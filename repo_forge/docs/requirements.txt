@@ -1,0 +1,23 @@
+# 📚 Documentation Dependencies - Essential knowledge architecture tools
+# Each package carefully selected for documentation excellence
+
+# Core dependencies for repo_forge
+colorama>=0.4.6
+pyyaml>=6.0
+jinja2>=3.0.0
+
+# Sphinx and extensions for documentation generation
+sphinx>=8.2.3              # Documentation foundation
+furo>=2024.8.6             # Modern theme with aesthetic elegance
+sphinx-rtd-theme>=3.0.2    # Classic alternative for universal appeal
+myst-parser>=4.0.1         # Markdown and reStructuredText harmony
+sphinxcontrib-plantuml>=0.2.0  # UML diagram integration 
+sphinxcontrib-mermaid>=0.1.0   # Flow charts and diagrams
+sphinx-autoapi>=3.0.0         # API documentation automation
+sphinx-copybutton>=0.5.2      # One-click code copying
+sphinx-autodoc-typehints>=3.1.0  # Type hint documentation
+sphinx-autobuild>=2024.10.3     # Live rebuilding
+sphinx-design>=0.6.1           # Design elements
+
+# Required for introspection and extraction
+gitpython>=3.1.40     # Git repository awareness

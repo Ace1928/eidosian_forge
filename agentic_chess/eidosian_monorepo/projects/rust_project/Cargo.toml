@@ -1,0 +1,14 @@
+[package]
+name = "rust_project"
+version = "0.1.0"
+edition = "2021"
+authors = ["Eidosian Team <team@example.com>"]
+license = "MIT"
+description = "Rust project within Eidosian monorepo"
+
+[dependencies]
+tokio = { version = "1.34", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+tokio-test = "0.4"

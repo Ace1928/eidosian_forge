@@ -1,0 +1,366 @@
+# ╭────────────────────────────────────────────────────╮
+# │ EIDOSIAN .GITIGNORE - PRECISION EXCLUSION PATTERNS │
+# ╰────────────────────────────────────────────────────╯
+
+# ┌─────────────────────────────────────────┐
+# │ GIT STRUCTURAL CONTAINMENT PROTOCOL     │
+# └─────────────────────────────────────────┘
+# Git repositories within repositories are chaotic anomalies
+*/**/.git/
+*/.git
+.git/modules/
+.git/worktrees/
+.git-crypt/
+
+# ┌─────────────────────────────────────────┐
+# │ OPERATING SYSTEM DETRITUS               │
+# └─────────────────────────────────────────┘
+
+# macOS: Because your filesystem metadata isn't part of the project
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon[[:cntrl:]]
+ehthumbs.db
+Thumbs.db
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+
+# Windows: The OS that never cleans up after itself
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+~$*
+*.tmp
+
+# Linux: Even perfection leaves footprints
+*~
+.directory
+.Trash-*
+.nfs*
+.fuse_hidden*
+
+# ┌─────────────────────────────────────────┐
+# │ EDITOR ARTIFACTS & CONFIGURATION        │
+# └─────────────────────────────────────────┘
+
+# VSCode: Precision tools, chaotic fingerprints
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+
+# JetBrains: Intelligence that leaves traces
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+out/
+atlassian-ide-plugin.xml
+*.iws
+cmake-build-*/
+.idea/**/mongoSettings.xml
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+
+# Sublime Text: Simple yet verbose
+*.sublime-project
+*.sublime-workspace
+
+# Vim: Even the minimal leave something behind
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+.netrwhist
+
+# Emacs: For those who prefer their editor as an OS
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# ┌─────────────────────────────────────────┐
+# │ LANGUAGE & FRAMEWORK ARTIFACTS          │
+# └─────────────────────────────────────────┘
+
+# Python: Where indentation matters but cleanup doesn't
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.venv/
+venv/
+ENV/
+cython_debug/
+pyrightconfig.json
+
+# JavaScript/TypeScript: Where node_modules weighs more than the sun
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.pnp.*
+.node_repl_history
+.eslintcache
+.env
+.env.test
+.cache
+.serverless/
+.parcel-cache/
+.next/
+out/
+.nuxt/
+.vuepress/dist
+.docusaurus/
+coverage/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+storybook-static/
+
+# Ruby: As precious as its name, as messy as its gems
+*.gem
+*.rbc
+.bundle/
+vendor/bundle
+.yardoc
+_yardoc/
+.rvmrc
+/.config
+/InstalledFiles
+/pkg/
+/test/tmp/
+/test/version_tmp/
+.byebug_history
+
+# Rust: Safe language, wild build artifacts
+/target/
+Cargo.lock
+**/*.rs.bk
+
+# Go: Simple syntax, complex ignores
+/vendor/
+/Godeps/
+.go-version
+
+# Java: Verbose language, verbose garbage
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+target/
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# C/C++: Where memory management isn't the only cleanup challenge
+*.d
+*.o
+*.obj
+*.gch
+*.pch
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.la
+*.lo
+*.exe
+*.out
+*.app
+.depend
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# ┌─────────────────────────────────────────┐
+# │ DATABASE & DATA STORAGE                 │
+# └─────────────────────────────────────────┘
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+*.dump
+*.mdb
+*.ldb
+*.bak
+*.backup
+*.swp
+*.rdb
+
+# ┌─────────────────────────────────────────┐
+# │ PROJECT OPERATIONAL ARTIFACTS           │
+# └─────────────────────────────────────────┘
+
+# Logs: The digital equivalent of forensic evidence
+logs/
+*.log
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local configuration: Your secrets aren't for sharing
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+config/local.json
+config/*.local.json
+local.properties
+
+# Runtime data: Here today, should be gone tomorrow
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files: Like visitors who overstay their welcome
+tmp/
+temp/
+.tmp/
+.temp/
+.cache/
+
+# Build outputs: The compiled thoughts of your code
+/build/
+/dist/
+/out/
+/output/
+
+# Documentation: Generated knowledge that can be regenerated
+/docs/api/
+/docs/dist/
+/docgen/
+/api-docs/
+
+# ┌─────────────────────────────────────────┐
+# │ SECURITY & CREDENTIALS - HIGHEST ALERT  │
+# └─────────────────────────────────────────┘
+.env
+credentials.json
+*credential*
+*password*
+*secret*
+*private*
+*key
+*token*
+*auth*
+*certificate*
+*cert.pem
+*key.pem
+.ssh/
+.gnupg/
+.gpg
+.pgp
+.htpasswd
+.htaccess
+# Exception patterns: Templates are useful, secrets are not
+!*example*
+!*template*
+!*sample*
+!*mock*
+
+# ┌─────────────────────────────────────────┐
+# │ CONTAINERIZATION & DEPLOYMENT           │
+# └─────────────────────────────────────────┘
+.dockerignore
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terragrunt-cache/
+.vagrant/
+*.box
+.kube/
+kubeconfig
+*kubeconfig*
+
+# ┌─────────────────────────────────────────┐
+# │ MISCELLANEOUS BINARY & MEDIA            │
+# └─────────────────────────────────────────┘
+# Binary blobs that belong in LFS, not git
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.mov
+*.mp4
+*.mp3
+*.flv
+*.fla
+*.swf
+*.gz
+*.zip
+*.7z
+*.ttf
+*.eot
+*.woff
+*.woff2
+*.pyc
+*.class
+*.exe
+*.dll
+*.bin
+# Exceptions for source-controlled resources
+!/assets/images/**
+!/public/img/**

@@ -1,0 +1,183 @@
+# 🔮 Eidosian Pyproject Perfection – Structural Harmony Embodied
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel>=0.37.0"]
+build-backend = "setuptools.build_meta"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📦 Project Core - Single Source of Truth - Eidosian Identity Matrix
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[project]
+name = "repo_forge"
+version = "0.1.0"  # ⚙️ AUTO-MANAGED: Version synchronization node
+description = "Eidosian Repo Forge - Universal monorepo structure generator"
+readme = "README.md"
+authors = [
+    {name = "Lloyd Handyside", email = "ace1928@gmail.com"},
+    {name = "Eidos", email = "syntheticeidos@gmail.com"},
+]
+requires-python = ">=3.8"
+license = {text = "MIT"}
+keywords = [
+    "repository", "structure", "monorepo", "generator", 
+    "toolkit", "eidos", "forge", "scaffolding",
+    "project", "template", "organization", "architecture"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+    "colorama>=0.4.6",  # Terminal styling with precision
+    "pyyaml>=6.0",      # Structured configuration parsing
+    "jinja2>=3.0.0",    # Template rendering with elegance
+]
+
+[project.urls]
+Homepage = "https://github.com/Ace1928/repo_forge"
+Documentation = "https://repo-forge.readthedocs.io"
+Organization = "https://neuroforge.io"
+"Bug Tracker" = "https://github.com/Ace1928/repo_forge/issues"
+"Source Code" = "https://github.com/Ace1928/repo_forge"
+Changelog = "https://github.com/Ace1928/repo_forge/blob/main/CHANGELOG.md"
+
+[project.scripts]
+repo-forge = "repo_forge.cli:main"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🧩 Optional Dependencies - Capability Matrix Expansion Systems
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[project.optional-dependencies]
+dev = [
+    # Development tools - engineering perfection toolkit
+    "black>=23.7.0",           # Code formatting with mathematical precision
+    "isort>=5.12.0",           # Import sorting with algorithmic elegance
+    "flake8>=6.1.0",           # Linting with unyielding accuracy
+    "mypy>=1.5.1",             # Type checking with relentless thoroughness
+    "pytest>=7.4.0",           # Testing with scientific rigor
+    "pytest-cov>=4.1.0",       # Coverage tracking with complete visibility
+    "build>=0.10.0",           # Package building with architectural integrity
+    "twine>=4.0.2",            # Distribution with secure precision
+]
+docs = [
+    # Documentation system - knowledge architecture tools
+    "sphinx>=8.2.3",                     # Documentation foundation
+    "furo>=2024.8.6",                    # Modern theme with aesthetic elegance
+    "sphinx-rtd-theme>=3.0.2",           # Alternative classic theme
+    "myst-parser>=4.0.1",                # Markdown integration
+    "sphinxcontrib-plantuml>=0.2.0",     # UML diagram support
+    "sphinxcontrib-mermaid>=0.1.0",      # Flow chart visualization
+    "sphinx-autoapi>=3.0.0",             # API documentation automation
+    "sphinx-copybutton>=0.5.2",          # Code block copying enhancement
+    "sphinx-autodoc-typehints>=3.1.0",   # Type hint integration
+    "sphinx-autobuild>=2024.10.3",       # Live rebuilding capability
+    "sphinx-design>=0.6.1",              # Advanced UI components
+]
+full = [
+    # Complete toolkit - maximum capability deployment
+    "gitpython>=3.1.40",        # Git operations with precision control
+    "rich>=13.7.0",             # Terminal output with aesthetic perfection
+    "tqdm>=4.66.1",             # Progress visualization with temporal clarity
+    "click>=8.1.7",             # Command interface with ergonomic design
+]
+test = [
+    # Isolated testing dependencies - verification subsystem
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.1",
+    "pytest-timeout>=2.1.0",
+]
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🔧 Development Tool Configurations - Engineering Excellence Protocol
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[tool.black]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311", "py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.eggs
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+case_sensitive = true
+combine_as_imports = true
+order_by_type = true
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_no_return = true
+warn_unreachable = true
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🧪 Test Configuration - Verification Matrix with Quantum Precision
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[tool.pytest.ini_options]
+# Core test architecture - foundational verification framework
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# Coverage analysis system - visibility into verification completeness
+addopts = "--cov=repo_forge --cov-report=term-missing --cov-report=xml:coverage.xml --no-cov-on-fail"
+
+# Terminal output protocol - optimized information transfer
+console_output_style = "progress"
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+
+# Execution control systems - reliability through isolation
+xvs = true
+filterwarnings = [
+    "ignore::DeprecationWarning:distutils.*:",
+    "ignore::DeprecationWarning:pkg_resources.*:",
+    "default::DeprecationWarning",
+]
+
+# Testing categories - contextual verification domains
+markers = [
+    "integration: tests that require external services",
+    "slow: tests that take longer than 1 second",
+    "structure: tests that verify directory structure creation",
+    "config: tests that verify configuration file generation",
+    "docs: tests that verify documentation generation",
+]
