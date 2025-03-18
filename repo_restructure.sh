@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ╭──────────────────────────────────────────────────────────────────────╮
-# │ 🏗️  EIDOSIAN FORGE - REPOSITORY RESTRUCTURER v1.0.2                  │
+# │ 🏗️  EIDOSIAN FORGE - REPOSITORY RESTRUCTURER v1.0.3                  │
 # │    Transforming chaos into crystalline architecture                  │
 # │    With atomic precision and recursive elegance                      │
 # ╰──────────────────────────────────────────────────────────────────────╯
@@ -12,20 +12,64 @@
 
 # Validate shell compatibility - fail fast with clear remediation path
 # @requires: Bash 4.0+ for associative arrays and parameter expansion
-# @returns: 0 on success, exits with code 1 on version mismatch
+# @returns: {Integer} 0 on success, exits with code 1 on version mismatch
 # @pure: False (has side effects - may exit process)
-(("${BASH_VERSINFO[0]}" >= 4)) || {
-  echo "⚠️  Fatal: Requires Bash 4.0+ for associative arrays and advanced features" >&2
-  echo "→ Current version: ${BASH_VERSION}" >&2
-  echo "→ Remediation: Use a compatible shell or upgrade bash" >&2
-  exit 1
+# @throws: Exits with code 1 and diagnostic message on version incompatibility
+function validate_bash_version() {
+  local -r min_major=4
+  local -r current_major="${BASH_VERSINFO[0]}"
+
+  if ((current_major < min_major)); then
+    echo "⚠️  Fatal: Requires Bash ${min_major}.0+ for associative arrays and advanced features" >&2
+    echo "→ Current version: ${BASH_VERSION}" >&2
+    echo "→ Remediation: Use a compatible shell or upgrade bash" >&2
+    return 1
+  fi
+  return 0
 }
+
+validate_bash_version || exit 1
 
 # Establish deterministic failure modes with explicit boundary conditions
 # @effect: Immediately exits on errors, undefined variables, and pipeline failures
 # @rationale: Prevents silent failures, state corruption, and zombie processes
 # @reliability: Guarantees execution integrity or immediate termination
 set -euo pipefail
+
+# Translate exit codes to human-readable meanings with precision
+# @param: {Integer} Exit code to interpret
+# @returns: {String} Human-readable description with semantic meaning
+# @usage: meaning=$(exit_code_meaning 127)
+# @pure: True (no side effects, deterministic output)
+# @throws: Error if required parameter is missing
+exit_code_meaning() {
+  local -r code=${1:?Missing required exit code parameter}
+
+  # Exit code dictionary with complete semantic mapping
+  local -r exit_codes=(
+    [0]="Success"
+    [1]="General error"
+    [2]="Misuse of shell builtins"
+    [126]="Command invoked cannot execute"
+    [127]="Command not found"
+    [128]="Invalid argument to exit"
+    [129]="SIGHUP - Hangup"
+    [130]="SIGINT - Terminal interrupt"
+    [131]="SIGQUIT - Terminal quit"
+    [132]="SIGILL - Illegal instruction"
+    [133]="SIGTRAP - Trace/breakpoint trap"
+    [134]="SIGABRT - Abort"
+    [135]="SIGBUS - Bus error"
+    [136]="SIGFPE - Floating point exception"
+    [137]="SIGKILL - Kill"
+    [139]="SIGSEGV - Segmentation fault"
+    [141]="SIGPIPE - Broken pipe"
+    [143]="SIGTERM - Termination"
+  )
+
+  # Deterministic response with graceful fallback
+  echo "${exit_codes[$code]:-Unknown error code: $code}"
+}
 
 # Create execution context for sophisticated error handling
 # @detects: Exact failure point with complete contextual information
@@ -44,37 +88,6 @@ trap 'error_code=$?;
       echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
       exit $error_code' ERR
 
-# Translate exit codes to human-readable meanings with precision
-# @param: {Integer} Exit code to interpret
-# @returns: {String} Human-readable description with semantic meaning
-# @usage: meaning=$(exit_code_meaning 127)
-# @pure: True (no side effects, deterministic output)
-# @throws: Error if required parameter is missing
-exit_code_meaning() {
-  local -r code=${1:?Missing required exit code parameter}
-  case $code in
-    0) echo "Success" ;;
-    1) echo "General error" ;;
-    2) echo "Misuse of shell builtins" ;;
-    126) echo "Command invoked cannot execute" ;;
-    127) echo "Command not found" ;;
-    128) echo "Invalid argument to exit" ;;
-    129) echo "SIGHUP - Hangup" ;;
-    130) echo "SIGINT - Terminal interrupt" ;;
-    131) echo "SIGQUIT - Terminal quit" ;;
-    132) echo "SIGILL - Illegal instruction" ;;
-    133) echo "SIGTRAP - Trace/breakpoint trap" ;;
-    134) echo "SIGABRT - Abort" ;;
-    135) echo "SIGBUS - Bus error" ;;
-    136) echo "SIGFPE - Floating point exception" ;;
-    137) echo "SIGKILL - Kill" ;;
-    139) echo "SIGSEGV - Segmentation fault" ;;
-    141) echo "SIGPIPE - Broken pipe" ;;
-    143) echo "SIGTERM - Termination" ;;
-    *) echo "Unknown error code: $code" ;; # Explicit unknown with context
-  esac
-}
-
 # ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 # ┃ VERSION IDENTITY - IMMUTABLE EXECUTION CONTEXT                      ┃
 # ┃ Establishes the foundational ontological parameters of execution    ┃
@@ -84,7 +97,7 @@ exit_code_meaning() {
 # @purpose: Provides consistent versioning and runtime identification
 # @immutable: True (values should never be modified during execution)
 # @type: String constants for deterministic reference
-readonly SCRIPT_VERSION="1.0.2"                                                                                         # Semantic version with backward compatibility guarantees
+readonly SCRIPT_VERSION="1.0.3"                                                                                         # Semantic version with backward compatibility guarantees
 readonly SCRIPT_NAME="$(basename "${0%.sh}")"                                                                           # Self-aware identifier with extension normalization
 readonly SCRIPT_START_TIME="$(date +%s)"                                                                                # Execution time anchor for duration calculations and telemetry
 readonly SCRIPT_PATH="$(readlink -f "$0")"                                                                              # Canonical path with symlink resolution for absolute reference
@@ -94,19 +107,6 @@ readonly SCRIPT_HASH="$([ -f "$SCRIPT_PATH" ] && md5sum "$SCRIPT_PATH" 2> /dev/n
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ DEPENDENCY VALIDATION - ENVIRONMENT INTEGRITY VERIFICATION            │
 # │ Ensures all external requirements are satisfied before execution      │
-# ╰──────────────────────────────────────────────────────────────────────╯
-
-# Verify runtime requirements with typed contracts and explicit remediation
-# @usage: verify_runtime_dependencies
-# @returns: {Integer} 0=success, 1=failure with actionable error message
-# @side_effects: Outputs error messages to stderr on failure
-# @idempotent: True (can be called multiple times without side effects)
-# @pure: False (has system inspection side effects but no state mutation)
-verify_runtime_dependencies() {
-  # Critical dependencies with atomistic validation and version requirements
-  # Each command is essential for proper script functionality
-  local -r REQUIRED_COMMANDS=(
-    "readlink:file path canonicalization"
     "mkdir:directory creation"
     "tput:terminal capability detection"
     "locale:character encoding discovery"

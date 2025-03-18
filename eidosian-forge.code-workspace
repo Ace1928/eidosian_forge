@@ -21,9 +21,9 @@
     "editor.guides.indentation": true,
     "editor.stickyScroll.enabled": true,
     "editor.stickyScroll.maxLineCount": 5,
-    "editor.minimap.renderCharacters": false,
-    "editor.minimap.maxColumn": 80,
-    "editor.minimap.scale": 2,
+    "editor.minimap.renderCharacters": true,
+    "editor.minimap.maxColumn": 120,
+    "editor.minimap.scale": 3,
     "editor.accessibilitySupport": "on",
     "editor.inlayHints.enabled": "on",
     "editor.inlayHints.padding": true,
@@ -42,9 +42,6 @@
     "workbench.tree.indent": 10,
     "workbench.editor.decorations.badges": true,
     "workbench.editor.decorations.colors": true,
-    "github.copilot.editor.enableAutoCompletions": true,
-    "github.copilot.editor.enableCodeActions": true,
-    "github.copilot.chat.localeOverride": "en",
     "github.copilot.chat.codeGeneration.instructions": [
       { "file": "./.github/prompts/eidosian-principles.prompt.md" },
       { "file": "./.github/prompts/eidosian-refinement.prompt.md" },
@@ -65,12 +62,16 @@
 
     // ━━━━ POLYGLOT MASTERY ━━━━
     // For the Eidosian whose code speaks many tongues
+
+    //Markdown
     "markdown.editor.drop.enabled": "smart",
     "markdown.validate.enabled": true,
     "markdown.editor.pasteUrlAsFormattedLink.enabled": "smart",
     "markdown.preview.typographer": true,
     "markdown.preview.openMarkdownLinks": "inEditor",
     "markdown.updateLinksOnFileMove.enabled": "always",
+
+    //Typescript
     "typescript.preferences.importModuleSpecifier": "relative",
     "typescript.updateImportsOnFileMove.enabled": "always",
     "typescript.preferences.quoteStyle": "single",
@@ -80,6 +81,8 @@
     "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
     "typescript.inlayHints.variableTypes.enabled": true,
     "typescript.suggest.completeFunctionCalls": true,
+
+    //Python
     "python.languageServer": "Pylance",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic",
@@ -88,12 +91,16 @@
     "python.analysis.autoFormatStrings": true,
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.fixAll": ["source.unusedImports"],
+
+    //Javascript
     "javascript.updateImportsOnFileMove.enabled": "always",
     "javascript.preferences.quoteStyle": "single",
     "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
     "javascript.inlayHints.parameterNames.enabled": "literals",
     "javascript.inlayHints.propertyDeclarationTypes.enabled": true,
     "javascript.format.semicolons": "insert",
+
+    //JSON
     "json.schemaDownload.enable": true,
     "json.validate.enable": true,
 
@@ -101,13 +108,7 @@
     // The Eidosian code aesthetic - elegant and precise
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
-    "editor.defaultFormatter": null,
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit",
-      "source.organizeImports": "explicit",
-      "source.sortImports": "explicit",
-      "source.fixAll.eslint": "explicit"
-    },
+    "editor.codeActionsOnSave": {},
     "editor.linkedEditing": true,
     "editor.wordWrap": "on",
     "editor.rulers": [80, 100, 120],
@@ -120,8 +121,6 @@
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
-    "files.autoSave": "afterDelay",
-    "files.autoSaveDelay": 1000,
     "html.format.wrapLineLength": 100,
     "html.format.wrapAttributes": "auto",
 
@@ -151,8 +150,6 @@
     "git.autoStash": true,
     "git.confirmSync": false,
     "git.enableSmartCommit": true,
-    "git.branchProtection": ["main", "master", "develop", "production"],
-    "git.branchProtectionPrompt": "alwaysPrompt",
     "git.mergeEditor": true,
     "git.postCommitCommand": "sync",
     "git.pullBeforeCheckout": true,
@@ -232,9 +229,6 @@
     "workbench.settings.settingsSearchTocBehavior": "filter",
     "workbench.settings.openDefaultKeybindings": true,
     "workbench.settings.useSplitJSON": true,
-    "[jsonc]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
     "accessibility.signalOptions.volume": 50,
     "accessibility.signals.lineHasError": {
       "sound": "auto"
