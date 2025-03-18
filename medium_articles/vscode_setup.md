@@ -1172,12 +1172,19 @@ This isn't merely a configuration—it's a neural extension framework that trans
   // │  ⟡ Where code achieves sentience through structural perfection ⟡ │
   // ╰──────────────────────────────────────────────────────────────────╯
 
-  // Core Visual & Cognitive Framework
+  // ┌─────────────────────────────────────────────────────┐
+  // │ CORE VISUAL & COGNITIVE FRAMEWORK                   │
+  // └─────────────────────────────────────────────────────┘
   "workbench.colorTheme": "Dark Modern",
   "editor.fontFamily": "'FiraCode NF', 'firaCode Nerd Font', 'Cascadia Code', Consolas, 'Courier New', monospace",
   "editor.fontLigatures": true,
+  "editor.fontSize": 14,
+  "editor.lineHeight": 22,
+  "editor.letterSpacing": 0.2,
 
-  // Interface Density Optimization
+  // ┌─────────────────────────────────────────────────────┐
+  // │ INTERFACE DENSITY OPTIMIZATION                      │
+  // └─────────────────────────────────────────────────────┘
   "window.menuBarVisibility": "compact",
   "window.commandCenter": true,
   "editor.minimap.autohide": true,
@@ -1188,18 +1195,25 @@ This isn't merely a configuration—it's a neural extension framework that trans
   "editor.minimap.side": "right",
   "breadcrumbs.enabled": false,
 
-  // Cursor Engineering
+  // ┌─────────────────────────────────────────────────────┐
+  // │ CURSOR ENGINEERING                                  │
+  // └─────────────────────────────────────────────────────┘
   "editor.cursorBlinking": "solid",
   "editor.cursorSmoothCaretAnimation": "on",
   "editor.cursorWidth": 1,
   "editor.cursorSurroundingLines": 10,
   "editor.cursorSurroundingLinesStyle": "default",
 
-  // Response Latency Optimization
+  // ┌─────────────────────────────────────────────────────┐
+  // │ RESPONSE LATENCY OPTIMIZATION                       │
+  // └─────────────────────────────────────────────────────┘
   "editor.hover.delay": 300,
   "workbench.hover.delay": 1,
+  "editor.quickSuggestionsDelay": 5,
 
-  // Code Structure Visualization
+  // ┌─────────────────────────────────────────────────────┐
+  // │ CODE STRUCTURE VISUALIZATION                        │
+  // └─────────────────────────────────────────────────────┘
   "editor.guides.bracketPairs": true,
   "editor.guides.bracketPairsHorizontal": "active",
   "editor.guides.highlightActiveBracketPair": true,
@@ -1207,9 +1221,12 @@ This isn't merely a configuration—it's a neural extension framework that trans
   "editor.guides.indentation": true,
   "editor.bracketPairColorization.enabled": true,
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
-  "editor.occurrencesHighlight": true,
+  "editor.occurrencesHighlight": "singleFile",
+  "editor.indentSize": "tabSize",
 
-  // Utility Optimizations
+  // ┌─────────────────────────────────────────────────────┐
+  // │ UTILITY OPTIMIZATIONS                               │
+  // └─────────────────────────────────────────────────────┘
   "editor.dragAndDrop": false,
   "editor.wordWrap": "on",
   "editor.copyWithSyntaxHighlighting": false,
@@ -1217,33 +1234,72 @@ This isn't merely a configuration—it's a neural extension framework that trans
   "files.trimTrailingWhitespace": true,
   "editor.tabCompletion": "on",
   "editor.acceptSuggestionOnEnter": "smart",
+  "editor.suggest.shareSuggestSelections": true,
+  "editor.suggestSelection": "first",
+  "editor.snippetSuggestions": "top",
+  "editor.suggest.preview": true,
 
-  // Automation Protocol
+  // ┌─────────────────────────────────────────────────────┐
+  // │ AUTOMATION PROTOCOL                                 │
+  // └─────────────────────────────────────────────────────┘
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.formatOnType": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
 
-  // Trust Protocol
+  // ┌─────────────────────────────────────────────────────┐
+  // │ TRUST PROTOCOL                                      │
+  // └─────────────────────────────────────────────────────┘
   "security.workspace.trust.banner": "never",
   "security.workspace.trust.emptyWindow": true,
   "security.workspace.trust.enabled": false,
   "security.workspace.trust.startupPrompt": "never",
 
-  // Advanced Intelligence Systems
+  // ┌─────────────────────────────────────────────────────┐
+  // │ ADVANCED INTELLIGENCE SYSTEMS                       │
+  // └─────────────────────────────────────────────────────┘
   "editor.defaultColorDecorators": "always",
   "editor.linkedEditing": true,
   "editor.quickSuggestions": {
     "comments": "on",
-    "strings": "on"
+    "strings": "on",
+    "other": "on"
   },
   "editor.suggest.localityBonus": true,
   "editor.accessibilitySupport": "on",
+  "editor.parameterHints.enabled": true,
+  "editor.suggest.showMethods": true,
+  "editor.suggest.showFunctions": true,
+  "editor.suggest.showConstructors": true,
+  "editor.suggest.showFields": true,
+  "editor.suggest.showVariables": true,
+  "editor.suggest.showClasses": true,
+  "editor.suggest.showStructs": true,
+  "editor.suggest.showInterfaces": true,
+  "editor.suggest.showModules": true,
+  "editor.suggest.showProperties": true,
+  "editor.suggest.showEvents": true,
+  "editor.suggest.showOperators": true,
+  "editor.suggest.showUnits": true,
+  "editor.suggest.showValues": true,
+  "editor.suggest.showConstants": true,
+  "editor.suggest.showEnums": true,
 
-  // Document State Management
+  // ┌─────────────────────────────────────────────────────┐
+  // │ DOCUMENT STATE MANAGEMENT                           │
+  // └─────────────────────────────────────────────────────┘
   "files.autoSaveWhenNoErrors": true,
   "files.autoSaveWorkspaceFilesOnly": true,
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
 
-  // Version Control Intelligence
+  // ┌─────────────────────────────────────────────────────┐
+  // │ VERSION CONTROL INTELLIGENCE                        │
+  // └─────────────────────────────────────────────────────┘
   "git.enableSmartCommit": true,
   "git.autofetch": true,
   "git.enableCommitSigning": true,
@@ -1251,8 +1307,14 @@ This isn't merely a configuration—it's a neural extension framework that trans
   "scm.diffDecorationsGutterPattern": {
     "added": true
   },
+  "git.confirmSync": false,
+  "git.branchProtection": ["main", "master", "develop"],
+  "git.branchProtectionPrompt": "alwaysPrompt",
+  "git.mergeEditor": true,
 
-  // Icon System Architecture
+  // ┌─────────────────────────────────────────────────────┐
+  // │ ICON SYSTEM ARCHITECTURE                            │
+  // └─────────────────────────────────────────────────────┘
   "workbench.iconTheme": "material-icon-theme",
   "material-icon-theme.folders.theme": "specific",
   "material-icon-theme.folders.color": "#42a5f5",
@@ -1261,28 +1323,9 @@ This isn't merely a configuration—it's a neural extension framework that trans
   "material-icon-theme.activeIconPack": "angular_ngrx",
   "material-icon-theme.hidesExplorerArrows": false,
 
-  // Formatting Strategy
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-
-  // Language-Specific Optimizations
-  "[python]": {
-    "diffEditor.ignoreTrimWhitespace": false,
-    "editor.formatOnType": true,
-    "editor.wordBasedSuggestions": "off"
-  },
-  "python.testing.pytestEnabled": true,
-  "python.testing.unittestEnabled": true,
-  "python.terminal.shellIntegration.enabled": true,
-
-  "[shellscript]": {
-    "files.eol": "\\n",
-    "editor.rulers": [80, 100],
-    "editor.tabSize": 2,
-    "editor.insertSpaces": true,
-    "editor.semanticHighlighting.enabled": true
-  },
-
-  // Chromatic Information Architecture
+  // ┌─────────────────────────────────────────────────────┐
+  // │ CHROMATIC INFORMATION ARCHITECTURE                  │
+  // └─────────────────────────────────────────────────────┘
   "workbench.colorCustomizations": {
     "editor.lineHighlightBackground": "#ff930f1a",
     "editor.lineHighlightBorder": "#9fced11f",
@@ -1302,23 +1345,94 @@ This isn't merely a configuration—it's a neural extension framework that trans
     "statusBar.noFolderBackground": "#007acc"
   },
 
-  // Spatial Navigation Engineering
+  // ┌─────────────────────────────────────────────────────┐
+  // │ SPATIAL NAVIGATION ENGINEERING                      │
+  // └─────────────────────────────────────────────────────┘
   "workbench.list.smoothScrolling": true,
   "editor.fastScrollSensitivity": 5,
   "editor.smoothScrolling": false,
   "editor.stickyScroll.enabled": true,
+  "editor.stickyScroll.maxLineCount": 10,
+  "editor.scrollBeyondLastLine": false,
 
-  // Recursive Icon Optimization
+  // ┌─────────────────────────────────────────────────────┐
+  // │ RECURSIVE ICON OPTIMIZATION                         │
+  // └─────────────────────────────────────────────────────┘
   "material-icon-theme.files.associations": {
+    // TypeScript/JavaScript Patterns
     "*.controller.ts": "angular-component",
     "*.service.ts": "angular-service",
     "*.utils.ts": "ngrx-effects",
     "*config.ts": "angular-cli",
     "*.types.ts": "typescript-def",
-    "*.model.ts": "angular-directive"
+    "*.model.ts": "angular-directive",
+    "*.dto.ts": "typescript-def",
+    "*.store.ts": "ngrx-store",
+    "*.effects.ts": "ngrx-effects",
+    "*.selectors.ts": "ngrx-selectors",
+    "*.reducer.ts": "ngrx-reducer",
+    "*.hook.ts": "hook",
+    "*.hook.tsx": "hook",
+
+    // React Patterns
+    "*.jsx": "react",
+    "*.tsx": "react-ts",
+    "*.component.jsx": "react-components",
+    "*.component.tsx": "react-components",
+    "*.slice.ts": "redux-store",
+    "*.slice.js": "redux-store",
+
+    // Rust Patterns
+    "*.rs": "rust",
+    "Cargo.toml": "cargo",
+    "Cargo.lock": "cargo-lock",
+
+    // Configuration Files
+    "*.toml": "tune",
+    "*.lock": "lock",
+    "tsconfig.json": "tsconfig",
+    "package.json": "npm",
+    "package-lock.json": "npm",
+    "yarn.lock": "yarn",
+    "Gemfile": "gemfile",
+
+    // Java/Kotlin Patterns
+    "*.java": "java",
+    "*.kt": "kotlin",
+    "*.kts": "kotlin",
+    "*.gradle": "gradle",
+    "build.gradle": "gradle",
+    "settings.gradle": "gradle",
+    "*.gradle.kts": "gradle",
+
+    // C/C++ Patterns
+    "*.c": "c",
+    "*.cpp": "cpp",
+    "*.h": "c-header",
+    "*.hpp": "cpp-header",
+    "CMakeLists.txt": "cmake",
+    "*.cmake": "cmake",
+
+    // Go Patterns
+    "*.go": "go",
+    "go.mod": "go-mod",
+    "go.sum": "go-sum",
+
+    // Shell Scripts
+    "*.sh": "shell",
+    "*.bash": "shell",
+    "*.zsh": "shell",
+    ".bashrc": "shell",
+    ".zshrc": "shell",
+
+    // Markdown & Documentation
+    "README.md": "readme",
+    "*.md": "markdown"
   },
 
-  // Custom Icon Clone Architecture
+  // ┌─────────────────────────────────────────────────────┐
+  // │ CUSTOM ICON CLONE ARCHITECTURE                      │
+  // └─────────────────────────────────────────────────────┘
   "material-icon-theme.files.customClones": [
     {
       "name": "api-service",
@@ -1339,10 +1453,30 @@ This isn't merely a configuration—it's a neural extension framework that trans
       "base": "ngrx-effects",
       "color": "amber-500",
       "fileNames": ["core.utils.ts", "utils.core.ts"]
+    },
+    {
+      "name": "rust-entity",
+      "base": "rust",
+      "color": "orange-700",
+      "fileNames": ["entity.rs", "model.rs", "models.rs", "entities.rs"]
+    },
+    {
+      "name": "rust-service",
+      "base": "unity",
+      "color": "red-800",
+      "fileNames": ["service.rs", "services.rs", "client.rs", "clients.rs"]
+    },
+    {
+      "name": "kotlin-view",
+      "base": "android",
+      "color": "green-500",
+      "fileNames": ["*Activity.kt", "*Fragment.kt", "*View.kt"]
     }
   ],
 
-  // Folder Hierarchy Visualization
+  // ┌─────────────────────────────────────────────────────┐
+  // │ FOLDER HIERARCHY VISUALIZATION                      │
+  // └─────────────────────────────────────────────────────┘
   "material-icon-theme.folders.associations": {
     "interfaces": "typescript",
     "dto": "typescript",
@@ -1356,21 +1490,317 @@ This isn't merely a configuration—it's a neural extension framework that trans
     "entities": "database",
     "repositories": "database",
     "fixtures": "mock",
-    "mocks": "mock"
+    "mocks": "mock",
+    "src": "src",
+    "lib": "lib",
+    "components": "components",
+    "container": "container",
+    "feature": "rules",
+    "pages": "api",
+    "domain": "theme",
+    "docker": "docker",
+    "k8s": "kubernetes",
+    "nginx": "nginx",
+    "target": "dist",
+    "mobile": "android",
+    "web": "www",
+    "api": "api",
+    "controllers": "middleware",
+    "services": "app",
+    "utils": "tools",
+    "hooks": "hook",
+    "crates": "packages"
   },
 
-  // Formatter Selection Matrix
+  // ╭──────────────────────────────────────────────────────────────────╮
+  // │  LANGUAGE-SPECIFIC OPTIMIZATIONS - TYPED PRECISION MODULES       │
+  // ╰──────────────────────────────────────────────────────────────────╯
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ TYPESCRIPT/JAVASCRIPT INTELLIGENCE MATRIX           │
+  // └─────────────────────────────────────────────────────┘
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100, 120],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    }
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100, 120],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    }
   },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.suggest.completeFunctionCalls": true,
+  "typescript.preferences.importModuleSpecifier": "shortest",
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.format.semicolons": "insert",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "javascript.suggest.completeFunctionCalls": true,
+  "javascript.preferences.importModuleSpecifier": "shortest",
+  "javascript.preferences.quoteStyle": "single",
+  "javascript.format.semicolons": "insert",
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ REACT/JSX FRAMEWORK OPTIMIZATION                    │
+  // └─────────────────────────────────────────────────────┘
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100, 120]
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100, 120]
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "emmet.triggerExpansionOnTab": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ ANGULAR FRAMEWORK PRECISION SYSTEM                  │
+  // └─────────────────────────────────────────────────────┘
+  "angular.enable-strict-mode-prompt": false,
+  "angular.view-engine": false,
+  "angular.experimental-ivy": true,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ WEB TECHNOLOGY SCHEMA INTEGRATION                   │
+  // └─────────────────────────────────────────────────────┘
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.suggest.insertMode": "replace"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.suggest.insertMode": "replace"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.suggest.insertMode": "replace"
+  },
+  "[less]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "html.format.wrapAttributes": "auto",
+  "css.lint.unknownAtRules": "ignore",
+  "css.validate": true,
+  "scss.validate": true,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ JSON & CONFIGURATION SCHEMA ENFORCEMENT             │
+  // └─────────────────────────────────────────────────────┘
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.quickSuggestions": {
+      "strings": true
+    }
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.quickSuggestions": {
+      "strings": true
+    }
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["package.json"],
+      "url": "https://json.schemastore.org/package.json"
+    },
+    {
+      "fileMatch": ["tsconfig.json"],
+      "url": "https://json.schemastore.org/tsconfig.json"
+    }
+  ],
+  "json.validate.enable": true,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ RUST OPTIMIZATION PROTOCOL                          │
+  // └─────────────────────────────────────────────────────┘
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [100],
+    "editor.semanticHighlighting.enabled": true
+  },
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.cargo.allFeatures": true,
+  "rust-analyzer.inlayHints.typeHints.enable": true,
+  "rust-analyzer.inlayHints.parameterHints.enable": true,
+  "rust-analyzer.procMacro.enable": true,
+  "rust-analyzer.rustfmt.extraArgs": ["--edition", "2021"],
+  "rust-analyzer.check.command": "clippy",
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ TOML CONFIGURATION PROTOCOL                         │
+  // └─────────────────────────────────────────────────────┘
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.semanticHighlighting.enabled": true
+  },
+  "evenBetterToml.formatter.alignEntries": true,
+  "evenBetterToml.formatter.arrayTrailingComma": true,
+  "evenBetterToml.formatter.arrayAutoExpand": true,
+  "evenBetterToml.formatter.compactArrays": false,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ MARKDOWN SEMANTIC ENHANCEMENT                       │
+  // └─────────────────────────────────────────────────────┘
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": true,
+      "strings": true,
+      "other": true
+    },
+    "editor.tabSize": 2,
+    "editor.renderWhitespace": "all"
+  },
+  "markdown.preview.breaks": true,
+  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.toc.updateOnSave": true,
+  "markdown.validate.enabled": true,
+  "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif",
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ PYTHON INTELLIGENCE MATRIX                          │
+  // └─────────────────────────────────────────────────────┘
+  "[python]": {
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnType": true,
+    "editor.wordBasedSuggestions": "off",
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4,
+    "editor.rulers": [88, 120],
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "python.analysis.typeCheckingMode": "basic",
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.mypyEnabled": true,
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": true,
+  "python.terminal.shellIntegration.enabled": true,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ C/C++ OPTIMIZATION PROTOCOL                         │
+  // └─────────────────────────────────────────────────────┘
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100]
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.rulers": [80, 100]
+  },
+  "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 100, NamespaceIndentation: All }",
+  "C_Cpp.default.cStandard": "c11",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.intelliSenseEngine": "Default",
+  "C_Cpp.enhancedColorization": "Enabled",
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ GO LANGUAGE PRECISION SYSTEM                        │
+  // └─────────────────────────────────────────────────────┘
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false,
+    "editor.rulers": [100],
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "go.useLanguageServer": true,
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": ["--fast"],
+  "go.lintOnSave": "package",
+  "go.vetOnSave": "package",
+  "go.buildOnSave": "package",
+  "go.testOnSave": false,
+  "go.formatTool": "goimports",
+  "go.coverOnSave": false,
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ JAVA/KOTLIN ANDROID DEVELOPMENT MATRIX              │
+  // └─────────────────────────────────────────────────────┘
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [100, 120],
+    "editor.semanticHighlighting.enabled": true
+  },
+  "[kotlin]": {
+    "editor.defaultFormatter": "fwcd.kotlin",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.rulers": [100, 120]
+  },
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.imports.organize.starThreshold": 5,
+  "java.imports.organize.staticStarThreshold": 3,
+  "java.completion.enabled": true,
+  "java.completion.guessMethodArguments": true,
+  "java.completion.importOrder": ["java", "javax", "com", "org", ""],
+  "kotlin.languageServer.enabled": true,
+  "kotlin.debugAdapter.enabled": true,
+  "kotlin.trace.server": "off",
+
+  // ┌─────────────────────────────────────────────────────┐
+  // │ SHELL SCRIPT OPTIMIZATION PROTOCOL                  │
+  // └─────────────────────────────────────────────────────┘
+  "[shellscript]": {
+    "files.eol": "\\n",
+    "editor.rulers": [80, 100],
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.semanticHighlighting.enabled": true
   },
 
   // VIM Integration Protocol
@@ -1385,6 +1815,360 @@ This isn't merely a configuration—it's a neural extension framework that trans
       "commands": ["workbench.action.closeEditorsInGroup"]
     }
   ]
+}
+```
+
+And to Install the required extensions:
+wdd
+
+```bash
+#!/usr/bin/env bash
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# ┃ Extensions aren't just tools—they're force multipliers ┃
+# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+# Enforce strict execution for predictable behavior
+set -euo pipefail
+
+# Initialize extension state tracking with strict typing
+declare -i INSTALLED_COUNT=0
+declare -i FAILED_COUNT=0
+declare -i SKIPPED_COUNT=0
+declare -A CATEGORY_STATS=()
+declare -a FAILED_EXTENSIONS=()
+declare -a SKIPPED_EXTENSIONS=()
+declare -a INSTALLATION_LOG=()
+
+# Timestamp for operation benchmarking
+START_TIME=$(date +%s)
+
+# ╭────────────────────────────────────────────────────────────────────────╮
+# │ EXTENSION MANAGEMENT PROTOCOL - PRECISE INSTALLATION FRAMEWORK         │
+# ╰────────────────────────────────────────────────────────────────────────╯
+
+# @signature: log_operation(String, String, String) -> Void
+# @description: Logs operations with consistent formatting
+# @param level: {String} Log level (INFO|WARN|ERROR)
+# @param message: {String} Log message content
+# @param details: {String} Optional additional details
+log_operation() {
+  local level="$1"
+  local message="$2"
+  local details="${3:-}"
+
+  local timestamp
+  timestamp=$(date "+%H:%M:%S")
+
+  # Color coding for different log levels
+  case "$level" in
+    "INFO")  echo -e "\033[0;32m[INFO]\033[0m  $timestamp - $message $details" ;;
+    "WARN")  echo -e "\033[0;33m[WARN]\033[0m  $timestamp - $message $details" ;;
+    "ERROR") echo -e "\033[0;31m[ERROR]\033[0m $timestamp - $message $details" ;;
+    *)       echo -e "$timestamp - $message $details" ;;
+  esac
+
+  # Store in log for final report
+  INSTALLATION_LOG+=("[$level] $message $details")
+}
+
+# @signature: check_vscode_availability() -> Boolean
+# @description: Verifies if VS Code CLI is available
+check_vscode_availability() {
+  if ! command -v code &> /dev/null; then
+    log_operation "ERROR" "VS Code not found in PATH. Installation aborted."
+    echo ""
+    echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+    echo "┃ VS Code CLI not available. Please install VS Code      ┃"
+    echo "┃ or ensure 'code' command is in your PATH.              ┃"
+    echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+    exit 1
+  fi
+  return 0
+}
+
+# @signature: install_extension(String, String) -> Integer
+# @description: Installs VSCode extension with elegant error handling and recovery
+# @param extension_id: {String} Extension identifier to install
+# @param category: {String} Functional category for extension
+# @returns: {Integer} Status code: 0=success, 1=error, 2=skipped
+install_extension() {
+  local extension_id="$1"
+  local category="${2:-uncategorized}"
+  local extension_name
+  extension_name=$(echo "$extension_id" | awk -F. '{print $NF}')
+
+  # Initialize category counter if not exists
+  CATEGORY_STATS["$category"]=${CATEGORY_STATS["$category"]:-0}
+
+  # Check if extension is already installed to prevent redundant operations
+  if code --list-extensions 2>/dev/null | grep -q "^$extension_id$"; then
+    echo "⟳ ${extension_name} already installed."
+    ((SKIPPED_COUNT++))
+    SKIPPED_EXTENSIONS+=("$extension_name")
+    return 2
+  fi
+
+  echo -n "⚡ Installing ${extension_name}... "
+
+  if code --install-extension "$extension_id" &>/dev/null; then
+    echo "✓"
+    ((INSTALLED_COUNT++))
+    ((CATEGORY_STATS["$category"]++))
+    return 0
+  else
+    echo "✗"
+    log_operation "ERROR" "Failed to install $extension_name" "($extension_id)"
+    FAILED_EXTENSIONS+=("$extension_name")
+    ((FAILED_COUNT++))
+    return 1
+  fi
+}
+
+# @signature: generate_extension_report() -> Void
+# @description: Produces a comprehensive installation report with precise metrics
+generate_extension_report() {
+  local total_extensions
+  total_extensions=$(code --list-extensions 2>/dev/null | wc -l)
+  local end_time
+  end_time=$(date +%s)
+  local duration=$((end_time - START_TIME))
+
+  echo ""
+  echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+  echo "┃ EXTENSION INSTALLATION REPORT                          ┃"
+  echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
+  echo ""
+  echo "✓ Successfully installed: $INSTALLED_COUNT extensions"
+  echo "⟳ Already installed:     $SKIPPED_COUNT extensions"
+  echo "✗ Installation failures: $FAILED_COUNT extensions"
+  echo "⏱️  Total execution time:  ${duration}s"
+
+  # Display category-based installation metrics
+  echo ""
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ CATEGORY DISTRIBUTION                                  │"
+  echo "└────────────────────────────────────────────────────────┘"
+  for category in "${!CATEGORY_STATS[@]}"; do
+    printf "%-15s : %3d extensions\n" "$category" "${CATEGORY_STATS[$category]}"
+  done
+
+  # Report failures with specific error messaging
+  if [ "$FAILED_COUNT" -gt 0 ]; then
+    echo ""
+    echo "┌────────────────────────────────────────────────────────┐"
+    echo "│ INSTALLATION FAILURES                                  │"
+    echo "└────────────────────────────────────────────────────────┘"
+    for extension in "${FAILED_EXTENSIONS[@]}"; do
+      echo "  ✗ $extension"
+    done
+    echo ""
+    echo "Run with '--verbose' to see detailed error logs."
+  fi
+
+  # System readiness assessment
+  echo ""
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ SYSTEM STATUS                                          │"
+  echo "└────────────────────────────────────────────────────────┘"
+  echo "✓ Active extensions: $total_extensions total"
+
+  # Add witty closing thought
+  echo ""
+  echo "┌────────────────────────────────────────────────────────┐"
+  echo "│ ʕ•́ᴥ•̀ʔ \"Quality extensions are like good spices —     │"
+  echo "│         essential in the right proportions.\"           │"
+  echo "└────────────────────────────────────────────────────────┘"
+
+  # Final system status with emoji for visual processing speed
+  if [ "$FAILED_COUNT" -eq 0 ]; then
+    echo "⚡ Environment initialization complete. Optimal tooling achieved."
+  else
+    echo "⚠️  Environment partially initialized with $FAILED_COUNT failures."
+    echo "   Run installation again or investigate specific failures."
+  fi
+}
+
+# ╭────────────────────────────────────────────────────────╮
+# │ MAIN EXECUTION PROTOCOL                                │
+# ╰────────────────────────────────────────────────────────╯
+
+main() {
+  # Verify VS Code is available before proceeding
+  check_vscode_availability
+
+  log_operation "INFO" "Extension installation initiated" "$(date)"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ CORE FRAMEWORK                                         │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ INITIALIZING CORE FRAMEWORK                            │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # Material Icon Theme - Visual indexing for rapid pattern recognition
+  install_extension "pkief.material-icon-theme" "core"
+
+  # Error Lens - Immediate feedback and failure visualization
+  install_extension "usernamehw.errorlens" "core"
+
+  # GitLens - Source control and history tracking
+  install_extension "eamodio.gitlens" "core"
+
+  # Path Intellisense - Filesystem navigation assistant
+  install_extension "christian-kohler.path-intellisense" "core"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ SYNTAX STRUCTURE                                       │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ ESTABLISHING SYNTAX STRUCTURE                          │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # Prettier - Code formatting standardization
+  install_extension "esbenp.prettier-vscode" "syntax"
+
+  # ESLint - JavaScript/TypeScript linting
+  install_extension "dbaeumer.vscode-eslint" "syntax"
+
+  # Better Comments - Enhanced comment organization
+  install_extension "aaron-bond.better-comments" "syntax"
+
+  # Indent Rainbow - Nested structure visualization
+  install_extension "oderwat.indent-rainbow" "syntax"
+
+  # TODO Tree - Task and reminder management
+  install_extension "Gruntfuggly.todo-tree" "syntax"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ LANGUAGE-SPECIFIC TOOLS                                │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ DEPLOYING LANGUAGE-SPECIFIC TOOLS                      │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # === Rust Toolkit ===
+  install_extension "rust-lang.rust-analyzer" "language"
+  install_extension "tamasfe.even-better-toml" "language"
+
+  # === TypeScript/JavaScript Framework ===
+  install_extension "ms-vscode.vscode-typescript-next" "language"
+  install_extension "dsznajder.es7-react-js-snippets" "language"
+  install_extension "xabikos.JavaScriptSnippets" "language"
+  install_extension "Angular.ng-template" "language"
+
+  # === C/C++ Development ===
+  install_extension "ms-vscode.cpptools" "language"
+  install_extension "jeff-hykin.better-cpp-syntax" "language"
+  install_extension "twxs.cmake" "language"
+
+  # === Go Development ===
+  install_extension "golang.go" "language"
+
+  # === Python Development ===
+  install_extension "ms-python.python" "language"
+  install_extension "ms-python.vscode-pylance" "language"
+  install_extension "njpwerner.autodocstring" "language"
+
+  # === JVM Development ===
+  install_extension "redhat.java" "language"
+  install_extension "vscjava.vscode-java-debug" "language"
+  install_extension "redhat.vscode-xml" "language"
+  install_extension "fwcd.kotlin" "language"
+
+  # === Web Development ===
+  install_extension "ecmel.vscode-html-css" "language"
+  install_extension "jock.svg" "language"
+  install_extension "bradlc.vscode-tailwindcss" "language"
+  install_extension "Vue.volar" "language"
+
+  # === Documentation Tools ===
+  install_extension "yzhang.markdown-all-in-one" "language"
+  install_extension "redhat.vscode-yaml" "language"
+  install_extension "TakumiI.markdowntable" "language"
+
+  # === Command Line Tools ===
+  install_extension "timonwong.shellcheck" "language"
+  install_extension "ms-azuretools.vscode-docker" "language"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ COLLABORATIVE TOOLS                                    │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ ESTABLISHING COLLABORATIVE FRAMEWORK                   │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # Remote Development Pack - Cross-environment development
+  install_extension "ms-vscode-remote.vscode-remote-extensionpack" "collab"
+
+  # Live Share - Real-time collaboration
+  install_extension "ms-vsliveshare.vsliveshare" "collab"
+
+  # GitLab Workflow - GitLab integration
+  install_extension "gitlab.gitlab-workflow" "collab"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ SYSTEM OPTIMIZATION                                    │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ DEPLOYING SYSTEM OPTIMIZATION TOOLS                    │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # Settings Sync - Configuration synchronization
+  install_extension "Shan.code-settings-sync" "system"
+
+  # Peacock - Workspace color differentiation
+  install_extension "johnpapa.vscode-peacock" "system"
+
+  # Import Cost - Dependency size visualization
+  install_extension "wix.vscode-import-cost" "system"
+
+  # Performance tools
+  install_extension "ms-vscode.js-debug-nightly" "system"
+  install_extension "streetsidesoftware.code-spell-checker" "system"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ AESTHETIC ENHANCEMENTS                                 │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ CONFIGURING VISUAL INTERFACE                           │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # Theme options
+  install_extension "dracula-theme.theme-dracula" "aesthetic"
+  install_extension "GitHub.github-vscode-theme" "aesthetic"
+
+  # ╭────────────────────────────────────────────────────────╮
+  # │ AI ASSISTANCE                                          │
+  # ╰────────────────────────────────────────────────────────╯
+
+  echo "╭────────────────────────────────────────────────────────╮"
+  echo "│ INTEGRATING AI ASSISTANCE                              │"
+  echo "╰────────────────────────────────────────────────────────╯"
+
+  # GitHub Copilot - AI code completion
+  install_extension "GitHub.copilot" "ai"
+
+  # Copilot Chat - AI conversation interface
+  install_extension "GitHub.copilot-chat" "ai"
+
+  # Generate final report
+  generate_extension_report
+}
+
+# Execute main function with error handling
+{
+  main "$@"
+} || {
+  exit_code=$?
+  log_operation "ERROR" "Script execution failed" "Exit code: $exit_code"
+  echo "⚠️  Installation process interrupted. Some extensions may not be installed."
+  exit $exit_code
 }
 ```
 
