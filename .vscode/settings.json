@@ -1,3 +1,220 @@
 {
-  "editor.formatOnSave": true
+  // ╭──────────────────────────────────────────────────────────────────╮
+  // │  EIDOSIAN FORGE - DEVELOPMENT ENVIRONMENT v3.14.7                │
+  // │  ⟡ Where code achieves sentience through structural perfection ⟡ │
+  // ╰──────────────────────────────────────────────────────────────────╯
+
+  // Core Visual & Cognitive Framework
+  "workbench.colorTheme": "Dark Modern",
+  "editor.fontFamily": "'FiraCode NF', 'firaCode Nerd Font', 'Cascadia Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+
+  // Interface Density Optimization
+  "window.menuBarVisibility": "compact",
+  "window.commandCenter": true,
+  "editor.minimap.autohide": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.renderCharacters": false,
+  "editor.minimap.scale": 3,
+  "editor.minimap.showSlider": "mouseover",
+  "editor.minimap.side": "right",
+  "breadcrumbs.enabled": false,
+
+  // Cursor Engineering
+  "editor.cursorBlinking": "solid",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorWidth": 1,
+  "editor.cursorSurroundingLines": 10,
+  "editor.cursorSurroundingLinesStyle": "default",
+
+  // Response Latency Optimization
+  "editor.hover.delay": 300,
+  "workbench.hover.delay": 1,
+
+  // Code Structure Visualization
+  "editor.guides.bracketPairs": true,
+  "editor.guides.bracketPairsHorizontal": "active",
+  "editor.guides.highlightActiveBracketPair": true,
+  "editor.guides.highlightActiveIndentation": true,
+  "editor.guides.indentation": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.occurrencesHighlight": true,
+
+  // Utility Optimizations
+  "editor.dragAndDrop": false,
+  "editor.wordWrap": "on",
+  "editor.copyWithSyntaxHighlighting": false,
+  "editor.renderWhitespace": "boundary",
+  "files.trimTrailingWhitespace": true,
+  "editor.tabCompletion": "on",
+  "editor.acceptSuggestionOnEnter": "smart",
+
+  // Automation Protocol
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": false,
+
+  // Trust Protocol
+  "security.workspace.trust.banner": "never",
+  "security.workspace.trust.emptyWindow": true,
+  "security.workspace.trust.enabled": false,
+  "security.workspace.trust.startupPrompt": "never",
+
+  // Advanced Intelligence Systems
+  "editor.defaultColorDecorators": "always",
+  "editor.linkedEditing": true,
+  "editor.quickSuggestions": {
+    "comments": "on",
+    "strings": "on"
+  },
+  "editor.suggest.localityBonus": true,
+  "editor.accessibilitySupport": "on",
+
+  // Document State Management
+  "files.autoSaveWhenNoErrors": true,
+  "files.autoSaveWorkspaceFilesOnly": true,
+
+  // Version Control Intelligence
+  "git.enableSmartCommit": true,
+  "git.autofetch": true,
+  "git.enableCommitSigning": true,
+  "diffEditor.maxComputationTime": 0,
+  "scm.diffDecorationsGutterPattern": {
+    "added": true
+  },
+
+  // Icon System Architecture
+  "workbench.iconTheme": "material-icon-theme",
+  "material-icon-theme.folders.theme": "specific",
+  "material-icon-theme.folders.color": "#42a5f5",
+  "material-icon-theme.opacity": 1,
+  "material-icon-theme.saturation": 0.85,
+  "material-icon-theme.activeIconPack": "angular_ngrx",
+  "material-icon-theme.hidesExplorerArrows": false,
+
+  // Formatting Strategy
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Language-Specific Optimizations
+  "[python]": {
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnType": true,
+    "editor.wordBasedSuggestions": "off"
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": true,
+  "python.terminal.shellIntegration.enabled": true,
+
+  "[shellscript]": {
+    "files.eol": "\\n",
+    "editor.rulers": [80, 100],
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.semanticHighlighting.enabled": true
+  },
+
+  // Chromatic Information Architecture
+  "workbench.colorCustomizations": {
+    "editor.lineHighlightBackground": "#ff930f1a",
+    "editor.lineHighlightBorder": "#9fced11f",
+    "editorCursor.background": "#ff930f",
+    "editorCursor.foreground": "#ff930f",
+    "editorLineNumber.activeForeground": "#A020F0",
+    "editorLineNumber.foreground": "#5DE23C",
+    "titleBar.activeBackground": "#000000",
+    "titleBar.activeForeground": "#F4DB01",
+    "titleBar.inactiveBackground": "#000000",
+    "titleBar.inactiveForeground": "#ffffff",
+    "tab.activeBorder": "#F4DB01",
+    "terminal.tab.activeBorder": "#F4DB01",
+    "statusBar.background": "#000000",
+    "statusBar.debuggingBackground": "#007acc",
+    "statusBar.foreground": "#F4DB01",
+    "statusBar.noFolderBackground": "#007acc"
+  },
+
+  // Spatial Navigation Engineering
+  "workbench.list.smoothScrolling": true,
+  "editor.fastScrollSensitivity": 5,
+  "editor.smoothScrolling": false,
+  "editor.stickyScroll.enabled": true,
+
+  // Recursive Icon Optimization
+  "material-icon-theme.files.associations": {
+    "*.controller.ts": "angular-component",
+    "*.service.ts": "angular-service",
+    "*.utils.ts": "ngrx-effects",
+    "*config.ts": "angular-cli",
+    "*.types.ts": "typescript-def",
+    "*.model.ts": "angular-directive"
+  },
+
+  // Custom Icon Clone Architecture
+  "material-icon-theme.files.customClones": [
+    {
+      "name": "api-service",
+      "base": "api",
+      "color": "purple-300",
+      "lightColor": "purple-700",
+      "fileNames": ["api.service.ts", "api-client.ts"]
+    },
+    {
+      "name": "data-model",
+      "base": "database",
+      "color": "teal-400",
+      "lightColor": "teal-700",
+      "fileNames": ["data.model.ts", "entity.model.ts", "schema.ts"]
+    },
+    {
+      "name": "core-utils",
+      "base": "ngrx-effects",
+      "color": "amber-500",
+      "fileNames": ["core.utils.ts", "utils.core.ts"]
+    }
+  ],
+
+  // Folder Hierarchy Visualization
+  "material-icon-theme.folders.associations": {
+    "interfaces": "typescript",
+    "dto": "typescript",
+    "enums": "typescript",
+    "state": "ngrx-state",
+    "store": "ngrx-store",
+    "effects": "ngrx-effects",
+    "selectors": "ngrx-selectors",
+    "reducers": "ngrx-reducer",
+    "models": "models",
+    "entities": "database",
+    "repositories": "database",
+    "fixtures": "mock",
+    "mocks": "mock"
+  },
+
+  // Formatter Selection Matrix
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+
+  // VIM Integration Protocol
+  "vim.leader": "<space>",
+  "vim.easymotion": true,
+  "vim.visualModeKeyBindings": [],
+  "vim.visualModeKeyBindingsNonRecursive": [],
+  "vim.insertModeKeyBindings": [],
+  "vim.normalModeKeyBindingsNonRecursive": [
+    {
+      "before": ["t", "t"],
+      "commands": ["workbench.action.closeEditorsInGroup"]
+    }
+  ]
 }
