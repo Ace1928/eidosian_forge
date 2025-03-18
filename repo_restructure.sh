@@ -75,21 +75,25 @@ exit_code_meaning() {
   esac
 }
 
-# ┌────────────────────────────────────────────────────────────┐
-# │ VERSION IDENTITY - IMMUTABLE EXECUTION CONTEXT             │
-# └────────────────────────────────────────────────────────────┘
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# ┃ VERSION IDENTITY - IMMUTABLE EXECUTION CONTEXT                      ┃
+# ┃ Establishes the foundational ontological parameters of execution    ┃
+# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 # Core identity markers - immutable execution context parameters
 # @purpose: Provides consistent versioning and runtime identification
 # @immutable: True (values should never be modified during execution)
-readonly SCRIPT_VERSION="1.0.2"                 # Semantic version with backward compatibility
-readonly SCRIPT_NAME="$(basename "${0%.sh}")"   # Self-aware identifier
-readonly SCRIPT_START_TIME="$(date +%s)"        # Execution time anchor for duration calculations
-readonly SCRIPT_PATH="$(readlink -f "$0")"      # Canonical path with symlink resolution
-readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")" # Execution context directory
+# @type: String constants for deterministic reference
+readonly SCRIPT_VERSION="1.0.2"                                                                                         # Semantic version with backward compatibility guarantees
+readonly SCRIPT_NAME="$(basename "${0%.sh}")"                                                                           # Self-aware identifier with extension normalization
+readonly SCRIPT_START_TIME="$(date +%s)"                                                                                # Execution time anchor for duration calculations and telemetry
+readonly SCRIPT_PATH="$(readlink -f "$0")"                                                                              # Canonical path with symlink resolution for absolute reference
+readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"                                                                         # Execution context directory for relative resource location
+readonly SCRIPT_HASH="$([ -f "$SCRIPT_PATH" ] && md5sum "$SCRIPT_PATH" 2> /dev/null | cut -d' ' -f1 || echo "unknown")" # Integrity verification
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ DEPENDENCY VALIDATION - ENVIRONMENT INTEGRITY VERIFICATION            │
+# │ Ensures all external requirements are satisfied before execution      │
 # ╰──────────────────────────────────────────────────────────────────────╯
 
 # Verify runtime requirements with typed contracts and explicit remediation
@@ -97,93 +101,192 @@ readonly SCRIPT_DIR="$(dirname "$SCRIPT_PATH")" # Execution context directory
 # @returns: {Integer} 0=success, 1=failure with actionable error message
 # @side_effects: Outputs error messages to stderr on failure
 # @idempotent: True (can be called multiple times without side effects)
+# @pure: False (has system inspection side effects but no state mutation)
 verify_runtime_dependencies() {
-  # Critical dependencies with atomistic validation
-  local -r REQUIRED_COMMANDS=("readlink" "mkdir" "tput" "locale" "grep" "date" "basename")
+  # Critical dependencies with atomistic validation and version requirements
+  # Each command is essential for proper script functionality
+  local -r REQUIRED_COMMANDS=(
+    "readlink:file path canonicalization"
+    "mkdir:directory creation"
+    "tput:terminal capability detection"
+    "locale:character encoding discovery"
+    "grep:pattern matching"
+    "date:temporal reference"
+    "basename:path component extraction"
+    "md5sum:integrity verification"
+  )
   local -a missing_deps=()
+  local -a version_issues=()
 
   # Deterministic validation protocol with isolation per dependency
-  for cmd in "${REQUIRED_COMMANDS[@]}"; do
+  # Guarantees complete discovery of all issues before reporting
+  for cmd_spec in "${REQUIRED_COMMANDS[@]}"; do
+    local cmd="${cmd_spec%%:*}"    # Extract command name before colon
+    local purpose="${cmd_spec#*:}" # Extract purpose description after colon
+
     if ! command -v "$cmd" > /dev/null 2>&1; then
-      missing_deps+=("$cmd")
+      missing_deps+=("$cmd ($purpose)")
+    elif [[ "$cmd" == "grep" ]] && ! grep --version | grep -q "GNU grep" > /dev/null 2>&1; then
+      # Validate specific tool implementations when required
+      version_issues+=("$cmd: requires GNU grep")
     fi
   done
 
-  # Binary outcome with explicit remediation path
-  if [[ ${#missing_deps[@]} -gt 0 ]]; then
+  # Binary outcome with explicit remediation path and categorical issue separation
+  local has_errors=0
+
+  if [[ ${#missing_deps[@]} -gt 0 || ${#version_issues[@]} -gt 0 ]]; then
     {
-      echo "╭─────────────────────────────────────────────╮"
-      echo "│ ✗ ENVIRONMENT VALIDATION FAILED             │"
-      echo "├─────────────────────────────────────────────┤"
-      echo "│ Missing required tools: ${missing_deps[*]}"
-      echo "│                                             │"
-      echo "│ Remediation:                                │"
-      echo "│ → Install with your system package manager  │"
-      echo "╰─────────────────────────────────────────────╯"
+      echo "╭─────────────────────────────────────────────────────╮"
+      echo "│ ✗ ENVIRONMENT VALIDATION FAILED                     │"
+      echo "├─────────────────────────────────────────────────────┤"
+
+      # Missing dependencies report with purpose documentation
+      if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        echo "│ Missing required tools:                             │"
+        for dep in "${missing_deps[@]}"; do
+          echo "│  • $dep"
+        done
+      fi
+
+      # Version incompatibility report with specific requirements
+      if [[ ${#version_issues[@]} -gt 0 ]]; then
+        echo "│ Version compatibility issues:                       │"
+        for issue in "${version_issues[@]}"; do
+          echo "│  • $issue"
+        done
+      fi
+
+      # Actionable remediation instructions with platform awareness
+      if [[ -f /etc/os-release ]]; then
+        source /etc/os-release
+        case "$ID" in
+          debian | ubuntu)
+            echo "│                                                     │"
+            echo "│ Remediation (Debian/Ubuntu):                        │"
+            echo "│ → sudo apt update && sudo apt install coreutils grep│"
+            ;;
+          fedora | rhel | centos)
+            echo "│                                                     │"
+            echo "│ Remediation (Fedora/RHEL/CentOS):                  │"
+            echo "│ → sudo dnf install coreutils grep                   │"
+            ;;
+        esac
+      else
+        echo "│                                                     │"
+        echo "│ Remediation:                                        │"
+        echo "│ → Install missing tools with your package manager   │"
+      fi
+
+      echo "╰─────────────────────────────────────────────────────╯"
     } >&2
-    return 1
+    has_errors=1
   fi
 
-  return 0
+  return $has_errors # Explicit status code for precise error handling
 }
 
 # Execute validation immediately with fail-fast principle
+# Early validation prevents cascading errors from missing dependencies
 verify_runtime_dependencies || exit 1
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ TERMINAL DETECTION - ADAPTIVE RENDERING CONTEXT                      │
+# │ Discovers environmental capabilities for optimal user experience     │
 # ╰──────────────────────────────────────────────────────────────────────╯
 
 # Terminal capability detection with adaptive degradation pathways
-# Returns normalized boolean expressions for consistent evaluation
-readonly HAS_TERMINAL="[[ -t 1 && -n \"$TERM\" && \"$TERM\" != \"dumb\" ]]"
-readonly TERMINAL_SUPPORTS_COLOR="$HAS_TERMINAL && tput colors >/dev/null 2>&1 && [[ \$(tput colors) -ge 8 ]]"
-readonly TERMINAL_SUPPORTS_UNICODE="$HAS_TERMINAL && locale charmap 2>/dev/null | grep -q 'UTF-\|utf-'"
+# Returns normalized boolean expressions for consistent evaluation across contexts
+readonly HAS_TERMINAL="[[ -t 1 && -n \"$TERM\" && \"$TERM\" != \"dumb\" ]]"                                    # Interactive terminal detection
+readonly TERMINAL_SUPPORTS_COLOR="$HAS_TERMINAL && tput colors >/dev/null 2>&1 && [[ \$(tput colors) -ge 8 ]]" # Color capability with minimum depth
+readonly TERMINAL_SUPPORTS_UNICODE="$HAS_TERMINAL && locale charmap 2>/dev/null | grep -q 'UTF-\|utf-'"        # Unicode rendering support
+readonly TERMINAL_WIDTH="$(eval "$HAS_TERMINAL" && tput cols 2> /dev/null || echo 80)"                         # Responsive layout support with fallback
+readonly TERMINAL_HEIGHT="$(eval "$HAS_TERMINAL" && tput lines 2> /dev/null || echo 24)"                       # Vertical space awareness with fallback
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ TYPOGRAPHY PROTOCOL - ADAPTIVE VISUAL GRAMMAR                        │
+# │ Establishes consistent visual hierarchy with graceful degradation    │
 # ╰──────────────────────────────────────────────────────────────────────╯
 
 # Terminal styles with graceful degradation cascade
-# Form adapts to capability while preserving semantic meaning
+# Form adapts to capability while preserving semantic meaning across environments
 readonly STYLE_BOLD="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput bold 2> /dev/null || echo '')"
 readonly STYLE_NORMAL="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput sgr0 2> /dev/null || echo '')"
 readonly STYLE_UNDERLINE="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput smul 2> /dev/null || echo '')"
 readonly STYLE_RESET="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput sgr0 2> /dev/null || echo '')"
 readonly STYLE_DIM="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput dim 2> /dev/null || echo '')"
+# Extended typography for semantic richness
+readonly STYLE_ITALIC="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput sitm 2> /dev/null || echo '')"
+readonly STYLE_BLINK="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput blink 2> /dev/null || echo '')" # Use sparingly - for critical alerts only
+readonly STYLE_REVERSE="$(eval "$TERMINAL_SUPPORTS_COLOR" && tput rev 2> /dev/null || echo '')" # For selection highlighting
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ SEMANTIC INDICATORS - UNIVERSAL COMMUNICATION SYMBOLS                 │
+# │ Provides consistent visual language across terminal capabilities      │
 # ╰──────────────────────────────────────────────────────────────────────╯
 
 # Status indicators with universal compatibility - semantic meaning persists across environments
-# Color-coding follows intuitive psychological associations: blue=info, green=success, etc.
-readonly ICON_INFO="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;36m➜\033[0m" || echo "INFO:")"
-readonly ICON_SUCCESS="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;32m✓\033[0m" || echo "SUCCESS:")"
-readonly ICON_WARNING="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;33m⚠\033[0m" || echo "WARNING:")"
-readonly ICON_ERROR="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;31m✗\033[0m" || echo "ERROR:")"
-readonly ICON_DEBUG="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;35m◉\033[0m" || echo "DEBUG:")"
-readonly ICON_QUESTION="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;34m?\033[0m" || echo "QUERY:")"
+# Color-coding follows intuitive psychological associations and accessibility standards
+readonly ICON_INFO="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;36m➜\033[0m" || echo "INFO:")"            # Cyan: informational
+readonly ICON_SUCCESS="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;32m✓\033[0m" || echo "SUCCESS:")"      # Green: successful completion
+readonly ICON_WARNING="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;33m⚠\033[0m" || echo "WARNING:")"      # Yellow: warning condition
+readonly ICON_ERROR="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;31m✗\033[0m" || echo "ERROR:")"          # Red: error condition
+readonly ICON_DEBUG="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;35m◉\033[0m" || echo "DEBUG:")"          # Magenta: debug information
+readonly ICON_QUESTION="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;34m?\033[0m" || echo "QUERY:")"       # Blue: interactive prompt
+readonly ICON_WAITING="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;33m⋯\033[0m" || echo "WAIT:")"         # Yellow: processing indicator
+readonly ICON_CRITICAL="$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo -e "\033[1;37;41m!\033[0m" || echo "CRITICAL:")" # White on red: critical alert
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ RUNTIME CAPABILITIES - EXECUTION CONTEXT AWARENESS                   │
+# │ Identifies available features for optimal execution path selection   │
 # ╰──────────────────────────────────────────────────────────────────────╯
 
 # Feature flags - typed capability registry with introspection support
+# Enables conditional logic based on available system features
 declare -ra FEATURES=(
-  "COLOR:$(eval "$TERMINAL_SUPPORTS_COLOR" && echo true || echo false)"     # Visual hierarchy through color
-  "UNICODE:$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo true || echo false)" # Enhanced symbolic density
-  "SCRIPT_VERSION:$SCRIPT_VERSION"                                          # Version tracking for compatibility checks
+  "COLOR:$(eval "$TERMINAL_SUPPORTS_COLOR" && echo true || echo false)"           # Visual hierarchy through color
+  "UNICODE:$(eval "$TERMINAL_SUPPORTS_UNICODE" && echo true || echo false)"       # Enhanced symbolic density
+  "SCRIPT_VERSION:$SCRIPT_VERSION"                                                # Version tracking for compatibility
+  "BASH_VERSION:${BASH_VERSION}"                                                  # Shell environment version
+  "RESPONSIVE:$((TERMINAL_WIDTH > 80 ? 1 : 0))"                                   # Layout adaptation capability
+  "ADMIN:$(eval "$HAS_ADMIN" && echo true || echo false)"                         # Elevated privileges detection
+  "NETWORK:$(ping -c 1 -W 1 8.8.8.8 > /dev/null 2>&1 && echo true || echo false)" # Network connectivity detection
+  "INTERACTIVE:$(eval "$HAS_TERMINAL" && echo true || echo false)"                # User interaction capability
 )
+
+# Query runtime features with type safety
+# @usage: has_feature FEATURE_NAME
+# @param: {String} Feature name to check
+# @returns: 0 if feature is available, 1 if not available
+# @example: if has_feature "COLOR"; then echo "Color support available"; fi
+has_feature() {
+  local feature_name="${1:?Missing required feature name}"
+  local feature_value=""
+
+  for feature in "${FEATURES[@]}"; do
+    if [[ "${feature%%:*}" == "$feature_name" ]]; then
+      feature_value="${feature#*:}"
+      break
+    fi
+  done
+
+  [[ "$feature_value" == "true" || "$feature_value" == "1" ]]
+  return $?
+}
 
 # ┌────────────────────────────────────────────────────────────┐
 # │ DOMAIN DISCOVERY - RUNTIME ENVIRONMENT INTROSPECTION        │
+# │ Identifies execution context for adaptive behavior          │
 # └────────────────────────────────────────────────────────────┘
 
 # Detect execution environment characteristics for adaptive behavior
-readonly IS_CI="[[ -n \"\${CI:-}\" || -n \"\${GITHUB_ACTIONS:-}\" ]]"
-readonly IS_RESTRICTED_ENV="[[ -n \"\${RESTRICTED_ENV:-}\" ]]"
-readonly HAS_ADMIN="[[ \$(id -u) -eq 0 ]]" # Root/admin detection
+# These expressions evaluate lazily when used, preventing unnecessary probing
+readonly IS_CI="[[ -n \"\${CI:-}\" || -n \"\${GITHUB_ACTIONS:-}\" || -n \"\${JENKINS_URL:-}\" || -n \"\${TRAVIS:-}\" ]]"
+readonly IS_RESTRICTED_ENV="[[ -n \"\${RESTRICTED_ENV:-}\" || ! -w \"/tmp\" ]]" # Detect write-restricted environments
+readonly HAS_ADMIN="[[ \$(id -u) -eq 0 ]]"                                      # Root/admin detection for privileged operations
+readonly IS_CONTAINER="[[ -f \"/.dockerenv\" || -f \"/run/.containerenv\" || grep -q 'container=' /proc/1/environ 2>/dev/null ]]"
+readonly OS_TYPE="$(uname -s | tr '[:upper:]' '[:lower:]')" # Operating system type for platform-specific behavior
+readonly MACHINE_TYPE="$(uname -m)"                         # Architecture detection for binary compatibility
 
 # ╭──────────────────────────────────────────────────────────────────────╮
 # │ COMMUNICATION PROTOCOL - TYPED MESSAGE EXCHANGE SYSTEM                │
