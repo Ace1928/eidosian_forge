@@ -1,4 +1,68 @@
+// filepath: /home/lloyd/eidosian_forge/.vscode/settings.json
 {
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "strict"
-}
+  // ━━━━ PYTHON INTELLIGENCE ━━━━
+  // Retained from original settings with extended capabilities
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "strict",
+  "python.globalModuleInstallation": true,
+  "python.terminal.activateEnvInCurrentTerminal": false,
+  "python.terminal.shellIntegration.enabled": true,
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": true,
+  "python.createEnvironment.trigger": "off",
+
+  // ━━━━ EDITOR ESSENTIALS ━━━━
+  // The Eidosian visual and functional experience
+  "editor.wordWrap": "on",
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.defaultColorDecorators": "always",
+  "editor.linkedEditing": true,
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.cursorWidth": 1,
+  "editor.formatOnSave": true,
+  "editor.minimap.scale": 3,
+  "editor.quickSuggestions": {
+    "comments": "on",
+    "strings": "on"
+  },
+  "editor.suggest.localityBonus": true,
+  "editor.accessibilitySupport": "on",
+
+  // ━━━━ FILE MANAGEMENT ━━━━
+  // Precision controls for file operations
+  "files.autoSaveWhenNoErrors": true,
+  "files.autoSaveWorkspaceFilesOnly": true,
+  "explorer.excludeGitIgnore": true,
+
+  // ━━━━ SCM & GIT INTEGRATION ━━━━
+  // Version control with Eidosian precision
+  "git.enableSmartCommit": true,
+  "git.autofetch": true,
+  "git.enableCommitSigning": true,
+  "scm.diffDecorationsGutterPattern": {
+    "added": true
+  },
+
+  // ━━━━ DIFF & COMPARISON ━━━━
+  // Seeing changes with crystal clarity
+  "diffEditor.maxComputationTime": 0,
+
+  // ━━━━ LANGUAGE-SPECIFIC SETTINGS ━━━━
+  // Tailored environments for each language
+  "[python]": {
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.defaultColorDecorators": "never",
+    "editor.formatOnType": true,
+    "editor.wordBasedSuggestions": "off"
+  },
+  "[shellscript]": {
+    "files.eol": "\n",
+    "editor.defaultColorDecorators": "never"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ━━━━ LINTING & QUALITY TOOLS ━━━━
+  // Ensuring impeccable code quality
+  "markdownlint.run": "onSave",

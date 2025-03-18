@@ -42,21 +42,8 @@
     "workbench.tree.indent": 10,
     "workbench.editor.decorations.badges": true,
     "workbench.editor.decorations.colors": true,
-
-    // ━━━━ AI COLLABORATORS ━━━━
-    // Because even an Eidosian needs a digital familiar
-    "github.copilot.enable": {
-      "*": true,
-      "plaintext": true,
-      "markdown": true,
-      "yaml": true,
-      "jsonc": true
-    },
     "github.copilot.editor.enableAutoCompletions": true,
     "github.copilot.editor.enableCodeActions": true,
-    "github.copilot.advanced.indentationMode": "autodetect",
-    "github.copilot.advanced.showEditorCompletions": true,
-    "github.copilot.advanced.setAutoCompletionTriggerMode": "lazy",
     "github.copilot.chat.localeOverride": "en",
     "github.copilot.chat.codeGeneration.instructions": [
       { "file": "./.github/prompts/eidosian-principles.prompt.md" },
@@ -74,7 +61,6 @@
       { "text": "Systematic Naming." }
     ],
     "inlineChat.accessibleDiffView": "on",
-    "inlineChat.mode": "preview",
     "jupyter.interactiveWindow.creationMode": "perFile",
 
     // ━━━━ POLYGLOT MASTERY ━━━━
@@ -94,7 +80,6 @@
     "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
     "typescript.inlayHints.variableTypes.enabled": true,
     "typescript.suggest.completeFunctionCalls": true,
-    "python.formatting.defaultFormatter": "ms-python.black-formatter",
     "python.languageServer": "Pylance",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic",
@@ -103,10 +88,8 @@
     "python.analysis.autoFormatStrings": true,
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.fixAll": ["source.unusedImports"],
-    "pylint.enabled": true,
     "javascript.updateImportsOnFileMove.enabled": "always",
     "javascript.preferences.quoteStyle": "single",
-    "javascript.inlayHints.enumMemberValues.enabled": true,
     "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
     "javascript.inlayHints.parameterNames.enabled": "literals",
     "javascript.inlayHints.propertyDeclarationTypes.enabled": true,
@@ -133,8 +116,7 @@
     "editor.gotoLocation.multipleImplementations": "gotoAndPeek",
     "editor.gotoLocation.multipleDefinitions": "gotoAndPeek",
     "diffEditor.ignoreTrimWhitespace": false,
-    "diffEditor.experimental.useVersion2": true,
-    "diffEditor.maxComputationTime": 5000,
+    "diffEditor.maxComputationTime": 10000,
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
@@ -238,7 +220,6 @@
       "tsconfig.json": "tsconfig.*.json",
       "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
     },
-    "symbols.hideSymbolsInEditableSourceCode": true,
     "editor.codeLens": true,
     "editor.codeLensFontSize": 12,
     "editor.definitionLinkOpensInPeek": true,
@@ -248,11 +229,9 @@
 
     // ━━━━ SYNCHRONIZATION MATRIX ━━━━
     // For the Eidosian who transcends devices
-    "settingsSync.keybindingsPerPlatform": false,
     "workbench.settings.settingsSearchTocBehavior": "filter",
     "workbench.settings.openDefaultKeybindings": true,
     "workbench.settings.useSplitJSON": true,
-    "settingsSync.ignoredExtensions": [],
     "[jsonc]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
