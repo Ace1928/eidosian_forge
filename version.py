@@ -9,16 +9,17 @@ Configuration cascade with deterministic priority:
 4. Central DB (central_versions.json) - organizational cohesion
 5. Defaults (last resort) - graceful degradation
 """
-import os
-import re
+import inspect
 import json
 import logging
-import inspect
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Literal, Optional, Protocol, Tuple, TypeVar, Union, cast, TypedDict
-from functools import lru_cache
+import os
+import re
 from dataclasses import dataclass, field
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+from typing import (Any, Callable, Dict, Final, List, Literal, Optional,
+                    Protocol, Tuple, TypedDict, TypeVar, Union, cast)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📐 Type Definitions - Structural contracts as guarantees
@@ -37,6 +38,16 @@ class VersionDict(TypedDict, total=False):
     release_date: str
     min_version: str
     source: ConfigSource
+
+class VersionDelta(TypedDict, total=False):
+    """Semantic version difference metrics"""
+    major: int
+    minor: int
+    patch: int
+    is_upgrade: bool
+    is_downgrade: bool
+    is_same: bool
+    error: str
 
 # Function signatures with precise intent
 VersionData = VersionDict
@@ -358,6 +369,9 @@ version_config: Final[VersionConfig] = load_version_config()
 # 🔢 Version Parsing - Mathematical semantics in structural form
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+import sys
+
+
 class SimpleVersion:
     """Semantic version with numerical precision and lexical comparison"""
     __slots__ = ("major", "minor", "patch", "micro", "prerelease", "_valid")
@@ -414,103 +428,108 @@ class SimpleVersion:
         return NotImplemented if lt_result is NotImplemented else not lt_result
 
     def __le__(self, other: Any) -> bool:
-        gt_result = self.__gt__(other)
-        return NotImplemented if gt_result is NotImplemented else not gt_result
+        """Less than or equal to comparison"""
+        eq_result = self.__eq__(other)
+        if eq_result is NotImplemented:
+            return NotImplemented
+        if eq_result:
+            return True
+        return self.__lt__(other)
 
     def __str__(self) -> str:
-        """Canonical representation with error flagging"""
-        base = f"{self.major}.{self.minor}.{self.patch}"
-        prerelease = f"-{self.prerelease}" if self.prerelease else ""
-        warning = " [⚠️]" if not self._valid else ""
-        return f"{base}{prerelease}{warning}"
+        """String representation"""
+        version = f"{self.major}.{self.minor}.{self.patch}"
+        if self.prerelease:
+            version += f"-{self.prerelease}"
+        return version
 
     def __repr__(self) -> str:
         """Unambiguous developer representation"""
-        return f"SimpleVersion({str(self)})"
+        return f"SimpleVersion({self.__str__()})"
 
-    def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionProtocol:
-        """Parse version string with optimal strategy selection"""
-        # Normalize input for consistent results
-        cleaned: str = re.sub(r'^[vV]', '', version_str.strip())
-
-        # Strategy cascade with graceful degradation
-        try:
-            # Preferred implementation when available
-            from packaging.version import parse as packaging_parse
-            from packaging.version import Version as PackagingVersion
-
-            # Create adapter to ensure protocol compliance
-            pkg_ver = packaging_parse(cleaned)
-            if isinstance(pkg_ver, PackagingVersion):
-                # Convert packaging.Version to SimpleVersion for protocol compliance
-                ver = SimpleVersion(f"{pkg_ver.release[0]}.{pkg_ver.release[1]}.{pkg_ver.release[2] if len(pkg_ver.release) > 2 else 0}")
-                # Copy additional attributes for compatibility
-                if pkg_ver.pre:
-                        ver.prerelease = '.'.join(str(x) for x in pkg_ver.pre)
-                return ver
-
-            # Fallback for unexpected version types
-            return SimpleVersion(cleaned)
-        except ImportError:
-            # Self-contained fallback requires no external dependencies
-                \return SimpleVersion(cleaned)
-            except Exception as e:
-                # Controlled failure with explicit instruction
-                if not fallback_to_simple:
-                    raise
-                logger.debug(f"Standard parser failed: {e}")
-                return SimpleVersion(cleaned)
+    def __hash__(self) -> int:
+        """Hash based on version components for dictionary use"""
+        return hash((self.major, self.minor, self.patch, self.prerelease))
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 🔍 Version Operations - Pure transformations with precision
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import sys
+def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionProtocol:
+    """Parse version string with optimal strategy selection"""
+    # Normalize input for consistent results
+    cleaned: str = re.sub(r'^[vV]', '', version_str.strip())
+
+    # Strategy cascade with graceful degradation
+    try:
+        # Preferred implementation when available
+        from packaging.version import parse as packaging_parse
+
+        # Create adapter to ensure protocol compliance
+        pkg_ver = packaging_parse(cleaned)
+        if hasattr(pkg_ver, 'release'):
+            # Convert packaging.Version to SimpleVersion for protocol compliance
+            release = pkg_ver.release
+            ver = SimpleVersion(f"{release[0]}.{release[1]}.{release[2] if len(release) > 2 else 0}")
+            # Copy additional attributes for compatibility
+            if hasattr(pkg_ver, 'pre') and pkg_ver.pre:
+                ver.prerelease = '.'.join(str(x) for x in pkg_ver.pre)
+            return ver
+
+        # Fallback for unexpected version types
+        return SimpleVersion(cleaned)
+    except ImportError:
+        # Self-contained fallback requires no external dependencies
+        return SimpleVersion(cleaned)
+    except Exception as e:
+        # Controlled failure with explicit instruction
+        if not fallback_to_simple:
+            raise
+        logger.debug(f"Standard parser failed: {e}")
+        return SimpleVersion(cleaned)
 
 
 def format_version(version: VersionLike) -> str:
     """Convert any version to canonical form with v-prefix"""
     try:
-        parsed_version = parse_version(version) if isinstance(version, str) else version
-        patch = getattr(parsed_version, 'patch', getattr(parsed_version, 'micro', 0))
-        return f"v{parsed_version.major}.{parsed_version.minor}.{patch}"
-    except Exception:
-        # Last-resort fallback preserves operational continuity
-        return f"v{version}"
+        if isinstance(version, str):
+            return f"v{version.lstrip('vV')}"
+        elif hasattr(version, '__version__'):
+            return f"v{getattr(version, '__version__').lstrip('vV')}"
+        elif hasattr(version, 'version'):
+            return f"v{getattr(version, 'version').lstrip('vV')}"
+        else:
+            return f"v{str(version).lstrip('vV')}"
+    except Exception as e:
+        logger.debug(f"Format error: {e}")
+        return f"v{DEFAULT_VERSION}"
 
 
 def is_compatible(version: str, minimum: Optional[str] = None) -> bool:
     """Check version compatibility - false until proven compatible"""
     try:
-        minimum_version = minimum or version_config.min_version
-        return parse_version(version) >= parse_version(minimum_version)
+        minimum_version: str = minimum or version_config.min_version
+        ver1: VersionProtocol = parse_version(version)
+        ver2: VersionProtocol = parse_version(minimum_version)
+        # Using only protocol-guaranteed methods: not less than = greater than or equal to
+        return not (ver1 < ver2) or (ver1 == ver2)
     except Exception as e:
         logger.debug(f"Compatibility check failed: {e}")
         return False  # When uncertain, assume incompatible
-
-
-class VersionDelta(TypedDict, total=False):
-    """Version comparison results with structural completeness"""
-    major: int          # Major version difference
-    minor: int          # Minor version difference
-    patch: int          # Patch version difference
-    is_upgrade: bool    # v1 < v2
-    is_downgrade: bool  # v1 > v2
-    is_same: bool       # v1 == v2
-    error: str          # Optional error message
 
 
 def calculate_delta(v1: str, v2: str) -> VersionDelta:
     """Calculate precise semantic distance between versions"""
     try:
         ver1, ver2 = parse_version(v1), parse_version(v2)
-        # Extract patch regardless of version implementation
-        patch1 = getattr(ver1, 'patch', getattr(ver1, 'micro', 0))
-        patch2 = getattr(ver2, 'patch', getattr(ver2, 'micro', 0))
+        # Extract components safely regardless of version implementation
+        major1: Any | int = getattr(ver1, 'major', 0)
+        major2: Any | int = getattr(ver2, 'major', 0)
+        minor1: Any | int = getattr(ver1, 'minor', 0)
+        minor2: Any | int = getattr(ver2, 'minor', 0)
+        patch1: Any | int = getattr(ver1, 'patch', getattr(ver1, 'micro', 0))
+        patch2: Any | int = getattr(ver2, 'patch', getattr(ver2, 'micro', 0))
 
         return {
-            "major": ver2.major - ver1.major,
-            "minor": ver2.minor - ver1.minor,
+            "major": major2 - major1,
+            "minor": minor2 - minor1,
             "patch": patch2 - patch1,
             "is_upgrade": ver2 > ver1,
             "is_downgrade": ver2 < ver1,
@@ -706,7 +725,7 @@ def get_version_status() -> VersionStatus:
 # 🚀 Command Interface - Structural information manipulation
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 if __name__ == "__main__":
-    from typing import Callable, NoReturn, Protocol
+    from typing import Callable, Protocol
 
     # ┌────────────────────────────────────────────────────────┐
     # │ Type Definitions - Command execution contracts         │
@@ -726,10 +745,10 @@ if __name__ == "__main__":
         delta: VersionDelta = calculate_delta(v1, v2)
 
         print(f"📊 {v1} → {v2}")
-        print(f"  Major: {delta['major']}, Minor: {delta['minor']}, Patch: {delta['patch']}")
+        print(f"  Major: {delta.get('major', 0)}, Minor: {delta.get('minor', 0)}, Patch: {delta.get('patch', 0)}")
 
         if delta.get('error'):
-            print(f"  ⚠️ Error: {delta['error']}")
+            print(f"  ⚠️ Error: {delta.get('error', '')}")
             return
 
         # Map semantic meaning to visual indicators
@@ -740,8 +759,8 @@ if __name__ == "__main__":
         }
 
         state_key = (
-            "upgrade" if delta.get('is_upgrade') else
-            ("downgrade" if delta.get('is_downgrade') else "equivalent")
+            "upgrade" if delta.get('is_upgrade', False) else
+            ("downgrade" if delta.get('is_downgrade', False) else "equivalent")
         )
 
         emoji, label = state_mapping[state_key]
@@ -750,7 +769,7 @@ if __name__ == "__main__":
     # ┌────────────────────────────────────────────────────────┐
     # │ Command Implementations - Pure functions with effects  │
     # └────────────────────────────────────────────────────────┘
-    def cmd_get(_: List[str]) -> None:
+    def cmd_get(args: List[str]) -> None:
         """Display current version in canonical format"""
         print(f"Version: {format_version(version_config.__version__)}")
 
@@ -779,7 +798,7 @@ if __name__ == "__main__":
         else:
             print(f"ℹ️ No changes needed for version {result['version_to']}")
 
-    def cmd_status(_: List[str]) -> None:
+    def cmd_status(args: List[str]) -> None:
         """Display comprehensive version diagnostics"""
         print(json.dumps(get_version_status(), indent=2))
 
@@ -791,7 +810,7 @@ if __name__ == "__main__":
 
         print_comparison(args[0], args[1])
 
-    def cmd_help(_: List[str]) -> None:
+    def cmd_help(args: List[str]) -> None:
         """Display available commands with usage instructions"""
         print(f"📦 Current: {format_version(version_config.__version__)}")
 
