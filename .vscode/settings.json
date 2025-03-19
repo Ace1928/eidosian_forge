@@ -1,52 +1,23 @@
 {
-  // ╭──────────────────────────────────────────────────────────────────╮
-  // │  EIDOSIAN FORGE - DEVELOPMENT ENVIRONMENT v3.14.7                │
-  // │  ⟡ Where code achieves sentience through structural perfection ⟡ │
-  // ╰──────────────────────────────────────────────────────────────────╯
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ CORE VISUAL & COGNITIVE FRAMEWORK                   │
-  // └─────────────────────────────────────────────────────┘
-  "workbench.colorTheme": "Dark Modern",
-  "editor.fontFamily": "'FiraCode NF', 'firaCode Nerd Font', 'Cascadia Code', Consolas, 'Courier New', monospace",
+  "editor.fontFamily": "'FiraCode NF', 'firaCode Nerd Font', 'JetBrains Mono', 'Cascadia Code', Consolas, 'Courier New', monospace",
   "editor.fontLigatures": true,
   "editor.fontSize": 14,
   "editor.lineHeight": 22,
   "editor.letterSpacing": 0.2,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ INTERFACE DENSITY OPTIMIZATION                      │
-  // └─────────────────────────────────────────────────────┘
-  "window.menuBarVisibility": "compact",
-  "window.commandCenter": true,
   "editor.minimap.autohide": true,
   "editor.minimap.enabled": true,
   "editor.minimap.renderCharacters": false,
   "editor.minimap.scale": 3,
   "editor.minimap.showSlider": "mouseover",
   "editor.minimap.side": "right",
-  "breadcrumbs.enabled": false,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ CURSOR ENGINEERING                                  │
-  // └─────────────────────────────────────────────────────┘
-  "editor.cursorBlinking": "solid",
+  "editor.cursorBlinking": "phase",
   "editor.cursorSmoothCaretAnimation": "on",
   "editor.cursorWidth": 1,
   "editor.cursorSurroundingLines": 10,
   "editor.cursorSurroundingLinesStyle": "default",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ RESPONSE LATENCY OPTIMIZATION                       │
-  // └─────────────────────────────────────────────────────┘
   "editor.hover.delay": 300,
-  "workbench.hover.delay": 1,
   "editor.quickSuggestionsDelay": 5,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ CODE STRUCTURE VISUALIZATION                        │
-  // └─────────────────────────────────────────────────────┘
-  "editor.guides.bracketPairs": true,
+  "editor.guides.bracketPairs": "active",
   "editor.guides.bracketPairsHorizontal": "active",
   "editor.guides.highlightActiveBracketPair": true,
   "editor.guides.highlightActiveIndentation": true,
@@ -55,10 +26,6 @@
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
   "editor.occurrencesHighlight": "singleFile",
   "editor.indentSize": "tabSize",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ UTILITY OPTIMIZATIONS                               │
-  // └─────────────────────────────────────────────────────┘
   "editor.dragAndDrop": false,
   "editor.wordWrap": "on",
   "editor.copyWithSyntaxHighlighting": false,
@@ -70,10 +37,6 @@
   "editor.suggestSelection": "first",
   "editor.snippetSuggestions": "top",
   "editor.suggest.preview": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ AUTOMATION PROTOCOL                                 │
-  // └─────────────────────────────────────────────────────┘
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "editor.formatOnType": false,
@@ -81,18 +44,6 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
   },
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ TRUST PROTOCOL                                      │
-  // └─────────────────────────────────────────────────────┘
-  "security.workspace.trust.banner": "never",
-  "security.workspace.trust.emptyWindow": true,
-  "security.workspace.trust.enabled": false,
-  "security.workspace.trust.startupPrompt": "never",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ ADVANCED INTELLIGENCE SYSTEMS                       │
-  // └─────────────────────────────────────────────────────┘
   "editor.defaultColorDecorators": "always",
   "editor.linkedEditing": true,
   "editor.quickSuggestions": {
@@ -119,19 +70,11 @@
   "editor.suggest.showValues": true,
   "editor.suggest.showConstants": true,
   "editor.suggest.showEnums": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ DOCUMENT STATE MANAGEMENT                           │
-  // └─────────────────────────────────────────────────────┘
   "files.autoSaveWhenNoErrors": true,
   "files.autoSaveWorkspaceFilesOnly": true,
-  "files.eol": "\n",
+  "files.eol": "auto",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ VERSION CONTROL INTELLIGENCE                        │
-  // └─────────────────────────────────────────────────────┘
   "git.enableSmartCommit": true,
   "git.autofetch": true,
   "git.enableCommitSigning": true,
@@ -139,218 +82,13 @@
   "scm.diffDecorationsGutterPattern": {
     "added": true
   },
-  "git.confirmSync": false,
   "git.branchProtection": ["main", "master", "develop"],
   "git.branchProtectionPrompt": "alwaysPrompt",
-  "git.mergeEditor": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ ICON SYSTEM ARCHITECTURE                            │
-  // └─────────────────────────────────────────────────────┘
-  "workbench.iconTheme": "material-icon-theme",
-  "material-icon-theme.folders.theme": "specific",
-  "material-icon-theme.folders.color": "#42a5f5",
-  "material-icon-theme.opacity": 1,
-  "material-icon-theme.saturation": 0.85,
-  "material-icon-theme.activeIconPack": "angular_ngrx",
-  "material-icon-theme.hidesExplorerArrows": false,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ CHROMATIC INFORMATION ARCHITECTURE                  │
-  // └─────────────────────────────────────────────────────┘
-  "workbench.colorCustomizations": {
-    "editor.lineHighlightBackground": "#ff930f1a",
-    "editor.lineHighlightBorder": "#9fced11f",
-    "editorCursor.background": "#ff930f",
-    "editorCursor.foreground": "#ff930f",
-    "editorLineNumber.activeForeground": "#A020F0",
-    "editorLineNumber.foreground": "#5DE23C",
-    "titleBar.activeBackground": "#000000",
-    "titleBar.activeForeground": "#F4DB01",
-    "titleBar.inactiveBackground": "#000000",
-    "titleBar.inactiveForeground": "#ffffff",
-    "tab.activeBorder": "#F4DB01",
-    "terminal.tab.activeBorder": "#F4DB01",
-    "statusBar.background": "#000000",
-    "statusBar.debuggingBackground": "#007acc",
-    "statusBar.foreground": "#F4DB01",
-    "statusBar.noFolderBackground": "#007acc"
-  },
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ SPATIAL NAVIGATION ENGINEERING                      │
-  // └─────────────────────────────────────────────────────┘
-  "workbench.list.smoothScrolling": true,
   "editor.fastScrollSensitivity": 5,
   "editor.smoothScrolling": false,
   "editor.stickyScroll.enabled": true,
   "editor.stickyScroll.maxLineCount": 10,
   "editor.scrollBeyondLastLine": false,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ RECURSIVE ICON OPTIMIZATION                         │
-  // └─────────────────────────────────────────────────────┘
-  "material-icon-theme.files.associations": {
-    // TypeScript/JavaScript Patterns
-    "*.controller.ts": "angular-component",
-    "*.service.ts": "angular-service",
-    "*.utils.ts": "ngrx-effects",
-    "*config.ts": "angular-cli",
-    "*.types.ts": "typescript-def",
-    "*.model.ts": "angular-directive",
-    "*.dto.ts": "typescript-def",
-    "*.store.ts": "ngrx-store",
-    "*.effects.ts": "ngrx-effects",
-    "*.selectors.ts": "ngrx-selectors",
-    "*.reducer.ts": "ngrx-reducer",
-    "*.hook.ts": "hook",
-    "*.hook.tsx": "hook",
-
-    // React Patterns
-    "*.jsx": "react",
-    "*.tsx": "react-ts",
-    "*.component.jsx": "react-components",
-    "*.component.tsx": "react-components",
-    "*.slice.ts": "redux-store",
-    "*.slice.js": "redux-store",
-
-    // Rust Patterns
-    "*.rs": "rust",
-    "Cargo.toml": "cargo",
-    "Cargo.lock": "cargo-lock",
-
-    // Configuration Files
-    "*.toml": "tune",
-    "*.lock": "lock",
-    "tsconfig.json": "tsconfig",
-    "package.json": "npm",
-    "package-lock.json": "npm",
-    "yarn.lock": "yarn",
-    "Gemfile": "gemfile",
-
-    // Java/Kotlin Patterns
-    "*.java": "java",
-    "*.kt": "kotlin",
-    "*.kts": "kotlin",
-    "*.gradle": "gradle",
-    "build.gradle": "gradle",
-    "settings.gradle": "gradle",
-    "*.gradle.kts": "gradle",
-
-    // C/C++ Patterns
-    "*.c": "c",
-    "*.cpp": "cpp",
-    "*.h": "c-header",
-    "*.hpp": "cpp-header",
-    "CMakeLists.txt": "cmake",
-    "*.cmake": "cmake",
-
-    // Go Patterns
-    "*.go": "go",
-    "go.mod": "go-mod",
-    "go.sum": "go-sum",
-
-    // Shell Scripts
-    "*.sh": "shell",
-    "*.bash": "shell",
-    "*.zsh": "shell",
-    ".bashrc": "shell",
-    ".zshrc": "shell",
-
-    // Markdown & Documentation
-    "README.md": "readme",
-    "*.md": "markdown"
-  },
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ CUSTOM ICON CLONE ARCHITECTURE                      │
-  // └─────────────────────────────────────────────────────┘
-  "material-icon-theme.files.customClones": [
-    {
-      "name": "api-service",
-      "base": "api",
-      "color": "purple-300",
-      "lightColor": "purple-700",
-      "fileNames": ["api.service.ts", "api-client.ts"]
-    },
-    {
-      "name": "data-model",
-      "base": "database",
-      "color": "teal-400",
-      "lightColor": "teal-700",
-      "fileNames": ["data.model.ts", "entity.model.ts", "schema.ts"]
-    },
-    {
-      "name": "core-utils",
-      "base": "ngrx-effects",
-      "color": "amber-500",
-      "fileNames": ["core.utils.ts", "utils.core.ts"]
-    },
-    {
-      "name": "rust-entity",
-      "base": "rust",
-      "color": "orange-700",
-      "fileNames": ["entity.rs", "model.rs", "models.rs", "entities.rs"]
-    },
-    {
-      "name": "rust-service",
-      "base": "unity",
-      "color": "red-800",
-      "fileNames": ["service.rs", "services.rs", "client.rs", "clients.rs"]
-    },
-    {
-      "name": "kotlin-view",
-      "base": "android",
-      "color": "green-500",
-      "fileNames": ["*Activity.kt", "*Fragment.kt", "*View.kt"]
-    }
-  ],
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ FOLDER HIERARCHY VISUALIZATION                      │
-  // └─────────────────────────────────────────────────────┘
-  "material-icon-theme.folders.associations": {
-    "interfaces": "typescript",
-    "dto": "typescript",
-    "enums": "typescript",
-    "state": "ngrx-state",
-    "store": "ngrx-store",
-    "effects": "ngrx-effects",
-    "selectors": "ngrx-selectors",
-    "reducers": "ngrx-reducer",
-    "models": "models",
-    "entities": "database",
-    "repositories": "database",
-    "fixtures": "mock",
-    "mocks": "mock",
-    "src": "src",
-    "lib": "lib",
-    "components": "components",
-    "container": "container",
-    "feature": "rules",
-    "pages": "api",
-    "domain": "theme",
-    "docker": "docker",
-    "k8s": "kubernetes",
-    "nginx": "nginx",
-    "target": "dist",
-    "mobile": "android",
-    "web": "www",
-    "api": "api",
-    "controllers": "middleware",
-    "services": "app",
-    "utils": "tools",
-    "hooks": "hook",
-    "crates": "packages"
-  },
-
-  // ╭──────────────────────────────────────────────────────────────────╮
-  // │  LANGUAGE-SPECIFIC OPTIMIZATIONS - TYPED PRECISION MODULES       │
-  // ╰──────────────────────────────────────────────────────────────────╯
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ TYPESCRIPT/JAVASCRIPT INTELLIGENCE MATRIX           │
-  // └─────────────────────────────────────────────────────┘
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
@@ -381,10 +119,6 @@
   "javascript.preferences.importModuleSpecifier": "shortest",
   "javascript.preferences.quoteStyle": "single",
   "javascript.format.semicolons": "insert",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ REACT/JSX FRAMEWORK OPTIMIZATION                    │
-  // └─────────────────────────────────────────────────────┘
   "[javascriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
@@ -397,10 +131,6 @@
     "editor.tabSize": 2,
     "editor.rulers": [80, 100, 120]
   },
-  "emmet.includeLanguages": {
-    "javascript": "javascriptreact",
-    "typescript": "typescriptreact"
-  },
   "emmet.triggerExpansionOnTab": true,
   "eslint.validate": [
     "javascript",
@@ -408,17 +138,6 @@
     "typescript",
     "typescriptreact"
   ],
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ ANGULAR FRAMEWORK PRECISION SYSTEM                  │
-  // └─────────────────────────────────────────────────────┘
-  "angular.enable-strict-mode-prompt": false,
-  "angular.view-engine": false,
-  "angular.experimental-ivy": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ WEB TECHNOLOGY SCHEMA INTEGRATION                   │
-  // └─────────────────────────────────────────────────────┘
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
@@ -446,10 +165,6 @@
   "css.lint.unknownAtRules": "ignore",
   "css.validate": true,
   "scss.validate": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ JSON & CONFIGURATION SCHEMA ENFORCEMENT             │
-  // └─────────────────────────────────────────────────────┘
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
@@ -476,11 +191,6 @@
       "url": "https://json.schemastore.org/tsconfig.json"
     }
   ],
-  "json.validate.enable": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ RUST OPTIMIZATION PROTOCOL                          │
-  // └─────────────────────────────────────────────────────┘
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer",
     "editor.formatOnSave": true,
@@ -488,17 +198,6 @@
     "editor.rulers": [100],
     "editor.semanticHighlighting.enabled": true
   },
-  "rust-analyzer.checkOnSave.command": "clippy",
-  "rust-analyzer.cargo.allFeatures": true,
-  "rust-analyzer.inlayHints.typeHints.enable": true,
-  "rust-analyzer.inlayHints.parameterHints.enable": true,
-  "rust-analyzer.procMacro.enable": true,
-  "rust-analyzer.rustfmt.extraArgs": ["--edition", "2021"],
-  "rust-analyzer.check.command": "clippy",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ TOML CONFIGURATION PROTOCOL                         │
-  // └─────────────────────────────────────────────────────┘
   "[toml]": {
     "editor.defaultFormatter": "tamasfe.even-better-toml",
     "editor.formatOnSave": true,
@@ -509,10 +208,6 @@
   "evenBetterToml.formatter.arrayTrailingComma": true,
   "evenBetterToml.formatter.arrayAutoExpand": true,
   "evenBetterToml.formatter.compactArrays": false,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ MARKDOWN SEMANTIC ENHANCEMENT                       │
-  // └─────────────────────────────────────────────────────┘
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
@@ -526,14 +221,8 @@
     "editor.renderWhitespace": "all"
   },
   "markdown.preview.breaks": true,
-  "markdown.extension.toc.levels": "2..6",
-  "markdown.extension.toc.updateOnSave": true,
   "markdown.validate.enabled": true,
   "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ PYTHON INTELLIGENCE MATRIX                          │
-  // └─────────────────────────────────────────────────────┘
   "[python]": {
     "diffEditor.ignoreTrimWhitespace": false,
     "editor.formatOnType": true,
@@ -546,17 +235,9 @@
     }
   },
   "python.analysis.typeCheckingMode": "basic",
-  "python.formatting.provider": "black",
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": true,
-  "python.linting.mypyEnabled": true,
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": true,
   "python.terminal.shellIntegration.enabled": true,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ C/C++ OPTIMIZATION PROTOCOL                         │
-  // └─────────────────────────────────────────────────────┘
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
@@ -572,12 +253,7 @@
   "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 100, NamespaceIndentation: All }",
   "C_Cpp.default.cStandard": "c11",
   "C_Cpp.default.cppStandard": "c++17",
-  "C_Cpp.intelliSenseEngine": "Default",
-  "C_Cpp.enhancedColorization": "Enabled",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ GO LANGUAGE PRECISION SYSTEM                        │
-  // └─────────────────────────────────────────────────────┘
+  "C_Cpp.intelliSenseEngine": "default",
   "[go]": {
     "editor.defaultFormatter": "golang.go",
     "editor.formatOnSave": true,
@@ -588,19 +264,13 @@
       "source.organizeImports": "explicit"
     }
   },
-  "go.useLanguageServer": true,
   "go.lintTool": "golangci-lint",
   "go.lintFlags": ["--fast"],
   "go.lintOnSave": "package",
   "go.vetOnSave": "package",
-  "go.buildOnSave": "package",
   "go.testOnSave": false,
   "go.formatTool": "goimports",
   "go.coverOnSave": false,
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ JAVA/KOTLIN ANDROID DEVELOPMENT MATRIX              │
-  // └─────────────────────────────────────────────────────┘
   "[java]": {
     "editor.defaultFormatter": "redhat.java",
     "editor.formatOnSave": true,
@@ -614,37 +284,35 @@
     "editor.tabSize": 4,
     "editor.rulers": [100, 120]
   },
-  "java.configuration.updateBuildConfiguration": "automatic",
-  "java.imports.organize.starThreshold": 5,
-  "java.imports.organize.staticStarThreshold": 3,
-  "java.completion.enabled": true,
-  "java.completion.guessMethodArguments": true,
-  "java.completion.importOrder": ["java", "javax", "com", "org", ""],
-  "kotlin.languageServer.enabled": true,
-  "kotlin.debugAdapter.enabled": true,
-  "kotlin.trace.server": "off",
-
-  // ┌─────────────────────────────────────────────────────┐
-  // │ SHELL SCRIPT OPTIMIZATION PROTOCOL                  │
-  // └─────────────────────────────────────────────────────┘
   "[shellscript]": {
-    "files.eol": "\\n",
+    "files.eol": "auto",
     "editor.rulers": [80, 100],
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
     "editor.semanticHighlighting.enabled": true
   },
-
-  // VIM Integration Protocol
-  "vim.leader": "<space>",
-  "vim.easymotion": true,
-  "vim.visualModeKeyBindings": [],
-  "vim.visualModeKeyBindingsNonRecursive": [],
-  "vim.insertModeKeyBindings": [],
-  "vim.normalModeKeyBindingsNonRecursive": [
-    {
-      "before": ["t", "t"],
-      "commands": ["workbench.action.closeEditorsInGroup"]
-    }
+  "cSpell.words": [
+    "autohide",
+    "calt",
+    "Cascadia",
+    "clippy",
+    "codegen",
+    "Consolas",
+    "cpptools",
+    "Eidosian",
+    "esbenp",
+    "Fira",
+    "fwcd",
+    "golangci",
+    "levelname",
+    "ngrx",
+    "picoregex",
+    "pylance",
+    "retrocompatible",
+    "subclassing",
+    "tamasfe",
+    "typeguard",
+    "typeguards",
+    "unbased"
   ]
 }
