@@ -6,8 +6,6 @@
     }
   ],
   "settings": {
-    // ━━━━ ACCESSIBILITY & ERGONOMICS ━━━━
-    // For the Eidosian who values clarity without eye strain
     "editor.fontFamily": "JetBrains Mono, Fira Code, 'Cascadia Code', Consolas, 'Courier New', monospace",
     "editor.fontLigatures": "'calt', 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08'",
     "editor.fontSize": 14,
@@ -59,186 +57,154 @@
     ],
     "inlineChat.accessibleDiffView": "on",
     "jupyter.interactiveWindow.creationMode": "perFile",
-
-    // ━━━━ POLYGLOT MASTERY ━━━━
-    // For the Eidosian whose code speaks many tongues
-
-    //Markdown
-    "markdown.editor.drop.enabled": "smart",
-    "markdown.validate.enabled": true,
-    "markdown.editor.pasteUrlAsFormattedLink.enabled": "smart",
-    "markdown.preview.typographer": true,
-    "markdown.preview.openMarkdownLinks": "inEditor",
-    "markdown.updateLinksOnFileMove.enabled": "always",
-
-    //Typescript
-    "typescript.preferences.importModuleSpecifier": "relative",
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "typescript.preferences.quoteStyle": "single",
-    "typescript.inlayHints.enumMemberValues.enabled": true,
-    "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
-    "typescript.inlayHints.parameterNames.enabled": "literals",
-    "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
-    "typescript.inlayHints.variableTypes.enabled": true,
-    "typescript.suggest.completeFunctionCalls": true,
-
-    //Python
-    "python.languageServer": "Pylance",
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.inlayHints.variableTypes": true,
-    "python.analysis.inlayHints.functionReturnTypes": true,
-    "python.analysis.autoFormatStrings": true,
-    "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.fixAll": ["source.unusedImports"],
-
-    //Javascript
-    "javascript.updateImportsOnFileMove.enabled": "always",
-    "javascript.preferences.quoteStyle": "single",
-    "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
-    "javascript.inlayHints.parameterNames.enabled": "literals",
-    "javascript.inlayHints.propertyDeclarationTypes.enabled": true,
-    "javascript.format.semicolons": "insert",
-
-    //JSON
-    "json.schemaDownload.enable": true,
-    "json.validate.enable": true,
-
-    // ━━━━ CODE QUALITY & FORMATTING ━━━━
-    // The Eidosian code aesthetic - elegant and precise
-    "editor.formatOnSave": true,
-    "editor.formatOnPaste": true,
-    "editor.codeActionsOnSave": {},
-    "editor.linkedEditing": true,
-    "editor.wordWrap": "on",
-    "editor.rulers": [80, 100, 120],
-    "editor.showFoldingControls": "always",
-    "editor.foldingStrategy": "auto",
-    "editor.gotoLocation.multipleImplementations": "gotoAndPeek",
-    "editor.gotoLocation.multipleDefinitions": "gotoAndPeek",
-    "diffEditor.ignoreTrimWhitespace": false,
-    "diffEditor.maxComputationTime": 10000,
-    "files.trimTrailingWhitespace": true,
-    "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true,
-    "html.format.wrapLineLength": 100,
-    "html.format.wrapAttributes": "auto",
-
-    // ━━━━ TERMINAL ARCANA ━━━━
-    // Where Eidosians craft their digital incantations
-    "terminal.integrated.fontFamily": "MesloLGS NF, Hack Nerd Font, Cascadia Code PL",
-    "terminal.integrated.fontSize": 13,
-    "terminal.integrated.fontWeight": "normal",
-    "terminal.integrated.tabs.enabled": true,
-    "terminal.integrated.tabs.showActions": "always",
-    "terminal.integrated.cursorBlinking": true,
-    "terminal.integrated.cursorStyle": "line",
-    "terminal.integrated.cursorWidth": 2,
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "terminal.integrated.defaultProfile.osx": "bash",
-    "terminal.integrated.defaultProfile.windows": "PowerShell",
-    "terminal.integrated.persistentSessionReviveProcess": "onExitAndWindowClose",
-    "terminal.integrated.shellIntegration.enabled": true,
-    "terminal.integrated.shellIntegration.decorationsEnabled": "both",
-    "terminal.integrated.gpuAcceleration": "auto",
-    "terminal.integrated.smoothScrolling": true,
-    "terminal.integrated.copyOnSelection": true,
-
-    // ━━━━ TIMELINE TRACKING ━━━━
-    // Git: The Eidosian way of bending time and space
-    "git.autofetch": true,
-    "git.autoStash": true,
-    "git.confirmSync": false,
-    "git.enableSmartCommit": true,
-    "git.mergeEditor": true,
-    "git.postCommitCommand": "sync",
-    "git.pullBeforeCheckout": true,
-    "git.showActionButton": {
-      "publish": true,
-      "sync": true,
-      "commit": true
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100, 120],
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+      }
     },
-    "git.untrackedChanges": "separate",
-    "git.allowForcePush": false,
-    "git.rebaseWhenSync": true,
-    "git.suggestSmartCommit": true,
-    "github.gitProtocol": "ssh",
-    "githubPullRequests.createOnPublishBranch": "ask",
-    "githubPullRequests.defaultMergeMethod": "squash",
-    "githubPullRequests.pullBranch": "always",
-
-    // ━━━━ PERFORMANCE ENCHANTMENTS ━━━━
-    // Optimizing the Eidosian workflow
-    "files.watcherExclude": {
-      "**/.git/objects/**": true,
-      "**/.git/subtree-cache/**": true,
-      "**/node_modules/**": true,
-      "**/.venv/**": true,
-      "**/.hg/store/**": true,
-      "**/dist/**": true,
-      "**/build/**": true
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100, 120],
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+      }
     },
-    "search.exclude": {
-      "**/node_modules": true,
-      "**/bower_components": true,
-      "**/.venv": true,
-      "**/dist": true,
-      "**/build": true
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100, 120]
     },
-    "files.exclude": {
-      "**/.git": true,
-      "**/.DS_Store": true,
-      "**/__pycache__": true,
-      "**/.pytest_cache": true,
-      "**/.mypy_cache": true,
-      "**/*.pyc": true,
-      "**/.ruff_cache": true
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100, 120]
     },
-    "workbench.editor.limit.enabled": true,
-    "workbench.editor.limit.value": 12,
-    "workbench.editor.limit.perEditorGroup": true,
-    "editor.snippetSuggestions": "top",
-    "search.smartCase": true,
-    "search.useGlobalIgnoreFiles": true,
-    "search.seedOnFocus": true,
-
-    // ━━━━ EIDOSIAN AUTOMATION ━━━━
-    // Automation that thinks like an Eidosian
-    "editor.suggest.preview": true,
-    "editor.suggest.showStatusBar": true,
-    "workbench.editor.pinnedTabsOnSeparateRow": true,
-    "explorer.fileNesting.enabled": true,
-    "explorer.fileNesting.expand": false,
-    "explorer.fileNesting.patterns": {
-      "*.ts": "${capture}.js, ${capture}.d.ts, ${capture}.spec.ts",
-      "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
-      "*.jsx": "${capture}.js",
-      "*.tsx": "${capture}.ts, ${capture}.spec.tsx",
-      "tsconfig.json": "tsconfig.*.json",
-      "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
+    "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.suggest.insertMode": "replace"
     },
-    "editor.codeLens": true,
-    "editor.codeLensFontSize": 12,
-    "editor.definitionLinkOpensInPeek": true,
-    "task.autoDetect": "on",
-    "task.quickOpen.history": 10,
-    "task.saveBeforeRun": "always",
-
-    // ━━━━ SYNCHRONIZATION MATRIX ━━━━
-    // For the Eidosian who transcends devices
-    "workbench.settings.settingsSearchTocBehavior": "filter",
-    "workbench.settings.openDefaultKeybindings": true,
-    "workbench.settings.useSplitJSON": true,
-    "accessibility.signalOptions.volume": 50,
-    "accessibility.signals.lineHasError": {
-      "sound": "auto"
+    "[css]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.suggest.insertMode": "replace"
     },
-    "accessibility.signals.lineHasBreakpoint": {
-      "sound": "auto"
+    "[scss]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.suggest.insertMode": "replace"
     },
-    "accessibility.signals.terminalCommandFailed": {
-      "sound": "auto"
+    "[less]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2
     },
-    "jupyter.interactiveWindow.codeLens.enable": true
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.quickSuggestions": {
+        "strings": true // Keys deserve intelligence too
+      }
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.quickSuggestions": {
+        "strings": true // Comments don't mean we can't be smart
+      }
+    },
+    "[toml]": {
+      "editor.defaultFormatter": "tamasfe.even-better-toml",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4,
+      "editor.semanticHighlighting.enabled": true // Colors reveal intention
+    },
+    "[markdown]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.wordWrap": "on",
+      "editor.quickSuggestions": {
+        "comments": true,
+        "strings": true,
+        "other": true
+      },
+      "editor.tabSize": 2,
+      "editor.renderWhitespace": "all" // Invisible structure made visible
+    },
+    "[rust]": {
+      "editor.defaultFormatter": "rust-lang.rust-analyzer",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4, // As the crab gods intended
+      "editor.rulers": [100],
+      "editor.semanticHighlighting.enabled": true
+    },
+    "[c]": {
+      "editor.defaultFormatter": "ms-vscode.cpptools",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100] // Memory efficiency begins with line length
+    },
+    "[cpp]": {
+      "editor.defaultFormatter": "ms-vscode.cpptools",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 2,
+      "editor.rulers": [80, 100]
+    },
+    "[go]": {
+      "editor.defaultFormatter": "golang.go",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4,
+      "editor.insertSpaces": false, // Gophers insist on tabs
+      "editor.rulers": [100],
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit" // Alphabetical or death
+      }
+    },
+    "[java]": {
+      "editor.defaultFormatter": "redhat.java",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4,
+      "editor.rulers": [100, 120],
+      "editor.semanticHighlighting.enabled": true // Enterprise code deserves enterprise colors
+    },
+    "[kotlin]": {
+      "editor.defaultFormatter": "fwcd.kotlin",
+      "editor.formatOnSave": true,
+      "editor.tabSize": 4,
+      "editor.rulers": [100, 120] // Less verbose Java still needs boundaries
+    },
+    "[python]": {
+      "diffEditor.ignoreTrimWhitespace": false, // Whitespace is semantic here
+      "editor.formatOnType": true,
+      "editor.wordBasedSuggestions": "off",
+      "editor.defaultFormatter": "ms-python.black-formatter", // Uncompromising code style
+      "editor.tabSize": 4,
+      "editor.rulers": [88, 120], // Black's default + sensible fallback
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit" // Sorted imports are happy imports
+      }
+    },
+    "[shellscript]": {
+      "files.eol": "auto",
+      "editor.rulers": [80, 100], // Terminal width hasn't changed much since 1970
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.semanticHighlighting.enabled": true
+    }
   }
 }
