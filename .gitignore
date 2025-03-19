@@ -13,6 +13,50 @@
 .git-crypt/
 
 # ┌─────────────────────────────────────────┐
+# │ EIDOSIAN FORGE PROJECTS - NESTED REPOS  │
+# └─────────────────────────────────────────┘
+# Each forge project lives its own dimensional plane
+# Structured ignorance prevents recursive tracking chaos
+/.github/
+/.vscode/
+/agentic_chess/
+/archived/
+/code_forge/
+/diagnostics/
+/doc_forge/
+/eidos_code_lens/
+/eidos_venv/
+/eidosian_songs/
+/figlet_forge/
+/file_forge/
+/glyph_forge/
+/knowledge_forge/
+/medium_articles/
+/memory_forge/
+/metadata_forge/
+/mkey/
+/ollama_forge/
+/refactor_forge/
+/repo_forge/
+/sms_forge/
+/terminal_forge/
+/test_forge/
+/version_forge/
+/viz_forge/
+
+# Root-level forge configuration - reference only
+/code_extensions_old.sh
+/code_extensions.sh
+/eidosian_roadmap.md
+/eidosian-forge.code-workspace
+/forge_projects_overview.md
+/global_info.py
+/README.md
+/repo_restructure.sh
+/TODO
+/version.py
+
+# ┌─────────────────────────────────────────┐
 # │ OPERATING SYSTEM DETRITUS               │
 # └─────────────────────────────────────────┘
 
