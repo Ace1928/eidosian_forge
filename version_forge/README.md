@@ -2,7 +2,7 @@
 
 > _"Version information isn't bookkeeping—it's structural integrity across time."_
 
-A type-safe toolkit for semantic versioning with cross-component compatibility enforcement. Version Forge treats version numbers as what they truly are: mathematical contracts that encode compatibility guarantees.
+A type-safe toolkit for semantic versioning with cross-component compatibility enforcement. Version Forge treats version numbers as what they truly are: mathematical contracts encoding compatibility guarantees through time and space.
 
 ```ascii
   ╭───────────────────────────────────╮
@@ -12,7 +12,7 @@ A type-safe toolkit for semantic versioning with cross-component compatibility e
   ╰───────────────────────────────────╯
 ```
 
-[![Version](https://img.shields.io/badge/Version-3.14.7-blue)](https://github.com/yourusername/version_forge) [![License](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/Version-3.14.7-blue)](https://github.com/Ace1928/version_forge) [![License](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT) [![Python](https://img.shields.io/badge/Python-3.12+-purple)](https://www.python.org/)
 
 ## ⚡ Core Capabilities
 
@@ -22,11 +22,18 @@ A type-safe toolkit for semantic versioning with cross-component compatibility e
 - **Automated Version Management** — Update version strings across file types
 - **CLI Interface** — Command-line tools for version operations
 
+```ascii
+╭──────────────────────────────────────────────────────╮
+│ (￣ω￣) "Versions should tell the truth, even when   │
+│         the rest of your documentation is lying."    │
+╰──────────────────────────────────────────────────────╯
+```
+
 ## 🔧 Installation
 
 ```bash
 # Install from source
-git clone https://github.com/yourusername/version_forge.git
+git clone https://github.com/Ace1928/version_forge.git
 cd version_forge
 pip install -e .
 
@@ -40,13 +47,14 @@ pip install version-forge
 
 ```python
 from version_forge import parse_version, format_version
+from typing import Optional
 
 # Parse a version string into its structured components
-version = parse_version("1.2.3-beta.4")
-print(version)  # SimpleVersion(major=1, minor=2, patch=3, label="beta", label_num=4)
+version = parse_version("1.2.3-beta.4")  # Type: VersionInfo
+print(version)  # VersionInfo(major=1, minor=2, patch=3, label="beta", label_num=4)
 
-# Format a version object back to string
-formatted = format_version(version)
+# Format a version object back to string with perfect fidelity
+formatted: str = format_version(version)
 print(formatted)  # "1.2.3-beta.4"
 ```
 
@@ -54,13 +62,14 @@ print(formatted)  # "1.2.3-beta.4"
 
 ```python
 from version_forge import is_compatible, calculate_delta
+from typing import Dict, Any
 
 # Check if versions are compatible (returns bool)
-compatible = is_compatible("2.0.0", "2.1.5")  # True (minor version change)
-breaking = is_compatible("2.0.0", "3.0.0")    # False (major version change)
+compatible: bool = is_compatible("2.0.0", "2.1.5")  # True (minor version change)
+breaking: bool = is_compatible("2.0.0", "3.0.0")    # False (major version change)
 
 # Calculate the semantic delta between versions
-delta = calculate_delta("1.0.0", "2.0.0")
+delta: Dict[str, Any] = calculate_delta("1.0.0", "2.0.0")
 print(delta)  # {"type": "major", "breaking": True, "distance": 1}
 ```
 
@@ -68,14 +77,16 @@ print(delta)  # {"type": "major", "breaking": True, "distance": 1}
 
 ```python
 from version_forge import MigrationGuideGenerator
+from typing import Dict, Any, List
 
 # Create migration paths between versions
 generator = MigrationGuideGenerator()
-guide = generator.generate_migration_guide("mylib", "1.0.0", "2.0.0")
+guide: Dict[str, Any] = generator.generate_migration_guide("mylib", "1.0.0", "2.0.0")
 
+# Extract the information that matters
 print(f"Upgrade type: {guide['upgrade_type']}")         # "major"
 print(f"Effort level: {guide['estimated_effort']}")     # "significant"
-print(f"Breaking changes: {guide['breaking_changes']}") # [...]
+print(f"Breaking changes: {guide['breaking_changes']}") # List[BreakingChange]
 ```
 
 ### Command Line Interface
@@ -122,12 +133,28 @@ Version numbers aren't arbitrary labels—they encode crucial information about 
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ```
 
+### Version Semantics
+
+```ascii
+┌─────────────────────────────────────────────────────────────┐
+│ MAJOR.MINOR.PATCH-LABEL.NUM+BUILD                           │
+│                                                             │
+│ MAJOR - Breaking changes that demand migration rituals      │
+│ MINOR - New features that preserve existing contracts       │
+│ PATCH - Corrections to unintended behaviors                 │
+│ LABEL - Warning labels for the chronically adventurous      │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ## 📚 Resources
 
 - [Semantic Versioning Specification](https://semver.org/) - The mathematical foundation
-- [Documentation](https://github.com/yourusername/version_forge/docs) - Full usage guide
-- [Issue Tracker](https://github.com/yourusername/version_forge/issues) - Report version anomalies
+- [Documentation](https://github.com/Ace1928/version_forge/docs) - Full usage guide
+- [Issue Tracker](https://github.com/Ace1928/version_forge/issues) - Report version anomalies
 
 ---
 
-_Made with recursive precision_ ⋆｡°✩
+Maintained with recursive precision by [Lloyd Handyside](mailto:ace1928@gmail.com) and [Neuroforge](https://neuroforge.io)
+© 3.14.7 - The irrational version for rational minds
+
+> "The only thing more dangerous than a missing version number is one that lies about compatibility." — Eidos
