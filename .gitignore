@@ -394,3 +394,8 @@ eidos_venv/
 venv/
 *.pyc
 __pycache__/
+# Python virtual environment
+eidos_venv/
+venv/
+*.pyc
+__pycache__/
