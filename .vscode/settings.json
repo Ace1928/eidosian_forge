@@ -314,5 +314,6 @@
     "typeguard",
     "typeguards",
     "unbased"
-  ]
+  ],
+  "git.ignoreLimitWarning": true
 }

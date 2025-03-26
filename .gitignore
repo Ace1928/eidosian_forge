@@ -389,3 +389,8 @@ eidos_venv/
 =======
 *_forge/
 >>>>>>> 9ca45068 (Update .gitignore to exclude *_forge/ directory)
+# Python virtual environment
+eidos_venv/
+venv/
+*.pyc
+__pycache__/
