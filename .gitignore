@@ -384,4 +384,8 @@ kubeconfig
 !/public/img/**
 =======
 eidos_venv/
+<<<<<<< HEAD
 >>>>>>> b8ee73d0 (Add workspace configuration and update .gitignore to exclude eidos_venv)
+=======
+*_forge/
+>>>>>>> 9ca45068 (Update .gitignore to exclude *_forge/ directory)
