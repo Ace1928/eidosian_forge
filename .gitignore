@@ -130,6 +130,7 @@ __pycache__/
 .Python
 env/
 build/
+<<<<<<< HEAD
 develop-eggs/
 dist/
 downloads/
@@ -381,3 +382,6 @@ kubeconfig
 # Exceptions for source-controlled resources
 !/assets/images/**
 !/public/img/**
+=======
+eidos_venv/
+>>>>>>> b8ee73d0 (Add workspace configuration and update .gitignore to exclude eidos_venv)
