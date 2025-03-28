@@ -209,7 +209,7 @@
   "evenBetterToml.formatter.arrayAutoExpand": true,
   "evenBetterToml.formatter.compactArrays": false,
   "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
     "editor.formatOnSave": true,
     "editor.wordWrap": "on",
     "editor.quickSuggestions": {
