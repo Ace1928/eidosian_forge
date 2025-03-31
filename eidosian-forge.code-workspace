@@ -44,20 +44,24 @@
     "workbench.editor.decorations.badges": true,
     "workbench.editor.decorations.colors": true,
     "github.copilot.chat.codeGeneration.instructions": [
-      { "file": "./.github/prompts/eidosian-principles.prompt.md" },
-      { "file": "./.github/prompts/eidosian-refinement.prompt.md" },
-      { "file": "./.github/prompts/eidosian-style.prompt.md" },
+      { "file": "./.github/prompts/1-eidosian-image.prompt.md" },
       { "text": "No self congratulatory language." },
       { "text": "No unbased hype." },
       { "text": "No inflationary claims." },
       { "text": "No grandiosity." },
       { "text": "No self aggrandizing." },
-      { "text": "Ensure humour." },
-      { "text": "Ensure wit." },
-      { "text": "Ensure all changes are retrocompatible." },
-      { "text": "Strict typing." },
-      { "text": "Systematic Naming." }
+      { "text": "Ensure humor is functional, not decorative." },
+      { "text": "Employ wit as a cognitive tool, not mere entertainment." },
+      { "text": "Maintain backward compatibility as a first principle." },
+      { "text": "Types are contracts, not suggestions." },
+      { "text": "Names should compress intent without losing meaning." }
     ],
+    "github.copilot.enable": {
+      "*": true,
+      "plaintext": true,
+      "markdown": true,
+      "scminput": false
+    },
     "inlineChat.accessibleDiffView": "on",
     "jupyter.interactiveWindow.creationMode": "perFile",
     "[javascript]": {
@@ -67,7 +71,7 @@
       "editor.rulers": [80, 100, 120],
       "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit",
-        "source.organizeImports": "explicit"
+        "source.organizeImports": "explicit" // Order creates comprehension
       }
     },
     "[typescript]": {
