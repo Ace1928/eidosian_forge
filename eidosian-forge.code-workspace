@@ -3,6 +3,9 @@
     {
       "name": "eidosian_forge",
       "path": "."
+    },
+    {
+      "path": "../.config/Code/User/prompts"
     }
   ],
   "settings": {
