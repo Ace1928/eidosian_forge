@@ -1,33 +1,28 @@
-# Eidosian Forge - Universal Ownership Matrix
+# Eidosian Forge - Code Ownership Matrix
+# Format: pattern @owner1 @owner2
 
-## Core Architectural Ownership
+# Default ownership - applies if no other rules match
+* @Ace1928 @eidos
 
-- @Ace1928 @eidos # Primary custodians of all architectural elements
+# Core System Components
+/tools/**             @Ace1928 @eidos
+/libs/**              @Ace1928 @eidos
+/src/**               @Ace1928 @eidos
+/scripts/**           @Ace1928 @eidos
+/api/**               @Ace1928 @eidos
 
-## System Components
+# Configuration Files
+*.toml                @Ace1928 @eidos
+*.json                @Ace1928 @eidos
+*.yaml                @Ace1928 @eidos
+*.yml                 @Ace1928 @eidos
 
-/tools/ @Ace1928 @eidos # Core toolkit implementations
-/libs/ @Ace1928 @eidos # Foundational libraries
-/src/ @Ace1928 @eidos # Source implementation
-\*.toml @Ace1928 @eidos # Configuration specifications
-/scripts/ @Ace1928 @eidos # Automation primitives
-/api/ @Ace1928 @eidos # Interface contracts
+# CI/CD Pipeline
+/.github/workflows/** @Ace1928 @eidos
+/tests/**             @Ace1928 @eidos
+/.ci/**               @Ace1928 @eidos
 
-## Pipeline Architecture
-
-/.github/workflows/ @Ace1928 @eidos # Integration pathways
-/tests/ @Ace1928 @eidos # Verification frameworks
-/.ci/ @Ace1928 @eidos # Continuous integration structures
-
-## Knowledge Systems
-
-\*.md @Ace1928 @eidos # Information structures
-/docs/ @Ace1928 @eidos # Documentation architecture
-/examples/ @Ace1928 @eidos # Implementation patterns
-
-## Resolution Protocol
-
-> Path resolution follows the principle of precision dominance
-> More specific paths override general paths—like water finding the most direct route
-> The machine applies the same logic you would: specific beats general, every time
-> Remember: With great ownership comes recursive responsibility
+# Documentation and Examples
+*.md                  @Ace1928 @eidos
+/docs/**              @Ace1928 @eidos
+/examples/**          @Ace1928 @eidos
