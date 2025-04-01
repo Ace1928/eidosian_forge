@@ -315,5 +315,6 @@
     "typeguards",
     "unbased"
   ],
-  "git.ignoreLimitWarning": true
+  "git.ignoreLimitWarning": true,
+  "python.REPL.enableREPLSmartSend": false
 }
