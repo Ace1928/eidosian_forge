@@ -121,6 +121,23 @@ function = generate_function(
 documented_function = document_code(function)
 ```
 
+## 🧪 Local Services
+
+- `eidos-brain` API: `cd eidos-brain && python -m api.server`
+- Health checks: `GET /healthz`, `GET /readyz` on `http://localhost:8000`
+
+## 📦 Local GraphRAG Indexing
+
+Use the incremental helper to build a searchable index over local files in batches:
+
+```bash
+python scripts/graphrag_local_index.py \
+  --root /home/lloyd/graphrag-local-index \
+  --scan-root /home/lloyd \
+  --batch-size 200 \
+  --graphrag-cmd "/home/lloyd/eidosian_forge/graphrag/.venv_tools/bin/poetry run graphrag"
+```
+
 ## 🧿 Core Design Principles
 
 ```ascii
