@@ -135,6 +135,8 @@ python scripts/graphrag_local_index.py \
   --root /home/lloyd/graphrag-local-index \
   --scan-root /home/lloyd \
   --batch-size 200 \
+  --max-bytes 200000 \
+  --method fast \
   --graphrag-cmd "/home/lloyd/eidosian_forge/graphrag/.venv_tools/bin/poetry run graphrag"
 ```
 

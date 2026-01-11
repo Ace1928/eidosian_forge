@@ -82,6 +82,12 @@ def parse_args() -> argparse.Namespace:
         help="File extension to include (repeatable). Defaults to common text/code.",
     )
     parser.add_argument(
+        "--max-bytes",
+        type=int,
+        default=200_000,
+        help="Skip files larger than this size in bytes (default: 200k).",
+    )
+    parser.add_argument(
         "--exclude-dir",
         action="append",
         default=[],
@@ -102,6 +108,12 @@ def parse_args() -> argparse.Namespace:
         "--graphrag-cmd",
         default="graphrag",
         help="Command to invoke GraphRAG (default: graphrag).",
+    )
+    parser.add_argument(
+        "--method",
+        choices=["standard", "fast"],
+        default="fast",
+        help="Indexing method to use (default: fast).",
     )
     parser.add_argument(
         "--state-file",
@@ -164,6 +176,7 @@ def iter_files(
     exts: list[str],
     exclude_dirs: set[str],
     exclude_globs: list[str],
+    max_bytes: int | None,
 ) -> list[Path]:
     collected = []
     for dirpath, dirnames, filenames in os.walk(scan_root, followlinks=False):
@@ -177,6 +190,12 @@ def iter_files(
             if is_excluded(path, exclude_globs):
                 continue
             if path.suffix.lower() in exts:
+                if max_bytes is not None:
+                    try:
+                        if path.stat().st_size > max_bytes:
+                            continue
+                    except (FileNotFoundError, PermissionError):
+                        continue
                 collected.append(path)
     return collected
 
@@ -185,7 +204,8 @@ def has_existing_output(root: Path) -> bool:
     output_dir = root / "output"
     if not output_dir.exists():
         return False
-    return any(output_dir.rglob("*.parquet"))
+    required = output_dir / "entities.parquet"
+    return required.exists()
 
 
 def clear_input_dir(input_dir: Path) -> None:
@@ -261,7 +281,9 @@ def main() -> int:
         if not scan_root.exists():
             print(f"Scan root missing, skipping: {scan_root}", file=sys.stderr)
             continue
-        candidates.extend(iter_files(scan_root, exts, exclude_dirs, exclude_globs))
+        candidates.extend(
+            iter_files(scan_root, exts, exclude_dirs, exclude_globs, args.max_bytes)
+        )
 
     pending: list[Path] = [path for path in candidates if needs_index(path, state)]
     if args.dry_run:
@@ -290,10 +312,16 @@ def main() -> int:
                 stage_files(input_dir, scan_root, files, args.copy)
 
         if not state.get("indexed") and not has_existing_output(root):
-            run_graphrag(args.graphrag_cmd, ["index", "--root", str(root)])
+            run_graphrag(
+                args.graphrag_cmd,
+                ["index", "--root", str(root), "--method", args.method],
+            )
             state["indexed"] = True
         else:
-            run_graphrag(args.graphrag_cmd, ["update", "--root", str(root)])
+            run_graphrag(
+                args.graphrag_cmd,
+                ["update", "--root", str(root), "--method", args.method],
+            )
 
         for path in batch:
             stat = path.stat()
