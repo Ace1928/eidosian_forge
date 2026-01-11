@@ -1,26 +1,28 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `*_forge/` directories are the core modules (for example, `agent_forge/`, `code_forge/`, `memory_forge/`) and are intended to be self-contained yet composable.
+- `*_forge/` directories are the core modules (`agent_forge/`, `code_forge/`, `memory_forge/`) and are self-contained yet composable.
 - `eidos-brain/` is a standalone subproject with `core/`, `agents/`, `labs/`, `api/`, and `knowledge/`.
 - `graphrag/` is another standalone subproject with its own package, tests, and tooling.
-- `lib/` holds shared utilities; `data/` contains datasets and generated artifacts; top-level scripts (for example, `run_gene_particles.py`) are entry points.
+- `lib/` holds shared utilities; `data/` contains datasets and generated artifacts; top-level scripts (like `run_gene_particles.py`) are entry points.
 
 ## Build, Test, and Development Commands
 - `python -m venv .venv && source .venv/bin/activate` — create a local virtualenv for development.
 - `pip install -r requirements.txt` — install shared dependencies used across the forges.
 - `cd eidos-brain && pip install -r requirements.txt` — install the eidos-brain subproject dependencies.
 - `cd eidos-brain && pytest` — run unit tests plus style checks (black + flake8).
-- `cd eidos-brain && python labs/tutorial_app.py` — launch the interactive tutorial app.
+- `cd eidos-brain && python labs/tutorial_app.py` — launch the tutorial app.
+- `cd eidos-brain && python -m api.server` — run the API locally (`/healthz`, `/readyz`).
 - `cd graphrag && poetry install` — set up the graphrag environment.
 - `cd graphrag && poetry run poe test` — run graphrag tests.
 - `cd graphrag && poetry run poe check` — run ruff + pyright checks.
+- `python scripts/graphrag_local_index.py --root <project> --scan-root <path>` — index local files in batches.
 
 ## Coding Style & Naming Conventions
 - Python is the dominant language; use 4-space indentation and a max line length of 88.
 - `eidos-brain/`: format with `black`, lint with `flake8`.
 - `graphrag/`: format/lint with `ruff` and type-check with `pyright` per `pyproject.toml`.
-- Keep forge module names in `snake_case` and align filenames with the module they implement (for example, `memory_store.py` in `memory_forge/`).
+- Keep forge module names in `snake_case` and align filenames with the module they implement (like `memory_store.py` in `memory_forge/`).
 
 ## Testing Guidelines
 - Use `pytest` across subprojects; tests live in `eidos-brain/tests/` and `graphrag/tests/`.
