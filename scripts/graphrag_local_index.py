@@ -209,17 +209,26 @@ def stage_files(
         dest = input_dir / root_slug / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         if use_copy:
-            shutil.copy2(src, dest)
+            try:
+                shutil.copy2(src, dest)
+            except (FileNotFoundError, PermissionError):
+                continue
         else:
             try:
                 os.symlink(src, dest)
             except OSError:
-                shutil.copy2(src, dest)
+                try:
+                    shutil.copy2(src, dest)
+                except (FileNotFoundError, PermissionError):
+                    continue
 
 
 def needs_index(path: Path, state: dict) -> bool:
     entry = state["processed"].get(str(path))
-    stat = path.stat()
+    try:
+        stat = path.stat()
+    except (FileNotFoundError, PermissionError):
+        return False
     return (
         entry is None
         or entry.get("mtime") != stat.st_mtime
