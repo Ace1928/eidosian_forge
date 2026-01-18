@@ -122,11 +122,6 @@ The service reads the following environment variables:
 - `PORT` – port the server listens on (default `8000`)
 - `ENABLE_UI` – set to `true` to enable the interactive docs
 
-Health endpoints:
-
-- `GET /healthz` returns `{"status": "ok"}`.
-- `GET /readyz` returns `{"status": "ready"}`.
-
 Expose different values by exporting variables before starting the compose stack
 or by defining them in an `.env` file.
 

@@ -23,6 +23,8 @@ class EidosAI:
             self._tweak_gravity()
         if self._ticks % 500 == 0:
             self._tweak_metabolism()
+        if self._ticks % 400 == 0:
+            self._tweak_environment()
 
     def _tweak_gravity(self) -> None:
         gravity = self.universe.gravity
@@ -40,5 +42,13 @@ class EidosAI:
         meta.movement_cost = new_move
         self.universe.log_event(
             f"Eidos adjusted movement cost: {old_move:.3f} -> {new_move:.3f}"
+        )
+
+    def _tweak_environment(self) -> None:
+        env = self.universe.environment
+        old_temp = env.temperature
+        env.temperature = max(0.5, min(5.0, old_temp * random.uniform(0.98, 1.02)))
+        self.universe.log_event(
+            f"Eidos tuned temperature: {old_temp:.2f} -> {env.temperature:.2f}"
         )
 

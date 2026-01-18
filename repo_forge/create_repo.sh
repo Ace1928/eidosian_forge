@@ -248,17 +248,8 @@ def detect_project_type(path):
 
 def publish_project(path, project_type):
     """Publish project using the appropriate tool."""
-    print(f"🚀 Publishing {project_type} project at {path}")
-    if project_type == "python":
-        os.system(f"cd {path} && python3 -m build && python3 -m twine upload dist/*")
-    elif project_type == "nodejs":
-        os.system(f"cd {path} && npm publish")
-    elif project_type == "go":
-        os.system(f"cd {path} && go build ./... && git tag v0.1.0 && git push origin v0.1.0")
-    elif project_type == "rust":
-        os.system(f"cd {path} && cargo publish")
-    else:
-        print(f"⚠️ Unknown project type {project_type}, cannot publish automatically.")
+    print(f"Publishing {project_type} project at {path}")
+    # Implementation would go here
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

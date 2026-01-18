@@ -150,8 +150,8 @@ RELATIONSHIP_TYPES: Final[Dict[str, RelationshipProperties]] = {
     # Derivational relationships
     "derived_from": {"weight": 0.5, "color": "#8c42f5", "bidirectional": False},
     "etymological_source": {"weight": 0.4, "color": "#f5b942", "bidirectional": False},
-    # Usage relationships
-    "context": {"weight": 0.3, "color": "#42d4f5", "bidirectional": False},
+    # Usage relationships - unique colors to avoid confusion with other types
+    "context": {"weight": 0.3, "color": "#87ceeb", "bidirectional": False},  # Sky blue
     "register": {"weight": 0.3, "color": "#f542d4", "bidirectional": False},
     # Example-based relationships
     "example_of": {"weight": 0.3, "color": "#7adbf5", "bidirectional": False},

@@ -15,9 +15,11 @@ class UniverseConfig:
     agent_size: int = 4
     energy_decay: float = 0.1
     movement_cost: float = 0.05
+    maintenance_cost: float = 0.02
     reproduction_energy: float = 80.0
     reproduction_cost: float = 30.0
     starting_energy: float = 50.0
     max_energy: float = 100.0
+    temperature: float = 1.0
     resource_count: int = 200
     resource_value: float = 25.0

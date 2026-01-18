@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from word_forge.database.database_manager import DBManager
 from word_forge.graph.graph_manager import GraphManager
 

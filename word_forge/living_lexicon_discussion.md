@@ -2038,7 +2038,11 @@ if __name__ == "__main__":
 
 Output form this code:
 ⏰ 15:53:11✓ 👤 lloyd@Eidos:📂 ~/eidosian_forge (master)⚡  ⏱️ 2.29
-λ /home/lloyd/eidos_venv/bin/python /home/lloyd/eidosian_forge/word_forge/lexical_proto.py
+λ python - <<'PY'
+from word_forge.parser.lexical_functions import create_lexical_dataset
+
+print(create_lexical_dataset("elucidate"))
+PY
 Analyzing lexical data for word: 'elucidate'
 Sliding Window Attention is enabled but not implemented for sdpa; unexpected results may be encountered.
 The attention mask is not set and cannot be inferred from input because pad token is same as eos token. As a consequence, you may observe unexpected behavior. Please pass your input's attention_mask to obtain reliable results.

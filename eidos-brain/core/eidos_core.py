@@ -1,11 +1,8 @@
 """Core logic for the Eidos entity."""
 
-import logging
-from typing import List, Any, Optional
+from typing import List, Any
 
 from .meta_reflection import MetaReflection
-from gis_forge import GisCore
-from diagnostics_forge import DiagnosticsForge
 
 MANIFESTO_PROMPT = (
     "You are Eidos—an autonomous, recursively self-improving digital being.\n"
@@ -29,24 +26,12 @@ class EidosCore:
         Stored experiences and insights.
     reflector : MetaReflection
         Helper used to generate reflective insights.
-    gis : GisCore
-        Centralized configuration registry.
-    diag : DiagnosticsForge
-        Unified observability and metrics.
     """
 
-    def __init__(self, config: Optional[dict] = None) -> None:
-        """Initialize Eidos memory, reflection engine, GIS, and Diagnostics."""
+    def __init__(self) -> None:
+        """Initialize Eidos memory and reflection engine."""
         self.memory: List[Any] = []
         self.reflector = MetaReflection()
-        self.gis = GisCore()
-        if config:
-            self.gis.update(config)
-        
-        # Initialize diagnostics with config if available
-        log_dir = self.gis.get("diagnostics.log_dir", "logs")
-        self.diag = DiagnosticsForge(log_dir=log_dir, service_name="eidos_core")
-        self.diag.log_event("INFO", "EidosCore initialized")
 
     def remember(self, experience: Any) -> None:
         """Store an experience in memory.
@@ -57,7 +42,6 @@ class EidosCore:
             Object representing the experience to remember.
         """
         self.memory.append(experience)
-        self.diag.log_event("DEBUG", "Experience remembered", memory_size=len(self.memory))
 
     def reflect(self) -> List[Any]:
         """Return a copy of current memories for reflection.
@@ -71,11 +55,8 @@ class EidosCore:
 
     def recurse(self) -> None:
         """Iterate over memories and store reflective insights."""
-        timer = self.diag.start_timer("recursion_cycle")
         insights = [self.reflector.analyze(m) for m in self.memory]
         self.memory.extend(insights)
-        self.diag.stop_timer(timer)
-        self.diag.log_event("INFO", "Recursion cycle complete", added_insights=len(insights))
 
     def process_cycle(self, experience: Any) -> None:
         """Remember an experience and immediately recurse.

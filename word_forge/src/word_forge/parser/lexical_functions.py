@@ -13,9 +13,19 @@ from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Union
 
 from nltk.corpus import wordnet as wn  # type: ignore
 from nltk.corpus.reader.wordnet import Lemma, Synset  # type: ignore
-from rdflib import Graph
-from rdflib import Literal as RdfLiteral  # Import Literal and URIRef
-from rdflib.query import ResultRow  # Import ResultRow for type hinting
+
+# Optional dependency for DBnary RDF processing
+try:
+    from rdflib import Graph
+    from rdflib import Literal as RdfLiteral
+    from rdflib.query import ResultRow
+
+    _rdflib_available = True
+except ImportError:
+    _rdflib_available = False
+    Graph = None  # type: ignore[assignment]
+    RdfLiteral = None  # type: ignore[assignment]
+    ResultRow = None  # type: ignore[assignment]
 
 from word_forge.utils.nltk_utils import ensure_nltk_data
 
@@ -290,6 +300,9 @@ def get_dbnary_data(word: str, dbnary_path: str) -> List[DbnaryEntry]:
     Raises:
         LexicalResourceError: If there's an error processing the DBnary data
     """
+    if not _rdflib_available:
+        return []
+
     if not file_exists(dbnary_path):
         return []
 

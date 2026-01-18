@@ -41,9 +41,15 @@ class GravityRule:
 class MetabolismRule:
     """Parameters governing energy costs and limits."""
 
+    base_decay: float = 0.05
     movement_cost: float = 0.05
     reproduction_cost: float = 30.0
+    maintenance_cost: float = 0.02
     max_energy: float = 100.0
+
+    def energy_loss(self, temperature: float) -> float:
+        """Return base energy loss adjusted by environment."""
+        return self.base_decay * (1.0 + temperature * 0.1)
 
 
 @dataclass
@@ -51,4 +57,12 @@ class ResourceRule:
     """Parameters controlling resource spawning."""
 
     spawn_rate: int = 1
+
+
+@dataclass
+class EnvironmentRule:
+    """Global environment parameters affecting all agents."""
+
+    temperature: float = 1.0
+    friction: float = 0.01
 

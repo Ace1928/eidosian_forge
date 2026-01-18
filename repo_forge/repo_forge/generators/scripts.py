@@ -13,7 +13,7 @@ import sys
 from datetime import datetime
 
 from ..core.files import write_file
-from ..core.templates import render_template, render_comment_block, TemplateManager
+from ..core.templates import render_template, render_comment_block
 from ..core.utils import make_executable
 
 
@@ -73,14 +73,13 @@ def create_script_files(
     if languages is None:
         languages = ["python", "nodejs", "go", "rust"]
     
-    tm = TemplateManager()
     scripts_path = base_path / "scripts"
     scripts_path.mkdir(exist_ok=True, parents=True)
     
     created_files = []
     
-    # 1. Register and render README
-    readme_template = """# 🛠️ Automation Scripts
+    # Create README for scripts directory
+    readme_content = """# 🛠️ Automation Scripts
 
 This directory contains scripts for automating common tasks in the repository.
 
@@ -110,15 +109,15 @@ When adding new scripts:
 2. Add appropriate documentation and usage examples
 3. Follow the repository's coding standards
 """
-    tm.register_template("scripts_readme", readme_template)
-    write_file(scripts_path / "README.md", tm.render("scripts_readme", {}), overwrite)
+    write_file(scripts_path / "README.md", readme_content, overwrite)
     created_files.append("scripts/README.md")
     
-    # 2. Setup Scripts
+    # Create setup scripts
     setup_path = scripts_path / "setup"
     setup_path.mkdir(exist_ok=True, parents=True)
     
-    install_template = """#!/usr/bin/env bash
+    # Create install dependencies script
+    install_script = """#!/usr/bin/env bash
 # 🚀 Eidosian dependency installer
 # Automatically installs dependencies for all supported languages
 
@@ -187,16 +186,15 @@ echo ""
 echo "✨ Dependency installation completed!"
 echo "Check $LOG_FILE for any errors."
 """
-    tm.register_template("script_install_deps", install_template)
-    write_file(setup_path / "install_dependencies.sh", tm.render("script_install_deps", {}))
+    write_file(setup_path / "install_dependencies.sh", install_script)
     created_files.append("scripts/setup/install_dependencies.sh")
     make_executable(setup_path / "install_dependencies.sh")
     
-    # 3. Build Scripts
+    # Create build script
     build_path = scripts_path / "build"
     build_path.mkdir(exist_ok=True, parents=True)
     
-    build_template = """#!/usr/bin/env bash
+    build_script = """#!/usr/bin/env bash
 # 🏗️ Eidosian universal build script
 # Builds all projects in the monorepo
 
@@ -272,7 +270,7 @@ if [ -d "$PROJECTS_DIR" ]; then
                 build_go_project "$project_dir"
             elif [[ "$project_dir" == *rust_project ]]; then
                 build_rust_project "$project_dir"
-            else
+            else:
                 echo "⚠️ Unknown project type: $(basename "$project_dir"). Skipping."
             fi
         fi
@@ -285,16 +283,15 @@ echo ""
 echo "✨ Build process completed!"
 echo "Check $LOG_FILE for any errors."
 """
-    tm.register_template("script_build_all", build_template)
-    write_file(build_path / "build_all.sh", tm.render("script_build_all", {}))
+    write_file(build_path / "build_all.sh", build_script)
     created_files.append("scripts/build/build_all.sh")
     make_executable(build_path / "build_all.sh")
     
-    # 4. Test Scripts
+    # Create test script
     test_path = scripts_path / "dev"
     test_path.mkdir(exist_ok=True, parents=True)
     
-    test_template = """#!/usr/bin/env bash
+    test_script = """#!/usr/bin/env bash
 # 🧪 Eidosian universal test runner
 # Runs tests for all projects in the monorepo
 
@@ -370,7 +367,7 @@ if [ -d "$PROJECTS_DIR" ]; then
                 test_go_project "$project_dir"
             elif [[ "$project_dir" == *rust_project ]]; then
                 test_rust_project "$project_dir"
-            else
+            else:
                 echo "⚠️ Unknown project type: $(basename "$project_dir"). Skipping."
             fi
         fi
@@ -383,25 +380,24 @@ echo ""
 echo "✨ Test run completed!"
 echo "Check $LOG_FILE for any errors."
 """
-    tm.register_template("script_run_tests", test_template)
-    write_file(test_path / "run_tests.sh", tm.render("script_run_tests", {}))
+    write_file(test_path / "run_tests.sh", test_script)
     created_files.append("scripts/dev/run_tests.sh")
     make_executable(test_path / "run_tests.sh")
     
-    # 5. Python Utility Scripts
+    # Create Python script for additional functionality
     if "python" in languages:
         utils_path = scripts_path / "utils"
         utils_path.mkdir(exist_ok=True, parents=True)
         
         global_info = _load_global_info()
         
-        stats_template = f'''#!/usr/bin/env python3
+        project_stats_script = f'''#!/usr/bin/env python3
 # 📊 Eidosian Project Stats Generator
 # Analyzes projects and generates stats about the codebase
 #
-# Author: $author_name <$author_email>
-# Organization: $org_name
-# Created: $current_date
+# Author: {global_info["author"]["name"]} <{global_info["author"]["email"]}>
+# Organization: {global_info["author"]["org"]}
+# Created: {datetime.now().strftime("%Y-%m-%d")}
 
 import os
 import sys
@@ -420,15 +416,18 @@ def count_lines_by_extension(file_path):
 
 def get_file_stats(repo_path):
     """Get statistics about files in the repository."""
+    # Escaped literal dictionary inside lambda
     stats = defaultdict(lambda: {{"count": 0, "lines": 0}})
     total_files = 0
     total_lines = 0
     
     for root, _, files in os.walk(repo_path):
+        # Skip hidden directories and node_modules
         if "/." in root or "node_modules" in root or "target" in root or "__pycache__" in root:
             continue
             
         for file in files:
+            # Skip hidden files
             if file.startswith('.'):
                 continue
                 
@@ -443,6 +442,7 @@ def get_file_stats(repo_path):
             total_files += 1
             total_lines += lines
     
+    # Escaped literal dictionary for return
     return {{
         "by_extension": dict(stats),
         "total_files": total_files,
@@ -455,21 +455,26 @@ def main():
     if len(sys.argv) > 1:
         repo_path = sys.argv[1]
     else:
+        # Default to the repository root
         script_dir = Path(__file__).parent.absolute()
         repo_path = script_dir.parent.parent
     
+    # The following f-strings are meant to be preserved in the generated file,
+    # so we escape their curly braces.
     print(f"🔮 Eidosian Project Stats Generator")
     print(f"==================================")
     print(f"Analyzing repository: {{repo_path}}")
     
     stats = get_file_stats(repo_path)
     
+    # Print summary
     print(f"\\nRepository Summary:")
     print(f"-------------------")
     print(f"Total files: {{stats['total_files']}}")
     print(f"Total lines: {{stats['total_lines']:,}}")
     print("\\nFiles by extension:")
     
+    # Sort extensions by line count
     sorted_extensions = sorted(
         stats["by_extension"].items(),
         key=lambda x: x[1]["lines"],
@@ -479,29 +484,29 @@ def main():
     for ext, data in sorted_extensions:
         print(f"  .{{ext:<10}} {{data['count']:5}} files, {{data['lines']:8,}} lines")
     
+    # Save to JSON
     output_path = os.path.join(repo_path, "project_stats.json")
     with open(output_path, 'w') as f:
         json.dump(stats, f, indent=2)
     
     print(f"\\n✨ Stats saved to {{output_path}}")
+    print(f"Script stats: {{stats}}")  # Clean, direct logging without complex formatters
 
 if __name__ == "__main__":
     main()
 '''
-        tm.register_template("script_project_stats", stats_template)
-        stats_vars = {
-            "author_name": global_info["author"]["name"],
-            "author_email": global_info["author"]["email"],
-            "org_name": global_info["author"]["org"]
-        }
-        write_file(utils_path / "project_stats.py", tm.render("script_project_stats", stats_vars), overwrite)
+    
+        write_file(utils_path / "project_stats.py", project_stats_script, overwrite)
         created_files.append("scripts/utils/project_stats.py")
         make_executable(utils_path / "project_stats.py")
 
     logging.info(f"Created {len(created_files)} script files")
+
+    # Atomic, optimized return dictionary - zero waste, maximum clarity
+    # Force count to integer to ensure JSON serialization stability
     return {
         "success": True,
         "created_files": [str(f) for f in created_files],
-        "count": int(len(created_files)),
+        "count": int(len(created_files)),  # Explicit int cast for stability
         "base_path": str(base_path)
     }

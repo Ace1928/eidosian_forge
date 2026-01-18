@@ -14,20 +14,17 @@ including both the processing logic and a demonstration entry point.
 import json
 from typing import Final
 
-# Ensure NLTK 'punkt' tokenizer is available
-import nltk  # type: ignore
-
-try:
-    nltk.data.find("tokenizers/punkt")  # type: ignore
-except LookupError:
-    nltk.download("punkt")  # type: ignore
-
 from llm_forge.logging_config import configure_logging
+from llm_forge.nltk_utils import ensure_punkt
 from llm_forge.response_loop import process_user_prompt
 from llm_forge.type_definitions import ModelResponse
 
+# Ensure required NLTK data is available at import time
+ensure_punkt()
+
 # Configure logging with module context
 logger: Final = configure_logging()
+ensure_punkt()
 
 
 def main() -> None:
@@ -52,7 +49,8 @@ def main() -> None:
 
     # Example prompt comparing LLM architectures
     user_prompt: Final[str] = (
-        "Compare three different LLM architectures: GPT, Claude, and Mistral. Provide details on:\n"
+        "Compare three different LLM architectures: GPT, Claude, and Mistral. "
+        "Provide details on:\n"
         "1. Model architecture\n"
         "2. Training data and methodology\n"
         "3. Strengths & Weaknesses\n"

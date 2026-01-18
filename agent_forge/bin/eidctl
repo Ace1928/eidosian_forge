@@ -9,46 +9,205 @@ Usage examples:
 """
 
 from __future__ import annotations
-import argparse, json, sys
-from pathlib import Path
+import argparse, json, dataclasses as dc
+
+# add repo root to sys.path so local 'core' can be imported without PYTHONPATH
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parents[1]))
 
 # local import; stdlib only
-from core.state import migrate, snapshot, append_journal  # type: ignore
+from core.state import (  # type: ignore
+    migrate,
+    snapshot,
+    append_journal,
+    save_snapshot,
+    iter_journal,
+    rotate_journal,
+    load_snapshot,
+    diff_snapshots,
+    add_goal,
+    list_goals,
+    list_steps_for_goal,
+    list_runs,
+)
+from core.artifacts import run_dir
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="eidctl", description="Eidos control CLI")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    try:
+        ap = argparse.ArgumentParser(
+            prog="eidctl",
+            description="Eidos control CLI",
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        )
+        sub = ap.add_subparsers(dest="cmd", required=True)
 
-    p_state = sub.add_parser("state", help="print state snapshot")
-    p_state.add_argument("--dir", default="state", help="state directory (default: state)")
-    p_state.add_argument("--json", action="store_true", help="print JSON instead of pretty text")
-    p_state.add_argument("--migrate", action="store_true", help="ensure directories/version exist")
+        p_state = sub.add_parser("state", help="print state snapshot")
+        p_state.add_argument("--dir", default="state", help="state directory")
+        p_state.add_argument("--json", action="store_true", help="print JSON instead of pretty text")
+        p_state.add_argument("--migrate", action="store_true", help="ensure directories/version exist")
+        p_state.add_argument("--last", type=int, default=5, help="number of recent events to display")
+        p_state.add_argument("--save", action="store_true", help="save snapshot to state/snaps")
+        p_state.add_argument("--name", help="optional label for --save filename")
+        p_state.add_argument(
+            "--diff",
+            nargs=2,
+            metavar=("A", "B"),
+            help="diff two snapshot files (paths). Use with --json for machine output.",
+        )
+        p_journal = sub.add_parser("journal", help="append or inspect journal")
+        p_journal.add_argument("--dir", default="state", help="state directory")
+        mode = p_journal.add_mutually_exclusive_group()
+        mode.add_argument("--add", metavar="TEXT", help="append a journal note (or pipe via STDIN)")
+        mode.add_argument("--list", action="store_true", help="list entries")
+        mode.add_argument("--rotate", action="store_true", help="rotate journal file")
+        p_journal.add_argument("--type", dest="etype", help="event type or filter by exact type")
+        p_journal.add_argument("--tags", help="comma-separated tags", default="")
+        p_journal.add_argument("--tag", help="filter by tag")
+        p_journal.add_argument("--since", help="ISO8601 Z lower bound (inclusive)")
+        p_journal.add_argument("--until", help="ISO8601 Z upper bound (inclusive)")
+        p_journal.add_argument("--limit", type=int, default=10, help="max entries to return")
+        p_journal.add_argument("--json", action="store_true", help="JSON output")
+        p_journal.add_argument(
+            "--max-bytes",
+            type=int,
+            default=5 * 1024 * 1024,
+            help="rotate threshold in bytes (with --rotate)",
+        )
+        p_journal.add_argument(
+            "--force", action="store_true", help="rotate even if under threshold"
+        )
 
-    p_journal = sub.add_parser("journal", help="append to journal")
-    p_journal.add_argument("--dir", default="state", help="state directory (default: state)")
-    p_journal.add_argument("--add", metavar="TEXT", help="text to append as a journal note")
-    p_journal.add_argument("--type", default="note", help="event type, e.g. goal.created")
+        p_goals = sub.add_parser("goals", help="manage goals")
+        gsub = p_goals.add_subparsers(dest="goals_cmd", required=True)
+        gadd = gsub.add_parser("add", help="add goal")
+        gadd.add_argument("--title", required=True)
+        gadd.add_argument("--drive", required=True)
+        gadd.add_argument("--dir", default="state", help="state directory")
+        gls = gsub.add_parser("ls", help="list goals")
+        gls.add_argument("--dir", default="state", help="state directory")
 
-    args = ap.parse_args(argv)
+        p_steps = sub.add_parser("steps", help="inspect steps")
+        ssub = p_steps.add_subparsers(dest="steps_cmd", required=True)
+        sls = ssub.add_parser("ls", help="list steps for a goal")
+        sls.add_argument("--goal", required=True)
+        sls.add_argument("--dir", default="state", help="state directory")
 
-    if args.cmd == "state":
-        if args.migrate:
-            migrate(args.dir)
-        snap = snapshot(args.dir)
-        if args.json:
-            print(json.dumps(snap, indent=2))
-        else:
-            _pretty_print_state(snap)
-        return 0
+        p_runs = sub.add_parser("runs", help="inspect runs")
+        rsub = p_runs.add_subparsers(dest="runs_cmd", required=True)
+        rls = rsub.add_parser("ls", help="list runs")
+        rls.add_argument("--dir", default="state", help="state directory")
+        rls.add_argument("--step", help="filter by step id")
+        rshow = rsub.add_parser("show", help="show run artifacts")
+        rshow.add_argument("--dir", default="state", help="state directory")
+        rshow.add_argument("--run", required=True)
+        rshow.add_argument("--head", type=int, default=200, help="max bytes to print per stream")
 
-    if args.cmd == "journal":
-        if not args.add:
-            p_journal.error("journal requires --add TEXT")
-        evt = append_journal(args.dir, args.add, etype=args.type)
-        print(f"[journal] appended: {evt['type']} @ {evt['ts']}")
-        return 0
+        args = ap.parse_args(argv)
 
-    return 2
+        if args.cmd == "state":
+            if args.diff:
+                a, b = args.diff
+                da = load_snapshot(a)
+                db = load_snapshot(b)
+                d = diff_snapshots(da, db)
+                out = json.dumps(d, indent=2) if args.json else d
+                print(out if isinstance(out, str) else json.dumps(out, indent=2))
+                return 0
+            if args.migrate:
+                migrate(args.dir)
+            snap = snapshot(args.dir, last=args.last)
+            if args.save:
+                path = save_snapshot(args.dir, snap, name=args.name)
+                print(f"[state] saved snapshot -> {path}")
+            if args.json:
+                print(json.dumps(snap, indent=2))
+            else:
+                _pretty_print_state(snap)
+            return 0
+
+        if args.cmd == "journal":
+            if args.rotate:
+                rot = rotate_journal(
+                    args.dir, max_bytes=args.max_bytes, force=args.force
+                )
+                if rot:
+                    print(f"[journal] rotated -> {rot}")
+                else:
+                    print("[journal] no rotation needed")
+                return 0
+            if args.list:
+                items = iter_journal(
+                    args.dir,
+                    etype=args.etype,
+                    tag=args.tag,
+                    since=args.since,
+                    until=args.until,
+                    limit=args.limit,
+                )
+                if args.json:
+                    print(json.dumps(items, indent=2))
+                else:
+                    for e in items:
+                        tags = f" [{', '.join(e.get('tags', []))}]" if e.get('tags') else ""
+                        print(f"{e.get('ts')}  {e.get('type')}: {e.get('text')}{tags}")
+                return 0
+            if not args.add:
+                if not sys.stdin.isatty():
+                    args.add = sys.stdin.read().strip()
+            if not args.add:
+                p_journal.error("journal requires --add TEXT (or pipe text to STDIN)")
+            tags = [t for t in (args.tags.split(",") if args.tags else []) if t]
+            evt = append_journal(args.dir, args.add, etype=args.etype or "note", tags=tags)
+            print(f"[journal] appended: {evt['type']} @ {evt['ts']}")
+            return 0
+
+        if args.cmd == "goals":
+            if args.goals_cmd == "add":
+                g = add_goal(args.dir, args.title, args.drive)
+                append_journal(args.dir, f"{g.title}", etype="goal.created", extra={"id": g.id})
+                print(g.id)
+                return 0
+            if args.goals_cmd == "ls":
+                gs = [dc.asdict(g) for g in list_goals(args.dir)]
+                print(json.dumps(gs, indent=2))
+                return 0
+
+        if args.cmd == "steps":
+            if args.steps_cmd == "ls":
+                steps = [dc.asdict(s) for s in list_steps_for_goal(args.dir, args.goal)]
+                print(json.dumps(steps, indent=2))
+                return 0
+
+        if args.cmd == "runs":
+            if args.runs_cmd == "ls":
+                runs = [dc.asdict(r) for r in list_runs(args.dir, step_id=args.step)]
+                for r in runs:
+                    print(f"{r['id']} {r['step_id']} rc={r.get('rc')} bytes={r.get('bytes_out')}")
+                return 0
+            if args.runs_cmd == "show":
+                d = run_dir(args.dir, args.run)
+                head = int(args.head)
+                for name in ("stdout", "stderr"):
+                    p = d / f"{name}.txt"
+                    data = p.read_bytes()[:head] if p.exists() else b""
+                    print(f"== {name} ==")
+                    if data:
+                        try:
+                            print(data.decode("utf-8", "replace"))
+                        except Exception:
+                            print(str(data))
+                    else:
+                        print("<empty>")
+                return 0
+
+        return 2
+    except KeyboardInterrupt:
+        print("aborted.", file=sys.stderr)
+        return 130
+    except Exception as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
 
 def _pretty_print_state(snap: dict) -> None:
     print(f"[state] base: {snap.get('base')}")
@@ -59,9 +218,15 @@ def _pretty_print_state(snap: dict) -> None:
     if last:
         print("  last:")
         for e in last:
-            print(f"    - {e.get('ts')}  {e.get('type')}: {e.get('text')}")
+            tags = f" [{', '.join(e.get('tags', []))}]" if e.get('tags') else ""
+            print(f"    - {e.get('ts')}  {e.get('type')}: {e.get('text')}{tags}")
     files = snap.get("files", {})
-    print("  files:  " + ", ".join(f"{k}={files.get(k,0)}" for k in ["events","vector_store","weights","adapters","snaps"]))
+    print(
+        "  files:  "
+        + ", ".join(
+            f"{k}={files.get(k,0)}" for k in ["events", "bus", "vector_store", "weights", "adapters", "snaps"]
+        )
+    )
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

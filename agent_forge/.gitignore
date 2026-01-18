@@ -1,0 +1,14 @@
+# Eidos E3
+.venv/
+__pycache__/
+*.pyc
+state/
+datasets/sessions/
+*.npz
+*.pkl
+*.log
+.env
+.DS_Store
+# Local live config (seeded from cfg.sample)
+cfg/*
+!cfg/approvals.yaml

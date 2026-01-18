@@ -47,18 +47,6 @@ def get_memories() -> list[object]:
     return core.reflect()
 
 
-@app.get("/healthz")
-def health_check() -> dict[str, str]:
-    """Return a simple health check."""
-    return {"status": "ok"}
-
-
-@app.get("/readyz")
-def readiness_check() -> dict[str, str]:
-    """Return a readiness check for the API."""
-    return {"status": "ready"}
-
-
 @app.post("/remember")
 def add_memory(experience: str) -> dict[str, str]:
     """Store a new experience."""

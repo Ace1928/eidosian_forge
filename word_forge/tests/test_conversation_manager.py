@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import pytest
+
+# Skip all tests in this module if vector dependencies are unavailable
+_VECTOR_AVAILABLE = (
+    importlib.util.find_spec("chromadb") is not None
+    and importlib.util.find_spec("sentence_transformers") is not None
+)
+
+pytestmark = pytest.mark.skipif(
+    not _VECTOR_AVAILABLE,
+    reason="Vector dependencies (chromadb, sentence-transformers) not installed",
+)
 
 from word_forge.conversation.conversation_manager import ConversationManager
 from word_forge.conversation.conversation_models import (

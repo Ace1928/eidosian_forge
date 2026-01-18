@@ -2,9 +2,22 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 
 import pytest
+import numpy as np
+
+# Skip all tests in this module if vector dependencies are unavailable
+_VECTOR_AVAILABLE = (
+    importlib.util.find_spec("chromadb") is not None
+    and importlib.util.find_spec("sentence_transformers") is not None
+)
+
+pytestmark = pytest.mark.skipif(
+    not _VECTOR_AVAILABLE,
+    reason="Vector dependencies (chromadb, sentence-transformers) not installed",
+)
 
 from word_forge.configs.config_essentials import StorageType
 from word_forge.vectorizer.vector_store import (
@@ -72,6 +85,19 @@ class TestVectorStoreBehavior:
         stored = store.store_word(_sample_entry())
         assert stored > 0
         assert store.collection.count() > 0
+
+    def test_upsert_normalizes_mismatched_dimension(self) -> None:
+        store = VectorStore(
+            dimension=1024,
+            storage_type=StorageType.MEMORY,
+            demo_mode=True,
+            model_name=TEST_MODEL,
+        )
+        small_vec = np.ones(384, dtype=np.float32)
+        store.upsert("abc", small_vec, metadata={"content_type": "word"})
+        assert store.collection.count() == 1
+        stored = store.collection._store["abc"]["embedding"]
+        assert stored.shape[0] == store.dimension
 
 
 class TestVectorStorePersistence:

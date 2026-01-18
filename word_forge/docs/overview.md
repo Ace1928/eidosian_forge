@@ -74,10 +74,12 @@ Builds and manages a semantic network from processed terms using NetworkX.
 - `GraphVisualizer` - 2D/3D visualization generation
 
 **Features:**
-- Multi-dimensional relationship support
+- Multi-dimensional relationship support (lexical, emotional, affective, contextual)
 - Layout algorithms (force-directed, hierarchical, spectral)
 - Export formats (GraphML, GEXF, JSON, HTML)
 - Community detection and clustering
+- Color-coded visualization by relationship type and emotional dimension
+- Valence and arousal-based node/edge coloring
 
 ### parser
 
@@ -99,14 +101,17 @@ Extracts and refines lexical entries from text sources.
 Generates and manages vector embeddings for semantic search.
 
 **Key Classes:**
-- `VectorStore` - Embedding storage and retrieval
-- `VectorWorker` - Background indexing worker
+- `VectorStore` - Embedding storage and retrieval with automatic dimension normalization
+- `VectorWorker` - Background indexing worker with fallback embedding support
+- `TransformerEmbedder` - High-quality sentence transformer embeddings
 
 **Features:**
 - Multiple backend support (ChromaDB, FAISS, SQLite)
 - Sentence transformer models
+- Automatic embedding dimension normalization (padding/truncation for model mismatches)
 - Hybrid search strategies
 - Configurable distance metrics
+- Graceful fallback between VectorStore and worker embedders
 
 ### queue
 

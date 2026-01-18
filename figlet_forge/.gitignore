@@ -1,0 +1,40 @@
+# Python bytecode and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+/build/
+/dist/
+/*.egg-info/
+/figlet_forge.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env*/
+
+# Development artifacts
+*~
+.*.swp
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# IDE specific files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Documentation builds
+/docs/_build/
+/site/
+
+# Runtime files
+*.log
+.DS_Store

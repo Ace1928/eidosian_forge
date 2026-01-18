@@ -109,6 +109,9 @@ class LexicalResources:
 class TermExtractor:
     """Discovers and extracts terms from textual content using advanced NLP techniques."""
 
+    # Class-level flag to track whether NER is available
+    _ner_available: bool = True
+
     def __init__(self) -> None:
         """Initialize the term extractor with necessary NLP components."""
         ensure_nltk_data()
@@ -273,6 +276,10 @@ class TermExtractor:
             named_entities: Set to add named entities to
             discovered_terms: Set to add component terms to
         """
+        # Skip NER if it previously failed (e.g., missing NLTK corpus data)
+        if not TermExtractor._ner_available:
+            return
+
         try:
             chunked: Tree = nltk.ne_chunk(tagged)  # type: ignore
             for subtree in chunked:
@@ -290,8 +297,12 @@ class TermExtractor:
                             if len(lemma) >= 3 and lemma not in self._stop_words:
                                 discovered_terms.add(lemma)
         except Exception as e:
-            # Soft fail for NER - continue with other extraction methods
-            logger.warning(f"Named entity recognition failed: {str(e)}", exc_info=True)
+            # Soft fail for NER - disable for future calls and continue
+            TermExtractor._ner_available = False
+            logger.warning(
+                f"Named entity recognition disabled due to error: {str(e)}. "
+                "Processing will continue without NER."
+            )
 
     def _extract_multiword_expressions(
         self, tagged: List[Tuple[str, str]], multiword_expressions: Set[str]

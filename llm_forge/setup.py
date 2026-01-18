@@ -122,8 +122,8 @@ if __name__ == "__main__":
         author_email=AUTHOR_EMAIL,
         url=PROJECT_URL,
         # Package discovery
-        packages=find_packages(where="src") + ["llm_forge_proto"],
-        package_dir={"": "src", "llm_forge_proto": "llm_forge_proto"},
+        packages=find_packages(where="src"),
+        package_dir={"": "src"},
         # Dependencies
         python_requires=PYTHON_REQUIRES,
         install_requires=INSTALL_REQUIRES,

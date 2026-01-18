@@ -913,6 +913,61 @@ class VectorStore:
                 f"{context} dimension {length} doesn't match expected {self.dimension}"
             )
 
+    def _normalize_vector_dimension(
+        self, vector: NDArray[np.float32], context: str
+    ) -> NDArray[np.float32]:
+        """
+        Coerce an embedding to the configured dimension by padding or truncating.
+
+        When upstream models change or cached indices expect a different shape,
+        resize the vector and re-normalize it to avoid runtime failures while
+        keeping cosine similarity meaningful.
+
+        Args:
+            vector: Incoming embedding
+            context: Human-friendly source label for logging
+
+        Returns:
+            NDArray[np.float32]: Dimensionally aligned and normalized vector
+        """
+        # Handle both numpy arrays and plain lists/sequences
+        if hasattr(vector, "shape"):
+            length = vector.shape[0] if len(vector.shape) > 0 else 0
+        else:
+            length = len(vector)
+            # Convert to numpy array if not already
+            vector = np.asarray(vector, dtype=np.float32)
+
+        if length == self.dimension:
+            return vector
+
+        if length == 0:
+            raise DimensionMismatchError(
+                f"{context} is empty; expected {self.dimension}"
+            )
+
+        if length > self.dimension:
+            coerced = vector[: self.dimension]
+            self.logger.debug(
+                "%s truncated from dimension %s to %s", context, length, self.dimension
+            )
+        else:
+            pad_width = self.dimension - length
+            coerced = np.pad(vector, (0, pad_width), mode="constant")
+            self.logger.debug(
+                "%s padded from dimension %s to %s with zeros",
+                context,
+                length,
+                self.dimension,
+            )
+
+        # Renormalize to keep cosine similarity stable
+        norm = np.linalg.norm(coerced)
+        if norm > 0:
+            coerced = coerced / norm
+
+        return coerced.astype(np.float32)
+
     def format_with_instruction(
         self, text: str, template_key: str = "search", is_query: bool = True
     ) -> str:
@@ -1002,7 +1057,11 @@ class VectorStore:
             # Ensure correct type
             vector = vector.astype(np.float32)
 
-            # Validate dimensions
+            # Normalize and validate dimensions
+            vector = self._normalize_vector_dimension(
+                vector,
+                context=f"Embedding for '{text[:30]}{'...' if len(text) > 30 else ''}'",
+            )
             self._validate_vector_dimension(
                 vector,
                 context=f"Embedding for '{text[:30]}{'...' if len(text) > 30 else ''}'",
@@ -1372,7 +1431,8 @@ class VectorStore:
         Raises:
             UpsertError: If ChromaDB operation fails
         """
-        # Validate vector dimensions
+        # Normalize and validate vector dimensions
+        embedding = self._normalize_vector_dimension(embedding, "Embedding")
         self._validate_vector_dimension(embedding, "Embedding")
 
         # Convert ID to string for ChromaDB
@@ -1524,8 +1584,11 @@ class VectorStore:
         """
         # Case 1: Direct vector provided
         if query_vector is not None:
-            self._validate_vector_dimension(query_vector, context="Query vector")
-            return query_vector
+            normalized = self._normalize_vector_dimension(
+                query_vector, context="Query vector"
+            )
+            self._validate_vector_dimension(normalized, context="Query vector")
+            return normalized
 
         # Case 2: Text provided - convert to vector
         assert query_text is not None, "Both query_vector and query_text cannot be None"
@@ -1534,8 +1597,11 @@ class VectorStore:
             embedded_vector = self.embed_text(
                 query_text, template_key="search", is_query=True, normalize=True
             )
-            self._validate_vector_dimension(embedded_vector, context="Embedded query")
-            return embedded_vector
+            normalized = self._normalize_vector_dimension(
+                embedded_vector, context="Embedded query"
+            )
+            self._validate_vector_dimension(normalized, context="Embedded query")
+            return normalized
 
         except Exception as e:
             raise SearchError(f"Failed to prepare search vector: {str(e)}") from e

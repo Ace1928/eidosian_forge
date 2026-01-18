@@ -504,6 +504,8 @@ class VectorWorker(threading.Thread):
         Process a batch of words into vector embeddings.
 
         Generates embeddings for each word and stores them in the vector store.
+        Uses the VectorStore's embed_text method when available to ensure
+        consistent dimensions, otherwise falls back to the worker's embedder.
 
         Args:
             words: List of words to process
@@ -513,11 +515,29 @@ class VectorWorker(threading.Thread):
             text = self._prepare_embedding_text(word)
 
             try:
-                # Generate embedding
-                vector = self.embedder.embed(text)
+                # Generate embedding - prefer VectorStore's method for consistency
+                if hasattr(self.vector_store, "embed_text"):
+                    try:
+                        # Use "definition" template for word processing (documents, not queries)
+                        vector = self.vector_store.embed_text(
+                            text, template_key="definition", is_query=False
+                        )
+                    except Exception as embed_err:
+                        # Fall back to worker's embedder if VectorStore embedding fails
+                        self.logger.debug(
+                            f"VectorStore embed_text failed, using worker embedder: {embed_err}"
+                        )
+                        vector = self.embedder.embed(text)
+                else:
+                    vector = self.embedder.embed(text)
 
-                # Store embedding
-                self.vector_store.upsert(word.id, vector)
+                # Store embedding with metadata for better retrieval
+                metadata = {
+                    "content_type": "word",
+                    "term": word.term,
+                    "original_id": word.id,
+                }
+                self.vector_store.upsert(word.id, vector, metadata=metadata, text=text)
                 self.stats.record_result(word.id, ProcessingResult.SUCCESS)
 
             except EmbeddingError as e:
@@ -529,6 +549,14 @@ class VectorWorker(threading.Thread):
                 error_msg = f"Vector storage failed for word {word.term} (ID: {word.id}): {str(e)}"
                 if "object has no attribute 'upsert'" in str(e):
                     error_msg += f" (vector_store has type {type(self.vector_store).__name__}, should be VectorStore)"
+                elif "dimension" in str(e).lower():
+                    # Provide helpful guidance for dimension mismatches
+                    embedder_dim = getattr(self.embedder, "dimension", "unknown")
+                    store_dim = getattr(self.vector_store, "dimension", "unknown")
+                    error_msg += (
+                        f" (embedder dimension: {embedder_dim}, "
+                        f"store dimension: {store_dim})"
+                    )
                 self.logger.error(error_msg)
                 self.stats.record_result(word.id, ProcessingResult.STORAGE_ERROR)
 
