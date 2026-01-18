@@ -1,0 +1,37 @@
+import itertools
+import os
+import re
+import sys
+from abc import ABC, abstractmethod
+from contextlib import nullcontext
+from copy import deepcopy
+from enum import auto, Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from unittest import mock
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+from torch.distributed.fsdp import CPUOffload, FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp._common_utils import TrainingState
+from torch.distributed.fsdp._init_utils import NO_RESHARD_AFTER_FORWARD_STRATEGIES
+from torch.distributed.fsdp.fully_sharded_data_parallel import (
+from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
+from torch.distributed.fsdp.wrap import always_wrap_policy, ModuleWrapPolicy, wrap
+from torch.nn import TransformerDecoderLayer, TransformerEncoderLayer
+from torch.nn.parallel.distributed import DistributedDataParallel as DDP
+from torch.testing._internal.common_distributed import (
+from torch.testing._internal.common_utils import FILE_SCHEMA, get_cycles_per_ms
+
+        Tests FSDP training against a reference, which defaults to DDP but
+        may be customized with ``ref_init_fn``.
+
+        Args:
+            model_class (Type[FSDPTestModel]): A model class that inherits from
+                ``FSDPTestModel``, which defines the expected interface.
+            fsdp_init_mode (FSDPInitMode): The mode to initialize the
+                FSDP-wrapped model. This should not be ``NO_FSDP``.
+            ref_init_fn (Optional[Callable]): A callable to invoke that wraps a
+                non-wrapped model to construct the reference model, where this
+                wrapper should provide data parallel semantics. If ``None``,
+                then the callable defaults to the DDP constructor.
+        

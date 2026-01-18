@@ -1,0 +1,25 @@
+from __future__ import annotations
+import logging
+import numpy as np
+from qiskit.circuit import Gate, ParameterExpression, Qubit
+from qiskit.circuit.delay import Delay
+from qiskit.circuit.library.standard_gates import IGate, UGate, U3Gate
+from qiskit.circuit.reset import Reset
+from qiskit.dagcircuit import DAGCircuit, DAGNode, DAGInNode, DAGOpNode
+from qiskit.quantum_info.operators.predicates import matrix_equal
+from qiskit.synthesis.one_qubit import OneQubitEulerDecomposer
+from qiskit.transpiler.exceptions import TranspilerError
+from qiskit.transpiler.instruction_durations import InstructionDurations
+from qiskit.transpiler.passes.optimization import Optimize1qGates
+from qiskit.transpiler.target import Target
+from .base_padding import BasePadding
+@staticmethod
+def _resolve_params(gate: Gate) -> tuple:
+    """Return gate params with any bound parameters replaced with floats"""
+    params = []
+    for p in gate.params:
+        if isinstance(p, ParameterExpression) and (not p.parameters):
+            params.append(float(p))
+        else:
+            params.append(p)
+    return tuple(params)

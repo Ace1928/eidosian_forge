@@ -1,0 +1,37 @@
+from __future__ import annotations
+import logging
+import numpy as np
+from pymatgen.analysis.chemenv.connectivity.structure_connectivity import StructureConnectivity
+def get_structure_connectivity(self, light_structure_environments):
+    """
+        Get the structure connectivity from the coordination environments provided
+        as an input.
+
+        Args:
+            light_structure_environments: LightStructureEnvironments with the
+            relevant coordination environments in the structure
+
+        Returns:
+            a StructureConnectivity object describing the connectivity of
+        the environments in the structure
+        """
+    logging.info('Setup of structure connectivity graph')
+    structure_connectivity = StructureConnectivity(light_structure_environments)
+    structure_connectivity.add_sites()
+    for isite, _site in enumerate(light_structure_environments.structure):
+        site_neighbors_sets = light_structure_environments.neighbors_sets[isite]
+        if site_neighbors_sets is None:
+            continue
+        if len(site_neighbors_sets) > 1:
+            if self.multiple_environments_choice is None:
+                raise ValueError(f'Local environment of site {isite} is a mix and nothing is asked about it')
+            if self.multiple_environments_choice == 'TAKE_HIGHEST_FRACTION':
+                imax = np.argmax([ee['ce_fraction'] for ee in light_structure_environments.coordination_environments[isite]])
+                print(f'IMAX {imax}')
+                site_neighbors_set = site_neighbors_sets[imax]
+            else:
+                raise RuntimeError('Should not be here')
+        else:
+            site_neighbors_set = site_neighbors_sets[0]
+        structure_connectivity.add_bonds(isite, site_neighbors_set)
+    return structure_connectivity

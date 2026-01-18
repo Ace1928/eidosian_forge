@@ -1,0 +1,2 @@
+class GDALException(Exception):
+    pass

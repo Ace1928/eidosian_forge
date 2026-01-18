@@ -1,0 +1,2 @@
+class EntityExistsError(PostgresDeclareError):
+    pass

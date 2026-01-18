@@ -1,0 +1,24 @@
+import ctypes
+import io
+import operator
+import os
+import sys
+import weakref
+from functools import reduce
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from . import _check_status, _keepref, cairo, constants, ffi
+from .fonts import FontOptions, _encode_string
+def dsc_begin_setup(self):
+    """Indicate that subsequent calls to :meth:`dsc_comment` should
+        direct comments to the Setup section of the PostScript output.
+
+        This method should be called at most once per surface,
+        and must be called before any call to :meth:`dsc_begin_page_setup`
+        and before any drawing is performed to the surface.
+
+        See :meth:`dsc_comment` for more details.
+
+        """
+    cairo.cairo_ps_surface_dsc_begin_setup(self._pointer)
+    self._check_status()

@@ -1,0 +1,2 @@
+class VertexHasNoApproxEdgeError(VerificationError):
+    pass

@@ -1,0 +1,17 @@
+import collections
+import json
+import optparse
+import sys
+from unittest import mock
+import testtools
+from troveclient.compat import common
+def test__pretty_list(self):
+    func = mock.Mock(return_value=None)
+    self.cmd_base.verbose = True
+    self.assertIsNone(self.cmd_base._pretty_list(func))
+    self.cmd_base.verbose = False
+    self.assertIsNone(self.cmd_base._pretty_list(func))
+    item = mock.Mock(return_value='test')
+    item._info = 'info'
+    func = mock.Mock(return_value=[item])
+    self.assertIsNone(self.cmd_base._pretty_list(func))

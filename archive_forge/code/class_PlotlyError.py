@@ -1,0 +1,2 @@
+class PlotlyError(Exception):
+    pass

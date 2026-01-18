@@ -1,0 +1,47 @@
+import pyomo.common.unittest as unittest
+from io import StringIO
+import logging
+from pyomo.environ import (
+from pyomo.network import Arc, Port
+from pyomo.core.expr.visitor import identify_variables
+from pyomo.common.collections.component_set import ComponentSet
+def test_expand_implicit_indexed(self):
+    m = ConcreteModel()
+    m.x = Var([1, 2], domain=Binary)
+    m.y = Var(bounds=(1, 3))
+    m.PRT = Port()
+    m.PRT.add(m.x)
+    m.PRT.add(m.y)
+    m.a2 = Var([1, 2])
+    m.b1 = Var()
+    m.EPRT2 = Port(implicit=['x'])
+    m.EPRT2.add(m.b1, 'y')
+    m.EPRT1 = Port(implicit=['y'])
+    m.EPRT1.add(m.a2, 'x')
+    m.c = Arc(ports=(m.EPRT1, m.PRT))
+    m.d = Arc(ports=(m.EPRT2, m.PRT))
+    self.assertEqual(len(list(m.component_objects(Constraint))), 0)
+    self.assertEqual(len(list(m.component_data_objects(Constraint))), 0)
+    os = StringIO()
+    m.EPRT1.pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'EPRT1 : Size=1, Index=None\n    Key  : Name : Size : Variable\n    None :    x :    2 :       a2\n         :    y :    - :     None\n')
+    TransformationFactory('network.expand_arcs').apply_to(m)
+    os = StringIO()
+    m.EPRT1.pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'EPRT1 : Size=1, Index=None\n    Key  : Name : Size : Variable\n    None :    x :    2 :           a2\n         :    y :    1 : EPRT1_auto_y\n')
+    self.assertEqual(len(list(m.component_objects(Constraint))), 4)
+    self.assertEqual(len(list(m.component_data_objects(Constraint))), 6)
+    self.assertFalse(m.c.active)
+    blk_c = m.component('c_expanded')
+    self.assertTrue(blk_c.component('x_equality').active)
+    self.assertTrue(blk_c.component('y_equality').active)
+    self.assertFalse(m.d.active)
+    blk_d = m.component('d_expanded')
+    self.assertTrue(blk_d.component('x_equality').active)
+    self.assertTrue(blk_d.component('y_equality').active)
+    os = StringIO()
+    blk_c.pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'c_expanded : Size=1, Index=None, Active=True\n    2 Constraint Declarations\n        x_equality : Size=2, Index={1, 2}, Active=True\n            Key : Lower : Body         : Upper : Active\n              1 :   0.0 : a2[1] - x[1] :   0.0 :   True\n              2 :   0.0 : a2[2] - x[2] :   0.0 :   True\n        y_equality : Size=1, Index=None, Active=True\n            Key  : Lower : Body             : Upper : Active\n            None :   0.0 : EPRT1_auto_y - y :   0.0 :   True\n\n    2 Declarations: x_equality y_equality\n')
+    os = StringIO()
+    blk_d.pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'd_expanded : Size=1, Index=None, Active=True\n    2 Constraint Declarations\n        x_equality : Size=2, Index={1, 2}, Active=True\n            Key : Lower : Body                   : Upper : Active\n              1 :   0.0 : EPRT2_auto_x[1] - x[1] :   0.0 :   True\n              2 :   0.0 : EPRT2_auto_x[2] - x[2] :   0.0 :   True\n        y_equality : Size=1, Index=None, Active=True\n            Key  : Lower : Body   : Upper : Active\n            None :   0.0 : b1 - y :   0.0 :   True\n\n    2 Declarations: x_equality y_equality\n')

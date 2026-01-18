@@ -1,0 +1,181 @@
+import os
+import shutil
+import sys
+import tempfile
+from io import BytesIO
+from typing import Dict, List
+from dulwich.tests import TestCase
+from ..errors import (
+from ..object_store import MemoryObjectStore
+from ..objects import Tree
+from ..protocol import ZERO_SHA, format_capability_line
+from ..repo import MemoryRepo, Repo
+from ..server import (
+from .utils import make_commit, make_tag
+class MultiAckDetailedGraphWalkerImplTestCase(AckGraphWalkerImplTestCase):
+    impl_cls = MultiAckDetailedGraphWalkerImpl
+
+    def test_multi_ack(self):
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self._impl.ack(THREE)
+        self.assertAck(THREE, b'common')
+        self._walker.wants_satisified = True
+        self.assertNextEquals(None)
+        self._walker.lines.append((None, None))
+        self.assertNextEmpty()
+        self.assertAcks([(THREE, b'ready'), (None, b'nak'), (THREE, b'')])
+        self.assertTrue(self._walker.pack_sent)
+
+    def test_multi_ack_nodone(self):
+        self._walker.done_required = False
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self._impl.ack(THREE)
+        self.assertAck(THREE, b'common')
+        self._walker.wants_satisified = True
+        self.assertNextEquals(None)
+        self._walker.lines.append((None, None))
+        self.assertNextEmpty()
+        self.assertAcks([(THREE, b'ready'), (None, b'nak'), (THREE, b'')])
+        self.assertTrue(self._walker.pack_sent)
+
+    def test_multi_ack_flush_end(self):
+        self._walker.lines[-1] = (None, None)
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self._impl.ack(THREE)
+        self.assertAck(THREE, b'common')
+        self._walker.wants_satisified = True
+        self.assertNextEmpty()
+        self.assertAcks([(THREE, b'ready'), (None, b'nak')])
+        self.assertFalse(self._walker.pack_sent)
+
+    def test_multi_ack_flush_end_nodone(self):
+        self._walker.lines[-1] = (None, None)
+        self._walker.done_required = False
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self._impl.ack(THREE)
+        self.assertAck(THREE, b'common')
+        self._walker.wants_satisified = True
+        self.assertNextEmpty()
+        self.assertAcks([(THREE, b'ready'), (None, b'nak'), (THREE, b'')])
+        self.assertTrue(self._walker.pack_sent)
+
+    def test_multi_ack_partial(self):
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertNextEquals(None)
+        self.assertNextEmpty()
+        self.assertAck(ONE)
+
+    def test_multi_ack_flush(self):
+        self._walker.lines = [(b'have', TWO), (None, None), (b'have', ONE), (b'have', THREE), (b'done', None), (None, None)]
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNak()
+        self._impl.ack(ONE)
+        self.assertAck(ONE, b'common')
+        self.assertNextEquals(THREE)
+        self._impl.ack(THREE)
+        self.assertAck(THREE, b'common')
+        self._walker.wants_satisified = True
+        self.assertNextEquals(None)
+        self.assertNextEmpty()
+        self.assertAcks([(THREE, b'ready'), (None, b'nak'), (THREE, b'')])
+
+    def test_multi_ack_nak(self):
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNoAck()
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertNextEquals(None)
+        self.assertNextEmpty()
+        self.assertNak()
+        self.assertNextEmpty()
+        self.assertTrue(self._walker.pack_sent)
+
+    def test_multi_ack_nak_nodone(self):
+        self._walker.done_required = False
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNoAck()
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertFalse(self._walker.pack_sent)
+        self.assertNextEquals(None)
+        self.assertNextEmpty()
+        self.assertTrue(self._walker.pack_sent)
+        self.assertNak()
+        self.assertNextEmpty()
+
+    def test_multi_ack_nak_flush(self):
+        self._walker.lines = [(b'have', TWO), (None, None), (b'have', ONE), (b'have', THREE), (b'done', None)]
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNak()
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertNextEquals(None)
+        self.assertNextEmpty()
+        self.assertNak()
+
+    def test_multi_ack_stateless(self):
+        self._walker.lines[-1] = (None, None)
+        self._walker.stateless_rpc = True
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNoAck()
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertFalse(self._walker.pack_sent)
+        self.assertNextEquals(None)
+        self.assertNak()
+        self.assertNextEmpty()
+        self.assertNoAck()
+        self.assertFalse(self._walker.pack_sent)
+
+    def test_multi_ack_stateless_nodone(self):
+        self._walker.done_required = False
+        self._walker.lines[-1] = (None, None)
+        self._walker.stateless_rpc = True
+        self.assertNextEquals(TWO)
+        self.assertNoAck()
+        self.assertNextEquals(ONE)
+        self.assertNoAck()
+        self.assertNextEquals(THREE)
+        self.assertNoAck()
+        self.assertFalse(self._walker.pack_sent)
+        self.assertNextEquals(None)
+        self.assertNak()
+        self.assertNextEmpty()
+        self.assertNoAck()
+        self.assertFalse(self._walker.pack_sent)

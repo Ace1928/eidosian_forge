@@ -1,0 +1,2 @@
+class OverwriteDirtyFileError(CloudPathException):
+    pass

@@ -1,0 +1,33 @@
+import logging
+from ..common.utils import isStrSpace
+from .state_block import StateBlock
+def hr(state: StateBlock, startLine: int, endLine: int, silent: bool) -> bool:
+    LOGGER.debug('entering hr: %s, %s, %s, %s', state, startLine, endLine, silent)
+    pos = state.bMarks[startLine] + state.tShift[startLine]
+    maximum = state.eMarks[startLine]
+    if state.is_code_block(startLine):
+        return False
+    try:
+        marker = state.src[pos]
+    except IndexError:
+        return False
+    pos += 1
+    if marker not in ('*', '-', '_'):
+        return False
+    cnt = 1
+    while pos < maximum:
+        ch = state.src[pos]
+        pos += 1
+        if ch != marker and (not isStrSpace(ch)):
+            return False
+        if ch == marker:
+            cnt += 1
+    if cnt < 3:
+        return False
+    if silent:
+        return True
+    state.line = startLine + 1
+    token = state.push('hr', 'hr', 0)
+    token.map = [startLine, state.line]
+    token.markup = marker * (cnt + 1)
+    return True

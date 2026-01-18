@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "principles": {
+    "contextualIntegrity": {
+      "active": true,
+      "description": "Every file has its perfect place in the structure"
+    },
+    "humorAsCognitiveLeverage": {
+      "active": true,
+      "description": "Clear, memorable interfaces and error messages"
+    },
+    "exhaustiveButConcise": {
+      "active": true,
+      "description": "Complete coverage without redundancy"
+    },
+    "flowLikeRiver": {
+      "active": true,
+      "description": "Seamless integration between components"
+    },
+    "hyperPersonalYetUniversallyApplicable": {
+      "active": true,
+      "description": "Works across any context, from solo dev to enterprise"
+    },
+    "recursiveRefinement": {
+      "active": true,
+      "description": "Built for continuous improvement and iteration"
+    },
+    "precisionAsStyle": {
+      "active": true,
+      "description": "Clean, functional design as aesthetic principle"
+    },
+    "velocityAsIntelligence": {
+      "active": true,
+      "description": "Optimized for rapid development and deployment"
+    },
+    "structureAsControl": {
+      "active": true,
+      "description": "Architecture defines capabilities"
+    },
+    "selfAwarenessAsFoundation": {
+      "active": true,
+      "description": "System introspects and optimizes itself"
+    }
+  },
+  "metadata": {
+    "creator": "repo_forge",
+    "created": "2025-03-13T03:09:37Z",
+    "lastModified": "2025-03-13T03:09:37Z",
+    "description": "A universal doc_forge_repo adhering to all Eidosian principles",
+    "languagesSupported": [
+      "python",
+      "javascript",
+      "typescript",
+      "go",
+      "rust",
+      "java",
+      "c++"
+    ],
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "date": "2025-03-13T03:09:37Z",
+        "description": "Initial creation"
+      }
+    ]
+  },
+  "self_analysis": {
+    "last_reflection": null,
+    "optimization_suggestions": [],
+    "usage_patterns": {}
+  }
+}

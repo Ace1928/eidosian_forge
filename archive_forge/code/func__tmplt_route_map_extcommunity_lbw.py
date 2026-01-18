@@ -1,0 +1,13 @@
+from __future__ import absolute_import, division, print_function
+import re
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.rm_base.network_template import (
+def _tmplt_route_map_extcommunity_lbw(config_data):
+    config_data = config_data['entries']['set']['extcommunity']['lbw']
+    command = 'set extcommunity lbw '
+    if config_data.get('aggregate'):
+        command += 'aggregate ' + config_data['value']
+    if not config_data.get('aggregate') and config_data.get('value'):
+        command += config_data['value']
+    if config_data.get('divide'):
+        command += 'divide ' + config_data['divide']
+    return command

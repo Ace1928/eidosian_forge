@@ -1,0 +1,24 @@
+import os
+import numpy as np
+from tensorflow.python.eager import context
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import callbacks
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import state_ops
+from tensorflow.python.ops import summary_ops_v2
+from tensorflow.python.ops import variables
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.profiler import profiler_v2 as profiler
+from tensorflow.python.summary import summary as tf_summary
+from tensorflow.python.training import saver
+def _start_profiler(self):
+    """Starts the profiler if currently inactive."""
+    if self._profiler_started:
+        return
+    try:
+        profiler.start(logdir=self.log_dir)
+        self._profiler_started = True
+    except errors.AlreadyExistsError as e:
+        logging.error('Failed to start profiler: %s', e.message)

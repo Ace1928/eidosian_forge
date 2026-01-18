@@ -1,0 +1,22 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def ll_fz_set_error_callback(error_cb, user):
+    """
+    Low-level wrapper for `::fz_set_error_callback()`.
+    Set the error callback. This will be called as part of the
+    exception handling.
+
+    The callback must not throw exceptions!
+    """
+    return _mupdf.ll_fz_set_error_callback(error_cb, user)

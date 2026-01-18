@@ -1,0 +1,32 @@
+import sys
+from docutils import nodes, utils
+from docutils.parsers.rst import Directive
+from docutils.parsers.rst import states
+from docutils.transforms import components
+def parsemeta(self, match):
+    name = self.parse_field_marker(match)
+    name = utils.unescape(utils.escape2null(name))
+    indented, indent, line_offset, blank_finish = self.state_machine.get_first_known_indented(match.end())
+    node = self.meta()
+    pending = nodes.pending(components.Filter, {'component': 'writer', 'format': 'html', 'nodes': [node]})
+    node['content'] = utils.unescape(utils.escape2null(' '.join(indented)))
+    if not indented:
+        line = self.state_machine.line
+        msg = self.reporter.info('No content for meta tag "%s".' % name, nodes.literal_block(line, line))
+        return (msg, blank_finish)
+    tokens = name.split()
+    try:
+        attname, val = utils.extract_name_value(tokens[0])[0]
+        node[attname.lower()] = val
+    except utils.NameValueError:
+        node['name'] = tokens[0]
+    for token in tokens[1:]:
+        try:
+            attname, val = utils.extract_name_value(token)[0]
+            node[attname.lower()] = val
+        except utils.NameValueError as detail:
+            line = self.state_machine.line
+            msg = self.reporter.error('Error parsing meta tag attribute "%s": %s.' % (token, detail), nodes.literal_block(line, line))
+            return (msg, blank_finish)
+    self.document.note_pending(pending)
+    return (pending, blank_finish)

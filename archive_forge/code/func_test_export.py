@@ -1,0 +1,19 @@
+import os
+import tarfile
+import zipfile
+from breezy import errors, osutils, tests
+from breezy.tests import features
+from breezy.tests.per_tree import TestCaseWithTree
+def test_export(self):
+    work_a = self.make_branch_and_tree('wta')
+    self.build_tree_contents([('wta/file', b'a\nb\nc\nd\n'), ('wta/dir', b'')])
+    work_a.add('file')
+    work_a.add('dir')
+    work_a.commit('add file')
+    tree_a = self.workingtree_to_test_tree(work_a)
+    output_path = 'output'
+    with open(output_path, 'wb') as f:
+        f.writelines(tree_a.archive(self.format, output_path))
+    names = self.get_export_names(output_path)
+    self.assertIn('file', names)
+    self.assertIn('dir', names)

@@ -1,0 +1,1 @@
+Validates the correctness of a string-based arg.

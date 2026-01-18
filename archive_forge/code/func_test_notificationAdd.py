@@ -1,0 +1,9 @@
+from yowsup.layers import YowProtocolLayerTest
+from yowsup.layers.protocol_contacts import YowContactsIqProtocolLayer
+from yowsup.layers.protocol_contacts.protocolentities.test_notification_contact_add import entity as addEntity
+from yowsup.layers.protocol_contacts.protocolentities.test_notification_contact_update import entity as updateEntity
+from yowsup.layers.protocol_contacts.protocolentities.test_notification_contact_remove import entity as removeEntity
+from yowsup.layers.protocol_contacts.protocolentities.test_iq_sync_result import entity as syncResultEntity
+from yowsup.layers.protocol_contacts.protocolentities.test_iq_sync_get import entity as syncGetEntity
+def test_notificationAdd(self):
+    self.assertReceived(addEntity)

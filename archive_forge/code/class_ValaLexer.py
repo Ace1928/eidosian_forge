@@ -1,0 +1,16 @@
+import re
+from pygments.lexer import RegexLexer, include, bygroups, inherit, words, \
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+from pygments.lexers.c_cpp import CLexer, CppLexer
+from pygments.lexers import _mql_builtins
+class ValaLexer(RegexLexer):
+    """
+    For Vala source code with preprocessor directives.
+
+    .. versionadded:: 1.1
+    """
+    name = 'Vala'
+    aliases = ['vala', 'vapi']
+    filenames = ['*.vala', '*.vapi']
+    mimetypes = ['text/x-vala']
+    tokens = {'whitespace': [('^\\s*#if\\s+0', Comment.Preproc, 'if0'), ('\\n', Text), ('\\s+', Text), ('\\\\\\n', Text), ('//(\\n|(.|\\n)*?[^\\\\]\\n)', Comment.Single), ('/(\\\\\\n)?[*](.|\\n)*?[*](\\\\\\n)?/', Comment.Multiline)], 'statements': [('[L@]?"', String, 'string'), ("L?'(\\\\.|\\\\[0-7]{1,3}|\\\\x[a-fA-F0-9]{1,2}|[^\\\\\\'\\n])'", String.Char), ('(?s)""".*?"""', String), ('(\\d+\\.\\d*|\\.\\d+|\\d+)[eE][+-]?\\d+[lL]?', Number.Float), ('(\\d+\\.\\d*|\\.\\d+|\\d+[fF])[fF]?', Number.Float), ('0x[0-9a-fA-F]+[Ll]?', Number.Hex), ('0[0-7]+[Ll]?', Number.Oct), ('\\d+[Ll]?', Number.Integer), ('[~!%^&*+=|?:<>/-]', Operator), ('(\\[)(Compact|Immutable|(?:Boolean|Simple)Type)(\\])', bygroups(Punctuation, Name.Decorator, Punctuation)), ('(\\[)(CCode|(?:Integer|Floating)Type)', bygroups(Punctuation, Name.Decorator)), ('[()\\[\\],.]', Punctuation), (words(('as', 'base', 'break', 'case', 'catch', 'construct', 'continue', 'default', 'delete', 'do', 'else', 'enum', 'finally', 'for', 'foreach', 'get', 'if', 'in', 'is', 'lock', 'new', 'out', 'params', 'return', 'set', 'sizeof', 'switch', 'this', 'throw', 'try', 'typeof', 'while', 'yield'), suffix='\\b'), Keyword), (words(('abstract', 'const', 'delegate', 'dynamic', 'ensures', 'extern', 'inline', 'internal', 'override', 'owned', 'private', 'protected', 'public', 'ref', 'requires', 'signal', 'static', 'throws', 'unowned', 'var', 'virtual', 'volatile', 'weak', 'yields'), suffix='\\b'), Keyword.Declaration), ('(namespace|using)(\\s+)', bygroups(Keyword.Namespace, Text), 'namespace'), ('(class|errordomain|interface|struct)(\\s+)', bygroups(Keyword.Declaration, Text), 'class'), ('(\\.)([a-zA-Z_]\\w*)', bygroups(Operator, Name.Attribute)), (words(('void', 'bool', 'char', 'double', 'float', 'int', 'int8', 'int16', 'int32', 'int64', 'long', 'short', 'size_t', 'ssize_t', 'string', 'time_t', 'uchar', 'uint', 'uint8', 'uint16', 'uint32', 'uint64', 'ulong', 'unichar', 'ushort'), suffix='\\b'), Keyword.Type), ('(true|false|null)\\b', Name.Builtin), ('[a-zA-Z_]\\w*', Name)], 'root': [include('whitespace'), default('statement')], 'statement': [include('whitespace'), include('statements'), ('[{}]', Punctuation), (';', Punctuation, '#pop')], 'string': [('"', String, '#pop'), ('\\\\([\\\\abfnrtv"\\\']|x[a-fA-F0-9]{2,4}|[0-7]{1,3})', String.Escape), ('[^\\\\"\\n]+', String), ('\\\\\\n', String), ('\\\\', String)], 'if0': [('^\\s*#if.*?(?<!\\\\)\\n', Comment.Preproc, '#push'), ('^\\s*#el(?:se|if).*\\n', Comment.Preproc, '#pop'), ('^\\s*#endif.*?(?<!\\\\)\\n', Comment.Preproc, '#pop'), ('.*?\\n', Comment)], 'class': [('[a-zA-Z_]\\w*', Name.Class, '#pop')], 'namespace': [('[a-zA-Z_][\\w.]*', Name.Namespace, '#pop')]}

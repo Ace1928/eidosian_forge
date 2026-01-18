@@ -1,0 +1,19 @@
+from __future__ import (absolute_import, division, print_function)
+import json
+import re
+import sys
+import datetime
+import time
+import traceback
+from ansible.module_utils.basic import env_fallback, missing_required_lib
+from ansible.module_utils.urls import fetch_url
+from ansible.module_utils.six.moves.urllib.parse import urlencode
+def resource_attributes_should_be_changed(target, wished, verifiable_mutable_attributes, mutable_attributes):
+    diff = dict()
+    for attr in verifiable_mutable_attributes:
+        if wished[attr] is not None and target[attr] != wished[attr]:
+            diff[attr] = wished[attr]
+    if diff:
+        return dict(((attr, wished[attr]) for attr in mutable_attributes))
+    else:
+        return diff

@@ -1,0 +1,40 @@
+from dataclasses import dataclass
+@dataclass
+class train_config:
+    model_name: str = 'PATH/to/LLAMA/7B'
+    tokenizer_name: str = None
+    enable_fsdp: bool = False
+    low_cpu_fsdp: bool = False
+    run_validation: bool = True
+    batch_size_training: int = 4
+    batching_strategy: str = 'packing'
+    context_length: int = 4096
+    gradient_accumulation_steps: int = 1
+    gradient_clipping: bool = False
+    gradient_clipping_threshold: float = 1.0
+    num_epochs: int = 3
+    max_train_step: int = 0
+    max_eval_step: int = 0
+    num_workers_dataloader: int = 1
+    lr: float = 0.0001
+    weight_decay: float = 0.0
+    gamma: float = 0.85
+    seed: int = 42
+    use_fp16: bool = False
+    mixed_precision: bool = True
+    val_batch_size: int = 1
+    dataset = 'samsum_dataset'
+    peft_method: str = 'lora'
+    use_peft: bool = False
+    output_dir: str = 'PATH/to/save/PEFT/model'
+    freeze_layers: bool = False
+    num_freeze_layers: int = 1
+    quantization: bool = False
+    one_gpu: bool = False
+    save_model: bool = True
+    dist_checkpoint_root_folder: str = 'PATH/to/save/FSDP/model'
+    dist_checkpoint_folder: str = 'fine-tuned'
+    save_optimizer: bool = False
+    use_fast_kernels: bool = False
+    use_wandb: bool = False
+    save_metrics: bool = False

@@ -1,0 +1,32 @@
+import datetime
+import io
+import os
+import tempfile
+import unittest
+from io import BytesIO
+from testtools import PlaceHolder, TestCase, TestResult, skipIf
+from testtools.compat import _b, _u
+from testtools.content import Content, TracebackContent, text_content
+from testtools.content_type import ContentType
+from testtools.matchers import Contains, Equals, MatchesAny
+import iso8601
+import subunit
+from subunit.tests import (_remote_exception_repr,
+def test_keywords_during_failure(self):
+    self.protocol.lineReceived(_b('test old mcdonald\n'))
+    self.protocol.lineReceived(_b('failure: old mcdonald [\n'))
+    self.protocol.lineReceived(_b('test old mcdonald\n'))
+    self.protocol.lineReceived(_b('failure a\n'))
+    self.protocol.lineReceived(_b('failure: a\n'))
+    self.protocol.lineReceived(_b('error a\n'))
+    self.protocol.lineReceived(_b('error: a\n'))
+    self.protocol.lineReceived(_b('success a\n'))
+    self.protocol.lineReceived(_b('success: a\n'))
+    self.protocol.lineReceived(_b('successful a\n'))
+    self.protocol.lineReceived(_b('successful: a\n'))
+    self.protocol.lineReceived(_b(' ]\n'))
+    self.protocol.lineReceived(_b(']\n'))
+    self.assertEqual(self.stdout.getvalue(), _b(''))
+    details = {}
+    details['traceback'] = Content(ContentType('text', 'x-traceback', {'charset': 'utf8'}), lambda: [_b('test old mcdonald\nfailure a\nfailure: a\nerror a\nerror: a\nsuccess a\nsuccess: a\nsuccessful a\nsuccessful: a\n]\n')])
+    self.assertEqual(self.client._events, [('startTest', self.test), ('addFailure', self.test, details), ('stopTest', self.test)])

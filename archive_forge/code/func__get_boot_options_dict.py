@@ -1,0 +1,48 @@
+from __future__ import absolute_import, division, print_function
+import json
+import os
+import random
+import string
+import gzip
+from io import BytesIO
+from ansible.module_utils.urls import open_url
+from ansible.module_utils.common.text.converters import to_native
+from ansible.module_utils.common.text.converters import to_text
+from ansible.module_utils.common.text.converters import to_bytes
+from ansible.module_utils.six import text_type
+from ansible.module_utils.six.moves import http_client
+from ansible.module_utils.six.moves.urllib.error import URLError, HTTPError
+from ansible.module_utils.six.moves.urllib.parse import urlparse
+from ansible.module_utils.ansible_release import __version__ as ansible_version
+from ansible_collections.community.general.plugins.module_utils.version import LooseVersion
+def _get_boot_options_dict(self, boot):
+    properties = ['DisplayName', 'BootOptionReference']
+    if 'BootOptions' in boot and '@odata.id' in boot['BootOptions']:
+        boot_options_uri = boot['BootOptions']['@odata.id']
+        response = self.get_request(self.root_uri + boot_options_uri)
+        if response['ret'] is False:
+            return {}
+        data = response['data']
+        if 'Members' not in data:
+            return {}
+        members = data['Members']
+    else:
+        members = []
+    boot_options_dict = {}
+    for member in members:
+        if '@odata.id' not in member:
+            return {}
+        boot_option_uri = member['@odata.id']
+        response = self.get_request(self.root_uri + boot_option_uri)
+        if response['ret'] is False:
+            return {}
+        data = response['data']
+        if 'BootOptionReference' not in data:
+            return {}
+        boot_option_ref = data['BootOptionReference']
+        boot_props = {}
+        for prop in properties:
+            if prop in data:
+                boot_props[prop] = data[prop]
+        boot_options_dict[boot_option_ref] = boot_props
+    return boot_options_dict

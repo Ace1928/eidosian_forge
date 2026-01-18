@@ -1,0 +1,10 @@
+import inspect
+import io
+import os
+import platform
+import warnings
+import numpy
+import cupy
+import cupy_backends
+def get_install_info():
+    return _InstallInfo()

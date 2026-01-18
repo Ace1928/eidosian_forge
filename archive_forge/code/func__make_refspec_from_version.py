@@ -1,0 +1,26 @@
+import asyncio
+import json
+import logging
+import os
+import platform
+import re
+import subprocess
+import sys
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+import click
+import wandb
+import wandb.docker as docker
+from wandb import util
+from wandb.apis.internal import Api
+from wandb.errors import CommError
+from wandb.sdk.launch.errors import LaunchError
+from wandb.sdk.launch.git_reference import GitReference
+from wandb.sdk.launch.wandb_reference import WandbReference
+from wandb.sdk.wandb_config import Config
+from .builder.templates._wandb_bootstrap import (
+def _make_refspec_from_version(version: Optional[str]) -> List[str]:
+    """Create a refspec that checks for the existence of origin/main and the version."""
+    if version:
+        return [f'+{version}']
+    return ['+refs/heads/main*:refs/remotes/origin/main*', '+refs/heads/master*:refs/remotes/origin/master*']

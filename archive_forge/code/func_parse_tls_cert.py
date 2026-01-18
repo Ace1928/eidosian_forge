@@ -1,0 +1,21 @@
+import abc
+import codecs
+import os.path
+import random
+import re
+import sys
+import uuid
+import weakref
+import ldap.controls
+import ldap.filter
+import ldappool
+from oslo_log import log
+from oslo_utils import reflection
+from keystone.common import driver_hints
+from keystone import exception
+from keystone.i18n import _
+def parse_tls_cert(opt):
+    try:
+        return LDAP_TLS_CERTS[opt]
+    except KeyError:
+        raise ValueError(_('Invalid LDAP TLS certs option: %(option)s. Choose one of: %(options)s') % {'option': opt, 'options': ', '.join(LDAP_TLS_CERTS.keys())})

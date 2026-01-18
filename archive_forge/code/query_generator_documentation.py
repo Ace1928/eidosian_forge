@@ -1,0 +1,1 @@
+QueryGenerator is a helper object to write filters for runs.

@@ -1,0 +1,42 @@
+import copy
+import warnings
+import numpy as np
+import numba
+from numba.core.transforms import find_setupwiths, with_lifting
+from numba.core.withcontexts import bypass_context, call_context, objmode_context
+from numba.core.bytecode import FunctionIdentity, ByteCode
+from numba.core.interpreter import Interpreter
+from numba.core import errors
+from numba.core.registry import cpu_target
+from numba.core.compiler import compile_ir, DEFAULT_FLAGS
+from numba import njit, typeof, objmode, types
+from numba.core.extending import overload
+from numba.tests.support import (MemoryLeak, TestCase, captured_stdout,
+from numba.core.utils import PYVERSION
+from numba.experimental import jitclass
+import unittest
+class TestBogusContext(BaseTestWithLifting):
+
+    def test_undefined_global(self):
+        the_ir = get_func_ir(lift_undefiend)
+        with self.assertRaises(errors.CompilerError) as raises:
+            with_lifting(the_ir, self.typingctx, self.targetctx, self.flags, locals={})
+        self.assertIn('Undefined variable used as context manager', str(raises.exception))
+
+    def test_invalid(self):
+        the_ir = get_func_ir(lift_invalid)
+        with self.assertRaises(errors.CompilerError) as raises:
+            with_lifting(the_ir, self.typingctx, self.targetctx, self.flags, locals={})
+        self.assertIn('Unsupported context manager in use', str(raises.exception))
+
+    def test_with_as_fails_gracefully(self):
+
+        @njit
+        def foo():
+            with open('') as f:
+                pass
+        with self.assertRaises(errors.UnsupportedError) as raises:
+            foo()
+        excstr = str(raises.exception)
+        msg = "The 'with (context manager) as (variable):' construct is not supported."
+        self.assertIn(msg, excstr)

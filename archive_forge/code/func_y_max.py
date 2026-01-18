@@ -1,0 +1,22 @@
+from collections import OrderedDict, defaultdict
+from itertools import cycle, tee
+import bokeh.plotting as bkp
+import matplotlib.pyplot as plt
+import numpy as np
+from bokeh.models import Band, ColumnDataSource, DataRange1d
+from bokeh.models.annotations import Title, Legend
+from bokeh.models.tickers import FixedTicker
+from ....sel_utils import xarray_var_iter
+from ....rcparams import rcParams
+from ....stats import hdi
+from ....stats.density_utils import get_bins, histogram, kde
+from ....stats.diagnostics import _ess, _rhat
+from ...plot_utils import _scale_fig_size
+from .. import show_layout
+from . import backend_kwarg_defaults
+def y_max(self):
+    """Get max y value for the variable."""
+    end_y = max((y for y, *_ in self.iterator()))
+    if self.combined:
+        end_y += self.group_offset
+    return end_y + 2 * self.group_offset

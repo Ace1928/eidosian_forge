@@ -1,0 +1,31 @@
+from pyomo.common.config import ConfigBlock, ConfigList, ConfigValue
+def default_config_block(solver, init=False):
+    config, blocks = Default_Config().config_block(init)
+    solver = ConfigBlock()
+    solver.declare('solver name', ConfigValue('glpk', str, 'Solver name', None))
+    solver.declare('solver executable', ConfigValue(default=None, domain=str, description='The solver executable used by the solver interface.', doc="The solver executable used by the solver interface. This option is only valid for those solver interfaces that interact with a local executable through the shell. If unset, the solver interface will attempt to find an executable within the search path of the shell's environment that matches a name commonly associated with the solver interface."))
+    solver.declare('io format', ConfigValue(None, str, 'The type of IO used to execute the solver. Different solvers support different types of IO, but the following are common options: lp - generate LP files, nl - generate NL files, python - direct Python interface, os - generate OSiL XML files.', None))
+    solver.declare('manager', ConfigValue('serial', str, 'The technique that is used to manage solver executions.', None))
+    solver.declare('options', ConfigBlock(implicit=True, implicit_domain=ConfigValue(None, str, 'Solver option', None), description='Options passed into the solver'))
+    solver.declare('options string', ConfigValue(None, str, 'String describing solver options', None))
+    solver.declare('suffixes', ConfigList([], ConfigValue(None, str, 'Suffix', None), "Solution suffixes that will be extracted by the solver (e.g., rc, dual, or slack). The use of this option is not required when a suffix has been declared on the model using Pyomo's Suffix component.", None))
+    blocks['solver'] = solver
+    solver_list = config.declare('solvers', ConfigList([], solver, 'List of solvers.  The first solver in this list is the main solver.', None))
+    solver_list.append()
+    solver_list[0].get('solver executable').declare_as_argument('--solver-executable', dest='solver_executable', metavar='FILE')
+    solver_list[0].get('io format').declare_as_argument('--solver-io', dest='io_format', metavar='FORMAT')
+    solver_list[0].get('manager').declare_as_argument('--solver-manager', dest='smanager_type', metavar='TYPE')
+    solver_list[0].get('options string').declare_as_argument('--solver-options', dest='options_string', metavar='STRING')
+    solver_list[0].get('suffixes').declare_as_argument('--solver-suffix', dest='solver_suffixes')
+    config.declare('postprocess', ConfigList([], ConfigValue(None, str, 'Module', None), 'Specify a Python module that gets executed after optimization.', None)).declare_as_argument(dest='postprocess')
+    postsolve = config.declare('postsolve', ConfigBlock())
+    blocks['postsolve'] = postsolve
+    postsolve.declare('print logfile', ConfigValue(False, bool, 'Print the solver logfile after performing optimization.', None)).declare_as_argument('-l', '--log', dest='log')
+    postsolve.declare('save results', ConfigValue(None, str, 'Specify the filename to which the results are saved.', None)).declare_as_argument('--save-results', dest='save_results', metavar='FILE')
+    postsolve.declare('show results', ConfigValue(False, bool, 'Print the results object after optimization.', None)).declare_as_argument(dest='show_results')
+    postsolve.declare('results format', ConfigValue(None, str, 'Specify the results format:  json or yaml.', None)).declare_as_argument('--results-format', dest='results_format', metavar='FORMAT').declare_as_argument('--json', dest='results_format', action='store_const', const='json', help='Store results in JSON format')
+    postsolve.declare('summary', ConfigValue(False, bool, 'Summarize the final solution after performing optimization.', None)).declare_as_argument(dest='summary')
+    runtime = blocks['runtime']
+    runtime.declare('only instance', ConfigValue(False, bool, 'Generate a model instance, and then exit', None)).declare_as_argument('--instance-only', dest='only_instance')
+    runtime.declare('stream output', ConfigValue(False, bool, "Stream the solver output to provide information about the solver's progress.", None)).declare_as_argument('--stream-output', '--stream-solver', dest='tee')
+    return (config, blocks)

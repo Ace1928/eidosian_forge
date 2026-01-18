@@ -1,0 +1,39 @@
+import tempfile
+import os
+import pickle
+import random
+import collections
+import itertools
+from io import StringIO
+import pyomo.common.unittest as unittest
+from pyomo.core.expr.numvalue import native_numeric_types
+from pyomo.core.expr.symbol_map import SymbolMap
+import pyomo.kernel as pmo
+from pyomo.common.log import LoggingIntercept
+from pyomo.core.tests.unit.kernel.test_dict_container import (
+from pyomo.core.tests.unit.kernel.test_tuple_container import (
+from pyomo.core.tests.unit.kernel.test_list_container import (
+from pyomo.core.kernel.base import ICategorizedObject, ICategorizedObjectContainer
+from pyomo.core.kernel.heterogeneous_container import (
+from pyomo.common.collections import ComponentMap
+from pyomo.core.kernel.suffix import suffix
+from pyomo.core.kernel.constraint import (
+from pyomo.core.kernel.parameter import parameter, parameter_dict, parameter_list
+from pyomo.core.kernel.expression import (
+from pyomo.core.kernel.objective import objective, objective_dict, objective_list
+from pyomo.core.kernel.variable import IVariable, variable, variable_dict, variable_list
+from pyomo.core.kernel.block import IBlock, block, block_dict, block_tuple, block_list
+from pyomo.core.kernel.sos import sos
+from pyomo.opt.results import Solution
+def test_components_no_descend_active_None(self):
+    for obj in self._components_no_descend:
+        self.assertTrue(isinstance(obj, ICategorizedObjectContainer))
+        self.assertTrue(isinstance(obj, IBlock))
+        for c in obj.components(descend_into=False):
+            self.assertTrue(_path_to_object_exists(obj, c))
+        self.assertEqual(sorted((str(_b) for _b in obj.components(ctype=IBlock, active=None, descend_into=False))), sorted((str(_b) for _b in self._components_no_descend[obj][IBlock])))
+        self.assertEqual(set((id(_b) for _b in obj.components(ctype=IBlock, active=None, descend_into=False))), set((id(_b) for _b in self._components_no_descend[obj][IBlock])))
+        self.assertEqual(sorted((str(_v) for _v in obj.components(ctype=IVariable, active=None, descend_into=False))), sorted((str(_v) for _v in self._components_no_descend[obj][IVariable])))
+        self.assertEqual(set((id(_v) for _v in obj.components(ctype=IVariable, active=None, descend_into=False))), set((id(_v) for _v in self._components_no_descend[obj][IVariable])))
+        self.assertEqual(sorted((str(_c) for _c in obj.components(active=None, descend_into=False))), sorted((str(_c) for ctype in self._components_no_descend[obj] for _c in self._components_no_descend[obj][ctype])))
+        self.assertEqual(set((id(_c) for _c in obj.components(active=None, descend_into=False))), set((id(_c) for ctype in self._components_no_descend[obj] for _c in self._components_no_descend[obj][ctype])))

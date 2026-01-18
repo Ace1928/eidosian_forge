@@ -1,0 +1,16 @@
+import math
+import unittest
+import numpy as np
+import pytest
+import scipy.linalg as la
+import scipy.stats as st
+import cvxpy as cp
+import cvxpy.tests.solver_test_helpers as sths
+from cvxpy.reductions.solvers.defines import (
+from cvxpy.tests.base_test import BaseTest
+from cvxpy.tests.solver_test_helpers import (
+from cvxpy.utilities.versioning import Version
+def test_scip_test_params__valid_scip_params(self) -> None:
+    prob = self.get_simple_problem()
+    prob.solve(solver='SCIP', scip_params={'lp/fastmip': 1, 'limits/gap': 0.1})
+    assert prob.value == 3

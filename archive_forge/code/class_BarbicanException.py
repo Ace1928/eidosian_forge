@@ -1,0 +1,2 @@
+class BarbicanException(Exception):
+    pass

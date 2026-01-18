@@ -1,0 +1,2 @@
+class StandardizeError(MolVSError):
+    pass

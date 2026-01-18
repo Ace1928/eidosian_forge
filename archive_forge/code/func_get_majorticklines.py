@@ -1,0 +1,24 @@
+import datetime
+import functools
+import logging
+from numbers import Real
+import warnings
+import numpy as np
+import matplotlib as mpl
+from matplotlib import _api, cbook
+import matplotlib.artist as martist
+import matplotlib.colors as mcolors
+import matplotlib.lines as mlines
+import matplotlib.scale as mscale
+import matplotlib.text as mtext
+import matplotlib.ticker as mticker
+import matplotlib.transforms as mtransforms
+import matplotlib.units as munits
+def get_majorticklines(self):
+    """Return this Axis' major tick lines as a list of `.Line2D`\\s."""
+    lines = []
+    ticks = self.get_major_ticks()
+    for tick in ticks:
+        lines.append(tick.tick1line)
+        lines.append(tick.tick2line)
+    return cbook.silent_list('Line2D ticklines', lines)

@@ -1,0 +1,2 @@
+class InvalidIssuedAtError(InvalidTokenError):
+    pass

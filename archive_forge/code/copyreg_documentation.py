@@ -1,0 +1,1 @@
+Unregister an extension code.  For testing only.

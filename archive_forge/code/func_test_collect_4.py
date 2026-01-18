@@ -1,0 +1,24 @@
+from sympy.core.add import Add
+from sympy.core.function import (Derivative, Function, diff)
+from sympy.core.mul import Mul
+from sympy.core.numbers import (I, Rational)
+from sympy.core.power import Pow
+from sympy.core.singleton import S
+from sympy.core.symbol import (Symbol, Wild, symbols)
+from sympy.functions.elementary.complexes import Abs
+from sympy.functions.elementary.exponential import (exp, log)
+from sympy.functions.elementary.miscellaneous import (root, sqrt)
+from sympy.functions.elementary.trigonometric import (cos, sin)
+from sympy.polys.polytools import factor
+from sympy.series.order import O
+from sympy.simplify.radsimp import (collect, collect_const, fraction, radsimp, rcollect)
+from sympy.core.expr import unchanged
+from sympy.core.mul import _unevaluated_Mul as umul
+from sympy.simplify.radsimp import (_unevaluated_Add,
+from sympy.testing.pytest import raises
+from sympy.abc import x, y, z, a, b, c, d
+def test_collect_4():
+    """Collect with respect to a power"""
+    a, b, c, x = symbols('a,b,c,x')
+    assert collect(a * x ** c + b * x ** c, x ** c) == x ** c * (a + b)
+    assert collect(a * x ** (2 * c) + b * x ** (2 * c), x ** c) == x ** (2 * c) * (a + b)

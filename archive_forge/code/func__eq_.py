@@ -1,0 +1,16 @@
+import collections
+import functools
+import numbers
+import sys
+from torch.utils.data.datapipes._hook_iterator import hook_iterator, _SnapshotState
+from typing import (Any, Dict, Iterator, Generic, List, Set, Tuple, TypeVar, Union,
+from typing import _eval_type, _tp_cache, _type_check, _type_repr  # type: ignore[attr-defined]
+from typing import ForwardRef
+from abc import ABCMeta
+from typing import _GenericAlias  # type: ignore[attr-defined, no-redef]
+def _eq_(self, other):
+    if not isinstance(other, _DataPipeMeta):
+        return NotImplemented
+    if self.__origin__ is None or other.__origin__ is None:
+        return self is other
+    return self.__origin__ == other.__origin__ and self.type == other.type

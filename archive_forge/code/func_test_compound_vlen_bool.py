@@ -1,0 +1,30 @@
+from itertools import count
+import platform
+import numpy as np
+import h5py
+from .common import ut, TestCase
+def test_compound_vlen_bool(self):
+    vidt = h5py.vlen_dtype(np.uint8)
+
+    def a(items):
+        return np.array(items, dtype=np.uint8)
+    f = self.f
+    dt_vb = np.dtype([('foo', vidt), ('logical', bool)])
+    vb = f.create_dataset('dt_vb', shape=(4,), dtype=dt_vb)
+    data = np.array([(a([1, 2, 3]), True), (a([1]), False), (a([1, 5]), True), (a([]), False)], dtype=dt_vb)
+    vb[:] = data
+    actual = f['dt_vb'][:]
+    self.assertVlenArrayEqual(data['foo'], actual['foo'])
+    self.assertArrayEqual(data['logical'], actual['logical'])
+    dt_vv = np.dtype([('foo', vidt), ('bar', vidt)])
+    f.create_dataset('dt_vv', shape=(4,), dtype=dt_vv)
+    dt_vvb = np.dtype([('foo', vidt), ('bar', vidt), ('logical', bool)])
+    vvb = f.create_dataset('dt_vvb', shape=(2,), dtype=dt_vvb)
+    dt_bvv = np.dtype([('logical', bool), ('foo', vidt), ('bar', vidt)])
+    bvv = f.create_dataset('dt_bvv', shape=(2,), dtype=dt_bvv)
+    data = np.array([(True, a([1, 2, 3]), a([1, 2])), (False, a([]), a([2, 4, 6]))], dtype=bvv)
+    bvv[:] = data
+    actual = bvv[:]
+    self.assertVlenArrayEqual(data['foo'], actual['foo'])
+    self.assertVlenArrayEqual(data['bar'], actual['bar'])
+    self.assertArrayEqual(data['logical'], actual['logical'])

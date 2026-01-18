@@ -1,0 +1,9 @@
+import xcffib
+import struct
+import io
+from . import xproto
+from . import xfixes
+def GetOverlayWindow(self, window, is_checked=True):
+    buf = io.BytesIO()
+    buf.write(struct.pack('=xx2xI', window))
+    return self.send_request(7, buf, GetOverlayWindowCookie, is_checked=is_checked)

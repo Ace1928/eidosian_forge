@@ -1,0 +1,337 @@
+import copy
+import logging
+import sys
+import threading
+import time
+from collections import OrderedDict, defaultdict
+from typing import Any, Dict, List
+import botocore
+from boto3.resources.base import ServiceResource
+import ray
+import ray._private.ray_constants as ray_constants
+from ray.autoscaler._private.aws.cloudwatch.cloudwatch_helper import (
+from ray.autoscaler._private.aws.config import bootstrap_aws
+from ray.autoscaler._private.aws.utils import (
+from ray.autoscaler._private.cli_logger import cf, cli_logger
+from ray.autoscaler._private.constants import BOTO_CREATE_MAX_RETRIES, BOTO_MAX_RETRIES
+from ray.autoscaler._private.log_timer import LogTimer
+from ray.autoscaler.node_launch_exception import NodeLaunchException
+from ray.autoscaler.node_provider import NodeProvider
+from ray.autoscaler.tags import (
+class AWSNodeProvider(NodeProvider):
+    max_terminate_nodes = 1000
+
+    def __init__(self, provider_config, cluster_name):
+        NodeProvider.__init__(self, provider_config, cluster_name)
+        self.cache_stopped_nodes = provider_config.get('cache_stopped_nodes', True)
+        aws_credentials = provider_config.get('aws_credentials')
+        self.ec2 = make_ec2_resource(region=provider_config['region'], max_retries=BOTO_MAX_RETRIES, aws_credentials=aws_credentials)
+        self.ec2_fail_fast = make_ec2_resource(region=provider_config['region'], max_retries=0, aws_credentials=aws_credentials)
+        self.tag_cache = {}
+        self.tag_cache_pending = defaultdict(dict)
+        self.batch_thread_count = 0
+        self.batch_update_done = threading.Event()
+        self.batch_update_done.set()
+        self.ready_for_new_batch = threading.Event()
+        self.ready_for_new_batch.set()
+        self.tag_cache_lock = threading.Lock()
+        self.count_lock = threading.Lock()
+        self.cached_nodes = {}
+
+    def non_terminated_nodes(self, tag_filters):
+        tag_filters = to_aws_format(tag_filters)
+        filters = [{'Name': 'instance-state-name', 'Values': ['pending', 'running']}, {'Name': 'tag:{}'.format(TAG_RAY_CLUSTER_NAME), 'Values': [self.cluster_name]}]
+        for k, v in tag_filters.items():
+            filters.append({'Name': 'tag:{}'.format(k), 'Values': [v]})
+        with boto_exception_handler('Failed to fetch running instances from AWS.'):
+            nodes = list(self.ec2.instances.filter(Filters=filters))
+        for node in nodes:
+            if node.id in self.tag_cache:
+                continue
+            self.tag_cache[node.id] = from_aws_format({x['Key']: x['Value'] for x in node.tags})
+        self.cached_nodes = {node.id: node for node in nodes}
+        return [node.id for node in nodes]
+
+    def is_running(self, node_id):
+        node = self._get_cached_node(node_id)
+        return node.state['Name'] == 'running'
+
+    def is_terminated(self, node_id):
+        node = self._get_cached_node(node_id)
+        state = node.state['Name']
+        return state not in ['running', 'pending']
+
+    def node_tags(self, node_id):
+        with self.tag_cache_lock:
+            d1 = self.tag_cache[node_id]
+            d2 = self.tag_cache_pending.get(node_id, {})
+            return dict(d1, **d2)
+
+    def external_ip(self, node_id):
+        node = self._get_cached_node(node_id)
+        if node.public_ip_address is None:
+            node = self._get_node(node_id)
+        return node.public_ip_address
+
+    def internal_ip(self, node_id):
+        node = self._get_cached_node(node_id)
+        if node.private_ip_address is None:
+            node = self._get_node(node_id)
+        return node.private_ip_address
+
+    def set_node_tags(self, node_id, tags):
+        is_batching_thread = False
+        with self.tag_cache_lock:
+            if not self.tag_cache_pending:
+                is_batching_thread = True
+                self.ready_for_new_batch.wait()
+                self.ready_for_new_batch.clear()
+                self.batch_update_done.clear()
+            self.tag_cache_pending[node_id].update(tags)
+        if is_batching_thread:
+            time.sleep(TAG_BATCH_DELAY)
+            with self.tag_cache_lock:
+                self._update_node_tags()
+                self.batch_update_done.set()
+        with self.count_lock:
+            self.batch_thread_count += 1
+        self.batch_update_done.wait()
+        with self.count_lock:
+            self.batch_thread_count -= 1
+            if self.batch_thread_count == 0:
+                self.ready_for_new_batch.set()
+
+    def _update_node_tags(self):
+        batch_updates = defaultdict(list)
+        for node_id, tags in self.tag_cache_pending.items():
+            for x in tags.items():
+                batch_updates[x].append(node_id)
+            self.tag_cache[node_id].update(tags)
+        self.tag_cache_pending = defaultdict(dict)
+        self._create_tags(batch_updates)
+
+    def _create_tags(self, batch_updates):
+        for (k, v), node_ids in batch_updates.items():
+            m = 'Set tag {}={} on {}'.format(k, v, node_ids)
+            with LogTimer('AWSNodeProvider: {}'.format(m)):
+                if k == TAG_RAY_NODE_NAME:
+                    k = 'Name'
+                self.ec2.meta.client.create_tags(Resources=node_ids, Tags=[{'Key': k, 'Value': v}])
+
+    def create_node(self, node_config, tags, count) -> Dict[str, Any]:
+        """Creates instances.
+
+        Returns dict mapping instance id to ec2.Instance object for the created
+        instances.
+        """
+        tags = OrderedDict(sorted(copy.deepcopy(tags).items()))
+        reused_nodes_dict = {}
+        if self.cache_stopped_nodes:
+            filters = [{'Name': 'instance-state-name', 'Values': ['stopped', 'stopping']}, {'Name': 'tag:{}'.format(TAG_RAY_CLUSTER_NAME), 'Values': [self.cluster_name]}, {'Name': 'tag:{}'.format(TAG_RAY_NODE_KIND), 'Values': [tags[TAG_RAY_NODE_KIND]]}, {'Name': 'tag:{}'.format(TAG_RAY_LAUNCH_CONFIG), 'Values': [tags[TAG_RAY_LAUNCH_CONFIG]]}]
+            if TAG_RAY_USER_NODE_TYPE in tags:
+                filters.append({'Name': 'tag:{}'.format(TAG_RAY_USER_NODE_TYPE), 'Values': [tags[TAG_RAY_USER_NODE_TYPE]]})
+            reuse_nodes = list(self.ec2.instances.filter(Filters=filters))[:count]
+            reuse_node_ids = [n.id for n in reuse_nodes]
+            reused_nodes_dict = {n.id: n for n in reuse_nodes}
+            if reuse_nodes:
+                cli_logger.print('Reusing nodes {}. To disable reuse, set `cache_stopped_nodes: False` under `provider` in the cluster configuration.', cli_logger.render_list(reuse_node_ids))
+                with cli_logger.group('Stopping instances to reuse'):
+                    for node in reuse_nodes:
+                        self.tag_cache[node.id] = from_aws_format({x['Key']: x['Value'] for x in node.tags})
+                        if node.state['Name'] == 'stopping':
+                            cli_logger.print('Waiting for instance {} to stop', node.id)
+                            node.wait_until_stopped()
+                self.ec2.meta.client.start_instances(InstanceIds=reuse_node_ids)
+                for node_id in reuse_node_ids:
+                    self.set_node_tags(node_id, tags)
+                count -= len(reuse_node_ids)
+        created_nodes_dict = {}
+        if count:
+            created_nodes_dict = self._create_node(node_config, tags, count)
+        all_created_nodes = reused_nodes_dict
+        all_created_nodes.update(created_nodes_dict)
+        return all_created_nodes
+
+    @staticmethod
+    def _merge_tag_specs(tag_specs: List[Dict[str, Any]], user_tag_specs: List[Dict[str, Any]]) -> None:
+        """
+        Merges user-provided node config tag specifications into a base
+        list of node provider tag specifications. The base list of
+        node provider tag specs is modified in-place.
+
+        This allows users to add tags and override values of existing
+        tags with their own, and only applies to the resource type
+        "instance". All other resource types are appended to the list of
+        tag specs.
+
+        Args:
+            tag_specs (List[Dict[str, Any]]): base node provider tag specs
+            user_tag_specs (List[Dict[str, Any]]): user's node config tag specs
+        """
+        for user_tag_spec in user_tag_specs:
+            if user_tag_spec['ResourceType'] == 'instance':
+                for user_tag in user_tag_spec['Tags']:
+                    exists = False
+                    for tag in tag_specs[0]['Tags']:
+                        if user_tag['Key'] == tag['Key']:
+                            exists = True
+                            tag['Value'] = user_tag['Value']
+                            break
+                    if not exists:
+                        tag_specs[0]['Tags'] += [user_tag]
+            else:
+                tag_specs += [user_tag_spec]
+
+    def _create_node(self, node_config, tags, count):
+        created_nodes_dict = {}
+        tags = to_aws_format(tags)
+        conf = node_config.copy()
+        tag_pairs = [{'Key': TAG_RAY_CLUSTER_NAME, 'Value': self.cluster_name}]
+        for k, v in tags.items():
+            tag_pairs.append({'Key': k, 'Value': v})
+        if CloudwatchHelper.cloudwatch_config_exists(self.provider_config, 'agent'):
+            cwa_installed = self._check_ami_cwa_installation(node_config)
+            if cwa_installed:
+                tag_pairs.extend([{'Key': CLOUDWATCH_AGENT_INSTALLED_TAG, 'Value': 'True'}])
+        tag_specs = [{'ResourceType': 'instance', 'Tags': tag_pairs}]
+        user_tag_specs = conf.get('TagSpecifications', [])
+        AWSNodeProvider._merge_tag_specs(tag_specs, user_tag_specs)
+        subnet_ids = conf.pop('SubnetIds')
+        conf.update({'MinCount': 1, 'MaxCount': count, 'TagSpecifications': tag_specs})
+        subnet_idx = 0
+        cli_logger_tags = {}
+        max_tries = max(BOTO_CREATE_MAX_RETRIES, len(subnet_ids))
+        for attempt in range(1, max_tries + 1):
+            try:
+                if 'NetworkInterfaces' in conf:
+                    net_ifs = conf['NetworkInterfaces']
+                    conf.pop('SecurityGroupIds', None)
+                    cli_logger_tags['network_interfaces'] = str(net_ifs)
+                else:
+                    subnet_id = subnet_ids[subnet_idx % len(subnet_ids)]
+                    conf['SubnetId'] = subnet_id
+                    cli_logger_tags['subnet_id'] = subnet_id
+                created = self.ec2_fail_fast.create_instances(**conf)
+                created_nodes_dict = {n.id: n for n in created}
+                with cli_logger.group('Launched {} nodes', count, _tags=cli_logger_tags):
+                    for instance in created:
+                        state_reason = instance.state_reason or {'Message': 'pending'}
+                        cli_logger.print('Launched instance {}', instance.instance_id, _tags=dict(state=instance.state['Name'], info=state_reason['Message']))
+                break
+            except botocore.exceptions.ClientError as exc:
+                subnet_idx += 1
+                if attempt == max_tries:
+                    try:
+                        exc = NodeLaunchException(category=exc.response['Error']['Code'], description=exc.response['Error']['Message'], src_exc_info=sys.exc_info())
+                    except Exception:
+                        logger.warning("Couldn't parse exception.", exc)
+                        pass
+                    cli_logger.abort('Failed to launch instances. Max attempts exceeded.', exc=exc)
+                else:
+                    cli_logger.warning('create_instances: Attempt failed with {}, retrying.', exc)
+        return created_nodes_dict
+
+    def terminate_node(self, node_id):
+        node = self._get_cached_node(node_id)
+        if self.cache_stopped_nodes:
+            if node.spot_instance_request_id:
+                cli_logger.print('Terminating instance {} ' + cf.dimmed('(cannot stop spot instances, only terminate)'), node_id)
+                node.terminate()
+            else:
+                cli_logger.print('Stopping instance {} ' + cf.dimmed('(to terminate instead, set `cache_stopped_nodes: False` under `provider` in the cluster configuration)'), node_id)
+                node.stop()
+        else:
+            node.terminate()
+
+    def _check_ami_cwa_installation(self, config):
+        response = self.ec2.meta.client.describe_images(ImageIds=[config['ImageId']])
+        cwa_installed = False
+        images = response.get('Images')
+        if images:
+            assert len(images) == 1, f'Expected to find only 1 AMI with the given ID, but found {len(images)}.'
+            image_name = images[0].get('Name', '')
+            if CLOUDWATCH_AGENT_INSTALLED_AMI_TAG in image_name:
+                cwa_installed = True
+        return cwa_installed
+
+    def terminate_nodes(self, node_ids):
+        if not node_ids:
+            return
+        terminate_instances_func = self.ec2.meta.client.terminate_instances
+        stop_instances_func = self.ec2.meta.client.stop_instances
+        nodes_to_terminate = {terminate_instances_func: [], stop_instances_func: []}
+        if self.cache_stopped_nodes:
+            spot_ids = []
+            on_demand_ids = []
+            for node_id in node_ids:
+                if self._get_cached_node(node_id).spot_instance_request_id:
+                    spot_ids += [node_id]
+                else:
+                    on_demand_ids += [node_id]
+            if on_demand_ids:
+                cli_logger.print('Stopping instances {} ' + cf.dimmed('(to terminate instead, set `cache_stopped_nodes: False` under `provider` in the cluster configuration)'), cli_logger.render_list(on_demand_ids))
+            if spot_ids:
+                cli_logger.print('Terminating instances {} ' + cf.dimmed('(cannot stop spot instances, only terminate)'), cli_logger.render_list(spot_ids))
+            nodes_to_terminate[stop_instances_func] = on_demand_ids
+            nodes_to_terminate[terminate_instances_func] = spot_ids
+        else:
+            nodes_to_terminate[terminate_instances_func] = node_ids
+        max_terminate_nodes = self.max_terminate_nodes if self.max_terminate_nodes is not None else len(node_ids)
+        for terminate_func, nodes in nodes_to_terminate.items():
+            for start in range(0, len(nodes), max_terminate_nodes):
+                terminate_func(InstanceIds=nodes[start:start + max_terminate_nodes])
+
+    def _get_node(self, node_id):
+        """Refresh and get info for this node, updating the cache."""
+        self.non_terminated_nodes({})
+        if node_id in self.cached_nodes:
+            return self.cached_nodes[node_id]
+        matches = list(self.ec2.instances.filter(InstanceIds=[node_id]))
+        assert len(matches) == 1, 'Invalid instance id {}'.format(node_id)
+        return matches[0]
+
+    def _get_cached_node(self, node_id):
+        """Return node info from cache if possible, otherwise fetches it."""
+        if node_id in self.cached_nodes:
+            return self.cached_nodes[node_id]
+        return self._get_node(node_id)
+
+    @staticmethod
+    def bootstrap_config(cluster_config):
+        return bootstrap_aws(cluster_config)
+
+    @staticmethod
+    def fillout_available_node_types_resources(cluster_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Fills out missing "resources" field for available_node_types."""
+        if 'available_node_types' not in cluster_config:
+            return cluster_config
+        cluster_config = copy.deepcopy(cluster_config)
+        instances_list = list_ec2_instances(cluster_config['provider']['region'], cluster_config['provider'].get('aws_credentials'))
+        instances_dict = {instance['InstanceType']: instance for instance in instances_list}
+        available_node_types = cluster_config['available_node_types']
+        head_node_type = cluster_config['head_node_type']
+        for node_type in available_node_types:
+            instance_type = available_node_types[node_type]['node_config']['InstanceType']
+            if instance_type in instances_dict:
+                cpus = instances_dict[instance_type]['VCpuInfo']['DefaultVCpus']
+                autodetected_resources = {'CPU': cpus}
+                if node_type != head_node_type:
+                    memory_total = instances_dict[instance_type]['MemoryInfo']['SizeInMiB']
+                    memory_total = int(memory_total) * 1024 * 1024
+                    prop = 1 - ray_constants.DEFAULT_OBJECT_STORE_MEMORY_PROPORTION
+                    memory_resources = int(memory_total * prop)
+                    autodetected_resources['memory'] = memory_resources
+                for accelerator_manager in ray._private.accelerators.get_all_accelerator_managers():
+                    num_accelerators = accelerator_manager.get_ec2_instance_num_accelerators(instance_type, instances_dict)
+                    accelerator_type = accelerator_manager.get_ec2_instance_accelerator_type(instance_type, instances_dict)
+                    if num_accelerators:
+                        autodetected_resources[accelerator_manager.get_resource_name()] = num_accelerators
+                        if accelerator_type:
+                            autodetected_resources[f'accelerator_type:{accelerator_type}'] = 1
+                autodetected_resources.update(available_node_types[node_type].get('resources', {}))
+                if autodetected_resources != available_node_types[node_type].get('resources', {}):
+                    available_node_types[node_type]['resources'] = autodetected_resources
+                    logger.debug('Updating the resources of {} to {}.'.format(node_type, autodetected_resources))
+            else:
+                raise ValueError('Instance type ' + instance_type + ' is not available in AWS region: ' + cluster_config['provider']['region'] + '.')
+        return cluster_config

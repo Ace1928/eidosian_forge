@@ -1,0 +1,15 @@
+import numpy as np
+import shapely
+from shapely.geometry import (
+import geopandas
+from geopandas import GeoDataFrame, GeoSeries, clip
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+import pytest
+from geopandas.tools.clip import _mask_is_list_like_rectangle
+def test_clip_poly_geom_col_rename(self, buffered_locations, mask):
+    """Test clipping a polygon GDF with a generic polygon geometry."""
+    poly_gdf_geom_col_rename = buffered_locations.rename_geometry('geometry2')
+    clipped_poly = clip(poly_gdf_geom_col_rename, mask)
+    assert len(clipped_poly.geometry) == 3
+    assert 'geometry' not in clipped_poly.keys()
+    assert 'geometry2' in clipped_poly.keys()

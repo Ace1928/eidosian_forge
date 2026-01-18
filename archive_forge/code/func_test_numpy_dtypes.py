@@ -1,0 +1,10 @@
+import numpy as np
+import pytest
+from pandas.core.dtypes.cast import find_common_type
+from pandas.core.dtypes.common import pandas_dtype
+from pandas.core.dtypes.dtypes import (
+from pandas import (
+@pytest.mark.parametrize('source_dtypes,expected_common_dtype', [((np.int64,), np.int64), ((np.uint64,), np.uint64), ((np.float32,), np.float32), ((object,), object), ((np.int16, np.int64), np.int64), ((np.int32, np.uint32), np.int64), ((np.uint16, np.uint64), np.uint64), ((np.float16, np.float32), np.float32), ((np.float16, np.int16), np.float32), ((np.float32, np.int16), np.float32), ((np.uint64, np.int64), np.float64), ((np.int16, np.float64), np.float64), ((np.float16, np.int64), np.float64), ((np.complex128, np.int32), np.complex128), ((object, np.float32), object), ((object, np.int16), object), ((np.dtype('bool'), np.int64), object), ((np.dtype('bool'), np.int32), object), ((np.dtype('bool'), np.int16), object), ((np.dtype('bool'), np.int8), object), ((np.dtype('bool'), np.uint64), object), ((np.dtype('bool'), np.uint32), object), ((np.dtype('bool'), np.uint16), object), ((np.dtype('bool'), np.uint8), object), ((np.dtype('bool'), np.float64), object), ((np.dtype('bool'), np.float32), object), ((np.dtype('datetime64[ns]'), np.dtype('datetime64[ns]')), np.dtype('datetime64[ns]')), ((np.dtype('timedelta64[ns]'), np.dtype('timedelta64[ns]')), np.dtype('timedelta64[ns]')), ((np.dtype('datetime64[ns]'), np.dtype('datetime64[ms]')), np.dtype('datetime64[ns]')), ((np.dtype('timedelta64[ms]'), np.dtype('timedelta64[ns]')), np.dtype('timedelta64[ns]')), ((np.dtype('datetime64[ns]'), np.dtype('timedelta64[ns]')), object), ((np.dtype('datetime64[ns]'), np.int64), object)])
+def test_numpy_dtypes(source_dtypes, expected_common_dtype):
+    source_dtypes = [pandas_dtype(x) for x in source_dtypes]
+    assert find_common_type(source_dtypes) == expected_common_dtype

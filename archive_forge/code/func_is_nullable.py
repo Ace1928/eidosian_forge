@@ -1,0 +1,32 @@
+import copy
+import difflib
+import functools
+import sys
+from collections import Counter, namedtuple
+from collections.abc import Iterator, Mapping
+from itertools import chain, count, product
+from string import ascii_uppercase
+from django.core.exceptions import FieldDoesNotExist, FieldError
+from django.db import DEFAULT_DB_ALIAS, NotSupportedError, connections
+from django.db.models.aggregates import Count
+from django.db.models.constants import LOOKUP_SEP
+from django.db.models.expressions import (
+from django.db.models.fields import Field
+from django.db.models.fields.related_lookups import MultiColSource
+from django.db.models.lookups import Lookup
+from django.db.models.query_utils import (
+from django.db.models.sql.constants import INNER, LOUTER, ORDER_DIR, SINGLE
+from django.db.models.sql.datastructures import BaseTable, Empty, Join, MultiJoin
+from django.db.models.sql.where import AND, OR, ExtraWhere, NothingNode, WhereNode
+from django.utils.functional import cached_property
+from django.utils.regex_helper import _lazy_re_compile
+from django.utils.tree import Node
+def is_nullable(self, field):
+    """
+        Check if the given field should be treated as nullable.
+
+        Some backends treat '' as null and Django treats such fields as
+        nullable for those backends. In such situations field.null can be
+        False even if we should treat the field as nullable.
+        """
+    return field.null or (field.empty_strings_allowed and connections[DEFAULT_DB_ALIAS].features.interprets_empty_strings_as_nulls)

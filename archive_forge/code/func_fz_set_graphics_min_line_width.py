@@ -1,0 +1,22 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def fz_set_graphics_min_line_width(min_line_width):
+    """
+    Class-aware wrapper for `::fz_set_graphics_min_line_width()`.
+    	Set the minimum line width to be
+    	used for stroked lines.
+
+    	min_line_width: The minimum line width to use (in pixels).
+    """
+    return _mupdf.fz_set_graphics_min_line_width(min_line_width)

@@ -1,0 +1,19 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def ll_fz_print_stext_page_as_text(out, page):
+    """
+    Low-level wrapper for `::fz_print_stext_page_as_text()`.
+    Output structured text to a file in plain-text UTF-8 format.
+    """
+    return _mupdf.ll_fz_print_stext_page_as_text(out, page)

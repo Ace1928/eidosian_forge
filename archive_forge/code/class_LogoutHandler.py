@@ -1,0 +1,14 @@
+from ..base.handlers import JupyterHandler
+from .decorator import allow_unauthenticated
+class LogoutHandler(JupyterHandler):
+    """An auth logout handler."""
+
+    @allow_unauthenticated
+    def get(self):
+        """Handle a logout."""
+        self.identity_provider.clear_login_cookie(self)
+        if self.login_available:
+            message = {'info': 'Successfully logged out.'}
+        else:
+            message = {'warning': 'Cannot log out. Jupyter Server authentication is disabled.'}
+        self.write(self.render_template('logout.html', message=message))

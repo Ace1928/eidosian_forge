@@ -1,0 +1,2 @@
+class OrbSolutionTypeError(VerificationError):
+    pass

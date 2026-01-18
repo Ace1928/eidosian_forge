@@ -1,0 +1,19 @@
+import os
+import sys
+import traceback
+from _pydev_bundle.pydev_imports import xmlrpclib, _queue, Exec
+from  _pydev_bundle._pydev_calltip_util import get_description
+from _pydevd_bundle import pydevd_vars
+from _pydevd_bundle import pydevd_xml
+from _pydevd_bundle.pydevd_constants import (IS_JYTHON, NEXT_VALUE_SEPARATOR, get_global_debugger,
+from contextlib import contextmanager
+from _pydev_bundle import pydev_log
+from _pydevd_bundle.pydevd_utils import interrupt_main_thread
+from io import StringIO
+def getFrame(self):
+    xml = StringIO()
+    hidden_ns = self.get_ipython_hidden_vars_dict()
+    xml.write('<xml>')
+    xml.write(pydevd_xml.frame_vars_to_xml(self.get_namespace(), hidden_ns))
+    xml.write('</xml>')
+    return xml.getvalue()

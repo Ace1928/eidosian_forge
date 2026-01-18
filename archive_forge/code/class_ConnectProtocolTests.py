@@ -1,0 +1,66 @@
+from errno import EPERM
+from socket import AF_INET, AF_INET6, IPPROTO_TCP, SOCK_STREAM, AddressFamily, gaierror
+from types import FunctionType
+from unicodedata import normalize
+from unittest import skipIf
+from zope.interface import implementer, providedBy, provider
+from zope.interface.interface import InterfaceClass
+from zope.interface.verify import verifyClass, verifyObject
+from twisted import plugins
+from twisted.internet import (
+from twisted.internet.abstract import isIPv6Address
+from twisted.internet.address import (
+from twisted.internet.endpoints import StandardErrorBehavior
+from twisted.internet.error import ConnectingCancelledError
+from twisted.internet.interfaces import (
+from twisted.internet.protocol import ClientFactory, Factory, Protocol
+from twisted.internet.stdio import PipeAddress
+from twisted.internet.task import Clock
+from twisted.internet.testing import (
+from twisted.logger import ILogObserver, globalLogPublisher
+from twisted.plugin import getPlugins
+from twisted.protocols import basic, policies
+from twisted.python import log
+from twisted.python.compat import nativeString
+from twisted.python.components import proxyForInterface
+from twisted.python.failure import Failure
+from twisted.python.filepath import FilePath
+from twisted.python.modules import getModule
+from twisted.python.systemd import ListenFDs
+from twisted.test.iosim import connectableEndpoint, connectedServerAndClient
+from twisted.trial import unittest
+class ConnectProtocolTests(unittest.TestCase):
+    """
+    Tests for C{connectProtocol}.
+    """
+
+    def test_connectProtocolCreatesFactory(self):
+        """
+        C{endpoints.connectProtocol} calls the given endpoint's C{connect()}
+        method with a factory that will build the given protocol.
+        """
+        reactor = MemoryReactor()
+        endpoint = endpoints.TCP4ClientEndpoint(reactor, '127.0.0.1', 0)
+        theProtocol = object()
+        endpoints.connectProtocol(endpoint, theProtocol)
+        self.assertEqual(len(reactor.tcpClients), 1)
+        factory = reactor.tcpClients[0][2]._wrappedFactory
+        self.assertIsInstance(factory, protocol.Factory)
+        self.assertIs(factory.buildProtocol(None), theProtocol)
+
+    def test_connectProtocolReturnsConnectResult(self):
+        """
+        C{endpoints.connectProtocol} returns the result of calling the given
+        endpoint's C{connect()} method.
+        """
+        result = defer.Deferred()
+
+        class Endpoint:
+
+            def connect(self, factory):
+                """
+                Return a marker object for use in our assertion.
+                """
+                return result
+        endpoint = Endpoint()
+        self.assertIs(result, endpoints.connectProtocol(endpoint, object()))

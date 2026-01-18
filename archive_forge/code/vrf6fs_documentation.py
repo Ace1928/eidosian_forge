@@ -1,0 +1,12 @@
+import logging
+from os_ken.lib.packet.bgp import RF_IPv6_FLOWSPEC
+from os_ken.lib.packet.bgp import RF_VPNv6_FLOWSPEC
+from os_ken.lib.packet.bgp import FlowSpecIPv6NLRI
+from os_ken.lib.packet.bgp import FlowSpecVPNv6NLRI
+from os_ken.services.protocols.bgp.info_base.vpnv6fs import VPNv6FlowSpecPath
+from os_ken.services.protocols.bgp.info_base.vrffs import VRFFlowSpecDest
+from os_ken.services.protocols.bgp.info_base.vrffs import VRFFlowSpecPath
+from os_ken.services.protocols.bgp.info_base.vrffs import VRFFlowSpecTable
+Virtual Routing and Forwarding information base
+    for IPv6 Flow Specification.
+    

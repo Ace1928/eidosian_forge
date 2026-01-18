@@ -1,0 +1,44 @@
+import itertools
+import os
+import re
+import sys
+from abc import ABC, abstractmethod
+from contextlib import nullcontext
+from copy import deepcopy
+from enum import auto, Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from unittest import mock
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+from torch.distributed.fsdp import CPUOffload, FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp._common_utils import TrainingState
+from torch.distributed.fsdp._init_utils import NO_RESHARD_AFTER_FORWARD_STRATEGIES
+from torch.distributed.fsdp.fully_sharded_data_parallel import (
+from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
+from torch.distributed.fsdp.wrap import always_wrap_policy, ModuleWrapPolicy, wrap
+from torch.nn import TransformerDecoderLayer, TransformerEncoderLayer
+from torch.nn.parallel.distributed import DistributedDataParallel as DDP
+from torch.testing._internal.common_distributed import (
+from torch.testing._internal.common_utils import FILE_SCHEMA, get_cycles_per_ms
+class DummyProcessGroup:
+
+    def __init__(self, rank: int, size: int):
+        self._rank = rank
+        self._size = size
+
+    def rank(self) -> int:
+        return self._rank
+
+    def size(self) -> int:
+        return self._size
+
+    def allreduce(self, *args, **kwargs):
+        dist_wait = mock.Mock()
+
+        def get_future():
+            future = torch.futures.Future()
+            future.set_result(1)
+            return future
+        dist_wait.get_future = get_future
+        return dist_wait

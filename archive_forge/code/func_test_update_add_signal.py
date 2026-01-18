@@ -1,0 +1,37 @@
+import copy
+from unittest import mock
+from heat.common import exception
+from heat.common import template_format
+from heat.db import api as db_api
+from heat.engine.clients.os.keystone import fake_keystoneclient
+from heat.engine import environment
+from heat.engine import resource
+from heat.engine import rsrc_defn
+from heat.engine import scheduler
+from heat.engine import service
+from heat.engine import stack
+from heat.engine import support
+from heat.engine import template
+from heat.objects import stack as stack_object
+from heat.rpc import api as rpc_api
+from heat.tests import common
+from heat.tests import generic_resource as generic_rsrc
+from heat.tests import utils
+def test_update_add_signal(self):
+    tmpl = {'HeatTemplateFormatVersion': '2012-12-12', 'Resources': {'AResource': {'Type': 'GenericResourceType'}}}
+    self.stack = stack.Stack(self.ctx, 'update_test_stack', template.Template(tmpl))
+    self.stack.store()
+    self.stack.create()
+    self.assertEqual((stack.Stack.CREATE, stack.Stack.COMPLETE), self.stack.state)
+    tmpl2 = {'HeatTemplateFormatVersion': '2012-12-12', 'Resources': {'AResource': {'Type': 'GenericResourceType'}, 'BResource': {'Type': 'GenericResourceType'}}}
+    updated_stack = stack.Stack(self.ctx, 'updated_stack', template.Template(tmpl2))
+    updater = scheduler.TaskRunner(self.stack.update_task, updated_stack)
+    updater.start()
+    while 'BResource' not in self.stack:
+        self.assertFalse(updater.step())
+    self.assertEqual((stack.Stack.UPDATE, stack.Stack.IN_PROGRESS), self.stack.state)
+    re_stack = stack.Stack.load(utils.dummy_context(), self.stack.id)
+    self.assertIn('BResource', re_stack)
+    updater.run_to_completion()
+    self.assertEqual((stack.Stack.UPDATE, stack.Stack.COMPLETE), self.stack.state)
+    self.assertIn('BResource', self.stack)

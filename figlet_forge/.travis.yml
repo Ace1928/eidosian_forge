@@ -1,0 +1,29 @@
+language: python
+python:
+    - "3.8"
+    - "3.9"
+    - "3.10"
+    - "3.11"
+    - "3.12"
+    - "pypy3"
+
+before_install:
+    - "sudo apt-get update -qq"
+    - "sudo apt-get install -qq figlet" # Keep figlet binary for compatibility tests
+
+install:
+    - "pip install -e '.[dev]'" # Install with dev dependencies from pyproject.toml
+    - "make full" # Build with all fonts
+
+script:
+    - "pytest tests/ -v" # Run the test suite
+    - "mypy figlet_forge/" # Type checking
+    - "ruff figlet_forge/ tests/" # Modern linting
+
+notifications:
+    email: false
+
+cache:
+    pip: true
+    directories:
+        - $HOME/.cache/pre-commit

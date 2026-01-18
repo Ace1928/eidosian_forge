@@ -1,0 +1,34 @@
+import sys
+import operator
+import numpy as np
+from llvmlite.ir import IntType, Constant
+from numba.core.cgutils import is_nonelike
+from numba.core.extending import (
+from numba.core.imputils import (lower_constant, lower_cast, lower_builtin,
+from numba.core.datamodel import register_default, StructModel
+from numba.core import types, cgutils
+from numba.core.utils import PYVERSION
+from numba.core.pythonapi import (
+from numba._helperlib import c_helpers
+from numba.cpython.hashing import _Py_hash_t
+from numba.core.unsafe.bytes import memcpy_region
+from numba.core.errors import TypingError
+from numba.cpython.unicode_support import (_Py_TOUPPER, _Py_TOLOWER, _Py_UCS4,
+from numba.cpython import slicing
+@overload_method(types.UnicodeType, 'zfill')
+def unicode_zfill(string, width):
+    if not isinstance(width, types.Integer):
+        raise TypingError('<width> must be an Integer')
+
+    def zfill_impl(string, width):
+        str_len = len(string)
+        if width <= str_len:
+            return string
+        first_char = string[0] if str_len else ''
+        padding = '0' * (width - str_len)
+        if first_char in ['+', '-']:
+            newstr = first_char + padding + string[1:]
+        else:
+            newstr = padding + string
+        return newstr
+    return zfill_impl

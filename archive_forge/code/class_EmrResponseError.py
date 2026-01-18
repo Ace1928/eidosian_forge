@@ -1,0 +1,11 @@
+import base64
+import xml.sax
+import boto
+from boto import handler
+from boto.compat import json, StandardError
+from boto.resultset import ResultSet
+class EmrResponseError(BotoServerError):
+    """
+    Error in response from EMR
+    """
+    pass

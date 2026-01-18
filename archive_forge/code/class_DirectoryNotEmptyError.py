@@ -1,0 +1,2 @@
+class DirectoryNotEmptyError(CloudPathException):
+    pass

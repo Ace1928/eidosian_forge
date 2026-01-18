@@ -1,0 +1,32 @@
+from enum import IntFlag, auto
+from typing import Dict, Tuple
+from ._utils import deprecate_with_replacement
+class GraphicsStateParameters:
+    """Table 58 – Entries in a Graphics State Parameter Dictionary"""
+    TYPE = '/Type'
+    LW = '/LW'
+    LC = '/LC'
+    LJ = '/LJ'
+    ML = '/ML'
+    D = '/D'
+    RI = '/RI'
+    OP = '/OP'
+    op = '/op'
+    OPM = '/OPM'
+    FONT = '/Font'
+    BG = '/BG'
+    BG2 = '/BG2'
+    UCR = '/UCR'
+    UCR2 = '/UCR2'
+    TR = '/TR'
+    TR2 = '/TR2'
+    HT = '/HT'
+    FL = '/FL'
+    SM = '/SM'
+    SA = '/SA'
+    BM = '/BM'
+    S_MASK = '/SMask'
+    CA = '/CA'
+    ca = '/ca'
+    AIS = '/AIS'
+    TK = '/TK'

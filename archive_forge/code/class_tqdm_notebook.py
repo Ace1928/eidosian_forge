@@ -1,0 +1,166 @@
+import re
+import sys
+from html import escape
+from weakref import proxy
+from .std import tqdm as std_tqdm
+class tqdm_notebook(std_tqdm):
+    """
+    Experimental IPython/Jupyter Notebook widget using tqdm!
+    """
+
+    @staticmethod
+    def status_printer(_, total=None, desc=None, ncols=None):
+        """
+        Manage the printing of an IPython/Jupyter Notebook progress bar widget.
+        """
+        if IProgress is None:
+            raise ImportError(WARN_NOIPYW)
+        if total:
+            pbar = IProgress(min=0, max=total)
+        else:
+            pbar = IProgress(min=0, max=1)
+            pbar.value = 1
+            pbar.bar_style = 'info'
+            if ncols is None:
+                pbar.layout.width = '20px'
+        ltext = HTML()
+        rtext = HTML()
+        if desc:
+            ltext.value = desc
+        container = TqdmHBox(children=[ltext, pbar, rtext])
+        if ncols is not None:
+            ncols = str(ncols)
+            try:
+                if int(ncols) > 0:
+                    ncols += 'px'
+            except ValueError:
+                pass
+            pbar.layout.flex = '2'
+            container.layout.width = ncols
+            container.layout.display = 'inline-flex'
+            container.layout.flex_flow = 'row wrap'
+        return container
+
+    def display(self, msg=None, pos=None, close=False, bar_style=None, check_delay=True):
+        if not msg and (not close):
+            d = self.format_dict
+            d['bar_format'] = (d['bar_format'] or '{l_bar}<bar/>{r_bar}').replace('{bar}', '<bar/>')
+            msg = self.format_meter(**d)
+        ltext, pbar, rtext = self.container.children
+        pbar.value = self.n
+        if msg:
+            msg = msg.replace(' ', u'\u2007')
+            if '<bar/>' in msg:
+                left, right = map(escape, re.split('\\|?<bar/>\\|?', msg, maxsplit=1))
+            else:
+                left, right = ('', escape(msg))
+            ltext.value = left
+            if right:
+                rtext.value = right
+        if bar_style:
+            if pbar.bar_style != 'danger' or bar_style != 'success':
+                pbar.bar_style = bar_style
+        if close and pbar.bar_style != 'danger':
+            try:
+                self.container.close()
+            except AttributeError:
+                self.container.visible = False
+            self.container.layout.visibility = 'hidden'
+        if check_delay and self.delay > 0 and (not self.displayed):
+            display(self.container)
+            self.displayed = True
+
+    @property
+    def colour(self):
+        if hasattr(self, 'container'):
+            return self.container.children[-2].style.bar_color
+
+    @colour.setter
+    def colour(self, bar_color):
+        if hasattr(self, 'container'):
+            self.container.children[-2].style.bar_color = bar_color
+
+    def __init__(self, *args, **kwargs):
+        """
+        Supports the usual `tqdm.tqdm` parameters as well as those listed below.
+
+        Parameters
+        ----------
+        display  : Whether to call `display(self.container)` immediately
+            [default: True].
+        """
+        kwargs = kwargs.copy()
+        file_kwarg = kwargs.get('file', sys.stderr)
+        if file_kwarg is sys.stderr or file_kwarg is None:
+            kwargs['file'] = sys.stdout
+        kwargs['gui'] = True
+        kwargs['disable'] = bool(kwargs.get('disable', False))
+        colour = kwargs.pop('colour', None)
+        display_here = kwargs.pop('display', True)
+        super(tqdm_notebook, self).__init__(*args, **kwargs)
+        if self.disable or not kwargs['gui']:
+            self.disp = lambda *_, **__: None
+            return
+        self.ncols = '100%' if self.dynamic_ncols else kwargs.get('ncols', None)
+        unit_scale = 1 if self.unit_scale is True else self.unit_scale or 1
+        total = self.total * unit_scale if self.total else self.total
+        self.container = self.status_printer(self.fp, total, self.desc, self.ncols)
+        self.container.pbar = proxy(self)
+        self.displayed = False
+        if display_here and self.delay <= 0:
+            display(self.container)
+            self.displayed = True
+        self.disp = self.display
+        self.colour = colour
+        if not self.disable:
+            self.display(check_delay=False)
+
+    def __iter__(self):
+        try:
+            it = super(tqdm_notebook, self).__iter__()
+            for obj in it:
+                yield obj
+        except:
+            self.disp(bar_style='danger')
+            raise
+
+    def update(self, n=1):
+        try:
+            return super(tqdm_notebook, self).update(n=n)
+        except:
+            self.disp(bar_style='danger')
+            raise
+
+    def close(self):
+        if self.disable:
+            return
+        super(tqdm_notebook, self).close()
+        if self.total and self.n < self.total:
+            self.disp(bar_style='danger', check_delay=False)
+        elif self.leave:
+            self.disp(bar_style='success', check_delay=False)
+        else:
+            self.disp(close=True, check_delay=False)
+
+    def clear(self, *_, **__):
+        pass
+
+    def reset(self, total=None):
+        """
+        Resets to 0 iterations for repeated use.
+
+        Consider combining with `leave=True`.
+
+        Parameters
+        ----------
+        total  : int or float, optional. Total to use for the new bar.
+        """
+        if self.disable:
+            return super(tqdm_notebook, self).reset(total=total)
+        _, pbar, _ = self.container.children
+        pbar.bar_style = ''
+        if total is not None:
+            pbar.max = total
+            if not self.total and self.ncols is None:
+                pbar.layout.width = None
+        return super(tqdm_notebook, self).reset(total=total)

@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.command_lib.accesscontextmanager import policies
+from googlecloudsdk.command_lib.util.args import repeated
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+from googlecloudsdk.core import exceptions
+from googlecloudsdk.core import resources
+def ParseOrgs(args, authorized_orgs_desc_result):
+    return repeated.ParsePrimitiveArgs(args, 'orgs', lambda: authorized_orgs_desc_result.Get().orgs)

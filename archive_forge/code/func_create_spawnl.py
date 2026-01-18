@@ -1,0 +1,22 @@
+import os
+import re
+import sys
+from _pydev_bundle._pydev_saved_modules import threading
+from _pydevd_bundle.pydevd_constants import get_global_debugger, IS_WINDOWS, IS_JYTHON, get_current_thread_id, \
+from _pydev_bundle import pydev_log
+from contextlib import contextmanager
+from _pydevd_bundle import pydevd_constants, pydevd_defaults
+from _pydevd_bundle.pydevd_defaults import PydevdCustomization
+import ast
+def create_spawnl(original_name):
+
+    def new_spawnl(mode, path, *args):
+        """
+        os.spawnl(mode, path, arg0, arg1, ...)
+        os.spawnlp(mode, file, arg0, arg1, ...)
+        """
+        if _get_apply_arg_patching():
+            args = patch_args(args)
+            send_process_created_message()
+        return getattr(os, original_name)(mode, path, *args)
+    return new_spawnl

@@ -1,0 +1,2 @@
+class KrawczykFailedWithBadDihedralAngleError(VerificationError):
+    pass

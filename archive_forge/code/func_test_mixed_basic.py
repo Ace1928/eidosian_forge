@@ -1,0 +1,46 @@
+import numpy as np
+from scipy.linalg import solve_discrete_lyapunov
+from statsmodels.tsa.statespace import sarimax, varmax
+from statsmodels.tsa.statespace.initialization import Initialization
+from numpy.testing import assert_allclose, assert_raises
+def test_mixed_basic():
+    endog = np.zeros(10)
+    mod = sarimax.SARIMAX(endog, order=(2, 0, 0))
+    phi = [0.5, -0.2]
+    sigma2 = 2.0
+    mod.update(np.r_[phi, sigma2])
+    init = Initialization(mod.k_states)
+    init.set(0, 'known', constant=[1.2])
+    init.set(1, 'known', constant=[-0.2])
+    check_initialization(mod, init, [1.2, -0.2], np.diag([0, 0]), np.diag([0, 0]))
+    init.unset(1)
+    init.set(1, 'diffuse')
+    check_initialization(mod, init, [1.2, 0], np.diag([0, 1]), np.diag([0, 0]))
+    init.unset(1)
+    init.set(1, 'approximate_diffuse')
+    check_initialization(mod, init, [1.2, 0], np.diag([0, 0]), np.diag([0, 1000000.0]))
+    init.unset(1)
+    init.set(1, 'stationary')
+    check_initialization(mod, init, [1.2, 0], np.diag([0, 0]), np.diag([0, 0]))
+    init = Initialization(mod.k_states)
+    init.set(0, 'known', stationary_cov=np.diag([1]))
+    init.set(1, 'diffuse')
+    check_initialization(mod, init, [0, 0], np.diag([0, 1]), np.diag([1, 0]))
+    init = Initialization(mod.k_states)
+    init.set(0, 'known', constant=[1.2], stationary_cov=np.diag([1]))
+    init.set(1, 'diffuse')
+    check_initialization(mod, init, [1.2, 0], np.diag([0, 1]), np.diag([1, 0]))
+    endog = np.zeros(10)
+    mod = sarimax.SARIMAX(endog, order=(3, 0, 0))
+    init = Initialization(mod.k_states)
+    init.set((0, 2), 'known', constant=[1.2, -0.2])
+    init.set(2, 'diffuse')
+    check_initialization(mod, init, [1.2, -0.2, 0], np.diag([0, 0, 1]), np.diag([0, 0, 0]))
+    init = Initialization(mod.k_states)
+    init.set((0, 2), 'known', stationary_cov=np.diag([1, 4.2]))
+    init.set(2, 'diffuse')
+    check_initialization(mod, init, [0, 0, 0], np.diag([0, 0, 1]), np.diag([1, 4.2, 0]))
+    init = Initialization(mod.k_states)
+    init.set((0, 2), 'known', constant=[1.2, -0.2], stationary_cov=np.diag([1, 4.2]))
+    init.set(2, 'diffuse')
+    check_initialization(mod, init, [1.2, -0.2, 0], np.diag([0, 0, 1]), np.diag([1, 4.2, 0]))

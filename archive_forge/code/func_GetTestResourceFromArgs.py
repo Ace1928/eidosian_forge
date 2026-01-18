@@ -1,0 +1,17 @@
+import json
+import re
+from apitools.base.py import encoding
+from googlecloudsdk.api_lib.resource_manager import folders
+from googlecloudsdk.command_lib.scc.manage import constants
+from googlecloudsdk.command_lib.scc.manage import errors
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+from googlecloudsdk.core import yaml
+from googlecloudsdk.generated_clients.apis.securitycentermanagement.v1 import securitycentermanagement_v1_messages as messages
+def GetTestResourceFromArgs(file):
+    """Process the test resource data file for the custom module to test against."""
+    try:
+        resource_dict = yaml.load(file)
+        return encoding.DictToMessage(resource_dict, messages.SimulatedResource)
+    except yaml.YAMLParseError as ype:
+        raise errors.InvalidResourceFileError('Error parsing resource file [{}]'.format(ype))

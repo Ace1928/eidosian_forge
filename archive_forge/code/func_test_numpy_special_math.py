@@ -1,0 +1,68 @@
+from itertools import product
+import math
+import inspect
+import mpmath
+from sympy.testing.pytest import raises, warns_deprecated_sympy
+from sympy.concrete.summations import Sum
+from sympy.core.function import (Function, Lambda, diff)
+from sympy.core.numbers import (E, Float, I, Rational, oo, pi)
+from sympy.core.relational import Eq
+from sympy.core.singleton import S
+from sympy.core.symbol import (Dummy, symbols)
+from sympy.functions.combinatorial.factorials import (RisingFactorial, factorial)
+from sympy.functions.combinatorial.numbers import bernoulli, harmonic
+from sympy.functions.elementary.complexes import Abs
+from sympy.functions.elementary.exponential import exp, log
+from sympy.functions.elementary.hyperbolic import acosh
+from sympy.functions.elementary.integers import floor
+from sympy.functions.elementary.miscellaneous import (Max, Min, sqrt)
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import (acos, cos, cot, sin,
+from sympy.functions.special.bessel import (besseli, besselj, besselk, bessely)
+from sympy.functions.special.beta_functions import (beta, betainc, betainc_regularized)
+from sympy.functions.special.delta_functions import (Heaviside)
+from sympy.functions.special.error_functions import (Ei, erf, erfc, fresnelc, fresnels, Si, Ci)
+from sympy.functions.special.gamma_functions import (digamma, gamma, loggamma, polygamma)
+from sympy.integrals.integrals import Integral
+from sympy.logic.boolalg import (And, false, ITE, Not, Or, true)
+from sympy.matrices.expressions.dotproduct import DotProduct
+from sympy.tensor.array import derive_by_array, Array
+from sympy.tensor.indexed import IndexedBase
+from sympy.utilities.lambdify import lambdify
+from sympy.core.expr import UnevaluatedExpr
+from sympy.codegen.cfunctions import expm1, log1p, exp2, log2, log10, hypot
+from sympy.codegen.numpy_nodes import logaddexp, logaddexp2
+from sympy.codegen.scipy_nodes import cosm1, powm1
+from sympy.functions.elementary.complexes import re, im, arg
+from sympy.functions.special.polynomials import \
+from sympy.matrices import Matrix, MatrixSymbol, SparseMatrix
+from sympy.printing.lambdarepr import LambdaPrinter
+from sympy.printing.numpy import NumPyPrinter
+from sympy.utilities.lambdify import implemented_function, lambdastr
+from sympy.testing.pytest import skip
+from sympy.utilities.decorator import conserve_mpmath_dps
+from sympy.utilities.exceptions import ignore_warnings
+from sympy.external import import_module
+from sympy.functions.special.gamma_functions import uppergamma, lowergamma
+import sympy
+def test_numpy_special_math():
+    if not numpy:
+        skip('numpy not installed')
+    funcs = [expm1, log1p, exp2, log2, log10, hypot, logaddexp, logaddexp2]
+    for func in funcs:
+        if 2 in func.nargs:
+            expr = func(x, y)
+            args = (x, y)
+            num_args = (0.3, 0.4)
+        elif 1 in func.nargs:
+            expr = func(x)
+            args = (x,)
+            num_args = (0.3,)
+        else:
+            raise NotImplementedError('Need to handle other than unary & binary functions in test')
+        f = lambdify(args, expr)
+        result = f(*num_args)
+        reference = expr.subs(dict(zip(args, num_args))).evalf()
+        assert numpy.allclose(result, float(reference))
+    lae2 = lambdify((x, y), logaddexp2(log2(x), log2(y)))
+    assert abs(2.0 ** lae2(1e-50, 2.5e-50) - 3.5e-50) < 1e-62

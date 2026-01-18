@@ -1,0 +1,22 @@
+import itertools
+import platform
+import sys
+import pytest
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+from numpy import zeros, arange, array, ones, eye, iscomplexobj
+from numpy.linalg import norm
+from scipy.sparse import spdiags, csr_matrix, kronsum
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
+class SingleTest:
+
+    def __init__(self, A, b, solver, casename, convergence=True):
+        self.A = A
+        self.b = b
+        self.solver = solver
+        self.name = casename + '-' + solver.__name__
+        self.convergence = convergence
+
+    def __repr__(self):
+        return f'<{self.name}>'

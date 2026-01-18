@@ -1,0 +1,97 @@
+import os
+import subprocess
+from pyomo.common import Executable
+from pyomo.common.collections import Bunch
+from pyomo.common.tempfiles import TempfileManager
+from pyomo.opt.base import ProblemFormat, ResultsFormat
+from pyomo.opt.base.solvers import _extract_version, SolverFactory
+from pyomo.opt.results import SolverStatus
+from pyomo.opt.solver import SystemCallSolver
+import logging
+@SolverFactory.register('conopt', doc='The CONOPT NLP solver')
+class CONOPT(SystemCallSolver):
+    """
+    An interface to the CONOPT optimizer that uses the AMPL Solver Library.
+    """
+
+    def __init__(self, **kwds):
+        kwds['type'] = 'conopt'
+        super(CONOPT, self).__init__(**kwds)
+        self._valid_problem_formats = [ProblemFormat.nl]
+        self._valid_result_formats = {}
+        self._valid_result_formats[ProblemFormat.nl] = [ResultsFormat.sol]
+        self.set_problem_format(ProblemFormat.nl)
+        self._capabilities = Bunch()
+        self._capabilities.linear = True
+        self._capabilities.integer = True
+        self._capabilities.quadratic_objective = True
+        self._capabilities.quadratic_constraint = True
+        self._capabilities.sos1 = True
+        self._capabilities.sos2 = True
+
+    def _default_results_format(self, prob_format):
+        return ResultsFormat.sol
+
+    def _default_executable(self):
+        executable = Executable('conopt')
+        if not executable:
+            logger.warning("Could not locate the 'conopt' executable, which is required for solver %s" % self.name)
+            self.enable = False
+            return None
+        return executable.path()
+
+    def _get_version(self):
+        """
+        Returns a tuple describing the solver executable version.
+        """
+        solver_exec = self.executable()
+        if solver_exec is None:
+            return _extract_version('')
+        results = subprocess.run([solver_exec], timeout=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        return _extract_version(results.stdout)
+
+    def create_command_line(self, executable, problem_files):
+        assert self._problem_format == ProblemFormat.nl
+        assert self._results_format == ResultsFormat.sol
+        if self._log_file is None:
+            self._log_file = TempfileManager.create_tempfile(suffix='_conopt.log')
+        fname = problem_files[0]
+        if '.' in fname:
+            tmp = fname.split('.')
+            if len(tmp) > 2:
+                fname = '.'.join(tmp[:-1])
+            else:
+                fname = tmp[0]
+        self._soln_file = fname + '.sol'
+        self._results_file = self._soln_file
+        env = os.environ.copy()
+        if 'PYOMO_AMPLFUNC' in env:
+            if 'AMPLFUNC' in env:
+                env['AMPLFUNC'] += '\n' + env['PYOMO_AMPLFUNC']
+            else:
+                env['AMPLFUNC'] = env['PYOMO_AMPLFUNC']
+        cmd = [executable, problem_files[0], '-AMPL']
+        if self._timer:
+            cmd.insert(0, self._timer)
+        opt = []
+        for key in self.options:
+            if key == 'solver':
+                continue
+            if isinstance(self.options[key], str) and ' ' in self.options[key]:
+                opt.append(key + '="' + str(self.options[key]) + '"')
+                cmd.append(str(key) + '=' + str(self.options[key]))
+            elif key == 'subsolver':
+                opt.append('solver=' + str(self.options[key]))
+                cmd.append(str(key) + '=' + str(self.options[key]))
+            else:
+                opt.append(key + '=' + str(self.options[key]))
+                cmd.append(str(key) + '=' + str(self.options[key]))
+        envstr = '%s_options' % self.options.solver
+        env[envstr] = ' '.join(opt)
+        return Bunch(cmd=cmd, log_file=self._log_file, env=env)
+
+    def _postsolve(self):
+        results = super(CONOPT, self)._postsolve()
+        if results.solver.id == 100 and 'Locally optimal' in results.solver.message:
+            results.solver.status = SolverStatus.ok
+        return results

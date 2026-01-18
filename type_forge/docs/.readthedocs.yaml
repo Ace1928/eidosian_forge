@@ -1,0 +1,72 @@
+# .readthedocs.yaml
+# Read the Docs configuration file for the Eidosian Type Forge
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Set the OS, Python version and other tools
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.10"
+    nodejs: "18"
+  apt_packages:
+    - graphviz # For inheritance diagrams
+  jobs:
+    # Cache pip packages to speed up builds
+    pre_install:
+      - python -m pip cache purge
+    post_create_environment:
+      # Install poetry
+      - pip install poetry
+      # Generate requirements.txt from poetry for RTD to use
+      - poetry export --without-hashes -f requirements.txt -o requirements.txt
+    pre_build:
+      # Cache Sphinx doctrees
+      - mkdir -p _build/doctrees
+      - find _build/doctrees -type f -mtime +30 -delete
+      # Generate API documentation automatically
+      - python -m sphinx.ext.apidoc -o docs/api type_forge -f -e -M
+      # Extract API typing information
+      - python -m autodoc_typehints -o docs/api-types type_forge
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+  fail_on_warning: true
+
+# Python requirements
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+        - dev
+    - requirements: requirements.txt
+
+# Build formats
+formats:
+  - pdf
+  - epub
+  - htmlzip
+
+# Submodules
+submodules:
+  include: all
+  recursive: true
+
+# Search configuration
+search:
+  ranking:
+    docs/api/*: 5
+    docs/examples/*: 3
+    docs/tutorials/*: 4
+    docs/concepts/*: 2
+  ignore:
+    - 404.html
+    - search.html
+    - genindex.html
+    - py-modindex.html

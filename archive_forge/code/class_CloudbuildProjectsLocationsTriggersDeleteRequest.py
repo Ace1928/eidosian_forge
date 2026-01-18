@@ -1,0 +1,16 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class CloudbuildProjectsLocationsTriggersDeleteRequest(_messages.Message):
+    """A CloudbuildProjectsLocationsTriggersDeleteRequest object.
+
+  Fields:
+    name: The name of the `Trigger` to delete. Format:
+      `projects/{project}/locations/{location}/triggers/{trigger}`
+    projectId: Required. ID of the project that owns the trigger.
+    triggerId: Required. ID of the `BuildTrigger` to delete.
+  """
+    name = _messages.StringField(1, required=True)
+    projectId = _messages.StringField(2)
+    triggerId = _messages.StringField(3)

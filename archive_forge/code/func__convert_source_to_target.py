@@ -1,0 +1,42 @@
+from __future__ import annotations
+import os
+import asyncio
+import subprocess
+from pathlib import Path
+from ..base import (
+from typing import Any, Union, Optional, Type, Iterable, Callable, Dict, List, Tuple, TypeVar
+def _convert_source_to_target(self, source: InputSourceType, target: Optional[str]='.txt', source_filename: Optional[str]=None, target_output: Optional[Any]=None, raise_errors: Optional[bool]=False, **kwargs) -> OutputType:
+    """
+        Convert the source to the target
+
+        source: /path/to/file.pdf
+        target: '.txt'
+        """
+    if not self.is_valid_target_content_type(target):
+        raise InvalidTargetError(self, target)
+    target_output_path = Path(target_output) if target_output else None
+    if target_output_path and target_output_path.is_dir():
+        if not source_filename and isinstance(source, str):
+            target_filename = Path(source).with_suffix(target).name
+        else:
+            target_filename = f'output{target}'
+        target_output_path = target_output_path.joinpath(target_filename)
+    source_file = self.convert_file_input_to_file(source, source_filename, make_temp=True)
+    cmd = f'cat "{source_file.as_posix()}" | pdftotext -layout -nopgbrk -eol unix -colspacing 0.7 -y 58 -x 0 -H 741 -W 596 - -'
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        stdout, stderr = process.communicate()
+        stdout = stdout.decode('utf-8')
+        os.unlink(source_file.as_posix())
+        if target_output_path:
+            target_output_path.parent.mkdir(parents=True, exist_ok=True)
+            target_output_path.write_text(stdout)
+            return target_output_path
+        return stdout
+    except Exception as e:
+        stderr = stderr.decode('utf-8')
+        self.logger.error(f'Error in pdftotext: {stderr}: {e}')
+        os.unlink(source_file.as_posix())
+        if raise_errors:
+            raise e
+        return None

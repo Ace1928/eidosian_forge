@@ -1,0 +1,39 @@
+import warnings
+import re
+import sys
+import pickle
+from pathlib import Path
+import os
+import json
+import platform
+from numpy.testing import (assert_equal, assert_array_equal,
+import pytest
+from pytest import raises as assert_raises
+import numpy
+import numpy as np
+from numpy import typecodes, array
+from numpy.lib.recfunctions import rec_append_fields
+from scipy import special
+from scipy._lib._util import check_random_state
+from scipy.integrate import (IntegrationWarning, quad, trapezoid,
+import scipy.stats as stats
+from scipy.stats._distn_infrastructure import argsreduce
+import scipy.stats.distributions
+from scipy.special import xlogy, polygamma, entr
+from scipy.stats._distr_params import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
+from scipy.optimize import root, fmin, differential_evolution
+from itertools import product
+class TestMielke:
+
+    def test_moments(self):
+        k, s = (4.642, 0.597)
+        assert_equal(stats.mielke(k, s).moment(1), np.inf)
+        assert_equal(stats.mielke(k, 1.0).moment(1), np.inf)
+        assert_(np.isfinite(stats.mielke(k, 1.01).moment(1)))
+
+    def test_burr_equivalence(self):
+        x = np.linspace(0.01, 100, 50)
+        k, s = (2.45, 5.32)
+        assert_allclose(stats.burr.pdf(x, s, k / s), stats.mielke.pdf(x, k, s))

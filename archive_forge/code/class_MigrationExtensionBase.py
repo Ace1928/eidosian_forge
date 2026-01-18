@@ -1,0 +1,69 @@
+import abc
+class MigrationExtensionBase(object, metaclass=abc.ABCMeta):
+    order = 0
+
+    @property
+    def enabled(self):
+        """Used for availability verification of a plugin.
+
+        :rtype: bool
+        """
+        return False
+
+    @abc.abstractmethod
+    def upgrade(self, version):
+        """Used for upgrading database.
+
+        :param version: Desired database version
+        :type version: string
+        """
+
+    @abc.abstractmethod
+    def downgrade(self, version):
+        """Used for downgrading database.
+
+        :param version: Desired database version
+        :type version: string
+        """
+
+    @abc.abstractmethod
+    def version(self):
+        """Current database version.
+
+        :returns: Databse version
+        :rtype: string
+        """
+
+    def revision(self, *args, **kwargs):
+        """Used to generate migration script.
+
+        In migration engines that support this feature, it should generate
+        new migration script.
+
+        Accept arbitrary set of arguments.
+        """
+        raise NotImplementedError()
+
+    def stamp(self, *args, **kwargs):
+        """Stamps database based on plugin features.
+
+        Accept arbitrary set of arguments.
+        """
+        raise NotImplementedError()
+
+    def has_revision(self, rev_id):
+        """Checks whether the repo contains a revision
+
+        :param rev_id: Revision to check
+        :returns: Whether the revision is in the repo
+        :rtype: bool
+        """
+        raise NotImplementedError()
+
+    def __cmp__(self, other):
+        """Used for definition of plugin order.
+
+        :param other: MigrationExtensionBase instance
+        :rtype: bool
+        """
+        return self.order > other.order

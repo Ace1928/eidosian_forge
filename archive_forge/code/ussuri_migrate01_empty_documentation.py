@@ -1,0 +1,1 @@
+Return the number of rows migrated.

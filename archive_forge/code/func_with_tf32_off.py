@@ -1,0 +1,13 @@
+import functools
+import torch
+import torch.cuda
+from torch.testing._internal.common_utils import LazyVal, TEST_NUMBA, TEST_WITH_ROCM, TEST_CUDA, IS_WINDOWS
+import inspect
+import contextlib
+def with_tf32_off(f):
+
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        with tf32_off():
+            return f(*args, **kwargs)
+    return wrapped

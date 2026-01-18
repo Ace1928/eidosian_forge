@@ -1,0 +1,11 @@
+import uuid
+import boto
+from boto.sqs.message import RawMessage
+from boto.exception import SQSDecodeError
+
+        :type value: file-like object
+        :param value: A file-like object containing the content
+            of the message.  The actual content will be stored
+            in S3 and a link to the S3 object will be stored in
+            the message body.
+        

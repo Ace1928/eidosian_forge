@@ -1,0 +1,46 @@
+import copyreg
+import io
+import pickle
+import re
+import warnings
+from unittest.mock import Mock
+import joblib
+import numpy as np
+import pytest
+from joblib.numpy_pickle import NumpyPickler
+from numpy.testing import assert_allclose, assert_array_equal
+import sklearn
+from sklearn._loss.loss import (
+from sklearn.base import BaseEstimator, TransformerMixin, clone, is_regressor
+from sklearn.compose import make_column_transformer
+from sklearn.datasets import make_classification, make_low_rank_matrix, make_regression
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import (
+from sklearn.ensemble._hist_gradient_boosting.binning import _BinMapper
+from sklearn.ensemble._hist_gradient_boosting.common import G_H_DTYPE
+from sklearn.ensemble._hist_gradient_boosting.grower import TreeGrower
+from sklearn.ensemble._hist_gradient_boosting.predictor import TreePredictor
+from sklearn.exceptions import NotFittedError
+from sklearn.metrics import get_scorer, mean_gamma_deviance, mean_poisson_deviance
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import KBinsDiscretizer, MinMaxScaler, OneHotEncoder
+from sklearn.utils import _IS_32BIT, shuffle
+from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
+from sklearn.utils._testing import _convert_container
+@pytest.mark.parametrize('Est', (HistGradientBoostingClassifier, HistGradientBoostingRegressor))
+@pytest.mark.parametrize('use_pandas, feature_name', [(False, 'at index 0'), (True, "'f0'")])
+def test_categorical_bad_encoding_errors(Est, use_pandas, feature_name):
+    gb = Est(categorical_features=[True], max_bins=2)
+    if use_pandas:
+        pd = pytest.importorskip('pandas')
+        X = pd.DataFrame({'f0': [0, 1, 2]})
+    else:
+        X = np.array([[0, 1, 2]]).T
+    y = np.arange(3)
+    msg = f'Categorical feature {feature_name} is expected to have a cardinality <= 2 but actually has a cardinality of 3.'
+    with pytest.raises(ValueError, match=msg):
+        gb.fit(X, y)
+    X = np.array([[0, 1, np.nan]]).T
+    y = np.arange(3)
+    gb.fit(X, y)

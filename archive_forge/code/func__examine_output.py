@@ -1,0 +1,60 @@
+from __future__ import (annotations, absolute_import, division, print_function)
+import collections.abc as c
+import errno
+import fcntl
+import hashlib
+import io
+import os
+import pty
+import re
+import shlex
+import subprocess
+import time
+import typing as t
+from functools import wraps
+from ansible.errors import (
+from ansible.errors import AnsibleOptionsError
+from ansible.module_utils.compat import selectors
+from ansible.module_utils.six import PY3, text_type, binary_type
+from ansible.module_utils.common.text.converters import to_bytes, to_native, to_text
+from ansible.module_utils.parsing.convert_bool import BOOLEANS, boolean
+from ansible.plugins.connection import ConnectionBase, BUFSIZE
+from ansible.plugins.shell.powershell import _parse_clixml
+from ansible.utils.display import Display
+from ansible.utils.path import unfrackpath, makedirs_safe
+def _examine_output(self, source: str, state: str, b_chunk: bytes, sudoable: bool) -> tuple[bytes, bytes]:
+    """
+        Takes a string, extracts complete lines from it, tests to see if they
+        are a prompt, error message, etc., and sets appropriate flags in self.
+        Prompt and success lines are removed.
+
+        Returns the processed (i.e. possibly-edited) output and the unprocessed
+        remainder (to be processed with the next chunk) as strings.
+        """
+    output = []
+    for b_line in b_chunk.splitlines(True):
+        display_line = to_text(b_line).rstrip('\r\n')
+        suppress_output = False
+        if SSH_DEBUG.match(display_line):
+            pass
+        elif self.become.expect_prompt() and self.become.check_password_prompt(b_line):
+            display.debug(u"become_prompt: (source=%s, state=%s): '%s'" % (source, state, display_line))
+            self._flags['become_prompt'] = True
+            suppress_output = True
+        elif self.become.success and self.become.check_success(b_line):
+            display.debug(u"become_success: (source=%s, state=%s): '%s'" % (source, state, display_line))
+            self._flags['become_success'] = True
+            suppress_output = True
+        elif sudoable and self.become.check_incorrect_password(b_line):
+            display.debug(u"become_error: (source=%s, state=%s): '%s'" % (source, state, display_line))
+            self._flags['become_error'] = True
+        elif sudoable and self.become.check_missing_password(b_line):
+            display.debug(u"become_nopasswd_error: (source=%s, state=%s): '%s'" % (source, state, display_line))
+            self._flags['become_nopasswd_error'] = True
+        if not suppress_output:
+            output.append(b_line)
+    remainder = b''
+    if output and (not output[-1].endswith(b'\n')):
+        remainder = output[-1]
+        output = output[:-1]
+    return (b''.join(output), remainder)

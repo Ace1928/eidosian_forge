@@ -1,0 +1,15 @@
+import xml.sax
+import datetime
+import itertools
+from boto import handler
+from boto import config
+from boto.mturk.price import Price
+import boto.mturk.notification
+from boto.connection import AWSQueryConnection
+from boto.exception import EC2ResponseError
+from boto.resultset import ResultSet
+from boto.mturk.question import QuestionForm, ExternalQuestion, HTMLQuestion
+def get_qualification_score(self, qualification_type_id, worker_id):
+    """TODO: Document."""
+    params = {'QualificationTypeId': qualification_type_id, 'SubjectId': worker_id}
+    return self._process_request('GetQualificationScore', params, [('Qualification', Qualification)])

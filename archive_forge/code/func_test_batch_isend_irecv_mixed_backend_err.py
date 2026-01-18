@@ -1,0 +1,52 @@
+import copy
+import itertools
+import math
+import os
+import random
+import sys
+import tempfile
+import time
+from collections import namedtuple, OrderedDict
+from contextlib import contextmanager, nullcontext
+from dataclasses import dataclass
+from datetime import timedelta
+from functools import reduce
+from typing import Union, NamedTuple, Callable, Any
+import unittest
+import numpy as np
+import torch
+import torch.cuda
+import torch.distributed as dist
+import torch.distributed.algorithms.model_averaging.averagers as averagers
+import torch.distributed.algorithms.model_averaging.hierarchical_model_averager as hierarchicalSGD
+import torch.distributed.algorithms.model_averaging.utils as model_averaging_utils
+import torch.nn as nn
+import torch.nn.functional as F
+from torch._utils_internal import TEST_MASTER_ADDR as MASTER_ADDR
+from torch._utils_internal import TEST_MASTER_PORT as MASTER_PORT
+from torch.cuda.amp import GradScaler, autocast
+from torch.distributed.algorithms.ddp_comm_hooks import (
+from torch.distributed.optim import _apply_optimizer_in_backward
+from torch.distributed.distributed_c10d import (
+from torch.distributed.utils import (
+from torch.nn.parallel import DistributedDataParallel
+from torch.nn.parallel.distributed import _dump_DDP_relevant_env_vars, _MixedPrecision
+from torch.testing._internal.common_distributed import (
+from torch.testing._internal.common_utils import (
+import torch.distributed.optim.post_localSGD_optimizer as post_localSGD_optimizer
+from torch.utils.data.distributed import DistributedSampler
+@skip_but_pass_in_sandcastle_if(BACKEND != 'nccl', 'NCCL Batch Send Recv Only')
+@requires_nccl_version((2, 7, 0), 'Need NCCL 2.7+ for send/recv')
+def test_batch_isend_irecv_mixed_backend_err(self):
+    self._barrier()
+    rank = dist.get_rank()
+    rank_to_GPU = init_multigpu_helper(dist.get_world_size(), BACKEND)
+    device_id = rank_to_GPU[rank][0]
+    group_gloo = dist.new_group(ranks=[0, 1], backend='gloo')
+    group_nccl = dist.new_group(ranks=[0, 1], backend='nccl')
+    if rank == 0:
+        with self.assertRaisesRegex(ValueError, 'All ops need to use the same group'):
+            send_tensor = _build_tensor(rank + 1)
+            send_op_gloo = dist.P2POp(dist.isend, send_tensor, 1, group_gloo)
+            send_op_nccl = dist.P2POp(dist.isend, send_tensor, 1, group_nccl)
+            dist.batch_isend_irecv([send_op_gloo, send_op_nccl])

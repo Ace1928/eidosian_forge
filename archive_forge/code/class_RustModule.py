@@ -1,0 +1,190 @@
+from __future__ import annotations
+import itertools
+import os
+import typing as T
+from mesonbuild.interpreterbase.decorators import FeatureNew
+from . import ExtensionModule, ModuleReturnValue, ModuleInfo
+from .. import mesonlib, mlog
+from ..build import (BothLibraries, BuildTarget, CustomTargetIndex, Executable, ExtractedObjects, GeneratedList,
+from ..compilers.compilers import are_asserts_disabled, lang_suffixes
+from ..interpreter.type_checking import (
+from ..interpreterbase import ContainerTypeInfo, InterpreterException, KwargInfo, typed_kwargs, typed_pos_args, noPosargs, permittedKwargs
+from ..mesonlib import File
+from ..programs import ExternalProgram
+class RustModule(ExtensionModule):
+    """A module that holds helper functions for rust."""
+    INFO = ModuleInfo('rust', '0.57.0', stabilized='1.0.0')
+
+    def __init__(self, interpreter: Interpreter) -> None:
+        super().__init__(interpreter)
+        self._bindgen_bin: T.Optional[T.Union[ExternalProgram, Executable, OverrideProgram]] = None
+        self.methods.update({'test': self.test, 'bindgen': self.bindgen, 'proc_macro': self.proc_macro})
+
+    @typed_pos_args('rust.test', str, BuildTarget)
+    @typed_kwargs('rust.test', *TEST_KWS, DEPENDENCIES_KW, LINK_WITH_KW.evolve(since='1.2.0'), KwargInfo('rust_args', ContainerTypeInfo(list, str), listify=True, default=[], since='1.2.0'), KwargInfo('is_parallel', bool, default=False))
+    def test(self, state: ModuleState, args: T.Tuple[str, BuildTarget], kwargs: FuncTest) -> ModuleReturnValue:
+        """Generate a rust test target from a given rust target.
+
+        Rust puts it's unitests inside it's main source files, unlike most
+        languages that put them in external files. This means that normally
+        you have to define two separate targets with basically the same
+        arguments to get tests:
+
+        ```meson
+        rust_lib_sources = [...]
+        rust_lib = static_library(
+            'rust_lib',
+            rust_lib_sources,
+        )
+
+        rust_lib_test = executable(
+            'rust_lib_test',
+            rust_lib_sources,
+            rust_args : ['--test'],
+        )
+
+        test(
+            'rust_lib_test',
+            rust_lib_test,
+            protocol : 'rust',
+        )
+        ```
+
+        This is all fine, but not very DRY. This method makes it much easier
+        to define rust tests:
+
+        ```meson
+        rust = import('unstable-rust')
+
+        rust_lib = static_library(
+            'rust_lib',
+            [sources],
+        )
+
+        rust.test('rust_lib_test', rust_lib)
+        ```
+        """
+        if any((isinstance(t, Jar) for t in kwargs.get('link_with', []))):
+            raise InvalidArguments('Rust tests cannot link with Jar targets')
+        name = args[0]
+        base_target: BuildTarget = args[1]
+        if not base_target.uses_rust():
+            raise InterpreterException('Second positional argument to rustmod.test() must be a rust based target')
+        extra_args = kwargs['args']
+        if '--test' in extra_args:
+            mlog.warning('Do not add --test to rustmod.test arguments')
+            extra_args.remove('--test')
+        if '--format' in extra_args:
+            mlog.warning('Do not add --format to rustmod.test arguments')
+            i = extra_args.index('--format')
+            del extra_args[i + 1]
+            del extra_args[i]
+        for i, a in enumerate(extra_args):
+            if isinstance(a, str) and a.startswith('--format='):
+                del extra_args[i]
+                break
+        tkwargs = T.cast('_kwargs.FuncTest', kwargs.copy())
+        tkwargs['args'] = extra_args + ['--test', '--format', 'pretty']
+        tkwargs['protocol'] = 'rust'
+        new_target_kwargs = base_target.original_kwargs.copy()
+        new_target_kwargs['install'] = False
+        new_target_kwargs['dependencies'] = new_target_kwargs.get('dependencies', []) + kwargs['dependencies']
+        new_target_kwargs['link_with'] = new_target_kwargs.get('link_with', []) + kwargs['link_with']
+        del new_target_kwargs['rust_crate_type']
+        lang_args = base_target.extra_args.copy()
+        lang_args['rust'] = base_target.extra_args['rust'] + kwargs['rust_args'] + ['--test']
+        new_target_kwargs['language_args'] = lang_args
+        sources = T.cast('T.List[SourceOutputs]', base_target.sources.copy())
+        sources.extend(base_target.generated)
+        new_target = Executable(name, base_target.subdir, state.subproject, base_target.for_machine, sources, base_target.structured_sources, base_target.objects, base_target.environment, base_target.compilers, new_target_kwargs)
+        test = self.interpreter.make_test(self.interpreter.current_node, (name, new_target), tkwargs)
+        return ModuleReturnValue(None, [new_target, test])
+
+    @noPosargs
+    @typed_kwargs('rust.bindgen', KwargInfo('c_args', ContainerTypeInfo(list, str), default=[], listify=True), KwargInfo('args', ContainerTypeInfo(list, str), default=[], listify=True), KwargInfo('input', ContainerTypeInfo(list, (File, GeneratedList, BuildTarget, BothLibraries, ExtractedObjects, CustomTargetIndex, CustomTarget, str), allow_empty=False), default=[], listify=True, required=True), KwargInfo('language', (str, NoneType), since='1.4.0', validator=in_set_validator({'c', 'cpp'})), KwargInfo('bindgen_version', ContainerTypeInfo(list, str), default=[], listify=True, since='1.4.0'), INCLUDE_DIRECTORIES.evolve(since_values={ContainerTypeInfo(list, str): '1.0.0'}), OUTPUT_KW, KwargInfo('output_inline_wrapper', str, default='', since='1.4.0'), DEPENDENCIES_KW.evolve(since='1.0.0'))
+    def bindgen(self, state: ModuleState, args: T.List, kwargs: FuncBindgen) -> ModuleReturnValue:
+        """Wrapper around bindgen to simplify it's use.
+
+        The main thing this simplifies is the use of `include_directory`
+        objects, instead of having to pass a plethora of `-I` arguments.
+        """
+        header, *_deps = self.interpreter.source_strings_to_files(kwargs['input'])
+        depends: T.List[SourceOutputs] = []
+        depend_files: T.List[File] = []
+        for d in _deps:
+            if isinstance(d, File):
+                depend_files.append(d)
+            else:
+                depends.append(d)
+        clang_args = state.environment.properties.host.get_bindgen_clang_args().copy()
+        for i in state.process_include_dirs(kwargs['include_directories']):
+            clang_args.extend([f'-I{x}' for x in i.to_string_list(state.environment.get_source_dir(), state.environment.get_build_dir())])
+        if are_asserts_disabled(state.environment.coredata.options):
+            clang_args.append('-DNDEBUG')
+        for de in kwargs['dependencies']:
+            for i in de.get_include_dirs():
+                clang_args.extend([f'-I{x}' for x in i.to_string_list(state.environment.get_source_dir(), state.environment.get_build_dir())])
+            clang_args.extend(de.get_all_compile_args())
+            for s in de.get_sources():
+                if isinstance(s, File):
+                    depend_files.append(s)
+                elif isinstance(s, CustomTarget):
+                    depends.append(s)
+        if self._bindgen_bin is None:
+            self._bindgen_bin = state.find_program('bindgen', wanted=kwargs['bindgen_version'])
+        name: str
+        if isinstance(header, File):
+            name = header.fname
+        elif isinstance(header, (BuildTarget, BothLibraries, ExtractedObjects, StructuredSources)):
+            raise InterpreterException('bindgen source file must be a C header, not an object or build target')
+        else:
+            name = header.get_outputs()[0]
+        language = kwargs['language']
+        if language is None:
+            ext = os.path.splitext(name)[1][1:]
+            if ext in lang_suffixes['cpp']:
+                language = 'cpp'
+            elif ext == 'h':
+                language = 'c'
+            else:
+                raise InterpreterException(f'Unknown file type extension for: {name}')
+        cargs = state.get_option('args', state.subproject, lang=language)
+        assert isinstance(cargs, list), 'for mypy'
+        for a in itertools.chain(state.global_args.get(language, []), state.project_args.get(language, []), cargs):
+            if a.startswith(('-I', '/I', '-D', '/D', '-U', '/U')):
+                clang_args.append(a)
+        if language == 'cpp':
+            clang_args.extend(['-x', 'c++'])
+        std = state.get_option('std', lang=language)
+        assert isinstance(std, str), 'for mypy'
+        if std.startswith('vc++'):
+            if std.endswith('latest'):
+                mlog.warning('Attempting to translate vc++latest into a clang compatible version.', 'Currently this is hardcoded for c++20', once=True, fatal=False)
+                std = 'c++20'
+            else:
+                mlog.debug('The current C++ standard is a Visual Studio extension version.', 'bindgen will use a the nearest C++ standard instead')
+                std = std[1:]
+        if std != 'none':
+            clang_args.append(f'-std={std}')
+        inline_wrapper_args: T.List[str] = []
+        outputs = [kwargs['output']]
+        if kwargs['output_inline_wrapper']:
+            if isinstance(self._bindgen_bin, ExternalProgram):
+                if mesonlib.version_compare(self._bindgen_bin.get_version(), '< 0.65'):
+                    raise InterpreterException("'output_inline_wrapper' parameter of rust.bindgen requires bindgen-0.65 or newer")
+            outputs.append(kwargs['output_inline_wrapper'])
+            inline_wrapper_args = ['--experimental', '--wrap-static-fns', '--wrap-static-fns-path', os.path.join(state.environment.build_dir, '@OUTPUT1@')]
+        cmd = self._bindgen_bin.get_command() + ['@INPUT@', '--output', os.path.join(state.environment.build_dir, '@OUTPUT0@')] + kwargs['args'] + inline_wrapper_args + ['--'] + kwargs['c_args'] + clang_args + ['-MD', '-MQ', '@INPUT@', '-MF', '@DEPFILE@']
+        target = CustomTarget(f'rustmod-bindgen-{name}'.replace('/', '_'), state.subdir, state.subproject, state.environment, cmd, [header], outputs, depfile='@PLAINNAME@.d', extra_depends=depends, depend_files=depend_files, backend=state.backend, description='Generating bindings for Rust {}')
+        return ModuleReturnValue(target, [target])
+
+    @FeatureNew('rust.proc_macro', '1.3.0')
+    @permittedKwargs({'rust_args', 'rust_dependency_map', 'sources', 'dependencies', 'extra_files', 'link_args', 'link_depends', 'link_with', 'override_options'})
+    @typed_pos_args('rust.proc_macro', str, varargs=SOURCES_VARARGS)
+    @typed_kwargs('rust.proc_macro', *SHARED_LIB_KWS, allow_unknown=True)
+    def proc_macro(self, state: ModuleState, args: T.Tuple[str, SourcesVarargsType], kwargs: _kwargs.SharedLibrary) -> SharedLibrary:
+        kwargs['native'] = True
+        kwargs['rust_crate_type'] = 'proc-macro'
+        kwargs['rust_args'] = kwargs['rust_args'] + ['--extern', 'proc_macro']
+        target = state._interpreter.build_target(state.current_node, args, kwargs, SharedLibrary)
+        return target

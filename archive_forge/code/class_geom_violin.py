@@ -1,0 +1,91 @@
+from __future__ import annotations
+import typing
+import numpy as np
+import pandas as pd
+from .._utils import groupby_apply, interleave, resolution
+from ..doctools import document
+from .geom import geom
+from .geom_path import geom_path
+from .geom_polygon import geom_polygon
+@document
+class geom_violin(geom):
+    """
+    Violin Plot
+
+    {usage}
+
+    Parameters
+    ----------
+    {common_parameters}
+    draw_quantiles : float | list[float], default=None
+        draw horizontal lines at the given quantiles (0..1)
+        of the density estimate.
+    style : str, default="full"
+        The type of violin plot to draw. The options are:
+
+        ```python
+        'full'        # Regular (2 sided violins)
+        'left'        # Left-sided half violins
+        'right'       # Right-sided half violins
+        'left-right'  # Alternate (left first) half violins by the group
+        'right-left'  # Alternate (right first) half violins by the group
+        ```
+    """
+    DEFAULT_AES = {'alpha': 1, 'color': '#333333', 'fill': 'white', 'linetype': 'solid', 'size': 0.5, 'weight': 1}
+    REQUIRED_AES = {'x', 'y'}
+    DEFAULT_PARAMS = {'stat': 'ydensity', 'position': 'dodge', 'draw_quantiles': None, 'style': 'full', 'scale': 'area', 'trim': True, 'width': None, 'na_rm': False}
+    draw_legend = staticmethod(geom_polygon.draw_legend)
+
+    def __init__(self, mapping: aes | None=None, data: DataLike | None=None, **kwargs: Any):
+        if 'draw_quantiles' in kwargs:
+            kwargs['draw_quantiles'] = np.repeat(kwargs['draw_quantiles'], 1)
+            if not all((0 < q < 1 for q in kwargs['draw_quantiles'])):
+                raise ValueError('draw_quantiles must be a float or an iterable of floats (>0.0; < 1.0)')
+        if 'style' in kwargs:
+            allowed = ('full', 'left', 'right', 'left-right', 'right-left')
+            if kwargs['style'] not in allowed:
+                raise ValueError(f'style must be either {allowed}')
+        super().__init__(mapping, data, **kwargs)
+
+    def setup_data(self, data: pd.DataFrame) -> pd.DataFrame:
+        if 'width' not in data:
+            if self.params['width']:
+                data['width'] = self.params['width']
+            else:
+                data['width'] = resolution(data['x'], False) * 0.9
+
+        def func(df: pd.DataFrame) -> pd.DataFrame:
+            df['ymin'] = df['y'].min()
+            df['ymax'] = df['y'].max()
+            df['xmin'] = df['x'] - df['width'] / 2
+            df['xmax'] = df['x'] + df['width'] / 2
+            return df
+        data = groupby_apply(data, ['group', 'PANEL'], func)
+        return data
+
+    def draw_panel(self, data: pd.DataFrame, panel_params: panel_view, coord: coord, ax: Axes, **params: Any):
+        quantiles = params['draw_quantiles']
+        style = params['style']
+        for i, (_, df) in enumerate(data.groupby('group')):
+            df['xminv'] = df['x'] - df['violinwidth'] * (df['x'] - df['xmin'])
+            df['xmaxv'] = df['x'] + df['violinwidth'] * (df['xmax'] - df['x'])
+            even = i % 2 == 0
+            if style == 'left' or (style == 'left-right' and even) or (style == 'right-left' and (not even)):
+                df['xmaxv'] = df['x']
+            elif style == 'right' or (style == 'right-left' and even) or (style == 'left-right' and (not even)):
+                df['xminv'] = df['x']
+            n = len(df)
+            polygon_df = pd.concat([df.sort_values('y'), df.sort_values('y', ascending=False)], axis=0, ignore_index=True)
+            _df = polygon_df.iloc
+            _loc = polygon_df.columns.get_loc
+            _df[:n, _loc('x')] = _df[:n, _loc('xminv')]
+            _df[n:, _loc('x')] = _df[n:, _loc('xmaxv')]
+            polygon_df.loc[-1, :] = polygon_df.loc[0, :]
+            geom_polygon.draw_group(polygon_df, panel_params, coord, ax, **params)
+            if quantiles is not None:
+                aes_df = df.drop(['x', 'y', 'group'], axis=1)
+                aes_df.reset_index(inplace=True)
+                idx = [0] * 2 * len(quantiles)
+                aes_df = aes_df.iloc[idx, :].reset_index(drop=True)
+                segment_df = pd.concat([make_quantile_df(df, quantiles), aes_df], axis=1)
+                geom_path.draw_group(segment_df, panel_params, coord, ax, **params)

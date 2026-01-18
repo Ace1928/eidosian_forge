@@ -1,0 +1,19 @@
+import os
+from io import BytesIO
+from tempfile import NamedTemporaryFile
+import numpy as np
+import pytest
+from PIL import Image
+from skimage._shared import testing
+from skimage._shared._tempfile import temporary_file
+from skimage._shared._warnings import expected_warnings
+from skimage._shared.testing import (
+from skimage.metrics import structural_similarity
+from ... import img_as_float
+from ...color import rgb2lab
+from .. import imread, imsave, reset_plugins, use_plugin, plugin_order
+from .._plugins.pil_plugin import _palette_is_grayscale, ndarray_to_pil, pil_to_ndarray
+def test_imread_index_png_with_alpha():
+    dfoo = np.array([[[127, 0, 255, 255], [127, 0, 255, 255], [127, 0, 255, 255], [127, 0, 255, 255], [127, 0, 255, 255]], [[192, 192, 255, 0], [192, 192, 255, 0], [0, 0, 255, 0], [0, 0, 255, 0], [0, 0, 255, 0]], [[0, 31, 255, 255], [0, 31, 255, 255], [0, 31, 255, 255], [0, 31, 255, 255], [0, 31, 255, 255]]], dtype=np.uint8)
+    img = imread(fetch('data/foo3x5x4indexed.png'))
+    assert_array_equal(img, dfoo)

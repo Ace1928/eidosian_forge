@@ -1,0 +1,10 @@
+import pytest
+@pytest.mark.parametrize('punct', PUNCT_CLOSE)
+@pytest.mark.parametrize('punct_add', ["'"])
+@pytest.mark.parametrize('text', ['Здраво'])
+def test_sr_tokenizer_splits_two_diff_close_punct(sr_tokenizer, punct, punct_add, text):
+    tokens = sr_tokenizer(text + punct + punct_add)
+    assert len(tokens) == 3
+    assert tokens[0].text == text
+    assert tokens[1].text == punct
+    assert tokens[2].text == punct_add

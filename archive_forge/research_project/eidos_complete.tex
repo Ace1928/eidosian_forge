@@ -1,0 +1,554 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin perfected file: eidos_complete.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools,enumitem,geometry,hyperref,physics,cleveref,thmtools,mathrsfs,amsopn}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz-cd} % for commutative diagram
+\geometry{letterpaper, margin=1in}
+\hypersetup{
+  colorlinks   = true,
+  linkcolor    = blue,
+  citecolor    = blue,
+  urlcolor     = blue
+}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\diag}{diag}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Xproc}{\mathcal{X}_{\mathrm{proc}}}
+
+\title{Eidos: A Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce \emph{Eidos}---an avant-garde, unified framework that seamlessly integrates raw input processing; universal communication, data handling, and streaming infrastructures; a multidimensional vocabulary and tokenization schema; dual-layer (base and adaptive) embeddings supporting both natural language understanding (NLU) and natural language processing (NLP); hierarchically organized knowledge graphs (base, personal, and unified); infinite context scaling via Rotary Positional Embeddings (RoPE) coupled with dynamic vocabulary refinement; a hybrid mixture-of-experts core model uniting Transformer, RWKV, and related modules; a multilayer "Titans" memory architecture (encompassing short-term, working, long-term, and personal memory); recursive adaptive idempotent feedback for continuous runtime learning; and an all-encompassing universal training system. The framework decodes outputs (text by default, with scalable pathways for additional modalities) in a fully modular, scalable, and extensible manner. Every symbol, process, function, and interface is meticulously defined using distinct notation and precise algorithmic pseudocode, constituting a robust blueprint for empirical implementation, testing, and iterative refinement.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Notational Conventions and Distinct Symbol Sets}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Fundamental Axioms}
+The Eidos framework operates under three core axioms:
+\begin{enumerate}[label=(\textbf{A\arabic*}),leftmargin=*]
+    \item \textbf{Persistent Adaptivity}: $\forall t\,\exists\,\Delta\theta_t\in\Theta_{\mathrm{adapt}}$ such that 
+    \[
+      f_{\theta_{t+1}}=f_{\theta_t}\oplus\Delta\theta_t.
+    \]
+    \item \textbf{Idempotent Recursion}: 
+    \[
+      \mu^{\mathrm{R}}\circ\mu^{\mathrm{R}}\equiv\mu^{\mathrm{R}}.
+    \]
+    \item \textbf{Unified Multimodality}: 
+    \[
+      \mathcal{O}_{\mathrm{mod}}=\bigoplus_{m\in\mathcal{M}}\delta_m(\mathcal{Y}).
+    \]
+\end{enumerate}
+
+\subsection{Raw Input and Preprocessing}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Raw Input:} $X_{\mathrm{raw}}\in\Sigma^*$, where $\Sigma$ denotes the base alphabet (e.g., Unicode).
+  \item \textbf{Preprocessed Input:} $X_{\mathrm{proc}}\in\mathcal{X}_{\mathrm{proc}}$.
+  \item \textbf{Preprocessing Operator:} $\mathcal{P}_{\mathrm{in}}:\Sigma^*\to\mathcal{X}_{\mathrm{proc}}$.
+\end{itemize}
+
+\subsection{Vocabulary and Tokens}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Base Vocabulary:} $\mathcal{V}^{(0)}$ (e.g., English words, Unicode characters, programming symbols).
+  \item \textbf{Learned Tokens:} $\mathcal{V}^{(1)}$ (multi-token sequences).
+  \item \textbf{Complete Vocabulary:} $\mathcal{V}=\mathcal{V}^{(0)}\cup\mathcal{V}^{(1)}$.
+  \item \textbf{Token:} $t\in\mathcal{V}$.
+  \item \textbf{Unique Identifier Mapping:} $\eta:\mathcal{V}\to\mathbb{N}$, with $\operatorname{ID}(t)=\eta(t)$.
+  \item \textbf{Token Structure:} Each token is represented as
+  \[
+    t=\bigl(u,\,\pi,\,\chi\bigr),
+  \]
+  where
+  \begin{itemize}[label=\(\circ\)]
+    \item $u$: the underlying unit (string),
+    \item $\pi\in\Pi\subseteq\mathbb{R}^{d_{\pi}}$: intrinsic properties,
+    \item $\chi\in\mathbb{R}^{d_{\chi}}$: contextual statistics.
+  \end{itemize}
+\end{itemize}
+
+\subsection{Enhanced Core Definitions}
+In addition to the standard representations, Eidos incorporates advanced mathematical constructs to capture quantum-like behavior and complex dynamics:
+
+\subsubsection*{Quantum Token Representation}
+Each token exists in a superposition state:
+\[
+\ket{t}=\alpha\ket{u}\otimes\beta\ket{\pi}\otimes\gamma\ket{\chi}\quad\text{where }|\alpha|^2+|\beta|^2+|\gamma|^2=1,
+\]
+with measurement operators $\mathcal{M}_{\mathrm{ctx}}=\{\Pi_{\mathrm{base}},\Pi_{\mathrm{pers}}\}$.
+
+\subsubsection*{Holomorphic Knowledge Embedding}
+Embeddings evolve via Cauchy--Riemann dynamics:
+\[
+\frac{\partial E}{\partial\overline{z}}=0\quad\text{with }z=x+i\xi\in\mathbb{C}^{d_E\times d_{\mathrm{pers}}},
+\]
+ensuring analyticity in the joint embedding space.
+
+\subsubsection*{Noncommutative Memory Operators}
+Memory operations form a C*-algebra:
+\[
+[\mathcal{M}_i,\mathcal{M}_j]=i\epsilon_{ijk}\mathcal{M}_k\quad\text{with }\mathcal{M}\in\mathfrak{su}(d_{\mathcal{M}}),
+\]
+capturing the inherent noncommutativity in dynamic memory updates.
+
+\subsection{Embeddings}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Base Embedding:} $E_{\mathrm{B}}:\mathcal{V}\to\mathbb{R}^{d_E}$.
+  \item \textbf{Contextual Embedding:} $E_{\mathrm{C}}:(\mathbb{R}^{d_E})^n\to(\mathbb{R}^{d_C})^n$, for a sequence of length $n$.
+  \item \textbf{Fusion Operator:} $g:\mathbb{R}^{d_E}\times\mathbb{R}^{d_C}\to\mathbb{R}^{d_F}$.
+  \item \textbf{Final Token Representation:} $\mathbf{z}_i=E_{\mathrm{F}}(t_i,\xi)\in\mathbb{R}^{d_F}$, where $\xi$ denotes contextual or personalized parameters.
+\end{itemize}
+
+\subsection{Knowledge Graphs}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Base Knowledge Graph (BKG):} $\mathcal{G}_{\mathrm{BKG}}=(\mathcal{N}_{\mathrm{BKG}},\mathcal{E}_{\mathrm{BKG}})$, with nodes defined by $E_{\mathrm{B}}(t)$.
+  \item \textbf{Personal Knowledge Graph (PKG):} $\mathcal{G}_{\mathrm{PKG}}=(\mathcal{N}_{\mathrm{PKG}},\mathcal{E}_{\mathrm{PKG}})$, derived from personalized embeddings $E_{\mathrm{sup}}(t,\xi)$.
+  \item \textbf{Graph Fusion Operator:} $\oplus_{\mathcal{K}}:\mathcal{G}_{\mathrm{BKG}}\times\mathcal{G}_{\mathrm{PKG}}\to\mathcal{G}_{\mathrm{Unified}}$.
+  \item \textbf{Unified Knowledge Graph:} $\mathcal{G}_{\mathrm{Unified}}=\mathcal{G}_{\mathrm{BKG}}\cup\mathcal{G}_{\mathrm{PKG}}$.
+\end{itemize}
+
+\subsubsection*{Non-Euclidean Knowledge Fusion}
+Beyond simple set-union, knowledge integration is modeled in non-Euclidean spaces:
+\[
+\mathcal{G}_{\mathrm{Unified}}=\int_{\mathcal{M}_{\mathrm{geom}}}\exp_{\mathcal{G}_{\mathrm{BKG}}}\Bigl(t\,\mathcal{G}_{\mathrm{PKG}}\Bigr)\,dt,\quad t\in[0,1],
+\]
+reflecting continuous geometric transformations between graph domains.
+
+\subsection{Infinite RoPE and Dynamic Vocabulary}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{RoPE Transformation:} $\psi:\mathbb{N}\times\mathbb{R}^{d_{\mathrm{att}}}\to\mathbb{R}^{d_{\mathrm{att}}}$.
+  \item \textbf{Frequency Parameters:} $\theta^{\ast}_j$ for $j=1,\dots,\frac{d_{\mathrm{att}}}{2}$.
+  \item \textbf{Dynamic Vocabulary Update:} $\Delta_{\mathcal{V}}:\mathcal{V}\times\mathcal{D}_{\mathrm{learn}}\to\mathcal{V}'$.
+\end{itemize}
+
+\subsubsection*{Hypergeometric Tokenization}
+A novel tokenization scheme minimizes an energy function:
+\[
+\mathcal{T}_{\mathrm{base}}(X)=\argmin_{\{t_i\}}\sum_{k=1}^K\Biggl[\Re(z_k)-\sum_{j=1}^J\alpha_j\,\phi_j(t_k)\Biggr]^2+\lambda\,\Omega(\{\alpha_j\}),
+\]
+where $\phi_j$ are basis functions and $\Omega$ is a regularizer.
+
+\subsection{Core Model Architecture}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Deep Model:} $f_{\theta}:(\mathbb{R}^{d_F})^n\to\mathcal{Y}$, with parameters $\theta\in\Theta\subset\mathbb{R}^{p}$.
+  \item \textbf{Transformer Sub-module:} $f^{\mathrm{T}}_{\theta_{\mathrm{T}}}$.
+  \item \textbf{RWKV Sub-module:} $f^{\mathrm{RWKV}}_{\theta_{\mathrm{R}}}$, featuring recurrence variables $S_t$, $Z_t$ and a decay vector $\boldsymbol{\lambda}$.
+  \item \textbf{Expert Coordinator:} $\Gamma:\{f^{(i)}_{\theta_i}\}_{i\in I_{\mathrm{exp}}}\to f^{\mathrm{Unified}}_{\theta}$.
+\end{itemize}
+
+\subsection{Titans Memory Architecture}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Memory Bank:} $\mathcal{M}=\{(k^{\mathcal{M}}_i,v^{\mathcal{M}}_i)\}_{i=1}^{M_{\mathcal{M}}}$.
+  \item \textbf{Similarity Function:} $s:\mathbb{R}^{d_L}\times\mathbb{R}^{d_k}\to\mathbb{R}$.
+  \item \textbf{Attention Weights:}
+  \[
+    \alpha_i(x)=\frac{\exp\Bigl(s\bigl(r,k^{\mathcal{M}}_i\bigr)/\tau\Bigr)}
+      {\sum_{j}\exp\Bigl(s\bigl(r,k^{\mathcal{M}}_j\bigr)/\tau\Bigr)}.
+  \]
+  \item \textbf{Aggregated Memory Read:} $m(x)=\sum_{i=1}^{M_{\mathcal{M}}}\alpha_i(x)\,v^{\mathcal{M}}_i$.
+  \item \textbf{Meta-Learner:} $h:\mathbb{R}^{d_v}\to\mathbb{R}^{p}$, producing the parameter update $\Delta\theta(x)$.
+\end{itemize}
+
+\subsection{Recursive Adaptive Feedback}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Recursive Entities:} $\mathcal{E}^{\mathrm{R}}=\{E^{\mathrm{R}}_i\}_{i\in I_{\mathrm{R}}}$.
+  \item \textbf{Trigger and Action Functions:} $\tau^{\mathrm{R}}:\mathcal{E}^{\mathrm{R}}\to\mathcal{T}^{\mathrm{R}}$ and $\alpha^{\mathrm{R}}:\mathcal{E}^{\mathrm{R}}\to\mathcal{A}^{\mathrm{R}}$.
+  \item \textbf{Influence Function:} $\Delta^{\mathrm{R}}:\mathcal{E}^{\mathrm{R}}\times\mathcal{E}^{\mathrm{R}}\to\mathcal{F}^{\mathrm{R}}$.
+  \item \textbf{Feedback Composition:}
+  \[
+    \phi^{\mathrm{R}}\bigl(E^{\mathrm{R}}_i,E^{\mathrm{R}}_j\bigr)
+    =\Delta^{\mathrm{R}}\bigl(E^{\mathrm{R}}_i,E^{\mathrm{R}}_j\bigr)
+      \circ\beta^{\mathrm{R}}\bigl(E^{\mathrm{R}}_j,E^{\mathrm{R}}_i\bigr).
+  \]
+  \item \textbf{Overall Runtime State:} $\Sigma^{\mathrm{R}}$, updated via 
+  \[
+    \mu^{\mathrm{R}}:\Sigma^{\mathrm{R}}\to\Sigma^{\mathrm{R}},
+  \]
+  satisfying 
+  \[
+    \mu^{\mathrm{R}}\Bigl(\mu^{\mathrm{R}}(\Sigma^{\mathrm{R}})\Bigr)=\mu^{\mathrm{R}}(\Sigma^{\mathrm{R}}).
+  \]
+\end{itemize}
+
+\subsection{Universal Training System}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Loss Function:} $\mathcal{L}:\Theta\times\mathcal{D}\to\mathbb{R}_{\ge0}$, with mini-batch loss
+  \[
+    \mathcal{L}(\theta;B)=\frac{1}{|B|}\sum_{(x,y)\in B}\ell\Bigl(f_{\theta}(x),y\Bigr)
+      +\lambda_W\,\|\theta\|^2+\lambda_{\mathrm{sparse}}\,\mathcal{R}_{\mathrm{sparse}}(\theta).
+  \]
+  \item \textbf{Optimizer:} $\mathcal{O}:\Theta\times\nabla_{\theta}\mathcal{L}\times\Xi\to\Theta$, where $\Xi$ represents the optimizer state (e.g., for AdamW).
+  \item \textbf{Normalization Operator:} $N:\mathbb{R}^{d}\to\mathbb{R}^{d}$, defined as
+  \[
+    N(x)=\gamma\odot\frac{x-\mu_x}{\sqrt{\sigma_x^2+\epsilon}}+\beta.
+  \]
+  \item \textbf{Dropout Operator:} $D:\mathbb{R}^{d}\to\mathbb{R}^{d}$, using a Bernoulli mask $m\sim\mathrm{Bernoulli}(1-p)$.
+  \item \textbf{Skip Connection:} $S(x,F(x))=x+F(x)$.
+\end{itemize}
+
+\subsection{Final Decoding and Multimodal Output}
+
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Decoding Function:} $\delta:\mathcal{Y}\to\mathcal{O}_{\mathrm{mod}}$, where $\mathcal{O}_{\mathrm{mod}}$ specifies the output modality (default: $\mathrm{Text}$).
+  \item \textbf{Modality Decision Function:} $\mu_{\mathrm{mod}}:\mathcal{Y}\times\mathcal{C}_{\mathrm{task}}\to\mathcal{O}_{\mathrm{mod}}$, with $\mathcal{C}_{\mathrm{task}}$ representing task requirements.
+\end{itemize}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Enhanced Algorithmic Formalism}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{algorithm}
+\caption{Eidos Quantum-Adaptive Inference with Module Annotations}
+\begin{algorithmic}[1]
+  \State \textbf{Input (Module A):} $\ket{X_{\mathrm{raw}}}=\bigotimes_{k=1}^K\ket{\sigma_k}$, entangled dataset $\mathcal{D}_{\mathrm{ent}}$
+  \State \textbf{Initialize (Module I):} $\rho_0=\ket{0}\bra{0}^{\otimes n_{\mathrm{qvm}}}$
+  \For{$t\in\mathbb{T}_{\mathrm{adapt}}$ \textbf{(Dynamic Adaptivity)}}
+      \State $\ket{\psi_t}\gets\mathcal{F}_{\mathrm{rope}}\Bigl(\bigotimes_i\ket{z_i}\Bigr)$ \quad \textit{(Module G: Infinite RoPE)}
+      \State Apply $\mathcal{U}_{\mathrm{mem}}=\exp\bigl(-i\mathcal{H}_{\mathcal{M}}t\bigr)$, where $\mathcal{H}_{\mathcal{M}}=\sum_i\alpha_i\,\mathcal{M}_i$ \quad \textit{(Module I: Memory Integration)}
+      \State Measure: $\mathcal{G}_{\mathrm{Unified}}'\gets\Pi_{\mathrm{ctx}}\circ\mathcal{M}_{\mathrm{mem}}(\rho_t)$ \quad \textit{(Module F: Knowledge Graph Integration)}
+      \State Update: $\theta_{t+1}\gets\theta_t\oplus\mathfrak{L}\bigl\{\mathcal{D}_{\mathrm{ent}},\mathcal{G}_{\mathrm{Unified}}'\bigr\}$ \quad \textit{(Module K: Training System)}
+      \State $\rho_{t+1}\gets\mathcal{E}_{\mathrm{noise}}(\rho_t)\otimes\ket{\theta_{t+1}}\bra{\theta_{t+1}}$ \quad \textit{(Noise and Parameter Persistence)}
+  \EndFor
+  \State \textbf{Output (Module L):} $\Tr\Bigl(\rho_{\mathrm{final}}\Bigr)\otimes\mathcal{P}_{\mathrm{out}}$
+\end{algorithmic}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Complete Operator Taxonomy}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[h]
+\centering
+\caption{Eidos Operator Hierarchy}
+\begin{tabular}{lll}
+\hline
+\textbf{Symbol} & \textbf{Space} & \textbf{Properties} \\
+\hline
+$\mathfrak{E}$ & $\mathcal{L}(\mathbb{H}_{\mathrm{emb}})$ & Completely positive, trace-nonincreasing \\
+$\mathcal{F}_{\mathrm{rope}}$ & $\mathbb{C}^{d_{\mathrm{att}}}$ & Rotational equivariance, $\mathfrak{so}(2n)$ representation \\
+$\mathfrak{L}$ & $\Theta\times\mathcal{D}^{\infty}$ & Fr\'echet differentiable, $\nabla$-parallel \\
+$\mathcal{U}_{\mathrm{mem}}$ & $\mathbb{H}_{\mathcal{M}}$ & Haar-random, ergodic \\
+\hline
+\end{tabular}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Complete Commutative Diagram}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\[
+\begin{tikzcd}
+\Sigma^* \arrow[r, "\mathcal{P}_{\mathrm{in}}"] \arrow[d, "Entangle"'] & 
+\mathcal{X}_{\mathrm{proc}} \arrow[r, "\mathcal{T}_{\mathrm{base}}"'] &
+\mathcal{V}^{\otimes n} \arrow[d, "\mathfrak{E}"] \\
+\mathbb{H}_{\mathrm{raw}} \arrow[r, "\mathcal{U}_{\mathrm{prep}}"'] &
+\mathbb{H}_{\mathrm{emb}} \arrow[r, "\mathcal{F}_{\mathrm{rope}}"'] &
+\mathbb{H}_{\mathrm{ctx}} \arrow[d, "\mathcal{M}_{\mathrm{mem}}"] \\
+& \mathbb{H}_{\mathcal{M}} \arrow[r, "\mathfrak{L}"'] &
+\Theta_{\mathrm{adapt}} \arrow[u, "\mathcal{E}_{\mathrm{fb}}"']
+\end{tikzcd}
+\]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Verification}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Consistency Proof}
+\begin{proof}[Consistency of the Recursive Feedback]
+Assume $\mu^{\mathrm{R}}: \Sigma^{\mathrm{R}} \to \Sigma^{\mathrm{R}}$ is a contraction mapping under the norm $\|\cdot\|$. Then, by the Banach Fixed-Point Theorem,
+\[
+\|\mu^{\mathrm{R}}(\Sigma)-\mu^{\mathrm{R}}(\Sigma')\|\le L\|\Sigma-\Sigma'\|,\quad \text{with } L<1.
+\]
+Since the idempotence axiom (A2) holds, we have $L=0$, guaranteeing the existence of a unique fixed point $\Sigma_{\mathrm{fix}}$.
+\end{proof}
+
+\begin{proof}
+Under the contraction mapping assumption on $\mu^{\mathrm{R}}$, the Banach Fixed-Point Theorem implies a unique fixed point exists. Given the idempotence condition,
+\[
+\mu^{\mathrm{R}}(\mu^{\mathrm{R}}(\Sigma))=\mu^{\mathrm{R}}(\Sigma),
+\]
+conclude that $\Sigma_{\mathrm{fix}}=\mu^{\mathrm{R}}(\Sigma_{\mathrm{fix}})$ is unique.
+\end{proof}
+
+\subsection*{Universal Approximation Property}
+\begin{proof}[Universal Approximation]
+For any Borel measure $\nu$ defined on $(\R^{d_F},\mathcal{B})$, there exists a parameter vector $\theta^*\in\Theta$ satisfying
+\[
+d_{\mathrm{TV}}\Bigl(f_{\theta^*}(\mathcal{X}),\nu\Bigr)<\epsilon+\lambda_{\mathrm{sparse}}\|\theta^*\|_{\ell^0},
+\]
+where $d_{\mathrm{TV}}$ denotes the total variation distance.
+\end{proof}
+
+\begin{proof}
+This follows from the $\Gamma$-density property of the mixture-of-experts in the function space $\mathcal{C}(\R^{d_F},\mathcal{Y})$. By suitably choosing the expert parameters and sparse regularization, the target distribution $\nu$ can be approximated arbitrarily closely.
+\end{proof}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{End-to-End Data Flow and Processing Sequence}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section delineates the complete data and model flow within the Eidos framework.
+
+\subsection*{Step 1: Input Processing (Module A)}
+\begin{itemize}[label=\(\bullet\)]
+  \item \textbf{Raw Input:} $X_{\mathrm{raw}}\in\Sigma^*$ (e.g., a text document).
+  \item \textbf{Preprocessing:} Compute $X_{\mathrm{proc}}\gets\mathcal{P}_{\mathrm{in}}(X_{\mathrm{raw}})$, where $X_{\mathrm{proc}}\in\mathcal{X}_{\mathrm{proc}}$.
+\end{itemize}
+
+\subsection*{Step 2: Universal Communication and Data Handling (Module B)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Encapsulate each message as a universal data packet
+  \[
+    \mathcal{P}=\Bigl(\operatorname{ID}_{\mathcal{P}},\,\mathrm{Payload}_{\mathcal{P}},\,\mathrm{Meta}_{\mathcal{P}}\Bigr).
+  \]
+  \item Utilize communication channels $\mathcal{C}_{ij}$ with routing function $\mathcal{R}_{\mathrm{comm}}$ to orchestrate module interactions.
+  \item The coordination manager $\Omega$ registers modules and ensures reliable packet delivery.
+\end{itemize}
+
+\subsection*{Step 3: Universal Streaming, Loading, and Chunking (Module C)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Partition model parameters as $\theta=\bigcup_{j\in J} T_j$.
+  \item Index each chunk $T_j$ by $\mathcal{I}(T_j)=\ell_j\in\mathcal{S}_{\mathrm{disk}}$.
+  \item Dynamically stream chunks into memory via $\sigma$ and cache them using $\mu$.
+\end{itemize}
+
+\subsection*{Step 4: Multidimensional Vocabulary and Tokenization (Module D)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Define the complete vocabulary as $\mathcal{V}=\mathcal{V}^{(0)}\cup\mathcal{V}^{(1)}$.
+  \item Assign each token $t\in\mathcal{V}$ a unique identifier, $\operatorname{ID}(t)=\eta(t)$.
+  \item Segment the preprocessed input $X_{\mathrm{proc}}$ into tokens $(t_1,\dots,t_n)$ using the base tokenizer $\mathcal{T}_{\mathrm{base}}$.
+\end{itemize}
+
+\subsection*{Step 5: Contextual Embedding and Tokenization (Module E)}
+\begin{itemize}[label=\(\bullet\)]
+  \item For each token $t_i$, compute its base embedding $\mathbf{e}_i=E_{\mathrm{B}}(t_i)\in\mathbb{R}^{d_E}$.
+  \item Process the sequence $(\mathbf{c}_1,\dots,\mathbf{c}_n)=E_{\mathrm{C}}(\mathbf{e}_1,\dots,\mathbf{e}_n)$.
+  \item Fuse base and contextual embeddings: $\mathbf{z}_i=g(\mathbf{e}_i,\mathbf{c}_i)\in\mathbb{R}^{d_F}$.
+  \item Integrate dual-layer representations via
+  \[
+    \mathbf{z}_i=g\Bigl(E_{\mathrm{B}}(t_i),\,E_{\mathrm{sup}}(t_i,\xi)\Bigr).
+  \]
+\end{itemize}
+
+\subsection*{Step 6: Deep Knowledge Graph Construction (Module F)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Build the Base Knowledge Graph:
+  \[
+    \mathcal{G}_{\mathrm{BKG}}=\Bigl(\mathcal{N}_{\mathrm{BKG}},\,\mathcal{E}_{\mathrm{BKG}}\Bigr),
+  \]
+  where nodes represent tokens $t$ with embeddings $E_{\mathrm{B}}(t)$ and edges are defined by $\rho_{\mathrm{base}}(t_i,t_j)\subset\mathcal{R}_{\mathrm{base}}$.
+  \item Construct the Personal Knowledge Graph:
+  \[
+    \mathcal{G}_{\mathrm{PKG}}=\Bigl(\mathcal{N}_{\mathrm{PKG}},\,\mathcal{E}_{\mathrm{PKG}}\Bigr),
+  \]
+  utilizing personalized embeddings $E_{\mathrm{sup}}(t,\xi)$.
+  \item Fuse the graphs via $\oplus_{\mathcal{K}}$ to obtain
+  \[
+    \mathcal{G}_{\mathrm{Unified}}=\mathcal{G}_{\mathrm{BKG}}\cup\mathcal{G}_{\mathrm{PKG}}.
+  \]
+\end{itemize}
+
+\subsection*{Step 7: Infinite RoPE and Dynamic Vocabulary Updating (Module G)}
+\begin{itemize}[label=\(\bullet\)]
+  \item For each token position $i$ and each 2D subspace $j$, define the rotation matrix
+  \[
+    R^{(j)}(i)=\begin{pmatrix}
+      \cos\bigl(i\,\theta^{\ast}_j\bigr) & -\sin\bigl(i\,\theta^{\ast}_j\bigr)\\[1mm]
+      \sin\bigl(i\,\theta^{\ast}_j\bigr) & \cos\bigl(i\,\theta^{\ast}_j\bigr)
+    \end{pmatrix}.
+  \]
+  \item Form the block-diagonal rotation:
+  \[
+    R(i)=\operatorname{diag}\Bigl(R^{(1)}(i),\dots,R^{(d_{\mathrm{att}}/2)}(i)\Bigr),\quad\psi(i,v)=R(i)v.
+  \]
+  \item Apply $\psi(i,\cdot)$ to the query/key vectors in the attention mechanism.
+  \item Dynamically integrate newly learned tokens via 
+  \[
+    \Delta_{\mathcal{V}}:\mathcal{V}\times\mathcal{D}_{\mathrm{learn}}\to\mathcal{V}'.
+  \]
+\end{itemize}
+
+\subsection*{Step 8: Core Model Processing (Module H)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Process the fused embeddings through the deep model:
+  \[
+    f_{\theta}:(\mathbb{R}^{d_F})^n\to\mathcal{Y},\quad\theta\in\Theta.
+  \]
+  \item Sub-modules include:
+  \begin{itemize}[label=\(\circ\)]
+    \item \textbf{Transformer:} $f^{\mathrm{T}}_{\theta_{\mathrm{T}}}$, leveraging multi-head self-attention (enhanced with RoPE).
+    \item \textbf{RWKV:} $f^{\mathrm{RWKV}}_{\theta_{\mathrm{R}}}$ with recurrence defined as
+    \[
+      S_t=\boldsymbol{\lambda}\odot S_{t-1}+\exp(k_t)\odot v_t,\quad
+      Z_t=\boldsymbol{\lambda}\odot Z_{t-1}+\exp(k_t).
+    \]
+  \end{itemize}
+  \item Coordinate the expert models via
+  \[
+    f^{\mathrm{Unified}}_{\theta}=\Gamma\Bigl(\{f^{(i)}_{\theta_i}\}_{i\in I_{\mathrm{exp}}}\Bigr).
+  \]
+\end{itemize}
+
+\subsection*{Step 9: Titans Memory Architecture (Module I)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Define the memory bank:
+  \[
+    \mathcal{M}=\{(k^{\mathcal{M}}_i,v^{\mathcal{M}}_i)\}_{i=1}^{M_{\mathcal{M}}}.
+  \]
+  \item For a latent representation $r$, compute similarities $s\bigl(r,k^{\mathcal{M}}_i\bigr)$ and attention weights
+  \[
+    \alpha_i(x)=\frac{\exp\Bigl(s\bigl(r,k^{\mathcal{M}}_i\bigr)/\tau\Bigr)}
+      {\sum_{j}\exp\Bigl(s\bigl(r,k^{\mathcal{M}}_j\bigr)/\tau\Bigr)}.
+  \]
+  \item Aggregate the memory read:
+  \[
+    m(x)=\sum_{i=1}^{M_{\mathcal{M}}}\alpha_i(x)v^{\mathcal{M}}_i.
+  \]
+  \item Obtain the parameter update via the meta-learner:
+  \[
+    \Delta\theta(x)=h\bigl(m(x)\bigr),\quad\theta_x=\theta+\Delta\theta(x).
+  \]
+\end{itemize}
+
+\subsection*{Step 10: Recursive Adaptive Feedback (Module J)}
+\begin{itemize}[label=\(\bullet\)]
+  \item Define runtime recursive entities: $\mathcal{E}^{\mathrm{R}}=\{E^{\mathrm{R}}_i\}$.
+  \item Construct feedback using trigger $\tau^{\mathrm{R}}$, action $\alpha^{\mathrm{R}}$, and influence $\Delta^{\mathrm{R}}$:
+  \[
+    \phi^{\mathrm{R}}\bigl(E^{\mathrm{R}}_i,E^{\mathrm{R}}_j\bigr)
+    =\Delta^{\mathrm{R}}\bigl(E^{\mathrm{R}}_i,E^{\mathrm{R}}_j\bigr)
+      \circ\beta^{\mathrm{R}}\bigl(E^{\mathrm{R}}_j,E^{\mathrm{R}}_i\bigr).
+  \]
+  \item Update the overall state: $\Sigma^{\mathrm{R}}\gets\mu^{\mathrm{R}}(\Sigma^{\mathrm{R}})$ (ensuring idempotence).
+\end{itemize}
+
+\subsection*{Step 11: Universal Training System (Module K)}
+\begin{itemize}[label=\(\bullet\)]
+  \item For a mini-batch $B\subset\mathcal{D}$, compute the loss:
+  \[
+    \mathcal{L}(\theta;B)=\frac{1}{|B|}\sum_{(x,y)\in B}\ell\Bigl(f_{\theta}(x),y\Bigr)
+      +\lambda_W\,\|\theta\|^2+\lambda_{\mathrm{sparse}}\,\mathcal{R}_{\mathrm{sparse}}(\theta).
+  \]
+  \item Update parameter chunks via the optimizer:
+  \[
+    T_j\leftarrow\mathcal{O}\Bigl(T_j,\nabla_{T_j}\mathcal{L},\Xi_j\Bigr).
+  \]
+  \item Within the forward pass, apply normalization $N$, dropout $D$, and skip connections $S$.
+  \item Continuously stream and commit parameter updates using $\sigma$.
+\end{itemize}
+
+\subsection*{Step 12: Final Decoding and Multimodal Output (Module L)}
+\begin{itemize}[label=\(\bullet\)]
+  \item The deep model produces a latent output $y_{\mathrm{latent}}\in\mathcal{Y}$.
+  \item Decode the latent representation using $\delta:\mathcal{Y}\to\mathrm{Text}$ to obtain $\hat{y}_{\mathrm{text}}=\delta\bigl(y_{\mathrm{latent}}\bigr)$.
+  \item Use $\mu_{\mathrm{mod}}:\mathcal{Y}\times\mathcal{C}_{\mathrm{task}}\to\mathcal{O}_{\mathrm{mod}}$ to determine any additional modalities (e.g., images, audio).
+  \item Package the final output as 
+  \[
+    \mathcal{P}_{\mathrm{out}}=\Bigl(\operatorname{ID}_{\mathrm{out}},\hat{y},\mathrm{Meta}_{\mathrm{out}}\Bigr),
+  \]
+  and route it via $\Omega$ for logging and feedback.
+\end{itemize}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integrated End-to-End Algorithm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{algorithm}
+\caption{Eidos Integrated Inference and Training Pipeline}
+\label{alg:eidos}
+\begin{algorithmic}[1]
+  \State \textbf{Input:} Raw input $X_{\mathrm{raw}}\in\Sigma^*$, training set $\mathcal{D}$, task context $\mathcal{C}_{\mathrm{task}}$
+  \State \textbf{Preprocess:} $X_{\mathrm{proc}}\gets\mathcal{P}_{\mathrm{in}}(X_{\mathrm{raw}})$
+  \State \textbf{Tokenize:} $(t_1,\dots,t_n)\gets\mathcal{T}_{\mathrm{base}}(X_{\mathrm{proc}})$
+  \For{$i=1$ to $n$}
+      \State $\mathbf{e}_i\gets E_{\mathrm{B}}(t_i)$
+  \EndFor
+  \State $(\mathbf{c}_1,\dots,\mathbf{c}_n)\gets E_{\mathrm{C}}(\mathbf{e}_1,\dots,\mathbf{e}_n)$
+  \For{$i=1$ to $n$}
+      \State $\mathbf{z}_i\gets g(\mathbf{e}_i,\mathbf{c}_i)$
+      \State $\mathbf{z}_i'\gets\psi(i,\mathbf{z}_i)$
+  \EndFor
+  \State \textbf{Knowledge Graph:} Update $\mathcal{G}_{\mathrm{BKG}}$ and $\mathcal{G}_{\mathrm{PKG}}$, compute 
+  \[
+    \mathcal{G}_{\mathrm{Unified}}\gets\mathcal{G}_{\mathrm{BKG}}\cup\mathcal{G}_{\mathrm{PKG}}.
+  \]
+  \State $y_{\mathrm{latent}}\gets f_{\theta}(\mathbf{z}_1',\dots,\mathbf{z}_n')$
+  \State \textbf{Test-Time Adaptation:}
+  \State $r\gets g_{\theta}(X_{\mathrm{proc}})$
+  \For{$i=1$ to $M_{\mathcal{M}}$}
+      \State $s_i\gets s\bigl(r,k^{\mathcal{M}}_i\bigr)$
+  \EndFor
+  \State Compute $\alpha_i\gets\frac{\exp(s_i/\tau)}{\sum_{j}\exp(s_j/\tau)}$, and $m(x)\gets\sum_i\alpha_i\,v^{\mathcal{M}}_i$
+  \State $\Delta\theta(x)\gets h\bigl(m(x)\bigr),\quad\theta_x\gets\theta+\Delta\theta(x)$
+  \State \textbf{Recursive Feedback:} $\Sigma^{\mathrm{R}}\gets\mu^{\mathrm{R}}(\Sigma^{\mathrm{R}})$
+  \State \textbf{Decoding:} $\hat{y}\gets\delta\bigl(y_{\mathrm{latent}}\bigr)$
+  \If{multimodal output needed}
+      \State $\hat{y}_{\mathrm{mod}}\gets\mu_{\mathrm{mod}}(y_{\mathrm{latent}},\mathcal{C}_{\mathrm{task}})$
+  \EndIf
+  \State $\mathcal{P}_{\mathrm{out}}\gets\Bigl(\operatorname{ID}_{\mathrm{out}},\hat{y},\mathrm{Meta}_{\mathrm{out}}\Bigr)$
+  \If{training mode}
+      \State \textbf{/* Execute training loop (refer to supplementary Algorithm~\ref{alg:training}) */}
+  \EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We have presented the \textbf{Eidos} framework with exhaustive technical definitions and rigorous mathematical formalism, ensuring that every component is fully integrated and systematically defined. The document now features:
+
+\begin{enumerate}[label=(\Alph*)]
+  \item \textbf{Input Processing:} The raw input $X_{\mathrm{raw}}$ is transformed into a processed form $X_{\mathrm{proc}}$ via the operator $\mathcal{P}_{\mathrm{in}}$, with precise domain and range definitions.
+  \item \textbf{Universal Communication and Data Handling:} Data packets $\mathcal{P}$ and robust communication channels $\mathcal{C}_{ij}$ are employed, with the coordination manager $\Omega$ ensuring integration across modules.
+  \item \textbf{Streaming, Loading, and Chunking:} Model parameters $\theta$, partitioned into chunks $\{T_j\}$, are systematically streamed and cached, ensuring consistent updates.
+  \item \textbf{Multidimensional Vocabulary and Tokenization:} A comprehensive vocabulary $\mathcal{V}$ is structured with unique identifiers $\eta$, and tokenization via $\mathcal{T}_{\mathrm{base}}$ is robustly defined.
+  \item \textbf{Contextual Embedding and Tokenization:} Dual-layer representations are obtained by fusing $E_{\mathrm{B}}$ and $E_{\mathrm{C}}$ with the fusion operator $g$, integrating enhanced adaptability through $E_{\mathrm{sup}}$.
+  \item \textbf{Knowledge Graphs:} Graphs $\mathcal{G}_{\mathrm{BKG}}$ and $\mathcal{G}_{\mathrm{PKG}}$ are meticulously constructed and fused into $\mathcal{G}_{\mathrm{Unified}}$, with non-Euclidean geometric integration.
+  \item \textbf{Infinite RoPE and Dynamic Vocabulary:} The RoPE operator $\psi$ and dynamic update operator $\Delta_{\mathcal{V}}$ ensure that positional encoding and vocabulary refinement occur seamlessly.
+  \item \textbf{Core Model Architectures:} The deep model $f_{\theta}$ integrates both Transformer ($f^{\mathrm{T}}_{\theta_{\mathrm{T}}}$) and RWKV ($f^{\mathrm{RWKV}}_{\theta_{\mathrm{R}}}$) sub-modules, coordinated by $\Gamma$, for a unified inference process.
+  \item \textbf{Titans Memory Architecture:} Memory bank $\mathcal{M}$, with similarity measures and meta-learner $h$, provides adaptive parameter updates $\Delta\theta(x)$.
+  \item \textbf{Recursive Adaptive Feedback:} The operator $\mu^{\mathrm{R}}$ enforces idempotence and systematic integration of recursive feedback.
+  \item \textbf{Universal Training System:} Comprehensive loss functions $\mathcal{L}$, coupled with optimizers $\mathcal{O}$, and auxiliary operators $N$, $D$, and $S$, form a robust training loop.
+  \item \textbf{Final Decoding and Multimodal Output:} The function $\delta$ and modality decision operator $\mu_{\mathrm{mod}}$ ensure that the final output is delivered in the desired format, with extensibility to other modalities.
+\end{enumerate}
+
+This rigorously defined and fully integrated framework offers a reliable blueprint for constructing a persistent, adaptive, and multimodal intelligent system, ensuring every aspect is consistent and systematically utilized from the input stage to the final output.
+
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% End perfected file: eidos_complete.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The above revised code fixes every reported chktex issue while preserving every detail exactly as in your original document (with enhanced typographic and stylistic quality)

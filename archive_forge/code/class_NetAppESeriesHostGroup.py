@@ -1,0 +1,142 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils._text import to_native
+from ansible_collections.netapp_eseries.santricity.plugins.module_utils.santricity import NetAppESeriesModule, create_multipart_formdata, request
+class NetAppESeriesHostGroup(NetAppESeriesModule):
+    EXPANSION_TIMEOUT_SEC = 10
+    DEFAULT_DISK_POOL_MINIMUM_DISK_COUNT = 11
+
+    def __init__(self):
+        version = '02.00.0000.0000'
+        ansible_options = dict(state=dict(choices=['present', 'absent'], type='str', default='present'), name=dict(required=True, type='str'), hosts=dict(required=False, type='list'))
+        super(NetAppESeriesHostGroup, self).__init__(ansible_options=ansible_options, web_services_version=version, supports_check_mode=True)
+        args = self.module.params
+        self.state = args['state']
+        self.name = args['name']
+        self.hosts_list = args['hosts']
+        self.current_host_group = None
+        self.hosts_cache = None
+
+    @property
+    def hosts(self):
+        """Retrieve a list of host reference identifiers should be associated with the host group."""
+        if self.hosts_cache is None:
+            self.hosts_cache = []
+            existing_hosts = []
+            if self.hosts_list:
+                try:
+                    rc, existing_hosts = self.request('storage-systems/%s/hosts' % self.ssid)
+                except Exception as error:
+                    self.module.fail_json(msg='Failed to retrieve hosts information. Array id [%s].  Error[%s].' % (self.ssid, to_native(error)))
+                for host in self.hosts_list:
+                    for existing_host in existing_hosts:
+                        if host in existing_host['id'] or host.lower() in existing_host['name'].lower():
+                            self.hosts_cache.append(existing_host['id'])
+                            break
+                    else:
+                        self.module.fail_json(msg='Expected host does not exist. Array id [%s].  Host [%s].' % (self.ssid, host))
+            self.hosts_cache.sort()
+        return self.hosts_cache
+
+    @property
+    def host_groups(self):
+        """Retrieve a list of existing host groups."""
+        host_groups = []
+        hosts = []
+        try:
+            rc, host_groups = self.request('storage-systems/%s/host-groups' % self.ssid)
+            rc, hosts = self.request('storage-systems/%s/hosts' % self.ssid)
+        except Exception as error:
+            self.module.fail_json(msg='Failed to retrieve host group information. Array id [%s].  Error[%s].' % (self.ssid, to_native(error)))
+        host_groups = [{'id': group['clusterRef'], 'name': group['name']} for group in host_groups]
+        for group in host_groups:
+            hosts_ids = []
+            for host in hosts:
+                if group['id'] == host['clusterRef']:
+                    hosts_ids.append(host['hostRef'])
+            group.update({'hosts': hosts_ids})
+        return host_groups
+
+    @property
+    def current_hosts_in_host_group(self):
+        """Retrieve the current hosts associated with the current hostgroup."""
+        current_hosts = []
+        for group in self.host_groups:
+            if group['name'] == self.name:
+                current_hosts = group['hosts']
+                break
+        return current_hosts
+
+    def unassign_hosts(self, host_list=None):
+        """Unassign hosts from host group."""
+        if host_list is None:
+            host_list = self.current_host_group['hosts']
+        for host_id in host_list:
+            try:
+                rc, resp = self.request('storage-systems/%s/hosts/%s/move' % (self.ssid, host_id), method='POST', data={'group': '0000000000000000000000000000000000000000'})
+            except Exception as error:
+                self.module.fail_json(msg='Failed to unassign hosts from host group. Array id [%s].  Host id [%s].  Error[%s].' % (self.ssid, host_id, to_native(error)))
+
+    def delete_host_group(self, unassign_hosts=True):
+        """Delete host group"""
+        if unassign_hosts:
+            self.unassign_hosts()
+        try:
+            rc, resp = self.request('storage-systems/%s/host-groups/%s' % (self.ssid, self.current_host_group['id']), method='DELETE')
+        except Exception as error:
+            self.module.fail_json(msg='Failed to delete host group. Array id [%s]. Error[%s].' % (self.ssid, to_native(error)))
+
+    def create_host_group(self):
+        """Create host group."""
+        data = {'name': self.name, 'hosts': self.hosts}
+        response = None
+        try:
+            rc, response = self.request('storage-systems/%s/host-groups' % self.ssid, method='POST', data=data)
+        except Exception as error:
+            self.module.fail_json(msg='Failed to create host group. Array id [%s]. Error[%s].' % (self.ssid, to_native(error)))
+        return response
+
+    def update_host_group(self):
+        """Update host group."""
+        data = {'name': self.name, 'hosts': self.hosts}
+        desired_host_ids = self.hosts
+        for host in self.current_hosts_in_host_group:
+            if host not in desired_host_ids:
+                self.unassign_hosts([host])
+        update_response = None
+        try:
+            rc, update_response = self.request('storage-systems/%s/host-groups/%s' % (self.ssid, self.current_host_group['id']), method='POST', data=data)
+        except Exception as error:
+            self.module.fail_json(msg='Failed to create host group. Array id [%s].  Error[%s].' % (self.ssid, to_native(error)))
+        return update_response
+
+    def apply(self):
+        """Apply desired host group state to the storage array."""
+        changes_required = False
+        for group in self.host_groups:
+            if group['name'] == self.name:
+                self.current_host_group = group
+                self.current_host_group['hosts'].sort()
+                break
+        if self.state == 'present':
+            if self.current_host_group:
+                if self.hosts and self.hosts != self.current_host_group['hosts']:
+                    changes_required = True
+            else:
+                if not self.name:
+                    self.module.fail_json(msg='The option name must be supplied when creating a new host group. Array id [%s].' % self.ssid)
+                changes_required = True
+        elif self.current_host_group:
+            changes_required = True
+        msg = ''
+        if changes_required and (not self.module.check_mode):
+            msg = 'No changes required.'
+            if self.state == 'present':
+                if self.current_host_group:
+                    if self.hosts != self.current_host_group['hosts']:
+                        msg = self.update_host_group()
+                else:
+                    msg = self.create_host_group()
+            elif self.current_host_group:
+                self.delete_host_group()
+                msg = 'Host group deleted. Array Id [%s]. Host group [%s].' % (self.ssid, self.current_host_group['name'])
+        self.module.exit_json(msg=msg, changed=changes_required)

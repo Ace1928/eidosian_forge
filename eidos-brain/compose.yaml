@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    command: python -m api.server
+    environment:
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-8000}
+      - ENABLE_UI=${ENABLE_UI:-false}
+    volumes:
+      - .:/app
+    ports:
+      - "${PORT:-8000}:8000"
+  ui:
+    image: nginx:alpine
+    volumes:
+      - ./ui:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    profiles:
+      - ui

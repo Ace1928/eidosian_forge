@@ -1,0 +1,43 @@
+import typing as ty
+from openstack.block_storage import _base_proxy
+from openstack.block_storage.v3 import attachment as _attachment
+from openstack.block_storage.v3 import availability_zone
+from openstack.block_storage.v3 import backup as _backup
+from openstack.block_storage.v3 import block_storage_summary as _summary
+from openstack.block_storage.v3 import capabilities as _capabilities
+from openstack.block_storage.v3 import extension as _extension
+from openstack.block_storage.v3 import group as _group
+from openstack.block_storage.v3 import group_snapshot as _group_snapshot
+from openstack.block_storage.v3 import group_type as _group_type
+from openstack.block_storage.v3 import limits as _limits
+from openstack.block_storage.v3 import quota_set as _quota_set
+from openstack.block_storage.v3 import resource_filter as _resource_filter
+from openstack.block_storage.v3 import service as _service
+from openstack.block_storage.v3 import snapshot as _snapshot
+from openstack.block_storage.v3 import stats as _stats
+from openstack.block_storage.v3 import transfer as _transfer
+from openstack.block_storage.v3 import type as _type
+from openstack.block_storage.v3 import volume as _volume
+from openstack import exceptions
+from openstack.identity.v3 import project as _project
+from openstack import resource
+from openstack import utils
+def find_group_snapshot(self, name_or_id, ignore_missing=True, *, details=True):
+    """Find a single group snapshot
+
+        :param name_or_id: The name or ID of a group snapshot.
+        :param bool ignore_missing: When set to ``False``
+            :class:`~openstack.exceptions.ResourceNotFound` will be raised
+            when the group snapshot does not exist.
+        :param bool details: When set to ``False``, no additional details will
+            be returned. The default, ``True``, will cause additional details
+            to be returned.
+
+        :returns: One :class:`~openstack.block_storage.v3.group_snapshot`
+        :raises: :class:`~openstack.exceptions.ResourceNotFound`
+            when no resource can be found.
+        :raises: :class:`~openstack.exceptions.DuplicateResource` when multiple
+            resources are found.
+        """
+    list_base_path = '/group_snapshots/detail' if details else None
+    return self._find(_group_snapshot.GroupSnapshot, name_or_id, ignore_missing=ignore_missing, list_base_path=list_base_path)

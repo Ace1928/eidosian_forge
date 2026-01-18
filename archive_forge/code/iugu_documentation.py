@@ -1,0 +1,12 @@
+import json
+import urllib.request
+from typing import List, Optional
+from langchain_core.documents import Document
+from langchain_core.utils import get_from_env, stringify_dict
+from langchain_community.document_loaders.base import BaseLoader
+Initialize the IUGU resource.
+
+        Args:
+            resource: The name of the resource to fetch.
+            api_token: The IUGU API token to use.
+        

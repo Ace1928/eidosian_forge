@@ -1,0 +1,16 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.compute import base_classes
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.compute import flags as compute_flags
+from googlecloudsdk.command_lib.compute.resource_policies import flags
+from googlecloudsdk.command_lib.compute.resource_policies import util
+@base.ReleaseTracks(base.ReleaseTrack.ALPHA)
+class CreateInstanceSchedulePolicyAlpha(CreateInstanceSchedulePolicyBeta):
+    """Create a Compute Engine instance schedule resource policy."""
+
+    @staticmethod
+    def Args(parser):
+        _CommonArgs(parser)

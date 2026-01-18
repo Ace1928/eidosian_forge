@@ -1,0 +1,58 @@
+import datetime
+import decimal
+import json
+import re
+import uuid
+from .. import config
+from .. import engines
+from .. import fixtures
+from .. import mock
+from ..assertions import eq_
+from ..assertions import is_
+from ..assertions import ne_
+from ..config import requirements
+from ..schema import Column
+from ..schema import Table
+from ... import and_
+from ... import ARRAY
+from ... import BigInteger
+from ... import bindparam
+from ... import Boolean
+from ... import case
+from ... import cast
+from ... import Date
+from ... import DateTime
+from ... import Float
+from ... import Integer
+from ... import Interval
+from ... import JSON
+from ... import literal
+from ... import literal_column
+from ... import MetaData
+from ... import null
+from ... import Numeric
+from ... import select
+from ... import String
+from ... import testing
+from ... import Text
+from ... import Time
+from ... import TIMESTAMP
+from ... import type_coerce
+from ... import TypeDecorator
+from ... import Unicode
+from ... import UnicodeText
+from ... import UUID
+from ... import Uuid
+from ...orm import declarative_base
+from ...orm import Session
+from ...sql import sqltypes
+from ...sql.sqltypes import LargeBinary
+from ...sql.sqltypes import PickleType
+@testing.combinations((True,), (False,), (None,), (15,), (0,), (-1,), (-1.0,), (15.052,), ('a string',), ('réve illé',), ('réve🐍 illé',))
+def test_single_element_round_trip(self, element):
+    data_table = self.tables.data_table
+    data_element = element
+    with config.db.begin() as conn:
+        conn.execute(data_table.insert(), {'name': 'row1', 'data': data_element, 'nulldata': data_element})
+        row = conn.execute(select(data_table.c.data, data_table.c.nulldata)).first()
+        eq_(row, (data_element, data_element))

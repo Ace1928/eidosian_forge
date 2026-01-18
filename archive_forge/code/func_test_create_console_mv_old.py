@@ -1,0 +1,41 @@
+import contextlib
+import datetime
+from unittest import mock
+import uuid
+import warnings
+from openstack.block_storage.v3 import volume
+from openstack.compute.v2 import _proxy
+from openstack.compute.v2 import aggregate
+from openstack.compute.v2 import availability_zone as az
+from openstack.compute.v2 import extension
+from openstack.compute.v2 import flavor
+from openstack.compute.v2 import hypervisor
+from openstack.compute.v2 import image
+from openstack.compute.v2 import keypair
+from openstack.compute.v2 import migration
+from openstack.compute.v2 import quota_set
+from openstack.compute.v2 import server
+from openstack.compute.v2 import server_action
+from openstack.compute.v2 import server_group
+from openstack.compute.v2 import server_interface
+from openstack.compute.v2 import server_ip
+from openstack.compute.v2 import server_migration
+from openstack.compute.v2 import server_remote_console
+from openstack.compute.v2 import service
+from openstack.compute.v2 import usage
+from openstack.compute.v2 import volume_attachment
+from openstack import resource
+from openstack.tests.unit import test_proxy_base
+from openstack import warnings as os_warnings
+@mock.patch('openstack.utils.supports_microversion', autospec=True)
+@mock.patch('openstack.compute.v2._proxy.Proxy._create', autospec=True)
+@mock.patch('openstack.compute.v2.server.Server.get_console_url', autospec=True)
+def test_create_console_mv_old(self, sgc, rcc, smv):
+    console_fake = {'url': 'a', 'type': 'b', 'protocol': 'c'}
+    smv.return_value = False
+    sgc.return_value = console_fake
+    ret = self.proxy.create_console('fake_server', 'fake_type')
+    smv.assert_called_once_with(self.proxy, '2.6')
+    rcc.assert_not_called()
+    sgc.assert_called_with(mock.ANY, self.proxy, 'fake_type')
+    self.assertDictEqual(console_fake, ret)

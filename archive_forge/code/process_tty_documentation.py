@@ -1,0 +1,1 @@
+Test to make sure we can open /dev/tty

@@ -1,0 +1,9 @@
+from decimal import Decimal
+from boto.compat import filter, map
+class GetAccountBalanceResult(ResponseElement):
+
+    def startElement(self, name, attrs, connection):
+        if name == 'AccountBalance':
+            setattr(self, name, AccountBalance(name=name))
+            return getattr(self, name)
+        return super(GetAccountBalanceResult, self).startElement(name, attrs, connection)

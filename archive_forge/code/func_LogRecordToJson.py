@@ -1,0 +1,25 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from collections import OrderedDict
+import contextlib
+import copy
+import datetime
+import json
+import logging
+import os
+import sys
+import time
+from googlecloudsdk.core import properties
+from googlecloudsdk.core.console import console_attr
+from googlecloudsdk.core.console.style import parser as style_parser
+from googlecloudsdk.core.console.style import text
+from googlecloudsdk.core.util import files
+from googlecloudsdk.core.util import times
+import six
+def LogRecordToJson(self, log_record):
+    """Returns a json string of the log message."""
+    log_message = self.BuildLogMsg(log_record)
+    if not log_message.get('error'):
+        log_message.pop('error')
+    return self.json_serializer(log_message, cls=self.json_encoder)

@@ -1,0 +1,7 @@
+from __future__ import absolute_import, division, print_function
+import os
+from functools import wraps
+from ansible.module_utils.common.collections import is_sequence
+from ansible.module_utils.six import iteritems
+def _process_as_is(rc, out, err):
+    return (rc, out, err)

@@ -1,0 +1,42 @@
+import argparse
+import inspect
+import locale
+import os
+import pkgutil
+import pydoc
+import re
+import sys
+from gettext import NullTranslations
+from os import path
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple, Type
+from jinja2 import TemplateNotFound
+from jinja2.sandbox import SandboxedEnvironment
+import sphinx.locale
+from sphinx import __display_version__, package_dir
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.config import Config
+from sphinx.ext.autodoc import Documenter
+from sphinx.ext.autodoc.importer import import_module
+from sphinx.ext.autosummary import (ImportExceptionGroup, get_documenter, import_by_name,
+from sphinx.locale import __
+from sphinx.pycode import ModuleAnalyzer, PycodeError
+from sphinx.registry import SphinxComponentRegistry
+from sphinx.util import logging, rst, split_full_qualified_name
+from sphinx.util.inspect import getall, safe_getattr
+from sphinx.util.osutil import ensuredir
+from sphinx.util.template import SphinxTemplateLoader
+def get_module_attrs(members: Any) -> Tuple[List[str], List[str]]:
+    """Find module attributes with docstrings."""
+    attrs, public = ([], [])
+    try:
+        analyzer = ModuleAnalyzer.for_module(name)
+        attr_docs = analyzer.find_attr_docs()
+        for namespace, attr_name in attr_docs:
+            if namespace == '' and attr_name in members:
+                attrs.append(attr_name)
+                if not attr_name.startswith('_'):
+                    public.append(attr_name)
+    except PycodeError:
+        pass
+    return (public, attrs)

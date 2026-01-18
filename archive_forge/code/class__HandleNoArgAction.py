@@ -1,0 +1,36 @@
+import argparse
+import arg_parsers
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import argparse
+import collections
+import copy
+import decimal
+import json
+import re
+from dateutil import tz
+from googlecloudsdk.calliope import arg_parsers_usage_text as usage_text
+from googlecloudsdk.calliope import parser_errors
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core.console import console_attr
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.util import files
+from googlecloudsdk.core.util import times
+import six
+from six.moves import zip  # pylint: disable=redefined-builtin
+class _HandleNoArgAction(argparse.Action):
+    """This class should not be used directly, use HandleNoArgAction instead."""
+
+    def __init__(self, none_arg, deprecation_message, **kwargs):
+        super(_HandleNoArgAction, self).__init__(**kwargs)
+        self.none_arg = none_arg
+        self.deprecation_message = deprecation_message
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        if value is None:
+            log.warning(self.deprecation_message)
+            if self.none_arg:
+                setattr(namespace, self.none_arg, True)
+        setattr(namespace, self.dest, value)

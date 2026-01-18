@@ -1,0 +1,151 @@
+import os
+from os.path import abspath, dirname
+import pyomo.environ as pyo
+import pyomo.common.unittest as unittest
+from pyomo.common.log import LoggingIntercept
+from pyomo.common.collections import ComponentSet
+from pyomo.core import (
+from pyomo.core.base import TransformationFactory
+from pyomo.core.expr import log
+from pyomo.core.expr.compare import assertExpressionsEqual
+from pyomo.gdp import Disjunction, Disjunct
+from pyomo.repn.standard_repn import generate_standard_repn
+from pyomo.opt import SolverFactory, check_available_solvers
+import pyomo.contrib.fme.fourier_motzkin_elimination
+from io import StringIO
+import logging
+import random
+def check_hull_projected_constraints(self, m, constraints, indices):
+    cons = constraints[indices[0]]
+    self.assertEqual(cons.lower, 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], -1)
+    self.assertIs(body.linear_vars[1], m.p[1])
+    self.assertEqual(body.linear_coefs[1], 1)
+    cons = constraints[indices[1]]
+    self.assertEqual(value(cons.lower), -10)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[1], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], -10)
+    self.assertIs(body.linear_vars[0], m.p[1])
+    self.assertEqual(body.linear_coefs[0], -1)
+    cons = constraints[indices[2]]
+    self.assertEqual(cons.lower, 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[1], m.time1_disjuncts[0].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], -1)
+    self.assertIs(body.linear_vars[0], m.p[1])
+    self.assertEqual(body.linear_coefs[0], 1)
+    cons = constraints[indices[3]]
+    self.assertEqual(cons.lower, 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.p[1])
+    self.assertEqual(body.linear_coefs[0], -1)
+    self.assertIs(body.linear_vars[1], m.time1_disjuncts[0].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], 10)
+    cons = constraints[indices[4]]
+    self.assertEqual(value(cons.lower), 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 4)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], 3)
+    self.assertIs(body.linear_vars[1], m.p[1])
+    self.assertEqual(body.linear_coefs[1], 1)
+    self.assertIs(body.linear_vars[2], m.p[2])
+    self.assertEqual(body.linear_coefs[2], -1)
+    self.assertIs(body.linear_vars[3], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[3], 2)
+    cons = constraints[indices[5]]
+    self.assertEqual(cons.lower, 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 3)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], -1)
+    self.assertIs(body.linear_vars[1], m.p[2])
+    self.assertEqual(body.linear_coefs[1], 1)
+    self.assertIs(body.linear_vars[2], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[2], -1)
+    cons = constraints[indices[6]]
+    self.assertEqual(cons.lower, 0)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 3)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], 10)
+    self.assertIs(body.linear_vars[1], m.p[2])
+    self.assertEqual(body.linear_coefs[1], -1)
+    self.assertIs(body.linear_vars[2], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[2], 2)
+    cons = constraints[indices[7]]
+    self.assertEqual(cons.lower, 1)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.time1_disjuncts[0].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], 1)
+    self.assertIs(body.linear_vars[1], m.time1_disjuncts[1].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], 1)
+    cons = constraints[indices[8]]
+    self.assertEqual(cons.lower, -1)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 2)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.time1_disjuncts[0].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], -1)
+    self.assertIs(body.linear_vars[1], m.time1_disjuncts[1].binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], -1)
+    cons = constraints[indices[9]]
+    self.assertEqual(cons.lower, 1)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 3)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.off.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], 1)
+    self.assertIs(body.linear_vars[1], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], 1)
+    self.assertIs(body.linear_vars[2], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[2], 1)
+    cons = constraints[indices[10]]
+    self.assertEqual(cons.lower, -1)
+    self.assertIsNone(cons.upper)
+    body = generate_standard_repn(cons.body)
+    self.assertEqual(body.constant, 0)
+    self.assertEqual(len(body.linear_vars), 3)
+    self.assertTrue(body.is_linear())
+    self.assertIs(body.linear_vars[0], m.off.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[0], -1)
+    self.assertIs(body.linear_vars[1], m.on.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[1], -1)
+    self.assertIs(body.linear_vars[2], m.startup.binary_indicator_var)
+    self.assertEqual(body.linear_coefs[2], -1)

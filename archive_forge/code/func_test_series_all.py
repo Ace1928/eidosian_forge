@@ -1,0 +1,9 @@
+import os
+from ....tests import TestCaseWithTransport
+from ..wrapper import (quilt_applied, quilt_delete, quilt_pop_all,
+from . import quilt_feature
+def test_series_all(self):
+    source = self.make_empty_quilt_dir('source')
+    self.build_tree_contents([('source/patches/series', 'patch1.diff\n'), ('source/patches/patch1.diff', TRIVIAL_PATCH)])
+    source.smart_add(['source'])
+    self.assertEqual(['patch1.diff'], quilt_series(source, 'patches/series'))

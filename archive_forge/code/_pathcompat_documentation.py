@@ -1,0 +1,1 @@
+Given a sequence of path names, returns the longest common sub-path.

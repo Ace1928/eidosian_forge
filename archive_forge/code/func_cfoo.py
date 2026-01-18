@@ -1,0 +1,8 @@
+import dill
+import abc
+from abc import ABC
+import warnings
+from types import FunctionType
+@classmethod
+def cfoo(cls):
+    return 'Class Method CFOO'

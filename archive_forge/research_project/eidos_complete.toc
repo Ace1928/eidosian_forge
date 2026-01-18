@@ -1,0 +1,19 @@
+\contentsline {section}{\numberline {1}Notational Conventions and Distinct Symbol Sets}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Raw Input and Preprocessing}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Vocabulary and Tokens}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Enhanced Core Definitions}{3}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Embeddings}{4}{subsection.1.4}%
+\contentsline {subsection}{\numberline {1.5}Knowledge Graphs}{4}{subsection.1.5}%
+\contentsline {subsection}{\numberline {1.6}Infinite RoPE and Dynamic Vocabulary}{5}{subsection.1.6}%
+\contentsline {subsection}{\numberline {1.7}Core Model Architecture}{5}{subsection.1.7}%
+\contentsline {subsection}{\numberline {1.8}Titans Memory Architecture}{5}{subsection.1.8}%
+\contentsline {subsection}{\numberline {1.9}Recursive Adaptive Feedback}{5}{subsection.1.9}%
+\contentsline {subsection}{\numberline {1.10}Universal Training System}{6}{subsection.1.10}%
+\contentsline {subsection}{\numberline {1.11}Final Decoding and Multimodal Output}{6}{subsection.1.11}%
+\contentsline {section}{\numberline {2}Enhanced Algorithmic Formalism}{7}{section.2}%
+\contentsline {section}{\numberline {3}Complete Operator Taxonomy}{7}{section.3}%
+\contentsline {section}{\numberline {4}Complete Commutative Diagram}{7}{section.4}%
+\contentsline {section}{\numberline {5}Formal Verification}{7}{section.5}%
+\contentsline {section}{\numberline {6}End-to-End Data Flow and Processing Sequence}{8}{section.6}%
+\contentsline {section}{\numberline {7}Integrated End-to-End Algorithm}{12}{section.7}%
+\contentsline {section}{\numberline {8}Conclusion}{13}{section.8}%

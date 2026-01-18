@@ -1,0 +1,9 @@
+import math
+import operator
+import platform
+import unittest
+from collections.abc import Collection, Sequence
+import pygame
+from pygame.colordict import THECOLORS
+def test_hsla__sanity_testing_converted_should_equate_bar_rounding(self):
+    self.colorspaces_converted_should_equate_bar_rounding('hsla')

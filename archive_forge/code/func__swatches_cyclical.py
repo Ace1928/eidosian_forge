@@ -1,0 +1,29 @@
+def _swatches_cyclical(module_names, module_contents, template=None):
+    """
+    Parameters
+    ----------
+    template : str or dict or plotly.graph_objects.layout.Template instance
+        The figure template name or definition.
+
+    Returns
+    -------
+    fig : graph_objects.Figure containing the displayed image
+        A `Figure` object. This figure demonstrates the color scales and
+        sequences in this module, as polar bar charts.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    from plotly.express._core import apply_default_cascade
+    args = dict(template=template)
+    apply_default_cascade(args)
+    rows = 2
+    cols = 4
+    scales = [(k, v) for k, v in module_contents.items() if not (k.startswith('_') or k.startswith('swatches') or k.endswith('_r'))]
+    names = [name for name, colors in scales]
+    fig = make_subplots(rows=rows, cols=cols, subplot_titles=names, specs=[[{'type': 'polar'}] * cols] * rows)
+    for i, (name, scale) in enumerate(scales):
+        fig.add_trace(go.Barpolar(r=[1] * int(360 / 5), theta=list(range(0, 360, 5)), marker_color=list(range(0, 360, 5)), marker_cmin=0, marker_cmax=360, marker_colorscale=name, name=name), row=int(i / cols) + 1, col=i % cols + 1)
+    fig.update_traces(width=5.2, marker_line_width=0, base=0.5, showlegend=False)
+    fig.update_polars(angularaxis_visible=False, radialaxis_visible=False)
+    fig.update_layout(title='plotly.colors.' + module_names.split('.')[-1], template=args['template'])
+    return fig

@@ -1,0 +1,41 @@
+import inspect
+import math
+import operator
+import sys
+import pickle
+import multiprocessing
+import ctypes
+import warnings
+import re
+import numpy as np
+from llvmlite import ir
+import numba
+from numba import njit, jit, vectorize, guvectorize, objmode
+from numba.core import types, errors, typing, compiler, cgutils
+from numba.core.typed_passes import type_inference_stage
+from numba.core.registry import cpu_target
+from numba.core.imputils import lower_constant
+from numba.tests.support import (
+from numba.core.errors import LoweringError
+import unittest
+from numba.extending import (
+from numba.core.typing.templates import (
+from .pdlike_usecase import Index, Series
+@overload(where)
+def overload_where_scalars(cond, x, y):
+    """
+    Implement where() for scalars.
+    """
+    if not isinstance(cond, types.Array):
+        if x != y:
+            raise errors.TypingError('x and y should have the same type')
+
+        def where_impl(cond, x, y):
+            """
+            Scalar where() => return a 0-dim array
+            """
+            scal = x if cond else y
+            arr = np.empty_like(scal)
+            arr[()] = scal
+            return arr
+        return where_impl

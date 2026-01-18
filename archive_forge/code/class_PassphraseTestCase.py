@@ -1,0 +1,63 @@
+from castellan.common import objects
+from castellan.common.objects import passphrase
+from castellan.tests import base
+class PassphraseTestCase(base.TestCase):
+
+    def _create_passphrase(self):
+        return passphrase.Passphrase(self.passphrase_data, self.name, self.created, consumers=self.consumers)
+
+    def setUp(self):
+        self.passphrase_data = bytes(b'secret passphrase')
+        self.name = 'my phrase'
+        self.created = 1448088699
+        self.consumers = [{'service': 'service_test', 'resource_type': 'type_test', 'resource_id': 'id_test'}]
+        self.passphrase = self._create_passphrase()
+        super(PassphraseTestCase, self).setUp()
+
+    def test_is_not_only_metadata(self):
+        self.assertFalse(self.passphrase.is_metadata_only())
+
+    def test_is_only_metadata(self):
+        p = passphrase.Passphrase(None, self.name, self.created)
+        self.assertTrue(p.is_metadata_only())
+
+    def test_get_format(self):
+        self.assertEqual('RAW', self.passphrase.format)
+
+    def test_get_encoded(self):
+        self.assertEqual(self.passphrase_data, self.passphrase.get_encoded())
+
+    def test_get_name(self):
+        self.assertEqual(self.name, self.passphrase.name)
+
+    def test_get_created(self):
+        self.assertEqual(self.created, self.passphrase.created)
+
+    def test_get_consumers(self):
+        self.assertEqual(self.consumers, self.passphrase.consumers)
+
+    def test_get_created_none(self):
+        created = None
+        phrase = passphrase.Passphrase(self.passphrase_data, self.name, created, consumers=self.consumers)
+        self.assertEqual(created, phrase.created)
+
+    def test___eq__(self):
+        self.assertTrue(self.passphrase == self.passphrase)
+        self.assertTrue(self.passphrase is self.passphrase)
+        self.assertFalse(self.passphrase is None)
+        self.assertFalse(None == self.passphrase)
+        other_passphrase = passphrase.Passphrase(self.passphrase_data)
+        self.assertTrue(self.passphrase == other_passphrase)
+        self.assertFalse(self.passphrase is other_passphrase)
+
+    def test___ne___none(self):
+        self.assertTrue(self.passphrase is not None)
+        self.assertTrue(None != self.passphrase)
+
+    def test___ne___data(self):
+        other_phrase = passphrase.Passphrase(b'other passphrase', self.name)
+        self.assertTrue(self.passphrase != other_phrase)
+
+    def test_to_and_from_dict(self):
+        other = objects.from_dict(self.passphrase.to_dict())
+        self.assertEqual(self.passphrase, other)

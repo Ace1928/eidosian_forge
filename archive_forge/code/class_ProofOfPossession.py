@@ -1,0 +1,4 @@
+from pyasn1_modules import rfc2315
+from pyasn1_modules.rfc2459 import *
+class ProofOfPossession(univ.Choice):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('raVerified', univ.Null().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))), namedtype.NamedType('signature', POPOSigningKey().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))), namedtype.NamedType('keyEncipherment', POPOPrivKey().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 2))), namedtype.NamedType('keyAgreement', POPOPrivKey().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 3))))

@@ -1,0 +1,24 @@
+import boto
+from boto.compat import json
+from boto.connection import AWSQueryConnection
+from boto.regioninfo import RegionInfo
+from boto.exception import JSONResponseError
+from boto.support import exceptions
+def describe_severity_levels(self, language=None):
+    """
+        Returns the list of severity levels that you can assign to an
+        AWS Support case. The severity level for a case is also a
+        field in the CaseDetails data type included in any CreateCase
+        request.
+
+        :type language: string
+        :param language: The ISO 639-1 code for the language in which AWS
+            provides support. AWS Support currently supports English ("en") and
+            Japanese ("ja"). Language parameters must be passed explicitly for
+            operations that take them.
+
+        """
+    params = {}
+    if language is not None:
+        params['language'] = language
+    return self.make_request(action='DescribeSeverityLevels', body=json.dumps(params))

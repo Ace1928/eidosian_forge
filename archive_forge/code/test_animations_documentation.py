@@ -1,0 +1,4 @@
+import pytest
+
+Animations tests
+================

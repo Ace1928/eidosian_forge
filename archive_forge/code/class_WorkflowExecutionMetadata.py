@@ -1,0 +1,15 @@
+import base64
+import json
+from ray import cloudpickle
+from enum import Enum, unique
+import hashlib
+from typing import Dict, Optional, Any, Tuple
+from dataclasses import dataclass
+import ray
+from ray import ObjectRef
+from ray._private.utils import get_or_create_event_loop
+from ray.util.annotations import PublicAPI
+@dataclass
+class WorkflowExecutionMetadata:
+    """Dataclass for the metadata of the workflow execution."""
+    is_output_workflow: bool = False

@@ -1,0 +1,10 @@
+import warnings
+from django.core import exceptions
+from django.utils.deprecation import RemovedInDjango60Warning
+from django.utils.functional import cached_property
+from django.utils.hashable import make_hashable
+from . import BLANK_CHOICE_DASH
+from .mixins import FieldCacheMixin
+@cached_property
+def path_infos(self):
+    return self.get_path_info()

@@ -1,0 +1,2 @@
+class PasswordRequired(Exception):
+    pass

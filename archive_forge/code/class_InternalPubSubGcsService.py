@@ -1,0 +1,16 @@
+import grpc
+from . import gcs_service_pb2 as src_dot_ray_dot_protobuf_dot_gcs__service__pb2
+class InternalPubSubGcsService(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def GcsPublish(request, target, options=(), channel_credentials=None, call_credentials=None, insecure=False, compression=None, wait_for_ready=None, timeout=None, metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ray.rpc.InternalPubSubGcsService/GcsPublish', src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsPublishRequest.SerializeToString, src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsPublishReply.FromString, options, channel_credentials, insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GcsSubscriberPoll(request, target, options=(), channel_credentials=None, call_credentials=None, insecure=False, compression=None, wait_for_ready=None, timeout=None, metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ray.rpc.InternalPubSubGcsService/GcsSubscriberPoll', src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberPollRequest.SerializeToString, src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberPollReply.FromString, options, channel_credentials, insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GcsSubscriberCommandBatch(request, target, options=(), channel_credentials=None, call_credentials=None, insecure=False, compression=None, wait_for_ready=None, timeout=None, metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/ray.rpc.InternalPubSubGcsService/GcsSubscriberCommandBatch', src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberCommandBatchRequest.SerializeToString, src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberCommandBatchReply.FromString, options, channel_credentials, insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

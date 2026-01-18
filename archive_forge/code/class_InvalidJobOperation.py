@@ -1,0 +1,2 @@
+class InvalidJobOperation(Exception):
+    pass

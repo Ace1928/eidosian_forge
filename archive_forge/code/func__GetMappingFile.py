@@ -1,0 +1,48 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import contextlib
+import hashlib
+import itertools
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+import textwrap
+import certifi
+from googlecloudsdk.core import argv_utils
+from googlecloudsdk.core import config
+from googlecloudsdk.core import exceptions
+from googlecloudsdk.core import execution_utils
+from googlecloudsdk.core import log
+from googlecloudsdk.core import metrics
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_attr
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.console import progress_tracker
+from googlecloudsdk.core.resource import resource_printer
+from googlecloudsdk.core.updater import installers
+from googlecloudsdk.core.updater import local_state
+from googlecloudsdk.core.updater import release_notes
+from googlecloudsdk.core.updater import snapshots
+from googlecloudsdk.core.updater import update_check
+from googlecloudsdk.core.util import encoding
+from googlecloudsdk.core.util import files as file_utils
+from googlecloudsdk.core.util import platforms
+import six
+from six.moves import map  # pylint: disable=redefined-builtin
+def _GetMappingFile(self, filename):
+    """Checks if mapping files are present and loads them for further use.
+
+    Args:
+      filename: str, The full filename (with .yaml extension) to be loaded.
+
+    Returns:
+      Loaded YAML if mapping files are present, None otherwise.
+    """
+    paths = config.Paths()
+    mapping_path = os.path.join(paths.sdk_root, paths.CLOUDSDK_STATE_DIR, filename)
+    if os.path.isfile(mapping_path):
+        return yaml.load_path(mapping_path)

@@ -1,0 +1,3 @@
+from typing import Any, Callable, Dict, Protocol, runtime_checkable
+def _valgrind_supported_platform(self) -> bool:
+    ...

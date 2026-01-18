@@ -1,0 +1,2 @@
+class NoAuthContextError(Exception):
+    pass

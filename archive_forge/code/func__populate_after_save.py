@@ -1,0 +1,76 @@
+import atexit
+import concurrent.futures
+import contextlib
+import json
+import multiprocessing.dummy
+import os
+import re
+import shutil
+import tempfile
+import time
+from copy import copy
+from datetime import datetime, timedelta
+from functools import partial
+from pathlib import PurePosixPath
+from typing import (
+from urllib.parse import urlparse
+import requests
+import wandb
+from wandb import data_types, env, util
+from wandb.apis.normalize import normalize_exceptions
+from wandb.apis.public import ArtifactCollection, ArtifactFiles, RetryingClient, Run
+from wandb.data_types import WBValue
+from wandb.errors.term import termerror, termlog, termwarn
+from wandb.sdk.artifacts.artifact_download_logger import ArtifactDownloadLogger
+from wandb.sdk.artifacts.artifact_instance_cache import artifact_instance_cache
+from wandb.sdk.artifacts.artifact_manifest import ArtifactManifest
+from wandb.sdk.artifacts.artifact_manifest_entry import ArtifactManifestEntry
+from wandb.sdk.artifacts.artifact_manifests.artifact_manifest_v1 import (
+from wandb.sdk.artifacts.artifact_state import ArtifactState
+from wandb.sdk.artifacts.artifact_ttl import ArtifactTTL
+from wandb.sdk.artifacts.exceptions import (
+from wandb.sdk.artifacts.staging import get_staging_dir
+from wandb.sdk.artifacts.storage_layout import StorageLayout
+from wandb.sdk.artifacts.storage_policies import WANDB_STORAGE_POLICY
+from wandb.sdk.artifacts.storage_policy import StoragePolicy
+from wandb.sdk.data_types._dtypes import Type as WBType
+from wandb.sdk.data_types._dtypes import TypeRegistry
+from wandb.sdk.internal.internal_api import Api as InternalApi
+from wandb.sdk.internal.thread_local_settings import _thread_local_api_settings
+from wandb.sdk.lib import filesystem, retry, runid, telemetry
+from wandb.sdk.lib.hashutil import B64MD5, b64_to_hex_id, md5_file_b64
+from wandb.sdk.lib.mailbox import Mailbox
+from wandb.sdk.lib.paths import FilePathStr, LogicalPath, StrPath, URIStr
+from wandb.sdk.lib.runid import generate_id
+from wandb.util import get_core_path
+from wandb_gql import gql  # noqa: E402
+def _populate_after_save(self, artifact_id: str) -> None:
+    query_template = '\n            query ArtifactByIDShort($id: ID!) {\n                artifact(id: $id) {\n                    artifactSequence {\n                        project {\n                            entityName\n                            name\n                        }\n                        name\n                    }\n                    versionIndex\n                    ttlDurationSeconds\n                    ttlIsInherited\n                    aliases {\n                        artifactCollection {\n                            project {\n                                entityName\n                                name\n                            }\n                            name\n                        }\n                        alias\n                    }\n                    state\n                    currentManifest {\n                        file {\n                            directUrl\n                        }\n                    }\n                    commitHash\n                    fileCount\n                    createdAt\n                    updatedAt\n                }\n            }\n        '
+    fields = InternalApi().server_artifact_introspection()
+    if 'ttlIsInherited' not in fields:
+        query_template = query_template.replace('ttlDurationSeconds', '').replace('ttlIsInherited', '')
+    query = gql(query_template)
+    assert self._client is not None
+    response = self._client.execute(query, variable_values={'id': artifact_id})
+    attrs = response.get('artifact')
+    if attrs is None:
+        raise ValueError(f'Unable to fetch artifact with id {artifact_id}')
+    self._id = artifact_id
+    self._entity = attrs['artifactSequence']['project']['entityName']
+    self._project = attrs['artifactSequence']['project']['name']
+    self._name = '{}:v{}'.format(attrs['artifactSequence']['name'], attrs['versionIndex'])
+    self._version = 'v{}'.format(attrs['versionIndex'])
+    self._source_entity = self._entity
+    self._source_project = self._project
+    self._source_name = self._name
+    self._source_version = self._version
+    self._ttl_duration_seconds = self._ttl_duration_seconds_from_gql(attrs.get('ttlDurationSeconds'))
+    self._ttl_is_inherited = True if attrs.get('ttlIsInherited') is None else attrs['ttlIsInherited']
+    self._ttl_changed = False
+    self._aliases = [alias['alias'] for alias in attrs['aliases'] if alias['artifactCollection']['project']['entityName'] == self._entity and alias['artifactCollection']['project']['name'] == self._project and (alias['artifactCollection']['name'] == self._name.split(':')[0]) and (not util.alias_is_version_index(alias['alias']))]
+    self._state = ArtifactState(attrs['state'])
+    self._load_manifest(attrs['currentManifest']['file']['directUrl'])
+    self._commit_hash = attrs['commitHash']
+    self._file_count = attrs['fileCount']
+    self._created_at = attrs['createdAt']
+    self._updated_at = attrs['updatedAt']

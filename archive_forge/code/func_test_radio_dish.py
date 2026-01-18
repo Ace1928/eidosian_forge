@@ -1,0 +1,24 @@
+import time
+import pytest
+import zmq
+from zmq.tests import BaseZMQTestCase
+def test_radio_dish(self):
+    dish, radio = self.create_bound_pair(zmq.DISH, zmq.RADIO)
+    dish.rcvtimeo = 250
+    group = 'mygroup'
+    dish.join(group)
+    received_count = 0
+    received = set()
+    sent = set()
+    for i in range(10):
+        msg = str(i).encode('ascii')
+        sent.add(msg)
+        radio.send(msg, group=group)
+        try:
+            recvd = dish.recv()
+        except zmq.Again:
+            time.sleep(0.1)
+        else:
+            received.add(recvd)
+            received_count += 1
+    assert len(received.intersection(sent)) >= 5

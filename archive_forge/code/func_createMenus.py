@@ -1,0 +1,16 @@
+from PySide2.QtWidgets import (QMainWindow, QAction, QFileDialog, QApplication)
+from addresswidget import AddressWidget
+def createMenus(self):
+    fileMenu = self.menuBar().addMenu('&File')
+    toolMenu = self.menuBar().addMenu('&Tools')
+    openAction = self.createAction('&Open...', fileMenu, self.openFile)
+    saveAction = self.createAction('&Save As...', fileMenu, self.saveFile)
+    fileMenu.addSeparator()
+    exitAction = self.createAction('E&xit', fileMenu, self.close)
+    addAction = self.createAction('&Add Entry...', toolMenu, self.addressWidget.addEntry)
+    self.editAction = self.createAction('&Edit Entry...', toolMenu, self.addressWidget.editEntry)
+    toolMenu.addSeparator()
+    self.removeAction = self.createAction('&Remove Entry', toolMenu, self.addressWidget.removeEntry)
+    self.editAction.setEnabled(False)
+    self.removeAction.setEnabled(False)
+    self.addressWidget.selectionChanged.connect(self.updateActions)

@@ -1,0 +1,31 @@
+import codecs
+import datetime
+import functools
+from io import BytesIO
+import logging
+import math
+import os
+import pathlib
+import shutil
+import subprocess
+from tempfile import TemporaryDirectory
+import weakref
+from PIL import Image
+import matplotlib as mpl
+from matplotlib import _api, cbook, font_manager as fm
+from matplotlib.backend_bases import (
+from matplotlib.backends.backend_mixed import MixedModeRenderer
+from matplotlib.backends.backend_pdf import (
+from matplotlib.path import Path
+from matplotlib.figure import Figure
+from matplotlib._pylab_helpers import Gcf
+@functools.lru_cache(1)
+def _get_image_inclusion_command():
+    man = LatexManager._get_cached_or_new()
+    man._stdin_writeln('\\includegraphics[interpolate=true]{%s}' % cbook._get_data_path('images/matplotlib.png').as_posix())
+    try:
+        man._expect_prompt()
+        return '\\includegraphics'
+    except LatexError:
+        LatexManager._get_cached_or_new_impl.cache_clear()
+        return '\\pgfimage'

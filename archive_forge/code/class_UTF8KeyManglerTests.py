@@ -1,0 +1,28 @@
+import copy
+import ssl
+import time
+from unittest import mock
+from dogpile.cache import proxy
+from oslo_config import cfg
+from oslo_utils import uuidutils
+from pymemcache import KeepaliveOpts
+from oslo_cache import _opts
+from oslo_cache import core as cache
+from oslo_cache import exception
+from oslo_cache.tests import test_cache
+class UTF8KeyManglerTests(test_cache.BaseTestCase):
+
+    def test_key_is_utf8_encoded(self):
+        key = 'fäké1'
+        encoded = cache._sha1_mangle_key(key)
+        self.assertIsNotNone(encoded)
+
+    def test_key_is_bytestring(self):
+        key = b'\xcf\x84o\xcf\x81\xce\xbdo\xcf\x82'
+        encoded = cache._sha1_mangle_key(key)
+        self.assertIsNotNone(encoded)
+
+    def test_key_is_string(self):
+        key = 'fake'
+        encoded = cache._sha1_mangle_key(key)
+        self.assertIsNotNone(encoded)

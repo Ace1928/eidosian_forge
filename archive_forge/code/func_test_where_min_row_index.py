@@ -1,0 +1,13 @@
+from __future__ import annotations
+import os
+from numpy import nan
+import numpy as np
+import pandas as pd
+import xarray as xr
+import datashader as ds
+import pytest
+from datashader.datatypes import RaggedDtype
+@pytest.mark.parametrize('df', dfs)
+def test_where_min_row_index(df):
+    out = xr.DataArray([[0, 10], [-5, -15]], coords=coords, dims=dims)
+    assert_eq_xr(c.points(df, 'x', 'y', ds.where(ds._min_row_index(), 'plusminus')), out)

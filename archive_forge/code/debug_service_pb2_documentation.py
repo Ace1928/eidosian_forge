@@ -1,0 +1,9 @@
+from google.protobuf.internal import builder as _builder
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pool as _descriptor_pool
+from google.protobuf import symbol_database as _symbol_database
+from tensorflow.core.framework import tensor_pb2 as tensorflow_dot_core_dot_framework_dot_tensor__pb2
+from tensorflow.core.profiler import tfprof_log_pb2 as tensorflow_dot_core_dot_profiler_dot_tfprof__log__pb2
+from tensorflow.core.protobuf import debug_pb2 as tensorflow_dot_core_dot_protobuf_dot_debug__pb2
+from tensorflow.core.util import event_pb2 as tensorflow_dot_core_dot_util_dot_event__pb2
+Generated protocol buffer code.

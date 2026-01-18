@@ -1,0 +1,18 @@
+import math
+import operator
+import sys
+import numpy as np
+import llvmlite.ir
+from llvmlite.ir import Constant
+from numba.core.imputils import Registry, impl_ret_untracked
+from numba import typeof
+from numba.core import types, utils, config, cgutils
+from numba.core.extending import overload
+from numba.core.typing import signature
+from numba.cpython.unsafe.numbers import trailing_zeros
+def f64_as_int64(builder, val):
+    """
+    Bitcast a double into a 64-bit integer.
+    """
+    assert val.type == llvmlite.ir.DoubleType()
+    return builder.bitcast(val, llvmlite.ir.IntType(64))

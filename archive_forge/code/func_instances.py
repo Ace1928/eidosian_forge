@@ -1,0 +1,17 @@
+from boto.ec2.ec2object import TaggedEC2Object
+from boto.exception import BotoClientError
+def instances(self, dry_run=False):
+    """
+        Find all of the current instances that are running within this
+        security group.
+
+        :rtype: list of :class:`boto.ec2.instance.Instance`
+        :return: A list of Instance objects
+        """
+    rs = []
+    if self.vpc_id:
+        rs.extend(self.connection.get_all_reservations(filters={'instance.group-id': self.id}, dry_run=dry_run))
+    else:
+        rs.extend(self.connection.get_all_reservations(filters={'group-id': self.id}, dry_run=dry_run))
+    instances = [i for r in rs for i in r.instances]
+    return instances

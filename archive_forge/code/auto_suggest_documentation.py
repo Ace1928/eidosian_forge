@@ -1,0 +1,17 @@
+from __future__ import unicode_literals
+from abc import ABCMeta, abstractmethod
+from six import with_metaclass
+from .filters import to_cli_filter
+
+        Return `None` or a :class:`.Suggestion` instance.
+
+        We receive both ``buffer`` and ``document``. The reason is that auto
+        suggestions are retrieved asynchronously. (Like completions.) The
+        buffer text could be changed in the meantime, but ``document`` contains
+        the buffer document like it was at the start of the auto suggestion
+        call. So, from here, don't access ``buffer.text``, but use
+        ``document.text`` instead.
+
+        :param buffer: The :class:`~prompt_toolkit.buffer.Buffer` instance.
+        :param document: The :class:`~prompt_toolkit.document.Document` instance.
+        

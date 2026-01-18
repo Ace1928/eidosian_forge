@@ -1,0 +1,24 @@
+from __future__ import annotations
+from typing import Any
+from typing import TYPE_CHECKING
+from typing import TypeVar
+from . import types
+from .array import ARRAY
+from ...sql import coercions
+from ...sql import elements
+from ...sql import expression
+from ...sql import functions
+from ...sql import roles
+from ...sql import schema
+from ...sql.schema import ColumnCollectionConstraint
+from ...sql.sqltypes import TEXT
+from ...sql.visitors import InternalTraversal
+def array_agg(*arg, **kw):
+    """PostgreSQL-specific form of :class:`_functions.array_agg`, ensures
+    return type is :class:`_postgresql.ARRAY` and not
+    the plain :class:`_types.ARRAY`, unless an explicit ``type_``
+    is passed.
+
+    """
+    kw['_default_array_type'] = ARRAY
+    return functions.func.array_agg(*arg, **kw)

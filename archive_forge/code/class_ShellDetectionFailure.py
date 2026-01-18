@@ -1,0 +1,2 @@
+class ShellDetectionFailure(EnvironmentError):
+    pass

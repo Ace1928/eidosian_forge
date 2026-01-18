@@ -1,0 +1,30 @@
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
+import numpy as np
+from scipy.optimize._lsq.common import (
+def test_find_active_constraints(self):
+    lb = np.array([0.0, -10.0, 1.0])
+    ub = np.array([1.0, 0.0, 100.0])
+    x = np.array([0.5, -5.0, 2.0])
+    active = find_active_constraints(x, lb, ub)
+    assert_equal(active, [0, 0, 0])
+    x = np.array([0.0, 0.0, 10.0])
+    active = find_active_constraints(x, lb, ub)
+    assert_equal(active, [-1, 1, 0])
+    active = find_active_constraints(x, lb, ub, rtol=0)
+    assert_equal(active, [-1, 1, 0])
+    x = np.array([1e-09, -1e-08, 100 - 1e-09])
+    active = find_active_constraints(x, lb, ub)
+    assert_equal(active, [0, 0, 1])
+    active = find_active_constraints(x, lb, ub, rtol=1.5e-09)
+    assert_equal(active, [-1, 0, 1])
+    lb = np.array([1.0, -np.inf, -np.inf])
+    ub = np.array([np.inf, 10.0, np.inf])
+    x = np.ones(3)
+    active = find_active_constraints(x, lb, ub)
+    assert_equal(active, [-1, 0, 0])
+    x = np.array([0.0, 11.0, 0.0])
+    active = find_active_constraints(x, lb, ub)
+    assert_equal(active, [-1, 1, 0])
+    active = find_active_constraints(x, lb, ub, rtol=0)
+    assert_equal(active, [-1, 1, 0])

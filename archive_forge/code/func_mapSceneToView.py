@@ -1,0 +1,17 @@
+import math
+import sys
+import weakref
+from copy import deepcopy
+import numpy as np
+from ... import debug as debug
+from ... import functions as fn
+from ... import getConfigOption
+from ...Point import Point
+from ...Qt import QtCore, QtGui, QtWidgets, isQObjectAlive, QT_LIB
+from ..GraphicsWidget import GraphicsWidget
+from ..ItemGroup import ItemGroup
+from .ViewBoxMenu import ViewBoxMenu
+def mapSceneToView(self, obj):
+    """Maps from scene coordinates to the coordinate system displayed inside the ViewBox"""
+    self.updateMatrix()
+    return self.mapToView(self.mapFromScene(obj))

@@ -1,0 +1,23 @@
+import sys
+import datetime
+from unittest.mock import Mock
+from libcloud.test import MockHttp, unittest
+from libcloud.utils.py3 import httplib, assertRaisesRegex
+from libcloud.test.secrets import OPENSTACK_PARAMS
+from libcloud.common.openstack import OpenStackBaseConnection
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.common.openstack_identity import (
+from libcloud.compute.drivers.openstack import OpenStack_1_0_NodeDriver
+from libcloud.test.compute.test_openstack import (
+class OpenStackIdentity_3_0_Connection_OIDC_access_tokenTests(unittest.TestCase):
+
+    def setUp(self):
+        mock_cls = OpenStackIdentity_3_0_MockHttp
+        mock_cls.type = None
+        OpenStackIdentity_3_0_Connection_OIDC_access_token.conn_class = mock_cls
+        self.auth_instance = OpenStackIdentity_3_0_Connection_OIDC_access_token(auth_url='http://none', user_id='idp', key='token', tenant_name='oidc', domain_name='project_name2')
+        self.auth_instance.auth_token = 'mock'
+
+    def test_authenticate(self):
+        auth = OpenStackIdentity_3_0_Connection_OIDC_access_token(auth_url='http://none', user_id='idp', key='token', token_scope='project', tenant_name='oidc', domain_name='project_name2')
+        auth.authenticate()

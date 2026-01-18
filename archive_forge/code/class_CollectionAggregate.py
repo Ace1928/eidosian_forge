@@ -1,0 +1,98 @@
+from __future__ import annotations
+from decimal import Decimal
+from enum import IntEnum
+import itertools
+import operator
+import re
+import typing
+from typing import AbstractSet
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Dict
+from typing import FrozenSet
+from typing import Generic
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import overload
+from typing import Sequence
+from typing import Set
+from typing import Tuple as typing_Tuple
+from typing import Type
+from typing import TYPE_CHECKING
+from typing import TypeVar
+from typing import Union
+from . import coercions
+from . import operators
+from . import roles
+from . import traversals
+from . import type_api
+from ._typing import has_schema_attr
+from ._typing import is_named_from_clause
+from ._typing import is_quoted_name
+from ._typing import is_tuple_type
+from .annotation import Annotated
+from .annotation import SupportsWrappingAnnotations
+from .base import _clone
+from .base import _expand_cloned
+from .base import _generative
+from .base import _NoArg
+from .base import Executable
+from .base import Generative
+from .base import HasMemoized
+from .base import Immutable
+from .base import NO_ARG
+from .base import SingletonConstant
+from .cache_key import MemoizedHasCacheKey
+from .cache_key import NO_CACHE
+from .coercions import _document_text_coercion  # noqa
+from .operators import ColumnOperators
+from .traversals import HasCopyInternals
+from .visitors import cloned_traverse
+from .visitors import ExternallyTraversible
+from .visitors import InternalTraversal
+from .visitors import traverse
+from .visitors import Visitable
+from .. import exc
+from .. import inspection
+from .. import util
+from ..util import HasMemoized_ro_memoized_attribute
+from ..util import TypingOnly
+from ..util.typing import Literal
+from ..util.typing import Self
+class CollectionAggregate(UnaryExpression[_T]):
+    """Forms the basis for right-hand collection operator modifiers
+    ANY and ALL.
+
+    The ANY and ALL keywords are available in different ways on different
+    backends.  On PostgreSQL, they only work for an ARRAY type.  On
+    MySQL, they only work for subqueries.
+
+    """
+    inherit_cache = True
+    _is_collection_aggregate = True
+
+    @classmethod
+    def _create_any(cls, expr: _ColumnExpressionArgument[_T]) -> CollectionAggregate[bool]:
+        col_expr: ColumnElement[_T] = coercions.expect(roles.ExpressionElementRole, expr)
+        col_expr = col_expr.self_group()
+        return CollectionAggregate(col_expr, operator=operators.any_op, type_=type_api.BOOLEANTYPE, wraps_column_expression=False)
+
+    @classmethod
+    def _create_all(cls, expr: _ColumnExpressionArgument[_T]) -> CollectionAggregate[bool]:
+        col_expr: ColumnElement[_T] = coercions.expect(roles.ExpressionElementRole, expr)
+        col_expr = col_expr.self_group()
+        return CollectionAggregate(col_expr, operator=operators.all_op, type_=type_api.BOOLEANTYPE, wraps_column_expression=False)
+
+    def operate(self, op, *other, **kwargs):
+        if not operators.is_comparison(op):
+            raise exc.ArgumentError('Only comparison operators may be used with ANY/ALL')
+        kwargs['reverse'] = True
+        return self.comparator.operate(operators.mirror(op), *other, **kwargs)
+
+    def reverse_operate(self, op, other, **kwargs):
+        assert not operators.is_comparison(op)
+        raise exc.ArgumentError('Only comparison operators may be used with ANY/ALL')

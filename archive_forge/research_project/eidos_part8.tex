@@ -1,0 +1,259 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools,enumitem,geometry,hyperref,algorithm,algpseudocode}
+\geometry{letterpaper,margin=1in}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style) \\ 
+\large Part of the Eidos Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+This module rigorously defines the \emph{Core Model Architectures} component of the Eidos framework. It encompasses two complementary deep learning architectures: the Transformer and the RWKV, integrated in a mixture-of-experts (MoE) style. The Transformer sub-module provides a powerful self-attention mechanism for capturing long-range dependencies, while the RWKV sub-module offers a recurrent, linear-time alternative. A higher-level expert coordinator aggregates outputs from multiple expert modules into a unified model output. This design balances expressive capacity and computational efficiency, supports dynamic expert addition and removal, and enables robust performance across diverse tasks. We present formal definitions, algorithmic descriptions, theoretical guarantees, and integration strategies with maximum academic rigor.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction and Motivation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The core processing engine of the Eidos framework is designed to efficiently capture complex dependencies in multimodal data. In this module, we integrate two leading deep architectures:
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Transformer Sub-Module:} Leveraging multi-head self-attention, the Transformer captures long-range dependencies and intricate interactions among token representations.
+    \item \textbf{RWKV Sub-Module:} A recurrent alternative that computes a context vector via weighted accumulation with learnable decay and gating, offering linear-time complexity.
+\end{enumerate}
+To maximize both capacity and efficiency, these sub-modules are organized in a \emph{mixture-of-experts} (MoE) framework. A dedicated expert coordinator, denoted by \(\Gamma\), aggregates the outputs of a set of expert modules, each specialized to different aspects of the input. This architecture not only enables dynamic expert specialization and scaling but also allows for seamless addition or removal of experts without disrupting overall performance.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries and Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We adopt the following notation and assumptions:
+\begin{itemize}[label=\(\bullet\)]
+    \item Let \(X = (x_1,x_2,\dots,x_n)\) denote an input sequence, where each \(x_i\) is processed into a final token representation \(E_{\mathrm{F}}(x_i,\xi) \in \mathbb{R}^{d_F}\) (obtained from Module E).
+    \item The overall deep model is a function:
+    \[
+    f_{\theta}: (\mathbb{R}^{d_F})^n \to \mathcal{Y},
+    \]
+    parameterized by \(\theta \in \Theta\).
+    \item The set of expert sub-modules is denoted by:
+    \[
+    \mathcal{E} = \{ f^{(i)}_{\theta_i} \mid i \in I_{\mathrm{exp}} \},
+    \]
+    where each \(f^{(i)}_{\theta_i}\) represents an individual expert, which may be either a Transformer module \(f^{\mathrm{T}}_{\theta_{\mathrm{T}}}\) or an RWKV module \(f^{\mathrm{RWKV}}_{\theta_{\mathrm{R}}}\).
+    \item A higher-level expert coordinator \(\Gamma\) aggregates expert outputs to produce a unified prediction:
+    \[
+    f^{\mathrm{Unified}}_{\theta} = \Gamma\Bigl(\{ f^{(i)}_{\theta_i} \}_{i\in I_{\mathrm{exp}}}\Bigr).
+    \]
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Definitions and Mathematical Formulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Definition H.1 (Transformer Sub-Module)}
+Let \(Z = (z_1, z_2, \dots, z_n) \in \mathbb{R}^{n \times d_{\mathrm{model}}}\) be the input representation obtained by adding positional encodings to the token embeddings:
+\[
+z_i = E_{\mathrm{F}}(x_i,\xi) + PE(i).
+\]
+For each Transformer layer, the following operations are performed:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Linear Projections:}
+    \[
+    Q = ZW^Q,\quad K = ZW^K,\quad V = ZW^V,
+    \]
+    with \(W^Q, W^K \in \mathbb{R}^{d_{\mathrm{model}} \times d_k}\) and \(W^V \in \mathbb{R}^{d_{\mathrm{model}} \times d_v}\).
+    \item \textbf{Scaled Dot-Product Attention:}
+    \[
+    \operatorname{Attention}(Q,K,V) = \operatorname{softmax}\!\Bigl(\frac{QK^\top}{\sqrt{d_k}}\Bigr)V.
+    \]
+    \item \textbf{Multi-Head Attention:}
+    With \(h\) heads, for head \(i\) define:
+    \[
+    \text{head}_i = \operatorname{Attention}(ZW_i^Q, ZW_i^K, ZW_i^V),
+    \]
+    and concatenate:
+    \[
+    \operatorname{MHA}(Z) = \operatorname{Concat}(\text{head}_1,\dots,\text{head}_h)W^O.
+    \]
+    \item \textbf{Residual Connection and Layer Normalization:}
+    \[
+    Z' = \operatorname{LayerNorm}\Bigl(Z + \operatorname{MHA}(Z)\Bigr).
+    \]
+    \item \textbf{Feed-Forward Network:}
+    \[
+    \operatorname{FFN}(Z') = \sigma\bigl(Z'W_1 + b_1\bigr)W_2 + b_2,
+    \]
+    with subsequent residual and normalization:
+    \[
+    Z'' = \operatorname{LayerNorm}\Bigl(Z' + \operatorname{FFN}(Z')\Bigr).
+    \]
+\end{enumerate}
+Thus, the Transformer sub-module \(f^{\mathrm{T}}_{\theta_{\mathrm{T}}}\) is defined as a stack of such layers.
+
+\subsection*{Definition H.2 (RWKV Sub-Module)}
+For a recurrent alternative, the RWKV module processes a sequence \( (x_1,\dots,x_n) \) as follows:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Embedding:} For each token, compute \( z_t = E_{\mathrm{F}}(x_t,\xi) \).
+    \item \textbf{Linear Projections:}  
+    \[
+    k_t = W_k z_t + b_k,\quad v_t = W_v z_t + b_v,\quad r_t = \sigma(W_r z_t + b_r),
+    \]
+    where \( r_t \in (0,1)^d \) acts as a gating (receptance) vector.
+    \item \textbf{Recurrent Accumulation:}  
+    Initialize \( S_0 = \mathbf{0} \) and \( Z_0 = \epsilon \mathbf{1} \) (with small \(\epsilon > 0\)). Then for \( t \ge 1 \):
+    \[
+    S_t = \lambda \odot S_{t-1} + \exp(k_t) \odot v_t, \quad Z_t = \lambda \odot Z_{t-1} + \exp(k_t),
+    \]
+    where \(\lambda \in [0,1]^d\) is a (possibly learnable) decay parameter.
+    \item \textbf{Output Computation:}  
+    The output at time \( t \) is given by:
+    \[
+    y_t = r_t \odot \left(\frac{S_t}{Z_t}\right).
+    \]
+\end{enumerate}
+The RWKV sub-module \( f^{\mathrm{RWKV}}_{\theta_{\mathrm{R}}} \) is defined by applying these recurrent operations over the entire sequence.
+
+\subsection*{Definition H.3 (Mixture-of-Experts Coordination)}
+Let the set of expert modules be:
+\[
+\mathcal{E} = \{ f^{(i)}_{\theta_i} \mid i \in I_{\mathrm{exp}} \},
+\]
+where each expert \( f^{(i)}_{\theta_i} \) is instantiated as either a Transformer module (as in Definition H.1) or an RWKV module (as in Definition H.2), possibly specialized for different tasks or data aspects.
+
+Define the expert coordinator as a function:
+\[
+\Gamma: \prod_{i \in I_{\mathrm{exp}}} \mathcal{F}^{(i)} \to \mathcal{F}^{\mathrm{Unified}},
+\]
+which aggregates the outputs \(\{y^{(i)}\}\) of the individual experts to produce a unified output:
+\[
+f^{\mathrm{Unified}}_{\theta}(X) = \Gamma\Bigl(\{ f^{(i)}_{\theta_i}(X) \}_{i \in I_{\mathrm{exp}}}\Bigr).
+\]
+A common instantiation of \(\Gamma\) is a weighted sum or concatenation followed by a linear projection:
+\[
+f^{\mathrm{Unified}}_{\theta}(X) = \Bigl[\sum_{i \in I_{\mathrm{exp}}} w_i\, f^{(i)}_{\theta_i}(X)\Bigr]W^C,
+\]
+with weights \(w_i\) (possibly learned or dynamically computed) and a coordinator projection \(W^C\).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithmic Description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following pseudocode summarizes the forward pass of the unified core model architecture:
+
+\begin{algorithm}[H]
+\caption{Unified Core Model Forward Pass (Module H)}
+\label{alg:core_model}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Token sequence \( X = (x_1,\dots,x_n) \); final token representations \( \{E_{\mathrm{F}}(x_i,\xi)\} \)
+    \State \textbf{Output:} Model prediction \( \hat{y} \in \mathcal{Y} \)
+    \State \textbf{Begin:}
+    \State \quad Compute input representation \( Z \) from \( \{E_{\mathrm{F}}(x_i,\xi)\} \)
+    \State \quad \textbf{// Expert Processing:}
+    \For{each expert \( i \in I_{\mathrm{exp}} \)}
+        \If{\( f^{(i)} \) is a Transformer expert}
+            \State \( y^{(i)} \gets f^{\mathrm{T}}_{\theta_i}(Z) \)
+        \Else
+            \State \( y^{(i)} \gets f^{\mathrm{RWKV}}_{\theta_i}(Z) \)
+        \EndIf
+    \EndFor
+    \State \quad \textbf{// Expert Coordination:}
+    \State \quad Compute unified output:
+    \[
+      y_{\mathrm{unified}} \gets \Gamma\Bigl(\{ y^{(i)} \}_{i \in I_{\mathrm{exp}}}\Bigr)
+    \]
+    \State \quad \textbf{// Final Prediction:}
+    \State \quad \( \hat{y} \gets \operatorname{softmax}\bigl(y_{\mathrm{unified}} W^P + b^P\bigr) \)
+    \State \textbf{Return:} \( \hat{y} \)
+\end{algorithmic}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theoretical Analysis and Guarantees}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Theorem H.1 (Expressivity of the Mixture-of-Experts Model)}
+\textbf{Statement:}  
+Assume that each expert \( f^{(i)}_{\theta_i} \) is a universal approximator over its domain and that the coordinator \(\Gamma\) is a non-degenerate aggregation operator. Then, the unified model
+\[
+f^{\mathrm{Unified}}_{\theta}(X) = \Gamma\Bigl(\{ f^{(i)}_{\theta_i}(X) \}_{i \in I_{\mathrm{exp}}}\Bigr)
+\]
+is a universal approximator for functions from \( (\mathbb{R}^{d_F})^n \) to \(\mathcal{Y}\).
+\newline
+\textbf{Proof Sketch:}  
+Since each expert can approximate any function to arbitrary accuracy and the coordinator aggregates these approximations in a weighted (or concatenated) manner, standard universal approximation theorems for neural networks imply that the composite function can approximate any target function over a compact domain. \(\Box\)
+
+\subsection*{Proposition H.2 (Computational Efficiency)}
+The use of both Transformer and RWKV experts enables balancing of computational complexity. Transformers have a complexity of \( O(n^2) \) per layer due to self-attention, while RWKV modules run in \( O(n) \) time. The mixture-of-experts framework can dynamically allocate computational resources to experts based on input characteristics, thus optimizing overall efficiency.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration with the Overall Eidos Framework}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Module H is the central processing engine of the Eidos framework. It:
+\begin{itemize}[label=\(\bullet\)]
+    \item Accepts the final token representations \( \{E_{\mathrm{F}}(x_i,\xi)\} \) produced by Module E.
+    \item Processes these representations using multiple expert sub-modules (Transformers and RWKV), each of which may specialize in different aspects of the input.
+    \item Aggregates expert outputs using the coordinator \(\Gamma\) to produce a unified prediction.
+    \item Provides an interface for subsequent modules (e.g., memory, training, decoding) to operate on the model’s output.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Considerations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Expert Specialization:}  
+    The set of experts \( \{ f^{(i)}_{\theta_i} \} \) may be pre-assigned or dynamically adjusted based on input characteristics or training objectives.
+    \item \textbf{Coordinator Design:}  
+    The aggregation function \(\Gamma\) can be implemented as a weighted sum, a gating mechanism, or even a small neural network that learns how to fuse expert outputs.
+    \item \textbf{Parallelization:}  
+    Experts can be computed in parallel, leveraging modern hardware accelerators (GPUs/TPUs) to reduce latency.
+    \item \textbf{Dynamic Expert Management:}  
+    Mechanisms for adding, removing, or re-weighting experts should be incorporated to allow for scalability and adaptivity.
+    \item \textbf{Training Strategy:}  
+    Joint or staged training of experts and the coordinator may be used, with careful tuning of learning rates and regularization to avoid overfitting any single expert.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In this module, we have defined a comprehensive core model architecture that integrates Transformer and RWKV sub-modules in a mixture-of-experts style. Key contributions include:
+\begin{itemize}[label=\(\bullet\)]
+    \item A formal definition of both Transformer and RWKV sub-modules with their internal operations.
+    \item The formulation of a mixture-of-experts framework wherein multiple expert modules operate in parallel.
+    \item The introduction of an expert coordinator \(\Gamma\) that aggregates individual expert outputs into a unified prediction.
+    \item Theoretical guarantees regarding the expressivity and computational efficiency of the unified model.
+    \item Detailed algorithmic pseudocode outlining the forward pass and integration of expert modules.
+\end{itemize}
+This module is the primary processing engine of the Eidos framework, providing both high-level semantic abstraction and computational efficiency while enabling flexible, dynamic adaptation through expert specialization.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Module Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{Completed:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module A: Input Processing.
+    \item Module B: Universal Communication \& Data Handling Interface and Coordination.
+    \item Module C: Universal Streaming/Handling/Loading/Indexing Module.
+    \item Module D: Multidimensional Vocabulary and Tokenization System.
+    \item Module E: Contextual NLU/NLP Embedding and Multidimensional Tokenization.
+    \item Module F: Deep Knowledge Graphs System (Base and Personal).
+    \item Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating.
+    \item Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style).
+\end{itemize}
+\textbf{Remaining Modules:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module I: Titans Memory Architecture (Multi-Layer Memory Module).
+    \item Module J: Recursive Adaptive Dynamic Idempotent Feedback and State-Based Runtime Learning and Inference.
+    \item Module K: Universal Training System.
+    \item Module L: Final Decoding and Multimodal Output.
+\end{itemize}
+
+\end{document}

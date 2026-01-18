@@ -1,0 +1,21 @@
+import itertools
+import pyomo.common.unittest as unittest
+import pyomo.environ as pyo
+from pyomo.contrib.pynumero.dependencies import (
+from pyomo.common.dependencies.scipy import sparse as sps
+from pyomo.contrib.pynumero.asl import AmplInterface
+from pyomo.contrib.pynumero.algorithms.solvers.cyipopt_solver import cyipopt_available
+from pyomo.contrib.pynumero.interfaces.external_pyomo_model import (
+from pyomo.contrib.pynumero.interfaces.pyomo_grey_box_nlp import (
+from pyomo.contrib.pynumero.interfaces.external_grey_box import ExternalGreyBoxBlock
+from pyomo.contrib.pynumero.algorithms.solvers.cyipopt_solver import CyIpoptSolver
+from pyomo.contrib.pynumero.interfaces.cyipopt_interface import CyIpoptNLP
+def test_hessian_SimpleModel1(self):
+    model = SimpleModel1()
+    m = model.make_model()
+    x_init_list = [[-5.0], [-4.0], [-3.0], [-1.5], [0.5], [1.0], [2.0], [3.5]]
+    external_model = ExternalPyomoModel([m.x], [m.y], [m.residual_eqn], [m.external_eqn])
+    for x in x_init_list:
+        external_model.set_input_values(x)
+        hess = external_model.evaluate_hessians_of_residuals()
+        self.assertAlmostEqual(hess[0][0, 0], model.evaluate_hessian(x[0]), delta=1e-08)

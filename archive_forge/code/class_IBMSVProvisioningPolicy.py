@@ -1,0 +1,130 @@
+from __future__ import absolute_import, division, print_function
+from traceback import format_exc
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.ibm.spectrum_virtualize.plugins.module_utils.ibm_svc_utils import (
+from ansible.module_utils._text import to_native
+class IBMSVProvisioningPolicy:
+
+    def __init__(self):
+        argument_spec = svc_argument_spec()
+        argument_spec.update(dict(name=dict(type='str', required=True), state=dict(type='str', choices=['present', 'absent'], required=True), capacitysaving=dict(type='str', choices=['drivebased', 'thin', 'compressed']), deduplicated=dict(type='bool', default=False), old_name=dict(type='str')))
+        self.module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True)
+        self.name = self.module.params['name']
+        self.state = self.module.params['state']
+        self.capacitysaving = self.module.params.get('capacitysaving')
+        self.deduplicated = self.module.params.get('deduplicated', False)
+        self.old_name = self.module.params.get('old_name', '')
+        self.basic_checks()
+        self.log_path = self.module.params['log_path']
+        log = get_logger(self.__class__.__name__, self.log_path)
+        self.log = log.info
+        self.changed = False
+        self.msg = ''
+        self.pp_data = {}
+        self.restapi = IBMSVCRestApi(module=self.module, clustername=self.module.params['clustername'], domain=self.module.params['domain'], username=self.module.params['username'], password=self.module.params['password'], validate_certs=self.module.params['validate_certs'], log_path=self.log_path, token=self.module.params['token'])
+
+    def basic_checks(self):
+        if self.state == 'present':
+            if not self.name:
+                self.module.fail_json(msg='Mandatory parameter missing: name')
+        else:
+            unsupported = ('capacitysaving', 'deduplicated', 'old_name')
+            unsupported_exists = ','.join((field for field in unsupported if getattr(self, field)))
+            if unsupported_exists:
+                self.module.fail_json(msg='state=absent but following paramters passed: {0}'.format(unsupported_exists))
+
+    def create_validation(self):
+        if self.old_name:
+            self.rename_validation([])
+        if not self.capacitysaving:
+            self.module.fail_json(msg='Mandatory parameter missing: capacitysaving')
+
+    def rename_validation(self, updates):
+        if self.old_name and self.name:
+            if self.name == self.old_name:
+                self.module.fail_json(msg='New name and old name should be different.')
+            new = self.is_pp_exists()
+            existing = self.is_pp_exists(name=self.old_name)
+            if existing:
+                if new:
+                    self.module.fail_json(msg='Provisioning policy ({0}) already exists for the given new name'.format(self.name))
+                else:
+                    updates.append('name')
+            elif not new:
+                self.module.fail_json(msg='Provisioning policy ({0}) does not exists for the given old name.'.format(self.old_name))
+            else:
+                self.module.exit_json(msg='Provisioning policy ({0}) already renamed. No modifications done.'.format(self.name))
+
+    def is_pp_exists(self, name=None):
+        result = {}
+        name = name if name else self.name
+        cmd = 'lsprovisioningpolicy'
+        data = self.restapi.svc_obj_info(cmd=cmd, cmdopts=None, cmdargs=[name])
+        if isinstance(data, list):
+            for d in data:
+                result.update(d)
+        else:
+            result = data
+        self.pp_data = result
+        return result
+
+    def create_provisioning_policy(self):
+        self.create_validation()
+        if self.module.check_mode:
+            self.changed = True
+            return
+        cmd = 'mkprovisioningpolicy'
+        cmdopts = {'name': self.name, 'capacitysaving': self.capacitysaving, 'deduplicated': self.deduplicated}
+        self.restapi.svc_run_command(cmd, cmdopts, cmdargs=None)
+        self.log('Provisioning policy (%s) created', self.name)
+        self.changed = True
+
+    def provisioning_policy_probe(self):
+        updates = []
+        self.rename_validation(updates)
+        if self.capacitysaving:
+            capsav = 'none' if self.capacitysaving == 'drivebased' else self.capacitysaving
+            if capsav and capsav != self.pp_data.get('capacity_saving', ''):
+                self.module.fail_json(msg='Following paramter not applicable for update operation: capacitysaving')
+        if self.deduplicated and (not strtobool(self.pp_data.get('deduplicated', 0))):
+            self.module.fail_json(msg='Following paramter not applicable for update operation: deduplicated')
+        return updates
+
+    def update_provisioning_policy(self, updates):
+        if self.module.check_mode:
+            self.changed = True
+            return
+        cmd = 'chprovisioningpolicy'
+        cmdopts = {'name': self.name}
+        self.restapi.svc_run_command(cmd, cmdopts, cmdargs=[self.old_name])
+        self.log('Provisioning policy (%s) renamed', self.name)
+        self.changed = True
+
+    def delete_provisioning_policy(self):
+        if self.module.check_mode:
+            self.changed = True
+            return
+        cmd = 'rmprovisioningpolicy'
+        self.restapi.svc_run_command(cmd, cmdopts=None, cmdargs=[self.name])
+        self.changed = True
+
+    def apply(self):
+        if self.is_pp_exists(name=self.old_name):
+            if self.state == 'present':
+                modifications = self.provisioning_policy_probe()
+                if any(modifications):
+                    self.update_provisioning_policy(modifications)
+                    self.msg = 'Provisioning policy ({0}) updated'.format(self.name)
+                else:
+                    self.msg = 'Provisioning policy ({0}) already exists. No modifications done.'.format(self.name)
+            else:
+                self.delete_provisioning_policy()
+                self.msg = 'Provisioning policy ({0}) deleted'.format(self.name)
+        elif self.state == 'absent':
+            self.msg = 'Provisioning policy ({0}) does not exist.'.format(self.name)
+        else:
+            self.create_provisioning_policy()
+            self.msg = 'Provisioning policy ({0}) created.'.format(self.name)
+        if self.module.check_mode:
+            self.msg = 'skipping changes due to check mode.'
+        self.module.exit_json(changed=self.changed, msg=self.msg)

@@ -1,0 +1,8 @@
+from nltk.chat.util import Chat
+def iesha_chat():
+    print('Iesha the TeenBoT\n---------')
+    print('Talk to the program by typing in plain English, using normal upper-')
+    print('and lower-case letters and punctuation.  Enter "quit" when done.')
+    print('=' * 72)
+    print("hi!! i'm iesha! who r u??!")
+    iesha_chatbot.converse()

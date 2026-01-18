@@ -1,0 +1,24 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def ll_fz_new_stext_page(mediabox):
+    """
+    Low-level wrapper for `::fz_new_stext_page()`.
+    Create an empty text page.
+
+    The text page is filled out by the text device to contain the
+    blocks and lines of text on the page.
+
+    mediabox: optional mediabox information.
+    """
+    return _mupdf.ll_fz_new_stext_page(mediabox)

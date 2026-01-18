@@ -1,0 +1,44 @@
+import numbers
+import sys
+import numpy as np
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import bitwise_ops
+from tensorflow.python.ops import clip_ops
+from tensorflow.python.ops import control_flow_assert
+from tensorflow.python.ops import gen_math_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn_ops
+from tensorflow.python.ops import sort_ops
+from tensorflow.python.ops import special_math_ops
+from tensorflow.python.ops import while_loop
+from tensorflow.python.ops.numpy_ops import np_array_ops
+from tensorflow.python.ops.numpy_ops import np_arrays
+from tensorflow.python.ops.numpy_ops import np_dtypes
+from tensorflow.python.ops.numpy_ops import np_utils
+from tensorflow.python.util import tf_export
+@tf_export.tf_export('experimental.numpy.argsort', v1=[])
+@np_utils.np_doc('argsort')
+def argsort(a, axis=-1, kind='quicksort', order=None):
+    if kind not in ('quicksort', 'stable'):
+        raise ValueError(f'Invalid value for argument `kind`. Only kind="quicksort" and kind="stable" are supported. Received: kind={kind}')
+    if order is not None:
+        raise ValueError('The `order` argument is not supported. Pass order=None')
+    stable = kind == 'stable'
+    a = np_array_ops.array(a)
+
+    def _argsort(a, axis, stable):
+        if axis is None:
+            a = array_ops.reshape(a, [-1])
+            axis = 0
+        return sort_ops.argsort(a, axis, stable=stable)
+    tf_ans = np_utils.cond(math_ops.equal(array_ops.rank(a), 0), lambda: constant_op.constant([0]), lambda: _argsort(a, axis, stable))
+    if ops.is_auto_dtype_conversion_enabled():
+        return np_array_ops.array(tf_ans, dtype=int)
+    else:
+        return np_array_ops.array(tf_ans, dtype=np.intp)

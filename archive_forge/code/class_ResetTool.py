@@ -1,0 +1,37 @@
+from __future__ import annotations
+import logging # isort:skip
+import difflib
+import typing as tp
+from math import nan
+from typing import Literal
+from ..core.enums import (
+from ..core.has_props import abstract
+from ..core.properties import (
+from ..core.property.struct import Optional
+from ..core.validation import error
+from ..core.validation.errors import NO_RANGE_TOOL_RANGES
+from ..model import Model
+from ..util.strings import nice_join
+from .annotations import BoxAnnotation, PolyAnnotation, Span
+from .callbacks import Callback
+from .dom import Template
+from .glyphs import (
+from .nodes import Node
+from .ranges import Range
+from .renderers import DataRenderer, GlyphRenderer
+from .ui import UIElement
+class ResetTool(PlotActionTool):
+    """ *toolbar icon*: |reset_icon|
+
+    The reset tool is an action. When activated in the toolbar, the tool resets
+    the data bounds of the plot to their values when the plot was initially
+    created.
+
+    .. |reset_icon| image:: /_images/icons/Reset.png
+        :height: 24px
+        :alt: Icon of two arrows on a circular arc forming a circle representing the reset tool in the toolbar.
+
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)

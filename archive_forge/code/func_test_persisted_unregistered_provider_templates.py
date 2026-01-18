@@ -1,0 +1,32 @@
+import collections
+import json
+import os
+from unittest import mock
+import uuid
+from heat.common import exception
+from heat.common.i18n import _
+from heat.common import identifier
+from heat.common import template_format
+from heat.common import urlfetch
+from heat.engine import attributes
+from heat.engine import environment
+from heat.engine import properties
+from heat.engine import resource
+from heat.engine import resources
+from heat.engine.resources import template_resource
+from heat.engine import rsrc_defn
+from heat.engine import stack as parser
+from heat.engine import support
+from heat.engine import template
+from heat.objects import stack as stack_object
+from heat.tests import common
+from heat.tests import generic_resource as generic_rsrc
+from heat.tests import utils
+def test_persisted_unregistered_provider_templates(self):
+    """Test that templates are registered correctly.
+
+        Test that templates persisted in the database prior to
+        https://review.opendev.org/#/c/79953/1 are registered correctly.
+        """
+    env = {'resource_registry': {'http://example.com/test.template': None, 'resources': {}}}
+    environment.Environment(env=env)

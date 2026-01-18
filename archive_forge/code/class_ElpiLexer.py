@@ -1,0 +1,26 @@
+from pygments.lexer import RegexLexer, bygroups, include
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class ElpiLexer(RegexLexer):
+    """
+    Lexer for the Elpi programming language.
+
+    .. versionadded:: 2.11
+    """
+    name = 'Elpi'
+    url = 'http://github.com/LPCIC/elpi'
+    aliases = ['elpi']
+    filenames = ['*.elpi']
+    mimetypes = ['text/x-elpi']
+    lcase_re = '[a-z]'
+    ucase_re = '[A-Z]'
+    digit_re = '[0-9]'
+    schar2_re = "([+*^?/<>`'@#~=&!])"
+    schar_re = '({}|-|\\$|_)'.format(schar2_re)
+    idchar_re = '({}|{}|{}|{})'.format(lcase_re, ucase_re, digit_re, schar_re)
+    idcharstarns_re = '({}*(\\.({}|{}){}*)*)'.format(idchar_re, lcase_re, ucase_re, idchar_re)
+    symbchar_re = '({}|{}|{}|{}|:)'.format(lcase_re, ucase_re, digit_re, schar_re)
+    constant_re = '({}{}*|{}{}|{}{}*|_{}+)'.format(ucase_re, idchar_re, lcase_re, idcharstarns_re, schar2_re, symbchar_re, idchar_re)
+    symbol_re = '(,|<=>|->|:-|;|\\?-|->|&|=>|\\bas\\b|\\buvar\\b|<|=<|=|==|>=|>|\\bi<|\\bi=<|\\bi>=|\\bi>|\\bis\\b|\\br<|\\br=<|\\br>=|\\br>|\\bs<|\\bs=<|\\bs>=|\\bs>|@|::|\\[\\]|`->|`:|`:=|\\^|-|\\+|\\bi-|\\bi\\+|r-|r\\+|/|\\*|\\bdiv\\b|\\bi\\*|\\bmod\\b|\\br\\*|~|\\bi~|\\br~)'
+    escape_re = '\\(({}|{})\\)'.format(constant_re, symbol_re)
+    const_sym_re = '({}|{}|{})'.format(constant_re, symbol_re, escape_re)
+    tokens = {'root': [include('elpi')], 'elpi': [include('_elpi-comment'), ('(:before|:after|:if|:name)(\\s*)(\\")', bygroups(Keyword.Mode, Text.Whitespace, String.Double), 'elpi-string'), ('(:index)(\\s*\\()', bygroups(Keyword.Mode, Text.Whitespace), 'elpi-indexing-expr'), ('\\b(external pred|pred)(\\s+)({})'.format(const_sym_re), bygroups(Keyword.Declaration, Text.Whitespace, Name.Function), 'elpi-pred-item'), ('\\b(external type|type)(\\s+)(({}(,\\s*)?)+)'.format(const_sym_re), bygroups(Keyword.Declaration, Text.Whitespace, Name.Function), 'elpi-type'), ('\\b(kind)(\\s+)(({}|,)+)'.format(const_sym_re), bygroups(Keyword.Declaration, Text.Whitespace, Name.Function), 'elpi-type'), ('\\b(typeabbrev)(\\s+)({})'.format(const_sym_re), bygroups(Keyword.Declaration, Text.Whitespace, Name.Function), 'elpi-type'), ('\\b(accumulate)(\\s+)(\\")', bygroups(Keyword.Declaration, Text.Whitespace, String.Double), 'elpi-string'), ('\\b(accumulate|namespace|local)(\\s+)({})'.format(constant_re), bygroups(Keyword.Declaration, Text.Whitespace, Text)), ('\\b(shorten)(\\s+)({}\\.)'.format(constant_re), bygroups(Keyword.Declaration, Text.Whitespace, Text)), ('\\b(pi|sigma)(\\s+)([a-zA-Z][A-Za-z0-9_ ]*)(\\\\)', bygroups(Keyword.Declaration, Text.Whitespace, Name.Variable, Text)), ('\\b(constraint)(\\s+)(({}(\\s+)?)+)'.format(const_sym_re), bygroups(Keyword.Declaration, Text.Whitespace, Name.Function), 'elpi-chr-rule-start'), ('(?=[A-Z_]){}'.format(constant_re), Name.Variable), ('(?=[a-z_]){}\\\\'.format(constant_re), Name.Variable), ('_', Name.Variable), ('({}|!|=>|;)'.format(symbol_re), Keyword.Declaration), (constant_re, Text), ('\\[|\\]|\\||=>', Keyword.Declaration), ('"', String.Double, 'elpi-string'), ('`', String.Double, 'elpi-btick'), ("\\'", String.Double, 'elpi-tick'), ('\\{\\{', Punctuation, 'elpi-quote'), ('\\{[^\\{]', Text, 'elpi-spill'), ('\\(', Text, 'elpi-in-parens'), ('\\d[\\d_]*', Number.Integer), ('-?\\d[\\d_]*(.[\\d_]*)?([eE][+\\-]?\\d[\\d_]*)', Number.Float), ('[\\+\\*\\-/\\^\\.]', Operator)], '_elpi-comment': [('%[^\\n]*\\n', Comment), ('/\\*', Comment, 'elpi-multiline-comment'), ('\\s+', Text.Whitespace)], 'elpi-multiline-comment': [('\\*/', Comment, '#pop'), ('.', Comment)], 'elpi-indexing-expr': [('[0-9 _]+', Number.Integer), ('\\)', Text, '#pop')], 'elpi-type': [('(ctype\\s+)(\\")', bygroups(Keyword.Type, String.Double), 'elpi-string'), ('->', Keyword.Type), (constant_re, Keyword.Type), ('\\(|\\)', Keyword.Type), ('\\.', Text, '#pop'), include('_elpi-comment')], 'elpi-chr-rule-start': [('\\{', Text, 'elpi-chr-rule'), include('_elpi-comment')], 'elpi-chr-rule': [('\\brule\\b', Keyword.Declaration), ('\\\\', Keyword.Declaration), ('\\}', Text, '#pop:2'), include('elpi')], 'elpi-pred-item': [('[io]:', Keyword.Mode, 'elpi-ctype'), ('\\.', Text, '#pop'), include('_elpi-comment')], 'elpi-ctype': [('(ctype\\s+)(\\")', bygroups(Keyword.Type, String.Double), 'elpi-string'), ('->', Keyword.Type), (constant_re, Keyword.Type), ('\\(|\\)', Keyword.Type), (',', Text, '#pop'), ('\\.', Text, '#pop:2'), include('_elpi-comment')], 'elpi-btick': [('[^` ]+', String.Double), ('`', String.Double, '#pop')], 'elpi-tick': [("[^\\' ]+", String.Double), ("\\'", String.Double, '#pop')], 'elpi-string': [('[^\\"]+', String.Double), ('"', String.Double, '#pop')], 'elpi-quote': [('\\{\\{', Punctuation, '#push'), ('\\}\\}', Punctuation, '#pop'), ('(lp:)((?=[A-Z_]){})'.format(constant_re), bygroups(Keyword, Name.Variable)), ('[^l\\}]+', Text), ('l|\\}', Text)], 'elpi-spill': [('\\{[^\\{]', Text, '#push'), ('\\}[^\\}]', Text, '#pop'), include('elpi')], 'elpi-in-parens': [('\\(', Operator, '#push'), ('\\)', Operator, '#pop'), include('elpi')]}

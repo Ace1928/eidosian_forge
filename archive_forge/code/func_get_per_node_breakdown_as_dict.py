@@ -1,0 +1,29 @@
+import collections
+import copy
+import hashlib
+import json
+import logging
+import os
+import threading
+from dataclasses import dataclass
+from datetime import datetime
+from io import StringIO
+from numbers import Number, Real
+from typing import Any, Dict, List, Optional, Tuple, Union
+import ray
+import ray._private.services as services
+from ray._private.utils import (
+from ray.autoscaler._private import constants
+from ray.autoscaler._private.cli_logger import cli_logger
+from ray.autoscaler._private.docker import validate_docker_config
+from ray.autoscaler._private.local.config import prepare_local
+from ray.autoscaler._private.providers import _get_default_config
+from ray.autoscaler.tags import NODE_TYPE_LEGACY_HEAD, NODE_TYPE_LEGACY_WORKER
+def get_per_node_breakdown_as_dict(lm_summary: LoadMetricsSummary) -> dict:
+    per_node_breakdown = {}
+    for node_id, usage in lm_summary.usage_by_node.items():
+        usage_string = ''
+        for line in parse_usage(usage, verbose=True):
+            usage_string += f'{line}\n'
+        per_node_breakdown[node_id] = usage_string.strip()
+    return per_node_breakdown

@@ -1,0 +1,13 @@
+from __future__ import annotations
+import logging
+import re
+from itertools import chain, combinations
+from typing import TYPE_CHECKING, no_type_check, overload
+import numpy as np
+from monty.fractions import gcd_float
+from monty.json import MontyDecoder, MSONable
+from uncertainties import ufloat
+from pymatgen.core.composition import Composition
+from pymatgen.entries.computed_entries import ComputedEntry
+def get_comp_amt(comp_str):
+    return {Composition(m.group(2)): float(m.group(1) or 1) for m in re.finditer('([\\d\\.]*(?:[eE]-?[\\d\\.]+)?)\\s*([A-Z][\\w\\.\\(\\)]*)', comp_str)}

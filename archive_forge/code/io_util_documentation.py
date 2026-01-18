@@ -1,0 +1,1 @@
+Checks whether a given path is Cloud filesystem path.

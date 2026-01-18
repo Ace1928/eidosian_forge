@@ -1,0 +1,14 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ..module_utils.cloudstack import (AnsibleCloudStack, cs_argument_spec,
+def absent_vpn_connection(self):
+    vpn_conn = self.get_vpn_connection()
+    if vpn_conn:
+        self.result['changed'] = True
+        args = {'id': vpn_conn['id']}
+        if not self.module.check_mode:
+            res = self.query_api('deleteVpnConnection', **args)
+            poll_async = self.module.params.get('poll_async')
+            if poll_async:
+                self.poll_job(res, 'vpnconnection')
+    return vpn_conn

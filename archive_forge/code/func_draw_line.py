@@ -1,0 +1,14 @@
+import warnings
+from .base import Renderer
+from ..exporter import Exporter
+def draw_line(self, data, coordinates, style, label, mplobj=None):
+    import vincent
+    if coordinates != 'data':
+        warnings.warn('Only data coordinates supported. Skipping this')
+    linedata = {'x': data[:, 0], 'y': data[:, 1]}
+    line = vincent.Line(linedata, iter_idx='x', width=self.figwidth, height=self.figheight)
+    line.scales['color'].range = [style['color']]
+    if self.chart is None:
+        self.chart = line
+    else:
+        warnings.warn('Multiple plot elements not yet supported')

@@ -1,0 +1,2 @@
+from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+HuggingFace sentence_transformer embedding models.

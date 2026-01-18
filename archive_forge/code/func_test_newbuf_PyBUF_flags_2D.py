@@ -1,0 +1,77 @@
+import os
+import unittest
+from pygame.tests import test_utils
+from pygame.tests.test_utils import (
+import pygame
+from pygame.locals import *
+from pygame.bufferproxy import BufferProxy
+import platform
+import gc
+import weakref
+import ctypes
+@unittest.skipIf(not pygame.HAVE_NEWBUF, 'newbuf not implemented')
+def test_newbuf_PyBUF_flags_2D(self):
+    from pygame.tests.test_utils import buftools
+    Importer = buftools.Importer
+    s = pygame.Surface((10, 6), 0, 32)
+    a = s.get_view('2')
+    b = Importer(a, buftools.PyBUF_SIMPLE)
+    self.assertEqual(b.ndim, 0)
+    self.assertTrue(b.format is None)
+    self.assertEqual(b.len, a.length)
+    self.assertEqual(b.itemsize, s.get_bytesize())
+    self.assertTrue(b.shape is None)
+    self.assertTrue(b.strides is None)
+    self.assertTrue(b.suboffsets is None)
+    self.assertFalse(b.readonly)
+    self.assertEqual(b.buf, s._pixels_address)
+    b = Importer(a, buftools.PyBUF_STRIDES)
+    self.assertEqual(b.ndim, 2)
+    self.assertTrue(b.format is None)
+    self.assertEqual(b.len, a.length)
+    self.assertEqual(b.itemsize, s.get_bytesize())
+    self.assertEqual(b.shape, s.get_size())
+    self.assertEqual(b.strides, (s.get_bytesize(), s.get_pitch()))
+    self.assertTrue(b.suboffsets is None)
+    self.assertFalse(b.readonly)
+    self.assertEqual(b.buf, s._pixels_address)
+    b = Importer(a, buftools.PyBUF_RECORDS_RO)
+    self.assertEqual(b.ndim, 2)
+    self.assertEqual(b.format, '=I')
+    self.assertEqual(b.strides, (s.get_bytesize(), s.get_pitch()))
+    b = Importer(a, buftools.PyBUF_RECORDS)
+    self.assertEqual(b.ndim, 2)
+    self.assertEqual(b.format, '=I')
+    self.assertEqual(b.strides, (s.get_bytesize(), s.get_pitch()))
+    b = Importer(a, buftools.PyBUF_F_CONTIGUOUS)
+    self.assertEqual(b.ndim, 2)
+    self.assertEqual(b.format, None)
+    self.assertEqual(b.strides, (s.get_bytesize(), s.get_pitch()))
+    b = Importer(a, buftools.PyBUF_ANY_CONTIGUOUS)
+    self.assertEqual(b.ndim, 2)
+    self.assertEqual(b.format, None)
+    self.assertEqual(b.strides, (s.get_bytesize(), s.get_pitch()))
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_ND)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_C_CONTIGUOUS)
+    s2 = s.subsurface((1, 1, 7, 4))
+    a = s2.get_view('2')
+    b = Importer(a, buftools.PyBUF_STRIDES)
+    self.assertEqual(b.ndim, 2)
+    self.assertTrue(b.format is None)
+    self.assertEqual(b.len, a.length)
+    self.assertEqual(b.itemsize, s2.get_bytesize())
+    self.assertEqual(b.shape, s2.get_size())
+    self.assertEqual(b.strides, (s2.get_bytesize(), s.get_pitch()))
+    self.assertTrue(b.suboffsets is None)
+    self.assertFalse(b.readonly)
+    self.assertEqual(b.buf, s2._pixels_address)
+    b = Importer(a, buftools.PyBUF_RECORDS)
+    self.assertEqual(b.ndim, 2)
+    self.assertEqual(b.format, '=I')
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_SIMPLE)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_FORMAT)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_WRITABLE)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_ND)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_C_CONTIGUOUS)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_F_CONTIGUOUS)
+    self.assertRaises(BufferError, Importer, a, buftools.PyBUF_ANY_CONTIGUOUS)

@@ -1,0 +1,6 @@
+import pytest
+from spacy.lang.tr.lex_attrs import like_num
+def test_tr_tokenizer_handles_long_text(tr_tokenizer):
+    text = 'Pamuk nasıl ipliğe dönüştürülür?\n\nSıkıştırılmış balyalar halindeki pamuk, iplik fabrikasına getirildiğinde hem\nlifleri birbirine dolaşmıştır, hem de tarladan toplanırken araya bitkinin\nparçaları karışmıştır. Üstelik balyalardaki pamuğun cinsi aynı olsa bile kalitesi\ndeğişeceğinden, önce bütün balyaların birbirine karıştırılarak harmanlanması gerekir.\n\nDaha sonra pamuk yığınları, liflerin açılıp temizlenmesi için tek bir birim halinde\nbirleştirilmiş çeşitli makinelerden geçirilir.Bunlardan biri, dönen tokmaklarıyla\npamuğu dövüp kabartarak dağınık yumaklar haline getiren ve liflerin arasındaki yabancı\nmaddeleri temizleyen hallaç makinesidir. Daha sonra tarak makinesine giren pamuk demetleri,\nherbirinin yüzeyinde yüzbinlerce incecik iğne bulunan döner silindirlerin arasından geçerek lif lif ayrılır\nve tül inceliğinde gevşek bir örtüye dönüşür. Ama bir sonraki makine bu lifleri dağınık\nve gevşek bir biçimde birbirine yaklaştırarak 2 cm eninde bir pamuk şeridi haline getirir.'
+    tokens = tr_tokenizer(text)
+    assert len(tokens) == 146

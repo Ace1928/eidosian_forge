@@ -1,0 +1,56 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.command_lib.storage import optimize_parameters_util
+from googlecloudsdk.command_lib.storage import plurality_checkable_iterator
+from googlecloudsdk.command_lib.storage.tasks import task_graph_executor
+from googlecloudsdk.command_lib.storage.tasks import task_status
+from googlecloudsdk.command_lib.storage.tasks import task_util
+from googlecloudsdk.core import exceptions as core_exceptions
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+def _execute_tasks_sequential(task_iterator, received_messages=None, task_status_queue=None, continue_on_error=False):
+    """Executes task objects sequentially.
+
+  Args:
+    task_iterator (Iterable[task.Task]): An iterator for task objects.
+    received_messages (Iterable[task.Message]): Messages sent to each
+      task in task_iterator.
+    task_status_queue (multiprocessing.Queue|None): Used by task to report it
+      progress to a central location.
+    continue_on_error (bool): If True, execution will continue even if
+      errors occur.
+
+  Returns:
+    Tuple[int, Iterable[task.Message]]: The first element in the tuple
+      is the exit code and the second element is an iterable of messages
+      emitted by the tasks in task_iterator.
+  """
+    exit_code = 0
+    messages_from_current_task_iterator = []
+    for task in task_iterator:
+        if received_messages is not None:
+            task.received_messages = received_messages
+        task_execution_error = None
+        try:
+            task_output = task.execute(task_status_queue=task_status_queue)
+        except core_exceptions.Error as e:
+            task_execution_error = e
+            if continue_on_error:
+                log.warning(str(e))
+                exit_code = 1
+                continue
+            else:
+                raise
+        finally:
+            task.exit_handler(task_execution_error, task_status_queue)
+        if task_output is None:
+            continue
+        if task_output.messages is not None:
+            messages_from_current_task_iterator.extend(task_output.messages)
+        if task_output.additional_task_iterators is not None:
+            messages_for_dependent_tasks = []
+            for additional_task_iterator in task_output.additional_task_iterators:
+                exit_code_from_dependent_tasks, messages_for_dependent_tasks = _execute_tasks_sequential(additional_task_iterator, messages_for_dependent_tasks, task_status_queue=task_status_queue, continue_on_error=continue_on_error)
+                exit_code = max(exit_code_from_dependent_tasks, exit_code)
+    return (exit_code, messages_from_current_task_iterator)

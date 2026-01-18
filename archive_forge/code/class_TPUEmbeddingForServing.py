@@ -1,0 +1,139 @@
+from typing import Any, Iterable, Optional, Text, Union, Dict
+from absl import logging
+from tensorflow.python.distribute import distribute_lib
+from tensorflow.python.distribute import tpu_strategy
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import sparse_tensor
+from tensorflow.python.framework import tensor
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import embedding_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import sparse_ops
+from tensorflow.python.ops import variables as tf_variables
+from tensorflow.python.ops.ragged import ragged_tensor
+from tensorflow.python.tpu import tpu_embedding_base
+from tensorflow.python.tpu import tpu_embedding_v2_utils
+from tensorflow.python.types import core
+from tensorflow.python.util import nest
+from tensorflow.python.util.tf_export import tf_export
+@tf_export('tpu.experimental.embedding.TPUEmbeddingForServing')
+class TPUEmbeddingForServing(tpu_embedding_base.TPUEmbeddingBase):
+    """The TPUEmbedding mid level API running on CPU for serving.
+
+  Note: This class is intended to be used for embedding tables that are trained
+  on TPU and to be served on CPU. Therefore the class should be only initialized
+  under non-TPU strategy. Otherwise an error will be raised.
+
+  You can first train your model using the TPUEmbedding class and save the
+  checkpoint. Then use this class to restore the checkpoint to do serving.
+
+  First train a model and save the checkpoint.
+  ```python
+  model = model_fn(...)
+  strategy = tf.distribute.TPUStrategy(...)
+  with strategy.scope():
+    embedding = tf.tpu.experimental.embedding.TPUEmbedding(
+        feature_config=feature_config,
+        optimizer=tf.tpu.experimental.embedding.SGD(0.1))
+
+  # Your custom training code.
+
+  checkpoint = tf.train.Checkpoint(model=model, embedding=embedding)
+  checkpoint.save(...)
+
+  ```
+
+  Then restore the checkpoint and do serving.
+  ```python
+
+  # Restore the model on CPU.
+  model = model_fn(...)
+  embedding = tf.tpu.experimental.embedding.TPUEmbeddingForServing(
+        feature_config=feature_config,
+        optimizer=tf.tpu.experimental.embedding.SGD(0.1))
+
+  checkpoint = tf.train.Checkpoint(model=model, embedding=embedding)
+  checkpoint.restore(...)
+
+  result = embedding(...)
+  table = embedding.embedding_table
+  ```
+
+  NOTE: This class can also be used to do embedding training on CPU. But it
+  requires the conversion between keras optimizer and embedding optimizers so
+  that the slot variables can stay consistent between them.
+  """
+
+    def __init__(self, feature_config: Union[tpu_embedding_v2_utils.FeatureConfig, Iterable], optimizer: Optional[tpu_embedding_v2_utils._Optimizer]):
+        """Creates the TPUEmbeddingForServing mid level API object.
+
+    ```python
+    embedding = tf.tpu.experimental.embedding.TPUEmbeddingForServing(
+        feature_config=tf.tpu.experimental.embedding.FeatureConfig(
+            table=tf.tpu.experimental.embedding.TableConfig(
+                dim=...,
+                vocabulary_size=...)))
+    ```
+
+    Args:
+      feature_config: A nested structure of
+        `tf.tpu.experimental.embedding.FeatureConfig` configs.
+      optimizer: An instance of one of `tf.tpu.experimental.embedding.SGD`,
+        `tf.tpu.experimental.embedding.Adagrad` or
+        `tf.tpu.experimental.embedding.Adam`. When not created under TPUStrategy
+        may be set to None to avoid the creation of the optimizer slot
+        variables, useful for optimizing memory consumption when exporting the
+        model for serving where slot variables aren't needed.
+
+    Raises:
+      RuntimeError: If created under TPUStrategy.
+    """
+        super(TPUEmbeddingForServing, self).__init__(feature_config, optimizer)
+        self._strategy = distribute_lib.get_strategy()
+        if isinstance(self._strategy, (tpu_strategy.TPUStrategy, tpu_strategy.TPUStrategyV2)):
+            raise RuntimeError('Serving on TPU is not yet supported.')
+
+    @property
+    def embedding_tables(self) -> Dict[tpu_embedding_v2_utils.TableConfig, tf_variables.Variable]:
+        """Returns a dict of embedding tables, keyed by `TableConfig`."""
+        self._maybe_build()
+        return {table: self._variables[table.name]['parameters'] for table in self._table_config}
+
+    def _maybe_build(self):
+        if not self._built:
+            with ops.init_scope():
+                self.build()
+
+    def _create_variables_and_slots(self) -> Dict[Text, Dict[Text, tf_variables.Variable]]:
+        """Create variables for TPU embeddings.
+
+    Returns:
+      A dict of dicts. The outer dict is keyed by the table names and the inner
+      dicts are keyed by 'parameters' and the slot variable names.
+    """
+        variables = {}
+        for table in self._table_config:
+            variables[table.name] = self._create_variables(table, trainable=True)
+        return variables
+
+    def embedding_lookup(self, features: Any, weights: Optional[Any]=None) -> Any:
+        """Apply standard lookup ops on CPU.
+
+    Args:
+      features: A nested structure of `tf.Tensor`s, `tf.SparseTensor`s or
+        `tf.RaggedTensor`s, with the same structure as `feature_config`. Inputs
+        will be downcast to `tf.int32`. Only one type out of `tf.SparseTensor`
+        or `tf.RaggedTensor` is supported per call.
+      weights: If not `None`, a nested structure of `tf.Tensor`s,
+        `tf.SparseTensor`s or `tf.RaggedTensor`s, matching the above, except
+        that the tensors should be of float type (and they will be downcast to
+        `tf.float32`). For `tf.SparseTensor`s we assume the `indices` are the
+        same for the parallel entries from `features` and similarly for
+        `tf.RaggedTensor`s we assume the row_splits are the same.
+
+    Returns:
+      A nested structure of Tensors with the same structure as input features.
+    """
+        return cpu_embedding_lookup(features, weights, self.embedding_tables, self._feature_config)

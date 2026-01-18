@@ -1,0 +1,16 @@
+from __future__ import annotations
+import logging # isort:skip
+import json
+import os
+import urllib
+from typing import (
+from uuid import uuid4
+from ..core.types import ID
+from ..util.serialization import make_id
+from ..util.warnings import warn
+from .state import curstate
+def install_jupyter_hooks() -> None:
+    """
+
+    """
+    install_notebook_hook('jupyter', load_notebook, show_doc, show_app)

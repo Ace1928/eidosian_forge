@@ -1,0 +1,16 @@
+import ctypes
+import pytest
+import pandas.util._test_decorators as td
+import pandas as pd
+@td.skip_if_no('pyarrow', min_version='14.0')
+def test_dataframe_arrow_interface():
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': ['a', 'b', 'c']})
+    capsule = df.__arrow_c_stream__()
+    assert ctypes.pythonapi.PyCapsule_IsValid(ctypes.py_object(capsule), b'arrow_array_stream') == 1
+    table = pa.table(df)
+    expected = pa.table({'a': [1, 2, 3], 'b': ['a', 'b', 'c']})
+    assert table.equals(expected)
+    schema = pa.schema([('a', pa.int8()), ('b', pa.string())])
+    table = pa.table(df, schema=schema)
+    expected = expected.cast(schema)
+    assert table.equals(expected)

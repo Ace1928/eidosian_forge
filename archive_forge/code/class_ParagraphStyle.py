@@ -1,0 +1,6 @@
+from reportlab.lib.colors import black
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.fonts import tt2ps
+from reportlab.rl_config import canvas_basefontname as _baseFontName, \
+class ParagraphStyle(PropertySet):
+    defaults = {'fontName': _baseFontName, 'fontSize': 10, 'leading': 12, 'leftIndent': 0, 'rightIndent': 0, 'firstLineIndent': 0, 'alignment': TA_LEFT, 'spaceBefore': 0, 'spaceAfter': 0, 'bulletFontName': _baseFontName, 'bulletFontSize': 10, 'bulletIndent': 0, 'textColor': black, 'backColor': None, 'wordWrap': None, 'borderWidth': 0, 'borderPadding': 0, 'borderColor': None, 'borderRadius': None, 'allowWidows': 1, 'allowOrphans': 0, 'textTransform': None, 'endDots': None, 'splitLongWords': 1, 'underlineWidth': _baseUnderlineWidth, 'bulletAnchor': 'start', 'justifyLastLine': 0, 'justifyBreaks': 0, 'spaceShrinkage': _spaceShrinkage, 'strikeWidth': _baseStrikeWidth, 'underlineOffset': _baseUnderlineOffset, 'underlineGap': _baseUnderlineGap, 'strikeOffset': _baseStrikeOffset, 'strikeGap': _baseStrikeGap, 'linkUnderline': _platypus_link_underline, 'underlineColor': None, 'strikeColor': None, 'hyphenationLang': _hyphenationLang, 'embeddedHyphenation': _embeddedHyphenation, 'uriWasteReduce': _uriWasteReduce}

@@ -1,0 +1,3 @@
+from boto.compat import six
+def get_query(self):
+    return self.manager._build_filter_part(self.model_class, self.filters, self.sort_by, self.select)

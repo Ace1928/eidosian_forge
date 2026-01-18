@@ -1,0 +1,8 @@
+import argparse
+import re
+from flax.traverse_util import flatten_dict, unflatten_dict
+from t5x import checkpoints
+from transformers import SwitchTransformersConfig, SwitchTransformersForConditionalGeneration
+from transformers.modeling_flax_pytorch_utils import load_flax_weights_in_pytorch_model
+from transformers.utils import logging
+Convert SwitchTransformersX checkpoints from the original repository to JAX/FLAX model.

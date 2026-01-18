@@ -1,0 +1,19 @@
+from boto.ec2.elb.healthcheck import HealthCheck
+from boto.ec2.elb.listener import Listener
+from boto.ec2.elb.listelement import ListElement
+from boto.ec2.elb.policies import Policies, OtherPolicy
+from boto.ec2.elb.securitygroup import SecurityGroup
+from boto.ec2.instanceinfo import InstanceInfo
+from boto.resultset import ResultSet
+from boto.compat import six
+def disable_cross_zone_load_balancing(self):
+    """
+        Turns off CrossZone Load Balancing for this ELB.
+
+        :rtype: bool
+        :return: True if successful, False if not.
+        """
+    success = self.connection.modify_lb_attribute(self.name, 'crossZoneLoadBalancing', False)
+    if success and self._attributes:
+        self._attributes.cross_zone_load_balancing.enabled = False
+    return success

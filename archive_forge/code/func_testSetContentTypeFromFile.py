@@ -1,0 +1,67 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+import collections
+import datetime
+import logging
+import os
+import pyu2f
+from apitools.base.py import exceptions as apitools_exceptions
+from gslib.bucket_listing_ref import BucketListingObject
+from gslib.bucket_listing_ref import BucketListingPrefix
+from gslib.cloud_api import CloudApi
+from gslib.cloud_api import ResumableUploadAbortException
+from gslib.cloud_api import ResumableUploadException
+from gslib.cloud_api import ResumableUploadStartOverException
+from gslib.cloud_api import ServiceException
+from gslib.command import CreateOrGetGsutilLogger
+from gslib.discard_messages_queue import DiscardMessagesQueue
+from gslib.exception import CommandException
+from gslib.gcs_json_api import GcsJsonApi
+from gslib.parallel_tracker_file import ObjectFromTracker
+from gslib.storage_url import StorageUrlFromString
+from gslib.tests.mock_cloud_api import MockCloudApi
+from gslib.tests.testcase.unit_testcase import GsUtilUnitTestCase
+from gslib.tests.util import GSMockBucketStorageUri
+from gslib.tests.util import SetBotoConfigForTest
+from gslib.tests.util import unittest
+from gslib.third_party.storage_apitools import storage_v1_messages as apitools_messages
+from gslib.utils import copy_helper
+from gslib.utils import parallelism_framework_util
+from gslib.utils import posix_util
+from gslib.utils import system_util
+from gslib.utils import hashing_helper
+from gslib.utils.copy_helper import _CheckCloudHashes
+from gslib.utils.copy_helper import _DelegateUploadFileToObject
+from gslib.utils.copy_helper import _GetPartitionInfo
+from gslib.utils.copy_helper import _SelectUploadCompressionStrategy
+from gslib.utils.copy_helper import _SetContentTypeFromFile
+from gslib.utils.copy_helper import ExpandUrlToSingleBlr
+from gslib.utils.copy_helper import FilterExistingComponents
+from gslib.utils.copy_helper import GZIP_ALL_FILES
+from gslib.utils.copy_helper import PerformParallelUploadFileToObjectArgs
+from gslib.utils.copy_helper import WarnIfMvEarlyDeletionChargeApplies
+from six import add_move, MovedModule
+from six.moves import mock
+def testSetContentTypeFromFile(self):
+    """Tests that content type is correctly determined for symlinks."""
+    if system_util.IS_WINDOWS:
+        return unittest.skip('use_magicfile features not available on Windows')
+    surprise_html = b'<html><body>And you thought I was just text!</body></html>'
+    temp_dir_path = self.CreateTempDir()
+    txt_file_path = self.CreateTempFile(tmpdir=temp_dir_path, contents=surprise_html, file_name='html_in_disguise.txt')
+    link_name = 'link_to_realfile'
+    os.symlink(txt_file_path, temp_dir_path + os.path.sep + link_name)
+    dst_obj_metadata_mock = mock.MagicMock(contentType=None)
+    src_url_stub = mock.MagicMock(object_name=temp_dir_path + os.path.sep + link_name)
+    src_url_stub.IsFileUrl.return_value = True
+    src_url_stub.IsStream.return_value = False
+    src_url_stub.IsFifo.return_value = False
+    with SetBotoConfigForTest([('GSUtil', 'use_magicfile', 'True')]):
+        _SetContentTypeFromFile(src_url_stub, dst_obj_metadata_mock)
+    self.assertEqual('text/html; charset=us-ascii', dst_obj_metadata_mock.contentType)
+    dst_obj_metadata_mock = mock.MagicMock(contentType=None)
+    with SetBotoConfigForTest([('GSUtil', 'use_magicfile', 'False')]):
+        _SetContentTypeFromFile(src_url_stub, dst_obj_metadata_mock)
+    self.assertEqual('text/plain', dst_obj_metadata_mock.contentType)

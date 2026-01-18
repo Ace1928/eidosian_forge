@@ -1,0 +1,31 @@
+import sys
+import sysconfig
+import pytest
+import pyarrow as pa
+import numpy as np
+@pytest.mark.parametrize('size', [0, 1, 1000])
+def test_copy_from_host(size):
+    arr, buf = make_random_buffer(size=size, target='host')
+    lst = arr.tolist()
+    dbuf = global_context.new_buffer(size)
+
+    def put(*args, **kwargs):
+        dbuf.copy_from_host(buf, *args, **kwargs)
+        rbuf = dbuf.copy_to_host()
+        return np.frombuffer(rbuf, dtype=np.uint8).tolist()
+    assert put() == lst
+    if size > 4:
+        assert put(position=size // 4) == lst[:size // 4] + lst[:-size // 4]
+        assert put() == lst
+        assert put(position=1, nbytes=size // 2) == lst[:1] + lst[:size // 2] + lst[-(size - size // 2 - 1):]
+    for position, nbytes in [(size + 2, -1), (-2, -1), (size + 1, 0), (-3, 0)]:
+        with pytest.raises(ValueError, match='position argument is out-of-range'):
+            put(position=position, nbytes=nbytes)
+    for position, nbytes in [(0, size + 1)]:
+        with pytest.raises(ValueError, match='requested more to copy than available from host buffer'):
+            put(position=position, nbytes=nbytes)
+    if size < 4:
+        return
+    for position, nbytes in [(size // 2, (size + 1) // 2 + 1)]:
+        with pytest.raises(ValueError, match='requested more to copy than available in device buffer'):
+            put(position=position, nbytes=nbytes)

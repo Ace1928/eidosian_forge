@@ -1,0 +1,2 @@
+class ReporterBase:
+    pass

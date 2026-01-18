@@ -1,0 +1,60 @@
+import pprint
+import zlib
+from ... import errors, fifo_cache, lru_cache, osutils, tests, transport
+from ...tests import TestCaseWithTransport, features, scenarios
+from .. import btree_index
+from .. import index as _mod_index
+def test_spill_index_stress_1_1_no_combine(self):
+    builder = btree_index.BTreeBuilder(key_elements=1, spill_at=2)
+    builder.set_optimize(for_size=False, combine_backing_indices=False)
+    nodes = [node[0:2] for node in self.make_nodes(16, 1, 0)]
+    builder.add_node(*nodes[0])
+    self.assertEqual(1, len(builder._nodes))
+    self.assertIs(None, builder._nodes_by_key)
+    builder.add_node(*nodes[1])
+    self.assertEqual(0, len(builder._nodes))
+    self.assertIs(None, builder._nodes_by_key)
+    self.assertEqual(1, len(builder._backing_indices))
+    self.assertEqual(2, builder._backing_indices[0].key_count())
+    builder.add_node(*nodes[2])
+    self.assertEqual(1, len(builder._nodes))
+    self.assertIs(None, builder._nodes_by_key)
+    builder.add_node(*nodes[3])
+    self.assertEqual(0, len(builder._nodes))
+    self.assertIs(None, builder._nodes_by_key)
+    self.assertEqual(2, len(builder._backing_indices))
+    for backing_index in builder._backing_indices:
+        self.assertEqual(2, backing_index.key_count())
+    builder.add_node(*nodes[4])
+    builder.add_node(*nodes[5])
+    self.assertEqual(0, len(builder._nodes))
+    self.assertIs(None, builder._nodes_by_key)
+    self.assertEqual(3, len(builder._backing_indices))
+    for backing_index in builder._backing_indices:
+        self.assertEqual(2, backing_index.key_count())
+    builder.add_node(*nodes[6])
+    builder.add_node(*nodes[7])
+    builder.add_node(*nodes[8])
+    builder.add_node(*nodes[9])
+    builder.add_node(*nodes[10])
+    builder.add_node(*nodes[11])
+    builder.add_node(*nodes[12])
+    self.assertEqual(6, len(builder._backing_indices))
+    for backing_index in builder._backing_indices:
+        self.assertEqual(2, backing_index.key_count())
+    self.assertEqual([(builder,) + node for node in sorted(nodes[:13])], list(builder.iter_all_entries()))
+    self.assertEqual({(builder,) + node for node in nodes[11:13]}, set(builder.iter_entries([nodes[12][0], nodes[11][0]])))
+    self.assertEqual(13, builder.key_count())
+    self.assertEqual({(builder,) + node for node in nodes[11:13]}, set(builder.iter_entries_prefix([nodes[12][0], nodes[11][0]])))
+    builder.add_node(*nodes[13])
+    builder.add_node(*nodes[14])
+    builder.add_node(*nodes[15])
+    self.assertEqual(8, len(builder._backing_indices))
+    for backing_index in builder._backing_indices:
+        self.assertEqual(2, backing_index.key_count())
+    transport = self.get_transport('')
+    size = transport.put_file('index', builder.finish())
+    index = btree_index.BTreeGraphIndex(transport, 'index', size)
+    nodes = list(index.iter_all_entries())
+    self.assertEqual(sorted(nodes), nodes)
+    self.assertEqual(16, len(nodes))

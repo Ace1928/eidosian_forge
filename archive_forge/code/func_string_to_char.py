@@ -1,0 +1,23 @@
+import gc
+import io
+import random
+import re
+import string
+import tempfile
+from os import environ as env
+import h5py
+import netCDF4
+import numpy as np
+import pytest
+from packaging import version
+from pytest import raises
+import h5netcdf
+from h5netcdf import legacyapi
+from h5netcdf.core import NOT_A_VARIABLE, CompatibilityError
+def string_to_char(arr):
+    """Like nc4.stringtochar, but faster and more flexible."""
+    arr = np.array(arr, copy=False, order='C')
+    kind = arr.dtype.kind
+    if kind not in ['U', 'S']:
+        raise ValueError('argument must be a string')
+    return arr.reshape(arr.shape + (1,)).view(kind + '1')

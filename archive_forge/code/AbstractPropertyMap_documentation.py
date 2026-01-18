@@ -1,0 +1,1 @@
+Return entity identifier on atoms (PRIVATE).

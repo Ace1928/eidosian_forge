@@ -1,0 +1,9 @@
+import os
+import setuptools
+import setuptools.command.test
+import sys
+def read_requirements(name):
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(project_root, name), 'rb') as f:
+        g = (line.decode('utf-8').lstrip().split('#', 1)[0].rstrip() for line in f)
+        return [l for l in g if l]

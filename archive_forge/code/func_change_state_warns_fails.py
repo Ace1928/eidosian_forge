@@ -1,0 +1,12 @@
+import inspect
+import re
+import warnings
+import pytest
+from numpy.testing import assert_equal
+from skimage._shared.testing import (
+from skimage._shared import testing
+from skimage._shared._warnings import expected_warnings
+from warnings import warn
+@run_in_parallel()
+def change_state_warns_fails():
+    warn('Test warning for test parallel', stacklevel=2)

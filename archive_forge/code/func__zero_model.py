@@ -1,0 +1,34 @@
+import itertools
+import os
+import re
+import sys
+from abc import ABC, abstractmethod
+from contextlib import nullcontext
+from copy import deepcopy
+from enum import auto, Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from unittest import mock
+import torch
+import torch.distributed as dist
+import torch.nn as nn
+from torch.distributed.fsdp import CPUOffload, FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp._common_utils import TrainingState
+from torch.distributed.fsdp._init_utils import NO_RESHARD_AFTER_FORWARD_STRATEGIES
+from torch.distributed.fsdp.fully_sharded_data_parallel import (
+from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
+from torch.distributed.fsdp.wrap import always_wrap_policy, ModuleWrapPolicy, wrap
+from torch.nn import TransformerDecoderLayer, TransformerEncoderLayer
+from torch.nn.parallel.distributed import DistributedDataParallel as DDP
+from torch.testing._internal.common_distributed import (
+from torch.testing._internal.common_utils import FILE_SCHEMA, get_cycles_per_ms
+def _zero_model(model: nn.Module, zero_buffers: bool=False, summon_full=True):
+    """Zeros the parameters and optionally buffers of ``model`` in place."""
+    ctx = FSDP.summon_full_params(model) if summon_full else nullcontext()
+    with ctx:
+        for param in model.parameters():
+            with torch.no_grad():
+                param.zero_()
+        if zero_buffers:
+            for buffer in model.buffers():
+                with torch.no_grad():
+                    buffer.zero_()

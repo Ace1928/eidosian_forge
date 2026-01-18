@@ -1,0 +1,27 @@
+from typing import Any, Dict, Optional, Set
+from docutils.nodes import Node
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.locale import __
+class DummyBuilder(Builder):
+    name = 'dummy'
+    epilog = __('The dummy builder generates no files.')
+    allow_parallel = True
+
+    def init(self) -> None:
+        pass
+
+    def get_outdated_docs(self) -> Set[str]:
+        return self.env.found_docs
+
+    def get_target_uri(self, docname: str, typ: Optional[str]=None) -> str:
+        return ''
+
+    def prepare_writing(self, docnames: Set[str]) -> None:
+        pass
+
+    def write_doc(self, docname: str, doctree: Node) -> None:
+        pass
+
+    def finish(self) -> None:
+        pass

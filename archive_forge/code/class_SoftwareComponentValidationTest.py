@@ -1,0 +1,27 @@
+import contextlib
+from unittest import mock
+from heat.common import exception as exc
+from heat.common import template_format
+from heat.engine import stack
+from heat.engine import template
+from heat.tests import common
+from heat.tests import utils
+class SoftwareComponentValidationTest(common.HeatTestCase):
+    scenarios = [('component_full', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       - actions: [CREATE]\n                         config: |\n                           #!/bin/bash\n                           echo CREATE $foo\n                         tool: script\n                     inputs:\n                       - name: foo\n                     outputs:\n                       - name: bar\n                     options:\n                       opt1: blah\n                 ', err=None, err_msg=None)), ('no_input_output_options', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       - actions: [CREATE]\n                         config: |\n                           #!/bin/bash\n                           echo CREATE $foo\n                         tool: script\n                 ', err=None, err_msg=None)), ('wrong_property_config', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     config: #!/bin/bash\n                     configs:\n                       - actions: [CREATE]\n                         config: |\n                           #!/bin/bash\n                           echo CREATE $foo\n                         tool: script\n                 ', err=exc.StackValidationFailed, err_msg='Unknown Property config')), ('missing_configs', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     inputs:\n                       - name: foo\n                 ', err=exc.StackValidationFailed, err_msg='Property configs not assigned')), ('empty_configs', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                 ', err=exc.StackValidationFailed, err_msg='resources.component.properties.configs: length (0) is out of range (min: 1, max: None)')), ('invalid_configs', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       actions: [CREATE]\n                       config: #!/bin/bash\n                       tool: script\n                 ', err=exc.StackValidationFailed, err_msg='is not a list')), ('config_empty_actions', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       - actions: []\n                         config: #!/bin/bash\n                         tool: script\n                 ', err=exc.StackValidationFailed, err_msg='component.properties.configs[0].actions: length (0) is out of range (min: 1, max: None)')), ('multiple_configs_per_action_single', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       - actions: [CREATE]\n                         config: #!/bin/bash\n                         tool: script\n                       - actions: [CREATE]\n                         config: #!/bin/bash\n                         tool: script\n                 ', err=exc.StackValidationFailed, err_msg='Defining more than one configuration for the same action in SoftwareComponent "component" is not allowed.')), ('multiple_configs_per_action_overlapping_list', dict(snippet='\n                 component:\n                   type: OS::Heat::SoftwareComponent\n                   properties:\n                     configs:\n                       - actions: [CREATE, UPDATE, RESUME]\n                         config: #!/bin/bash\n                         tool: script\n                       - actions: [UPDATE]\n                         config: #!/bin/bash\n                         tool: script\n                 ', err=exc.StackValidationFailed, err_msg='Defining more than one configuration for the same action in SoftwareComponent "component" is not allowed.'))]
+
+    def setUp(self):
+        super(SoftwareComponentValidationTest, self).setUp()
+        self.ctx = utils.dummy_context()
+        tpl = '\n        heat_template_version: 2013-05-23\n        resources:\n          %s\n        ' % self.snippet
+        self.template = template_format.parse(tpl)
+        self.stack = stack.Stack(self.ctx, 'software_component_test_stack', template.Template(self.template))
+        self.component = self.stack['component']
+        self.component._rpc_client = mock.MagicMock()
+
+    def test_properties_schema(self):
+        if self.err:
+            err = self.assertRaises(self.err, self.stack.validate)
+            if self.err_msg:
+                self.assertIn(self.err_msg, str(err))
+        else:
+            self.assertIsNone(self.stack.validate())

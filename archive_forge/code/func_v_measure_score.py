@@ -1,0 +1,104 @@
+import warnings
+from math import log
+from numbers import Real
+import numpy as np
+from scipy import sparse as sp
+from ...utils._param_validation import Interval, StrOptions, validate_params
+from ...utils.multiclass import type_of_target
+from ...utils.validation import check_array, check_consistent_length
+from ._expected_mutual_info_fast import expected_mutual_information
+@validate_params({'labels_true': ['array-like'], 'labels_pred': ['array-like'], 'beta': [Interval(Real, 0, None, closed='left')]}, prefer_skip_nested_validation=True)
+def v_measure_score(labels_true, labels_pred, *, beta=1.0):
+    """V-measure cluster labeling given a ground truth.
+
+    This score is identical to :func:`normalized_mutual_info_score` with
+    the ``'arithmetic'`` option for averaging.
+
+    The V-measure is the harmonic mean between homogeneity and completeness::
+
+        v = (1 + beta) * homogeneity * completeness
+             / (beta * homogeneity + completeness)
+
+    This metric is independent of the absolute values of the labels:
+    a permutation of the class or cluster label values won't change the
+    score value in any way.
+
+    This metric is furthermore symmetric: switching ``label_true`` with
+    ``label_pred`` will return the same score value. This can be useful to
+    measure the agreement of two independent label assignments strategies
+    on the same dataset when the real ground truth is not known.
+
+    Read more in the :ref:`User Guide <homogeneity_completeness>`.
+
+    Parameters
+    ----------
+    labels_true : array-like of shape (n_samples,)
+        Ground truth class labels to be used as a reference.
+
+    labels_pred : array-like of shape (n_samples,)
+        Cluster labels to evaluate.
+
+    beta : float, default=1.0
+        Ratio of weight attributed to ``homogeneity`` vs ``completeness``.
+        If ``beta`` is greater than 1, ``completeness`` is weighted more
+        strongly in the calculation. If ``beta`` is less than 1,
+        ``homogeneity`` is weighted more strongly.
+
+    Returns
+    -------
+    v_measure : float
+       Score between 0.0 and 1.0. 1.0 stands for perfectly complete labeling.
+
+    See Also
+    --------
+    homogeneity_score : Homogeneity metric of cluster labeling.
+    completeness_score : Completeness metric of cluster labeling.
+    normalized_mutual_info_score : Normalized Mutual Information.
+
+    References
+    ----------
+
+    .. [1] `Andrew Rosenberg and Julia Hirschberg, 2007. V-Measure: A
+       conditional entropy-based external cluster evaluation measure
+       <https://aclweb.org/anthology/D/D07/D07-1043.pdf>`_
+
+    Examples
+    --------
+    Perfect labelings are both homogeneous and complete, hence have score 1.0::
+
+      >>> from sklearn.metrics.cluster import v_measure_score
+      >>> v_measure_score([0, 0, 1, 1], [0, 0, 1, 1])
+      1.0
+      >>> v_measure_score([0, 0, 1, 1], [1, 1, 0, 0])
+      1.0
+
+    Labelings that assign all classes members to the same clusters
+    are complete but not homogeneous, hence penalized::
+
+      >>> print("%.6f" % v_measure_score([0, 0, 1, 2], [0, 0, 1, 1]))
+      0.8...
+      >>> print("%.6f" % v_measure_score([0, 1, 2, 3], [0, 0, 1, 1]))
+      0.66...
+
+    Labelings that have pure clusters with members coming from the same
+    classes are homogeneous but un-necessary splits harm completeness
+    and thus penalize V-measure as well::
+
+      >>> print("%.6f" % v_measure_score([0, 0, 1, 1], [0, 0, 1, 2]))
+      0.8...
+      >>> print("%.6f" % v_measure_score([0, 0, 1, 1], [0, 1, 2, 3]))
+      0.66...
+
+    If classes members are completely split across different clusters,
+    the assignment is totally incomplete, hence the V-Measure is null::
+
+      >>> print("%.6f" % v_measure_score([0, 0, 0, 0], [0, 1, 2, 3]))
+      0.0...
+
+    Clusters that include samples from totally different classes totally
+    destroy the homogeneity of the labeling, hence::
+
+      >>> print("%.6f" % v_measure_score([0, 0, 1, 1], [0, 0, 0, 0]))
+      0.0...
+    """
+    return homogeneity_completeness_v_measure(labels_true, labels_pred, beta=beta)[2]

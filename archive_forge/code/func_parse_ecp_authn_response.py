@@ -1,0 +1,54 @@
+import logging
+import threading
+import time
+from typing import Mapping
+from urllib.parse import parse_qs
+from urllib.parse import urlencode
+from urllib.parse import urlparse
+from warnings import warn as _warn
+import saml2
+from saml2 import BINDING_HTTP_POST
+from saml2 import BINDING_HTTP_REDIRECT
+from saml2 import BINDING_PAOS
+from saml2 import BINDING_SOAP
+from saml2 import SAMLError
+from saml2 import saml
+from saml2 import samlp
+from saml2 import soap
+from saml2.entity import Entity
+from saml2.extension import sp_type
+from saml2.extension.requested_attributes import RequestedAttribute
+from saml2.extension.requested_attributes import RequestedAttributes
+from saml2.mdstore import locations
+from saml2.population import Population
+from saml2.profile import ecp
+from saml2.profile import paos
+from saml2.response import AssertionIDResponse
+from saml2.response import AttributeResponse
+from saml2.response import AuthnQueryResponse
+from saml2.response import AuthnResponse
+from saml2.response import AuthzResponse
+from saml2.response import NameIDMappingResponse
+from saml2.response import StatusError
+from saml2.s_utils import UnravelError
+from saml2.s_utils import do_attributes
+from saml2.s_utils import signature
+from saml2.saml import NAMEID_FORMAT_PERSISTENT
+from saml2.saml import NAMEID_FORMAT_TRANSIENT
+from saml2.saml import AuthnContextClassRef
+from saml2.samlp import AttributeQuery
+from saml2.samlp import AuthnQuery
+from saml2.samlp import AuthnRequest
+from saml2.samlp import AuthzDecisionQuery
+from saml2.samlp import Extensions
+from saml2.samlp import NameIDMappingRequest
+from saml2.samlp import RequestedAuthnContext
+from saml2.soap import make_soap_enveloped_saml_thingy
+def parse_ecp_authn_response(self, txt, outstanding=None):
+    rdict = soap.class_instances_from_soap_enveloped_saml_thingies(txt, [paos, ecp, samlp])
+    _relay_state = None
+    for item in rdict['header']:
+        if item.c_tag == 'RelayState' and item.c_namespace == ecp.NAMESPACE:
+            _relay_state = item
+    response = self.parse_authn_request_response(rdict['body'], BINDING_PAOS, outstanding)
+    return (response, _relay_state)

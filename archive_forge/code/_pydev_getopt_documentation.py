@@ -1,0 +1,12 @@
+getopt(args, options[, long_options]) -> opts, args
+
+    This function works like getopt(), except that GNU style scanning
+    mode is used by default. This means that option and non-option
+    arguments may be intermixed. The getopt() function stops
+    processing options as soon as a non-option argument is
+    encountered.
+
+    If the first character of the option string is `+', or if the
+    environment variable POSIXLY_CORRECT is set, then option
+    processing stops as soon as a non-option argument is encountered.
+    

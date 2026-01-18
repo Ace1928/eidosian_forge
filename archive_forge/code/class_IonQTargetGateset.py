@@ -1,0 +1,75 @@
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
+import cirq
+class IonQTargetGateset(cirq.TwoQubitCompilationTargetGateset):
+    """Target gateset for compiling circuits to IonQ devices.
+
+    The gate families accepted by this gateset are:
+
+    Type gate families:
+    *  Single-Qubit Gates: `cirq.XPowGate`, `cirq.YPowGate`, `cirq.ZPowGate`.
+    *  Two-Qubit Gates: `cirq.XXPowGate`, `cirq.YYPowGate`, `cirq.ZZPowGate`.
+    *  Measurement Gate: `cirq.MeasurementGate`.
+
+    Instance gate families:
+    *  Single-Qubit Gates: `cirq.H`.
+    *  Two-Qubit Gates: `cirq.CNOT`, `cirq.SWAP`.
+    """
+
+    def __init__(self, *, atol: float=1e-08):
+        """Initializes CZTargetGateset
+
+        Args:
+            atol: A limit on the amount of absolute error introduced by the decomposition.
+        """
+        super().__init__(cirq.H, cirq.CNOT, cirq.SWAP, cirq.XPowGate, cirq.YPowGate, cirq.ZPowGate, cirq.XXPowGate, cirq.YYPowGate, cirq.ZZPowGate, cirq.MeasurementGate, unroll_circuit_op=False)
+        self.atol = atol
+
+    def _decompose_single_qubit_operation(self, op: cirq.Operation, _) -> cirq.OP_TREE:
+        qubit = op.qubits[0]
+        mat = cirq.unitary(op)
+        for gate in cirq.single_qubit_matrix_to_gates(mat, self.atol):
+            yield gate(qubit)
+
+    def _decompose_two_qubit_operation(self, op: cirq.Operation, _) -> cirq.OP_TREE:
+        if not cirq.has_unitary(op):
+            return NotImplemented
+        mat = cirq.unitary(op)
+        q0, q1 = op.qubits
+        naive = cirq.two_qubit_matrix_to_cz_operations(q0, q1, mat, allow_partial_czs=False)
+        temp = cirq.map_operations_and_unroll(cirq.Circuit(naive), lambda op, _: [cirq.H(op.qubits[1]), cirq.CNOT(*op.qubits), cirq.H(op.qubits[1])] if op.gate == cirq.CZ else op)
+        return cirq.merge_k_qubit_unitaries(temp, k=1, rewriter=lambda op: self._decompose_single_qubit_operation(op, -1)).all_operations()
+
+    def _decompose_multi_qubit_operation(self, op: cirq.Operation, _) -> cirq.OP_TREE:
+        if isinstance(op.gate, cirq.CCZPowGate):
+            return decompose_all_to_all_connect_ccz_gate(op.gate, op.qubits)
+        return NotImplemented
+
+    @property
+    def preprocess_transformers(self) -> List['cirq.TRANSFORMER']:
+        """List of transformers which should be run before decomposing individual operations.
+
+        Decompose to three qubit gates because three qubit gates have different decomposition
+        for all-to-all connectivity between qubits.
+        """
+        return [cirq.create_transformer_with_kwargs(cirq.expand_composite, no_decomp=lambda op: cirq.num_qubits(op) <= 3)]
+
+    @property
+    def postprocess_transformers(self) -> List['cirq.TRANSFORMER']:
+        """List of transformers which should be run after decomposing individual operations."""
+        return [cirq.drop_negligible_operations, cirq.drop_empty_moments]
+
+    def __repr__(self) -> str:
+        return f'cirq_ionq.IonQTargetGateset(atol={self.atol})'
+
+    def _value_equality_values_(self) -> Any:
+        return self.atol
+
+    def _json_dict_(self) -> Dict[str, Any]:
+        return cirq.obj_to_dict_helper(self, ['atol'])
+
+    @classmethod
+    def _from_json_dict_(cls, atol, **kwargs):
+        return cls(atol=atol)

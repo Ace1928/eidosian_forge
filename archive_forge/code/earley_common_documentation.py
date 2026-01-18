@@ -1,0 +1,1 @@
+An Earley Item, the atom of the algorithm.

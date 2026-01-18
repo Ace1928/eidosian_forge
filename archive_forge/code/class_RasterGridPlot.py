@@ -1,0 +1,180 @@
+import sys
+import numpy as np
+import param
+from packaging.version import Version
+from ...core import CompositeOverlay, Element, traversal
+from ...core.util import isfinite, match_spec, max_range, unique_iterator
+from ...element.raster import RGB, Image, Raster
+from ..util import categorical_legend
+from .chart import PointPlot
+from .element import ColorbarPlot, ElementPlot, LegendPlot, OverlayPlot
+from .plot import GridPlot, MPLPlot, mpl_rc_context
+from .util import get_raster_array, mpl_version
+class RasterGridPlot(GridPlot, OverlayPlot):
+    """
+    RasterGridPlot evenly spaces out plots of individual projections on
+    a grid, even when they differ in size. Since this class uses a single
+    axis to generate all the individual plots it is much faster than the
+    equivalent using subplots.
+    """
+    padding = param.Number(default=0.1, doc='\n        The amount of padding as a fraction of the total Grid size')
+    apply_extents = param.Parameter(precedence=-1)
+    apply_ranges = param.Parameter(precedence=-1)
+    apply_ticks = param.Parameter(precedence=-1)
+    batched = param.Parameter(precedence=-1)
+    bgcolor = param.Parameter(precedence=-1)
+    data_aspect = param.Parameter(precedence=-1)
+    default_span = param.Parameter(precedence=-1)
+    hooks = param.Parameter(precedence=-1)
+    invert_axes = param.Parameter(precedence=-1)
+    invert_xaxis = param.Parameter(precedence=-1)
+    invert_yaxis = param.Parameter(precedence=-1)
+    invert_zaxis = param.Parameter(precedence=-1)
+    labelled = param.Parameter(precedence=-1)
+    legend_cols = param.Parameter(precedence=-1)
+    legend_labels = param.Parameter(precedence=-1)
+    legend_position = param.Parameter(precedence=-1)
+    legend_opts = param.Parameter(precedence=-1)
+    legend_limit = param.Parameter(precedence=-1)
+    logx = param.Parameter(precedence=-1)
+    logy = param.Parameter(precedence=-1)
+    logz = param.Parameter(precedence=-1)
+    show_grid = param.Parameter(precedence=-1)
+    style_grouping = param.Parameter(precedence=-1)
+    xlim = param.Parameter(precedence=-1)
+    ylim = param.Parameter(precedence=-1)
+    zlim = param.Parameter(precedence=-1)
+    xticks = param.Parameter(precedence=-1)
+    xformatter = param.Parameter(precedence=-1)
+    yticks = param.Parameter(precedence=-1)
+    yformatter = param.Parameter(precedence=-1)
+    zticks = param.Parameter(precedence=-1)
+    zaxis = param.Parameter(precedence=-1)
+    zrotation = param.Parameter(precedence=-1)
+    zformatter = param.Parameter(precedence=-1)
+    xlabel = param.Parameter(precedence=-1)
+    ylabel = param.Parameter(precedence=-1)
+    zlabel = param.Parameter(precedence=-1)
+
+    def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None, layout_num=1, **params):
+        self.top_level = keys is None
+        if self.top_level:
+            dimensions, keys = traversal.unique_dimkeys(layout)
+        MPLPlot.__init__(self, dimensions=dimensions, keys=keys, **params)
+        self.layout = layout
+        self.cyclic_index = 0
+        self.zorder = 0
+        self.layout_num = layout_num
+        self.overlaid = False
+        self.hmap = layout
+        if layout.ndims > 1:
+            xkeys, ykeys = zip(*layout.keys())
+        else:
+            xkeys = layout.keys()
+            ykeys = [None]
+        self._xkeys = list(dict.fromkeys(xkeys))
+        self._ykeys = list(dict.fromkeys(ykeys))
+        self._xticks, self._yticks = ([], [])
+        self.rows, self.cols = layout.shape
+        self.fig_inches = self._get_size()
+        _, _, self.layout = self._create_subplots(layout, None, ranges, create_axes=False)
+        self.border_extents = self._compute_borders()
+        width, height, _, _, _, _ = self.border_extents
+        if self.aspect == 'equal':
+            self.aspect = float(width / height)
+        self.streams = []
+
+    def _finalize_artist(self, key):
+        pass
+
+    def get_extents(self, view, ranges, range_type='combined', **kwargs):
+        if range_type == 'hard':
+            return (np.nan,) * 4
+        width, height, _, _, _, _ = self.border_extents
+        return (0, 0, width, height)
+
+    def _get_frame(self, key):
+        return GridPlot._get_frame(self, key)
+
+    @mpl_rc_context
+    def initialize_plot(self, ranges=None):
+        _, _, b_w, b_h, widths, heights = self.border_extents
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.layout, key, ranges)
+        self.handles['projs'] = {}
+        x, y = (b_w, b_h)
+        for xidx, xkey in enumerate(self._xkeys):
+            w = widths[xidx]
+            for yidx, ykey in enumerate(self._ykeys):
+                h = heights[yidx]
+                if self.layout.ndims > 1:
+                    vmap = self.layout.get((xkey, ykey), None)
+                else:
+                    vmap = self.layout.get(xkey, None)
+                pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key) if d in vmap.kdims})
+                pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
+                data = get_raster_array(pane) if pane else None
+                ranges = self.compute_ranges(vmap, key, ranges)
+                opts = self.lookup_options(pane, 'style')[self.cyclic_index]
+                plot = self.handles['axis'].imshow(data, extent=(x, x + w, y, y + h), **opts)
+                cdim = pane.vdims[0].name
+                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))['combined']
+                plot.set_clim(valrange)
+                if data is None:
+                    plot.set_visible(False)
+                self.handles['projs'][xkey, ykey] = plot
+                y += h + b_h
+                if xidx == 0:
+                    self._yticks.append(y - b_h - h / 2.0)
+            y = b_h
+            x += w + b_w
+            self._xticks.append(x - b_w - w / 2.0)
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
+
+    @mpl_rc_context
+    def update_frame(self, key, ranges=None):
+        grid = self._get_frame(key)
+        ranges = self.compute_ranges(self.layout, key, ranges)
+        for xkey in self._xkeys:
+            for ykey in self._ykeys:
+                plot = self.handles['projs'][xkey, ykey]
+                grid_key = (xkey, ykey) if self.layout.ndims > 1 else (xkey,)
+                element = grid.data.get(grid_key, None)
+                if element:
+                    plot.set_visible(True)
+                    img = element.values()[0] if isinstance(element, CompositeOverlay) else element
+                    data = get_raster_array(img)
+                    plot.set_data(data)
+                else:
+                    plot.set_visible(False)
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
+
+    def _get_axis_kwargs(self):
+        xdim = self.layout.kdims[0]
+        ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
+        xticks = (self._xticks, [xdim.pprint_value(l) for l in self._xkeys])
+        yticks = (self._yticks, [ydim.pprint_value(l) if ydim else '' for l in self._ykeys])
+        return dict(dimensions=[xdim, ydim], xticks=xticks, yticks=yticks)
+
+    def _compute_borders(self):
+        ndims = self.layout.ndims
+        width_fn = lambda x: x.range(0)
+        height_fn = lambda x: x.range(1)
+        width_extents = [max_range(self.layout[x, :].traverse(width_fn, [Element])) for x in unique_iterator(self.layout.dimension_values(0))]
+        if ndims > 1:
+            height_extents = [max_range(self.layout[:, y].traverse(height_fn, [Element])) for y in unique_iterator(self.layout.dimension_values(1))]
+        else:
+            height_extents = [max_range(self.layout.traverse(height_fn, [Element]))]
+        widths = [extent[0] - extent[1] for extent in width_extents]
+        heights = [extent[0] - extent[1] for extent in height_extents]
+        width, height = (np.sum(widths), np.sum(heights))
+        border_width = width * self.padding / (len(widths) + 1)
+        border_height = height * self.padding / (len(heights) + 1)
+        width += width * self.padding
+        height += height * self.padding
+        return (width, height, border_width, border_height, widths, heights)
+
+    def __len__(self):
+        return max([len(self.keys), 1])

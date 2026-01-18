@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.network_security.security_profile_groups import spg_api
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.calliope.concepts import deps
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+from googlecloudsdk.command_lib.util.concepts import presentation_specs
+from googlecloudsdk.core import resources
+def AddProfileGroupDescription(parser, required=False):
+    parser.add_argument('--description', required=required, help='Brief description of the security profile group')

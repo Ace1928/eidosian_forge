@@ -1,0 +1,31 @@
+import hashlib
+import os
+from typing import Generic, TypeVar, Union, Dict, Optional, Any
+from pathlib import Path
+from parso._compatibility import is_pypy
+from parso.pgen2 import generate_grammar
+from parso.utils import split_lines, python_bytes_to_unicode, \
+from parso.python.diff import DiffParser
+from parso.python.tokenize import tokenize_lines, tokenize
+from parso.python.token import PythonTokenTypes
+from parso.cache import parser_cache, load_module, try_to_save_module
+from parso.parser import BaseParser
+from parso.python.parser import Parser as PythonParser
+from parso.python.errors import ErrorFinderConfig
+from parso.python import pep8
+from parso.file_io import FileIO, KnownContentFileIO
+from parso.normalizer import RefactoringNormalizer, NormalizerConfig
+class PythonGrammar(Grammar):
+    _error_normalizer_config = ErrorFinderConfig()
+    _token_namespace = PythonTokenTypes
+    _start_nonterminal = 'file_input'
+
+    def __init__(self, version_info: PythonVersionInfo, bnf_text: str):
+        super().__init__(bnf_text, tokenizer=self._tokenize_lines, parser=PythonParser, diff_parser=DiffParser)
+        self.version_info = version_info
+
+    def _tokenize_lines(self, lines, **kwargs):
+        return tokenize_lines(lines, version_info=self.version_info, **kwargs)
+
+    def _tokenize(self, code):
+        return tokenize(code, version_info=self.version_info)

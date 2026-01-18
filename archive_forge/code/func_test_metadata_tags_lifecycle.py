@@ -1,0 +1,87 @@
+import http.client as http
+from oslo_serialization import jsonutils
+import requests
+from glance.tests.functional.v2 import metadef_base
+def test_metadata_tags_lifecycle(self):
+    path = self._url('/v2/metadefs/namespaces/MyNamespace')
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.NOT_FOUND, response.status_code)
+    path = self._url('/v2/metadefs/namespaces')
+    headers = self._headers({'content-type': 'application/json'})
+    namespace_name = 'MyNamespace'
+    data = jsonutils.dumps({'namespace': namespace_name, 'display_name': 'My User Friendly Namespace', 'description': 'My description', 'visibility': 'public', 'protected': False, 'owner': 'The Test Owner'})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CREATED, response.status_code)
+    metadata_tag_name = 'tag1'
+    path = self._url('/v2/metadefs/namespaces/%s/tags/%s' % (namespace_name, metadata_tag_name))
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.NOT_FOUND, response.status_code)
+    headers = self._headers({'content-type': 'application/json'})
+    response = requests.post(path, headers=headers)
+    self.assertEqual(http.CREATED, response.status_code)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    metadata_tag = jsonutils.loads(response.text)
+    self.assertEqual(metadata_tag_name, metadata_tag['name'])
+    metadata_tag = jsonutils.loads(response.text)
+    checked_keys = set(['name', 'created_at', 'updated_at'])
+    self.assertEqual(checked_keys, set(metadata_tag.keys()))
+    expected_metadata_tag = {'name': metadata_tag_name}
+    checked_values = set(['name'])
+    for key, value in expected_metadata_tag.items():
+        if key in checked_values:
+            self.assertEqual(metadata_tag[key], value, key)
+    headers = self._headers({'content-type': 'application/json'})
+    response = requests.post(path, headers=headers)
+    self.assertEqual(http.CONFLICT, response.status_code)
+    path = self._url('/v2/metadefs/namespaces/%s/tags/%s' % (namespace_name, metadata_tag_name))
+    media_type = 'application/json'
+    headers = self._headers({'content-type': media_type})
+    metadata_tag_name = 'tag1-UPDATED'
+    data = jsonutils.dumps({'name': metadata_tag_name})
+    response = requests.put(path, headers=headers, data=data)
+    self.assertEqual(http.OK, response.status_code, response.text)
+    metadata_tag = jsonutils.loads(response.text)
+    self.assertEqual('tag1-UPDATED', metadata_tag['name'])
+    path = self._url('/v2/metadefs/namespaces/%s/tags/%s' % (namespace_name, metadata_tag_name))
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    self.assertEqual('tag1-UPDATED', metadata_tag['name'])
+    path = self._url('/v2/metadefs/namespaces/%s/tags/%s' % (namespace_name, metadata_tag_name))
+    response = requests.delete(path, headers=self._headers())
+    self.assertEqual(http.NO_CONTENT, response.status_code)
+    path = self._url('/v2/metadefs/namespaces/%s/tags/%s' % (namespace_name, metadata_tag_name))
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.NOT_FOUND, response.status_code)
+    path = self._url('/v2/metadefs/namespaces/%s/tags' % namespace_name)
+    headers = self._headers({'content-type': 'application/json'})
+    data = jsonutils.dumps({'tags': [{'name': 'tag1'}, {'name': 'tag2'}, {'name': 'tag3'}]})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CREATED, response.status_code)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    tags = jsonutils.loads(response.text)['tags']
+    self.assertEqual(3, len(tags))
+    data = jsonutils.dumps({'tags': [{'name': 'tag4'}, {'name': 'tag5'}, {'name': 'tag4'}]})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CONFLICT, response.status_code)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    tags = jsonutils.loads(response.text)['tags']
+    self.assertEqual(3, len(tags))
+    path = self._url('/v2/metadefs/namespaces/%s/tags' % namespace_name)
+    headers = self._headers({'content-type': 'application/json', 'X-Openstack-Append': 'True'})
+    data = jsonutils.dumps({'tags': [{'name': 'tag4'}, {'name': 'tag5'}, {'name': 'tag6'}]})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CREATED, response.status_code)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    tags = jsonutils.loads(response.text)['tags']
+    self.assertEqual(6, len(tags))
+    data = jsonutils.dumps({'tags': [{'name': 'tag6'}, {'name': 'tag7'}, {'name': 'tag8'}]})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CONFLICT, response.status_code)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    tags = jsonutils.loads(response.text)['tags']
+    self.assertEqual(6, len(tags))

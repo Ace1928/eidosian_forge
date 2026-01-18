@@ -1,0 +1,15 @@
+import numpy as np
+from numpy.testing import assert_, assert_allclose
+from numpy import pi
+import pytest
+import itertools
+from scipy._lib import _pep440
+import scipy.special as sc
+from scipy.special._testutils import (
+from scipy.special._mptestutils import (
+from scipy.special._ufuncs import (
+def lpnm_2(n, m, z):
+    v = sc.lpmv(m, n, z)
+    if abs(v) > 1e+306:
+        v = np.inf * np.sign(v.real)
+    return v

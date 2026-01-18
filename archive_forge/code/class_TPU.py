@@ -1,0 +1,57 @@
+import logging
+import os
+import threading
+from collections import deque
+from typing import TYPE_CHECKING, List, Optional
+from .aggregators import aggregate_mean
+from .asset_registry import asset_registry
+from .interfaces import Interface, Metric, MetricsMonitor
+@asset_registry.register
+class TPU:
+
+    def __init__(self, interface: 'Interface', settings: 'SettingsStatic', shutdown_event: threading.Event) -> None:
+        self.name = self.__class__.__name__.lower()
+        self.service_addr = self.get_service_addr()
+        self.metrics: List[Metric] = [TPUUtilization(self.service_addr)]
+        self.metrics_monitor = MetricsMonitor(self.name, self.metrics, interface, settings, shutdown_event)
+
+    @staticmethod
+    def get_service_addr(service_addr: Optional[str]=None, tpu_name: Optional[str]=None, compute_zone: Optional[str]=None, core_project: Optional[str]=None) -> str:
+        if service_addr is not None:
+            if tpu_name is not None:
+                logger.warn('Both service_addr and tpu_name arguments provided. Ignoring tpu_name and using service_addr.')
+        else:
+            tpu_name = tpu_name or os.environ.get('TPU_NAME')
+            if tpu_name is None:
+                raise Exception('Required environment variable TPU_NAME.')
+            compute_zone = compute_zone or os.environ.get('CLOUDSDK_COMPUTE_ZONE')
+            core_project = core_project or os.environ.get('CLOUDSDK_CORE_PROJECT')
+            try:
+                from tensorflow.python.distribute.cluster_resolver import tpu_cluster_resolver
+                service_addr = tpu_cluster_resolver.TPUClusterResolver([tpu_name], zone=compute_zone, project=core_project).get_master()
+            except (ValueError, TypeError):
+                raise ValueError('Failed to find TPU. Try specifying TPU zone (via CLOUDSDK_COMPUTE_ZONE environment variable) and GCP project (via CLOUDSDK_CORE_PROJECT environment variable).')
+        service_addr = service_addr.replace('grpc://', '').replace(':8470', ':8466')
+        return service_addr
+
+    def start(self) -> None:
+        if self.metrics:
+            self.metrics_monitor.start()
+
+    def finish(self) -> None:
+        self.metrics_monitor.finish()
+
+    @classmethod
+    def is_available(cls) -> bool:
+        if os.environ.get('TPU_NAME', False) is False:
+            return False
+        try:
+            from tensorflow.python.distribute.cluster_resolver import tpu_cluster_resolver
+            from tensorflow.python.profiler import profiler_client
+            cls.get_service_addr()
+        except (ImportError, TypeError, AttributeError, ValueError):
+            return False
+        return True
+
+    def probe(self) -> dict:
+        return {self.name: {'service_address': self.service_addr}}

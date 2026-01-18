@@ -1,0 +1,130 @@
+{
+    "version": "2.0.0",
+    "project_name": "Doc Forge",
+    "documentation_categories": {
+        "manual": {
+            "title": "Manual Documentation",
+            "description": "Hand-crafted documentation by development team",
+            "sections": {
+                "getting_started": {
+                    "path": "manual/getting_started",
+                    "title": "Getting Started",
+                    "priority": 10
+                },
+                "guides": {
+                    "path": "manual/guides",
+                    "title": "User Guides",
+                    "priority": 20
+                },
+                "concepts": {
+                    "path": "manual/concepts",
+                    "title": "Concept Reference",
+                    "priority": 30
+                },
+                "examples": {
+                    "path": "manual/examples",
+                    "title": "Examples",
+                    "priority": 40
+                },
+                "faq": {
+                    "path": "manual/faq",
+                    "title": "FAQs",
+                    "priority": 50
+                }
+            }
+        },
+        "auto": {
+            "title": "Auto-generated Documentation",
+            "description": "Documentation generated from source code",
+            "sections": {
+                "python": {
+                    "path": "auto/python",
+                    "title": "Python API",
+                    "priority": 10
+                },
+                "cpp": {
+                    "path": "auto/cpp",
+                    "title": "C++ API",
+                    "priority": 20
+                },
+                "rust": {
+                    "path": "auto/rust",
+                    "title": "Rust API",
+                    "priority": 30
+                },
+                "go": {
+                    "path": "auto/go",
+                    "title": "Go API",
+                    "priority": 40
+                },
+                "javascript": {
+                    "path": "auto/javascript",
+                    "title": "JavaScript API",
+                    "priority": 50
+                }
+            }
+        },
+        "source": {
+            "title": "Source Documentation",
+            "description": "Documentation of the source code structure",
+            "sections": {
+                "index": {
+                    "path": "source/index",
+                    "title": "Source Overview",
+                    "priority": 10
+                },
+                "architecture": {
+                    "path": "source/architecture",
+                    "title": "Architecture",
+                    "priority": 20
+                },
+                "code_organization": {
+                    "path": "source/code_organization",
+                    "title": "Code Organization",
+                    "priority": 30
+                }
+            }
+        },
+        "assets": {
+            "title": "Assets",
+            "description": "Documentation assets and resources",
+            "sections": {
+                "readme": {
+                    "path": "assets/README",
+                    "title": "Assets README",
+                    "priority": 10
+                }
+            }
+        }
+    },
+    "metadata": {
+        "last_updated": "2024-01-01T00:00:00Z",
+        "validation_status": {
+            "missing_docs": [],
+            "outdated_docs": [],
+            "orphaned_docs": []
+        },
+        "build_info": {
+            "last_build": "",
+            "build_status": ""
+        },
+        "doc_metrics": {
+            "total_files": 0,
+            "manual_files": 0,
+            "auto_files": 0,
+            "coverage_percentage": 0
+        }
+    },
+    "living_docs": {
+        "enabled": true,
+        "validation_frequency": "daily",
+        "update_policy": "suggest",
+        "validation_rules": [
+            "check_function_signature_match",
+            "check_parameter_descriptions",
+            "check_return_value_descriptions",
+            "check_example_validity",
+            "check_doc_freshness"
+        ]
+    }
+}

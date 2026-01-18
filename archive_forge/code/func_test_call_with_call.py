@@ -1,0 +1,36 @@
+import six
+import unittest2 as unittest
+from mock import (
+from mock.mock import _Call, _CallList
+from datetime import datetime
+def test_call_with_call(self):
+    kall = _Call()
+    self.assertEqual(kall, _Call())
+    self.assertEqual(kall, _Call(('',)))
+    self.assertEqual(kall, _Call(((),)))
+    self.assertEqual(kall, _Call(({},)))
+    self.assertEqual(kall, _Call(('', ())))
+    self.assertEqual(kall, _Call(('', {})))
+    self.assertEqual(kall, _Call(('', (), {})))
+    self.assertEqual(kall, _Call(('foo',)))
+    self.assertEqual(kall, _Call(('bar', ())))
+    self.assertEqual(kall, _Call(('baz', {})))
+    self.assertEqual(kall, _Call(('spam', (), {})))
+    kall = _Call(((1, 2, 3),))
+    self.assertEqual(kall, _Call(((1, 2, 3),)))
+    self.assertEqual(kall, _Call(('', (1, 2, 3))))
+    self.assertEqual(kall, _Call(((1, 2, 3), {})))
+    self.assertEqual(kall, _Call(('', (1, 2, 3), {})))
+    kall = _Call(((1, 2, 4),))
+    self.assertNotEqual(kall, _Call(('', (1, 2, 3))))
+    self.assertNotEqual(kall, _Call(('', (1, 2, 3), {})))
+    kall = _Call(('foo', (1, 2, 4)))
+    self.assertNotEqual(kall, _Call(('', (1, 2, 4))))
+    self.assertNotEqual(kall, _Call(('', (1, 2, 4), {})))
+    self.assertNotEqual(kall, _Call(('bar', (1, 2, 4))))
+    self.assertNotEqual(kall, _Call(('bar', (1, 2, 4), {})))
+    kall = _Call(({'a': 3},))
+    self.assertEqual(kall, _Call(('', (), {'a': 3})))
+    self.assertEqual(kall, _Call(('', {'a': 3})))
+    self.assertEqual(kall, _Call(((), {'a': 3})))
+    self.assertEqual(kall, _Call(({'a': 3},)))

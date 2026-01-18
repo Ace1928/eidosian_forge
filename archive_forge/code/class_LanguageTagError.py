@@ -1,0 +1,2 @@
+class LanguageTagError(ValueError):
+    pass

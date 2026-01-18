@@ -1,0 +1,21 @@
+import collections
+import fnmatch
+import glob
+import itertools
+import os.path
+import re
+import weakref
+from oslo_config import cfg
+from oslo_log import log
+from heat.common import environment_format as env_fmt
+from heat.common import exception
+from heat.common.i18n import _
+from heat.common import policy
+from heat.engine import support
+def is_flat_params(env_or_param):
+    if env_or_param is None:
+        return False
+    for sect in env_fmt.SECTIONS:
+        if sect in env_or_param:
+            return False
+    return True

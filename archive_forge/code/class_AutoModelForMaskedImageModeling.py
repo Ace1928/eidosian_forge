@@ -1,0 +1,7 @@
+import warnings
+from collections import OrderedDict
+from ...utils import logging
+from .auto_factory import (
+from .configuration_auto import CONFIG_MAPPING_NAMES
+class AutoModelForMaskedImageModeling(_BaseAutoModelClass):
+    _model_mapping = MODEL_FOR_MASKED_IMAGE_MODELING_MAPPING

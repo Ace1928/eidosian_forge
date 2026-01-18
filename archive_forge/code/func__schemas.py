@@ -1,0 +1,16 @@
+import json
+from referencing import Resource
+def _schemas():
+    """
+    All schemas we ship.
+    """
+    for version in files(__package__).joinpath('schemas').iterdir():
+        if version.name.startswith('.'):
+            continue
+        for child in version.iterdir():
+            children = [child] if child.is_file() else child.iterdir()
+            for path in children:
+                if path.name.startswith('.'):
+                    continue
+                contents = json.loads(path.read_text(encoding='utf-8'))
+                yield Resource.from_contents(contents)

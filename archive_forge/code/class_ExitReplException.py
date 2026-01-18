@@ -1,0 +1,2 @@
+class ExitReplException(InternalCommandException):
+    pass

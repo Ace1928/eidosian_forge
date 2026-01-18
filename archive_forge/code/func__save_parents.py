@@ -1,0 +1,50 @@
+import copy
+import inspect
+import warnings
+from functools import partialmethod
+from itertools import chain
+from asgiref.sync import sync_to_async
+import django
+from django.apps import apps
+from django.conf import settings
+from django.core import checks
+from django.core.exceptions import (
+from django.db import (
+from django.db.models import NOT_PROVIDED, ExpressionWrapper, IntegerField, Max, Value
+from django.db.models.constants import LOOKUP_SEP
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
+from django.db.models.deletion import CASCADE, Collector
+from django.db.models.expressions import DatabaseDefault, RawSQL
+from django.db.models.fields.related import (
+from django.db.models.functions import Coalesce
+from django.db.models.manager import Manager
+from django.db.models.options import Options
+from django.db.models.query import F, Q
+from django.db.models.signals import (
+from django.db.models.utils import AltersData, make_model_tuple
+from django.utils.encoding import force_str
+from django.utils.hashable import make_hashable
+from django.utils.text import capfirst, get_text_list
+from django.utils.translation import gettext_lazy as _
+def _save_parents(self, cls, using, update_fields, force_insert, updated_parents=None):
+    """Save all the parents of cls using values from self."""
+    meta = cls._meta
+    inserted = False
+    if updated_parents is None:
+        updated_parents = {}
+    for parent, field in meta.parents.items():
+        if field and getattr(self, parent._meta.pk.attname) is None and (getattr(self, field.attname) is not None):
+            setattr(self, parent._meta.pk.attname, getattr(self, field.attname))
+        if (parent_updated := updated_parents.get(parent)) is None:
+            parent_inserted = self._save_parents(cls=parent, using=using, update_fields=update_fields, force_insert=force_insert, updated_parents=updated_parents)
+            updated = self._save_table(cls=parent, using=using, update_fields=update_fields, force_insert=parent_inserted or issubclass(parent, force_insert))
+            if not updated:
+                inserted = True
+            updated_parents[parent] = updated
+        elif not parent_updated:
+            inserted = True
+        if field:
+            setattr(self, field.attname, self._get_pk_val(parent._meta))
+            if field.is_cached(self):
+                field.delete_cached_value(self)
+    return inserted

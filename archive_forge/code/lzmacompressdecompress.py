@@ -1,0 +1,18 @@
+import lzma
+
+# File to compress
+file_to_compress = "example.txt"
+
+# Compress the file
+with open(file_to_compress, "rb") as file_in:
+    with lzma.open(file_to_compress + ".xz", "wb") as file_out:
+        file_out.write(file_in.read())
+
+print("File compressed successfully.")
+
+# Decompress the file
+with lzma.open(file_to_compress + ".xz", "rb") as file_in:
+    with open("decompressed_file.txt", "wb") as file_out:
+        file_out.write(file_in.read())
+
+print("File decompressed successfully.")

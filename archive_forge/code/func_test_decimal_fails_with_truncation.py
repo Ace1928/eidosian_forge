@@ -1,0 +1,28 @@
+import gc
+import decimal
+import json
+import multiprocessing as mp
+import sys
+import warnings
+from collections import OrderedDict
+from datetime import date, datetime, time, timedelta, timezone
+import hypothesis as h
+import hypothesis.strategies as st
+import numpy as np
+import numpy.testing as npt
+import pytest
+from pyarrow.pandas_compat import get_logical_type, _pandas_api
+from pyarrow.tests.util import invoke_script, random_ascii, rands
+import pyarrow.tests.strategies as past
+import pyarrow.tests.util as test_util
+from pyarrow.vendored.version import Version
+import pyarrow as pa
+def test_decimal_fails_with_truncation(self):
+    data1 = [decimal.Decimal('1.234')]
+    type1 = pa.decimal128(10, 2)
+    with pytest.raises(pa.ArrowInvalid):
+        pa.array(data1, type=type1)
+    data2 = [decimal.Decimal('1.2345')]
+    type2 = pa.decimal128(10, 3)
+    with pytest.raises(pa.ArrowInvalid):
+        pa.array(data2, type=type2)

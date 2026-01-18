@@ -1,0 +1,6 @@
+from troveclient import client as base_client
+from troveclient.tests import utils
+from troveclient.v1 import client
+from urllib import parse
+def get_backups(self, **kw):
+    return (200, {}, {'backups': [{'status': 'COMPLETED', 'updated': '2015-05-16T14:23:08', 'description': None, 'datastore': {'version': '5.6', 'type': 'mysql', 'version_id': 'v-56'}, 'id': 'bk-1234', 'size': 0.11, 'name': 'bkp_1', 'created': '2015-05-16T14:22:28', 'instance_id': '1234', 'parent_id': None, 'locationRef': 'http://backup_srvr/database_backups/bk-1234.xbstream.gz.enc', 'project_id': '262db161-d3e4-4218-8bde-5bd879fc3e61'}, {'status': 'COMPLETED', 'updated': '2015-05-16T14:22:12', 'description': None, 'datastore': {'version': '5.6', 'type': 'mysql', 'version_id': 'v-56'}, 'id': 'bk-5678', 'size': 0.11, 'name': 'test_bkp', 'created': '2015-05-16T14:21:27', 'instance_id': '5678', 'parent_id': None, 'locationRef': 'http://backup_srvr/database_backups/bk-5678.xbstream.gz.enc', 'project_id': '262db161-d3e4-4218-8bde-5bd879fc3e61'}]})

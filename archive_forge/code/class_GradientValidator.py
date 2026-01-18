@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class GradientValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='gradient', parent_name='scattergeo.marker', **kwargs):
+        super(GradientValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Gradient'), data_docs=kwargs.pop('data_docs', '\n            color\n                Sets the final color of the gradient fill: the\n                center color for radial, the right for\n                horizontal, or the bottom for vertical.\n            colorsrc\n                Sets the source reference on Chart Studio Cloud\n                for `color`.\n            type\n                Sets the type of gradient used to fill the\n                markers\n            typesrc\n                Sets the source reference on Chart Studio Cloud\n                for `type`.\n'), **kwargs)

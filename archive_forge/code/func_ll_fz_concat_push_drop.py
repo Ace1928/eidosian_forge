@@ -1,0 +1,21 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def ll_fz_concat_push_drop(concat, chain):
+    """
+    Low-level wrapper for `::fz_concat_push_drop()`.
+    Add a chained stream to the end of the concatenate filter.
+
+    Ownership of chain is passed in.
+    """
+    return _mupdf.ll_fz_concat_push_drop(concat, chain)

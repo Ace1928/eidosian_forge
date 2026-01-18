@@ -1,0 +1,378 @@
+from sympy.categories.diagram_drawing import _GrowableGrid, ArrowStringDescription
+from sympy.categories import (DiagramGrid, Object, NamedMorphism,
+from sympy.sets.sets import FiniteSet
+def test_DiagramGrid():
+    A = Object('A')
+    B = Object('B')
+    C = Object('C')
+    D = Object('D')
+    E = Object('E')
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    h = NamedMorphism(D, A, 'h')
+    k = NamedMorphism(D, B, 'k')
+    d = Diagram([f])
+    grid = DiagramGrid(d)
+    assert grid.width == 2
+    assert grid.height == 1
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid.morphisms == {f: FiniteSet()}
+    d = Diagram([f, g], {g * f: 'unique'})
+    grid = DiagramGrid(d)
+    assert grid.width == 2
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[1, 0] == C
+    assert grid[1, 1] is None
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), g * f: FiniteSet('unique')}
+    l_A = NamedMorphism(A, A, 'l_A')
+    d = Diagram([f, g, l_A])
+    grid = DiagramGrid(d)
+    assert grid.width == 2
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), l_A: FiniteSet()}
+    d = Diagram([f, g, h, k])
+    grid = DiagramGrid(d)
+    assert grid.width == 3
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == D
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid[1, 2] is None
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), h: FiniteSet(), k: FiniteSet()}
+    assert str(grid) == '[[Object("A"), Object("B"), Object("D")], [None, Object("C"), None]]'
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    h = NamedMorphism(C, D, 'h')
+    k = NamedMorphism(D, E, 'k')
+    d = Diagram([f, g, h, k])
+    grid = DiagramGrid(d)
+    assert grid.width == 3
+    assert grid.height == 3
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] is None
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid[1, 2] == D
+    assert grid[2, 0] is None
+    assert grid[2, 1] is None
+    assert grid[2, 2] == E
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), h: FiniteSet(), k: FiniteSet()}
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, D, 'g')
+    h = NamedMorphism(A, C, 'h')
+    k = NamedMorphism(C, D, 'k')
+    d = Diagram([f, g, h, k])
+    grid = DiagramGrid(d)
+    assert grid.width == 2
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[1, 0] == C
+    assert grid[1, 1] == D
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), h: FiniteSet(), k: FiniteSet()}
+    A = Object('A')
+    B = Object('B')
+    C = Object('C')
+    D = Object('D')
+    E = Object('E')
+    A_ = Object("A'")
+    B_ = Object("B'")
+    C_ = Object("C'")
+    D_ = Object("D'")
+    E_ = Object("E'")
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    h = NamedMorphism(C, D, 'h')
+    i = NamedMorphism(D, E, 'i')
+    j = NamedMorphism(A, B, 'j')
+    k = NamedMorphism(B, C, 'k')
+    l = NamedMorphism(C, D, 'l')
+    m = NamedMorphism(D, E, 'm')
+    o = NamedMorphism(A, A_, 'o')
+    p = NamedMorphism(B, B_, 'p')
+    q = NamedMorphism(C, C_, 'q')
+    r = NamedMorphism(D, D_, 'r')
+    s = NamedMorphism(E, E_, 's')
+    d = Diagram([f, g, h, i, j, k, l, m, o, p, q, r, s])
+    grid = DiagramGrid(d)
+    assert grid.width == 3
+    assert grid.height == 4
+    assert grid[0, 0] is None
+    assert grid[0, 1] == A
+    assert grid[0, 2] == A_
+    assert grid[1, 0] == C
+    assert grid[1, 1] == B
+    assert grid[1, 2] == B_
+    assert grid[2, 0] == C_
+    assert grid[2, 1] == D
+    assert grid[2, 2] == D_
+    assert grid[3, 0] is None
+    assert grid[3, 1] == E
+    assert grid[3, 2] == E_
+    morphisms = {}
+    for m in [f, g, h, i, j, k, l, m, o, p, q, r, s]:
+        morphisms[m] = FiniteSet()
+    assert grid.morphisms == morphisms
+    A1 = Object('A1')
+    A2 = Object('A2')
+    A3 = Object('A3')
+    A4 = Object('A4')
+    A5 = Object('A5')
+    A6 = Object('A6')
+    A7 = Object('A7')
+    A8 = Object('A8')
+    f1 = NamedMorphism(A1, A2, 'f1')
+    f2 = NamedMorphism(A1, A3, 'f2')
+    f3 = NamedMorphism(A2, A4, 'f3')
+    f4 = NamedMorphism(A3, A4, 'f3')
+    f5 = NamedMorphism(A5, A6, 'f5')
+    f6 = NamedMorphism(A5, A7, 'f6')
+    f7 = NamedMorphism(A6, A8, 'f7')
+    f8 = NamedMorphism(A7, A8, 'f8')
+    f9 = NamedMorphism(A1, A5, 'f9')
+    f10 = NamedMorphism(A2, A6, 'f10')
+    f11 = NamedMorphism(A3, A7, 'f11')
+    f12 = NamedMorphism(A4, A8, 'f11')
+    d = Diagram([f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12])
+    grid = DiagramGrid(d)
+    assert grid.width == 4
+    assert grid.height == 3
+    assert grid[0, 0] is None
+    assert grid[0, 1] == A5
+    assert grid[0, 2] == A6
+    assert grid[0, 3] is None
+    assert grid[1, 0] is None
+    assert grid[1, 1] == A1
+    assert grid[1, 2] == A2
+    assert grid[1, 3] is None
+    assert grid[2, 0] == A7
+    assert grid[2, 1] == A3
+    assert grid[2, 2] == A4
+    assert grid[2, 3] == A8
+    morphisms = {}
+    for m in [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12]:
+        morphisms[m] = FiniteSet()
+    assert grid.morphisms == morphisms
+    A = Object('A')
+    B = Object('B')
+    C = Object('C')
+    D = Object('D')
+    E = Object('E')
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    h = NamedMorphism(C, D, 'h')
+    i = NamedMorphism(D, E, 'i')
+    d = Diagram([f, g, h, i])
+    grid = DiagramGrid(d, layout='sequential')
+    assert grid.width == 5
+    assert grid.height == 1
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == C
+    assert grid[0, 3] == D
+    assert grid[0, 4] == E
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), h: FiniteSet(), i: FiniteSet()}
+    grid = DiagramGrid(d, layout='sequential', transpose=True)
+    assert grid.width == 1
+    assert grid.height == 5
+    assert grid[0, 0] == A
+    assert grid[1, 0] == B
+    assert grid[2, 0] == C
+    assert grid[3, 0] == D
+    assert grid[4, 0] == E
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), h: FiniteSet(), i: FiniteSet()}
+    m1 = NamedMorphism(A, B, 'm1')
+    m2 = NamedMorphism(A, C, 'm2')
+    s1 = NamedMorphism(B, D, 's1')
+    s2 = NamedMorphism(C, D, 's2')
+    f1 = NamedMorphism(E, B, 'f1')
+    f2 = NamedMorphism(E, C, 'f2')
+    g = NamedMorphism(E, A, 'g')
+    d = Diagram([m1, m2, s1, s2, f1, f2], {g: 'unique'})
+    grid = DiagramGrid(d)
+    assert grid.width == 3
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == E
+    assert grid[1, 0] == C
+    assert grid[1, 1] == D
+    assert grid[1, 2] is None
+    morphisms = {g: FiniteSet('unique')}
+    for m in [m1, m2, s1, s2, f1, f2]:
+        morphisms[m] = FiniteSet()
+    assert grid.morphisms == morphisms
+    grid = DiagramGrid(d, layout='sequential')
+    assert grid.width == 5
+    assert grid.height == 1
+    assert grid[0, 0] == D
+    assert grid[0, 1] == B
+    assert grid[0, 2] == A
+    assert grid[0, 3] == C
+    assert grid[0, 4] == E
+    assert grid.morphisms == morphisms
+    grid = DiagramGrid(d, groups=FiniteSet(E, FiniteSet(A, B, C, D)))
+    assert grid.width == 3
+    assert grid.height == 2
+    assert grid[0, 0] == E
+    assert grid[0, 1] == A
+    assert grid[0, 2] == B
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid[1, 2] == D
+    assert grid.morphisms == morphisms
+    A = Object('A')
+    B = Object('B')
+    C = Object('C')
+    D = Object('D')
+    E = Object('E')
+    A_ = Object("A'")
+    B_ = Object("B'")
+    C_ = Object("C'")
+    D_ = Object("D'")
+    E_ = Object("E'")
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    h = NamedMorphism(C, D, 'h')
+    i = NamedMorphism(D, E, 'i')
+    j = NamedMorphism(A_, B_, 'j')
+    k = NamedMorphism(B_, C_, 'k')
+    l = NamedMorphism(C_, D_, 'l')
+    m = NamedMorphism(D_, E_, 'm')
+    o = NamedMorphism(A, A_, 'o')
+    p = NamedMorphism(B, B_, 'p')
+    q = NamedMorphism(C, C_, 'q')
+    r = NamedMorphism(D, D_, 'r')
+    s = NamedMorphism(E, E_, 's')
+    d = Diagram([f, g, h, i, j, k, l, m, o, p, q, r, s])
+    grid = DiagramGrid(d)
+    assert grid.width == 5
+    assert grid.height == 3
+    assert grid[0, 0] is None
+    assert grid[0, 1] == A
+    assert grid[0, 2] == A_
+    assert grid[0, 3] is None
+    assert grid[0, 4] is None
+    assert grid[1, 0] == C
+    assert grid[1, 1] == B
+    assert grid[1, 2] == B_
+    assert grid[1, 3] == C_
+    assert grid[1, 4] is None
+    assert grid[2, 0] == D
+    assert grid[2, 1] == E
+    assert grid[2, 2] is None
+    assert grid[2, 3] == D_
+    assert grid[2, 4] == E_
+    morphisms = {}
+    for m in [f, g, h, i, j, k, l, m, o, p, q, r, s]:
+        morphisms[m] = FiniteSet()
+    assert grid.morphisms == morphisms
+    grid = DiagramGrid(d, FiniteSet(FiniteSet(A, B, C, D, E), FiniteSet(A_, B_, C_, D_, E_)))
+    assert grid.width == 6
+    assert grid.height == 3
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] is None
+    assert grid[0, 3] == A_
+    assert grid[0, 4] == B_
+    assert grid[0, 5] is None
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid[1, 2] == D
+    assert grid[1, 3] is None
+    assert grid[1, 4] == C_
+    assert grid[1, 5] == D_
+    assert grid[2, 0] is None
+    assert grid[2, 1] is None
+    assert grid[2, 2] == E
+    assert grid[2, 3] is None
+    assert grid[2, 4] is None
+    assert grid[2, 5] == E_
+    assert grid.morphisms == morphisms
+    grid = DiagramGrid(d, [(A, B, C, D, E), {A_, B_, C_, D_, E_}])
+    assert grid.width == 6
+    assert grid.height == 3
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] is None
+    assert grid[0, 3] == A_
+    assert grid[0, 4] == B_
+    assert grid[0, 5] is None
+    assert grid[1, 0] is None
+    assert grid[1, 1] == C
+    assert grid[1, 2] == D
+    assert grid[1, 3] is None
+    assert grid[1, 4] == C_
+    assert grid[1, 5] == D_
+    assert grid[2, 0] is None
+    assert grid[2, 1] is None
+    assert grid[2, 2] == E
+    assert grid[2, 3] is None
+    assert grid[2, 4] is None
+    assert grid[2, 5] == E_
+    assert grid.morphisms == morphisms
+    grid = DiagramGrid(d, {FiniteSet(A, B, C, D, E): {'layout': 'sequential', 'transpose': True}, FiniteSet(A_, B_, C_, D_, E_): {'layout': 'sequential', 'transpose': True}}, transpose=True)
+    assert grid.width == 5
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == C
+    assert grid[0, 3] == D
+    assert grid[0, 4] == E
+    assert grid[1, 0] == A_
+    assert grid[1, 1] == B_
+    assert grid[1, 2] == C_
+    assert grid[1, 3] == D_
+    assert grid[1, 4] == E_
+    assert grid.morphisms == morphisms
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(B, C, 'g')
+    f_ = NamedMorphism(A_, B_, 'f')
+    g_ = NamedMorphism(B_, C_, 'g')
+    d = Diagram([f, g, f_, g_], {g * f: 'unique', g_ * f_: 'unique'})
+    grid = DiagramGrid(d)
+    assert grid.width == 4
+    assert grid.height == 2
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == A_
+    assert grid[0, 3] == B_
+    assert grid[1, 0] == C
+    assert grid[1, 1] is None
+    assert grid[1, 2] == C_
+    assert grid[1, 3] is None
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet(), f_: FiniteSet(), g_: FiniteSet(), g * f: FiniteSet('unique'), g_ * f_: FiniteSet('unique')}
+    f = NamedMorphism(A, B, 'f')
+    g = NamedMorphism(C, D, 'g')
+    d = Diagram([f, g])
+    grid = DiagramGrid(d)
+    assert grid.width == 4
+    assert grid.height == 1
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B
+    assert grid[0, 2] == C
+    assert grid[0, 3] == D
+    assert grid.morphisms == {f: FiniteSet(), g: FiniteSet()}
+    f = NamedMorphism(A, A, 'f')
+    d = Diagram([f])
+    grid = DiagramGrid(d)
+    assert grid.width == 1
+    assert grid.height == 1
+    assert grid[0, 0] == A
+    g = NamedMorphism(B, B, 'g')
+    d = Diagram([f, g])
+    grid = DiagramGrid(d)
+    assert grid.width == 2
+    assert grid.height == 1
+    assert grid[0, 0] == A
+    assert grid[0, 1] == B

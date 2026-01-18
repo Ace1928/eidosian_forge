@@ -1,0 +1,1 @@
+Length of the primer product (i.e. product size).

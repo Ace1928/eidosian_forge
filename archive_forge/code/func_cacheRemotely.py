@@ -1,0 +1,31 @@
+import random
+from hashlib import md5
+from zope.interface import Interface, implementer
+from twisted.cred.credentials import (
+from twisted.cred.portal import Portal
+from twisted.internet import defer, protocol
+from twisted.persisted import styles
+from twisted.python import failure, log, reflect
+from twisted.python.compat import cmp, comparable
+from twisted.python.components import registerAdapter
+from twisted.spread import banana
+from twisted.spread.flavors import (
+from twisted.spread.interfaces import IJellyable, IUnjellyable
+from twisted.spread.jelly import _newInstance, globalSecurity, jelly, unjelly
+def cacheRemotely(self, instance):
+    """
+        XXX
+
+        @return: A new LUID.
+        """
+    puid = instance.processUniqueID()
+    luid = self.newLocalID()
+    if len(self.remotelyCachedObjects) > MAX_BROKER_REFS:
+        self.maxBrokerRefsViolations = self.maxBrokerRefsViolations + 1
+        if self.maxBrokerRefsViolations > 3:
+            self.transport.loseConnection()
+            raise Error('Maximum PB cache count exceeded.  Goodbye.')
+        raise Error('Maximum PB cache count exceeded.')
+    self.remotelyCachedLUIDs[puid] = luid
+    self.remotelyCachedObjects[luid] = Local(instance, self.serializingPerspective)
+    return luid

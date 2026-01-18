@@ -1,0 +1,7 @@
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from .message_media import MediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_location import LocationAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@accuracy_in_meters.setter
+def accuracy_in_meters(self, value):
+    self.media_specific_attributes.accuracy_in_meters = value

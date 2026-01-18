@@ -1,0 +1,287 @@
+from __future__ import annotations
+import os
+import typing
+from typing import Any, Optional  # noqa: H301
+from oslo_log import log as logging
+from oslo_service import loopingcall
+from os_brick import exception
+from os_brick.i18n import _
+from os_brick import initiator
+from os_brick.initiator.connectors import base
+from os_brick.initiator import linuxfc
+from os_brick import utils
+class FibreChannelConnector(base.BaseLinuxConnector):
+    """Connector class to attach/detach Fibre Channel volumes."""
+
+    def __init__(self, root_helper: str, driver=None, execute: Optional[str]=None, use_multipath: bool=False, device_scan_attempts: int=initiator.DEVICE_SCAN_ATTEMPTS_DEFAULT, *args, **kwargs):
+        self._linuxfc = linuxfc.LinuxFibreChannel(root_helper, execute)
+        super(FibreChannelConnector, self).__init__(root_helper, *args, driver=driver, execute=execute, device_scan_attempts=device_scan_attempts, **kwargs)
+        self.use_multipath = use_multipath
+        self.device_name: Optional[str]
+        self.host_device: Optional[str]
+        self.tries: int
+
+    def set_execute(self, execute) -> None:
+        super(FibreChannelConnector, self).set_execute(execute)
+        self._linuxscsi.set_execute(execute)
+        self._linuxfc.set_execute(execute)
+
+    @staticmethod
+    def get_connector_properties(root_helper: str, *args, **kwargs) -> dict[str, Any]:
+        """The Fibre Channel connector properties."""
+        props = {}
+        fc = linuxfc.LinuxFibreChannel(root_helper, execute=kwargs.get('execute'))
+        wwpns = fc.get_fc_wwpns()
+        if wwpns:
+            props['wwpns'] = wwpns
+        wwnns = fc.get_fc_wwnns()
+        if wwnns:
+            props['wwnns'] = wwnns
+        return props
+
+    def get_search_path(self) -> str:
+        """Where do we look for FC based volumes."""
+        return '/dev/disk/by-path'
+
+    def _add_targets_to_connection_properties(self, connection_properties: dict) -> dict:
+        LOG.debug('Adding targets to connection properties receives: %s', connection_properties)
+        target_wwn = connection_properties.get('target_wwn')
+        target_wwns = connection_properties.get('target_wwns')
+        if target_wwns:
+            wwns = target_wwns
+        elif isinstance(target_wwn, list):
+            wwns = target_wwn
+        elif isinstance(target_wwn, str):
+            wwns = [target_wwn]
+        else:
+            wwns = []
+        wwns = [wwn.lower() for wwn in wwns]
+        if target_wwns:
+            connection_properties['target_wwns'] = wwns
+        elif target_wwn:
+            connection_properties['target_wwn'] = wwns
+        target_lun = connection_properties.get('target_lun', 0)
+        target_luns = connection_properties.get('target_luns')
+        if target_luns:
+            luns = target_luns
+        elif isinstance(target_lun, int):
+            luns = [target_lun]
+        else:
+            luns = []
+        if len(luns) == len(wwns):
+            targets = list(zip(wwns, luns))
+        elif len(luns) == 1 and len(wwns) > 1:
+            targets = [(wwn, luns[0]) for wwn in wwns]
+        else:
+            msg = _('Unable to find potential volume paths for FC device with luns: %(luns)s and wwns: %(wwns)s.') % {'luns': luns, 'wwns': wwns}
+            LOG.error(msg)
+            raise exception.VolumePathsNotFound(msg)
+        connection_properties['targets'] = targets
+        wwpn_lun_map = {wwpn: lun for wwpn, lun in targets}
+        if connection_properties.get('initiator_target_map') is not None:
+            itmap = connection_properties['initiator_target_map']
+            itmap = {k.lower(): [port.lower() for port in v] for k, v in itmap.items()}
+            connection_properties['initiator_target_map'] = itmap
+            itmaplun = dict()
+            for init_wwpn, target_wwpns in itmap.items():
+                itmaplun[init_wwpn] = [(target_wwpn, wwpn_lun_map[target_wwpn]) for target_wwpn in target_wwpns if target_wwpn in wwpn_lun_map]
+                if len(itmaplun[init_wwpn]) != len(itmap[init_wwpn]):
+                    unknown = set(itmap[init_wwpn])
+                    unknown.difference_update(itmaplun[init_wwpn])
+                    LOG.warning('Driver returned an unknown targets in the initiator mapping %s', ', '.join(unknown))
+            connection_properties['initiator_target_lun_map'] = itmaplun
+        LOG.debug('Adding targets to connection properties returns: %s', connection_properties)
+        return connection_properties
+
+    def _get_possible_volume_paths(self, connection_properties: dict, hbas) -> list[str]:
+        targets = connection_properties['targets']
+        addressing_mode = connection_properties.get('addressing_mode')
+        possible_devs = self._get_possible_devices(hbas, targets, addressing_mode)
+        host_paths = self._get_host_devices(possible_devs)
+        return host_paths
+
+    def get_volume_paths(self, connection_properties: dict) -> list:
+        volume_paths = []
+        hbas = self._linuxfc.get_fc_hbas_info()
+        device_paths = self._get_possible_volume_paths(connection_properties, hbas)
+        for path in device_paths:
+            if os.path.exists(path):
+                volume_paths.append(path)
+        return volume_paths
+
+    @utils.trace
+    @base.synchronized('extend_volume', external=True)
+    @utils.connect_volume_undo_prepare_result
+    def extend_volume(self, connection_properties: dict) -> Optional[int]:
+        """Update the local kernel's size information.
+
+        Try and update the local kernel's size information
+        for an FC volume.
+        """
+        connection_properties = self._add_targets_to_connection_properties(connection_properties)
+        volume_paths = self.get_volume_paths(connection_properties)
+        if volume_paths:
+            return self._linuxscsi.extend_volume(volume_paths, use_multipath=self.use_multipath)
+        else:
+            LOG.warning("Couldn't find any volume paths on the host to extend volume for %(props)s", {'props': connection_properties})
+            raise exception.VolumePathsNotFound()
+
+    @utils.trace
+    @utils.connect_volume_prepare_result
+    @base.synchronized('connect_volume', external=True)
+    def connect_volume(self, connection_properties: dict) -> dict:
+        """Attach the volume to instance_name.
+
+        :param connection_properties: The dictionary that describes all
+                                      of the target volume attributes.
+        :type connection_properties: dict
+        :returns: dict
+
+        connection_properties for Fibre Channel must include:
+        target_wwn - World Wide Name
+        target_lun - LUN id of the volume
+        """
+        device_info = {'type': 'block'}
+        connection_properties = self._add_targets_to_connection_properties(connection_properties)
+        hbas = self._linuxfc.get_fc_hbas_info()
+        if not hbas:
+            LOG.warning('We are unable to locate any Fibre Channel devices.')
+            raise exception.NoFibreChannelHostsFound()
+        host_devices = self._get_possible_volume_paths(connection_properties, hbas)
+
+        def _wait_for_device_discovery(host_devices: list[str]) -> None:
+            for device in host_devices:
+                LOG.debug('Looking for Fibre Channel dev %(device)s', {'device': device})
+                if os.path.exists(device) and self.check_valid_device(device):
+                    self.host_device = device
+                    self.device_name = os.path.realpath(device)
+                    raise loopingcall.LoopingCallDone()
+            if self.tries >= self.device_scan_attempts:
+                LOG.error('Fibre Channel volume device not found.')
+                raise exception.NoFibreChannelVolumeDeviceFound()
+            LOG.info('Fibre Channel volume device not yet found. Will rescan & retry.  Try number: %(tries)s.', {'tries': self.tries})
+            self._linuxfc.rescan_hosts(hbas, connection_properties)
+            self.tries = self.tries + 1
+        self.host_device = None
+        self.device_name = None
+        self.tries = 0
+        timer = loopingcall.FixedIntervalLoopingCall(_wait_for_device_discovery, host_devices)
+        timer.start(interval=2).wait()
+        self.host_device = typing.cast(str, self.host_device)
+        LOG.debug('Found Fibre Channel volume %(name)s (after %(tries)s rescans.)', {'name': self.device_name, 'tries': self.tries})
+        device_wwn = self._linuxscsi.get_scsi_wwn(self.host_device)
+        LOG.debug("Device WWN = '%(wwn)s'", {'wwn': device_wwn})
+        device_info['scsi_wwn'] = device_wwn
+        if self.use_multipath:
+            assert self.host_device is not None
+            device_path, multipath_id = self._discover_mpath_device(device_wwn, connection_properties, self.host_device)
+            if multipath_id:
+                device_info['multipath_id'] = multipath_id
+        else:
+            device_path = self.host_device
+        device_path = typing.cast(str, device_path)
+        device_info['path'] = device_path
+        return device_info
+
+    def _get_host_devices(self, possible_devs: list) -> list:
+        """Compute the device paths on the system with an id, wwn, and lun
+
+        :param possible_devs: list of (platform, pci_id, wwn, lun) tuples
+        :return: list of device paths on the system based on the possible_devs
+        """
+        host_devices = []
+        for platform, pci_num, target_wwn, lun in possible_devs:
+            host_device = '/dev/disk/by-path/%spci-%s-fc-%s-lun-%s' % (platform + '-' if platform else '', pci_num, target_wwn, self._linuxscsi.process_lun_id(lun))
+            host_devices.append(host_device)
+        return host_devices
+
+    def _get_possible_devices(self, hbas: list, targets: list, addressing_mode: Optional[str]=None) -> list:
+        """Compute the possible fibre channel device options.
+
+        :param hbas: available hba devices.
+        :param targets: tuple of possible wwn addresses and lun combinations.
+
+        :returns: list of (platform, pci_id, wwn, lun) tuples
+
+        Given one or more wwn (mac addresses for fibre channel) ports
+        do the matrix math to figure out a set of pci device, wwn
+        tuples that are potentially valid (they won't all be). This
+        provides a search space for the device connection.
+
+        """
+        raw_devices = []
+        for hba in hbas:
+            platform, pci_num = self._get_pci_num(hba)
+            if pci_num is not None:
+                for wwn, lun in targets:
+                    lun = self._linuxscsi.lun_for_addressing(lun, addressing_mode)
+                    target_wwn = '0x%s' % wwn.lower()
+                    raw_devices.append((platform, pci_num, target_wwn, lun))
+        return raw_devices
+
+    @utils.trace
+    @base.synchronized('connect_volume', external=True)
+    @utils.connect_volume_undo_prepare_result(unlink_after=True)
+    def disconnect_volume(self, connection_properties: dict, device_info: dict, force: bool=False, ignore_errors: bool=False) -> None:
+        """Detach the volume from instance_name.
+
+        :param connection_properties: The dictionary that describes all
+                                      of the target volume attributes.
+        :type connection_properties: dict
+        :param device_info: historical difference, but same as connection_props
+        :type device_info: dict
+
+        connection_properties for Fibre Channel must include:
+        target_wwn - World Wide Name
+        target_lun - LUN id of the volume
+        """
+        exc = exception.ExceptionChainer()
+        devices = []
+        wwn = None
+        connection_properties = self._add_targets_to_connection_properties(connection_properties)
+        volume_paths = self.get_volume_paths(connection_properties)
+        mpath_path = None
+        for path in volume_paths:
+            real_path = self._linuxscsi.get_name_from_path(path)
+            if self.use_multipath and (not mpath_path) and self.check_valid_device(path):
+                wwn = self._linuxscsi.get_scsi_wwn(path)
+                mpath_path = self._linuxscsi.find_multipath_device_path(wwn)
+                if mpath_path:
+                    with exc.context(force, 'Flushing %s failed', mpath_path):
+                        self._linuxscsi.flush_multipath_device(mpath_path)
+            real_path = typing.cast(str, real_path)
+            dev_info = self._linuxscsi.get_device_info(real_path)
+            devices.append(dev_info)
+        if mpath_path and exc:
+            with exc.context(force, 'Removing multipath %s failed', mpath_path):
+                mpath_name = os.path.basename(os.path.realpath(mpath_path))
+                self._linuxscsi.multipath_del_map(mpath_name)
+        LOG.debug('devices to remove = %s', devices)
+        self._remove_devices(connection_properties, devices, device_info, force, exc)
+        if exc:
+            LOG.warning('There were errors removing %s, leftovers may remain in the system', volume_paths)
+            if not ignore_errors:
+                raise exc
+
+    def _remove_devices(self, connection_properties: dict, devices: list, device_info: dict, force: bool, exc) -> None:
+        path_used = utils.get_dev_path(connection_properties, device_info)
+        was_symlink = path_used.count(os.sep) > 2
+        was_multipath = '/pci-' not in path_used and was_symlink
+        for device in devices:
+            with exc.context(force, 'Removing device %s failed', device):
+                device_path = device['device']
+                flush = self._linuxscsi.requires_flush(device_path, path_used, was_multipath)
+                self._linuxscsi.remove_scsi_device(device_path, flush=flush)
+
+    def _get_pci_num(self, hba: Optional[dict]) -> tuple:
+        platform = None
+        if hba is not None:
+            if 'device_path' in hba:
+                device_path = hba['device_path'].split('/')
+                has_platform = len(device_path) > 3 and device_path[3] == 'platform'
+                for index, value in enumerate(device_path):
+                    if has_platform and value.startswith('pci'):
+                        platform = 'platform-%s' % device_path[index - 1]
+                    if value.startswith('net') or value.startswith('host'):
+                        return (platform, device_path[index - 1])
+        return (None, None)

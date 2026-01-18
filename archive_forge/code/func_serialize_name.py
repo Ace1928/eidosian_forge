@@ -1,0 +1,2 @@
+def serialize_name(value):
+    return ''.join((c if c in 'abcdefghijklmnopqrstuvwxyz-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' or ord(c) > 127 else '\\A ' if c == '\n' else '\\D ' if c == '\r' else '\\C ' if c == '\x0c' else '\\' + c for c in value))

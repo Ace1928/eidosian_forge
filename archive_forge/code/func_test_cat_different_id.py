@@ -1,0 +1,30 @@
+from ... import tests
+from ...transport import memory
+def test_cat_different_id(self):
+    """'cat' works with old and new files"""
+    self.disable_missing_extensions_warning()
+    tree = self.make_branch_and_tree('.')
+    self.build_tree_contents([('a-rev-tree', b'foo\n'), ('c-rev', b'baz\n'), ('d-rev', b'bar\n'), ('e-rev', b'qux\n')])
+    with tree.lock_write():
+        tree.add(['a-rev-tree', 'c-rev', 'd-rev', 'e-rev'])
+        tree.commit('add test files', rev_id=b'first')
+        tree.flush()
+        tree.remove(['d-rev'])
+        tree.rename_one('a-rev-tree', 'b-tree')
+        tree.rename_one('c-rev', 'a-rev-tree')
+        tree.rename_one('e-rev', 'old-rev')
+        self.build_tree_contents([('e-rev', b'new\n')])
+        tree.add(['e-rev'])
+    self.run_bzr_error(["^brz: ERROR: u?'b-tree' is not present in revision .+$"], 'cat b-tree --name-from-revision')
+    out, err = self.run_bzr('cat d-rev')
+    self.assertEqual('', err)
+    self.assertEqual('bar\n', out)
+    out, err = self.run_bzr('cat a-rev-tree --name-from-revision')
+    self.assertEqual('foo\n', out)
+    self.assertEqual('', err)
+    out, err = self.run_bzr('cat a-rev-tree')
+    self.assertEqual('baz\n', out)
+    self.assertEqual('', err)
+    out, err = self.run_bzr('cat e-rev -rrevid:first')
+    self.assertEqual('qux\n', out)
+    self.assertEqual('', err)

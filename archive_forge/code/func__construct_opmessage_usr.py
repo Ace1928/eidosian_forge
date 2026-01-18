@@ -1,0 +1,17 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.zabbix.plugins.module_utils.base import ZabbixBase
+from ansible.module_utils.compat.version import LooseVersion
+import ansible_collections.community.zabbix.plugins.module_utils.helpers as zabbix_utils
+def _construct_opmessage_usr(self, operation):
+    """Construct operation message user.
+
+        Args:
+            operation: operation to construct the message user
+
+        Returns:
+            list: constructed operation message user or None if operation not found
+        """
+    if operation.get('send_to_users') is None:
+        return None
+    return [{'userid': self._zapi_wrapper.get_user_by_user_name(_user)['userid']} for _user in operation.get('send_to_users')]

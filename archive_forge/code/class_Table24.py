@@ -1,0 +1,20 @@
+from fontTools.misc.fixedTools import (
+from fontTools.misc.roundTools import nearestMultipleShortestRepr, otRound
+from fontTools.misc.textTools import bytesjoin, tobytes, tostr, pad, safeEval
+from fontTools.ttLib import getSearchRange
+from .otBase import (
+from .otTables import (
+from itertools import zip_longest
+from functools import partial
+import re
+import struct
+from typing import Optional
+import logging
+class Table24(Table):
+    staticSize = 3
+
+    def readOffset(self, reader):
+        return reader.readUInt24()
+
+    def writeNullOffset(self, writer):
+        writer.writeUInt24(0)

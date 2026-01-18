@@ -1,0 +1,29 @@
+import numpy as np
+from .common import TestCase, ut
+import h5py
+from h5py import h5a, h5s, h5t
+from h5py import File
+from h5py._hl.base import is_empty_dataspace
+class TestArray(BaseAttrs):
+    """
+        Feature: Non-scalar types are correctly retrieved as ndarrays
+    """
+
+    def test_single(self):
+        """ Single-element arrays are correctly recovered """
+        data = np.ndarray((1,), dtype='f')
+        self.f.attrs['x'] = data
+        out = self.f.attrs['x']
+        self.assertIsInstance(out, np.ndarray)
+        self.assertEqual(out.shape, (1,))
+
+    def test_multi(self):
+        """ Rank-1 arrays are correctly recovered """
+        data = np.ndarray((42,), dtype='f')
+        data[:] = 42.0
+        data[10:35] = -47.0
+        self.f.attrs['x'] = data
+        out = self.f.attrs['x']
+        self.assertIsInstance(out, np.ndarray)
+        self.assertEqual(out.shape, (42,))
+        self.assertArrayEqual(out, data)

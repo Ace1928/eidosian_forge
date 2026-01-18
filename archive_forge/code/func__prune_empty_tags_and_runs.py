@@ -1,0 +1,27 @@
+import contextlib
+import functools
+import time
+import grpc
+from google.protobuf import message
+from tensorboard.compat.proto import graph_pb2
+from tensorboard.compat.proto import summary_pb2
+from tensorboard.compat.proto import types_pb2
+from tensorboard.uploader.proto import write_service_pb2
+from tensorboard.uploader import logdir_loader
+from tensorboard.uploader import upload_tracker
+from tensorboard.uploader import util
+from tensorboard.backend import process_graph
+from tensorboard.backend.event_processing import directory_loader
+from tensorboard.backend.event_processing import event_file_loader
+from tensorboard.backend.event_processing import io_wrapper
+from tensorboard.plugins.graph import metadata as graphs_metadata
+from tensorboard.util import grpc_util
+from tensorboard.util import tb_logging
+from tensorboard.util import tensor_util
+def _prune_empty_tags_and_runs(request):
+    for run_idx, run in reversed(list(enumerate(request.runs))):
+        for tag_idx, tag in reversed(list(enumerate(run.tags))):
+            if not tag.points:
+                del run.tags[tag_idx]
+        if not run.tags:
+            del request.runs[run_idx]

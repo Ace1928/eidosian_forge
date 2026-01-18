@@ -1,0 +1,31 @@
+from statsmodels.compat.pandas import MONTH_END
+from statsmodels.compat.pytest import pytest_warns
+import datetime as dt
+from itertools import product
+from typing import NamedTuple, Union
+import numpy as np
+from numpy.testing import assert_allclose, assert_almost_equal
+import pandas as pd
+from pandas import Index, Series, date_range, period_range
+from pandas.testing import assert_series_equal
+import pytest
+from statsmodels.datasets import macrodata, sunspots
+from statsmodels.iolib.summary import Summary
+from statsmodels.regression.linear_model import OLS
+from statsmodels.tools.sm_exceptions import SpecificationWarning, ValueWarning
+from statsmodels.tools.tools import Bunch
+from statsmodels.tsa.ar_model import (
+from statsmodels.tsa.arima_process import arma_generate_sample
+from statsmodels.tsa.deterministic import (
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.tests.results import results_ar
+@pytest.mark.smoke
+def test_autoreg_score():
+    data = sunspots.load_pandas()
+    ar = AutoReg(np.asarray(data.endog), 3)
+    res = ar.fit()
+    score = ar.score(res.params)
+    assert isinstance(score, np.ndarray)
+    assert score.shape == (4,)
+    assert ar.information(res.params).shape == (4, 4)
+    assert_allclose(-ar.hessian(res.params), ar.information(res.params))

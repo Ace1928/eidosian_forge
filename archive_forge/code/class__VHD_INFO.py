@@ -1,0 +1,4 @@
+import ctypes
+from os_win.utils.winapi import wintypes
+class _VHD_INFO(ctypes.Union):
+    _fields_ = [('Size', _VHD_INFO_SIZE), ('Identifier', wintypes.GUID), ('ParentLocation', _VHD_INFO_PARENT_LOCATION), ('ParentIdentifier', wintypes.GUID), ('ParentTimestamp', wintypes.ULONG), ('VirtualStorageType', VIRTUAL_STORAGE_TYPE), ('ProviderSubtype', wintypes.ULONG), ('Is4kAligned', wintypes.BOOL), ('IsLoaded', wintypes.BOOL), ('PhysicalDisk', _VHD_INFO_PHYSICAL_DISK), ('VhdPhysicalSectorSize', wintypes.ULONG), ('SmallestSafeVirtualSize', wintypes.ULARGE_INTEGER), ('FragmentationPercentage', wintypes.ULONG)]

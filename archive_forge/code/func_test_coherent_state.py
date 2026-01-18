@@ -1,0 +1,14 @@
+from sympy.core.numbers import (Rational, oo, pi)
+from sympy.core.singleton import S
+from sympy.core.symbol import Symbol
+from sympy.functions.elementary.exponential import exp
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.integrals.integrals import integrate
+from sympy.simplify.simplify import simplify
+from sympy.abc import omega, m, x
+from sympy.physics.qho_1d import psi_n, E_n, coherent_state
+from sympy.physics.quantum.constants import hbar
+def test_coherent_state(n=10):
+    alpha = Symbol('alpha')
+    for i in range(n + 1):
+        assert simplify(sqrt(n + 1) * coherent_state(n + 1, alpha)) == simplify(alpha * coherent_state(n, alpha))

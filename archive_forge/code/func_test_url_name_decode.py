@@ -1,0 +1,7 @@
+from heat.common import identifier
+from heat.tests import common
+def test_url_name_decode(self):
+    enc_arn = 'arn%3Aopenstack%3Aheat%3A%3At%3Astacks%2F%253A%2525%2Fi'
+    url = self.url_prefix + enc_arn
+    hi = identifier.HeatIdentifier.from_arn_url(url)
+    self.assertEqual(':%', hi.stack_name)

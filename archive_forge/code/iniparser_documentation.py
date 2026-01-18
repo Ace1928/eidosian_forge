@@ -1,0 +1,1 @@
+Called when a comment is parsed.

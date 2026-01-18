@@ -1,0 +1,2 @@
+class CharacterEncodingUnknown(ThingsNobodyCaresAboutButMe):
+    pass

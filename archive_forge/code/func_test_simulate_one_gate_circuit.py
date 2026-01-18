@@ -1,0 +1,11 @@
+import math
+from typing import Any, Dict, List, Sequence, Tuple
+import numpy as np
+import pytest
+import sympy
+import cirq
+def test_simulate_one_gate_circuit():
+    sim = CountingSimulator()
+    r = sim.simulate(cirq.Circuit(cirq.X(q0)))
+    assert r._final_simulator_state.gate_count == 1
+    assert r._final_simulator_state.copy_count == 0

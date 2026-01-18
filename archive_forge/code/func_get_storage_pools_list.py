@@ -1,0 +1,14 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.dellemc.unity.plugins.module_utils.storage.dell \
+def get_storage_pools_list(self):
+    """ Get the list of storage pools on a given Unity storage
+            system """
+    try:
+        LOG.info('Getting storage pools list ')
+        storage_pools = self.unity.get_pool()
+        return result_list(storage_pools)
+    except Exception as e:
+        msg = 'Get storage pools list from unity array failed with error %s' % str(e)
+        LOG.error(msg)
+        self.module.fail_json(msg=msg)

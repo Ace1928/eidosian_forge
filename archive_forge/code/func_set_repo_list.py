@@ -1,0 +1,13 @@
+from __future__ import absolute_import, division, print_function
+import json
+import os
+from time import sleep
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import fetch_url
+from ansible.module_utils.urls import url_argument_spec
+def set_repo_list(self):
+    url = '%s/pulp/api/v2/repositories/?details=true' % self.host
+    response, info = fetch_url(self.module, url, method='GET')
+    if info['status'] != 200:
+        self.module.fail_json(msg='Request failed', status_code=info['status'], response=info['msg'], url=url)
+    self.repo_list = json.load(response)

@@ -1,0 +1,29 @@
+from __future__ import annotations
+import functools
+import inspect
+import sys
+import typing
+import warnings
+from typing import (
+import torch
+import torch._C._onnx as _C_onnx
+from torch import _C
+from torch.onnx import _constants, _type_utils, errors
+from torch.onnx._globals import GLOBALS
+from torch.onnx._internal import _beartype, jit_utils
+from torch.types import Number
+@_beartype.beartype
+def _if_scalar_type_as(self, tensor):
+    """
+    Convert self into the same type of tensor, as necessary.
+    We only support implicit casting for scalars, so we never
+    actually need to insert an ONNX cast operator here; just
+    fix up the scalar.
+    """
+    if isinstance(self, _C.Value):
+        return self
+    scalar_type = _type_utils.JitScalarType.from_value(tensor, _type_utils.JitScalarType.UNDEFINED)
+    if scalar_type != _type_utils.JitScalarType.UNDEFINED:
+        ty = scalar_type.scalar_name().lower()
+        return getattr(self, ty)()
+    return self

@@ -1,0 +1,16 @@
+import math
+from dataclasses import dataclass
+from typing import Any, Optional, Tuple, Union
+import torch
+import torch.utils.checkpoint
+from torch import nn
+from torch.nn import CrossEntropyLoss
+from ...activations import ACT2FN
+from ...modeling_outputs import (
+from ...modeling_utils import PreTrainedModel
+from ...pytorch_utils import apply_chunking_to_forward, find_pruneable_heads_and_indices, prune_linear_layer
+from ...utils import (
+from ..auto import AutoModelForCausalLM, AutoModelForSeq2SeqLM
+from .configuration_instructblip import InstructBlipConfig, InstructBlipQFormerConfig, InstructBlipVisionConfig
+def get_attn_gradients(self):
+    return self.attn_gradients

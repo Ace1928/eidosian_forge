@@ -1,0 +1,8 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.community.general.plugins.module_utils.module_helper import ModuleHelper
+from ansible_collections.community.general.plugins.module_utils.xfconf import xfconf_runner
+def _process_list_channels(self, rc, out, err):
+    lines = out.splitlines()
+    lines.pop(0)
+    lines = [s.lstrip() for s in lines]
+    return lines

@@ -1,0 +1,7 @@
+from __future__ import absolute_import
+from googlecloudsdk.third_party.appengine.proto import ProtocolBuffer
+import abc
+import array
+def set_longitude(self, x):
+    self.has_longitude_ = 1
+    self.longitude_ = x

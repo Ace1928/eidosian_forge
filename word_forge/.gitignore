@@ -1,0 +1,72 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# SQLite databases and demo files
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*-wal
+*-shm
+word_forge.sqlite
+**/word_forge.sqlite
+**/test_database.sqlite
+**/demo.sqlite
+**/temp*_demo_db.sqlite*
+
+# Demo output directories
+vector_demo/
+db_worker_demo/
+db_worker_demo/backups/*
+
+# Data and logs (runtime generated)
+data/
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb

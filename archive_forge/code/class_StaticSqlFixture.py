@@ -1,0 +1,35 @@
+import copy
+from unittest import mock
+import warnings
+import fixtures
+from oslo_config import cfg
+from oslo_db.sqlalchemy import enginefacade
+from oslo_db.sqlalchemy import provision
+from oslo_db.sqlalchemy import session
+from oslo_messaging import conffixture
+from neutron_lib.api import attributes
+from neutron_lib.api import definitions
+from neutron_lib.callbacks import manager
+from neutron_lib.callbacks import registry
+from neutron_lib.db import api as db_api
+from neutron_lib.db import model_base
+from neutron_lib.db import model_query
+from neutron_lib.db import resource_extend
+from neutron_lib.plugins import directory
+from neutron_lib import rpc
+from neutron_lib.tests.unit import fake_notifier
+class StaticSqlFixture(SqlFixture):
+    _GLOBAL_RESOURCES = False
+
+    @classmethod
+    def _init_resources(cls):
+        if cls._GLOBAL_RESOURCES:
+            return
+        else:
+            cls._GLOBAL_RESOURCES = True
+            cls.schema_resource = provision.SchemaResource(provision.DatabaseResource('sqlite', db_api.get_context_manager()), cls._generate_schema, teardown=False)
+            dependency_resources = {}
+            for name, resource in cls.schema_resource.resources:
+                dependency_resources[name] = resource.getResource()
+            cls.schema_resource.make(dependency_resources)
+            cls.engine = dependency_resources['database'].engine

@@ -1,0 +1,26 @@
+from abc import ABC, abstractmethod
+from typing import Set, Optional, Awaitable
+from google.cloud.pubsublite.types import Partition
+
+        Called with the previous and new assignment delivered to this client on an assignment change.
+        The assignment will not be acknowledged until this method returns, so it should complete
+        quickly, or the backend will assume it is non-responsive and assign all partitions away without
+        waiting for acknowledgement.
+
+        handle_reassignment will only be called after no new message deliveries will be started for the partition.
+        There may still be messages in flight on executors or in async callbacks.
+
+        Acks or nacks on messages from partitions being assigned away will have no effect.
+
+        This method will be called on an event loop and should not block.
+
+        Args:
+          before: The previous assignment.
+          after: The new assignment.
+
+        Returns:
+          Either None or an Awaitable to be waited on before acknowledging reassignment.
+
+        Raises:
+          GoogleAPICallError: To fail the client if raised.
+        

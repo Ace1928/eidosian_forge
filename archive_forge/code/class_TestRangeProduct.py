@@ -1,0 +1,121 @@
+import pickle
+import pyomo.common.unittest as unittest
+from pyomo.core.base.range import (
+from pyomo.core.base.set import Any
+class TestRangeProduct(unittest.TestCase):
+
+    def test_str(self):
+        a = RP([[NR(0, 10, 1)], [NR(0, 10, 0), NNR('a')]])
+        self.assertEqual(str(a), '<[0:10], ([0..10], {a})>')
+
+    def test_range_relational(self):
+        a = RP([[NR(0, 10, 1)], [NR(0, 10, 0), NNR('a')]])
+        aa = RP([[NR(0, 10, 1)], [NR(0, 10, 0), NNR('a')]])
+        b = RP([[NR(0, 10, 1)], [NR(0, 10, 0), NNR('a'), NNR('b')]])
+        c = RP([[NR(0, 10, 1)], [NR(0, 10, 0), NNR('b')]])
+        d = RP([[NR(0, 10, 0)], [NR(0, 10, 0), NNR('a')]])
+        d = RP([[NR(0, 10, 0)], [AnyRange()]])
+        self.assertTrue(a.issubset(aa))
+        self.assertTrue(a.issubset(b))
+        self.assertFalse(a.issubset(c))
+        self.assertTrue(a.issubset(d))
+        self.assertFalse(a.issubset(NNR('a')))
+        self.assertFalse(a.issubset(NR(None, None, 0)))
+        self.assertTrue(a.issubset(AnyRange()))
+
+    def test_contains(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        self.assertNotIn('a', x)
+        self.assertNotIn(0, x)
+        self.assertNotIn(None, x)
+        self.assertIn(('a', 0), x)
+        self.assertIn(('a', 6), x)
+        self.assertNotIn(('a', 6.5), x)
+
+    def test_equality(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        self.assertEqual(x, x)
+        self.assertNotEqual(x, y)
+
+    def test_isdisjoint(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        z = RP([[a], [b], [c]])
+        w = RP([[AnyRange()], [b]])
+        self.assertFalse(x.isdisjoint(x))
+        self.assertFalse(x.isdisjoint(y))
+        self.assertTrue(x.isdisjoint(z))
+        self.assertFalse(x.isdisjoint(w))
+        self.assertTrue(x.isdisjoint(a))
+        self.assertFalse(y.isdisjoint(w))
+        self.assertFalse(x.isdisjoint(AnyRange()))
+        v = RP([[AnyRange()], [NR(0, 5, 0, (False, False))]])
+        self.assertTrue(y.isdisjoint(v))
+
+    def test_range_difference(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        b1 = NR(0, 5, 0, '[)')
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        z = RP([[a], [b], [c]])
+        w = RP([list(Any.ranges()), [b]])
+        self.assertEqual(x.range_difference([x]), [])
+        self.assertEqual(x.range_difference([y]), [RP([[a], [b1]])])
+        self.assertEqual(x.range_difference([z]), [x])
+        self.assertEqual(x.range_difference(Any.ranges()), [])
+        self.assertEqual(x.range_difference([w]), [RP([[a], [NR(6, 10, 1)]])])
+        v = RP([[AnyRange()], [NR(0, 5, 0, (False, False))]])
+        self.assertEqual(y.range_difference([v]), [y])
+
+    def test_range_intersection(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        z = RP([[a], [b], [c]])
+        w = RP([list(Any.ranges()), [b]])
+        self.assertEqual(x.range_intersection([x]), [x])
+        self.assertEqual(x.range_intersection([y]), [y])
+        self.assertEqual(x.range_intersection([z]), [])
+        self.assertEqual(x.range_intersection(Any.ranges()), [x])
+        self.assertEqual(x.range_intersection([w]), [RP([[a], [b]])])
+        self.assertEqual(y.range_intersection([w]), [RP([[a], [NR(5, 5, 0)]])])
+        v = RP([[AnyRange()], [NR(0, 5, 0, (False, False))]])
+        self.assertEqual(y.range_intersection([v]), [])
+
+    def test_info_methods(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        self.assertFalse(x.isdiscrete())
+        self.assertFalse(x.isfinite())
+        self.assertTrue(y.isdiscrete())
+        self.assertTrue(y.isfinite())
+
+    def test_pickle(self):
+        a = NNR('a')
+        b = NR(0, 5, 0)
+        c = NR(5, 10, 1)
+        x = RP([[a], [b, c]])
+        y = RP([[a], [c]])
+        xx = pickle.loads(pickle.dumps(x))
+        self.assertIsNot(x, xx)
+        self.assertEqual(x, xx)
+        yy = pickle.loads(pickle.dumps(y))
+        self.assertIsNot(y, yy)
+        self.assertEqual(y, yy)

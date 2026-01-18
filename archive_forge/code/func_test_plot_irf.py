@@ -1,0 +1,25 @@
+from statsmodels.compat.pandas import QUARTER_END, assert_index_equal
+from statsmodels.compat.python import lrange
+from io import BytesIO, StringIO
+import os
+import sys
+import warnings
+import numpy as np
+from numpy.testing import assert_allclose, assert_almost_equal, assert_equal
+import pandas as pd
+import pytest
+from statsmodels.datasets import macrodata
+import statsmodels.tools.data as data_util
+from statsmodels.tools.sm_exceptions import ValueWarning
+from statsmodels.tsa.base.datetools import dates_from_str
+import statsmodels.tsa.vector_ar.util as util
+from statsmodels.tsa.vector_ar.var_model import VAR, var_acf
+@pytest.mark.matplotlib
+def test_plot_irf(self, close_figures):
+    self.irf.plot()
+    self.irf.plot(plot_stderr=False)
+    self.irf.plot(impulse=0, response=1)
+    self.irf.plot(impulse=0)
+    self.irf.plot(response=0)
+    self.irf.plot(orth=True)
+    self.irf.plot(impulse=0, response=1, orth=True)

@@ -1,0 +1,83 @@
+from collections import defaultdict
+from sympy.concrete.products import Product
+from sympy.concrete.summations import Sum
+from sympy.core import (Basic, S, Add, Mul, Pow, Symbol, sympify,
+from sympy.core.exprtools import factor_nc
+from sympy.core.parameters import global_parameters
+from sympy.core.function import (expand_log, count_ops, _mexpand,
+from sympy.core.numbers import Float, I, pi, Rational
+from sympy.core.relational import Relational
+from sympy.core.rules import Transform
+from sympy.core.sorting import ordered
+from sympy.core.sympify import _sympify
+from sympy.core.traversal import bottom_up as _bottom_up, walk as _walk
+from sympy.functions import gamma, exp, sqrt, log, exp_polar, re
+from sympy.functions.combinatorial.factorials import CombinatorialFunction
+from sympy.functions.elementary.complexes import unpolarify, Abs, sign
+from sympy.functions.elementary.exponential import ExpBase
+from sympy.functions.elementary.hyperbolic import HyperbolicFunction
+from sympy.functions.elementary.integers import ceiling
+from sympy.functions.elementary.piecewise import (Piecewise, piecewise_fold,
+from sympy.functions.elementary.trigonometric import TrigonometricFunction
+from sympy.functions.special.bessel import (BesselBase, besselj, besseli,
+from sympy.functions.special.tensor_functions import KroneckerDelta
+from sympy.integrals.integrals import Integral
+from sympy.matrices.expressions import (MatrixExpr, MatAdd, MatMul,
+from sympy.polys import together, cancel, factor
+from sympy.polys.numberfields.minpoly import _is_sum_surds, _minimal_polynomial_sq
+from sympy.simplify.combsimp import combsimp
+from sympy.simplify.cse_opts import sub_pre, sub_post
+from sympy.simplify.hyperexpand import hyperexpand
+from sympy.simplify.powsimp import powsimp
+from sympy.simplify.radsimp import radsimp, fraction, collect_abs
+from sympy.simplify.sqrtdenest import sqrtdenest
+from sympy.simplify.trigsimp import trigsimp, exptrigsimp
+from sympy.utilities.decorator import deprecated
+from sympy.utilities.iterables import has_variety, sift, subsets, iterable
+from sympy.utilities.misc import as_int
+import mpmath
+def kroneckersimp(expr):
+    """
+    Simplify expressions with KroneckerDelta.
+
+    The only simplification currently attempted is to identify multiplicative cancellation:
+
+    Examples
+    ========
+
+    >>> from sympy import KroneckerDelta, kroneckersimp
+    >>> from sympy.abc import i
+    >>> kroneckersimp(1 + KroneckerDelta(0, i) * KroneckerDelta(1, i))
+    1
+    """
+
+    def args_cancel(args1, args2):
+        for i1 in range(2):
+            for i2 in range(2):
+                a1 = args1[i1]
+                a2 = args2[i2]
+                a3 = args1[(i1 + 1) % 2]
+                a4 = args2[(i2 + 1) % 2]
+                if Eq(a1, a2) is S.true and Eq(a3, a4) is S.false:
+                    return True
+        return False
+
+    def cancel_kronecker_mul(m):
+        args = m.args
+        deltas = [a for a in args if isinstance(a, KroneckerDelta)]
+        for delta1, delta2 in subsets(deltas, 2):
+            args1 = delta1.args
+            args2 = delta2.args
+            if args_cancel(args1, args2):
+                return S.Zero * m
+        return m
+    if not expr.has(KroneckerDelta):
+        return expr
+    if expr.has(Piecewise):
+        expr = expr.rewrite(KroneckerDelta)
+    newexpr = expr
+    expr = None
+    while newexpr != expr:
+        expr = newexpr
+        newexpr = expr.replace(lambda e: isinstance(e, Mul), cancel_kronecker_mul)
+    return expr

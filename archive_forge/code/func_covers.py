@@ -1,0 +1,10 @@
+import base64
+import calendar
+import struct
+import time
+import dns.dnssec
+import dns.exception
+import dns.rdata
+import dns.rdatatype
+def covers(self):
+    return self.type_covered

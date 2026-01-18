@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class UniformtextValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='uniformtext', parent_name='layout', **kwargs):
+        super(UniformtextValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Uniformtext'), data_docs=kwargs.pop('data_docs', '\n            minsize\n                Sets the minimum text size between traces of\n                the same type.\n            mode\n                Determines how the font size for various text\n                elements are uniformed between each trace type.\n                If the computed text sizes were smaller than\n                the minimum size defined by\n                `uniformtext.minsize` using "hide" option hides\n                the text; and using "show" option shows the\n                text without further downscaling. Please note\n                that if the size defined by `minsize` is\n                greater than the font size defined by trace,\n                then the `minsize` is used.\n'), **kwargs)

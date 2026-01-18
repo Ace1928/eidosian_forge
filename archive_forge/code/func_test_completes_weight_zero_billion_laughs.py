@@ -1,0 +1,10 @@
+import json
+import urllib
+import numpy as np
+import pytest
+import cirq
+from cirq import quirk_url_to_circuit, quirk_json_to_circuit
+from cirq.interop.quirk.cells.testing import assert_url_to_circuit_returns
+def test_completes_weight_zero_billion_laughs():
+    circuit = cirq.quirk_url_to_circuit('https://algassert.com/quirk#circuit={"cols":[["~z"]],"gates":[{"id":"~a","circuit":{"cols":[["•"],["inputA2"],["setA"],["⊗","xpar"]]}},{"id":"~b","circuit":{"cols":[["~a"],["~a"],["~a"],["~a"]]}},{"id":"~c","circuit":{"cols":[["~b"],["~b"],["~b"],["~b"]]}},{"id":"~d","circuit":{"cols":[["~c"],["~c"],["~c"],["~c"]]}},{"id":"~e","circuit":{"cols":[["~d"],["~d"],["~d"],["~d"]]}},{"id":"~f","circuit":{"cols":[["~e"],["~e"],["~e"],["~e"]]}},{"id":"~g","circuit":{"cols":[["~f"],["~f"],["~f"],["~f"]]}},{"id":"~h","circuit":{"cols":[["~g"],["~g"],["~g"],["~g"]]}},{"id":"~i","circuit":{"cols":[["~h"],["~h"],["~h"],["~h"]]}},{"id":"~j","circuit":{"cols":[["~i"],["~i"],["~i"],["~i"]]}},{"id":"~k","circuit":{"cols":[["~j"],["~j"],["~j"],["~j"]]}},{"id":"~l","circuit":{"cols":[["~k"],["~k"],["~k"],["~k"]]}},{"id":"~m","circuit":{"cols":[["~l"],["~l"],["~l"],["~l"]]}},{"id":"~n","circuit":{"cols":[["~m"],["~m"],["~m"],["~m"]]}},{"id":"~o","circuit":{"cols":[["~n"],["~n"],["~n"],["~n"]]}},{"id":"~p","circuit":{"cols":[["~o"],["~o"],["~o"],["~o"]]}},{"id":"~q","circuit":{"cols":[["~p"],["~p"],["~p"],["~p"]]}},{"id":"~r","circuit":{"cols":[["~q"],["~q"],["~q"],["~q"]]}},{"id":"~s","circuit":{"cols":[["~r"],["~r"],["~r"],["~r"]]}},{"id":"~t","circuit":{"cols":[["~s"],["~s"],["~s"],["~s"]]}},{"id":"~u","circuit":{"cols":[["~t"],["~t"],["~t"],["~t"]]}},{"id":"~v","circuit":{"cols":[["~u"],["~u"],["~u"],["~u"]]}},{"id":"~w","circuit":{"cols":[["~v"],["~v"],["~v"],["~v"]]}},{"id":"~x","circuit":{"cols":[["~w"],["~w"],["~w"],["~w"]]}},{"id":"~y","circuit":{"cols":[["~x"],["~x"],["~x"],["~x"]]}},{"id":"~z","circuit":{"cols":[["~y"],["~y"],["~y"],["~y"]]}}]}', max_operation_count=0)
+    assert circuit == cirq.Circuit()

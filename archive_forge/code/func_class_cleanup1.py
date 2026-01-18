@@ -1,0 +1,11 @@
+import io
+import os
+import sys
+import pickle
+import subprocess
+from test import support
+import unittest
+from unittest.case import _Outcome
+from unittest.test.support import (LoggingResult,
+def class_cleanup1(*args, **kwargs):
+    class_cleanups.append((3, args, kwargs))

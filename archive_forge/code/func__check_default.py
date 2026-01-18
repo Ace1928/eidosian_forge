@@ -1,0 +1,6 @@
+from django.core import checks
+def _check_default(self):
+    if self.has_default() and self.default is not None and (not callable(self.default)):
+        return [checks.Warning("%s default should be a callable instead of an instance so that it's not shared between all field instances." % (self.__class__.__name__,), hint='Use a callable instead, e.g., use `%s` instead of `%s`.' % self._default_hint, obj=self, id='fields.E010')]
+    else:
+        return []

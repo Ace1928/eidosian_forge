@@ -1,0 +1,41 @@
+import glob
+import io
+import os
+import posixpath
+import re
+import tarfile
+import time
+import xml.dom.minidom
+import zipfile
+from asyncio import TimeoutError
+from io import BytesIO
+from itertools import chain
+from pathlib import Path, PurePosixPath
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Union
+from xml.etree import ElementTree as ET
+import fsspec
+from aiohttp.client_exceptions import ClientError
+from huggingface_hub.utils import EntryNotFoundError
+from packaging import version
+from .. import config
+from ..filesystems import COMPRESSION_FILESYSTEMS
+from ..utils.file_utils import (
+from ..utils.logging import get_logger
+from ..utils.py_utils import map_nested
+from .download_config import DownloadConfig
+def xxml_dom_minidom_parse(filename_or_file, download_config: Optional[DownloadConfig]=None, **kwargs):
+    """Extend `xml.dom.minidom.parse` function to support remote files.
+
+    Args:
+        filename_or_file (`str` or file): File path or file object.
+        download_config : mainly use token or storage_options to support different platforms and auth types.
+        **kwargs (optional): Additional keyword arguments passed to `xml.dom.minidom.parse`.
+
+    Returns:
+        :obj:`xml.dom.minidom.Document`: Parsed document.
+    """
+    if hasattr(filename_or_file, 'read'):
+        return xml.dom.minidom.parse(filename_or_file, **kwargs)
+    else:
+        with xopen(filename_or_file, 'rb', download_config=download_config) as f:
+            return xml.dom.minidom.parse(f, **kwargs)

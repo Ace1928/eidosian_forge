@@ -1,0 +1,90 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+def quantized_conv2d(input: _atypes.TensorFuzzingAnnotation[TV_QuantizedConv2D_Tinput], filter: _atypes.TensorFuzzingAnnotation[TV_QuantizedConv2D_Tfilter], min_input: _atypes.TensorFuzzingAnnotation[_atypes.Float32], max_input: _atypes.TensorFuzzingAnnotation[_atypes.Float32], min_filter: _atypes.TensorFuzzingAnnotation[_atypes.Float32], max_filter: _atypes.TensorFuzzingAnnotation[_atypes.Float32], strides, padding: str, out_type: TV_QuantizedConv2D_out_type=_dtypes.qint32, dilations=[1, 1, 1, 1], name=None):
+    """Computes a 2D convolution given quantized 4D input and filter tensors.
+
+  The inputs are quantized tensors where the lowest value represents the real
+  number of the associated minimum, and the highest represents the maximum.
+  This means that you can only interpret the quantized output in the same way, by
+  taking the returned minimum and maximum values into account.
+
+  Args:
+    input: A `Tensor`. Must be one of the following types: `qint8`, `quint8`, `qint32`, `qint16`, `quint16`.
+    filter: A `Tensor`. Must be one of the following types: `qint8`, `quint8`, `qint32`, `qint16`, `quint16`.
+      filter's input_depth dimension must match input's depth dimensions.
+    min_input: A `Tensor` of type `float32`.
+      The float value that the lowest quantized input value represents.
+    max_input: A `Tensor` of type `float32`.
+      The float value that the highest quantized input value represents.
+    min_filter: A `Tensor` of type `float32`.
+      The float value that the lowest quantized filter value represents.
+    max_filter: A `Tensor` of type `float32`.
+      The float value that the highest quantized filter value represents.
+    strides: A list of `ints`.
+      The stride of the sliding window for each dimension of the input
+      tensor.
+    padding: A `string` from: `"SAME", "VALID"`.
+      The type of padding algorithm to use.
+    out_type: An optional `tf.DType` from: `tf.qint8, tf.quint8, tf.qint32, tf.qint16, tf.quint16`. Defaults to `tf.qint32`.
+    dilations: An optional list of `ints`. Defaults to `[1, 1, 1, 1]`.
+      1-D tensor of length 4.  The dilation factor for each dimension of
+      `input`. If set to k > 1, there will be k-1 skipped cells between each
+      filter element on that dimension. The dimension order is determined by the
+      value of `data_format`, see above for details. Dilations in the batch and
+      depth dimensions must be 1.
+    name: A name for the operation (optional).
+
+  Returns:
+    A tuple of `Tensor` objects (output, min_output, max_output).
+
+    output: A `Tensor` of type `out_type`.
+    min_output: A `Tensor` of type `float32`.
+    max_output: A `Tensor` of type `float32`.
+  """
+    _ctx = _context._context or _context.context()
+    tld = _ctx._thread_local_data
+    if tld.is_eager:
+        try:
+            _result = pywrap_tfe.TFE_Py_FastPathExecute(_ctx, 'QuantizedConv2D', name, input, filter, min_input, max_input, min_filter, max_filter, 'out_type', out_type, 'strides', strides, 'padding', padding, 'dilations', dilations)
+            _result = _QuantizedConv2DOutput._make(_result)
+            return _result
+        except _core._NotOkStatusException as e:
+            _ops.raise_from_not_ok_status(e, name)
+        except _core._FallbackException:
+            pass
+        try:
+            return quantized_conv2d_eager_fallback(input, filter, min_input, max_input, min_filter, max_filter, out_type=out_type, strides=strides, padding=padding, dilations=dilations, name=name, ctx=_ctx)
+        except _core._SymbolicException:
+            pass
+    if not isinstance(strides, (list, tuple)):
+        raise TypeError("Expected list for 'strides' argument to 'quantized_conv2d' Op, not %r." % strides)
+    strides = [_execute.make_int(_i, 'strides') for _i in strides]
+    padding = _execute.make_str(padding, 'padding')
+    if out_type is None:
+        out_type = _dtypes.qint32
+    out_type = _execute.make_type(out_type, 'out_type')
+    if dilations is None:
+        dilations = [1, 1, 1, 1]
+    if not isinstance(dilations, (list, tuple)):
+        raise TypeError("Expected list for 'dilations' argument to 'quantized_conv2d' Op, not %r." % dilations)
+    dilations = [_execute.make_int(_i, 'dilations') for _i in dilations]
+    _, _, _op, _outputs = _op_def_library._apply_op_helper('QuantizedConv2D', input=input, filter=filter, min_input=min_input, max_input=max_input, min_filter=min_filter, max_filter=max_filter, strides=strides, padding=padding, out_type=out_type, dilations=dilations, name=name)
+    _result = _outputs[:]
+    if _execute.must_record_gradient():
+        _attrs = ('Tinput', _op._get_attr_type('Tinput'), 'Tfilter', _op._get_attr_type('Tfilter'), 'out_type', _op._get_attr_type('out_type'), 'strides', _op.get_attr('strides'), 'padding', _op.get_attr('padding'), 'dilations', _op.get_attr('dilations'))
+        _inputs_flat = _op.inputs
+        _execute.record_gradient('QuantizedConv2D', _inputs_flat, _attrs, _result)
+    _result = _QuantizedConv2DOutput._make(_result)
+    return _result

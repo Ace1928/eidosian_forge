@@ -1,0 +1,21 @@
+from dulwich.tests import TestCase
+from ..objects import Blob
+from ..objectspec import (
+from ..repo import MemoryRepo
+from .utils import build_commit_graph
+class ParseCommitTests(TestCase):
+    """Test parse_commit."""
+
+    def test_nonexistent(self):
+        r = MemoryRepo()
+        self.assertRaises(KeyError, parse_commit, r, 'thisdoesnotexist')
+
+    def test_commit_by_sha(self):
+        r = MemoryRepo()
+        [c1] = build_commit_graph(r.object_store, [[1]])
+        self.assertEqual(c1, parse_commit(r, c1.id))
+
+    def test_commit_by_short_sha(self):
+        r = MemoryRepo()
+        [c1] = build_commit_graph(r.object_store, [[1]])
+        self.assertEqual(c1, parse_commit(r, c1.id[:10]))

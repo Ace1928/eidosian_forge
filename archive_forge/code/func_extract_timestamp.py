@@ -1,0 +1,15 @@
+from __future__ import annotations
+import base64
+import binascii
+import os
+import time
+import typing
+from cryptography import utils
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.hmac import HMAC
+def extract_timestamp(self, token: typing.Union[bytes, str]) -> int:
+    timestamp, data = Fernet._get_unverified_token_data(token)
+    self._verify_signature(data)
+    return timestamp

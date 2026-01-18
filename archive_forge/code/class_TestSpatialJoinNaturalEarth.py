@@ -1,0 +1,25 @@
+import math
+from typing import Sequence
+import numpy as np
+import pandas as pd
+import shapely
+from shapely.geometry import Point, Polygon, GeometryCollection
+import geopandas
+import geopandas._compat as compat
+from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
+import pytest
+class TestSpatialJoinNaturalEarth:
+
+    def setup_method(self):
+        world_path = geopandas.datasets.get_path('naturalearth_lowres')
+        cities_path = geopandas.datasets.get_path('naturalearth_cities')
+        self.world = read_file(world_path)
+        self.cities = read_file(cities_path)
+
+    def test_sjoin_inner(self):
+        countries = self.world[['geometry', 'name']]
+        countries = countries.rename(columns={'name': 'country'})
+        cities_with_country = sjoin(self.cities, countries, how='inner', predicate='intersects')
+        assert cities_with_country.shape == (213, 4)

@@ -1,0 +1,1 @@
+Return the full coding as a python string, use str(my_coding).

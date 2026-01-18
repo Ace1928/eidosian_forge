@@ -1,0 +1,11 @@
+from tests.compat import mock, unittest
+from boto.exception import BotoClientError
+from boto.ec2.networkinterface import NetworkInterfaceCollection
+from boto.ec2.networkinterface import NetworkInterfaceSpecification
+from boto.ec2.networkinterface import PrivateIPAddress
+from boto.ec2.networkinterface import Attachment, NetworkInterface
+def test_public_ip(self):
+    collection = NetworkInterfaceCollection(self.network_interfaces_spec3)
+    params = {}
+    collection.build_list_params(params, prefix='LaunchSpecification.')
+    self.assertDictEqual(params, {'LaunchSpecification.NetworkInterface.0.AssociatePublicIpAddress': 'true', 'LaunchSpecification.NetworkInterface.0.DeviceIndex': '0', 'LaunchSpecification.NetworkInterface.0.DeleteOnTermination': 'false', 'LaunchSpecification.NetworkInterface.0.Description': 'description2', 'LaunchSpecification.NetworkInterface.0.PrivateIpAddress': '10.0.1.54', 'LaunchSpecification.NetworkInterface.0.SubnetId': 'subnet_id2', 'LaunchSpecification.NetworkInterface.0.PrivateIpAddresses.0.Primary': 'false', 'LaunchSpecification.NetworkInterface.0.PrivateIpAddresses.0.PrivateIpAddress': '10.0.1.10', 'LaunchSpecification.NetworkInterface.0.PrivateIpAddresses.1.Primary': 'false', 'LaunchSpecification.NetworkInterface.0.PrivateIpAddresses.1.PrivateIpAddress': '10.0.1.11', 'LaunchSpecification.NetworkInterface.0.SecurityGroupId.0': 'group_id1', 'LaunchSpecification.NetworkInterface.0.SecurityGroupId.1': 'group_id2'})

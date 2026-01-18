@@ -1,0 +1,12 @@
+import os
+from ..base import (
+from .base import NiftySegCommand
+from ..niftyreg.base import get_custom_path
+from ...utils.filemanip import split_filename
+class BinaryMathsInput(MathsInput):
+    """Input Spec for seg_maths Binary operations."""
+    operation = traits.Enum('mul', 'div', 'add', 'sub', 'pow', 'thr', 'uthr', 'smo', 'edge', 'sobel3', 'sobel5', 'min', 'smol', 'geo', 'llsnorm', 'masknan', 'hdr_copy', 'splitinter', mandatory=True, argstr='-%s', position=4, desc='Operation to perform:\n\n    * mul - <float/file> - Multiply image <float> value or by other image.\n    * div - <float/file> - Divide image by <float> or by other image.\n    * add - <float/file> - Add image by <float> or by other image.\n    * sub - <float/file> - Subtract image by <float> or by other image.\n    * pow - <float> - Image to the power of <float>.\n    * thr - <float> - Threshold the image below <float>.\n    * uthr - <float> - Threshold image above <float>.\n    * smo - <float> - Gaussian smoothing by std <float> (in voxels and up to 4-D).\n    * edge - <float> - Calculate the edges of the image using a threshold <float>.\n    * sobel3 - <float> - Calculate the edges of all timepoints using a Sobel filter\n      with a 3x3x3 kernel and applying <float> gaussian smoothing.\n    * sobel5 - <float> - Calculate the edges of all timepoints using a Sobel filter\n      with a 5x5x5 kernel and applying <float> gaussian smoothing.\n    * min - <file> - Get the min per voxel between <current> and <file>.\n    * smol - <float> - Gaussian smoothing of a 3D label image.\n    * geo - <float/file> - Geodesic distance according to the speed function <float/file>\n    * llsnorm  <file_norm> - Linear LS normalisation between current and <file_norm>\n    * masknan <file_norm> - Assign everything outside the mask (mask==0) with NaNs\n    * hdr_copy <file> - Copy header from working image to <file> and save in <output>.\n    * splitinter <x/y/z> - Split interleaved slices in direction <x/y/z>\n      into separate time points\n\n')
+    operand_file = File(exists=True, argstr='%s', mandatory=True, position=5, xor=['operand_value', 'operand_str'], desc='second image to perform operation with')
+    operand_value = traits.Float(argstr='%.8f', mandatory=True, position=5, xor=['operand_file', 'operand_str'], desc='float value to perform operation with')
+    desc = 'string value to perform operation splitinter'
+    operand_str = traits.Enum('x', 'y', 'z', argstr='%s', mandatory=True, position=5, xor=['operand_value', 'operand_file'], desc=desc)

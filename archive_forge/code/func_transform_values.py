@@ -1,0 +1,8 @@
+from __future__ import annotations
+import typing as t
+from sqlglot import exp as expression
+from sqlglot.dataframe.sql.column import Column
+from sqlglot.helper import ensure_list, flatten as _flatten
+def transform_values(col: ColumnOrName, f: t.Union[t.Callable[[Column, Column], Column]]) -> Column:
+    f_expression = _get_lambda_from_func(f)
+    return Column.invoke_anonymous_function(col, 'TRANSFORM_VALUES', Column(f_expression))

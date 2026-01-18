@@ -1,0 +1,2 @@
+class ExpiredSignatureError(InvalidTokenError):
+    pass

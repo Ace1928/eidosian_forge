@@ -1,0 +1,2 @@
+class NvrtcCompilationError(NvrtcError):
+    pass

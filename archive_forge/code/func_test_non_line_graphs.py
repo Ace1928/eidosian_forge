@@ -1,0 +1,30 @@
+import pytest
+import networkx as nx
+from networkx.generators import line
+from networkx.utils import edges_equal
+def test_non_line_graphs(self):
+    claw = nx.star_graph(3)
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, claw)
+    wheel = nx.wheel_graph(6)
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, wheel)
+    K5m = nx.complete_graph(5)
+    K5m.remove_edge(0, 1)
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, K5m)
+    G = nx.compose(nx.path_graph(2), nx.complete_bipartite_graph(2, 3))
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G = nx.diamond_graph()
+    G.add_edges_from([(4, 0), (5, 3)])
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G.add_edge(4, 5)
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G = nx.diamond_graph()
+    G.add_edges_from([(4, 0), (4, 3)])
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G = nx.diamond_graph()
+    G.add_edges_from([(4, 0), (4, 1), (4, 2), (5, 3)])
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G.add_edges_from([(5, 1), (5, 2)])
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)
+    G = nx.diamond_graph()
+    G.add_edges_from([(4, 0), (4, 1), (5, 2), (5, 3)])
+    pytest.raises(nx.NetworkXError, nx.inverse_line_graph, G)

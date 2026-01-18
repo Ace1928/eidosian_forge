@@ -1,0 +1,86 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
+def check_dvspg_state(self):
+    self.dv_switch = find_dvs_by_name(self.content, self.module.params['switch_name'])
+    if self.dv_switch is None:
+        self.module.fail_json(msg='A distributed virtual switch with name %s does not exist' % self.module.params['switch_name'])
+    self.dvs_portgroup = find_dvspg_by_name(self.dv_switch, self.module.params['portgroup_name'])
+    if self.dvs_portgroup is None:
+        return 'absent'
+    if self.module.params['port_allocation'] != 'elastic' and self.module.params['port_binding'] != 'ephemeral':
+        if self.dvs_portgroup.config.numPorts != self.module.params['num_ports']:
+            return 'update'
+    defaultPortConfig = self.dvs_portgroup.config.defaultPortConfig
+    if self.module.params['vlan_trunk']:
+        if not isinstance(defaultPortConfig.vlan, vim.dvs.VmwareDistributedVirtualSwitch.TrunkVlanSpec):
+            return 'update'
+        if list(map(lambda x: (x.start, x.end), defaultPortConfig.vlan.vlanId)) != self.create_vlan_list():
+            return 'update'
+    elif self.module.params['vlan_private']:
+        if not isinstance(defaultPortConfig.vlan, vim.dvs.VmwareDistributedVirtualSwitch.PvlanSpec):
+            return 'update'
+        if defaultPortConfig.vlan.pvlanId != int(self.module.params['vlan_id']):
+            return 'update'
+    else:
+        if not isinstance(defaultPortConfig.vlan, vim.dvs.VmwareDistributedVirtualSwitch.VlanIdSpec):
+            return 'update'
+        if defaultPortConfig.vlan.vlanId != int(self.module.params['vlan_id']):
+            return 'update'
+    if self.module.params['network_policy'] is not None:
+        if defaultPortConfig.macManagementPolicy.inherited != self.module.params['network_policy']['inherited']:
+            return 'update'
+        if not self.module.params['network_policy']['inherited']:
+            if defaultPortConfig.macManagementPolicy.allowPromiscuous != self.module.params['network_policy']['promiscuous'] or defaultPortConfig.macManagementPolicy.forgedTransmits != self.module.params['network_policy']['forged_transmits'] or defaultPortConfig.macManagementPolicy.macChanges != self.module.params['network_policy']['mac_changes']:
+                return 'update'
+    macLearning = self.module.params['mac_learning']
+    if macLearning:
+        macLearningPolicy = defaultPortConfig.macManagementPolicy.macLearningPolicy
+        if macLearning['allow_unicast_flooding'] is not None and macLearningPolicy.allowUnicastFlooding != macLearning['allow_unicast_flooding']:
+            return 'update'
+        if macLearning['enabled'] is not None and macLearningPolicy.enabled != macLearning['enabled']:
+            return 'update'
+        if macLearning['limit'] is not None and macLearningPolicy.limit != macLearning['limit']:
+            return 'update'
+        if macLearning['limit_policy'] and macLearningPolicy.limitPolicy != macLearning['limit_policy']:
+            return 'update'
+    teamingPolicy = self.dvs_portgroup.config.defaultPortConfig.uplinkTeamingPolicy
+    if self.module.params['teaming_policy']['inbound_policy'] is not None and teamingPolicy.reversePolicy.value != self.module.params['teaming_policy']['inbound_policy']:
+        return 'update'
+    if teamingPolicy.policy.value != self.module.params['teaming_policy']['load_balance_policy'] or teamingPolicy.notifySwitches.value != self.module.params['teaming_policy']['notify_switches'] or teamingPolicy.rollingOrder.value != self.module.params['teaming_policy']['rolling_order']:
+        return 'update'
+    if self.module.params['teaming_policy']['active_uplinks'] and teamingPolicy.uplinkPortOrder.activeUplinkPort != self.module.params['teaming_policy']['active_uplinks']:
+        return 'update'
+    if self.module.params['teaming_policy']['standby_uplinks'] and teamingPolicy.uplinkPortOrder.standbyUplinkPort != self.module.params['teaming_policy']['standby_uplinks']:
+        return 'update'
+    net_flow = self.module.params['net_flow']
+    if net_flow is not None:
+        if is_boolean(net_flow) and (self.dvs_portgroup.config.defaultPortConfig.ipfixEnabled.inherited is not False or self.dvs_portgroup.config.defaultPortConfig.ipfixEnabled.value != is_truthy(net_flow)):
+            return 'update'
+        elif self.dvs_portgroup.config.defaultPortConfig.ipfixEnabled.inherited is not True:
+            return 'update'
+    in_traffic_shaping = self.module.params['in_traffic_shaping']
+    if in_traffic_shaping is not None:
+        if in_traffic_shaping['inherited'] is False and self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.inherited is not False and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.enabled.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.enabled.value != in_traffic_shaping['enabled']) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.averageBandwidth.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.averageBandwidth.value != in_traffic_shaping['average_bandwidth'] * 1000) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.burstSize.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.burstSize.value != in_traffic_shaping['burst_size'] * 1024) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.peakBandwidth.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.peakBandwidth.value != in_traffic_shaping['peak_bandwidth'] * 1000):
+            return 'update'
+        elif in_traffic_shaping['inherited'] is True and self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.inherited is not True and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.enabled.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.averageBandwidth.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.burstSize.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.inShapingPolicy.peakBandwidth.inherited is not True):
+            return 'update'
+    out_traffic_shaping = self.module.params['out_traffic_shaping']
+    if out_traffic_shaping is not None:
+        if out_traffic_shaping['inherited'] is False and self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.inherited is not False and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.enabled.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.enabled.value != out_traffic_shaping['enabled']) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.averageBandwidth.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.averageBandwidth.value != out_traffic_shaping['average_bandwidth'] * 1000) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.burstSize.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.burstSize.value != out_traffic_shaping['burst_size'] * 1024) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.peakBandwidth.inherited is not False) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.peakBandwidth.value != out_traffic_shaping['peak_bandwidth'] * 1000):
+            return 'update'
+        elif self.module.params['out_traffic_shaping'] is None and self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.inherited is not True and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.enabled.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.averageBandwidth.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.burstSize.inherited is not True) and (self.dvs_portgroup.config.defaultPortConfig.outShapingPolicy.peakBandwidth.inherited is not True):
+            return 'update'
+    policy = self.dvs_portgroup.config.policy
+    if policy.blockOverrideAllowed != self.module.params['port_policy']['block_override'] or policy.ipfixOverrideAllowed != self.module.params['port_policy']['ipfix_override'] or policy.livePortMovingAllowed != self.module.params['port_policy']['live_port_move'] or (policy.macManagementOverrideAllowed != self.module.params['port_policy']['mac_management_override']) or (policy.networkResourcePoolOverrideAllowed != self.module.params['port_policy']['network_rp_override']) or (policy.portConfigResetAtDisconnect != self.module.params['port_policy']['port_config_reset_at_disconnect']) or (policy.securityPolicyOverrideAllowed != self.module.params['port_policy']['mac_management_override']) or (policy.shapingOverrideAllowed != self.module.params['port_policy']['shaping_override']) or (policy.trafficFilterOverrideAllowed != self.module.params['port_policy']['traffic_filter_override']) or (policy.uplinkTeamingOverrideAllowed != self.module.params['port_policy']['uplink_teaming_override']) or (policy.vendorConfigOverrideAllowed != self.module.params['port_policy']['vendor_config_override']) or (policy.vlanOverrideAllowed != self.module.params['port_policy']['vlan_override']):
+        return 'update'
+    if self.module.params['port_binding'] == 'ephemeral':
+        if self.dvs_portgroup.config.type != 'ephemeral':
+            return 'update'
+    elif self.port_allocation == 'fixed' and self.dvs_portgroup.config.type != 'earlyBinding':
+        return 'update'
+    if self.port_allocation == 'elastic' and self.dvs_portgroup.config.autoExpand is False:
+        return 'update'
+    elif self.port_allocation == 'fixed' and self.dvs_portgroup.config.autoExpand is True:
+        return 'update'
+    return 'present'

@@ -1,0 +1,2 @@
+class HttpParserInvalidStatusError(HttpParserError):
+    pass

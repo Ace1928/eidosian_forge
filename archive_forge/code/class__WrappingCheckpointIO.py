@@ -1,0 +1,52 @@
+from typing import Any, Dict, Optional
+from typing_extensions import override
+from lightning_fabric.plugins import CheckpointIO
+class _WrappingCheckpointIO(CheckpointIO):
+    """``_WrappingCheckpointIO`` is a wrapper checkpoint_io that uses a base checkpoint_io to handle checkpointing.
+
+    Args:
+        checkpoint_io: A checkpoint IO plugin that is used as the basis.
+
+    """
+
+    def __init__(self, checkpoint_io: Optional['CheckpointIO']=None) -> None:
+        super().__init__()
+        self._checkpoint_io = checkpoint_io
+        self._base_checkpoint_io_configured: bool = False
+        if checkpoint_io is not None:
+            if isinstance(checkpoint_io, _WrappingCheckpointIO):
+                self._base_checkpoint_io_configured = checkpoint_io._base_checkpoint_io_configured
+            else:
+                self._base_checkpoint_io_configured = True
+
+    @property
+    def checkpoint_io(self) -> Optional['CheckpointIO']:
+        return self._checkpoint_io
+
+    @checkpoint_io.setter
+    def checkpoint_io(self, checkpoint_io: 'CheckpointIO') -> None:
+        assert not isinstance(checkpoint_io, _WrappingCheckpointIO)
+        if self._checkpoint_io is None:
+            self._base_checkpoint_io_configured = True
+            self._checkpoint_io = checkpoint_io
+        elif isinstance(self._checkpoint_io, _WrappingCheckpointIO) and (not self._base_checkpoint_io_configured):
+            self._base_checkpoint_io_configured = True
+            self._checkpoint_io.checkpoint_io = checkpoint_io
+
+    @override
+    def save_checkpoint(self, *args: Any, **kwargs: Any) -> None:
+        """Uses the base ``checkpoint_io`` to save the checkpoint."""
+        assert self.checkpoint_io is not None
+        self.checkpoint_io.save_checkpoint(*args, **kwargs)
+
+    @override
+    def remove_checkpoint(self, *args: Any, **kwargs: Any) -> None:
+        """Uses the base ``checkpoint_io`` to remove the checkpoint."""
+        assert self.checkpoint_io is not None
+        self.checkpoint_io.remove_checkpoint(*args, **kwargs)
+
+    @override
+    def load_checkpoint(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Uses the base ``checkpoint_io`` to load the checkpoint."""
+        assert self.checkpoint_io is not None
+        return self.checkpoint_io.load_checkpoint(*args, **kwargs)

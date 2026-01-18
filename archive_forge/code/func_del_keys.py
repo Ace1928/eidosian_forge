@@ -1,0 +1,14 @@
+import asyncio
+import time
+from typing import List
+import numpy
+import ray
+import ray.experimental.internal_kv as internal_kv
+from ray._raylet import GcsClient
+from ray.util.collective.types import ReduceOp, torch_available
+from ray.util.queue import _QueueActor
+def del_keys(self, keys: List[str]) -> List[int]:
+    results = []
+    for key in keys:
+        results.append(self.delete(key))
+    return results

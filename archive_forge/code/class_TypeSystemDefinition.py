@@ -1,0 +1,2 @@
+class TypeSystemDefinition(TypeDefinition):
+    pass

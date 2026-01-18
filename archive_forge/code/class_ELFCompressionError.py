@@ -1,0 +1,2 @@
+class ELFCompressionError(ELFError):
+    pass

@@ -1,0 +1,11 @@
+import math
+import pytest
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_array_equal, assert_equal
+from skimage import data
+from skimage._shared.utils import _supported_float_type
+from skimage.transform import pyramids
+def test_pyramid_expand_gray():
+    rows, cols = image_gray.shape
+    out = pyramids.pyramid_expand(image_gray, upscale=2)
+    assert_array_equal(out.shape, (rows * 2, cols * 2))

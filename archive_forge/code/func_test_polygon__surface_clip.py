@@ -1,0 +1,42 @@
+import math
+import unittest
+import sys
+import warnings
+import pygame
+from pygame import draw
+from pygame import draw_py
+from pygame.locals import SRCALPHA
+from pygame.tests import test_utils
+from pygame.math import Vector2
+def test_polygon__surface_clip(self):
+    """Ensures draw polygon respects a surface's clip area.
+
+        Tests drawing the polygon filled and unfilled.
+        """
+    surfw = surfh = 30
+    polygon_color = pygame.Color('red')
+    surface_color = pygame.Color('green')
+    surface = pygame.Surface((surfw, surfh))
+    surface.fill(surface_color)
+    clip_rect = pygame.Rect((0, 0), (8, 10))
+    clip_rect.center = surface.get_rect().center
+    pos_rect = clip_rect.copy()
+    for width in (0, 1):
+        for center in rect_corners_mids_and_center(clip_rect):
+            pos_rect.center = center
+            vertices = (pos_rect.topleft, pos_rect.topright, pos_rect.bottomright, pos_rect.bottomleft)
+            surface.set_clip(None)
+            surface.fill(surface_color)
+            self.draw_polygon(surface, polygon_color, vertices, width)
+            expected_pts = get_color_points(surface, polygon_color, clip_rect)
+            surface.fill(surface_color)
+            surface.set_clip(clip_rect)
+            self.draw_polygon(surface, polygon_color, vertices, width)
+            surface.lock()
+            for pt in ((x, y) for x in range(surfw) for y in range(surfh)):
+                if pt in expected_pts:
+                    expected_color = polygon_color
+                else:
+                    expected_color = surface_color
+                self.assertEqual(surface.get_at(pt), expected_color, pt)
+            surface.unlock()

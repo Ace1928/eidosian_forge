@@ -1,0 +1,49 @@
+import boto.ec2
+from boto.mashups.iobject import IObject
+from boto.pyami.config import BotoConfigPath, Config
+from boto.sdb.db.model import Model
+from boto.sdb.db.property import StringProperty, IntegerProperty, BooleanProperty, CalculatedProperty
+from boto.manage import propget
+from boto.ec2.zone import Zone
+from boto.ec2.keypair import KeyPair
+import os, time
+from contextlib import closing
+from boto.exception import EC2ResponseError
+from boto.compat import six, StringIO
+def bundle(self, bucket=None, prefix=None, key_file=None, cert_file=None, size=None, ssh_key=None, fp=None, clear_history=True):
+    iobject = IObject()
+    if not bucket:
+        bucket = iobject.get_string('Name of S3 bucket')
+    if not prefix:
+        prefix = iobject.get_string('Prefix for AMI file')
+    if not key_file:
+        key_file = iobject.get_filename('Path to RSA private key file')
+    if not cert_file:
+        cert_file = iobject.get_filename('Path to RSA public cert file')
+    if not size:
+        size = iobject.get_int('Size (in MB) of bundled image')
+    if not ssh_key:
+        ssh_key = self.server.get_ssh_key_file()
+    self.copy_x509(key_file, cert_file)
+    if not fp:
+        fp = StringIO()
+    fp.write('sudo mv %s /mnt/boto.cfg; ' % BotoConfigPath)
+    fp.write('mv ~/.ssh/authorized_keys /mnt/authorized_keys; ')
+    if clear_history:
+        fp.write('history -c; ')
+    fp.write(self.bundle_image(prefix, size, ssh_key))
+    fp.write('; ')
+    fp.write(self.upload_bundle(bucket, prefix, ssh_key))
+    fp.write('; ')
+    fp.write('sudo mv /mnt/boto.cfg %s; ' % BotoConfigPath)
+    fp.write('mv /mnt/authorized_keys ~/.ssh/authorized_keys')
+    command = fp.getvalue()
+    print('running the following command on the remote server:')
+    print(command)
+    t = self.ssh_client.run(command)
+    print('\t%s' % t[0])
+    print('\t%s' % t[1])
+    print('...complete!')
+    print('registering image...')
+    self.image_id = self.server.ec2.register_image(name=prefix, image_location='%s/%s.manifest.xml' % (bucket, prefix))
+    return self.image_id

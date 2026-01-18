@@ -1,0 +1,45 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+import calendar
+import copy
+from datetime import datetime
+from datetime import timedelta
+import getpass
+import json
+import re
+import sys
+import six
+from six.moves import urllib
+from apitools.base.py.exceptions import HttpError
+from apitools.base.py.http_wrapper import MakeRequest
+from apitools.base.py.http_wrapper import Request
+from boto import config
+from gslib.command import Command
+from gslib.command_argument import CommandArgument
+from gslib.cs_api_map import ApiSelector
+from gslib.exception import CommandException
+from gslib.storage_url import ContainsWildcard
+from gslib.storage_url import StorageUrlFromString
+from gslib.utils import constants
+from gslib.utils.boto_util import GetNewHttp
+from gslib.utils.shim_util import GcloudStorageMap, GcloudStorageFlag
+from gslib.utils.signurl_helper import CreatePayload, GetFinalUrl
+def _DurationToTimeDelta(duration):
+    """Parses the given duration and returns an equivalent timedelta."""
+    match = re.match('^(\\d+)([dDhHmMsS])?$', duration)
+    if not match:
+        raise CommandException('Unable to parse duration string')
+    duration, modifier = match.groups('h')
+    duration = int(duration)
+    modifier = modifier.lower()
+    if modifier == 'd':
+        ret = timedelta(days=duration)
+    elif modifier == 'h':
+        ret = timedelta(hours=duration)
+    elif modifier == 'm':
+        ret = timedelta(minutes=duration)
+    elif modifier == 's':
+        ret = timedelta(seconds=duration)
+    return ret

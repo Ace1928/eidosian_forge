@@ -1,0 +1,2 @@
+class ThingsNobodyCaresAboutButMe(Exception):
+    pass

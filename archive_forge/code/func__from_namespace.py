@@ -1,0 +1,64 @@
+import os
+import typing
+import typing as t
+import weakref
+from collections import ChainMap
+from functools import lru_cache
+from functools import partial
+from functools import reduce
+from types import CodeType
+from markupsafe import Markup
+from . import nodes
+from .compiler import CodeGenerator
+from .compiler import generate
+from .defaults import BLOCK_END_STRING
+from .defaults import BLOCK_START_STRING
+from .defaults import COMMENT_END_STRING
+from .defaults import COMMENT_START_STRING
+from .defaults import DEFAULT_FILTERS
+from .defaults import DEFAULT_NAMESPACE
+from .defaults import DEFAULT_POLICIES
+from .defaults import DEFAULT_TESTS
+from .defaults import KEEP_TRAILING_NEWLINE
+from .defaults import LINE_COMMENT_PREFIX
+from .defaults import LINE_STATEMENT_PREFIX
+from .defaults import LSTRIP_BLOCKS
+from .defaults import NEWLINE_SEQUENCE
+from .defaults import TRIM_BLOCKS
+from .defaults import VARIABLE_END_STRING
+from .defaults import VARIABLE_START_STRING
+from .exceptions import TemplateNotFound
+from .exceptions import TemplateRuntimeError
+from .exceptions import TemplatesNotFound
+from .exceptions import TemplateSyntaxError
+from .exceptions import UndefinedError
+from .lexer import get_lexer
+from .lexer import Lexer
+from .lexer import TokenStream
+from .nodes import EvalContext
+from .parser import Parser
+from .runtime import Context
+from .runtime import new_context
+from .runtime import Undefined
+from .utils import _PassArg
+from .utils import concat
+from .utils import consume
+from .utils import import_string
+from .utils import internalcode
+from .utils import LRUCache
+from .utils import missing
+@classmethod
+def _from_namespace(cls, environment: Environment, namespace: t.MutableMapping[str, t.Any], globals: t.MutableMapping[str, t.Any]) -> 'Template':
+    t: 'Template' = object.__new__(cls)
+    t.environment = environment
+    t.globals = globals
+    t.name = namespace['name']
+    t.filename = namespace['__file__']
+    t.blocks = namespace['blocks']
+    t.root_render_func = namespace['root']
+    t._module = None
+    t._debug_info = namespace['debug_info']
+    t._uptodate = None
+    namespace['environment'] = environment
+    namespace['__jinja_template__'] = t
+    return t

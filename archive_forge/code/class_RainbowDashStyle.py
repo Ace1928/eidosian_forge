@@ -1,0 +1,8 @@
+from pygments.style import Style
+from pygments.token import (Comment, Error, Generic, Name, Number, Operator,
+class RainbowDashStyle(Style):
+    """
+    A bright and colorful syntax highlighting theme.
+    """
+    background_color = WHITE
+    styles = {Comment: 'italic {}'.format(BLUE_LIGHT), Comment.Preproc: 'noitalic', Comment.Special: 'bold', Error: 'bg:{} {}'.format(RED, WHITE), Generic.Deleted: 'border:{} bg:{}'.format(RED_DARK, RED_LIGHT), Generic.Emph: 'italic', Generic.Error: RED_BRIGHT, Generic.Heading: 'bold {}'.format(BLUE), Generic.Inserted: 'border:{} bg:{}'.format(GREEN_NEON, GREEN_LIGHT), Generic.Output: GREY, Generic.Prompt: 'bold {}'.format(BLUE), Generic.Strong: 'bold', Generic.Subheading: 'bold {}'.format(BLUE), Generic.Traceback: RED_DARK, Keyword: 'bold {}'.format(BLUE), Keyword.Pseudo: 'nobold', Keyword.Type: PURPLE, Name.Attribute: 'italic {}'.format(BLUE), Name.Builtin: 'bold {}'.format(PURPLE), Name.Class: 'underline', Name.Constant: TURQUOISE, Name.Decorator: 'bold {}'.format(ORANGE), Name.Entity: 'bold {}'.format(PURPLE), Name.Exception: 'bold {}'.format(PURPLE), Name.Function: 'bold {}'.format(ORANGE), Name.Tag: 'bold {}'.format(BLUE), Number: 'bold {}'.format(PURPLE), Operator: BLUE, Operator.Word: 'bold', String: GREEN, String.Doc: 'italic', String.Escape: 'bold {}'.format(RED_DARK), String.Other: TURQUOISE, String.Symbol: 'bold {}'.format(RED_DARK), Text: GREY_DARK, Whitespace: GREY_LIGHT}

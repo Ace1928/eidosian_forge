@@ -1,0 +1,29 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataDatasetResyncStatus(_messages.Message):
+    """Resync status against inconsistency types on the dataset level.
+
+  Enums:
+    DatasetInconsistencyTypeValueValuesEnum: The type of the inconsistency of
+      the dataset.
+
+  Fields:
+    datasetInconsistencyType: The type of the inconsistency of the dataset.
+    status: The status of resyncing the dataset with regards to the detected
+      inconsistency. Empty if ResyncDatasetRequest.validate_only is `true`.
+  """
+
+    class DatasetInconsistencyTypeValueValuesEnum(_messages.Enum):
+        """The type of the inconsistency of the dataset.
+
+    Values:
+      DATASET_INCONSISTENCY_TYPE_UNSPECIFIED: Default value.
+      DATASET_INCONSISTENCY_TYPE_NO_STORAGE_MARKER: The marker file under the
+        dataset folder is not found.
+    """
+        DATASET_INCONSISTENCY_TYPE_UNSPECIFIED = 0
+        DATASET_INCONSISTENCY_TYPE_NO_STORAGE_MARKER = 1
+    datasetInconsistencyType = _messages.EnumField('DatasetInconsistencyTypeValueValuesEnum', 1)
+    status = _messages.MessageField('GoogleRpcStatus', 2)

@@ -1,0 +1,2 @@
+class NewtonMethodError(VerificationError):
+    pass

@@ -1,0 +1,23 @@
+from pyomo.common.collections import ComponentMap, ComponentSet
+import pyomo.core.expr as _expr
+from pyomo.core.expr.visitor import ExpressionValueVisitor, nonpyomo_leaf_types
+from pyomo.core.expr.numvalue import value, is_constant
+from pyomo.core.expr import exp, log, sin, cos
+import math
+def _diff_PowExpression(node, val_dict, der_dict):
+    """
+
+    Parameters
+    ----------
+    node: pyomo.core.expr.numeric_expr.PowExpression
+    val_dict: ComponentMap
+    der_dict: ComponentMap
+    """
+    assert len(node.args) == 2
+    arg1, arg2 = node.args
+    der = der_dict[node]
+    val1 = val_dict[arg1]
+    val2 = val_dict[arg2]
+    der_dict[arg1] += der * val2 * val1 ** (val2 - 1)
+    if arg2.__class__ not in nonpyomo_leaf_types:
+        der_dict[arg2] += der * val1 ** val2 * log(val1)

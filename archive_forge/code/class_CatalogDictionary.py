@@ -1,0 +1,33 @@
+from enum import IntFlag, auto
+from typing import Dict, Tuple
+from ._utils import deprecate_with_replacement
+class CatalogDictionary:
+    """Table 3.25 in the 1.7 reference."""
+    TYPE = '/Type'
+    VERSION = '/Version'
+    PAGES = '/Pages'
+    PAGE_LABELS = '/PageLabels'
+    NAMES = '/Names'
+    DESTS = '/Dests'
+    VIEWER_PREFERENCES = '/ViewerPreferences'
+    PAGE_LAYOUT = '/PageLayout'
+    PAGE_MODE = '/PageMode'
+    OUTLINES = '/Outlines'
+    THREADS = '/Threads'
+    OPEN_ACTION = '/OpenAction'
+    AA = '/AA'
+    URI = '/URI'
+    ACRO_FORM = '/AcroForm'
+    METADATA = '/Metadata'
+    STRUCT_TREE_ROOT = '/StructTreeRoot'
+    MARK_INFO = '/MarkInfo'
+    LANG = '/Lang'
+    SPIDER_INFO = '/SpiderInfo'
+    OUTPUT_INTENTS = '/OutputIntents'
+    PIECE_INFO = '/PieceInfo'
+    OC_PROPERTIES = '/OCProperties'
+    PERMS = '/Perms'
+    LEGAL = '/Legal'
+    REQUIREMENTS = '/Requirements'
+    COLLECTION = '/Collection'
+    NEEDS_RENDERING = '/NeedsRendering'

@@ -1,0 +1,14 @@
+from __future__ import annotations
+from abc import ABCMeta
+from typing import Any
+import numpy as np
+from qiskit.circuit import Parameter
+from qiskit.circuit.parameterexpression import ParameterExpression
+from qiskit.pulse.exceptions import PulseError
+class SnapshotChannel(ClassicalIOChannel):
+    """Snapshot channels are used to specify instructions for simulators."""
+    prefix = 's'
+
+    def __init__(self):
+        """Create new snapshot channel."""
+        super().__init__(0)

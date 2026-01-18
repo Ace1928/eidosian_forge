@@ -1,0 +1,19 @@
+from sys import version_info as _swig_python_version_info
+import numbers
+from ortools.linear_solver.python.linear_solver_natural_api import OFFSET_KEY
+from ortools.linear_solver.python.linear_solver_natural_api import inf
+from ortools.linear_solver.python.linear_solver_natural_api import LinearExpr
+from ortools.linear_solver.python.linear_solver_natural_api import ProductCst
+from ortools.linear_solver.python.linear_solver_natural_api import Sum
+from ortools.linear_solver.python.linear_solver_natural_api import SumArray
+from ortools.linear_solver.python.linear_solver_natural_api import SumCst
+from ortools.linear_solver.python.linear_solver_natural_api import LinearConstraint
+from ortools.linear_solver.python.linear_solver_natural_api import VariableExpr
+def SetSolverSpecificParametersAsString(self, parameters):
+    """
+        Advanced usage: pass solver specific parameters in text format.
+
+        The format is solver-specific and is the same as the corresponding solver
+        configuration file format. Returns true if the operation was successful.
+        """
+    return _pywraplp.Solver_SetSolverSpecificParametersAsString(self, parameters)

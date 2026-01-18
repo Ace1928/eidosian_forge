@@ -1,0 +1,13 @@
+from typing import Optional
+from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.tools import BaseTool
+from langchain_community.utilities.bing_search import BingSearchAPIWrapper
+class BingSearchRun(BaseTool):
+    """Tool that queries the Bing search API."""
+    name: str = 'bing_search'
+    description: str = 'A wrapper around Bing Search. Useful for when you need to answer questions about current events. Input should be a search query.'
+    api_wrapper: BingSearchAPIWrapper
+
+    def _run(self, query: str, run_manager: Optional[CallbackManagerForToolRun]=None) -> str:
+        """Use the tool."""
+        return self.api_wrapper.run(query)

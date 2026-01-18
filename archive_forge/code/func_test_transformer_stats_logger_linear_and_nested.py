@@ -1,0 +1,14 @@
+from unittest import mock
+from typing import Optional
+import cirq
+from cirq.transformers.transformer_api import LogLevel
+import pytest
+def test_transformer_stats_logger_linear_and_nested(capfd):
+    q = cirq.LineQubit.range(2)
+    circuit = cirq.Circuit(cirq.H.on_each(*q), cirq.CNOT(*q))
+    context = cirq.TransformerContext(logger=cirq.TransformerLogger())
+    circuit = t1(circuit, context=context)
+    circuit = t3(circuit, context=context)
+    context.logger.show(LogLevel.ALL)
+    out, _ = capfd.readouterr()
+    assert out.strip() == '\nTransformer-1: T1\nInitial Circuit:\n0: ───H───@───\n          │\n1: ───H───X───\n\n LogLevel.DEBUG First Verbose Log of T1\n LogLevel.INFO Second INFO Log of T1\n LogLevel.WARNING Third WARNING Log of T1\n\nFinal Circuit:\n0: ───H───@───@───H───\n          │   │\n1: ───H───X───X───H───\n----------------------------------------\nTransformer-2: t3\nInitial Circuit:\n0: ───H───@───@───H───\n          │   │\n1: ───H───X───X───H───\n\n LogLevel.INFO First INFO Log of T3 Start\n LogLevel.INFO Second INFO Log of T3 Middle\n LogLevel.INFO Third INFO Log of T3 End\n\nFinal Circuit:\n0: ───H───@───H───@───H───@───H───@───\n          │       │       │       │\n1: ───H───X───H───X───H───X───H───X───\n----------------------------------------\n    Transformer-3: T1\n    Initial Circuit:\n    0: ───H───@───@───H───\n              │   │\n    1: ───H───X───X───H───\n\n     LogLevel.DEBUG First Verbose Log of T1\n     LogLevel.INFO Second INFO Log of T1\n     LogLevel.WARNING Third WARNING Log of T1\n\n    Final Circuit:\n    0: ───H───@───@───H───H───@───@───H───\n              │   │           │   │\n    1: ───H───X───X───H───H───X───X───H───\n----------------------------------------\n    Transformer-4: t2\n    Initial Circuit:\n    0: ───H───@───@───H───H───@───@───H───\n              │   │           │   │\n    1: ───H───X───X───H───H───X───X───H───\n\n     LogLevel.INFO First INFO Log of T2 Start\n     LogLevel.INFO Second INFO Log of T2 End\n\n    Final Circuit:\n    0: ───H───@───H───@───H───@───H───@───\n              │       │       │       │\n    1: ───H───X───H───X───H───X───H───X───\n----------------------------------------\n        Transformer-5: T1\n        Initial Circuit:\n        0: ───H───@───@───H───H───@───@───H───\n                  │   │           │   │\n        1: ───H───X───X───H───H───X───X───H───\n\n         LogLevel.DEBUG First Verbose Log of T1\n         LogLevel.INFO Second INFO Log of T1\n         LogLevel.WARNING Third WARNING Log of T1\n\n        Final Circuit:\n        0: ───H───@───@───H───H───@───@───H───H───@───@───H───H───@───@───H───\n                  │   │           │   │           │   │           │   │\n        1: ───H───X───X───H───H───X───X───H───H───X───X───H───H───X───X───H───\n----------------------------------------\n'.strip()

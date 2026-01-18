@@ -1,0 +1,28 @@
+import contextlib
+import datetime
+import os
+import pathlib
+import posixpath
+import sys
+import tempfile
+import textwrap
+import threading
+import time
+from shutil import copytree
+from urllib.parse import quote
+import numpy as np
+import pytest
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.csv
+import pyarrow.feather
+import pyarrow.fs as fs
+import pyarrow.json
+from pyarrow.tests.util import (FSProtocolClass, ProxyHandler,
+@pytest.mark.parquet
+def test_write_dataset_schema_metadata_parquet(tempdir):
+    table = pa.table({'a': [1, 2, 3]})
+    table = table.replace_schema_metadata({b'key': b'value'})
+    ds.write_dataset(table, tempdir, format='parquet')
+    schema = pq.read_table(tempdir / 'part-0.parquet').schema
+    assert schema.metadata == {b'key': b'value'}

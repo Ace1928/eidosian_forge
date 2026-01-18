@@ -1,0 +1,71 @@
+import http.client as http
+from oslo_serialization import jsonutils
+import requests
+from glance.tests.functional.v2 import metadef_base
+def test_namespace_lifecycle(self):
+    path = self._url('/v2/metadefs/namespaces/MyNamespace')
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.NOT_FOUND, response.status_code)
+    path = self._url('/v2/metadefs/namespaces')
+    headers = self._headers({'content-type': 'application/json'})
+    namespace_name = 'MyNamespace'
+    data = jsonutils.dumps({'namespace': namespace_name, 'display_name': 'My User Friendly Namespace', 'description': 'My description'})
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CREATED, response.status_code)
+    namespace_loc_header = response.headers['Location']
+    namespace = jsonutils.loads(response.text)
+    checked_keys = set(['namespace', 'display_name', 'description', 'visibility', 'self', 'schema', 'protected', 'owner', 'created_at', 'updated_at'])
+    self.assertEqual(set(namespace.keys()), checked_keys)
+    expected_namespace = {'namespace': namespace_name, 'display_name': 'My User Friendly Namespace', 'description': 'My description', 'visibility': 'private', 'protected': False, 'owner': self.tenant1, 'self': '/v2/metadefs/namespaces/%s' % namespace_name, 'schema': '/v2/schemas/metadefs/namespace'}
+    for key, value in expected_namespace.items():
+        self.assertEqual(namespace[key], value, key)
+    response = requests.post(path, headers=headers, data=data)
+    self.assertEqual(http.CONFLICT, response.status_code)
+    response = requests.get(namespace_loc_header, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    namespace = jsonutils.loads(response.text)
+    self.assertEqual(namespace_name, namespace['namespace'])
+    self.assertNotIn('object', namespace)
+    self.assertEqual(self.tenant1, namespace['owner'])
+    self.assertEqual('private', namespace['visibility'])
+    self.assertFalse(namespace['protected'])
+    path = self._url('/v2/metadefs/namespaces/%s' % namespace_name)
+    media_type = 'application/json'
+    headers = self._headers({'content-type': media_type})
+    namespace_name = 'MyNamespace-UPDATED'
+    data = jsonutils.dumps({'namespace': namespace_name, 'display_name': 'display_name-UPDATED', 'description': 'description-UPDATED', 'visibility': 'private', 'protected': True, 'owner': self.tenant2})
+    response = requests.put(path, headers=headers, data=data)
+    self.assertEqual(http.OK, response.status_code, response.text)
+    namespace = jsonutils.loads(response.text)
+    self.assertEqual('MyNamespace-UPDATED', namespace_name)
+    self.assertEqual('display_name-UPDATED', namespace['display_name'])
+    self.assertEqual('description-UPDATED', namespace['description'])
+    self.assertEqual('private', namespace['visibility'])
+    self.assertTrue(namespace['protected'])
+    self.assertEqual(self.tenant2, namespace['owner'])
+    path = self._url('/v2/metadefs/namespaces/%s' % namespace_name)
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.OK, response.status_code)
+    namespace = jsonutils.loads(response.text)
+    self.assertEqual('MyNamespace-UPDATED', namespace['namespace'])
+    self.assertEqual('display_name-UPDATED', namespace['display_name'])
+    self.assertEqual('description-UPDATED', namespace['description'])
+    self.assertEqual('private', namespace['visibility'])
+    self.assertTrue(namespace['protected'])
+    self.assertEqual(self.tenant2, namespace['owner'])
+    path = self._url('/v2/metadefs/namespaces/%s' % namespace_name)
+    response = requests.delete(path, headers=self._headers())
+    self.assertEqual(http.FORBIDDEN, response.status_code)
+    path = self._url('/v2/metadefs/namespaces/%s' % namespace_name)
+    media_type = 'application/json'
+    headers = self._headers({'content-type': media_type})
+    doc = {'namespace': namespace_name, 'display_name': 'My User Friendly Namespace', 'description': 'My description', 'visibility': 'public', 'protected': False, 'owner': self.tenant2}
+    data = jsonutils.dumps(doc)
+    response = requests.put(path, headers=headers, data=data)
+    self.assertEqual(http.OK, response.status_code, response.text)
+    path = self._url('/v2/metadefs/namespaces/%s' % namespace_name)
+    response = requests.delete(path, headers=self._headers())
+    self.assertEqual(http.NO_CONTENT, response.status_code)
+    path = self._url('/v2/metadefs/namespaces/MyNamespace')
+    response = requests.get(path, headers=self._headers())
+    self.assertEqual(http.NOT_FOUND, response.status_code)

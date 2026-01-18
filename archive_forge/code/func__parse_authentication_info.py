@@ -1,0 +1,15 @@
+import base64
+import re
+import pyparsing as pp
+from .error import *
+def _parse_authentication_info(headers, headername='authentication-info'):
+    """https://tools.ietf.org/html/rfc7615
+    """
+    header = headers.get(headername, '').strip()
+    if not header:
+        return {}
+    try:
+        parsed = authentication_info.parseString(header)
+    except pp.ParseException as ex:
+        raise MalformedHeader(headername)
+    return parsed.asDict()

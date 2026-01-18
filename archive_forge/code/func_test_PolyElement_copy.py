@@ -1,0 +1,20 @@
+from functools import reduce
+from operator import add, mul
+from sympy.polys.rings import ring, xring, sring, PolyRing, PolyElement
+from sympy.polys.fields import field, FracField
+from sympy.polys.domains import ZZ, QQ, RR, FF, EX
+from sympy.polys.orderings import lex, grlex
+from sympy.polys.polyerrors import GeneratorsError, \
+from sympy.testing.pytest import raises
+from sympy.core import Symbol, symbols
+from sympy.core.singleton import S
+from sympy.core.numbers import (oo, pi)
+from sympy.functions.elementary.exponential import exp
+from sympy.functions.elementary.miscellaneous import sqrt
+def test_PolyElement_copy():
+    R, x, y, z = ring('x,y,z', ZZ)
+    f = x * y + 3 * z
+    g = f.copy()
+    assert f == g
+    g[1, 1, 1] = 7
+    assert f != g

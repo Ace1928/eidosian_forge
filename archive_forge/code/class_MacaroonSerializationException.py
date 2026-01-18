@@ -1,0 +1,2 @@
+class MacaroonSerializationException(MacaroonException):
+    pass

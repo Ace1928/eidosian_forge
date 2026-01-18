@@ -1,0 +1,17 @@
+from __future__ import absolute_import, division, print_function
+from copy import deepcopy
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common import (
+from ansible_collections.dellemc.enterprise_sonic.plugins.module_utils.network.sonic.argspec.vrfs.vrfs import VrfsArgs
+from ansible_collections.dellemc.enterprise_sonic.plugins.module_utils.network.sonic.sonic import (
+from ansible.module_utils.connection import ConnectionError
+def get_all_vrf_interfaces(self):
+    """Get all the interfaces available in chassis"""
+    all_network_instatnces = {}
+    request = [{'path': 'data/openconfig-network-instance:network-instances', 'method': GET}]
+    try:
+        response = edit_config(self._module, to_request(self._module, request))
+    except ConnectionError as exc:
+        self._module.fail_json(msg=str(exc), code=exc.code)
+    if 'openconfig-network-instance:network-instances' in response[0][1]:
+        all_network_instatnces = response[0][1].get('openconfig-network-instance:network-instances', {})
+    return self.get_vrf_interfaces_from_network_instances(all_network_instatnces['network-instance'])

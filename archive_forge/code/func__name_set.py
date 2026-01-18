@@ -1,0 +1,19 @@
+import binascii
+import importlib.util
+import io
+import itertools
+import os
+import posixpath
+import shutil
+import stat
+import struct
+import sys
+import threading
+import time
+import contextlib
+import pathlib
+def _name_set(self):
+    with contextlib.suppress(AttributeError):
+        return self.__lookup
+    self.__lookup = super(FastLookup, self)._name_set()
+    return self.__lookup

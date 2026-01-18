@@ -1,0 +1,17 @@
+from os import name
+import os.path
+from math import isclose
+from textwrap import dedent
+from kivy.app import App
+from kivy.clock import Clock
+from kivy import lang
+from kivy.tests import GraphicUnitTest, async_run, UnitKivyApp
+def basic_app():
+    from kivy.app import App
+    from kivy.uix.label import Label
+
+    class TestApp(UnitKivyApp, App):
+
+        def build(self):
+            return Label(text='Hello, World!')
+    return TestApp()

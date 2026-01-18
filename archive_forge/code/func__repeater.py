@@ -1,0 +1,32 @@
+from __future__ import annotations
+import itertools
+from typing import (
+import warnings
+import numpy as np
+import pandas._libs.reshape as libreshape
+from pandas.errors import PerformanceWarning
+from pandas.util._decorators import cache_readonly
+from pandas.util._exceptions import find_stack_level
+from pandas.core.dtypes.cast import (
+from pandas.core.dtypes.common import (
+from pandas.core.dtypes.dtypes import ExtensionDtype
+from pandas.core.dtypes.missing import notna
+import pandas.core.algorithms as algos
+from pandas.core.algorithms import (
+from pandas.core.arrays.categorical import factorize_from_iterable
+from pandas.core.construction import ensure_wrapped_if_datetimelike
+from pandas.core.frame import DataFrame
+from pandas.core.indexes.api import (
+from pandas.core.reshape.concat import concat
+from pandas.core.series import Series
+from pandas.core.sorting import (
+@cache_readonly
+def _repeater(self) -> np.ndarray:
+    if len(self.removed_level_full) != len(self.removed_level):
+        repeater = self.removed_level_full.get_indexer(self.removed_level)
+        if self.lift:
+            repeater = np.insert(repeater, 0, -1)
+    else:
+        stride = len(self.removed_level) + self.lift
+        repeater = np.arange(stride) - self.lift
+    return repeater

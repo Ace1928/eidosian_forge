@@ -1,0 +1,18 @@
+import math
+import types
+import numpy as np
+import matplotlib as mpl
+from matplotlib import _api, cbook
+from matplotlib.axes import Axes
+import matplotlib.axis as maxis
+import matplotlib.markers as mmarkers
+import matplotlib.patches as mpatches
+from matplotlib.path import Path
+import matplotlib.ticker as mticker
+import matplotlib.transforms as mtransforms
+from matplotlib.spines import Spine
+def view_limits(self, vmin, vmax):
+    vmin, vmax = self.base.view_limits(vmin, vmax)
+    if self._zero_in_bounds() and vmax > vmin:
+        vmin = min(0, vmin)
+    return mtransforms.nonsingular(vmin, vmax)

@@ -1,0 +1,23 @@
+import itertools
+import collections.abc
+import contextlib
+import hashlib
+import io
+import logging
+import os
+import pickle
+import sys
+import time
+import warnings
+from collections import namedtuple
+from datetime import timedelta
+from typing import Any, Callable, Dict, Optional, Tuple, Union, List
+import torch
+from torch._C._distributed_c10d import (
+from .constants import default_pg_timeout, default_pg_nccl_timeout
+from .c10d_logger import _exception_logger, _time_logger
+from .rendezvous import register_rendezvous_handler, rendezvous  # noqa: F401
+def _check_single_tensor(param, param_name):
+    """Check that the parameter ``param_name`` is a single tensor."""
+    if not isinstance(param, torch.Tensor):
+        raise TypeError(f'Invalid function argument. Expected parameter `{param_name}` to be of type torch.Tensor.')

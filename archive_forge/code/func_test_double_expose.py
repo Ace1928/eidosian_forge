@@ -1,0 +1,21 @@
+import unittest
+import webtest
+from wsme import WSRoot, expose, validate
+from wsme.rest import scan_api
+from wsme import types
+from wsme import exc
+import wsme.api as wsme_api
+import wsme.types
+from wsme.tests.test_protocols import DummyProtocol
+def test_double_expose(self):
+    try:
+
+        class MyRoot(WSRoot):
+
+            @expose()
+            @expose()
+            def atest(self):
+                pass
+        assert False, 'A ValueError should have been raised'
+    except ValueError:
+        pass

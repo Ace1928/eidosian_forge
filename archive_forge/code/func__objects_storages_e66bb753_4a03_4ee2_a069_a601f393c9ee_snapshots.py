@@ -1,0 +1,13 @@
+import sys
+import unittest
+from datetime import datetime
+from libcloud.test import MockHttp, LibcloudTestCase
+from libcloud.utils.py3 import httplib
+from libcloud.compute.base import NodeSize
+from libcloud.test.secrets import GRIDSCALE_PARAMS
+from libcloud.utils.iso8601 import UTC
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.gridscale import GridscaleNodeDriver
+def _objects_storages_e66bb753_4a03_4ee2_a069_a601f393c9ee_snapshots(self, method, url, body, headers):
+    body = self.fixtures.load('list_volume_snapshots.json')
+    return (httplib.OK, body, {}, httplib.responses[httplib.OK])

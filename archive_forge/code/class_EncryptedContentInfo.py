@@ -1,0 +1,3 @@
+from pyasn1_modules.rfc2459 import *
+class EncryptedContentInfo(univ.Sequence):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('contentType', ContentType()), namedtype.NamedType('contentEncryptionAlgorithm', ContentEncryptionAlgorithmIdentifier()), namedtype.OptionalNamedType('encryptedContent', EncryptedContent().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)), openType=opentype.OpenType('contentType', contentTypeMap)))

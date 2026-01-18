@@ -1,0 +1,31 @@
+from __future__ import annotations
+import dataclasses
+import datetime
+import decimal
+import operator
+import pathlib
+import pickle
+import random
+import subprocess
+import sys
+import textwrap
+from enum import Enum, Flag, IntEnum, IntFlag
+from typing import Union
+import cloudpickle
+import pytest
+from tlz import compose, curry, partial
+import dask
+from dask.base import TokenizationError, normalize_token, tokenize
+from dask.core import literal
+from dask.utils import tmpfile
+from dask.utils_test import import_or_none
+@pytest.mark.xfail(reason='https://github.com/cloudpipe/cloudpickle/issues/453')
+@pytest.mark.parametrize('instance', [False, True])
+def test_tokenize_local_classes_from_different_contexts(instance):
+
+    def f():
+
+        class C:
+            pass
+        return C() if instance else C
+    assert check_tokenize(f()) == check_tokenize(f())

@@ -31,6 +31,7 @@ DEFAULT_EXCLUDE_DIRS = {
     ".ruff_cache",
     ".tox",
     ".cache",
+    ".var",
     "node_modules",
     "dist",
     "build",
@@ -108,6 +109,11 @@ def parse_args() -> argparse.Namespace:
         "--graphrag-cmd",
         default="graphrag",
         help="Command to invoke GraphRAG (default: graphrag).",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose GraphRAG logging.",
     )
     parser.add_argument(
         "--method",
@@ -295,9 +301,7 @@ def main() -> int:
         return 0
 
     batch_size = max(args.batch_size, 1)
-    batches = [
-        pending[i : i + batch_size] for i in range(0, len(pending), batch_size)
-    ]
+    batches = [pending[i : i + batch_size] for i in range(0, len(pending), batch_size)]
     max_batches = args.max_batches
     if max_batches > 0:
         batches = batches[:max_batches]
@@ -312,20 +316,23 @@ def main() -> int:
                 stage_files(input_dir, scan_root, files, args.copy)
 
         if not state.get("indexed") and not has_existing_output(root):
-            run_graphrag(
-                args.graphrag_cmd,
-                ["index", "--root", str(root), "--method", args.method],
-            )
+            cmd = ["index", "--root", str(root), "--method", args.method]
+            if args.verbose:
+                cmd.append("--verbose")
+            run_graphrag(args.graphrag_cmd, cmd)
             state["indexed"] = True
         else:
-            run_graphrag(
-                args.graphrag_cmd,
-                ["update", "--root", str(root), "--method", args.method],
-            )
+            cmd = ["update", "--root", str(root), "--method", args.method]
+            if args.verbose:
+                cmd.append("--verbose")
+            run_graphrag(args.graphrag_cmd, cmd)
 
         for path in batch:
             stat = path.stat()
-            state["processed"][str(path)] = {"mtime": stat.st_mtime, "size": stat.st_size}
+            state["processed"][str(path)] = {
+                "mtime": stat.st_mtime,
+                "size": stat.st_size,
+            }
         save_state(state_path, state)
 
     print("Indexing complete.")

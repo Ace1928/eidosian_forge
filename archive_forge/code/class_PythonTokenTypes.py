@@ -1,0 +1,16 @@
+from __future__ import absolute_import
+from enum import Enum
+class PythonTokenTypes(Enum):
+    STRING = TokenType('STRING')
+    NUMBER = TokenType('NUMBER')
+    NAME = TokenType('NAME', contains_syntax=True)
+    ERRORTOKEN = TokenType('ERRORTOKEN')
+    NEWLINE = TokenType('NEWLINE')
+    INDENT = TokenType('INDENT')
+    DEDENT = TokenType('DEDENT')
+    ERROR_DEDENT = TokenType('ERROR_DEDENT')
+    FSTRING_STRING = TokenType('FSTRING_STRING')
+    FSTRING_START = TokenType('FSTRING_START')
+    FSTRING_END = TokenType('FSTRING_END')
+    OP = TokenType('OP', contains_syntax=True)
+    ENDMARKER = TokenType('ENDMARKER')

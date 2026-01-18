@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class CurrentvalueValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='currentvalue', parent_name='layout.slider', **kwargs):
+        super(CurrentvalueValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Currentvalue'), data_docs=kwargs.pop('data_docs', '\n            font\n                Sets the font of the current value label text.\n            offset\n                The amount of space, in pixels, between the\n                current value label and the slider.\n            prefix\n                When currentvalue.visible is true, this sets\n                the prefix of the label.\n            suffix\n                When currentvalue.visible is true, this sets\n                the suffix of the label.\n            visible\n                Shows the currently-selected value above the\n                slider.\n            xanchor\n                The alignment of the value readout relative to\n                the length of the slider.\n'), **kwargs)

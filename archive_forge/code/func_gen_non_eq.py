@@ -1,0 +1,32 @@
+from collections import namedtuple
+import math
+from functools import reduce
+import numpy as np
+import operator
+import warnings
+from llvmlite import ir
+from numba.core.imputils import (lower_builtin, lower_getattr,
+from numba.core import typing, types, utils, cgutils
+from numba.core.extending import overload, intrinsic
+from numba.core.typeconv import Conversion
+from numba.core.errors import (TypingError, LoweringError,
+from numba.misc.special import literal_unroll
+from numba.core.typing.asnumbatype import as_numba_type
+from numba.core.typing.builtins import IndexValue, IndexValueType
+from numba.extending import overload, register_jitable
+def gen_non_eq(val):
+
+    def none_equality(a, b):
+        a_none = isinstance(a, types.NoneType)
+        b_none = isinstance(b, types.NoneType)
+        if a_none and b_none:
+
+            def impl(a, b):
+                return val
+            return impl
+        elif a_none ^ b_none:
+
+            def impl(a, b):
+                return not val
+            return impl
+    return none_equality

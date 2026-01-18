@@ -1,0 +1,74 @@
+import math
+from typing import Dict, Tuple, Optional, Union
+import numpy as np
+import torch
+import torch.cuda
+import torch.nn as nn
+import torch.nn.functional as F
+from parlai.core.torch_generator_agent import TorchGeneratorModel
+from parlai.utils.misc import warn_once
+from parlai.utils.torch import neginf, PipelineHelper
+class TransformerGeneratorModel(TorchGeneratorModel):
+    """
+    Implements a full generator model, with one encoder and one decoder.
+    """
+
+    @classmethod
+    def build_encoder(cls, opt, dictionary, embedding=None, padding_idx=None, reduction_type='mean', n_positions=1024, n_segments=0):
+        n_layers = opt['n_encoder_layers'] if opt.get('n_encoder_layers', -1) > 0 else opt['n_layers']
+        return TransformerEncoder(n_heads=opt['n_heads'], n_layers=n_layers, embedding_size=opt['embedding_size'], ffn_size=opt['ffn_size'], vocabulary_size=len(dictionary), embedding=embedding, dropout=opt['dropout'], attention_dropout=opt['attention_dropout'], relu_dropout=opt['relu_dropout'], padding_idx=padding_idx, learn_positional_embeddings=opt['learn_positional_embeddings'], embeddings_scale=opt['embeddings_scale'], reduction_type=reduction_type, n_positions=n_positions, n_segments=n_segments, activation=opt['activation'], variant=opt['variant'], output_scaling=opt['output_scaling'])
+
+    @classmethod
+    def build_decoder(cls, opt, dictionary, embedding=None, padding_idx=None, n_positions=1024, n_segments=0):
+        n_layers = opt['n_decoder_layers'] if opt.get('n_decoder_layers', -1) > 0 else opt['n_layers']
+        return TransformerDecoder(n_heads=opt['n_heads'], n_layers=n_layers, embedding_size=opt['embedding_size'], ffn_size=opt['ffn_size'], vocabulary_size=len(dictionary), embedding=embedding, dropout=opt['dropout'], attention_dropout=opt['attention_dropout'], relu_dropout=opt['relu_dropout'], padding_idx=padding_idx, learn_positional_embeddings=opt['learn_positional_embeddings'], embeddings_scale=opt['embeddings_scale'], n_positions=n_positions, activation=opt['activation'], variant=opt['variant'], n_segments=n_segments)
+
+    def __init__(self, opt, dictionary):
+        self.pad_idx = dictionary[dictionary.null_token]
+        self.start_idx = dictionary[dictionary.start_token]
+        self.end_idx = dictionary[dictionary.end_token]
+        super().__init__(self.pad_idx, self.start_idx, self.end_idx)
+        self.embeddings = _create_embeddings(dictionary, opt['embedding_size'], self.pad_idx)
+        if opt.get('n_positions'):
+            n_positions = opt['n_positions']
+        else:
+            n_positions = max(opt.get('truncate') or 0, opt.get('text_truncate') or 0, opt.get('label_truncate') or 0)
+            if n_positions == 0:
+                n_positions = 1024
+        n_segments = opt.get('n_segments', 0)
+        if n_positions < 0:
+            raise ValueError('n_positions must be positive')
+        self.encoder = self.build_encoder(opt, dictionary, self.embeddings, self.pad_idx, reduction_type=None, n_positions=n_positions, n_segments=n_segments)
+        self.decoder = self.build_decoder(opt, dictionary, self.embeddings, self.pad_idx, n_positions=n_positions)
+
+    def reorder_encoder_states(self, encoder_states, indices):
+        """
+        Reorder the encoder states.
+
+        See ``TorchGeneratorModel.reorder_encoder_states`` for a description.
+        """
+        enc, mask = encoder_states
+        if not torch.is_tensor(indices):
+            indices = torch.LongTensor(indices).to(enc.device)
+        enc = torch.index_select(enc, 0, indices)
+        mask = torch.index_select(mask, 0, indices)
+        return (enc, mask)
+
+    def reorder_decoder_incremental_state(self, incremental_state: Dict[int, dict], inds: torch.Tensor) -> Dict[int, dict]:
+        """
+        Reorder the decoder incremental state.
+
+        See ``TorchGeneratorModel.reorder_decoder_incremental_state`` for a description.
+
+        Here, incremental_state is a dict whose keys are layer indices and whose values
+        are dicts containing the incremental state for that layer.
+        """
+        return {idx: layer.reorder_incremental_state(incremental_state[idx], inds) for idx, layer in enumerate(self.decoder.layers)}
+
+    def output(self, tensor):
+        """
+        Compute output logits.
+        """
+        output = F.linear(tensor, self.embeddings.weight)
+        output[:, :, self.start_idx] = neginf(output.dtype)
+        return output

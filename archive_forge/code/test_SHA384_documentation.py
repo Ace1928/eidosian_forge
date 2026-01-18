@@ -1,0 +1,1 @@
+Self-test suite for Cryptodome.Hash.SHA384

@@ -1,0 +1,1 @@
+Replacement for old numpy.testing.utils.array_almost_equal.

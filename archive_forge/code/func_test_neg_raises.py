@@ -1,0 +1,21 @@
+from decimal import Decimal
+import numpy as np
+import pytest
+from pandas.compat.numpy import np_version_gte1p25
+import pandas as pd
+import pandas._testing as tm
+@pytest.mark.parametrize('df', [pd.DataFrame({'a': ['a', 'b']}), pd.DataFrame({'a': pd.to_datetime(['2017-01-22', '1970-01-01'])})])
+def test_neg_raises(self, df, using_infer_string):
+    msg = "bad operand type for unary -: 'str'|bad operand type for unary -: 'DatetimeArray'"
+    if using_infer_string and df.dtypes.iloc[0] == 'string':
+        import pyarrow as pa
+        msg = 'has no kernel'
+        with pytest.raises(pa.lib.ArrowNotImplementedError, match=msg):
+            -df
+        with pytest.raises(pa.lib.ArrowNotImplementedError, match=msg):
+            -df['a']
+    else:
+        with pytest.raises(TypeError, match=msg):
+            -df
+        with pytest.raises(TypeError, match=msg):
+            -df['a']

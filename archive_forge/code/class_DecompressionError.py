@@ -1,0 +1,2 @@
+class DecompressionError(ArchiveError):
+    pass

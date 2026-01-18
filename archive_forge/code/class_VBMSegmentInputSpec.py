@@ -1,0 +1,40 @@
+import os
+from copy import deepcopy
+import numpy as np
+from ...utils.filemanip import (
+from ..base import (
+from .base import (
+class VBMSegmentInputSpec(SPMCommandInputSpec):
+    in_files = InputMultiPath(ImageFileSPM(exists=True), desc='A list of files to be segmented', field='estwrite.data', copyfile=False, mandatory=True)
+    tissues = ImageFileSPM(exists=True, field='estwrite.tpm', desc='tissue probability map')
+    gaussians_per_class = traits.Tuple((2, 2, 2, 3, 4, 2), *[traits.Int()] * 6, usedefault=True, desc='number of gaussians for each tissue class')
+    bias_regularization = traits.Enum(0.0001, (0, 1e-05, 0.0001, 0.001, 0.01, 0.1, 1, 10), field='estwrite.opts.biasreg', usedefault=True, desc='no(0) - extremely heavy (10)')
+    bias_fwhm = traits.Enum(60, (30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 'Inf'), field='estwrite.opts.biasfwhm', usedefault=True, desc='FWHM of Gaussian smoothness of bias')
+    sampling_distance = traits.Float(3, usedefault=True, field='estwrite.opts.samp', desc='Sampling distance on data for parameter estimation')
+    warping_regularization = traits.Float(4, usedefault=True, field='estwrite.opts.warpreg', desc='Controls balance between parameters and data')
+    spatial_normalization = traits.Enum('high', 'low', usedefault=True)
+    dartel_template = ImageFileSPM(exists=True, field='estwrite.extopts.dartelwarp.normhigh.darteltpm')
+    use_sanlm_denoising_filter = traits.Range(0, 2, 2, usedefault=True, field='estwrite.extopts.sanlm', desc='0=No denoising, 1=denoising,2=denoising multi-threaded')
+    mrf_weighting = traits.Float(0.15, usedefault=True, field='estwrite.extopts.mrf')
+    cleanup_partitions = traits.Int(1, usedefault=True, field='estwrite.extopts.cleanup', desc='0=None,1=light,2=thorough')
+    display_results = traits.Bool(True, usedefault=True, field='estwrite.extopts.print')
+    gm_native = traits.Bool(False, usedefault=True, field='estwrite.output.GM.native')
+    gm_normalized = traits.Bool(False, usedefault=True, field='estwrite.output.GM.warped')
+    gm_modulated_normalized = traits.Range(0, 2, 2, usedefault=True, field='estwrite.output.GM.modulated', desc='0=none,1=affine+non-linear(SPM8 default),2=non-linear only')
+    gm_dartel = traits.Range(0, 2, 0, usedefault=True, field='estwrite.output.GM.dartel', desc='0=None,1=rigid(SPM8 default),2=affine')
+    wm_native = traits.Bool(False, usedefault=True, field='estwrite.output.WM.native')
+    wm_normalized = traits.Bool(False, usedefault=True, field='estwrite.output.WM.warped')
+    wm_modulated_normalized = traits.Range(0, 2, 2, usedefault=True, field='estwrite.output.WM.modulated', desc='0=none,1=affine+non-linear(SPM8 default),2=non-linear only')
+    wm_dartel = traits.Range(0, 2, 0, usedefault=True, field='estwrite.output.WM.dartel', desc='0=None,1=rigid(SPM8 default),2=affine')
+    csf_native = traits.Bool(False, usedefault=True, field='estwrite.output.CSF.native')
+    csf_normalized = traits.Bool(False, usedefault=True, field='estwrite.output.CSF.warped')
+    csf_modulated_normalized = traits.Range(0, 2, 2, usedefault=True, field='estwrite.output.CSF.modulated', desc='0=none,1=affine+non-linear(SPM8 default),2=non-linear only')
+    csf_dartel = traits.Range(0, 2, 0, usedefault=True, field='estwrite.output.CSF.dartel', desc='0=None,1=rigid(SPM8 default),2=affine')
+    bias_corrected_native = traits.Bool(False, usedefault=True, field='estwrite.output.bias.native')
+    bias_corrected_normalized = traits.Bool(True, usedefault=True, field='estwrite.output.bias.warped')
+    bias_corrected_affine = traits.Bool(False, usedefault=True, field='estwrite.output.bias.affine')
+    pve_label_native = traits.Bool(False, usedefault=True, field='estwrite.output.label.native')
+    pve_label_normalized = traits.Bool(False, usedefault=True, field='estwrite.output.label.warped')
+    pve_label_dartel = traits.Range(0, 2, 0, usedefault=True, field='estwrite.output.label.dartel', desc='0=None,1=rigid(SPM8 default),2=affine')
+    jacobian_determinant = traits.Bool(False, usedefault=True, field='estwrite.jacobian.warped')
+    deformation_field = traits.Tuple((0, 0), traits.Bool, traits.Bool, usedefault=True, field='estwrite.output.warps', desc='forward and inverse field')

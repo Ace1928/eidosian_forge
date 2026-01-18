@@ -1,0 +1,27 @@
+import os
+import re as regex
+from ..base import (
+class BfcInputSpec(CommandLineInputSpec):
+    inputMRIFile = File(mandatory=True, desc='input skull-stripped MRI volume', argstr='-i %s')
+    inputMaskFile = File(desc='mask file', argstr='-m %s', hash_files=False)
+    outputMRIVolume = File(desc='output bias-corrected MRI volume. If unspecified, output file name will be auto generated.', argstr='-o %s', hash_files=False, genfile=True)
+    outputBiasField = File(desc='save bias field estimate', argstr='--bias %s', hash_files=False)
+    outputMaskedBiasField = File(desc='save bias field estimate (masked)', argstr='--maskedbias %s', hash_files=False)
+    histogramRadius = traits.Int(desc='histogram radius (voxels)', argstr='-r %d')
+    biasEstimateSpacing = traits.Int(desc='bias sample spacing (voxels)', argstr='-s %d')
+    controlPointSpacing = traits.Int(desc='control point spacing (voxels)', argstr='-c %d')
+    splineLambda = traits.Float(desc='spline stiffness weighting parameter', argstr='-w %f')
+    histogramType = traits.Enum('ellipse', 'block', desc='Options for type of histogram:\n\n  * ``ellipse``: use ellipsoid for ROI histogram\n  * ``block``:use block for ROI histogram\n\n', argstr='%s')
+    iterativeMode = traits.Bool(desc='iterative mode (overrides -r, -s, -c, -w settings)', argstr='--iterate')
+    correctionScheduleFile = File(desc='list of parameters ', argstr='--schedule %s')
+    biasFieldEstimatesOutputPrefix = traits.Str(desc='save iterative bias field estimates as <prefix>.n.field.nii.gz', argstr='--biasprefix %s')
+    correctedImagesOutputPrefix = traits.Str(desc='save iterative corrected images as <prefix>.n.bfc.nii.gz', argstr='--prefix %s')
+    correctWholeVolume = traits.Bool(desc='apply correction field to entire volume', argstr='--extrapolate')
+    minBias = traits.Float(0.5, usedefault=True, desc='minimum allowed bias value', argstr='-L %f')
+    maxBias = traits.Float(1.5, usedefault=True, desc='maximum allowed bias value', argstr='-U %f')
+    biasRange = traits.Enum('low', 'medium', 'high', desc='Preset options for bias_model\n\n  * low: small bias model [0.95,1.05]\n  * medium: medium bias model [0.90,1.10]\n  * high: high bias model [0.80,1.20]\n\n', argstr='%s')
+    intermediate_file_type = traits.Enum('analyze', 'nifti', 'gzippedAnalyze', 'gzippedNifti', desc='Options for the format in which intermediate files are generated', argstr='%s')
+    convergenceThreshold = traits.Float(desc='convergence threshold', argstr='--eps %f')
+    biasEstimateConvergenceThreshold = traits.Float(desc='bias estimate convergence threshold (values > 0.1 disable)', argstr='--beps %f')
+    verbosityLevel = traits.Int(desc='verbosity level (0=silent)', argstr='-v %d')
+    timer = traits.Bool(desc='display timing information', argstr='--timer')

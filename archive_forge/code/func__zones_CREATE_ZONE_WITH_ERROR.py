@@ -1,0 +1,11 @@
+import sys
+import unittest
+from libcloud.test import MockHttp
+from libcloud.dns.types import RecordType, ZoneDoesNotExistError, RecordDoesNotExistError
+from libcloud.utils.py3 import httplib
+from libcloud.test.secrets import DNS_PARAMS_POINTDNS
+from libcloud.test.file_fixtures import DNSFileFixtures
+from libcloud.dns.drivers.pointdns import PointDNSDriver, PointDNSException
+def _zones_CREATE_ZONE_WITH_ERROR(self, method, url, body, headers):
+    body = self.fixtures.load('error.json')
+    return (httplib.PAYMENT_REQUIRED, body, {}, httplib.responses[httplib.PAYMENT_REQUIRED])

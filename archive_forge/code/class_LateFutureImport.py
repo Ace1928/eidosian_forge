@@ -1,0 +1,2 @@
+class LateFutureImport(Message):
+    message = 'from __future__ imports must occur at the beginning of the file'

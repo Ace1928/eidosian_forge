@@ -1,0 +1,14 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import tensorflow as tf
+from tensorflow.python.framework import ops
+from tensorflow_estimator.python.estimator import model_fn
+from tensorflow_estimator.python.estimator.canned import metric_keys
+from tensorflow_estimator.python.estimator.canned import prediction_keys
+from tensorflow_estimator.python.estimator.estimator_export import estimator_export
+from tensorflow_estimator.python.estimator.export import export_output
+from tensorflow_estimator.python.estimator.head import base_head
+from tensorflow_estimator.python.estimator.mode_keys import ModeKeys
+def _poisson_loss(self, labels, logits):
+    return tf.nn.log_poisson_loss(targets=labels, log_input=logits, compute_full_loss=self._compute_full_loss)

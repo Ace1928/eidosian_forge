@@ -1,0 +1,1 @@
+Merge a dict or keyword arguments with another dictionary

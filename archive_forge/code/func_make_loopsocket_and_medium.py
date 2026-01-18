@@ -1,0 +1,33 @@
+import doctest
+import errno
+import os
+import socket
+import subprocess
+import sys
+import threading
+import time
+from io import BytesIO
+from typing import Optional, Type
+from testtools.matchers import DocTestMatches
+import breezy
+from ... import controldir, debug, errors, osutils, tests
+from ... import transport as _mod_transport
+from ... import urlutils
+from ...tests import features, test_server
+from ...transport import local, memory, remote, ssh
+from ...transport.http import urllib
+from .. import bzrdir
+from ..remote import UnknownErrorFromSmartServer
+from ..smart import client, medium, message, protocol
+from ..smart import request as _mod_request
+from ..smart import server as _mod_server
+from ..smart import vfs
+from . import test_smart
+def make_loopsocket_and_medium(self):
+    """Create a loopback socket for testing, and a medium aimed at it."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('127.0.0.1', 0))
+    sock.listen(1)
+    port = sock.getsockname()[1]
+    client_medium = medium.SmartTCPClientMedium('127.0.0.1', port, 'base')
+    return (sock, client_medium)

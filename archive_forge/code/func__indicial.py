@@ -1,0 +1,64 @@
+from sympy.core import Add, Mul, Pow
+from sympy.core.numbers import (NaN, Infinity, NegativeInfinity, Float, I, pi,
+from sympy.core.singleton import S
+from sympy.core.sorting import ordered
+from sympy.core.symbol import Dummy, Symbol
+from sympy.core.sympify import sympify
+from sympy.functions.combinatorial.factorials import binomial, factorial, rf
+from sympy.functions.elementary.exponential import exp_polar, exp, log
+from sympy.functions.elementary.hyperbolic import (cosh, sinh)
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.trigonometric import (cos, sin, sinc)
+from sympy.functions.special.error_functions import (Ci, Shi, Si, erf, erfc, erfi)
+from sympy.functions.special.gamma_functions import gamma
+from sympy.functions.special.hyper import hyper, meijerg
+from sympy.integrals import meijerint
+from sympy.matrices import Matrix
+from sympy.polys.rings import PolyElement
+from sympy.polys.fields import FracElement
+from sympy.polys.domains import QQ, RR
+from sympy.polys.polyclasses import DMF
+from sympy.polys.polyroots import roots
+from sympy.polys.polytools import Poly
+from sympy.polys.matrices import DomainMatrix
+from sympy.printing import sstr
+from sympy.series.limits import limit
+from sympy.series.order import Order
+from sympy.simplify.hyperexpand import hyperexpand
+from sympy.simplify.simplify import nsimplify
+from sympy.solvers.solvers import solve
+from .recurrence import HolonomicSequence, RecurrenceOperator, RecurrenceOperators
+from .holonomicerrors import (NotPowerSeriesError, NotHyperSeriesError,
+from sympy.integrals.meijerint import _mytype
+def _indicial(self):
+    """
+        Computes roots of the Indicial equation.
+        """
+    if self.x0 != 0:
+        return self.shift_x(self.x0)._indicial()
+    list_coeff = self.annihilator.listofpoly
+    R = self.annihilator.parent.base
+    x = self.x
+    s = R.zero
+    y = R.one
+
+    def _pole_degree(poly):
+        root_all = roots(R.to_sympy(poly), x, filter='Z')
+        if 0 in root_all.keys():
+            return root_all[0]
+        else:
+            return 0
+    degree = [j.degree() for j in list_coeff]
+    degree = max(degree)
+    inf = 10 * (max(1, degree) + max(1, self.annihilator.order))
+    deg = lambda q: inf if q.is_zero else _pole_degree(q)
+    b = deg(list_coeff[0])
+    for j in range(1, len(list_coeff)):
+        b = min(b, deg(list_coeff[j]) - j)
+    for i, j in enumerate(list_coeff):
+        listofdmp = j.all_coeffs()
+        degree = len(listofdmp) - 1
+        if -i - b <= 0 and degree - i - b >= 0:
+            s = s + listofdmp[degree - i - b] * y
+        y *= x - i
+    return roots(R.to_sympy(s), x)

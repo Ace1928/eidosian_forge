@@ -1,0 +1,111 @@
+from __future__ import annotations
+import asyncio
+import contextvars
+import os
+import re
+import signal
+import sys
+import threading
+import time
+from asyncio import (
+from contextlib import ExitStack, contextmanager
+from subprocess import Popen
+from traceback import format_tb
+from typing import (
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.cache import SimpleCache
+from prompt_toolkit.clipboard import Clipboard, InMemoryClipboard
+from prompt_toolkit.cursor_shapes import AnyCursorShapeConfig, to_cursor_shape_config
+from prompt_toolkit.data_structures import Size
+from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.eventloop import (
+from prompt_toolkit.eventloop.utils import call_soon_threadsafe
+from prompt_toolkit.filters import Condition, Filter, FilterOrBool, to_filter
+from prompt_toolkit.formatted_text import AnyFormattedText
+from prompt_toolkit.input.base import Input
+from prompt_toolkit.input.typeahead import get_typeahead, store_typeahead
+from prompt_toolkit.key_binding.bindings.page_navigation import (
+from prompt_toolkit.key_binding.defaults import load_key_bindings
+from prompt_toolkit.key_binding.emacs_state import EmacsState
+from prompt_toolkit.key_binding.key_bindings import (
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent, KeyProcessor
+from prompt_toolkit.key_binding.vi_state import ViState
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.layout.containers import Container, Window
+from prompt_toolkit.layout.controls import BufferControl, UIControl
+from prompt_toolkit.layout.dummy import create_dummy_layout
+from prompt_toolkit.layout.layout import Layout, walk
+from prompt_toolkit.output import ColorDepth, Output
+from prompt_toolkit.renderer import Renderer, print_formatted_text
+from prompt_toolkit.search import SearchState
+from prompt_toolkit.styles import (
+from prompt_toolkit.utils import Event, in_main_thread
+from .current import get_app_session, set_app
+from .run_in_terminal import in_terminal, run_in_terminal
+class _CombinedRegistry(KeyBindingsBase):
+    """
+    The `KeyBindings` of key bindings for a `Application`.
+    This merges the global key bindings with the one of the current user
+    control.
+    """
+
+    def __init__(self, app: Application[_AppResult]) -> None:
+        self.app = app
+        self._cache: SimpleCache[tuple[Window, frozenset[UIControl]], KeyBindingsBase] = SimpleCache()
+
+    @property
+    def _version(self) -> Hashable:
+        """Not needed - this object is not going to be wrapped in another
+        KeyBindings object."""
+        raise NotImplementedError
+
+    @property
+    def bindings(self) -> list[Binding]:
+        """Not needed - this object is not going to be wrapped in another
+        KeyBindings object."""
+        raise NotImplementedError
+
+    def _create_key_bindings(self, current_window: Window, other_controls: list[UIControl]) -> KeyBindingsBase:
+        """
+        Create a `KeyBindings` object that merges the `KeyBindings` from the
+        `UIControl` with all the parent controls and the global key bindings.
+        """
+        key_bindings = []
+        collected_containers = set()
+        container: Container = current_window
+        while True:
+            collected_containers.add(container)
+            kb = container.get_key_bindings()
+            if kb is not None:
+                key_bindings.append(kb)
+            if container.is_modal():
+                break
+            parent = self.app.layout.get_parent(container)
+            if parent is None:
+                break
+            else:
+                container = parent
+        for c in walk(container):
+            if c not in collected_containers:
+                kb = c.get_key_bindings()
+                if kb is not None:
+                    key_bindings.append(GlobalOnlyKeyBindings(kb))
+        if self.app.key_bindings:
+            key_bindings.append(self.app.key_bindings)
+        key_bindings.append(ConditionalKeyBindings(self.app._page_navigation_bindings, self.app.enable_page_navigation_bindings))
+        key_bindings.append(self.app._default_bindings)
+        key_bindings = key_bindings[::-1]
+        return merge_key_bindings(key_bindings)
+
+    @property
+    def _key_bindings(self) -> KeyBindingsBase:
+        current_window = self.app.layout.current_window
+        other_controls = list(self.app.layout.find_all_controls())
+        key = (current_window, frozenset(other_controls))
+        return self._cache.get(key, lambda: self._create_key_bindings(current_window, other_controls))
+
+    def get_bindings_for_keys(self, keys: KeysTuple) -> list[Binding]:
+        return self._key_bindings.get_bindings_for_keys(keys)
+
+    def get_bindings_starting_with_keys(self, keys: KeysTuple) -> list[Binding]:
+        return self._key_bindings.get_bindings_starting_with_keys(keys)

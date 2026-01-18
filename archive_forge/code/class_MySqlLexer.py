@@ -1,0 +1,16 @@
+import re
+from pygments.lexer import Lexer, RegexLexer, do_insertions, bygroups, words
+from pygments.token import Punctuation, Whitespace, Error, \
+from pygments.lexers import get_lexer_by_name, ClassNotFound
+from pygments.util import iteritems
+from pygments.lexers._postgres_builtins import KEYWORDS, DATATYPES, \
+from pygments.lexers import _tsql_builtins
+class MySqlLexer(RegexLexer):
+    """
+    Special lexer for MySQL.
+    """
+    name = 'MySQL'
+    aliases = ['mysql']
+    mimetypes = ['text/x-mysql']
+    flags = re.IGNORECASE
+    tokens = {'root': [('\\s+', Text), ('(#|--\\s+).*\\n?', Comment.Single), ('/\\*', Comment.Multiline, 'multiline-comments'), ('[0-9]+', Number.Integer), ('[0-9]*\\.[0-9]+(e[+-][0-9]+)', Number.Float), ("'(\\\\\\\\|\\\\'|''|[^'])*'", String.Single), ('"(\\\\\\\\|\\\\"|""|[^"])*"', String.Double), ('`(\\\\\\\\|\\\\`|``|[^`])*`', String.Symbol), ('[+*/<>=~!@#%^&|`?-]', Operator), ('\\b(tinyint|smallint|mediumint|int|integer|bigint|date|datetime|time|bit|bool|tinytext|mediumtext|longtext|text|tinyblob|mediumblob|longblob|blob|float|double|double\\s+precision|real|numeric|dec|decimal|timestamp|year|char|varchar|varbinary|varcharacter|enum|set)(\\b\\s*)(\\()?', bygroups(Keyword.Type, Text, Punctuation)), ('\\b(add|all|alter|analyze|and|as|asc|asensitive|before|between|bigint|binary|blob|both|by|call|cascade|case|change|char|character|check|collate|column|condition|constraint|continue|convert|create|cross|current_date|current_time|current_timestamp|current_user|cursor|database|databases|day_hour|day_microsecond|day_minute|day_second|dec|decimal|declare|default|delayed|delete|desc|describe|deterministic|distinct|distinctrow|div|double|drop|dual|each|else|elseif|enclosed|escaped|exists|exit|explain|fetch|flush|float|float4|float8|for|force|foreign|from|fulltext|grant|group|having|high_priority|hour_microsecond|hour_minute|hour_second|if|ignore|in|index|infile|inner|inout|insensitive|insert|int|int1|int2|int3|int4|int8|integer|interval|into|is|iterate|join|key|keys|kill|leading|leave|left|like|limit|lines|load|localtime|localtimestamp|lock|long|loop|low_priority|match|minute_microsecond|minute_second|mod|modifies|natural|no_write_to_binlog|not|numeric|on|optimize|option|optionally|or|order|out|outer|outfile|precision|primary|procedure|purge|raid0|read|reads|real|references|regexp|release|rename|repeat|replace|require|restrict|return|revoke|right|rlike|schema|schemas|second_microsecond|select|sensitive|separator|set|show|smallint|soname|spatial|specific|sql|sql_big_result|sql_calc_found_rows|sql_small_result|sqlexception|sqlstate|sqlwarning|ssl|starting|straight_join|table|terminated|then|to|trailing|trigger|undo|union|unique|unlock|unsigned|update|usage|use|using|utc_date|utc_time|utc_timestamp|values|varying|when|where|while|with|write|x509|xor|year_month|zerofill)\\b', Keyword), ('\\b(auto_increment|engine|charset|tables)\\b', Keyword.Pseudo), ('(true|false|null)', Name.Constant), ('([a-z_]\\w*)(\\s*)(\\()', bygroups(Name.Function, Text, Punctuation)), ('[a-z_]\\w*', Name), ('@[a-z0-9]*[._]*[a-z0-9]*', Name.Variable), ('[;:()\\[\\],.]', Punctuation)], 'multiline-comments': [('/\\*', Comment.Multiline, 'multiline-comments'), ('\\*/', Comment.Multiline, '#pop'), ('[^/*]+', Comment.Multiline), ('[/*]', Comment.Multiline)]}

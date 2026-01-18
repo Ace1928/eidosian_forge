@@ -1,0 +1,9 @@
+from unittest import SkipTest
+from holoviews.element import Distribution
+from .test_plot import TestPlotlyPlot
+def test_distribution_filled(self):
+    dist = Distribution([1, 1.1, 2.1, 3, 2, 1, 2.2])
+    state = self._get_plot_state(dist)
+    self.assertEqual(state['data'][0]['type'], 'scatter')
+    self.assertEqual(state['data'][0]['mode'], 'lines')
+    self.assertEqual(state['data'][0]['fill'], 'tozeroy')

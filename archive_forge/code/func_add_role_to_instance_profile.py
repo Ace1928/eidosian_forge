@@ -1,0 +1,17 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def add_role_to_instance_profile(self, instance_profile_name, role_name):
+    """
+        Adds the specified role to the specified instance profile.
+
+        :type instance_profile_name: string
+        :param instance_profile_name: Name of the instance profile to update.
+
+        :type role_name: string
+        :param role_name: Name of the role to add.
+        """
+    return self.get_response('AddRoleToInstanceProfile', {'InstanceProfileName': instance_profile_name, 'RoleName': role_name})

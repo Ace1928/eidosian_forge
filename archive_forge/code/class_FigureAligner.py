@@ -1,0 +1,34 @@
+import re
+import unicodedata
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, cast
+import docutils
+from docutils import nodes
+from docutils.nodes import Element, Node, Text
+from docutils.transforms import Transform, Transformer
+from docutils.transforms.parts import ContentsFilter
+from docutils.transforms.universal import SmartQuotes
+from docutils.utils import normalize_language_tag
+from docutils.utils.smartquotes import smartchars
+from sphinx import addnodes
+from sphinx.config import Config
+from sphinx.deprecation import RemovedInSphinx60Warning
+from sphinx.locale import _, __
+from sphinx.util import logging
+from sphinx.util.docutils import new_document
+from sphinx.util.i18n import format_date
+from sphinx.util.nodes import NodeMatcher, apply_source_workaround, is_smartquotable
+class FigureAligner(SphinxTransform):
+    """
+    Align figures to center by default.
+    """
+    default_priority = 700
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        warnings.warn('FigureAilgner is deprecated.', RemovedInSphinx60Warning)
+        super().__init__(*args, **kwargs)
+
+    def apply(self, **kwargs: Any) -> None:
+        matcher = NodeMatcher(nodes.table, nodes.figure)
+        for node in self.document.findall(matcher):
+            node.setdefault('align', 'default')

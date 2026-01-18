@@ -1,0 +1,2 @@
+class AlreadyLoggedIn(WordsError):
+    pass

@@ -1,0 +1,46 @@
+import os
+from cursive import exception as cursive_exception
+import glance_store
+from glance_store import backend
+from glance_store import location
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import encodeutils
+from oslo_utils import excutils
+import webob.exc
+import glance.api.policy
+from glance.api.v2 import policy as api_policy
+from glance.common import exception
+from glance.common import trust_auth
+from glance.common import utils
+from glance.common import wsgi
+import glance.db
+import glance.gateway
+from glance.i18n import _, _LE, _LI
+import glance.notifier
+from glance.quota import keystone as ks_quota
+def _unstage(self, image_repo, image, staging_store):
+    """
+        Restore the image to queued status and remove data from staging.
+
+        :param image_repo: The instance of ImageRepo
+        :param image: The image will be restored
+        :param staging_store: The store used for staging
+        """
+    if CONF.enabled_backends:
+        file_path = '%s/%s' % (getattr(CONF, 'os_glance_staging_store').filesystem_store_datadir, image.image_id)
+        try:
+            loc = location.get_location_from_uri_and_backend(file_path, 'os_glance_staging_store')
+            staging_store.delete(loc)
+        except (glance_store.exceptions.NotFound, glance_store.exceptions.UnknownScheme):
+            pass
+    else:
+        file_path = str(CONF.node_staging_uri + '/' + image.image_id)[7:]
+        if os.path.exists(file_path):
+            try:
+                os.unlink(file_path)
+            except OSError as e:
+                LOG.error(_('Cannot delete staged image data %(fn)s [Errno %(en)d]'), {'fn': file_path, 'en': e.errno})
+        else:
+            LOG.warning(_('Staged image data not found at %(fn)s'), {'fn': file_path})
+    self._restore(image_repo, image)

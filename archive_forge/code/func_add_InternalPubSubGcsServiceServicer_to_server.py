@@ -1,0 +1,6 @@
+import grpc
+from . import gcs_service_pb2 as src_dot_ray_dot_protobuf_dot_gcs__service__pb2
+def add_InternalPubSubGcsServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {'GcsPublish': grpc.unary_unary_rpc_method_handler(servicer.GcsPublish, request_deserializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsPublishRequest.FromString, response_serializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsPublishReply.SerializeToString), 'GcsSubscriberPoll': grpc.unary_unary_rpc_method_handler(servicer.GcsSubscriberPoll, request_deserializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberPollRequest.FromString, response_serializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberPollReply.SerializeToString), 'GcsSubscriberCommandBatch': grpc.unary_unary_rpc_method_handler(servicer.GcsSubscriberCommandBatch, request_deserializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberCommandBatchRequest.FromString, response_serializer=src_dot_ray_dot_protobuf_dot_gcs__service__pb2.GcsSubscriberCommandBatchReply.SerializeToString)}
+    generic_handler = grpc.method_handlers_generic_handler('ray.rpc.InternalPubSubGcsService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))

@@ -1,0 +1,30 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+@encoding.MapUnrecognizedFields('additionalProperties')
+class ResourceLabelsSelectorValue(_messages.Message):
+    """List of resource labels to search for, evaluated with AND. E.g.
+    "resource_labels_selector": {"key": "value", "env": "prod"} will match
+    resources with labels "key": "value" AND "env": "prod"
+    https://cloud.google.com/resource-manager/docs/creating-managing-labels
+
+    Messages:
+      AdditionalProperty: An additional property for a
+        ResourceLabelsSelectorValue object.
+
+    Fields:
+      additionalProperties: Additional properties of type
+        ResourceLabelsSelectorValue
+    """
+
+    class AdditionalProperty(_messages.Message):
+        """An additional property for a ResourceLabelsSelectorValue object.
+
+      Fields:
+        key: Name of the additional property.
+        value: A string attribute.
+      """
+        key = _messages.StringField(1)
+        value = _messages.StringField(2)
+    additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)

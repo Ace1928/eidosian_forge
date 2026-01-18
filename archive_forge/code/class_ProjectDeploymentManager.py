@@ -1,0 +1,16 @@
+from typing import Any, cast, Dict, Optional, TYPE_CHECKING, Union
+from gitlab import cli
+from gitlab import exceptions as exc
+from gitlab.base import RESTManager, RESTObject
+from gitlab.mixins import CreateMixin, RetrieveMixin, SaveMixin, UpdateMixin
+from gitlab.types import RequiredOptional
+from .merge_requests import ProjectDeploymentMergeRequestManager  # noqa: F401
+class ProjectDeploymentManager(RetrieveMixin, CreateMixin, UpdateMixin, RESTManager):
+    _path = '/projects/{project_id}/deployments'
+    _obj_cls = ProjectDeployment
+    _from_parent_attrs = {'project_id': 'id'}
+    _list_filters = ('order_by', 'sort', 'updated_after', 'updated_before', 'environment', 'status')
+    _create_attrs = RequiredOptional(required=('sha', 'ref', 'tag', 'status', 'environment'))
+
+    def get(self, id: Union[str, int], lazy: bool=False, **kwargs: Any) -> ProjectDeployment:
+        return cast(ProjectDeployment, super().get(id=id, lazy=lazy, **kwargs))

@@ -1,0 +1,6 @@
+import pandas as pd
+from mplfinance._arg_validators import _process_kwargs, _validate_vkwargs_dict
+def _valid_update_width_kwargs():
+    vkwargs = {'ohlc_ticksize': {'Default': None, 'Description': 'length of horizontal open/close tickmarks on ohlc bars', 'Validator': lambda value: isinstance(value, (float, int))}, 'ohlc_linewidth': {'Default': None, 'Description': 'width (thickness) of ohlc bars', 'Validator': lambda value: isinstance(value, (float, int))}, 'volume_width': {'Default': None, 'Description': 'width of volume bars', 'Validator': lambda value: isinstance(value, (float, int))}, 'volume_linewidth': {'Default': None, 'Description': 'width of edges of volume bars', 'Validator': lambda value: isinstance(value, (float, int))}, 'candle_width': {'Default': None, 'Description': 'width of candles', 'Validator': lambda value: isinstance(value, (float, int))}, 'candle_linewidth': {'Default': None, 'Description': 'width of candle edges and wicks', 'Validator': lambda value: isinstance(value, (float, int))}, 'line_width': {'Default': None, 'Description': 'width of lines (for line plots and moving averages)', 'Validator': lambda value: isinstance(value, (float, int))}}
+    _validate_vkwargs_dict(vkwargs)
+    return vkwargs

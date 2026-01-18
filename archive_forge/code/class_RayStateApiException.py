@@ -1,0 +1,2 @@
+class RayStateApiException(Exception):
+    pass

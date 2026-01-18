@@ -1,0 +1,49 @@
+import os
+import warnings
+from statsmodels.compat.platform import PLATFORM_WIN
+import numpy as np
+import pandas as pd
+import pytest
+from statsmodels.tsa.statespace import sarimax, tools
+from .results import results_sarimax
+from statsmodels.tools import add_constant
+from statsmodels.tools.tools import Bunch
+from numpy.testing import (
+class TestFriedmanMLERegression(Friedman):
+    """
+    Notes
+    -----
+
+    Standard errors are very good for the OPG and complex step approximation
+    cases.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        super().setup_class(results_sarimax.friedman2_mle)
+
+    def test_mle(self):
+        result = self.model.fit(disp=-1)
+        ratio = result.params / self.result.params
+        assert_allclose(ratio, np.ones(5), atol=0.01, rtol=0.001)
+
+    def test_bse(self):
+        assert_equal(self.result.cov_type, 'opg')
+        assert_equal(self.result._cov_approx_complex_step, True)
+        assert_equal(self.result._cov_approx_centered, False)
+        assert_allclose(self.result.bse[0:2], self.true['se_exog_opg'], atol=0.0001)
+        assert_allclose(self.result.bse[2], self.true['se_ar_opg'], atol=1e-06)
+        assert_allclose(self.result.bse[3], self.true['se_ma_opg'], atol=1e-06)
+
+    def test_bse_approx(self):
+        bse = self.result._cov_params_approx(approx_complex_step=True).diagonal() ** 0.5
+        assert_allclose(bse[0:2], self.true['se_exog_oim'], atol=0.0001)
+        assert_allclose(bse[2], self.true['se_ar_oim'], atol=1e-06)
+        assert_allclose(bse[3], self.true['se_ma_oim'], atol=1e-06)
+
+    def test_bse_oim(self):
+        bse = self.result.cov_params_oim.diagonal() ** 0.5
+        assert_allclose(bse[0], self.true['se_exog_oim'][0], rtol=1)
+        assert_allclose(bse[1], self.true['se_exog_oim'][1], atol=0.01)
+        assert_allclose(bse[2], self.true['se_ar_oim'], atol=0.01)
+        assert_allclose(bse[3], self.true['se_ma_oim'], atol=0.01)

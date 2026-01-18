@@ -1,0 +1,42 @@
+from oslo_serialization import jsonutils
+from mistralclient.api import base
+class ActionExecutionManager(base.ResourceManager):
+    resource_class = ActionExecution
+
+    def create(self, name, input=None, namespace='', **params):
+        self._ensure_not_empty(name=name)
+        data = {'name': name}
+        if input:
+            data['input'] = jsonutils.dumps(input)
+        if params:
+            data['params'] = jsonutils.dumps(params)
+        if namespace:
+            data['workflow_namespace'] = namespace
+        return self._create('/action_executions', data, dump_json=True)
+
+    def update(self, id, state=None, output=None):
+        self._ensure_not_empty(id=id)
+        if not (state or output):
+            raise base.APIException(400, 'Please provide either state or output for action execution.')
+        data = {}
+        if state:
+            data['state'] = state
+        if output:
+            data['output'] = output
+        return self._update('/action_executions/%s' % id, data)
+
+    def list(self, task_execution_id=None, limit=None, marker='', fields=None, sort_keys='', sort_dirs='', **filters):
+        url = '/action_executions'
+        if task_execution_id:
+            url = '/tasks/%s/action_executions' % task_execution_id
+        url += '%s'
+        query_string = self._build_query_params(marker=marker, limit=limit, sort_keys=sort_keys, sort_dirs=sort_dirs, fields=fields, filters=filters)
+        return self._list(url % query_string, response_key='action_executions')
+
+    def get(self, id):
+        self._ensure_not_empty(id=id)
+        return self._get('/action_executions/%s' % id)
+
+    def delete(self, id):
+        self._ensure_not_empty(id=id)
+        self._delete('/action_executions/%s' % id)

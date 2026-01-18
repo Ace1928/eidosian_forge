@@ -1,0 +1,20 @@
+from sys import version_info
+from pyflakes import messages as m
+from pyflakes.test.harness import TestCase, skip, skipIf
+def test_defaultExceptNotLast(self):
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        ', m.DefaultExceptNotLast, m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        else:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except:\n            pass\n        else:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        else:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        else:\n            pass\n        ', m.DefaultExceptNotLast, m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast, m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        else:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except:\n            pass\n        else:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        else:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast)
+    self.flakes('\n        try:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        except:\n            pass\n        except ValueError:\n            pass\n        else:\n            pass\n        finally:\n            pass\n        ', m.DefaultExceptNotLast, m.DefaultExceptNotLast)

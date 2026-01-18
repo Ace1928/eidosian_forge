@@ -1,0 +1,20 @@
+import unittest
+from Cython import StringIOTree as stringtree
+def test_insertion(self):
+    self.write_lines((1, 2, 3))
+    line_4_to_6_insertion_point = self.tree.insertion_point()
+    self.write_lines((7, 8))
+    line_9_to_13_insertion_point = self.tree.insertion_point()
+    self.write_lines((14, 15, 16))
+    line_4_insertion_point = line_4_to_6_insertion_point.insertion_point()
+    self.write_lines((5, 6), tree=line_4_to_6_insertion_point)
+    line_9_to_12_insertion_point = line_9_to_13_insertion_point.insertion_point()
+    self.write_line(13, tree=line_9_to_13_insertion_point)
+    self.write_line(4, tree=line_4_insertion_point)
+    self.write_line(9, tree=line_9_to_12_insertion_point)
+    line_10_insertion_point = line_9_to_12_insertion_point.insertion_point()
+    self.write_line(11, tree=line_9_to_12_insertion_point)
+    self.write_line(10, tree=line_10_insertion_point)
+    self.write_line(12, tree=line_9_to_12_insertion_point)
+    self.assertEqual(self.tree.allmarkers(), list(range(1, 17)))
+    self.assertEqual(code.strip(), self.tree.getvalue().strip())

@@ -1,0 +1,33 @@
+import json
+import os
+import shutil
+import tempfile
+import numpy as np
+import pandas as pd
+from pyproj import CRS
+from pyproj.exceptions import CRSError
+from shapely.geometry import Point, Polygon
+import geopandas
+import geopandas._compat as compat
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import ignore_shapely2_warnings
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+import pytest
+def test_multiindex_geometry_colname_3_level_new_col(self):
+    crs = 'EPSG:4326'
+    df = pd.DataFrame([[1, 0], [0, 1]], columns=[['foo', 'foo'], ['location', 'location'], ['x', 'y']])
+    x_col = df['foo', 'location', 'x']
+    y_col = df['foo', 'location', 'y']
+    df['geometry'] = GeoSeries.from_xy(x_col, y_col)
+    df2 = df.copy()
+    gdf = df.set_geometry('geometry', crs=crs)
+    assert gdf.crs == crs
+    assert gdf._geometry_column_name == 'geometry'
+    assert gdf.geometry.name == 'geometry'
+    gdf = df2.set_geometry(('geometry', '', ''), crs=crs)
+    assert gdf.crs == crs
+    assert gdf._geometry_column_name == ('geometry', '', '')
+    assert gdf.geometry.name == ('geometry', '', '')

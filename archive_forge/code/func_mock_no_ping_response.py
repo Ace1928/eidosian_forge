@@ -1,0 +1,12 @@
+from __future__ import absolute_import, division, print_function
+import json
+import sys
+from awx.main.models import Organization, Team, Project, Inventory
+from requests.models import Response
+from unittest import mock
+def mock_no_ping_response(self, method, url, **kwargs):
+    r = Response()
+    r.getheader = getNoheader.__get__(r)
+    r.read = read.__get__(r)
+    r.status = status.__get__(r)
+    return r

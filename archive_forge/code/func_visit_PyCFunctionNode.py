@@ -1,0 +1,29 @@
+from __future__ import absolute_import
+import cython
+import copy
+import hashlib
+import sys
+from . import PyrexTypes
+from . import Naming
+from . import ExprNodes
+from . import Nodes
+from . import Options
+from . import Builtin
+from . import Errors
+from .Visitor import VisitorTransform, TreeVisitor
+from .Visitor import CythonTransform, EnvTransform, ScopeTrackingTransform
+from .UtilNodes import LetNode, LetRefNode
+from .TreeFragment import TreeFragment
+from .StringEncoding import EncodedString, _unicode
+from .Errors import error, warning, CompileError, InternalError
+from .Code import UtilityCode
+def visit_PyCFunctionNode(self, node):
+    orig_qualified_name = self.qualified_name[:]
+    if node.def_node.is_wrapper and self.qualified_name and (self.qualified_name[-1] == '<locals>'):
+        self.qualified_name.pop()
+        self._set_qualname(node)
+    else:
+        self._set_qualname(node, node.def_node.name)
+    self.visitchildren(node)
+    self.qualified_name = orig_qualified_name
+    return node

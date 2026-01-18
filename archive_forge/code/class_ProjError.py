@@ -1,0 +1,10 @@
+from pyproj._datadir import _clear_proj_error, _get_proj_error
+class ProjError(RuntimeError):
+    """Raised when a Proj error occurs."""
+
+    def __init__(self, error_message: str) -> None:
+        proj_error = _get_proj_error()
+        if proj_error is not None:
+            error_message = f'{error_message}: (Internal Proj Error: {proj_error})'
+            _clear_proj_error()
+        super().__init__(error_message)

@@ -1,0 +1,1 @@
+Raised when the given ISO string can not be parsed.

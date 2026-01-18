@@ -1,0 +1,386 @@
+import logging
+import os
+import shutil
+import subprocess
+import sys
+import sysconfig
+import types
+class EnvBuilder:
+    """
+    This class exists to allow virtual environment creation to be
+    customized. The constructor parameters determine the builder's
+    behaviour when called upon to create a virtual environment.
+
+    By default, the builder makes the system (global) site-packages dir
+    *un*available to the created environment.
+
+    If invoked using the Python -m option, the default is to use copying
+    on Windows platforms but symlinks elsewhere. If instantiated some
+    other way, the default is to *not* use symlinks.
+
+    :param system_site_packages: If True, the system (global) site-packages
+                                 dir is available to created environments.
+    :param clear: If True, delete the contents of the environment directory if
+                  it already exists, before environment creation.
+    :param symlinks: If True, attempt to symlink rather than copy files into
+                     virtual environment.
+    :param upgrade: If True, upgrade an existing virtual environment.
+    :param with_pip: If True, ensure pip is installed in the virtual
+                     environment
+    :param prompt: Alternative terminal prefix for the environment.
+    :param upgrade_deps: Update the base venv modules to the latest on PyPI
+    """
+
+    def __init__(self, system_site_packages=False, clear=False, symlinks=False, upgrade=False, with_pip=False, prompt=None, upgrade_deps=False):
+        self.system_site_packages = system_site_packages
+        self.clear = clear
+        self.symlinks = symlinks
+        self.upgrade = upgrade
+        self.with_pip = with_pip
+        self.orig_prompt = prompt
+        if prompt == '.':
+            prompt = os.path.basename(os.getcwd())
+        self.prompt = prompt
+        self.upgrade_deps = upgrade_deps
+
+    def create(self, env_dir):
+        """
+        Create a virtual environment in a directory.
+
+        :param env_dir: The target directory to create an environment in.
+
+        """
+        env_dir = os.path.abspath(env_dir)
+        context = self.ensure_directories(env_dir)
+        true_system_site_packages = self.system_site_packages
+        self.system_site_packages = False
+        self.create_configuration(context)
+        self.setup_python(context)
+        if self.with_pip:
+            self._setup_pip(context)
+        if not self.upgrade:
+            self.setup_scripts(context)
+            self.post_setup(context)
+        if true_system_site_packages:
+            self.system_site_packages = True
+            self.create_configuration(context)
+        if self.upgrade_deps:
+            self.upgrade_dependencies(context)
+
+    def clear_directory(self, path):
+        for fn in os.listdir(path):
+            fn = os.path.join(path, fn)
+            if os.path.islink(fn) or os.path.isfile(fn):
+                os.remove(fn)
+            elif os.path.isdir(fn):
+                shutil.rmtree(fn)
+
+    def _venv_path(self, env_dir, name):
+        vars = {'base': env_dir, 'platbase': env_dir, 'installed_base': env_dir, 'installed_platbase': env_dir}
+        return sysconfig.get_path(name, scheme='venv', vars=vars)
+
+    def ensure_directories(self, env_dir):
+        """
+        Create the directories for the environment.
+
+        Returns a context object which holds paths in the environment,
+        for use by subsequent logic.
+        """
+
+        def create_if_needed(d):
+            if not os.path.exists(d):
+                os.makedirs(d)
+            elif os.path.islink(d) or os.path.isfile(d):
+                raise ValueError('Unable to create directory %r' % d)
+        if os.pathsep in os.fspath(env_dir):
+            raise ValueError(f'Refusing to create a venv in {env_dir} because it contains the PATH separator {os.pathsep}.')
+        if os.path.exists(env_dir) and self.clear:
+            self.clear_directory(env_dir)
+        context = types.SimpleNamespace()
+        context.env_dir = env_dir
+        context.env_name = os.path.split(env_dir)[1]
+        prompt = self.prompt if self.prompt is not None else context.env_name
+        context.prompt = '(%s) ' % prompt
+        create_if_needed(env_dir)
+        executable = sys._base_executable
+        if not executable:
+            raise ValueError('Unable to determine path to the running Python interpreter. Provide an explicit path or check that your PATH environment variable is correctly set.')
+        dirname, exename = os.path.split(os.path.abspath(executable))
+        context.executable = executable
+        context.python_dir = dirname
+        context.python_exe = exename
+        binpath = self._venv_path(env_dir, 'scripts')
+        incpath = self._venv_path(env_dir, 'include')
+        libpath = self._venv_path(env_dir, 'purelib')
+        context.inc_path = incpath
+        create_if_needed(incpath)
+        create_if_needed(libpath)
+        if sys.maxsize > 2 ** 32 and os.name == 'posix' and (sys.platform != 'darwin'):
+            link_path = os.path.join(env_dir, 'lib64')
+            if not os.path.exists(link_path):
+                os.symlink('lib', link_path)
+        context.bin_path = binpath
+        context.bin_name = os.path.relpath(binpath, env_dir)
+        context.env_exe = os.path.join(binpath, exename)
+        create_if_needed(binpath)
+        context.env_exec_cmd = context.env_exe
+        if sys.platform == 'win32':
+            real_env_exe = os.path.realpath(context.env_exe)
+            if os.path.normcase(real_env_exe) != os.path.normcase(context.env_exe):
+                logger.warning('Actual environment location may have moved due to redirects, links or junctions.\n  Requested location: "%s"\n  Actual location:    "%s"', context.env_exe, real_env_exe)
+                context.env_exec_cmd = real_env_exe
+        return context
+
+    def create_configuration(self, context):
+        """
+        Create a configuration file indicating where the environment's Python
+        was copied from, and whether the system site-packages should be made
+        available in the environment.
+
+        :param context: The information for the environment creation request
+                        being processed.
+        """
+        context.cfg_path = path = os.path.join(context.env_dir, 'pyvenv.cfg')
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write('home = %s\n' % context.python_dir)
+            if self.system_site_packages:
+                incl = 'true'
+            else:
+                incl = 'false'
+            f.write('include-system-site-packages = %s\n' % incl)
+            f.write('version = %d.%d.%d\n' % sys.version_info[:3])
+            if self.prompt is not None:
+                f.write(f'prompt = {self.prompt!r}\n')
+            f.write('executable = %s\n' % os.path.realpath(sys.executable))
+            args = []
+            nt = os.name == 'nt'
+            if nt and self.symlinks:
+                args.append('--symlinks')
+            if not nt and (not self.symlinks):
+                args.append('--copies')
+            if not self.with_pip:
+                args.append('--without-pip')
+            if self.system_site_packages:
+                args.append('--system-site-packages')
+            if self.clear:
+                args.append('--clear')
+            if self.upgrade:
+                args.append('--upgrade')
+            if self.upgrade_deps:
+                args.append('--upgrade-deps')
+            if self.orig_prompt is not None:
+                args.append(f'--prompt="{self.orig_prompt}"')
+            args.append(context.env_dir)
+            args = ' '.join(args)
+            f.write(f'command = {sys.executable} -m venv {args}\n')
+    if os.name != 'nt':
+
+        def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
+            """
+            Try symlinking a file, and if that fails, fall back to copying.
+            """
+            force_copy = not self.symlinks
+            if not force_copy:
+                try:
+                    if not os.path.islink(dst):
+                        if relative_symlinks_ok:
+                            assert os.path.dirname(src) == os.path.dirname(dst)
+                            os.symlink(os.path.basename(src), dst)
+                        else:
+                            os.symlink(src, dst)
+                except Exception:
+                    logger.warning('Unable to symlink %r to %r', src, dst)
+                    force_copy = True
+            if force_copy:
+                shutil.copyfile(src, dst)
+    else:
+
+        def symlink_or_copy(self, src, dst, relative_symlinks_ok=False):
+            """
+            Try symlinking a file, and if that fails, fall back to copying.
+            """
+            bad_src = os.path.lexists(src) and (not os.path.exists(src))
+            if self.symlinks and (not bad_src) and (not os.path.islink(dst)):
+                try:
+                    if relative_symlinks_ok:
+                        assert os.path.dirname(src) == os.path.dirname(dst)
+                        os.symlink(os.path.basename(src), dst)
+                    else:
+                        os.symlink(src, dst)
+                    return
+                except Exception:
+                    logger.warning('Unable to symlink %r to %r', src, dst)
+            basename, ext = os.path.splitext(os.path.basename(src))
+            srcfn = os.path.join(os.path.dirname(__file__), 'scripts', 'nt', basename + ext)
+            if sysconfig.is_python_build() or not os.path.isfile(srcfn):
+                if basename.endswith('_d'):
+                    ext = '_d' + ext
+                    basename = basename[:-2]
+                if basename == 'python':
+                    basename = 'venvlauncher'
+                elif basename == 'pythonw':
+                    basename = 'venvwlauncher'
+                src = os.path.join(os.path.dirname(src), basename + ext)
+            else:
+                src = srcfn
+            if not os.path.exists(src):
+                if not bad_src:
+                    logger.warning('Unable to copy %r', src)
+                return
+            shutil.copyfile(src, dst)
+
+    def setup_python(self, context):
+        """
+        Set up a Python executable in the environment.
+
+        :param context: The information for the environment creation request
+                        being processed.
+        """
+        binpath = context.bin_path
+        path = context.env_exe
+        copier = self.symlink_or_copy
+        dirname = context.python_dir
+        if os.name != 'nt':
+            copier(context.executable, path)
+            if not os.path.islink(path):
+                os.chmod(path, 493)
+            for suffix in ('python', 'python3', f'python3.{sys.version_info[1]}'):
+                path = os.path.join(binpath, suffix)
+                if not os.path.exists(path):
+                    copier(context.env_exe, path, relative_symlinks_ok=True)
+                    if not os.path.islink(path):
+                        os.chmod(path, 493)
+        else:
+            if self.symlinks:
+                suffixes = [f for f in os.listdir(dirname) if os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')]
+                if sysconfig.is_python_build():
+                    suffixes = [f for f in suffixes if os.path.normcase(f).startswith(('python', 'vcruntime'))]
+            else:
+                suffixes = {'python.exe', 'python_d.exe', 'pythonw.exe', 'pythonw_d.exe'}
+                base_exe = os.path.basename(context.env_exe)
+                suffixes.add(base_exe)
+            for suffix in suffixes:
+                src = os.path.join(dirname, suffix)
+                if os.path.lexists(src):
+                    copier(src, os.path.join(binpath, suffix))
+            if sysconfig.is_python_build():
+                for root, dirs, files in os.walk(context.python_dir):
+                    if 'init.tcl' in files:
+                        tcldir = os.path.basename(root)
+                        tcldir = os.path.join(context.env_dir, 'Lib', tcldir)
+                        if not os.path.exists(tcldir):
+                            os.makedirs(tcldir)
+                        src = os.path.join(root, 'init.tcl')
+                        dst = os.path.join(tcldir, 'init.tcl')
+                        shutil.copyfile(src, dst)
+                        break
+
+    def _call_new_python(self, context, *py_args, **kwargs):
+        """Executes the newly created Python using safe-ish options"""
+        args = [context.env_exec_cmd, *py_args]
+        kwargs['env'] = env = os.environ.copy()
+        env['VIRTUAL_ENV'] = context.env_dir
+        env.pop('PYTHONHOME', None)
+        env.pop('PYTHONPATH', None)
+        kwargs['cwd'] = context.env_dir
+        kwargs['executable'] = context.env_exec_cmd
+        subprocess.check_output(args, **kwargs)
+
+    def _setup_pip(self, context):
+        """Installs or upgrades pip in a virtual environment"""
+        self._call_new_python(context, '-m', 'ensurepip', '--upgrade', '--default-pip', stderr=subprocess.STDOUT)
+
+    def setup_scripts(self, context):
+        """
+        Set up scripts into the created environment from a directory.
+
+        This method installs the default scripts into the environment
+        being created. You can prevent the default installation by overriding
+        this method if you really need to, or if you need to specify
+        a different location for the scripts to install. By default, the
+        'scripts' directory in the venv package is used as the source of
+        scripts to install.
+        """
+        path = os.path.abspath(os.path.dirname(__file__))
+        path = os.path.join(path, 'scripts')
+        self.install_scripts(context, path)
+
+    def post_setup(self, context):
+        """
+        Hook for post-setup modification of the venv. Subclasses may install
+        additional packages or scripts here, add activation shell scripts, etc.
+
+        :param context: The information for the environment creation request
+                        being processed.
+        """
+        pass
+
+    def replace_variables(self, text, context):
+        """
+        Replace variable placeholders in script text with context-specific
+        variables.
+
+        Return the text passed in , but with variables replaced.
+
+        :param text: The text in which to replace placeholder variables.
+        :param context: The information for the environment creation request
+                        being processed.
+        """
+        text = text.replace('__VENV_DIR__', context.env_dir)
+        text = text.replace('__VENV_NAME__', context.env_name)
+        text = text.replace('__VENV_PROMPT__', context.prompt)
+        text = text.replace('__VENV_BIN_NAME__', context.bin_name)
+        text = text.replace('__VENV_PYTHON__', context.env_exe)
+        return text
+
+    def install_scripts(self, context, path):
+        """
+        Install scripts into the created environment from a directory.
+
+        :param context: The information for the environment creation request
+                        being processed.
+        :param path:    Absolute pathname of a directory containing script.
+                        Scripts in the 'common' subdirectory of this directory,
+                        and those in the directory named for the platform
+                        being run on, are installed in the created environment.
+                        Placeholder variables are replaced with environment-
+                        specific values.
+        """
+        binpath = context.bin_path
+        plen = len(path)
+        for root, dirs, files in os.walk(path):
+            if root == path:
+                for d in dirs[:]:
+                    if d not in ('common', os.name):
+                        dirs.remove(d)
+                continue
+            for f in files:
+                if os.name == 'nt' and f.startswith('python') and f.endswith(('.exe', '.pdb')):
+                    continue
+                srcfile = os.path.join(root, f)
+                suffix = root[plen:].split(os.sep)[2:]
+                if not suffix:
+                    dstdir = binpath
+                else:
+                    dstdir = os.path.join(binpath, *suffix)
+                if not os.path.exists(dstdir):
+                    os.makedirs(dstdir)
+                dstfile = os.path.join(dstdir, f)
+                with open(srcfile, 'rb') as f:
+                    data = f.read()
+                if not srcfile.endswith(('.exe', '.pdb')):
+                    try:
+                        data = data.decode('utf-8')
+                        data = self.replace_variables(data, context)
+                        data = data.encode('utf-8')
+                    except UnicodeError as e:
+                        data = None
+                        logger.warning('unable to copy script %r, may be binary: %s', srcfile, e)
+                if data is not None:
+                    with open(dstfile, 'wb') as f:
+                        f.write(data)
+                    shutil.copymode(srcfile, dstfile)
+
+    def upgrade_dependencies(self, context):
+        logger.debug(f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}')
+        self._call_new_python(context, '-m', 'pip', 'install', '--upgrade', *CORE_VENV_DEPS)

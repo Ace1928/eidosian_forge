@@ -1,0 +1,38 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.secrets import api as secrets_api
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.secrets import args as secrets_args
+from googlecloudsdk.command_lib.secrets import log as secrets_log
+from googlecloudsdk.core.console import console_io
+@base.ReleaseTracks(base.ReleaseTrack.GA)
+class Destroy(base.DeleteCommand):
+    """Destroy a secret version's metadata and secret data.
+
+  Destroy a secret version's metadata and secret data. This action is
+  irreversible.
+
+  ## EXAMPLES
+
+  Destroy version '123' of the secret named 'my-secret':
+
+    $ {command} 123 --secret=my-secret
+
+  Destroy version '123' of the secret named 'my-secret' using etag:
+
+    $ {command} 123 --secret=my-secret --etag=\\"123\\"
+  """
+    CONFIRM_DESTROY_MESSAGE = 'You are about to destroy version [{version}] of the secret [{secret}]. This action cannot be reversed.'
+
+    @staticmethod
+    def Args(parser):
+        secrets_args.AddVersion(parser, purpose='to destroy', positional=True, required=True)
+        secrets_args.AddVersionEtag(parser)
+
+    def Run(self, args):
+        version_ref = args.CONCEPTS.version.Parse()
+        console_io.PromptContinue(self.CONFIRM_DESTROY_MESSAGE.format(version=version_ref.Name(), secret=version_ref.Parent().Name()), throw_if_unattended=True, cancel_on_no=True)
+        result = secrets_api.Versions().Destroy(version_ref, etag=args.etag)
+        secrets_log.Versions().Destroyed(version_ref)
+        return result

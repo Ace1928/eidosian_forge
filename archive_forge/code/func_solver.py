@@ -1,0 +1,17 @@
+import itertools
+import platform
+import sys
+import pytest
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
+from numpy import zeros, arange, array, ones, eye, iscomplexobj
+from numpy.linalg import norm
+from scipy.sparse import spdiags, csr_matrix, kronsum
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
+@pytest.fixture(params=_SOLVERS, scope='session')
+def solver(request):
+    """
+    Fixture for all solvers in scipy.sparse.linalg._isolve
+    """
+    return request.param

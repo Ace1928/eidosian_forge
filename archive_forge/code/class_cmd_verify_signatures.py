@@ -1,0 +1,77 @@
+from . import controldir, errors, gpg
+from . import repository as _mod_repository
+from . import revision as _mod_revision
+from .commands import Command
+from .i18n import gettext, ngettext
+from .option import Option
+class cmd_verify_signatures(Command):
+    __doc__ = 'Verify all commit signatures.\n\n    Verifies that all commits in the branch are signed by known GnuPG keys.\n    '
+    takes_options = [Option('acceptable-keys', help='Comma separated list of GPG key patterns which are acceptable for verification.', short_name='k', type=str), 'revision', 'verbose']
+    takes_args = ['location?']
+
+    def run(self, acceptable_keys=None, revision=None, verbose=None, location='.'):
+        bzrdir = controldir.ControlDir.open_containing(location)[0]
+        branch = bzrdir.open_branch()
+        repo = branch.repository
+        branch_config = branch.get_config_stack()
+        gpg_strategy = gpg.GPGStrategy(branch_config)
+        gpg_strategy.set_acceptable_keys(acceptable_keys)
+
+        def write(string):
+            self.outf.write(string + '\n')
+
+        def write_verbose(string):
+            self.outf.write('  ' + string + '\n')
+        self.add_cleanup(repo.lock_read().unlock)
+        revisions = []
+        if revision is not None:
+            if len(revision) == 1:
+                revno, rev_id = revision[0].in_history(branch)
+                revisions.append(rev_id)
+            elif len(revision) == 2:
+                from_revno, from_revid = revision[0].in_history(branch)
+                to_revno, to_revid = revision[1].in_history(branch)
+                if to_revid is None:
+                    to_revno = branch.revno()
+                if from_revno is None or to_revno is None:
+                    raise errors.CommandError(gettext('Cannot verify a range of non-revision-history revisions'))
+                for revno in range(from_revno, to_revno + 1):
+                    revisions.append(branch.get_rev_id(revno))
+        else:
+            graph = repo.get_graph()
+            revisions = []
+            for rev_id, parents in graph.iter_ancestry([branch.last_revision()]):
+                if _mod_revision.is_null(rev_id):
+                    continue
+                if parents is None:
+                    continue
+                revisions.append(rev_id)
+        count, result, all_verifiable = gpg.bulk_verify_signatures(repo, revisions, gpg_strategy)
+        if all_verifiable:
+            write(gettext('All commits signed with verifiable keys'))
+            if verbose:
+                for message in gpg.verbose_valid_message(result):
+                    write_verbose(message)
+            return 0
+        else:
+            write(gpg.valid_commits_message(count))
+            if verbose:
+                for message in gpg.verbose_valid_message(result):
+                    write_verbose(message)
+            write(gpg.expired_commit_message(count))
+            if verbose:
+                for message in gpg.verbose_expired_key_message(result, repo):
+                    write_verbose(message)
+            write(gpg.unknown_key_message(count))
+            if verbose:
+                for message in gpg.verbose_missing_key_message(result):
+                    write_verbose(message)
+            write(gpg.commit_not_valid_message(count))
+            if verbose:
+                for message in gpg.verbose_not_valid_message(result, repo):
+                    write_verbose(message)
+            write(gpg.commit_not_signed_message(count))
+            if verbose:
+                for message in gpg.verbose_not_signed_message(result, repo):
+                    write_verbose(message)
+            return 1

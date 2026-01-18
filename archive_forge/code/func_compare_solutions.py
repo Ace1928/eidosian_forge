@@ -1,0 +1,26 @@
+import itertools
+import platform
+import sys
+import pytest
+import numpy as np
+from numpy import ones, r_, diag
+from numpy.testing import (assert_almost_equal, assert_equal,
+from scipy import sparse
+from scipy.linalg import eig, eigh, toeplitz, orth
+from scipy.sparse import spdiags, diags, eye, csr_matrix
+from scipy.sparse.linalg import eigs, LinearOperator
+from scipy.sparse.linalg._eigen.lobpcg import lobpcg
+from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
+from scipy._lib._util import np_long, np_ulong
+def compare_solutions(A, B, m):
+    """Check eig vs. lobpcg consistency.
+    """
+    n = A.shape[0]
+    rnd = np.random.RandomState(0)
+    V = rnd.random((n, m))
+    X = orth(V)
+    eigvals, _ = lobpcg(A, X, B=B, tol=0.01, maxiter=50, largest=False)
+    eigvals.sort()
+    w, _ = eig(A, b=B)
+    w.sort()
+    assert_almost_equal(w[:int(m / 2)], eigvals[:int(m / 2)], decimal=2)

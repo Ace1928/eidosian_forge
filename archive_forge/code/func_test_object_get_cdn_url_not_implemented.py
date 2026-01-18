@@ -1,0 +1,10 @@
+import sys
+import unittest
+from libcloud.test import LibcloudTestCase
+from libcloud.common.types import LibcloudError
+from libcloud.storage.base import Object, Container
+from libcloud.test.secrets import STORAGE_S3_PARAMS
+from libcloud.storage.drivers.digitalocean_spaces import (
+def test_object_get_cdn_url_not_implemented(self):
+    with self.assertRaises(NotImplementedError):
+        self.object.get_cdn_url()

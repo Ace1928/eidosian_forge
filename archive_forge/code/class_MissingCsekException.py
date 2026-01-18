@@ -1,0 +1,15 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import abc
+import base64
+import json
+import re
+from googlecloudsdk.api_lib.compute import exceptions
+from googlecloudsdk.core import resources
+from googlecloudsdk.core.console import console_io
+import six
+class MissingCsekException(Error):
+
+    def __init__(self, resource):
+        super(MissingCsekException, self).__init__('Key required for resource [{0}], but none found.'.format(resource))

@@ -1,0 +1,21 @@
+import collections
+import collections.abc
+import math
+import operator
+import unittest
+from dataclasses import asdict, dataclass
+from enum import Enum
+from functools import partial
+from itertools import product
+from typing import Any, Callable, Iterable, List, Optional, Tuple
+from torchgen.utils import dataclass_repr
+import torch
+from torch.testing import make_tensor
+from torch.testing._internal.common_device_type import (
+from torch.testing._internal.common_dtype import (
+from torch.testing._internal.common_utils import (
+from torch.testing._internal.opinfo import utils
+def generate_elementwise_unary_small_value_tensors(op, *, device, dtype, requires_grad=False):
+    for sample in generate_elementwise_binary_small_value_tensors(op, device=device, dtype=dtype, requires_grad=requires_grad):
+        a = _filter_unary_elementwise_tensor(sample.input, op=op)
+        yield SampleInput(a, kwargs=op.sample_kwargs(device, dtype, a)[0])

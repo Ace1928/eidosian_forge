@@ -1,0 +1,9 @@
+import types
+import numpy as np
+import cupy as cp
+from cupyx.fallback_mode import notification
+@classmethod
+def _store_array_from_numpy(cls, array):
+    if type(array) is np.ndarray and array.dtype.kind in '?bhilqBHILQefdFD':
+        return cls(_initial_array=array, _supports_cupy=True)
+    return cls(_initial_array=array, _supports_cupy=False)

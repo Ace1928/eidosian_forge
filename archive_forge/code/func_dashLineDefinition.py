@@ -1,0 +1,7 @@
+import math
+from io import StringIO
+from rdkit.sping.pid import *
+from . import psmetrics  # for font info
+def dashLineDefinition():
+    res = '\n%% This is hacked straight out of the Blue book (from Adobe)\n/centerdash\n  { /pattern exch def\n    /pathlen pathlength def\n    /patternlength 0 def\n    pattern\n      { patternlength add /patternlength exch def\n      } forall\n    pattern length 2 mod 0 ne\n      { /patternlength patternlength 2 mul def } if\n    /first pattern 0 get def\n    /last patternlength first sub def\n    /n pathlen last sub cvi patternlength idiv def\n    /endpart pathlen patternlength n mul sub\n       last sub 2 div def\n    /offset first endpart sub def\n    pattern offset setdash\n  } def\n\n/pathlength\n    { flattenpath\n      /dist 0 def\n\n      { /yfirst exch def /xfirst exch def\n        /ymoveto yfirst def /xmoveto xfirst def }\n      { /ynext exch def /xnext exch def\n        /dist dist ynext yfirst sub dup mul\n          xnext xfirst sub dup mul add sqrt add def\n        /yfirst ynext def /xfirst xnext def }\n      {}\n\n      { /ynext ymoveto def /xnext xmoveto def\n        /dist dist ynext yfirst sub dup mul\n          xnext xfirst sub dup mul add sqrt add def\n        /yfirst ynext def /xfirst xnext def }\n      pathforall\n      dist\n    } def\n'
+    return res

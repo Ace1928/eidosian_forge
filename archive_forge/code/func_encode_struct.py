@@ -1,0 +1,17 @@
+from __future__ import annotations
+import logging # isort:skip
+import base64
+import datetime as dt
+import sys
+from array import array as TypedArray
+from math import isinf, isnan
+from types import SimpleNamespace
+from typing import (
+import numpy as np
+from ..util.dataclasses import (
+from ..util.dependencies import uses_pandas
+from ..util.serialization import (
+from ..util.warnings import BokehUserWarning, warn
+from .types import ID
+def encode_struct(self, **fields: Any) -> dict[str, AnyRep]:
+    return {key: self.encode(val) for key, val in fields.items() if val is not Unspecified}

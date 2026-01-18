@@ -1,0 +1,9 @@
+import os
+@property
+def getopt_long_name(self):
+    ln = None
+    if self.long_name:
+        ln = '%s' % self.long_name
+        if self.ptype != 'boolean':
+            ln += '='
+    return ln

@@ -1,0 +1,8 @@
+import os
+from tempest.lib.cli import base
+from tempest.lib.cli import output_parser
+from tempest.lib import exceptions as tempest_exc
+def _stack_snapshot_delete(self, id, snapshot_id):
+    cmd = 'stack snapshot delete ' + id + ' ' + snapshot_id
+    if snapshot_id in self.openstack('stack snapshot list ' + id):
+        self.openstack(cmd)

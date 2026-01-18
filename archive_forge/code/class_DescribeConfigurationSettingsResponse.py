@@ -1,0 +1,13 @@
+from datetime import datetime
+from boto.compat import six
+class DescribeConfigurationSettingsResponse(Response):
+
+    def __init__(self, response):
+        response = response['DescribeConfigurationSettingsResponse']
+        super(DescribeConfigurationSettingsResponse, self).__init__(response)
+        response = response['DescribeConfigurationSettingsResult']
+        self.configuration_settings = []
+        if response['ConfigurationSettings']:
+            for member in response['ConfigurationSettings']:
+                configuration_setting = ConfigurationSettingsDescription(member)
+                self.configuration_settings.append(configuration_setting)

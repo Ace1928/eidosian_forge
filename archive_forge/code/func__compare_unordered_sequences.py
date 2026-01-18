@@ -1,0 +1,36 @@
+from __future__ import annotations
+from collections import deque
+import collections.abc as collections_abc
+import itertools
+from itertools import zip_longest
+import operator
+import typing
+from typing import Any
+from typing import Callable
+from typing import Deque
+from typing import Dict
+from typing import Iterable
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Type
+from . import operators
+from .cache_key import HasCacheKey
+from .visitors import _TraverseInternalsType
+from .visitors import anon_map
+from .visitors import ExternallyTraversible
+from .visitors import HasTraversalDispatch
+from .visitors import HasTraverseInternals
+from .. import util
+from ..util import langhelpers
+from ..util.typing import Self
+def _compare_unordered_sequences(self, seq1, seq2, **kw):
+    if seq1 is None:
+        return seq2 is None
+    completed: Set[object] = set()
+    for clause in seq1:
+        for other_clause in set(seq2).difference(completed):
+            if self.compare_inner(clause, other_clause, **kw):
+                completed.add(other_clause)
+                break
+    return len(completed) == len(seq1) == len(seq2)

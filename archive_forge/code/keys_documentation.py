@@ -1,0 +1,1 @@
+Return a typed cache key for the specified hashable arguments.

@@ -1,0 +1,32 @@
+from unittest import mock
+import yaml
+from mistralclient.api import base as mistral_base
+from mistralclient.api.v2 import executions
+from oslo_serialization import jsonutils
+from heat.common import exception
+from heat.common import template_format
+from heat.engine.clients.os import mistral as client
+from heat.engine import node_data
+from heat.engine import resource
+from heat.engine.resources.openstack.mistral import workflow
+from heat.engine.resources import signal_responder
+from heat.engine.resources import stack_user
+from heat.engine import scheduler
+from heat.engine import template
+from heat.tests import common
+from heat.tests import utils
+def test_backward_support(self):
+    tmpl = template_format.parse(workflow_template_backward_support)
+    stack = utils.parse_stack(tmpl)
+    rsrc_defns = stack.t.resource_definitions(stack)['create_vm']
+    wf = workflow.Workflow('create_vm', rsrc_defns, stack)
+    self.mistral.workflows.create.return_value = [FakeWorkflow('create_vm')]
+    scheduler.TaskRunner(wf.create)()
+    expected_state = (wf.CREATE, wf.COMPLETE)
+    self.assertEqual(expected_state, wf.state)
+    self.assertEqual('create_vm', wf.resource_id)
+    for task in wf.properties['tasks']:
+        if task['name'] == 'wait_instance':
+            self.assertEqual(5, task['retry']['delay'])
+            self.assertEqual(15, task['retry']['count'])
+            break

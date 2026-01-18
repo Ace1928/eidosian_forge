@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class SmithValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='smith', parent_name='layout', **kwargs):
+        super(SmithValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Smith'), data_docs=kwargs.pop('data_docs', '\n            bgcolor\n                Set the background color of the subplot\n            domain\n                :class:`plotly.graph_objects.layout.smith.Domai\n                n` instance or dict with compatible properties\n            imaginaryaxis\n                :class:`plotly.graph_objects.layout.smith.Imagi\n                naryaxis` instance or dict with compatible\n                properties\n            realaxis\n                :class:`plotly.graph_objects.layout.smith.Reala\n                xis` instance or dict with compatible\n                properties\n'), **kwargs)

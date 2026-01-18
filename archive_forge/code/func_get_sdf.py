@@ -1,0 +1,12 @@
+import boto.exception
+from boto.compat import json
+import requests
+import boto
+def get_sdf(self):
+    """
+        Generate the working set of documents in Search Data Format (SDF)
+
+        :rtype: string
+        :returns: JSON-formatted string of the documents in SDF
+        """
+    return self._sdf if self._sdf else json.dumps(self.documents_batch)

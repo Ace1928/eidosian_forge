@@ -1,0 +1,2 @@
+class TranscriptionNotReady(Exception):
+    pass

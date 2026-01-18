@@ -1,0 +1,31 @@
+import re
+from django.conf import settings
+from django.contrib.gis.db.backends.base.operations import BaseSpatialOperations
+from django.contrib.gis.db.backends.utils import SpatialOperator
+from django.contrib.gis.db.models import GeometryField, RasterField
+from django.contrib.gis.gdal import GDALRaster
+from django.contrib.gis.geos.geometry import GEOSGeometryBase
+from django.contrib.gis.geos.prototypes.io import wkb_r
+from django.contrib.gis.measure import Distance
+from django.core.exceptions import ImproperlyConfigured
+from django.db import NotSupportedError, ProgrammingError
+from django.db.backends.postgresql.operations import DatabaseOperations
+from django.db.backends.postgresql.psycopg_any import is_psycopg3
+from django.db.models import Func, Value
+from django.utils.functional import cached_property
+from django.utils.version import get_version_tuple
+from .adapter import PostGISAdapter
+from .models import PostGISGeometryColumns, PostGISSpatialRefSys
+from .pgraster import from_pgraster
+def proj_version_tuple(self):
+    """
+        Return the version of PROJ used by PostGIS as a tuple of the
+        major, minor, and subminor release numbers.
+        """
+    proj_regex = re.compile('(\\d+)\\.(\\d+)\\.(\\d+)')
+    proj_ver_str = self.postgis_proj_version()
+    m = proj_regex.search(proj_ver_str)
+    if m:
+        return tuple(map(int, m.groups()))
+    else:
+        raise Exception('Could not determine PROJ version from PostGIS.')

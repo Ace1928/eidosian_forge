@@ -1,0 +1,45 @@
+import pytest
+import networkx as nx
+from networkx import Graph, NetworkXError
+from networkx.algorithms.community import asyn_fluidc
+def test_five_clique_ring():
+    test = Graph()
+    test.add_edge('1a', '1b')
+    test.add_edge('1a', '1c')
+    test.add_edge('1a', '1d')
+    test.add_edge('1b', '1c')
+    test.add_edge('1b', '1d')
+    test.add_edge('1c', '1d')
+    test.add_edge('2a', '2b')
+    test.add_edge('2a', '2c')
+    test.add_edge('2a', '2d')
+    test.add_edge('2b', '2c')
+    test.add_edge('2b', '2d')
+    test.add_edge('2c', '2d')
+    test.add_edge('3a', '3b')
+    test.add_edge('3a', '3c')
+    test.add_edge('3a', '3d')
+    test.add_edge('3b', '3c')
+    test.add_edge('3b', '3d')
+    test.add_edge('3c', '3d')
+    test.add_edge('4a', '4b')
+    test.add_edge('4a', '4c')
+    test.add_edge('4a', '4d')
+    test.add_edge('4b', '4c')
+    test.add_edge('4b', '4d')
+    test.add_edge('4c', '4d')
+    test.add_edge('5a', '5b')
+    test.add_edge('5a', '5c')
+    test.add_edge('5a', '5d')
+    test.add_edge('5b', '5c')
+    test.add_edge('5b', '5d')
+    test.add_edge('5c', '5d')
+    test.add_edge('1a', '2c')
+    test.add_edge('2a', '3c')
+    test.add_edge('3a', '4c')
+    test.add_edge('4a', '5c')
+    test.add_edge('5a', '1c')
+    ground_truth = {frozenset(['1a', '1b', '1c', '1d']), frozenset(['2a', '2b', '2c', '2d']), frozenset(['3a', '3b', '3c', '3d']), frozenset(['4a', '4b', '4c', '4d']), frozenset(['5a', '5b', '5c', '5d'])}
+    communities = asyn_fluidc(test, 5, seed=9)
+    result = {frozenset(c) for c in communities}
+    assert result == ground_truth

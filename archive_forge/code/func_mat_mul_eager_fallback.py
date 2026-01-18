@@ -1,0 +1,36 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+def mat_mul_eager_fallback(a: _atypes.TensorFuzzingAnnotation[TV_MatMul_T], b: _atypes.TensorFuzzingAnnotation[TV_MatMul_T], transpose_a: bool, transpose_b: bool, grad_a: bool, grad_b: bool, name, ctx) -> _atypes.TensorFuzzingAnnotation[TV_MatMul_T]:
+    if transpose_a is None:
+        transpose_a = False
+    transpose_a = _execute.make_bool(transpose_a, 'transpose_a')
+    if transpose_b is None:
+        transpose_b = False
+    transpose_b = _execute.make_bool(transpose_b, 'transpose_b')
+    if grad_a is None:
+        grad_a = False
+    grad_a = _execute.make_bool(grad_a, 'grad_a')
+    if grad_b is None:
+        grad_b = False
+    grad_b = _execute.make_bool(grad_b, 'grad_b')
+    _attr_T, _inputs_T = _execute.args_to_matching_eager([a, b], ctx, [_dtypes.bfloat16, _dtypes.half, _dtypes.float32, _dtypes.float64, _dtypes.int32, _dtypes.int64, _dtypes.uint8, _dtypes.uint16, _dtypes.uint32, _dtypes.uint64, _dtypes.complex64, _dtypes.complex128])
+    a, b = _inputs_T
+    _inputs_flat = [a, b]
+    _attrs = ('transpose_a', transpose_a, 'transpose_b', transpose_b, 'T', _attr_T, 'grad_a', grad_a, 'grad_b', grad_b)
+    _result = _execute.execute(b'MatMul', 1, inputs=_inputs_flat, attrs=_attrs, ctx=ctx, name=name)
+    if _execute.must_record_gradient():
+        _execute.record_gradient('MatMul', _inputs_flat, _attrs, _result)
+    _result, = _result
+    return _result

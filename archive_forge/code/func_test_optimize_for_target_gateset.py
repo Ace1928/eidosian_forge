@@ -1,0 +1,14 @@
+import cirq
+from cirq.protocols.decompose_protocol import DecomposeResult
+from cirq.transformers.optimize_for_target_gateset import _decompose_operations_to_target_gateset
+import pytest
+def test_optimize_for_target_gateset():
+    q = cirq.LineQubit.range(4)
+    c_orig = cirq.Circuit(cirq.QuantumFourierTransformGate(4).on(*q), cirq.Y(q[0]).with_tags('ignore'), cirq.Y(q[1]).with_tags('ignore'), cirq.CNOT(*q[2:]).with_tags('ignore'), cirq.measure(*q[:2], key='m'), cirq.CZ(*q[2:]).with_classical_controls('m'), cirq.inverse(cirq.QuantumFourierTransformGate(4).on(*q)))
+    cirq.testing.assert_has_diagram(c_orig, "\n0: ───qft───Y['ignore']───M───────qft^-1───\n      │                   ║       │\n1: ───#2────Y['ignore']───M───────#2───────\n      │                   ║       │\n2: ───#3────@['ignore']───╫───@───#3───────\n      │     │             ║   ║   │\n3: ───#4────X─────────────╫───@───#4───────\n                          ║   ║\nm: ═══════════════════════@═══^════════════\n")
+    gateset = MatrixGateTargetGateset()
+    context = cirq.TransformerContext(tags_to_ignore=('ignore',))
+    c_new = cirq.optimize_for_target_gateset(c_orig, gateset=gateset, context=context)
+    cirq.testing.assert_has_diagram(c_new, "\n                                         ┌────────┐                         ┌────────┐                 ┌────────┐\n0: ───M[1]──────────M[1]──────────────────────M[1]────Y['ignore']───M────────────M[1]───────────────────M[1]────────M[1]───M[1]───\n      │             │                         │                     ║            │                      │           │      │\n1: ───M[2]───M[1]───┼─────────────M[1]────M[1]┼───────Y['ignore']───M────────M[1]┼──────────────M[1]────┼───M[1]────┼──────M[2]───\n             │      │             │       │   │                     ║        │   │              │       │   │       │\n2: ──────────M[2]───M[2]───M[1]───┼───────M[2]┼───────@['ignore']───╫───@────M[2]┼───────M[1]───┼───────┼───M[2]────M[2]──────────\n                           │      │           │       │             ║   ║        │       │      │       │\n3: ────────────────────────M[2]───M[2]────────M[2]────X─────────────╫───@────────M[2]────M[2]───M[2]────M[2]──────────────────────\n                                                                    ║   ║\nm: ═════════════════════════════════════════════════════════════════@═══^═════════════════════════════════════════════════════════\n                                         └────────┘                         └────────┘                 └────────┘\n       ")
+    with pytest.raises(ValueError, match='Unable to convert'):
+        _ = cirq.optimize_for_target_gateset(c_orig, gateset=gateset, context=context, ignore_failures=False)

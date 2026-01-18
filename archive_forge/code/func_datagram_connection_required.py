@@ -1,0 +1,9 @@
+import asyncio
+import socket
+import sys
+import dns._asyncbackend
+import dns._features
+import dns.exception
+import dns.inet
+def datagram_connection_required(self):
+    return False

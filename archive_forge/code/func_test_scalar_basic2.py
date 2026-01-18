@@ -1,0 +1,19 @@
+import warnings
+import pytest
+from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
+from pytest import raises as assert_raises
+import numpy as np
+from numpy import array, float64
+from multiprocessing.pool import ThreadPool
+from scipy import optimize, linalg
+from scipy.special import lambertw
+from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
+from scipy.optimize import OptimizeWarning
+from scipy.optimize._minimize import Bounds
+def test_scalar_basic2(self):
+
+    def func(x):
+        return x ** 0.5
+    x0 = 1.05
+    x = fixed_point(func, x0)
+    assert_almost_equal(x, 1.0)

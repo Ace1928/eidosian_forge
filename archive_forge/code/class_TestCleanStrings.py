@@ -1,0 +1,58 @@
+import datetime
+import unittest
+from traits.util.clean_strings import clean_filename, clean_timestamp
+class TestCleanStrings(unittest.TestCase):
+
+    def test_clean_filename_default(self):
+        test_strings = ['!!!', '', ' ', '\t/\n', '^!+']
+        for test_string in test_strings:
+            with self.assertWarns(DeprecationWarning):
+                safe_string = clean_filename(test_string, 'default-output')
+            self.check_output(safe_string)
+            self.assertEqual(safe_string, 'default-output')
+
+    def test_clean_filename_whitespace_handling(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(clean_filename(' abc '), 'abc')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(clean_filename(' \t\tabc    \n'), 'abc')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(clean_filename('well name'), 'well-name')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(clean_filename('well \n name'), 'well-name')
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(clean_filename('well - name'), 'well-name')
+
+    def test_clean_filename_conversion_to_lowercase(self):
+        test_string = 'ABCdefGHI123'
+        with self.assertWarns(DeprecationWarning):
+            safe_string = clean_filename(test_string)
+        self.assertEqual(safe_string, test_string.lower())
+        self.check_output(safe_string)
+
+    def test_clean_filename_accented_chars(self):
+        test_strings = ['äbçdèf', 'äbçdèf']
+        for test_string in test_strings:
+            with self.assertWarns(DeprecationWarning):
+                safe_string = clean_filename(test_string)
+            self.check_output(safe_string)
+            self.assertEqual(safe_string, 'abcdef')
+
+    def test_clean_filename_all_chars(self):
+        test_strings = [''.join((chr(n) for n in range(10000))), ''.join((chr(n) for n in range(10000))) * 2, ''.join((chr(n) for n in reversed(range(10000))))]
+        for test_string in test_strings:
+            with self.assertWarns(DeprecationWarning):
+                safe_string = clean_filename(test_string)
+            self.check_output(safe_string)
+
+    def test_clean_timestamp_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            clean_timestamp(datetime.datetime.now())
+
+    def check_output(self, safe_string):
+        """
+        Check that a supposedly safe string is actually safe.
+        """
+        self.assertIsInstance(safe_string, str)
+        chars_in_string = set(safe_string)
+        self.assertLessEqual(chars_in_string, LEGAL_CHARS)

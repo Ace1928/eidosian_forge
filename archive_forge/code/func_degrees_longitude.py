@@ -1,0 +1,7 @@
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from .message_media import MediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_location import LocationAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@degrees_longitude.setter
+def degrees_longitude(self, value):
+    self.media_specific_attributes.degrees_longitude = value

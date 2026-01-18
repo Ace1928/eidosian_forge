@@ -1,0 +1,32 @@
+import os
+import time
+import sys
+import zlib
+from io import BytesIO
+import warnings
+import numpy as np
+import scipy.sparse
+from ._byteordercodes import native_code, swapped_code
+from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
+from ._mio5_utils import VarReader5
+from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
+from ._streams import ZlibInputStream
+def write_numeric(self, arr):
+    imagf = arr.dtype.kind == 'c'
+    logif = arr.dtype.kind == 'b'
+    try:
+        mclass = NP_TO_MXTYPES[arr.dtype.str[1:]]
+    except KeyError:
+        if imagf:
+            arr = arr.astype('c128')
+        elif logif:
+            arr = arr.astype('i1')
+        else:
+            arr = arr.astype('f8')
+        mclass = mxDOUBLE_CLASS
+    self.write_header(matdims(arr, self.oned_as), mclass, is_complex=imagf, is_logical=logif)
+    if imagf:
+        self.write_element(arr.real)
+        self.write_element(arr.imag)
+    else:
+        self.write_element(arr)

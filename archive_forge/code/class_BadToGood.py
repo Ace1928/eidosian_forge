@@ -1,0 +1,21 @@
+import unittest
+import types as pytypes
+from numba import jit, njit, cfunc, types, int64, float64, float32, errors
+from numba import literal_unroll, typeof
+from numba.core.config import IS_WIN32
+import ctypes
+import warnings
+from .support import TestCase, MemoryLeakMixin
+import numpy as np
+class BadToGood(types.WrapperAddressProtocol):
+    """A first-class function type with invalid address that is
+            recovered to a valid address.
+            """
+    counter = -1
+
+    def __wrapper_address__(self):
+        self.counter += 1
+        return test.address * min(1, self.counter)
+
+    def signature(self):
+        return sig

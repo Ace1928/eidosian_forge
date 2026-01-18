@@ -1,0 +1,30 @@
+from __future__ import annotations
+import datetime
+import re
+from contextlib import ExitStack
+from dataclasses import dataclass
+from functools import partial
+from io import BytesIO
+from tempfile import NamedTemporaryFile
+from textwrap import indent
+from typing import (
+from zoneinfo import ZoneInfo
+import param
+from ..io.resources import CDN_DIST, get_dist_path
+from ..io.state import state
+from ..layout import Column, Row
+from ..pane.base import PaneBase, ReplacementPane, panel as _panel
+from ..pane.image import (
+from ..pane.markup import (
+from ..pane.media import Audio, Video
+from ..param import ParamFunction
+from ..viewable import Viewable
+from ..widgets.base import Widget
+from .icon import ChatCopyIcon, ChatReactionIcons
+@staticmethod
+def _to_alpha_numeric(user: str) -> str:
+    """
+        Convert the user name to an alpha numeric string,
+        removing all non-alphanumeric characters.
+        """
+    return re.sub('\\W+', '', user).lower()

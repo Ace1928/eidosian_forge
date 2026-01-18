@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""
+Command-line interface for Figlet Forge.
+
+This script provides the main entry point for using Figlet Forge from the
+command line, offering text-to-ASCII art conversion with advanced options.
+"""
+
+import sys
+
+from figlet_forge.cli.main import main
+
+if __name__ == "__main__":
+    sys.exit(main())

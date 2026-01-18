@@ -1,0 +1,18 @@
+import itertools
+from collections import OrderedDict
+from ...error import GraphQLError
+from ...language import ast
+from ...language.printer import print_ast
+from ...pyutils.pair_set import PairSet
+from ...type.definition import (GraphQLInterfaceType, GraphQLList,
+from ...utils.type_comparators import is_equal_type
+from ...utils.type_from_ast import type_from_ast
+from .base import ValidationRule
+def _get_referenced_fields_and_fragment_names(context, cached_fields_and_fragment_names, fragment):
+    """Given a reference to a fragment, return the represented collection of fields as well as a list of
+    nested fragment names referenced via fragment spreads."""
+    cached = cached_fields_and_fragment_names.get(fragment.selection_set)
+    if cached:
+        return cached
+    fragment_type = type_from_ast(context.get_schema(), fragment.type_condition)
+    return _get_fields_and_fragments_names(context, cached_fields_and_fragment_names, fragment_type, fragment.selection_set)

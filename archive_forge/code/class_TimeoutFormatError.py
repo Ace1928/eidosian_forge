@@ -1,0 +1,2 @@
+class TimeoutFormatError(Exception):
+    pass

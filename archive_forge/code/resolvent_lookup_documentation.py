@@ -1,0 +1,1 @@
+Lookup table for Galois resolvents for polys of degree 4 through 6. 

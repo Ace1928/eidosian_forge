@@ -1,0 +1,67 @@
+from __future__ import annotations
+from typing import NamedTuple, Type, Callable, Sequence
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from collections import defaultdict
+from collections.abc import Mapping
+from sympy.core.add import Add
+from sympy.core.cache import cacheit
+from sympy.core.containers import Dict
+from sympy.core.expr import Expr
+from sympy.core.function import Derivative
+from sympy.core.logic import fuzzy_not
+from sympy.core.mul import Mul
+from sympy.core.numbers import Integer, Number, E
+from sympy.core.power import Pow
+from sympy.core.relational import Eq, Ne, Boolean
+from sympy.core.singleton import S
+from sympy.core.symbol import Dummy, Symbol, Wild
+from sympy.functions.elementary.complexes import Abs
+from sympy.functions.elementary.exponential import exp, log
+from sympy.functions.elementary.hyperbolic import (HyperbolicFunction, csch,
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import (TrigonometricFunction,
+from sympy.functions.special.delta_functions import Heaviside, DiracDelta
+from sympy.functions.special.error_functions import (erf, erfi, fresnelc,
+from sympy.functions.special.gamma_functions import uppergamma
+from sympy.functions.special.elliptic_integrals import elliptic_e, elliptic_f
+from sympy.functions.special.polynomials import (chebyshevt, chebyshevu,
+from sympy.functions.special.zeta_functions import polylog
+from .integrals import Integral
+from sympy.logic.boolalg import And
+from sympy.ntheory.factor_ import primefactors
+from sympy.polys.polytools import degree, lcm_list, gcd_list, Poly
+from sympy.simplify.radsimp import fraction
+from sympy.simplify.simplify import simplify
+from sympy.solvers.solvers import solve
+from sympy.strategies.core import switch, do_one, null_safe, condition
+from sympy.utilities.iterables import iterable
+from sympy.utilities.misc import debug
+@dataclass
+class SqrtQuadraticDenomRule(AtomicRule):
+    """integrate(poly(x)/sqrt(a+b*x+c*x**2), x)"""
+    a: Expr
+    b: Expr
+    c: Expr
+    coeffs: list[Expr]
+
+    def eval(self) -> Expr:
+        a, b, c, coeffs, x = (self.a, self.b, self.c, self.coeffs.copy(), self.variable)
+        result_coeffs = []
+        coeffs = coeffs.copy()
+        for i in range(len(coeffs) - 2):
+            n = len(coeffs) - 1 - i
+            coeff = coeffs[i] / (c * n)
+            result_coeffs.append(coeff)
+            coeffs[i + 1] -= (2 * n - 1) * b / 2 * coeff
+            coeffs[i + 2] -= (n - 1) * a * coeff
+        d, e = (coeffs[-1], coeffs[-2])
+        s = sqrt(a + b * x + c * x ** 2)
+        constant = d - b * e / (2 * c)
+        if constant == 0:
+            I0 = 0
+        else:
+            step = inverse_trig_rule(IntegralInfo(1 / s, x), degenerate=False)
+            I0 = constant * step.eval()
+        return Add(*(result_coeffs[i] * x ** (len(coeffs) - 2 - i) for i in range(len(result_coeffs))), e / c) * s + I0

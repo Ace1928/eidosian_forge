@@ -1,0 +1,6 @@
+import os
+@classmethod
+def convert_dir(cls, param, value):
+    if os.path.isdir(value):
+        return value
+    raise ValueError

@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def slot_to_dict(slot):
+    return dict(id=slot.id, resource_group=slot.resource_group, server_farm_id=slot.server_farm_id, target_swap_slot=slot.target_swap_slot, enabled_host_names=slot.enabled_host_names, slot_swap_status=slot.slot_swap_status, name=slot.name, location=slot.location, enabled=slot.enabled, reserved=slot.reserved, host_names_disabled=slot.host_names_disabled, state=slot.state, repository_site_name=slot.repository_site_name, default_host_name=slot.default_host_name, kind=slot.kind, site_config=slot.site_config, tags=slot.tags if slot.tags else None)

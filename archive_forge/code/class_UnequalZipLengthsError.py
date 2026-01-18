@@ -1,0 +1,2 @@
+class UnequalZipLengthsError(Error):
+    pass

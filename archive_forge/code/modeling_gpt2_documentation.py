@@ -1,0 +1,27 @@
+import math
+import os
+import warnings
+from dataclasses import dataclass
+from typing import Optional, Tuple, Union
+import torch
+import torch.utils.checkpoint
+from torch import nn
+from torch.cuda.amp import autocast
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+from ...activations import ACT2FN
+from ...modeling_outputs import (
+from ...modeling_utils import PreTrainedModel, SequenceSummary
+from ...pytorch_utils import Conv1D, find_pruneable_heads_and_indices, prune_conv1d_layer
+from ...utils import (
+from ...utils.model_parallel_utils import assert_device_map, get_device_map
+from .configuration_gpt2 import GPT2Config
+
+        start_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the start of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        end_positions (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
+            Labels for position (index) of the end of the labelled span for computing the token classification loss.
+            Positions are clamped to the length of the sequence (`sequence_length`). Position outside of the sequence
+            are not taken into account for computing the loss.
+        

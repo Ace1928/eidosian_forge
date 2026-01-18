@@ -1,0 +1,72 @@
+from __future__ import annotations
+import contextlib
+import warnings
+from datetime import datetime
+import numpy as np
+import pandas as pd
+import pytest
+from pandas.api.types import is_scalar
+import dask.dataframe as dd
+from dask.array.numpy_compat import NUMPY_GE_125
+from dask.dataframe._compat import (
+from dask.dataframe.utils import (
+def test_scalar_arithmetics():
+    el = np.int64(10)
+    er = np.int64(4)
+    l = dd.core.Scalar({('l', 0): el}, 'l', 'i8')
+    r = dd.core.Scalar({('r', 0): er}, 'r', 'i8')
+    assert isinstance(l, dd.core.Scalar)
+    assert isinstance(r, dd.core.Scalar)
+    assert_eq(l, el)
+    assert_eq(r, er)
+    assert_eq(l + r, el + er)
+    assert_eq(l * r, el * er)
+    assert_eq(l - r, el - er)
+    assert_eq(l / r, el / er)
+    assert_eq(l // r, el // er)
+    assert_eq(l ** r, el ** er)
+    assert_eq(l % r, el % er)
+    assert_eq(l & r, el & er)
+    assert_eq(l | r, el | er)
+    assert_eq(l ^ r, el ^ er)
+    assert_eq(l > r, el > er)
+    assert_eq(l < r, el < er)
+    assert_eq(l >= r, el >= er)
+    assert_eq(l <= r, el <= er)
+    assert_eq(l == r, el == er)
+    assert_eq(l != r, el != er)
+    assert_eq(l + 2, el + 2)
+    assert_eq(l * 2, el * 2)
+    assert_eq(l - 2, el - 2)
+    assert_eq(l / 2, el / 2)
+    assert_eq(l & True, el & True)
+    assert_eq(l | True, el | True)
+    assert_eq(l ^ True, el ^ True)
+    assert_eq(l // 2, el // 2)
+    assert_eq(l ** 2, el ** 2)
+    assert_eq(l % 2, el % 2)
+    assert_eq(l > 2, el > 2)
+    assert_eq(l < 2, el < 2)
+    assert_eq(l >= 2, el >= 2)
+    assert_eq(l <= 2, el <= 2)
+    assert_eq(l == 2, el == 2)
+    assert_eq(l != 2, el != 2)
+    assert_eq(2 + r, 2 + er)
+    assert_eq(2 * r, 2 * er)
+    assert_eq(2 - r, 2 - er)
+    assert_eq(2 / r, 2 / er)
+    assert_eq(True & r, True & er)
+    assert_eq(True | r, True | er)
+    assert_eq(True ^ r, True ^ er)
+    assert_eq(2 // r, 2 // er)
+    assert_eq(2 ** r, 2 ** er)
+    assert_eq(2 % r, 2 % er)
+    assert_eq(2 > r, 2 > er)
+    assert_eq(2 < r, 2 < er)
+    assert_eq(2 >= r, 2 >= er)
+    assert_eq(2 <= r, 2 <= er)
+    assert_eq(2 == r, 2 == er)
+    assert_eq(2 != r, 2 != er)
+    assert_eq(-l, -el)
+    assert_eq(abs(l), abs(el))
+    assert_eq(~(l == r), ~(el == er))

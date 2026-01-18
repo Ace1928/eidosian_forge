@@ -1,0 +1,30 @@
+import argparse
+import io
+import json
+import re
+import sys
+from unittest import mock
+import ddt
+import fixtures
+import keystoneauth1.exceptions as ks_exc
+from keystoneauth1.exceptions import DiscoveryFailure
+from keystoneauth1.identity.generic.password import Password as ks_password
+from keystoneauth1 import session
+import requests_mock
+from testtools import matchers
+import cinderclient
+from cinderclient import api_versions
+from cinderclient.contrib import noauth
+from cinderclient import exceptions
+from cinderclient import shell
+from cinderclient.tests.unit import fake_actions_module
+from cinderclient.tests.unit.fixture_data import keystone_client
+from cinderclient.tests.unit import utils
+from cinderclient.tests.unit.v3 import fakes
+@mock.patch.object(cinderclient.shell.OpenStackCinderShell, '_get_keystone_session')
+@mock.patch.object(cinderclient.client.SessionClient, 'authenticate', side_effect=RuntimeError())
+def test_password_auth_type(self, mock_authenticate, mock_get_session):
+    self.make_env(include={'OS_AUTH_TYPE': 'password'})
+    _shell = shell.OpenStackCinderShell()
+    self.assertRaises(RuntimeError, _shell.main, ['list'])
+    self.assertIsInstance(_shell.cs.client.session.auth, ks_password)

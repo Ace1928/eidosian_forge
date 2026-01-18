@@ -1,0 +1,2 @@
+class LogInsightLoginTimeout(Exception):
+    pass

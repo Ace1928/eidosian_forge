@@ -1,0 +1,3 @@
+from Cython.TestUtils import CythonTest
+def test_return_none(self):
+    self.t(u'\n                    def f(x, y, z):\n                        return\n                    cdef f(x, y, z):\n                        return\n                    def f(x, y, z):\n                        return None\n                    cdef f(x, y, z):\n                        return None\n                    def f(x, y, z):\n                        return 1234\n                    cdef f(x, y, z):\n                        return 1234\n               ')

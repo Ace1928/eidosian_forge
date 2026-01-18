@@ -1,0 +1,20 @@
+import sys
+import os
+import json
+import traceback
+import warnings
+from io import StringIO, BytesIO
+import webob
+from webob.exc import HTTPNotFound
+from webtest import TestApp
+from pecan import (
+from pecan.templating import (
+from pecan.decorators import accept_noncanonical
+from pecan.tests import PecanTestCase
+import unittest
+def test_empty_index(self):
+    r = self.app_.get('/')
+    self.assertEqual(r.status_int, 204)
+    self.assertNotIn('Content-Type', r.headers)
+    self.assertEqual(r.headers['Content-Length'], '0')
+    self.assertEqual(len(r.body), 0)

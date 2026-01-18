@@ -1,0 +1,23 @@
+import contextlib
+import errno
+import hashlib
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import IO, TYPE_CHECKING, ContextManager, Generator, Optional, Tuple
+import wandb
+from wandb import env, util
+from wandb.errors import term
+from wandb.sdk.lib.filesystem import files_in
+from wandb.sdk.lib.hashutil import B64MD5, ETag, b64_to_hex_id
+from wandb.sdk.lib.paths import FilePathStr, StrPath, URIStr
+def check_md5_obj_path(self, b64_md5: B64MD5, size: int) -> Tuple[FilePathStr, bool, 'Opener']:
+    if self._override_cache_path is not None:
+        path = Path(self._override_cache_path)
+    else:
+        hex_md5 = b64_to_hex_id(b64_md5)
+        path = self._obj_dir / 'md5' / hex_md5[:2] / hex_md5[2:]
+    return self._check_or_create(path, size)

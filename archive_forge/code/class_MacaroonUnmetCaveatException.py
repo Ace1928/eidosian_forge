@@ -1,0 +1,2 @@
+class MacaroonUnmetCaveatException(MacaroonVerificationFailedException):
+    pass

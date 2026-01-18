@@ -1,0 +1,340 @@
+import logging
+import os
+import shutil
+import sys
+import urllib.parse
+from typing import (
+from pip._internal.cli.spinners import SpinnerInterface
+from pip._internal.exceptions import BadCommand, InstallationError
+from pip._internal.utils.misc import (
+from pip._internal.utils.subprocess import (
+from pip._internal.utils.urls import get_url_scheme
+class VersionControl:
+    name = ''
+    dirname = ''
+    repo_name = ''
+    schemes: Tuple[str, ...] = ()
+    unset_environ: Tuple[str, ...] = ()
+    default_arg_rev: Optional[str] = None
+
+    @classmethod
+    def should_add_vcs_url_prefix(cls, remote_url: str) -> bool:
+        """
+        Return whether the vcs prefix (e.g. "git+") should be added to a
+        repository's remote url when used in a requirement.
+        """
+        return not remote_url.lower().startswith(f'{cls.name}:')
+
+    @classmethod
+    def get_subdirectory(cls, location: str) -> Optional[str]:
+        """
+        Return the path to Python project root, relative to the repo root.
+        Return None if the project root is in the repo root.
+        """
+        return None
+
+    @classmethod
+    def get_requirement_revision(cls, repo_dir: str) -> str:
+        """
+        Return the revision string that should be used in a requirement.
+        """
+        return cls.get_revision(repo_dir)
+
+    @classmethod
+    def get_src_requirement(cls, repo_dir: str, project_name: str) -> str:
+        """
+        Return the requirement string to use to redownload the files
+        currently at the given repository directory.
+
+        Args:
+          project_name: the (unescaped) project name.
+
+        The return value has a form similar to the following:
+
+            {repository_url}@{revision}#egg={project_name}
+        """
+        repo_url = cls.get_remote_url(repo_dir)
+        if cls.should_add_vcs_url_prefix(repo_url):
+            repo_url = f'{cls.name}+{repo_url}'
+        revision = cls.get_requirement_revision(repo_dir)
+        subdir = cls.get_subdirectory(repo_dir)
+        req = make_vcs_requirement_url(repo_url, revision, project_name, subdir=subdir)
+        return req
+
+    @staticmethod
+    def get_base_rev_args(rev: str) -> List[str]:
+        """
+        Return the base revision arguments for a vcs command.
+
+        Args:
+          rev: the name of a revision to install.  Cannot be None.
+        """
+        raise NotImplementedError
+
+    def is_immutable_rev_checkout(self, url: str, dest: str) -> bool:
+        """
+        Return true if the commit hash checked out at dest matches
+        the revision in url.
+
+        Always return False, if the VCS does not support immutable commit
+        hashes.
+
+        This method does not check if there are local uncommitted changes
+        in dest after checkout, as pip currently has no use case for that.
+        """
+        return False
+
+    @classmethod
+    def make_rev_options(cls, rev: Optional[str]=None, extra_args: Optional[CommandArgs]=None) -> RevOptions:
+        """
+        Return a RevOptions object.
+
+        Args:
+          rev: the name of a revision to install.
+          extra_args: a list of extra options.
+        """
+        return RevOptions(cls, rev, extra_args=extra_args)
+
+    @classmethod
+    def _is_local_repository(cls, repo: str) -> bool:
+        """
+        posix absolute paths start with os.path.sep,
+        win32 ones start with drive (like c:\\folder)
+        """
+        drive, tail = os.path.splitdrive(repo)
+        return repo.startswith(os.path.sep) or bool(drive)
+
+    @classmethod
+    def get_netloc_and_auth(cls, netloc: str, scheme: str) -> Tuple[str, Tuple[Optional[str], Optional[str]]]:
+        """
+        Parse the repository URL's netloc, and return the new netloc to use
+        along with auth information.
+
+        Args:
+          netloc: the original repository URL netloc.
+          scheme: the repository URL's scheme without the vcs prefix.
+
+        This is mainly for the Subversion class to override, so that auth
+        information can be provided via the --username and --password options
+        instead of through the URL.  For other subclasses like Git without
+        such an option, auth information must stay in the URL.
+
+        Returns: (netloc, (username, password)).
+        """
+        return (netloc, (None, None))
+
+    @classmethod
+    def get_url_rev_and_auth(cls, url: str) -> Tuple[str, Optional[str], AuthInfo]:
+        """
+        Parse the repository URL to use, and return the URL, revision,
+        and auth info to use.
+
+        Returns: (url, rev, (username, password)).
+        """
+        scheme, netloc, path, query, frag = urllib.parse.urlsplit(url)
+        if '+' not in scheme:
+            raise ValueError(f'Sorry, {url!r} is a malformed VCS url. The format is <vcs>+<protocol>://<url>, e.g. svn+http://myrepo/svn/MyApp#egg=MyApp')
+        scheme = scheme.split('+', 1)[1]
+        netloc, user_pass = cls.get_netloc_and_auth(netloc, scheme)
+        rev = None
+        if '@' in path:
+            path, rev = path.rsplit('@', 1)
+            if not rev:
+                raise InstallationError(f'The URL {url!r} has an empty revision (after @) which is not supported. Include a revision after @ or remove @ from the URL.')
+        url = urllib.parse.urlunsplit((scheme, netloc, path, query, ''))
+        return (url, rev, user_pass)
+
+    @staticmethod
+    def make_rev_args(username: Optional[str], password: Optional[HiddenText]) -> CommandArgs:
+        """
+        Return the RevOptions "extra arguments" to use in obtain().
+        """
+        return []
+
+    def get_url_rev_options(self, url: HiddenText) -> Tuple[HiddenText, RevOptions]:
+        """
+        Return the URL and RevOptions object to use in obtain(),
+        as a tuple (url, rev_options).
+        """
+        secret_url, rev, user_pass = self.get_url_rev_and_auth(url.secret)
+        username, secret_password = user_pass
+        password: Optional[HiddenText] = None
+        if secret_password is not None:
+            password = hide_value(secret_password)
+        extra_args = self.make_rev_args(username, password)
+        rev_options = self.make_rev_options(rev, extra_args=extra_args)
+        return (hide_url(secret_url), rev_options)
+
+    @staticmethod
+    def normalize_url(url: str) -> str:
+        """
+        Normalize a URL for comparison by unquoting it and removing any
+        trailing slash.
+        """
+        return urllib.parse.unquote(url).rstrip('/')
+
+    @classmethod
+    def compare_urls(cls, url1: str, url2: str) -> bool:
+        """
+        Compare two repo URLs for identity, ignoring incidental differences.
+        """
+        return cls.normalize_url(url1) == cls.normalize_url(url2)
+
+    def fetch_new(self, dest: str, url: HiddenText, rev_options: RevOptions, verbosity: int) -> None:
+        """
+        Fetch a revision from a repository, in the case that this is the
+        first fetch from the repository.
+
+        Args:
+          dest: the directory to fetch the repository to.
+          rev_options: a RevOptions object.
+          verbosity: verbosity level.
+        """
+        raise NotImplementedError
+
+    def switch(self, dest: str, url: HiddenText, rev_options: RevOptions) -> None:
+        """
+        Switch the repo at ``dest`` to point to ``URL``.
+
+        Args:
+          rev_options: a RevOptions object.
+        """
+        raise NotImplementedError
+
+    def update(self, dest: str, url: HiddenText, rev_options: RevOptions) -> None:
+        """
+        Update an already-existing repo to the given ``rev_options``.
+
+        Args:
+          rev_options: a RevOptions object.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def is_commit_id_equal(cls, dest: str, name: Optional[str]) -> bool:
+        """
+        Return whether the id of the current commit equals the given name.
+
+        Args:
+          dest: the repository directory.
+          name: a string name.
+        """
+        raise NotImplementedError
+
+    def obtain(self, dest: str, url: HiddenText, verbosity: int) -> None:
+        """
+        Install or update in editable mode the package represented by this
+        VersionControl object.
+
+        :param dest: the repository directory in which to install or update.
+        :param url: the repository URL starting with a vcs prefix.
+        :param verbosity: verbosity level.
+        """
+        url, rev_options = self.get_url_rev_options(url)
+        if not os.path.exists(dest):
+            self.fetch_new(dest, url, rev_options, verbosity=verbosity)
+            return
+        rev_display = rev_options.to_display()
+        if self.is_repository_directory(dest):
+            existing_url = self.get_remote_url(dest)
+            if self.compare_urls(existing_url, url.secret):
+                logger.debug('%s in %s exists, and has correct URL (%s)', self.repo_name.title(), display_path(dest), url)
+                if not self.is_commit_id_equal(dest, rev_options.rev):
+                    logger.info('Updating %s %s%s', display_path(dest), self.repo_name, rev_display)
+                    self.update(dest, url, rev_options)
+                else:
+                    logger.info('Skipping because already up-to-date.')
+                return
+            logger.warning('%s %s in %s exists with URL %s', self.name, self.repo_name, display_path(dest), existing_url)
+            prompt = ('(s)witch, (i)gnore, (w)ipe, (b)ackup ', ('s', 'i', 'w', 'b'))
+        else:
+            logger.warning('Directory %s already exists, and is not a %s %s.', dest, self.name, self.repo_name)
+            prompt = ('(i)gnore, (w)ipe, (b)ackup ', ('i', 'w', 'b'))
+        logger.warning('The plan is to install the %s repository %s', self.name, url)
+        response = ask_path_exists(f'What to do?  {prompt[0]}', prompt[1])
+        if response == 'a':
+            sys.exit(-1)
+        if response == 'w':
+            logger.warning('Deleting %s', display_path(dest))
+            rmtree(dest)
+            self.fetch_new(dest, url, rev_options, verbosity=verbosity)
+            return
+        if response == 'b':
+            dest_dir = backup_dir(dest)
+            logger.warning('Backing up %s to %s', display_path(dest), dest_dir)
+            shutil.move(dest, dest_dir)
+            self.fetch_new(dest, url, rev_options, verbosity=verbosity)
+            return
+        if response == 's':
+            logger.info('Switching %s %s to %s%s', self.repo_name, display_path(dest), url, rev_display)
+            self.switch(dest, url, rev_options)
+
+    def unpack(self, location: str, url: HiddenText, verbosity: int) -> None:
+        """
+        Clean up current location and download the url repository
+        (and vcs infos) into location
+
+        :param url: the repository URL starting with a vcs prefix.
+        :param verbosity: verbosity level.
+        """
+        if os.path.exists(location):
+            rmtree(location)
+        self.obtain(location, url=url, verbosity=verbosity)
+
+    @classmethod
+    def get_remote_url(cls, location: str) -> str:
+        """
+        Return the url used at location
+
+        Raises RemoteNotFoundError if the repository does not have a remote
+        url configured.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def get_revision(cls, location: str) -> str:
+        """
+        Return the current commit id of the files at the given location.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def run_command(cls, cmd: Union[List[str], CommandArgs], show_stdout: bool=True, cwd: Optional[str]=None, on_returncode: 'Literal["raise", "warn", "ignore"]'='raise', extra_ok_returncodes: Optional[Iterable[int]]=None, command_desc: Optional[str]=None, extra_environ: Optional[Mapping[str, Any]]=None, spinner: Optional[SpinnerInterface]=None, log_failed_cmd: bool=True, stdout_only: bool=False) -> str:
+        """
+        Run a VCS subcommand
+        This is simply a wrapper around call_subprocess that adds the VCS
+        command name, and checks that the VCS is available
+        """
+        cmd = make_command(cls.name, *cmd)
+        if command_desc is None:
+            command_desc = format_command_args(cmd)
+        try:
+            return call_subprocess(cmd, show_stdout, cwd, on_returncode=on_returncode, extra_ok_returncodes=extra_ok_returncodes, command_desc=command_desc, extra_environ=extra_environ, unset_environ=cls.unset_environ, spinner=spinner, log_failed_cmd=log_failed_cmd, stdout_only=stdout_only)
+        except FileNotFoundError:
+            raise BadCommand(f'Cannot find command {cls.name!r} - do you have {cls.name!r} installed and in your PATH?')
+        except PermissionError:
+            raise BadCommand(f'No permission to execute {cls.name!r} - install it locally, globally (ask admin), or check your PATH. See possible solutions at https://pip.pypa.io/en/latest/reference/pip_freeze/#fixing-permission-denied.')
+
+    @classmethod
+    def is_repository_directory(cls, path: str) -> bool:
+        """
+        Return whether a directory path is a repository directory.
+        """
+        logger.debug('Checking in %s for %s (%s)...', path, cls.dirname, cls.name)
+        return os.path.exists(os.path.join(path, cls.dirname))
+
+    @classmethod
+    def get_repository_root(cls, location: str) -> Optional[str]:
+        """
+        Return the "root" (top-level) directory controlled by the vcs,
+        or `None` if the directory is not in any.
+
+        It is meant to be overridden to implement smarter detection
+        mechanisms for specific vcs.
+
+        This can do more than is_repository_directory() alone. For
+        example, the Git override checks that Git is actually available.
+        """
+        if cls.is_repository_directory(location):
+            return location
+        return None

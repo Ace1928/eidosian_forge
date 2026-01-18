@@ -1,0 +1,19 @@
+import torch
+import torch.nn as nn
+import torch.ao.nn.intrinsic as nni
+import torch.nn.functional as F
+import torch.ao.nn.quantized.reference as nnqr
+from ._common_operator_config_utils import (
+from .backend_config import (
+from ..fuser_method_mappings import (
+import operator
+from torch.ao.quantization.utils import MatchAllNode
+import itertools
+def _conv_bn_add_relu_extra_inputs_getter_left(pattern):
+    """ get inputs pattern for extra inputs, inputs for root node
+    are assumed to be copied over from root node to the fused node
+    """
+    relu, add_pattern = pattern
+    _, bn_conv, extra_input = add_pattern
+    bn, conv = bn_conv
+    return [extra_input]

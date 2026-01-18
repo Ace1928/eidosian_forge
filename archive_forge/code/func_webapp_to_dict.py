@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def webapp_to_dict(webapp):
+    return dict(id=webapp.id, name=webapp.name, location=webapp.location, client_cert_enabled=webapp.client_cert_enabled, enabled=webapp.enabled, reserved=webapp.reserved, client_affinity_enabled=webapp.client_affinity_enabled, server_farm_id=webapp.server_farm_id, host_names_disabled=webapp.host_names_disabled, https_only=webapp.https_only if hasattr(webapp, 'https_only') else None, skip_custom_domain_verification=webapp.skip_custom_domain_verification if hasattr(webapp, 'skip_custom_domain_verification') else None, ttl_in_seconds=webapp.ttl_in_seconds if hasattr(webapp, 'ttl_in_seconds') else None, state=webapp.state, tags=webapp.tags if webapp.tags else None)

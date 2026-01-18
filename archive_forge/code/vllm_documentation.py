@@ -1,0 +1,22 @@
+import math
+from collections import defaultdict
+from typing import TYPE_CHECKING, DefaultDict, List, Optional, Type, Union
+import torch
+from pydantic import BaseModel
+from outlines.fsm.guide import RegexGuide
+from outlines.fsm.json_schema import build_regex_from_schema
+from outlines.integrations.utils import adapt_tokenizer, convert_json_schema_to_str
+Compile the FSM that drives the JSON-guided generation.
+
+        Parameters
+        ----------
+        schema
+            A JSON schema that encodes the structure we want the model to generate.
+        llm
+            The vLLM model.
+        whitespace_pattern
+            Pattern to use for JSON syntactic whitespace (doesn't impact string
+            literals). For example, to allow only a single space or newline with
+            `whitespace_pattern=r"[
+ ]?"`
+        

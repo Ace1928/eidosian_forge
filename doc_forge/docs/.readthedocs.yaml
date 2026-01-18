@@ -1,0 +1,102 @@
+# Read the Docs configuration file for Sphinx projects
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🌟 Universal Read the Docs configuration for *forge_repo projects
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Required
+version: 2
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🏗️ Build environment - Foundation of knowledge construction
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+build:
+  # Specify the OS and tool versions
+  os: ubuntu-24.04  # LTS version for stability and consistency
+  tools:
+    python: "3.12"  # Prioritizing existing Python version
+    nodejs: "20"    # For modern JavaScript processing
+    rust: "1.82"    # For Rust documentation and components
+    golang: "1.23"  # For Go documentation and utilities
+  
+  # System dependencies - the pillars of capability
+  apt_packages:
+    - clang        # C language family support
+    - cmake        # Cross-platform build system
+    - rustc        # Rust compiler
+    - cargo        # Rust package manager
+    - golang       # Go language support
+    - hugo         # Static site generator
+    - nodejs       # JavaScript runtime
+    - npm          # Node package manager
+  
+  # Build orchestration - the rhythm of creation
+  # (Retaining commented items, adding a minimal pre_create_environment job)
+  jobs:
+    pre_create_environment:
+      - echo "Running essential doc_forge modules.."
+      - pip install -e .  # Install the package itself first
+      - python -c "import os, sys; from pathlib import Path; docs_path = Path(os.getcwd()) / 'docs'; from doc_forge.update_toctrees import update_toctrees; update_toctrees(docs_path)"
+      - python -c "import os, sys; from pathlib import Path; docs_path = Path(os.getcwd()) / 'docs'; from doc_forge.fix_inline_refs import fix_inline_references; fix_inline_references(docs_path)"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🐍 Python environment - Precision as style, flow like a river
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+python:
+  install:
+    - method: pip
+      path: .  # Install the package itself first
+    - requirements: requirements.txt  # Core project requirements
+    - requirements: docs/requirements.txt  # Documentation-specific dependencies
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📘 Sphinx configuration - Structure as control
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+sphinx:
+  configuration: docs/conf.py  # Central source of truth
+  builder: html  # Default builder for most common case
+  fail_on_warning: false  # Temporarily disable to debug build issues
+  
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📦 Output formats - Exhaustive but concise delivery
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+formats:
+  - htmlzip  # Compressed HTML for efficient distribution
+  - pdf      # Professional PDF for offline reading
+  - epub     # E-reader compatibility for universal access
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🔄 Git Submodules - The branches of knowledge
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+submodules:
+  include: all      # Embrace the whole ecosystem of knowledge
+  recursive: true   # Dive deep into nested wisdom
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🔍 Search configuration - The path to enlightenment
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+search:
+  ranking:
+    # Decrease rank for outdated docs
+    old/*: -5
+    "deprecated/index.html": -5  # Lower rank for deprecated pages
+    "docs/important.html": 5     # Boost rank for key documentation
+  ignore:
+    - temp.html
+    - "404.html"
+    - "search.html"
+    - "search/index.html"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🔮 Optional: MkDocs configuration - For those who seek alternatives
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Uncomment to enable MkDocs if your project uses it
+# mkdocs:
+#   configuration: mkdocs.yml
+#   fail_on_warning: false
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# End of Eidosian forge_repo documentation configuration
+# Where clarity meets precision, and knowledge finds its form
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

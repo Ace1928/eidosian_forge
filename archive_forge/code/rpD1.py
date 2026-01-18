@@ -1,0 +1,186 @@
+"""
+sound_fetch.py
+
+Author: Lloyd Handyside
+Creation Date: 2024-03-31
+
+Description:
+This module is designed to download soundfont files from a specified URL. It handles the fetching of soundfont JSON configurations, downloading instrument JSON files, and the associated pitch/velocity MP3 files for each instrument. It ensures that only missing files are downloaded to optimize bandwidth usage.
+
+"""
+
+import json
+import os
+import urllib.request
+import logging
+import functools
+import time
+from typing import Callable, List
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logging.debug("Starting soundfont download process")
+
+__all__ = ["log_execution_time", "get_pitches_array"]
+
+
+def log_execution_time(func: Callable) -> Callable:
+    """Decorator to log the execution time of a function.
+
+    Parameters:
+    - func (Callable): The function to be decorated.
+
+    Returns:
+    - Callable: The wrapped function with execution time logging.
+
+    This decorator calculates the execution time of the function it decorates and logs it.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        logging.info(f"{func.__name__} executed in {end_time - start_time} seconds")
+        return result
+
+    return wrapper
+
+
+def get_pitches_array(min_pitch: int, max_pitch: int) -> List[int]:
+    """
+    Generates a list of pitches within the specified range.
+
+    Parameters:
+    - min_pitch (int): The minimum pitch value.
+    - max_pitch (int): The maximum pitch value.
+
+    Returns:
+    - List[int]: A list of integers representing pitches.
+
+    Raises:
+    - ValueError: If min_pitch is greater than max_pitch.
+
+    Example:
+    >>> get_pitches_array(60, 62)
+    [60, 61, 62]
+    """
+    if min_pitch > max_pitch:
+        raise ValueError("min_pitch cannot be greater than max_pitch")
+    return list(range(min_pitch, max_pitch + 1))
+
+
+# Constants for base URL and soundfont path
+base_url = "https://storage.googleapis.com/magentadata/js/soundfonts"
+soundfont_path = "sgm_plus"
+soundfont_json_url = f"{base_url}/{soundfont_path}/soundfont.json"
+logging.debug(f"Attempting to download soundfont.json from {soundfont_json_url}")
+
+# Attempt to download soundfont.json if it does not exist locally
+try:
+    if not os.path.exists("soundfont.json"):
+        with urllib.request.urlopen(soundfont_json_url) as response:
+            soundfont_json = response.read()  # This is correctly in bytes
+        with open("soundfont.json", "wb") as file:  # Correctly opened in binary mode
+            file.write(soundfont_json)
+    else:
+        with open("soundfont.json", "rb") as file:  # Ensure reading in binary mode
+            soundfont_json = file.read()
+except urllib.error.URLError as e:
+    logging.error(f"Network error when trying to download soundfont.json: {e}")
+except Exception as e:
+    logging.critical(f"Unable to proceed without soundfont.json due to {e}")
+
+# Parse soundfont.json
+soundfont_data = (
+    None  # Initialize soundfont_data to None to handle potential unbound variable issue
+)
+try:
+    # Check if 'soundfont_json' is defined to avoid "possibly unbound" error
+    if "soundfont_json" in locals():
+        # Decoding the binary data to a string before parsing it as JSON
+        soundfont_data_str = soundfont_json.decode("utf-8")
+        soundfont_data = json.loads(soundfont_data_str)
+    else:
+        logging.error("soundfont_json is not defined, cannot parse soundfont.json")
+except json.JSONDecodeError as e:
+    logging.error(f"Failed to parse soundfont.json due to {e}")
+    # Ensuring soundfont_data remains None if an exception occurs
+
+if soundfont_data is not None:
+    for instrument_id, instrument_name in soundfont_data["instruments"].items():
+        logging.debug(f"Processing instrument: {instrument_name}")
+        if not os.path.isdir(instrument_name):
+            os.makedirs(instrument_name)
+        instrument_json: bytes = b""  # Corrected type annotation
+        instrument_path = f"{soundfont_path}/{instrument_name}"
+        try:
+            if not os.path.exists(f"{instrument_name}/instrument.json"):
+                instrument_json_url = f"{base_url}/{instrument_path}/instrument.json"
+                with urllib.request.urlopen(instrument_json_url) as response:
+                    instrument_json = response.read()
+                with open(f"{instrument_name}/instrument.json", "wb") as file:
+                    file.write(instrument_json)
+            else:
+                with open(f"{instrument_name}/instrument.json", "rb") as file:
+                    instrument_json = file.read()
+        except urllib.error.URLError as e:
+            logging.error(
+                f"Network error when trying to download or read {instrument_name}/instrument.json: {e}"
+            )
+        except FileNotFoundError:
+            logging.error(f"{instrument_name}/instrument.json not found locally.")
+        except Exception as e:
+            logging.error(
+                f"Failed to download or read {instrument_name}/instrument.json due to {e}"
+            )
+        try:
+            instrument_data = json.loads(instrument_json)
+        except json.JSONDecodeError as e:
+            logging.error(
+                f"Failed to parse {instrument_name}/instrument.json due to {e}"
+            )
+            instrument_data = None
+        if instrument_data is not None:
+            for velocity in instrument_data["velocities"]:
+                pitches = get_pitches_array(
+                    instrument_data["minPitch"], instrument_data["maxPitch"]
+                )
+                for pitch in pitches:
+                    file_name = f"p{pitch}_v{velocity}.mp3"
+                    if not os.path.exists(f"{instrument_name}/{file_name}"):
+                        file_url = f"{base_url}/{instrument_path}/{file_name}"
+                        try:
+                            with urllib.request.urlopen(file_url) as response:
+                                file_contents = response.read()
+                            with open(f"{instrument_name}/{file_name}", "wb") as file:
+                                file.write(file_contents)
+                            logging.info(f"Downloaded {instrument_name}/{file_name}")
+                        except urllib.error.URLError as e:
+                            logging.error(
+                                f"Network error when trying to download {instrument_name}/{file_name} due to {e}"
+                            )
+                        except FileNotFoundError:
+                            logging.error(
+                                f"{instrument_name}/{file_name} not found locally."
+                            )
+                        except Exception as e:
+                            logging.error(
+                                f"Failed to download {instrument_name}/{file_name} due to {e}"
+                            )
+else:
+    logging.error("Failed to parse soundfont.json")
+
+"""
+TODO:
+- Refactor the script to encapsulate logic within functions or classes for better reusability and clarity.
+- Implement a logging mechanism to replace print statements for more granular debugging and operational insight.
+- Enhance error handling by specifying exception types and adding more comprehensive error messages.
+- Consider adding progress indicators for file downloads to improve user experience.
+
+Known Issues:
+- Global variables are used extensively, which could lead to issues when integrating with other modules or scaling the script.
+- Lack of a main guard (`if __name__ == "__main__":`) makes the script execute all operations on import, which might not be desirable.
+"""

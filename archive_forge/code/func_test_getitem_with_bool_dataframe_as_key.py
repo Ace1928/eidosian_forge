@@ -1,0 +1,34 @@
+from __future__ import annotations
+import contextlib
+import decimal
+import warnings
+import weakref
+import xml.etree.ElementTree
+from datetime import datetime, timedelta
+from itertools import product
+from operator import add
+from textwrap import dedent
+import numpy as np
+import pandas as pd
+import pytest
+from pandas.errors import PerformanceWarning
+from pandas.io.formats import format as pandas_format
+import dask
+import dask.array as da
+import dask.dataframe as dd
+import dask.dataframe.groupby
+from dask import delayed
+from dask.base import compute_as_if_collection
+from dask.blockwise import fuse_roots
+from dask.dataframe import _compat, methods
+from dask.dataframe._compat import (
+from dask.dataframe._pyarrow import to_pyarrow_string
+from dask.dataframe.core import (
+from dask.dataframe.utils import (
+from dask.datasets import timeseries
+from dask.utils import M, is_dataframe_like, is_series_like, put_lines
+from dask.utils_test import _check_warning, hlg_layer
+def test_getitem_with_bool_dataframe_as_key():
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6]})
+    ddf = dd.from_pandas(df, 2)
+    assert_eq(df[df > 3], ddf[ddf > 3])

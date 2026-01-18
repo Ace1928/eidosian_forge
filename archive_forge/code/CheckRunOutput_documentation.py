@@ -1,0 +1,3 @@
+from typing import Any, Dict
+from github.GithubObject import Attribute, NonCompletableGithubObject, NotSet
+This class represents the output of check run.

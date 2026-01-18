@@ -1,0 +1,11 @@
+import argparse
+import copy
+import datetime
+import uuid
+from magnumclient.tests.osc.unit import osc_fakes
+from magnumclient.tests.osc.unit import osc_utils
+class MagnumFakeClientManager(osc_fakes.FakeClientManager):
+
+    def __init__(self):
+        super(MagnumFakeClientManager, self).__init__()
+        self.container_infra = MagnumFakeContainerInfra()

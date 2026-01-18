@@ -1,0 +1,118 @@
+import numpy as np
+import ase  # Annotations
+from ase.utils import jsonable
+from ase.calculators.calculator import PropertyNotImplementedError
+class BandStructurePlot:
+
+    def __init__(self, bs):
+        self.bs = bs
+        self.ax = None
+        self.xcoords = None
+        self.show_legend = False
+
+    def plot(self, ax=None, spin=None, emin=-10, emax=5, filename=None, show=False, ylabel=None, colors=None, label=None, spin_labels=['spin up', 'spin down'], loc=None, **plotkwargs):
+        """Plot band-structure.
+
+        spin: int or None
+            Spin channel.  Default behaviour is to plot both spin up and down
+            for spin-polarized calculations.
+        emin,emax: float
+            Maximum energy above reference.
+        filename: str
+            Write image to a file.
+        ax: Axes
+            MatPlotLib Axes object.  Will be created if not supplied.
+        show: bool
+            Show the image.
+        """
+        if self.ax is None:
+            ax = self.prepare_plot(ax, emin, emax, ylabel)
+        if spin is None:
+            e_skn = self.bs.energies
+        else:
+            e_skn = self.bs.energies[spin, np.newaxis]
+        if colors is None:
+            if len(e_skn) == 1:
+                colors = 'g'
+            else:
+                colors = 'yb'
+        nspins = len(e_skn)
+        for spin, e_kn in enumerate(e_skn):
+            color = colors[spin]
+            kwargs = dict(color=color)
+            kwargs.update(plotkwargs)
+            if nspins == 2:
+                if label:
+                    lbl = label + ' ' + spin_labels[spin]
+                else:
+                    lbl = spin_labels[spin]
+            else:
+                lbl = label
+            ax.plot(self.xcoords, e_kn[:, 0], label=lbl, **kwargs)
+            for e_k in e_kn.T[1:]:
+                ax.plot(self.xcoords, e_k, **kwargs)
+        self.show_legend = label is not None or nspins == 2
+        self.finish_plot(filename, show, loc)
+        return ax
+
+    def plot_with_colors(self, ax=None, emin=-10, emax=5, filename=None, show=False, energies=None, colors=None, ylabel=None, clabel='$s_z$', cmin=-1.0, cmax=1.0, sortcolors=False, loc=None, s=2):
+        """Plot band-structure with colors."""
+        import matplotlib.pyplot as plt
+        if self.ax is None:
+            ax = self.prepare_plot(ax, emin, emax, ylabel)
+        shape = energies.shape
+        xcoords = np.vstack([self.xcoords] * shape[1])
+        if sortcolors:
+            perm = colors.argsort(axis=None)
+            energies = energies.ravel()[perm].reshape(shape)
+            colors = colors.ravel()[perm].reshape(shape)
+            xcoords = xcoords.ravel()[perm].reshape(shape)
+        for e_k, c_k, x_k in zip(energies, colors, xcoords):
+            things = ax.scatter(x_k, e_k, c=c_k, s=s, vmin=cmin, vmax=cmax)
+        cbar = plt.colorbar(things)
+        cbar.set_label(clabel)
+        self.finish_plot(filename, show, loc)
+        return ax
+
+    def prepare_plot(self, ax=None, emin=-10, emax=5, ylabel=None):
+        import matplotlib.pyplot as plt
+        if ax is None:
+            ax = plt.figure().add_subplot(111)
+
+        def pretty(kpt):
+            if kpt == 'G':
+                kpt = '$\\Gamma$'
+            elif len(kpt) == 2:
+                kpt = kpt[0] + '$_' + kpt[1] + '$'
+            return kpt
+        self.xcoords, label_xcoords, orig_labels = self.bs.get_labels()
+        label_xcoords = list(label_xcoords)
+        labels = [pretty(name) for name in orig_labels]
+        i = 1
+        while i < len(labels):
+            if label_xcoords[i - 1] == label_xcoords[i]:
+                labels[i - 1] = labels[i - 1] + ',' + labels[i]
+                labels.pop(i)
+                label_xcoords.pop(i)
+            else:
+                i += 1
+        for x in label_xcoords[1:-1]:
+            ax.axvline(x, color='0.5')
+        ylabel = ylabel if ylabel is not None else 'energies [eV]'
+        ax.set_xticks(label_xcoords)
+        ax.set_xticklabels(labels)
+        ax.set_ylabel(ylabel)
+        ax.axhline(self.bs.reference, color='k', ls=':')
+        ax.axis(xmin=0, xmax=self.xcoords[-1], ymin=emin, ymax=emax)
+        self.ax = ax
+        return ax
+
+    def finish_plot(self, filename, show, loc):
+        import matplotlib.pyplot as plt
+        if self.show_legend:
+            leg = plt.legend(loc=loc)
+            leg.get_frame().set_alpha(1)
+        if filename:
+            plt.savefig(filename)
+        if show:
+            plt.show()

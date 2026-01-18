@@ -1,0 +1,49 @@
+import asyncio
+from threading import Event, Thread
+from typing import Any, List, Optional
+import zmq
+import zmq.asyncio
+from .base import Authenticator
+class ThreadAuthenticator(Authenticator):
+    """Run ZAP authentication in a background thread"""
+    pipe: 'zmq.Socket'
+    pipe_endpoint: str = ''
+    thread: AuthenticationThread
+
+    def __init__(self, context: Optional['zmq.Context']=None, encoding: str='utf-8', log: Any=None):
+        super().__init__(context=context, encoding=encoding, log=log)
+        self.pipe = None
+        self.pipe_endpoint = f'inproc://{id(self)}.inproc'
+        self.thread = None
+
+    def start(self) -> None:
+        """Start the authentication thread"""
+        super().start()
+        self.pipe = self.context.socket(zmq.PAIR, socket_class=zmq.Socket)
+        self.pipe.linger = 1
+        self.pipe.bind(self.pipe_endpoint)
+        thread_pipe = self.context.socket(zmq.PAIR, socket_class=zmq.Socket)
+        thread_pipe.linger = 1
+        thread_pipe.connect(self.pipe_endpoint)
+        self.thread = AuthenticationThread(authenticator=self, pipe=thread_pipe)
+        self.thread.start()
+        if not self.thread.started.wait(timeout=10):
+            raise RuntimeError('Authenticator thread failed to start')
+
+    def stop(self) -> None:
+        """Stop the authentication thread"""
+        if self.pipe:
+            self.pipe.send(b'TERMINATE')
+            if self.is_alive():
+                self.thread.join()
+            self.thread = None
+            self.pipe.close()
+            self.pipe = None
+        super().stop()
+
+    def is_alive(self) -> bool:
+        """Is the ZAP thread currently running?"""
+        return bool(self.thread and self.thread.is_alive())
+
+    def __del__(self) -> None:
+        self.stop()

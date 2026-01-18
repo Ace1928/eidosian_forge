@@ -1,0 +1,23 @@
+from contextlib import contextmanager
+from inspect import signature, Signature, Parameter
+import inspect
+import os
+import pytest
+import re
+import sys
+from .. import oinspect
+from decorator import decorator
+from IPython.testing.tools import AssertPrints, AssertNotPrints
+from IPython.utils.path import compress_user
+class NoBoolCall:
+    """
+    callable with `__bool__` raising should still be inspect-able.
+    """
+
+    def __call__(self):
+        """does nothing"""
+        pass
+
+    def __bool__(self):
+        """just raise NotImplemented"""
+        raise NotImplementedError('Must be implemented')

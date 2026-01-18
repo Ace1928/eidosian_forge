@@ -1,0 +1,6 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import (AzureRMModuleBase,
+from ansible.module_utils._text import to_native
+def construct_ip_configuration_set(self, raw):
+    configurations = [dict(private_ip_allocation_method=to_native(item.get('private_ip_allocation_method')), public_ip_address_name=to_native(item.get('public_ip_address').get('name')) if item.get('public_ip_address') else to_native(item.get('public_ip_address_name')), primary=item.get('primary'), load_balancer_backend_address_pools=set([to_native(self.backend_addr_pool_id(id)) for id in item.get('load_balancer_backend_address_pools')]) if item.get('load_balancer_backend_address_pools') else None, application_gateway_backend_address_pools=set([to_native(self.gateway_backend_addr_pool_id(id)) for id in item.get('application_gateway_backend_address_pools')]) if item.get('application_gateway_backend_address_pools') else None, application_security_groups=set([to_native(asg_id) for asg_id in item.get('application_security_groups')]) if item.get('application_security_groups') else None, name=to_native(item.get('name'))) for item in raw]
+    return configurations

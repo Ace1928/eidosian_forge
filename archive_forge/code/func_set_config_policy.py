@@ -1,0 +1,23 @@
+from __future__ import absolute_import, division, print_function
+import os
+import re
+import tempfile
+import traceback
+from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.common.process import get_bin_path
+from ansible.module_utils.facts.utils import get_file_lines
+def set_config_policy(module, policy, configfile):
+    if not os.path.exists('/etc/selinux/%s/policy' % policy):
+        module.fail_json(msg='Policy %s does not exist in /etc/selinux/' % policy)
+    policyline = 'SELINUXTYPE=%s' % policy
+    lines = get_file_lines(configfile, strip=False)
+    tmpfd, tmpfile = tempfile.mkstemp()
+    with open(tmpfile, 'w') as write_file:
+        line_found = False
+        for line in lines:
+            if re.match('^SELINUXTYPE=.*$', line):
+                line_found = True
+            write_file.write(re.sub('^SELINUXTYPE=.*', policyline, line) + '\n')
+        if not line_found:
+            write_file.write('SELINUXTYPE=%s\n' % policy)
+    module.atomic_move(tmpfile, configfile)

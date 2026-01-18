@@ -1,0 +1,20 @@
+from collections.abc import Iterator
+from functools import partial
+from io import (
+import os
+from pathlib import Path
+import re
+import threading
+from urllib.error import URLError
+import numpy as np
+import pytest
+from pandas.compat import is_platform_windows
+import pandas.util._test_decorators as td
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.core.arrays import (
+from pandas.io.common import file_path_to_url
+@pytest.fixture
+def python_docs(self):
+    return '\n          <table class="contentstable" align="center"><tr>\n            <td width="50%">\n            <p class="biglink"><a class="biglink" href="whatsnew/2.7.html">What\'s new in Python 2.7?</a><br/>\n                <span class="linkdescr">or <a href="whatsnew/index.html">all "What\'s new" documents</a> since 2.0</span></p>\n            <p class="biglink"><a class="biglink" href="tutorial/index.html">Tutorial</a><br/>\n                <span class="linkdescr">start here</span></p>\n            <p class="biglink"><a class="biglink" href="library/index.html">Library Reference</a><br/>\n                <span class="linkdescr">keep this under your pillow</span></p>\n            <p class="biglink"><a class="biglink" href="reference/index.html">Language Reference</a><br/>\n                <span class="linkdescr">describes syntax and language elements</span></p>\n            <p class="biglink"><a class="biglink" href="using/index.html">Python Setup and Usage</a><br/>\n                <span class="linkdescr">how to use Python on different platforms</span></p>\n            <p class="biglink"><a class="biglink" href="howto/index.html">Python HOWTOs</a><br/>\n                <span class="linkdescr">in-depth documents on specific topics</span></p>\n            </td><td width="50%">\n            <p class="biglink"><a class="biglink" href="installing/index.html">Installing Python Modules</a><br/>\n                <span class="linkdescr">installing from the Python Package Index &amp; other sources</span></p>\n            <p class="biglink"><a class="biglink" href="distributing/index.html">Distributing Python Modules</a><br/>\n                <span class="linkdescr">publishing modules for installation by others</span></p>\n            <p class="biglink"><a class="biglink" href="extending/index.html">Extending and Embedding</a><br/>\n                <span class="linkdescr">tutorial for C/C++ programmers</span></p>\n            <p class="biglink"><a class="biglink" href="c-api/index.html">Python/C API</a><br/>\n                <span class="linkdescr">reference for C/C++ programmers</span></p>\n            <p class="biglink"><a class="biglink" href="faq/index.html">FAQs</a><br/>\n                <span class="linkdescr">frequently asked questions (with answers!)</span></p>\n            </td></tr>\n        </table>\n\n        <p><strong>Indices and tables:</strong></p>\n        <table class="contentstable" align="center"><tr>\n            <td width="50%">\n            <p class="biglink"><a class="biglink" href="py-modindex.html">Python Global Module Index</a><br/>\n                <span class="linkdescr">quick access to all modules</span></p>\n            <p class="biglink"><a class="biglink" href="genindex.html">General Index</a><br/>\n                <span class="linkdescr">all functions, classes, terms</span></p>\n            <p class="biglink"><a class="biglink" href="glossary.html">Glossary</a><br/>\n                <span class="linkdescr">the most important terms explained</span></p>\n            </td><td width="50%">\n            <p class="biglink"><a class="biglink" href="search.html">Search page</a><br/>\n                <span class="linkdescr">search this documentation</span></p>\n            <p class="biglink"><a class="biglink" href="contents.html">Complete Table of Contents</a><br/>\n                <span class="linkdescr">lists all sections and subsections</span></p>\n            </td></tr>\n        </table>\n        '

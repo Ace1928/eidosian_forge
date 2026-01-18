@@ -1,0 +1,2 @@
+class MolVSError(Exception):
+    pass

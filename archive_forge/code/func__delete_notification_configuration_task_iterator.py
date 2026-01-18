@@ -1,0 +1,13 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.storage import notification_configuration_iterator
+from googlecloudsdk.command_lib.storage.tasks import task_executor
+from googlecloudsdk.command_lib.storage.tasks import task_graph_executor
+from googlecloudsdk.command_lib.storage.tasks import task_status
+from googlecloudsdk.command_lib.storage.tasks.buckets.notifications import delete_notification_configuration_task
+def _delete_notification_configuration_task_iterator(urls):
+    """Creates delete tasks from notification_configuration_iterator."""
+    for notification_configuration_iterator_result in notification_configuration_iterator.get_notification_configuration_iterator(urls):
+        yield delete_notification_configuration_task.DeleteNotificationConfigurationTask(notification_configuration_iterator_result.bucket_url, notification_configuration_iterator_result.notification_configuration.id)

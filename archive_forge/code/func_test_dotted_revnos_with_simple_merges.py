@@ -1,0 +1,8 @@
+import pprint
+from breezy.errors import GraphCycleError
+from breezy.revision import NULL_REVISION
+from breezy.tests import TestCase
+from breezy.tsort import MergeSorter, TopoSorter, merge_sort, topo_sort
+def test_dotted_revnos_with_simple_merges(self):
+    self.assertSortAndIterate({'A': [], 'B': ['A'], 'C': ['A'], 'D': ['B'], 'E': ['C'], 'F': ['C'], 'G': ['D', 'E'], 'H': ['F'], 'I': ['F'], 'J': ['G', 'H'], 'K': ['I'], 'L': ['J', 'K']}.items(), 'L', [(0, 'L', 0, (6,), False), (1, 'K', 1, (1, 3, 2), False), (2, 'I', 1, (1, 3, 1), True), (3, 'J', 0, (5,), False), (4, 'H', 1, (1, 2, 2), False), (5, 'F', 1, (1, 2, 1), True), (6, 'G', 0, (4,), False), (7, 'E', 1, (1, 1, 2), False), (8, 'C', 1, (1, 1, 1), True), (9, 'D', 0, (3,), False), (10, 'B', 0, (2,), False), (11, 'A', 0, (1,), True)], True)
+    self.assertSortAndIterate({'A': [], 'B': ['A'], 'C': ['A'], 'D': ['B'], 'E': ['C'], 'F': ['C'], 'G': ['D', 'E'], 'H': ['F'], 'I': ['F'], 'J': ['G', 'H'], 'K': ['I'], 'L': ['J', 'K'], 'M': ['A'], 'N': ['L', 'M']}.items(), 'N', [(0, 'N', 0, (7,), False), (1, 'M', 1, (1, 4, 1), True), (2, 'L', 0, (6,), False), (3, 'K', 1, (1, 3, 2), False), (4, 'I', 1, (1, 3, 1), True), (5, 'J', 0, (5,), False), (6, 'H', 1, (1, 2, 2), False), (7, 'F', 1, (1, 2, 1), True), (8, 'G', 0, (4,), False), (9, 'E', 1, (1, 1, 2), False), (10, 'C', 1, (1, 1, 1), True), (11, 'D', 0, (3,), False), (12, 'B', 0, (2,), False), (13, 'A', 0, (1,), True)], True)

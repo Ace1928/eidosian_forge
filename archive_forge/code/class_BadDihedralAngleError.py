@@ -1,0 +1,2 @@
+class BadDihedralAngleError(VerificationError):
+    pass

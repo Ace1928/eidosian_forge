@@ -1,0 +1,2 @@
+class CredentialsNotFound(StoreError):
+    pass

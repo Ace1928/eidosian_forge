@@ -1,0 +1,1 @@
+Represent the SCOP description record as a tab-separated string.

@@ -1,0 +1,216 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Eidosian Notebook Schema",
+  "description": "A schema to describe the structure and format of Eidosian notebooks, facilitating programmatic generation and processing of sections and subsections with custom styling components.",
+  "type": "object",
+  "properties": {
+    "coverBlock": {
+      "type": "object",
+      "description": "A decorated cover or introductory block with stylized HTML, providing overall notebook context and a table of contents.",
+      "properties": {
+        "containerStyle": {
+          "type": "string",
+          "description": "CSS style attributes for the outer DIV container of the cover block.",
+          "default": "display: flex; flex-direction: column; align-items: center; padding: 20px; border-bottom: 2px solid #eee; margin-bottom: 30px; background-color: #f9f9f9;"
+        },
+        "header": {
+          "type": "object",
+          "description": "Main header element within the cover block.",
+          "properties": {
+            "icon": {
+              "type": "string",
+              "description": "HTML entity or icon to prepend to the title.",
+              "default": "&#x1F4D6;"
+            },
+            "titleText": {
+              "type": "string",
+              "description": "The primary title text of the notebook introduction.",
+              "default": "Eidosian Notebook"
+            },
+            "titleStyle": {
+              "type": "string",
+              "description": "CSS style attributes for the title element.",
+              "default": "font-size: 2.5em; color: #333; margin-bottom: 10px; text-align: center;"
+            }
+          },
+          "required": ["icon", "titleText"]
+        },
+        "descriptionParagraphs": {
+          "type": "array",
+          "description": "An array of paragraph objects displayed under the main header in the cover block.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Descriptive paragraph text about the notebook's purpose, content, or context.",
+                "default": "This notebook provides a comprehensive overview of the Eidosian system."
+              },
+              "style": {
+                "type": "string",
+                "description": "Inline CSS styling for the paragraph element.",
+                 "default": "font-size: 1.1em; color: #555; line-height: 1.6; margin-bottom: 10px; text-align: center;"
+              }
+            },
+            "required": ["text"]
+          },
+          "default": [
+            {
+              "text": "This notebook provides a comprehensive overview of the Eidosian system.",
+              "style": "font-size: 1.1em; color: #555; line-height: 1.6; margin-bottom: 10px; text-align: center;"
+            },
+             {
+              "text": "It includes detailed explanations, code examples, and visualizations.",
+              "style": "font-size: 1.1em; color: #555; line-height: 1.6; margin-bottom: 10px; text-align: center;"
+            }
+          ]
+        },
+        "tableOfContents": {
+          "type": "object",
+          "description": "A table of contents block with links to major notebook sections.",
+          "properties": {
+            "headerStyle": {
+              "type": "string",
+              "description": "Inline CSS for the table of contents header.",
+              "default": "font-size: 1.4em; color: #444; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; text-align: center;"
+            },
+            "tocItems": {
+              "type": "array",
+              "description": "Array of table-of-contents item objects, each linking to a specific anchor (id) in the notebook.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "description": "Text displayed for the TOC link.",
+                    "default": "Section"
+                  },
+                  "anchorRef": {
+                    "type": "string",
+                    "description": "Hash/anchor reference to the section’s ID.",
+                    "default": "#section1"
+                  },
+                  "textColor": {
+                    "type": "string",
+                    "description": "Color or style for the link text.",
+                    "default": "color: #007bff; text-decoration: none;"
+                  }
+                },
+                "required": ["displayName", "anchorRef"]
+              },
+              "default": []
+            }
+          },
+          "required": ["tocItems"]
+        },
+        "noteBlock": {
+          "type": "object",
+          "description": "An optional note or disclaimer block at the bottom of the introduction.",
+          "properties": {
+            "noteLabel": {
+              "type": "string",
+              "description": "Label for the note, e.g., 'Note:'.",
+              "default": "Note:"
+            },
+            "noteContent": {
+              "type": "string",
+              "description": "Text content of the note.",
+              "default": "This is a default note."
+            }
+          },
+          "default": {}
+        }
+      },
+      "required": ["containerStyle", "header", "descriptionParagraphs", "tableOfContents"]
+    },
+    "sections": {
+      "type": "array",
+      "description": "An ordered array of major sections (e.g., Classification, Policy Optimization). Each section contains nested subsections with unified styling.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sectionId": {
+            "type": "string",
+            "description": "Anchor or unique ID for referencing the section.",
+            "default": "section1"
+          },
+          "sectionIcon": {
+            "type": "string",
+            "description": "HTML entity or icon to prepend to the section title.",
+            "default": "&#x270E;"
+          },
+          "sectionTitle": {
+            "type": "string",
+            "description": "The main heading of this section.",
+            "default": "Section Title"
+          },
+          "sectionDescription": {
+            "type": "string",
+            "description": "A brief paragraph describing this section.",
+            "default": "A brief description of this section."
+          },
+          "subsections": {
+            "type": "array",
+            "description": "An array of subsection objects, each describing a specific topic within this section.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subsectionId": {
+                  "type": "string",
+                  "description": "Anchor or unique ID for referencing the subsection.",
+                  "default": "subsection1"
+                },
+                "subsectionIcon": {
+                  "type": "string",
+                  "description": "HTML entity or icon for subsection decoration.",
+                  "default": "&#x2022;"
+                },
+                "subsectionTitle": {
+                  "type": "string",
+                  "description": "The heading or label for the subsection.",
+                  "default": "Subsection Title"
+                },
+                 "details": {
+                  "type": "string",
+                  "description": "A textual explanation or summary of the concept, typically including an inline reference to the algorithm's specifics.",
+                  "default": "Detailed explanation of the subsection."
+                },
+                "containerStyle": {
+                  "type": "string",
+                  "description": "Inline CSS for the subsection's outer container (e.g., background, box-shadow).",
+                  "default": "padding: 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fff;"
+                }
+              },
+              "required": ["subsectionId", "subsectionTitle", "details"]
+            },
+            "default": []
+          }
+        },
+        "required": ["sectionId", "sectionTitle", "subsections"]
+      },
+      "default": []
+    },
+    "globalFooter": {
+      "type": "object",
+      "description": "A concluding block or 'Conclusion' section at the end of the notebook.",
+      "properties": {
+        "footerStyle": {
+          "type": "string",
+          "description": "Inline CSS styles for the global footer container. Typically includes margin, padding, or box-shadow.",
+          "default": "margin-top: 50px; padding: 20px; border-top: 2px solid #eee; text-align: center; color: #777;"
+        },
+        "footerText": {
+          "type": "string",
+          "description": "Conclusion or final remarks about the entire notebook.",
+          "default": "End of Eidosian Notebook."
+        }
+      },
+      "required": ["footerStyle", "footerText"],
+       "default": {
+        "footerStyle": "margin-top: 50px; padding: 20px; border-top: 2px solid #eee; text-align: center; color: #777;",
+        "footerText": "End of Eidosian Notebook."
+      }
+    }
+  },
+  "required": ["coverBlock", "sections"]
+}

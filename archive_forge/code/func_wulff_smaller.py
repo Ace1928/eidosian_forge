@@ -1,0 +1,20 @@
+from copy import copy
+from ase.gui.i18n import _
+import numpy as np
+import ase
+import ase.data
+import ase.gui.ui as ui
+from ase.cluster.cubic import FaceCenteredCubic, BodyCenteredCubic, SimpleCubic
+from ase.cluster.hexagonal import HexagonalClosedPacked, Graphite
+from ase.cluster import wulff_construction
+from ase.gui.widgets import Element, pybutton
+import ase
+import ase
+from ase.cluster import wulff_construction
+def wulff_smaller(self, widget=None):
+    """Make a smaller Wulff construction."""
+    n = len(self.atoms)
+    self.size_radio.value = 'natoms'
+    self.size_natoms.value = n - 1
+    self.round_radio.value = 'below'
+    self.apply()

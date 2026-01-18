@@ -1,0 +1,13 @@
+from unittest import mock
+from oslo_config import cfg
+import oslo_messaging as messaging
+from oslo_messaging import conffixture as messaging_conffixture
+from oslo_messaging import exceptions as oslomsg_exc
+import testtools
+from neutron_lib import fixture
+from neutron_lib import rpc
+from neutron_lib.tests import _base as base
+def test_set_max_timeout_retains_lower_timeouts(self):
+    rpc._BackingOffContextWrapper._METHOD_TIMEOUTS['method_1'] = 10
+    rpc.BackingOffClient.set_max_timeout(50)
+    self.assertEqual(10, rpc._BackingOffContextWrapper._METHOD_TIMEOUTS['method_1'])

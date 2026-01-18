@@ -1,0 +1,29 @@
+import copy
+import os
+from parlai.core.teachers import (
+class ParlaiformatTeacher(ParlAIDialogTeacher):
+    """
+    This module provides access to data in the ParlAI Text Dialog format.
+
+    See core/teachers.py for more info about the format.
+    """
+
+    @staticmethod
+    def add_cmdline_args(argparser):
+        agent = argparser.add_argument_group('FromFile Task Arguments')
+        agent.add_argument('-ffdp', '--fromfile-datapath', type=str, help='Data file')
+        agent.add_argument('-ffdt', '--fromfile-datatype-extension', type='bool', default=False, help='If true, use _train.txt, _valid.txt, _test.txt file extensions')
+
+    def __init__(self, opt, shared=None):
+        super().__init__(opt, shared)
+        opt = copy.deepcopy(opt)
+        if not opt.get('fromfile_datapath'):
+            raise RuntimeError('fromfile_datapath not specified')
+        datafile = opt['fromfile_datapath']
+        if self.opt['fromfile_datatype_extension']:
+            datafile += '_' + self.opt['datatype'].split(':')[0] + '.txt'
+        if shared is None:
+            self._setup_data(datafile)
+        dirname, basename = os.path.split(datafile)
+        self.id = os.path.join(os.path.split(dirname)[1], basename)
+        self.reset()

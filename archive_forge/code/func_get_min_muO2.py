@@ -1,0 +1,31 @@
+from __future__ import annotations
+import itertools
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+from monty.json import MontyDecoder
+from scipy.constants import N_A
+from pymatgen.analysis.phase_diagram import PDEntry, PhaseDiagram
+from pymatgen.apps.battery.battery_abc import AbstractElectrode, AbstractVoltagePair
+from pymatgen.core import Composition, Element
+from pymatgen.core.units import Charge, Time
+from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
+def get_min_muO2(self, min_voltage=None, max_voltage=None):
+    """Minimum critical oxygen chemical potential along path.
+
+        Args:
+            min_voltage: The minimum allowable voltage for a given step
+            max_voltage: The maximum allowable voltage allowable for a given
+                step
+
+        Returns:
+            Minimum critical oxygen chemical of all compounds along the
+            insertion path (a subset of the path can be chosen by the optional
+            arguments).
+        """
+    data = []
+    for pair in self._select_in_voltage_range(min_voltage, max_voltage):
+        if pair.muO2_discharge is not None:
+            data.extend([d['chempot'] for d in pair.muO2_discharge])
+        if pair.muO2_charge is not None:
+            data.extend([d['chempot'] for d in pair.muO2_discharge])
+    return min(data) if len(data) > 0 else None

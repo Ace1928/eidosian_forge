@@ -1,0 +1,23 @@
+from libcloud.utils.py3 import ET
+from libcloud.utils.xml import findall, findtext, fixxpath
+from libcloud.utils.misc import reverse_dict
+from libcloud.common.nttcis import (
+from libcloud.loadbalancer.base import DEFAULT_ALGORITHM, Driver, Member, Algorithm, LoadBalancer
+from libcloud.loadbalancer.types import State, Provider
+def ex_get_nodes(self, ex_network_domain_id=None):
+    """
+        Get the nodes within this geography or in given network.
+
+        :param ex_network_domain_id: UUID of Network Domain
+               if not None returns only balancers in the given network
+               if None then returns all pools for the organization
+        :type  ex_network_domain_id: ``str``
+
+        :return: Returns an ``list`` of ``NttCisVIPNode``
+        :rtype: ``list`` of ``NttCisVIPNode``
+        """
+    params = None
+    if ex_network_domain_id is not None:
+        params = {'networkDomainId': ex_network_domain_id}
+    nodes = self.connection.request_with_orgId_api_2('networkDomainVip/node', params=params).object
+    return self._to_nodes(nodes)

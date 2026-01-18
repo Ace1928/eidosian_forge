@@ -1,0 +1,67 @@
+from __future__ import annotations
+import enum
+import functools
+import gc
+import itertools
+import random
+import select
+import sys
+import threading
+import warnings
+from collections import deque
+from contextlib import AbstractAsyncContextManager, contextmanager, suppress
+from contextvars import copy_context
+from heapq import heapify, heappop, heappush
+from math import inf
+from time import perf_counter
+from typing import (
+import attrs
+from outcome import Error, Outcome, Value, capture
+from sniffio import thread_local as sniffio_library
+from sortedcontainers import SortedDict
+from .. import _core
+from .._abc import Clock, Instrument
+from .._deprecate import warn_deprecated
+from .._util import NoPublicConstructor, coroutine_or_error, final
+from ._asyncgens import AsyncGenerators
+from ._concat_tb import concat_tb
+from ._entry_queue import EntryQueue, TrioToken
+from ._exceptions import Cancelled, RunFinishedError, TrioInternalError
+from ._instrumentation import Instruments
+from ._ki import LOCALS_KEY_KI_PROTECTION_ENABLED, KIManager, enable_ki_protection
+from ._thread_cache import start_thread_soon
+from ._traps import (
+from ._generated_instrumentation import *
+from ._generated_run import *
+def _count_context_run_tb_frames() -> int:
+    """Count implementation dependent traceback frames from Context.run()
+
+    On CPython, Context.run() is implemented in C and doesn't show up in
+    tracebacks. On PyPy, it is implemented in Python and adds 1 frame to
+    tracebacks.
+
+    Returns:
+        int: Traceback frame count
+
+    """
+
+    def function_with_unique_name_xyzzy() -> NoReturn:
+        try:
+            1 / 0
+        except ZeroDivisionError:
+            raise
+        else:
+            raise TrioInternalError("A ZeroDivisionError should have been raised, but it wasn't.")
+    ctx = copy_context()
+    try:
+        ctx.run(function_with_unique_name_xyzzy)
+    except ZeroDivisionError as exc:
+        tb = exc.__traceback__
+        tb = tb.tb_next
+        count = 0
+        while tb.tb_frame.f_code.co_name != 'function_with_unique_name_xyzzy':
+            tb = tb.tb_next
+            count += 1
+        return count
+    else:
+        raise TrioInternalError(f"The purpose of {function_with_unique_name_xyzzy.__name__} is to raise a ZeroDivisionError, but it didn't.")

@@ -1,0 +1,51 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import math
+import six
+import tensorflow as tf
+from tensorflow.python.feature_column import feature_column
+from tensorflow.python.feature_column import feature_column_lib
+from tensorflow.python.feature_column import feature_column_v2 as fc_v2
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import variable_scope
+from tensorflow_estimator.python.estimator import estimator
+from tensorflow_estimator.python.estimator.canned import head as head_lib
+from tensorflow_estimator.python.estimator.canned import optimizers
+from tensorflow_estimator.python.estimator.canned.linear_optimizer.python.utils import sdca_ops
+from tensorflow_estimator.python.estimator.estimator_export import estimator_export
+from tensorflow_estimator.python.estimator.head import binary_class_head
+from tensorflow_estimator.python.estimator.head import head_utils
+from tensorflow_estimator.python.estimator.head import regression_head
+from tensorflow_estimator.python.estimator.mode_keys import ModeKeys
+def _linear_model_fn_builder_v2(units, feature_columns, sparse_combiner='sum', features=None):
+    """Function builder for a linear model_fn.
+
+  Args:
+    units: An int indicating the dimension of the logit layer.
+    feature_columns: An iterable containing all the feature columns used by the
+      model.
+    sparse_combiner: A string specifying how to reduce if a categorical column
+      is multivalent.  One of "mean", "sqrtn", and "sum".
+    features: This is the first item returned from the `input_fn` passed to
+      `train`, `evaluate`, and `predict`. This should be a single `Tensor` or
+      `dict` of same.
+
+  Returns:
+    A `Tensor` representing the logits.
+    A list of trainable variables.
+
+  """
+    if not feature_column_lib.is_feature_column_v2(feature_columns):
+        raise ValueError('Received a feature column from TensorFlow v1, but this is a TensorFlow v2 Estimator. Please either use v2 feature columns (accessible via tf.feature_column.* in TF 2.x) with this Estimator, or switch to a v1 Estimator for use with v1 feature columns (accessible via tf.compat.v1.estimator.* and tf.compat.v1.feature_column.*, respectively.')
+    linear_model = LinearModel(feature_columns=feature_columns, units=units, sparse_combiner=sparse_combiner, name='linear/linear_model')
+    logits = linear_model(features)
+    bias = linear_model.bias
+    variables = linear_model.variables
+    variables.remove(bias)
+    if units > 1:
+        tf.compat.v1.summary.histogram('bias', bias)
+    else:
+        tf.compat.v1.summary.scalar('bias', bias[0])
+    tf.compat.v1.summary.scalar('fraction_of_zero_weights', _compute_fraction_of_zero(variables))
+    return (logits, linear_model.variables)

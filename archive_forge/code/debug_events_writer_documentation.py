@@ -1,0 +1,4 @@
+import time
+from tensorflow.core.protobuf import debug_event_pb2
+from tensorflow.python.client import _pywrap_debug_events_writer
+Close the writer.

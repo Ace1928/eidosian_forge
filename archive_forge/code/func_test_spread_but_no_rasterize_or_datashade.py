@@ -1,0 +1,15 @@
+from unittest import TestCase, SkipTest
+import sys
+from parameterized import parameterized
+import numpy as np
+import pandas as pd
+from holoviews.core import GridMatrix, NdOverlay
+from holoviews.element import (
+from hvplot import scatter_matrix
+def test_spread_but_no_rasterize_or_datashade(self):
+    with self.assertRaises(ValueError):
+        scatter_matrix(self.df, dynspread=True)
+    with self.assertRaises(ValueError):
+        scatter_matrix(self.df, spread=True)
+    with self.assertRaises(ValueError):
+        scatter_matrix(self.df, dynspread=True, spread=True)

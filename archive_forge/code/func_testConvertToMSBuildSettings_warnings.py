@@ -1,0 +1,10 @@
+import unittest
+import gyp.MSVSSettings as MSVSSettings
+from io import StringIO
+def testConvertToMSBuildSettings_warnings(self):
+    """Tests conversion that generates warnings."""
+    msvs_settings = {'VCCLCompilerTool': {'AdditionalIncludeDirectories': '1', 'AdditionalOptions': '2', 'BasicRuntimeChecks': '12', 'BrowseInformation': '21', 'UsePrecompiledHeader': '13', 'GeneratePreprocessedFile': '14'}, 'VCLinkerTool': {'Driver': '10', 'LinkTimeCodeGeneration': '31', 'ErrorReporting': '21', 'FixedBaseAddress': '6'}, 'VCResourceCompilerTool': {'Culture': '1003'}}
+    expected_msbuild_settings = {'ClCompile': {'AdditionalIncludeDirectories': '1', 'AdditionalOptions': '2'}, 'Link': {}, 'ResourceCompile': {'Culture': '0x03eb'}}
+    actual_msbuild_settings = MSVSSettings.ConvertToMSBuildSettings(msvs_settings, self.stderr)
+    self.assertEqual(expected_msbuild_settings, actual_msbuild_settings)
+    self._ExpectedWarnings(['Warning: while converting VCCLCompilerTool/BasicRuntimeChecks to MSBuild, index value (12) not in expected range [0, 4)', 'Warning: while converting VCCLCompilerTool/BrowseInformation to MSBuild, index value (21) not in expected range [0, 3)', 'Warning: while converting VCCLCompilerTool/UsePrecompiledHeader to MSBuild, index value (13) not in expected range [0, 3)', 'Warning: while converting VCCLCompilerTool/GeneratePreprocessedFile to MSBuild, value must be one of [0, 1, 2]; got 14', 'Warning: while converting VCLinkerTool/Driver to MSBuild, index value (10) not in expected range [0, 4)', 'Warning: while converting VCLinkerTool/LinkTimeCodeGeneration to MSBuild, index value (31) not in expected range [0, 5)', 'Warning: while converting VCLinkerTool/ErrorReporting to MSBuild, index value (21) not in expected range [0, 3)', 'Warning: while converting VCLinkerTool/FixedBaseAddress to MSBuild, index value (6) not in expected range [0, 3)'])

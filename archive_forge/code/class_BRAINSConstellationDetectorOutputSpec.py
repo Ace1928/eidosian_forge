@@ -1,0 +1,13 @@
+import os
+from ...base import (
+class BRAINSConstellationDetectorOutputSpec(TraitedSpec):
+    outputVolume = File(desc='ACPC-aligned output image with the same voxels, but updated origin, and direction cosign so that the AC point would fall at the physical location (0.0,0.0,0.0), and the mid-sagital plane is the plane where physical L/R coordinate is 0.0.', exists=True)
+    outputResampledVolume = File(desc='ACPC-aligned output image in a resampled unifor space.  Currently this is a 1mm, 256^3, Identity direction image.', exists=True)
+    outputTransform = File(desc='The filename for the original space to ACPC alignment to be written (in .h5 format).,             ', exists=True)
+    outputLandmarksInInputSpace = File(desc=',               The filename for the new subject-specific landmark definition file in the same format produced by Slicer3 (.fcsv) with the landmarks in the original image space (the detected RP, AC, PC, and VN4) in it to be written.,             ', exists=True)
+    outputLandmarksInACPCAlignedSpace = File(desc=',               The filename for the new subject-specific landmark definition file in the same format produced by Slicer3 (.fcsv) with the landmarks in the output image space (the detected RP, AC, PC, and VN4) in it to be written.,             ', exists=True)
+    outputMRML = File(desc=',               The filename for the new subject-specific scene definition file in the same format produced by Slicer3 (in .mrml format). Only the components that were specified by the user on command line would be generated. Compatible components include inputVolume, outputVolume, outputLandmarksInInputSpace, outputLandmarksInACPCAlignedSpace, and outputTransform.,             ', exists=True)
+    outputVerificationScript = File(desc=',               The filename for the Slicer3 script that verifies the aligned landmarks against the aligned image file.  This will happen only in conjunction with saveOutputLandmarks and an outputVolume.,             ', exists=True)
+    outputUntransformedClippedVolume = File(desc='Output image in which to store neck-clipped input image, with the use of --acLowerBound and maybe --cutOutHeadInUntransformedVolume.', exists=True)
+    writeBranded2DImage = File(desc=',               The filename for the 2D .png branded midline debugging image.  This will happen only in conjunction with requesting an outputVolume.,             ', exists=True)
+    resultsDir = Directory(desc=',               The directory for the debugging images to be written.,             ', exists=True)

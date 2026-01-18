@@ -1,0 +1,43 @@
+import datetime
+import hashlib
+import http.client as http
+import os
+import re
+import urllib.parse as urlparse
+import uuid
+from castellan.common import exception as castellan_exception
+from castellan import key_manager
+import glance_store
+from glance_store import location
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_serialization import jsonutils as json
+from oslo_utils import encodeutils
+from oslo_utils import timeutils as oslo_timeutils
+import requests
+import webob.exc
+from glance.api import common
+from glance.api import policy
+from glance.api.v2 import policy as api_policy
+from glance.common import exception
+from glance.common import store_utils
+from glance.common import timeutils
+from glance.common import utils
+from glance.common import wsgi
+from glance import context as glance_context
+import glance.db
+import glance.gateway
+from glance.i18n import _, _LE, _LI, _LW
+import glance.notifier
+from glance.quota import keystone as ks_quota
+import glance.schema
+def is_proxyable(self, image):
+    """Decide if an action is proxyable to a stage host.
+
+        If the image has a staging host recorded with a URL that does not match
+        ours, then we can proxy our request to that host.
+
+        :param image: The Image from the repo
+        :returns: bool indicating proxyable status
+        """
+    return 'os_glance_stage_host' in image.extra_properties and image.extra_properties['os_glance_stage_host'] != self.self_url

@@ -1,0 +1,227 @@
+import sys
+from _pydevd_frame_eval.vendored import bytecode as _bytecode
+from _pydevd_frame_eval.vendored.bytecode.concrete import ConcreteInstr
+from _pydevd_frame_eval.vendored.bytecode.flags import CompilerFlags
+from _pydevd_frame_eval.vendored.bytecode.instr import Label, SetLineno, Instr
+class ControlFlowGraph(_bytecode.BaseBytecode):
+
+    def __init__(self):
+        super().__init__()
+        self._blocks = []
+        self._block_index = {}
+        self.argnames = []
+        self.add_block()
+
+    def legalize(self):
+        """Legalize all blocks."""
+        current_lineno = self.first_lineno
+        for block in self._blocks:
+            current_lineno = block.legalize(current_lineno)
+
+    def get_block_index(self, block):
+        try:
+            return self._block_index[id(block)]
+        except KeyError:
+            raise ValueError('the block is not part of this bytecode')
+
+    def _add_block(self, block):
+        block_index = len(self._blocks)
+        self._blocks.append(block)
+        self._block_index[id(block)] = block_index
+
+    def add_block(self, instructions=None):
+        block = BasicBlock(instructions)
+        self._add_block(block)
+        return block
+
+    def compute_stacksize(self, *, check_pre_and_post=True):
+        """Compute the stack size by iterating through the blocks
+
+        The implementation make use of a generator function to avoid issue with
+        deeply nested recursions.
+
+        """
+        if not self:
+            return 0
+        for block in self:
+            block.seen = False
+            block.startsize = -32768
+        initial_stack_size = 0
+        if sys.version_info >= (3, 10) and self.flags & (CompilerFlags.GENERATOR | CompilerFlags.COROUTINE | CompilerFlags.ASYNC_GENERATOR):
+            initial_stack_size = 1
+        coro = _compute_stack_size(self[0], initial_stack_size, 0, check_pre_and_post=check_pre_and_post)
+        coroutines = []
+        push_coroutine = coroutines.append
+        pop_coroutine = coroutines.pop
+        args = None
+        try:
+            while True:
+                args = coro.send(None)
+                while isinstance(args, int):
+                    coro = pop_coroutine()
+                    args = coro.send(args)
+                push_coroutine(coro)
+                coro = _compute_stack_size(*args, check_pre_and_post=check_pre_and_post)
+        except IndexError:
+            assert args is not None
+            return args
+
+    def __repr__(self):
+        return '<ControlFlowGraph block#=%s>' % len(self._blocks)
+
+    def get_instructions(self):
+        instructions = []
+        jumps = []
+        for block in self:
+            target_block = block.get_jump()
+            if target_block is not None:
+                instr = block[-1]
+                instr = ConcreteInstr(instr.name, 0, lineno=instr.lineno)
+                jumps.append((target_block, instr))
+                instructions.extend(block[:-1])
+                instructions.append(instr)
+            else:
+                instructions.extend(block)
+        for target_block, instr in jumps:
+            instr.arg = self.get_block_index(target_block)
+        return instructions
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+        if self.argnames != other.argnames:
+            return False
+        instrs1 = self.get_instructions()
+        instrs2 = other.get_instructions()
+        if instrs1 != instrs2:
+            return False
+        return super().__eq__(other)
+
+    def __len__(self):
+        return len(self._blocks)
+
+    def __iter__(self):
+        return iter(self._blocks)
+
+    def __getitem__(self, index):
+        if isinstance(index, BasicBlock):
+            index = self.get_block_index(index)
+        return self._blocks[index]
+
+    def __delitem__(self, index):
+        if isinstance(index, BasicBlock):
+            index = self.get_block_index(index)
+        block = self._blocks[index]
+        del self._blocks[index]
+        del self._block_index[id(block)]
+        for index in range(index, len(self)):
+            block = self._blocks[index]
+            self._block_index[id(block)] -= 1
+
+    def split_block(self, block, index):
+        if not isinstance(block, BasicBlock):
+            raise TypeError('expected block')
+        block_index = self.get_block_index(block)
+        if index < 0:
+            raise ValueError('index must be positive')
+        block = self._blocks[block_index]
+        if index == 0:
+            return block
+        if index > len(block):
+            raise ValueError('index out of the block')
+        instructions = block[index:]
+        if not instructions:
+            if block_index + 1 < len(self):
+                return self[block_index + 1]
+        del block[index:]
+        block2 = BasicBlock(instructions)
+        block.next_block = block2
+        for block in self[block_index + 1:]:
+            self._block_index[id(block)] += 1
+        self._blocks.insert(block_index + 1, block2)
+        self._block_index[id(block2)] = block_index + 1
+        return block2
+
+    @staticmethod
+    def from_bytecode(bytecode):
+        label_to_block_index = {}
+        jumps = []
+        block_starts = {}
+        for index, instr in enumerate(bytecode):
+            if isinstance(instr, Label):
+                label_to_block_index[instr] = index
+            elif isinstance(instr, Instr) and isinstance(instr.arg, Label):
+                jumps.append((index, instr.arg))
+        for target_index, target_label in jumps:
+            target_index = label_to_block_index[target_label]
+            block_starts[target_index] = target_label
+        bytecode_blocks = _bytecode.ControlFlowGraph()
+        bytecode_blocks._copy_attr_from(bytecode)
+        bytecode_blocks.argnames = list(bytecode.argnames)
+        block = bytecode_blocks[0]
+        labels = {}
+        jumps = []
+        for index, instr in enumerate(bytecode):
+            if index in block_starts:
+                old_label = block_starts[index]
+                if index != 0:
+                    new_block = bytecode_blocks.add_block()
+                    if not block[-1].is_final():
+                        block.next_block = new_block
+                    block = new_block
+                if old_label is not None:
+                    labels[old_label] = block
+            elif block and isinstance(block[-1], Instr):
+                if block[-1].is_final():
+                    block = bytecode_blocks.add_block()
+                elif block[-1].has_jump():
+                    new_block = bytecode_blocks.add_block()
+                    block.next_block = new_block
+                    block = new_block
+            if isinstance(instr, Label):
+                continue
+            if isinstance(instr, Instr):
+                instr = instr.copy()
+                if isinstance(instr.arg, Label):
+                    jumps.append(instr)
+            block.append(instr)
+        for instr in jumps:
+            label = instr.arg
+            instr.arg = labels[label]
+        return bytecode_blocks
+
+    def to_bytecode(self):
+        """Convert to Bytecode."""
+        used_blocks = set()
+        for block in self:
+            target_block = block.get_jump()
+            if target_block is not None:
+                used_blocks.add(id(target_block))
+        labels = {}
+        jumps = []
+        instructions = []
+        for block in self:
+            if id(block) in used_blocks:
+                new_label = Label()
+                labels[id(block)] = new_label
+                instructions.append(new_label)
+            for instr in block:
+                if isinstance(instr, Instr):
+                    instr = instr.copy()
+                    if isinstance(instr.arg, BasicBlock):
+                        jumps.append(instr)
+                instructions.append(instr)
+        for instr in jumps:
+            instr.arg = labels[id(instr.arg)]
+        bytecode = _bytecode.Bytecode()
+        bytecode._copy_attr_from(self)
+        bytecode.argnames = list(self.argnames)
+        bytecode[:] = instructions
+        return bytecode
+
+    def to_code(self, stacksize=None):
+        """Convert to code."""
+        if stacksize is None:
+            stacksize = self.compute_stacksize()
+        bc = self.to_bytecode()
+        return bc.to_code(stacksize=stacksize)

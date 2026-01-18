@@ -1,0 +1,20 @@
+import os
+import time
+import sys
+import zlib
+from io import BytesIO
+import warnings
+import numpy as np
+import scipy.sparse
+from ._byteordercodes import native_code, swapped_code
+from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
+from ._mio5_utils import VarReader5
+from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
+from ._streams import ZlibInputStream
+def write_object(self, arr):
+    """Same as writing structs, except different mx class, and extra
+        classname element after header
+        """
+    self.write_header(matdims(arr, self.oned_as), mxOBJECT_CLASS)
+    self.write_element(np.array(arr.classname, dtype='S'), mdtype=miINT8)
+    self._write_items(arr)

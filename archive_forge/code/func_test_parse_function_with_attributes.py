@@ -1,0 +1,8 @@
+import unittest
+from parameterized import parameterized
+import onnx
+from onnx import GraphProto, OperatorSetIdProto, checker
+def test_parse_function_with_attributes(self) -> None:
+    input = '\n            <\n            ir_version: 9,\n            opset_import: [ "" : 15, "custom_domain" : 1],\n            producer_name: "FunctionProtoTest",\n            producer_version: "1.0",\n            model_version: 1,\n            doc_string: "A test model for model local functions."\n          >\n         agraph (float[N] x) => (float[N] out)\n         {\n            out = custom_domain.Selu<alpha=2.0, gamma=3.0>(x)\n         }\n         <\n         domain: "custom_domain",\n         opset_import: [ "" : 15],\n         doc_string: "Test function proto"\n         >\n           Selu\n           <alpha: float=1.67326319217681884765625, gamma: float=1.05070102214813232421875>\n           (X) => (C)\n           {\n               constant_alpha = Constant<value_float: float=@alpha>()\n               constant_gamma = Constant<value_float: float=@gamma>()\n               alpha_x = CastLike(constant_alpha, X)\n               gamma_x = CastLike(constant_gamma, X)\n               exp_x = Exp(X)\n               alpha_x_exp_x = Mul(alpha_x, exp_x)\n               alpha_x_exp_x_ = Sub(alpha_x_exp_x, alpha_x)\n               neg = Mul(gamma_x, alpha_x_exp_x_)\n               pos = Mul(gamma_x, X)\n               _zero = Constant<value_float=0.0>()\n               zero = CastLike(_zero, X)\n               less_eq = LessOrEqual(X, zero)\n               C = Where(less_eq, neg, pos)\n           }\n        '
+    model = onnx.parser.parse_model(input)
+    checker.check_model(model)

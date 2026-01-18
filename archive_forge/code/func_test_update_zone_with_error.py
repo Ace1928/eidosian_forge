@@ -1,0 +1,19 @@
+import sys
+import unittest
+from libcloud.test import MockHttp
+from libcloud.dns.types import RecordType, ZoneDoesNotExistError, RecordDoesNotExistError
+from libcloud.utils.py3 import httplib
+from libcloud.test.secrets import DNS_PARAMS_POINTDNS
+from libcloud.test.file_fixtures import DNSFileFixtures
+from libcloud.dns.drivers.pointdns import PointDNSDriver, PointDNSException
+def test_update_zone_with_error(self):
+    PointDNSMockHttp.type = 'GET'
+    zone = self.driver.list_zones()[0]
+    PointDNSMockHttp.type = 'UPDATE_ZONE_WITH_ERROR'
+    extra = {'user-id': 6}
+    try:
+        self.driver.update_zone(zone, zone.domain, zone.ttl, extra=extra)
+    except PointDNSException:
+        pass
+    else:
+        self.fail('Exception was not thrown')

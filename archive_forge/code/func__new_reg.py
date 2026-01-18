@@ -1,0 +1,67 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.common._collections_compat import Mapping
+from ansible_collections.community.crypto.plugins.module_utils.acme.errors import (
+def _new_reg(self, contact=None, agreement=None, terms_agreed=False, allow_creation=True, external_account_binding=None):
+    """
+        Registers a new ACME account. Returns a pair ``(created, data)``.
+        Here, ``created`` is ``True`` if the account was created and
+        ``False`` if it already existed (e.g. it was not newly created),
+        or does not exist. In case the account was created or exists,
+        ``data`` contains the account data; otherwise, it is ``None``.
+
+        If specified, ``external_account_binding`` should be a dictionary
+        with keys ``kid``, ``alg`` and ``key``
+        (https://tools.ietf.org/html/rfc8555#section-7.3.4).
+
+        https://tools.ietf.org/html/rfc8555#section-7.3
+        """
+    contact = contact or []
+    if self.client.version == 1:
+        new_reg = {'resource': 'new-reg', 'contact': contact}
+        if agreement:
+            new_reg['agreement'] = agreement
+        else:
+            new_reg['agreement'] = self.client.directory['meta']['terms-of-service']
+        if external_account_binding is not None:
+            raise ModuleFailException('External account binding is not supported for ACME v1')
+        url = self.client.directory['new-reg']
+    else:
+        if (external_account_binding is not None or self.client.directory['meta'].get('externalAccountRequired')) and allow_creation:
+            created, data = self._new_reg(contact=contact, allow_creation=False)
+            if data:
+                return (created, data)
+        new_reg = {'contact': contact}
+        if not allow_creation:
+            new_reg['onlyReturnExisting'] = True
+        if terms_agreed:
+            new_reg['termsOfServiceAgreed'] = True
+        url = self.client.directory['newAccount']
+        if external_account_binding is not None:
+            new_reg['externalAccountBinding'] = self.client.sign_request({'alg': external_account_binding['alg'], 'kid': external_account_binding['kid'], 'url': url}, self.client.account_jwk, self.client.backend.create_mac_key(external_account_binding['alg'], external_account_binding['key']))
+        elif self.client.directory['meta'].get('externalAccountRequired') and allow_creation:
+            raise ModuleFailException('To create an account, an external account binding must be specified. Use the acme_account module with the external_account_binding option.')
+    result, info = self.client.send_signed_request(url, new_reg, fail_on_error=False)
+    if not isinstance(result, Mapping):
+        raise ACMEProtocolException(self.client.module, msg='Invalid account creation reply from ACME server', info=info, content=result)
+    if info['status'] in ([200, 201] if self.client.version == 1 else [201]):
+        if 'location' in info:
+            self.client.set_account_uri(info['location'])
+        return (True, result)
+    elif info['status'] == (409 if self.client.version == 1 else 200):
+        if result.get('status') == 'deactivated':
+            if not allow_creation:
+                return (False, None)
+            else:
+                raise ModuleFailException('Account is deactivated')
+        if 'location' in info:
+            self.client.set_account_uri(info['location'])
+        return (False, result)
+    elif info['status'] in (400, 404) and result['type'] == 'urn:ietf:params:acme:error:accountDoesNotExist' and (not allow_creation):
+        return (False, None)
+    elif info['status'] == 403 and result['type'] == 'urn:ietf:params:acme:error:unauthorized' and ('deactivated' in (result.get('detail') or '')):
+        if not allow_creation:
+            return (False, None)
+        else:
+            raise ModuleFailException('Account is deactivated')
+    else:
+        raise ACMEProtocolException(self.client.module, msg='Registering ACME account failed', info=info, content_json=result)

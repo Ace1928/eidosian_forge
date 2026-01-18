@@ -1,0 +1,8 @@
+import sys
+import re
+from pyside2uic.Compiler.indenter import write_code
+from pyside2uic.Compiler.misc import Literal, moduleMember
+class QTreeView(QAbstractItemView):
+
+    def header(self):
+        return QtWidgets.QHeaderView('%s.header()' % self, False, (), noInstantiation=True)

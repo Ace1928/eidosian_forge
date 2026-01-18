@@ -1,0 +1,26 @@
+import collections
+import json
+from numbers import Complex
+from typing import (
+import numpy as np
+from deprecated import deprecated
+from deprecated.sphinx import versionadded
+from pyquil.quilatom import (
+from dataclasses import dataclass
+class ClassicalStore(AbstractInstruction):
+    """
+    The STORE instruction.
+    """
+    op = 'STORE'
+
+    def __init__(self, target: str, left: MemoryReference, right: Union[MemoryReference, int, float]):
+        if not isinstance(left, MemoryReference):
+            raise TypeError('left operand should be an MemoryReference')
+        if not (isinstance(right, MemoryReference) or isinstance(right, int) or isinstance(right, float)):
+            raise TypeError('right operand should be an MemoryReference or an int or float.')
+        self.target = target
+        self.left = left
+        self.right = right
+
+    def out(self) -> str:
+        return '%s %s %s %s' % (self.op, self.target, self.left, self.right)

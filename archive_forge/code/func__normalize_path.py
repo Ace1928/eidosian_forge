@@ -1,0 +1,18 @@
+import os
+import re
+import urllib
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
+from ray._private.client_mode_hook import client_mode_hook
+from ray._private.utils import _add_creatable_buckets_param_if_s3_uri, load_class
+from ray._private.auto_init_hook import wrap_auto_init
+def _normalize_path(p: str) -> str:
+    segments = []
+    for s in p.replace('\\', '/').split('/'):
+        if s == '..':
+            if not segments:
+                raise ValueError('Path goes beyond root.')
+            segments.pop()
+        elif s not in ('.', ''):
+            segments.append(s)
+    return '/'.join(segments)

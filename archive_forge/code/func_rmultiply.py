@@ -1,0 +1,50 @@
+from collections import defaultdict
+from collections.abc import Iterable
+from inspect import isfunction
+from functools import reduce
+from sympy.assumptions.refine import refine
+from sympy.core import SympifyError, Add
+from sympy.core.basic import Atom
+from sympy.core.decorators import call_highest_priority
+from sympy.core.kind import Kind, NumberKind
+from sympy.core.logic import fuzzy_and, FuzzyBool
+from sympy.core.mod import Mod
+from sympy.core.singleton import S
+from sympy.core.symbol import Symbol
+from sympy.core.sympify import sympify
+from sympy.functions.elementary.complexes import Abs, re, im
+from .utilities import _dotprodsimp, _simplify
+from sympy.polys.polytools import Poly
+from sympy.utilities.iterables import flatten, is_sequence
+from sympy.utilities.misc import as_int, filldedent
+from sympy.tensor.array import NDimArray
+from .utilities import _get_intermediate_simp_bool
+def rmultiply(self, other, dotprodsimp=None):
+    """Same as __rmul__() but with optional simplification.
+
+        Parameters
+        ==========
+
+        dotprodsimp : bool, optional
+            Specifies whether intermediate term algebraic simplification is used
+            during matrix multiplications to control expression blowup and thus
+            speed up calculation. Default is off.
+        """
+    isimpbool = _get_intermediate_simp_bool(False, dotprodsimp)
+    other = _matrixify(other)
+    if hasattr(other, 'shape') and len(other.shape) == 2 and (getattr(other, 'is_Matrix', True) or getattr(other, 'is_MatrixLike', True)):
+        if self.shape[0] != other.shape[1]:
+            raise ShapeError('Matrix size mismatch.')
+    if getattr(other, 'is_Matrix', False):
+        m = self._eval_matrix_rmul(other)
+        if isimpbool:
+            return m._new(m.rows, m.cols, [_dotprodsimp(e) for e in m])
+        return m
+    if getattr(other, 'is_MatrixLike', False):
+        return MatrixArithmetic._eval_matrix_rmul(self, other)
+    if not isinstance(other, Iterable):
+        try:
+            return self._eval_scalar_rmul(other)
+        except TypeError:
+            pass
+    return NotImplemented

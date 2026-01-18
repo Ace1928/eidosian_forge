@@ -1,0 +1,34 @@
+import kivy
+import weakref
+from functools import partial
+from itertools import chain
+from kivy.logger import Logger
+from kivy.uix.widget import Widget
+from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.image import Image
+from kivy.uix.treeview import TreeViewNode, TreeView
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.modalview import ModalView
+from kivy.graphics import Color, Rectangle, PushMatrix, PopMatrix
+from kivy.graphics.context_instructions import Transform
+from kivy.graphics.transformation import Matrix
+from kivy.properties import (ObjectProperty, BooleanProperty, ListProperty,
+from kivy.graphics.texture import Texture
+from kivy.clock import Clock
+from kivy.lang import Builder
+def update_widget_tree(self, *args):
+    win = self.console.win
+    if not self._window_node:
+        self._window_node = self.ids.widgettree.add_node(TreeViewWidget(text='Window', widget=win, is_open=True))
+    nodes = self._update_widget_tree_node(self._window_node, win, is_open=True)
+    while nodes:
+        ntmp = nodes[:]
+        nodes = []
+        for node in ntmp:
+            nodes += self._update_widget_tree_node(*node)
+    self.ids.widgettree.update_selected_widget(self.widget)

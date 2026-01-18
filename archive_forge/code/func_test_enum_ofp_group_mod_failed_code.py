@@ -1,0 +1,19 @@
+import unittest
+import logging
+from os_ken.ofproto.ofproto_v1_2 import *
+def test_enum_ofp_group_mod_failed_code(self):
+    self.assertEqual(OFPGMFC_GROUP_EXISTS, 0)
+    self.assertEqual(OFPGMFC_INVALID_GROUP, 1)
+    self.assertEqual(OFPGMFC_WEIGHT_UNSUPPORTED, 2)
+    self.assertEqual(OFPGMFC_OUT_OF_GROUPS, 3)
+    self.assertEqual(OFPGMFC_OUT_OF_BUCKETS, 4)
+    self.assertEqual(OFPGMFC_CHAINING_UNSUPPORTED, 5)
+    self.assertEqual(OFPGMFC_WATCH_UNSUPPORTED, 6)
+    self.assertEqual(OFPGMFC_LOOP, 7)
+    self.assertEqual(OFPGMFC_UNKNOWN_GROUP, 8)
+    self.assertEqual(OFPGMFC_CHAINED_GROUP, 9)
+    self.assertEqual(OFPGMFC_BAD_TYPE, 10)
+    self.assertEqual(OFPGMFC_BAD_COMMAND, 11)
+    self.assertEqual(OFPGMFC_BAD_BUCKET, 12)
+    self.assertEqual(OFPGMFC_BAD_WATCH, 13)
+    self.assertEqual(OFPGMFC_EPERM, 14)

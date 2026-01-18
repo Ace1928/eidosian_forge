@@ -1,0 +1,4 @@
+from neutron_lib._i18n import _
+from neutron_lib import exceptions
+class IKEPolicyNotFound(exceptions.NotFound):
+    message = _('IKEPolicy %(ikepolicy_id)s could not be found')

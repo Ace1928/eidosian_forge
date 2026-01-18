@@ -1,0 +1,187 @@
+import os
+import sys
+import re
+import shlex
+import itertools
+from . import sysconfig
+from ._modified import newer
+from .ccompiler import CCompiler, gen_preprocess_options, gen_lib_options
+from .errors import DistutilsExecError, CompileError, LibError, LinkError
+from ._log import log
+from ._macos_compat import compiler_fixup
+class UnixCCompiler(CCompiler):
+    compiler_type = 'unix'
+    executables = {'preprocessor': None, 'compiler': ['cc'], 'compiler_so': ['cc'], 'compiler_cxx': ['cc'], 'linker_so': ['cc', '-shared'], 'linker_exe': ['cc'], 'archiver': ['ar', '-cr'], 'ranlib': None}
+    if sys.platform[:6] == 'darwin':
+        executables['ranlib'] = ['ranlib']
+    src_extensions = ['.c', '.C', '.cc', '.cxx', '.cpp', '.m']
+    obj_extension = '.o'
+    static_lib_extension = '.a'
+    shared_lib_extension = '.so'
+    dylib_lib_extension = '.dylib'
+    xcode_stub_lib_extension = '.tbd'
+    static_lib_format = shared_lib_format = dylib_lib_format = 'lib%s%s'
+    xcode_stub_lib_format = dylib_lib_format
+    if sys.platform == 'cygwin':
+        exe_extension = '.exe'
+
+    def preprocess(self, source, output_file=None, macros=None, include_dirs=None, extra_preargs=None, extra_postargs=None):
+        fixed_args = self._fix_compile_args(None, macros, include_dirs)
+        ignore, macros, include_dirs = fixed_args
+        pp_opts = gen_preprocess_options(macros, include_dirs)
+        pp_args = self.preprocessor + pp_opts
+        if output_file:
+            pp_args.extend(['-o', output_file])
+        if extra_preargs:
+            pp_args[:0] = extra_preargs
+        if extra_postargs:
+            pp_args.extend(extra_postargs)
+        pp_args.append(source)
+        preprocess = self.force or output_file is None or newer(source, output_file)
+        if not preprocess:
+            return
+        if output_file:
+            self.mkpath(os.path.dirname(output_file))
+        try:
+            self.spawn(pp_args)
+        except DistutilsExecError as msg:
+            raise CompileError(msg)
+
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        compiler_so = compiler_fixup(self.compiler_so, cc_args + extra_postargs)
+        try:
+            self.spawn(compiler_so + cc_args + [src, '-o', obj] + extra_postargs)
+        except DistutilsExecError as msg:
+            raise CompileError(msg)
+
+    def create_static_lib(self, objects, output_libname, output_dir=None, debug=0, target_lang=None):
+        objects, output_dir = self._fix_object_args(objects, output_dir)
+        output_filename = self.library_filename(output_libname, output_dir=output_dir)
+        if self._need_link(objects, output_filename):
+            self.mkpath(os.path.dirname(output_filename))
+            self.spawn(self.archiver + [output_filename] + objects + self.objects)
+            if self.ranlib:
+                try:
+                    self.spawn(self.ranlib + [output_filename])
+                except DistutilsExecError as msg:
+                    raise LibError(msg)
+        else:
+            log.debug('skipping %s (up-to-date)', output_filename)
+
+    def link(self, target_desc, objects, output_filename, output_dir=None, libraries=None, library_dirs=None, runtime_library_dirs=None, export_symbols=None, debug=0, extra_preargs=None, extra_postargs=None, build_temp=None, target_lang=None):
+        objects, output_dir = self._fix_object_args(objects, output_dir)
+        fixed_args = self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
+        libraries, library_dirs, runtime_library_dirs = fixed_args
+        lib_opts = gen_lib_options(self, library_dirs, runtime_library_dirs, libraries)
+        if not isinstance(output_dir, (str, type(None))):
+            raise TypeError("'output_dir' must be a string or None")
+        if output_dir is not None:
+            output_filename = os.path.join(output_dir, output_filename)
+        if self._need_link(objects, output_filename):
+            ld_args = objects + self.objects + lib_opts + ['-o', output_filename]
+            if debug:
+                ld_args[:0] = ['-g']
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend(extra_postargs)
+            self.mkpath(os.path.dirname(output_filename))
+            try:
+                building_exe = target_desc == CCompiler.EXECUTABLE
+                linker = (self.linker_exe if building_exe else self.linker_so)[:]
+                if target_lang == 'c++' and self.compiler_cxx:
+                    env, linker_ne = _split_env(linker)
+                    aix, linker_na = _split_aix(linker_ne)
+                    _, compiler_cxx_ne = _split_env(self.compiler_cxx)
+                    _, linker_exe_ne = _split_env(self.linker_exe)
+                    params = _linker_params(linker_na, linker_exe_ne)
+                    linker = env + aix + compiler_cxx_ne + params
+                linker = compiler_fixup(linker, ld_args)
+                self.spawn(linker + ld_args)
+            except DistutilsExecError as msg:
+                raise LinkError(msg)
+        else:
+            log.debug('skipping %s (up-to-date)', output_filename)
+
+    def library_dir_option(self, dir):
+        return '-L' + dir
+
+    def _is_gcc(self):
+        cc_var = sysconfig.get_config_var('CC')
+        compiler = os.path.basename(shlex.split(cc_var)[0])
+        return 'gcc' in compiler or 'g++' in compiler
+
+    def runtime_library_dir_option(self, dir):
+        if sys.platform[:6] == 'darwin':
+            from distutils.util import get_macosx_target_ver, split_version
+            macosx_target_ver = get_macosx_target_ver()
+            if macosx_target_ver and split_version(macosx_target_ver) >= [10, 5]:
+                return '-Wl,-rpath,' + dir
+            else:
+                return '-L' + dir
+        elif sys.platform[:7] == 'freebsd':
+            return '-Wl,-rpath=' + dir
+        elif sys.platform[:5] == 'hp-ux':
+            return ['-Wl,+s' if self._is_gcc() else '+s', '-L' + dir]
+        if sysconfig.get_config_var('GNULD') == 'yes':
+            return '-Wl,--enable-new-dtags,-R' + dir
+        else:
+            return '-Wl,-R' + dir
+
+    def library_option(self, lib):
+        return '-l' + lib
+
+    @staticmethod
+    def _library_root(dir):
+        """
+        macOS users can specify an alternate SDK using'-isysroot'.
+        Calculate the SDK root if it is specified.
+
+        Note that, as of Xcode 7, Apple SDKs may contain textual stub
+        libraries with .tbd extensions rather than the normal .dylib
+        shared libraries installed in /.  The Apple compiler tool
+        chain handles this transparently but it can cause problems
+        for programs that are being built with an SDK and searching
+        for specific libraries.  Callers of find_library_file need to
+        keep in mind that the base filename of the returned SDK library
+        file might have a different extension from that of the library
+        file installed on the running system, for example:
+          /Applications/Xcode.app/Contents/Developer/Platforms/
+              MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
+              usr/lib/libedit.tbd
+        vs
+          /usr/lib/libedit.dylib
+        """
+        cflags = sysconfig.get_config_var('CFLAGS')
+        match = re.search('-isysroot\\s*(\\S+)', cflags)
+        apply_root = sys.platform == 'darwin' and match and (dir.startswith('/System/') or (dir.startswith('/usr/') and (not dir.startswith('/usr/local/'))))
+        return os.path.join(match.group(1), dir[1:]) if apply_root else dir
+
+    def find_library_file(self, dirs, lib, debug=0):
+        """
+        Second-guess the linker with not much hard
+        data to go on: GCC seems to prefer the shared library, so
+        assume that *all* Unix C compilers do,
+        ignoring even GCC's "-static" option.
+
+        >>> compiler = UnixCCompiler()
+        >>> compiler._library_root = lambda dir: dir
+        >>> monkeypatch = getfixture('monkeypatch')
+        >>> monkeypatch.setattr(os.path, 'exists', lambda d: 'existing' in d)
+        >>> dirs = ('/foo/bar/missing', '/foo/bar/existing')
+        >>> compiler.find_library_file(dirs, 'abc').replace('\\\\', '/')
+        '/foo/bar/existing/libabc.dylib'
+        >>> compiler.find_library_file(reversed(dirs), 'abc').replace('\\\\', '/')
+        '/foo/bar/existing/libabc.dylib'
+        >>> monkeypatch.setattr(os.path, 'exists',
+        ...     lambda d: 'existing' in d and '.a' in d)
+        >>> compiler.find_library_file(dirs, 'abc').replace('\\\\', '/')
+        '/foo/bar/existing/libabc.a'
+        >>> compiler.find_library_file(reversed(dirs), 'abc').replace('\\\\', '/')
+        '/foo/bar/existing/libabc.a'
+        """
+        lib_names = (self.library_filename(lib, lib_type=type) for type in 'dylib xcode_stub shared static'.split())
+        roots = map(self._library_root, dirs)
+        searched = (os.path.join(root, lib_name) for root, lib_name in itertools.product(roots, lib_names))
+        found = filter(os.path.exists, searched)
+        return next(found, None)

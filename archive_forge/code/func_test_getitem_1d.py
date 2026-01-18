@@ -1,0 +1,39 @@
+from __future__ import annotations
+import warnings
+from abc import ABC
+from copy import copy, deepcopy
+from datetime import datetime, timedelta
+from textwrap import dedent
+from typing import Generic
+import numpy as np
+import pandas as pd
+import pytest
+import pytz
+from xarray import DataArray, Dataset, IndexVariable, Variable, set_options
+from xarray.core import dtypes, duck_array_ops, indexing
+from xarray.core.common import full_like, ones_like, zeros_like
+from xarray.core.indexing import (
+from xarray.core.types import T_DuckArray
+from xarray.core.utils import NDArrayMixin
+from xarray.core.variable import as_compatible_data, as_variable
+from xarray.namedarray.pycompat import array_type
+from xarray.tests import (
+from xarray.tests.test_namedarray import NamedArraySubclassobjects
+def test_getitem_1d(self):
+    data = np.array([0, 1, 2])
+    v = self.cls(['x'], data)
+    v_new = v[dict(x=[0, 1])]
+    assert v_new.dims == ('x',)
+    assert_array_equal(v_new, data[[0, 1]])
+    v_new = v[dict(x=slice(None))]
+    assert v_new.dims == ('x',)
+    assert_array_equal(v_new, data)
+    v_new = v[dict(x=Variable('a', [0, 1]))]
+    assert v_new.dims == ('a',)
+    assert_array_equal(v_new, data[[0, 1]])
+    v_new = v[dict(x=1)]
+    assert v_new.dims == ()
+    assert_array_equal(v_new, data[1])
+    v_new = v[slice(None)]
+    assert v_new.dims == ('x',)
+    assert_array_equal(v_new, data)

@@ -1,0 +1,212 @@
+import warnings
+from abc import ABCMeta, abstractmethod
+from numbers import Integral, Real
+import numpy as np
+import scipy.sparse as sp
+from ..base import BaseEstimator, ClassifierMixin, _fit_context
+from ..exceptions import ConvergenceWarning, NotFittedError
+from ..preprocessing import LabelEncoder
+from ..utils import check_array, check_random_state, column_or_1d, compute_class_weight
+from ..utils._param_validation import Interval, StrOptions
+from ..utils.extmath import safe_sparse_dot
+from ..utils.metaestimators import available_if
+from ..utils.multiclass import _ovr_decision_function, check_classification_targets
+from ..utils.validation import (
+from . import _liblinear as liblinear  # type: ignore
+from . import _libsvm as libsvm  # type: ignore
+from . import _libsvm_sparse as libsvm_sparse  # type: ignore
+class BaseSVC(ClassifierMixin, BaseLibSVM, metaclass=ABCMeta):
+    """ABC for LibSVM-based classifiers."""
+    _parameter_constraints: dict = {**BaseLibSVM._parameter_constraints, 'decision_function_shape': [StrOptions({'ovr', 'ovo'})], 'break_ties': ['boolean']}
+    for unused_param in ['epsilon', 'nu']:
+        _parameter_constraints.pop(unused_param)
+
+    @abstractmethod
+    def __init__(self, kernel, degree, gamma, coef0, tol, C, nu, shrinking, probability, cache_size, class_weight, verbose, max_iter, decision_function_shape, random_state, break_ties):
+        self.decision_function_shape = decision_function_shape
+        self.break_ties = break_ties
+        super().__init__(kernel=kernel, degree=degree, gamma=gamma, coef0=coef0, tol=tol, C=C, nu=nu, epsilon=0.0, shrinking=shrinking, probability=probability, cache_size=cache_size, class_weight=class_weight, verbose=verbose, max_iter=max_iter, random_state=random_state)
+
+    def _validate_targets(self, y):
+        y_ = column_or_1d(y, warn=True)
+        check_classification_targets(y)
+        cls, y = np.unique(y_, return_inverse=True)
+        self.class_weight_ = compute_class_weight(self.class_weight, classes=cls, y=y_)
+        if len(cls) < 2:
+            raise ValueError('The number of classes has to be greater than one; got %d class' % len(cls))
+        self.classes_ = cls
+        return np.asarray(y, dtype=np.float64, order='C')
+
+    def decision_function(self, X):
+        """Evaluate the decision function for the samples in X.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input samples.
+
+        Returns
+        -------
+        X : ndarray of shape (n_samples, n_classes * (n_classes-1) / 2)
+            Returns the decision function of the sample for each class
+            in the model.
+            If decision_function_shape='ovr', the shape is (n_samples,
+            n_classes).
+
+        Notes
+        -----
+        If decision_function_shape='ovo', the function values are proportional
+        to the distance of the samples X to the separating hyperplane. If the
+        exact distances are required, divide the function values by the norm of
+        the weight vector (``coef_``). See also `this question
+        <https://stats.stackexchange.com/questions/14876/
+        interpreting-distance-from-hyperplane-in-svm>`_ for further details.
+        If decision_function_shape='ovr', the decision function is a monotonic
+        transformation of ovo decision function.
+        """
+        dec = self._decision_function(X)
+        if self.decision_function_shape == 'ovr' and len(self.classes_) > 2:
+            return _ovr_decision_function(dec < 0, -dec, len(self.classes_))
+        return dec
+
+    def predict(self, X):
+        """Perform classification on samples in X.
+
+        For an one-class model, +1 or -1 is returned.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix} of shape (n_samples, n_features) or                 (n_samples_test, n_samples_train)
+            For kernel="precomputed", the expected shape of X is
+            (n_samples_test, n_samples_train).
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            Class labels for samples in X.
+        """
+        check_is_fitted(self)
+        if self.break_ties and self.decision_function_shape == 'ovo':
+            raise ValueError("break_ties must be False when decision_function_shape is 'ovo'")
+        if self.break_ties and self.decision_function_shape == 'ovr' and (len(self.classes_) > 2):
+            y = np.argmax(self.decision_function(X), axis=1)
+        else:
+            y = super().predict(X)
+        return self.classes_.take(np.asarray(y, dtype=np.intp))
+
+    def _check_proba(self):
+        if not self.probability:
+            raise AttributeError('predict_proba is not available when probability=False')
+        if self._impl not in ('c_svc', 'nu_svc'):
+            raise AttributeError('predict_proba only implemented for SVC and NuSVC')
+        return True
+
+    @available_if(_check_proba)
+    def predict_proba(self, X):
+        """Compute probabilities of possible outcomes for samples in X.
+
+        The model needs to have probability information computed at training
+        time: fit with attribute `probability` set to True.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            For kernel="precomputed", the expected shape of X is
+            (n_samples_test, n_samples_train).
+
+        Returns
+        -------
+        T : ndarray of shape (n_samples, n_classes)
+            Returns the probability of the sample for each class in
+            the model. The columns correspond to the classes in sorted
+            order, as they appear in the attribute :term:`classes_`.
+
+        Notes
+        -----
+        The probability model is created using cross validation, so
+        the results can be slightly different than those obtained by
+        predict. Also, it will produce meaningless results on very small
+        datasets.
+        """
+        X = self._validate_for_predict(X)
+        if self.probA_.size == 0 or self.probB_.size == 0:
+            raise NotFittedError('predict_proba is not available when fitted with probability=False')
+        pred_proba = self._sparse_predict_proba if self._sparse else self._dense_predict_proba
+        return pred_proba(X)
+
+    @available_if(_check_proba)
+    def predict_log_proba(self, X):
+        """Compute log probabilities of possible outcomes for samples in X.
+
+        The model need to have probability information computed at training
+        time: fit with attribute `probability` set to True.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features) or                 (n_samples_test, n_samples_train)
+            For kernel="precomputed", the expected shape of X is
+            (n_samples_test, n_samples_train).
+
+        Returns
+        -------
+        T : ndarray of shape (n_samples, n_classes)
+            Returns the log-probabilities of the sample for each class in
+            the model. The columns correspond to the classes in sorted
+            order, as they appear in the attribute :term:`classes_`.
+
+        Notes
+        -----
+        The probability model is created using cross validation, so
+        the results can be slightly different than those obtained by
+        predict. Also, it will produce meaningless results on very small
+        datasets.
+        """
+        return np.log(self.predict_proba(X))
+
+    def _dense_predict_proba(self, X):
+        X = self._compute_kernel(X)
+        kernel = self.kernel
+        if callable(kernel):
+            kernel = 'precomputed'
+        svm_type = LIBSVM_IMPL.index(self._impl)
+        pprob = libsvm.predict_proba(X, self.support_, self.support_vectors_, self._n_support, self._dual_coef_, self._intercept_, self._probA, self._probB, svm_type=svm_type, kernel=kernel, degree=self.degree, cache_size=self.cache_size, coef0=self.coef0, gamma=self._gamma)
+        return pprob
+
+    def _sparse_predict_proba(self, X):
+        X.data = np.asarray(X.data, dtype=np.float64, order='C')
+        kernel = self.kernel
+        if callable(kernel):
+            kernel = 'precomputed'
+        kernel_type = self._sparse_kernels.index(kernel)
+        return libsvm_sparse.libsvm_sparse_predict_proba(X.data, X.indices, X.indptr, self.support_vectors_.data, self.support_vectors_.indices, self.support_vectors_.indptr, self._dual_coef_.data, self._intercept_, LIBSVM_IMPL.index(self._impl), kernel_type, self.degree, self._gamma, self.coef0, self.tol, self.C, getattr(self, 'class_weight_', np.empty(0)), self.nu, self.epsilon, self.shrinking, self.probability, self._n_support, self._probA, self._probB)
+
+    def _get_coef(self):
+        if self.dual_coef_.shape[0] == 1:
+            coef = safe_sparse_dot(self.dual_coef_, self.support_vectors_)
+        else:
+            coef = _one_vs_one_coef(self.dual_coef_, self._n_support, self.support_vectors_)
+            if sp.issparse(coef[0]):
+                coef = sp.vstack(coef).tocsr()
+            else:
+                coef = np.vstack(coef)
+        return coef
+
+    @property
+    def probA_(self):
+        """Parameter learned in Platt scaling when `probability=True`.
+
+        Returns
+        -------
+        ndarray of shape  (n_classes * (n_classes - 1) / 2)
+        """
+        return self._probA
+
+    @property
+    def probB_(self):
+        """Parameter learned in Platt scaling when `probability=True`.
+
+        Returns
+        -------
+        ndarray of shape  (n_classes * (n_classes - 1) / 2)
+        """
+        return self._probB

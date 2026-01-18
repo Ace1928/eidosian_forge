@@ -1,0 +1,15 @@
+import re
+from pygments.lexer import RegexLexer, bygroups, include, using, this, words
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class VhdlLexer(RegexLexer):
+    """
+    For VHDL source code.
+
+    .. versionadded:: 1.5
+    """
+    name = 'vhdl'
+    aliases = ['vhdl']
+    filenames = ['*.vhdl', '*.vhd']
+    mimetypes = ['text/x-vhdl']
+    flags = re.MULTILINE | re.IGNORECASE
+    tokens = {'root': [('\\n', Text), ('\\s+', Text), ('\\\\\\n', Text), ('--.*?$', Comment.Single), ("'(U|X|0|1|Z|W|L|H|-)'", String.Char), ('[~!%^&*+=|?:<>/-]', Operator), ("'[a-z_]\\w*", Name.Attribute), ("[()\\[\\],.;\\']", Punctuation), ('"[^\\n\\\\"]*"', String), ('(library)(\\s+)([a-z_]\\w*)', bygroups(Keyword, Text, Name.Namespace)), ('(use)(\\s+)(entity)', bygroups(Keyword, Text, Keyword)), ('(use)(\\s+)([a-z_][\\w.]*\\.)(all)', bygroups(Keyword, Text, Name.Namespace, Keyword)), ('(use)(\\s+)([a-z_][\\w.]*)', bygroups(Keyword, Text, Name.Namespace)), ('(std|ieee)(\\.[a-z_]\\w*)', bygroups(Name.Namespace, Name.Namespace)), (words(('std', 'ieee', 'work'), suffix='\\b'), Name.Namespace), ('(entity|component)(\\s+)([a-z_]\\w*)', bygroups(Keyword, Text, Name.Class)), ('(architecture|configuration)(\\s+)([a-z_]\\w*)(\\s+)(of)(\\s+)([a-z_]\\w*)(\\s+)(is)', bygroups(Keyword, Text, Name.Class, Text, Keyword, Text, Name.Class, Text, Keyword)), ('([a-z_]\\w*)(:)(\\s+)(process|for)', bygroups(Name.Class, Operator, Text, Keyword)), ('(end)(\\s+)', bygroups(using(this), Text), 'endblock'), include('types'), include('keywords'), include('numbers'), ('[a-z_]\\w*', Name)], 'endblock': [include('keywords'), ('[a-z_]\\w*', Name.Class), ('(\\s+)', Text), (';', Punctuation, '#pop')], 'types': [(words(('boolean', 'bit', 'character', 'severity_level', 'integer', 'time', 'delay_length', 'natural', 'positive', 'string', 'bit_vector', 'file_open_kind', 'file_open_status', 'std_ulogic', 'std_ulogic_vector', 'std_logic', 'std_logic_vector', 'signed', 'unsigned'), suffix='\\b'), Keyword.Type)], 'keywords': [(words(('abs', 'access', 'after', 'alias', 'all', 'and', 'architecture', 'array', 'assert', 'attribute', 'begin', 'block', 'body', 'buffer', 'bus', 'case', 'component', 'configuration', 'constant', 'disconnect', 'downto', 'else', 'elsif', 'end', 'entity', 'exit', 'file', 'for', 'function', 'generate', 'generic', 'group', 'guarded', 'if', 'impure', 'in', 'inertial', 'inout', 'is', 'label', 'library', 'linkage', 'literal', 'loop', 'map', 'mod', 'nand', 'new', 'next', 'nor', 'not', 'null', 'of', 'on', 'open', 'or', 'others', 'out', 'package', 'port', 'postponed', 'procedure', 'process', 'pure', 'range', 'record', 'register', 'reject', 'rem', 'return', 'rol', 'ror', 'select', 'severity', 'signal', 'shared', 'sla', 'sll', 'sra', 'srl', 'subtype', 'then', 'to', 'transport', 'type', 'units', 'until', 'use', 'variable', 'wait', 'when', 'while', 'with', 'xnor', 'xor'), suffix='\\b'), Keyword)], 'numbers': [('\\d{1,2}#[0-9a-f_]+#?', Number.Integer), ('\\d+', Number.Integer), ('(\\d+\\.\\d*|\\.\\d+|\\d+)E[+-]?\\d+', Number.Float), ('X"[0-9a-f_]+"', Number.Hex), ('O"[0-7_]+"', Number.Oct), ('B"[01_]+"', Number.Bin)]}

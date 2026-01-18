@@ -1,0 +1,22 @@
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
+class LightThemeColors:
+    Red = '#B71C1C'
+    Pink = '#FCE4EC'
+    Purple = '#4A148C'
+    DeepPurple = '#311B92'
+    Indigo = '#1A237E'
+    Blue = '#0D47A1'
+    LightBlue = '#01579B'
+    Cyan = '#006064'
+    Teal = '#004D40'
+    Green = '#1B5E20'
+    LightGreen = '#33691E'
+    Lime = '#827717'
+    Yellow = '#F57F17'
+    Amber = '#FF6F00'
+    Orange = '#E65100'
+    DeepOrange = '#BF360C'
+    Brown = '#3E2723'
+    Grey = '#212121'
+    BlueGrey = '#263238'

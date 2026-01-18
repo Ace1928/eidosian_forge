@@ -1,0 +1,2 @@
+class InvalidAudienceError(InvalidTokenError):
+    pass

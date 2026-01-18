@@ -1,0 +1,19 @@
+from statsmodels.compat.pytest import pytest_warns
+from statsmodels.compat.pandas import assert_index_equal, assert_series_equal
+from statsmodels.compat.platform import (
+from statsmodels.compat.scipy import SCIPY_GT_14
+import numpy as np
+from numpy.testing import (
+import pandas as pd
+import pytest
+import statsmodels.api as sm
+from statsmodels.formula.api import glm, ols
+import statsmodels.tools._testing as smt
+from statsmodels.tools.sm_exceptions import HessianInversionWarning
+class TestGenericOLS(CheckGenericMixin):
+
+    def setup_method(self):
+        x = self.exog
+        np.random.seed(987689)
+        y = x.sum(1) + np.random.randn(x.shape[0])
+        self.results = sm.OLS(y, self.exog).fit()

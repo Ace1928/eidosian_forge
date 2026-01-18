@@ -1,0 +1,4 @@
+import saml2
+from saml2 import SamlBase
+def problem_action_type__soap_action_from_string(xml_string):
+    return saml2.create_class_from_xml_string(ProblemActionType_SoapAction, xml_string)

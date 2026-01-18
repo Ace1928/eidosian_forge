@@ -1,0 +1,11 @@
+from io import BytesIO
+from pprint import pformat
+from ... import errors
+from ...osutils import sha_string
+from ..weave import Weave, WeaveFormatError, WeaveInvalidChecksum
+from ..weavefile import read_weave, write_weave
+from . import TestCase, TestCaseInTempDir
+def test_allow_reserved_true(self):
+    w = Weave('name', allow_reserved=True)
+    w.add_lines(b'name:', [], TEXT_1)
+    self.assertEqual(TEXT_1, w.get_lines(b'name:'))

@@ -1,0 +1,130 @@
+import functools
+import hashlib
+import multiprocessing.dummy
+import os
+import pathlib
+import queue
+import random
+import shutil
+import tarfile
+import threading
+import time
+import typing
+import urllib
+import warnings
+import weakref
+import zipfile
+from abc import abstractmethod
+from contextlib import closing
+import numpy as np
+import tensorflow.compat.v2 as tf
+from six.moves.urllib.parse import urlsplit
+from keras.src.utils import io_utils
+from keras.src.utils import tf_inspect
+from keras.src.utils.generic_utils import Progbar
+from tensorflow.python.util.tf_export import keras_export
+from six.moves.urllib.request import urlopen
+@keras_export('keras.utils.pad_sequences', 'keras.preprocessing.sequence.pad_sequences')
+def pad_sequences(sequences, maxlen=None, dtype='int32', padding='pre', truncating='pre', value=0.0):
+    """Pads sequences to the same length.
+
+    This function transforms a list (of length `num_samples`)
+    of sequences (lists of integers)
+    into a 2D Numpy array of shape `(num_samples, num_timesteps)`.
+    `num_timesteps` is either the `maxlen` argument if provided,
+    or the length of the longest sequence in the list.
+
+    Sequences that are shorter than `num_timesteps`
+    are padded with `value` until they are `num_timesteps` long.
+
+    Sequences longer than `num_timesteps` are truncated
+    so that they fit the desired length.
+
+    The position where padding or truncation happens is determined by
+    the arguments `padding` and `truncating`, respectively.
+    Pre-padding or removing values from the beginning of the sequence is the
+    default.
+
+    >>> sequence = [[1], [2, 3], [4, 5, 6]]
+    >>> tf.keras.utils.pad_sequences(sequence)
+    array([[0, 0, 1],
+           [0, 2, 3],
+           [4, 5, 6]], dtype=int32)
+
+    >>> tf.keras.utils.pad_sequences(sequence, value=-1)
+    array([[-1, -1,  1],
+           [-1,  2,  3],
+           [ 4,  5,  6]], dtype=int32)
+
+    >>> tf.keras.utils.pad_sequences(sequence, padding='post')
+    array([[1, 0, 0],
+           [2, 3, 0],
+           [4, 5, 6]], dtype=int32)
+
+    >>> tf.keras.utils.pad_sequences(sequence, maxlen=2)
+    array([[0, 1],
+           [2, 3],
+           [5, 6]], dtype=int32)
+
+    Args:
+        sequences: List of sequences (each sequence is a list of integers).
+        maxlen: Optional Int, maximum length of all sequences. If not provided,
+            sequences will be padded to the length of the longest individual
+            sequence.
+        dtype: (Optional). Type of the output sequences.
+            To pad sequences with variable length strings, you can use `object`.
+            Defaults to `"int32"`.
+        padding: String, "pre" or "post" (optional):
+            pad either before or after each sequence. Defaults to `"pre"`.
+        truncating: String, "pre" or "post" (optional):
+            remove values from sequences larger than
+            `maxlen`, either at the beginning or at the end of the sequences.
+            Defaults to `"pre"`.
+        value: Float or String, padding value. (Optional). Defaults to `0.`.
+
+    Returns:
+        Numpy array with shape `(len(sequences), maxlen)`
+
+    Raises:
+        ValueError: In case of invalid values for `truncating` or `padding`,
+            or in case of invalid shape for a `sequences` entry.
+    """
+    if not hasattr(sequences, '__len__'):
+        raise ValueError('`sequences` must be iterable.')
+    num_samples = len(sequences)
+    lengths = []
+    sample_shape = ()
+    flag = True
+    for x in sequences:
+        try:
+            lengths.append(len(x))
+            if flag and len(x):
+                sample_shape = np.asarray(x).shape[1:]
+                flag = False
+        except TypeError as e:
+            raise ValueError(f'`sequences` must be a list of iterables. Found non-iterable: {str(x)}') from e
+    if maxlen is None:
+        maxlen = np.max(lengths)
+    is_dtype_str = np.issubdtype(dtype, np.str_) or np.issubdtype(dtype, np.unicode_)
+    if isinstance(value, str) and dtype != object and (not is_dtype_str):
+        raise ValueError(f"`dtype` {dtype} is not compatible with `value`'s type: {type(value)}\nYou should set `dtype=object` for variable length strings.")
+    x = np.full((num_samples, maxlen) + sample_shape, value, dtype=dtype)
+    for idx, s in enumerate(sequences):
+        if not len(s):
+            continue
+        if truncating == 'pre':
+            trunc = s[-maxlen:]
+        elif truncating == 'post':
+            trunc = s[:maxlen]
+        else:
+            raise ValueError(f'Truncating type "{truncating}" not understood')
+        trunc = np.asarray(trunc, dtype=dtype)
+        if trunc.shape[1:] != sample_shape:
+            raise ValueError(f'Shape of sample {trunc.shape[1:]} of sequence at position {idx} is different from expected shape {sample_shape}')
+        if padding == 'post':
+            x[idx, :len(trunc)] = trunc
+        elif padding == 'pre':
+            x[idx, -len(trunc):] = trunc
+        else:
+            raise ValueError(f'Padding type "{padding}" not understood')
+    return x

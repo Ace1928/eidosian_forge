@@ -1,0 +1,10 @@
+import numpy as np
+from onnx.reference.ops._op import OpRunReduceNumpy
+class ReduceSumSquare_1(OpRunReduceNumpy):
+
+    def _run(self, data, axes=None, keepdims=None):
+        axes = tuple(axes) if axes is not None else None
+        res = np.sum(np.square(data), axis=axes, keepdims=keepdims)
+        if keepdims == 0 and (not isinstance(res, np.ndarray)):
+            res = np.array(res)
+        return (res,)

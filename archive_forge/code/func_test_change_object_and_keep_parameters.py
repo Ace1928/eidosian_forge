@@ -1,0 +1,39 @@
+import asyncio
+import os
+import pandas as pd
+import param
+import pytest
+from bokeh.models import (
+from packaging.version import Version
+from panel import config
+from panel.depends import bind
+from panel.io.state import set_curdoc, state
+from panel.layout import Row, Tabs
+from panel.models import HTML as BkHTML
+from panel.pane import (
+from panel.param import (
+from panel.tests.util import mpl_available, mpl_figure
+from panel.widgets import (
+def test_change_object_and_keep_parameters():
+    """Test that https://github.com/holoviz/panel/issues/1581 is solved"""
+
+    class TextModel(param.Parameterized):
+        text = param.String()
+        param2 = param.String()
+
+    class TextView(param.Parameterized):
+        text = param.ClassSelector(class_=TextModel)
+        text_pane = param.Parameter()
+
+        def __init__(self, **params):
+            params['text'] = TextModel(text='Original Text')
+            super().__init__(**params)
+            self.text_pane = Param(self.text, parameters=['text'])
+
+        @param.depends('text', watch=True)
+        def _update_text_pane(self, *_):
+            self.text_pane.object = self.text
+    view = TextView()
+    assert view.text_pane.parameters == ['text']
+    view.text = TextModel(text='New TextModel')
+    assert view.text_pane.parameters == ['text']

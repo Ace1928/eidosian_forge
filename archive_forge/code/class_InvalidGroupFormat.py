@@ -1,0 +1,2 @@
+class InvalidGroupFormat(Exception):
+    pass

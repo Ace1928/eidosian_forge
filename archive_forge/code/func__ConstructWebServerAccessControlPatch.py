@@ -1,0 +1,24 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.composer import environments_util as environments_api_util
+from googlecloudsdk.api_lib.composer import operations_util as operations_api_util
+from googlecloudsdk.api_lib.composer import util as api_util
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.composer import util as command_util
+from googlecloudsdk.core import log
+import six
+def _ConstructWebServerAccessControlPatch(web_server_access_control, release_track):
+    """Constructs an environment patch for web server network access control.
+
+  Args:
+    web_server_access_control: [{string: string}], the target list of IP ranges.
+    release_track: base.ReleaseTrack, the release track of command. It dictates
+      which Composer client library is used.
+
+  Returns:
+    (str, Environment), the field mask and environment to use for update.
+  """
+    messages = api_util.GetMessagesModule(release_track=release_track)
+    config = messages.EnvironmentConfig(webServerNetworkAccessControl=environments_api_util.BuildWebServerNetworkAccessControl(web_server_access_control, release_track))
+    return ('config.web_server_network_access_control', messages.Environment(config=config))

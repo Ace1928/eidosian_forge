@@ -1,0 +1,1 @@
+Represent the SCOP hierarchy record as a string.

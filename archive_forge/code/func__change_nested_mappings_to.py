@@ -1,0 +1,31 @@
+import abc
+import typing
+import warnings
+import typing_extensions
+from tensorflow.core.protobuf import struct_pb2
+from tensorflow.python.framework import composite_tensor
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import extension_type_field
+from tensorflow.python.framework import immutable_dict
+from tensorflow.python.framework import tensor
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import type_spec
+from tensorflow.python.framework import type_spec_registry
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import composite_tensor_ops
+from tensorflow.python.ops import gen_math_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.saved_model import nested_structure_coder
+from tensorflow.python.util import nest
+from tensorflow.python.util import tf_decorator
+from tensorflow.python.util import tf_inspect
+from tensorflow.python.util.tf_export import tf_export
+def _change_nested_mappings_to(value, new_type):
+    """Recursively replace mappings with `new_type`."""
+    if isinstance(value, (dict, immutable_dict.ImmutableDict)):
+        return new_type([(k, _change_nested_mappings_to(v, new_type)) for k, v in value.items()])
+    elif isinstance(value, tuple):
+        return tuple((_change_nested_mappings_to(elt, new_type) for elt in value))
+    else:
+        return value

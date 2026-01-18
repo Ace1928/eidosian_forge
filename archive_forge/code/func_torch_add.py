@@ -1,0 +1,32 @@
+import builtins
+import collections
+import functools
+import inspect
+import math
+import operator
+import os
+import random
+import warnings
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+import torch
+from torch import nn
+from torch.fx import Graph, GraphModule, Proxy, Tracer
+from torch.fx._compatibility import compatibility
+from torch.fx.proxy import ParameterProxy
+from .. import PretrainedConfig, PreTrainedModel, logging
+from ..models.auto import get_values
+from ..models.auto.modeling_auto import (
+from ..pytorch_utils import is_torch_greater_or_equal_than_2_0
+from ..utils import (
+def torch_add(input, other, *, alpha=1, out=None):
+    if not isinstance(input, torch.Tensor):
+        return torch.empty_like(other, device='meta')
+    if not isinstance(other, torch.Tensor):
+        return torch.empty_like(input, device='meta')
+    max_length = max(input.dim(), other.dim())
+    input_shape = list(input.shape) + [1] * (max_length - input.dim())
+    other_shape = list(other.shape) + [1] * (max_length - other.dim())
+    shape = []
+    for i in range(max_length):
+        shape.append(max(input_shape[i], other_shape[i]))
+    return torch.empty(shape, device='meta')

@@ -1,0 +1,61 @@
+import os
+import sys
+import time
+import mmap
+import weakref
+import warnings
+import threading
+from traceback import format_exception
+from math import sqrt
+from time import sleep
+from pickle import PicklingError
+from contextlib import nullcontext
+from multiprocessing import TimeoutError
+import pytest
+import joblib
+from joblib import parallel
+from joblib import dump, load
+from joblib._multiprocessing_helpers import mp
+from joblib.test.common import np, with_numpy
+from joblib.test.common import with_multiprocessing
+from joblib.test.common import IS_PYPY, force_gc_pypy
+from joblib.testing import (parametrize, raises, check_subprocess_call,
+from queue import Queue
+from joblib._parallel_backends import SequentialBackend
+from joblib._parallel_backends import ThreadingBackend
+from joblib._parallel_backends import MultiprocessingBackend
+from joblib._parallel_backends import ParallelBackendBase
+from joblib._parallel_backends import LokyBackend
+from joblib.parallel import Parallel, delayed
+from joblib.parallel import parallel_config
+from joblib.parallel import parallel_backend
+from joblib.parallel import register_parallel_backend
+from joblib.parallel import effective_n_jobs, cpu_count
+from joblib.parallel import mp, BACKENDS, DEFAULT_BACKEND
+from joblib import Parallel, delayed
+import sys
+from joblib import Parallel, delayed
+import sys
+import faulthandler
+from joblib import Parallel, delayed
+from functools import partial
+import sys
+from joblib import Parallel, delayed, hash
+import multiprocessing as mp
+@with_multiprocessing
+@parametrize('backend', PARALLEL_BACKENDS)
+@pytest.mark.xfail(reason='https://github.com/joblib/loky/pull/255')
+def test_nested_exception_dispatch(backend):
+    """Ensure errors for nested joblib cases gets propagated
+
+    We rely on the Python 3 built-in __cause__ system that already
+    report this kind of information to the user.
+    """
+    with raises(ValueError) as excinfo:
+        Parallel(n_jobs=2, backend=backend)((delayed(nested_function_outer)(i) for i in range(30)))
+    report_lines = format_exception(excinfo.type, excinfo.value, excinfo.tb)
+    report = ''.join(report_lines)
+    assert 'nested_function_outer' in report
+    assert 'nested_function_inner' in report
+    assert 'exception_raiser' in report
+    assert type(excinfo.value) is ValueError

@@ -1,0 +1,18 @@
+from datetime import datetime
+from boto.compat import six
+class ListAvailableSolutionStacksResponse(Response):
+
+    def __init__(self, response):
+        response = response['ListAvailableSolutionStacksResponse']
+        super(ListAvailableSolutionStacksResponse, self).__init__(response)
+        response = response['ListAvailableSolutionStacksResult']
+        self.solution_stack_details = []
+        if response['SolutionStackDetails']:
+            for member in response['SolutionStackDetails']:
+                solution_stack_detail = SolutionStackDescription(member)
+                self.solution_stack_details.append(solution_stack_detail)
+        self.solution_stacks = []
+        if response['SolutionStacks']:
+            for member in response['SolutionStacks']:
+                solution_stack = str(member)
+                self.solution_stacks.append(solution_stack)

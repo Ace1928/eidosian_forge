@@ -1,0 +1,52 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import contextlib
+import hashlib
+import itertools
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+import textwrap
+import certifi
+from googlecloudsdk.core import argv_utils
+from googlecloudsdk.core import config
+from googlecloudsdk.core import exceptions
+from googlecloudsdk.core import execution_utils
+from googlecloudsdk.core import log
+from googlecloudsdk.core import metrics
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_attr
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.console import progress_tracker
+from googlecloudsdk.core.resource import resource_printer
+from googlecloudsdk.core.updater import installers
+from googlecloudsdk.core.updater import local_state
+from googlecloudsdk.core.updater import release_notes
+from googlecloudsdk.core.updater import snapshots
+from googlecloudsdk.core.updater import update_check
+from googlecloudsdk.core.util import encoding
+from googlecloudsdk.core.util import files as file_utils
+from googlecloudsdk.core.util import platforms
+import six
+from six.moves import map  # pylint: disable=redefined-builtin
+def _UpdateWithProgressBar(self, components, action, action_func, first=False, last=False):
+    """Performs an update on a component while using a progress bar.
+
+    Args:
+      components: [schemas.Component], The components that are going to be acted
+        on.
+      action: str, The action that is printed for this update.
+      action_func: func, The function to call to actually do the update.  It
+        takes a single argument which is the component id.
+      first: bool, True if this is the first stacked ProgressBar group.
+      last: bool, True if this is the last stacked ProgressBar group.
+    """
+    for index, component in enumerate(components):
+        label = '{action}: {name}'.format(action=action, name=component.details.display_name)
+        with console_io.ProgressBar(label=label, stream=log.status, first=first, last=last and index == len(components) - 1) as pb:
+            action_func(component.id, progress_callback=pb.SetProgress)
+        first = False

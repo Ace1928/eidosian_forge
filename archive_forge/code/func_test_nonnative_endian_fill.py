@@ -1,0 +1,20 @@
+import copy
+import sys
+import gc
+import tempfile
+import pytest
+from os import path
+from io import BytesIO
+from itertools import chain
+import numpy as np
+from numpy.testing import (
+from numpy.testing._private.utils import _no_tracing, requires_memory
+from numpy.compat import asbytes, asunicode, pickle
+def test_nonnative_endian_fill(self):
+    if sys.byteorder == 'little':
+        dtype = np.dtype('>i4')
+    else:
+        dtype = np.dtype('<i4')
+    x = np.empty([1], dtype=dtype)
+    x.fill(1)
+    assert_equal(x, np.array([1], dtype=dtype))

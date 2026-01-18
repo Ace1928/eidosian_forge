@@ -1,0 +1,2 @@
+class NvvmSupportError(ImportError):
+    pass

@@ -1,0 +1,36 @@
+import datetime
+import time
+from dateutil import tz
+from testtools import matchers
+import yaql.tests
+def test_datetime_math(self):
+    self.context['dt1'] = self.eval('now()')
+    time.sleep(0.1)
+    self.context['dt2'] = self.eval('now()')
+    delta = TS(milliseconds=120)
+    self.assertIsInstance(self.eval('$dt2 - $dt1'), TS)
+    self.assertThat(self.eval('$dt2 - $dt1'), matchers.LessThan(delta))
+    self.assertTrue(self.eval('($dt2 - $dt1) + $dt1 = $dt2'))
+    self.assertTrue(self.eval('$dt1 + ($dt2 - $dt1) = $dt2'))
+    self.assertThat(self.eval('($dt2 - $dt1) * 2'), matchers.LessThan(2 * delta))
+    self.assertThat(self.eval('2.1 * ($dt2 - $dt1)'), matchers.LessThan(2 * delta))
+    self.assertTrue(self.eval('-($dt1 - $dt2) = +($dt2 - $dt1)'))
+    self.assertTrue(self.eval('$dt2 > $dt1'))
+    self.assertTrue(self.eval('$dt2 >= $dt1'))
+    self.assertTrue(self.eval('$dt2 != $dt1'))
+    self.assertTrue(self.eval('$dt1 = $dt1'))
+    self.assertTrue(self.eval('$dt1 < $dt2'))
+    self.assertTrue(self.eval('$dt1 <= $dt2'))
+    self.assertEqual(-1, self.eval('($dt2 - $dt1) / ($dt1 - $dt2)'))
+    self.assertTrue(self.eval('$dt2 - ($dt2 - $dt1) = $dt1'))
+    self.assertEqual(0, self.eval('($dt2 - $dt1) - ($dt2 - $dt1)').total_seconds())
+    delta2 = self.eval('($dt2 - $dt1) / 2.1')
+    self.assertThat(delta2, matchers.LessThan(delta / 2))
+    self.assertTrue(self.eval('$dt1 + $ < $dt2', delta2))
+    self.assertTrue(self.eval('$ + $dt1 < $dt2', delta2))
+    self.assertTrue(self.eval('$dt2 - $dt1 > $', delta2))
+    self.assertTrue(self.eval('$dt2 - $dt1 >= $', delta2))
+    self.assertTrue(self.eval('$dt2 - $dt1 != $', delta2))
+    self.assertFalse(self.eval('$dt2 - $dt1 < $', delta2))
+    self.assertFalse(self.eval('$dt2 - $dt1 <= $', delta2))
+    self.assertTrue(self.eval('($dt2 - $dt1) + $ > $', delta2))

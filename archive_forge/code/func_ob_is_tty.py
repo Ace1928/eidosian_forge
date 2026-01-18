@@ -1,0 +1,45 @@
+import asyncio
+from collections import deque
+import errno
+import fcntl
+import gc
+import getpass
+import glob as glob_module
+import inspect
+import logging
+import os
+import platform
+import pty
+import pwd
+import re
+import select
+import signal
+import stat
+import struct
+import sys
+import termios
+import textwrap
+import threading
+import time
+import traceback
+import tty
+import warnings
+import weakref
+from asyncio import Queue as AQueue
+from contextlib import contextmanager
+from functools import partial
+from importlib import metadata
+from io import BytesIO, StringIO, UnsupportedOperation
+from io import open as fdopen
+from locale import getpreferredencoding
+from queue import Empty, Queue
+from shlex import quote as shlex_quote
+from types import GeneratorType, ModuleType
+from typing import Any, Dict, Type, Union
+def ob_is_tty(ob):
+    """checks if an object (like a file-like object) is a tty."""
+    fileno = get_fileno(ob)
+    is_tty = False
+    if fileno is not None:
+        is_tty = os.isatty(fileno)
+    return is_tty

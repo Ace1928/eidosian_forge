@@ -1,0 +1,64 @@
+# 🔮 Eidosian Configuration
+
+# Repository metadata
+repo_name: "doc_forge_repo"
+created_at: "2025-03-13"
+version: "0.1.0"
+
+# Structure configuration
+structure:
+  enforce_consistent_structure: true
+  allow_custom_directories: true
+  require_documentation: true
+  enforce_testing: true
+
+# Code style
+code_style:
+  python:
+    formatter: "black"
+    line_length: 88
+    docstring_style: "sphinx"
+  javascript:
+    formatter: "prettier"
+    line_length: 80
+  go:
+    formatter: "gofmt"
+  rust:
+    formatter: "rustfmt"
+
+# Documentation
+documentation:
+  require_readme: true
+  require_contributing: true
+  require_code_of_conduct: true
+  require_license: true
+  api_docs_generator: "sphinx"
+
+# CI/CD
+ci_cd:
+  required_checks:
+    - "lint"
+    - "test"
+    - "build"
+    - "docs"
+  platforms:
+    - "github-actions"
+    - "gitlab-ci"
+
+# Dependencies
+dependencies:
+  allow_direct_dependencies: true
+  require_dependency_lockfiles: true
+  security_scanning: true
+
+# Security
+security:
+  enforce_security_policy: true
+  require_vulnerability_reporting: true
+  security_scanning_on_pr: true
+
+# Community
+community:
+  require_code_of_conduct: true
+  issue_templates: true
+  pr_templates: true

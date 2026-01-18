@@ -1,0 +1,116 @@
+import abc
+from collections import Counter
+from collections import defaultdict
+import dataclasses
+import enum
+import fnmatch
+from functools import partial
+import inspect
+import itertools
+import os
+from pathlib import Path
+import types
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import final
+from typing import Generator
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Literal
+from typing import Mapping
+from typing import Optional
+from typing import Pattern
+from typing import Sequence
+from typing import Set
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
+import warnings
+import _pytest
+from _pytest import fixtures
+from _pytest import nodes
+from _pytest._code import filter_traceback
+from _pytest._code import getfslineno
+from _pytest._code.code import ExceptionInfo
+from _pytest._code.code import TerminalRepr
+from _pytest._code.code import Traceback
+from _pytest._io import TerminalWriter
+from _pytest._io.saferepr import saferepr
+from _pytest.compat import ascii_escaped
+from _pytest.compat import get_default_arg_names
+from _pytest.compat import get_real_func
+from _pytest.compat import getimfunc
+from _pytest.compat import getlocation
+from _pytest.compat import is_async_function
+from _pytest.compat import is_generator
+from _pytest.compat import LEGACY_PATH
+from _pytest.compat import NOTSET
+from _pytest.compat import safe_getattr
+from _pytest.compat import safe_isclass
+from _pytest.config import Config
+from _pytest.config import ExitCode
+from _pytest.config import hookimpl
+from _pytest.config.argparsing import Parser
+from _pytest.deprecated import check_ispytest
+from _pytest.fixtures import FixtureDef
+from _pytest.fixtures import FixtureRequest
+from _pytest.fixtures import FuncFixtureInfo
+from _pytest.fixtures import get_scope_node
+from _pytest.main import Session
+from _pytest.mark import MARK_GEN
+from _pytest.mark import ParameterSet
+from _pytest.mark.structures import get_unpacked_marks
+from _pytest.mark.structures import Mark
+from _pytest.mark.structures import MarkDecorator
+from _pytest.mark.structures import normalize_mark_list
+from _pytest.outcomes import fail
+from _pytest.outcomes import skip
+from _pytest.pathlib import bestrelpath
+from _pytest.pathlib import fnmatch_ex
+from _pytest.pathlib import import_path
+from _pytest.pathlib import ImportPathMismatchError
+from _pytest.pathlib import scandir
+from _pytest.scope import _ScopeName
+from _pytest.scope import Scope
+from _pytest.stash import StashKey
+from _pytest.warning_types import PytestCollectionWarning
+from _pytest.warning_types import PytestReturnNotNoneWarning
+from _pytest.warning_types import PytestUnhandledCoroutineWarning
+@final
+@dataclasses.dataclass(frozen=True)
+class CallSpec2:
+    """A planned parameterized invocation of a test function.
+
+    Calculated during collection for a given test function's Metafunc.
+    Once collection is over, each callspec is turned into a single Item
+    and stored in item.callspec.
+    """
+    params: Dict[str, object] = dataclasses.field(default_factory=dict)
+    indices: Dict[str, int] = dataclasses.field(default_factory=dict)
+    _arg2scope: Mapping[str, Scope] = dataclasses.field(default_factory=dict)
+    _idlist: Sequence[str] = dataclasses.field(default_factory=tuple)
+    marks: List[Mark] = dataclasses.field(default_factory=list)
+
+    def setmulti(self, *, argnames: Iterable[str], valset: Iterable[object], id: str, marks: Iterable[Union[Mark, MarkDecorator]], scope: Scope, param_index: int) -> 'CallSpec2':
+        params = self.params.copy()
+        indices = self.indices.copy()
+        arg2scope = dict(self._arg2scope)
+        for arg, val in zip(argnames, valset):
+            if arg in params:
+                raise ValueError(f'duplicate parametrization of {arg!r}')
+            params[arg] = val
+            indices[arg] = param_index
+            arg2scope[arg] = scope
+        return CallSpec2(params=params, indices=indices, _arg2scope=arg2scope, _idlist=[*self._idlist, id], marks=[*self.marks, *normalize_mark_list(marks)])
+
+    def getparam(self, name: str) -> object:
+        try:
+            return self.params[name]
+        except KeyError as e:
+            raise ValueError(name) from e
+
+    @property
+    def id(self) -> str:
+        return '-'.join(self._idlist)

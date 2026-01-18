@@ -1,0 +1,1 @@
+String constants describing contents of an event accumulator.

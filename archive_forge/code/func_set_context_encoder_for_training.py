@@ -1,0 +1,15 @@
+import copy
+from dataclasses import dataclass
+from typing import Callable, List, Optional, Tuple, Union
+import torch
+from torch import nn
+from ...configuration_utils import PretrainedConfig
+from ...generation import BeamSearchScorer, GenerationConfig, LogitsProcessorList, StoppingCriteriaList
+from ...modeling_outputs import ModelOutput
+from ...modeling_utils import PreTrainedModel
+from ...utils import add_start_docstrings_to_model_forward, logging, replace_return_docstrings
+from .configuration_rag import RagConfig
+from .retrieval_rag import RagRetriever
+def set_context_encoder_for_training(self, ctx_encoder: PreTrainedModel):
+    self.rag.context_encoder_training = True
+    self.rag.ctx_encoder = ctx_encoder

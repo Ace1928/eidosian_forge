@@ -1,0 +1,48 @@
+from weakref import proxy
+import copy
+import pickle
+import regex
+import string
+import sys
+import unittest
+def test_fuzzy_ext(self):
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:a){e<=1:[a-z]}', 'e')), True)
+    self.assertEqual(bool(regex.fullmatch('(?:a){e<=1:[a-z]}', 'e')), True)
+    self.assertEqual(bool(regex.fullmatch('(?:a){e<=1:[a-z]}', '-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:a){e<=1:[a-z]}', '-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?:a){e<=1:[a-z]}', 'ae')), True)
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:a){e<=1:[a-z]}', 'ae')), True)
+    self.assertEqual(bool(regex.fullmatch('(?:a){e<=1:[a-z]}', 'a-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:a){e<=1:[a-z]}', 'a-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?:ab){e<=1:[a-z]}', 'ae')), True)
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:ab){e<=1:[a-z]}', 'ae')), True)
+    self.assertEqual(bool(regex.fullmatch('(?:ab){e<=1:[a-z]}', 'a-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?r)(?:ab){e<=1:[a-z]}', 'a-')), False)
+    self.assertEqual(bool(regex.fullmatch('(a)\\1{e<=1:[a-z]}', 'ae')), True)
+    self.assertEqual(bool(regex.fullmatch('(?r)\\1{e<=1:[a-z]}(a)', 'ea')), True)
+    self.assertEqual(bool(regex.fullmatch('(a)\\1{e<=1:[a-z]}', 'a-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?r)\\1{e<=1:[a-z]}(a)', '-a')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 'ts')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 'st')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 'st')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 'ts')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', '-s')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 's-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', 's-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(?:\\N{LATIN SMALL LETTER SHARP S}){e<=1:[a-z]}', '-s')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', 'ssst')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', 'ssts')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)\\1{e<=1:[a-z]}(\\N{LATIN SMALL LETTER SHARP S})', 'stss')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)\\1{e<=1:[a-z]}(\\N{LATIN SMALL LETTER SHARP S})', 'tsss')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', 'ss-s')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', 'sss-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', '-s')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(\\N{LATIN SMALL LETTER SHARP S})\\1{e<=1:[a-z]}', 's-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(ss)\\1{e<=1:[a-z]}', 'ßts')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(ss)\\1{e<=1:[a-z]}', 'ßst')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)\\1{e<=1:[a-z]}(ss)', 'stß')), True)
+    self.assertEqual(bool(regex.fullmatch('(?firu)\\1{e<=1:[a-z]}(ss)', 'tsß')), True)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(ss)\\1{e<=1:[a-z]}', 'ß-s')), False)
+    self.assertEqual(bool(regex.fullmatch('(?fiu)(ss)\\1{e<=1:[a-z]}', 'ßs-')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(ss)\\1{e<=1:[a-z]}', 's-ß')), False)
+    self.assertEqual(bool(regex.fullmatch('(?firu)(ss)\\1{e<=1:[a-z]}', '-sß')), False)

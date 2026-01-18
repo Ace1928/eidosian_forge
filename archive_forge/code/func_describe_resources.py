@@ -1,0 +1,4 @@
+from datetime import datetime
+from boto.resultset import ResultSet
+def describe_resources(self, logical_resource_id=None, physical_resource_id=None):
+    return self.connection.describe_stack_resources(stack_name_or_id=self.stack_id, logical_resource_id=logical_resource_id, physical_resource_id=physical_resource_id)

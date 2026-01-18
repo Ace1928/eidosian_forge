@@ -1,0 +1,1 @@
+A function that tells you if the program is running in graph mode.

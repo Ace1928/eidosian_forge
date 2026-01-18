@@ -1,0 +1,26 @@
+from . import z3core
+from .z3core import *
+from .z3types import *
+from .z3consts import *
+from .z3printer import *
+from fractions import Fraction
+import sys
+import io
+import math
+import copy
+def RecFunction(name, *sig):
+    """Create a new Z3 recursive with the given sorts."""
+    sig = _get_args(sig)
+    if z3_debug():
+        _z3_assert(len(sig) > 0, 'At least two arguments expected')
+    arity = len(sig) - 1
+    rng = sig[arity]
+    if z3_debug():
+        _z3_assert(is_sort(rng), 'Z3 sort expected')
+    dom = (Sort * arity)()
+    for i in range(arity):
+        if z3_debug():
+            _z3_assert(is_sort(sig[i]), 'Z3 sort expected')
+        dom[i] = sig[i].ast
+    ctx = rng.ctx
+    return FuncDeclRef(Z3_mk_rec_func_decl(ctx.ref(), to_symbol(name, ctx), arity, dom, rng.ast), ctx)

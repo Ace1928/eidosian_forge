@@ -1,0 +1,1 @@
+Readahead files not implemented; simply returns given path.

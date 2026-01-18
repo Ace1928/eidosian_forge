@@ -1,0 +1,1 @@
+Enum for originating source of a :py:class:`mlflow.entities.Run`.

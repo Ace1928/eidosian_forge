@@ -1,0 +1,8 @@
+import pytest
+from pyparsing import ParseException
+from ..parsing import (
+from ..testing import requires
+@pytest.mark.parametrize('species, latex', [('H2O', 'H_{2}O'), ('C6H6+', 'C_{6}H_{6}^{+}'), ('C18H38+2', 'C_{18}H_{38}^{2+}'), ('NaCl', 'NaCl'), ('NaCl(s)', 'NaCl(s)'), ('e-(aq)', 'e^{-}(aq)'), ('Ca+2(aq)', 'Ca^{2+}(aq)'), ('.NO2(g)', '^\\bullet NO_{2}(g)'), ('.NH2', '^\\bullet NH_{2}'), ('ONOOH', 'ONOOH'), ('.ONOO', '^\\bullet ONOO'), ('.NO3-2', '^\\bullet NO_{3}^{2-}'), ('alpha-FeOOH(s)', '\\alpha-FeOOH(s)'), ('epsilon-Zn(OH)2(s)', '\\varepsilon-Zn(OH)_{2}(s)'), ('Na2CO3..7H2O(s)', 'Na_{2}CO_{3}\\cdot 7H_{2}O(s)'), ('Na2CO3..1H2O(s)', 'Na_{2}CO_{3}\\cdot H_{2}O(s)'), ('K4[Fe(CN)6]', 'K_{4}[Fe(CN)_{6}]'), ('K4[Fe(CN)6](s)', 'K_{4}[Fe(CN)_{6}](s)'), ('K4[Fe(CN)6](aq)', 'K_{4}[Fe(CN)_{6}](aq)'), ('[Fe(H2O)6][Fe(CN)6]..19H2O', '[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\\cdot 19H_{2}O'), ('[Fe(H2O)6][Fe(CN)6]..19H2O(s)', '[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\\cdot 19H_{2}O(s)'), ('[Fe(H2O)6][Fe(CN)6]..19H2O(aq)', '[Fe(H_{2}O)_{6}][Fe(CN)_{6}]\\cdot 19H_{2}O(aq)'), ('[Fe(CN)6]-3', '[Fe(CN)_{6}]^{3-}'), ('[Fe(CN)6]-3(aq)', '[Fe(CN)_{6}]^{3-}(aq)'), ('Ca2.832Fe0.6285Mg5.395(CO3)6', 'Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}'), ('Ca2.832Fe0.6285Mg5.395(CO3)6(s)', 'Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}(s)'), ('Ca2.832Fe0.6285Mg5.395(CO3)6..8H2O(s)', 'Ca_{2.832}Fe_{0.6285}Mg_{5.395}(CO_{3})_{6}\\cdot 8H_{2}O(s)')])
+@requires(parsing_library)
+def test_formula_to_latex(species, latex):
+    assert formula_to_latex(species) == latex

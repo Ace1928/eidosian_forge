@@ -1,0 +1,89 @@
+from __future__ import annotations
+import contextlib
+import gzip
+import itertools
+import math
+import os.path
+import pickle
+import platform
+import re
+import shutil
+import sys
+import tempfile
+import uuid
+import warnings
+from collections.abc import Generator, Iterator, Mapping
+from contextlib import ExitStack
+from io import BytesIO
+from os import listdir
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
+from unittest.mock import patch
+import numpy as np
+import pandas as pd
+import pytest
+from packaging.version import Version
+from pandas.errors import OutOfBoundsDatetime
+import xarray as xr
+from xarray import (
+from xarray.backends.common import robust_getitem
+from xarray.backends.h5netcdf_ import H5netcdfBackendEntrypoint
+from xarray.backends.netcdf3 import _nc3_dtype_coercions
+from xarray.backends.netCDF4_ import (
+from xarray.backends.pydap_ import PydapDataStore
+from xarray.backends.scipy_ import ScipyBackendEntrypoint
+from xarray.coding.cftime_offsets import cftime_range
+from xarray.coding.strings import check_vlen_dtype, create_vlen_dtype
+from xarray.coding.variables import SerializationWarning
+from xarray.conventions import encode_dataset_coordinates
+from xarray.core import indexing
+from xarray.core.options import set_options
+from xarray.namedarray.pycompat import array_type
+from xarray.tests import (
+from xarray.tests.test_coding_times import (
+from xarray.tests.test_dataset import (
+@requires_scipy_or_netCDF4
+class TestDataArrayToNetCDF:
+
+    def test_dataarray_to_netcdf_no_name(self) -> None:
+        original_da = DataArray(np.arange(12).reshape((3, 4)))
+        with create_tmp_file() as tmp:
+            original_da.to_netcdf(tmp)
+            with open_dataarray(tmp) as loaded_da:
+                assert_identical(original_da, loaded_da)
+
+    def test_dataarray_to_netcdf_with_name(self) -> None:
+        original_da = DataArray(np.arange(12).reshape((3, 4)), name='test')
+        with create_tmp_file() as tmp:
+            original_da.to_netcdf(tmp)
+            with open_dataarray(tmp) as loaded_da:
+                assert_identical(original_da, loaded_da)
+
+    def test_dataarray_to_netcdf_coord_name_clash(self) -> None:
+        original_da = DataArray(np.arange(12).reshape((3, 4)), dims=['x', 'y'], name='x')
+        with create_tmp_file() as tmp:
+            original_da.to_netcdf(tmp)
+            with open_dataarray(tmp) as loaded_da:
+                assert_identical(original_da, loaded_da)
+
+    def test_open_dataarray_options(self) -> None:
+        data = DataArray(np.arange(5), coords={'y': ('x', range(5))}, dims=['x'])
+        with create_tmp_file() as tmp:
+            data.to_netcdf(tmp)
+            expected = data.drop_vars('y')
+            with open_dataarray(tmp, drop_variables=['y']) as loaded:
+                assert_identical(expected, loaded)
+
+    @requires_scipy
+    def test_dataarray_to_netcdf_return_bytes(self) -> None:
+        data = xr.DataArray([1, 2, 3])
+        output = data.to_netcdf()
+        assert isinstance(output, bytes)
+
+    def test_dataarray_to_netcdf_no_name_pathlib(self) -> None:
+        original_da = DataArray(np.arange(12).reshape((3, 4)))
+        with create_tmp_file() as tmps:
+            tmp = Path(tmps)
+            original_da.to_netcdf(tmp)
+            with open_dataarray(tmp) as loaded_da:
+                assert_identical(original_da, loaded_da)

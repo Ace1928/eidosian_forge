@@ -1,0 +1,25 @@
+from collections import namedtuple, OrderedDict
+import os
+from fontTools.misc.fixedTools import fixedToFloat
+from fontTools.misc.roundTools import otRound
+from fontTools import ttLib
+from fontTools.ttLib.tables import otTables as ot
+from fontTools.ttLib.tables.otBase import (
+from fontTools.ttLib.tables import otBase
+from fontTools.feaLib.ast import STATNameStatement
+from fontTools.otlLib.optimize.gpos import (
+from fontTools.otlLib.error import OpenTypeLibError
+from functools import reduce
+import logging
+import copy
+def ruleSetAttr_(self, format=1, chaining=True):
+    if format == 1:
+        formatType = 'Rule'
+    elif format == 2:
+        formatType = 'Class'
+    else:
+        raise AssertionError(formatType)
+    subtablename = f'{self.subtable_type[0:3]}{formatType}Set'
+    if chaining:
+        subtablename = 'Chain' + subtablename
+    return subtablename

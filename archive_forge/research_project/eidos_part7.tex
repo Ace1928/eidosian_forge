@@ -1,0 +1,297 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, amsthm, mathtools, enumitem, geometry, hyperref, algorithm, algpseudocode}
+\geometry{letterpaper, margin=1in}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating \\ 
+\large Part of the Eidos Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+This module rigorously defines the \emph{Infinite RoPE Context Scaling and Dynamic Vocabulary Updating} component of the Eidos framework. It introduces Rotary Positional Embeddings (RoPE) as a mechanism to encode relative positional information in a manner that naturally extends to arbitrarily long (or even infinite) contexts. In addition, this module formalizes a dynamic vocabulary updating mechanism, which continuously integrates new multi-token sequences into the existing vocabulary. By merging infinite-context scaling with adaptive vocabulary expansion, the module provides the linguistic and structural backbone for long-range dependencies and continual learning. The framework is presented with full mathematical rigor, including formal definitions, algorithmic descriptions, and theoretical guarantees.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction and Motivation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Modern language and multimodal models must handle sequences whose lengths are not fixed a priori. Traditional absolute positional encodings impose a hard upper bound on context length, limiting the model’s ability to process long sequences. Rotary Positional Embeddings (RoPE) overcome this limitation by encoding relative positional information through continuous, rotational transformations applied to query and key vectors in attention mechanisms. Simultaneously, as models process increasing amounts of data, the vocabulary must evolve to incorporate new, frequently occurring multi-token sequences. The dual objectives of infinite context scaling and dynamic vocabulary updating are critical for a truly adaptive and extensible system.
+
+The goals of this module are to:
+\begin{enumerate}[label=(\alph*)]
+  \item Define a mathematically rigorous formulation of RoPE that supports infinite context scaling.
+  \item Establish theoretical guarantees (e.g., relative positional invariance) for the RoPE mechanism.
+  \item Formally define a dynamic vocabulary updating function that integrates new multi-token sequences into the existing vocabulary without loss of consistency.
+  \item Detail the algorithmic procedures for applying RoPE and updating the vocabulary in real time.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries and Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We introduce the following notation to ensure clarity:
+
+\begin{itemize}[label=\(\bullet\)]
+    \item Let \(\Sigma\) denote the base alphabet (e.g., Unicode).
+    \item \( X_{\mathrm{proc}} \in \mathcal{X}_{\mathrm{proc}} \) is preprocessed input (from Module A).
+    \item \(\mathcal{V}\) denotes the complete vocabulary, defined as:
+    \[
+      \mathcal{V} = \mathcal{V}^{(0)} \cup \mathcal{V}^{(1)},
+    \]
+    where \(\mathcal{V}^{(0)}\) is the base vocabulary (natural language tokens, Unicode characters, programming symbols) and \(\mathcal{V}^{(1)}\) is the set of learned multi-token sequences.
+    \item Each token \( t \in \mathcal{V} \) is represented as:
+    \[
+      t = \bigl( u,\, \pi,\, \chi \bigr),
+    \]
+    with:
+    \begin{itemize}[label=\(\circ\)]
+        \item \( u \) as the underlying unit (string/symbol),
+        \item \(\pi \in \Pi \subseteq \mathbb{R}^{d_\pi}\) representing intrinsic properties,
+        \item \(\chi \in \mathbb{R}^{d_\chi}\) representing contextual statistics.
+    \end{itemize}
+    \item A unique identifier mapping is defined as:
+    \[
+      \eta: \mathcal{V} \to \mathbb{N},
+    \]
+    so that \(\operatorname{ID}(t)=\eta(t)\).
+    \item \textbf{RoPE Notation:}
+    \begin{itemize}[label=\(\circ\)]
+        \item Let \( d_{\mathrm{att}} \) be an even integer representing the dimensionality of the attention subspace.
+        \item For a vector \( v \in \mathbb{R}^{d_{\mathrm{att}}} \), partition it into \( \frac{d_{\mathrm{att}}}{2} \) sub-vectors \( v^{(j)} \in \mathbb{R}^{2} \) for \( j=1,\dots,\frac{d_{\mathrm{att}}}{2} \).
+        \item For each subspace \( j \), let \(\theta_j \in \mathbb{R}\) be the frequency parameter.
+        \item Define the rotation angle at position \( i \) as:
+        \[
+          \varphi_j(i) = i\, \theta_j.
+        \]
+        \item Define the 2D rotation matrix for subspace \( j \) at position \( i \) as:
+        \[
+          R^{(j)}(i) = \begin{pmatrix}
+          \cos\bigl(\varphi_j(i)\bigr) & -\sin\bigl(\varphi_j(i)\bigr) \\
+          \sin\bigl(\varphi_j(i)\bigr) & \cos\bigl(\varphi_j(i)\bigr)
+          \end{pmatrix}.
+        \]
+        \item The block-diagonal rotation operator is then defined as:
+        \[
+          R(i) = \operatorname{diag}\Bigl(R^{(1)}(i),\, R^{(2)}(i),\, \dots,\, R^{(d_{\mathrm{att}}/2)}(i)\Bigr).
+        \]
+        \item The RoPE transformation is given by:
+        \[
+          \psi(i, v) = R(i) \, v.
+        \]
+    \end{itemize}
+    \item \textbf{Dynamic Vocabulary Updating:}
+    \begin{itemize}[label=\(\circ\)]
+        \item Let \(\mathcal{D}_{\mathrm{learn}}\) denote the set of learning signals or new data from which additional multi-token sequences are extracted.
+        \item Define the dynamic vocabulary update function:
+        \[
+          \Delta_{\mathcal{V}}: \mathcal{V} \times \mathcal{D}_{\mathrm{learn}} \to \mathcal{V}',
+        \]
+        which expands the vocabulary to \(\mathcal{V}'\) such that \(\mathcal{V} \subset \mathcal{V}'\).
+    \end{itemize}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Definitions and Mathematical Formulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Definition G.1 (RoPE Transformation)}
+Given a vector \( v \in \mathbb{R}^{d_{\mathrm{att}}} \) and a position \( i \in \mathbb{N} \), the RoPE transformation is defined as:
+\[
+\psi(i, v) \;=\; R(i) \, v,
+\]
+where the block-diagonal rotation operator \( R(i) \) is:
+\[
+R(i) \;=\; \operatorname{diag}\Bigl( R^{(1)}(i),\, R^{(2)}(i),\, \dots,\, R^{(d_{\mathrm{att}}/2)}(i) \Bigr),
+\]
+with each 2D rotation matrix
+\[
+R^{(j)}(i) \;=\; \begin{pmatrix}
+\cos\bigl(i\,\theta_j\bigr) & -\sin\bigl(i\,\theta_j\bigr) \\
+\sin\bigl(i\,\theta_j\bigr) & \cos\bigl(i\,\theta_j\bigr)
+\end{pmatrix}.
+\]
+This transformation is applied elementwise to the query and key vectors in the attention mechanism, ensuring that the inner product between rotated queries and keys depends solely on their relative positions.
+
+\subsection*{Theorem G.1 (Relative Invariance of the RoPE Dot Product)}
+\textbf{Statement:}  
+For any two positions \( i,j \in \mathbb{N} \) and any vectors \( q, k \in \mathbb{R}^{d_{\mathrm{att}}} \), let
+\[
+q'_i = \psi(i, q), \quad k'_j = \psi(j, k).
+\]
+Then, the dot product
+\[
+{q'_i}^\top k'_j = q^\top R(i)^\top R(j) \, k
+\]
+depends only on the relative position \( j - i \); that is, there exists a function \( \Phi \) such that:
+\[
+{q'_i}^\top k'_j = \Phi(q, k; j-i).
+\]
+\textbf{Proof Sketch:}  
+Since each \( R^{(j)}(i) \) is an orthogonal matrix, \( R(i)^\top R(j) \) equals a block-diagonal matrix with blocks \( R^{(j)}(j-i) \). Therefore, the dot product is computed as a sum of terms of the form:
+\[
+{q^{(j)}}^\top R^{(j)}(j-i) k^{(j)},
+\]
+which depends solely on the difference \( j-i \). \(\Box\)
+
+\subsection*{Definition G.2 (Infinite Context Scaling)}
+The RoPE transformation \(\psi(i, v)\) is defined for all \( i \in \mathbb{N} \). Thus, there is no fixed maximum context length:
+\[
+\forall\, i \in \mathbb{N}, \quad \psi(i, v) \text{ is well-defined}.
+\]
+This property enables the model to process sequences of arbitrarily long (or even infinite) length without modification to the positional encoding mechanism.
+
+\subsection*{Definition G.3 (Dynamic Vocabulary Update)}
+Let \(\mathcal{V}\) be the current vocabulary and \(\mathcal{D}_{\mathrm{learn}}\) be a set of learning signals derived from new input data. The dynamic vocabulary update function is:
+\[
+\Delta_{\mathcal{V}}: \mathcal{V} \times \mathcal{D}_{\mathrm{learn}} \to \mathcal{V}',
+\]
+such that:
+\begin{enumerate}[label=(\roman*)]
+    \item For any \( t \in \mathcal{V} \), \( t \in \mathcal{V}' \) (preservation of the base vocabulary).
+    \item For any novel multi-token sequence \( \delta \in \mathcal{D}_{\mathrm{learn}} \) that meets a predetermined frequency or confidence threshold, \(\Delta_{\mathcal{V}}\) incorporates \(\delta\) as a new token \( t_{\delta} \) into \(\mathcal{V}'\).
+    \item There exists an extension of the unique identifier mapping:
+    \[
+      \eta': \mathcal{V}' \to \mathbb{N},
+    \]
+    such that for all \( t \in \mathcal{V} \), \(\eta'(t)=\eta(t)\).
+\end{enumerate}
+This mechanism allows the vocabulary to grow dynamically, incorporating additional tokens that capture frequently occurring multi-token patterns.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithmic Description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following pseudocode describes the application of the RoPE transformation to token representations and the dynamic vocabulary update process.
+
+\begin{algorithm}[H]
+\caption{Infinite Context Scaling with RoPE and Dynamic Vocabulary Updating}
+\label{alg:rope_dynamic_vocab}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Sequence of tokens \( (t_1,\dots,t_n) \) with base embeddings \( \{E_{\mathrm{B}}(t_i)\} \); frequency parameters \( \{\theta_j\}_{j=1}^{d_{\mathrm{att}}/2} \); new learning signals \( \mathcal{D}_{\mathrm{learn}} \); current vocabulary \( \mathcal{V} \)
+    \For{each position \( i = 1, \dots, n \)}
+        \For{each subspace \( j = 1, \dots, d_{\mathrm{att}}/2 \)}
+            \State Compute rotation angle: \(\varphi_j(i) \gets i \cdot \theta_j\)
+            \State Form rotation matrix:
+            \[
+            R^{(j)}(i) \gets \begin{pmatrix}
+            \cos(\varphi_j(i)) & -\sin(\varphi_j(i)) \\
+            \sin(\varphi_j(i)) & \cos(\varphi_j(i))
+            \end{pmatrix}
+            \]
+        \EndFor
+        \State Construct block-diagonal rotation: 
+        \[
+        R(i) \gets \operatorname{diag}\Bigl( R^{(1)}(i),\, \dots,\, R^{(d_{\mathrm{att}}/2)}(i) \Bigr)
+        \]
+        \State Apply to token’s query/key (if applicable): \( q_i' \gets \psi(i, q_i) \), \( k_i' \gets \psi(i, k_i) \)
+    \EndFor
+    \State \textbf{Dynamic Vocabulary Update:}
+    \For{each candidate multi-token sequence \( \delta \in \mathcal{D}_{\mathrm{learn}} \)}
+        \If{\( \delta \) satisfies the frequency/confidence threshold}
+            \State Add \( \delta \) as a new token \( t_\delta \) to \(\mathcal{V}'\)
+            \State Extend identifier mapping: set \(\eta'(t_\delta) \gets \text{new unique ID}\)
+        \EndIf
+    \EndFor
+    \State \textbf{Return:} Updated vocabulary \(\mathcal{V}'\) and rotated vectors \( \{q_i', k_i'\} \)
+\end{algorithmic}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theoretical Analysis and Guarantees}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Theorem G.1 (Relative Invariance of RoPE)}
+\textbf{Statement:} For any two positions \( i, j \in \mathbb{N} \) and any vectors \( q, k \in \mathbb{R}^{d_{\mathrm{att}}} \), the dot product of the RoPE-transformed vectors satisfies:
+\[
+{q'_i}^\top k'_j = \Phi(q, k; j-i),
+\]
+i.e., it depends solely on the relative position \( j-i \).
+
+\textbf{Proof Sketch:}  
+Since each subspace rotation \( R^{(j)}(i) \) is orthogonal, we have
+\[
+R(i)^\top R(j) = \operatorname{diag}\Bigl(R^{(1)}(j-i),\, \dots,\, R^{(d_{\mathrm{att}}/2)}(j-i)\Bigr).
+\]
+Thus, the dot product becomes a function of the differences \( j-i \) only. \(\Box\)
+
+\subsection*{Proposition G.2 (Infinite Context Capability)}
+Because the RoPE transformation \(\psi(i,v)\) is defined for all \( i \in \mathbb{N} \), the mechanism imposes no fixed limit on the sequence length. Therefore, the model can handle arbitrarily long contexts, limited only by computational resources.
+
+\subsection*{Proposition G.3 (Extensibility of Dynamic Vocabulary)}
+The dynamic vocabulary update function \( \Delta_{\mathcal{V}} \) guarantees that:
+\begin{enumerate}[label=(\roman*)]
+    \item The base vocabulary is preserved: \(\forall t \in \mathcal{V}, \ t \in \mathcal{V}'\).
+    \item New tokens are integrated seamlessly with unique identifiers maintained via an extension \( \eta' \).
+\end{enumerate}
+Thus, the vocabulary can be extended without disrupting existing mappings, ensuring modularity and consistency.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration with the Overall Eidos Framework}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Module G, which provides infinite context scaling via RoPE and dynamic vocabulary updating, is fundamental to ensuring that the Eidos framework can process long-range dependencies and continually adapt its linguistic representation. Its integration points include:
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Contextual Embedding (Module E):} The RoPE-transformed vectors are used as inputs to the deep contextual encoder, enhancing the attention mechanism with relative positional information.
+    \item \textbf{Dynamic Vocabulary (Module D):} The dynamic update function \( \Delta_{\mathcal{V}} \) augments the static vocabulary with new multi-token sequences, which are then used in tokenization and embedding.
+    \item \textbf{Downstream Processing:} The infinite-context capability ensures that knowledge graphs (Module F) and deep model architectures (Module H) receive enriched, context-aware representations.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Considerations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Computational Efficiency:}  
+    The block-diagonal structure of \( R(i) \) allows the RoPE transformation to be computed efficiently even for large \( i \). Vectorized implementations in modern deep learning frameworks (e.g., PyTorch or TensorFlow) can further accelerate this process.
+    \item \textbf{Frequency Parameter Selection:}  
+    The choice of \(\theta_j\) is critical for ensuring that the rotations do not degenerate over long sequences. Typically, a decaying schedule (e.g., \(\theta_j = 1/10000^{\frac{2(j-1)}{d_{\mathrm{att}}}}\)) is used.
+    \item \textbf{Dynamic Vocabulary Update Strategy:}  
+    Implementing \(\Delta_{\mathcal{V}}\) may involve unsupervised segmentation techniques (e.g., Byte-Pair Encoding or SentencePiece) and thresholding based on token frequency and contextual significance.
+    \item \textbf{Storage and Retrieval:}  
+    New tokens must be indexed and stored efficiently. A database or hash table structure that maps token strings to unique identifiers is recommended.
+    \item \textbf{Training and Fine-Tuning:}  
+    Both the RoPE mechanism and the dynamic vocabulary update may be trained jointly with the rest of the model, requiring careful balancing of learning rates and update frequencies.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this module, we have rigorously defined the mechanisms for infinite context scaling using Rotary Positional Embeddings (RoPE) and the dynamic updating of the vocabulary. Key contributions include:
+\begin{itemize}[label=\(\bullet\)]
+    \item A formal definition of the RoPE transformation \(\psi(i,v) = R(i)v\) that guarantees relative positional invariance and enables processing of arbitrarily long sequences.
+    \item Theoretical guarantees that the RoPE-transformed dot product depends solely on the relative positions of tokens.
+    \item A dynamic vocabulary update function \(\Delta_{\mathcal{V}}\) that extends the vocabulary with newly learned multi-token sequences while preserving the unique identifiers of existing tokens.
+    \item An algorithmic framework that integrates these components efficiently and robustly, ensuring seamless operation within the overall Eidos framework.
+\end{itemize}
+This module provides the critical ability for the system to handle long-range dependencies and to adapt its linguistic representation in response to continuous data, thereby forming a vital component of the Eidos architecture.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Module Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{Completed:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module A: Input Processing.
+    \item Module B: Universal Communication \& Data Handling Interface and Coordination.
+    \item Module C: Universal Streaming/Handling/Loading/Indexing Module.
+    \item Module D: Multidimensional Vocabulary and Tokenization System.
+    \item Module E: Contextual NLU/NLP Embedding and Multidimensional Tokenization.
+    \item Module F: Deep Knowledge Graphs System (Base and Personal).
+    \item Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating.
+\end{itemize}
+\textbf{Remaining Modules:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style).
+    \item Module I: Titans Memory Architecture (Multi-Layer Memory Module).
+    \item Module J: Recursive Adaptive Dynamic Idempotent Feedback and State-Based Runtime Learning and Inference.
+    \item Module K: Universal Training System.
+    \item Module L: Final Decoding and Multimodal Output.
+\end{itemize}
+
+\end{document}

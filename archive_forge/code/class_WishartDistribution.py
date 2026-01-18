@@ -1,0 +1,41 @@
+from math import prod
+from sympy.core.basic import Basic
+from sympy.core.numbers import pi
+from sympy.core.singleton import S
+from sympy.functions.elementary.exponential import exp
+from sympy.functions.special.gamma_functions import multigamma
+from sympy.core.sympify import sympify, _sympify
+from sympy.matrices import (ImmutableMatrix, Inverse, Trace, Determinant,
+from sympy.stats.rv import (_value_check, RandomMatrixSymbol, NamedArgsMixin, PSpace,
+from sympy.external import import_module
+class WishartDistribution(MatrixDistribution):
+    _argnames = ('n', 'scale_matrix')
+
+    @staticmethod
+    def check(n, scale_matrix):
+        if not isinstance(scale_matrix, MatrixSymbol):
+            _value_check(scale_matrix.is_positive_definite, 'The shape matrix must be positive definite.')
+        _value_check(scale_matrix.is_square, 'Should be square matrix')
+        _value_check(n.is_positive, 'Shape parameter should be positive.')
+
+    @property
+    def set(self):
+        k = self.scale_matrix.shape[0]
+        return MatrixSet(k, k, S.Reals)
+
+    @property
+    def dimension(self):
+        return self.scale_matrix.shape
+
+    def pdf(self, x):
+        n, scale_matrix = (self.n, self.scale_matrix)
+        p = scale_matrix.shape[0]
+        if isinstance(x, list):
+            x = ImmutableMatrix(x)
+        if not isinstance(x, (MatrixBase, MatrixSymbol)):
+            raise ValueError('%s should be an isinstance of Matrix or MatrixSymbol' % str(x))
+        sigma_inv_x = -Inverse(scale_matrix) * x / S(2)
+        term1 = exp(Trace(sigma_inv_x)) / (2 ** (p * n / S(2)) * multigamma(n / S(2), p))
+        term2 = Determinant(scale_matrix) ** (-n / S(2))
+        term3 = Determinant(x) ** (S(n - p - 1) / 2)
+        return term1 * term2 * term3

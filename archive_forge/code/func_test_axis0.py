@@ -1,0 +1,11 @@
+import numpy as np
+from numpy.random import standard_normal
+from numpy.testing import assert_almost_equal, assert_equal
+import pytest
+from scipy.stats import norm as Gaussian
+import statsmodels.api as sm
+import statsmodels.robust.scale as scale
+from statsmodels.robust.scale import mad
+def test_axis0(self):
+    m = scale.qn_scale(self.X, axis=0)
+    assert_equal(m.shape, (10, 30))

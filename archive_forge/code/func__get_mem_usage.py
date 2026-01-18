@@ -1,0 +1,35 @@
+import asyncio
+import datetime
+import json
+import logging
+import os
+import socket
+import sys
+import traceback
+import warnings
+import psutil
+from typing import List, Optional, Tuple
+from collections import defaultdict
+import ray
+import ray._private.services
+import ray._private.utils
+from ray.dashboard.consts import (
+from ray.dashboard.modules.reporter.profile_manager import CpuProfilingManager
+import ray.dashboard.modules.reporter.reporter_consts as reporter_consts
+import ray.dashboard.utils as dashboard_utils
+from opencensus.stats import stats as stats_module
+import ray._private.prometheus_exporter as prometheus_exporter
+from prometheus_client.core import REGISTRY
+from ray._private.metrics_agent import Gauge, MetricsAgent, Record
+from ray._private.ray_constants import DEBUG_AUTOSCALING_STATUS
+from ray.core.generated import reporter_pb2, reporter_pb2_grpc
+from ray.util.debug import log_once
+from ray.dashboard import k8s_utils
+from ray._raylet import WorkerID
+@staticmethod
+def _get_mem_usage():
+    total = ray._private.utils.get_system_memory()
+    used = ray._private.utils.get_used_memory()
+    available = total - used
+    percent = round(used / total, 3) * 100
+    return (total, available, percent, used)

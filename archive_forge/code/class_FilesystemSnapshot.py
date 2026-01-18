@@ -1,0 +1,279 @@
+from __future__ import (absolute_import, division, print_function)
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.dellemc.unity.plugins.module_utils.storage.dell \
+from datetime import datetime
+class FilesystemSnapshot(object):
+    """Class with Filesystem Snapshot operations"""
+
+    def __init__(self):
+        """ Define all parameters required by this module"""
+        self.module_params = utils.get_unity_management_host_parameters()
+        self.module_params.update(get_snapshot_parameters())
+        mutually_exclusive = [['snapshot_name', 'snapshot_id'], ['filesystem_name', 'filesystem_id'], ['nas_server_name', 'nas_server_id']]
+        required_one_of = [['snapshot_name', 'snapshot_id']]
+        self.module = AnsibleModule(argument_spec=self.module_params, supports_check_mode=False, mutually_exclusive=mutually_exclusive, required_one_of=required_one_of)
+        utils.ensure_required_libs(self.module)
+        self.result = {'changed': False, 'filesystem_snapshot_details': {}}
+        self.unity_conn = utils.get_unity_unisphere_connection(self.module.params, application_type)
+        self.snap_obj = utils.snap.UnitySnap(self.unity_conn)
+        LOG.info('Connection established with the Unity Array')
+
+    def validate_expiry_time(self, expiry_time):
+        """Validates the specified expiry_time"""
+        try:
+            datetime.strptime(expiry_time, '%m/%d/%Y %H:%M')
+        except ValueError:
+            error_msg = 'expiry_time: %s, not in MM/DD/YYYY HH:MM format.' % expiry_time
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def to_update(self, fs_snapshot, description=None, auto_del=None, expiry_time=None, fs_access_type=None):
+        """Determines whether to update the snapshot or not"""
+        snap_modify_dict = dict()
+        if fs_access_type and fs_access_type != fs_snapshot.access_type:
+            error_message = 'Modification of access type is not allowed.'
+            LOG.error(error_message)
+            self.module.fail_json(msg=error_message)
+        if expiry_time and fs_snapshot.is_auto_delete and (auto_del is None or auto_del):
+            self.module.fail_json(msg='expiry_time can be assigned when auto delete is False.')
+        if auto_del is not None:
+            if fs_snapshot.expiration_time:
+                error_msg = 'expiry_time for filesystem snapshot is set. Once it is set then snapshot cannot be assigned to auto_delete policy.'
+                self.module.fail_json(msg=error_msg)
+            if auto_del != fs_snapshot.is_auto_delete:
+                snap_modify_dict['is_auto_delete'] = auto_del
+        if description is not None and description != fs_snapshot.description:
+            snap_modify_dict['description'] = description
+        if to_update_expiry_time(fs_snapshot, expiry_time):
+            snap_modify_dict['expiry_time'] = expiry_time
+        LOG.info('Snapshot modification details: %s', snap_modify_dict)
+        return snap_modify_dict
+
+    def update_filesystem_snapshot(self, fs_snapshot, snap_modify_dict):
+        try:
+            duration = None
+            if 'expiry_time' in snap_modify_dict and snap_modify_dict['expiry_time']:
+                duration = convert_timestamp_to_sec(snap_modify_dict['expiry_time'], self.unity_conn.system_time)
+            if duration and duration <= 0:
+                self.module.fail_json(msg='expiry_time should be after the current system time.')
+            if 'is_auto_delete' in snap_modify_dict and snap_modify_dict['is_auto_delete'] is not None:
+                auto_delete = snap_modify_dict['is_auto_delete']
+            else:
+                auto_delete = None
+            if 'description' in snap_modify_dict and (snap_modify_dict['description'] or len(snap_modify_dict['description']) == 0):
+                description = snap_modify_dict['description']
+            else:
+                description = None
+            fs_snapshot.modify(retentionDuration=duration, isAutoDelete=auto_delete, description=description)
+            fs_snapshot.update()
+        except Exception as e:
+            error_msg = 'Failed to modify filesystem snapshot [name: %s , id: %s] with error %s.' % (fs_snapshot.name, fs_snapshot.id, str(e))
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def create_filesystem_snapshot(self, snap_name, storage_id, description=None, auto_del=None, expiry_time=None, fs_access_type=None):
+        try:
+            duration = None
+            if expiry_time:
+                duration = convert_timestamp_to_sec(expiry_time, self.unity_conn.system_time)
+                if duration <= 0:
+                    self.module.fail_json(msg='expiry_time should be after the current system time.')
+            fs_snapshot = self.snap_obj.create(cli=self.unity_conn._cli, storage_resource=storage_id, name=snap_name, description=description, is_auto_delete=auto_del, retention_duration=duration, fs_access_type=fs_access_type)
+            return fs_snapshot
+        except Exception as e:
+            error_msg = 'Failed to create filesystem snapshot %s with error %s' % (snap_name, str(e))
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def is_snap_has_share(self, fs_snap):
+        try:
+            obj = self.unity_conn.get_nfs_share(snap=fs_snap) or self.unity_conn.get_cifs_share(snap=fs_snap)
+            if len(obj) > 0:
+                LOG.info('Snapshot has %s nfs/smb share/s', len(obj))
+                return True
+        except Exception as e:
+            msg = 'Failed to get nfs/smb share from filesystem snapshot. error: %s' % str(e)
+            LOG.error(msg)
+            self.module.fail_json(msg=msg)
+        return False
+
+    def delete_fs_snapshot(self, fs_snapshot):
+        try:
+            if self.is_snap_has_share(fs_snapshot):
+                msg = 'Filesystem snapshot cannot be deleted because it has nfs/smb share'
+                LOG.error(msg)
+                self.module.fail_json(msg=msg)
+            fs_snapshot.delete()
+            return None
+        except Exception as e:
+            error_msg = 'Failed to delete filesystem snapshot [name: %s, id: %s] with error %s.' % (fs_snapshot.name, fs_snapshot.id, str(e))
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def get_fs_snapshot_obj(self, name=None, id=None):
+        fs_snapshot = id if id else name
+        msg = 'Failed to get details of filesystem snapshot %s with error %s.'
+        try:
+            fs_snap_obj = self.unity_conn.get_snap(name=name, _id=id)
+            if fs_snap_obj and fs_snap_obj.existed:
+                LOG.info('Successfully got the filesystem snapshot object %s.', fs_snap_obj)
+            else:
+                fs_snap_obj = None
+            return fs_snap_obj
+        except utils.HttpError as e:
+            if e.http_status == 401:
+                cred_err = 'Incorrect username or password , %s' % e.message
+                self.module.fail_json(msg=cred_err)
+            else:
+                err_msg = msg % (fs_snapshot, str(e))
+                LOG.error(err_msg)
+                self.module.fail_json(msg=err_msg)
+        except utils.UnityResourceNotFoundError as e:
+            err_msg = msg % (fs_snapshot, str(e))
+            LOG.error(err_msg)
+            return None
+        except Exception as e:
+            err_msg = msg % (fs_snapshot, str(e))
+            LOG.error(err_msg)
+            self.module.fail_json(msg=err_msg)
+
+    def get_filesystem_obj(self, nas_server=None, name=None, id=None):
+        filesystem = id if id else name
+        try:
+            obj_fs = None
+            if name:
+                if not nas_server:
+                    err_msg = 'NAS Server is required to get the FileSystem.'
+                    LOG.error(err_msg)
+                    self.module.fail_json(msg=err_msg)
+                obj_fs = self.unity_conn.get_filesystem(name=name, nas_server=nas_server)
+                if obj_fs and obj_fs.existed:
+                    LOG.info('Successfully got the filesystem object %s.', obj_fs)
+                    return obj_fs
+            if id:
+                if nas_server:
+                    obj_fs = self.unity_conn.get_filesystem(id=id, nas_server=nas_server)
+                else:
+                    obj_fs = self.unity_conn.get_filesystem(id=id)
+                if obj_fs and obj_fs.existed:
+                    LOG.info('Successfully got the filesystem object %s.', obj_fs)
+                    return obj_fs
+        except Exception as e:
+            error_msg = 'Failed to get filesystem %s with error %s.' % (filesystem, str(e))
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def get_nas_server_obj(self, name=None, id=None):
+        nas_server = id if id else name
+        error_msg = 'Failed to get NAS server %s.' % nas_server
+        try:
+            obj_nas = self.unity_conn.get_nas_server(_id=id, name=name)
+            if name and obj_nas.existed or (id and obj_nas.existed):
+                LOG.info('Successfully got the NAS server object %s.', obj_nas)
+                return obj_nas
+            else:
+                LOG.error(error_msg)
+                self.module.fail_json(msg=error_msg)
+        except Exception as e:
+            error_msg = 'Failed to get NAS server %s with error %s.' % (nas_server, str(e))
+            LOG.error(error_msg)
+            self.module.fail_json(msg=error_msg)
+
+    def create_fs_snapshot_details_dict(self, fs_snapshot):
+        """ Add name and id of storage resource to filesystem snapshot
+            details """
+        snapshot_dict = fs_snapshot._get_properties()
+        del snapshot_dict['storage_resource']
+        snapshot_dict['filesystem_name'] = fs_snapshot.storage_resource.name
+        snapshot_dict['filesystem_id'] = fs_snapshot.storage_resource.filesystem.id
+        obj_fs = self.unity_conn.get_filesystem(id=fs_snapshot.storage_resource.filesystem.id)
+        if obj_fs and obj_fs.existed:
+            snapshot_dict['nas_server_name'] = obj_fs.nas_server[0].name
+            snapshot_dict['nas_server_id'] = obj_fs.nas_server[0].id
+        return snapshot_dict
+
+    def perform_module_operation(self):
+        """
+        Perform different actions on snapshot module based on parameters
+        chosen in playbook
+        """
+        snapshot_name = self.module.params['snapshot_name']
+        snapshot_id = self.module.params['snapshot_id']
+        filesystem_name = self.module.params['filesystem_name']
+        filesystem_id = self.module.params['filesystem_id']
+        nas_server_name = self.module.params['nas_server_name']
+        nas_server_id = self.module.params['nas_server_id']
+        auto_delete = self.module.params['auto_delete']
+        expiry_time = self.module.params['expiry_time']
+        description = self.module.params['description']
+        fs_access_type = self.module.params['fs_access_type']
+        state = self.module.params['state']
+        nas_server_resource = None
+        filesystem_resource = None
+        changed = False
+        LOG.info('Getting Filesystem Snapshot details.')
+        fs_snapshot = self.get_fs_snapshot_obj(name=snapshot_name, id=snapshot_id)
+        msg = 'Filesystem Snapshot details: %s.' % str(fs_snapshot)
+        LOG.info(msg)
+        if nas_server_name is not None:
+            if nas_server_name == '' or nas_server_name.isspace():
+                self.module.fail_json(msg='Invalid nas_server_name given, Please provide a valid name.')
+            nas_server_resource = self.get_nas_server_obj(name=nas_server_name)
+        elif nas_server_id is not None:
+            if nas_server_id == '' or nas_server_id.isspace():
+                self.module.fail_json(msg='Invalid nas_server_id given, Please provide a valid ID.')
+            nas_server_resource = self.get_nas_server_obj(id=nas_server_id)
+        if filesystem_name is not None:
+            if filesystem_name == '' or filesystem_name.isspace():
+                self.module.fail_json(msg='Invalid filesystem_name given, Please provide a valid name.')
+            filesystem_resource = self.get_filesystem_obj(nas_server=nas_server_resource, name=filesystem_name)
+            fs_res_id = filesystem_resource.storage_resource.id
+        elif filesystem_id is not None:
+            if filesystem_id == '' or filesystem_id.isspace():
+                self.module.fail_json(msg='Invalid filesystem_id given, Please provide a valid ID.')
+            filesystem_resource = self.get_filesystem_obj(id=filesystem_id)
+            fs_res_id = filesystem_resource[0].storage_resource.id
+        if fs_snapshot and filesystem_resource and (fs_snapshot.storage_resource.id != fs_res_id):
+            self.module.fail_json(msg='Snapshot %s is of %s storage resource. Cannot create new snapshot with same name for %s storage resource.' % (fs_snapshot.name, fs_snapshot.storage_resource.name, filesystem_resource.storage_resource.name))
+        if expiry_time is not None and (expiry_time == '' or expiry_time.isspace()):
+            self.module.fail_json(msg='Please provide valid expiry_time, empty expiry_time given.')
+        if expiry_time:
+            self.validate_expiry_time(expiry_time)
+        if expiry_time and auto_delete:
+            error_msg = 'Cannot set expiry_time if auto_delete given as True.'
+            LOG.info(error_msg)
+            self.module.fail_json(msg=error_msg)
+        if fs_access_type is not None:
+            if fs_access_type == '' or fs_access_type.isspace():
+                self.module.fail_json(msg='Please provide valid fs_access_type, empty fs_access_type given.')
+            if fs_access_type == 'Checkpoint':
+                fs_access_type = utils.FilesystemSnapAccessTypeEnum.CHECKPOINT
+            elif fs_access_type == 'Protocol':
+                fs_access_type = utils.FilesystemSnapAccessTypeEnum.PROTOCOL
+        fs_snap_modify_dict = dict()
+        if state == 'present' and fs_snapshot:
+            fs_snap_modify_dict = self.to_update(fs_snapshot, description=description, auto_del=auto_delete, expiry_time=expiry_time, fs_access_type=fs_access_type)
+        if not fs_snapshot and state == 'present':
+            LOG.info('Creating the filesystem snapshot.')
+            if snapshot_id:
+                self.module.fail_json(msg='Creation of Filesystem Snapshot is allowed using snapshot_name only, snapshot_id given.')
+            if snapshot_name == '' or snapshot_name.isspace():
+                self.module.fail_json(msg='snapshot_name is required for creation of the filesystem snapshot, empty snapshot_name given.')
+            if not filesystem_resource:
+                self.module.fail_json(msg='filesystem_name or filesystem_id required to create a snapshot.')
+            fs_snapshot = self.create_filesystem_snapshot(snapshot_name, fs_res_id, description, auto_delete, expiry_time, fs_access_type)
+            changed = True
+        if fs_snapshot and state == 'present' and fs_snap_modify_dict:
+            LOG.info('Updating the Filesystem Snapshot.')
+            self.update_filesystem_snapshot(fs_snapshot, fs_snap_modify_dict)
+            changed = True
+        if state == 'absent' and fs_snapshot:
+            fs_snapshot = self.delete_fs_snapshot(fs_snapshot)
+            changed = True
+        if fs_snapshot:
+            fs_snapshot.update()
+            self.result['filesystem_snapshot_details'] = self.create_fs_snapshot_details_dict(fs_snapshot)
+        else:
+            self.result['filesystem_snapshot_details'] = {}
+        self.result['changed'] = changed
+        self.module.exit_json(**self.result)

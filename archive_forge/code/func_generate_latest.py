@@ -1,0 +1,35 @@
+from ..utils import floatToGoString
+def generate_latest(registry):
+    """Returns the metrics from the registry in latest text format as a string."""
+    output = []
+    for metric in registry.collect():
+        try:
+            mname = metric.name
+            output.append('# HELP {} {}\n'.format(mname, metric.documentation.replace('\\', '\\\\').replace('\n', '\\n').replace('"', '\\"')))
+            output.append(f'# TYPE {mname} {metric.type}\n')
+            if metric.unit:
+                output.append(f'# UNIT {mname} {metric.unit}\n')
+            for s in metric.samples:
+                if s.labels:
+                    labelstr = '{{{0}}}'.format(','.join(['{}="{}"'.format(k, v.replace('\\', '\\\\').replace('\n', '\\n').replace('"', '\\"')) for k, v in sorted(s.labels.items())]))
+                else:
+                    labelstr = ''
+                if s.exemplar:
+                    if not _is_valid_exemplar_metric(metric, s):
+                        raise ValueError(f'Metric {metric.name} has exemplars, but is not a histogram bucket or counter')
+                    labels = '{{{0}}}'.format(','.join(['{}="{}"'.format(k, v.replace('\\', '\\\\').replace('\n', '\\n').replace('"', '\\"')) for k, v in sorted(s.exemplar.labels.items())]))
+                    if s.exemplar.timestamp is not None:
+                        exemplarstr = ' # {} {} {}'.format(labels, floatToGoString(s.exemplar.value), s.exemplar.timestamp)
+                    else:
+                        exemplarstr = ' # {} {}'.format(labels, floatToGoString(s.exemplar.value))
+                else:
+                    exemplarstr = ''
+                timestamp = ''
+                if s.timestamp is not None:
+                    timestamp = f' {s.timestamp}'
+                output.append('{}{} {}{}{}\n'.format(s.name, labelstr, floatToGoString(s.value), timestamp, exemplarstr))
+        except Exception as exception:
+            exception.args = (exception.args or ('',)) + (metric,)
+            raise
+    output.append('# EOF\n')
+    return ''.join(output).encode('utf-8')

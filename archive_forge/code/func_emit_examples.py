@@ -1,0 +1,34 @@
+from __future__ import annotations
+import functools
+import json
+import logging
+import os
+import pprint
+import re
+import sys
+import typing as t
+from collections import OrderedDict, defaultdict
+from contextlib import suppress
+from copy import deepcopy
+from logging.config import dictConfig
+from textwrap import dedent
+from traitlets.config.configurable import Configurable, SingletonConfigurable
+from traitlets.config.loader import (
+from traitlets.traitlets import (
+from traitlets.utils.bunch import Bunch
+from traitlets.utils.nested_update import nested_update
+from traitlets.utils.text import indent, wrap_paragraphs
+from ..utils import cast_unicode
+from ..utils.importstring import import_item
+def emit_examples(self) -> t.Generator[str, None, None]:
+    """Yield lines with the usage and examples.
+
+        This usage string goes at the end of the command line help string
+        and should contain examples of the application's usage.
+        """
+    if self.examples:
+        yield 'Examples'
+        yield '--------'
+        yield ''
+        yield indent(dedent(self.examples.strip()))
+        yield ''

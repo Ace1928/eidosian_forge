@@ -1,0 +1,47 @@
+from __future__ import annotations
+import collections
+from concurrent import futures
+import contextvars
+import enum
+import logging
+import threading
+import time
+import traceback
+from typing import (
+import grpc  # pytype: disable=pyi-error
+from grpc import _common  # pytype: disable=pyi-error
+from grpc import _compression  # pytype: disable=pyi-error
+from grpc import _interceptor  # pytype: disable=pyi-error
+from grpc._cython import cygrpc
+from grpc._typing import ArityAgnosticMethodHandler
+from grpc._typing import ChannelArgumentType
+from grpc._typing import DeserializingFunction
+from grpc._typing import MetadataType
+from grpc._typing import NullaryCallbackType
+from grpc._typing import ResponseType
+from grpc._typing import SerializingFunction
+from grpc._typing import ServerCallbackTag
+from grpc._typing import ServerTagCallbackType
+def _stream_response_in_pool(rpc_event: cygrpc.BaseEvent, state: _RPCState, behavior: ArityAgnosticMethodHandler, argument_thunk: Callable[[], Any], request_deserializer: Optional[DeserializingFunction], response_serializer: Optional[SerializingFunction]) -> None:
+    cygrpc.install_context_from_request_call_event(rpc_event)
+
+    def send_response(response: Any) -> None:
+        if response is None:
+            _status(rpc_event, state, None)
+        else:
+            serialized_response = _serialize_response(rpc_event, state, response, response_serializer)
+            if serialized_response is not None:
+                _send_response(rpc_event, state, serialized_response)
+    try:
+        argument = argument_thunk()
+        if argument is not None:
+            if hasattr(behavior, 'experimental_non_blocking') and behavior.experimental_non_blocking:
+                _call_behavior(rpc_event, state, behavior, argument, request_deserializer, send_response_callback=send_response)
+            else:
+                response_iterator, proceed = _call_behavior(rpc_event, state, behavior, argument, request_deserializer)
+                if proceed:
+                    _send_message_callback_to_blocking_iterator_adapter(rpc_event, state, send_response, response_iterator)
+    except Exception:
+        traceback.print_exc()
+    finally:
+        cygrpc.uninstall_context()

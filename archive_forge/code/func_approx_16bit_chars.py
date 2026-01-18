@@ -1,0 +1,5 @@
+from typing import List, Union
+from .charsetprober import CharSetProber
+from .enums import ProbingState
+def approx_16bit_chars(self) -> float:
+    return max(1.0, self.position / 2.0)

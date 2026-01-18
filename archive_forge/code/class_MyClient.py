@@ -1,0 +1,47 @@
+import base64
+import inspect
+import re
+from io import BytesIO
+from typing import Any, List, Optional, Tuple, Type
+from zope.interface import directlyProvides, implementer
+import twisted.cred.checkers
+import twisted.cred.credentials
+import twisted.cred.error
+import twisted.cred.portal
+from twisted import cred
+from twisted.cred.checkers import AllowAnonymousAccess, ICredentialsChecker
+from twisted.cred.credentials import IAnonymous
+from twisted.cred.error import UnauthorizedLogin
+from twisted.cred.portal import IRealm, Portal
+from twisted.internet import address, defer, error, interfaces, protocol, reactor, task
+from twisted.internet.testing import MemoryReactor, StringTransport
+from twisted.mail import smtp
+from twisted.mail._cred import LOGINCredentials
+from twisted.protocols import basic, loopback
+from twisted.python.util import LineLog
+from twisted.trial.unittest import TestCase
+class MyClient:
+
+    def __init__(self, messageInfo=None):
+        if messageInfo is None:
+            messageInfo = ('moshez@foo.bar', ['moshez@foo.bar'], BytesIO(mail))
+        self._sender = messageInfo[0]
+        self._recipient = messageInfo[1]
+        self._data = messageInfo[2]
+
+    def getMailFrom(self):
+        return self._sender
+
+    def getMailTo(self):
+        return self._recipient
+
+    def getMailData(self):
+        return self._data
+
+    def sendError(self, exc):
+        self._error = exc
+
+    def sentMail(self, code, resp, numOk, addresses, log):
+        self._sender = None
+        self._recipient = None
+        self._data = None

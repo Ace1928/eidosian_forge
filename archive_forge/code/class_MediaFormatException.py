@@ -1,0 +1,2 @@
+class MediaFormatException(MediaException):
+    pass

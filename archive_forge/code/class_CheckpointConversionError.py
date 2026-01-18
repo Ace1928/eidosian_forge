@@ -1,0 +1,2 @@
+class CheckpointConversionError(Exception):
+    pass

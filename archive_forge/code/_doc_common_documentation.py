@@ -1,0 +1,35 @@
+import struct
+import zlib
+from abc import abstractmethod
+from datetime import datetime
+from typing import (
+from ._encryption import Encryption
+from ._page import PageObject, _VirtualList
+from ._page_labels import index2label as page_index2page_label
+from ._utils import (
+from .constants import CatalogAttributes as CA
+from .constants import CatalogDictionary as CD
+from .constants import (
+from .constants import Core as CO
+from .constants import DocumentInformationAttributes as DI
+from .constants import FieldDictionaryAttributes as FA
+from .constants import PageAttributes as PG
+from .constants import PagesAttributes as PA
+from .errors import (
+from .generic import (
+from .types import OutlineType, PagemodeType
+from .xmp import XmpInformation
+
+        Retrieves all or selected file attachments of the PDF as a dictionary of file names
+        and the file data as a bytestring.
+
+        Args:
+            filename: If filename is None, then a dictionary of all attachments
+                will be returned, where the key is the filename and the value
+                is the content. Otherwise, a dictionary with just a single key
+                - the filename - and its content will be returned.
+
+        Returns:
+            dictionary of filename -> Union[bytestring or List[ByteString]]
+            If the filename exists multiple times a list of the different versions will be provided.
+        

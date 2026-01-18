@@ -1,0 +1,13 @@
+autonomy_ladder:
+  - { name: observe,     act: false, require_approvals: none,     min_competence: 0.0, max_risk: 1.0 }
+  - { name: propose,     act: false, require_approvals: none,     min_competence: 0.3, max_risk: 0.8 }
+  - { name: act_limited, act: true,  require_approvals: commands, min_competence: 0.5, max_risk: 0.6 }
+  - { name: act_full,    act: true,  require_approvals: none,     min_competence: 0.7, max_risk: 0.4 }
+risk_model:
+  weights: { surface_area: 0.35, reversibility: 0.25, blast_radius: 0.25, novelty: 0.15 }
+  cutoffs: { red: 0.7, amber: 0.4 }
+confidence: { min_brier_improvement: 0.02, decay_per_week: 0.01 }
+approvals:
+  safe_commands: ["pnpm test -w", "pnpm lint --fix", "ruff --fix", "pytest -q", "go test ./..."]
+  path_allowlist: ["./src", "./tests", "./docs", "./tools"]
+  deny_patterns: ["|", ">", "<(", "curl", "nc", "scp", "ssh", "/etc", "/var", "~"]

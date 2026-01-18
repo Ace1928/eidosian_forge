@@ -1,0 +1,27 @@
+from __future__ import annotations
+import contextlib
+import contextvars
+import inspect
+import queue as stdlib_queue
+import threading
+from itertools import count
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
+import attrs
+import outcome
+from attrs import define
+from sniffio import current_async_library_cvar
+import trio
+from ._core import (
+from ._deprecate import warn_deprecated
+from ._sync import CapacityLimiter, Event
+from ._util import coroutine_or_error
+def report_back_in_trio_thread_fn(result: outcome.Outcome[RetT]) -> None:
+
+    def do_release_then_return_result() -> RetT:
+        try:
+            return result.unwrap()
+        finally:
+            limiter.release_on_behalf_of(placeholder)
+    result = outcome.capture(do_release_then_return_result)
+    if task_register[0] is not None:
+        trio.lowlevel.reschedule(task_register[0], outcome.Value(result))

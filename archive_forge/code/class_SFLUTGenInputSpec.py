@@ -1,0 +1,12 @@
+import os
+from ...utils.filemanip import split_filename
+from ..base import (
+class SFLUTGenInputSpec(StdOutCommandLineInputSpec):
+    in_file = File(exists=True, argstr='-inputfile %s', mandatory=True, desc='Voxel-order data of the spherical functions peaks.')
+    info_file = File(argstr='-infofile %s', mandatory=True, desc='The Info file that corresponds to the calibration datafile used in the reconstruction.')
+    outputstem = traits.Str('LUT', argstr='-outputstem %s', desc='Define the name of the generated luts.  The form of the filenames will be [outputstem]_oneFibreSurfaceCoeffs.Bdouble and [outputstem]_twoFibreSurfaceCoeffs.Bdouble', usedefault=True)
+    pdf = traits.Enum('bingham', 'watson', argstr='-pdf %s', desc='Sets the distribution to use for the calibration. The default is the Bingham\ndistribution, which allows elliptical probability density contours.\nCurrently supported options are:\n\n  * bingham -- The Bingham distribution, which allows elliptical probability\n    density contours.\n  * watson -- The Watson distribution. This distribution is rotationally symmetric.\n\n', usedefault=True)
+    binincsize = traits.Int(argstr='-binincsize %d', units='NA', desc='Sets the size of the bins.  In the case of 2D histograms such as the Bingham, the bins are always square. Default is 1.')
+    minvectsperbin = traits.Int(argstr='-minvectsperbin %d', units='NA', desc='Specifies the minimum number of fibre-orientation estimates a bin must contain before it is used in the lut line/surface generation. Default is 50. If you get the error "no fibre-orientation estimates in histogram!", the calibration data set is too small to get enough samples in any of the  histogram  bins. You can decrease the minimum number  per  bin to get things running in quick tests, but the sta- tistics will not be reliable and for serious applications, you need  to increase the size of the calibration data set until the error goes.')
+    directmap = traits.Bool(argstr='-directmap', desc='Use direct mapping between the eigenvalues and the distribution parameters instead of the log of the eigenvalues.')
+    order = traits.Int(argstr='-order %d', units='NA', desc='The order of the polynomial fitting the surface. Order 1 is linear. Order 2 (default) is quadratic.')

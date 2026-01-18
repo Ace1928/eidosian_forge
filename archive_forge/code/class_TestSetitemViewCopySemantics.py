@@ -1,0 +1,44 @@
+from datetime import (
+from decimal import Decimal
+import numpy as np
+import pytest
+from pandas.compat.numpy import np_version_gte1p24
+from pandas.errors import IndexingError
+from pandas.core.dtypes.common import is_list_like
+from pandas import (
+import pandas._testing as tm
+from pandas.tseries.offsets import BDay
+class TestSetitemViewCopySemantics:
+
+    def test_setitem_invalidates_datetime_index_freq(self, using_copy_on_write):
+        dti = date_range('20130101', periods=3, tz='US/Eastern')
+        ts = dti[1]
+        ser = Series(dti)
+        assert ser._values is not dti
+        if using_copy_on_write:
+            assert ser._values._ndarray.base is dti._data._ndarray.base
+        else:
+            assert ser._values._ndarray.base is not dti._data._ndarray.base
+        assert dti.freq == 'D'
+        ser.iloc[1] = NaT
+        assert ser._values.freq is None
+        assert ser._values is not dti
+        assert ser._values._ndarray.base is not dti._data._ndarray.base
+        assert dti[1] == ts
+        assert dti.freq == 'D'
+
+    def test_dt64tz_setitem_does_not_mutate_dti(self, using_copy_on_write):
+        dti = date_range('2016-01-01', periods=10, tz='US/Pacific')
+        ts = dti[0]
+        ser = Series(dti)
+        assert ser._values is not dti
+        if using_copy_on_write:
+            assert ser._values._ndarray.base is dti._data._ndarray.base
+            assert ser._mgr.arrays[0]._ndarray.base is dti._data._ndarray.base
+        else:
+            assert ser._values._ndarray.base is not dti._data._ndarray.base
+            assert ser._mgr.arrays[0]._ndarray.base is not dti._data._ndarray.base
+        assert ser._mgr.arrays[0] is not dti
+        ser[::3] = NaT
+        assert ser[0] is NaT
+        assert dti[0] == ts

@@ -1,0 +1,15 @@
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_spec
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import cond
+from tensorflow.python.ops import image_ops
+from tensorflow.python.ops import map_fn
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops.ragged import ragged_tensor
+from tensorflow.python.util import dispatch
+def empty_result():
+    channels = array_ops.shape(images.flat_values)[-1:]
+    return array_ops.zeros(array_ops.concat([[0], size, channels], axis=0))

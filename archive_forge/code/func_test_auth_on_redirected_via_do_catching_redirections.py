@@ -1,0 +1,27 @@
+import io
+import socket
+import sys
+import threading
+from http.client import UnknownProtocol, parse_headers
+from http.server import SimpleHTTPRequestHandler
+import breezy
+from .. import (config, controldir, debug, errors, osutils, tests, trace,
+from ..bzr import remote as _mod_remote
+from ..transport import remote
+from ..transport.http import urllib
+from ..transport.http.urllib import (AbstractAuthHandler, BasicAuthHandler,
+from . import features, http_server, http_utils, test_server
+from .scenarios import load_tests_apply_scenarios, multiply_scenarios
+def test_auth_on_redirected_via_do_catching_redirections(self):
+    self.redirections = 0
+
+    def redirected(t, exception, redirection_notice):
+        self.redirections += 1
+        redirected_t = t._redirected_to(exception.source, exception.target)
+        self.addCleanup(redirected_t.disconnect)
+        return redirected_t
+    ui.ui_factory = tests.TestUIFactory(stdin='joe\nfoo\n')
+    self.assertEqual(b'redirected once', transport.do_catching_redirections(self.get_a, self.old_transport, redirected).read())
+    self.assertEqual(1, self.redirections)
+    self.assertEqual('', ui.ui_factory.stdin.readline())
+    self.assertEqual('', ui.ui_factory.stdout.getvalue())

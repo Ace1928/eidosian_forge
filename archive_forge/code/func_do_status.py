@@ -1,0 +1,20 @@
+from optparse import OptionParser
+from boto.services.servicedef import ServiceDef
+from boto.services.submit import Submitter
+from boto.services.result import ResultProcessor
+import boto
+import sys, os
+from boto.compat import StringIO
+def do_status(self):
+    iq = self.sd.get_obj('input_queue')
+    if iq:
+        print('The input_queue (%s) contains approximately %s messages' % (iq.id, iq.count()))
+    ob = self.sd.get_obj('output_bucket')
+    ib = self.sd.get_obj('input_bucket')
+    if ob:
+        if ib and ob.name == ib.name:
+            return
+        total = 0
+        for k in ob:
+            total += 1
+        print('The output_bucket (%s) contains %d keys' % (ob.name, total))

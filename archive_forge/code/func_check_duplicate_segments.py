@@ -1,0 +1,20 @@
+from neutron_lib.api import converters
+from neutron_lib.api.definitions import network
+from neutron_lib.api import validators
+from neutron_lib.api.validators import multiprovidernet as mp_validator
+from neutron_lib import constants
+from neutron_lib.exceptions import multiprovidernet as mp_exc
+def check_duplicate_segments(segments, is_partial_func=None):
+    """Helper function checking duplicate segments.
+
+    If is_partial_funcs is specified and not None, then
+    SegmentsContainDuplicateEntry is raised if two segments are identical and
+    non partially defined (is_partial_func(segment) == False).
+    Otherwise SegmentsContainDuplicateEntry is raised if two segment are
+    identical.
+    """
+    if is_partial_func is not None:
+        segments = [s for s in segments if not is_partial_func(s)]
+    fully_specifieds = [tuple(sorted(s.items())) for s in segments]
+    if len(set(fully_specifieds)) != len(fully_specifieds):
+        raise mp_exc.SegmentsContainDuplicateEntry()

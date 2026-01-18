@@ -1,0 +1,1 @@
+Sorts wr, rt and ct tags into the appropriate contig / read instance, if possible.

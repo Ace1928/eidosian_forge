@@ -1,0 +1,25 @@
+import calendar
+from collections import deque
+from datetime import (
+from decimal import Decimal
+import locale
+from dateutil.parser import parse
+from dateutil.tz.tz import tzoffset
+import numpy as np
+import pytest
+import pytz
+from pandas._libs import tslib
+from pandas._libs.tslibs import (
+from pandas.errors import (
+import pandas.util._test_decorators as td
+from pandas.core.dtypes.common import is_datetime64_ns_dtype
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.core.arrays import DatetimeArray
+from pandas.core.tools import datetimes as tools
+from pandas.core.tools.datetimes import start_caching_at
+@pytest.mark.parametrize('input_s, expected', [[Series(['19801222', np.nan, '20010012', '10019999']), Series([Timestamp('19801222'), np.nan, np.nan, np.nan])], [Series(['19801222', '20010012', '10019999', np.nan]), Series([Timestamp('19801222'), np.nan, np.nan, np.nan])], [Series([20190813, np.nan, 20010012, 20019999]), Series([Timestamp('20190813'), np.nan, np.nan, np.nan])], [Series([20190813, 20010012, np.nan, 20019999]), Series([Timestamp('20190813'), np.nan, np.nan, np.nan])]])
+def test_to_datetime_format_YYYYMMDD_overflow(self, input_s, expected):
+    result = to_datetime(input_s, format='%Y%m%d', errors='coerce')
+    tm.assert_series_equal(result, expected)

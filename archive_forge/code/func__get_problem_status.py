@@ -1,0 +1,13 @@
+import dataclasses
+import datetime
+import enum
+from typing import Dict, Iterable, List, Optional, overload
+from ortools.gscip import gscip_pb2
+from ortools.math_opt import result_pb2
+from ortools.math_opt.python import model
+from ortools.math_opt.python import solution
+from ortools.math_opt.solvers import osqp_pb2
+def _get_problem_status(result_proto: result_pb2.SolveResultProto) -> result_pb2.ProblemStatusProto:
+    if result_proto.termination.HasField('problem_status'):
+        return result_proto.termination.problem_status
+    return result_proto.solve_stats.problem_status

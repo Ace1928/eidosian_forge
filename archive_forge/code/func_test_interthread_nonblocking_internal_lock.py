@@ -1,0 +1,38 @@
+import collections
+import errno
+import multiprocessing
+import os
+import signal
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from unittest import mock
+from oslotest import base as test_base
+from oslo_concurrency.fixture import lockutils as fixtures
+from oslo_concurrency import lockutils
+from oslo_config import fixture as config
+def test_interthread_nonblocking_internal_lock(self):
+    call_list = []
+
+    @lockutils.synchronized('foo', blocking=False, lock_path=self.lock_dir)
+    def foo(param):
+        call_list.append(param)
+        time.sleep(0.5)
+        call_list.append(param)
+
+    def other(param):
+        foo(param)
+    thread = threading.Thread(target=other, args=('other',))
+    thread.start()
+    start = time.time()
+    while not call_list:
+        if time.time() - start > 5:
+            self.fail('Timed out waiting for thread to grab lock')
+        time.sleep(0)
+    thread1 = threading.Thread(target=other, args=('main',))
+    thread1.start()
+    thread1.join()
+    thread.join()
+    self.assertEqual(['other', 'other'], call_list)

@@ -1,0 +1,25 @@
+import atexit
+from copy import deepcopy
+import logging
+import os
+import shutil
+import sys
+from pathlib import Path
+from traitlets.config.application import Application, catch_config_error
+from traitlets.config.loader import ConfigFileNotFound, PyFileConfigLoader
+from IPython.core import release, crashhandler
+from IPython.core.profiledir import ProfileDir, ProfileDirError
+from IPython.paths import get_ipython_dir, get_ipython_package_dir
+from IPython.utils.path import ensure_dir_exists
+from traitlets import (
+class ProfileAwareConfigLoader(PyFileConfigLoader):
+    """A Python file config loader that is aware of IPython profiles."""
+
+    def load_subconfig(self, fname, path=None, profile=None):
+        if profile is not None:
+            try:
+                profile_dir = ProfileDir.find_profile_dir_by_name(get_ipython_dir(), profile)
+            except ProfileDirError:
+                return
+            path = profile_dir.location
+        return super(ProfileAwareConfigLoader, self).load_subconfig(fname, path=path)

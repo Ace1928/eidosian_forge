@@ -1,0 +1,26 @@
+from __future__ import annotations
+import itertools
+import logging
+from typing import TYPE_CHECKING
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+from matplotlib.patches import Circle, FancyArrowPatch
+from monty.json import MSONable, jsanitize
+from networkx.algorithms.components import is_connected
+from networkx.algorithms.traversal import bfs_tree
+from pymatgen.analysis.chemenv.connectivity.environment_nodes import EnvironmentNode
+from pymatgen.analysis.chemenv.utils.chemenv_errors import ChemenvError
+from pymatgen.analysis.chemenv.utils.graph_utils import get_delta
+from pymatgen.analysis.chemenv.utils.math_utils import get_linearly_independent_vectors
+@staticmethod
+def _edgedictkey_to_edgekey(key):
+    if isinstance(key, int):
+        return key
+    if isinstance(key, str):
+        try:
+            return int(key)
+        except ValueError:
+            return key
+    else:
+        raise ValueError('Edge key in a dict of dicts representation of a graph should be either a str or an int.')

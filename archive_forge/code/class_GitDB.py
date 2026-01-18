@@ -1,0 +1,49 @@
+from gitdb.db.base import (
+from gitdb.db.loose import LooseObjectDB
+from gitdb.db.pack import PackedDB
+from gitdb.db.ref import ReferenceDB
+from gitdb.exc import InvalidDBRoot
+import os
+class GitDB(FileDBBase, ObjectDBW, CompoundDB):
+    """A git-style object database, which contains all objects in the 'objects'
+    subdirectory
+
+    ``IMPORTANT``: The usage of this implementation is highly discouraged as it fails to release file-handles.
+    This can be a problem with long-running processes and/or big repositories.
+    """
+    PackDBCls = PackedDB
+    LooseDBCls = LooseObjectDB
+    ReferenceDBCls = ReferenceDB
+    packs_dir = 'pack'
+    loose_dir = ''
+    alternates_dir = os.path.join('info', 'alternates')
+
+    def __init__(self, root_path):
+        """Initialize ourselves on a git objects directory"""
+        super().__init__(root_path)
+
+    def _set_cache_(self, attr):
+        if attr == '_dbs' or attr == '_loose_db':
+            self._dbs = list()
+            loose_db = None
+            for subpath, dbcls in ((self.packs_dir, self.PackDBCls), (self.loose_dir, self.LooseDBCls), (self.alternates_dir, self.ReferenceDBCls)):
+                path = self.db_path(subpath)
+                if os.path.exists(path):
+                    self._dbs.append(dbcls(path))
+                    if dbcls is self.LooseDBCls:
+                        loose_db = self._dbs[-1]
+            if not self._dbs:
+                raise InvalidDBRoot(self.root_path())
+            assert loose_db is not None and hasattr(loose_db, 'store'), 'First database needs store functionality'
+            self._loose_db = loose_db
+        else:
+            super()._set_cache_(attr)
+
+    def store(self, istream):
+        return self._loose_db.store(istream)
+
+    def ostream(self):
+        return self._loose_db.ostream()
+
+    def set_ostream(self, ostream):
+        return self._loose_db.set_ostream(ostream)

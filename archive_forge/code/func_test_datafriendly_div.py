@@ -1,0 +1,36 @@
+import sys
+import warnings
+import copy
+import operator
+import itertools
+import textwrap
+import pytest
+from functools import reduce
+import numpy as np
+import numpy.ma.core
+import numpy.core.fromnumeric as fromnumeric
+import numpy.core.umath as umath
+from numpy.testing import (
+from numpy.testing._private.utils import requires_memory
+from numpy import ndarray
+from numpy.compat import asbytes
+from numpy.ma.testutils import (
+from numpy.ma.core import (
+from numpy.compat import pickle
+def test_datafriendly_div(self):
+    x = array([1, 2, 3], mask=[0, 0, 1])
+    xx = x / 2.0
+    assert_equal(xx.data, [1 / 2.0, 2 / 2.0, 3])
+    assert_equal(xx.mask, [0, 0, 1])
+    x = array([1.0, 2.0, 3.0], mask=[0, 0, 1])
+    x /= 2.0
+    assert_equal(x.data, [1 / 2.0, 2 / 2.0, 3])
+    assert_equal(x.mask, [0, 0, 1])
+    x = array([1.0, 2.0, 3.0], mask=[0, 0, 1])
+    xx = x / array([10.0, 20.0, 30.0], mask=[1, 0, 0])
+    assert_equal(xx.data, [1.0, 2.0 / 20.0, 3.0])
+    assert_equal(xx.mask, [1, 0, 1])
+    x = array([1.0, 2.0, 3.0], mask=[0, 0, 1])
+    x /= array([10.0, 20.0, 30.0], mask=[1, 0, 0])
+    assert_equal(x.data, [1.0, 2 / 20.0, 3.0])
+    assert_equal(x.mask, [1, 0, 1])

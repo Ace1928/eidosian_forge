@@ -1,0 +1,9 @@
+import numpy as np
+from numba import cuda, complex64, int32, float64
+from numba.cuda.testing import unittest, CUDATestCase
+from numba.core.config import ENABLE_CUDASIM
+def cuconstRec(A, B):
+    C = cuda.const.array_like(CONST_RECORD)
+    i = cuda.grid(1)
+    A[i] = C[i]['x']
+    B[i] = C[i]['y']

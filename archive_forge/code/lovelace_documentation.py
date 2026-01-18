@@ -1,0 +1,6 @@
+from pygments.style import Style
+from pygments.token import Keyword, Name, Comment, String, Error, \
+
+    The style used in Lovelace interactive learning environment. Tries to avoid
+    the "angry fruit salad" effect with desaturated and dim colours.
+    

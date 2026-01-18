@@ -1,0 +1,30 @@
+from ... import branch, gpg
+from ...tests import fixtures
+from . import TestCaseWithTransport
+from .matchers import ContainsNoVfsCalls
+class TestSmartServerRevno(TestCaseWithTransport):
+
+    def test_simple_branch_revno(self):
+        self.setup_smart_server_with_call_log()
+        t = self.make_branch_and_tree('branch')
+        self.build_tree_contents([('branch/foo', b'thecontents')])
+        t.add('foo')
+        revid = t.commit('message')
+        self.reset_smart_call_log()
+        out, err = self.run_bzr(['revno', self.get_url('branch')])
+        self.assertThat(self.hpss_calls, ContainsNoVfsCalls)
+        self.assertLength(1, self.hpss_connections)
+        self.assertLength(6, self.hpss_calls)
+
+    def test_simple_branch_revno_lookup(self):
+        self.setup_smart_server_with_call_log()
+        t = self.make_branch_and_tree('branch')
+        self.build_tree_contents([('branch/foo', b'thecontents')])
+        t.add('foo')
+        revid1 = t.commit('message')
+        revid2 = t.commit('message')
+        self.reset_smart_call_log()
+        out, err = self.run_bzr(['revno', '-rrevid:' + revid1.decode('utf-8'), self.get_url('branch')])
+        self.assertLength(5, self.hpss_calls)
+        self.assertLength(1, self.hpss_connections)
+        self.assertThat(self.hpss_calls, ContainsNoVfsCalls)

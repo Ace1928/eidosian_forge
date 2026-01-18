@@ -1,0 +1,15 @@
+import copy
+import datetime
+import re
+from unittest import mock
+from urllib import parse
+from oslo_utils import strutils
+import novaclient
+from novaclient import api_versions
+from novaclient import client as base_client
+from novaclient import exceptions
+from novaclient.tests.unit import fakes
+from novaclient.tests.unit import utils
+from novaclient.v2 import client
+def delete_flavors_1_os_extra_specs_k1(self, **kw):
+    return (204, {}, None)

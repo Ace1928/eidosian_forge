@@ -1,0 +1,12 @@
+from qiskit.transpiler.basepasses import AnalysisPass
+from qiskit.circuit import Gate
+from qiskit.dagcircuit import DAGOpNode, DAGInNode
+special key function for topological ordering.
+            Heuristic for this is to push all gates involving measurement
+            or barriers, etc. as far back as possible (because they force
+            blocks to end). After that, we process gates in order of lowest
+            number of qubits acted on to largest number of qubits acted on
+            because these have less chance of increasing the size of blocks
+            The key also processes all the non operation notes first so that
+            input nodes do not mess with the top sort of op nodes
+            

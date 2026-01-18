@@ -1,0 +1,17 @@
+from __future__ import annotations
+import typing
+from types import TracebackType
+from .._models import Request, Response
+class AsyncBaseTransport:
+
+    async def __aenter__(self: A) -> A:
+        return self
+
+    async def __aexit__(self, exc_type: type[BaseException] | None=None, exc_value: BaseException | None=None, traceback: TracebackType | None=None) -> None:
+        await self.aclose()
+
+    async def handle_async_request(self, request: Request) -> Response:
+        raise NotImplementedError("The 'handle_async_request' method must be implemented.")
+
+    async def aclose(self) -> None:
+        pass

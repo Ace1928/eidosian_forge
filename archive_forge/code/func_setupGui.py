@@ -1,0 +1,16 @@
+from PySide2 import QtCore, QtGui, QtWidgets, QtSvg
+def setupGui(self):
+    fileNameLabel = QtWidgets.QLabel(self.tr('Svg File Name:'))
+    self.fileNameLineEdit = QtWidgets.QLineEdit()
+    insertTextObjectButton = QtWidgets.QPushButton(self.tr('Insert Image'))
+    self.fileNameLineEdit.setText('./files/heart.svg')
+    QtCore.QObject.connect(insertTextObjectButton, QtCore.SIGNAL('clicked()'), self.insertTextObject)
+    bottomLayout = QtWidgets.QHBoxLayout()
+    bottomLayout.addWidget(fileNameLabel)
+    bottomLayout.addWidget(self.fileNameLineEdit)
+    bottomLayout.addWidget(insertTextObjectButton)
+    self.textEdit = QtWidgets.QTextEdit()
+    mainLayout = QtWidgets.QVBoxLayout()
+    mainLayout.addWidget(self.textEdit)
+    mainLayout.addLayout(bottomLayout)
+    self.setLayout(mainLayout)

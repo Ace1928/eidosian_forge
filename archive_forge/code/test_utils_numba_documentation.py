@@ -1,0 +1,9 @@
+import importlib
+from unittest.mock import Mock
+import numpy as np
+import pytest
+from ...stats.stats_utils import stats_variance_2d as svar
+from ...utils import Numba, _numba_var, numba_check
+from ..helpers import running_on_ci
+from .test_utils import utils_with_numba_import_fail  # pylint: disable=unused-import
+This function does nothing

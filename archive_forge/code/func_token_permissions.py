@@ -1,0 +1,14 @@
+import abc
+import base64
+import time
+from abc import ABC
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Dict, Optional, Union
+import jwt
+from requests import utils
+from github import Consts
+from github.InstallationAuthorization import InstallationAuthorization
+from github.Requester import Requester, WithRequester
+@property
+def token_permissions(self) -> Optional[Dict[str, str]]:
+    return self._token_permissions

@@ -1,0 +1,17 @@
+import unittest
+from unittest.test.support import LoggingResult
+def test_failure_and_skip_in_cleanup(self):
+
+    class Foo(unittest.TestCase):
+
+        def test_skip_me(self):
+            self.fail('fail')
+
+        def tearDown(self):
+            self.skipTest('skip')
+    events = []
+    result = LoggingResult(events)
+    test = Foo('test_skip_me')
+    self.assertIs(test.run(result), result)
+    self.assertEqual(events, ['startTest', 'addFailure', 'addSkip', 'stopTest'])
+    self.assertEqual(result.skipped, [(test, 'skip')])

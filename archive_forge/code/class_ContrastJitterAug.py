@@ -1,0 +1,38 @@
+import sys
+import os
+import random
+import logging
+import json
+import warnings
+from numbers import Number
+import numpy as np
+from .. import numpy as _mx_np  # pylint: disable=reimported
+from ..base import numeric_types
+from .. import ndarray as nd
+from ..ndarray import _internal
+from .. import io
+from .. import recordio
+from .. util import is_np_array
+from ..ndarray.numpy import _internal as _npi
+class ContrastJitterAug(Augmenter):
+    """Random contrast jitter augmentation.
+
+    Parameters
+    ----------
+    contrast : float
+        The contrast jitter ratio range, [0, 1]
+    """
+
+    def __init__(self, contrast):
+        super(ContrastJitterAug, self).__init__(contrast=contrast)
+        self.contrast = contrast
+        self.coef = nd.array([[[0.299, 0.587, 0.114]]])
+
+    def __call__(self, src):
+        """Augmenter body"""
+        alpha = 1.0 + random.uniform(-self.contrast, self.contrast)
+        gray = src * self.coef
+        gray = 3.0 * (1.0 - alpha) / gray.size * nd.sum(gray)
+        src *= alpha
+        src += gray
+        return src

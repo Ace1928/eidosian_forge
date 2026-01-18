@@ -1,0 +1,19 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import sys
+import subprocess
+import importlib
+import pkg_resources
+import threading
+from subprocess import check_output
+from dataclasses import dataclass
+from typing import Optional
+from fileio import File, PathIO, PathIOLike
+from lazyops.envs import logger
+from lazyops.envs import LazyEnv
+@property
+def main_module_path(self):
+    if not self.main_module:
+        return None
+    return self.main_module.submodule_search_locations[0]

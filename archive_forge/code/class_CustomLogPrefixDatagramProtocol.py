@@ -1,0 +1,28 @@
+import socket
+from zope.interface import implementer
+from zope.interface.verify import verifyObject
+from twisted.internet import defer, error
+from twisted.internet.address import IPv4Address, IPv6Address
+from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.interfaces import (
+from twisted.internet.protocol import DatagramProtocol
+from twisted.internet.test.connectionmixins import LogObserverMixin, findFreePort
+from twisted.internet.test.reactormixins import ReactorBuilder
+from twisted.python import context
+from twisted.python.log import ILogContext, err
+from twisted.test.test_udp import GoodClient, Server
+from twisted.trial.unittest import SkipTest
+class CustomLogPrefixDatagramProtocol(DatagramProtocol):
+
+    def __init__(self, prefix):
+        self._prefix = prefix
+        self.system = Deferred()
+
+    def logPrefix(self):
+        return self._prefix
+
+    def datagramReceived(self, bytes, addr):
+        if self.system is not None:
+            system = self.system
+            self.system = None
+            system.callback(context.get(ILogContext)['system'])

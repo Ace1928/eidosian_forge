@@ -1,0 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import ast
+import os.path
+import unittest
+from six import with_metaclass
+import pasta
+from pasta.base import codegen
+from pasta.base import test_utils
+def _is_syntax_valid(filepath):
+    with open(filepath, 'r') as f:
+        try:
+            ast.parse(f.read())
+        except SyntaxError:
+            return False
+    return True

@@ -1,0 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.compute.instances.ops_agents import ops_agents_policy as agent_policy
+from googlecloudsdk.calliope import arg_parsers
+def _AddGroupLabelsArgument(parser):
+    parser.add_argument('--group-labels', metavar='LABEL_NAME=LABEL_VALUE,LABEL_NAME=LABEL_VALUE,...', action='store', type=arg_parsers.ArgList(custom_delim_char=';', element_type=arg_parsers.ArgDict()), help='      A list of label maps to filter instances that the policy applies to.\n\n      Optional. The ``--group-labels\'\' flag needs to be quoted. Each label map\n      item in the list are separated by ```;```. To manage instance labels,\n      refer to:\n\n        $ gcloud beta compute instances add-labels\n\n        $ gcloud beta compute instances remove-labels\n\n      Each label map item in the ``--group-labels\'\' list is a map in the format\n      of ``LABEL_NAME=LABEL_VALUE,LABEL_NAME=LABEL_VALUE,...\'\'. An instance has\n      to match all of the ``LABEL_NAME=LABEL_VALUE\'\' criteria inside a label map\n      to be considered a match for that label map. But the instance only needs\n      to match one label map in the ``--group-labels\'\' list.\n\n      For example,\n      ``--group-labels="env=prod,product=myapp;env=staging,product=myapp"\'\'\n      implies the matching criteria is:\n\n      *(env=prod AND product=myapp) OR (env=staging AND product=myapp)*\n      ')

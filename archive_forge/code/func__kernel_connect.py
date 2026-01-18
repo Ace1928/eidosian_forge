@@ -1,0 +1,7 @@
+import warnings
+import numpy
+import cupy
+from cupy import _core
+from cupy import _util
+def _kernel_connect():
+    return _core.ElementwiseKernel('raw int32 shape, raw int32 dirs, int32 ndirs, int32 ndim', 'raw Y y', '\n        if (y[i] < 0) continue;\n        for (int dr = 0; dr < ndirs; dr++) {\n            int j = i;\n            int rest = j;\n            int stride = 1;\n            int k = 0;\n            for (int dm = ndim-1; dm >= 0; dm--) {\n                int pos = rest % shape[dm] + dirs[dm + dr * ndim];\n                if (pos < 0 || pos >= shape[dm]) {\n                    k = -1;\n                    break;\n                }\n                k += pos * stride;\n                rest /= shape[dm];\n                stride *= shape[dm];\n            }\n            if (k < 0) continue;\n            if (y[k] < 0) continue;\n            while (1) {\n                while (j != y[j]) { j = y[j]; }\n                while (k != y[k]) { k = y[k]; }\n                if (j == k) break;\n                if (j < k) {\n                    int old = atomicCAS( &y[k], k, j );\n                    if (old == k) break;\n                    k = old;\n                }\n                else {\n                    int old = atomicCAS( &y[j], j, k );\n                    if (old == j) break;\n                    j = old;\n                }\n            }\n        }\n        ', 'cupyx_scipy_ndimage_label_connect')

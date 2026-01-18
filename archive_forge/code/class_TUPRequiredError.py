@@ -1,0 +1,2 @@
+class TUPRequiredError(HardwareError):
+    pass

@@ -1,0 +1,6 @@
+@property
+def range_key_type(self):
+    type = None
+    if 'RangeKeyElement' in self._dict:
+        type = self._dict['RangeKeyElement']['AttributeType']
+    return type

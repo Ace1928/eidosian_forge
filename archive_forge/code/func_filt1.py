@@ -1,0 +1,12 @@
+from datetime import (
+import numpy as np
+import pytest
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.tests.groupby import get_groupby_method_args
+def filt1(x):
+    if x.shape[0] == 1:
+        return x.copy()
+    else:
+        return x[x.category == 'c']

@@ -1,0 +1,17 @@
+import unittest
+from typing import Any
+import numpy as np
+import parameterized
+import onnx
+from onnx import helper, numpy_helper
+def test_float8_e5m2_negative_zero(self):
+    x = numpy_helper.float8e5m2_to_float32(128)
+    to = helper.float32_to_float8e5m2(x)
+    self.assertEqual(to, 128)
+    back = numpy_helper.float8e4m3_to_float32(to)
+    self.assertEqual(back, 0)
+    x = numpy_helper.float8e5m2_to_float32(128)
+    to = helper.float32_to_float8e5m2(x, saturate=False)
+    self.assertEqual(to, 128)
+    back = numpy_helper.float8e4m3_to_float32(to)
+    self.assertEqual(back, 0)

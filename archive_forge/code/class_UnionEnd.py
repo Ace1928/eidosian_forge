@@ -1,0 +1,2 @@
+class UnionEnd(Action):
+    pass

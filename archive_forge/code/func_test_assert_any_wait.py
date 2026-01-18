@@ -1,0 +1,20 @@
+import asyncio
+import gc
+import inspect
+import re
+import unittest
+from contextlib import contextmanager
+from test import support
+from asyncio import run, iscoroutinefunction
+from unittest import IsolatedAsyncioTestCase
+from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
+def test_assert_any_wait(self):
+    with self.assertRaises(AssertionError):
+        self.mock.assert_any_await('foo')
+    run(self._runnable_test('baz'))
+    with self.assertRaises(AssertionError):
+        self.mock.assert_any_await('foo')
+    run(self._runnable_test('foo'))
+    self.mock.assert_any_await('foo')
+    run(self._runnable_test('SomethingElse'))
+    self.mock.assert_any_await('foo')

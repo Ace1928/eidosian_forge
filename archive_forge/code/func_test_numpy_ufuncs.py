@@ -1,0 +1,11 @@
+import numpy as np
+import pytest
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+@pytest.mark.parametrize('func', [np.exp, np.exp2, np.expm1, np.log, np.log2, np.log10, np.log1p, np.sqrt, np.sin, np.cos, np.tan, np.arcsin, np.arccos, np.arctan, np.sinh, np.cosh, np.tanh, np.arcsinh, np.arccosh, np.arctanh, np.deg2rad, np.rad2deg], ids=lambda func: func.__name__)
+def test_numpy_ufuncs(idx, func):
+    expected_exception = TypeError
+    msg = f'loop of ufunc does not support argument 0 of type tuple which has no callable {func.__name__} method'
+    with pytest.raises(expected_exception, match=msg):
+        func(idx)

@@ -1,0 +1,19 @@
+import codecs
+import os.path
+import nltk
+from nltk.chunk import tagstr2tree
+from nltk.corpus.reader.api import *
+from nltk.corpus.reader.bracket_parse import BracketParseCorpusReader
+from nltk.corpus.reader.util import *
+from nltk.tokenize import *
+from nltk.tree import Tree
+def chunked_words(self, fileids=None, tagset=None):
+    """
+        :return: the given file(s) as a list of tagged
+            words and chunks.  Words are encoded as ``(word, tag)``
+            tuples (if the corpus has tags) or word strings (if the
+            corpus has no tags).  Chunks are encoded as depth-one
+            trees over ``(word,tag)`` tuples or word strings.
+        :rtype: list(tuple(str,str) and Tree)
+        """
+    return concat([ChunkedCorpusView(f, enc, 1, 0, 0, 1, *self._cv_args, target_tagset=tagset) for f, enc in self.abspaths(fileids, True)])

@@ -1,0 +1,45 @@
+from collections import defaultdict
+import functools
+import itertools
+import math
+import textwrap
+import numpy as np
+import matplotlib as mpl
+from matplotlib import _api, cbook, _docstring, _preprocess_data
+import matplotlib.artist as martist
+import matplotlib.axes as maxes
+import matplotlib.collections as mcoll
+import matplotlib.colors as mcolors
+import matplotlib.image as mimage
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
+import matplotlib.container as mcontainer
+import matplotlib.transforms as mtransforms
+from matplotlib.axes import Axes
+from matplotlib.axes._base import _axis_method_wrapper, _process_plot_format
+from matplotlib.transforms import Bbox
+from matplotlib.tri._triangulation import Triangulation
+from . import art3d
+from . import proj3d
+from . import axis3d
+def get_zlim(self):
+    """
+        Return the 3D z-axis view limits.
+
+        Returns
+        -------
+        left, right : (float, float)
+            The current z-axis limits in data coordinates.
+
+        See Also
+        --------
+        set_zlim
+        set_zbound, get_zbound
+        invert_zaxis, zaxis_inverted
+
+        Notes
+        -----
+        The z-axis may be inverted, in which case the *left* value will
+        be greater than the *right* value.
+        """
+    return tuple(self.zz_viewLim.intervalx)

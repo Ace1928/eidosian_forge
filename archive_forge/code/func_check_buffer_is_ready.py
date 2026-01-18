@@ -1,0 +1,18 @@
+import collections
+import logging
+import random
+from typing import Any, Dict, Optional
+import numpy as np
+from ray.rllib.policy.rnn_sequencing import timeslice_along_seq_lens_with_overlap
+from ray.rllib.policy.sample_batch import (
+from ray.rllib.utils.annotations import override
+from ray.rllib.utils.replay_buffers.multi_agent_prioritized_replay_buffer import (
+from ray.rllib.utils.replay_buffers.multi_agent_replay_buffer import (
+from ray.rllib.utils.replay_buffers.replay_buffer import _ALL_POLICIES, StorageUnit
+from ray.rllib.utils.typing import PolicyID, SampleBatchType
+from ray.util.annotations import DeveloperAPI
+from ray.util.debug import log_once
+def check_buffer_is_ready(_policy_id):
+    if len(self.replay_buffers[policy_id]) == 0 and self.replay_ratio > 0.0 or (len(self.last_added_batches[_policy_id]) == 0 and self.replay_ratio < 1.0):
+        return False
+    return True

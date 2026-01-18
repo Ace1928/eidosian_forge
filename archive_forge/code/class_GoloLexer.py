@@ -1,0 +1,15 @@
+import re
+from pygments.lexer import Lexer, RegexLexer, include, bygroups, using, \
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+from pygments.util import shebang_matches
+from pygments import unistring as uni
+class GoloLexer(RegexLexer):
+    """
+    For `Golo <http://golo-lang.org/>`_ source code.
+
+    .. versionadded:: 2.0
+    """
+    name = 'Golo'
+    filenames = ['*.golo']
+    aliases = ['golo']
+    tokens = {'root': [('[^\\S\\n]+', Text), ('#.*$', Comment), ('(\\^|\\.\\.\\.|:|\\?:|->|==|!=|=|\\+|\\*|%|/|<=|<|>=|>|=|\\.)', Operator), ('(?<=[^-])(-)(?=[^-])', Operator), ('(?<=[^`])(is|isnt|and|or|not|oftype|in|orIfNull)\\b', Operator.Word), ('[]{}|(),[]', Punctuation), ('(module|import)(\\s+)', bygroups(Keyword.Namespace, Text), 'modname'), ('\\b([a-zA-Z_][\\w$.]*)(::)', bygroups(Name.Namespace, Punctuation)), ('\\b([a-zA-Z_][\\w$]*(?:\\.[a-zA-Z_][\\w$]*)+)\\b', Name.Namespace), ('(let|var)(\\s+)', bygroups(Keyword.Declaration, Text), 'varname'), ('(struct)(\\s+)', bygroups(Keyword.Declaration, Text), 'structname'), ('(function)(\\s+)', bygroups(Keyword.Declaration, Text), 'funcname'), ('(null|true|false)\\b', Keyword.Constant), ('(augment|pimp|if|else|case|match|return|case|when|then|otherwise|while|for|foreach|try|catch|finally|throw|local|continue|break)\\b', Keyword), ('(map|array|list|set|vector|tuple)(\\[)', bygroups(Name.Builtin, Punctuation)), ('(print|println|readln|raise|fun|asInterfaceInstance)\\b', Name.Builtin), ('(`?[a-zA-Z_][\\w$]*)(\\()', bygroups(Name.Function, Punctuation)), ('-?[\\d_]*\\.[\\d_]*([eE][+-]?\\d[\\d_]*)?F?', Number.Float), ('0[0-7]+j?', Number.Oct), ('0[xX][a-fA-F0-9]+', Number.Hex), ('-?\\d[\\d_]*L', Number.Integer.Long), ('-?\\d[\\d_]*', Number.Integer), ('`?[a-zA-Z_][\\w$]*', Name), ('@[a-zA-Z_][\\w$.]*', Name.Decorator), ('"""', String, combined('stringescape', 'triplestring')), ('"', String, combined('stringescape', 'doublestring')), ("'", String, combined('stringescape', 'singlestring')), ('----((.|\\n)*?)----', String.Doc)], 'funcname': [('`?[a-zA-Z_][\\w$]*', Name.Function, '#pop')], 'modname': [('[a-zA-Z_][\\w$.]*\\*?', Name.Namespace, '#pop')], 'structname': [('`?[\\w.]+\\*?', Name.Class, '#pop')], 'varname': [('`?[a-zA-Z_][\\w$]*', Name.Variable, '#pop')], 'string': [('[^\\\\\\\'"\\n]+', String), ('[\\\'"\\\\]', String)], 'stringescape': [('\\\\([\\\\abfnrtv"\\\']|\\n|N\\{.*?\\}|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8}|x[a-fA-F0-9]{2}|[0-7]{1,3})', String.Escape)], 'triplestring': [('"""', String, '#pop'), include('string'), ('\\n', String)], 'doublestring': [('"', String.Double, '#pop'), include('string')], 'singlestring': [("'", String, '#pop'), include('string')], 'operators': [('[#=,./%+\\-?]', Operator), ('(eq|gt|lt|gte|lte|neq|matches)\\b', Operator), ('(==|<=|<|>=|>|!=)', Operator)]}

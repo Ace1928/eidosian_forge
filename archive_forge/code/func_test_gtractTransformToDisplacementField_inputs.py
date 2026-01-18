@@ -1,0 +1,7 @@
+from ..gtract import gtractTransformToDisplacementField
+def test_gtractTransformToDisplacementField_inputs():
+    input_map = dict(args=dict(argstr='%s'), environ=dict(nohash=True, usedefault=True), inputReferenceVolume=dict(argstr='--inputReferenceVolume %s', extensions=None), inputTransform=dict(argstr='--inputTransform %s', extensions=None), numberOfThreads=dict(argstr='--numberOfThreads %d'), outputDeformationFieldVolume=dict(argstr='--outputDeformationFieldVolume %s', hash_files=False))
+    inputs = gtractTransformToDisplacementField.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

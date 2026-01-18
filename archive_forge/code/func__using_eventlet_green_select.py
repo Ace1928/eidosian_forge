@@ -1,0 +1,9 @@
+import errno
+import os
+import select
+import socket
+import sys
+import ovs.timeval
+import ovs.vlog
+def _using_eventlet_green_select():
+    return False

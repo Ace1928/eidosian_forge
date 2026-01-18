@@ -1,0 +1,15 @@
+from openstackclient.tests.functional.identity.v3 import common
+def test_region_set(self):
+    parent_region_id = self._create_dummy_region()
+    new_parent_region_id = self._create_dummy_region()
+    region_id = self._create_dummy_region(parent_region_id)
+    raw_output = self.openstack('region show %s' % region_id)
+    region = self.parse_show_as_object(raw_output)
+    self.assertEqual(parent_region_id, region['parent_region'])
+    self.assertEqual(region_id, region['region'])
+    raw_output = self.openstack('region set --parent-region %(parent_region)s %(region)s' % {'parent_region': new_parent_region_id, 'region': region_id})
+    self.assertEqual(0, len(raw_output))
+    raw_output = self.openstack('region show %s' % region_id)
+    region = self.parse_show_as_object(raw_output)
+    self.assertEqual(new_parent_region_id, region['parent_region'])
+    self.assertEqual(region_id, region['region'])

@@ -1,0 +1,1 @@
+Instance name is the same as the class name.

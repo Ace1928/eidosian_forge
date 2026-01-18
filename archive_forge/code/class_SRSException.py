@@ -1,0 +1,2 @@
+class SRSException(Exception):
+    pass

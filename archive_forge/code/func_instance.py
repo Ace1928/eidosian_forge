@@ -1,0 +1,14 @@
+import itertools
+from abc import abstractmethod
+from enum import Enum
+from typing import Any, Callable, Dict, Iterable, List, Optional, TypeVar, Union
+from ray.data._internal.block_batching.block_batching import batch_blocks
+from ray.data._internal.execution.interfaces.task_context import TaskContext
+from ray.data._internal.output_buffer import BlockOutputBuffer
+from ray.data.block import Block, BlockAccessor, DataBatch
+@classmethod
+def instance(cls) -> 'BlocksToRowsMapTransformFn':
+    """Returns the singleton instance."""
+    if getattr(cls, '_instance', None) is None:
+        cls._instance = cls()
+    return cls._instance

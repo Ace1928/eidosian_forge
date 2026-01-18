@@ -1,0 +1,8 @@
+from Bio.Application import _Option, _Switch, AbstractCommandline
+class Est2GenomeCommandline(_EmbossCommandLine):
+    """Commandline object for the est2genome program from EMBOSS."""
+
+    def __init__(self, cmd='est2genome', **kwargs):
+        """Initialize the class."""
+        self.parameters = [_Option(['-est', 'est'], 'EST sequence(s)', is_required=True), _Option(['-genome', 'genome'], 'Genomic sequence', is_required=True), _Option(['-match', 'match'], 'Score for matching two bases'), _Option(['-mismatch', 'mismatch'], 'Cost for mismatching two bases'), _Option(['-gappenalty', 'gappenalty'], 'Cost for deleting a single base in either sequence, excluding introns'), _Option(['-intronpenalty', 'intronpenalty'], 'Cost for an intron, independent of length.'), _Option(['-splicepenalty', 'splicepenalty'], 'Cost for an intron, independent of length and starting/ending on donor-acceptor sites'), _Option(['-minscore', 'minscore'], 'Exclude alignments with scores below this threshold score.'), _Option(['-reverse', 'reverse'], 'Reverse the orientation of the EST sequence'), _Option(['-splice', 'splice'], 'Use donor and acceptor splice sites.'), _Option(['-mode', 'mode'], "This determines the comparison mode. 'both', 'forward', or 'reverse'"), _Option(['-best', 'best'], 'You can print out all comparisons instead of just the best'), _Option(['-space', 'space'], 'for linear-space recursion.'), _Option(['-shuffle', 'shuffle'], 'Shuffle'), _Option(['-seed', 'seed'], 'Random number seed'), _Option(['-align', 'align'], 'Show the alignment.'), _Option(['-width', 'width'], 'Alignment width')]
+        _EmbossCommandLine.__init__(self, cmd, **kwargs)

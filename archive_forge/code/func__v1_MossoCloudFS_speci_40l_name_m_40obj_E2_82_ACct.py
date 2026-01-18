@@ -1,0 +1,29 @@
+import os
+import sys
+import copy
+import hmac
+import math
+import hashlib
+import os.path  # pylint: disable-msg=W0404
+from io import BytesIO
+from hashlib import sha1
+from unittest import mock
+from unittest.mock import Mock, PropertyMock
+import libcloud.utils.files
+from libcloud.test import MockHttp  # pylint: disable-msg=E0611
+from libcloud.test import unittest, make_response, generate_random_data
+from libcloud.utils.py3 import StringIO, b, httplib, urlquote
+from libcloud.utils.files import exhaust_iterator
+from libcloud.common.types import MalformedResponseError
+from libcloud.storage.base import CHUNK_SIZE, Object, Container
+from libcloud.storage.types import (
+from libcloud.test.storage.base import BaseRangeDownloadMockHttp
+from libcloud.test.file_fixtures import StorageFileFixtures  # pylint: disable-msg=E0611
+from libcloud.storage.drivers.cloudfiles import CloudFilesStorageDriver
+def _v1_MossoCloudFS_speci_40l_name_m_40obj_E2_82_ACct(self, method, url, body, headers):
+    object_name = 'm@obj€ct'
+    urlquote(object_name)
+    headers = copy.deepcopy(self.base_headers)
+    body = ''
+    headers['etag'] = 'hash343hhash89h932439jsaa89'
+    return (httplib.CREATED, body, headers, httplib.responses[httplib.OK])

@@ -1,0 +1,36 @@
+from __future__ import annotations
+from math import pi, inf, isclose
+from typing import Any
+from copy import deepcopy
+from itertools import product
+from functools import partial
+import numpy as np
+from qiskit.converters import circuit_to_dag, dag_to_circuit
+from qiskit.transpiler import CouplingMap, Target
+from qiskit.transpiler.basepasses import TransformationPass
+from qiskit.transpiler.exceptions import TranspilerError
+from qiskit.dagcircuit.dagcircuit import DAGCircuit
+from qiskit.synthesis.one_qubit import one_qubit_decompose
+from qiskit.synthesis.two_qubit.xx_decompose import XXDecomposer, XXEmbodiments
+from qiskit.synthesis.two_qubit.two_qubit_decompose import (
+from qiskit.quantum_info import Operator
+from qiskit.circuit import ControlFlowOp, Gate, Parameter
+from qiskit.circuit.library.standard_gates import (
+from qiskit.transpiler.passes.synthesis import plugin
+from qiskit.transpiler.passes.optimization.optimize_1q_decomposition import (
+from qiskit.providers.models import BackendProperties
+from qiskit.circuit.library.standard_gates import get_standard_gate_name_mapping
+from qiskit.exceptions import QiskitError
+def _choose_bases(basis_gates, basis_dict=None):
+    """Find the matching basis string keys from the list of basis gates from the backend."""
+    if basis_gates is None:
+        basis_set = set()
+    else:
+        basis_set = set(basis_gates)
+    if basis_dict is None:
+        basis_dict = one_qubit_decompose.ONE_QUBIT_EULER_BASIS_GATES
+    out_basis = []
+    for basis, gates in basis_dict.items():
+        if set(gates).issubset(basis_set):
+            out_basis.append(basis)
+    return out_basis

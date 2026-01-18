@@ -1,0 +1,39 @@
+from ironicclient.common import base
+from ironicclient.common.i18n import _
+from ironicclient.common import utils
+from ironicclient import exc
+Retrieve a list of conductors.
+
+        :param marker: Optional, the hostname of a conductor, eg the last
+                       conductor from a previous result set. Return
+                       the next result set.
+        :param limit: The maximum number of results to return per
+                      request, if:
+
+            1) limit > 0, the maximum number of ports to return.
+            2) limit == 0, return the entire list of ports.
+            3) limit param is NOT specified (None), the number of items
+               returned respect the maximum imposed by the Ironic API
+               (see Ironic's api.max_limit option).
+
+        :param sort_key: Optional, field used for sorting.
+
+        :param sort_dir: Optional, direction of sorting, either 'asc' (the
+                         default) or 'desc'.
+
+        :param fields: Optional, a list with a specified set of fields
+                       of the resource to be returned. Can not be used
+                       when 'detail' is set.
+
+        :param detail: Optional, boolean whether to return detailed information
+                       about conductors.
+
+        :param os_ironic_api_version: String version (e.g. "1.35") to use for
+            the request.  If not specified, the client's default is used.
+
+        :param global_request_id: String containing global request ID header
+            value (in form "req-<UUID>") to use for the request.
+
+        :returns: A list of conductors.
+
+        

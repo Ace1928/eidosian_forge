@@ -1,0 +1,18 @@
+import time
+from twisted.cred import checkers, credentials, portal
+from twisted.internet import address, defer, reactor
+from twisted.internet.defer import Deferred, DeferredList, maybeDeferred, succeed
+from twisted.spread import pb
+from twisted.test import proto_helpers
+from twisted.trial import unittest
+from twisted.words import ewords, service
+from twisted.words.protocols import irc
+def testUserAddition(self):
+    realm = service.InMemoryWordsRealm('realmname')
+    p = service.User('testuser')
+    user = self.successResultOf(realm.addUser(p))
+    self.assertIdentical(p, user)
+    retrieved = self.successResultOf(realm.getUser('testuser'))
+    self.assertIdentical(user, retrieved)
+    lookedUp = self.successResultOf(realm.lookupUser('testuser'))
+    self.assertIdentical(retrieved, lookedUp)

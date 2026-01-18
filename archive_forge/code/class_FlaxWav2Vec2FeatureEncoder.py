@@ -1,0 +1,29 @@
+from functools import partial
+from typing import Optional, Tuple, Union
+import flax
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
+import numpy as np
+from flax.core.frozen_dict import FrozenDict, freeze, unfreeze
+from flax.linen.attention import dot_product_attention_weights
+from flax.traverse_util import flatten_dict, unflatten_dict
+from jax import lax
+from ...modeling_flax_outputs import FlaxBaseModelOutput, FlaxCausalLMOutput
+from ...modeling_flax_utils import (
+from ...utils import ModelOutput, add_start_docstrings, add_start_docstrings_to_model_forward, logging
+from .configuration_wav2vec2 import Wav2Vec2Config
+class FlaxWav2Vec2FeatureEncoder(nn.Module):
+    """Construct the features from raw audio waveform"""
+    config: Wav2Vec2Config
+    dtype: jnp.dtype = jnp.float32
+
+    def setup(self):
+        self.conv_layers = FlaxConvLayersCollection(self.config, dtype=self.dtype)
+
+    def __call__(self, input_values, freeze_feature_encoder=False):
+        hidden_states = input_values[:, :, None]
+        hidden_states = self.conv_layers(hidden_states)
+        if freeze_feature_encoder:
+            hidden_states = jax.lax.stop_gradient(hidden_states)
+        return hidden_states

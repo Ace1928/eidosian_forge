@@ -1,0 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.ml_engine import models
+from googlecloudsdk.command_lib.iam import iam_util
+from googlecloudsdk.command_lib.ml_engine import region_util
+from googlecloudsdk.command_lib.util.args import labels_util
+from googlecloudsdk.core import exceptions as core_exceptions
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+from googlecloudsdk.core.console import console_io
+def AddIamPolicyBinding(models_client, model, member, role):
+    model_ref = ParseModel(model)
+    policy = models_client.GetIamPolicy(model_ref)
+    iam_util.AddBindingToIamPolicy(models_client.messages.GoogleIamV1Binding, policy, member, role)
+    return models_client.SetIamPolicy(model_ref, policy, 'bindings,etag')

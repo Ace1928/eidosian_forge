@@ -1,0 +1,27 @@
+from __future__ import absolute_import
+from .Errors import CompileError, error
+from . import ExprNodes
+from .ExprNodes import IntNode, NameNode, AttributeNode
+from . import Options
+from .Code import UtilityCode, TempitaUtilityCode
+from .UtilityCode import CythonUtilityCode
+from . import Buffer
+from . import PyrexTypes
+from . import ModuleNode
+def valid_memslice_dtype(dtype, i=0):
+    """
+    Return whether type dtype can be used as the base type of a
+    memoryview slice.
+
+    We support structs, numeric types and objects
+    """
+    if dtype.is_complex and dtype.real_type.is_int:
+        return False
+    if dtype is PyrexTypes.c_bint_type:
+        return False
+    if dtype.is_struct and dtype.kind == 'struct':
+        for member in dtype.scope.var_entries:
+            if not valid_memslice_dtype(member.type):
+                return False
+        return True
+    return dtype.is_error or (dtype.is_array and i < 8 and valid_memslice_dtype(dtype.base_type, i + 1)) or dtype.is_numeric or dtype.is_pyobject or dtype.is_fused or (dtype.is_typedef and valid_memslice_dtype(dtype.typedef_base_type))

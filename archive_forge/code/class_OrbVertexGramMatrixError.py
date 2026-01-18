@@ -1,0 +1,2 @@
+class OrbVertexGramMatrixError(VerificationError):
+    pass

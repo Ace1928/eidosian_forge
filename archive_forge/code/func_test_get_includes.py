@@ -1,0 +1,13 @@
+from unittest import TestCase
+import zmq
+def test_get_includes(self):
+    from os.path import basename
+    includes = zmq.get_includes()
+    assert isinstance(includes, list)
+    assert len(includes) >= 2
+    parent = includes[0]
+    assert isinstance(parent, str)
+    utilsdir = includes[1]
+    assert isinstance(utilsdir, str)
+    utils = basename(utilsdir)
+    assert utils == 'utils'

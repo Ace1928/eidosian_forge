@@ -1,0 +1,28 @@
+import copy
+from oslo_log import log as logging
+from heat.common import exception
+from heat.common import template_format
+from heat.engine.clients.os import neutron
+from heat.engine.resources.openstack.neutron import trunk
+from heat.engine import scheduler
+from heat.engine import stk_defn
+from heat.tests import common
+from heat.tests import utils
+from neutronclient.common import exceptions as ncex
+from neutronclient.neutron import v2_0 as neutronV20
+from neutronclient.v2_0 import client as neutronclient
+def test_create_two_subports(self):
+    t = template_format.parse(create_template)
+    del t['resources']['trunk']['properties']['sub_ports'][2:]
+    stack = utils.parse_stack(t)
+    parent_port = stack['parent_port']
+    self.patchobject(parent_port, 'get_reference_id', return_value='parent_port_id')
+    stk_defn.update_resource_data(stack.defn, parent_port.name, parent_port.node_data())
+    subport_1 = stack['subport_1']
+    self.patchobject(subport_1, 'get_reference_id', return_value='subport_1_id')
+    stk_defn.update_resource_data(stack.defn, subport_1.name, subport_1.node_data())
+    subport_2 = stack['subport_2']
+    self.patchobject(subport_2, 'get_reference_id', return_value='subport_2_id')
+    stk_defn.update_resource_data(stack.defn, subport_2.name, subport_2.node_data())
+    self._create_trunk(stack)
+    self.create_trunk_mock.assert_called_once_with({'trunk': {'description': 'trunk description', 'name': 'trunk name', 'port_id': 'parent_port_id', 'sub_ports': [{'port_id': 'subport_1_id', 'segmentation_type': 'vlan', 'segmentation_id': 101}, {'port_id': 'subport_2_id', 'segmentation_type': 'vlan', 'segmentation_id': 102}]}})

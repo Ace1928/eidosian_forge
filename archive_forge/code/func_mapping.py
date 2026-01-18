@@ -1,0 +1,25 @@
+from collections import OrderedDict
+from gymnasium.spaces import Discrete, MultiDiscrete
+import numpy as np
+import tree  # pip install dm_tree
+from types import MappingProxyType
+from typing import List, Optional
+from ray.rllib.utils.annotations import PublicAPI
+from ray.rllib.utils.deprecation import (
+from ray.rllib.utils.framework import try_import_tf, try_import_torch
+from ray.rllib.utils.typing import SpaceStruct, TensorType, TensorStructType, Union
+def mapping(item):
+    if torch and isinstance(item, torch.Tensor):
+        ret = item.cpu().item() if len(item.size()) == 0 else item.detach().cpu().numpy()
+    elif tf and isinstance(item, (tf.Tensor, tf.Variable)) and hasattr(item, 'numpy'):
+        assert tf.executing_eagerly()
+        ret = item.numpy()
+    else:
+        ret = item
+    if reduce_type and isinstance(ret, np.ndarray):
+        if np.issubdtype(ret.dtype, np.floating):
+            ret = ret.astype(np.float32)
+        elif np.issubdtype(ret.dtype, int):
+            ret = ret.astype(np.int32)
+        return ret
+    return ret

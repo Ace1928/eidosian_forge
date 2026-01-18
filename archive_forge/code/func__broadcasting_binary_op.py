@@ -1,0 +1,25 @@
+from tensorflow.compiler.tf2xla.ops import gen_xla_ops
+from tensorflow.compiler.xla import xla_data_pb2
+from tensorflow.core.framework import attr_value_pb2
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import bitwise_ops
+from tensorflow.python.ops import gen_math_ops
+from tensorflow.python.ops import gen_random_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import random_ops
+from tensorflow.python.ops import random_ops_util
+from tensorflow.python.ops import special_math_ops
+from tensorflow.python.ops.numpy_ops import np_utils
+def _broadcasting_binary_op(fn):
+    """Wraps a binary Tensorflow operator and performs XLA-style broadcasting."""
+
+    def broadcasting_binary_op_wrapper(x, y, broadcast_dims=None, name=None):
+        """Inner wrapper function."""
+        broadcast_dims = broadcast_dims or []
+        broadcast_dims = ops.convert_to_tensor(broadcast_dims, dtypes.int64)
+        x, y = gen_xla_ops.xla_broadcast_helper(x, y, broadcast_dims)
+        return fn(x, y, name=name)
+    return broadcasting_binary_op_wrapper

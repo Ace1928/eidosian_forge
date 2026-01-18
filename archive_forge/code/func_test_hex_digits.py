@@ -1,0 +1,40 @@
+import math
+import operator
+import platform
+import unittest
+from collections.abc import Collection, Sequence
+import pygame
+from pygame.colordict import THECOLORS
+def test_hex_digits(self):
+    Color = pygame.color.Color
+    self.assertEqual(Color('#00000000').r, 0)
+    self.assertEqual(Color('#10000000').r, 16)
+    self.assertEqual(Color('#20000000').r, 32)
+    self.assertEqual(Color('#30000000').r, 48)
+    self.assertEqual(Color('#40000000').r, 64)
+    self.assertEqual(Color('#50000000').r, 80)
+    self.assertEqual(Color('#60000000').r, 96)
+    self.assertEqual(Color('#70000000').r, 112)
+    self.assertEqual(Color('#80000000').r, 128)
+    self.assertEqual(Color('#90000000').r, 144)
+    self.assertEqual(Color('#A0000000').r, 160)
+    self.assertEqual(Color('#B0000000').r, 176)
+    self.assertEqual(Color('#C0000000').r, 192)
+    self.assertEqual(Color('#D0000000').r, 208)
+    self.assertEqual(Color('#E0000000').r, 224)
+    self.assertEqual(Color('#F0000000').r, 240)
+    self.assertEqual(Color('#01000000').r, 1)
+    self.assertEqual(Color('#02000000').r, 2)
+    self.assertEqual(Color('#03000000').r, 3)
+    self.assertEqual(Color('#04000000').r, 4)
+    self.assertEqual(Color('#05000000').r, 5)
+    self.assertEqual(Color('#06000000').r, 6)
+    self.assertEqual(Color('#07000000').r, 7)
+    self.assertEqual(Color('#08000000').r, 8)
+    self.assertEqual(Color('#09000000').r, 9)
+    self.assertEqual(Color('#0A000000').r, 10)
+    self.assertEqual(Color('#0B000000').r, 11)
+    self.assertEqual(Color('#0C000000').r, 12)
+    self.assertEqual(Color('#0D000000').r, 13)
+    self.assertEqual(Color('#0E000000').r, 14)
+    self.assertEqual(Color('#0F000000').r, 15)

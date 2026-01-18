@@ -1,0 +1,15 @@
+from typing import Any, Callable, Dict, Optional, Collection, Union, TYPE_CHECKING
+from .exceptions import ConfigurationError, GrammarError, assert_config
+from .utils import get_regexp_width, Serialize
+from .lexer import LexerThread, BasicLexer, ContextualLexer, Lexer
+from .parsers import earley, xearley, cyk
+from .parsers.lalr_parser import LALR_Parser
+from .tree import Tree
+from .common import LexerConf, ParserConf, _ParserArgType, _LexerArgType
+def _get_lexer_callbacks(transformer, terminals):
+    result = {}
+    for terminal in terminals:
+        callback = getattr(transformer, terminal.name, None)
+        if callback is not None:
+            result[terminal.name] = callback
+    return result

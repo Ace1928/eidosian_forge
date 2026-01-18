@@ -1,0 +1,12 @@
+from collections import OrderedDict
+from collections.abc import Iterable
+import sys
+import weakref
+import numpy as np
+import pytest
+import pyarrow as pa
+import pyarrow.compute as pc
+def test_recordbatch_take():
+    batch = pa.record_batch([pa.array([1, 2, 3, None, 5]), pa.array(['a', 'b', 'c', 'd', 'e'])], ['f1', 'f2'])
+    assert batch.take(pa.array([2, 3])).equals(batch.slice(2, 2))
+    assert batch.take(pa.array([2, None])).equals(pa.record_batch([pa.array([3, None]), pa.array(['c', None])], ['f1', 'f2']))

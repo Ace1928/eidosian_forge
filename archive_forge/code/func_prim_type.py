@@ -1,0 +1,24 @@
+from __future__ import annotations
+import builtins
+import functools
+import math
+import sys
+import warnings
+from typing import Callable, List, Optional, Sequence, Tuple, Union
+import torch
+import torch._C._onnx as _C_onnx
+import torch.nn.modules.utils
+import torch.onnx
+from torch import _C
+from torch.onnx import _constants, _deprecation, _type_utils, errors, symbolic_helper
+from torch.onnx._globals import GLOBALS
+from torch.onnx._internal import _beartype, jit_utils, registration
+from torch.types import Number
+@_onnx_symbolic('prim::type')
+@_beartype.beartype
+def prim_type(g: jit_utils.GraphContext, device_value: _C.Value, *args, **kwargs):
+    if device_value.node().kind() == 'prim::device':
+        device = jit_utils.get_device_from_value(device_value.node().input())
+        if device is not None:
+            return g.op('Constant', value_s=str(device))
+    return symbolic_helper._unimplemented('prim::type', 'Device type cannot be statically determined.', device_value)

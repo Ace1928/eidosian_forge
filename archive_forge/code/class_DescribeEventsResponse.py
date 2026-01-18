@@ -1,0 +1,14 @@
+from datetime import datetime
+from boto.compat import six
+class DescribeEventsResponse(Response):
+
+    def __init__(self, response):
+        response = response['DescribeEventsResponse']
+        super(DescribeEventsResponse, self).__init__(response)
+        response = response['DescribeEventsResult']
+        self.events = []
+        if response['Events']:
+            for member in response['Events']:
+                event = EventDescription(member)
+                self.events.append(event)
+        self.next_tokent = str(response['NextToken'])

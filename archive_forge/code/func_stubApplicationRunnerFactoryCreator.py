@@ -1,0 +1,58 @@
+import errno
+import inspect
+import os
+import pickle
+import signal
+import sys
+from io import StringIO
+from unittest import skipIf
+from zope.interface import implementer
+from zope.interface.verify import verifyObject
+from twisted import internet, logger, plugin
+from twisted.application import app, reactors, service
+from twisted.application.service import IServiceMaker
+from twisted.internet.base import ReactorBase
+from twisted.internet.defer import Deferred
+from twisted.internet.interfaces import IReactorDaemonize, _ISupportsExitSignalCapturing
+from twisted.internet.test.modulehelpers import AlternateReactor
+from twisted.internet.testing import MemoryReactor
+from twisted.logger import ILogObserver, globalLogBeginner, globalLogPublisher
+from twisted.python import util
+from twisted.python.components import Componentized
+from twisted.python.fakepwd import UserDatabase
+from twisted.python.log import ILogObserver as LegacyILogObserver, textFromEventDict
+from twisted.python.reflect import requireModule
+from twisted.python.runtime import platformType
+from twisted.python.usage import UsageError
+from twisted.scripts import twistd
+from twisted.test.test_process import MockOS
+from twisted.trial.unittest import TestCase
+def stubApplicationRunnerFactoryCreator(signum):
+    """
+    Create a factory function to instantiate a
+    StubApplicationRunnerWithSignal that will report signum as the captured
+    signal..
+
+    @param signum: The integer signal number or None
+    @type signum: C{int} or C{None}
+
+    @return: A factory function to create stub runners.
+    @rtype: stubApplicationRunnerFactory
+    """
+
+    def stubApplicationRunnerFactory(config):
+        """
+        Create a StubApplicationRunnerWithSignal using a reactor that
+        implements _ISupportsExitSignalCapturing and whose _exitSignal
+        attribute is set to signum.
+
+        @param config: The runner configuration, platform dependent.
+        @type config: L{twisted.scripts.twistd.ServerOptions}
+
+        @return: A runner to use for the test.
+        @rtype: twisted.test.test_twistd.StubApplicationRunnerWithSignal
+        """
+        runner = StubApplicationRunnerWithSignal(config)
+        runner._signalValue = signum
+        return runner
+    return stubApplicationRunnerFactory

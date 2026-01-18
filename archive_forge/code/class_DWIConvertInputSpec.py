@@ -1,0 +1,21 @@
+import os
+from ...base import (
+class DWIConvertInputSpec(CommandLineInputSpec):
+    conversionMode = traits.Enum('DicomToNrrd', 'DicomToFSL', 'NrrdToFSL', 'FSLToNrrd', desc='Determine which conversion to perform. DicomToNrrd (default): Convert DICOM series to NRRD DicomToFSL: Convert DICOM series to NIfTI File + gradient/bvalue text files NrrdToFSL: Convert DWI NRRD file to NIfTI File + gradient/bvalue text files FSLToNrrd: Convert NIfTI File + gradient/bvalue text files to NRRD file.', argstr='--conversionMode %s')
+    inputVolume = File(desc='Input DWI volume -- not used for DicomToNrrd mode.', exists=True, argstr='--inputVolume %s')
+    outputVolume = traits.Either(traits.Bool, File(), hash_files=False, desc='Output filename (.nhdr or .nrrd)', argstr='--outputVolume %s')
+    inputDicomDirectory = Directory(desc='Directory holding Dicom series', exists=True, argstr='--inputDicomDirectory %s')
+    fslNIFTIFile = File(desc='4D NIfTI file containing gradient volumes', exists=True, argstr='--fslNIFTIFile %s')
+    inputBValues = File(desc='The B Values are stored in FSL .bval text file format', exists=True, argstr='--inputBValues %s')
+    inputBVectors = File(desc='The Gradient Vectors are stored in FSL .bvec text file format', exists=True, argstr='--inputBVectors %s')
+    outputBValues = traits.Either(traits.Bool, File(), hash_files=False, desc='The B Values are stored in FSL .bval text file format (defaults to <outputVolume>.bval)', argstr='--outputBValues %s')
+    outputBVectors = traits.Either(traits.Bool, File(), hash_files=False, desc='The Gradient Vectors are stored in FSL .bvec text file format (defaults to <outputVolume>.bvec)', argstr='--outputBVectors %s')
+    fMRI = traits.Bool(desc='Output a NRRD file, but without gradients', argstr='--fMRI ')
+    writeProtocolGradientsFile = traits.Bool(desc="Write the protocol gradients to a file suffixed by '.txt' as they were specified in the procol by multiplying each diffusion gradient direction by the measurement frame.  This file is for debugging purposes only, the format is not fixed, and will likely change as debugging of new dicom formats is necessary.", argstr='--writeProtocolGradientsFile ')
+    useIdentityMeaseurementFrame = traits.Bool(desc='Adjust all the gradients so that the measurement frame is an identity matrix.', argstr='--useIdentityMeaseurementFrame ')
+    useBMatrixGradientDirections = traits.Bool(desc='Fill the nhdr header with the gradient directions and bvalues computed out of the BMatrix. Only changes behavior for Siemens data.  In some cases the standard public gradients are not properly computed.  The gradients can empirically computed from the private BMatrix fields.  In some cases the private BMatrix is consistent with the public grandients, but not in all cases, when it exists BMatrix is usually most robust.', argstr='--useBMatrixGradientDirections ')
+    outputDirectory = traits.Either(traits.Bool, Directory(), hash_files=False, desc='Directory holding the output NRRD file', argstr='--outputDirectory %s')
+    gradientVectorFile = traits.Either(traits.Bool, File(), hash_files=False, desc='Text file giving gradient vectors', argstr='--gradientVectorFile %s')
+    smallGradientThreshold = traits.Float(desc='If a gradient magnitude is greater than 0 and less than smallGradientThreshold, then DWIConvert will display an error message and quit, unless the useBMatrixGradientDirections option is set.', argstr='--smallGradientThreshold %f')
+    allowLossyConversion = traits.Bool(desc="The only supported output type is 'short'. Conversion from images of a different type may cause data loss due to rounding or truncation. Use with caution!", argstr='--allowLossyConversion ')
+    transposeInputBVectors = traits.Bool(desc='FSL input BVectors are expected to be encoded in the input file as one vector per line. If it is not the case, use this option to transpose the file as it is read.', argstr='--transposeInputBVectors ')

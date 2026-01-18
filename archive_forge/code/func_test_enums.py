@@ -1,0 +1,25 @@
+from collections import namedtuple
+import gc
+import os
+import operator
+import sys
+import weakref
+import numpy as np
+from numba.core import types, typing, errors, sigutils
+from numba.core.types.abstract import _typecache
+from numba.core.types.functions import _header_lead
+from numba.core.typing.templates import make_overload_template
+from numba import jit, njit, typeof
+from numba.core.extending import (overload, register_model, models, unbox,
+from numba.tests.support import TestCase, create_temp_module
+from numba.tests.enum_usecases import Color, Shake, Shape
+import unittest
+from numba.np import numpy_support
+from numba.core import types
+def test_enums(self):
+    ty1 = types.EnumMember(Color, types.int32)
+    self.check_pickling(ty1)
+    ty2 = types.EnumMember(Shake, types.int64)
+    self.check_pickling(ty2)
+    ty3 = types.IntEnumMember(Shape, types.int64)
+    self.check_pickling(ty3)

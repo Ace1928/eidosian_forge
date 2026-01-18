@@ -1,0 +1,8 @@
+from functools import partial
+from pytest import raises
+from ..scalars import String
+from ..structures import List, NonNull
+from .utils import MyLazyType
+def test_nonnull_with_string_type():
+    field = NonNull('graphene.types.tests.utils.MyLazyType')
+    assert field.of_type == MyLazyType

@@ -1,0 +1,323 @@
+import boto
+import re
+from boto.utils import find_class
+import uuid
+from boto.sdb.db.key import Key
+from boto.sdb.db.blob import Blob
+from boto.sdb.db.property import ListProperty, MapProperty
+from datetime import datetime, date, time
+from boto.exception import SDBPersistenceError, S3ResponseError
+from boto.compat import map, six, long_type
+class SDBManager(object):
+
+    def __init__(self, cls, db_name, db_user, db_passwd, db_host, db_port, db_table, ddl_dir, enable_ssl, consistent=None):
+        self.cls = cls
+        self.db_name = db_name
+        self.db_user = db_user
+        self.db_passwd = db_passwd
+        self.db_host = db_host
+        self.db_port = db_port
+        self.db_table = db_table
+        self.ddl_dir = ddl_dir
+        self.enable_ssl = enable_ssl
+        self.s3 = None
+        self.bucket = None
+        self.converter = SDBConverter(self)
+        self._sdb = None
+        self._domain = None
+        if consistent is None and hasattr(cls, '__consistent__'):
+            consistent = cls.__consistent__
+        self.consistent = consistent
+
+    @property
+    def sdb(self):
+        if self._sdb is None:
+            self._connect()
+        return self._sdb
+
+    @property
+    def domain(self):
+        if self._domain is None:
+            self._connect()
+        return self._domain
+
+    def _connect(self):
+        args = dict(aws_access_key_id=self.db_user, aws_secret_access_key=self.db_passwd, is_secure=self.enable_ssl)
+        try:
+            region = [x for x in boto.sdb.regions() if x.endpoint == self.db_host][0]
+            args['region'] = region
+        except IndexError:
+            pass
+        self._sdb = boto.connect_sdb(**args)
+        self._domain = self._sdb.lookup(self.db_name, validate=False)
+        if not self._domain:
+            self._domain = self._sdb.create_domain(self.db_name)
+
+    def _object_lister(self, cls, query_lister):
+        for item in query_lister:
+            obj = self.get_object(cls, item.name, item)
+            if obj:
+                yield obj
+
+    def encode_value(self, prop, value):
+        if value is None:
+            return None
+        if not prop:
+            return str(value)
+        return self.converter.encode_prop(prop, value)
+
+    def decode_value(self, prop, value):
+        return self.converter.decode_prop(prop, value)
+
+    def get_s3_connection(self):
+        if not self.s3:
+            self.s3 = boto.connect_s3(self.db_user, self.db_passwd)
+        return self.s3
+
+    def get_blob_bucket(self, bucket_name=None):
+        s3 = self.get_s3_connection()
+        bucket_name = '%s-%s' % (s3.aws_access_key_id, self.domain.name)
+        bucket_name = bucket_name.lower()
+        try:
+            self.bucket = s3.get_bucket(bucket_name)
+        except:
+            self.bucket = s3.create_bucket(bucket_name)
+        return self.bucket
+
+    def load_object(self, obj):
+        if not obj._loaded:
+            a = self.domain.get_attributes(obj.id, consistent_read=self.consistent)
+            if '__type__' in a:
+                for prop in obj.properties(hidden=False):
+                    if prop.name in a:
+                        value = self.decode_value(prop, a[prop.name])
+                        value = prop.make_value_from_datastore(value)
+                        try:
+                            setattr(obj, prop.name, value)
+                        except Exception as e:
+                            boto.log.exception(e)
+            obj._loaded = True
+
+    def get_object(self, cls, id, a=None):
+        obj = None
+        if not a:
+            a = self.domain.get_attributes(id, consistent_read=self.consistent)
+        if '__type__' in a:
+            if not cls or a['__type__'] != cls.__name__:
+                cls = find_class(a['__module__'], a['__type__'])
+            if cls:
+                params = {}
+                for prop in cls.properties(hidden=False):
+                    if prop.name in a:
+                        value = self.decode_value(prop, a[prop.name])
+                        value = prop.make_value_from_datastore(value)
+                        params[prop.name] = value
+                obj = cls(id, **params)
+                obj._loaded = True
+            else:
+                s = '(%s) class %s.%s not found' % (id, a['__module__'], a['__type__'])
+                boto.log.info('sdbmanager: %s' % s)
+        return obj
+
+    def get_object_from_id(self, id):
+        return self.get_object(None, id)
+
+    def query(self, query):
+        query_str = 'select * from `%s` %s' % (self.domain.name, self._build_filter_part(query.model_class, query.filters, query.sort_by, query.select))
+        if query.limit:
+            query_str += ' limit %s' % query.limit
+        rs = self.domain.select(query_str, max_items=query.limit, next_token=query.next_token)
+        query.rs = rs
+        return self._object_lister(query.model_class, rs)
+
+    def count(self, cls, filters, quick=True, sort_by=None, select=None):
+        """
+        Get the number of results that would
+        be returned in this query
+        """
+        query = 'select count(*) from `%s` %s' % (self.domain.name, self._build_filter_part(cls, filters, sort_by, select))
+        count = 0
+        for row in self.domain.select(query):
+            count += int(row['Count'])
+            if quick:
+                return count
+        return count
+
+    def _build_filter(self, property, name, op, val):
+        if name == '__id__':
+            name = 'itemName()'
+        if name != 'itemName()':
+            name = '`%s`' % name
+        if val is None:
+            if op in ('is', '='):
+                return '%(name)s is null' % {'name': name}
+            elif op in ('is not', '!='):
+                return '%s is not null' % name
+            else:
+                val = ''
+        if property.__class__ == ListProperty:
+            if op in ('is', '='):
+                op = 'like'
+            elif op in ('!=', 'not'):
+                op = 'not like'
+            if not (op in ['like', 'not like'] and val.startswith('%')):
+                val = '%%:%s' % val
+        return "%s %s '%s'" % (name, op, val.replace("'", "''"))
+
+    def _build_filter_part(self, cls, filters, order_by=None, select=None):
+        """
+        Build the filter part
+        """
+        import types
+        query_parts = []
+        order_by_filtered = False
+        if order_by:
+            if order_by[0] == '-':
+                order_by_method = 'DESC'
+                order_by = order_by[1:]
+            else:
+                order_by_method = 'ASC'
+        if select:
+            if order_by and order_by in select:
+                order_by_filtered = True
+            query_parts.append('(%s)' % select)
+        if isinstance(filters, six.string_types):
+            query = "WHERE %s AND `__type__` = '%s'" % (filters, cls.__name__)
+            if order_by in ['__id__', 'itemName()']:
+                query += ' ORDER BY itemName() %s' % order_by_method
+            elif order_by is not None:
+                query += ' ORDER BY `%s` %s' % (order_by, order_by_method)
+            return query
+        for filter in filters:
+            filter_parts = []
+            filter_props = filter[0]
+            if not isinstance(filter_props, list):
+                filter_props = [filter_props]
+            for filter_prop in filter_props:
+                name, op = filter_prop.strip().split(' ', 1)
+                value = filter[1]
+                property = cls.find_property(name)
+                if name == order_by:
+                    order_by_filtered = True
+                if types.TypeType(value) == list:
+                    filter_parts_sub = []
+                    for val in value:
+                        val = self.encode_value(property, val)
+                        if isinstance(val, list):
+                            for v in val:
+                                filter_parts_sub.append(self._build_filter(property, name, op, v))
+                        else:
+                            filter_parts_sub.append(self._build_filter(property, name, op, val))
+                    filter_parts.append('(%s)' % ' OR '.join(filter_parts_sub))
+                else:
+                    val = self.encode_value(property, value)
+                    if isinstance(val, list):
+                        for v in val:
+                            filter_parts.append(self._build_filter(property, name, op, v))
+                    else:
+                        filter_parts.append(self._build_filter(property, name, op, val))
+            query_parts.append('(%s)' % ' or '.join(filter_parts))
+        type_query = "(`__type__` = '%s'" % cls.__name__
+        for subclass in self._get_all_decendents(cls).keys():
+            type_query += " or `__type__` = '%s'" % subclass
+        type_query += ')'
+        query_parts.append(type_query)
+        order_by_query = ''
+        if order_by:
+            if not order_by_filtered:
+                query_parts.append("`%s` LIKE '%%'" % order_by)
+            if order_by in ['__id__', 'itemName()']:
+                order_by_query = ' ORDER BY itemName() %s' % order_by_method
+            else:
+                order_by_query = ' ORDER BY `%s` %s' % (order_by, order_by_method)
+        if len(query_parts) > 0:
+            return 'WHERE %s %s' % (' AND '.join(query_parts), order_by_query)
+        else:
+            return ''
+
+    def _get_all_decendents(self, cls):
+        """Get all decendents for a given class"""
+        decendents = {}
+        for sc in cls.__sub_classes__:
+            decendents[sc.__name__] = sc
+            decendents.update(self._get_all_decendents(sc))
+        return decendents
+
+    def query_gql(self, query_string, *args, **kwds):
+        raise NotImplementedError('GQL queries not supported in SimpleDB')
+
+    def save_object(self, obj, expected_value=None):
+        if not obj.id:
+            obj.id = str(uuid.uuid4())
+        attrs = {'__type__': obj.__class__.__name__, '__module__': obj.__class__.__module__, '__lineage__': obj.get_lineage()}
+        del_attrs = []
+        for property in obj.properties(hidden=False):
+            value = property.get_value_for_datastore(obj)
+            if value is not None:
+                value = self.encode_value(property, value)
+            if value == []:
+                value = None
+            if value is None:
+                del_attrs.append(property.name)
+                continue
+            attrs[property.name] = value
+            if property.unique:
+                try:
+                    args = {property.name: value}
+                    obj2 = next(obj.find(**args))
+                    if obj2.id != obj.id:
+                        raise SDBPersistenceError('Error: %s must be unique!' % property.name)
+                except StopIteration:
+                    pass
+        if expected_value:
+            prop = obj.find_property(expected_value[0])
+            v = expected_value[1]
+            if v is not None and (not isinstance(v, bool)):
+                v = self.encode_value(prop, v)
+            expected_value[1] = v
+        self.domain.put_attributes(obj.id, attrs, replace=True, expected_value=expected_value)
+        if len(del_attrs) > 0:
+            self.domain.delete_attributes(obj.id, del_attrs)
+        return obj
+
+    def delete_object(self, obj):
+        self.domain.delete_attributes(obj.id)
+
+    def set_property(self, prop, obj, name, value):
+        setattr(obj, name, value)
+        value = prop.get_value_for_datastore(obj)
+        value = self.encode_value(prop, value)
+        if prop.unique:
+            try:
+                args = {prop.name: value}
+                obj2 = next(obj.find(**args))
+                if obj2.id != obj.id:
+                    raise SDBPersistenceError('Error: %s must be unique!' % prop.name)
+            except StopIteration:
+                pass
+        self.domain.put_attributes(obj.id, {name: value}, replace=True)
+
+    def get_property(self, prop, obj, name):
+        a = self.domain.get_attributes(obj.id, consistent_read=self.consistent)
+        if name in a:
+            value = self.decode_value(prop, a[name])
+            value = prop.make_value_from_datastore(value)
+            setattr(obj, prop.name, value)
+            return value
+        raise AttributeError('%s not found' % name)
+
+    def set_key_value(self, obj, name, value):
+        self.domain.put_attributes(obj.id, {name: value}, replace=True)
+
+    def delete_key_value(self, obj, name):
+        self.domain.delete_attributes(obj.id, name)
+
+    def get_key_value(self, obj, name):
+        a = self.domain.get_attributes(obj.id, name, consistent_read=self.consistent)
+        if name in a:
+            return a[name]
+        else:
+            return None
+
+    def get_raw_item(self, obj):
+        return self.domain.get_item(obj.id)

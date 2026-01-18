@@ -1,0 +1,15 @@
+import re
+import warnings
+from Bio import BiopythonParserWarning
+from Bio.Seq import Seq
+from Bio.SeqFeature import Location
+from Bio.SeqFeature import Reference
+from Bio.SeqFeature import SeqFeature
+from Bio.SeqFeature import SimpleLocation
+from Bio.SeqFeature import LocationParserError
+from .utils import FeatureValueCleaner
+from .Scanner import GenBankScanner
+def residue_type(self, content):
+    if 'dna' in content or 'rna' in content:
+        warnings.warn(f'Invalid seq_type ({content}): DNA/RNA should be uppercase.', BiopythonParserWarning)
+    self.data.residue_type = content

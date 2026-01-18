@@ -1,0 +1,12 @@
+import io
+import xml.dom
+from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
+from xml.dom.minicompat import *
+from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
+def createTextNode(self, data):
+    if not isinstance(data, str):
+        raise TypeError('node contents must be a string')
+    t = Text()
+    t.data = data
+    t.ownerDocument = self
+    return t

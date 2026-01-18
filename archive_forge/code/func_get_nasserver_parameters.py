@@ -1,0 +1,9 @@
+from __future__ import (absolute_import, division, print_function)
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.dellemc.unity.plugins.module_utils.storage.dell \
+def get_nasserver_parameters():
+    """
+    This method provides parameters required for the ansible NAS Server
+    modules on Unity
+    """
+    return dict(nas_server_name=dict(), nas_server_id=dict(), nas_server_new_name=dict(), default_unix_user=dict(), default_windows_user=dict(), current_unix_directory_service=dict(choices=['NIS', 'LDAP', 'LOCAL_THEN_NIS', 'LOCAL_THEN_LDAP', 'NONE', 'LOCAL']), is_replication_destination=dict(type='bool'), is_backup_only=dict(type='bool'), is_multiprotocol_enabled=dict(type='bool'), allow_unmapped_user=dict(type='bool'), enable_windows_to_unix_username_mapping=dict(type='bool'), is_packet_reflect_enabled=dict(type='bool'), replication_params=dict(type='dict', options=dict(destination_nas_server_name=dict(type='str'), replication_mode=dict(type='str', choices=['asynchronous', 'manual']), rpo=dict(type='int'), replication_type=dict(type='str', choices=['local', 'remote']), remote_system=dict(type='dict', options=dict(remote_system_host=dict(type='str', required=True, no_log=True), remote_system_verifycert=dict(type='bool', required=False, default=True), remote_system_username=dict(type='str', required=True), remote_system_password=dict(type='str', required=True, no_log=True), remote_system_port=dict(type='int', required=False, default=443, no_log=True))), destination_pool_name=dict(type='str'), destination_pool_id=dict(type='str'), destination_sp=dict(type='str', choices=['SPA', 'SPB']), is_backup=dict(type='bool'), replication_name=dict(type='str'), new_replication_name=dict(type='str'))), replication_reuse_resource=dict(type='bool'), replication_state=dict(type='str', choices=['enable', 'disable']), state=dict(required=True, choices=['present', 'absent'], type='str'))

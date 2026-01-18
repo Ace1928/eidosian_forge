@@ -1,0 +1,18 @@
+import sys
+import unittest
+import Cython.Compiler.StringEncoding as StringEncoding
+def test_string_contains_lone_surrogates(self):
+    self.assertFalse(StringEncoding.string_contains_lone_surrogates(u'abc'))
+    self.assertFalse(StringEncoding.string_contains_lone_surrogates(u'ꯍ'))
+    self.assertFalse(StringEncoding.string_contains_lone_surrogates(u'☃'))
+    if sys.version_info[0] != 2:
+        self.assertTrue(StringEncoding.string_contains_lone_surrogates(u'\ud800\udfff'))
+    obfuscated_surrogate_pair = (u'\udfff' + '\ud800')[::-1]
+    if sys.version_info[0] == 2 and sys.maxunicode == 65565:
+        self.assertFalse(StringEncoding.string_contains_lone_surrogates(obfuscated_surrogate_pair))
+    else:
+        self.assertTrue(StringEncoding.string_contains_lone_surrogates(obfuscated_surrogate_pair))
+    self.assertTrue(StringEncoding.string_contains_lone_surrogates(u'\ud800'))
+    self.assertTrue(StringEncoding.string_contains_lone_surrogates(u'\udfff'))
+    self.assertTrue(StringEncoding.string_contains_lone_surrogates(u'\udfff\ud800'))
+    self.assertTrue(StringEncoding.string_contains_lone_surrogates(u'\ud800x\udfff'))

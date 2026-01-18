@@ -1,0 +1,15 @@
+from yowsup.layers import YowProtocolLayer
+from .protocolentities import ImageDownloadableMediaMessageProtocolEntity
+from .protocolentities import AudioDownloadableMediaMessageProtocolEntity
+from .protocolentities import VideoDownloadableMediaMessageProtocolEntity
+from .protocolentities import DocumentDownloadableMediaMessageProtocolEntity
+from .protocolentities import StickerDownloadableMediaMessageProtocolEntity
+from .protocolentities import LocationMediaMessageProtocolEntity
+from .protocolentities import ContactMediaMessageProtocolEntity
+from .protocolentities import ResultRequestUploadIqProtocolEntity
+from .protocolentities import MediaMessageProtocolEntity
+from .protocolentities import ExtendedTextMediaMessageProtocolEntity
+from yowsup.layers.protocol_iq.protocolentities import IqProtocolEntity, ErrorIqProtocolEntity
+import logging
+def onRequestUploadSuccess(self, resultNode, requestUploadEntity):
+    self.toUpper(ResultRequestUploadIqProtocolEntity.fromProtocolTreeNode(resultNode))

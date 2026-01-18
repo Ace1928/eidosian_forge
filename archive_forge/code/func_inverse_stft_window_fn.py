@@ -1,0 +1,68 @@
+import numpy as np
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops.signal import dct_ops
+from tensorflow.python.ops.signal import fft_ops
+from tensorflow.python.ops.signal import reconstruction_ops
+from tensorflow.python.ops.signal import shape_ops
+from tensorflow.python.ops.signal import window_ops
+from tensorflow.python.util import dispatch
+from tensorflow.python.util.tf_export import tf_export
+@tf_export('signal.inverse_stft_window_fn')
+@dispatch.add_dispatch_support
+def inverse_stft_window_fn(frame_step, forward_window_fn=window_ops.hann_window, name=None):
+    """Generates a window function that can be used in `inverse_stft`.
+
+  Constructs a window that is equal to the forward window with a further
+  pointwise amplitude correction.  `inverse_stft_window_fn` is equivalent to
+  `forward_window_fn` in the case where it would produce an exact inverse.
+
+  See examples in `inverse_stft` documentation for usage.
+
+  Args:
+    frame_step: An integer scalar `Tensor`. The number of samples to step.
+    forward_window_fn: window_fn used in the forward transform, `stft`.
+    name: An optional name for the operation.
+
+  Returns:
+    A callable that takes a window length and a `dtype` keyword argument and
+      returns a `[window_length]` `Tensor` of samples in the provided datatype.
+      The returned window is suitable for reconstructing original waveform in
+      inverse_stft.
+  """
+
+    def inverse_stft_window_fn_inner(frame_length, dtype):
+        """Computes a window that can be used in `inverse_stft`.
+
+    Args:
+      frame_length: An integer scalar `Tensor`. The window length in samples.
+      dtype: Data type of waveform passed to `stft`.
+
+    Returns:
+      A window suitable for reconstructing original waveform in `inverse_stft`.
+
+    Raises:
+      ValueError: If `frame_length` is not scalar, `forward_window_fn` is not a
+      callable that takes a window length and a `dtype` keyword argument and
+      returns a `[window_length]` `Tensor` of samples in the provided datatype
+      `frame_step` is not scalar, or `frame_step` is not scalar.
+    """
+        with ops.name_scope(name, 'inverse_stft_window_fn', [forward_window_fn]):
+            frame_step_ = ops.convert_to_tensor(frame_step, name='frame_step')
+            frame_step_.shape.assert_has_rank(0)
+            frame_length = ops.convert_to_tensor(frame_length, name='frame_length')
+            frame_length.shape.assert_has_rank(0)
+            forward_window = forward_window_fn(frame_length, dtype=dtype)
+            denom = math_ops.square(forward_window)
+            overlaps = -(-frame_length // frame_step_)
+            denom = array_ops.pad(denom, [(0, overlaps * frame_step_ - frame_length)])
+            denom = array_ops.reshape(denom, [overlaps, frame_step_])
+            denom = math_ops.reduce_sum(denom, 0, keepdims=True)
+            denom = array_ops.tile(denom, [overlaps, 1])
+            denom = array_ops.reshape(denom, [overlaps * frame_step_])
+            return forward_window / denom[:frame_length]
+    return inverse_stft_window_fn_inner

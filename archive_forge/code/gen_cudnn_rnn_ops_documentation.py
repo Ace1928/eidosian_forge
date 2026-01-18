@@ -1,0 +1,80 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+A RNN backed by cuDNN.
+
+  Computes the RNN from the input and initial states, with respect to the params
+  buffer. Accepts one extra input "sequence_lengths" than CudnnRNN.
+
+  rnn_mode: Indicates the type of the RNN model.
+  input_mode: Indicates whether there is a linear projection between the input and
+    the actual computation before the first layer. 'skip_input' is only allowed
+    when input_size == num_units; 'auto_select' implies 'skip_input' when
+    input_size == num_units; otherwise, it implies 'linear_input'.
+  direction: Indicates whether a bidirectional model will be used. Should be
+    "unidirectional" or "bidirectional".
+  dropout: Dropout probability. When set to 0., dropout is disabled.
+  seed: The 1st part of a seed to initialize dropout.
+  seed2: The 2nd part of a seed to initialize dropout.
+  input: If time_major is true, this is a 3-D tensor with the shape of
+      [seq_length, batch_size, input_size]. If time_major is false, the shape is
+      [batch_size, seq_length, input_size].
+  input_h: If time_major is true, this is a 3-D tensor with the shape of
+      [num_layer * dir, batch_size, num_units]. If time_major is false, the shape
+      is [batch_size, num_layer * dir, num_units].
+  input_c: For LSTM, a 3-D tensor with the shape of
+      [num_layer * dir, batch, num_units]. For other models, it is ignored.
+  params: A 1-D tensor that contains the weights and biases in an opaque layout.
+      The size must be created through CudnnRNNParamsSize, and initialized
+      separately. Note that they might not be compatible across different
+      generations. So it is a good idea to save and restore
+  sequence_lengths: a vector of lengths of each input sequence.
+  output: If time_major is true, this is a 3-D tensor with the shape of
+      [seq_length, batch_size, dir * num_units]. If time_major is false, the
+      shape is [batch_size, seq_length, dir * num_units].
+  output_h: The same shape has input_h.
+  output_c: The same shape as input_c for LSTM. An empty tensor for other models.
+  is_training: Indicates whether this operation is used for inference or
+    training.
+  time_major: Indicates whether the input/output format is time major or batch
+      major.
+  reserve_space: An opaque tensor that can be used in backprop calculation. It
+    is only produced if is_training is true.
+
+  Args:
+    input: A `Tensor`. Must be one of the following types: `bfloat16`, `half`, `float32`, `float64`.
+    input_h: A `Tensor`. Must have the same type as `input`.
+    input_c: A `Tensor`. Must have the same type as `input`.
+    params: A `Tensor`. Must have the same type as `input`.
+    sequence_lengths: A `Tensor` of type `int32`.
+    rnn_mode: An optional `string` from: `"rnn_relu", "rnn_tanh", "lstm", "gru"`. Defaults to `"lstm"`.
+    input_mode: An optional `string` from: `"linear_input", "skip_input", "auto_select"`. Defaults to `"linear_input"`.
+    direction: An optional `string` from: `"unidirectional", "bidirectional"`. Defaults to `"unidirectional"`.
+    dropout: An optional `float`. Defaults to `0`.
+    seed: An optional `int`. Defaults to `0`.
+    seed2: An optional `int`. Defaults to `0`.
+    num_proj: An optional `int`. Defaults to `0`.
+    is_training: An optional `bool`. Defaults to `True`.
+    time_major: An optional `bool`. Defaults to `True`.
+    name: A name for the operation (optional).
+
+  Returns:
+    A tuple of `Tensor` objects (output, output_h, output_c, reserve_space, host_reserved).
+
+    output: A `Tensor`. Has the same type as `input`.
+    output_h: A `Tensor`. Has the same type as `input`.
+    output_c: A `Tensor`. Has the same type as `input`.
+    reserve_space: A `Tensor`. Has the same type as `input`.
+    host_reserved: A `Tensor` of type `int8`.
+  

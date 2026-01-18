@@ -1,0 +1,51 @@
+from __future__ import (absolute_import, division, print_function)
+import cmd
+import functools
+import os
+import pprint
+import queue
+import sys
+import threading
+import time
+import typing as t
+from collections import deque
+from multiprocessing import Lock
+from jinja2.exceptions import UndefinedError
+from ansible import constants as C
+from ansible import context
+from ansible.errors import AnsibleError, AnsibleFileNotFound, AnsibleUndefinedVariable, AnsibleParserError
+from ansible.executor import action_write_locks
+from ansible.executor.play_iterator import IteratingStates, PlayIterator
+from ansible.executor.process.worker import WorkerProcess
+from ansible.executor.task_result import TaskResult
+from ansible.executor.task_queue_manager import CallbackSend, DisplaySend, PromptSend
+from ansible.module_utils.six import string_types
+from ansible.module_utils.common.text.converters import to_text
+from ansible.module_utils.connection import Connection, ConnectionError
+from ansible.playbook.conditional import Conditional
+from ansible.playbook.handler import Handler
+from ansible.playbook.helpers import load_list_of_blocks
+from ansible.playbook.task import Task
+from ansible.playbook.task_include import TaskInclude
+from ansible.plugins import loader as plugin_loader
+from ansible.template import Templar
+from ansible.utils.display import Display
+from ansible.utils.fqcn import add_internal_fqcns
+from ansible.utils.unsafe_proxy import wrap_var
+from ansible.utils.sentinel import Sentinel
+from ansible.utils.vars import combine_vars, isidentifier
+from ansible.vars.clean import strip_internal_keys, module_response_deepcopy
+def _get_item_vars(result, task):
+    item_vars = {}
+    if task.loop or task.loop_with:
+        loop_var = result.get('ansible_loop_var', 'item')
+        index_var = result.get('ansible_index_var')
+        if loop_var in result:
+            item_vars[loop_var] = result[loop_var]
+        if index_var and index_var in result:
+            item_vars[index_var] = result[index_var]
+        if '_ansible_item_label' in result:
+            item_vars['_ansible_item_label'] = result['_ansible_item_label']
+        if 'ansible_loop' in result:
+            item_vars['ansible_loop'] = result['ansible_loop']
+    return item_vars

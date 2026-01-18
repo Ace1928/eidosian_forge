@@ -1,0 +1,107 @@
+# 🔥 Eidosian-optimized .gitignore 🔥
+
+# ╔══ Languages ══════════════════════════╗
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.npm/
+.yarn/
+.pnp.*
+package-lock.json
+.node_repl_history
+.env
+.env.test
+
+# Go
+*.o
+*.a
+*.so
+_obj
+_test
+*.exe
+*.test
+*.prof
+*.out
+.glide/
+vendor/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# ╔══ Environments ═══════════════════════╗
+.env
+.venv
+env/
+venv/
+ENV/
+.virtualenv/
+
+# ╔══ Editors ═════════════════════════════╗
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+.idea_modules/
+out/
+
+# ╔══ OS Files ════════════════════════════╗
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ╔══ Logs & Databases ═══════════════════╗
+*.log
+*.sql
+*.sqlite
+*.db
+
+# ╔══ Temp Files ═══════════════════════════╗
+*~
+*.swp
+*.swo
+*.tmp
+*.bak

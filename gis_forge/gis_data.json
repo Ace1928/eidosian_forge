@@ -1,0 +1,9 @@
+{
+  "forgengine": {
+    "memory": "memory.json",
+    "think": 30,
+    "model": "12",
+    "max_tokens": 512,
+    "adapter": ""
+  }
+}

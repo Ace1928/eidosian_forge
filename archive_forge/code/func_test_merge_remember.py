@@ -1,0 +1,51 @@
+import doctest
+import os
+from testtools import matchers
+from breezy import (branch, controldir, merge_directive, osutils, tests,
+from breezy.bzr import conflicts
+from breezy.tests import scenarios, script
+def test_merge_remember(self):
+    """Merge changes from one branch to another, test submit location."""
+    tree_a = self.make_branch_and_tree('branch_a')
+    branch_a = tree_a.branch
+    self.build_tree(['branch_a/a'])
+    tree_a.add('a')
+    tree_a.commit('commit a')
+    branch_b = branch_a.controldir.sprout('branch_b').open_branch()
+    tree_b = branch_b.controldir.open_workingtree()
+    branch_c = branch_a.controldir.sprout('branch_c').open_branch()
+    tree_c = branch_c.controldir.open_workingtree()
+    self.build_tree(['branch_a/b'])
+    tree_a.add('b')
+    tree_a.commit('commit b')
+    self.build_tree(['branch_c/c'])
+    tree_c.add('c')
+    tree_c.commit('commit c')
+    parent = branch_b.get_parent()
+    branch_b.set_parent(None)
+    self.assertEqual(None, branch_b.get_parent())
+    out = self.run_bzr('merge', retcode=3, working_dir='branch_b')
+    self.assertEqual(out, ('', 'brz: ERROR: No location specified or remembered\n'))
+    self.build_tree(['branch_b/d'])
+    tree_b.add('d')
+    self.run_bzr_error(['Working tree ".*" has uncommitted changes'], 'merge', working_dir='branch_b')
+    tree_b.commit('commit d')
+    out, err = self.run_bzr('merge ../branch_a', working_dir='branch_b')
+    base = urlutils.local_path_from_url(branch_a.base)
+    self.assertEndsWith(err, '+N  b\nAll changes applied successfully.\n')
+    branch_b = branch_b.controldir.open_branch()
+    self.assertEqual(osutils.abspath(branch_b.get_submit_branch()), osutils.abspath(parent))
+    self.build_tree(['branch_b/e'])
+    tree_b.add('e')
+    tree_b.commit('commit e')
+    out, err = self.run_bzr('merge', working_dir='branch_b')
+    self.assertStartsWith(err, 'Merging from remembered submit location {}\n'.format(base))
+    tree_b = branch_b.controldir.open_workingtree()
+    tree_b.commit('merge branch_a')
+    out, err = self.run_bzr('merge ../branch_c --remember', working_dir='branch_b')
+    self.assertEqual(out, '')
+    self.assertEqual(err, '+N  c\nAll changes applied successfully.\n')
+    branch_b = branch_b.controldir.open_branch()
+    self.assertEqual(osutils.abspath(branch_b.get_submit_branch()), osutils.abspath(branch_c.controldir.root_transport.base))
+    tree_b = branch_b.controldir.open_workingtree()
+    tree_b.commit('merge branch_c')

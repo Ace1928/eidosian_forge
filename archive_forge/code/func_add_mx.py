@@ -1,0 +1,12 @@
+import copy
+from boto.exception import TooManyRecordsException
+from boto.route53.record import ResourceRecordSets
+from boto.route53.status import Status
+def add_mx(self, name, records, ttl=None, identifier=None, comment=''):
+    """
+        Add a new MX record to this Zone.  See _new_record for
+        parameter documentation.  Returns a Status object.
+        """
+    ttl = ttl or default_ttl
+    records = self.route53connection._make_qualified(records)
+    return self.add_record(resource_type='MX', name=name, value=records, ttl=ttl, identifier=identifier, comment=comment)

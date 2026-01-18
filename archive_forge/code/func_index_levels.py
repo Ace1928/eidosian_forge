@@ -1,0 +1,9 @@
+from __future__ import annotations
+from abc import (
+from typing import (
+import numpy as np
+from pandas.core.dtypes.generic import ABCMultiIndex
+@property
+def index_levels(self) -> int:
+    """Integer number of levels in index."""
+    return self.frame.index.nlevels

@@ -1,0 +1,220 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools,enumitem,geometry,hyperref,algorithm,algpseudocode}
+\geometry{letterpaper, margin=1in}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Module F: Deep Knowledge Graphs System (Base and Personal) \\ 
+\large Part of the Eidos Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+This module rigorously defines the \emph{Deep Knowledge Graphs System} of the Eidos framework, which integrates a dual-layer knowledge representation. The first layer, the \emph{Base Knowledge Graph (BKG)}, is constructed from the static, foundational vocabulary and tokenization system and encodes intrinsic semantic, syntactic, and relational information. The second layer, the \emph{Personal Knowledge Graph (PKG)}, dynamically augments the base graph by incorporating adaptive, real-time updates based on model interactions, user feedback, and domain-specific signals. A fusion operator integrates these layers into a unified knowledge graph, enabling robust, scalable, and continuously adaptive knowledge representations for downstream processing. This document details the formal definitions, algorithmic constructions, theoretical guarantees, and integration strategies for this system.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction and Motivation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In modern natural language and multimodal processing systems, representing the relationships between tokens is crucial for high-level reasoning and understanding. The \emph{Deep Knowledge Graphs System} provides such a representation by constructing two distinct yet interrelated graphs:
+\begin{enumerate}[label=(\alph*)]
+    \item The \textbf{Base Knowledge Graph (BKG)} captures fundamental relationships (e.g., semantic, syntactic, and lexical associations) derived from a static, pre-defined vocabulary.
+    \item The \textbf{Personal Knowledge Graph (PKG)} captures dynamic, adaptive relationships that evolve in real time based on contextual and usage-specific signals.
+\end{enumerate}
+These two layers are integrated via a \emph{fusion operator} to form a unified knowledge graph that supports downstream tasks such as contextual embedding refinement, inference in deep architectures, and continual learning. The dual-layer design ensures both stability (through the base graph) and adaptability (through the personal graph).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries and Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We assume the existence of the complete vocabulary \( \mathcal{V} \) as defined in Module D. In particular:
+\begin{itemize}[label=\(\bullet\)]
+    \item Each token \( t \in \mathcal{V} \) is represented as 
+    \[
+      t = \bigl(u,\, \pi,\, \chi\bigr),
+    \]
+    where \( u \) is the underlying unit (a string or symbol), \( \pi \in \Pi \subseteq \mathbb{R}^{d_\pi} \) encodes intrinsic properties, and \( \chi \in \mathbb{R}^{d_\chi} \) contains contextual statistics.
+    \item A unique identifier mapping is provided by 
+    \[
+      \eta: \mathcal{V} \to \mathbb{N},
+    \]
+    so that \( \operatorname{ID}(t) = \eta(t) \).
+\end{itemize}
+For the knowledge graphs, we introduce the following additional notation:
+\begin{itemize}[label=\(\bullet\)]
+    \item \(\mathcal{G}_{\mathrm{BKG}} = (\mathcal{N}_{\mathrm{BKG}}, \mathcal{E}_{\mathrm{BKG}})\): the Base Knowledge Graph.
+    \item \(\mathcal{G}_{\mathrm{PKG}} = (\mathcal{N}_{\mathrm{PKG}}, \mathcal{E}_{\mathrm{PKG}})\): the Personal Knowledge Graph.
+    \item \(\mathcal{G}_{\mathrm{Unified}}\): the unified knowledge graph resulting from the fusion of the BKG and PKG.
+    \item \( \rho_{\mathrm{base}}: \mathcal{V} \times \mathcal{V} \to \mathcal{P}(\mathcal{R}_{\mathrm{base}}) \) is a relation function for the base graph, where \( \mathcal{R}_{\mathrm{base}} \) denotes the set of relation types (e.g., synonymy, hypernymy, syntactic dependency).
+    \item \( \rho_{\mathrm{personal}}: \mathcal{V} \times \mathcal{V} \times \Xi \to \mathcal{P}(\mathcal{R}_{\mathrm{personal}}) \) is a relation function for the personal graph, with \(\Xi\) representing adaptive, contextual parameters.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Definitions and Mathematical Formulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Definition F.1 (Base Knowledge Graph)}
+The \emph{Base Knowledge Graph} is defined as:
+\[
+\mathcal{G}_{\mathrm{BKG}} = \bigl( \mathcal{N}_{\mathrm{BKG}},\, \mathcal{E}_{\mathrm{BKG}} \bigr),
+\]
+where:
+\begin{itemize}[label=\(\circ\)]
+    \item \(\mathcal{N}_{\mathrm{BKG}} = \{ n_t \mid t \in \mathcal{V} \}\) is the set of nodes, with each node \( n_t \) corresponding to a token \( t \) and associated with its base embedding \( E_{\mathrm{B}}(t) \in \mathbb{R}^{d_E} \).
+    \item \(\mathcal{E}_{\mathrm{BKG}}\) is the set of edges defined by a relation function:
+    \[
+      \rho_{\mathrm{base}}: \mathcal{V} \times \mathcal{V} \to \mathcal{P}(\mathcal{R}_{\mathrm{base}}),
+    \]
+    such that an edge exists between nodes \( n_{t_i} \) and \( n_{t_j} \) if there exists a relation \( r \in \rho_{\mathrm{base}}(t_i,t_j) \). Each edge may be represented as:
+    \[
+      e_{ij} = \bigl(n_{t_i},\, n_{t_j},\, r\bigr).
+    \]
+\end{itemize}
+
+\subsection*{Definition F.2 (Personal Knowledge Graph)}
+The \emph{Personal Knowledge Graph} is defined as:
+\[
+\mathcal{G}_{\mathrm{PKG}} = \bigl( \mathcal{N}_{\mathrm{PKG}},\, \mathcal{E}_{\mathrm{PKG}} \bigr),
+\]
+where:
+\begin{itemize}[label=\(\circ\)]
+    \item \(\mathcal{N}_{\mathrm{PKG}} = \{ n'_t \mid t \in \mathcal{V} \}\) is the set of nodes, each corresponding to a token \( t \) but associated with a personalized (adaptive) embedding \( E_{\mathrm{sup}}(t, \xi) \in \mathbb{R}^{d_C} \), where \(\xi\) represents contextual or domain-specific parameters.
+    \item \(\mathcal{E}_{\mathrm{PKG}}\) is defined by a personalized relation function:
+    \[
+      \rho_{\mathrm{personal}}: \mathcal{V} \times \mathcal{V} \times \Xi \to \mathcal{P}(\mathcal{R}_{\mathrm{personal}}),
+    \]
+    such that an edge exists between nodes \( n'_{t_i} \) and \( n'_{t_j} \) if there is a personalized relation \( r' \in \rho_{\mathrm{personal}}(t_i, t_j, \xi) \). Each edge is represented as:
+    \[
+      e'_{ij} = \bigl(n'_{t_i},\, n'_{t_j},\, r'\bigr).
+    \]
+\end{itemize}
+
+\subsection*{Definition F.3 (Fusion Operator and Unified Knowledge Graph)}
+Define a fusion operator:
+\[
+\oplus_{\mathcal{K}}: \mathcal{G}_{\mathrm{BKG}} \times \mathcal{G}_{\mathrm{PKG}} \to \mathcal{G}_{\mathrm{Unified}},
+\]
+which constructs the \emph{Unified Knowledge Graph}:
+\[
+\mathcal{G}_{\mathrm{Unified}} = \mathcal{G}_{\mathrm{BKG}} \cup \mathcal{G}_{\mathrm{PKG}},
+\]
+with:
+\begin{itemize}[label=\(\circ\)]
+    \item \(\mathcal{N}_{\mathrm{Unified}} = \mathcal{N}_{\mathrm{BKG}} = \mathcal{N}_{\mathrm{PKG}}\), by aligning nodes via the unique token identifiers.
+    \item \(\mathcal{E}_{\mathrm{Unified}} = \mathcal{E}_{\mathrm{BKG}} \cup \mathcal{E}_{\mathrm{PKG}}\), with each edge annotated by its source (base or personal), and possibly weighted by confidence scores.
+\end{itemize}
+This operator guarantees that the unified graph retains stable base knowledge while integrating adaptive personal updates.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithmic Description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We now describe the process for constructing and updating the knowledge graphs.
+
+\begin{algorithm}[H]
+\caption{Construction of Base and Personal Knowledge Graphs}
+\label{alg:kg_construction}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Token sequence \( (t_1, t_2, \dots, t_n) \) from \(\mathcal{T}_{\mathrm{base}}\); Base embedding function \( E_{\mathrm{B}} \); Adaptive embedding function \( E_{\mathrm{sup}}(\cdot,\xi) \); Relation functions \( \rho_{\mathrm{base}} \) and \( \rho_{\mathrm{personal}} \)
+    \State \textbf{Output:} Unified Knowledge Graph \( \mathcal{G}_{\mathrm{Unified}} \)
+    \State \textbf{Begin:}
+    \For{each token \( t \) in \( (t_1, \dots, t_n) \)}
+        \State Create base node \( n_t \) with embedding \( E_{\mathrm{B}}(t) \)
+        \State Create personal node \( n'_t \) with embedding \( E_{\mathrm{sup}}(t, \xi) \)
+    \EndFor
+    \For{each pair of tokens \( (t_i, t_j) \)}
+        \State Determine base relations: \( R_{\mathrm{base}} \gets \rho_{\mathrm{base}}(t_i, t_j) \)
+        \State For each \( r \in R_{\mathrm{base}} \), add edge \( (n_{t_i}, n_{t_j}, r) \) to \(\mathcal{E}_{\mathrm{BKG}}\)
+        \State Determine personal relations: \( R_{\mathrm{personal}} \gets \rho_{\mathrm{personal}}(t_i, t_j, \xi) \)
+        \State For each \( r' \in R_{\mathrm{personal}} \), add edge \( (n'_{t_i}, n'_{t_j}, r') \) to \(\mathcal{E}_{\mathrm{PKG}}\)
+    \EndFor
+    \State \textbf{Fusion:} 
+    \[
+      \mathcal{G}_{\mathrm{Unified}} \gets \oplus_{\mathcal{K}}\Bigl(\mathcal{G}_{\mathrm{BKG}},\, \mathcal{G}_{\mathrm{PKG}}\Bigr)
+    \]
+    \State \textbf{Return:} \( \mathcal{G}_{\mathrm{Unified}} \)
+\end{algorithmic}
+\end{algorithm}
+
+\noindent \textbf{Remark:}  
+In practice, the relation functions \( \rho_{\mathrm{base}} \) and \( \rho_{\mathrm{personal}} \) may be implemented via statistical analyses (e.g., co-occurrence frequencies, syntactic dependency parsing) and can be further refined using supervised or unsupervised methods.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theoretical Analysis and Guarantees}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Theorem F.1 (Consistency of Node Identities)}
+\textbf{Statement:}  
+Given that the base and personal graphs are constructed from the same vocabulary \(\mathcal{V}\) and use the unique identifier mapping \(\eta\), the node sets satisfy:
+\[
+\mathcal{N}_{\mathrm{BKG}} = \mathcal{N}_{\mathrm{PKG}},
+\]
+up to a canonical isomorphism. Consequently, the fusion operator \(\oplus_{\mathcal{K}}\) produces a well-defined unified node set.
+\newline
+\textbf{Proof Sketch:}  
+Since each token \( t \in \mathcal{V} \) is assigned a unique identifier via \(\eta\), nodes created in both graphs are aligned by this identifier. Thus, merging the two graphs yields a common node for each token. \(\Box\)
+
+\subsection*{Proposition F.2 (Extensibility and Modularity)}
+The dual-layer design allows independent updating of the Base Knowledge Graph (e.g., through periodic retraining) and the Personal Knowledge Graph (via real-time adaptation). The fusion operator is defined so that changes in one layer can be integrated without altering the other, ensuring modularity and extensibility.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration with the Overall Eidos Framework}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Module F, the Deep Knowledge Graphs System, serves as the core for representing inter-token relationships. It directly interfaces with:
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Module D (Vocabulary):} The nodes of both the base and personal graphs are derived from tokens in \(\mathcal{V}\).
+    \item \textbf{Module E (Contextual Embeddings):} The adaptive embeddings \( E_{\mathrm{sup}}(t,\xi) \) provide dynamic features that enrich the personal graph.
+    \item \textbf{Subsequent Modules:} The unified knowledge graph \(\mathcal{G}_{\mathrm{Unified}}\) is used to inform downstream processes such as reasoning in deep models and further contextual adaptation.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Considerations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Data Structures:}  
+    Graphs \(\mathcal{G}_{\mathrm{BKG}}\) and \(\mathcal{G}_{\mathrm{PKG}}\) may be stored using graph databases or optimized sparse matrix representations. Edge metadata (e.g., relation types, confidence scores, timestamps) should be maintained.
+    \item \textbf{Relation Extraction:}  
+    Techniques such as co-occurrence analysis, dependency parsing, and semantic similarity measures can be used to define \( \rho_{\mathrm{base}} \) and \( \rho_{\mathrm{personal}} \).
+    \item \textbf{Fusion Strategy:}  
+    The fusion operator \( \oplus_{\mathcal{K}} \) should be designed to allow weighted integration of base and personal edges, possibly using confidence scores or temporal weights.
+    \item \textbf{Dynamic Updates:}  
+    The PKG should support real-time updates, while the BKG remains relatively stable. Efficient incremental graph update algorithms will be necessary.
+    \item \textbf{Scalability:}  
+    Given that the vocabulary size may reach millions, efficient indexing and retrieval mechanisms for nodes and edges are crucial.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this module, we have presented a comprehensive framework for constructing deep knowledge graphs in the Eidos system. The Base Knowledge Graph captures the static, inherent relationships among tokens derived from the multidimensional vocabulary, while the Personal Knowledge Graph continuously adapts to reflect dynamic, context-sensitive information. A fusion operator integrates these two layers into a unified graph, ensuring that the system benefits from both stability and adaptivity. The module includes rigorous definitions, an algorithmic process for graph construction, theoretical guarantees regarding consistency and extensibility, and practical considerations for implementation. This dual-layer knowledge representation forms a critical foundation for advanced semantic reasoning and dynamic adaptation in the overall Eidos framework.
+
+\vspace{1em}
+\textbf{Module Summary:}\\
+\textbf{Completed:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module A: Input Processing.
+    \item Module B: Universal Communication \& Data Handling Interface and Coordination.
+    \item Module C: Universal Streaming/Handling/Loading/Indexing Module.
+    \item Module D: Multidimensional Vocabulary and Tokenization System.
+    \item Module E: Contextual NLU/NLP Embedding and Multidimensional Tokenization.
+    \item Module F: Deep Knowledge Graphs System (Base and Personal).
+\end{itemize}
+\textbf{Remaining Modules:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating.
+    \item Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style).
+    \item Module I: Titans Memory Architecture (Multi-Layer Memory Module).
+    \item Module J: Recursive Adaptive Dynamic Idempotent Feedback and State-Based Runtime Learning and Inference.
+    \item Module K: Universal Training System.
+    \item Module L: Final Decoding and Multimodal Output.
+\end{itemize}
+
+\end{document}

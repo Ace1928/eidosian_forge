@@ -1,0 +1,2 @@
+class WidgetPluginError(Exception):
+    pass

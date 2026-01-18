@@ -1,0 +1,19 @@
+from boto.sdb.db.property import Property
+from boto.sdb.db.key import Key
+from boto.sdb.db.query import Query
+import boto
+from boto.compat import filter
+@classmethod
+def find_property(cls, prop_name):
+    property = None
+    while cls:
+        for key in cls.__dict__.keys():
+            prop = cls.__dict__[key]
+            if isinstance(prop, Property):
+                if not prop.__class__.__name__.startswith('_') and prop_name == prop.name:
+                    property = prop
+        if len(cls.__bases__) > 0:
+            cls = cls.__bases__[0]
+        else:
+            cls = None
+    return property

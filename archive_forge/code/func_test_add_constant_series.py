@@ -1,0 +1,16 @@
+from statsmodels.compat.pandas import assert_frame_equal, assert_series_equal
+from statsmodels.compat.python import lrange
+import string
+import numpy as np
+from numpy.random import standard_normal
+from numpy.testing import (
+import pandas as pd
+import pytest
+from statsmodels.datasets import longley
+from statsmodels.tools import tools
+from statsmodels.tools.tools import pinv_extended
+def test_add_constant_series(self):
+    s = pd.Series([1.0, 2.0, 3.0])
+    output = tools.add_constant(s)
+    expected = pd.Series([1.0, 1.0, 1.0], name='const')
+    assert_series_equal(expected, output['const'])

@@ -1,0 +1,41 @@
+import json
+import logging
+import os
+import platform
+from abc import ABCMeta, abstractmethod
+from typing import (
+import gymnasium as gym
+import numpy as np
+import tree  # pip install dm_tree
+from gymnasium.spaces import Box
+from packaging import version
+import ray
+import ray.cloudpickle as pickle
+from ray.actor import ActorHandle
+from ray.train import Checkpoint
+from ray.rllib.core.models.base import STATE_IN, STATE_OUT
+from ray.rllib.models.action_dist import ActionDistribution
+from ray.rllib.models.catalog import ModelCatalog
+from ray.rllib.models.modelv2 import ModelV2
+from ray.rllib.policy.rnn_sequencing import add_time_dimension
+from ray.rllib.policy.sample_batch import SampleBatch
+from ray.rllib.policy.view_requirement import ViewRequirement
+from ray.rllib.utils.annotations import (
+from ray.rllib.utils.checkpoints import (
+from ray.rllib.utils.deprecation import (
+from ray.rllib.utils.exploration.exploration import Exploration
+from ray.rllib.utils.framework import try_import_tf, try_import_torch
+from ray.rllib.utils.from_config import from_config
+from ray.rllib.utils.numpy import convert_to_numpy
+from ray.rllib.utils.serialization import (
+from ray.rllib.utils.spaces.space_utils import (
+from ray.rllib.utils.tensor_dtype import get_np_dtype
+from ray.rllib.utils.tf_utils import get_tf_eager_cls_if_necessary
+from ray.rllib.utils.typing import (
+from ray.util.annotations import PublicAPI
+@DeveloperAPI
+def get_gym_space_from_struct_of_tensors(value: Union[Mapping, Tuple, List, TensorType], batched_input=True) -> gym.Space:
+    start_idx = 1 if batched_input else 0
+    struct = tree.map_structure(lambda x: gym.spaces.Box(-1.0, 1.0, shape=x.shape[start_idx:], dtype=get_np_dtype(x)), value)
+    space = get_gym_space_from_struct_of_spaces(struct)
+    return space

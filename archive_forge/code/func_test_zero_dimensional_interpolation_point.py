@@ -1,0 +1,31 @@
+import operator
+import warnings
+import sys
+import decimal
+from fractions import Fraction
+import math
+import pytest
+import hypothesis
+from hypothesis.extra.numpy import arrays
+import hypothesis.strategies as st
+from functools import partial
+import numpy as np
+from numpy import ma
+from numpy.testing import (
+import numpy.lib.function_base as nfb
+from numpy.random import rand
+from numpy.lib import (
+from numpy.core.numeric import normalize_axis_tuple
+def test_zero_dimensional_interpolation_point(self):
+    x = np.linspace(0, 1, 5)
+    y = np.linspace(0, 1, 5)
+    x0 = np.array(0.3)
+    assert_almost_equal(np.interp(x0, x, y), x0)
+    xp = np.array([0, 2, 4])
+    fp = np.array([1, -1, 1])
+    actual = np.interp(np.array(1), xp, fp)
+    assert_equal(actual, 0)
+    assert_(isinstance(actual, np.float64))
+    actual = np.interp(np.array(4.5), xp, fp, period=4)
+    assert_equal(actual, 0.5)
+    assert_(isinstance(actual, np.float64))

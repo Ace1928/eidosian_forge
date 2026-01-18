@@ -1,0 +1,19 @@
+import sys
+import traceback
+from mako import compat
+from mako import util
+def html_error_template():
+    """Provides a template that renders a stack trace in an HTML format,
+    providing an excerpt of code as well as substituting source template
+    filenames, line numbers and code for that of the originating source
+    template, as applicable.
+
+    The template's default ``encoding_errors`` value is
+    ``'htmlentityreplace'``. The template has two options. With the
+    ``full`` option disabled, only a section of an HTML document is
+    returned. With the ``css`` option disabled, the default stylesheet
+    won't be included.
+
+    """
+    import mako.template
+    return mako.template.Template('\n<%!\n    from mako.exceptions import RichTraceback, syntax_highlight,\\\n            pygments_html_formatter\n%>\n<%page args="full=True, css=True, error=None, traceback=None"/>\n% if full:\n<html>\n<head>\n    <title>Mako Runtime Error</title>\n% endif\n% if css:\n    <style>\n        body { font-family:verdana; margin:10px 30px 10px 30px;}\n        .stacktrace { margin:5px 5px 5px 5px; }\n        .highlight { padding:0px 10px 0px 10px; background-color:#9F9FDF; }\n        .nonhighlight { padding:0px; background-color:#DFDFDF; }\n        .sample { padding:10px; margin:10px 10px 10px 10px;\n                  font-family:monospace; }\n        .sampleline { padding:0px 10px 0px 10px; }\n        .sourceline { margin:5px 5px 10px 5px; font-family:monospace;}\n        .location { font-size:80%; }\n        .highlight { white-space:pre; }\n        .sampleline { white-space:pre; }\n\n    % if pygments_html_formatter:\n        ${pygments_html_formatter.get_style_defs()}\n        .linenos { min-width: 2.5em; text-align: right; }\n        pre { margin: 0; }\n        .syntax-highlighted { padding: 0 10px; }\n        .syntax-highlightedtable { border-spacing: 1px; }\n        .nonhighlight { border-top: 1px solid #DFDFDF;\n                        border-bottom: 1px solid #DFDFDF; }\n        .stacktrace .nonhighlight { margin: 5px 15px 10px; }\n        .sourceline { margin: 0 0; font-family:monospace; }\n        .code { background-color: #F8F8F8; width: 100%; }\n        .error .code { background-color: #FFBDBD; }\n        .error .syntax-highlighted { background-color: #FFBDBD; }\n    % endif\n\n    </style>\n% endif\n% if full:\n</head>\n<body>\n% endif\n\n<h2>Error !</h2>\n<%\n    tback = RichTraceback(error=error, traceback=traceback)\n    src = tback.source\n    line = tback.lineno\n    if src:\n        lines = src.split(\'\\n\')\n    else:\n        lines = None\n%>\n<h3>${tback.errorname}: ${tback.message|h}</h3>\n\n% if lines:\n    <div class="sample">\n    <div class="nonhighlight">\n% for index in range(max(0, line-4),min(len(lines), line+5)):\n    <%\n       if pygments_html_formatter:\n           pygments_html_formatter.linenostart = index + 1\n    %>\n    % if index + 1 == line:\n    <%\n       if pygments_html_formatter:\n           old_cssclass = pygments_html_formatter.cssclass\n           pygments_html_formatter.cssclass = \'error \' + old_cssclass\n    %>\n        ${lines[index] | syntax_highlight(language=\'mako\')}\n    <%\n       if pygments_html_formatter:\n           pygments_html_formatter.cssclass = old_cssclass\n    %>\n    % else:\n        ${lines[index] | syntax_highlight(language=\'mako\')}\n    % endif\n% endfor\n    </div>\n    </div>\n% endif\n\n<div class="stacktrace">\n% for (filename, lineno, function, line) in tback.reverse_traceback:\n    <div class="location">${filename}, line ${lineno}:</div>\n    <div class="nonhighlight">\n    <%\n       if pygments_html_formatter:\n           pygments_html_formatter.linenostart = lineno\n    %>\n      <div class="sourceline">${line | syntax_highlight(filename)}</div>\n    </div>\n% endfor\n</div>\n\n% if full:\n</body>\n</html>\n% endif\n', output_encoding=sys.getdefaultencoding(), encoding_errors='htmlentityreplace')

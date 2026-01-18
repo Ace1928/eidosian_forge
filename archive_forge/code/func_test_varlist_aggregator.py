@@ -1,0 +1,38 @@
+import os
+from os.path import abspath, dirname
+import pyomo.common.unittest as unittest
+from io import StringIO
+from pyomo.environ import (
+def test_varlist_aggregator(self):
+    m = ConcreteModel()
+    m.flow = VarList()
+    m.phase = Var(bounds=(1, 3))
+    m.CON = Connector()
+    m.CON.add(m.flow, aggregate=lambda m, v: sum((v[i] for i in v)) == 0)
+    m.CON.add(m.phase)
+    m.ECON2 = Connector()
+    m.ECON1 = Connector()
+    m.c = Constraint(expr=m.CON == m.ECON1)
+    m.d = Constraint(expr=m.ECON2 == m.CON)
+    self.assertEqual(len(list(m.component_objects(Constraint))), 2)
+    self.assertEqual(len(list(m.component_data_objects(Constraint))), 2)
+    TransformationFactory('core.expand_connectors').apply_to(m)
+    self.assertEqual(len(list(m.component_objects(Constraint))), 5)
+    self.assertEqual(len(list(m.component_data_objects(Constraint))), 7)
+    self.assertFalse(m.c.active)
+    self.assertTrue(m.component('c.expanded').active)
+    self.assertFalse(m.d.active)
+    self.assertTrue(m.component('d.expanded').active)
+    self.assertEqual(len(m.flow), 2)
+    os = StringIO()
+    m.component('c.expanded').pprint(ostream=os)
+    self.assertEqual(os.getvalue(), "c.expanded : Size=2, Index={1, 2}, Active=True\n    Key : Lower : Body                        : Upper : Active\n      1 :   0.0 : flow[1] - 'ECON1.auto.flow' :   0.0 :   True\n      2 :   0.0 :  phase - 'ECON1.auto.phase' :   0.0 :   True\n")
+    os = StringIO()
+    m.component('d.expanded').pprint(ostream=os)
+    self.assertEqual(os.getvalue(), "d.expanded : Size=2, Index={1, 2}, Active=True\n    Key : Lower : Body                        : Upper : Active\n      1 :   0.0 : 'ECON2.auto.flow' - flow[2] :   0.0 :   True\n      2 :   0.0 :  'ECON2.auto.phase' - phase :   0.0 :   True\n")
+    os = StringIO()
+    m.component('CON.flow.aggregate').pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'CON.flow.aggregate : Size=1, Index=None, Active=True\n    Key  : Lower : Body              : Upper : Active\n    None :   0.0 : flow[1] + flow[2] :   0.0 :   True\n')
+    os = StringIO()
+    m.CON.pprint(ostream=os)
+    self.assertEqual(os.getvalue(), 'CON : Size=1, Index=None\n    Key  : Name  : Size : Variable\n    None :  flow :    * :     flow\n         : phase :    1 :    phase\n')

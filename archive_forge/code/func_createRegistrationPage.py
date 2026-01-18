@@ -1,0 +1,16 @@
+from PySide2 import QtWidgets
+def createRegistrationPage():
+    page = QtWidgets.QWizardPage()
+    page.setTitle('Registration')
+    page.setSubTitle('Please fill both fields.')
+    nameLabel = QtWidgets.QLabel('Name:')
+    nameLineEdit = QtWidgets.QLineEdit()
+    emailLabel = QtWidgets.QLabel('Email address:')
+    emailLineEdit = QtWidgets.QLineEdit()
+    layout = QtWidgets.QGridLayout()
+    layout.addWidget(nameLabel, 0, 0)
+    layout.addWidget(nameLineEdit, 0, 1)
+    layout.addWidget(emailLabel, 1, 0)
+    layout.addWidget(emailLineEdit, 1, 1)
+    page.setLayout(layout)
+    return page

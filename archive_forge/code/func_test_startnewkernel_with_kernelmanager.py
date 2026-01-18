@@ -1,0 +1,38 @@
+import asyncio
+import concurrent.futures
+import copy
+import datetime
+import functools
+import os
+import re
+import sys
+import threading
+import warnings
+from base64 import b64decode, b64encode
+from queue import Empty
+from typing import Any
+from unittest.mock import MagicMock, Mock
+import nbformat
+import pytest
+import xmltodict
+from flaky import flaky  # type:ignore
+from jupyter_client import KernelClient, KernelManager
+from jupyter_client._version import version_info
+from jupyter_client.kernelspec import KernelSpecManager
+from nbconvert.filters import strip_ansi
+from nbformat import NotebookNode
+from testpath import modified_env
+from traitlets import TraitError
+from nbclient import NotebookClient, execute
+from nbclient.exceptions import CellExecutionError
+from .base import NBClientTestsBase
+def test_startnewkernel_with_kernelmanager():
+    nb = nbformat.v4.new_notebook()
+    km = KernelManager()
+    executor = NotebookClient(nb, km=km)
+    executor.start_new_kernel()
+    kc = executor.start_new_kernel_client()
+    assert kc is not None
+    kc.shutdown()
+    km.cleanup_resources()
+    kc.stop_channels()

@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def has_updates(self, site_config):
+    return site_config.scm_ip_security_restrictions_use_main != self.scm_ip_security_restrictions_use_main or (self.ip_security_restrictions and self.ip_security_restrictions != self.to_restriction_dict_list(site_config.ip_security_restrictions)) or (self.scm_ip_security_restrictions and self.scm_ip_security_restrictions != self.to_restriction_dict_list(site_config.scm_ip_security_restrictions))

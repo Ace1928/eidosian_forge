@@ -1,0 +1,21 @@
+import os
+import sys
+import itertools
+import traceback
+import textwrap
+import subprocess
+import pytest
+import numpy as np
+from numpy import array, single, double, csingle, cdouble, dot, identity, matmul
+from numpy.core import swapaxes
+from numpy import multiply, atleast_2d, inf, asarray
+from numpy import linalg
+from numpy.linalg import matrix_power, norm, matrix_rank, multi_dot, LinAlgError
+from numpy.linalg.linalg import _multi_dot_matrix_chain_order
+from numpy.testing import (
+@pytest.mark.skipif(IS_WASM, reason="fp errors don't work in wasm")
+def test_exceptions_not_invertible(self, dt):
+    if dt in self.dtnoinv:
+        return
+    mat = self.noninv.astype(dt)
+    assert_raises(LinAlgError, matrix_power, mat, -1)

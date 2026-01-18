@@ -1,0 +1,61 @@
+from __future__ import annotations
+import contextlib
+import copy
+import pathlib
+import re
+import xml.etree.ElementTree
+from unittest import mock
+import pytest
+import math
+import operator
+import os
+import time
+import warnings
+from functools import reduce
+from io import StringIO
+from operator import add, sub
+from threading import Lock
+from tlz import concat, merge
+from tlz.curried import identity
+import dask
+import dask.array as da
+from dask.array.chunk import getitem
+from dask.array.core import (
+from dask.array.numpy_compat import NUMPY_GE_200
+from dask.array.reshape import _not_implemented_message
+from dask.array.tests.test_dispatch import EncapsulateNDArray
+from dask.array.utils import assert_eq, same_keys
+from dask.base import compute_as_if_collection, tokenize
+from dask.blockwise import broadcast_dimensions
+from dask.blockwise import make_blockwise_graph as top
+from dask.blockwise import optimize_blockwise
+from dask.delayed import Delayed, delayed
+from dask.highlevelgraph import HighLevelGraph, MaterializedLayer
+from dask.layers import Blockwise
+from dask.utils import SerializableLock, key_split, parse_bytes, tmpdir, tmpfile
+from dask.utils_test import dec, hlg_layer_topological, inc
+def test_blockwise_concatenate():
+    x = da.ones((4, 4, 4), chunks=(2, 2, 2))
+    y = da.ones((4, 4), chunks=(2, 2))
+
+    def f(a, b):
+        assert isinstance(a, np.ndarray)
+        assert isinstance(b, np.ndarray)
+        assert a.shape == (2, 4, 4)
+        assert b.shape == (4, 4)
+        return (a + b).sum(axis=(1, 2))
+    z = da.blockwise(f, 'i', x, 'ijk', y, 'jk', concatenate=True, dtype=x.dtype)
+    assert_eq(z, np.ones(4) * 32)
+    z = da.blockwise(add, 'ij', y, 'ij', y, 'ij', concatenate=True, dtype=x.dtype)
+    assert_eq(z, np.ones((4, 4)) * 2)
+
+    def f(a, b, c):
+        assert isinstance(a, np.ndarray)
+        assert isinstance(b, np.ndarray)
+        assert isinstance(c, np.ndarray)
+        assert a.shape == (4, 2, 4)
+        assert b.shape == (4, 4)
+        assert c.shape == (4, 2)
+        return np.ones(2)
+    z = da.blockwise(f, 'j', x, 'ijk', y, 'ki', y, 'ij', concatenate=True, dtype=x.dtype)
+    assert_eq(z, np.ones(4), check_shape=False)

@@ -1,0 +1,54 @@
+import concurrent.futures
+import contextlib
+import json
+import os
+import sys
+import threading
+import time
+from collections import namedtuple
+from functools import partial
+from threading import Event
+from threading import Lock
+from unittest import mock
+import torch
+import torch.nn as nn
+import torch.distributed as dist
+import torch.distributed.rpc as rpc
+import torch.distributed.autograd as dist_autograd
+from torch.distributed.rpc import RRef, _get_debug_info, _rref_context_get_debug_info, WorkerInfo
+from torch.distributed.rpc.api import _use_rpc_pickler, _thread_local_var, _wait_all
+from torch.distributed.rpc.internal import (
+from torch.futures import Future
+from torch.testing._internal.common_distributed import (
+from torch.testing._internal.common_utils import (
+from torch.testing._internal.dist_utils import (
+from torch.testing._internal.distributed.rpc.rpc_agent_test_fixture import (
+from torch.testing._internal.common_utils import TemporaryFileName
+from torch.autograd.profiler_legacy import profile as _profile
+def _test_cuda_future_extraction(self, wrapper, unwrapper, sparse_tensor):
+    future = Future(devices=['cuda:0'])
+    with torch.cuda.device('cuda:0'):
+        stream = torch.cuda.Stream()
+        another_stream = torch.cuda.Stream()
+        with torch.cuda.stream(stream):
+            if sparse_tensor:
+                tensor = build_sparse_tensor().to('cuda:0')
+                add_tensor = build_sparse_tensor().to('cuda:0')
+                expected_tensor = (tensor + add_tensor).coalesce()
+            else:
+                tensor = torch.zeros((100,), device='cuda:0')
+                add_tensor = torch.ones((100,), device='cuda:0')
+                expected_tensor = tensor + add_tensor
+            torch.cuda._sleep(int(1000 * get_cycles_per_ms()))
+            tensor += add_tensor
+            if sparse_tensor:
+                tensor = tensor.coalesce()
+            future.set_result(wrapper(tensor))
+        with torch.cuda.stream(another_stream):
+            tensor = unwrapper(future.wait())
+            if sparse_tensor:
+                self.assertTrue(torch.eq(tensor.indices(), expected_tensor.indices()).all().item())
+                self.assertTrue(torch.eq(tensor.values(), expected_tensor.values()).all().item())
+                self.assertEqual(tensor.size(), expected_tensor.size())
+            else:
+                self.assertTrue(torch.eq(tensor, expected_tensor).all().item())

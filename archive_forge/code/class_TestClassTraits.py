@@ -1,0 +1,16 @@
+import unittest
+from traits.api import HasTraits, Int, List, Str
+class TestClassTraits(unittest.TestCase):
+
+    def test_all_class_traits(self):
+        expected = ['x', 'name', 'trait_added', 'trait_modified']
+        self.assertCountEqual(A.class_traits(), expected)
+        self.assertCountEqual(B.class_traits(), expected)
+        expected.extend(('lst', 'y'))
+        self.assertCountEqual(C.class_traits(), expected)
+
+    def test_class_traits_with_metadata(self):
+        traits = C.class_traits(marked=True)
+        self.assertCountEqual(list(traits.keys()), ('y', 'name'))
+        marked_traits = C.class_traits(marked=lambda attr: attr is not None)
+        self.assertCountEqual(marked_traits, ('y', 'name', 'lst'))

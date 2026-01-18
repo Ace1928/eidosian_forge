@@ -1,0 +1,23 @@
+import random
+import time
+from itertools import islice
+from pathlib import Path
+from typing import Iterable, List, Optional
+import numpy
+import typer
+from tqdm import tqdm
+from wasabi import msg
+from .. import util
+from ..language import Language
+from ..tokens import Doc
+from ..training import Corpus
+from ._util import Arg, Opt, benchmark_cli, import_code, setup_gpu
+class time_context:
+    """Register the running time of a context."""
+
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.elapsed = time.perf_counter() - self.start

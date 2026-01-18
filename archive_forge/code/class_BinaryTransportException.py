@@ -1,0 +1,2 @@
+class BinaryTransportException(PydeckException):
+    pass

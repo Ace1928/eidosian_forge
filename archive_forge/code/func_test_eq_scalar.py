@@ -1,0 +1,12 @@
+import copy
+import itertools
+import operator
+import unittest
+import numpy as np
+from numba import jit, njit
+from numba.core import types, utils, errors
+from numba.core.types.functions import _header_lead
+from numba.tests.support import TestCase, tag, needs_blas
+from numba.tests.matmul_usecase import (matmul_usecase, imatmul_usecase,
+def test_eq_scalar(self, flags=force_pyobj_flags):
+    self.run_test_scalar_compare(self.op.eq_usecase, flags, ordered=False)

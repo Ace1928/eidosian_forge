@@ -1,0 +1,14 @@
+from datetime import datetime
+from boto.compat import six
+class DescribeConfigurationOptionsResponse(Response):
+
+    def __init__(self, response):
+        response = response['DescribeConfigurationOptionsResponse']
+        super(DescribeConfigurationOptionsResponse, self).__init__(response)
+        response = response['DescribeConfigurationOptionsResult']
+        self.options = []
+        if response['Options']:
+            for member in response['Options']:
+                option = ConfigurationOptionDescription(member)
+                self.options.append(option)
+        self.solution_stack_name = str(response['SolutionStackName'])

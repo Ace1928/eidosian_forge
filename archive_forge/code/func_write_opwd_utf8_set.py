@@ -1,0 +1,16 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def write_opwd_utf8_set(self, text):
+    """ Copies <text> into write.opwd_utf8[]."""
+    return _mupdf.PdfCleanOptions_write_opwd_utf8_set(self, text)

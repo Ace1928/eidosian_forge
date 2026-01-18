@@ -1,0 +1,38 @@
+from typing import TYPE_CHECKING, Dict, List, Optional, Union, Tuple
+import numpy as np
+import pyarrow
+import tensorflow as tf
+from ray.air.util.data_batch_conversion import _unwrap_ndarray_object_type_if_needed
+def get_type_spec(schema: Union['pyarrow.lib.Schema', 'PandasBlockSchema'], columns: Union[str, List[str]]) -> Union[tf.TypeSpec, Dict[str, tf.TypeSpec]]:
+    import pyarrow as pa
+    from ray.data.extensions import TensorDtype, ArrowTensorType
+    assert not isinstance(schema, type)
+    dtypes: Dict[str, Union[np.dtype, pa.DataType]] = dict(zip(schema.names, schema.types))
+
+    def get_dtype(dtype: Union[np.dtype, pa.DataType]) -> tf.dtypes.DType:
+        if isinstance(dtype, pa.DataType):
+            dtype = dtype.to_pandas_dtype()
+        if isinstance(dtype, TensorDtype):
+            dtype = dtype.element_dtype
+        return tf.dtypes.as_dtype(dtype)
+
+    def get_shape(dtype: Union[np.dtype, pa.DataType]) -> Tuple[int, ...]:
+        shape = (None,)
+        if isinstance(dtype, ArrowTensorType):
+            dtype = dtype.to_pandas_dtype()
+        if isinstance(dtype, TensorDtype):
+            shape += dtype.element_shape
+        return shape
+
+    def get_tensor_spec(dtype: Union[np.dtype, pa.DataType], *, name: str) -> tf.TypeSpec:
+        shape, dtype = (get_shape(dtype), get_dtype(dtype))
+        is_ragged = sum((dim is None for dim in shape)) > 1
+        if is_ragged:
+            type_spec = tf.RaggedTensorSpec(shape, dtype=dtype)
+        else:
+            type_spec = tf.TensorSpec(shape, dtype=dtype, name=name)
+        return type_spec
+    if isinstance(columns, str):
+        name, dtype = (columns, dtypes[columns])
+        return get_tensor_spec(dtype, name=name)
+    return {name: get_tensor_spec(dtype, name=name) for name, dtype in dtypes.items() if name in columns}

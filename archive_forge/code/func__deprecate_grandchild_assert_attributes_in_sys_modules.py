@@ -1,0 +1,29 @@
+import collections
+import dataclasses
+import importlib.metadata
+import inspect
+import logging
+import multiprocessing
+import os
+import sys
+import traceback
+import types
+import warnings
+from types import ModuleType
+from typing import Any, Callable, Dict, Optional, Tuple
+from importlib.machinery import ModuleSpec
+from unittest import mock
+import duet
+import numpy as np
+import pandas as pd
+import pytest
+import sympy
+from _pytest.outcomes import Failed
+import cirq.testing
+from cirq._compat import (
+def _deprecate_grandchild_assert_attributes_in_sys_modules():
+    """Ensure submodule attributes are identical to sys.modules values."""
+    import cirq.testing._compat_test_data.module_a.fake_ab
+    assert cirq.testing._compat_test_data.module_a.fake_ab is sys.modules['cirq.testing._compat_test_data.module_a.fake_ab']
+    assert cirq.testing._compat_test_data.module_a is sys.modules['cirq.testing._compat_test_data.module_a']
+    assert cirq.testing._compat_test_data is sys.modules['cirq.testing._compat_test_data']

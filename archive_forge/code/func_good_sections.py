@@ -1,0 +1,15 @@
+from __future__ import annotations
+import collections
+import logging
+import os
+import sys
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.gridspec import GridSpec
+from pymatgen.io.core import ParseError
+from pymatgen.util.plotting import add_fig_kwargs, get_ax_fig
+def good_sections(self, key='wall_time', criterion='mean', nmax=5):
+    """Return first `nmax` sections with best value of key `key` using criterion `criterion`."""
+    good_sections = self._order_by_peff(key, criterion=criterion)
+    return good_sections[:nmax]

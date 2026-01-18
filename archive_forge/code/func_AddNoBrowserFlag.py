@@ -1,0 +1,5 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+def AddNoBrowserFlag(parser, auth_target, auth_command):
+    parser.add_argument('--no-browser', default=False, action='store_true', help='      If you want to authorize the {0} on a machine that doesn\'t\n      have a browser and you can install the gcloud CLI on another machine\n      with a browser, use the `--no-browser` flag.\n\n      1.  To initiate authorization, enter the following command:\n\n          ```\n          {1} --no-browser\n          ```\n\n      2.  Copy the long command that begins with `{1} --remote-bootstrap="`.\n\n      3.  Paste and run this command on the command line of a different,\n          trusted machine that has local installations of both a web browser\n          and the gcloud CLI tool version 372.0 or later.\n\n      4.  Copy the long URL output from the machine with the web browser.\n\n      5.  Paste the long URL back to the first machine under the prompt,\n          "Enter the output of the above command", and press Enter to complete\n          the authorization.\n      '.format(auth_target, auth_command))

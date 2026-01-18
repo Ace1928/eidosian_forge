@@ -1,0 +1,23 @@
+import datetime
+import json
+import logging
+import sys
+from abc import ABC
+from dataclasses import asdict, field, fields
+from enum import Enum, unique
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+import ray.dashboard.utils as dashboard_utils
+from ray._private.ray_constants import env_integer
+from ray.core.generated.common_pb2 import TaskStatus, TaskType
+from ray.core.generated.gcs_pb2 import TaskEvents
+from ray.util.state.custom_types import (
+from ray.util.state.exception import RayStateApiException
+from ray.dashboard.modules.job.pydantic_models import JobDetails
+from ray._private.pydantic_compat import IS_PYDANTIC_2
+@classmethod
+def list_columns(cls, detail: bool=False) -> List[str]:
+    if not detail:
+        return ['job_id', 'submission_id', 'entrypoint', 'type', 'status', 'message', 'error_type', 'driver_info']
+    if isinstance(JobDetails, object):
+        return []
+    return JobDetails.model_fields if hasattr(JobDetails, 'model_fields') else JobDetails.__fields__

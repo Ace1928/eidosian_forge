@@ -1,0 +1,21 @@
+from mpmath import *
+from mpmath import fp
+def test_fp_number_parts():
+    assert ae(fp.arg(3), 0.0)
+    assert ae(fp.arg(-3), 3.141592653589793)
+    assert ae(fp.arg(3j), 1.5707963267948966)
+    assert ae(fp.arg(-3j), -1.5707963267948966)
+    assert ae(fp.arg(2 + 3j), 0.982793723247329)
+    assert ae(fp.arg(-1 - 1j), -2.356194490192345)
+    assert ae(fp.re(2.5), 2.5)
+    assert ae(fp.re(2.5 + 3j), 2.5)
+    assert ae(fp.im(2.5), 0.0)
+    assert ae(fp.im(2.5 + 3j), 3.0)
+    assert ae(fp.floor(2.5), 2.0)
+    assert ae(fp.floor(2), 2.0)
+    assert ae(fp.floor(2.0 + 0j), 2.0 + 0j)
+    assert ae(fp.floor(-1.5 - 0.5j), -2.0 - 1j)
+    assert ae(fp.ceil(2.5), 3.0)
+    assert ae(fp.ceil(2), 2.0)
+    assert ae(fp.ceil(2.0 + 0j), 2.0 + 0j)
+    assert ae(fp.ceil(-1.5 - 0.5j), -1.0 + 0j)

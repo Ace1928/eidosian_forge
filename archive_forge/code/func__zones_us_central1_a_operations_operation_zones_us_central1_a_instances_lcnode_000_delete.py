@@ -1,0 +1,17 @@
+import sys
+import datetime
+import unittest
+from unittest import mock
+from libcloud.test import MockHttp
+from libcloud.utils.py3 import httplib
+from libcloud.compute.base import Node, StorageVolume
+from libcloud.test.compute import TestCaseMixin
+from libcloud.test.secrets import GCE_PARAMS, GCE_KEYWORD_PARAMS
+from libcloud.common.google import (
+from libcloud.compute.types import NodeState
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.gce import (
+from libcloud.test.common.test_google import GoogleTestCase, GoogleAuthMockHttp
+def _zones_us_central1_a_operations_operation_zones_us_central1_a_instances_lcnode_000_delete(self, method, url, body, headers):
+    body = self.fixtures.load('operations_operation_zones_us-central1-a_instances_lcnode-000_delete.json')
+    return (httplib.OK, body, self.json_hdr, httplib.responses[httplib.OK])

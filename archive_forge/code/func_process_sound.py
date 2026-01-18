@@ -1,0 +1,7 @@
+import numpy as np
+import sys
+from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets
+import pyaudio
+def process_sound(self, sound: np.ndarray) -> np.ndarray:
+    return sound

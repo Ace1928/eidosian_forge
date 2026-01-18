@@ -1,0 +1,2 @@
+class Inserted(Item):
+    prefix = '+ '

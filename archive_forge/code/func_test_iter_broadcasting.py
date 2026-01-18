@@ -1,0 +1,51 @@
+import sys
+import pytest
+import textwrap
+import subprocess
+import numpy as np
+import numpy.core._multiarray_tests as _multiarray_tests
+from numpy import array, arange, nditer, all
+from numpy.testing import (
+def test_iter_broadcasting():
+    i = nditer([arange(6), np.int32(2)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 6)
+    assert_equal(i.shape, (6,))
+    i = nditer([arange(6).reshape(2, 3), np.int32(2)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 6)
+    assert_equal(i.shape, (2, 3))
+    i = nditer([arange(6).reshape(2, 3), arange(3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 6)
+    assert_equal(i.shape, (2, 3))
+    i = nditer([arange(2).reshape(2, 1), arange(3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 6)
+    assert_equal(i.shape, (2, 3))
+    i = nditer([arange(2).reshape(2, 1), arange(3).reshape(1, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 6)
+    assert_equal(i.shape, (2, 3))
+    i = nditer([np.int32(2), arange(24).reshape(4, 2, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(3), arange(24).reshape(4, 2, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(3), arange(8).reshape(4, 2, 1)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(6).reshape(2, 3), arange(24).reshape(4, 2, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(2).reshape(2, 1), arange(24).reshape(4, 2, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(3).reshape(1, 3), arange(8).reshape(4, 2, 1)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(2).reshape(1, 2, 1), arange(3).reshape(1, 1, 3), arange(4).reshape(4, 1, 1)], ['multi_index'], [['readonly']] * 3)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(6).reshape(1, 2, 3), arange(4).reshape(4, 1, 1)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))
+    i = nditer([arange(24).reshape(4, 2, 3), arange(12).reshape(4, 1, 3)], ['multi_index'], [['readonly']] * 2)
+    assert_equal(i.itersize, 24)
+    assert_equal(i.shape, (4, 2, 3))

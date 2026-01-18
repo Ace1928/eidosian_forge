@@ -1,0 +1,35 @@
+import datetime
+import os
+import time
+from unittest import mock
+import uuid
+import fixtures
+from keystoneauth1 import exceptions as ksa_exceptions
+from keystoneauth1 import fixture
+from keystoneauth1 import loading
+from keystoneauth1 import session
+import oslo_cache
+from oslo_log import log as logging
+from oslo_serialization import jsonutils
+from oslo_utils import timeutils
+import pbr.version
+import testresources
+from testtools import matchers
+import webob
+import webob.dec
+from keystonemiddleware import auth_token
+from keystonemiddleware.auth_token import _base
+from keystonemiddleware.auth_token import _cache
+from keystonemiddleware.auth_token import _exceptions as ksm_exceptions
+from keystonemiddleware.tests.unit.auth_token import base
+from keystonemiddleware.tests.unit import client_fixtures
+def test_http_error_not_cached_token(self):
+    """Test to don't cache token as invalid on network errors.
+
+        We use UUID tokens since they are the easiest one to reach
+        get_http_connection.
+        """
+    self.set_middleware(conf={'http_request_max_retries': '0'})
+    self.call_middleware(headers={'X-Auth-Token': ERROR_TOKEN}, expected_status=503)
+    self.assertIsNone(self._get_cached_token(ERROR_TOKEN))
+    self.assert_valid_last_url(ERROR_TOKEN)

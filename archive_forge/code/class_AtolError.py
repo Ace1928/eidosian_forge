@@ -1,0 +1,2 @@
+class AtolError(ValueError):
+    pass

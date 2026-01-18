@@ -1,0 +1,3 @@
+from os_ken.lib.of_config.base import _Base, _e, _ct
+class OFPortType(_Base):
+    _ELEMENTS = [_e('resource-id', is_list=False), _e('number', is_list=False), _e('name', is_list=False), _e('current-rate', is_list=False), _e('max-rate', is_list=False), _ct('configuration', OFPortConfigurationType, is_list=False), _ct('state', OFPortStateType, is_list=False), _ct('features', None, is_list=False), _ct('tunnel-type', None, is_list=False)]

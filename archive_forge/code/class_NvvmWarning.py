@@ -1,0 +1,2 @@
+class NvvmWarning(Warning):
+    pass

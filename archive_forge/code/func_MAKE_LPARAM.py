@@ -1,0 +1,11 @@
+from winappdbg.win32.defines import *
+from winappdbg.win32.version import bits
+from winappdbg.win32.kernel32 import GetLastError, SetLastError
+from winappdbg.win32.gdi32 import POINT, PPOINT, LPPOINT, RECT, PRECT, LPRECT
+def MAKE_LPARAM(lParam):
+    """
+    Convert arguments to the LPARAM type.
+    Used automatically by SendMessage, PostMessage, etc.
+    You shouldn't need to call this function.
+    """
+    return ctypes.cast(lParam, LPARAM)

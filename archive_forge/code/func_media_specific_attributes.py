@@ -1,0 +1,7 @@
+from .message_media_downloadable import DownloadableMediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_video import VideoAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@property
+def media_specific_attributes(self):
+    return self.message_attributes.video

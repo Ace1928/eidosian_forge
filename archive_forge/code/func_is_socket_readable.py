@@ -1,0 +1,19 @@
+import select
+import socket
+import sys
+import typing
+def is_socket_readable(sock: typing.Optional[socket.socket]) -> bool:
+    """
+    Return whether a socket, as identifed by its file descriptor, is readable.
+    "A socket is readable" means that the read buffer isn't empty, i.e. that calling
+    .recv() on it would immediately return some data.
+    """
+    sock_fd = None if sock is None else sock.fileno()
+    if sock_fd is None or sock_fd < 0:
+        return True
+    if sys.platform == 'win32' or getattr(select, 'poll', None) is None:
+        rready, _, _ = select.select([sock_fd], [], [], 0)
+        return bool(rready)
+    p = select.poll()
+    p.register(sock_fd, select.POLLIN)
+    return bool(p.poll(0))

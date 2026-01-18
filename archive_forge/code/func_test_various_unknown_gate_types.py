@@ -1,0 +1,9 @@
+import pytest
+import sympy
+import cirq
+from cirq.contrib.quirk.export_to_quirk import circuit_to_quirk_url
+def test_various_unknown_gate_types():
+    a = cirq.NamedQubit('a')
+    b = cirq.NamedQubit('b')
+    circuit = cirq.Circuit(MysteryOperation(b), cirq.SWAP(a, b) ** 0.5, cirq.H(a) ** 0.5, cirq.SingleQubitCliffordGate.X_sqrt.merged_with(cirq.SingleQubitCliffordGate.Z_sqrt).on(a), cirq.X(a) ** (1 / 5), cirq.Y(a) ** (1 / 5), cirq.Z(a) ** (1 / 5), cirq.CZ(a, b) ** (1 / 5), cirq.PhasedXPowGate(phase_exponent=0.25)(a), cirq.PhasedXPowGate(exponent=1, phase_exponent=sympy.Symbol('r'))(a), cirq.PhasedXPowGate(exponent=0.001, phase_exponent=0.1)(a))
+    assert_links_to(circuit, '\n        http://algassert.com/quirk#circuit={"cols":[\n            [1,"UNKNOWN"],\n            ["UNKNOWN", "UNKNOWN"],\n            [{"id":"?","matrix":"{{0.853553+0.146447i,0.353553-0.353553i},\n                                  {0.353553-0.353553i,0.146447+0.853553i}}"}],\n            [{"id":"?","matrix":"{{0.5+0.5i,0.5+0.5i},{0.5-0.5i,-0.5+0.5i}}"}],\n            [{"arg":"0.2000","id":"X^ft"}],\n            [{"arg":"0.2000","id":"Y^ft"}],\n            [{"arg":"0.2000","id":"Z^ft"}],\n            ["•",{"arg":"0.2000","id":"Z^ft"}],\n            [{"id":"?",\n              "matrix":"{{0, 0.707107+0.707107i},\n                         {0.707107-0.707107i, 0}}"}],\n            ["UNKNOWN"],\n            [{"id":"?",\n              "matrix":"{{0.999998+0.001571i,0.000488-0.001493i},\n                         {-0.000483-0.001495i,0.999998+0.001571i}}"}]\n        ]}\n    ', escape_url=False, prefer_unknown_gate_to_failure=True)

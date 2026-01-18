@@ -1,0 +1,113 @@
+[tool.poetry]
+name = "type_forge"
+version = "0.1.0"
+description = "A robust type validation framework with dynamic functionality."
+authors = [ "Lloyd Handyside <ace1928@gmail.com>" ]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/Ace1928/type_forge"
+repository = "https://github.com/Ace1928/type_forge"
+keywords = [ "type", "validation", "dynamic", "forge", "eidosian" ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Typing :: Typed",
+]
+packages = [ { include = "type_forge" } ]
+
+[tool.poetry.dependencies]
+python            = "^3.8"
+typing-extensions = "^4.5.0"
+typeguard         = "^4.0.0"
+pydantic          = "^2.0.0"
+attrs             = "^23.1.0"
+cattrs            = "^23.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest          = "^7.3.1"
+pytest-cov      = "^4.1.0"
+mypy            = "^1.3.0"
+black           = "^23.3.0"
+ruff            = "^0.0.267"
+isort           = "^5.12.0"
+pre-commit      = "^3.3.2"
+commitizen      = "^3.2.2"
+mkdocs          = "^1.4.3"
+mkdocs-material = "^9.1.15"
+mkdocstrings    = { extras = [ "python" ], version = "^0.22.0" }
+
+[tool.poetry.scripts]
+type-forge = "type_forge.cli:main"
+
+[build-system]
+requires      = [ "poetry-core>=1.0.0" ]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length    = 88
+target-version = [ "py38", "py39", "py310", "py311" ]
+include        = '\.pyi?$'
+
+[tool.isort]
+profile     = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = [
+    "E",
+    "F",
+    "B",
+    "I",
+    "N",
+    "COM",
+    "UP",
+    "PYI",
+    "PT",
+    "RET",
+    "SIM",
+    "TID",
+]
+ignore = [  ]
+
+[tool.mypy]
+python_version              = "3.8"
+warn_return_any             = true
+warn_unused_configs         = true
+disallow_untyped_defs       = true
+disallow_incomplete_defs    = true
+check_untyped_defs          = true
+disallow_untyped_decorators = true
+no_implicit_optional        = true
+strict_optional             = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts    = "--cov=type_forge --cov-report=term-missing --cov-report=xml -v"
+testpaths  = [ "tests" ]
+
+[tool.coverage.run]
+source = [ "type_forge" ]
+omit   = [ "tests/*" ]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+]
+
+[tool.commitizen]
+name       = "cz_conventional_commits"
+version    = "0.1.0"
+tag_format = "v$version"

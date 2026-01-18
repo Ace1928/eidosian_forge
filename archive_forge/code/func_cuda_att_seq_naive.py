@@ -1,0 +1,18 @@
+from typing import Optional
+import types, gc, os, time, re, platform
+import torch
+from torch.nn import functional as F
+@MyFunction
+def cuda_att_seq_naive(self, x, sx, aa, bb, pp, ln_w, ln_b, k_mix, v_mix, r_mix, t_decay, t_first, kw, vw, rw, ow, kmx, krx, kmy, kry, vmx, vrx, vmy, vry, rmx, rrx, rmy, rry, omx, orx, omy, ory):
+    T, C = x.size()
+    xx = F.layer_norm(x, (C,), weight=ln_w, bias=ln_b)
+    sx = torch.cat((sx.unsqueeze(0), xx[:-1, :]))
+    kx = xx * k_mix + sx * (1 - k_mix)
+    vx = xx * v_mix + sx * (1 - v_mix)
+    rx = xx * r_mix + sx * (1 - r_mix)
+    r = torch.sigmoid(gemm(rx, rw))
+    k = gemm(kx, kw, output_dtype=torch.float32)
+    v = gemm(vx, vw, output_dtype=torch.float32)
+    y, aa, bb, pp = cuda_wkv(T, C, t_decay, t_first, k, v, aa, bb, pp)
+    out = gemm(r * y.to(x.dtype), ow)
+    return (x + out, xx[-1, :], aa, bb, pp)

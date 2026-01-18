@@ -1,0 +1,3 @@
+from pyasn1_modules.rfc2459 import *
+class SignedData(univ.Sequence):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('version', Version()), namedtype.NamedType('digestAlgorithms', DigestAlgorithmIdentifiers()), namedtype.NamedType('contentInfo', ContentInfo()), namedtype.OptionalNamedType('certificates', ExtendedCertificatesAndCertificates().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))), namedtype.OptionalNamedType('crls', CertificateRevocationLists().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))), namedtype.NamedType('signerInfos', SignerInfos()))

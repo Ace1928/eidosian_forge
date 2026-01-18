@@ -1,0 +1,2 @@
+class OutOfData(UnpackException):
+    pass

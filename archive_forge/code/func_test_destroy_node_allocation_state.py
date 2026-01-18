@@ -1,0 +1,18 @@
+import sys
+from libcloud.test import MockHttp, unittest
+from libcloud.utils.py3 import ET, httplib
+from libcloud.common.types import LibcloudError, InvalidCredsError
+from libcloud.compute.base import NodeImage, NodeLocation
+from libcloud.test.compute import TestCaseMixin
+from libcloud.common.abiquo import ForbiddenError, get_href
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.abiquo import AbiquoNodeDriver
+def test_destroy_node_allocation_state(self):
+    """
+        Test the 'destroy_node' invalid state.
+
+        Try to destroy a node when the node is not running.
+        """
+    self.driver = AbiquoNodeDriver('ve', 'geta', 'http://dummy.host.com/api')
+    node = self.driver.list_nodes()[0]
+    self.assertRaises(LibcloudError, self.driver.destroy_node, node)

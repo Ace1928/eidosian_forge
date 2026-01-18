@@ -1,0 +1,70 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+import base64
+import collections
+import json
+import os
+import os.path
+import re
+import uuid
+from apitools.base.py import encoding_helper
+from apitools.base.py import exceptions as apitools_exceptions
+from googlecloudsdk.api_lib.app import yaml_parsing as app_engine_yaml_parsing
+from googlecloudsdk.api_lib.run import container_resource
+from googlecloudsdk.api_lib.run import service as k8s_service
+from googlecloudsdk.api_lib.util import apis
+from googlecloudsdk.api_lib.util import messages as messages_util
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.auth import auth_util
+from googlecloudsdk.command_lib.code import builders
+from googlecloudsdk.command_lib.code import common
+from googlecloudsdk.command_lib.code import dataobject
+from googlecloudsdk.command_lib.code import secrets
+from googlecloudsdk.command_lib.code import yaml_helper
+from googlecloudsdk.command_lib.iam import iam_util
+from googlecloudsdk.command_lib.run import secrets_mapping
+from googlecloudsdk.core import config
+from googlecloudsdk.core import exceptions
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.util import encoding
+from googlecloudsdk.core.util import files
+import six
+class _SecretVolume(dataobject.DataObject):
+    """Configuration for a single volume that mounts secret versions.
+
+    Attributes:
+      name: (str) The name of the volume to be referenced in the k8s resource.
+      mount_path: (str) The filesystem location where the volume is mounted.
+      secret_name: (str) The secret manager reference.
+      mapped_secret: (str) If set, the path of the secret in another project to
+        use. For example 'projects/123/secrets/foo'.
+      items: (List[SecretPath]) The list of keys and paths for the secret.
+  """
+    NAMES = ('name', 'mapped_secret', 'mount_path', 'secret_name', 'items')
+
+    @classmethod
+    def FromParsedYaml(cls, mount, volume_secret, secret_aliases, renamed_secrets=None):
+        """Make a SecretVolume based on the volumeMount and secret from the yaml."""
+        items = []
+        renamed_secrets = renamed_secrets or {}
+        for item in volume_secret.items:
+            items.append(_SecretPath(key=item.key, path=item.path))
+        name = volume_secret.secretName
+        mapped_secret = secret_aliases.get(volume_secret.secretName, None)
+        if not mapped_secret and (not secrets.IsValidK8sName(name)):
+            mapped_secret = name
+            name = renamed_secrets.get(name, None)
+            if not name:
+                name, mapped_secret = _BuildReachableSecret(volume_secret.secretName)
+                renamed_secrets[mapped_secret] = name
+        return cls(name=mount.name, mount_path=mount.mountPath, secret_name=name, items=items, mapped_secret=mapped_secret)
+
+    def IsSameSecret(self, other):
+        if self.mapped_secret or other.mapped_secret:
+            return self.mapped_secret == other.mapped_secret
+        return self.secret_name == other.secret_name

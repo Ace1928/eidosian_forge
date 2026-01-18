@@ -1,0 +1,45 @@
+from PySide2.QtCore import QDate, QFile, Qt, QTextStream
+from PySide2.QtGui import (QFont, QIcon, QKeySequence, QTextCharFormat,
+from PySide2.QtPrintSupport import QPrintDialog, QPrinter
+from PySide2.QtWidgets import (QAction, QApplication, QDialog, QDockWidget,
+import dockwidgets_rc
+def newLetter(self):
+    self.textEdit.clear()
+    cursor = self.textEdit.textCursor()
+    cursor.movePosition(QTextCursor.Start)
+    topFrame = cursor.currentFrame()
+    topFrameFormat = topFrame.frameFormat()
+    topFrameFormat.setPadding(16)
+    topFrame.setFrameFormat(topFrameFormat)
+    textFormat = QTextCharFormat()
+    boldFormat = QTextCharFormat()
+    boldFormat.setFontWeight(QFont.Bold)
+    italicFormat = QTextCharFormat()
+    italicFormat.setFontItalic(True)
+    tableFormat = QTextTableFormat()
+    tableFormat.setBorder(1)
+    tableFormat.setCellPadding(16)
+    tableFormat.setAlignment(Qt.AlignRight)
+    cursor.insertTable(1, 1, tableFormat)
+    cursor.insertText('The Firm', boldFormat)
+    cursor.insertBlock()
+    cursor.insertText('321 City Street', textFormat)
+    cursor.insertBlock()
+    cursor.insertText('Industry Park')
+    cursor.insertBlock()
+    cursor.insertText('Some Country')
+    cursor.setPosition(topFrame.lastPosition())
+    cursor.insertText(QDate.currentDate().toString('d MMMM yyyy'), textFormat)
+    cursor.insertBlock()
+    cursor.insertBlock()
+    cursor.insertText('Dear ', textFormat)
+    cursor.insertText('NAME', italicFormat)
+    cursor.insertText(',', textFormat)
+    for i in range(3):
+        cursor.insertBlock()
+    cursor.insertText('Yours sincerely,', textFormat)
+    for i in range(3):
+        cursor.insertBlock()
+    cursor.insertText('The Boss', textFormat)
+    cursor.insertBlock()
+    cursor.insertText('ADDRESS', italicFormat)

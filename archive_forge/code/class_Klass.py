@@ -1,0 +1,2 @@
+class Klass:
+    classvar = None

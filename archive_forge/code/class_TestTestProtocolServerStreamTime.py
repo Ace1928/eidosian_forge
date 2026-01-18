@@ -1,0 +1,31 @@
+import datetime
+import io
+import os
+import tempfile
+import unittest
+from io import BytesIO
+from testtools import PlaceHolder, TestCase, TestResult, skipIf
+from testtools.compat import _b, _u
+from testtools.content import Content, TracebackContent, text_content
+from testtools.content_type import ContentType
+from testtools.matchers import Contains, Equals, MatchesAny
+import iso8601
+import subunit
+from subunit.tests import (_remote_exception_repr,
+class TestTestProtocolServerStreamTime(unittest.TestCase):
+    """Test managing time information at the protocol level."""
+
+    def test_time_accepted_stdlib(self):
+        self.result = Python26TestResult()
+        self.stream = BytesIO()
+        self.protocol = subunit.TestProtocolServer(self.result, stream=self.stream)
+        self.protocol.lineReceived(_b('time: 2001-12-12 12:59:59Z\n'))
+        self.assertEqual(_b(''), self.stream.getvalue())
+
+    def test_time_accepted_extended(self):
+        self.result = ExtendedTestResult()
+        self.stream = BytesIO()
+        self.protocol = subunit.TestProtocolServer(self.result, stream=self.stream)
+        self.protocol.lineReceived(_b('time: 2001-12-12 12:59:59Z\n'))
+        self.assertEqual(_b(''), self.stream.getvalue())
+        self.assertEqual([('time', datetime.datetime(2001, 12, 12, 12, 59, 59, 0, iso8601.UTC))], self.result._events)

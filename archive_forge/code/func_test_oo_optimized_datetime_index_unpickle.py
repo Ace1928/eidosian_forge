@@ -1,0 +1,14 @@
+import array
+import subprocess
+import sys
+import numpy as np
+import pytest
+from pandas.errors import IntCastingNaNError
+import pandas.util._test_decorators as td
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.core.arrays import (
+@pytest.mark.single_cpu
+def test_oo_optimized_datetime_index_unpickle():
+    subprocess.check_call([sys.executable, '-OO', '-c', "import pandas as pd, pickle; pickle.loads(pickle.dumps(pd.date_range('2021-01-01', periods=1)))"])

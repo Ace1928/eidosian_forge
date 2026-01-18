@@ -1,0 +1,13 @@
+import unittest
+import torch
+import sys
+import os
+import pathlib
+from ActivationDictionary import ActivationDictionary
+def test_get_activation_function(self):
+    activation_dictionary = ActivationDictionary()
+    activation_function = activation_dictionary.get_activation_function('ReLU')
+    self.assertIsNotNone(activation_function)
+    self.assertEqual(activation_function(torch.tensor([1.0])), torch.tensor([1.0]))
+    with self.assertRaises(KeyError):
+        activation_dictionary.get_activation_function('NonExistentActivation')

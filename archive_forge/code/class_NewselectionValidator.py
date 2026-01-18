@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class NewselectionValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='newselection', parent_name='layout', **kwargs):
+        super(NewselectionValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Newselection'), data_docs=kwargs.pop('data_docs', '\n            line\n                :class:`plotly.graph_objects.layout.newselectio\n                n.Line` instance or dict with compatible\n                properties\n            mode\n                Describes how a new selection is created. If\n                `immediate`, a new selection is created after\n                first mouse up. If `gradual`, a new selection\n                is not created after first mouse. By adding to\n                and subtracting from the initial selection,\n                this option allows declaring extra outlines of\n                the selection.\n'), **kwargs)

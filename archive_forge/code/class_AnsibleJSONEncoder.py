@@ -1,0 +1,40 @@
+from __future__ import (absolute_import, division, print_function)
+import json
+import datetime
+from ansible.module_utils.common.text.converters import to_text
+from ansible.module_utils.six.moves.collections_abc import Mapping
+from ansible.module_utils.common.collections import is_sequence
+class AnsibleJSONEncoder(json.JSONEncoder):
+    """
+    Simple encoder class to deal with JSON encoding of Ansible internal types
+    """
+
+    def __init__(self, preprocess_unsafe=False, vault_to_text=False, **kwargs):
+        self._preprocess_unsafe = preprocess_unsafe
+        self._vault_to_text = vault_to_text
+        super(AnsibleJSONEncoder, self).__init__(**kwargs)
+
+    def default(self, o):
+        if getattr(o, '__ENCRYPTED__', False):
+            if self._vault_to_text:
+                value = to_text(o, errors='surrogate_or_strict')
+            else:
+                value = {'__ansible_vault': to_text(o._ciphertext, errors='surrogate_or_strict', nonstring='strict')}
+        elif getattr(o, '__UNSAFE__', False):
+            value = {'__ansible_unsafe': to_text(o._strip_unsafe(), errors='surrogate_or_strict', nonstring='strict')}
+        elif isinstance(o, Mapping):
+            value = dict(o)
+        elif isinstance(o, (datetime.date, datetime.datetime)):
+            value = o.isoformat()
+        else:
+            value = super(AnsibleJSONEncoder, self).default(o)
+        return value
+
+    def iterencode(self, o, **kwargs):
+        """Custom iterencode, primarily design to handle encoding ``AnsibleUnsafe``
+        as the ``AnsibleUnsafe`` subclasses inherit from string types and
+        ``json.JSONEncoder`` does not support custom encoders for string types
+        """
+        if self._preprocess_unsafe:
+            o = _preprocess_unsafe_encode(o)
+        return super(AnsibleJSONEncoder, self).iterencode(o, **kwargs)

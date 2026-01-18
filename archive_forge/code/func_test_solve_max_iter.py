@@ -1,0 +1,14 @@
+import pyomo.common.unittest as unittest
+from pyomo.common.dependencies import scipy, scipy_available
+import pyomo.environ as pyo
+from pyomo.contrib.pynumero.asl import AmplInterface
+from pyomo.contrib.pynumero.interfaces.pyomo_nlp import PyomoNLP
+from pyomo.contrib.pynumero.algorithms.solvers.square_solver_base import (
+from pyomo.contrib.pynumero.algorithms.solvers.scipy_solvers import (
+def test_solve_max_iter(self):
+    m, _ = make_simple_model()
+    solver = pyo.SolverFactory('scipy.fsolve')
+    solver.set_options(dict(xtol=1e-09, maxfev=10))
+    res = solver.solve(m)
+    self.assertNotEqual(res.solver.return_code, 1)
+    self.assertIn('has reached maxfev', res.solver.message)

@@ -1,0 +1,1 @@
+ Exception raised when a requested adaptation is not possible. 

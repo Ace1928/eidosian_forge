@@ -1,0 +1,36 @@
+import torch
+from torch.testing._internal.common_utils import TEST_WITH_ROCM
+class AutocastCPUTestLists:
+
+    def __init__(self, dev):
+        super().__init__()
+        n = 8
+        pointwise0_bf16 = (torch.randn(n, dtype=torch.bfloat16, device=dev),)
+        pointwise1_bf16 = (torch.randn(n, dtype=torch.bfloat16, device=dev),)
+        pointwise2_bf16 = (torch.randn(n, dtype=torch.bfloat16, device=dev),)
+        mat0_bf16 = (torch.randn((n, n), dtype=torch.bfloat16, device=dev),)
+        mat1_bf16 = (torch.randn((n, n), dtype=torch.bfloat16, device=dev),)
+        mat2_bf16 = (torch.randn((n, n), dtype=torch.bfloat16, device=dev),)
+        pointwise0_fp16 = (torch.randn(n, dtype=torch.float16, device=dev),)
+        pointwise1_fp16 = (torch.randn(n, dtype=torch.float16, device=dev),)
+        dummy_dimsets = ((n,), (n, n), (n, n, n), (n, n, n, n), (n, n, n, n, n))
+        dummy_bf16 = [(torch.randn(dimset, dtype=torch.bfloat16, device=dev),) for dimset in dummy_dimsets]
+        dimsets = ((n, n, n), (n, n, n, n), (n, n, n, n, n))
+        conv_args_bf16 = [(torch.randn(dimset, dtype=torch.bfloat16, device=dev), torch.randn(dimset, dtype=torch.bfloat16, device=dev)) for dimset in dimsets]
+        conv_args_fp32 = [(torch.randn(dimset, dtype=torch.float32, device=dev), torch.randn(dimset, dtype=torch.float32, device=dev)) for dimset in dimsets]
+        bias_fp32 = (torch.randn((n,), dtype=torch.float32, device=dev),)
+        element0_fp32 = (torch.randn(1, dtype=torch.float32, device=dev),)
+        pointwise0_fp32 = (torch.randn(n, dtype=torch.float32, device=dev),)
+        pointwise1_fp32 = (torch.randn(n, dtype=torch.float32, device=dev),)
+        mat0_fp32 = (torch.randn((n, n), dtype=torch.float32, device=dev),)
+        mat1_fp32 = (torch.randn((n, n), dtype=torch.float32, device=dev),)
+        mat2_fp32 = (torch.randn((n, n), dtype=torch.float32, device=dev),)
+        mat3_fp32 = (torch.randn((n, n), dtype=torch.float32, device=dev),)
+        dummy_fp32 = [(torch.randn(dimset, dtype=torch.float32, device=dev),) for dimset in dummy_dimsets]
+        self.torch_expect_builtin_promote = [('eq', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('ge', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('gt', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('le', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('lt', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('ne', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('add', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32), ('div', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32), ('mul', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32)]
+        self.methods_expect_builtin_promote = [('__eq__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__ge__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__gt__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__le__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__lt__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__ne__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.bool), ('__add__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32), ('__div__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32), ('__mul__', pointwise0_fp32 + pointwise1_bf16, pointwise0_fp32 + pointwise1_fp16, torch.float32)]
+        self.torch_16 = [('conv1d', conv_args_fp32[0]), ('conv2d', conv_args_fp32[1]), ('conv3d', conv_args_fp32[2]), ('bmm', (torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32))), ('mm', mat0_fp32 + mat1_fp32), ('matmul', mat0_fp32 + mat1_fp32), ('baddbmm', (torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32))), ('addmm', mat1_fp32 + mat2_fp32 + mat3_fp32), ('addbmm', mat0_fp32 + (torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32))), ('conv_tbc', (torch.randn((10, 7, 3), device=dev, dtype=torch.float32), torch.randn((5, 3, 5), device=dev, dtype=torch.float32), torch.randn(5, device=dev, dtype=torch.float32), 0)), ('conv_transpose1d', conv_args_fp32[0]), ('conv_transpose2d', conv_args_fp32[1]), ('conv_transpose3d', conv_args_fp32[2]), ('prelu', pointwise0_fp32 + element0_fp32), ('_native_multi_head_attention', (torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32), torch.randn((n, n, n), device=dev, dtype=torch.float32), n, 4, torch.randn((3 * n, n), device=dev, dtype=torch.float32), torch.randn(3 * n, device=dev, dtype=torch.float32), torch.randn((n, n), device=dev, dtype=torch.float32), torch.randn(n, device=dev, dtype=torch.float32)))]
+        self.torch_fp32 = [('poisson_nll_loss', mat0_bf16 + mat1_bf16 + (True, False, 1e-08, torch.nn._reduction.get_enum('mean'))), ('cosine_embedding_loss', (torch.tensor([[1, 2, 3]], device=dev, dtype=torch.bfloat16), torch.tensor([[1, 3, 4]], device=dev, dtype=torch.bfloat16), torch.tensor([1], device=dev, dtype=torch.int))), ('hinge_embedding_loss', mat0_bf16 + (torch.ones(n, device=dev, dtype=torch.int),)), ('margin_ranking_loss', mat0_bf16 + mat1_bf16 + (torch.ones((n,), device=dev, dtype=torch.bfloat16),)), ('triplet_margin_loss', mat0_bf16 + mat1_bf16 + mat2_bf16), ('binary_cross_entropy_with_logits', mat0_bf16 + (torch.rand((n, n), device=dev, dtype=torch.bfloat16),))]
+        self.nn_16 = [('linear', mat0_fp32 + mat1_fp32, {})]
+        self.nn_fp32 = [('avg_pool3d', dummy_bf16[3], {'kernel_size': (3, 3, 3), 'stride': (1, 1, 1)}), ('binary_cross_entropy', (torch.rand((n, n), device=dev, dtype=torch.bfloat16),) + (torch.rand((n, n), device=dev, dtype=torch.bfloat16),)), ('reflection_pad1d', dummy_bf16[2], {'padding': (3, 3)}), ('nll_loss', (torch.rand((n, n), device=dev, dtype=torch.bfloat16), torch.zeros((n,), device=dev, dtype=torch.long))), ('nll_loss2d', (torch.rand((n, n, n, n), device=dev, dtype=torch.bfloat16), torch.zeros((n, n, n), device=dev, dtype=torch.long))), ('l1_loss', mat0_bf16 + mat1_bf16), ('smooth_l1_loss', mat0_bf16 + mat1_bf16), ('mse_loss', mat0_bf16 + mat1_bf16), ('multilabel_margin_loss', mat0_bf16 + (torch.ones((n, n), device=dev, dtype=torch.long),)), ('soft_margin_loss', mat0_bf16 + (torch.ones((n, n), device=dev, dtype=torch.long),)), ('multi_margin_loss', mat0_bf16 + (torch.ones((n,), device=dev, dtype=torch.long),)), ('huber_loss', mat0_bf16 + mat1_bf16)]
+        self.torch_need_autocast_promote = [('cat', (pointwise0_bf16 + pointwise1_fp32,), (pointwise0_fp16 + pointwise1_fp32,)), ('stack', (pointwise0_bf16 + pointwise1_fp32,), (pointwise0_fp16 + pointwise1_fp32,))]

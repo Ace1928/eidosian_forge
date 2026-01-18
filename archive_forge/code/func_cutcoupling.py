@@ -1,0 +1,10 @@
+import numpy as np
+def cutcoupling(h, s, index_n):
+    for i in index_n:
+        s[:, i] = 0.0
+        s[i, :] = 0.0
+        s[i, i] = 1.0
+        Ei = h[i, i]
+        h[:, i] = 0.0
+        h[i, :] = 0.0
+        h[i, i] = Ei

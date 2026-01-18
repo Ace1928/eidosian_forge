@@ -1,0 +1,18 @@
+import random
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+import numpy as np
+import tree  # pip install dm_tree
+from ray.rllib.env.base_env import _DUMMY_AGENT_ID
+from ray.rllib.policy.policy_map import PolicyMap
+from ray.rllib.utils.annotations import Deprecated, DeveloperAPI
+from ray.rllib.utils.deprecation import deprecation_warning
+from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
+from ray.rllib.utils.typing import (
+from ray.util import log_once
+def _add_agent_rewards(self, reward_dict: Dict[AgentID, float]) -> None:
+    for agent_id, reward in reward_dict.items():
+        if reward is not None:
+            self.agent_rewards[agent_id, self.policy_for(agent_id)] += reward
+            self.total_reward += reward
+            self._agent_reward_history[agent_id].append(reward)

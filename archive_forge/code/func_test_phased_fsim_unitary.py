@@ -1,0 +1,30 @@
+import numpy as np
+import pytest
+import sympy
+import cirq
+def test_phased_fsim_unitary():
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=0)), np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=np.pi / 2, phi=0)), np.array([[1, 0, 0, 0], [0, 0, -1j, 0], [0, -1j, 0, 0], [0, 0, 0, 1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=-np.pi / 2, phi=0)), np.array([[1, 0, 0, 0], [0, 0, 1j, 0], [0, 1j, 0, 0], [0, 0, 0, 1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=np.pi, phi=0)), np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=2 * np.pi, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=0)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=-np.pi / 2, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=3 / 2 * np.pi, phi=0)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=np.pi / 2)), np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1j]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=-np.pi / 2)), np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1j]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=np.pi)), np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, -1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=2 * np.pi)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=-np.pi / 2)), cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=3 / 2 * np.pi)), atol=1e-08)
+    s = np.sqrt(0.5)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=np.pi / 4, phi=np.pi / 3)), np.array([[1, 0, 0, 0], [0, s, -1j * s, 0], [0, -1j * s, s, 0], [0, 0, 0, 0.5 - 1j * np.sqrt(0.75)]]), atol=1e-08)
+    w6 = np.exp(-1j * np.pi / 6)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, gamma=np.pi / 2, zeta=np.pi / 3)), np.array([[1, 0, 0, 0], [0, -w6.conjugate(), 0, 0], [0, 0, w6, 0], [0, 0, 0, -1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=0, phi=0, chi=0.2)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=np.pi, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=np.pi, chi=0.2)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=-np.pi / 2, gamma=np.pi / 2, chi=np.pi / 3)), np.array([[1, 0, 0, 0], [0, 0, 1j * w6, 0], [0, 1j * -w6.conjugate(), 0, 0], [0, 0, 0, -1]]), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=np.pi / 2, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=np.pi / 2, zeta=0.2, phi=0)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(theta=-np.pi / 2, phi=0)), cirq.unitary(cirq.PhasedFSimGate(theta=-np.pi / 2, zeta=0.2)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(-np.pi / 2, 0, 1, 2, 3)), cirq.unitary(cirq.PhasedFSimGate(-np.pi / 2, 0.1, 1, 2, 3)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(np.pi / 2, 1, 1, 2, 3)), cirq.unitary(cirq.PhasedFSimGate(np.pi / 2, 2, 1, 2, 3)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(-np.pi, 1, 0, 2, 3)), cirq.unitary(cirq.PhasedFSimGate(-np.pi, 1, 0.1, 2, 3)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(0, 1, 1, 2, 3)), cirq.unitary(cirq.PhasedFSimGate(0, 1, 2, 2, 3)), atol=1e-08)
+    np.testing.assert_allclose(cirq.unitary(cirq.PhasedFSimGate(np.pi / 2, -0.5, 1, 2, 3)), cirq.unitary(cirq.PhasedFSimGate(np.pi / 2, -0.2, 1, 2, 3)), atol=1e-08)

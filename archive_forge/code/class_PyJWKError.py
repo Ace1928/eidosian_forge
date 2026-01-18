@@ -1,0 +1,2 @@
+class PyJWKError(PyJWTError):
+    pass

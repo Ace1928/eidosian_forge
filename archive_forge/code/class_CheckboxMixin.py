@@ -1,0 +1,200 @@
+from __future__ import annotations
+from dataclasses import dataclass
+from textwrap import dedent
+from typing import TYPE_CHECKING, cast
+from streamlit.elements.form import current_form_id
+from streamlit.elements.utils import (
+from streamlit.proto.Checkbox_pb2 import Checkbox as CheckboxProto
+from streamlit.runtime.metrics_util import gather_metrics
+from streamlit.runtime.scriptrunner import ScriptRunContext, get_script_run_ctx
+from streamlit.runtime.state import (
+from streamlit.runtime.state.common import compute_widget_id
+from streamlit.type_util import Key, LabelVisibility, maybe_raise_label_warnings, to_key
+class CheckboxMixin:
+
+    @gather_metrics('checkbox')
+    def checkbox(self, label: str, value: bool=False, key: Key | None=None, help: str | None=None, on_change: WidgetCallback | None=None, args: WidgetArgs | None=None, kwargs: WidgetKwargs | None=None, *, disabled: bool=False, label_visibility: LabelVisibility='visible') -> bool:
+        """Display a checkbox widget.
+
+        Parameters
+        ----------
+        label : str
+            A short label explaining to the user what this checkbox is for.
+            The label can optionally contain Markdown and supports the following
+            elements: Bold, Italics, Strikethroughs, Inline Code, Emojis, and Links.
+
+            This also supports:
+
+            * Emoji shortcodes, such as ``:+1:``  and ``:sunglasses:``.
+              For a list of all supported codes,
+              see https://share.streamlit.io/streamlit/emoji-shortcodes.
+
+            * LaTeX expressions, by wrapping them in "$" or "$$" (the "$$"
+              must be on their own lines). Supported LaTeX functions are listed
+              at https://katex.org/docs/supported.html.
+
+            * Colored text, using the syntax ``:color[text to be colored]``,
+              where ``color`` needs to be replaced with any of the following
+              supported colors: blue, green, orange, red, violet, gray/grey, rainbow.
+
+            Unsupported elements are unwrapped so only their children (text contents) render.
+            Display unsupported elements as literal characters by
+            backslash-escaping them. E.g. ``1\\. Not an ordered list``.
+
+            For accessibility reasons, you should never set an empty label (label="")
+            but hide it with label_visibility if needed. In the future, we may disallow
+            empty labels by raising an exception.
+        value : bool
+            Preselect the checkbox when it first renders. This will be
+            cast to bool internally.
+        key : str or int
+            An optional string or integer to use as the unique key for the widget.
+            If this is omitted, a key will be generated for the widget
+            based on its content. Multiple widgets of the same type may
+            not share the same key.
+        help : str
+            An optional tooltip that gets displayed next to the checkbox.
+        on_change : callable
+            An optional callback invoked when this checkbox's value changes.
+        args : tuple
+            An optional tuple of args to pass to the callback.
+        kwargs : dict
+            An optional dict of kwargs to pass to the callback.
+        disabled : bool
+            An optional boolean, which disables the checkbox if set to True.
+            The default is False.
+        label_visibility : "visible", "hidden", or "collapsed"
+            The visibility of the label. If "hidden", the label doesn't show but there
+            is still empty space for it (equivalent to label="").
+            If "collapsed", both the label and the space are removed. Default is
+            "visible".
+
+        Returns
+        -------
+        bool
+            Whether or not the checkbox is checked.
+
+        Example
+        -------
+        >>> import streamlit as st
+        >>>
+        >>> agree = st.checkbox('I agree')
+        >>>
+        >>> if agree:
+        ...     st.write('Great!')
+
+        .. output::
+           https://doc-checkbox.streamlit.app/
+           height: 220px
+
+        """
+        ctx = get_script_run_ctx()
+        return self._checkbox(label=label, value=value, key=key, help=help, on_change=on_change, args=args, kwargs=kwargs, disabled=disabled, label_visibility=label_visibility, type=CheckboxProto.StyleType.DEFAULT, ctx=ctx)
+
+    @gather_metrics('toggle')
+    def toggle(self, label: str, value: bool=False, key: Key | None=None, help: str | None=None, on_change: WidgetCallback | None=None, args: WidgetArgs | None=None, kwargs: WidgetKwargs | None=None, *, disabled: bool=False, label_visibility: LabelVisibility='visible') -> bool:
+        """Display a toggle widget.
+
+        Parameters
+        ----------
+        label : str
+            A short label explaining to the user what this toggle is for.
+            The label can optionally contain Markdown and supports the following
+            elements: Bold, Italics, Strikethroughs, Inline Code, Emojis, and Links.
+
+            This also supports:
+
+            * Emoji shortcodes, such as ``:+1:``  and ``:sunglasses:``.
+              For a list of all supported codes,
+              see https://share.streamlit.io/streamlit/emoji-shortcodes.
+
+            * LaTeX expressions, by wrapping them in "$" or "$$" (the "$$"
+              must be on their own lines). Supported LaTeX functions are listed
+              at https://katex.org/docs/supported.html.
+
+            * Colored text, using the syntax ``:color[text to be colored]``,
+              where ``color`` needs to be replaced with any of the following
+              supported colors: blue, green, orange, red, violet, gray/grey, rainbow.
+
+            Unsupported elements are unwrapped so only their children (text contents) render.
+            Display unsupported elements as literal characters by
+            backslash-escaping them. E.g. ``1\\. Not an ordered list``.
+
+            For accessibility reasons, you should never set an empty label (label="")
+            but hide it with label_visibility if needed. In the future, we may disallow
+            empty labels by raising an exception.
+        value : bool
+            Preselect the toggle when it first renders. This will be
+            cast to bool internally.
+        key : str or int
+            An optional string or integer to use as the unique key for the widget.
+            If this is omitted, a key will be generated for the widget
+            based on its content. Multiple widgets of the same type may
+            not share the same key.
+        help : str
+            An optional tooltip that gets displayed next to the toggle.
+        on_change : callable
+            An optional callback invoked when this toggle's value changes.
+        args : tuple
+            An optional tuple of args to pass to the callback.
+        kwargs : dict
+            An optional dict of kwargs to pass to the callback.
+        disabled : bool
+            An optional boolean, which disables the toggle if set to True.
+            The default is False.
+        label_visibility : "visible", "hidden", or "collapsed"
+            The visibility of the label. If "hidden", the label doesn't show but there
+            is still empty space for it (equivalent to label="").
+            If "collapsed", both the label and the space are removed. Default is
+            "visible".
+
+        Returns
+        -------
+        bool
+            Whether or not the toggle is checked.
+
+        Example
+        -------
+        >>> import streamlit as st
+        >>>
+        >>> on = st.toggle('Activate feature')
+        >>>
+        >>> if on:
+        ...     st.write('Feature activated!')
+
+        .. output::
+           https://doc-toggle.streamlit.app/
+           height: 220px
+
+        """
+        ctx = get_script_run_ctx()
+        return self._checkbox(label=label, value=value, key=key, help=help, on_change=on_change, args=args, kwargs=kwargs, disabled=disabled, label_visibility=label_visibility, type=CheckboxProto.StyleType.TOGGLE, ctx=ctx)
+
+    def _checkbox(self, label: str, value: bool=False, key: Key | None=None, help: str | None=None, on_change: WidgetCallback | None=None, args: WidgetArgs | None=None, kwargs: WidgetKwargs | None=None, *, disabled: bool=False, label_visibility: LabelVisibility='visible', type: CheckboxProto.StyleType.ValueType=CheckboxProto.StyleType.DEFAULT, ctx: ScriptRunContext | None=None) -> bool:
+        key = to_key(key)
+        check_callback_rules(self.dg, on_change)
+        check_session_state_rules(default_value=None if value is False else value, key=key)
+        maybe_raise_label_warnings(label, label_visibility)
+        id = compute_widget_id('toggle' if type == CheckboxProto.StyleType.TOGGLE else 'checkbox', user_key=key, label=label, value=bool(value), key=key, help=help, form_id=current_form_id(self.dg), page=ctx.page_script_hash if ctx else None)
+        checkbox_proto = CheckboxProto()
+        checkbox_proto.id = id
+        checkbox_proto.label = label
+        checkbox_proto.default = bool(value)
+        checkbox_proto.type = type
+        checkbox_proto.form_id = current_form_id(self.dg)
+        checkbox_proto.disabled = disabled
+        checkbox_proto.label_visibility.value = get_label_visibility_proto_value(label_visibility)
+        if help is not None:
+            checkbox_proto.help = dedent(help)
+        serde = CheckboxSerde(value)
+        checkbox_state = register_widget('checkbox', checkbox_proto, user_key=key, on_change_handler=on_change, args=args, kwargs=kwargs, deserializer=serde.deserialize, serializer=serde.serialize, ctx=ctx)
+        if checkbox_state.value_changed:
+            checkbox_proto.value = checkbox_state.value
+            checkbox_proto.set_value = True
+        self.dg._enqueue('checkbox', checkbox_proto)
+        return checkbox_state.value
+
+    @property
+    def dg(self) -> DeltaGenerator:
+        """Get our DeltaGenerator."""
+        return cast('DeltaGenerator', self)

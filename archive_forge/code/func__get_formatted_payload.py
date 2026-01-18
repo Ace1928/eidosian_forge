@@ -1,0 +1,12 @@
+from __future__ import (absolute_import, division, print_function)
+import json
+import os
+from ssl import SSLError
+from ansible_collections.dellemc.openmanage.plugins.module_utils.redfish import Redfish, redfish_auth_params
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import ConnectionError, SSLValidationError
+from ansible.module_utils.six.moves.urllib.error import URLError, HTTPError
+def _get_formatted_payload(obj, existing_payload):
+    """get the payload after removing unwanted tags"""
+    existing_payload = obj.strip_substr_dict(existing_payload)
+    return existing_payload

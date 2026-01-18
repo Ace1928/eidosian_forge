@@ -1,0 +1,14 @@
+from __future__ import absolute_import
+from apitools.base.py import base_api
+from googlecloudsdk.generated_clients.apis.healthcare.v1beta1 import healthcare_v1beta1_messages as messages
+def ExplainDataAccess(self, request, global_params=None):
+    """Explains all the permitted/denied actor, purpose and environment for a given resource.
+
+      Args:
+        request: (HealthcareProjectsLocationsDatasetsFhirStoresExplainDataAccessRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (ExplainDataAccessResponse) The response message.
+      """
+    config = self.GetMethodConfig('ExplainDataAccess')
+    return self._RunMethod(config, request, global_params=global_params)

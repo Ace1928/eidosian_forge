@@ -1,0 +1,26 @@
+import gc
+from io import StringIO
+import numpy as np
+from numba import njit, vectorize
+from numba import typeof
+from numba.core import utils, types, typing, ir, compiler, cpu, cgutils
+from numba.core.compiler import Compiler, Flags
+from numba.core.registry import cpu_target
+from numba.tests.support import (MemoryLeakMixin, TestCase, temp_directory,
+from numba.extending import (
+import operator
+import textwrap
+import unittest
+def test_issue_1372(self):
+    """Test array expression with duplicated term"""
+    from numba import njit
+
+    @njit
+    def foo(a, b):
+        b = np.sin(b)
+        return b + b + a
+    a = np.random.uniform(10)
+    b = np.random.uniform(10)
+    expect = foo.py_func(a, b)
+    got = foo(a, b)
+    np.testing.assert_allclose(got, expect)

@@ -1,0 +1,11 @@
+import string
+from typing import Callable, Dict, Set, Tuple, Union, Any, Optional, List, cast
+import numpy as np
+import cirq
+import cirq_rigetti
+from cirq import protocols, value, ops
+def _zzpow_gate(op: cirq.Operation, formatter: QuilFormatter) -> str:
+    gate = cast(cirq.ZZPowGate, op.gate)
+    if gate._exponent == 1:
+        return formatter.format('Z {0}\nZ {1}\n', op.qubits[0], op.qubits[1])
+    return formatter.format('RZ({0}) {1}\nRZ({2}) {3}\n', gate._exponent * np.pi, op.qubits[0], gate._exponent * np.pi, op.qubits[1])

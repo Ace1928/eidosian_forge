@@ -1,0 +1,2 @@
+class CharacterEncodingOverride(ThingsNobodyCaresAboutButMe):
+    pass

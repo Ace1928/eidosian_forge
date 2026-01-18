@@ -1,0 +1,21 @@
+import bz2
+import json
+import lzma
+import zlib
+from datetime import datetime, timezone
+from decimal import Context
+from io import BytesIO
+from struct import error as StructError
+from typing import IO, Union, Optional, Generic, TypeVar, Iterator, Dict
+from warnings import warn
+from .io.binary_decoder import BinaryDecoder
+from .io.json_decoder import AvroJSONDecoder
+from .logical_readers import LOGICAL_READERS
+from .schema import (
+from .types import Schema, AvroMessage, NamedSchemas
+from ._read_common import (
+from .const import NAMED_TYPES, AVRO_TYPES
+def bzip2_read_block(decoder):
+    """Read block in "bzip2" codec."""
+    data = decoder.read_bytes()
+    return BytesIO(bz2.decompress(data))

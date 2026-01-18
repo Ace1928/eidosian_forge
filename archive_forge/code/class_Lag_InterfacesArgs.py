@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+class Lag_InterfacesArgs(object):
+    """The arg spec for the ios_lag_interfaces module"""
+    argument_spec = {'config': {'type': 'list', 'elements': 'dict', 'options': {'name': {'type': 'str', 'required': True}, 'members': {'type': 'list', 'elements': 'dict', 'options': {'member': {'type': 'str'}, 'mode': {'type': 'str', 'choices': ['auto', 'desirable', 'on', 'active', 'passive']}, 'link': {'type': 'int'}}}}}, 'running_config': {'type': 'str'}, 'state': {'type': 'str', 'choices': ['merged', 'replaced', 'overridden', 'deleted', 'rendered', 'parsed', 'gathered'], 'default': 'merged'}}

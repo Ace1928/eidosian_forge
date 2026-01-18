@@ -1,0 +1,15 @@
+import sys
+import unittest
+from libcloud.test import MockHttp, LibcloudTestCase
+from libcloud.utils.py3 import httplib
+from libcloud.common.types import LibcloudError
+from libcloud.compute.base import (
+from libcloud.test.secrets import ECS_PARAMS
+from libcloud.compute.types import NodeState, StorageVolumeState
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.ecs import ECSDriver
+def _JoinSecurityGroup(self, method, url, body, headers):
+    params = {'InstanceId': self.test.fake_node.id, 'SecurityGroupId': self.test.fake_security_group_id}
+    self.assertUrlContainsQueryParams(url, params)
+    body = self.fixtures.load('join_security_group_by_id.xml')
+    return (httplib.OK, body, {}, httplib.responses[httplib.OK])

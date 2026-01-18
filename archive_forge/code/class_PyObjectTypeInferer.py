@@ -1,0 +1,21 @@
+from __future__ import absolute_import
+from .Errors import error, message
+from . import ExprNodes
+from . import Nodes
+from . import Builtin
+from . import PyrexTypes
+from .. import Utils
+from .PyrexTypes import py_object_type, unspecified_type
+from .Visitor import CythonTransform, EnvTransform
+class PyObjectTypeInferer(object):
+    """
+    If it's not declared, it's a PyObject.
+    """
+
+    def infer_types(self, scope):
+        """
+        Given a dict of entries, map all unspecified types to a specified type.
+        """
+        for name, entry in scope.entries.items():
+            if entry.type is unspecified_type:
+                entry.type = py_object_type

@@ -1,0 +1,17 @@
+from typing import NamedTuple
+import numpy as np
+from numpy.testing import assert_allclose
+import pandas as pd
+from pandas.testing import assert_index_equal
+import pytest
+from statsmodels.datasets import danish_data
+from statsmodels.iolib.summary import Summary
+from statsmodels.tools.sm_exceptions import SpecificationWarning
+from statsmodels.tsa.ar_model import AutoReg
+from statsmodels.tsa.ardl.model import (
+from statsmodels.tsa.deterministic import DeterministicProcess
+def test_ardl_only_deterministic(data):
+    deterministic = DeterministicProcess(data.y.index, constant=True, order=3)
+    res = ARDL(data.y, None, data.x, None, trend='n', deterministic=deterministic).fit()
+    assert res.params.shape[0] == 4
+    check_results(res)

@@ -1,0 +1,14 @@
+import datetime
+import email.message
+import math
+from operator import methodcaller
+import sys
+import unittest
+import warnings
+from testtools.compat import _b
+from testtools.content import (
+from testtools.content_type import ContentType
+from testtools.tags import TagContext
+def _details_to_exc_info(self, details):
+    """Convert a details dict to an exc_info tuple."""
+    return (_StringException, _StringException(_details_to_str(details, special='traceback')), None)

@@ -1,0 +1,54 @@
+from __future__ import annotations
+import base64
+import codecs
+import functools
+import locale
+import os
+import uuid
+from collections import OrderedDict
+from io import BytesIO
+from itertools import chain
+from typing import Optional, Type
+from unittest import skipIf
+from zope.interface import implementer
+from zope.interface.verify import verifyClass, verifyObject
+from twisted.cred.checkers import InMemoryUsernamePasswordDatabaseDontUse
+from twisted.cred.credentials import (
+from twisted.cred.error import UnauthorizedLogin
+from twisted.cred.portal import IRealm, Portal
+from twisted.internet import defer, error, interfaces, reactor
+from twisted.internet.defer import Deferred
+from twisted.internet.task import Clock
+from twisted.internet.testing import StringTransport, StringTransportWithDisconnection
+from twisted.mail import imap4
+from twisted.mail.imap4 import MessageSet
+from twisted.mail.interfaces import (
+from twisted.protocols import loopback
+from twisted.python import failure, log, util
+from twisted.python.compat import iterbytes, nativeString, networkString
+from twisted.trial.unittest import SynchronousTestCase, TestCase
+def test_mailboxWithoutNamespace(self):
+    """
+        A mailbox that does not provide L{INamespacePresenter} returns
+        empty L{list}s for its personal, shared, and user namespaces.
+        """
+    self.server.theAccount = AccountWithoutNamespaces(b'testuser')
+    self.namespaceArgs = None
+
+    def login():
+        return self.client.login(b'testuser', b'password-test')
+
+    def namespace():
+
+        def gotNamespace(args):
+            self.namespaceArgs = args
+            self._cbStopClient(None)
+        return self.client.namespace().addCallback(gotNamespace)
+    d1 = self.connected.addCallback(strip(login))
+    d1.addCallback(strip(namespace))
+    d1.addErrback(self._ebGeneral)
+    d2 = self.loopback()
+    d = defer.gatherResults([d1, d2])
+    d.addCallback(lambda _: self.namespaceArgs)
+    d.addCallback(self.assertEqual, [[], [], []])
+    return d

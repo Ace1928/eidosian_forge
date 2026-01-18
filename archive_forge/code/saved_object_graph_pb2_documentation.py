@@ -1,0 +1,12 @@
+from google.protobuf.internal import builder as _builder
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import descriptor_pool as _descriptor_pool
+from google.protobuf import symbol_database as _symbol_database
+from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
+from tensorflow.core.framework import tensor_shape_pb2 as tensorflow_dot_core_dot_framework_dot_tensor__shape__pb2
+from tensorflow.core.framework import types_pb2 as tensorflow_dot_core_dot_framework_dot_types__pb2
+from tensorflow.core.framework import variable_pb2 as tensorflow_dot_core_dot_framework_dot_variable__pb2
+from tensorflow.core.framework import versions_pb2 as tensorflow_dot_core_dot_framework_dot_versions__pb2
+from tensorflow.core.protobuf import struct_pb2 as tensorflow_dot_core_dot_protobuf_dot_struct__pb2
+from tensorflow.core.protobuf import trackable_object_graph_pb2 as tensorflow_dot_core_dot_protobuf_dot_trackable__object__graph__pb2
+Generated protocol buffer code.

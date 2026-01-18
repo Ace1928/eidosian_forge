@@ -1,0 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+from sympy.simplify import simplify as simp, trigsimp as tsimp  # type: ignore
+from sympy.core.decorators import call_highest_priority, _sympifyit
+from sympy.core.assumptions import StdFactKB
+from sympy.core.function import diff as df
+from sympy.integrals.integrals import Integral
+from sympy.polys.polytools import factor as fctr
+from sympy.core import S, Add, Mul
+from sympy.core.expr import Expr
+def as_coeff_add(self, *deps):
+    """Efficiently extract the coefficient of a summation."""
+    l = [x * self.components[x] for x in self.components]
+    return (0, tuple(l))

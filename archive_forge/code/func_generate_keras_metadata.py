@@ -1,0 +1,24 @@
+import os
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.protobuf import saved_metadata_pb2
+from tensorflow.python.keras.protobuf import versions_pb2
+from tensorflow.python.keras.saving import saving_utils
+from tensorflow.python.keras.saving.saved_model import constants
+from tensorflow.python.keras.saving.saved_model import save_impl
+from tensorflow.python.keras.saving.saved_model import utils
+from tensorflow.python.keras.utils.generic_utils import LazyLoader
+from tensorflow.python.keras.utils.io_utils import ask_to_proceed_with_overwrite
+from tensorflow.python.platform import gfile
+from tensorflow.python.saved_model import save as save_lib
+def generate_keras_metadata(saved_nodes, node_paths):
+    """Constructs a KerasMetadata proto with the metadata of each keras object."""
+    metadata = saved_metadata_pb2.SavedMetadata()
+    for node_id, node in enumerate(saved_nodes):
+        if isinstance(node, base_layer.Layer):
+            path = node_paths[node]
+            if not path:
+                node_path = 'root'
+            else:
+                node_path = 'root.{}'.format('.'.join([ref.name for ref in path]))
+            metadata.nodes.add(node_id=node_id, node_path=node_path, version=versions_pb2.VersionDef(producer=1, min_consumer=1, bad_consumers=[]), identifier=node._object_identifier, metadata=node._tracking_metadata)
+    return metadata

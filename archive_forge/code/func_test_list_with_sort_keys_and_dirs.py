@@ -1,0 +1,24 @@
+import argparse
+import base64
+import builtins
+import collections
+import datetime
+import io
+import os
+from unittest import mock
+import fixtures
+from oslo_utils import timeutils
+import testtools
+import novaclient
+from novaclient import api_versions
+from novaclient import base
+import novaclient.client
+from novaclient import exceptions
+import novaclient.shell
+from novaclient.tests.unit import utils
+from novaclient.tests.unit.v2 import fakes
+from novaclient.v2 import servers
+import novaclient.v2.shell
+def test_list_with_sort_keys_and_dirs(self):
+    self.run_command('list --sort 1:asc,2:desc')
+    self.assert_called('GET', '/servers/detail?sort_dir=asc&sort_dir=desc&sort_key=1&sort_key=2')

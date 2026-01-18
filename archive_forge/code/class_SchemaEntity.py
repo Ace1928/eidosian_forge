@@ -1,0 +1,41 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class SchemaEntity(_messages.Message):
+    """Schema typically has no parent entity, but can have a parent entity
+  DatabaseInstance (for database engines which support it). For some database
+  engines, the terms schema and user can be used interchangeably when they
+  refer to a namespace or a collection of other database entities. Can store
+  additional information which is schema specific.
+
+  Messages:
+    CustomFeaturesValue: Custom engine specific features.
+
+  Fields:
+    customFeatures: Custom engine specific features.
+  """
+
+    @encoding.MapUnrecognizedFields('additionalProperties')
+    class CustomFeaturesValue(_messages.Message):
+        """Custom engine specific features.
+
+    Messages:
+      AdditionalProperty: An additional property for a CustomFeaturesValue
+        object.
+
+    Fields:
+      additionalProperties: Properties of the object.
+    """
+
+        class AdditionalProperty(_messages.Message):
+            """An additional property for a CustomFeaturesValue object.
+
+      Fields:
+        key: Name of the additional property.
+        value: A extra_types.JsonValue attribute.
+      """
+            key = _messages.StringField(1)
+            value = _messages.MessageField('extra_types.JsonValue', 2)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
+    customFeatures = _messages.MessageField('CustomFeaturesValue', 1)

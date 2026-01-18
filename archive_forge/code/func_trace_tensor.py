@@ -1,0 +1,71 @@
+import collections
+import hashlib
+import operator
+import os
+import os.path
+import sys
+import numpy as np
+from tensorflow.core.framework import summary_pb2
+from tensorflow.python.eager import monitoring
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import func_graph
+from tensorflow.python.framework import function
+from tensorflow.python.framework import graph_io
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor as tensor_lib
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.lib.io import file_io
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import cond
+from tensorflow.python.ops import control_flow_case
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import control_flow_util
+from tensorflow.python.ops import gen_math_ops
+from tensorflow.python.ops import init_ops
+from tensorflow.python.ops import linalg_ops
+from tensorflow.python.ops import logging_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn_impl
+from tensorflow.python.ops import state_ops
+from tensorflow.python.ops import string_ops
+from tensorflow.python.ops import summary_ops_v2 as summary
+from tensorflow.python.ops import variable_scope
+from tensorflow.python.platform import analytics
+from tensorflow.python.platform import gfile
+from tensorflow.python.platform import remote_utils
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.summary import summary_iterator
+from tensorflow.python.tpu import tensor_tracer_flags
+from tensorflow.python.tpu import tensor_tracer_report
+from tensorflow.python.tpu import tpu_replication
+from tensorflow.python.tpu.ops import tpu_ops
+from tensorflow.python.training import training_util
+def trace_tensor(tensor, tracepoint_name=None):
+    """Programmatic interface to trace a tensor with Tensor Tracer.
+
+  Tensor Tracer, by default, traces all tensors in the execution. This function
+  can be used to limit traced tensors. If this function is called for a subset
+  of the tensors, only those will be traced.
+
+  For example, Tensor Traacer will only trace c below.
+    c = tf.MatMul(a, b)
+    tensor_tracer.trace_tensor(c)
+    d = tf.add(c, 1)
+  Args:
+     tensor: the tensor object for which the tracing is requested.
+     tracepoint_name: an optional tensor tracepoint name string. A tracepoint
+       name is an Tensor Tracer internal name for the tensor. It is useful when
+       comparing equivalent traces from different models that have different
+       tensor namings. Equivalent tensors (with different names) can be mapped
+       to each other by assigning a common tracepoint_name.
+
+  Returns:
+    The provided tensor.
+  """
+    if tracepoint_name is None:
+        tracepoint_name = tensor.name
+    tensor.graph.get_collection(_TENSOR_TRACER_COLLECTION)
+    tensor.graph.add_to_collection(_TENSOR_TRACER_COLLECTION, (tensor, tracepoint_name))
+    return tensor

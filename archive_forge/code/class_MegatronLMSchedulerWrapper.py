@@ -1,0 +1,19 @@
+import argparse
+import math
+from abc import ABC
+from functools import partial
+import torch
+import torch.nn.functional as F
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
+from ..optimizer import AcceleratedOptimizer
+from ..scheduler import AcceleratedScheduler
+from .imports import is_megatron_lm_available, is_transformers_available
+from .operations import recursively_apply, send_to_device
+class MegatronLMSchedulerWrapper(AcceleratedScheduler):
+
+    def __init__(self, scheduler, optimizers):
+        super().__init__(scheduler, optimizers)
+
+    def step(self, *args, **kwargs):
+        return

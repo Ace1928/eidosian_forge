@@ -1,0 +1,17 @@
+import sys
+import unittest
+from datetime import datetime
+from libcloud.test import MockHttp
+from libcloud.utils.py3 import httplib
+from libcloud.common.types import LibcloudError, InvalidCredsError
+from libcloud.compute.base import Node, NodeImage, NodeState, StorageVolume
+from libcloud.test.compute import TestCaseMixin
+from libcloud.common.linode import LinodeDisk, LinodeIPAddress, LinodeExceptionV4
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.linode import LinodeNodeDriver, LinodeNodeDriverV4
+def test_ex_clone_volume(self):
+    volume = self.driver.list_volumes()[0]
+    cloned_volume = self.driver.ex_clone_volume(volume, 'TestingClone')
+    self.assertIsInstance(cloned_volume, StorageVolume)
+    self.assertEqual(volume.size, cloned_volume.size)
+    self.assertEqual(cloned_volume.name, 'TestingClone')

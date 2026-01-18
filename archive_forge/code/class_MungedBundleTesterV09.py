@@ -1,0 +1,42 @@
+import bz2
+import os
+import sys
+import tempfile
+from io import BytesIO
+from ... import diff, errors, merge, osutils
+from ... import revision as _mod_revision
+from ... import tests
+from ... import transport as _mod_transport
+from ... import treebuilder
+from ...tests import features, test_commit
+from ...tree import InterTree
+from .. import bzrdir, inventory, knitrepo
+from ..bundle.apply_bundle import install_bundle, merge_bundle
+from ..bundle.bundle_data import BundleTree
+from ..bundle.serializer import read_bundle, v4, v09, write_bundle
+from ..bundle.serializer.v4 import BundleSerializerV4
+from ..bundle.serializer.v08 import BundleSerializerV08
+from ..bundle.serializer.v09 import BundleSerializerV09
+from ..inventorytree import InventoryTree
+class MungedBundleTesterV09(tests.TestCaseWithTransport, MungedBundleTester):
+    format = '0.9'
+
+    def test_missing_trailing_whitespace(self):
+        bundle_txt = self.build_test_bundle()
+        raw = bundle_txt.getvalue()
+        self.assertEqual(b'\n\n', raw[-2:])
+        bundle_txt = BytesIO(raw[:-1])
+        bundle = read_bundle(bundle_txt)
+        self.check_valid(bundle)
+
+    def test_opening_text(self):
+        bundle_txt = self.build_test_bundle()
+        bundle_txt = BytesIO(b'Some random\nemail comments\n' + bundle_txt.getvalue())
+        bundle = read_bundle(bundle_txt)
+        self.check_valid(bundle)
+
+    def test_trailing_text(self):
+        bundle_txt = self.build_test_bundle()
+        bundle_txt = BytesIO(bundle_txt.getvalue() + b'Some trailing\nrandom\ntext\n')
+        bundle = read_bundle(bundle_txt)
+        self.check_valid(bundle)

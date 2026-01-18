@@ -1,0 +1,30 @@
+import itertools
+from .typeconv import TypeManager, TypeCastingRules
+from numba.core import types
+def _init_casting_rules(tm):
+    tcr = TypeCastingRules(tm)
+    tcr.safe_unsafe(types.boolean, types.int8)
+    tcr.safe_unsafe(types.boolean, types.uint8)
+    tcr.promote_unsafe(types.int8, types.int16)
+    tcr.promote_unsafe(types.uint8, types.uint16)
+    tcr.promote_unsafe(types.int16, types.int32)
+    tcr.promote_unsafe(types.uint16, types.uint32)
+    tcr.promote_unsafe(types.int32, types.int64)
+    tcr.promote_unsafe(types.uint32, types.uint64)
+    tcr.safe_unsafe(types.uint8, types.int16)
+    tcr.safe_unsafe(types.uint16, types.int32)
+    tcr.safe_unsafe(types.uint32, types.int64)
+    tcr.safe_unsafe(types.int8, types.float16)
+    tcr.safe_unsafe(types.int16, types.float32)
+    tcr.safe_unsafe(types.int32, types.float64)
+    tcr.unsafe_unsafe(types.int16, types.float16)
+    tcr.unsafe_unsafe(types.int32, types.float32)
+    tcr.safe_unsafe(types.int64, types.float64)
+    tcr.safe_unsafe(types.uint64, types.float64)
+    tcr.promote_unsafe(types.float16, types.float32)
+    tcr.promote_unsafe(types.float32, types.float64)
+    tcr.safe(types.float32, types.complex64)
+    tcr.safe(types.float64, types.complex128)
+    tcr.promote_unsafe(types.complex64, types.complex128)
+    tcr.unsafe_unsafe(types.uintp, types.voidptr)
+    return tcr

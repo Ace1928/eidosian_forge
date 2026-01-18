@@ -1,0 +1,24 @@
+from 1.0.5, you can use a timeout of -1::
+from sys import platform
+from os import environ
+from functools import wraps, partial
+from kivy.context import register_context
+from kivy.config import Config
+from kivy.logger import Logger
+from kivy.compat import clock as _default_time
+import time
+from threading import Event as ThreadingEvent
+class ClockBaseInterruptFreeBehavior(ClockBaseInterruptBehavior):
+    """A base class for the clock that interrupts the sleep interval for
+    free events.
+    """
+
+    def __init__(self, **kwargs):
+        super(ClockBaseInterruptFreeBehavior, self).__init__(**kwargs)
+        self._get_min_timeout_func = self.get_min_free_timeout
+
+    def on_schedule(self, event):
+        if not event.free:
+            return
+        event._last_dt = self.time()
+        return super(ClockBaseInterruptFreeBehavior, self).on_schedule(event)

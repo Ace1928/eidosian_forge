@@ -1,0 +1,22 @@
+import unittest
+from zope.interface import Interface
+from zope.interface.adapter import VerifyingAdapterRegistry
+from zope.interface.registry import Components
+def test_unregisterUtility_w_existing_subscr_non_hashable_fresh_cache(self):
+    from zope.interface.declarations import InterfaceClass
+    from zope.interface.registry import _UtilityRegistrations
+
+    class IFoo(InterfaceClass):
+        pass
+    ifoo = IFoo('IFoo')
+    _info = 'info'
+    _name1 = 'name1'
+    _name2 = 'name2'
+    _to_reg = dict()
+    comp = self._makeOne()
+    comp.registerUtility(_to_reg, ifoo, _name1, _info)
+    comp.registerUtility(_to_reg, ifoo, _name2, _info)
+    _monkey, _events = self._wrapEvents()
+    with _monkey:
+        comp.unregisterUtility(_to_reg, ifoo, _name2)
+    self.assertEqual(comp.utilities._subscribers[0][ifoo][''], (_to_reg,))

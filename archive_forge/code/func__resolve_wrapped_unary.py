@@ -1,0 +1,11 @@
+import operator
+from numba.core import types
+from numba.core.typing.npydecl import (parse_dtype, parse_shape,
+from numba.core.typing.templates import (AttributeTemplate, ConcreteTemplate,
+from numba.cuda.types import dim3
+from numba.core.typeconv import Conversion
+from numba import cuda
+from numba.cuda.compiler import declare_device_function_template
+def _resolve_wrapped_unary(fname):
+    decl = declare_device_function_template(f'__numba_wrapper_{fname}', types.float16, (types.float16,))
+    return types.Function(decl)

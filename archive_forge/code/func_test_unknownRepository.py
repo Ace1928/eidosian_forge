@@ -1,0 +1,17 @@
+import glob
+import operator
+import os
+import shutil
+import sys
+import tempfile
+from incremental import Version
+from twisted.python import release
+from twisted.python._release import (
+from twisted.python.filepath import FilePath
+from twisted.trial.unittest import TestCase
+def test_unknownRepository(self):
+    """
+        L{getRepositoryCommand} from a directory which doesn't look like a Git
+        repository produces a L{NotWorkingDirectory} exception.
+        """
+    self.assertRaises(NotWorkingDirectory, getRepositoryCommand, self.repos)

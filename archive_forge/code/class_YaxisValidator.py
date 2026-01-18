@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class YaxisValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='yaxis', parent_name='layout.xaxis.rangeslider', **kwargs):
+        super(YaxisValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'YAxis'), data_docs=kwargs.pop('data_docs', '\n            range\n                Sets the range of this axis for the\n                rangeslider.\n            rangemode\n                Determines whether or not the range of this\n                axis in the rangeslider use the same value than\n                in the main plot when zooming in/out. If\n                "auto", the autorange will be used. If "fixed",\n                the `range` is used. If "match", the current\n                range of the corresponding y-axis on the main\n                subplot is used.\n'), **kwargs)

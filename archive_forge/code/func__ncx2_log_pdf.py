@@ -1,0 +1,29 @@
+import warnings
+from collections.abc import Iterable
+from functools import wraps, cached_property
+import ctypes
+import numpy as np
+from numpy.polynomial import Polynomial
+from scipy._lib.doccer import (extend_notes_in_docstring,
+from scipy._lib._ccallback import LowLevelCallable
+from scipy import optimize
+from scipy import integrate
+import scipy.special as sc
+import scipy.special._ufuncs as scu
+from scipy._lib._util import _lazyselect, _lazywhere
+from . import _stats
+from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
+from ._distn_infrastructure import (
+from ._ksstats import kolmogn, kolmognp, kolmogni
+from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
+from ._censored_data import CensoredData
+import scipy.stats._boost as _boost
+from scipy.optimize import root_scalar
+from scipy.stats._warnings_errors import FitError
+import scipy.stats as stats
+def _ncx2_log_pdf(x, df, nc):
+    df2 = df / 2.0 - 1.0
+    xs, ns = (np.sqrt(x), np.sqrt(nc))
+    res = sc.xlogy(df2 / 2.0, x / nc) - 0.5 * (xs - ns) ** 2
+    corr = sc.ive(df2, xs * ns) / 2.0
+    return _lazywhere(corr > 0, (res, corr), f=lambda r, c: r + np.log(c), fillvalue=-np.inf)

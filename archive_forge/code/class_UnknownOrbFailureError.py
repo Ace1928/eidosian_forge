@@ -1,0 +1,2 @@
+class UnknownOrbFailureError(VerificationError):
+    pass

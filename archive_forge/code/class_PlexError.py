@@ -1,0 +1,2 @@
+class PlexError(Exception):
+    message = ''

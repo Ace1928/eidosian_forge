@@ -1,0 +1,10 @@
+import cirq
+def test_expands_composite_recursively_preserving_structur():
+    q = cirq.LineQubit.range(2)
+    c_nested = cirq.FrozenCircuit(cirq.SWAP(*q[:2]), cirq.SWAP(*q[:2]).with_tags('ignore'), cirq.SWAP(*q[:2]))
+    c_nested_expanded = cirq.FrozenCircuit([cirq.CNOT(*q), cirq.CNOT(*q[::-1]), cirq.CNOT(*q)], cirq.SWAP(*q[:2]).with_tags('ignore'), [cirq.CNOT(*q), cirq.CNOT(*q[::-1]), cirq.CNOT(*q)])
+    c_orig = cirq.Circuit(c_nested, cirq.CircuitOperation(cirq.FrozenCircuit(c_nested, cirq.CircuitOperation(c_nested).repeat(5).with_tags('ignore'), cirq.CircuitOperation(c_nested).repeat(6).with_tags('preserve_tag'), cirq.CircuitOperation(c_nested).repeat(7), c_nested)).repeat(4).with_tags('ignore'), c_nested, cirq.CircuitOperation(cirq.FrozenCircuit(c_nested, cirq.CircuitOperation(c_nested).repeat(5).with_tags('ignore'), cirq.CircuitOperation(c_nested).repeat(6).with_tags('preserve_tag'), cirq.CircuitOperation(c_nested).repeat(7), c_nested)).repeat(5).with_tags('preserve_tag'), c_nested)
+    c_expected = cirq.Circuit(c_nested_expanded, cirq.CircuitOperation(cirq.FrozenCircuit(c_nested, cirq.CircuitOperation(c_nested).repeat(5).with_tags('ignore'), cirq.CircuitOperation(c_nested).repeat(6).with_tags('preserve_tag'), cirq.CircuitOperation(c_nested).repeat(7), c_nested)).repeat(4).with_tags('ignore'), c_nested_expanded, cirq.CircuitOperation(cirq.FrozenCircuit(c_nested_expanded, cirq.CircuitOperation(c_nested).repeat(5).with_tags('ignore'), cirq.CircuitOperation(c_nested_expanded).repeat(6).with_tags('preserve_tag'), cirq.CircuitOperation(c_nested_expanded).repeat(7), c_nested_expanded)).repeat(5).with_tags('preserve_tag'), c_nested_expanded)
+    context = cirq.TransformerContext(tags_to_ignore=['ignore'], deep=True)
+    c_expanded = cirq.expand_composite(c_orig, no_decomp=lambda op: op.gate == cirq.CNOT, context=context)
+    cirq.testing.assert_same_circuits(c_expanded, c_expected)

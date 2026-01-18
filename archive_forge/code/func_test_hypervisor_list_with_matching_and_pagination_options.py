@@ -1,0 +1,15 @@
+import json
+from unittest import mock
+from novaclient import exceptions as nova_exceptions
+from openstack import utils as sdk_utils
+from osc_lib.cli import format_columns
+from osc_lib import exceptions
+from openstackclient.compute.v2 import hypervisor
+from openstackclient.tests.unit.compute.v2 import fakes as compute_fakes
+@mock.patch.object(sdk_utils, 'supports_microversion', return_value=False)
+def test_hypervisor_list_with_matching_and_pagination_options(self, sm_mock):
+    arglist = ['--matching', self.hypervisors[0].name, '--limit', '1', '--marker', self.hypervisors[0].name]
+    verifylist = [('matching', self.hypervisors[0].name), ('limit', 1), ('marker', self.hypervisors[0].name)]
+    parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+    ex = self.assertRaises(exceptions.CommandError, self.cmd.take_action, parsed_args)
+    self.assertIn('--matching is not compatible with --marker or --limit', str(ex))

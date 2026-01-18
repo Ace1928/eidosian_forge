@@ -1,0 +1,1 @@
+See Tree.iter_entries_by_dir.

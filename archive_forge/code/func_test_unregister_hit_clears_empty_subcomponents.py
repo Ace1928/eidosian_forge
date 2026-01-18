@@ -1,0 +1,21 @@
+import unittest
+from zope.interface.tests import OptimizationTestMixin
+def test_unregister_hit_clears_empty_subcomponents(self):
+    IB0, IB1, IB2, IB3, IB4, IF0, IF1, IR0, IR1 = _makeInterfaces()
+    registry = self._makeOne()
+    one = object()
+    another = object()
+    registry.register([IB1, IB2], None, '', one)
+    registry.register([IB1, IB3], None, '', another)
+    self._check_basic_types_of_adapters(registry, expected_order=3)
+    self.assertIn(IB2, registry._adapters[2][IB1])
+    self.assertIn(IB3, registry._adapters[2][IB1])
+    MT = self._getMappingType()
+    self.assertEqual(registry._adapters[2], MT({IB1: MT({IB2: MT({None: MT({'': one})}), IB3: MT({None: MT({'': another})})})}))
+    PT = self._getProvidedType()
+    self.assertEqual(registry._provided, PT({None: 2}))
+    registry.unregister([IB1, IB3], None, '', another)
+    self.assertIn(IB2, registry._adapters[2][IB1])
+    self.assertNotIn(IB3, registry._adapters[2][IB1])
+    self.assertEqual(registry._adapters[2], MT({IB1: MT({IB2: MT({None: MT({'': one})})})}))
+    self.assertEqual(registry._provided, PT({None: 1}))

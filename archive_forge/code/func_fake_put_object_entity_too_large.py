@@ -1,0 +1,28 @@
+import copy
+from unittest import mock
+import fixtures
+import hashlib
+import http.client
+import importlib
+import io
+import tempfile
+import uuid
+from oslo_config import cfg
+from oslo_utils import encodeutils
+from oslo_utils.secretutils import md5
+from oslo_utils import units
+import requests_mock
+import swiftclient
+from glance_store._drivers.swift import buffered
+from glance_store._drivers.swift import connection_manager as manager
+from glance_store._drivers.swift import store as swift
+from glance_store._drivers.swift import utils as sutils
+from glance_store import backend
+from glance_store import capabilities
+from glance_store import exceptions
+from glance_store import location
+from glance_store.tests import base
+from glance_store.tests.unit import test_store_capabilities
+def fake_put_object_entity_too_large(*args, **kwargs):
+    msg = 'Test Out of Quota'
+    raise swiftclient.ClientException(msg, http_status=http.client.REQUEST_ENTITY_TOO_LARGE)

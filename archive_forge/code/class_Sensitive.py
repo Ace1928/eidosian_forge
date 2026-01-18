@@ -1,0 +1,42 @@
+import linecache
+import sys
+import time
+import types
+from importlib import reload
+from types import ModuleType
+from typing import Dict
+from twisted.python import log, reflect
+class Sensitive:
+    """
+    A utility mixin that's sensitive to rebuilds.
+
+    This is a mixin for classes (usually those which represent collections of
+    callbacks) to make sure that their code is up-to-date before running.
+    """
+    lastRebuild = lastRebuild
+
+    def needRebuildUpdate(self):
+        yn = self.lastRebuild < lastRebuild
+        return yn
+
+    def rebuildUpToDate(self):
+        self.lastRebuild = time.time()
+
+    def latestVersionOf(self, anObject):
+        """
+        Get the latest version of an object.
+
+        This can handle just about anything callable; instances, functions,
+        methods, and classes.
+        """
+        t = type(anObject)
+        if t == types.FunctionType:
+            return latestFunction(anObject)
+        elif t == types.MethodType:
+            if anObject.__self__ is None:
+                return getattr(anObject.im_class, anObject.__name__)
+            else:
+                return getattr(anObject.__self__, anObject.__name__)
+        else:
+            log.msg('warning returning anObject!')
+            return anObject

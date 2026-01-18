@@ -1,0 +1,47 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class SparkSqlBatch(_messages.Message):
+    """A configuration for running Apache Spark SQL
+  (https://spark.apache.org/sql/) queries as a batch workload.
+
+  Messages:
+    QueryVariablesValue: Optional. Mapping of query variable names to values
+      (equivalent to the Spark SQL command: SET name="value";).
+
+  Fields:
+    jarFileUris: Optional. HCFS URIs of jar files to be added to the Spark
+      CLASSPATH.
+    queryFileUri: Required. The HCFS URI of the script that contains Spark SQL
+      queries to execute.
+    queryVariables: Optional. Mapping of query variable names to values
+      (equivalent to the Spark SQL command: SET name="value";).
+  """
+
+    @encoding.MapUnrecognizedFields('additionalProperties')
+    class QueryVariablesValue(_messages.Message):
+        """Optional. Mapping of query variable names to values (equivalent to the
+    Spark SQL command: SET name="value";).
+
+    Messages:
+      AdditionalProperty: An additional property for a QueryVariablesValue
+        object.
+
+    Fields:
+      additionalProperties: Additional properties of type QueryVariablesValue
+    """
+
+        class AdditionalProperty(_messages.Message):
+            """An additional property for a QueryVariablesValue object.
+
+      Fields:
+        key: Name of the additional property.
+        value: A string attribute.
+      """
+            key = _messages.StringField(1)
+            value = _messages.StringField(2)
+        additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)
+    jarFileUris = _messages.StringField(1, repeated=True)
+    queryFileUri = _messages.StringField(2)
+    queryVariables = _messages.MessageField('QueryVariablesValue', 3)

@@ -1,0 +1,25 @@
+import json
+import os
+import numpy as np
+from numpy.testing import (
+import pandas as pd
+from pandas.testing import assert_frame_equal
+import pytest
+from statsmodels.datasets import macrodata, sunspots
+from statsmodels.regression.linear_model import OLS
+import statsmodels.stats.diagnostic as smsdia
+import statsmodels.stats.outliers_influence as oi
+import statsmodels.stats.sandwich_covariance as sw
+from statsmodels.tools.tools import Bunch, add_constant
+from statsmodels.tsa.ar_model import AutoReg
+from statsmodels.tsa.arima.model import ARIMA
+def test_rainbow_exception(reset_randomstate):
+    e = pd.DataFrame(np.random.standard_normal((500, 1)))
+    x = pd.DataFrame(np.random.standard_normal((500, 3)), columns=[f'x{i}' for i in range(3)])
+    y = x @ np.ones((3, 1)) + e
+    res = OLS(y, x).fit()
+    with pytest.raises(TypeError, match='order_by must contain'):
+        smsdia.linear_rainbow(res, order_by='x5')
+    res = OLS(np.asarray(y), np.asarray(x)).fit()
+    with pytest.raises(TypeError, match='order_by must contain'):
+        smsdia.linear_rainbow(res, order_by=('x0',))

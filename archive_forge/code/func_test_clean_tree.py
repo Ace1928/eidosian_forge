@@ -1,0 +1,32 @@
+import os
+from breezy import ignores
+from breezy.tests import TestCaseWithTransport
+from breezy.tests.script import run_script
+def test_clean_tree(self):
+    self.run_bzr('init')
+    self.run_bzr('ignore *~')
+    self.run_bzr('ignore *.pyc')
+    self.touch('name')
+    self.touch('name~')
+    self.assertPathExists('name~')
+    self.touch('name.pyc')
+    self.run_bzr('clean-tree --force')
+    self.assertPathExists('name~')
+    self.assertPathDoesNotExist('name')
+    self.touch('name')
+    self.run_bzr('clean-tree --detritus --force')
+    self.assertPathExists('name')
+    self.assertPathDoesNotExist('name~')
+    self.assertPathExists('name.pyc')
+    self.run_bzr('clean-tree --ignored --force')
+    self.assertPathExists('name')
+    self.assertPathDoesNotExist('name.pyc')
+    self.run_bzr('clean-tree --unknown --force')
+    self.assertPathDoesNotExist('name')
+    self.touch('name')
+    self.touch('name~')
+    self.touch('name.pyc')
+    self.run_bzr('clean-tree --unknown --ignored --force')
+    self.assertPathDoesNotExist('name')
+    self.assertPathDoesNotExist('name~')
+    self.assertPathDoesNotExist('name.pyc')

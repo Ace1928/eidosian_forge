@@ -1,0 +1,18 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.google.cloud.plugins.module_utils.gcp_utils import (
+import json
+import re
+class SubscriptionDeadletterpolicy(object):
+
+    def __init__(self, request, module):
+        self.module = module
+        if request:
+            self.request = request
+        else:
+            self.request = {}
+
+    def to_request(self):
+        return remove_nones_from_dict({u'deadLetterTopic': self.request.get('dead_letter_topic'), u'maxDeliveryAttempts': self.request.get('max_delivery_attempts')})
+
+    def from_response(self):
+        return remove_nones_from_dict({u'deadLetterTopic': self.request.get(u'deadLetterTopic'), u'maxDeliveryAttempts': self.request.get(u'maxDeliveryAttempts')})

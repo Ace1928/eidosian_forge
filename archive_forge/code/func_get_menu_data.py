@@ -1,0 +1,22 @@
+import pickle
+import subprocess
+import sys
+import weakref
+from functools import partial
+from ase.gui.i18n import _
+from time import time
+import numpy as np
+from ase import Atoms, __version__
+import ase.gui.ui as ui
+from ase.gui.defaults import read_defaults
+from ase.gui.images import Images
+from ase.gui.nanoparticle import SetupNanoparticle
+from ase.gui.nanotube import SetupNanotube
+from ase.gui.save import save_dialog
+from ase.gui.settings import Settings
+from ase.gui.status import Status
+from ase.gui.surfaceslab import SetupSurfaceSlab
+from ase.gui.view import View
+def get_menu_data(self):
+    M = ui.MenuItem
+    return [(_('_File'), [M(_('_Open'), self.open, 'Ctrl+O'), M(_('_New'), self.new, 'Ctrl+N'), M(_('_Save'), self.save, 'Ctrl+S'), M('---'), M(_('_Quit'), self.exit, 'Ctrl+Q')]), (_('_Edit'), [M(_('Select _all'), self.select_all), M(_('_Invert selection'), self.invert_selection), M(_('Select _constrained atoms'), self.select_constrained_atoms), M(_('Select _immobile atoms'), self.select_immobile_atoms), M(_('_Cut'), self.cut_atoms_to_clipboard, 'Ctrl+X'), M(_('_Copy'), self.copy_atoms_to_clipboard, 'Ctrl+C'), M(_('_Paste'), self.paste_atoms_from_clipboard, 'Ctrl+V'), M('---'), M(_('Hide selected atoms'), self.hide_selected), M(_('Show selected atoms'), self.show_selected), M('---'), M(_('_Modify'), self.modify_atoms, 'Ctrl+Y'), M(_('_Add atoms'), self.add_atoms, 'Ctrl+A'), M(_('_Delete selected atoms'), self.delete_selected_atoms, 'Backspace'), M(_('Edit _cell'), self.cell_editor, 'Ctrl+E'), M('---'), M(_('_First image'), self.step, 'Home'), M(_('_Previous image'), self.step, 'Page-Up'), M(_('_Next image'), self.step, 'Page-Down'), M(_('_Last image'), self.step, 'End'), M(_('Append image copy'), self.copy_image)]), (_('_View'), [M(_('Show _unit cell'), self.toggle_show_unit_cell, 'Ctrl+U', value=self.config['show_unit_cell']), M(_('Show _axes'), self.toggle_show_axes, value=self.config['show_axes']), M(_('Show _bonds'), self.toggle_show_bonds, 'Ctrl+B', value=self.config['show_bonds']), M(_('Show _velocities'), self.toggle_show_velocities, 'Ctrl+G', value=False), M(_('Show _forces'), self.toggle_show_forces, 'Ctrl+F', value=False), M(_('Show _Labels'), self.show_labels, choices=[_('_None'), _('Atom _Index'), _('_Magnetic Moments'), _('_Element Symbol'), _('_Initial Charges')]), M('---'), M(_('Quick Info ...'), self.quick_info_window, 'Ctrl+I'), M(_('Repeat ...'), self.repeat_window, 'R'), M(_('Rotate ...'), self.rotate_window), M(_('Colors ...'), self.colors_window, 'C'), M(_('Focus'), self.focus, 'F'), M(_('Zoom in'), self.zoom, '+'), M(_('Zoom out'), self.zoom, '-'), M(_('Change View'), submenu=[M(_('Reset View'), self.reset_view, '='), M(_('xy-plane'), self.set_view, 'Z'), M(_('yz-plane'), self.set_view, 'X'), M(_('zx-plane'), self.set_view, 'Y'), M(_('yx-plane'), self.set_view, 'Alt+Z'), M(_('zy-plane'), self.set_view, 'Alt+X'), M(_('xz-plane'), self.set_view, 'Alt+Y'), M(_('a2,a3-plane'), self.set_view, '1'), M(_('a3,a1-plane'), self.set_view, '2'), M(_('a1,a2-plane'), self.set_view, '3'), M(_('a3,a2-plane'), self.set_view, 'Alt+1'), M(_('a1,a3-plane'), self.set_view, 'Alt+2'), M(_('a2,a1-plane'), self.set_view, 'Alt+3')]), M(_('Settings ...'), self.settings), M('---'), M(_('VMD'), partial(self.external_viewer, 'vmd')), M(_('RasMol'), partial(self.external_viewer, 'rasmol')), M(_('xmakemol'), partial(self.external_viewer, 'xmakemol')), M(_('avogadro'), partial(self.external_viewer, 'avogadro'))]), (_('_Tools'), [M(_('Graphs ...'), self.plot_graphs), M(_('Movie ...'), self.movie), M(_('Constraints ...'), self.constraints_window), M(_('Render scene ...'), self.render_window), M(_('_Move selected atoms'), self.toggle_move_mode, 'Ctrl+M'), M(_('_Rotate selected atoms'), self.toggle_rotate_mode, 'Ctrl+R'), M(_('NE_B plot'), self.neb), M(_('B_ulk Modulus'), self.bulk_modulus), M(_('Reciprocal space ...'), self.reciprocal)]), (_('_Setup'), [M(_('_Surface slab'), self.surface_window, disabled=False), M(_('_Nanoparticle'), self.nanoparticle_window), M(_('Nano_tube'), self.nanotube_window)]), (_('_Help'), [M(_('_About'), partial(ui.about, 'ASE-GUI', version=__version__, webpage='https://wiki.fysik.dtu.dk/ase/ase/gui/gui.html')), M(_('Webpage ...'), webpage)])]

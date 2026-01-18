@@ -1,0 +1,13 @@
+import xcffib
+import struct
+import io
+class GrabPointerReply(xcffib.Reply):
+    xge = False
+
+    def __init__(self, unpacker):
+        if isinstance(unpacker, xcffib.Protobj):
+            unpacker = xcffib.MemoryUnpacker(unpacker.pack())
+        xcffib.Reply.__init__(self, unpacker)
+        base = unpacker.offset
+        self.status, = unpacker.unpack('xB2x4x')
+        self.bufsize = unpacker.offset - base

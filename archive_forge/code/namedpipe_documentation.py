@@ -1,0 +1,10 @@
+import errno
+import os
+from eventlet import patcher
+from oslo_log import log as logging
+from os_win._i18n import _
+from os_win import constants
+from os_win import exceptions
+from os_win.utils.io import ioutils
+from os_win.utils.winapi import constants as w_const
+Opens a named pipe in overlapped mode for asyncronous I/O.

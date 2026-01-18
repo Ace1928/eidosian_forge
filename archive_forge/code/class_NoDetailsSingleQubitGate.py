@@ -1,0 +1,6 @@
+from typing import Tuple
+import numpy as np
+import pytest
+import cirq
+class NoDetailsSingleQubitGate(cirq.testing.SingleQubitGate):
+    pass

@@ -1,0 +1,2 @@
+class JSONLDException(ValueError):
+    pass

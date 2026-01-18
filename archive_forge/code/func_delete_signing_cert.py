@@ -1,0 +1,24 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def delete_signing_cert(self, cert_id, user_name=None):
+    """
+        Delete a signing certificate associated with a user.
+
+        If the user_name is not specified, it is determined implicitly based
+        on the AWS Access Key ID used to sign the request.
+
+        :type user_name: string
+        :param user_name: The username of the user
+
+        :type cert_id: string
+        :param cert_id: The ID of the certificate.
+
+        """
+    params = {'CertificateId': cert_id}
+    if user_name:
+        params['UserName'] = user_name
+    return self.get_response('DeleteSigningCertificate', params)

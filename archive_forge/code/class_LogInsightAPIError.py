@@ -1,0 +1,2 @@
+class LogInsightAPIError(Exception):
+    pass

@@ -1,0 +1,78 @@
+import ctypes
+from ..base import _LIB
+from ..base import c_str_array, c_handle_array, c_str, mx_uint
+from ..base import SymbolHandle
+from ..base import check_call
+class SymbolBase(object):
+    """Symbol is symbolic graph."""
+    __slots__ = ['handle']
+
+    def __init__(self, handle):
+        """Initialize the function with handle
+
+        Parameters
+        ----------
+        handle : SymbolHandle
+            the handle to the underlying C++ Symbol
+        """
+        self.handle = handle
+
+    def __del__(self):
+        check_call(_LIB.NNSymbolFree(self.handle))
+
+    def _compose(self, *args, **kwargs):
+        """Compose symbol on inputs.
+
+        This call mutates the current symbol.
+
+        Parameters
+        ----------
+        args:
+            provide positional arguments
+
+        kwargs:
+            provide keyword arguments
+
+        Returns
+        -------
+        the resulting symbol
+        """
+        name = kwargs.pop('name', None)
+        if name:
+            name = c_str(name)
+        if len(args) != 0 and len(kwargs) != 0:
+            raise TypeError('compose only accept input Symbols                 either as positional or keyword arguments, not both')
+        for arg in args:
+            if not isinstance(arg, SymbolBase):
+                raise TypeError('Compose expect `Symbol` as arguments')
+        for val in kwargs.values():
+            if not isinstance(val, SymbolBase):
+                raise TypeError('Compose expect `Symbol` as arguments')
+        num_args = len(args) + len(kwargs)
+        if len(kwargs) != 0:
+            keys = c_str_array(kwargs.keys())
+            args = c_handle_array(kwargs.values())
+        else:
+            keys = None
+            args = c_handle_array(kwargs.values())
+        check_call(_LIB.NNSymbolCompose(self.handle, name, num_args, keys, args))
+
+    def _set_attr(self, **kwargs):
+        """Set the attribute of the symbol.
+
+        Parameters
+        ----------
+        **kwargs
+            The attributes to set
+        """
+        keys = c_str_array(kwargs.keys())
+        vals = c_str_array([str(s) for s in kwargs.values()])
+        num_args = mx_uint(len(kwargs))
+        check_call(_LIB.MXSymbolSetAttrs(self.handle, num_args, keys, vals))
+
+    def _set_handle(self, handle):
+        """Set handle."""
+        self.handle = handle
+
+    def __reduce__(self):
+        return (_symbol_cls, (None,), self.__getstate__())

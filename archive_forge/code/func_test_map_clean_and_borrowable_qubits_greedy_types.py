@@ -1,0 +1,15 @@
+import cirq
+def test_map_clean_and_borrowable_qubits_greedy_types():
+    qm = cirq.ops.SimpleQubitManager()
+    q = cirq.LineQubit.range(2)
+    g = GateAllocInDecompose(1)
+    circuit = cirq.Circuit(cirq.Moment(g(q[0]), g(q[1])))
+    cirq.testing.assert_has_diagram(circuit, '\n0: ───TestGateAlloc───\n\n1: ───TestGateAlloc───\n    ')
+    unrolled_circuit = cirq.map_operations_and_unroll(circuit, map_func=get_decompose_func(GateAllocInDecompose, qm), raise_if_add_qubits=False)
+    cirq.testing.assert_has_diagram(unrolled_circuit, '\n          ┌──┐\n_c(0): ────X─────\n           │\n_c(1): ────┼X────\n           ││\n0: ────────@┼────\n            │\n1: ─────────@────\n          └──┘\n')
+    qubit_manager = cirq.GreedyQubitManager(prefix='ancilla', size=2, maximize_reuse=False)
+    allocated_circuit = cirq.map_clean_and_borrowable_qubits(unrolled_circuit, qm=qubit_manager)
+    cirq.testing.assert_has_diagram(allocated_circuit, '\n              ┌──┐\n0: ────────────@─────\n               │\n1: ────────────┼@────\n               ││\nancilla_0: ────X┼────\n                │\nancilla_1: ─────X────\n              └──┘\n    ')
+    qubit_manager = cirq.GreedyQubitManager(prefix='ancilla', size=2, maximize_reuse=True)
+    allocated_circuit = cirq.map_clean_and_borrowable_qubits(unrolled_circuit, qm=qubit_manager)
+    cirq.testing.assert_has_diagram(allocated_circuit, '\n0: ───────────@───────\n              │\n1: ───────────┼───@───\n              │   │\nancilla_1: ───X───X───\n    ')

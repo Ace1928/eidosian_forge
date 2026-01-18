@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class RotationValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='rotation', parent_name='layout.geo.projection', **kwargs):
+        super(RotationValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Rotation'), data_docs=kwargs.pop('data_docs', '\n            lat\n                Rotates the map along meridians (in degrees\n                North).\n            lon\n                Rotates the map along parallels (in degrees\n                East). Defaults to the center of the\n                `lonaxis.range` values.\n            roll\n                Roll the map (in degrees) For example, a roll\n                of 180 makes the map appear upside down.\n'), **kwargs)

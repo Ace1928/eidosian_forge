@@ -1,0 +1,17 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def remove_role_from_instance_profile(self, instance_profile_name, role_name):
+    """
+        Removes the specified role from the specified instance profile.
+
+        :type instance_profile_name: string
+        :param instance_profile_name: Name of the instance profile to update.
+
+        :type role_name: string
+        :param role_name: Name of the role to remove.
+        """
+    return self.get_response('RemoveRoleFromInstanceProfile', {'InstanceProfileName': instance_profile_name, 'RoleName': role_name})

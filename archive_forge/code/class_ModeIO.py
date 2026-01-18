@@ -1,0 +1,17 @@
+from ._base import *
+class ModeIO(Enum):
+    r = 'r'
+    rb = 'rb'
+    read = 'r'
+    read_binary = 'rb'
+    a = 'a'
+    append = 'a'
+    w = 'w'
+    wb = 'wb'
+    write = 'w'
+    write_binary = 'wb'
+    rw = 'r+'
+    rwb = 'rb+'
+    readwrite = 'r+'
+    readwrite_binary = 'rb+'
+    auto = 'auto'

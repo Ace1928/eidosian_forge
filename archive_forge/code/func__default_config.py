@@ -1,0 +1,7 @@
+from typing import Optional, Union
+from .helpers import LineKey, PCColumn
+from .util import Attr, Panel, coalesce, nested_get, nested_set
+from .validators import (
+@staticmethod
+def _default_config():
+    return {'panel2Config': {'exp': {'nodeType': 'output', 'type': {'type': 'tagged', 'tag': {'type': 'tagged', 'tag': {'type': 'typedDict', 'propertyTypes': {'entityName': 'string', 'projectName': 'string'}}, 'value': {'type': 'typedDict', 'propertyTypes': {'project': 'project', 'artifactName': 'string', 'artifactVersionAlias': 'string'}}}, 'value': {'type': 'file', 'extension': 'json', 'wbObjectType': {'type': 'table', 'columnTypes': {}}}}, 'fromOp': {'name': 'artifactVersion-file', 'inputs': {'artifactVersion': {'nodeType': 'output', 'type': {'type': 'tagged', 'tag': {'type': 'tagged', 'tag': {'type': 'typedDict', 'propertyTypes': {'entityName': 'string', 'projectName': 'string'}}, 'value': {'type': 'typedDict', 'propertyTypes': {'project': 'project', 'artifactName': 'string', 'artifactVersionAlias': 'string'}}}, 'value': 'artifactVersion'}, 'fromOp': {'name': 'project-artifactVersion', 'inputs': {'project': {'nodeType': 'var', 'type': {'type': 'tagged', 'tag': {'type': 'typedDict', 'propertyTypes': {'entityName': 'string', 'projectName': 'string'}}, 'value': 'project'}, 'varName': 'project'}, 'artifactName': {'nodeType': 'const', 'type': 'string', 'val': ''}, 'artifactVersionAlias': {'nodeType': 'const', 'type': 'string', 'val': ''}}}}, 'path': {'nodeType': 'const', 'type': 'string', 'val': ''}}}, '__userInput': True}}}

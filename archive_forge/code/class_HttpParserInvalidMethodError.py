@@ -1,0 +1,2 @@
+class HttpParserInvalidMethodError(HttpParserError):
+    pass

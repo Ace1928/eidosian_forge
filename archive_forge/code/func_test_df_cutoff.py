@@ -1,0 +1,38 @@
+import warnings
+import re
+import sys
+import pickle
+from pathlib import Path
+import os
+import json
+import platform
+from numpy.testing import (assert_equal, assert_array_equal,
+import pytest
+from pytest import raises as assert_raises
+import numpy
+import numpy as np
+from numpy import typecodes, array
+from numpy.lib.recfunctions import rec_append_fields
+from scipy import special
+from scipy._lib._util import check_random_state
+from scipy.integrate import (IntegrationWarning, quad, trapezoid,
+import scipy.stats as stats
+from scipy.stats._distn_infrastructure import argsreduce
+import scipy.stats.distributions
+from scipy.special import xlogy, polygamma, entr
+from scipy.stats._distr_params import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
+from scipy.optimize import root, fmin, differential_evolution
+from itertools import product
+def test_df_cutoff(self):
+    res = stats.studentized_range.pdf(3, 10, 100000)
+    res_finite = stats.studentized_range.pdf(3, 10, 99999)
+    res_sanity = stats.studentized_range.pdf(3, 10, 99998)
+    assert_raises(AssertionError, assert_allclose, res, res_finite, atol=1e-06, rtol=1e-06)
+    assert_allclose(res_finite, res_sanity, atol=1e-06, rtol=1e-06)
+    res = stats.studentized_range.cdf(3, 10, 100000)
+    res_finite = stats.studentized_range.cdf(3, 10, 99999)
+    res_sanity = stats.studentized_range.cdf(3, 10, 99998)
+    assert_raises(AssertionError, assert_allclose, res, res_finite, atol=1e-06, rtol=1e-06)
+    assert_allclose(res_finite, res_sanity, atol=1e-06, rtol=1e-06)

@@ -1,0 +1,21 @@
+import errno
+import io
+import logging
+import multiprocessing
+import os
+import pickle
+import resource
+import socket
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+from unittest import mock
+import fixtures
+from oslotest import base as test_base
+from oslo_concurrency import processutils
+def test_cpu_time(self):
+    time = self.soft_limit(resource.RLIMIT_CPU, 1, 1024)
+    prlimit = processutils.ProcessLimits(cpu_time=time)
+    self.check_limit(prlimit, 'RLIMIT_CPU', prlimit.cpu_time)

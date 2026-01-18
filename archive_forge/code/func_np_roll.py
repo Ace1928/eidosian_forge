@@ -1,0 +1,32 @@
+import math
+from collections import namedtuple
+import operator
+import warnings
+import llvmlite.ir
+import numpy as np
+from numba.core import types, cgutils
+from numba.core.extending import overload, overload_method, register_jitable
+from numba.np.numpy_support import (as_dtype, type_can_asarray, type_is_scalar,
+from numba.core.imputils import (lower_builtin, impl_ret_borrowed,
+from numba.np.arrayobj import (make_array, load_item, store_item,
+from numba.np.linalg import ensure_blas
+from numba.core.extending import intrinsic
+from numba.core.errors import (RequireLiteralValue, TypingError,
+from numba.cpython.unsafe.tuple import tuple_setitem
+@overload(np.roll)
+def np_roll(a, shift):
+    if not isinstance(shift, (types.Integer, types.Boolean)):
+        raise TypingError('shift must be an integer')
+
+    def np_roll_impl(a, shift):
+        arr = np.asarray(a)
+        out = np.empty(arr.shape, dtype=arr.dtype)
+        arr_flat = arr.flat
+        for i in range(arr.size):
+            idx = (i + shift) % arr.size
+            out.flat[idx] = arr_flat[i]
+        return out
+    if isinstance(a, (types.Number, types.Boolean)):
+        return lambda a, shift: np.asarray(a)
+    else:
+        return np_roll_impl

@@ -1,0 +1,8 @@
+rich
+pytest
+black
+flake8
+openai
+fastapi
+uvicorn
+httpx

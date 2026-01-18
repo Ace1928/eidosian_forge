@@ -1,0 +1,11 @@
+from collections import defaultdict, deque
+from typing import Any, Counter, Dict, Iterable, Iterator, List, \
+from ..exceptions import XMLSchemaValueError
+from ..aliases import ModelGroupType, ModelParticleType, SchemaElementType
+from ..translation import gettext as _
+from .. import limits
+from .exceptions import XMLSchemaModelError, XMLSchemaModelDepthError
+from .wildcards import XsdAnyElement, Xsd11AnyElement
+from . import groups
+def iter_collapsed_content(self, content: Iterable[ContentItemType], default_namespace: Optional[str]=None) -> Iterator[ContentItemType]:
+    return iter_collapsed_content(content, self.root, default_namespace)

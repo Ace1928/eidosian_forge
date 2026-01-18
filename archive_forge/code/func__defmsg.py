@@ -1,0 +1,2 @@
+def _defmsg(status_byte, type_, value_names, length):
+    return {'status_byte': status_byte, 'type': type_, 'value_names': value_names, 'attribute_names': set(value_names) | {'type', 'time'}, 'length': length}

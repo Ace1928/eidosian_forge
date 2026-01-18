@@ -1,0 +1,22 @@
+import abc
+import functools
+import inspect
+import itertools
+import typing
+import uuid
+from abc import abstractmethod
+from contextlib import contextmanager
+import mlflow
+import mlflow.utils.autologging_utils
+from mlflow.entities.run_status import RunStatus
+from mlflow.environment_variables import _MLFLOW_AUTOLOGGING_TESTING
+from mlflow.tracking.client import MlflowClient
+from mlflow.utils import gorilla, is_iterator
+from mlflow.utils.autologging_utils import _logger
+from mlflow.utils.autologging_utils.events import AutologgingEventLogger
+from mlflow.utils.autologging_utils.logging_and_warnings import (
+from mlflow.utils.mlflow_tags import MLFLOW_AUTOLOGGING
+def create_managed_run():
+    managed_run = mlflow.start_run(tags=tags)
+    _logger.info("Created MLflow autologging run with ID '%s', which will track hyperparameters, performance metrics, model artifacts, and lineage information for the current %s workflow", managed_run.info.run_id, autologging_integration)
+    return managed_run

@@ -1,0 +1,2 @@
+class UndeclaredNamespace(Exception):
+    pass

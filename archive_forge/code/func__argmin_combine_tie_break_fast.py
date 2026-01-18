@@ -1,0 +1,6 @@
+from __future__ import annotations
+from ..runtime.jit import jit
+from . import core, math
+@jit
+def _argmin_combine_tie_break_fast(value1, index1, value2, index2):
+    return _argmin_combine(value1, index1, value2, index2, False)

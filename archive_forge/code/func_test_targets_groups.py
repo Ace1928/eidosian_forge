@@ -1,0 +1,6 @@
+import re, textwrap, os
+from os import sys, path
+from distutils.errors import DistutilsError
+def test_targets_groups(self):
+    self.expect_targets('\n            /*@targets $keep_baseline baseline #test_group */\n            ', groups=dict(test_group='\n                    $keep_baseline\n                    asimddp sse2 vsx2 avx2 vsx3\n                    avx512f asimdhp\n                '), x86='avx512f avx2 sse2 baseline', ppc64='vsx3 vsx2 baseline', armhf='asimddp asimdhp baseline')
+    self.expect_targets('\n            /*@targets\n             * sse42 avx avx512f\n             * #test_group_1\n             * vsx2\n             * #test_group_2\n             * asimddp asimdfhm\n            */\n            ', groups=dict(test_group_1='\n                    VSX2 vsx3 asimd avx2 SSE41\n                ', test_group_2='\n                    vsx2 vsx3 asImd aVx2 sse41\n                '), x86='avx512f avx2 avx sse42 sse41', ppc64='vsx3 vsx2', ppc64le='vsx3', armhf='asimdfhm asimddp asimd', aarch64='asimdfhm asimddp')

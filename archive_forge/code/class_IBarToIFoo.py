@@ -1,0 +1,2 @@
+class IBarToIFoo(object):
+    pass

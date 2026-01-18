@@ -1,0 +1,16 @@
+from breezy.tests.per_workingtree import TestCaseWithWorkingTree
+def test_annotate_same_as_merge_parent_supersedes(self):
+    builder = self.make_branch_builder('branch')
+    builder.start_series()
+    revid1 = builder.build_snapshot(None, [('add', ('', None, 'directory', None)), ('add', ('file', None, 'file', b'initial content\n'))])
+    revid2 = builder.build_snapshot([revid1], [('modify', ('file', b'initial content\nnew content\n'))])
+    revid3 = builder.build_snapshot([revid2], [('modify', ('file', b'initial content\ncontent in 3\n'))])
+    revid4 = builder.build_snapshot([revid3], [('modify', ('file', b'initial content\nnew content\n'))])
+    builder.finish_series()
+    b = builder.get_branch()
+    tree = b.create_checkout('tree', revision_id=revid2, lightweight=True)
+    tree.lock_write()
+    self.addCleanup(tree.unlock)
+    tree.set_parent_ids([revid2, revid4])
+    annotations = tree.annotate_iter('file')
+    self.assertEqual([(revid1, b'initial content\n'), (revid4, b'new content\n')], annotations)

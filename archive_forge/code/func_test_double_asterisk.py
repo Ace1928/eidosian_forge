@@ -1,0 +1,6 @@
+import re
+from .. import errors, lazy_regex
+from ..globbing import (ExceptionGlobster, Globster, _OrderedGlobster,
+from . import TestCase
+def test_double_asterisk(self):
+    self.assertMatch([('foo/**/x', ['foo/x', 'foo/bar/x'], ['foox', 'foo/bax', 'foo/.x', 'foo/bar/bax']), ('**/bar', ['bar', 'foo/bar'], ['foobar', 'foo.bar', 'foo/foobar', 'foo/f.bar', '.bar', 'foo/.bar']), ('foo/***/x', ['foo/x', 'foo/bar/x'], ['foox', 'foo/bax', 'foo/.x', 'foo/bar/bax']), ('***/bar', ['bar', 'foo/bar'], ['foobar', 'foo.bar', 'foo/foobar', 'foo/f.bar', '.bar', 'foo/.bar']), ('x**/x', ['x茶/x', 'x/x'], ['xx', 'x.x', 'bar/x/bar/x', 'x.y.x', 'x/y/x']), ('x**x', ['xx', 'x.x', 'x茶..x', 'foo/x.x', 'x.y.x'], ['bar/x/bar/x', 'xfoo/bar/x', 'x/x', 'bax/abaxab']), ('foo/**x', ['foo/x', 'foo/bax', 'foo/a.x', 'foo/.x', 'foo/.q.x'], ['foo/bar/bax']), ('f**', ['foo', 'foo.bar'], ['.foo', 'foo/bar', 'foo/.bar']), ('**bar', ['bar', 'foobar', 'foo\\nbar', 'foo.bar', 'foo/bar', 'foo/foobar', 'foo/f.bar', '.bar', 'foo/.bar'], [])])

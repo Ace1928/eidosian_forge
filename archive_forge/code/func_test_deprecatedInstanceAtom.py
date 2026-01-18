@@ -1,0 +1,15 @@
+import datetime
+import decimal
+from twisted.internet.testing import StringTransport
+from twisted.spread import banana, jelly, pb
+from twisted.trial import unittest
+from twisted.trial.unittest import TestCase
+def test_deprecatedInstanceAtom(self):
+    """
+        L{jelly.instance_atom} is deprecated since 15.0.0.
+        """
+    jelly.instance_atom
+    warnings = self.flushWarnings([self.test_deprecatedInstanceAtom])
+    self.assertEqual(len(warnings), 1)
+    self.assertEqual(warnings[0]['message'], 'twisted.spread.jelly.instance_atom was deprecated in Twisted 15.0.0: instance_atom is unused within Twisted.')
+    self.assertEqual(warnings[0]['category'], DeprecationWarning)

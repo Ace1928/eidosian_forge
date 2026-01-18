@@ -1,0 +1,26 @@
+import re
+from pygments.lexer import RegexLexer, include, bygroups, default, words, \
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class GDScriptLexer(RegexLexer):
+    """
+    For GDScript source code.
+    """
+    name = 'GDScript'
+    url = 'https://www.godotengine.org'
+    aliases = ['gdscript', 'gd']
+    filenames = ['*.gd']
+    mimetypes = ['text/x-gdscript', 'application/x-gdscript']
+
+    def innerstring_rules(ttype):
+        return [('%(\\(\\w+\\))?[-#0 +]*([0-9]+|[*])?(\\.([0-9]+|[*]))?[hlL]?[E-GXc-giorsux%]', String.Interpol), ('[^\\\\\\\'"%\\n]+', ttype), ('[\\\'"\\\\]', ttype), ('%', ttype)]
+    tokens = {'root': [('\\n', Whitespace), ('^(\\s*)([rRuUbB]{,2})("""(?:.|\\n)*?""")', bygroups(Whitespace, String.Affix, String.Doc)), ("^(\\s*)([rRuUbB]{,2})('''(?:.|\\n)*?''')", bygroups(Whitespace, String.Affix, String.Doc)), ('[^\\S\\n]+', Whitespace), ('#.*$', Comment.Single), ('[]{}:(),;[]', Punctuation), ('(\\\\)(\\n)', bygroups(Text, Whitespace)), ('\\\\', Text), ('(in|and|or|not)\\b', Operator.Word), ('!=|==|<<|>>|&&|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\|\\||[-~+/*%=<>&^.!|$]', Operator), include('keywords'), ('(func)(\\s+)', bygroups(Keyword, Whitespace), 'funcname'), ('(class)(\\s+)', bygroups(Keyword, Whitespace), 'classname'), include('builtins'), ('([rR]|[uUbB][rR]|[rR][uUbB])(""")', bygroups(String.Affix, String.Double), 'tdqs'), ("([rR]|[uUbB][rR]|[rR][uUbB])(''')", bygroups(String.Affix, String.Single), 'tsqs'), ('([rR]|[uUbB][rR]|[rR][uUbB])(")', bygroups(String.Affix, String.Double), 'dqs'), ("([rR]|[uUbB][rR]|[rR][uUbB])(')", bygroups(String.Affix, String.Single), 'sqs'), ('([uUbB]?)(""")', bygroups(String.Affix, String.Double), combined('stringescape', 'tdqs')), ("([uUbB]?)(''')", bygroups(String.Affix, String.Single), combined('stringescape', 'tsqs')), ('([uUbB]?)(")', bygroups(String.Affix, String.Double), combined('stringescape', 'dqs')), ("([uUbB]?)(')", bygroups(String.Affix, String.Single), combined('stringescape', 'sqs')), include('name'), include('numbers')], 'keywords': [(words(('and', 'in', 'not', 'or', 'as', 'breakpoint', 'class', 'class_name', 'extends', 'is', 'func', 'setget', 'signal', 'tool', 'const', 'enum', 'export', 'onready', 'static', 'var', 'break', 'continue', 'if', 'elif', 'else', 'for', 'pass', 'return', 'match', 'while', 'remote', 'master', 'puppet', 'remotesync', 'mastersync', 'puppetsync'), suffix='\\b'), Keyword)], 'builtins': [(words(('Color8', 'ColorN', 'abs', 'acos', 'asin', 'assert', 'atan', 'atan2', 'bytes2var', 'ceil', 'char', 'clamp', 'convert', 'cos', 'cosh', 'db2linear', 'decimals', 'dectime', 'deg2rad', 'dict2inst', 'ease', 'exp', 'floor', 'fmod', 'fposmod', 'funcref', 'hash', 'inst2dict', 'instance_from_id', 'is_inf', 'is_nan', 'lerp', 'linear2db', 'load', 'log', 'max', 'min', 'nearest_po2', 'pow', 'preload', 'print', 'print_stack', 'printerr', 'printraw', 'prints', 'printt', 'rad2deg', 'rand_range', 'rand_seed', 'randf', 'randi', 'randomize', 'range', 'round', 'seed', 'sign', 'sin', 'sinh', 'sqrt', 'stepify', 'str', 'str2var', 'tan', 'tan', 'tanh', 'type_exist', 'typeof', 'var2bytes', 'var2str', 'weakref', 'yield'), prefix='(?<!\\.)', suffix='\\b'), Name.Builtin), ('((?<!\\.)(self|false|true)|(PI|TAU|NAN|INF))\\b', Name.Builtin.Pseudo), (words(('bool', 'int', 'float', 'String', 'NodePath', 'Vector2', 'Rect2', 'Transform2D', 'Vector3', 'Rect3', 'Plane', 'Quat', 'Basis', 'Transform', 'Color', 'RID', 'Object', 'NodePath', 'Dictionary', 'Array', 'PackedByteArray', 'PackedInt32Array', 'PackedInt64Array', 'PackedFloat32Array', 'PackedFloat64Array', 'PackedStringArray', 'PackedVector2Array', 'PackedVector3Array', 'PackedColorArray', 'null', 'void'), prefix='(?<!\\.)', suffix='\\b'), Name.Builtin.Type)], 'numbers': [('(\\d+\\.\\d*|\\d*\\.\\d+)([eE][+-]?[0-9]+)?j?', Number.Float), ('\\d+[eE][+-]?[0-9]+j?', Number.Float), ('0[xX][a-fA-F0-9]+', Number.Hex), ('\\d+j?', Number.Integer)], 'name': [('[a-zA-Z_]\\w*', Name)], 'funcname': [('[a-zA-Z_]\\w*', Name.Function, '#pop'), default('#pop')], 'classname': [('[a-zA-Z_]\\w*', Name.Class, '#pop')], 'stringescape': [('\\\\([\\\\abfnrtv"\\\']|\\n|N\\{.*?\\}|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8}|x[a-fA-F0-9]{2}|[0-7]{1,3})', String.Escape)], 'strings-single': innerstring_rules(String.Single), 'strings-double': innerstring_rules(String.Double), 'dqs': [('"', String.Double, '#pop'), ('\\\\\\\\|\\\\"|\\\\\\n', String.Escape), include('strings-double')], 'sqs': [("'", String.Single, '#pop'), ("\\\\\\\\|\\\\'|\\\\\\n", String.Escape), include('strings-single')], 'tdqs': [('"""', String.Double, '#pop'), include('strings-double'), ('\\n', Whitespace)], 'tsqs': [("'''", String.Single, '#pop'), include('strings-single'), ('\\n', Whitespace)]}
+
+    def analyse_text(text):
+        score = 0.0
+        if re.search('func (_ready|_init|_input|_process|_unhandled_input)', text):
+            score += 0.8
+        if re.search('(extends |class_name |onready |preload|load|setget|func [^_])', text):
+            score += 0.4
+        if re.search('(var|const|enum|export|signal|tool)', text):
+            score += 0.2
+        return min(score, 1.0)

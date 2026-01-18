@@ -1,0 +1,57 @@
+import os
+import platform
+import sys
+import breezy
+from . import bedding, controldir, errors, osutils, trace
+def show_version(show_config=True, show_copyright=True, to_file=None):
+    if to_file is None:
+        to_file = sys.stdout
+    to_file.write('Breezy (brz) %s\n' % breezy.__version__)
+    src_tree = _get_brz_source_tree()
+    if src_tree:
+        src_revision_id = src_tree.last_revision()
+        to_file.write('  from brz checkout {}\n'.format(src_tree.basedir))
+        try:
+            revno = src_tree.branch.revision_id_to_revno(src_revision_id)
+        except errors.GhostRevisionsHaveNoRevno:
+            pass
+        else:
+            to_file.write('    revision: {}\n'.format(revno))
+        to_file.write('    revid: {}\n'.format(src_revision_id))
+        to_file.write('    branch nick: {}\n'.format(src_tree.branch.nick))
+    to_file.write('  Python interpreter: ')
+    if getattr(sys, 'frozen', None) is None:
+        to_file.write(sys.executable + ' ')
+    else:
+        basedir = os.path.dirname(sys.executable)
+        python_dll = 'python%d%d.dll' % sys.version_info[:2]
+        to_file.write(os.path.join(basedir, python_dll) + ' ')
+    to_file.write(breezy._format_version_tuple(sys.version_info))
+    to_file.write('\n')
+    to_file.write('  Python standard library:' + ' ')
+    to_file.write(os.path.dirname(os.__file__) + '\n')
+    platform_str = platform.platform(aliased=1)
+    if not isinstance(platform_str, str):
+        platform_str = platform_str.decode('utf-8')
+    to_file.write('  Platform: %s\n' % platform_str)
+    to_file.write('  breezy: ')
+    if len(breezy.__path__) > 1:
+        to_file.write(repr(breezy.__path__) + '\n')
+    else:
+        to_file.write(breezy.__path__[0] + '\n')
+    if show_config:
+        config_dir = osutils.normpath(bedding.config_dir())
+        if not isinstance(config_dir, str):
+            config_dir = config_dir.decode(osutils.get_user_encoding())
+        to_file.write('  Breezy configuration: {}\n'.format(config_dir))
+        to_file.write('  Breezy log file: ')
+        to_file.write(trace._brz_log_filename + '\n')
+    if show_copyright:
+        to_file.write('\n')
+        to_file.write(breezy.__copyright__ + '\n')
+        to_file.write('https://www.breezy-vcs.org/\n')
+        to_file.write('\n')
+        to_file.write('brz comes with ABSOLUTELY NO WARRANTY.  brz is free software, and\n')
+        to_file.write('you may use, modify and redistribute it under the terms of the GNU\n')
+        to_file.write('General Public License version 2 or later.\n')
+    to_file.write('\n')

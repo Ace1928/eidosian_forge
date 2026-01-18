@@ -1,0 +1,19 @@
+import numpy as np
+import pytest
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer, KNNImputer, SimpleImputer
+from sklearn.utils._testing import (
+from sklearn.utils.fixes import CSR_CONTAINERS
+@pytest.mark.filterwarnings('ignore::sklearn.exceptions.ConvergenceWarning')
+@pytest.mark.parametrize('marker', [np.nan, -1, 0])
+@pytest.mark.parametrize('imputer', imputers(), ids=lambda x: x.__class__.__name__)
+def test_imputers_add_indicator(marker, imputer):
+    X = np.array([[marker, 1, 5, marker, 1], [2, marker, 1, marker, 2], [6, 3, marker, marker, 3], [1, 2, 9, marker, 4]])
+    X_true_indicator = np.array([[1.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
+    imputer.set_params(missing_values=marker, add_indicator=True)
+    X_trans = imputer.fit_transform(X)
+    assert_allclose(X_trans[:, -4:], X_true_indicator)
+    assert_array_equal(imputer.indicator_.features_, np.array([0, 1, 2, 3]))
+    imputer.set_params(add_indicator=False)
+    X_trans_no_indicator = imputer.fit_transform(X)
+    assert_allclose(X_trans[:, :-4], X_trans_no_indicator)

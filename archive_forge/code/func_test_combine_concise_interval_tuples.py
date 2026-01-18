@@ -1,0 +1,10 @@
+import unittest
+import aniso8601
+from aniso8601.builders import (
+from aniso8601.exceptions import (
+from aniso8601.tests.compat import mock
+def test_combine_concise_interval_tuples(self):
+    testtuples = ((DateTuple('2020', '01', '01', None, None, None), DateTuple(None, None, '02', None, None, None), DateTuple('2020', '01', '02', None, None, None)), (DateTuple('2008', '02', '15', None, None, None), DateTuple(None, '03', '14', None, None, None), DateTuple('2008', '03', '14', None, None, None)), (DatetimeTuple(DateTuple('2007', '12', '14', None, None, None), TimeTuple('13', '30', None, None)), TimeTuple('15', '30', None, None), DatetimeTuple(DateTuple('2007', '12', '14', None, None, None), TimeTuple('15', '30', None, None))), (DatetimeTuple(DateTuple('2007', '11', '13', None, None, None), TimeTuple('09', '00', None, None)), DatetimeTuple(DateTuple(None, None, '15', None, None, None), TimeTuple('17', '00', None, None)), DatetimeTuple(DateTuple('2007', '11', '15', None, None, None), TimeTuple('17', '00', None, None))), (DatetimeTuple(DateTuple('2007', '11', '13', None, None, None), TimeTuple('00', '00', None, None)), DatetimeTuple(DateTuple(None, None, '16', None, None, None), TimeTuple('00', '00', None, None)), DatetimeTuple(DateTuple('2007', '11', '16', None, None, None), TimeTuple('00', '00', None, None))), (DatetimeTuple(DateTuple('2007', '11', '13', None, None, None), TimeTuple('09', '00', None, TimezoneTuple(False, True, None, None, 'Z'))), DatetimeTuple(DateTuple(None, None, '15', None, None, None), TimeTuple('17', '00', None, None)), DatetimeTuple(DateTuple('2007', '11', '15', None, None, None), TimeTuple('17', '00', None, TimezoneTuple(False, True, None, None, 'Z')))))
+    for testtuple in testtuples:
+        result = BaseTimeBuilder._combine_concise_interval_tuples(testtuple[0], testtuple[1])
+        self.assertEqual(result, testtuple[2])

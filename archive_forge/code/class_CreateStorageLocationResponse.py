@@ -1,0 +1,9 @@
+from datetime import datetime
+from boto.compat import six
+class CreateStorageLocationResponse(Response):
+
+    def __init__(self, response):
+        response = response['CreateStorageLocationResponse']
+        super(CreateStorageLocationResponse, self).__init__(response)
+        response = response['CreateStorageLocationResult']
+        self.s3_bucket = str(response['S3Bucket'])

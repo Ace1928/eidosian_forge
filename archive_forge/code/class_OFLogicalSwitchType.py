@@ -1,0 +1,3 @@
+from os_ken.lib.of_config.base import _Base, _e, _ct
+class OFLogicalSwitchType(_Base):
+    _ELEMENTS = [_e('id', is_list=False), _ct('capabilities', None, is_list=False), _e('datapath-id', is_list=False), _e('enabled', is_list=False), _e('check-controller-certificate', is_list=False), _e('lost-connection-behavior', is_list=False), _ct('controllers', OFLogicalSwitchControllersType, is_list=False), _ct('resources', OFLogicalSwitchResourcesType, is_list=False)]

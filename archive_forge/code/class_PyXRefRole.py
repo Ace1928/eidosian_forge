@@ -1,0 +1,47 @@
+import builtins
+import inspect
+import re
+import sys
+import typing
+import warnings
+from inspect import Parameter
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, Optional, Tuple, Type, cast
+from docutils import nodes
+from docutils.nodes import Element, Node
+from docutils.parsers.rst import directives
+from docutils.parsers.rst.states import Inliner
+from sphinx import addnodes
+from sphinx.addnodes import desc_signature, pending_xref, pending_xref_condition
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.deprecation import RemovedInSphinx60Warning
+from sphinx.directives import ObjectDescription
+from sphinx.domains import Domain, Index, IndexEntry, ObjType
+from sphinx.environment import BuildEnvironment
+from sphinx.locale import _, __
+from sphinx.pycode.ast import ast
+from sphinx.pycode.ast import parse as ast_parse
+from sphinx.roles import XRefRole
+from sphinx.util import logging
+from sphinx.util.docfields import Field, GroupedField, TypedField
+from sphinx.util.docutils import SphinxDirective, switch_source_input
+from sphinx.util.inspect import signature_from_str
+from sphinx.util.nodes import (find_pending_xref_condition, make_id, make_refnode,
+from sphinx.util.typing import OptionSpec, TextlikeNode
+class PyXRefRole(XRefRole):
+
+    def process_link(self, env: BuildEnvironment, refnode: Element, has_explicit_title: bool, title: str, target: str) -> Tuple[str, str]:
+        refnode['py:module'] = env.ref_context.get('py:module')
+        refnode['py:class'] = env.ref_context.get('py:class')
+        if not has_explicit_title:
+            title = title.lstrip('.')
+            target = target.lstrip('~')
+            if title[0:1] == '~':
+                title = title[1:]
+                dot = title.rfind('.')
+                if dot != -1:
+                    title = title[dot + 1:]
+        if target[0:1] == '.':
+            target = target[1:]
+            refnode['refspecific'] = True
+        return (title, target)

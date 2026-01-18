@@ -1,0 +1,18 @@
+import argparse
+import json
+import logging
+import os
+import re
+import shlex
+import subprocess
+import sys
+import warnings
+from typing import (
+def lsb_release_attr(self, attribute: str) -> str:
+    """
+        Return a single named information item from the lsb_release command
+        output data source of the OS distribution.
+
+        For details, see :func:`distro.lsb_release_attr`.
+        """
+    return self._lsb_release_info.get(attribute, '')

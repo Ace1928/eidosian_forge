@@ -1,0 +1,39 @@
+import base64
+import binascii
+import codecs
+import datetime
+import hashlib
+import json
+import logging
+import os
+import pprint
+from decimal import Decimal
+from typing import Optional
+import wandb
+from wandb import util
+from wandb.sdk.lib import filesystem
+from .sdk.data_types import _dtypes
+from .sdk.data_types._private import MEDIA_TMP
+from .sdk.data_types.base_types.media import (
+from .sdk.data_types.base_types.wb_value import WBValue
+from .sdk.data_types.helper_types.bounding_boxes_2d import BoundingBoxes2D
+from .sdk.data_types.helper_types.classes import Classes
+from .sdk.data_types.helper_types.image_mask import ImageMask
+from .sdk.data_types.histogram import Histogram
+from .sdk.data_types.html import Html
+from .sdk.data_types.image import Image
+from .sdk.data_types.molecule import Molecule
+from .sdk.data_types.object_3d import Object3D
+from .sdk.data_types.plotly import Plotly
+from .sdk.data_types.saved_model import _SavedModel
+from .sdk.data_types.trace_tree import WBTraceTree
+from .sdk.data_types.video import Video
+from .sdk.lib import runid
+def _eq_debug(self, other, should_assert=False):
+    eq = isinstance(other, JoinedTable)
+    assert not should_assert or eq, 'Found type {}, expected {}'.format(other.__class__, JoinedTable)
+    eq = eq and self._join_key == other._join_key
+    assert not should_assert or eq, 'Found {} join key, expected {}'.format(other._join_key, self._join_key)
+    eq = eq and self._table1._eq_debug(other._table1, should_assert)
+    eq = eq and self._table2._eq_debug(other._table2, should_assert)
+    return eq

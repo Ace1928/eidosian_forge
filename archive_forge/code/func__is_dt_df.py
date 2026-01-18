@@ -1,0 +1,11 @@
+import ctypes
+import json
+import os
+import warnings
+from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple, cast
+import numpy as np
+from ._typing import (
+from .compat import DataFrame, lazy_isinstance
+from .core import (
+def _is_dt_df(data: DataType) -> bool:
+    return lazy_isinstance(data, 'datatable', 'Frame') or lazy_isinstance(data, 'datatable', 'DataTable')

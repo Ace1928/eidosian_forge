@@ -1,0 +1,6 @@
+global: { wall_clock_day_min: 60, cpu_time_day_sec: 18000, energy_kj_day: 1200, max_parallel_tasks: 2 }
+scopes:
+  hygiene:   { wall_clock: 10, cpu_time: 600,  retry_limit: 1 }
+  refactor:  { wall_clock: 30, cpu_time: 2400, retry_limit: 3 }
+  feature:   { wall_clock: 45, cpu_time: 3600, retry_limit: 3 }
+  migration: { wall_clock: 90, cpu_time: 7200, retry_limit: 4 }

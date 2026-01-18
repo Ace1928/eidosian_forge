@@ -1,0 +1,26 @@
+import contextlib
+import copy
+import re
+from unittest import mock
+import uuid
+from oslo_serialization import jsonutils
+from heat.common import exception as exc
+from heat.common.i18n import _
+from heat.common import template_format
+from heat.engine.clients.os import nova
+from heat.engine.clients.os import swift
+from heat.engine.clients.os import zaqar
+from heat.engine import node_data
+from heat.engine import resource
+from heat.engine.resources.openstack.heat import software_deployment as sd
+from heat.engine import rsrc_defn
+from heat.engine import stack as parser
+from heat.engine import template
+from heat.tests import common
+from heat.tests import utils
+def test_check_create_complete_error(self):
+    self._create_stack(self.template)
+    mock_sd = {'status': self.deployment.FAILED, 'status_reason': 'something wrong'}
+    self.rpc_client.show_software_deployment.return_value = mock_sd
+    err = self.assertRaises(exc.Error, self.deployment.check_create_complete, mock_sd)
+    self.assertEqual('Deployment to server failed: something wrong', str(err))

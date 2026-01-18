@@ -1,0 +1,6 @@
+from typing import Mapping
+from urllib.parse import urlencode
+from google.cloud.pubsublite.types import Partition, TopicPath, SubscriptionPath
+def subscription_routing_metadata(subscription: SubscriptionPath, partition: Partition) -> Mapping[str, str]:
+    encoded = urlencode({'partition': str(partition.value), 'subscription': str(subscription)})
+    return {_PARAMS_HEADER: encoded}

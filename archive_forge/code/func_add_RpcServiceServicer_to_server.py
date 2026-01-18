@@ -1,0 +1,6 @@
+import grpc
+from tensorflow.distribute.experimental.rpc.proto import tf_rpc_service_pb2 as tensorflow_dot_distribute_dot_experimental_dot_rpc_dot_proto_dot_tf__rpc__service__pb2
+def add_RpcServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {'Call': grpc.unary_unary_rpc_method_handler(servicer.Call, request_deserializer=tensorflow_dot_distribute_dot_experimental_dot_rpc_dot_proto_dot_tf__rpc__service__pb2.CallRequest.FromString, response_serializer=tensorflow_dot_distribute_dot_experimental_dot_rpc_dot_proto_dot_tf__rpc__service__pb2.CallResponse.SerializeToString), 'List': grpc.unary_unary_rpc_method_handler(servicer.List, request_deserializer=tensorflow_dot_distribute_dot_experimental_dot_rpc_dot_proto_dot_tf__rpc__service__pb2.ListRequest.FromString, response_serializer=tensorflow_dot_distribute_dot_experimental_dot_rpc_dot_proto_dot_tf__rpc__service__pb2.ListResponse.SerializeToString)}
+    generic_handler = grpc.method_handlers_generic_handler('tensorflow.rpc.RpcService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))

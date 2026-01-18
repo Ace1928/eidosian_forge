@@ -1,0 +1,33 @@
+import sys
+import warnings
+import copy
+import operator
+import itertools
+import textwrap
+import pytest
+from functools import reduce
+import numpy as np
+import numpy.ma.core
+import numpy.core.fromnumeric as fromnumeric
+import numpy.core.umath as umath
+from numpy.testing import (
+from numpy.testing._private.utils import requires_memory
+from numpy import ndarray
+from numpy.compat import asbytes
+from numpy.ma.testutils import (
+from numpy.ma.core import (
+from numpy.compat import pickle
+def test_minimummaximum_func(self):
+    a = np.ones((2, 2))
+    aminimum = minimum(a, a)
+    assert_(isinstance(aminimum, MaskedArray))
+    assert_equal(aminimum, np.minimum(a, a))
+    aminimum = minimum.outer(a, a)
+    assert_(isinstance(aminimum, MaskedArray))
+    assert_equal(aminimum, np.minimum.outer(a, a))
+    amaximum = maximum(a, a)
+    assert_(isinstance(amaximum, MaskedArray))
+    assert_equal(amaximum, np.maximum(a, a))
+    amaximum = maximum.outer(a, a)
+    assert_(isinstance(amaximum, MaskedArray))
+    assert_equal(amaximum, np.maximum.outer(a, a))

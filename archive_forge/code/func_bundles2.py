@@ -1,0 +1,25 @@
+from prov.model import ProvDocument, Namespace, Literal, PROV, Identifier
+import datetime
+def bundles2():
+    g = ProvDocument()
+    g.add_namespace('ex', 'http://www.example.com/')
+    g.add_namespace('alice', 'http://example.org/alice/')
+    g.add_namespace('bob', 'http://example.org/bob/')
+    g.entity('bob:bundle4', {'prov:type': PROV['Bundle']})
+    g.wasGeneratedBy('bob:bundle4', time='2012-05-24T10:30:00')
+    g.agent('ex:Bob')
+    g.wasAttributedTo('bob:bundle4', 'ex:Bob')
+    g.entity('alice:bundle5', {'prov:type': PROV['Bundle']})
+    g.wasGeneratedBy('alice:bundle5', time='2012-05-25T11:15:00')
+    g.agent('ex:Alice')
+    g.wasAttributedTo('alice:bundle5', 'ex:Alice')
+    b4 = g.bundle('bob:bundle4')
+    b4.entity('ex:report1', {'prov:type': 'report', 'ex:version': 1})
+    b4.wasGeneratedBy('ex:report1', time='2012-05-24T10:00:01')
+    b5 = g.bundle('alice:bundle5')
+    b5.entity('ex:report1bis')
+    b5.mentionOf('ex:report1bis', 'ex:report1', 'bob:bundle4')
+    b5.entity('ex:report2', [('prov:type', 'report'), ('ex:version', 2)])
+    b5.wasGeneratedBy('ex:report2', time='2012-05-25T11:00:01')
+    b5.wasDerivedFrom('ex:report2', 'ex:report1bis')
+    return g

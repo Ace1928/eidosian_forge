@@ -1,0 +1,2 @@
+class StackResourceBuildErrorException(IntegrationException):
+    message = "Resource %(resource_name)s in stack %(stack_identifier)s is in %(resource_status)s status due to '%(resource_status_reason)s'"

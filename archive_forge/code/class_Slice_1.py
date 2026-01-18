@@ -1,0 +1,15 @@
+from typing import Optional
+import numpy as np
+from onnx.reference.ops._op import OpRun
+class Slice_1(SliceCommon):
+
+    def __init__(self, onnx_node, run_params):
+        SliceCommon.__init__(self, onnx_node, run_params)
+        for f in ['starts', 'ends', 'steps', 'axes']:
+            if not hasattr(self, f):
+                continue
+            if getattr(self, f) is not None and len(getattr(self, f)) == 0:
+                setattr(self, f, None)
+
+    def _run(self, data, axes=None, ends=None, starts=None):
+        return SliceCommon._run(self, data, starts, ends, axes)

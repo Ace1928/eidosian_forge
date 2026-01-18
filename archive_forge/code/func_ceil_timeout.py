@@ -1,0 +1,40 @@
+import asyncio
+import base64
+import binascii
+import contextlib
+import datetime
+import enum
+import functools
+import inspect
+import netrc
+import os
+import platform
+import re
+import sys
+import time
+import warnings
+import weakref
+from collections import namedtuple
+from contextlib import suppress
+from email.parser import HeaderParser
+from email.utils import parsedate
+from math import ceil
+from pathlib import Path
+from types import TracebackType
+from typing import (
+from urllib.parse import quote
+from urllib.request import getproxies, proxy_bypass
+import attr
+from multidict import MultiDict, MultiDictProxy, MultiMapping
+from yarl import URL
+from . import hdrs
+from .log import client_logger, internal_logger
+def ceil_timeout(delay: Optional[float], ceil_threshold: float=5) -> async_timeout.Timeout:
+    if delay is None or delay <= 0:
+        return async_timeout.timeout(None)
+    loop = get_running_loop()
+    now = loop.time()
+    when = now + delay
+    if delay > ceil_threshold:
+        when = ceil(when)
+    return async_timeout.timeout_at(when)

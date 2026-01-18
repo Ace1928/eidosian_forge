@@ -1,0 +1,10 @@
+import re
+from sqlparse import sql, tokens as T
+from sqlparse.utils import split_unquoted_newlines
+def _get_insert_token(token):
+    """Returns either a whitespace or the line breaks from token."""
+    m = re.search('([\\r\\n]+) *$', token.value)
+    if m is not None:
+        return sql.Token(T.Whitespace.Newline, m.groups()[0])
+    else:
+        return sql.Token(T.Whitespace, ' ')

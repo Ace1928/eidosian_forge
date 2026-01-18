@@ -1,0 +1,16 @@
+from __future__ import absolute_import, division, print_function
+import sys
+import math
+from collections import OrderedDict
+from datetime import datetime, date, time
+from decimal import Decimal
+from petl.compat import izip_longest, text_type, string_types, PY3
+from petl.io.sources import read_source_from_arg, write_source_from_arg
+from petl.transform.headers import skip, setheader
+from petl.util.base import Table, dicts, fieldnames, iterpeek, wrap
+def _get_schema_header_names(schema):
+    fields = schema.get('fields')
+    if fields is None:
+        return []
+    header = [field.get('name') for field in fields]
+    return header

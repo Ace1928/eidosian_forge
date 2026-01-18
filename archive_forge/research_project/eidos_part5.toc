@@ -1,0 +1,9 @@
+\contentsline {section}{\numberline {1}Abstract}{2}{section.1}%
+\contentsline {section}{\numberline {2}Introduction and Motivation}{2}{section.2}%
+\contentsline {section}{\numberline {3}Preliminaries and Notation}{2}{section.3}%
+\contentsline {section}{\numberline {4}Formal Definitions and Mathematical Formulation}{3}{section.4}%
+\contentsline {section}{\numberline {5}Algorithmic Description}{4}{section.5}%
+\contentsline {section}{\numberline {6}Theoretical Analysis and Guarantees}{4}{section.6}%
+\contentsline {section}{\numberline {7}Integration with the Overall Eidos Framework}{5}{section.7}%
+\contentsline {section}{\numberline {8}Implementation Considerations}{5}{section.8}%
+\contentsline {section}{\numberline {9}Conclusion}{6}{section.9}%

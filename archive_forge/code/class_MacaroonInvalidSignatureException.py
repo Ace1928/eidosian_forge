@@ -1,0 +1,2 @@
+class MacaroonInvalidSignatureException(MacaroonVerificationFailedException):
+    pass

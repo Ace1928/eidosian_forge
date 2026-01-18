@@ -1,0 +1,58 @@
+from __future__ import annotations
+import os
+import re
+import abc
+import csv
+import sys
+import json
+import zipp
+import email
+import types
+import inspect
+import pathlib
+import operator
+import textwrap
+import warnings
+import functools
+import itertools
+import posixpath
+import collections
+from . import _adapters, _meta, _py39compat
+from ._collections import FreezableDefaultDict, Pair
+from ._compat import (
+from ._functools import method_cache, pass_none
+from ._itertools import always_iterable, unique_everseen
+from ._meta import PackageMetadata, SimplePath
+from contextlib import suppress
+from importlib import import_module
+from importlib.abc import MetaPathFinder
+from itertools import starmap
+from typing import Any, Iterable, List, Mapping, Match, Optional, Set, cast
+@install
+class MetadataPathFinder(NullFinder, DistributionFinder):
+    """A degenerate finder for distribution packages on the file system.
+
+    This finder supplies only a find_distributions() method for versions
+    of Python that do not have a PathFinder find_distributions().
+    """
+
+    def find_distributions(self, context=DistributionFinder.Context()) -> Iterable[PathDistribution]:
+        """
+        Find distributions.
+
+        Return an iterable of all Distribution instances capable of
+        loading the metadata for packages matching ``context.name``
+        (or all names if ``None`` indicated) along the paths in the list
+        of directories ``context.path``.
+        """
+        found = self._search_paths(context.name, context.path)
+        return map(PathDistribution, found)
+
+    @classmethod
+    def _search_paths(cls, name, paths):
+        """Find metadata directories in paths heuristically."""
+        prepared = Prepared(name)
+        return itertools.chain.from_iterable((path.search(prepared) for path in map(FastPath, paths)))
+
+    def invalidate_caches(cls) -> None:
+        FastPath.__new__.cache_clear()

@@ -1,0 +1,7 @@
+from ..nilearn import SignalExtraction
+def test_SignalExtraction_inputs():
+    input_map = dict(class_labels=dict(mandatory=True), detrend=dict(usedefault=True), in_file=dict(extensions=None, mandatory=True), incl_shared_variance=dict(usedefault=True), include_global=dict(usedefault=True), label_files=dict(mandatory=True), out_file=dict(extensions=None, usedefault=True))
+    inputs = SignalExtraction.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

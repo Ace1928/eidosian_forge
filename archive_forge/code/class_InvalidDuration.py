@@ -1,0 +1,2 @@
+class InvalidDuration(PydubException):
+    pass

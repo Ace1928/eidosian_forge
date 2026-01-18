@@ -1,0 +1,74 @@
+from sympy.core import (Function, Pow, sympify, Expr)
+from sympy.core.relational import Relational
+from sympy.core.singleton import S
+from sympy.polys import Poly, decompose
+from sympy.utilities.misc import func_name
+from sympy.functions.elementary.miscellaneous import Min, Max
+def decompogen(f, symbol):
+    """
+    Computes General functional decomposition of ``f``.
+    Given an expression ``f``, returns a list ``[f_1, f_2, ..., f_n]``,
+    where::
+              f = f_1 o f_2 o ... f_n = f_1(f_2(... f_n))
+
+    Note: This is a General decomposition function. It also decomposes
+    Polynomials. For only Polynomial decomposition see ``decompose`` in polys.
+
+    Examples
+    ========
+
+    >>> from sympy.abc import x
+    >>> from sympy import decompogen, sqrt, sin, cos
+    >>> decompogen(sin(cos(x)), x)
+    [sin(x), cos(x)]
+    >>> decompogen(sin(x)**2 + sin(x) + 1, x)
+    [x**2 + x + 1, sin(x)]
+    >>> decompogen(sqrt(6*x**2 - 5), x)
+    [sqrt(x), 6*x**2 - 5]
+    >>> decompogen(sin(sqrt(cos(x**2 + 1))), x)
+    [sin(x), sqrt(x), cos(x), x**2 + 1]
+    >>> decompogen(x**4 + 2*x**3 - x - 1, x)
+    [x**2 - x - 1, x**2 + x]
+
+    """
+    f = sympify(f)
+    if not isinstance(f, Expr) or isinstance(f, Relational):
+        raise TypeError('expecting Expr but got: `%s`' % func_name(f))
+    if symbol not in f.free_symbols:
+        return [f]
+    if isinstance(f, (Function, Pow)):
+        if f.is_Pow and f.base == S.Exp1:
+            arg = f.exp
+        else:
+            arg = f.args[0]
+        if arg == symbol:
+            return [f]
+        return [f.subs(arg, symbol)] + decompogen(arg, symbol)
+    if isinstance(f, (Min, Max)):
+        args = list(f.args)
+        d0 = None
+        for i, a in enumerate(args):
+            if not a.has_free(symbol):
+                continue
+            d = decompogen(a, symbol)
+            if len(d) == 1:
+                d = [symbol] + d
+            if d0 is None:
+                d0 = d[1:]
+            elif d[1:] != d0:
+                d = [symbol]
+                break
+            args[i] = d[0]
+        if d[0] == symbol:
+            return [f]
+        return [f.func(*args)] + d0
+    fp = Poly(f)
+    gens = list(filter(lambda x: symbol in x.free_symbols, fp.gens))
+    if len(gens) == 1 and gens[0] != symbol:
+        f1 = f.subs(gens[0], symbol)
+        f2 = gens[0]
+        return [f1] + decompogen(f2, symbol)
+    try:
+        return decompose(f)
+    except ValueError:
+        return [f]

@@ -1,0 +1,42 @@
+from __future__ import annotations
+import atexit
+from contextlib import contextmanager
+import fnmatch
+import importlib.util
+import io
+import os
+from os.path import abspath
+from os.path import dirname
+from os.path import exists
+from os.path import isabs
+from os.path import isdir
+from os.path import isfile
+from os.path import islink
+from os.path import normpath
+import posixpath
+from stat import S_ISDIR
+from stat import S_ISLNK
+from stat import S_ISREG
+import sys
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Literal
+from typing import overload
+from typing import TYPE_CHECKING
+import uuid
+import warnings
+from . import error
+def _ensuredirs(self):
+    parent = self.dirpath()
+    if parent == self:
+        return self
+    if parent.check(dir=0):
+        parent._ensuredirs()
+    if self.check(dir=0):
+        try:
+            self.mkdir()
+        except error.EEXIST:
+            if self.check(dir=0):
+                raise
+    return self

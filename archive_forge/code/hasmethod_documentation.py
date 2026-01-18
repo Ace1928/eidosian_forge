@@ -1,0 +1,1 @@
+Does ``obj`` have a method named ``methodname``?

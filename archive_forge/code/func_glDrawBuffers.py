@@ -1,0 +1,21 @@
+from OpenGL import platform, constant, arrays
+from OpenGL import extensions, wrapper
+import ctypes
+from OpenGL.raw.GLES2 import _types, _glgets
+from OpenGL.raw.GLES2.EXT.draw_buffers import *
+from OpenGL.raw.GLES2.EXT.draw_buffers import _EXTENSION_NAME
+from OpenGL.lazywrapper import lazy as _lazy
+@_lazy(glDrawBuffers)
+def glDrawBuffers(baseOperation, n=None, bufs=None):
+    """glDrawBuffers( bufs ) -> bufs
+
+    Wrapper will calculate n from dims of bufs if only
+    one argument is provided...
+    """
+    if bufs is None:
+        bufs = n
+        n = None
+    bufs = arrays.GLenumArray.asArray(bufs)
+    if n is None:
+        n = arrays.GLenumArray.arraySize(bufs)
+    return baseOperation(n, bufs)

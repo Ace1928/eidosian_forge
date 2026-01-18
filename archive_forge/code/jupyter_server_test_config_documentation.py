@@ -1,0 +1,4 @@
+Server configuration for integration tests.
+!! Never use this configuration in production because it
+opens the server to the world and provide access to JupyterLab
+JavaScript objects through the global window variable.

@@ -1,0 +1,16 @@
+from __future__ import annotations
+from typing import Any, Callable, NamedTuple
+from pydantic_core import CoreConfig, CoreSchema, ValidationError
+from typing_extensions import Literal, Protocol, TypeAlias
+class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
+    """Event handler for `SchemaValidator.validate_strings`."""
+
+    def on_enter(self, input: StringInput, *, strict: bool | None=None, context: dict[str, Any] | None=None) -> None:
+        """Callback to be notified of validation start, and create an instance of the event handler.
+
+        Args:
+            input: The string data to be validated.
+            strict: Whether to validate the object in strict mode.
+            context: The context to use for validation, this is passed to functional validators.
+        """
+        pass

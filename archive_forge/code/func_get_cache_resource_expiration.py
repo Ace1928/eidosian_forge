@@ -1,0 +1,30 @@
+import copy
+import os.path
+import typing as ty
+from urllib import parse
+import warnings
+from keystoneauth1 import discover
+import keystoneauth1.exceptions.catalog
+from keystoneauth1.loading import adapter as ks_load_adap
+from keystoneauth1 import session as ks_session
+import os_service_types
+import requestsexceptions
+from openstack import _log
+from openstack.config import _util
+from openstack.config import defaults as config_defaults
+from openstack import exceptions
+from openstack import proxy
+from openstack import version as openstack_version
+from openstack import warnings as os_warnings
+def get_cache_resource_expiration(self, resource, default=None):
+    """Get expiration time for a resource
+
+        :param resource: Name of the resource type
+        :param default: Default value to return if not found (optional,
+                        defaults to None)
+
+        :returns: Expiration time for the resource type as float or default
+        """
+    if resource not in self._cache_expirations:
+        return default
+    return float(self._cache_expirations[resource])

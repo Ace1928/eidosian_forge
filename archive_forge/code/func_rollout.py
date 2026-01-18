@@ -1,0 +1,109 @@
+import collections
+import copy
+import gymnasium as gym
+import json
+import os
+from pathlib import Path
+import shelve
+import typer
+import ray
+import ray.cloudpickle as cloudpickle
+from ray.rllib.env import MultiAgentEnv
+from ray.rllib.env.base_env import _DUMMY_AGENT_ID
+from ray.rllib.env.env_context import EnvContext
+from ray.rllib.evaluation.worker_set import WorkerSet
+from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
+from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
+from ray.rllib.common import CLIArguments as cli
+from ray.train._checkpoint import Checkpoint
+from ray.train._internal.session import _TrainingResult
+from ray.tune.utils import merge_dicts
+from ray.tune.registry import get_trainable_cls, _global_registry, ENV_CREATOR
+def rollout(agent, env_name, num_steps, num_episodes=0, saver=None, no_render=True):
+    policy_agent_mapping = default_policy_agent_mapping
+    if saver is None:
+        saver = RolloutSaver()
+    if hasattr(agent, 'evaluation_workers') and isinstance(agent.evaluation_workers, WorkerSet):
+        steps = 0
+        episodes = 0
+        while keep_going(steps, num_steps, episodes, num_episodes):
+            saver.begin_rollout()
+            eval_result = agent.evaluate()['evaluation']
+            eps = agent.config['evaluation_duration']
+            episodes += eps
+            steps += eps * eval_result['episode_len_mean']
+            print('Episode #{}: reward: {}'.format(episodes, eval_result['episode_reward_mean']))
+            saver.end_rollout()
+        return
+    elif hasattr(agent, 'workers') and isinstance(agent.workers, WorkerSet):
+        env = agent.workers.local_worker().env
+        multiagent = isinstance(env, MultiAgentEnv)
+        if agent.workers.local_worker().multiagent:
+            policy_agent_mapping = agent.config.policy_mapping_fn
+        policy_map = agent.workers.local_worker().policy_map
+        state_init = {p: m.get_initial_state() for p, m in policy_map.items()}
+        use_lstm = {p: len(s) > 0 for p, s in state_init.items()}
+    else:
+        from gymnasium import envs
+        if envs.registry.env_specs.get(agent.config['env']):
+            env = gym.make(agent.config['env'])
+        else:
+            env_creator = _global_registry.get(ENV_CREATOR, agent.config['env'])
+            env_context = EnvContext(agent.config['env_config'] or {}, worker_index=0)
+            env = env_creator(env_context)
+        multiagent = False
+        try:
+            policy_map = {DEFAULT_POLICY_ID: agent.policy}
+        except AttributeError:
+            raise AttributeError('Agent ({}) does not have a `policy` property! This is needed for performing (trained) agent rollouts.'.format(agent))
+        use_lstm = {DEFAULT_POLICY_ID: False}
+    action_init = {p: flatten_to_single_ndarray(m.action_space.sample()) for p, m in policy_map.items()}
+    steps = 0
+    episodes = 0
+    while keep_going(steps, num_steps, episodes, num_episodes):
+        mapping_cache = {}
+        saver.begin_rollout()
+        obs, info = env.reset()
+        agent_states = DefaultMapping(lambda agent_id: state_init[mapping_cache[agent_id]])
+        prev_actions = DefaultMapping(lambda agent_id: action_init[mapping_cache[agent_id]])
+        prev_rewards = collections.defaultdict(lambda: 0.0)
+        terminated = truncated = False
+        reward_total = 0.0
+        while not terminated and (not truncated) and keep_going(steps, num_steps, episodes, num_episodes):
+            multi_obs = obs if multiagent else {_DUMMY_AGENT_ID: obs}
+            action_dict = {}
+            for agent_id, a_obs in multi_obs.items():
+                if a_obs is not None:
+                    policy_id = mapping_cache.setdefault(agent_id, policy_agent_mapping(agent_id))
+                    p_use_lstm = use_lstm[policy_id]
+                    if p_use_lstm:
+                        a_action, p_state, _ = agent.compute_single_action(a_obs, state=agent_states[agent_id], prev_action=prev_actions[agent_id], prev_reward=prev_rewards[agent_id], policy_id=policy_id)
+                        agent_states[agent_id] = p_state
+                    else:
+                        a_action = agent.compute_single_action(a_obs, prev_action=prev_actions[agent_id], prev_reward=prev_rewards[agent_id], policy_id=policy_id)
+                    a_action = flatten_to_single_ndarray(a_action)
+                    action_dict[agent_id] = a_action
+                    prev_actions[agent_id] = a_action
+            action = action_dict
+            action = action if multiagent else action[_DUMMY_AGENT_ID]
+            next_obs, reward, terminated, truncated, info = env.step(action)
+            if multiagent:
+                for agent_id, r in reward.items():
+                    prev_rewards[agent_id] = r
+            else:
+                prev_rewards[_DUMMY_AGENT_ID] = reward
+            if multiagent:
+                terminated = terminated['__all__']
+                truncated = truncated['__all__']
+                reward_total += sum((r for r in reward.values() if r is not None))
+            else:
+                reward_total += reward
+            if not no_render:
+                env.render()
+            saver.append_step(obs, action, next_obs, reward, terminated, truncated, info)
+            steps += 1
+            obs = next_obs
+        saver.end_rollout()
+        print('Episode #{}: reward: {}'.format(episodes, reward_total))
+        if terminated or truncated:
+            episodes += 1

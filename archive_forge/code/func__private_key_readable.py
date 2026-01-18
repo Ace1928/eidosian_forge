@@ -1,0 +1,23 @@
+from __future__ import absolute_import, division, print_function
+import abc
+import os
+from ansible.module_utils import six
+from ansible.module_utils.basic import missing_required_lib
+from ansible.module_utils.common.text.converters import to_native, to_text, to_bytes
+from ansible_collections.community.crypto.plugins.module_utils.version import LooseVersion
+from ansible_collections.community.crypto.plugins.module_utils.openssh.cryptography import (
+from ansible_collections.community.crypto.plugins.module_utils.openssh.backends.common import (
+from ansible_collections.community.crypto.plugins.module_utils.openssh.utils import (
+def _private_key_readable(self):
+    try:
+        OpensshKeypair.load(path=self.private_key_path, passphrase=self.passphrase, no_public_key=True)
+    except (InvalidPrivateKeyFileError, InvalidPassphraseError):
+        return False
+    if self.passphrase:
+        try:
+            OpensshKeypair.load(path=self.private_key_path, passphrase=None, no_public_key=True)
+        except (InvalidPrivateKeyFileError, InvalidPassphraseError):
+            return True
+        else:
+            return False
+    return True

@@ -1,0 +1,6 @@
+import re, textwrap, os
+from os import sys, path
+from distutils.errors import DistutilsError
+def test_targets_syntax(self):
+    for targets in ('/*@targets $keep_baseline sse vsx neon vx*/', '/*@targets,$keep_baseline,sse,vsx,neon vx*/', '/*@targets*$keep_baseline*sse*vsx*neon*vx*/', '\n            /*\n            ** @targets\n            ** $keep_baseline, sse vsx,neon, vx\n            */\n            ', '\n            /*\n            ************@targets****************\n            ** $keep_baseline, sse vsx, neon, vx\n            ************************************\n            */\n            ', '\n            /*\n            /////////////@targets/////////////////\n            //$keep_baseline//sse//vsx//neon//vx\n            /////////////////////////////////////\n            */\n            ', '\n            /*\n            @targets\n            $keep_baseline\n            SSE VSX NEON VX*/\n            '):
+        self.expect_targets(targets, x86='sse', ppc64='vsx', armhf='neon', s390x='vx', unknown='')

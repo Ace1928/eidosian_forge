@@ -1,0 +1,11 @@
+from __future__ import absolute_import, print_function, division
+import operator
+from collections import OrderedDict
+from itertools import islice
+from petl.compat import izip_longest, text_type, next
+from petl.util.base import asindices, Table
+
+    Wrap the table with a cache that caches up to `n` rows as they are initially
+    requested via iteration (cache all rows be default).
+
+    

@@ -1,0 +1,53 @@
+from sympy.concrete.summations import Sum
+from sympy.core.function import (Lambda, diff, expand_func)
+from sympy.core.mul import Mul
+from sympy.core import EulerGamma
+from sympy.core.numbers import (E as e, I, Rational, pi)
+from sympy.core.relational import (Eq, Ne)
+from sympy.core.singleton import S
+from sympy.core.symbol import (Dummy, Symbol, symbols)
+from sympy.functions.combinatorial.factorials import (binomial, factorial)
+from sympy.functions.elementary.complexes import (Abs, im, re, sign)
+from sympy.functions.elementary.exponential import (exp, log)
+from sympy.functions.elementary.hyperbolic import (cosh, sinh)
+from sympy.functions.elementary.integers import floor
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import (asin, atan, cos, sin, tan)
+from sympy.functions.special.bessel import (besseli, besselj, besselk)
+from sympy.functions.special.beta_functions import beta
+from sympy.functions.special.error_functions import (erf, erfc, erfi, expint)
+from sympy.functions.special.gamma_functions import (gamma, lowergamma, uppergamma)
+from sympy.functions.special.hyper import hyper
+from sympy.integrals.integrals import Integral
+from sympy.logic.boolalg import (And, Or)
+from sympy.sets.sets import Interval
+from sympy.simplify.simplify import simplify
+from sympy.utilities.lambdify import lambdify
+from sympy.functions.special.error_functions import erfinv
+from sympy.functions.special.hyper import meijerg
+from sympy.sets.sets import FiniteSet, Complement, Intersection
+from sympy.stats import (P, E, where, density, variance, covariance, skewness, kurtosis, median,
+from sympy.stats.crv_types import NormalDistribution, ExponentialDistribution, ContinuousDistributionHandmade
+from sympy.stats.joint_rv_types import MultivariateLaplaceDistribution, MultivariateNormalDistribution
+from sympy.stats.crv import SingleContinuousPSpace, SingleContinuousDomain
+from sympy.stats.compound_rv import CompoundPSpace
+from sympy.stats.symbolic_probability import Probability
+from sympy.testing.pytest import raises, XFAIL, slow, ignore_warnings
+from sympy.core.random import verify_numerically as tn
+def test_reciprocal():
+    a = Symbol('a', real=True)
+    b = Symbol('b', real=True)
+    X = Reciprocal('x', a, b)
+    assert density(X)(x) == 1 / (x * (-log(a) + log(b)))
+    assert cdf(X)(x) == Piecewise((log(a) / (log(a) - log(b)) - log(x) / (log(a) - log(b)), a <= x), (0, True))
+    X = Reciprocal('x', 5, 30)
+    assert E(X) == 25 / (log(30) - log(5))
+    assert P(X < 4) == S.Zero
+    assert P(X < 20) == log(20) / (log(30) - log(5)) - log(5) / (log(30) - log(5))
+    assert cdf(X)(10) == log(10) / (log(30) - log(5)) - log(5) / (log(30) - log(5))
+    a = symbols('a', nonpositive=True)
+    raises(ValueError, lambda: Reciprocal('x', a, b))
+    a = symbols('a', positive=True)
+    b = symbols('b', positive=True)
+    raises(ValueError, lambda: Reciprocal('x', a + b, a))

@@ -1,0 +1,7 @@
+import numpy as np
+from ..._shared.testing import assert_equal, assert_almost_equal
+from ..profile import profile_line
+def test_reduce_func_mean_linewidth_1():
+    prof = profile_line(pyth_image, (0, 1), (3, 1), linewidth=1, order=0, reduce_func=np.mean, mode='constant')
+    expected_prof = pyth_image[:4, 1]
+    assert_almost_equal(prof, expected_prof)

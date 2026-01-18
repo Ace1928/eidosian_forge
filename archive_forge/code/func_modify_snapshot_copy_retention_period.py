@@ -1,0 +1,33 @@
+import boto
+from boto.compat import json
+from boto.connection import AWSQueryConnection
+from boto.regioninfo import RegionInfo
+from boto.exception import JSONResponseError
+from boto.redshift import exceptions
+def modify_snapshot_copy_retention_period(self, cluster_identifier, retention_period):
+    """
+        Modifies the number of days to retain automated snapshots in
+        the destination region after they are copied from the source
+        region.
+
+        :type cluster_identifier: string
+        :param cluster_identifier: The unique identifier of the cluster for
+            which you want to change the retention period for automated
+            snapshots that are copied to a destination region.
+        Constraints: Must be the valid name of an existing cluster that has
+            cross-region snapshot copy enabled.
+
+        :type retention_period: integer
+        :param retention_period: The number of days to retain automated
+            snapshots in the destination region after they are copied from the
+            source region.
+        If you decrease the retention period for automated snapshots that are
+            copied to a destination region, Amazon Redshift will delete any
+            existing automated snapshots that were copied to the destination
+            region and that fall outside of the new retention period.
+
+        Constraints: Must be at least 1 and no more than 35.
+
+        """
+    params = {'ClusterIdentifier': cluster_identifier, 'RetentionPeriod': retention_period}
+    return self._make_request(action='ModifySnapshotCopyRetentionPeriod', verb='POST', path='/', params=params)

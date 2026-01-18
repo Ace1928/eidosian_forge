@@ -1,0 +1,19 @@
+import pyomo.common.unittest as unittest
+import pytest
+import random
+import pyomo.environ as pyo
+import pyomo.dae as dae
+from pyomo.common.collections import ComponentMap
+from pyomo.contrib.mpc.data.scalar_data import ScalarData
+from pyomo.contrib.mpc.data.series_data import TimeSeriesData
+from pyomo.contrib.mpc.data.interval_data import IntervalData
+from pyomo.contrib.mpc.data.convert import (
+def test_no_time_points_left_endpoints(self):
+    m = _make_model()
+    intervals = [(0.0, 0.2), (0.2, 0.5), (0.7, 1.0)]
+    data = {m.var[:, 'A']: [1.0, 2.0, 3.0], m.var[:, 'B']: [4.0, 5.0, 6.0]}
+    interval_data = IntervalData(data, intervals)
+    series_data = interval_to_series(interval_data, use_left_endpoints=True)
+    pred_time_points = [0.0, 0.2, 0.7]
+    pred_data = {m.var[:, 'A']: [1.0, 2.0, 3.0], m.var[:, 'B']: [4.0, 5.0, 6.0]}
+    self.assertEqual(series_data, TimeSeriesData(pred_data, pred_time_points))

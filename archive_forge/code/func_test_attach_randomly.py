@@ -1,0 +1,36 @@
+import pytest
+import numpy as np
+from ase.parallel import world
+from ase.build import molecule, fcc111
+from ase.build.attach import (attach, attach_randomly,
+def test_attach_randomly():
+    """Attach two molecules in random orientation."""
+    m1 = molecule('C6H6')
+    m2 = molecule('CF4')
+    distance = 2.5
+    if world.size > 1:
+        'Check that the coordinates are correctly distributed from master.'
+        rng = np.random.RandomState(world.rank)
+        atoms = attach_randomly_and_broadcast(m1, m2, distance, rng)
+        p0 = 1.0 * atoms[-1].position
+        world.broadcast(p0, 0)
+        for i in range(1, world.size):
+            pi = 1.0 * atoms[-1].position
+            world.broadcast(pi, i)
+            assert pi == pytest.approx(p0, 1e-08)
+        'Check that every core has its own structure'
+        rng = np.random.RandomState(world.rank)
+        atoms = attach_randomly(m1, m2, distance, rng)
+        p0 = 1.0 * atoms[-1].position
+        world.broadcast(p0, 0)
+        for i in range(1, world.size):
+            pi = 1.0 * atoms[-1].position
+            world.broadcast(pi, i)
+            assert pi != pytest.approx(p0, 1e-08)
+    rng = np.random.RandomState(42)
+    pos2_ac = np.zeros((5, 3))
+    N = 25
+    for i in range(N):
+        atoms = attach_randomly(m1, m2, distance, rng=rng)
+        pos2_ac += atoms.get_positions()[12:, :]
+    assert (np.abs(pos2_ac / N) <= 1).all()

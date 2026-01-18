@@ -1,0 +1,2 @@
+class MonkeypatchWarning(UserWarning):
+    pass

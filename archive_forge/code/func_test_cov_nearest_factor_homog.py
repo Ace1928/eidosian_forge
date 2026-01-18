@@ -1,0 +1,19 @@
+import warnings
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_allclose
+import scipy.sparse as sparse
+import pytest
+from statsmodels.stats.correlation_tools import (
+from statsmodels.tools.testing import Holder
+@pytest.mark.parametrize('dm', [1, 2])
+def test_cov_nearest_factor_homog(self, dm):
+    d = 100
+    X = np.zeros((d, dm), dtype=np.float64)
+    x = np.linspace(0, 2 * np.pi, d)
+    for j in range(dm):
+        X[:, j] = np.sin(x * (j + 1))
+    mat = np.dot(X, X.T)
+    np.fill_diagonal(mat, np.diag(mat) + 3.1)
+    rslt = cov_nearest_factor_homog(mat, dm)
+    mat1 = rslt.to_matrix()
+    assert_allclose(mat, mat1, rtol=0.25, atol=0.001)

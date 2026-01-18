@@ -1,0 +1,1 @@
+Exception definitions for Words

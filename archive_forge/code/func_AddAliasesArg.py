@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.command_lib.util.apis import arg_utils
+def AddAliasesArg(parser, add_network_interface=False):
+    """Adds --aliases argument to the parser."""
+    if add_network_interface:
+        help_text = '\n        The IP alias ranges to allocate for this interface. If there are\n        multiple IP alias ranges, they are separated by semicolons.\n\n        For example:\n\n            --aliases="10.128.1.0/24;range1:/32"\n\n        Each IP alias range consists of a range name and an IP range\n        separated by a colon, or just the IP range.\n        The range name is the name of the range within the network\n        interface\'s subnet from which to allocate an IP alias range. If\n        unspecified, it defaults to the primary IP range of the subnet.\n        The IP range can be a CIDR range (e.g. `192.168.100.0/24`), a single\n        IP address (e.g. `192.168.100.1`), or a netmask in CIDR format (e.g.\n        `/24`). If the IP range is specified by CIDR range or single IP\n        address, it must belong to the CIDR range specified by the range\n        name on the subnet. If the IP range is specified by netmask, the\n        IP allocator will pick an available range with the specified netmask\n        and allocate it to this network interface.\n      '
+    else:
+        help_text = '\n        The IP alias ranges to allocate for this interface. If there are\n        multiple IP alias ranges, they are separated by semicolons.\n\n        Can be specified together with --network and/or --subnetwork to choose\n        IP alias ranges in the new subnetwork. If unspecified, then the previous\n        IP alias ranges will be allocated in the new subnetwork. If the previous\n        IP alias ranges are not available in the new subnetwork, then other\n        available IP alias ranges of the same size will be allocated in the new\n        subnetwork.\n\n        For example:\n\n            --aliases="10.128.1.0/24;r1:/32"\n      '
+    parser.add_argument('--aliases', type=str, help=help_text)

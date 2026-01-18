@@ -1,0 +1,11 @@
+from logging.config import valid_ident
+from ..construct import (
+from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
+from .enums import *
+def _create_loclists_parsers(self):
+    """ Create a struct for debug_loclists CU header, DWARFv5, 7,29
+        """
+    self.Dwarf_loclists_CU_header = Struct('Dwarf_loclists_CU_header', StreamOffset('cu_offset'), self.Dwarf_initial_length('unit_length'), Value('is64', lambda ctx: ctx.is64), StreamOffset('offset_after_length'), self.Dwarf_uint16('version'), self.Dwarf_uint8('address_size'), self.Dwarf_uint8('segment_selector_size'), self.Dwarf_uint32('offset_count'), StreamOffset('offset_table_offset'))
+    cld = self.Dwarf_loclists_counted_location_description = PrefixedArray(self.Dwarf_uint8('loc_expr'), self.Dwarf_uleb128(''))
+    self.Dwarf_loclists_entries = RepeatUntilExcluding(lambda obj, ctx: obj.entry_type == 'DW_LLE_end_of_list', Struct('entry', StreamOffset('entry_offset'), Enum(self.Dwarf_uint8('entry_type'), **ENUM_DW_LLE), Embed(Switch('', lambda ctx: ctx.entry_type, {'DW_LLE_end_of_list': Struct('end_of_list'), 'DW_LLE_base_addressx': Struct('base_addressx', self.Dwarf_uleb128('index')), 'DW_LLE_startx_endx': Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('end_index'), cld), 'DW_LLE_startx_length': Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('length'), cld), 'DW_LLE_offset_pair': Struct('startx_endx', self.Dwarf_uleb128('start_offset'), self.Dwarf_uleb128('end_offset'), cld), 'DW_LLE_default_location': Struct('default_location', cld), 'DW_LLE_base_address': Struct('base_address', self.Dwarf_target_addr('address')), 'DW_LLE_start_end': Struct('start_end', self.Dwarf_target_addr('start_address'), self.Dwarf_target_addr('end_address'), cld), 'DW_LLE_start_length': Struct('start_length', self.Dwarf_target_addr('start_address'), self.Dwarf_uleb128('length'), cld)})), StreamOffset('entry_end_offset'), Value('entry_length', lambda ctx: ctx.entry_end_offset - ctx.entry_offset)))
+    self.Dwarf_locview_pair = Struct('locview_pair', StreamOffset('entry_offset'), self.Dwarf_uleb128('begin'), self.Dwarf_uleb128('end'))

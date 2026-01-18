@@ -1,0 +1,7 @@
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from .message_media import MediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_location import LocationAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@axolotl_sender_key_distribution_message.setter
+def axolotl_sender_key_distribution_message(self, value):
+    self.media_specific_attributes.axolotl_sender_key_distribution_message = value

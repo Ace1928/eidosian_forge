@@ -1,0 +1,32 @@
+import abc
+from abc import ABCMeta
+from abc import abstractmethod
+from copy import copy
+import logging
+import functools
+import netaddr
+from os_ken.lib.packet.bgp import RF_IPv4_UC
+from os_ken.lib.packet.bgp import RouteTargetMembershipNLRI
+from os_ken.lib.packet.bgp import BGP_ATTR_TYPE_EXTENDED_COMMUNITIES
+from os_ken.lib.packet.bgp import BGPPathAttributeLocalPref
+from os_ken.lib.packet.bgp import BGP_ATTR_TYPE_AS_PATH
+from os_ken.services.protocols.bgp.base import OrderedDict
+from os_ken.services.protocols.bgp.constants import VPN_TABLE
+from os_ken.services.protocols.bgp.constants import VRF_TABLE
+from os_ken.services.protocols.bgp.model import OutgoingRoute
+from os_ken.services.protocols.bgp.processor import BPR_ONLY_PATH
+from os_ken.services.protocols.bgp.processor import BPR_UNKNOWN
+def withdraw_uninteresting_paths(self, interested_rts):
+    """Withdraws paths that are no longer interesting.
+
+        For all known paths that do not have any route target in common with
+        given `interested_rts` we add a corresponding withdraw.
+
+        Returns True if we added any withdraws.
+        """
+    add_withdraws = False
+    for path in self._known_path_list:
+        if not path.has_rts_in(interested_rts):
+            self.withdraw_path(path)
+            add_withdraws = True
+    return add_withdraws

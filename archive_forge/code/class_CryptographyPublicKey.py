@@ -1,0 +1,22 @@
+from typing import Any, Optional, Type
+from cryptography.hazmat.primitives import serialization
+from dns.dnssecalgs.base import GenericPrivateKey, GenericPublicKey
+from dns.exception import AlgorithmKeyMismatch
+class CryptographyPublicKey(GenericPublicKey):
+    key: Any = None
+    key_cls: Any = None
+
+    def __init__(self, key: Any) -> None:
+        if self.key_cls is None:
+            raise TypeError('Undefined private key class')
+        if not isinstance(key, self.key_cls):
+            raise AlgorithmKeyMismatch
+        self.key = key
+
+    @classmethod
+    def from_pem(cls, public_pem: bytes) -> 'GenericPublicKey':
+        key = serialization.load_pem_public_key(public_pem)
+        return cls(key=key)
+
+    def to_pem(self) -> bytes:
+        return self.key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)

@@ -1,0 +1,9 @@
+from __future__ import print_function
+import re
+from sqlparse import tokens as T
+from sqlparse.compat import string_types, text_type, unicode_compatible
+from sqlparse.utils import imt, remove_quotes
+class Begin(TokenList):
+    """A BEGIN/END block."""
+    M_OPEN = (T.Keyword, 'BEGIN')
+    M_CLOSE = (T.Keyword, 'END')

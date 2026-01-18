@@ -1,0 +1,58 @@
+from fontTools.misc.fixedTools import (
+from fontTools.varLib.models import normalizeValue, piecewiseLinearMap
+from fontTools.ttLib import TTFont
+from fontTools.ttLib.tables.TupleVariation import TupleVariation
+from fontTools.ttLib.tables import _g_l_y_f
+from fontTools import varLib
+from fontTools import subset  # noqa: F401
+from fontTools.varLib import builder
+from fontTools.varLib.mvar import MVAR_ENTRIES
+from fontTools.varLib.merger import MutatorMerger
+from fontTools.varLib.instancer import names
+from .featureVars import instantiateFeatureVariations
+from fontTools.misc.cliTools import makeOutputFileName
+from fontTools.varLib.instancer import solver
+import collections
+import dataclasses
+from contextlib import contextmanager
+from copy import deepcopy
+from enum import IntEnum
+import logging
+import os
+import re
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Tuple, Union
+import warnings
+def axisValuesFromAxisLimits(stat, axisLimits):
+
+    def isAxisValueOutsideLimits(axisTag, axisValue):
+        if axisTag in axisLimits:
+            triple = axisLimits[axisTag]
+            if axisValue < triple.minimum or axisValue > triple.maximum:
+                return True
+        return False
+    designAxes = stat.DesignAxisRecord.Axis
+    newAxisValueTables = []
+    for axisValueTable in stat.AxisValueArray.AxisValue:
+        axisValueFormat = axisValueTable.Format
+        if axisValueFormat in (1, 2, 3):
+            axisTag = designAxes[axisValueTable.AxisIndex].AxisTag
+            if axisValueFormat == 2:
+                axisValue = axisValueTable.NominalValue
+            else:
+                axisValue = axisValueTable.Value
+            if isAxisValueOutsideLimits(axisTag, axisValue):
+                continue
+        elif axisValueFormat == 4:
+            dropAxisValueTable = False
+            for rec in axisValueTable.AxisValueRecord:
+                axisTag = designAxes[rec.AxisIndex].AxisTag
+                axisValue = rec.Value
+                if isAxisValueOutsideLimits(axisTag, axisValue):
+                    dropAxisValueTable = True
+                    break
+            if dropAxisValueTable:
+                continue
+        else:
+            log.warning('Unknown AxisValue table format (%s); ignored', axisValueFormat)
+        newAxisValueTables.append(axisValueTable)
+    return newAxisValueTables

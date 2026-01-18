@@ -1,0 +1,21 @@
+from __future__ import annotations
+import datetime
+import functools
+import operator
+import pickle
+from array import array
+import pytest
+from tlz import curry
+from dask import get
+from dask.highlevelgraph import HighLevelGraph
+from dask.optimization import SubgraphCallable
+from dask.utils import (
+from dask.utils_test import inc
+def test_SerializableLock_name_collision():
+    a = SerializableLock('a')
+    b = SerializableLock('b')
+    c = SerializableLock('a')
+    d = SerializableLock()
+    assert a.lock is not b.lock
+    assert a.lock is c.lock
+    assert d.lock not in (a.lock, b.lock, c.lock)

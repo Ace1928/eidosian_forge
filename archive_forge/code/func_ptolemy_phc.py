@@ -1,0 +1,5 @@
+import sys, snappy, giac_rur, extended, phc_wrapper, time, gluing
+from sage.all import QQ, PolynomialRing, CC, QQbar, macaulay2
+def ptolemy_phc(manifold):
+    I = extended.ptolemy_ideal_for_filled(manifold)
+    return phc_wrapper.find_solutions(I)

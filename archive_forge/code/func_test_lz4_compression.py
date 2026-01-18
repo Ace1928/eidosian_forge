@@ -1,0 +1,42 @@
+import copy
+import os
+import random
+import re
+import io
+import sys
+import warnings
+import gzip
+import zlib
+import bz2
+import pickle
+import socket
+from contextlib import closing
+import mmap
+from pathlib import Path
+import pytest
+from joblib.test.common import np, with_numpy, with_lz4, without_lz4
+from joblib.test.common import with_memory_profiler, memory_used
+from joblib.testing import parametrize, raises, warns
+from joblib import numpy_pickle, register_compressor
+from joblib.test import data
+from joblib.numpy_pickle_utils import _IO_BUFFER_SIZE
+from joblib.numpy_pickle_utils import _detect_compressor
+from joblib.numpy_pickle_utils import _is_numpy_array_byte_order_mismatch
+from joblib.numpy_pickle_utils import _ensure_native_byte_order
+from joblib.compressor import (_COMPRESSORS, _LZ4_PREFIX, CompressorWrapper,
+@with_lz4
+def test_lz4_compression(tmpdir):
+    import lz4.frame
+    compressor = 'lz4'
+    assert compressor in _COMPRESSORS
+    assert _COMPRESSORS[compressor].fileobj_factory == lz4.frame.LZ4FrameFile
+    fname = tmpdir.join('test.pkl').strpath
+    data = 'test data'
+    numpy_pickle.dump(data, fname, compress=compressor)
+    with open(fname, 'rb') as f:
+        assert f.read(len(_LZ4_PREFIX)) == _LZ4_PREFIX
+    assert numpy_pickle.load(fname) == data
+    numpy_pickle.dump(data, fname + '.lz4')
+    with open(fname, 'rb') as f:
+        assert f.read(len(_LZ4_PREFIX)) == _LZ4_PREFIX
+    assert numpy_pickle.load(fname) == data

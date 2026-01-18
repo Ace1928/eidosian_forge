@@ -1,0 +1,15 @@
+import uuid
+import http.client
+from testtools import matchers
+from keystone.common import provider_api
+import keystone.conf
+from keystone.credential.providers import fernet as credential_fernet
+from keystone import exception
+from keystone.tests import unit
+from keystone.tests.unit import ksfixtures
+from keystone.tests.unit import test_v3
+from keystone.tests.unit import utils as test_utils
+def test_delete_not_leaf_project(self):
+    """Call ``DELETE /projects/{project_id}``."""
+    projects = self._create_projects_hierarchy()
+    self.delete('/projects/%(project_id)s' % {'project_id': projects[0]['project']['id']}, expected_status=http.client.FORBIDDEN)

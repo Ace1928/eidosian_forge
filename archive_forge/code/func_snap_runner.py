@@ -1,0 +1,5 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.community.general.plugins.module_utils.cmd_runner import CmdRunner, cmd_runner_fmt
+def snap_runner(module, **kwargs):
+    runner = CmdRunner(module, 'snap', arg_formats=dict(state_alias=cmd_runner_fmt.as_map(_alias_state_map), name=cmd_runner_fmt.as_list(), alias=cmd_runner_fmt.as_list(), state=cmd_runner_fmt.as_map(_state_map), _list=cmd_runner_fmt.as_fixed('list'), _set=cmd_runner_fmt.as_fixed('set'), get=cmd_runner_fmt.as_fixed(['get', '-d']), classic=cmd_runner_fmt.as_bool('--classic'), channel=cmd_runner_fmt.as_func(lambda v: [] if v == 'stable' else ['--channel', '{0}'.format(v)]), options=cmd_runner_fmt.as_list(), info=cmd_runner_fmt.as_fixed('info'), dangerous=cmd_runner_fmt.as_bool('--dangerous')), check_rc=False, **kwargs)
+    return runner

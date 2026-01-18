@@ -1,0 +1,2 @@
+class MediaException(Exception):
+    pass

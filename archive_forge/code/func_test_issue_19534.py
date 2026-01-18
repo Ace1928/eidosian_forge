@@ -1,0 +1,21 @@
+from sympy.core.evalf import N
+from sympy.core.function import (Derivative, Function, PoleError, Subs)
+from sympy.core.numbers import (E, Float, Rational, oo, pi, I)
+from sympy.core.singleton import S
+from sympy.core.symbol import (Symbol, symbols)
+from sympy.functions.elementary.exponential import (LambertW, exp, log)
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.trigonometric import (atan, cos, sin)
+from sympy.functions.special.gamma_functions import gamma
+from sympy.integrals.integrals import Integral, integrate
+from sympy.series.order import O
+from sympy.series.series import series
+from sympy.abc import x, y, n, k
+from sympy.testing.pytest import raises
+from sympy.series.acceleration import richardson, shanks
+from sympy.concrete.summations import Sum
+from sympy.core.numbers import Integer
+def test_issue_19534():
+    dt = symbols('dt', real=True)
+    expr = 16 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) / 45 + 49 * dt * (-0.04933518989886041 * dt * (2.0 * dt + 1.0) + 0.2960111393931624 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) - 0.1256435533549298 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 0.051640768506639186 * dt + dt * (1 / 2 - sqrt(21) / 14) + 1.0) / 180 + 49 * dt * (-0.2363790958154253 * dt * (2.0 * dt + 1.0) - 0.7481756236662596 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.8808545802392703 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 2.116515138991168 * dt * (-0.04933518989886041 * dt * (2.0 * dt + 1.0) + 0.2960111393931624 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) - 0.1256435533549298 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 0.2243139331526506 * dt + 1.0) - 1.185488164394765 * dt + dt * (sqrt(21) / 14 + 1 / 2) + 1.0) / 180 + dt * (0.6666666666666666 * dt * (2.0 * dt + 1.0) + 6.017339969931307 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) - 4.111704479703632 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) - 7.018914097580199 * dt * (-0.04933518989886041 * dt * (2.0 * dt + 1.0) + 0.2960111393931624 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) - 0.1256435533549298 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 0.2243139331526506 * dt + 1.0) + 0.9401094519616178 * dt * (-0.2363790958154253 * dt * (2.0 * dt + 1.0) - 0.7481756236662596 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.8808545802392703 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 2.116515138991168 * dt * (-0.04933518989886041 * dt * (2.0 * dt + 1.0) + 0.2960111393931624 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) - 0.1256435533549298 * dt * (0.07407407407407407 * dt * (2.0 * dt + 1.0) + 0.2962962962962963 * dt * (0.125 * dt * (2.0 * dt + 1.0) + 0.875 * dt + 1.0) + 0.9629629629629629 * dt + 1.0) + 0.2243139331526506 * dt + 1.0) - 0.3581613290407763 * dt + 1.0) + 5.50650248872424 * dt + 1.0) / 20 + dt / 20 + 1
+    assert N(expr.series(dt, 0, 8), 20) == -Float('0.00092592592592592596126289', precision=70) * dt ** 7 + Float('0.0027777777777777783174695', precision=70) * dt ** 6 + Float('0.016666666666666656027029', precision=70) * dt ** 5 + Float('0.083333333333333300951828', precision=70) * dt ** 4 + Float('0.33333333333333337034077', precision=70) * dt ** 3 + Float('1.0', precision=70) * dt ** 2 + Float('1.0', precision=70) * dt + Float('1.0', precision=70)

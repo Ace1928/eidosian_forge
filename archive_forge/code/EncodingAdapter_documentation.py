@@ -1,0 +1,1 @@
+Adapter for running test cases against multiple encodings.

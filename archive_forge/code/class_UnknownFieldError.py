@@ -1,0 +1,20 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import collections
+import enum
+import re
+from apitools.base.protorpclite import messages
+from apitools.base.py import encoding
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope.concepts import util as format_util
+from googlecloudsdk.core import properties
+from googlecloudsdk.core.resource import resource_property
+from googlecloudsdk.core.util import http_encoding
+import six
+class UnknownFieldError(Error):
+    """The referenced field could not be found in the message object."""
+
+    def __init__(self, field_name, message):
+        super(UnknownFieldError, self).__init__('Field [{}] not found in message [{}]. Available fields: [{}]'.format(field_name, _GetFullClassName(message), ', '.join((f.name for f in message.all_fields()))))

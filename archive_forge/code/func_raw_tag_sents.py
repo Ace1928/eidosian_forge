@@ -1,0 +1,28 @@
+import json
+import os  # required for doctests
+import re
+import socket
+import time
+from typing import List, Tuple
+from nltk.internals import _java_options, config_java, find_jar_iter, java
+from nltk.parse.api import ParserI
+from nltk.parse.dependencygraph import DependencyGraph
+from nltk.tag.api import TaggerI
+from nltk.tokenize.api import TokenizerI
+from nltk.tree import Tree
+def raw_tag_sents(self, sentences):
+    """
+        Tag multiple sentences.
+
+        Takes multiple sentences as a list where each sentence is a string.
+
+        :param sentences: Input sentences to tag
+        :type sentences: list(str)
+        :rtype: list(list(list(tuple(str, str)))
+        """
+    default_properties = {'ssplit.isOneSentence': 'true', 'annotators': 'tokenize,ssplit,'}
+    assert self.tagtype in ['pos', 'ner']
+    default_properties['annotators'] += self.tagtype
+    for sentence in sentences:
+        tagged_data = self.api_call(sentence, properties=default_properties)
+        yield [[(token['word'], token[self.tagtype]) for token in tagged_sentence['tokens']] for tagged_sentence in tagged_data['sentences']]

@@ -1,0 +1,16 @@
+from __future__ import annotations
+import logging
+import typing as t
+from collections import defaultdict
+from sqlglot import exp
+from sqlglot.errors import ErrorLevel, ParseError, concat_messages, merge_errors
+from sqlglot.helper import apply_index_offset, ensure_list, seq_get
+from sqlglot.time import format_time
+from sqlglot.tokens import Token, Tokenizer, TokenType
+from sqlglot.trie import TrieResult, in_trie, new_trie
+def _parse_boolean(self) -> t.Optional[exp.Expression]:
+    if self._match(TokenType.TRUE):
+        return self.PRIMARY_PARSERS[TokenType.TRUE](self, self._prev)
+    if self._match(TokenType.FALSE):
+        return self.PRIMARY_PARSERS[TokenType.FALSE](self, self._prev)
+    return self._parse_placeholder()

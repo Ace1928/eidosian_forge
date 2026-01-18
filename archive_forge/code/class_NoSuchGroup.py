@@ -1,0 +1,2 @@
+class NoSuchGroup(WordsError):
+    pass

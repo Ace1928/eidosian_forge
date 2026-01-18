@@ -1,0 +1,22 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+import os
+import time
+from gslib.command import CreateOrGetGsutilLogger
+from gslib.tab_complete import CloudObjectCompleter
+from gslib.tab_complete import TAB_COMPLETE_CACHE_TTL
+from gslib.tab_complete import TabCompletionCache
+import gslib.tests.testcase as testcase
+from gslib.tests.util import ARGCOMPLETE_AVAILABLE
+from gslib.tests.util import SetBotoConfigForTest
+from gslib.tests.util import unittest
+from gslib.tests.util import WorkingDirectory
+from gslib.utils.boto_util import GetTabCompletionCacheFilename
+Tests tab completion prefix matching ignoring partial cached results.
+
+    If the tab completion prefix is an extension of the cached prefix, but the
+    cached result set is partial, the cached results should not be used because
+    the matching results for the prefix may be incomplete.
+    

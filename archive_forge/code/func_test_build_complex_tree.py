@@ -1,0 +1,8 @@
+from unittest import mock
+from osprofiler.drivers.mongodb import MongoDB
+from osprofiler.tests import test
+def test_build_complex_tree(self):
+    test_input = {'2': {'parent_id': '0', 'trace_id': '2', 'info': {'started': 1}}, '1': {'parent_id': '0', 'trace_id': '1', 'info': {'started': 0}}, '21': {'parent_id': '2', 'trace_id': '21', 'info': {'started': 6}}, '22': {'parent_id': '2', 'trace_id': '22', 'info': {'started': 7}}, '11': {'parent_id': '1', 'trace_id': '11', 'info': {'started': 1}}, '113': {'parent_id': '11', 'trace_id': '113', 'info': {'started': 3}}, '112': {'parent_id': '11', 'trace_id': '112', 'info': {'started': 2}}, '114': {'parent_id': '11', 'trace_id': '114', 'info': {'started': 5}}}
+    expected_output = [{'parent_id': '0', 'trace_id': '1', 'info': {'started': 0}, 'children': [{'parent_id': '1', 'trace_id': '11', 'info': {'started': 1}, 'children': [{'parent_id': '11', 'trace_id': '112', 'info': {'started': 2}, 'children': []}, {'parent_id': '11', 'trace_id': '113', 'info': {'started': 3}, 'children': []}, {'parent_id': '11', 'trace_id': '114', 'info': {'started': 5}, 'children': []}]}]}, {'parent_id': '0', 'trace_id': '2', 'info': {'started': 1}, 'children': [{'parent_id': '2', 'trace_id': '21', 'info': {'started': 6}, 'children': []}, {'parent_id': '2', 'trace_id': '22', 'info': {'started': 7}, 'children': []}]}]
+    result = self.mongodb._build_tree(test_input)
+    self.assertEqual(expected_output, result)

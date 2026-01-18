@@ -1,0 +1,1 @@
+Mapping of Korean role names to canonical role names for interpreted text.

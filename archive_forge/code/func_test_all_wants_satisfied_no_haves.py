@@ -1,0 +1,21 @@
+import os
+import shutil
+import sys
+import tempfile
+from io import BytesIO
+from typing import Dict, List
+from dulwich.tests import TestCase
+from ..errors import (
+from ..object_store import MemoryObjectStore
+from ..objects import Tree
+from ..protocol import ZERO_SHA, format_capability_line
+from ..repo import MemoryRepo, Repo
+from ..server import (
+from .utils import make_commit, make_tag
+def test_all_wants_satisfied_no_haves(self):
+    self._walker.set_wants([ONE])
+    self.assertFalse(self._walker.all_wants_satisfied([]))
+    self._walker.set_wants([TWO])
+    self.assertFalse(self._walker.all_wants_satisfied([]))
+    self._walker.set_wants([THREE])
+    self.assertFalse(self._walker.all_wants_satisfied([]))

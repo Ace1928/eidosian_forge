@@ -1,0 +1,7 @@
+import random
+from typing import Tuple, Optional
+import numpy as np
+import pytest
+import cirq
+def _get_assert_diagonalized_by_str(m, p, d):
+    return f'm.round(3) : {np.round(m, 3)}, p.round(3) : {np.round(p, 3)}, np.abs(p.T @ m @ p).round(2): {np.abs(d).round(2)}'
