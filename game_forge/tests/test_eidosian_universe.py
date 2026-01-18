@@ -14,7 +14,7 @@ def test_agent_consumes_resource():
     res = Resource(x=agent.x, y=agent.y, value=10.0)
     uni.resources = [res]
     old_energy = agent.energy
-    agent.update(config, uni.resources, uni.metabolism)
+    agent.update(config, uni.environment, uni.resources, uni.metabolism)
     assert agent.energy > old_energy
     assert uni.resources[0].value < 10.0
 

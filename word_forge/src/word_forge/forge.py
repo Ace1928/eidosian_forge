@@ -8,9 +8,10 @@ processing pipeline with a single command:
 Running the command launches the queue based parser/refiner which
 recursively builds lexical entries for all discovered terms.  The
 pipeline relies on :class:`ParserRefiner` which in turn uses the
-:func:`create_lexical_dataset` function from :mod:`lexical_proto` to
-pull in data from WordNet and other sources and to generate additional
-lexical insight using a language model.
+:func:`create_lexical_dataset` function from
+:mod:`word_forge.parser.lexical_functions` to pull in data from
+WordNet and other sources and to generate additional lexical insight
+using a language model.
 
 The CLI is intentionally lightweight so that it can be used as a quick
 entry point.  More advanced control flows can still be achieved by

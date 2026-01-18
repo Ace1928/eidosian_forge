@@ -20,6 +20,11 @@
 - Format with `black` and sort imports with `isort` (`profile = "black"`).
 - Use descriptive class names (e.g., `GraphManager`, `QueueWorker`) and snake_case for functions.
 
+## Polishing & Perfection Prompts
+- Apply the Eidosian refinement guides in `code_polishing_prompt.md` and `code_perfection_prompt.md` when tightening code quality.
+- Keep changes minimal while enforcing typed interfaces, explicit error handling, and the Napoleon/Google docstring style requested in those prompts.
+- When in doubt, favor the stricter guidance from the prompts and document non-obvious decisions inline with existing style.
+
 ## Testing Guidelines
 - Use `pytest`; name files `test_*.py` and keep tests close to the feature they exercise.
 - Integration tests should validate real ingestion, graph, and vector flows without mocks or stubs.

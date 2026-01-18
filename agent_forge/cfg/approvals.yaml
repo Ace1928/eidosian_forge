@@ -1,0 +1,6 @@
+defaults:
+  allow_prefixes: ["uv","pytest","ruff","black","git","bash","sh","make","python","pip"]
+  deny_tokens: ["curl","wget","ssh","nc","iptables","docker"]
+templates:
+  hygiene:
+    allow_prefixes: ["pytest","ruff","bash"]

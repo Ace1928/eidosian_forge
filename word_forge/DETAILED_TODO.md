@@ -229,8 +229,8 @@ Item Format:
   - Status: Complete - Added db + graph fixtures and sample data helpers (no mocks)
 - [x] **`tests/fixtures/`** - Sample data files
   - Status: Complete - Added sample_words.json, sample_conversations.json, sample_thesaurus.jsonl
-- [x] **`tests/test_lexical_proto.py`** - Remove dependency stubs
-  - Status: Complete - Use real dependencies to avoid cross-test contamination
+- [x] **`tests/test_lexical_functions.py`** - Verify lexical I/O helpers (lexical proto removed)
+  - Status: Complete - Uses real helpers to avoid dependency stubs or legacy scripts
 - [ ] **`pyproject.toml`** - Coverage thresholds
 - [ ] **CI cache for model/NLTK downloads** - Reduce runtime for integration tests [P1]
 
@@ -567,7 +567,7 @@ Item Format:
 
 ### 19.1 Pipeline [P1]
 
-- [ ] **Dependency caching** - pip cache
+- [x] **Dependency caching** - pip cache
 - [ ] **Parallel tests** - pytest-xdist
 - [ ] **Coverage reporting** - codecov/coveralls
 - [ ] **Integration test job** - Separate workflow

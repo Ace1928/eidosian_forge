@@ -307,8 +307,10 @@ class GraphConfig:
     limit_edge_count: Optional[int] = 2000
 
     # Multidimensional relationship settings
+    # By default, include lexical, emotional, and contextual dimensions
+    # to provide a comprehensive view of word relationships
     active_dimensions: Set[RelationshipDimension] = field(
-        default_factory=lambda: {"lexical"}
+        default_factory=lambda: {"lexical", "emotional", "affective", "contextual"}
     )
 
     dimension_weights: DimensionWeighting = field(

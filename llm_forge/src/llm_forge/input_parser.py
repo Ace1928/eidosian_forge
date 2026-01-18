@@ -10,10 +10,15 @@ import re
 from typing import Final, List, Match, Optional, cast
 
 # Type stub for nltk.tokenize functions
+from nltk import download
 from nltk.tokenize import sent_tokenize  # type: ignore
 
 from llm_forge.logging_config import configure_logging
 from llm_forge.type_definitions import StructuredInput
+
+# Ensure punkt tokenizer is available
+download("punkt", quiet=True)
+download("punkt_tab", quiet=True)
 
 logger: Final = configure_logging()
 

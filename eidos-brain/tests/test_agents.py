@@ -8,7 +8,7 @@ from agents import Agent, UtilityAgent, ExperimentAgent
 
 def test_utility_agent_perform_task():
     agent = UtilityAgent()
-    result = agent.act("clean")
+    result = agent.perform_task("clean")
     assert result == "Performed clean"
 
 
@@ -32,7 +32,7 @@ def test_base_methods():
 
 def test_experiment_agent_run():
     agent = ExperimentAgent()
-    result = agent.act("hypothesis")
+    result = agent.run("hypothesis")
     assert result == "Experimenting with hypothesis"
 
 

@@ -11,18 +11,14 @@ to enhance output quality.
 import json
 from typing import Final
 
-# Ensure NLTK 'punkt' tokenizer is available
-import nltk  # type: ignore
-
-try:
-    nltk.data.find("tokenizers/punkt")  # type: ignore
-except LookupError:
-    nltk.download("punkt")  # type: ignore
-
 from llm_forge.content_generator import ensure_complete_response, generate_response
 from llm_forge.input_parser import parse_input
 from llm_forge.logging_config import configure_logging
+from llm_forge.nltk_utils import ensure_punkt
 from llm_forge.type_definitions import ModelResponse, StructuredInput
+
+# Ensure required NLTK data is available at import time
+ensure_punkt()
 
 # Configure logging with module context
 logger: Final = configure_logging()

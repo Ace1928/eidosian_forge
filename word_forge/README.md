@@ -163,7 +163,11 @@ python -m word_forge.demos.config_demo --validate
 python -m word_forge.demos.vector_worker_demo
 
 # Generate lexical data for a word
-python lexical_proto.py recursion
+python - <<'PY'
+from word_forge.parser.lexical_functions import create_lexical_dataset
+
+print(create_lexical_dataset("recursion"))
+PY
 
 # Database demo
 python -m word_forge.demos.database_demo

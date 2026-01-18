@@ -72,10 +72,13 @@ class TestGraphConfigActiveDimensions:
     """Tests for active dimensions configuration."""
 
     def test_default_active_dimensions(self):
-        """Test default active dimensions."""
+        """Test default active dimensions include lexical, emotional, affective, and contextual."""
         config = GraphConfig()
         assert "lexical" in config.active_dimensions
-        assert len(config.active_dimensions) == 1
+        assert "emotional" in config.active_dimensions
+        assert "affective" in config.active_dimensions
+        assert "contextual" in config.active_dimensions
+        assert len(config.active_dimensions) == 4
 
     def test_custom_active_dimensions(self):
         """Test custom active dimensions."""

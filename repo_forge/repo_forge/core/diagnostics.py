@@ -12,14 +12,6 @@ from typing import Any, Dict, Optional, Union
 from datetime import datetime
 from pathlib import Path
 
-# Integration with Eidosian Foundation
-try:
-    from gis_forge import GisCore
-    from diagnostics_forge import DiagnosticsForge
-    HAS_FOUNDATION = True
-except ImportError:
-    HAS_FOUNDATION = False
-
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # ⚡ Core Diagnostic Functions - Quantum-Level Precision
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -27,47 +19,35 @@ except ImportError:
 class DiagnosticLogger:
     """Hyper-detailed logging system with context tracing."""
     
-    def __init__(self, name: str = "repo_forge.diagnostics", log_path: Optional[Path] = None):
+    def __init__(self, name: str = "eidosian.diagnostics", log_path: Optional[Path] = None):
         """Initialize the advanced diagnostic logger."""
-        self.gis = GisCore() if HAS_FOUNDATION else None
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(logging.DEBUG)
         
-        # Use DiagnosticsForge if available for underlying implementation
-        if HAS_FOUNDATION:
-            log_dir = str(log_path.parent) if log_path else "logs"
-            self.forge_diag = DiagnosticsForge(log_dir=log_dir, service_name=name)
-            self.logger = self.forge_diag.logger
-        else:
-            self.logger = logging.getLogger(name)
-            self.logger.setLevel(logging.DEBUG)
-            self._setup_standard_logging(log_path)
-            self.forge_diag = None
-
-    def _setup_standard_logging(self, log_path: Optional[Path]):
         # Maintain default console handler for immediate visibility
-        if not self.logger.handlers:
-            console = logging.StreamHandler()
-            console.setLevel(logging.DEBUG)
-            console_format = logging.Formatter(
-                "🔍 %(levelname)s [%(asctime)s] %(name)s.%(funcName)s:%(lineno)d - %(message)s",
-                datefmt="%H:%M:%S"
-            )
-            console.setFormatter(console_format)
-            self.logger.addHandler(console)
-            
-            # Add file handler if path provided
-            if log_path:
-                try:
-                    file_handler = logging.FileHandler(log_path, mode='a')
-                    file_handler.setLevel(logging.DEBUG)
-                    file_format = logging.Formatter(
-                        "%(levelname)s [%(asctime)s] %(name)s.%(funcName)s:%(lineno)d - %(message)s"
-                    )
-                    file_handler.setFormatter(file_format)
-                    self.logger.addHandler(file_handler)
-                except Exception as e:
-                    self.logger.warning(f"Failed to create log file at {log_path}: {e}")
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+        console_format = logging.Formatter(
+            "🔍 %(levelname)s [%(asctime)s] %(name)s.%(funcName)s:%(lineno)d - %(message)s",
+            datefmt="%H:%M:%S"
+        )
+        console.setFormatter(console_format)
+        self.logger.addHandler(console)
+        
+        # Add file handler if path provided
+        if log_path:
+            try:
+                file_handler = logging.FileHandler(log_path, mode='a')
+                file_handler.setLevel(logging.DEBUG)
+                file_format = logging.Formatter(
+                    "%(levelname)s [%(asctime)s] %(name)s.%(funcName)s:%(lineno)d - %(message)s"
+                )
+                file_handler.setFormatter(file_format)
+                self.logger.addHandler(file_handler)
+            except Exception as e:
+                self.logger.warning(f"Failed to create log file at {log_path}: {e}")
     
-    def trace(self, message: str, data: Any = None, stack_level: int = 2) -> None:
+    def trace(self, message: str, data: Any = None, stack_level: int = 1) -> None:
         """Log with ultra-precise stack trace and data inspection."""
         frame = sys._getframe(stack_level)
         filename = frame.f_code.co_filename
@@ -92,22 +72,36 @@ class DiagnosticLogger:
             # For basic types, include value-specific details
             if isinstance(data, (int, float, bool, str)):
                 data_details["value"] = str(data)
+                # For numeric types, show binary/hex representation for complete clarity
                 if isinstance(data, int):
                     data_details["hex"] = hex(data)
                     data_details["bin"] = bin(data)
             elif isinstance(data, dict):
+                # For dictionaries, analyze keys and values
                 data_details["keys"] = list(data.keys())
                 data_details["key_types"] = {k: type(k).__name__ for k in data.keys()}
                 data_details["value_types"] = {k: type(v).__name__ for k, v in data.items()}
             
+            # Try safe JSON serialization with error handling
             try:
                 json_str = json.dumps(data)
                 data_details["json_serializable"] = True
+                # Only include sample for large data
                 if len(json_str) > 500:
                     data_details["json_sample"] = json_str[:500] + "..."
             except (TypeError, ValueError, OverflowError) as e:
                 data_details["json_serializable"] = False
                 data_details["json_error"] = str(e)
+                # Try to identify problematic keys
+                if isinstance(data, dict):
+                    problem_keys = []
+                    for k, v in data.items():
+                        try:
+                            json.dumps({k: v})
+                        except Exception as e:
+                            problem_keys.append((k, type(v).__name__, str(e)))
+                    if problem_keys:
+                        data_details["problematic_fields"] = problem_keys
             
             log_msg = f"[{context}] {message} | Data({data_type}): {data_details}"
         else:
@@ -115,17 +109,99 @@ class DiagnosticLogger:
             
         self.logger.debug(log_msg)
 
-    def start_timer(self, name: str):
-        if self.forge_diag:
-            return self.forge_diag.start_timer(name)
-        return {"name": name, "start": datetime.now()}
-
-    def stop_timer(self, timer: Dict[str, Any]):
-        if self.forge_diag:
-            return self.forge_diag.stop_timer(timer)
-        duration = (datetime.now() - timer["start"]).total_seconds()
-        self.logger.debug(f"Timer {timer['name']} stopped: {duration}s")
-        return duration
+    def capture_serialization(self, data: Any) -> Dict[str, Any]:
+        """
+        Analyze data for JSON serialization issues with surgical precision.
+        
+        Returns a comprehensive diagnostic report with specific problem areas identified.
+        """
+        report = {
+            "timestamp": datetime.now().isoformat(),
+            "serializable": False,
+            "issues": [],
+            "type_report": {},
+        }
+        
+        # Build type report - recursive introspection
+        report["type_report"] = self._build_type_report(data)
+        
+        # Attempt serialization with surgical error trapping
+        try:
+            json_str = json.dumps(data)
+            report["serializable"] = True
+            report["string_length"] = len(json_str)
+            report["sample"] = json_str[:100] + "..." if len(json_str) > 100 else json_str
+            return report
+        except (TypeError, ValueError, OverflowError) as e:
+            report["error"] = str(e)
+            report["error_type"] = type(e).__name__
+            
+            # For dictionaries, perform atomic key-value pair analysis
+            if isinstance(data, dict):
+                for k, v in data.items():
+                    try:
+                        # Test each key-value pair individually
+                        json.dumps({k: v})
+                    except Exception as pair_error:
+                        # Record precise details about problematic pairs
+                        report["issues"].append({
+                            "key": str(k),
+                            "key_type": type(k).__name__,
+                            "value_type": type(v).__name__,
+                            "error": str(pair_error),
+                            "value_sample": str(v)[:50] if isinstance(v, str) else str(v),
+                        })
+            elif isinstance(data, (list, tuple)):
+                # For sequences, identify problematic indices
+                for i, item in enumerate(data):
+                    try:
+                        json.dumps(item)
+                    except Exception as item_error:
+                        report["issues"].append({
+                            "index": i,
+                            "type": type(item).__name__,
+                            "error": str(item_error),
+                            "value_sample": str(item)[:50] if isinstance(item, str) else str(item),
+                        })
+        
+        return report
+    
+    def _build_type_report(self, data: Any, depth: int = 0, max_depth: int = 3) -> Dict[str, Any]:
+        """Build recursive type report with configurable depth."""
+        if depth > max_depth:
+            return {"type": type(data).__name__, "truncated": True}
+        
+        if isinstance(data, dict):
+            return {
+                "type": "dict",
+                "length": len(data),
+                "keys": {
+                    k: self._build_type_report(v, depth + 1, max_depth)
+                    for k, v in data.items()
+                } if depth < max_depth else "truncated"
+            }
+        elif isinstance(data, (list, tuple)):
+            return {
+                "type": type(data).__name__,
+                "length": len(data),
+                "items": [
+                    self._build_type_report(item, depth + 1, max_depth) 
+                    for item in data[:5]  # Limit items for large collections
+                ] if depth < max_depth else "truncated",
+                "truncated": len(data) > 5
+            }
+        else:
+            # Base case for primitive types
+            type_info = {"type": type(data).__name__}
+            
+            # Add extra details for numeric types
+            if isinstance(data, int):
+                type_info["value"] = data
+                type_info["hex"] = hex(data)
+            elif isinstance(data, (float, bool, str)):
+                type_info["value"] = data
+                
+            return type_info
 
 
 # Create globally accessible instance with standard configuration

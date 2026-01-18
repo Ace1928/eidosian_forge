@@ -8,9 +8,14 @@ from typing import List
 
 import pygame
 
-from .eu_agent import Agent
+from .eu_agent import Agent, Component
 from .eu_config import UniverseConfig
-from .eu_rules import GravityRule, MetabolismRule, ResourceRule
+from .eu_rules import (
+    GravityRule,
+    MetabolismRule,
+    ResourceRule,
+    EnvironmentRule,
+)
 
 
 @dataclass
@@ -33,8 +38,10 @@ class Universe:
         self.metabolism = MetabolismRule(
             movement_cost=config.movement_cost,
             reproduction_cost=config.reproduction_cost,
+            maintenance_cost=config.maintenance_cost,
             max_energy=config.max_energy,
         )
+        self.environment = EnvironmentRule(temperature=config.temperature)
         self.resource_rule = ResourceRule()
         self.log: List[str] = []
         self._initialize_agents()
@@ -54,8 +61,19 @@ class Universe:
             dy=random.uniform(-1, 1),
             energy=self.config.starting_energy,
             mass=random.uniform(0.5, 2.0),
-            components=[(random.uniform(-1, 1), random.uniform(-1, 1)) for _ in range(random.randint(1, 3))],
-            color=(random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)),
+            components=[
+                Component(
+                    offset=(random.uniform(-1, 1), random.uniform(-1, 1)),
+                    mass=random.uniform(0.1, 0.5),
+                    efficiency=random.uniform(0.8, 1.2),
+                )
+                for _ in range(random.randint(1, 3))
+            ],
+            color=(
+                random.randint(50, 255),
+                random.randint(50, 255),
+                random.randint(50, 255),
+            ),
         )
 
     def _initialize_resources(self) -> None:
@@ -70,11 +88,20 @@ class Universe:
 
     def update(self) -> None:
         """Advance simulation state."""
+        # slowly vary environment temperature
+        self.environment.temperature = max(
+            0.5,
+            min(
+                5.0,
+                self.environment.temperature + random.uniform(-0.01, 0.01),
+            ),
+        )
+
         self.gravity.apply(self.agents)
 
         new_agents: List[Agent] = []
         for agent in list(self.agents):
-            agent.update(self.config, self.resources, self.metabolism)
+            agent.update(self.config, self.environment, self.resources, self.metabolism)
             if agent.can_reproduce(self.config) and len(self.agents) < self.config.max_agents:
                 new_agents.append(agent.reproduce(self.config))
             if agent.energy <= 0:

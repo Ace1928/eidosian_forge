@@ -37,12 +37,26 @@ main() {
 
   say "Making Python venv"
   if [ ! -d "$root_dir/.venv" ]; then
-    python3 -m venv "$root_dir/.venv"
+    if command -v uv >/dev/null 2>&1; then
+      uv venv "$root_dir/.venv"
+    else
+      python3 -m venv "$root_dir/.venv"
+    fi
   fi
   # shellcheck disable=SC1091
   source "$root_dir/.venv/bin/activate"
-  python -m pip install -U pip wheel >/dev/null
-  python -m pip install --quiet 'pyyaml>=6,<7'
+  if command -v uv >/dev/null 2>&1; then
+    uv sync --dev >/dev/null
+  else
+    python -m pip install -U pip wheel >/dev/null
+    python -m pip install --quiet 'pyyaml>=6,<7' 'pytest>=8.4'
+    if [ -f "$root_dir/uv.lock" ]; then
+      uv sync >/dev/null
+    else
+      uv pip install -r "$root_dir/pyproject.toml" >/dev/null
+    fi
+    uv pip install pytest >/dev/null
+  fi
 
   say "Touch state files"
   : >"$root_dir/state/events/.keep"
