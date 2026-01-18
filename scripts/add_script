@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_NAME="add_script"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/bash_lib.sh
+. "$SCRIPT_DIR/lib/bash_lib.sh"
+
+ENV_PATH="$HOME/.config/eidosian/${SCRIPT_NAME}.env"
+load_env_file "$ENV_PATH"
+
+DEFAULT_DIR="${ADD_SCRIPT_DIR:-$HOME/scripts}"
+
+usage() {
+  cat <<USAGE
+Usage: $SCRIPT_NAME --name NAME [--dir DIR] [--from-stdin] [--force]
+
+Save clipboard or stdin content as an executable script.
+
+Options:
+  --name NAME      Script name (required)
+  --dir DIR        Output directory (default: $DEFAULT_DIR)
+  --from-stdin     Read content from stdin instead of clipboard
+  --force          Overwrite existing file
+  -h, --help       Show this help
+
+Examples:
+  $SCRIPT_NAME --name my_script
+  echo '#!/usr/bin/env bash' | $SCRIPT_NAME --name my_script --from-stdin
+USAGE
+}
+
+SCRIPT_NAME_ARG=""
+OUT_DIR="$DEFAULT_DIR"
+FROM_STDIN=false
+FORCE=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --name)
+      [[ -n "${2:-}" ]] || die "--name requires a value"
+      SCRIPT_NAME_ARG="$2"
+      shift 2
+      ;;
+    --dir)
+      [[ -n "${2:-}" ]] || die "--dir requires a value"
+      OUT_DIR="$2"
+      shift 2
+      ;;
+    --from-stdin)
+      FROM_STDIN=true
+      shift
+      ;;
+    --force)
+      FORCE=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ -n "$SCRIPT_NAME_ARG" ]] || die "--name is required"
+
+read_clipboard() {
+  if command -v qdbus >/dev/null 2>&1; then
+    local content
+    if command -v timeout >/dev/null 2>&1; then
+      content=$(timeout 3 qdbus org.kde.klipper /klipper org.kde.klipper.klipper.getClipboardContents 2>/dev/null || true)
+    else
+      content=$(qdbus org.kde.klipper /klipper org.kde.klipper.klipper.getClipboardContents 2>/dev/null || true)
+    fi
+    if [[ -n "$content" ]]; then
+      printf '%s' "$content"
+      return 0
+    fi
+  fi
+  if command -v wl-paste >/dev/null 2>&1; then
+    wl-paste
+    return 0
+  fi
+  if command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard -o
+    return 0
+  fi
+  if command -v xsel >/dev/null 2>&1; then
+    xsel -b -o
+    return 0
+  fi
+  return 1
+}
+
+mkdir -p "$OUT_DIR"
+OUT_PATH="$OUT_DIR/$SCRIPT_NAME_ARG"
+
+if [[ -e "$OUT_PATH" && $FORCE == false ]]; then
+  die "File exists: $OUT_PATH (use --force to overwrite)"
+fi
+
+if $FROM_STDIN; then
+  CONTENT=$(cat)
+else
+  CONTENT=$(read_clipboard) || die "No clipboard backend available"
+fi
+
+if [[ -z "$CONTENT" ]]; then
+  die "No content provided"
+fi
+
+printf '%s' "$CONTENT" > "$OUT_PATH"
+chmod +x "$OUT_PATH"
+log_info "Saved script to $OUT_PATH"

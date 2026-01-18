@@ -1,0 +1,8 @@
+usage: pdf_check_encryption [-h] [--file FILE] [--json]
+
+Check if a PDF is encrypted
+
+options:
+  -h, --help   show this help message and exit
+  --file FILE  Path to PDF file
+  --json       Machine-readable output

@@ -1,0 +1,13 @@
+Usage: completion_install [--dry-run] [--yes] [--non-interactive] [--include PATTERN] [--exclude PATTERN] [--max N]
+
+Scan PATH for executables that emit bash completions and install them into
+~/.bash_completion.d, then configure shell sourcing.
+
+Options:
+  --dry-run           Analyze only; do not install
+  --yes               Skip prompts (assume yes)
+  --non-interactive   Do not prompt (implies --dry-run unless --yes)
+  --include PATTERN   Only include commands matching glob (can repeat)
+  --exclude PATTERN   Exclude commands matching glob (can repeat)
+  --max N             Limit number of commands scanned
+  -h, --help          Show this help

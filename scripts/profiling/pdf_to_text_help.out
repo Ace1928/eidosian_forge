@@ -1,0 +1,11 @@
+usage: pdf_to_text [-h] [--input INPUT] [--output OUTPUT] [--overwrite]
+                   [--json]
+
+Convert PDF to text
+
+options:
+  -h, --help       show this help message and exit
+  --input INPUT    Input PDF file
+  --output OUTPUT  Output text file
+  --overwrite      Overwrite output file
+  --json           Machine-readable output

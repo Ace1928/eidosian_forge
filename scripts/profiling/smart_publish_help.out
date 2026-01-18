@@ -1,0 +1,35 @@
+usage: smart_publish [-h] [--bump {none,patch,minor,major}]
+                     [--version VERSION] [--pypirc PYPIRC] [--test]
+                     [--skip-existing] [--no-build] [--no-upload]
+                     [--repository REPOSITORY]
+                     [--repository-url REPOSITORY_URL]
+                     [--search-path SEARCH_PATH] [--dry-run]
+                     [--platform {win32,win-amd64,linux-x86_64,linux-aarch64,macosx-x86_64,macosx-arm64,all}]
+                     package
+
+Smart package version manager and publisher
+
+positional arguments:
+  package               Name of the package to publish
+
+options:
+  -h, --help            show this help message and exit
+  --bump {none,patch,minor,major}
+                        Version increment type (default: none)
+  --version VERSION     Set specific version instead of auto-incrementing
+  --pypirc PYPIRC       Path to custom .pypirc file
+  --test                Use TestPyPI instead of PyPI
+  --skip-existing       Skip existing versions on PyPI
+  --no-build            Skip building distributions
+  --no-upload           Skip uploading (build only)
+  --repository REPOSITORY
+                        Named repository from .pypirc
+  --repository-url REPOSITORY_URL
+                        Custom repository URL
+  --search-path SEARCH_PATH
+                        Additional directory to search for packages (can
+                        repeat)
+  --dry-run             Show version changes without publishing
+  --platform {win32,win-amd64,linux-x86_64,linux-aarch64,macosx-x86_64,macosx-arm64,all}
+                        Target platform(s) to build wheels for (can specify
+                        multiple times or 'all')

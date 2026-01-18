@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_NAME="overwrite"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/bash_lib.sh
+. "$SCRIPT_DIR/lib/bash_lib.sh"
+
+ENV_PATH="$HOME/.config/eidosian/${SCRIPT_NAME}.env"
+load_env_file "$ENV_PATH"
+
+BACKUP_DIR="${OVERWRITE_BACKUP_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/eidos_backups}"
+DEFAULT_FILE="${OVERWRITE_DEFAULT_FILE:-file_tree.txt}"
+
+usage() {
+  cat <<USAGE
+Usage: $SCRIPT_NAME [--file PATH] [--from-stdin] [--force] [--no-backup] [--no-diff] [--preview] [--quiet]
+
+Overwrite a file with clipboard or stdin contents, with optional backup and diff.
+
+Options:
+  --file PATH     Target file (default: $DEFAULT_FILE)
+  --from-stdin    Read content from stdin instead of clipboard
+  --force         Skip confirmation prompt
+  --no-backup     Do not create backup
+  --no-diff       Do not show diff
+  --preview       Show a short preview of content
+  --quiet         Reduce output
+  -h, --help      Show this help
+USAGE
+}
+
+TARGET_FILE="$DEFAULT_FILE"
+FROM_STDIN=false
+FORCE=false
+NO_BACKUP=false
+NO_DIFF=false
+PREVIEW=false
+QUIET=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --file)
+      [[ -n "${2:-}" ]] || die "--file requires a value"
+      TARGET_FILE="$2"
+      shift 2
+      ;;
+    --from-stdin)
+      FROM_STDIN=true
+      shift
+      ;;
+    --force)
+      FORCE=true
+      shift
+      ;;
+    --no-backup)
+      NO_BACKUP=true
+      shift
+      ;;
+    --no-diff)
+      NO_DIFF=true
+      shift
+      ;;
+    --preview)
+      PREVIEW=true
+      shift
+      ;;
+    --quiet)
+      QUIET=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+read_clipboard() {
+  if command -v qdbus >/dev/null 2>&1; then
+    local content
+    if command -v timeout >/dev/null 2>&1; then
+      content=$(timeout 3 qdbus org.kde.klipper /klipper org.kde.klipper.klipper.getClipboardContents 2>/dev/null || true)
+    else
+      content=$(qdbus org.kde.klipper /klipper org.kde.klipper.klipper.getClipboardContents 2>/dev/null || true)
+    fi
+    if [[ -n "$content" ]]; then
+      printf '%s' "$content"
+      return 0
+    fi
+  fi
+  if command -v wl-paste >/dev/null 2>&1; then
+    wl-paste
+    return 0
+  fi
+  if command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard -o
+    return 0
+  fi
+  if command -v xsel >/dev/null 2>&1; then
+    xsel -b -o
+    return 0
+  fi
+  return 1
+}
+
+if $FROM_STDIN; then
+  CONTENT=$(cat)
+else
+  CONTENT=$(read_clipboard) || die "No clipboard backend available"
+fi
+
+if [[ -z "$CONTENT" ]]; then
+  die "No content provided"
+fi
+
+if $PREVIEW && ! $QUIET; then
+  log_info "Content preview: $(printf '%s' "$CONTENT" | head -c 100)"
+fi
+
+if [[ -f "$TARGET_FILE" && $NO_DIFF == false ]]; then
+  if command -v diff >/dev/null 2>&1; then
+    tmp_file=$(mktemp)
+    printf '%s' "$CONTENT" > "$tmp_file"
+    log_info "Changes to be made:"
+    diff -u "$TARGET_FILE" "$tmp_file" || true
+    rm -f "$tmp_file"
+  else
+    log_warn "diff not available; skipping diff"
+  fi
+fi
+
+if $NO_BACKUP == false && [[ -f "$TARGET_FILE" ]]; then
+  mkdir -p "$BACKUP_DIR"
+  backup_path="$BACKUP_DIR/$(basename "$TARGET_FILE")_$(date +%Y%m%d_%H%M%S).bak"
+  cp "$TARGET_FILE" "$backup_path" || log_warn "Failed to create backup"
+fi
+
+if ! $FORCE; then
+  if ! confirm "Overwrite $TARGET_FILE?" "no"; then
+    log_info "Operation cancelled."
+    exit 0
+  fi
+fi
+
+printf '%s' "$CONTENT" > "$TARGET_FILE"
+$QUIET || log_info "Overwrote: $TARGET_FILE"

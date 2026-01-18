@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stratum"
+version = "0.1.0"
+description = "Emergent Layered Physical Simulation Engine"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Stratum Contributors"}
+]
+keywords = ["simulation", "physics", "engine", "stellar", "collapse"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Games/Entertainment :: Simulation",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+viz = [
+    "matplotlib>=3.3.0",
+    "pygame>=2.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "stratum[viz,dev]",
+]
+
+[project.scripts]
+stratum-collapse = "scenarios.stellar_collapse:main"
+stratum-runtime = "scenarios.stellar_collapse_runtime:main"
+stratum-screensaver = "scenarios.stellar_screensaver:main"
+stratum = "scenarios.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Ace1928/Stratum"
+Repository = "https://github.com/Ace1928/Stratum.git"
+Issues = "https://github.com/Ace1928/Stratum/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "domains*", "scenarios*", "util*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501", "E731"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

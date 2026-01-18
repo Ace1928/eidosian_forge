@@ -1,0 +1,15 @@
+Usage: add_to_path [--path DIR] [--shell SHELL] [--remove] [--dry-run]
+
+Add or remove a directory from shell PATH configuration.
+
+Options:
+  --path DIR     Directory to add/remove (default: current directory)
+  --shell SHELL  Target shell config: bash|zsh|profile|auto (default: auto)
+  --remove       Remove PATH entry instead of adding
+  --dry-run      Show changes without writing
+  -h, --help     Show this help
+
+Examples:
+  add_to_path --path ~/scripts
+  add_to_path --path ~/scripts --shell zsh
+  add_to_path --path ~/scripts --remove

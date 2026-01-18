@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/lib/python3.12/cProfile.py", line 195, in <module>
+    main()
+  File "/usr/lib/python3.12/cProfile.py", line 173, in main
+    code = compile(fp.read(), progname, 'exec')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "./treegen", line 85
+    if dd if=/dev/zero of=/tmp/treegen_io_test bs=1M count=2 oflag=direct 2>/dev/null; then
+                                                  ^
+SyntaxError: invalid decimal literal

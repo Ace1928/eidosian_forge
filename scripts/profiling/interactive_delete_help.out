@@ -1,0 +1,15 @@
+Usage: interactive_delete [--path DIR] [--exclude NAME ...] [--dry-run] [--force] [--sudo]
+
+Safely delete directories at max depth 1 under a target path.
+
+Options:
+  --path DIR        Target directory (default: current directory)
+  --exclude NAME    Exclude name pattern (can be repeated)
+  --dry-run         Show what would be deleted
+  --force           Skip confirmation prompt
+  --sudo            Use sudo for deletion
+  -h, --help        Show this help
+
+Examples:
+  interactive_delete --path /tmp --exclude keep-me --dry-run
+  interactive_delete --path . --exclude Documents --force

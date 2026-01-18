@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""
+pdf_to_text
+
+Convert a PDF to plain text using pdftotext.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+from lib.py_lib import require_cmd, log_error
+
+
+def convert_pdf(pdf_file: str, txt_file: str, overwrite: bool = False) -> None:
+    if not overwrite:
+        try:
+            with open(txt_file, "x", encoding="utf-8"):
+                pass
+        except FileExistsError:
+            raise RuntimeError("Output file exists. Use --overwrite to replace.")
+    result = subprocess.run(["pdftotext", pdf_file, txt_file], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "Conversion failed")
+
+
+def cli_main() -> int:
+    parser = argparse.ArgumentParser(description="Convert PDF to text")
+    parser.add_argument("--input", help="Input PDF file")
+    parser.add_argument("--output", help="Output text file")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite output file")
+    parser.add_argument("--json", action="store_true", help="Machine-readable output")
+    args = parser.parse_args()
+
+    require_cmd("pdftotext")
+
+    if args.input and args.output:
+        try:
+            convert_pdf(args.input, args.output, overwrite=args.overwrite)
+        except Exception as exc:
+            if args.json:
+                print(f'{{"ok": false, "error": "{str(exc)}"}}')
+            else:
+                log_error(str(exc))
+            return 1
+        if args.json:
+            print("{\"ok\": true}")
+        else:
+            print("converted")
+        return 0
+
+    return gui_main()
+
+
+def gui_main() -> int:
+    root = tk.Tk()
+    root.title("Convert PDF to Text")
+
+    def convert() -> None:
+        pdf_file = filedialog.askopenfilename(
+            title="Select a PDF",
+            filetypes=[("PDF Files", "*.pdf")],
+            initialdir=os.path.expanduser("~/Documents"),
+        )
+        if not pdf_file:
+            return
+
+        txt_file = filedialog.asksaveasfilename(
+            title="Save As",
+            defaultextension=".txt",
+            filetypes=[("Text Files", "*.txt")],
+            initialdir=os.path.expanduser("~/Documents"),
+        )
+        if not txt_file:
+            return
+
+        try:
+            convert_pdf(pdf_file, txt_file, overwrite=True)
+            messagebox.showinfo("Success", f"Converted:\n{pdf_file}\n\nto\n{txt_file}")
+        except Exception as exc:
+            messagebox.showerror("Error", str(exc))
+
+    tk.Button(root, text="Convert PDF to TXT", command=convert).pack(padx=20, pady=20)
+    root.mainloop()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(cli_main())
