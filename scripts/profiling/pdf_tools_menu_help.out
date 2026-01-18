@@ -1,0 +1,12 @@
+usage: pdf_tools_menu [-h] [--check-text | --to-text | --check-encryption]
+                      [--file FILE] [--output OUTPUT]
+
+PDF tools menu
+
+options:
+  -h, --help          show this help message and exit
+  --check-text        Check if PDF has text
+  --to-text           Convert PDF to text
+  --check-encryption  Check if PDF is encrypted
+  --file FILE         PDF file path
+  --output OUTPUT     Output text path (for --to-text)

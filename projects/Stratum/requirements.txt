@@ -1,0 +1,11 @@
+# Stratum Requirements
+
+# Core dependencies
+numpy>=1.20.0
+
+# Visualization dependencies
+matplotlib>=3.3.0
+pygame>=2.0.0
+
+# Testing dependencies
+pytest>=7.0.0

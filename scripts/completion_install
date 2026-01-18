@@ -1,0 +1,391 @@
+#!/usr/bin/env bash
+# Advanced Script: install_all_completions.sh
+# Purpose: Programmatically scan your PATH for executables that support bash completions,
+# check several common conventions (if they support bash), perform a dry run (with analysis),
+# then install/update each completion to its own file.
+# Finally, ensure that your shell (via ~/.bashrc) sources the target completions directory.
+#
+# Usage:
+#   ./install_all_completions.sh [--dry-run]
+#
+# Requirements: bash, timeout, grep, cmp, mkdir, sort
+
+set -euo pipefail
+
+SCRIPT_NAME="completion_install"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/bash_lib.sh
+. "$SCRIPT_DIR/lib/bash_lib.sh"
+
+usage() {
+    cat <<USAGE
+Usage: $SCRIPT_NAME [--dry-run] [--yes] [--non-interactive] [--include PATTERN] [--exclude PATTERN] [--max N]
+
+Scan PATH for executables that emit bash completions and install them into
+~/.bash_completion.d, then configure shell sourcing.
+
+Options:
+  --dry-run           Analyze only; do not install
+  --yes               Skip prompts (assume yes)
+  --non-interactive   Do not prompt (implies --dry-run unless --yes)
+  --include PATTERN   Only include commands matching glob (can repeat)
+  --exclude PATTERN   Exclude commands matching glob (can repeat)
+  --max N             Limit number of commands scanned
+  -h, --help          Show this help
+USAGE
+}
+
+# Option: --dry-run (only analyze, don't install)
+DRY_RUN=false
+ASSUME_YES=false
+NON_INTERACTIVE=false
+MAX_COMMANDS=0
+INCLUDE_PATTERNS=()
+EXCLUDE_PATTERNS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --yes)
+            ASSUME_YES=true
+            shift
+            ;;
+        --non-interactive)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --include)
+            [[ -n "${2:-}" ]] || die "--include requires a pattern"
+            INCLUDE_PATTERNS+=("$2")
+            shift 2
+            ;;
+        --exclude)
+            [[ -n "${2:-}" ]] || die "--exclude requires a pattern"
+            EXCLUDE_PATTERNS+=("$2")
+            shift 2
+            ;;
+        --max)
+            [[ -n "${2:-}" ]] || die "--max requires a number"
+            MAX_COMMANDS="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+done
+
+require_cmd timeout
+require_cmd awk
+require_cmd grep
+require_cmd cmp
+require_cmd sort
+
+# Target directory for storing individual completion files.
+TARGET_DIR="$HOME/.bash_completion.d"
+echo "Using target directory for completions: $TARGET_DIR"
+mkdir -p "$TARGET_DIR"
+
+# Candidate patterns for bash completions.
+# Each string represents a set of arguments to try.
+declare -a completion_patterns=(
+    "completion bash"
+    "completions bash"
+    "--generate-completion bash"
+    "--generate-bash-completion"
+)
+
+# Function: get_completion_output
+# For a given command, try all candidate patterns until one returns non-empty, acceptable output.
+get_completion_output() {
+    local cmd="$1"
+    local output=""
+    for pattern in "${completion_patterns[@]}"; do
+        # Split the pattern into arguments.
+        IFS=' ' read -r -a args <<< "$pattern"
+        output=$(timeout 2 "$cmd" "${args[@]}" 2>/dev/null || true)
+        if [[ -n "$output" ]] && ! echo "$output" | grep -qiE "(unknown|error)"; then
+            echo "$output"
+            return 0
+        fi
+    done
+    return 1
+}
+
+matches_patterns() {
+    local name="$1"
+    local matched_include=true
+    if [[ ${#INCLUDE_PATTERNS[@]} -gt 0 ]]; then
+        matched_include=false
+        for pattern in "${INCLUDE_PATTERNS[@]}"; do
+            if [[ "$name" == $pattern ]]; then
+                matched_include=true
+                break
+            fi
+        done
+    fi
+    if ! $matched_include; then
+        return 1
+    fi
+    for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+        if [[ "$name" == $pattern ]]; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+# Gather unique executable names from all directories in PATH.
+declare -a commands
+IFS=':' read -r -a pathdirs <<< "$PATH"
+for dir in "${pathdirs[@]}"; do
+    if [[ -d "$dir" ]]; then
+        for file in "$dir"/*; do
+            if [[ -x "$file" && ! -d "$file" ]]; then
+                commands+=("$(basename "$file")")
+            fi
+        done
+    fi
+done
+# Deduplicate the command list.
+unique_commands=($(printf "%s\n" "${commands[@]}" | sort -u))
+
+echo "=== Dry Run: Checking for commands that support bash completions ==="
+declare -a supported_commands=()
+declare -A completions_preview=()
+for cmd in "${unique_commands[@]}"; do
+    if [[ $MAX_COMMANDS -gt 0 && ${#supported_commands[@]} -ge $MAX_COMMANDS ]]; then
+        break
+    fi
+    # Ensure the command exists.
+    if ! command -v "$cmd" &>/dev/null; then
+        continue
+    fi
+    if ! matches_patterns "$cmd"; then
+        continue
+    fi
+    # Try to retrieve bash completion output.
+    output=$(get_completion_output "$cmd" || true)
+    if [[ -n "$output" ]]; then
+        supported_commands+=("$cmd")
+        completions_preview["$cmd"]="$output"
+        echo "Command '$cmd' supports bash completions."
+        echo "$output" | head -n 3 | sed 's/^/    /'
+        echo "..."
+    fi
+done
+
+echo ""
+echo "Dry Run Complete: Found ${#supported_commands[@]} commands with potential bash completions."
+echo "Commands: ${supported_commands[*]}"
+echo ""
+
+if $DRY_RUN; then
+    echo "--dry-run enabled. No changes will be made."
+    exit 0
+fi
+if $NON_INTERACTIVE && ! $ASSUME_YES; then
+    echo "--non-interactive enabled without --yes; no changes will be made."
+    exit 0
+fi
+
+if ! $ASSUME_YES; then
+    read -p "Do you want to install these completions to $TARGET_DIR? (y/N): " answer
+    if [[ ! "$answer" =~ ^[Yy]$ ]]; then
+        echo "Aborting installation."
+        exit 0
+    fi
+fi
+
+# Function: Install or update a single command's completion.
+install_completion() {
+    local cmd="$1"
+    local outfile="$TARGET_DIR/${cmd}.bash"
+    local new_output
+    new_output=$(get_completion_output "$cmd" || true)
+    # Skip if no valid output.
+    if [[ -z "$new_output" ]]; then
+        return
+    fi
+    # If the file exists and the content hasn't changed, skip updating.
+    if [[ -f "$outfile" ]]; then
+        if cmp -s <(echo "$new_output") "$outfile"; then
+            echo "No changes for '$cmd'; skipping update."
+            return
+        fi
+    fi
+    echo "$new_output" > "$outfile"
+    echo "Installed/Updated completions for '$cmd' to '$outfile'."
+}
+
+# Install completions for each supported command.
+for cmd in "${supported_commands[@]}"; do
+    install_completion "$cmd"
+done
+
+echo ""
+echo "=== Completion Installation Complete ==="
+
+# Universal shell integration with adaptive configuration
+configure_shell_integration() {
+    local target_dir="$1"
+    local detected_shells=()
+    local primary_shell="${SHELL##*/}"
+    
+    # Detect available shells
+    [[ -f "$HOME/.bashrc" ]] && detected_shells+=("bash")
+    [[ -f "$HOME/.zshrc" ]] && detected_shells+=("zsh")  
+    [[ -f "$HOME/.config/fish/config.fish" ]] && detected_shells+=("fish")
+    
+    # If no shells detected, default to bash
+    [[ ${#detected_shells[@]} -eq 0 ]] && detected_shells+=("bash")
+    
+    echo "=== Shell Integration ==="
+    echo "Detected shells: ${detected_shells[*]}"
+    echo "Primary shell: $primary_shell"
+    
+    for shell in "${detected_shells[@]}"; do
+        case "$shell" in
+            bash)
+                configure_bash "$target_dir"
+                ;;
+            zsh)
+                configure_zsh "$target_dir"
+                ;;
+            fish)
+                configure_fish "$target_dir"
+                ;;
+        esac
+    done
+}
+
+configure_bash() {
+    local target_dir="$1"
+    local config_files=("$HOME/.bashrc")
+    [[ -f "$HOME/.bash_profile" ]] && config_files+=("$HOME/.bash_profile")
+    
+    local snippet=$(cat <<EOF
+# --- Auto-load completions from $target_dir ---
+if [ -d "$target_dir" ]; then
+  for completion_file in "$target_dir"/*.bash; do
+    [ -r "\$completion_file" ] && source "\$completion_file"
+  done
+  unset completion_file
+fi
+# --- End auto-load completions ---
+EOF
+)
+    add_snippet_to_configs "bash" "${config_files[@]}" "$snippet"
+}
+
+configure_zsh() {
+    local target_dir="$1"
+    local config_files=("$HOME/.zshrc")
+    
+    local snippet=$(cat <<EOF
+# --- Auto-load completions from $target_dir ---
+if [ -d "$target_dir" ]; then
+  for completion_file in "$target_dir"/*.bash; do
+    [ -r "\$completion_file" ] && source "\$completion_file"
+  done
+  unset completion_file
+fi
+# --- End auto-load completions ---
+EOF
+)
+    add_snippet_to_configs "zsh" "${config_files[@]}" "$snippet"
+}
+
+configure_fish() {
+    local target_dir="$1"
+    local config_files=("$HOME/.config/fish/config.fish")
+    
+    # Create config directory if needed
+    mkdir -p "$(dirname "${config_files[0]}")"
+    
+    local snippet=$(cat <<EOF
+# --- Auto-load completions from $target_dir ---
+for completion_file in $target_dir/*.bash
+    if test -r \$completion_file
+        source \$completion_file
+    end
+end
+# --- End auto-load completions ---
+EOF
+)
+    add_snippet_to_configs "fish" "${config_files[@]}" "$snippet"
+}
+
+add_snippet_to_configs() {
+    local shell_name="$1"
+    shift
+    local config_files=("$@")
+    local snippet="${!#}"  # Get last argument
+    unset 'config_files[${#config_files[@]}-1]'  # Remove last argument
+    
+    local success=false
+    
+    for config_file in "${config_files[@]}"; do
+        # Create config file if it doesn't exist
+        if [[ ! -f "$config_file" ]]; then
+            echo "Creating $config_file"
+            touch "$config_file"
+        fi
+        
+        # Check if snippet exists using more efficient method than grep
+        if ! awk '/Auto-load completions/,/End auto-load completions/' "$config_file" | grep -q "."; then
+            echo -e "\n$snippet" >> "$config_file"
+            echo "✓ Added completion sourcing to $config_file"
+            success=true
+        else
+            echo "✓ Completion sourcing already present in $config_file"
+            success=true
+        fi
+    done
+    
+    if $success; then
+        echo "✓ Shell integration complete for $shell_name"
+    else
+        echo "⚠ Could not set up shell integration for $shell_name"
+    fi
+}
+
+verify_completions() {
+    local target_dir="$1"
+    local completion_count=$(find "$target_dir" -name "*.bash" | wc -l)
+    
+    echo ""
+    echo "=== Verification Summary ==="
+    echo "✓ $completion_count completion files installed in $target_dir"
+    echo "✓ Shell integration configured for detected shells"
+    
+    # Recommend how to activate completions
+    local shell="${SHELL##*/}"
+    echo ""
+    echo "To activate completions now:"
+    case "$shell" in
+        bash)
+            echo "  source ~/.bashrc"
+            ;;
+        zsh)
+            echo "  source ~/.zshrc"
+            ;;
+        fish)
+            echo "  source ~/.config/fish/config.fish"
+            ;;
+        *)
+            echo "  Start a new shell session"
+            ;;
+    esac
+}
+
+# Replace previous shell integration code with calls to the new functions
+configure_shell_integration "$TARGET_DIR"
+verify_completions "$TARGET_DIR"

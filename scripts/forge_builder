@@ -1,0 +1,520 @@
+#!/usr/bin/env python3
+"""
+Eidosian Forge Builder - A powerful tool for creating project structures with style
+
+This script creates standardized project directory structures with a rich
+interactive interface, comprehensive logging, and flexible execution modes.
+"""
+import os
+import sys
+import shutil
+import argparse
+import logging
+import time
+import json
+import random
+from enum import Enum
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Dict, Optional, Union, Tuple, Set, Callable, Any, Iterator
+import concurrent.futures
+from datetime import datetime
+
+# Third-party imports (with graceful fallbacks)
+try:
+    from rich import print as rprint
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+    from rich.prompt import Confirm, Prompt
+    from rich.tree import Tree
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.logging import RichHandler
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
+    Console = object
+    def rprint(text): print(text)
+
+# Constants
+VERSION = "2.0.0"
+EIDOSIAN_QUOTES = [
+    "The cosmic forge awaits your creation...",
+    "Building digital realities, one directory at a time.",
+    "The Eidosian way: Build beautifully, build with purpose.",
+    "Every great project begins with a well-structured foundation.",
+    "Folding digital space into elegant hierarchies..."
+]
+
+# Configure logging
+log_path = Path.home() / ".eidosian" / "logs"
+log_path.mkdir(parents=True, exist_ok=True)
+log_file = log_path / f"forge_builder_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+if RICH_AVAILABLE:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(rich_tracebacks=True), 
+                  logging.FileHandler(log_file)]
+    )
+else:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(), 
+                  logging.FileHandler(log_file)]
+    )
+
+logger = logging.getLogger("eidosian_forge")
+
+# UI Elements
+class UIElements:
+    """UI element management for consistent visual experience"""
+    
+    @staticmethod
+    def header(console: Console) -> None:
+        """Display the application header"""
+        console.print(Panel.fit(
+            f"[bold cyan]🚀 Eidosian Forge Builder v{VERSION} 🚀[/bold cyan]\n"
+            f"[italic green]{random.choice(EIDOSIAN_QUOTES)}[/italic green]",
+            border_style="cyan"
+        ))
+    
+    @staticmethod
+    def section(console: Console, title: str) -> None:
+        """Display a section header"""
+        console.print(f"\n[bold blue]== {title} ==[/bold blue]")
+    
+    @staticmethod
+    def success(console: Console, message: str) -> None:
+        """Display a success message"""
+        console.print(f"[bold green]✅ {message}[/bold green]")
+    
+    @staticmethod
+    def warning(console: Console, message: str) -> None:
+        """Display a warning message"""
+        console.print(f"[bold yellow]⚠️  {message}[/bold yellow]")
+    
+    @staticmethod
+    def error(console: Console, message: str) -> None:
+        """Display an error message"""
+        console.print(f"[bold red]❌ {message}[/bold red]")
+
+class OperationMode(Enum):
+    """Operation modes for the forge builder"""
+    INTERACTIVE = "interactive"
+    AUTONOMOUS = "autonomous"
+    DRY_RUN = "dry_run"
+
+@dataclass
+class ForgeConfig:
+    """Configuration for the Eidosian Forge"""
+    name: str
+    mode: OperationMode = OperationMode.INTERACTIVE
+    verbose: bool = False
+    output_dir: Optional[Path] = None
+    template_dir: Optional[Path] = None
+    skip_existing: bool = False
+    parallel: bool = False
+    max_workers: int = 4
+    core_folders: List[str] = field(default_factory=list)
+    base_files: List[str] = field(default_factory=list)
+    modules: List[str] = field(default_factory=list)
+    
+    def get_root_dir(self) -> Path:
+        """Get the root directory for the forge"""
+        if self.output_dir:
+            return Path(self.output_dir) / self.name
+        return Path(self.name)
+
+class FileSystemOperator:
+    """Handles all filesystem operations with appropriate error handling"""
+    
+    def __init__(self, config: ForgeConfig, console: Console):
+        self.config = config
+        self.console = console
+        self.operations_count = {"created_dirs": 0, "created_files": 0, "skipped": 0, "errors": 0}
+    
+    def safely_move_contents(self, src: Path, dest: Path) -> None:
+        """Safely move contents from source to destination"""
+        try:
+            for item in src.iterdir():
+                target = dest / item.name
+                if target.exists():
+                    logger.warning(f"Skipping existing item: {target}")
+                    self.operations_count["skipped"] += 1
+                    if RICH_AVAILABLE:
+                        self.console.print(f"[yellow]Skipping existing item:[/yellow] {target}")
+                    continue
+                
+                shutil.move(str(item), str(target))
+                logger.info(f"Moved: {item} -> {target}")
+                if RICH_AVAILABLE:
+                    self.console.print(f"[green]Moved:[/green] {item} -> {target}")
+            
+            src.rmdir()
+            logger.info(f"Removed temporary directory: {src}")
+            if RICH_AVAILABLE:
+                self.console.print(f"[blue]Removed temporary directory:[/blue] {src}")
+        except Exception as e:
+            logger.error(f"Error moving contents: {e}")
+            self.operations_count["errors"] += 1
+            if RICH_AVAILABLE:
+                self.console.print(f"[bold red]Error moving contents: {e}[/bold red]")
+    
+    def create_path(self, path: Path, is_file: bool = False) -> bool:
+        """Create a directory or file with proper error handling"""
+        try:
+            if is_file:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch(exist_ok=True)
+                self.operations_count["created_files"] += 1
+                logger.info(f"Created file: {path}")
+                if RICH_AVAILABLE and self.config.verbose:
+                    self.console.print(f"[green]Created file:[/green] {path}")
+            else:
+                path.mkdir(parents=True, exist_ok=True)
+                self.operations_count["created_dirs"] += 1
+                logger.info(f"Created folder: {path}")
+                if RICH_AVAILABLE and self.config.verbose:
+                    self.console.print(f"[blue]Created folder:[/blue] {path}")
+            return True
+        except Exception as e:
+            self.operations_count["errors"] += 1
+            logger.error(f"Error creating {'file' if is_file else 'folder'} {path}: {e}")
+            if RICH_AVAILABLE:
+                self.console.print(f"[bold red]Error creating {'file' if is_file else 'folder'} {path}: {e}[/bold red]")
+            return False
+
+def create_structure(config: ForgeConfig) -> None:
+    """Create the directory and file structure based on configuration"""
+    # Initialize console and operator
+    console = Console() if RICH_AVAILABLE else None
+    fs_operator = FileSystemOperator(config, console)
+    
+    if RICH_AVAILABLE:
+        UIElements.header(console)
+        UIElements.section(console, f"Building Forge: {config.name}")
+    
+    # Prepare paths
+    root_dir = config.get_root_dir()
+    paths = config.core_folders + config.base_files + config.modules
+    
+    # In dry run mode, just show the structure
+    if config.mode == OperationMode.DRY_RUN and RICH_AVAILABLE:
+        tree = Tree(f"📁 [bold green]{root_dir}[/bold green]")
+        for path in paths:
+            full_path = root_dir / path
+            node = tree
+            parts = full_path.relative_to(root_dir).parts
+
+            for part in parts:
+                label = f"📁 [cyan]{part}[/cyan]" if not Path(part).suffix else f"📄 [yellow]{part}[/yellow]"
+                node = next((n for n in node.children if n.label == label), node.add(label))
+
+            status = "[yellow]⚠️ Would exist[/yellow]" if full_path.exists() else "[green]✅ Would create[/green]"
+            node.add(status)
+        
+        console.print(tree)
+        return
+    
+    # Execute creation
+    if RICH_AVAILABLE and config.mode == OperationMode.INTERACTIVE:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold blue]{task.description}"),
+            BarColumn(),
+            TextColumn("[bold green]{task.completed}/{task.total}"),
+            TimeElapsedColumn(),
+        ) as progress:
+            task = progress.add_task("Creating project structure...", total=len(paths))
+            
+            for path in paths:
+                full_path = root_dir / path
+                progress.update(task, description=f"Processing: {path}")
+                
+                if full_path.exists():
+                    if full_path.is_file():
+                        logger.info(f"File exists, skipping: {full_path}")
+                        fs_operator.operations_count["skipped"] += 1
+                    elif full_path.is_dir():
+                        if config.skip_existing:
+                            logger.info(f"Directory exists, skipping: {full_path}")
+                            fs_operator.operations_count["skipped"] += 1
+                        else:
+                            temp_dir = unique_temp_dir(full_path)
+                            full_path.rename(temp_dir)
+                            full_path.mkdir(parents=True, exist_ok=True)
+                            logger.info(f"Renamed existing folder to temp: {temp_dir}")
+                            fs_operator.safely_move_contents(temp_dir, full_path)
+                else:
+                    is_file = bool(full_path.suffix)
+                    fs_operator.create_path(full_path, is_file=is_file)
+                
+                progress.update(task, advance=1)
+    else:
+        # Non-interactive or non-rich mode
+        if config.parallel:
+            # Parallel execution for faster processing
+            with concurrent.futures.ThreadPoolExecutor(max_workers=config.max_workers) as executor:
+                futures = {}
+                for path in paths:
+                    full_path = root_dir / path
+                    is_file = bool(full_path.suffix)
+                    
+                    if full_path.exists():
+                        if full_path.is_file() or (full_path.is_dir() and config.skip_existing):
+                            logger.info(f"Path exists, skipping: {full_path}")
+                            fs_operator.operations_count["skipped"] += 1
+                            continue
+                    
+                    futures[executor.submit(fs_operator.create_path, full_path, is_file)] = path
+                
+                for future in concurrent.futures.as_completed(futures):
+                    path = futures[future]
+                    try:
+                        success = future.result()
+                        if not success:
+                            logger.warning(f"Failed to create: {path}")
+                    except Exception as e:
+                        logger.error(f"Exception creating {path}: {e}")
+        else:
+            # Sequential execution
+            for path in paths:
+                full_path = root_dir / path
+                is_file = bool(full_path.suffix)
+                
+                if full_path.exists():
+                    if full_path.is_file():
+                        logger.info(f"File exists, skipping: {full_path}")
+                        fs_operator.operations_count["skipped"] += 1
+                        continue
+                    elif full_path.is_dir():
+                        if config.skip_existing:
+                            logger.info(f"Directory exists, skipping: {full_path}")
+                            fs_operator.operations_count["skipped"] += 1
+                            continue
+                        else:
+                            temp_dir = unique_temp_dir(full_path)
+                            full_path.rename(temp_dir)
+                            full_path.mkdir(parents=True, exist_ok=True)
+                            logger.info(f"Renamed existing folder to temp: {temp_dir}")
+                            fs_operator.safely_move_contents(temp_dir, full_path)
+                            continue
+                
+                fs_operator.create_path(full_path, is_file=is_file)
+    
+    # Display completion info
+    if RICH_AVAILABLE:
+        summary_table = Table(title="Operation Summary")
+        summary_table.add_column("Operation", style="cyan")
+        summary_table.add_column("Count", style="green", justify="right")
+        
+        summary_table.add_row("Directories Created", str(fs_operator.operations_count["created_dirs"]))
+        summary_table.add_row("Files Created", str(fs_operator.operations_count["created_files"]))
+        summary_table.add_row("Items Skipped", str(fs_operator.operations_count["skipped"]))
+        summary_table.add_row("Errors", str(fs_operator.operations_count["errors"]))
+        
+        console.print(summary_table)
+        
+        if fs_operator.operations_count["errors"] == 0:
+            UIElements.success(console, f"Eidosian Forge '{config.name}' setup complete!")
+            console.print(f"[italic]May your project grow as magnificent as the cosmic forge itself![/italic]")
+        else:
+            UIElements.warning(console, f"Completed with {fs_operator.operations_count['errors']} errors. Check the logs at {log_file}")
+    else:
+        logger.info(f"Completed: Created {fs_operator.operations_count['created_dirs']} directories, "
+                   f"{fs_operator.operations_count['created_files']} files, "
+                   f"skipped {fs_operator.operations_count['skipped']} items, "
+                   f"with {fs_operator.operations_count['errors']} errors.")
+
+def load_default_config() -> Dict[str, Any]:
+    """Load default configuration from user config if available"""
+    config_path = Path.home() / ".eidosian" / "forge_config.json"
+    
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load config file: {e}")
+    
+    return {}
+
+def load_config_file(config_path: Optional[Path]) -> Dict[str, Any]:
+    if not config_path:
+        return {}
+    if not config_path.exists():
+        logger.warning(f"Config file not found: {config_path}")
+        return {}
+    try:
+        with open(config_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not load config file: {e}")
+    return {}
+
+def unique_temp_dir(path: Path) -> Path:
+    base = path.parent / f"{path.name}_temp"
+    if not base.exists():
+        return base
+    for idx in range(1, 100):
+        candidate = path.parent / f"{path.name}_temp_{idx}"
+        if not candidate.exists():
+            return candidate
+    raise RuntimeError(f"Could not find a unique temp directory for {path}")
+
+def save_as_default_config(config: ForgeConfig) -> None:
+    """Save current configuration as default"""
+    config_path = Path.home() / ".eidosian" / "forge_config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    config_dict = {
+        "core_folders": config.core_folders,
+        "base_files": config.base_files,
+        "skip_existing": config.skip_existing,
+        "parallel": config.parallel,
+        "max_workers": config.max_workers
+    }
+    
+    try:
+        with open(config_path, 'w') as f:
+            json.dump(config_dict, f, indent=2)
+        logger.info(f"Configuration saved to {config_path}")
+    except Exception as e:
+        logger.error(f"Failed to save config: {e}")
+
+def interactive_setup(console: Console, config: ForgeConfig) -> ForgeConfig:
+    """Interactive setup for forge configuration"""
+    UIElements.section(console, "Interactive Setup")
+    
+    # Confirm or modify project name
+    config.name = Prompt.ask("Project name", default=config.name)
+    
+    # Output directory
+    output_dir = Prompt.ask("Output directory", default=str(config.output_dir or "."))
+    config.output_dir = Path(output_dir)
+    
+    # Operation mode options
+    config.skip_existing = Confirm.ask("Skip existing files and directories?", default=config.skip_existing)
+    config.parallel = Confirm.ask("Use parallel processing?", default=config.parallel)
+    
+    if config.parallel:
+        config.max_workers = int(Prompt.ask(
+            "Maximum parallel workers", 
+            default=str(config.max_workers or 4)
+        ))
+    
+    # Ask if they want to save as default
+    if Confirm.ask("Save these settings as default?", default=False):
+        save_as_default_config(config)
+    
+    return config
+
+def main():
+    """Main entry point for the Eidosian Forge Builder"""
+    # Load default configuration
+    default_config = load_default_config()
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="🌀 Eidosian Forge Builder 🌀 - Create structured project foundations with elegance",
+        epilog="May your forge burn bright with innovation!"
+    )
+    
+    parser.add_argument("forge_name", nargs="?", default=None, help="Name of the forge repo")
+    parser.add_argument("--output-dir", "-o", type=str, help="Output directory")
+    parser.add_argument("--config", type=str, help="Path to JSON config file")
+    parser.add_argument("--yes", action="store_true", help="Skip prompts and use defaults")
+    parser.add_argument("--mode", "-m", choices=["interactive", "autonomous", "dry-run"], 
+                        default="interactive", help="Operation mode")
+    parser.add_argument("--skip-existing", "-s", action="store_true", 
+                        help="Skip existing files and directories")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument("--parallel", "-p", action="store_true", 
+                        help="Use parallel processing for faster creation")
+    parser.add_argument("--workers", "-w", type=int, default=4, 
+                        help="Maximum number of parallel workers")
+    parser.add_argument("--version", action="version", version=f"Eidosian Forge Builder v{VERSION}")
+    
+    args = parser.parse_args()
+
+    # Merge user config overrides
+    user_config = load_config_file(Path(args.config)) if args.config else {}
+    if user_config:
+        default_config.update(user_config)
+    
+    # Set up operation mode
+    if args.mode == "dry-run":
+        op_mode = OperationMode.DRY_RUN
+    elif args.mode == "autonomous":
+        op_mode = OperationMode.AUTONOMOUS
+    else:
+        op_mode = OperationMode.INTERACTIVE
+    
+    # Initialize configuration
+    config = ForgeConfig(
+        name=args.forge_name or "eidosian_project",
+        mode=op_mode,
+        verbose=args.verbose,
+        output_dir=Path(args.output_dir) if args.output_dir else None,
+        skip_existing=args.skip_existing,
+        parallel=args.parallel,
+        max_workers=args.workers,
+        # Default folder structure from defaults or hardcoded values
+        core_folders=default_config.get("core_folders", [
+            ".github/workflows", ".github/ISSUE_TEMPLATE", "benchmarks", "bin",
+            "communication/api_gateways", "communication/message_queue",
+            "data/persistent", "data/transient",
+            "docs/api/auto_generated", "docs/api/manually_maintained",
+            "docs/architecture", "docs/changelog", "docs/config",
+            "docs/developer_guide", "docs/user_guide",
+            "ethics/compliance_checks", "ethics/governance_policies",
+            "evolution/adaptive_learning", "evolution/optimization_strategies",
+            "extensions/community_extensions", "extensions/official_extensions",
+            "introspection/reflection_logs", "introspection/schema_evolution",
+            "libs", "observability/logging", "observability/metrics",
+            "observability/tracing", "scripts", "shared_schema/interfaces",
+            "shared_schema/protocols", "shared_schema/types",
+            "src/config", "src/examples", "src/templates", "src/tests",
+            "tools", "wheelhouse"
+        ]),
+        base_files=default_config.get("base_files", [
+            ".editorconfig", ".eidosian.json", ".gitignore", ".gitkeep",
+            "CHANGELOG.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md",
+            "eidosian_config.yml", "install.sh", "LICENSE", "pyproject.toml",
+            "README.md", "requirements.txt", "SECURITY.md", "setup.py"
+        ])
+    )
+    
+    # In interactive mode with rich available, run the interactive setup
+    if RICH_AVAILABLE and config.mode == OperationMode.INTERACTIVE and not args.yes:
+        console = Console()
+        UIElements.header(console)
+        
+        # If forge name wasn't provided, ask for it
+        if not args.forge_name:
+            config = interactive_setup(console, config)
+    elif not RICH_AVAILABLE and config.mode == OperationMode.INTERACTIVE:
+        print("Interactive mode requires 'rich' library. Install with 'pip install rich'")
+        print("Falling back to autonomous mode...")
+        config.mode = OperationMode.AUTONOMOUS
+    
+    # Add module paths based on the forge name
+    config.modules = [
+        f"src/{config.name}/api",
+        f"src/{config.name}/config",
+        f"src/{config.name}/core",
+        f"src/{config.name}/services",
+        f"src/{config.name}/utils"
+    ]
+    
+    # Create the project structure
+    create_structure(config)
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

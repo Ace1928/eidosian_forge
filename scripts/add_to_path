@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_NAME="add_to_path"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/bash_lib.sh
+. "$SCRIPT_DIR/lib/bash_lib.sh"
+
+usage() {
+  cat <<USAGE
+Usage: $SCRIPT_NAME [--path DIR] [--shell SHELL] [--remove] [--dry-run]
+
+Add or remove a directory from shell PATH configuration.
+
+Options:
+  --path DIR     Directory to add/remove (default: current directory)
+  --shell SHELL  Target shell config: bash|zsh|profile|auto (default: auto)
+  --remove       Remove PATH entry instead of adding
+  --dry-run      Show changes without writing
+  -h, --help     Show this help
+
+Examples:
+  $SCRIPT_NAME --path ~/scripts
+  $SCRIPT_NAME --path ~/scripts --shell zsh
+  $SCRIPT_NAME --path ~/scripts --remove
+USAGE
+}
+
+TARGET_DIR="$PWD"
+TARGET_SHELL="auto"
+REMOVE=false
+DRY_RUN=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --path)
+      [[ -n "${2:-}" ]] || die "--path requires a value"
+      TARGET_DIR="$2"
+      shift 2
+      ;;
+    --shell)
+      [[ -n "${2:-}" ]] || die "--shell requires a value"
+      TARGET_SHELL="$2"
+      shift 2
+      ;;
+    --remove)
+      REMOVE=true
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+MARKER_START="# >>> add_to_path managed block >>>"
+MARKER_END="# <<< add_to_path managed block <<<"
+SNIPPET=$(cat <<EOF_SNIP
+$MARKER_START
+if [[ ":\$PATH:" != *":$TARGET_DIR:"* ]]; then
+  export PATH="$TARGET_DIR:\$PATH"
+fi
+$MARKER_END
+EOF_SNIP
+)
+
+select_config() {
+  local shell_name="$1"
+  case "$shell_name" in
+    bash) echo "$HOME/.bashrc" ;;
+    zsh) echo "$HOME/.zshrc" ;;
+    profile) echo "$HOME/.profile" ;;
+    auto)
+      case "${SHELL##*/}" in
+        zsh) echo "$HOME/.zshrc" ;;
+        bash) echo "$HOME/.bashrc" ;;
+        *) echo "$HOME/.profile" ;;
+      esac
+      ;;
+    *) die "Unknown shell: $shell_name" ;;
+  esac
+}
+
+CONFIG_FILE="$(select_config "$TARGET_SHELL")"
+
+if [[ $REMOVE == true ]]; then
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    die "Config file not found: $CONFIG_FILE"
+  fi
+  if $DRY_RUN; then
+    log_info "Would remove PATH block from $CONFIG_FILE"
+    exit 0
+  fi
+  awk -v start="$MARKER_START" -v end="$MARKER_END" '
+    $0==start {skip=1}
+    $0==end {skip=0; next}
+    skip==0 {print}
+  ' "$CONFIG_FILE" > "$CONFIG_FILE.tmp"
+  mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+  log_info "Removed PATH block from $CONFIG_FILE"
+  exit 0
+fi
+
+if $DRY_RUN; then
+  log_info "Would add PATH block to $CONFIG_FILE"
+  exit 0
+fi
+
+mkdir -p "$(dirname "$CONFIG_FILE")"
+if [[ ! -f "$CONFIG_FILE" ]]; then
+  touch "$CONFIG_FILE"
+fi
+
+if grep -qF "$MARKER_START" "$CONFIG_FILE"; then
+  log_info "PATH block already present in $CONFIG_FILE"
+  exit 0
+fi
+
+echo "" >> "$CONFIG_FILE"
+echo "$SNIPPET" >> "$CONFIG_FILE"
+log_info "Added PATH block to $CONFIG_FILE"

@@ -1,0 +1,8 @@
+Usage: clipboard_diagnostics [--json] [--show-sample]
+
+Detect available clipboard tools and test read access.
+
+Options:
+  --json          Output machine-readable JSON
+  --show-sample   Print a sample of clipboard contents
+  -h, --help      Show this help

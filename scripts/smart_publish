@@ -1,0 +1,487 @@
+#!/usr/bin/env python3
+"""
+Smart Python Package Publisher
+
+Automatically handles version increments and publishing for Python packages.
+Extends the functionality of publish.py while maintaining compatibility.
+"""
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import shutil
+from enum import Enum
+from pathlib import Path
+from typing import Tuple, Optional, List, Dict
+
+try:
+    import tomllib  # Python 3.11+
+except ImportError:  # pragma: no cover
+    tomllib = None
+
+
+class VersionBump(Enum):
+    NONE = "none"
+    PATCH = "patch"
+    MINOR = "minor"
+    MAJOR = "major"
+
+
+# Platform configuration for multi-architecture builds
+PLATFORM_CONFIGS = {
+    "win32": "win_amd64",
+    "win-amd64": "win_amd64",
+    "linux-x86_64": "manylinux1_x86_64",
+    "linux-aarch64": "manylinux2014_aarch64",
+    "macosx-x86_64": "macosx_10_9_x86_64",
+    "macosx-arm64": "macosx_11_0_arm64",
+    "all": None,  # Special case to build for all platforms
+}
+
+
+def parse_version(version_str: str) -> Tuple[int, int, int]:
+    """Parse a version string into major, minor, patch components."""
+    match = re.match(r"(\d+)\.(\d+)\.(\d+)", version_str)
+    if not match:
+        raise ValueError(f"Invalid version format: {version_str}")
+    return int(match.group(1)), int(match.group(2)), int(match.group(3))
+
+
+def increment_version(version: str, bump: VersionBump) -> str:
+    """Increment a version string according to specified bump type."""
+    if bump == VersionBump.NONE:
+        return version
+        
+    major, minor, patch = parse_version(version)
+    
+    if bump == VersionBump.PATCH:
+        patch += 1
+    elif bump == VersionBump.MINOR:
+        minor += 1
+        patch = 0
+    elif bump == VersionBump.MAJOR:
+        major += 1
+        minor = 0
+        patch = 0
+        
+    return f"{major}.{minor}.{patch}"
+
+
+def find_package_root(target_package: str, search_paths: Optional[List[Path]] = None) -> Optional[Path]:
+    """Find the root directory of the specified package."""
+    # First check if we're already in the package directory
+    current_dir = Path.cwd()
+    if current_dir.name == target_package:
+        return current_dir
+    
+    # Check immediate subdirectories
+    for item in current_dir.iterdir():
+        if item.is_dir() and item.name == target_package:
+            return item
+    
+    # Check additional search paths if provided
+    for base in search_paths or []:
+        if base.exists():
+            for item in base.iterdir():
+                if item.is_dir() and item.name == target_package:
+                    return item
+    
+    return None
+
+
+def update_version_in_file(file_path: Path, current_version: str, new_version: str) -> bool:
+    """Update version number in a file."""
+    if not file_path.exists():
+        print(f"Warning: {file_path} not found, skipping version update")
+        return False
+    
+    content = file_path.read_text()
+    
+    # Different patterns for different file types
+    if file_path.name == "setup.cfg":
+        # Use a replacement function instead of string to avoid backref confusion
+        def setup_cfg_replace(match):
+            return match.group(1) + new_version
+            
+        new_content = re.sub(
+            r"(version\s*=\s*)[0-9]+\.[0-9]+\.[0-9]+",
+            setup_cfg_replace,
+            content
+        )
+    elif file_path.name == "__init__.py":
+        def init_replace(match):
+            return match.group(1) + new_version + match.group(2)
+            
+        new_content = re.sub(
+            r"(__version__\s*=\s*[\"'])[0-9]+\.[0-9]+\.[0-9]+([\"'])",
+            init_replace,
+            content
+        )
+    elif file_path.name == "pyproject.toml" and "version" in content:
+        def pyproject_replace(match):
+            return match.group(1) + new_version + match.group(2)
+            
+        new_content = re.sub(
+            r"(version\s*=\s*[\"'])[0-9]+\.[0-9]+\.[0-9]+([\"'])",
+            pyproject_replace,
+            content
+        )
+    else:
+        # No recognized version pattern
+        return False
+    
+    # Only write if the content actually changed
+    if new_content != content:
+        file_path.write_text(new_content)
+        return True
+    
+    return False
+
+
+def update_package_version(package_root: Path, current_version: str, new_version: str) -> int:
+    """Update version across all relevant files."""
+    files_updated = 0
+    
+    # Common files that might contain version numbers
+    version_files = [
+        package_root / "setup.cfg",
+        package_root / "pyproject.toml",
+        package_root / "__init__.py",
+    ]
+    
+    # Only check the nested structure if it actually exists
+    nested_init = package_root / package_root.name / "__init__.py"
+    if (package_root / package_root.name).is_dir():
+        version_files.append(nested_init)
+    
+    for file_path in version_files:
+        if update_version_in_file(file_path, current_version, new_version):
+            print(f"Updated version in {file_path}")
+            files_updated += 1
+    
+    return files_updated
+
+
+def load_pyproject_version(pyproject: Path) -> Optional[str]:
+    if not pyproject.exists() or tomllib is None:
+        return None
+    try:
+        data = tomllib.loads(pyproject.read_text())
+    except Exception:
+        return None
+    project = data.get("project", {})
+    version = project.get("version")
+    if isinstance(version, str):
+        return version
+    return None
+
+
+def get_current_version(package_root: Path) -> Optional[str]:
+    """Get the current version from package files."""
+    # Try setup.cfg first
+    setup_cfg = package_root / "setup.cfg"
+    if setup_cfg.exists():
+        content = setup_cfg.read_text()
+        match = re.search(r"version\s*=\s*([0-9]+\.[0-9]+\.[0-9]+)", content)
+        if match:
+            return match.group(1)
+    
+    # Try pyproject.toml
+    pyproject = package_root / "pyproject.toml"
+    pyproject_version = load_pyproject_version(pyproject)
+    if pyproject_version:
+        return pyproject_version
+
+    # Try __init__.py
+    init_paths = [
+        package_root / "__init__.py",
+        package_root / package_root.name / "__init__.py"
+    ]
+    
+    for init_path in init_paths:
+        if init_path.exists():
+            content = init_path.read_text()
+            match = re.search(r"__version__\s*=\s*[\"']([0-9]+\.[0-9]+\.[0-9]+)[\"']", content)
+            if match:
+                return match.group(1)
+    
+    return None
+
+
+def build_wheel_for_platform(package_root: Path, platform: str) -> int:
+    """Build a wheel for a specific platform."""
+    plat_name = PLATFORM_CONFIGS.get(platform)
+    if not plat_name:
+        print(f"Error: Unknown platform '{platform}'")
+        return 1
+    
+    cmd = [sys.executable, "setup.py", "bdist_wheel", "--plat-name", plat_name]
+    print(f"Building wheel for platform: {platform} (plat-name: {plat_name})")
+    return subprocess.call(cmd, cwd=package_root)
+
+
+def build_multi_platform_wheels(package_root: Path, platforms: List[str]) -> bool:
+    """Build wheels for multiple platforms."""
+    # Clean dist directory first
+    dist_dir = package_root / "dist"
+    if dist_dir.exists():
+        # Only remove wheel files, keep source distributions
+        for wheel in dist_dir.glob("*.whl"):
+            wheel.unlink()
+    else:
+        dist_dir.mkdir(exist_ok=True)
+    
+    # Build source distribution first
+    print("Building source distribution...")
+    if subprocess.call([sys.executable, "setup.py", "sdist"], cwd=package_root) != 0:
+        print("Error building source distribution")
+        return False
+
+    # Special case for 'all' platforms
+    if "all" in platforms:
+        platforms = [p for p in PLATFORM_CONFIGS.keys() if p != "all"]
+
+    # Build wheels for each platform
+    success = True
+    for platform in platforms:
+        if platform not in PLATFORM_CONFIGS:
+            print(f"Warning: Ignoring unknown platform '{platform}'")
+            continue
+            
+        if build_wheel_for_platform(package_root, platform) != 0:
+            print(f"Error building wheel for platform {platform}")
+            success = False
+    
+    return success
+
+
+def run_publish_command(
+    package_root: Path, 
+    publish_args: List[str], 
+    platforms: List[str] = None
+) -> int:
+    """Run the actual publish command."""
+    # Look for existing publish.py script
+    publish_script = package_root / "publish.py"
+    
+    if publish_script.exists() and not platforms:
+        print(f"Running existing publish script: {publish_script}")
+        return subprocess.call([sys.executable, str(publish_script)] + publish_args)
+    
+    # Clean build directory
+    build_dir = package_root / "build"
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    
+    # If using multi-platform builds
+    if platforms:
+        if not build_multi_platform_wheels(package_root, platforms):
+            return 1
+    else:
+        # Build the package (standard approach)
+        print("Building distributions...")
+        if build_distributions(package_root) != 0:
+            print("Error building distributions")
+            return 1
+    
+    # Upload using twine
+    print("Uploading to PyPI...")
+    twine_command = ["twine", "upload"]
+    twine_command.extend(publish_args)
+    twine_command.append("dist/*")
+    
+    return subprocess.call(twine_command, cwd=package_root)
+
+
+def setup_auth(pypirc_path: Optional[str]) -> List[str]:
+    """Setup authentication for PyPI and return args for twine."""
+    twine_args = []
+    
+    # Check for PYPI_TOKEN environment variable
+    if "PYPI_TOKEN" in os.environ:
+        print("Using PYPI_TOKEN from environment")
+        twine_args.extend(["--username", "__token__", "--password", os.environ["PYPI_TOKEN"]])
+        return twine_args
+    
+    # Check if custom .pypirc was provided
+    if pypirc_path:
+        pypirc = Path(pypirc_path)
+        if pypirc.exists():
+            print(f"Using custom .pypirc: {pypirc}")
+            twine_args.extend(["--config-file", str(pypirc)])
+            return twine_args
+    
+    # Check for .pypirc in package directory
+    return twine_args
+
+
+def build_distributions(package_root: Path) -> int:
+    if shutil.which("python") is None:
+        return 1
+    try:
+        import importlib.util
+        has_build = importlib.util.find_spec("build") is not None
+    except Exception:  # pragma: no cover
+        has_build = False
+    if has_build:
+        return subprocess.call([sys.executable, "-m", "build"], cwd=package_root)
+    return subprocess.call([sys.executable, "setup.py", "sdist", "bdist_wheel"], cwd=package_root)
+
+
+def validate_version(version: str) -> None:
+    if not re.match(r"^[0-9]+\.[0-9]+\.[0-9]+", version):
+        raise ValueError(f"Invalid version: {version}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Smart package version manager and publisher")
+    parser.add_argument("package", help="Name of the package to publish")
+    parser.add_argument(
+        "--bump", 
+        type=str, 
+        choices=["none", "patch", "minor", "major"], 
+        default="none",
+        help="Version increment type (default: none)"
+    )
+    parser.add_argument(
+        "--version", 
+        type=str,
+        help="Set specific version instead of auto-incrementing"
+    )
+    parser.add_argument(
+        "--pypirc", 
+        type=str,
+        help="Path to custom .pypirc file"
+    )
+    parser.add_argument(
+        "--test", 
+        action="store_true", 
+        help="Use TestPyPI instead of PyPI"
+    )
+    parser.add_argument(
+        "--skip-existing", 
+        action="store_true", 
+        help="Skip existing versions on PyPI"
+    )
+    parser.add_argument(
+        "--no-build",
+        action="store_true",
+        help="Skip building distributions"
+    )
+    parser.add_argument(
+        "--no-upload",
+        action="store_true",
+        help="Skip uploading (build only)"
+    )
+    parser.add_argument(
+        "--repository",
+        type=str,
+        help="Named repository from .pypirc"
+    )
+    parser.add_argument(
+        "--repository-url",
+        type=str,
+        help="Custom repository URL"
+    )
+    parser.add_argument(
+        "--search-path",
+        action="append",
+        default=[],
+        help="Additional directory to search for packages (can repeat)"
+    )
+    parser.add_argument(
+        "--dry-run", 
+        action="store_true", 
+        help="Show version changes without publishing"
+    )
+    parser.add_argument(
+        "--platform",
+        type=str,
+        action="append",
+        choices=list(PLATFORM_CONFIGS.keys()),
+        help="Target platform(s) to build wheels for (can specify multiple times or 'all')"
+    )
+    
+    args = parser.parse_args()
+    
+    # Find the package directory
+    search_paths = [Path(p) for p in args.search_path]
+    package_root = find_package_root(args.package, search_paths=search_paths)
+    if not package_root:
+        print(f"Error: Could not locate package '{args.package}'")
+        print("Make sure you're running this from a directory containing the package")
+        return 1
+    
+    print(f"Found package at: {package_root}")
+    
+    # Get current version
+    current_version = get_current_version(package_root)
+    if not current_version:
+        print("Error: Could not determine current version")
+        return 1
+    
+    print(f"Current version: {current_version}")
+    
+    # Determine new version
+    if args.version:
+        new_version = args.version
+        print(f"Setting version to: {new_version}")
+    else:
+        bump = VersionBump(args.bump)
+        new_version = increment_version(current_version, bump)
+        if bump != VersionBump.NONE:
+            print(f"Incrementing version ({args.bump}): {current_version} → {new_version}")
+    try:
+        validate_version(new_version)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        return 1
+    
+    if args.dry_run:
+        if current_version != new_version:
+            print(f"Dry run: would update version from {current_version} to {new_version}")
+        else:
+            print("Dry run: version unchanged")
+        print("Dry run completed. Skipping publishing.")
+        return 0
+
+    # Update version in files
+    if current_version != new_version:
+        updated = update_package_version(package_root, current_version, new_version)
+        print(f"Updated version in {updated} files")
+    
+    # Setup authentication
+    twine_args = setup_auth(args.pypirc)
+    
+    # Add TestPyPI if requested
+    if args.test:
+        twine_args.extend(["--repository-url", "https://test.pypi.org/legacy/"])
+
+    if args.repository:
+        twine_args.extend(["--repository", args.repository])
+
+    if args.repository_url:
+        twine_args.extend(["--repository-url", args.repository_url])
+    
+    # Add skip-existing if requested
+    if args.skip_existing:
+        twine_args.append("--skip-existing")
+    
+    if args.no_upload:
+        print("Skipping upload.")
+        if args.no_build:
+            return 0
+        return build_distributions(package_root)
+
+    if args.no_build:
+        print("Skipping build; uploading existing dist/*")
+        return subprocess.call(["twine", "upload"] + twine_args + ["dist/*"], cwd=package_root)
+
+    # Run the publish command
+    return run_publish_command(package_root, twine_args, platforms=args.platform)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())

@@ -1,0 +1,185 @@
+Build Dependencies:
+  blas:
+    detection method: system
+    found: true
+    include directory: unknown
+    lib directory: unknown
+    name: blas
+    openblas configuration: unknown
+    pc file directory: unknown
+    version: unknown
+  lapack:
+    detection method: internal
+    found: true
+    include directory: unknown
+    lib directory: unknown
+    name: dep140228583157936
+    openblas configuration: unknown
+    pc file directory: unknown
+    version: 1.26.4
+Compilers:
+  c:
+    args: -g, -O2, -fno-omit-frame-pointer, -mno-omit-leaf-frame-pointer, -ffile-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=.,
+      -flto=auto, -ffat-lto-objects, -fstack-protector-strong, -fstack-clash-protection,
+      -Wformat, -Werror=format-security, -fcf-protection, -fdebug-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=/usr/src/numpy-1:1.26.4+ds-6ubuntu1,
+      -Wdate-time, -D_FORTIFY_SOURCE=3
+    commands: cc
+    linker: ld.bfd
+    linker args: -Wl,-Bsymbolic-functions, -flto=auto, -ffat-lto-objects, -Wl,-z,relro,
+      -g, -O2, -fno-omit-frame-pointer, -mno-omit-leaf-frame-pointer, -ffile-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=.,
+      -flto=auto, -ffat-lto-objects, -fstack-protector-strong, -fstack-clash-protection,
+      -Wformat, -Werror=format-security, -fcf-protection, -fdebug-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=/usr/src/numpy-1:1.26.4+ds-6ubuntu1,
+      -Wdate-time, -D_FORTIFY_SOURCE=3
+    name: gcc
+    version: 13.2.0
+  c++:
+    args: -g, -O2, -fno-omit-frame-pointer, -mno-omit-leaf-frame-pointer, -ffile-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=.,
+      -flto=auto, -ffat-lto-objects, -fstack-protector-strong, -fstack-clash-protection,
+      -Wformat, -Werror=format-security, -fcf-protection, -fdebug-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=/usr/src/numpy-1:1.26.4+ds-6ubuntu1,
+      -Wdate-time, -D_FORTIFY_SOURCE=3
+    commands: c++
+    linker: ld.bfd
+    linker args: -Wl,-Bsymbolic-functions, -flto=auto, -ffat-lto-objects, -Wl,-z,relro,
+      -g, -O2, -fno-omit-frame-pointer, -mno-omit-leaf-frame-pointer, -ffile-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=.,
+      -flto=auto, -ffat-lto-objects, -fstack-protector-strong, -fstack-clash-protection,
+      -Wformat, -Werror=format-security, -fcf-protection, -fdebug-prefix-map=/build/numpy-VpSPb5/numpy-1.26.4+ds=/usr/src/numpy-1:1.26.4+ds-6ubuntu1,
+      -Wdate-time, -D_FORTIFY_SOURCE=3
+    name: gcc
+    version: 13.2.0
+  cython:
+    commands: cython
+    linker: cython
+    name: cython
+    version: 3.0.8
+Machine Information:
+  build:
+    cpu: x86_64
+    endian: little
+    family: x86_64
+    system: linux
+  host:
+    cpu: x86_64
+    endian: little
+    family: x86_64
+    system: linux
+Python Information:
+  path: /usr/bin/python3.12
+  version: '3.12'
+SIMD Extensions:
+  baseline:
+  - SSE
+  - SSE2
+  - SSE3
+  found:
+  - SSSE3
+  - SSE41
+  - POPCNT
+  - SSE42
+  - AVX
+  - F16C
+  - FMA3
+  - AVX2
+  - AVX512F
+  - AVX512CD
+  - AVX512_SKX
+  - AVX512_CLX
+  - AVX512_CNL
+  - AVX512_ICL
+  not found:
+  - AVX512_KNL
+  - AVX512_KNM
+  - AVX512_SPR
+
+usage: glyph_stream [-h] [--webcam] [--virtual-display] [--text TEXT]
+                    [--engine {unicode,text,transformer,stream,virtual}]
+                    [--preset {standard,detailed,fast,minimal}]
+                    [--scale {1,2,3,4}] [--block-width BLOCK_WIDTH]
+                    [--block-height BLOCK_HEIGHT]
+                    [--edge-threshold EDGE_THRESHOLD] [--no-color]
+                    [--no-enhanced-edges] [--dithering] [--fps FPS]
+                    [--no-adaptive] [--no-stats] [--no-border]
+                    [--algorithm {sobel,prewitt,scharr,laplacian,canny}]
+                    [--webcam-id WEBCAM_ID] [--display-size DISPLAY_SIZE]
+                    [--font FONT] [--align {left,center,right}]
+                    [--gradient-set {standard,enhanced,braille,ascii}]
+                    [--transform {optimize,edge,dither,invert}] [--save FILE]
+                    [--format {ansi,plain,html,svg,png}] [--debug]
+                    [--launch-app LAUNCH_APP] [--benchmark] [--network-check]
+                    [--json-info] [--headless]
+                    [source]
+
+🌟 GlyphStream - Dimensional Unicode Art Transmutation Engine
+
+positional arguments:
+  source                📂 Input file path or 🔗 URL
+
+options:
+  -h, --help            show this help message and exit
+  --webcam, -w          📷 Use webcam as input
+  --virtual-display, -vd
+                        🖥️ Capture virtual display
+  --text TEXT, -tx TEXT
+                        🔠 Generate text art
+  --engine {unicode,text,transformer,stream,virtual}, -e {unicode,text,transformer,stream,virtual}
+                        🧠 Rendering engine (default: auto-selected based on
+                        input)
+  --preset {standard,detailed,fast,minimal}, -p {standard,detailed,fast,minimal}
+                        🧩 Processing preset (standard=balanced, detailed=high-
+                        quality, fast=performance, minimal=ASCII)
+  --scale {1,2,3,4}, -s {1,2,3,4}
+                        🔍 Detail enhancement factor (1-4)
+  --block-width BLOCK_WIDTH, -bw BLOCK_WIDTH
+                        ⬜ Character cell width
+  --block-height BLOCK_HEIGHT, -bh BLOCK_HEIGHT
+                        ⬜ Character cell height
+  --edge-threshold EDGE_THRESHOLD, -et EDGE_THRESHOLD
+                        🔪 Edge detection threshold (0-255)
+  --no-color            ⚫ Disable dimensional color
+  --no-enhanced-edges   ➖ Use simplified edge characters
+  --dithering, -d       🔢 Apply error diffusion dithering
+  --fps FPS, -f FPS     🎞️ Target frames per second for video
+  --no-adaptive         🔒 Disable adaptive quality adjustments
+  --no-stats            🚫 Hide performance statistics
+  --no-border           ⬜ Disable dimensional frame
+  --algorithm {sobel,prewitt,scharr,laplacian,canny}, -a {sobel,prewitt,scharr,laplacian,canny}
+                        🧪 Edge detection algorithm
+  --webcam-id WEBCAM_ID
+                        🎯 Webcam device ID (usually 0)
+  --display-size DISPLAY_SIZE
+                        📐 Virtual display size (WIDTHxHEIGHT), e.g. 1280x720
+  --font FONT           🔠 Text font name or category
+  --align {left,center,right}
+                        📏 Text alignment
+  --gradient-set {standard,enhanced,braille,ascii}
+                        🔣 Character gradient set to use
+  --transform {optimize,edge,dither,invert}, -t {optimize,edge,dither,invert}
+                        🔄 Apply transformation (can be used multiple times)
+  --save FILE, -o FILE  💾 Save output to specified file
+  --format {ansi,plain,html,svg,png}
+                        📄 Output format when saving
+  --debug               🐛 Enable debug mode with additional diagnostics
+  --launch-app LAUNCH_APP
+                        🚀 Launch application in virtual display (with
+                        --virtual-display)
+  --benchmark           ⏱️ Run benchmark and show detailed performance metrics
+  --network-check       🌐 Enable network connectivity checks
+  --json-info           📦 Print environment summary as JSON and exit
+  --headless            🚫 Disable interactive prompts when no source is
+                        provided
+
+╔════════════════════════════════════════════════════╗
+║ 🔮 Examples:                                       ║
+╟────────────────────────────────────────────────────╢
+║ glyph_stream                     # Interactive mode ║
+║ glyph_stream image.jpg           # Process image    ║
+║ glyph_stream video.mp4 --fps 30  # Process video    ║
+║ glyph_stream https://youtu.be/ID # Stream YouTube   ║
+║ glyph_stream --webcam            # Use webcam       ║
+║ glyph_stream --virtual-display   # Capture display  ║
+║ glyph_stream --text "Hello"      # Generate text    ║
+║ glyph_stream --help              # Show this help   ║
+╚════════════════════════════════════════════════════╝
+
+Neuroforge Glyph Dimensional Engine v1.0
+Lloyd Handyside <ace1928@gmail.com> • Neuroforge
+        

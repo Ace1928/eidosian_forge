@@ -1,0 +1,28 @@
+usage: forge_builder [-h] [--output-dir OUTPUT_DIR] [--config CONFIG] [--yes]
+                     [--mode {interactive,autonomous,dry-run}]
+                     [--skip-existing] [--verbose] [--parallel]
+                     [--workers WORKERS] [--version]
+                     [forge_name]
+
+🌀 Eidosian Forge Builder 🌀 - Create structured project foundations with
+elegance
+
+positional arguments:
+  forge_name            Name of the forge repo
+
+options:
+  -h, --help            show this help message and exit
+  --output-dir OUTPUT_DIR, -o OUTPUT_DIR
+                        Output directory
+  --config CONFIG       Path to JSON config file
+  --yes                 Skip prompts and use defaults
+  --mode {interactive,autonomous,dry-run}, -m {interactive,autonomous,dry-run}
+                        Operation mode
+  --skip-existing, -s   Skip existing files and directories
+  --verbose, -v         Verbose output
+  --parallel, -p        Use parallel processing for faster creation
+  --workers WORKERS, -w WORKERS
+                        Maximum number of parallel workers
+  --version             show program's version number and exit
+
+May your forge burn bright with innovation!

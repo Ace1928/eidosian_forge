@@ -1,0 +1,14 @@
+Usage: add_script --name NAME [--dir DIR] [--from-stdin] [--force]
+
+Save clipboard or stdin content as an executable script.
+
+Options:
+  --name NAME      Script name (required)
+  --dir DIR        Output directory (default: /home/lloyd/scripts)
+  --from-stdin     Read content from stdin instead of clipboard
+  --force          Overwrite existing file
+  -h, --help       Show this help
+
+Examples:
+  add_script --name my_script
+  echo '#!/usr/bin/env bash' | add_script --name my_script --from-stdin

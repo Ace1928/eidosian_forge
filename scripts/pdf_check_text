@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""
+pdf_check_text
+
+Check whether a PDF likely contains selectable text.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from pathlib import Path
+
+from lib.py_lib import require_cmd, log_error
+
+
+def check_pdf_text(pdf_file: str) -> bool:
+    result = subprocess.run(
+        ["pdftotext", pdf_file, "-"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "pdftotext failed")
+    return bool(result.stdout.strip())
+
+
+def cli_main() -> int:
+    parser = argparse.ArgumentParser(description="Check if a PDF contains text")
+    parser.add_argument("--file", help="Path to PDF file")
+    parser.add_argument("--json", action="store_true", help="Machine-readable output")
+    args = parser.parse_args()
+
+    require_cmd("pdftotext")
+
+    if args.file:
+        try:
+            has_text = check_pdf_text(args.file)
+        except Exception as exc:
+            if args.json:
+                print(f'{{"ok": false, "error": "{str(exc)}"}}')
+            else:
+                log_error(str(exc))
+            return 1
+        if args.json:
+            print(f'{{"ok": true, "has_text": {str(has_text).lower()}}}')
+        else:
+            print("has_text" if has_text else "no_text")
+        return 0
+
+    return gui_main()
+
+
+def gui_main() -> int:
+    root = tk.Tk()
+    root.title("Check if PDF Has Text")
+
+    def pick_pdf_and_check() -> None:
+        pdf_file = filedialog.askopenfilename(
+            title="Select a PDF",
+            filetypes=[("PDF Files", "*.pdf")],
+            initialdir=os.path.expanduser("~/Documents"),
+        )
+        if not pdf_file:
+            return
+        try:
+            has_text = check_pdf_text(pdf_file)
+        except Exception as exc:
+            messagebox.showerror("Error", str(exc))
+            return
+
+        if has_text:
+            messagebox.showinfo("Result", "PDF has text! (Likely not scanned.)")
+        else:
+            messagebox.showwarning("Result", "No text found (scanned or empty).")
+
+    tk.Button(root, text="Check PDF for Text", command=pick_pdf_and_check).pack(
+        padx=20, pady=20
+    )
+
+    root.mainloop()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(cli_main())

@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""
+pdf_tools_menu
+
+A GUI menu for PDF tools with optional CLI passthrough.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import tkinter as tk
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+
+def run_script(script_name: str, args: list[str]) -> int:
+    script_path = SCRIPT_DIR / script_name
+    if not script_path.exists():
+        print(f"ERROR: Missing script: {script_path}", file=sys.stderr)
+        return 1
+    return subprocess.call([sys.executable, str(script_path)] + args)
+
+
+def cli_main() -> int:
+    parser = argparse.ArgumentParser(description="PDF tools menu")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--check-text", action="store_true", help="Check if PDF has text")
+    group.add_argument("--to-text", action="store_true", help="Convert PDF to text")
+    group.add_argument("--check-encryption", action="store_true", help="Check if PDF is encrypted")
+    parser.add_argument("--file", help="PDF file path")
+    parser.add_argument("--output", help="Output text path (for --to-text)")
+    args = parser.parse_args()
+
+    if args.check_text:
+        cmd_args = ["--file", args.file] if args.file else []
+        return run_script("pdf_check_text", cmd_args)
+    if args.to_text:
+        cmd_args = []
+        if args.file:
+            cmd_args += ["--input", args.file]
+        if args.output:
+            cmd_args += ["--output", args.output]
+        return run_script("pdf_to_text", cmd_args)
+    if args.check_encryption:
+        cmd_args = ["--file", args.file] if args.file else []
+        return run_script("pdf_check_encryption", cmd_args)
+
+    return gui_main()
+
+
+def gui_main() -> int:
+    root = tk.Tk()
+    root.title("PDF Tools Menu")
+
+    def run_check_text() -> None:
+        run_script("pdf_check_text", [])
+
+    def run_convert_text() -> None:
+        run_script("pdf_to_text", [])
+
+    def run_check_encryption() -> None:
+        run_script("pdf_check_encryption", [])
+
+    tk.Button(root, text="Check If PDF Has Text", command=run_check_text).pack(
+        padx=20, pady=10
+    )
+    tk.Button(root, text="Convert PDF to TXT", command=run_convert_text).pack(
+        padx=20, pady=10
+    )
+    tk.Button(root, text="Check PDF Encryption", command=run_check_encryption).pack(
+        padx=20, pady=10
+    )
+
+    root.mainloop()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(cli_main())

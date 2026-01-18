@@ -1,0 +1,13 @@
+Usage: overwrite [--file PATH] [--from-stdin] [--force] [--no-backup] [--no-diff] [--preview] [--quiet]
+
+Overwrite a file with clipboard or stdin contents, with optional backup and diff.
+
+Options:
+  --file PATH     Target file (default: file_tree.txt)
+  --from-stdin    Read content from stdin instead of clipboard
+  --force         Skip confirmation prompt
+  --no-backup     Do not create backup
+  --no-diff       Do not show diff
+  --preview       Show a short preview of content
+  --quiet         Reduce output
+  -h, --help      Show this help

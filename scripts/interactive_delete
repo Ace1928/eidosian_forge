@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_NAME="interactive_delete"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/bash_lib.sh
+. "$SCRIPT_DIR/lib/bash_lib.sh"
+
+usage() {
+  cat <<USAGE
+Usage: $SCRIPT_NAME [--path DIR] [--exclude NAME ...] [--dry-run] [--force] [--sudo]
+
+Safely delete directories at max depth 1 under a target path.
+
+Options:
+  --path DIR        Target directory (default: current directory)
+  --exclude NAME    Exclude name pattern (can be repeated)
+  --dry-run         Show what would be deleted
+  --force           Skip confirmation prompt
+  --sudo            Use sudo for deletion
+  -h, --help        Show this help
+
+Examples:
+  $SCRIPT_NAME --path /tmp --exclude keep-me --dry-run
+  $SCRIPT_NAME --path . --exclude Documents --force
+USAGE
+}
+
+TARGET_DIR="."
+DRY_RUN=false
+FORCE=false
+USE_SUDO=false
+EXCLUSIONS=("eidos*" "mandelbulber" "Development" "scripts" "Documents" "Downloads" "Desktop" "Music" "Videos" "go")
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --path)
+      TARGET_DIR="$2"
+      shift 2
+      ;;
+    --exclude)
+      EXCLUSIONS+=("$2")
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    --force)
+      FORCE=true
+      shift
+      ;;
+    --sudo)
+      USE_SUDO=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+ done
+
+TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
+
+if [[ "$TARGET_DIR" == "/" ]]; then
+  die "Refusing to operate on root directory: $TARGET_DIR"
+fi
+
+if [[ ! -d "$TARGET_DIR" ]]; then
+  die "Target directory does not exist: $TARGET_DIR"
+fi
+
+build_find_args() {
+  local args=()
+  for excl in "${EXCLUSIONS[@]}"; do
+    args+=( ! -name "$excl" )
+  done
+  echo "${args[@]}"
+}
+
+log_info "Target: $TARGET_DIR"
+log_info "Exclusions: ${EXCLUSIONS[*]}"
+
+mapfile -t candidates < <(find "$TARGET_DIR" -mindepth 1 -maxdepth 1 -type d $(build_find_args))
+
+if [[ ${#candidates[@]} -eq 0 ]]; then
+  log_info "No candidate directories to delete."
+  exit 0
+fi
+
+log_info "Candidate directories:"
+printf '%s
+' "${candidates[@]}"
+
+if $DRY_RUN; then
+  log_info "Dry run enabled; no deletions performed."
+  exit 0
+fi
+
+if ! $FORCE; then
+  if ! confirm "Proceed with deletion of these directories?" "no"; then
+    log_info "Deletion cancelled."
+    exit 0
+  fi
+fi
+
+rm_cmd=(rm -rf)
+if $USE_SUDO; then
+  rm_cmd=(sudo rm -rf)
+fi
+
+for dir in "${candidates[@]}"; do
+  "${rm_cmd[@]}" -- "$dir"
+  log_info "Deleted: $dir"
+ done
+
+log_info "Deletion completed."

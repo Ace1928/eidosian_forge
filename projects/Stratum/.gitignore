@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Output directories
+stellar_outputs/
+stellar_runtime_outputs/
+
+# Editor/IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
