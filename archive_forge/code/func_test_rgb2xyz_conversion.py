@@ -1,0 +1,17 @@
+import colorsys
+import numpy as np
+import pytest
+from numpy.testing import assert_almost_equal, assert_array_almost_equal, assert_equal
+from skimage import data
+from skimage._shared._warnings import expected_warnings
+from skimage._shared.testing import fetch, assert_stacklevel
+from skimage._shared.utils import _supported_float_type, slice_at_axis
+from skimage.color import (
+from skimage.util import img_as_float, img_as_ubyte, img_as_float32
+@pytest.mark.parametrize('channel_axis', [0, 1, -1, -2])
+def test_rgb2xyz_conversion(self, channel_axis):
+    gt = np.array([[[0.950456, 1.0, 1.088754], [0.538003, 0.787329, 1.06942], [0.592876, 0.28484, 0.969561], [0.180423, 0.072169, 0.950227]], [[0.770033, 0.927831, 0.138527], [0.35758, 0.71516, 0.119193], [0.412453, 0.212671, 0.019334], [0.0, 0.0, 0.0]]])
+    img = np.moveaxis(self.colbars_array, source=-1, destination=channel_axis)
+    out = rgb2xyz(img, channel_axis=channel_axis)
+    out = np.moveaxis(out, source=channel_axis, destination=-1)
+    assert_almost_equal(out, gt)

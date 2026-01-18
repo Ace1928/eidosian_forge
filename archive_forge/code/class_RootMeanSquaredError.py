@@ -1,0 +1,101 @@
+import abc
+import types
+import warnings
+import numpy as np
+from tensorflow.python.autograph.core import ag_ctx
+from tensorflow.python.autograph.impl import api as autograph
+from tensorflow.python.distribute import distribute_lib
+from tensorflow.python.eager import context
+from tensorflow.python.eager import def_function
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor_conversion
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.keras import activations
+from tensorflow.python.keras import backend
+from tensorflow.python.keras.engine import base_layer
+from tensorflow.python.keras.engine import base_layer_utils
+from tensorflow.python.keras.engine import keras_tensor
+from tensorflow.python.keras.losses import binary_crossentropy
+from tensorflow.python.keras.losses import categorical_crossentropy
+from tensorflow.python.keras.losses import categorical_hinge
+from tensorflow.python.keras.losses import hinge
+from tensorflow.python.keras.losses import kullback_leibler_divergence
+from tensorflow.python.keras.losses import logcosh
+from tensorflow.python.keras.losses import mean_absolute_error
+from tensorflow.python.keras.losses import mean_absolute_percentage_error
+from tensorflow.python.keras.losses import mean_squared_error
+from tensorflow.python.keras.losses import mean_squared_logarithmic_error
+from tensorflow.python.keras.losses import poisson
+from tensorflow.python.keras.losses import sparse_categorical_crossentropy
+from tensorflow.python.keras.losses import squared_hinge
+from tensorflow.python.keras.saving.saved_model import metric_serialization
+from tensorflow.python.keras.utils import generic_utils
+from tensorflow.python.keras.utils import losses_utils
+from tensorflow.python.keras.utils import metrics_utils
+from tensorflow.python.keras.utils.generic_utils import deserialize_keras_object
+from tensorflow.python.keras.utils.generic_utils import serialize_keras_object
+from tensorflow.python.keras.utils.generic_utils import to_list
+from tensorflow.python.keras.utils.tf_utils import is_tensor_or_variable
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import check_ops
+from tensorflow.python.ops import confusion_matrix
+from tensorflow.python.ops import init_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn
+from tensorflow.python.ops import variables as variables_module
+from tensorflow.python.ops import weights_broadcast_ops
+from tensorflow.python.util import dispatch
+from tensorflow.python.util import nest
+from tensorflow.tools.docs import doc_controls
+class RootMeanSquaredError(Mean):
+    """Computes root mean squared error metric between `y_true` and `y_pred`.
+
+  Standalone usage:
+
+  >>> m = tf.keras.metrics.RootMeanSquaredError()
+  >>> m.update_state([[0, 1], [0, 0]], [[1, 1], [0, 0]])
+  >>> m.result().numpy()
+  0.5
+
+  >>> m.reset_state()
+  >>> m.update_state([[0, 1], [0, 0]], [[1, 1], [0, 0]],
+  ...                sample_weight=[1, 0])
+  >>> m.result().numpy()
+  0.70710677
+
+  Usage with `compile()` API:
+
+  ```python
+  model.compile(
+      optimizer='sgd',
+      loss='mse',
+      metrics=[tf.keras.metrics.RootMeanSquaredError()])
+  ```
+  """
+
+    def __init__(self, name='root_mean_squared_error', dtype=None):
+        super(RootMeanSquaredError, self).__init__(name, dtype=dtype)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        """Accumulates root mean squared error statistics.
+
+    Args:
+      y_true: The ground truth values.
+      y_pred: The predicted values.
+      sample_weight: Optional weighting of each example. Defaults to 1. Can be a
+        `Tensor` whose rank is either 0, or the same rank as `y_true`, and must
+        be broadcastable to `y_true`.
+
+    Returns:
+      Update op.
+    """
+        y_true = math_ops.cast(y_true, self._dtype)
+        y_pred = math_ops.cast(y_pred, self._dtype)
+        y_pred, y_true = losses_utils.squeeze_or_expand_dimensions(y_pred, y_true)
+        error_sq = math_ops.squared_difference(y_pred, y_true)
+        return super(RootMeanSquaredError, self).update_state(error_sq, sample_weight=sample_weight)
+
+    def result(self):
+        return math_ops.sqrt(math_ops.div_no_nan(self.total, self.count))

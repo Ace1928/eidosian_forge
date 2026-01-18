@@ -1,0 +1,10 @@
+import os
+import sys
+import threading
+import weakref
+from celery.local import Proxy
+from celery.utils.threads import LocalStack
+def _announce_app_finalized(app):
+    callbacks = set(_on_app_finalizers)
+    for callback in callbacks:
+        callback(app)

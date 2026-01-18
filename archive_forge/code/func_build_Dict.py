@@ -1,0 +1,23 @@
+import ast
+import dataclasses
+import inspect
+import re
+import string
+import sys
+from collections import namedtuple
+from textwrap import dedent
+from typing import List, Tuple  # noqa: F401
+import torch
+import torch.jit.annotations
+from torch import _jit_internal
+from torch._C._jit_tree_views import (
+from torch._jit_internal import (  # noqa: F401
+from torch._sources import (
+from torch.jit._dataclass_impls import DATACLASS_MAGIC_METHODS
+from torch.jit._monkeytype_config import get_qualified_name, monkeytype_trace
+@staticmethod
+def build_Dict(ctx, expr):
+    range = ctx.make_range(expr.lineno, expr.col_offset, expr.col_offset + 1)
+    if expr.keys and (not expr.keys[0]):
+        raise NotSupportedError(range, 'Dict expansion (e.g. `{**dict}`) is not supported')
+    return DictLiteral(range, [build_expr(ctx, e) for e in expr.keys], [build_expr(ctx, e) for e in expr.values])

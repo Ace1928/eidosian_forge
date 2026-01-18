@@ -1,0 +1,2 @@
+class OverwriteNewerCloudError(CloudPathException):
+    pass

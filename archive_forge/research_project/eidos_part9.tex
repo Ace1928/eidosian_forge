@@ -1,0 +1,277 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,mathtools,enumitem,geometry,hyperref,algorithm,algpseudocode}
+\geometry{letterpaper, margin=1in}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\title{Module I: Titans Memory Architecture (Multi-Layer Memory Module) \\ 
+\large Part of the Eidos Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+This module rigorously defines the \emph{Titans Memory Architecture}, a multi-layer memory system designed for test–time adaptation and continual learning within the Eidos framework. The architecture comprises multiple layers of memory including short-term, working, long-term, and personal memory. A memory bank stores key–value pairs, and a similarity-based retrieval mechanism aggregates relevant memory content via attention. A meta–learner then uses this aggregated memory read to produce adaptive parameter updates for the model. The design supports idempotent, reversible, and efficient retrieval and updating under heterogeneous hardware constraints. We present formal definitions, algorithmic descriptions, theoretical guarantees, and integration considerations with the highest academic rigor.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction and Motivation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Robust memory mechanisms are essential for adaptive systems, particularly in contexts where long-term dependencies, contextual adjustments, and continual learning are required. The \emph{Titans Memory Architecture} is engineered to support multiple layers of memory:
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Short-Term Memory:} Captures transient, context-dependent information for immediate tasks.
+    \item \textbf{Working Memory:} Maintains intermediate representations relevant to the current task or sequence.
+    \item \textbf{Long-Term Memory:} Stores persistent, significant information acquired over extended periods.
+    \item \textbf{Personal Memory:} Reflects adaptive, individualized knowledge updated continuously during deployment.
+\end{itemize}
+This module enables the system to retrieve and integrate memory efficiently at test time and to update model parameters dynamically based on retrieved information. The design emphasizes modularity, scalability, and hardware-agnostic deployment, ensuring that even models with extensive memory components can be efficiently managed.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries and Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We define the following notation to be used throughout this module:
+
+\begin{itemize}[label=\(\bullet\)]
+    \item Let \( r \in \mathbb{R}^{d_L} \) denote a latent representation of an input, computed by an encoder \( g_\theta \) from a deep model.
+    \item The memory bank is denoted by 
+    \[
+      \mathcal{M} = \{ (k_i, v_i) \mid i = 1,\dots, M_{\mathcal{M}} \},
+    \]
+    where:
+    \begin{itemize}[label=\(\circ\)]
+        \item \( k_i \in \mathbb{R}^{d_k} \) is the key corresponding to a stored memory element,
+        \item \( v_i \in \mathbb{R}^{d_v} \) is the associated value (which may encode feature corrections, gradient information, or auxiliary signals).
+    \end{itemize}
+    \item A similarity function is defined as:
+    \[
+      s: \mathbb{R}^{d_L} \times \mathbb{R}^{d_k} \to \mathbb{R},
+    \]
+    for instance, using cosine similarity:
+    \[
+      s(r, k_i) = \frac{\langle W_s r,\, k_i \rangle}{\|W_s r\|\|k_i\|},
+    \]
+    where \( W_s \in \mathbb{R}^{d_L \times d_k} \) is a learnable projection matrix.
+    \item A temperature parameter \(\tau > 0\) is used to scale similarity scores.
+    \item Attention weights over the memory are computed as:
+    \[
+      \alpha_i(x) = \frac{\exp\bigl(s(r,k_i)/\tau\bigr)}{\sum_{j=1}^{M_{\mathcal{M}}} \exp\bigl(s(r,k_j)/\tau\bigr)}.
+    \]
+    \item The aggregated memory read is defined as:
+    \[
+      m(x) = \sum_{i=1}^{M_{\mathcal{M}}} \alpha_i(x) \, v_i \in \mathbb{R}^{d_v}.
+    \]
+    \item A meta–learner is defined as:
+    \[
+      h: \mathbb{R}^{d_v} \to \mathbb{R}^{p},
+    \]
+    which maps the memory read \( m(x) \) to an update vector \(\Delta\theta(x)\) for the model parameters.
+    \item The adapted parameters are given by:
+    \[
+      \theta_x = \theta + \Delta\theta(x),
+    \]
+    where \(\theta\) are the base model parameters.
+    \item The architecture is \emph{multi-layered}, partitioning \(\mathcal{M}\) into sub-banks:
+    \[
+      \mathcal{M} = \mathcal{M}_{\text{short}} \cup \mathcal{M}_{\text{working}} \cup \mathcal{M}_{\text{long}} \cup \mathcal{M}_{\text{personal}},
+    \]
+    each of which may be processed with different weights or retrieval strategies.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Definitions and Mathematical Formulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Definition I.1 (Memory Bank)}
+The memory bank is defined as:
+\[
+\mathcal{M} = \{ (k_i, v_i) \mid i = 1,\dots, M_{\mathcal{M}} \},
+\]
+where for each \( i \):
+\begin{itemize}[label=\(\circ\)]
+    \item \( k_i \in \mathbb{R}^{d_k} \) is the key vector associated with a particular memory unit.
+    \item \( v_i \in \mathbb{R}^{d_v} \) is the corresponding value vector, which encodes information such as contextual corrections or learned feature adjustments.
+\end{itemize}
+
+\subsection*{Definition I.2 (Memory Retrieval Mechanism)}
+Given a latent representation \( r \in \mathbb{R}^{d_L} \) derived from an input \( x \) by an encoder \( g_\theta \), the similarity between \( r \) and each memory key \( k_i \) is computed as:
+\[
+s(r,k_i) = \frac{\langle W_s r,\, k_i \rangle}{\|W_s r\| \, \|k_i\|},
+\]
+where \( W_s \in \mathbb{R}^{d_L \times d_k} \) is a learnable projection. The attention weight for each memory slot is then:
+\[
+\alpha_i(x) = \frac{\exp\bigl(s(r,k_i)/\tau\bigr)}{\sum_{j=1}^{M_{\mathcal{M}}} \exp\bigl(s(r,k_j)/\tau\bigr)}.
+\]
+The aggregated memory read is defined by:
+\[
+m(x) = \sum_{i=1}^{M_{\mathcal{M}}} \alpha_i(x) \, v_i.
+\]
+
+\subsection*{Definition I.3 (Meta–Learner for Test-Time Adaptation)}
+The meta–learner is a function:
+\[
+h: \mathbb{R}^{d_v} \to \mathbb{R}^p,
+\]
+which computes a parameter update:
+\[
+\Delta\theta(x) = h\bigl(m(x)\bigr).
+\]
+The model parameters are adapted at test time via:
+\[
+\theta_x = \theta + \Delta\theta(x),
+\]
+where \(\theta \in \Theta\) are the base parameters.
+
+\subsection*{Definition I.4 (Multi-Layer Memory Structure)}
+We partition the memory bank into hierarchical layers:
+\[
+\mathcal{M} = \mathcal{M}_{\text{short}} \cup \mathcal{M}_{\text{working}} \cup \mathcal{M}_{\text{long}} \cup \mathcal{M}_{\text{personal}},
+\]
+where:
+\begin{itemize}[label=\(\circ\)]
+    \item \(\mathcal{M}_{\text{short}}\) stores transient, context-specific information.
+    \item \(\mathcal{M}_{\text{working}}\) maintains task-related intermediate representations.
+    \item \(\mathcal{M}_{\text{long}}\) holds persistent information acquired over extended periods.
+    \item \(\mathcal{M}_{\text{personal}}\) captures adaptive, user- or domain-specific knowledge.
+\end{itemize}
+Each sub-bank can be processed using a specialized similarity function \( s_\ell \) and may be aggregated via weighted summation:
+\[
+m(x) = \sum_{\ell \in \{\text{short, working, long, personal}\}} w_\ell \, m_\ell(x),
+\]
+where:
+\[
+m_\ell(x) = \sum_{i \in I_\ell} \alpha_i^{(\ell)}(x) \, v_i^{(\ell)},
+\]
+with \( I_\ell \) indexing the memory units in layer \(\ell\), and \( w_\ell \) are weights (learned or pre-defined) governing the contribution of each layer.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithmic Description}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following pseudocode details the operation of the Titans Memory Architecture, including memory retrieval, aggregation, and test–time parameter adaptation.
+
+\begin{algorithm}[H]
+\caption{Titans Memory Architecture: Memory Retrieval and Adaptation}
+\label{alg:memory}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Test input \( x \in \mathcal{X} \); encoder \( g_\theta \); memory banks \( \{\mathcal{M}_\ell\}_{\ell \in \{\text{short, working, long, personal}\}} \); temperature \( \tau \); meta–learner \( h \)
+    \State \textbf{Output:} Adapted parameters \( \theta_x \) or direct prediction update
+    \State \textbf{Compute:} Latent representation \( r \gets g_\theta(x) \in \mathbb{R}^{d_L} \)
+    \For{each memory layer \(\ell\) in \{\text{short, working, long, personal}\}}
+        \For{each memory unit \( (k_i^{(\ell)}, v_i^{(\ell)}) \in \mathcal{M}_\ell \)}
+            \State Compute similarity: \( s_i^{(\ell)} \gets s_\ell(r, k_i^{(\ell)}) \)
+        \EndFor
+        \State Compute attention weights:
+        \[
+          \alpha_i^{(\ell)} \gets \frac{\exp\bigl(s_i^{(\ell)}/\tau\bigr)}{\sum_{j \in I_\ell} \exp\bigl(s_j^{(\ell)}/\tau\bigr)}
+        \]
+        \State Aggregate memory read for layer \(\ell\):
+        \[
+          m_\ell(x) \gets \sum_{i \in I_\ell} \alpha_i^{(\ell)} \, v_i^{(\ell)}
+        \]
+    \EndFor
+    \State \textbf{Combine Layers:} 
+    \[
+      m(x) \gets \sum_{\ell} w_\ell \, m_\ell(x)
+    \]
+    \State \textbf{Meta–Learner Update:}  
+    \[
+      \Delta\theta(x) \gets h\bigl(m(x)\bigr)
+    \]
+    \State Update parameters: 
+    \[
+      \theta_x \gets \theta + \Delta\theta(x)
+    \]
+    \State \textbf{Return:} \( \theta_x \) (or use \( \theta_x \) to compute prediction \( \hat{y} = f_{\theta_x}(x) \))
+\end{algorithmic}
+\end{algorithm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theoretical Analysis and Guarantees}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Theorem I.1 (Convergence and Stability of Memory Read)}
+\textbf{Statement:}  
+Assume that for each layer \(\ell\), the similarity function \( s_\ell \) is bounded and the attention weights \( \alpha_i^{(\ell)} \) form a probability distribution. Then, for any input \( x \), the aggregated memory read
+\[
+m(x) = \sum_{\ell} w_\ell \left(\sum_{i \in I_\ell} \alpha_i^{(\ell)}\, v_i^{(\ell)}\right)
+\]
+is a well-defined, bounded vector. Furthermore, if the memory banks are updated in a controlled manner, then the meta–learner update \( \Delta\theta(x) = h(m(x)) \) converges, and repeated adaptation leads to a stable parameter set \( \theta_x \).
+
+\textbf{Proof Sketch:}  
+Since \( \alpha_i^{(\ell)} \ge 0 \) and \(\sum_{i \in I_\ell} \alpha_i^{(\ell)} = 1\), each \( m_\ell(x) \) is a convex combination of bounded vectors \( v_i^{(\ell)} \). Hence, \( m(x) \) is bounded. Under standard assumptions on the contraction properties of \( h \) (e.g., Lipschitz continuity with a constant less than one), iterative updates will converge to a fixed point. \(\Box\)
+
+\subsection*{Proposition I.2 (Scalability)}
+The hierarchical partitioning of \(\mathcal{M}\) into layers enables the system to scale with the overall amount of memory. Since each layer is managed separately and combined via weighted summation, the in-memory retrieval operations remain efficient even as the total number of memory units grows.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration with the Overall Eidos Framework}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Module I, the Titans Memory Architecture, is a critical component of the Eidos system. It:
+\begin{itemize}[label=\(\bullet\)]
+    \item Provides a multi-layer memory system that supports test–time adaptation and continual learning.
+    \item Interfaces with the Core Model Architectures (Module H) by supplying adaptive updates through the meta–learner.
+    \item Receives latent representations from upstream modules (e.g., contextual embeddings from Module E) and aggregates memory information to influence model parameters.
+    \item Supports real-time updates and retrieval, ensuring that the system remains adaptive to new data and domain shifts.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Considerations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Efficient Storage:}  
+    Memory banks should be implemented using data structures optimized for sparse retrieval and vector operations (e.g., approximate nearest neighbor search structures).
+    \item \textbf{Parallel Retrieval:}  
+    Similarity computations and attention weight calculations can be parallelized across memory layers.
+    \item \textbf{Dynamic Weighting:}  
+    The weights \( w_\ell \) for combining memory layers may be learned or set based on domain knowledge to reflect the relative importance of each memory type.
+    \item \textbf{Meta–Learner Design:}  
+    The function \( h \) should be designed to produce small, stable updates to the model parameters and may itself be a shallow neural network.
+    \item \textbf{Resource Constraints:}  
+    Considerations for computational resources (e.g., GPU memory) should guide the number of memory units retained in active memory.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In this module, we have rigorously defined the Titans Memory Architecture, a multi-layer memory system essential for test–time adaptation and continual learning in the Eidos framework. The module:
+\begin{itemize}[label=\(\bullet\)]
+    \item Introduces a memory bank \( \mathcal{M} \) partitioned into hierarchical layers (short-term, working, long-term, and personal).
+    \item Defines a similarity-based retrieval mechanism that computes attention weights \( \alpha_i(x) \) over memory units.
+    \item Aggregates memory reads from different layers via weighted summation.
+    \item Utilizes a meta–learner \( h \) to convert the aggregated memory read into adaptive parameter updates.
+    \item Provides theoretical guarantees regarding the boundedness, convergence, and scalability of the memory retrieval process.
+\end{itemize}
+This architecture enables the overall system to adapt dynamically to new data and contextual changes, thereby enhancing model performance and robustness in diverse environments.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Module Summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{Completed:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module A: Input Processing.
+    \item Module B: Universal Communication \& Data Handling Interface and Coordination.
+    \item Module C: Universal Streaming/Handling/Loading/Indexing Module.
+    \item Module D: Multidimensional Vocabulary and Tokenization System.
+    \item Module E: Contextual NLU/NLP Embedding and Multidimensional Tokenization.
+    \item Module F: Deep Knowledge Graphs System (Base and Personal).
+    \item Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating.
+    \item Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style).
+    \item Module I: Titans Memory Architecture (Multi-Layer Memory Module).
+\end{itemize}
+\textbf{Remaining Modules:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module J: Recursive Adaptive Dynamic Idempotent Feedback and State-Based Runtime Learning and Inference.
+    \item Module K: Universal Training System.
+    \item Module L: Final Decoding and Multimodal Output.
+\end{itemize}
+
+\end{document}

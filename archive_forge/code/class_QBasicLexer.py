@@ -1,0 +1,26 @@
+import re
+from pygments.lexer import RegexLexer, bygroups, default, words, include
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class QBasicLexer(RegexLexer):
+    """
+    For
+    `QBasic <http://en.wikipedia.org/wiki/QBasic>`_
+    source code.
+
+    .. versionadded:: 2.0
+    """
+    name = 'QBasic'
+    aliases = ['qbasic', 'basic']
+    filenames = ['*.BAS', '*.bas']
+    mimetypes = ['text/basic']
+    declarations = ('DATA', 'LET')
+    functions = ('ABS', 'ASC', 'ATN', 'CDBL', 'CHR$', 'CINT', 'CLNG', 'COMMAND$', 'COS', 'CSNG', 'CSRLIN', 'CVD', 'CVDMBF', 'CVI', 'CVL', 'CVS', 'CVSMBF', 'DATE$', 'ENVIRON$', 'EOF', 'ERDEV', 'ERDEV$', 'ERL', 'ERR', 'EXP', 'FILEATTR', 'FIX', 'FRE', 'FREEFILE', 'HEX$', 'INKEY$', 'INP', 'INPUT$', 'INSTR', 'INT', 'IOCTL$', 'LBOUND', 'LCASE$', 'LEFT$', 'LEN', 'LOC', 'LOF', 'LOG', 'LPOS', 'LTRIM$', 'MID$', 'MKD$', 'MKDMBF$', 'MKI$', 'MKL$', 'MKS$', 'MKSMBF$', 'OCT$', 'PEEK', 'PEN', 'PLAY', 'PMAP', 'POINT', 'POS', 'RIGHT$', 'RND', 'RTRIM$', 'SADD', 'SCREEN', 'SEEK', 'SETMEM', 'SGN', 'SIN', 'SPACE$', 'SPC', 'SQR', 'STICK', 'STR$', 'STRIG', 'STRING$', 'TAB', 'TAN', 'TIME$', 'TIMER', 'UBOUND', 'UCASE$', 'VAL', 'VARPTR', 'VARPTR$', 'VARSEG')
+    metacommands = ('$DYNAMIC', '$INCLUDE', '$STATIC')
+    operators = ('AND', 'EQV', 'IMP', 'NOT', 'OR', 'XOR')
+    statements = ('BEEP', 'BLOAD', 'BSAVE', 'CALL', 'CALL ABSOLUTE', 'CALL INTERRUPT', 'CALLS', 'CHAIN', 'CHDIR', 'CIRCLE', 'CLEAR', 'CLOSE', 'CLS', 'COLOR', 'COM', 'COMMON', 'CONST', 'DATA', 'DATE$', 'DECLARE', 'DEF FN', 'DEF SEG', 'DEFDBL', 'DEFINT', 'DEFLNG', 'DEFSNG', 'DEFSTR', 'DEF', 'DIM', 'DO', 'LOOP', 'DRAW', 'END', 'ENVIRON', 'ERASE', 'ERROR', 'EXIT', 'FIELD', 'FILES', 'FOR', 'NEXT', 'FUNCTION', 'GET', 'GOSUB', 'GOTO', 'IF', 'THEN', 'INPUT', 'INPUT #', 'IOCTL', 'KEY', 'KEY', 'KILL', 'LET', 'LINE', 'LINE INPUT', 'LINE INPUT #', 'LOCATE', 'LOCK', 'UNLOCK', 'LPRINT', 'LSET', 'MID$', 'MKDIR', 'NAME', 'ON COM', 'ON ERROR', 'ON KEY', 'ON PEN', 'ON PLAY', 'ON STRIG', 'ON TIMER', 'ON UEVENT', 'ON', 'OPEN', 'OPEN COM', 'OPTION BASE', 'OUT', 'PAINT', 'PALETTE', 'PCOPY', 'PEN', 'PLAY', 'POKE', 'PRESET', 'PRINT', 'PRINT #', 'PRINT USING', 'PSET', 'PUT', 'PUT', 'RANDOMIZE', 'READ', 'REDIM', 'REM', 'RESET', 'RESTORE', 'RESUME', 'RETURN', 'RMDIR', 'RSET', 'RUN', 'SCREEN', 'SEEK', 'SELECT CASE', 'SHARED', 'SHELL', 'SLEEP', 'SOUND', 'STATIC', 'STOP', 'STRIG', 'SUB', 'SWAP', 'SYSTEM', 'TIME$', 'TIMER', 'TROFF', 'TRON', 'TYPE', 'UEVENT', 'UNLOCK', 'VIEW', 'WAIT', 'WHILE', 'WEND', 'WIDTH', 'WINDOW', 'WRITE')
+    keywords = ('ACCESS', 'ALIAS', 'ANY', 'APPEND', 'AS', 'BASE', 'BINARY', 'BYVAL', 'CASE', 'CDECL', 'DOUBLE', 'ELSE', 'ELSEIF', 'ENDIF', 'INTEGER', 'IS', 'LIST', 'LOCAL', 'LONG', 'LOOP', 'MOD', 'NEXT', 'OFF', 'ON', 'OUTPUT', 'RANDOM', 'SIGNAL', 'SINGLE', 'STEP', 'STRING', 'THEN', 'TO', 'UNTIL', 'USING', 'WEND')
+    tokens = {'root': [('\\n+', Text), ('\\s+', Text.Whitespace), ('^(\\s*)(\\d*)(\\s*)(REM .*)$', bygroups(Text.Whitespace, Name.Label, Text.Whitespace, Comment.Single)), ('^(\\s*)(\\d+)(\\s*)', bygroups(Text.Whitespace, Name.Label, Text.Whitespace)), ('(?=[\\s]*)(\\w+)(?=[\\s]*=)', Name.Variable.Global), ('(?=[^"]*)\\\'.*$', Comment.Single), ('"[^\\n"]*"', String.Double), ('(END)(\\s+)(FUNCTION|IF|SELECT|SUB)', bygroups(Keyword.Reserved, Text.Whitespace, Keyword.Reserved)), ('(DECLARE)(\\s+)([A-Z]+)(\\s+)(\\S+)', bygroups(Keyword.Declaration, Text.Whitespace, Name.Variable, Text.Whitespace, Name)), ('(DIM)(\\s+)(SHARED)(\\s+)([^\\s(]+)', bygroups(Keyword.Declaration, Text.Whitespace, Name.Variable, Text.Whitespace, Name.Variable.Global)), ('(DIM)(\\s+)([^\\s(]+)', bygroups(Keyword.Declaration, Text.Whitespace, Name.Variable.Global)), ('^(\\s*)([a-zA-Z_]+)(\\s*)(\\=)', bygroups(Text.Whitespace, Name.Variable.Global, Text.Whitespace, Operator)), ('(GOTO|GOSUB)(\\s+)(\\w+\\:?)', bygroups(Keyword.Reserved, Text.Whitespace, Name.Label)), ('(SUB)(\\s+)(\\w+\\:?)', bygroups(Keyword.Reserved, Text.Whitespace, Name.Label)), include('declarations'), include('functions'), include('metacommands'), include('operators'), include('statements'), include('keywords'), ('[a-zA-Z_]\\w*[$@#&!]', Name.Variable.Global), ('[a-zA-Z_]\\w*\\:', Name.Label), ('\\-?\\d*\\.\\d+[@|#]?', Number.Float), ('\\-?\\d+[@|#]', Number.Float), ('\\-?\\d+#?', Number.Integer.Long), ('\\-?\\d+#?', Number.Integer), ('!=|==|:=|\\.=|<<|>>|[-~+/\\\\*%=<>&^|?:!.]', Operator), ('[\\[\\]{}(),;]', Punctuation), ('[\\w]+', Name.Variable.Global)], 'declarations': [('\\b(%s)(?=\\(|\\b)' % '|'.join(map(re.escape, declarations)), Keyword.Declaration)], 'functions': [('\\b(%s)(?=\\(|\\b)' % '|'.join(map(re.escape, functions)), Keyword.Reserved)], 'metacommands': [('\\b(%s)(?=\\(|\\b)' % '|'.join(map(re.escape, metacommands)), Keyword.Constant)], 'operators': [('\\b(%s)(?=\\(|\\b)' % '|'.join(map(re.escape, operators)), Operator.Word)], 'statements': [('\\b(%s)\\b' % '|'.join(map(re.escape, statements)), Keyword.Reserved)], 'keywords': [('\\b(%s)\\b' % '|'.join(keywords), Keyword)]}
+
+    def analyse_text(text):
+        if '$DYNAMIC' in text or '$STATIC' in text:
+            return 0.9

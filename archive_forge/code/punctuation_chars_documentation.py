@@ -1,0 +1,10 @@
+import sys, re
+import unicodedata
+Test whether `c1` and `c2` are a matching open/close character pair.
+
+    Matching open/close pairs are at the same position in
+    `punctuation_chars.openers` and `punctuation_chars.closers`.
+    The pairing of open/close quotes is ambiguous due to  different
+    typographic conventions in different languages,
+    so we test for additional matches stored in `quote_pairs`.
+    

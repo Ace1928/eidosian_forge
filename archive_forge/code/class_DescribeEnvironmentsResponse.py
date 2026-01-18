@@ -1,0 +1,13 @@
+from datetime import datetime
+from boto.compat import six
+class DescribeEnvironmentsResponse(Response):
+
+    def __init__(self, response):
+        response = response['DescribeEnvironmentsResponse']
+        super(DescribeEnvironmentsResponse, self).__init__(response)
+        response = response['DescribeEnvironmentsResult']
+        self.environments = []
+        if response['Environments']:
+            for member in response['Environments']:
+                environment = EnvironmentDescription(member)
+                self.environments.append(environment)

@@ -1,0 +1,16 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def ll_pdf_preview_signature_as_pixmap(w, h, lang, signer, appearance_flags, graphic, reason, location):
+    """ Low-level wrapper for `::pdf_preview_signature_as_pixmap()`."""
+    return _mupdf.ll_pdf_preview_signature_as_pixmap(w, h, lang, signer, appearance_flags, graphic, reason, location)

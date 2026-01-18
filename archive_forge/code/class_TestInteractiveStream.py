@@ -1,0 +1,50 @@
+from unittest.mock import Mock
+import numpy as np
+import panel as pn
+from bokeh.document import Document
+from pyviz_comms import Comm
+import holoviews as hv
+from holoviews.streams import (
+from .test_plot import TestPlotlyPlot
+class TestInteractiveStream(TestPlotlyPlot):
+
+    def test_interactive_streams(self):
+        ys = np.arange(10)
+        scatter1 = hv.Scatter(ys)
+        scatter2 = hv.Scatter(ys)
+        scatter3 = hv.Scatter(ys)
+        rangexy1 = RangeXY(source=scatter1)
+        boundsxy2a = BoundsXY(source=scatter2)
+        boundsxy2b = BoundsXY(source=scatter2)
+        rangexy3 = RangeXY(source=scatter3)
+        boundsxy3 = BoundsXY(source=scatter3)
+        selection1d3 = Selection1D(source=scatter3)
+        layout = scatter1 + scatter2 + scatter3
+        layout_pane = pn.pane.HoloViews(layout, backend='plotly')
+        doc = Document()
+        comm = Comm()
+        layout_pane.get_root(doc, comm)
+        _, plotly_pane = next(iter(layout_pane._plots.values()))
+        plotly_pane.viewport = {'xaxis.range': [1, 3], 'yaxis.range': [2, 4], 'xaxis2.range': [3, 5], 'yaxis2.range': [4, 6], 'xaxis3.range': [5, 7], 'yaxis3.range': [6, 8]}
+        self.assertEqual(rangexy1.x_range, (1, 3))
+        self.assertEqual(rangexy1.y_range, (2, 4))
+        self.assertEqual(rangexy3.x_range, (5, 7))
+        self.assertEqual(rangexy3.y_range, (6, 8))
+        plotly_pane.viewport = None
+        self.assertIsNone(rangexy1.x_range)
+        self.assertIsNone(rangexy1.y_range)
+        self.assertIsNone(rangexy3.x_range)
+        self.assertIsNone(rangexy3.y_range)
+        plotly_pane.selected_data = {'points': [], 'range': {'x2': [10, 20], 'y2': [11, 22]}}
+        self.assertEqual(boundsxy2a.bounds, (10, 11, 20, 22))
+        self.assertEqual(boundsxy2b.bounds, (10, 11, 20, 22))
+        plotly_pane.selected_data = {'points': [{'curveNumber': 2, 'pointNumber': 0}, {'curveNumber': 2, 'pointNumber': 3}, {'curveNumber': 2, 'pointNumber': 7}], 'range': {'x3': [0, 5], 'y3': [1, 6]}}
+        self.assertEqual(boundsxy3.bounds, (0, 1, 5, 6))
+        self.assertEqual(selection1d3.index, [0, 3, 7])
+        self.assertIsNone(boundsxy2a.bounds)
+        self.assertIsNone(boundsxy2b.bounds)
+        plotly_pane.selected_data = None
+        self.assertIsNone(boundsxy3.bounds)
+        self.assertIsNone(boundsxy2a.bounds)
+        self.assertIsNone(boundsxy2b.bounds)
+        self.assertEqual(selection1d3.index, [])

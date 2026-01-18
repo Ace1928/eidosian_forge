@@ -1,0 +1,17 @@
+from typing import Any, Dict
+def _resolve_schema_references(schema: Any, definitions: Dict[str, Any]) -> Any:
+    """
+    Resolves the $ref keys in a JSON schema object using the provided definitions.
+    """
+    if isinstance(schema, list):
+        for i, item in enumerate(schema):
+            schema[i] = _resolve_schema_references(item, definitions)
+    elif isinstance(schema, dict):
+        if '$ref' in schema:
+            ref_key = schema.pop('$ref').split('/')[-1]
+            ref = definitions.get(ref_key, {})
+            schema.update(ref)
+        else:
+            for key, value in schema.items():
+                schema[key] = _resolve_schema_references(value, definitions)
+    return schema

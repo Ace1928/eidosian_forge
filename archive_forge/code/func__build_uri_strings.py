@@ -1,0 +1,22 @@
+import boto
+import os
+import sys
+import textwrap
+from boto.s3.deletemarker import DeleteMarker
+from boto.exception import BotoClientError
+from boto.exception import InvalidUriError
+def _build_uri_strings(self):
+    if self.bucket_name and self.object_name:
+        self.versionless_uri = '%s://%s/%s' % (self.scheme, self.bucket_name, self.object_name)
+        if self.generation:
+            self.version_specific_uri = '%s#%s' % (self.versionless_uri, self.generation)
+        elif self.version_id:
+            self.version_specific_uri = '%s#%s' % (self.versionless_uri, self.version_id)
+        if self.is_version_specific:
+            self.uri = self.version_specific_uri
+        else:
+            self.uri = self.versionless_uri
+    elif self.bucket_name:
+        self.uri = '%s://%s/' % (self.scheme, self.bucket_name)
+    else:
+        self.uri = '%s://' % self.scheme

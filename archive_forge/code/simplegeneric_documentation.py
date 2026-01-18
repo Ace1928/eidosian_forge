@@ -1,0 +1,1 @@
+Decorator to add a method to be called for the given object(s)

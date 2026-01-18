@@ -1,0 +1,5 @@
+import pytest
+from .roundtrip import round_trip, dedent, round_trip_load, round_trip_dump
+@pytest.mark.xfail(strict=True)
+def test_indent_not_retained(self):
+    round_trip('\n        verbosity: 1                  # 0 is minimal output, -1 none\n        base_url: http://gopher.net\n        special_indices: [1, 5, 8]\n        also_special:\n        - a\n        - 19\n        - 32\n        asia and europe: &asia_europe\n            Turkey: Ankara\n            Russia: Moscow\n        countries:\n            Asia:\n                <<: *asia_europe\n                Japan: Tokyo # 東京\n            Europe:\n                <<: *asia_europe\n                Spain: Madrid\n                Italy: Rome\n            Antarctica:\n            -   too cold\n        ')

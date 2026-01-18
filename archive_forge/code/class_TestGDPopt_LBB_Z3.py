@@ -1,0 +1,63 @@
+from io import StringIO
+import logging
+from math import fabs
+from os.path import abspath, dirname, join, normpath
+import pyomo.common.unittest as unittest
+from pyomo.common.fileutils import import_file
+from pyomo.common.log import LoggingIntercept
+import pyomo.contrib.gdpopt.tests.common_tests as ct
+from pyomo.contrib.satsolver.satsolver import z3_available
+from pyomo.environ import SolverFactory, value, ConcreteModel, Var, Objective, maximize
+from pyomo.gdp import Disjunction
+from pyomo.opt import TerminationCondition
+@unittest.skipUnless(solver_available, 'Required subsolver %s is not available' % (minlp_solver,))
+@unittest.skipUnless(z3_available, 'Z3 SAT solver is not available.')
+class TestGDPopt_LBB_Z3(unittest.TestCase):
+    """Tests for logic-based branch and bound with Z3 SAT solver integration."""
+
+    def test_infeasible_GDP(self):
+        """Test for infeasible GDP."""
+        m = ConcreteModel()
+        m.x = Var(bounds=(0, 2))
+        m.d = Disjunction(expr=[[m.x ** 2 >= 3, m.x >= 3], [m.x ** 2 <= -1, m.x <= -1]])
+        m.o = Objective(expr=m.x)
+        result = SolverFactory('gdpopt.lbb').solve(m, tee=False, minlp_solver=minlp_solver, minlp_solver_args=minlp_args)
+        self.assertEqual(result.solver.termination_condition, TerminationCondition.infeasible)
+        self.assertEqual(result.solver.termination_condition, TerminationCondition.infeasible)
+        self.assertIsNone(m.x.value)
+        self.assertIsNone(m.d.disjuncts[0].indicator_var.value)
+        self.assertIsNone(m.d.disjuncts[1].indicator_var.value)
+
+    @unittest.skipUnless(license_available, 'Problem is too big for unlicensed BARON.')
+    def test_LBB_8PP(self):
+        """Test the logic-based branch and bound algorithm."""
+        exfile = import_file(join(exdir, 'eight_process', 'eight_proc_model.py'))
+        eight_process = exfile.build_eight_process_flowsheet()
+        results = SolverFactory('gdpopt.lbb').solve(eight_process, tee=False, check_sat=True, minlp_solver=minlp_solver, minlp_solver_args=minlp_args)
+        ct.check_8PP_solution(self, eight_process, results)
+
+    @unittest.skipUnless(license_available, 'Problem is too big for unlicensed BARON.')
+    def test_LBB_strip_pack(self):
+        """Test logic-based branch and bound with strip packing."""
+        exfile = import_file(join(exdir, 'strip_packing', 'strip_packing_concrete.py'))
+        strip_pack = exfile.build_rect_strip_packing_model()
+        SolverFactory('gdpopt.lbb').solve(strip_pack, tee=False, check_sat=True, minlp_solver=minlp_solver, minlp_solver_args=minlp_args)
+        self.assertTrue(fabs(value(strip_pack.total_length.expr) - 11) <= 0.01)
+
+    @unittest.skipUnless(license_available, 'Problem is too big for unlicensed BARON.')
+    @unittest.pytest.mark.expensive
+    def test_LBB_constrained_layout(self):
+        """Test LBB with constrained layout."""
+        exfile = import_file(join(exdir, 'constrained_layout', 'cons_layout_model.py'))
+        cons_layout = exfile.build_constrained_layout_model()
+        SolverFactory('gdpopt.lbb').solve(cons_layout, tee=False, check_sat=True, minlp_solver=minlp_solver, minlp_solver_args=minlp_args)
+        objective_value = value(cons_layout.min_dist_cost.expr)
+        self.assertTrue(fabs(objective_value - 41573) <= 200, 'Objective value of %s instead of 41573' % objective_value)
+
+    def test_LBB_ex_633_trespalacios(self):
+        """Test LBB with Francisco thesis example."""
+        exfile = import_file(join(exdir, 'small_lit', 'ex_633_trespalacios.py'))
+        model = exfile.build_simple_nonconvex_gdp()
+        SolverFactory('gdpopt').solve(model, algorithm='LBB', tee=False, check_sat=True, minlp_solver=minlp_solver, minlp_solver_args=minlp_args)
+        objective_value = value(model.obj.expr)
+        self.assertAlmostEqual(objective_value, 4.46, 2)

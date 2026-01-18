@@ -1,0 +1,50 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+class AzureRMBackupPolicyInfo(AzureRMModuleBase):
+    """Information class for an Azure RM Backup Policy"""
+
+    def __init__(self):
+        self.module_arg_spec = dict(vault_name=dict(type='str', required=True), name=dict(type='str', required=True), resource_group=dict(type='str', required=True))
+        self.vault_name = None
+        self.name = None
+        self.resource_group = None
+        self.log_path = None
+        self.log_mode = None
+        self.results = dict(id=None, changed=False)
+        super(AzureRMBackupPolicyInfo, self).__init__(derived_arg_spec=self.module_arg_spec, supports_check_mode=True, supports_tags=False, facts_module=True)
+
+    def exec_module(self, **kwargs):
+        """Main module execution method"""
+        for key in self.module_arg_spec:
+            setattr(self, key, kwargs[key])
+        existing_backup_policy = None
+        response = None
+        existing_backup_policy = self.get_backup_policy()
+        self.set_results(existing_backup_policy)
+        return self.results
+
+    def get_backup_policy(self):
+        """
+        Gets the properties of the specified backup policy.
+
+        :return: ProtectionPolicyResource
+        """
+        self.log('Checking if the backup policy {0} for vault {1} in resource group {2} is present'.format(self.name, self.vault_name, self.resource_group))
+        policy = None
+        try:
+            policy = self.recovery_services_backup_client.protection_policies.get(vault_name=self.vault_name, resource_group_name=self.resource_group, policy_name=self.name)
+        except ResourceNotFoundError as ex:
+            self.log('Could not find backup policy {0} for vault {1} in resource group {2}'.format(self.name, self.vault_name, self.resource_group))
+        return policy
+
+    def set_results(self, policy):
+        if policy:
+            self.results['id'] = policy.id
+            self.results['location'] = policy.location
+            self.results['name'] = policy.name
+            self.results['type'] = policy.type
+        else:
+            self.results['id'] = None
+            self.results['location'] = None
+            self.results['name'] = None
+            self.results['type'] = None

@@ -1,0 +1,14 @@
+import copy
+from unittest import mock
+from osc_lib.tests import utils as osctestutils
+from ironicclient import exc
+from ironicclient.osc.v1 import baremetal_volume_target as bm_vol_target
+from ironicclient.tests.unit.osc.v1 import fakes as baremetal_fakes
+def test_baremetal_volume_target_delete_multiple(self):
+    fake_volume_target_uuid2 = 'vvv-tttttt-tttt'
+    arglist = [baremetal_fakes.baremetal_volume_target_uuid, fake_volume_target_uuid2]
+    verifylist = [('volume_targets', [baremetal_fakes.baremetal_volume_target_uuid, fake_volume_target_uuid2])]
+    parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+    self.cmd.take_action(parsed_args)
+    self.baremetal_mock.volume_target.delete.assert_has_calls([mock.call(baremetal_fakes.baremetal_volume_target_uuid), mock.call(fake_volume_target_uuid2)])
+    self.assertEqual(2, self.baremetal_mock.volume_target.delete.call_count)

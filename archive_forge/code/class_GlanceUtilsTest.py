@@ -1,0 +1,31 @@
+from unittest import mock
+import uuid
+from glanceclient import exc
+from heat.engine.clients import client_exception as exception
+from heat.engine.clients.os import glance
+from heat.tests import common
+from heat.tests import utils
+class GlanceUtilsTest(common.HeatTestCase):
+    """Basic tests for :module:'heat.engine.resources.clients.os.glance'."""
+
+    def setUp(self):
+        super(GlanceUtilsTest, self).setUp()
+        self.glance_client = mock.MagicMock()
+        con = utils.dummy_context()
+        c = con.clients
+        self.glance_plugin = c.client_plugin('glance')
+        self.glance_plugin.client = lambda: self.glance_client
+        self.my_image = mock.MagicMock()
+
+    def test_find_image_by_name_or_id(self):
+        """Tests the find_image_by_name_or_id function."""
+        img_id = str(uuid.uuid4())
+        img_name = 'myfakeimage'
+        self.my_image.id = img_id
+        self.my_image.name = img_name
+        self.glance_client.images.get.side_effect = [self.my_image, exc.HTTPNotFound(), exc.HTTPNotFound(), exc.HTTPNotFound()]
+        self.glance_client.images.list.side_effect = [[self.my_image], [], [self.my_image, self.my_image]]
+        self.assertEqual(img_id, self.glance_plugin.find_image_by_name_or_id(img_id))
+        self.assertEqual(img_id, self.glance_plugin.find_image_by_name_or_id(img_name))
+        self.assertRaises(exception.EntityMatchNotFound, self.glance_plugin.find_image_by_name_or_id, 'noimage')
+        self.assertRaises(exception.EntityUniqueMatchNotFound, self.glance_plugin.find_image_by_name_or_id, 'myfakeimage')

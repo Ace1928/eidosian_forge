@@ -1,0 +1,21 @@
+import os
+from ..base import (
+class JistLaminarVolumetricLayeringInputSpec(CommandLineInputSpec):
+    inInner = File(desc='Inner Distance Image (GM/WM boundary)', exists=True, argstr='--inInner %s')
+    inOuter = File(desc='Outer Distance Image (CSF/GM boundary)', exists=True, argstr='--inOuter %s')
+    inNumber = traits.Int(desc='Number of layers', argstr='--inNumber %d')
+    inMax = traits.Int(desc='Max iterations for narrow band evolution', argstr='--inMax %d')
+    inMin = traits.Float(desc='Min change ratio for narrow band evolution', argstr='--inMin %f')
+    inLayering = traits.Enum('distance-preserving', 'volume-preserving', desc='Layering method', argstr='--inLayering %s')
+    inLayering2 = traits.Enum('outward', 'inward', desc='Layering direction', argstr='--inLayering2 %s')
+    incurvature = traits.Int(desc='curvature approximation scale (voxels)', argstr='--incurvature %d')
+    inratio = traits.Float(desc='ratio smoothing kernel size (voxels)', argstr='--inratio %f')
+    inpresmooth = traits.Enum('true', 'false', desc='pre-smooth cortical surfaces', argstr='--inpresmooth %s')
+    inTopology = traits.Enum('26/6', '6/26', '18/6', '6/18', '6/6', 'wcs', 'wco', 'no', desc='Topology', argstr='--inTopology %s')
+    xPrefExt = traits.Enum('nrrd', desc='Output File Type', argstr='--xPrefExt %s')
+    outContinuous = traits.Either(traits.Bool, File(), hash_files=False, desc='Continuous depth measurement', argstr='--outContinuous %s')
+    outDiscrete = traits.Either(traits.Bool, File(), hash_files=False, desc='Discrete sampled layers', argstr='--outDiscrete %s')
+    outLayer = traits.Either(traits.Bool, File(), hash_files=False, desc='Layer boundary surfaces', argstr='--outLayer %s')
+    null = traits.Str(desc='Execution Time', argstr='--null %s')
+    xDefaultMem = traits.Int(desc='Set default maximum heap size', argstr='-xDefaultMem %d')
+    xMaxProcess = traits.Int(1, desc='Set default maximum number of processes.', argstr='-xMaxProcess %d', usedefault=True)

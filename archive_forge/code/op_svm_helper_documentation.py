@@ -1,0 +1,3 @@
+from typing import Any
+import numpy as np
+Base class for SVM.

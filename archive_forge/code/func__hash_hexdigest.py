@@ -1,0 +1,24 @@
+import copy
+import hashlib
+import math
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import warnings
+from cupy.cuda import device
+from cupy.cuda import function
+from cupy.cuda import get_rocm_path
+from cupy_backends.cuda.api import driver
+from cupy_backends.cuda.api import runtime
+from cupy_backends.cuda.libs import nvrtc
+from cupy import _util
+def _hash_hexdigest(value):
+    if _has_usedforsecurity:
+        hashobj = hashlib.sha1(value, usedforsecurity=False)
+    else:
+        hashobj = hashlib.sha1(value)
+    return hashobj.hexdigest()

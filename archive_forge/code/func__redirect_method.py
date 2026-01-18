@@ -1,0 +1,35 @@
+from __future__ import annotations
+import datetime
+import enum
+import logging
+import typing
+import warnings
+from contextlib import asynccontextmanager, contextmanager
+from types import TracebackType
+from .__version__ import __version__
+from ._auth import Auth, BasicAuth, FunctionAuth
+from ._config import (
+from ._decoders import SUPPORTED_DECODERS
+from ._exceptions import (
+from ._models import Cookies, Headers, Request, Response
+from ._status_codes import codes
+from ._transports.asgi import ASGITransport
+from ._transports.base import AsyncBaseTransport, BaseTransport
+from ._transports.default import AsyncHTTPTransport, HTTPTransport
+from ._transports.wsgi import WSGITransport
+from ._types import (
+from ._urls import URL, QueryParams
+from ._utils import (
+def _redirect_method(self, request: Request, response: Response) -> str:
+    """
+        When being redirected we may want to change the method of the request
+        based on certain specs or browser behavior.
+        """
+    method = request.method
+    if response.status_code == codes.SEE_OTHER and method != 'HEAD':
+        method = 'GET'
+    if response.status_code == codes.FOUND and method != 'HEAD':
+        method = 'GET'
+    if response.status_code == codes.MOVED_PERMANENTLY and method == 'POST':
+        method = 'GET'
+    return method

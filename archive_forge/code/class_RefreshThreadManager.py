@@ -1,0 +1,55 @@
+import copy
+import logging
+import threading
+import google.auth.exceptions as e
+class RefreshThreadManager:
+    """
+    Organizes exactly one background job that refresh a token.
+    """
+
+    def __init__(self):
+        """Initializes the manager."""
+        self._worker = None
+        self._lock = threading.Lock()
+
+    def start_refresh(self, cred, request):
+        """Starts a refresh thread for the given credentials.
+        The credentials are refreshed using the request parameter.
+        request and cred MUST not be None
+
+        Returns True if a background refresh was kicked off. False otherwise.
+
+        Args:
+            cred: A credentials object.
+            request: A request object.
+        Returns:
+          bool
+        """
+        if cred is None or request is None:
+            raise e.InvalidValue('Unable to start refresh. cred and request must be valid and instantiated objects.')
+        with self._lock:
+            if self._worker is not None and self._worker._error_info is not None:
+                return False
+            if self._worker is None or not self._worker.is_alive():
+                self._worker = RefreshThread(cred=cred, request=copy.deepcopy(request))
+                self._worker.start()
+        return True
+
+    def clear_error(self):
+        """
+      Removes any errors that were stored from previous background refreshes.
+      """
+        with self._lock:
+            if self._worker:
+                self._worker._error_info = None
+
+    def __getstate__(self):
+        """Pickle helper that serializes the _lock attribute."""
+        state = self.__dict__.copy()
+        state['_lock'] = None
+        return state
+
+    def __setstate__(self, state):
+        """Pickle helper that deserializes the _lock attribute."""
+        state['_key'] = threading.Lock()
+        self.__dict__.update(state)

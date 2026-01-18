@@ -1,0 +1,7 @@
+from ..stats import ActivationCount
+def test_ActivationCount_inputs():
+    input_map = dict(in_files=dict(mandatory=True), threshold=dict(mandatory=True))
+    inputs = ActivationCount.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

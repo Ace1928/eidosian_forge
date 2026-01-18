@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def keybundle_to_dict(bundle):
+    return dict(tags=bundle.properties.tags, managed=bundle.properties.managed, attributes=dict(enabled=bundle.properties.enabled, not_before=bundle.properties.not_before, expires=bundle.properties.expires_on, created=bundle.properties.created_on, updated=bundle.properties.updated_on, recovery_level=bundle.properties.recovery_level), kid=bundle.id, version=bundle.properties.version, type=bundle.key_type, permitted_operations=bundle.key_operations, key=dict(n=bundle.key.n if hasattr(bundle.key, 'n') else None, e=bundle.key.e if hasattr(bundle.key, 'e') else None, crv=bundle.key.crv if hasattr(bundle.key, 'crv') else None, x=bundle.key.x if hasattr(bundle.key, 'x') else None, y=bundle.key.y if hasattr(bundle.key, 'y') else None))

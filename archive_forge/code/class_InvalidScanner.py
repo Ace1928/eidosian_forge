@@ -1,0 +1,2 @@
+class InvalidScanner(PlexError):
+    pass

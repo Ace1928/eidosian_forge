@@ -1,0 +1,21 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def fz_is_libarchive_archive(self):
+    """
+        Class-aware wrapper for `::fz_is_libarchive_archive()`.
+        	Detect if stream object is an archive supported by libarchive.
+
+        	Assumes that the stream object is seekable.
+        """
+    return _mupdf.FzStream_fz_is_libarchive_archive(self)

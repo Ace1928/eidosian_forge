@@ -1,0 +1,193 @@
+import socket
+import sys
+import threading
+from contextlib import suppress
+from . import Adapter
+from .. import errors
+from .._compat import IS_ABOVE_OPENSSL10
+from ..makefile import StreamReader, StreamWriter
+from ..server import HTTPServer
+class BuiltinSSLAdapter(Adapter):
+    """Wrapper for integrating Python's builtin :py:mod:`ssl` with Cheroot."""
+    certificate = None
+    'The file name of the server SSL certificate.'
+    private_key = None
+    "The file name of the server's private key file."
+    certificate_chain = None
+    'The file name of the certificate chain file.'
+    ciphers = None
+    'The ciphers list of SSL.'
+    CERT_KEY_TO_ENV = {'version': 'M_VERSION', 'serialNumber': 'M_SERIAL', 'notBefore': 'V_START', 'notAfter': 'V_END', 'subject': 'S_DN', 'issuer': 'I_DN', 'subjectAltName': 'SAN'}
+    CERT_KEY_TO_LDAP_CODE = {'countryName': 'C', 'stateOrProvinceName': 'ST', 'localityName': 'L', 'organizationName': 'O', 'organizationalUnitName': 'OU', 'commonName': 'CN', 'title': 'T', 'initials': 'I', 'givenName': 'G', 'surname': 'S', 'description': 'D', 'userid': 'UID', 'emailAddress': 'Email'}
+
+    def __init__(self, certificate, private_key, certificate_chain=None, ciphers=None):
+        """Set up context in addition to base class properties if available."""
+        if ssl is None:
+            raise ImportError('You must install the ssl module to use HTTPS.')
+        super(BuiltinSSLAdapter, self).__init__(certificate, private_key, certificate_chain, ciphers)
+        self.context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH, cafile=certificate_chain)
+        self.context.load_cert_chain(certificate, private_key)
+        if self.ciphers is not None:
+            self.context.set_ciphers(ciphers)
+        self._server_env = self._make_env_cert_dict('SSL_SERVER', _parse_cert(certificate, private_key, self.certificate_chain))
+        if not self._server_env:
+            return
+        cert = None
+        with open(certificate, mode='rt') as f:
+            cert = f.read()
+        cert_start = cert.find(ssl.PEM_HEADER)
+        if cert_start == -1:
+            return
+        cert_end = cert.find(ssl.PEM_FOOTER, cert_start)
+        if cert_end == -1:
+            return
+        cert_end += len(ssl.PEM_FOOTER)
+        self._server_env['SSL_SERVER_CERT'] = cert[cert_start:cert_end]
+
+    @property
+    def context(self):
+        """:py:class:`~ssl.SSLContext` that will be used to wrap sockets."""
+        return self._context
+
+    @context.setter
+    def context(self, context):
+        """Set the ssl ``context`` to use."""
+        self._context = context
+        with suppress(AttributeError):
+            if ssl.HAS_SNI and context.sni_callback is None:
+                context.sni_callback = _sni_callback
+
+    def bind(self, sock):
+        """Wrap and return the given socket."""
+        return super(BuiltinSSLAdapter, self).bind(sock)
+
+    def wrap(self, sock):
+        """Wrap and return the given socket, plus WSGI environ entries."""
+        EMPTY_RESULT = (None, {})
+        try:
+            s = self.context.wrap_socket(sock, do_handshake_on_connect=True, server_side=True)
+        except ssl.SSLError as ex:
+            if ex.errno == ssl.SSL_ERROR_EOF:
+                return EMPTY_RESULT
+            elif ex.errno == ssl.SSL_ERROR_SSL:
+                if _assert_ssl_exc_contains(ex, 'http request'):
+                    raise errors.NoSSLError
+                _block_errors = ('unknown protocol', 'unknown ca', 'unknown_ca', 'unknown error', 'https proxy request', 'inappropriate fallback', 'wrong version number', 'no shared cipher', 'certificate unknown', 'ccs received early', 'certificate verify failed', 'version too low', 'unsupported protocol')
+                if _assert_ssl_exc_contains(ex, *_block_errors):
+                    return EMPTY_RESULT
+            elif _assert_ssl_exc_contains(ex, 'handshake operation timed out'):
+                return EMPTY_RESULT
+            raise
+        except generic_socket_error as exc:
+            "It is unclear why exactly this happens.\n\n            It's reproducible only with openssl>1.0 and stdlib\n            :py:mod:`ssl` wrapper.\n            In CherryPy it's triggered by Checker plugin, which connects\n            to the app listening to the socket port in TLS mode via plain\n            HTTP during startup (from the same process).\n\n\n            Ref: https://github.com/cherrypy/cherrypy/issues/1618\n            "
+            is_error0 = exc.args == (0, 'Error')
+            if is_error0 and IS_ABOVE_OPENSSL10:
+                return EMPTY_RESULT
+            raise
+        return (s, self.get_environ(s))
+
+    def get_environ(self, sock):
+        """Create WSGI environ entries to be merged into each request."""
+        cipher = sock.cipher()
+        ssl_environ = {'wsgi.url_scheme': 'https', 'HTTPS': 'on', 'SSL_PROTOCOL': cipher[1], 'SSL_CIPHER': cipher[0], 'SSL_CIPHER_EXPORT': '', 'SSL_CIPHER_USEKEYSIZE': cipher[2], 'SSL_VERSION_INTERFACE': '%s Python/%s' % (HTTPServer.version, sys.version), 'SSL_VERSION_LIBRARY': ssl.OPENSSL_VERSION, 'SSL_CLIENT_VERIFY': 'NONE'}
+        with suppress(AttributeError):
+            compression = sock.compression()
+            if compression is not None:
+                ssl_environ['SSL_COMPRESS_METHOD'] = compression
+        with suppress(AttributeError):
+            ssl_environ['SSL_SESSION_ID'] = sock.session.id.hex()
+        with suppress(AttributeError):
+            target_cipher = cipher[:2]
+            for cip in sock.context.get_ciphers():
+                if target_cipher == (cip['name'], cip['protocol']):
+                    ssl_environ['SSL_CIPHER_ALGKEYSIZE'] = cip['alg_bits']
+                    break
+        with suppress(AttributeError):
+            ssl_environ['SSL_TLS_SNI'] = sock.sni
+        if self.context and self.context.verify_mode != ssl.CERT_NONE:
+            client_cert = sock.getpeercert()
+            if client_cert:
+                ssl_environ['SSL_CLIENT_VERIFY'] = 'SUCCESS'
+                ssl_environ.update(self._make_env_cert_dict('SSL_CLIENT', client_cert))
+                ssl_environ['SSL_CLIENT_CERT'] = ssl.DER_cert_to_PEM_cert(sock.getpeercert(binary_form=True)).strip()
+        ssl_environ.update(self._server_env)
+        return ssl_environ
+
+    def _make_env_cert_dict(self, env_prefix, parsed_cert):
+        """Return a dict of WSGI environment variables for a certificate.
+
+        E.g. SSL_CLIENT_M_VERSION, SSL_CLIENT_M_SERIAL, etc.
+        See https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#envvars.
+        """
+        if not parsed_cert:
+            return {}
+        env = {}
+        for cert_key, env_var in self.CERT_KEY_TO_ENV.items():
+            key = '%s_%s' % (env_prefix, env_var)
+            value = parsed_cert.get(cert_key)
+            if env_var == 'SAN':
+                env.update(self._make_env_san_dict(key, value))
+            elif env_var.endswith('_DN'):
+                env.update(self._make_env_dn_dict(key, value))
+            else:
+                env[key] = str(value)
+        if 'notBefore' in parsed_cert:
+            remain = ssl.cert_time_to_seconds(parsed_cert['notAfter'])
+            remain -= ssl.cert_time_to_seconds(parsed_cert['notBefore'])
+            remain /= 60 * 60 * 24
+            env['%s_V_REMAIN' % (env_prefix,)] = str(int(remain))
+        return env
+
+    def _make_env_san_dict(self, env_prefix, cert_value):
+        """Return a dict of WSGI environment variables for a certificate DN.
+
+        E.g. SSL_CLIENT_SAN_Email_0, SSL_CLIENT_SAN_DNS_0, etc.
+        See SSL_CLIENT_SAN_* at
+        https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#envvars.
+        """
+        if not cert_value:
+            return {}
+        env = {}
+        dns_count = 0
+        email_count = 0
+        for attr_name, val in cert_value:
+            if attr_name == 'DNS':
+                env['%s_DNS_%i' % (env_prefix, dns_count)] = val
+                dns_count += 1
+            elif attr_name == 'Email':
+                env['%s_Email_%i' % (env_prefix, email_count)] = val
+                email_count += 1
+        return env
+
+    def _make_env_dn_dict(self, env_prefix, cert_value):
+        """Return a dict of WSGI environment variables for a certificate DN.
+
+        E.g. SSL_CLIENT_S_DN_CN, SSL_CLIENT_S_DN_C, etc.
+        See SSL_CLIENT_S_DN_x509 at
+        https://httpd.apache.org/docs/2.4/mod/mod_ssl.html#envvars.
+        """
+        if not cert_value:
+            return {}
+        dn = []
+        dn_attrs = {}
+        for rdn in cert_value:
+            for attr_name, val in rdn:
+                attr_code = self.CERT_KEY_TO_LDAP_CODE.get(attr_name)
+                dn.append('%s=%s' % (attr_code or attr_name, val))
+                if not attr_code:
+                    continue
+                dn_attrs.setdefault(attr_code, [])
+                dn_attrs[attr_code].append(val)
+        env = {env_prefix: ','.join(dn)}
+        for attr_code, values in dn_attrs.items():
+            env['%s_%s' % (env_prefix, attr_code)] = ','.join(values)
+            if len(values) == 1:
+                continue
+            for i, val in enumerate(values):
+                env['%s_%s_%i' % (env_prefix, attr_code, i)] = val
+        return env
+
+    def makefile(self, sock, mode='r', bufsize=DEFAULT_BUFFER_SIZE):
+        """Return socket file object."""
+        cls = StreamReader if 'r' in mode else StreamWriter
+        return cls(sock, mode, bufsize)

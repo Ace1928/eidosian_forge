@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.util.apis import yaml_data
+from googlecloudsdk.command_lib.util.args import common_args
+from googlecloudsdk.command_lib.util.args import resource_args
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+def AddFeedAssetNamesArgs(parser):
+    parser.add_argument('--asset-names', metavar='ASSET_NAMES', type=arg_parsers.ArgList(), default=[], help='A comma-separated list of the full names of the assets to receive updates. For example: `//compute.googleapis.com/projects/my_project_123/zones/zone1/instances/instance1`. For more information, see: https://cloud.google.com/apis/design/resource_names#full_resource_name')

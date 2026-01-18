@@ -1,0 +1,23 @@
+from __future__ import absolute_import
+from apitools.base.py import base_api
+from googlecloudsdk.generated_clients.apis.dlp.v2 import dlp_v2_messages as messages
+class ProjectsLocationsImageService(base_api.BaseApiService):
+    """Service class for the projects_locations_image resource."""
+    _NAME = 'projects_locations_image'
+
+    def __init__(self, client):
+        super(DlpV2.ProjectsLocationsImageService, self).__init__(client)
+        self._upload_configs = {}
+
+    def Redact(self, request, global_params=None):
+        """Redacts potentially sensitive info from an image. This method has limits on input size, processing time, and output size. See https://cloud.google.com/sensitive-data-protection/docs/redacting-sensitive-data-images to learn more. When no InfoTypes or CustomInfoTypes are specified in this request, the system will automatically choose what detectors to run. By default this may be all types, but may change over time as detectors are updated.
+
+      Args:
+        request: (DlpProjectsLocationsImageRedactRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GooglePrivacyDlpV2RedactImageResponse) The response message.
+      """
+        config = self.GetMethodConfig('Redact')
+        return self._RunMethod(config, request, global_params=global_params)
+    Redact.method_config = lambda: base_api.ApiMethodInfo(flat_path='v2/projects/{projectsId}/locations/{locationsId}/image:redact', http_method='POST', method_id='dlp.projects.locations.image.redact', ordered_params=['parent'], path_params=['parent'], query_params=[], relative_path='v2/{+parent}/image:redact', request_field='googlePrivacyDlpV2RedactImageRequest', request_type_name='DlpProjectsLocationsImageRedactRequest', response_type_name='GooglePrivacyDlpV2RedactImageResponse', supports_download=False)

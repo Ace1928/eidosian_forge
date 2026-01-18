@@ -1,0 +1,2 @@
+class CudaRuntimeError(Exception):
+    pass

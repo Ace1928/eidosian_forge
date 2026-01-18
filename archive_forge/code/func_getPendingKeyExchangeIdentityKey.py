@@ -1,0 +1,12 @@
+from . import storageprotos_pb2 as storageprotos
+from ..identitykeypair import IdentityKey, IdentityKeyPair
+from ..ratchet.rootkey import RootKey
+from ..kdf.hkdf import HKDF
+from ..ecc.curve import Curve
+from ..ecc.eckeypair import ECKeyPair
+from ..ratchet.chainkey import ChainKey
+from ..kdf.messagekeys import MessageKeys
+def getPendingKeyExchangeIdentityKey(self):
+    publicKey = IdentityKey(bytearray(self.sessionStructure.pendingKeyExchange.localIdentityKey), 0)
+    privateKey = Curve.decodePrivatePoint(self.sessionStructure.pendingKeyExchange.localIdentityKeyPrivate)
+    return IdentityKeyPair(publicKey, privateKey)

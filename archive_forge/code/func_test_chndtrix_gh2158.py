@@ -1,0 +1,11 @@
+import itertools
+import numpy as np
+from numpy.testing import assert_equal, assert_allclose
+import pytest
+import scipy.special as sp
+from scipy.special._testutils import (
+from scipy.special._mptestutils import (
+def test_chndtrix_gh2158():
+    res = sp.chndtrix(0.999999, 2, np.arange(20.0) + 1e-06)
+    res_exp = [27.63103493142305, 35.2572858995054, 39.97396073236288, 43.88033702110538, 47.35206403482798, 50.54112500166103, 53.52720257322766, 56.3583004286781, 59.06600769498512, 61.67243118946381, 64.19376191277179, 66.64228141346548, 69.0275692720018, 71.35726934749408, 73.63759723904816, 75.87368842650227, 78.0698443118572, 80.22971052389806, 82.35640899964173, 84.45263768373256]
+    assert_allclose(res, res_exp)

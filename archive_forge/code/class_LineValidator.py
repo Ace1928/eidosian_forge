@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class LineValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='line', parent_name='box.marker', **kwargs):
+        super(LineValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Line'), data_docs=kwargs.pop('data_docs', '\n            color\n                Sets the marker.line color. It accepts either a\n                specific color or an array of numbers that are\n                mapped to the colorscale relative to the max\n                and min values of the array or relative to\n                `marker.line.cmin` and `marker.line.cmax` if\n                set.\n            outliercolor\n                Sets the border line color of the outlier\n                sample points. Defaults to marker.color\n            outlierwidth\n                Sets the border line width (in px) of the\n                outlier sample points.\n            width\n                Sets the width (in px) of the lines bounding\n                the marker points.\n'), **kwargs)

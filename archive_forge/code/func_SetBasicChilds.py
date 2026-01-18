@@ -1,0 +1,53 @@
+import numpy as np
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+from ase import Atoms
+from ase.utils import writer
+def SetBasicChilds():
+    """
+    Basic property setup for Material Studio File
+    """
+    XSD = ET.Element('XSD')
+    XSD.set('Version', '6.0')
+    ATR = SetChild(XSD, 'AtomisticTreeRoot', dict(ID='1', NumProperties='40', NumChildren='1'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='AngleEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='BendBendEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='BendTorsionBendEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='BondEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='EFGAsymmetry', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='EFGQuadrupolarCoupling', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='ElectrostaticEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='GrowthFace', Name='FaceMillerIndex', Type='MillerIndex'))
+    SetChild(ATR, 'Property', dict(DefinedOn='GrowthFace', Name='FacetTransparency', Type='Float'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Bondable', Name='Force', Type='CoDirection'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='HydrogenBondEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Bondable', Name='ImportOrder', Type='UnsignedInteger'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='InversionEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='IsBackboneAtom', Type='Boolean'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='IsChiralCenter', Type='Boolean'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='IsOutOfPlane', Type='Boolean'))
+    SetChild(ATR, 'Property', dict(DefinedOn='BestFitLineMonitor', Name='LineExtentPadding', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Linkage', Name='LinkageGroupName', Type='String'))
+    SetChild(ATR, 'Property', dict(DefinedOn='PropertyList', Name='ListIdentifier', Type='String'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Atom', Name='NMRShielding', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='NonBondEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Bondable', Name='NormalMode', Type='Direction'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Bondable', Name='NormalModeFrequency', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Bondable', Name='OrbitalCutoffRadius', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='BestFitPlaneMonitor', Name='PlaneExtentPadding', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='PotentialEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ScalarFieldBase', Name='QuantizationValue', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='RestraintEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='SeparatedStretchStretchEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='Trajectory', Name='SimulationStep', Type='Integer'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='StretchBendStretchEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='StretchStretchEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='StretchTorsionStretchEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='TorsionBendBendEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='TorsionEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='TorsionStretchEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='ValenceCrossTermEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='ValenceDiagonalEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='ClassicalEnergyHolder', Name='VanDerWaalsEnergy', Type='Double'))
+    SetChild(ATR, 'Property', dict(DefinedOn='SymmetrySystem', Name='_Stress', Type='Matrix'))
+    return (ATR, XSD)

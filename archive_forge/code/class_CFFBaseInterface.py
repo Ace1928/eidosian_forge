@@ -1,0 +1,4 @@
+from ..base import LibraryBaseInterface
+from ...utils.misc import package_check
+class CFFBaseInterface(LibraryBaseInterface):
+    _pkg = 'cfflib'

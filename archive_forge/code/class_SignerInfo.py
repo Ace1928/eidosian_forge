@@ -1,0 +1,3 @@
+from pyasn1_modules.rfc2459 import *
+class SignerInfo(univ.Sequence):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('version', Version()), namedtype.NamedType('issuerAndSerialNumber', IssuerAndSerialNumber()), namedtype.NamedType('digestAlgorithm', DigestAlgorithmIdentifier()), namedtype.OptionalNamedType('authenticatedAttributes', Attributes().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))), namedtype.NamedType('digestEncryptionAlgorithm', DigestEncryptionAlgorithmIdentifier()), namedtype.NamedType('encryptedDigest', EncryptedDigest()), namedtype.OptionalNamedType('unauthenticatedAttributes', Attributes().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))))

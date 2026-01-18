@@ -1,0 +1,6 @@
+import unittest
+def _check_handler_complex_diamond(self):
+    handler = self.log_handler
+    self.assertEqual(1, len(handler.records))
+    record = handler.records[0]
+    self.assertEqual('\n'.join((l.rstrip() for l in record.getMessage().splitlines())), 'Object <InterfaceClass zope.interface.tests.test_ro.A> has different legacy and C3 MROs:\n  Legacy RO (len=7)                 C3 RO (len=7; inconsistent=no)\n  ==================================================================\n    zope.interface.tests.test_ro.A    zope.interface.tests.test_ro.A\n    zope.interface.tests.test_ro.B    zope.interface.tests.test_ro.B\n  - zope.interface.tests.test_ro.E\n    zope.interface.tests.test_ro.C    zope.interface.tests.test_ro.C\n    zope.interface.tests.test_ro.D    zope.interface.tests.test_ro.D\n                                    + zope.interface.tests.test_ro.E\n    zope.interface.tests.test_ro.F    zope.interface.tests.test_ro.F\n    zope.interface.Interface          zope.interface.Interface')

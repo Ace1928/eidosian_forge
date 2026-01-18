@@ -1,0 +1,35 @@
+from unittest import mock
+from osc_lib import exceptions
+from openstackclient.network.v2 import network_qos_rule
+from openstackclient.tests.unit.network.v2 import fakes as network_fakes
+from openstackclient.tests.unit import utils as tests_utils
+class TestDeleteNetworkQosRuleMinimumPacketRate(TestNetworkQosRule):
+
+    def setUp(self):
+        super(TestDeleteNetworkQosRuleMinimumPacketRate, self).setUp()
+        attrs = {'qos_policy_id': self.qos_policy.id, 'type': RULE_TYPE_MINIMUM_PACKET_RATE}
+        self.new_rule = network_fakes.FakeNetworkQosRule.create_one_qos_rule(attrs)
+        self.qos_policy.rules = [self.new_rule]
+        self.network_client.delete_qos_minimum_packet_rate_rule = mock.Mock(return_value=None)
+        self.network_client.find_qos_minimum_packet_rate_rule = network_fakes.FakeNetworkQosRule.get_qos_rules(qos_rules=self.new_rule)
+        self.cmd = network_qos_rule.DeleteNetworkQosRule(self.app, self.namespace)
+
+    def test_qos_policy_delete(self):
+        arglist = [self.new_rule.qos_policy_id, self.new_rule.id]
+        verifylist = [('qos_policy', self.new_rule.qos_policy_id), ('id', self.new_rule.id)]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.network_client.find_qos_policy.assert_called_once_with(self.qos_policy.id, ignore_missing=False)
+        self.network_client.delete_qos_minimum_packet_rate_rule.assert_called_once_with(self.new_rule.id, self.qos_policy.id)
+        self.assertIsNone(result)
+
+    def test_qos_policy_delete_error(self):
+        arglist = [self.new_rule.qos_policy_id, self.new_rule.id]
+        verifylist = [('qos_policy', self.new_rule.qos_policy_id), ('id', self.new_rule.id)]
+        self.network_client.delete_qos_minimum_packet_rate_rule.side_effect = Exception('Error message')
+        try:
+            parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+            self.cmd.take_action(parsed_args)
+        except exceptions.CommandError as e:
+            msg = 'Failed to delete Network QoS rule ID "%(rule)s": %(e)s' % {'rule': self.new_rule.id, 'e': 'Error message'}
+            self.assertEqual(msg, str(e))

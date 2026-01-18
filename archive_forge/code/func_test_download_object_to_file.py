@@ -1,0 +1,42 @@
+import random
+import string
+import tempfile
+from testtools import content
+from openstack import exceptions
+from openstack.tests.functional import base
+def test_download_object_to_file(self):
+    """Test uploading small and large files."""
+    container_name = self.getUniqueString('container')
+    self.addDetail('container', content.text_content(container_name))
+    self.addCleanup(self.user_cloud.delete_container, container_name)
+    self.user_cloud.create_container(container_name)
+    self.assertEqual(container_name, self.user_cloud.list_containers()[0]['name'])
+    sizes = ((64 * 1024, 1), (64 * 1024, 5))
+    for size, nseg in sizes:
+        fake_content = ''
+        segment_size = int(round(size / nseg))
+        with tempfile.NamedTemporaryFile() as fake_file:
+            fake_content = ''.join((random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(size))).encode('latin-1')
+            fake_file.write(fake_content)
+            fake_file.flush()
+            name = 'test-%d' % size
+            self.addCleanup(self.user_cloud.delete_object, container_name, name)
+            self.user_cloud.create_object(container_name, name, fake_file.name, segment_size=segment_size, metadata={'foo': 'bar'})
+            self.assertFalse(self.user_cloud.is_object_stale(container_name, name, fake_file.name))
+        self.assertEqual('bar', self.user_cloud.get_object_metadata(container_name, name)['foo'])
+        self.user_cloud.update_object(container=container_name, name=name, metadata={'testk': 'testv'})
+        self.assertEqual('testv', self.user_cloud.get_object_metadata(container_name, name)['testk'])
+        try:
+            with tempfile.NamedTemporaryFile() as fake_file:
+                self.user_cloud.get_object(container_name, name, outfile=fake_file.name)
+                downloaded_content = open(fake_file.name, 'rb').read()
+                self.assertEqual(fake_content, downloaded_content)
+        except exceptions.SDKException as e:
+            self.addDetail('failed_response', content.text_content(str(e.response.headers)))
+            self.addDetail('failed_response', content.text_content(e.response.text))
+            raise
+        self.assertEqual(name, self.user_cloud.list_objects(container_name)[0]['name'])
+        self.assertTrue(self.user_cloud.delete_object(container_name, name))
+    self.assertEqual([], self.user_cloud.list_objects(container_name))
+    self.assertEqual(container_name, self.user_cloud.list_containers()[0]['name'])
+    self.user_cloud.delete_container(container_name)

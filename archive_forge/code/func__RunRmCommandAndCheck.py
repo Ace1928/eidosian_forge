@@ -1,0 +1,44 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+import os
+import re
+import sys
+from unittest import mock
+from gslib.exception import NO_URLS_MATCHED_PREFIX
+from gslib.exception import NO_URLS_MATCHED_TARGET
+import gslib.tests.testcase as testcase
+from gslib.tests.testcase.base import MAX_BUCKET_LENGTH
+from gslib.tests.testcase.integration_testcase import SkipForS3
+import gslib.tests.util as util
+from gslib.tests.util import GenerationFromURI as urigen
+from gslib.tests.util import ObjectToURI as suri
+from gslib.tests.util import SetBotoConfigForTest
+from gslib.tests.util import SetEnvironmentForTest
+from gslib.utils import shim_util
+from gslib.utils.retry_util import Retry
+@Retry(AssertionError, tries=5, timeout_secs=1)
+def _RunRmCommandAndCheck():
+    """Runs/retries the command updating+checking cumulative output."""
+    stderr = self.RunGsUtil(command_and_args, return_stderr=True, expected_status=None, stdin=stdin)
+    stderr = self._CleanRmUiOutputBeforeChecking(stderr)
+    update_lines = True
+    if NO_URLS_MATCHED_PREFIX in stderr or '409 BucketNotEmpty' in stderr or '409 VersionedBucketNotEmpty' in stderr:
+        update_lines = False
+    if self._use_gcloud_storage:
+        bucket_not_found_string = 'not found'
+    else:
+        bucket_not_found_string = 'bucket does not exist'
+    if '-r' in command_and_args and 'bucket does not exist' in stderr:
+        for bucket_to_remove in buckets_to_remove:
+            matching_bucket = re.match('.*404\\s+%s\\s+bucket does not exist' % re.escape(bucket_to_remove), stderr)
+            if matching_bucket:
+                for line in cumulative_stderr_lines:
+                    if 'Removing %s/...' % bucket_to_remove in line:
+                        return
+                if 'Removing %s/...' % bucket_to_remove in stderr:
+                    return
+    if update_lines:
+        cumulative_stderr_lines.update(set([s for s in stderr.splitlines() if s]))
+    self.assertEqual(cumulative_stderr_lines, expected_stderr_lines)

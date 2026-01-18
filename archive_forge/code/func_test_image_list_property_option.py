@@ -1,0 +1,23 @@
+import copy
+import io
+import tempfile
+from unittest import mock
+from cinderclient import api_versions
+from openstack import exceptions as sdk_exceptions
+from osc_lib.cli import format_columns
+from osc_lib import exceptions
+from openstackclient.image.v2 import image as _image
+from openstackclient.tests.unit.identity.v3 import fakes as identity_fakes
+from openstackclient.tests.unit.image.v2 import fakes as image_fakes
+from openstackclient.tests.unit.volume.v3 import fakes as volume_fakes
+@mock.patch('osc_lib.api.utils.simple_filter')
+def test_image_list_property_option(self, sf_mock):
+    sf_mock.return_value = [copy.deepcopy(self._image)]
+    arglist = ['--property', 'a=1']
+    verifylist = [('property', {'a': '1'})]
+    parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+    columns, data = self.cmd.take_action(parsed_args)
+    self.image_client.images.assert_called_with()
+    sf_mock.assert_called_with([self._image], attr='a', value='1', property_field='properties')
+    self.assertEqual(self.columns, columns)
+    self.assertCountEqual(self.datalist, tuple(data))

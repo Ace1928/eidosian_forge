@@ -1,0 +1,80 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+@_dispatch.add_fallback_dispatch_list
+@_dispatch.add_type_based_api_dispatcher
+@tf_export('rpc_client')
+def rpc_client(server_address: _atypes.TensorFuzzingAnnotation[_atypes.String], timeout_in_ms: _atypes.TensorFuzzingAnnotation[_atypes.Int64], shared_name: str='', list_registered_methods: bool=False, name=None):
+    """TODO: add doc.
+
+  Args:
+    server_address: A `Tensor` of type `string`.
+    timeout_in_ms: A `Tensor` of type `int64`.
+    shared_name: An optional `string`. Defaults to `""`.
+    list_registered_methods: An optional `bool`. Defaults to `False`.
+    name: A name for the operation (optional).
+
+  Returns:
+    A tuple of `Tensor` objects (client, method_specs).
+
+    client: A `Tensor` of type `resource`.
+    method_specs: A `Tensor` of type `string`.
+  """
+    _ctx = _context._context or _context.context()
+    tld = _ctx._thread_local_data
+    if tld.is_eager:
+        try:
+            _result = pywrap_tfe.TFE_Py_FastPathExecute(_ctx, 'RpcClient', name, server_address, timeout_in_ms, 'shared_name', shared_name, 'list_registered_methods', list_registered_methods)
+            _result = _RpcClientOutput._make(_result)
+            return _result
+        except _core._NotOkStatusException as e:
+            _ops.raise_from_not_ok_status(e, name)
+        except _core._FallbackException:
+            pass
+        try:
+            _result = _dispatcher_for_rpc_client((server_address, timeout_in_ms, shared_name, list_registered_methods, name), None)
+            if _result is not NotImplemented:
+                return _result
+            return rpc_client_eager_fallback(server_address, timeout_in_ms, shared_name=shared_name, list_registered_methods=list_registered_methods, name=name, ctx=_ctx)
+        except _core._SymbolicException:
+            pass
+        except (TypeError, ValueError):
+            _result = _dispatch.dispatch(rpc_client, (), dict(server_address=server_address, timeout_in_ms=timeout_in_ms, shared_name=shared_name, list_registered_methods=list_registered_methods, name=name))
+            if _result is not _dispatch.OpDispatcher.NOT_SUPPORTED:
+                return _result
+            raise
+    else:
+        _result = _dispatcher_for_rpc_client((server_address, timeout_in_ms, shared_name, list_registered_methods, name), None)
+        if _result is not NotImplemented:
+            return _result
+    if shared_name is None:
+        shared_name = ''
+    shared_name = _execute.make_str(shared_name, 'shared_name')
+    if list_registered_methods is None:
+        list_registered_methods = False
+    list_registered_methods = _execute.make_bool(list_registered_methods, 'list_registered_methods')
+    try:
+        _, _, _op, _outputs = _op_def_library._apply_op_helper('RpcClient', server_address=server_address, timeout_in_ms=timeout_in_ms, shared_name=shared_name, list_registered_methods=list_registered_methods, name=name)
+    except (TypeError, ValueError):
+        _result = _dispatch.dispatch(rpc_client, (), dict(server_address=server_address, timeout_in_ms=timeout_in_ms, shared_name=shared_name, list_registered_methods=list_registered_methods, name=name))
+        if _result is not _dispatch.OpDispatcher.NOT_SUPPORTED:
+            return _result
+        raise
+    _result = _outputs[:]
+    if _execute.must_record_gradient():
+        _attrs = ('shared_name', _op.get_attr('shared_name'), 'list_registered_methods', _op._get_attr_bool('list_registered_methods'))
+        _inputs_flat = _op.inputs
+        _execute.record_gradient('RpcClient', _inputs_flat, _attrs, _result)
+    _result = _RpcClientOutput._make(_result)
+    return _result

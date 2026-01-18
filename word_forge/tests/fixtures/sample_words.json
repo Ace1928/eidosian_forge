@@ -1,0 +1,41 @@
+{
+  "words": [
+    {
+      "term": "happiness",
+      "definition": "a state of well-being characterized by emotions ranging from contentment to intense joy",
+      "pos": "noun",
+      "examples": ["Her happiness was contagious.", "Finding happiness in simple things."]
+    },
+    {
+      "term": "sadness",
+      "definition": "an emotional state characterized by feelings of disadvantage, loss, and helplessness",
+      "pos": "noun",
+      "examples": ["A wave of sadness washed over him.", "Sadness can be a natural response to loss."]
+    },
+    {
+      "term": "joy",
+      "definition": "an emotion of great delight caused by something exceptionally good or satisfying",
+      "pos": "noun",
+      "examples": ["The joy of discovery.", "Joy filled the room."]
+    },
+    {
+      "term": "sorrow",
+      "definition": "a feeling of deep distress caused by loss, disappointment, or misfortune",
+      "pos": "noun",
+      "examples": ["She expressed her sorrow.", "Sorrow hung heavy in the air."]
+    },
+    {
+      "term": "love",
+      "definition": "an intense feeling of deep affection or strong attachment to someone or something",
+      "pos": "noun",
+      "examples": ["Love is patient.", "A mother's love."]
+    }
+  ],
+  "relationships": [
+    {"source": "happiness", "target": "joy", "type": "synonym"},
+    {"source": "happiness", "target": "sadness", "type": "antonym"},
+    {"source": "sadness", "target": "sorrow", "type": "synonym"},
+    {"source": "joy", "target": "happiness", "type": "synonym"},
+    {"source": "love", "target": "happiness", "type": "evokes"}
+  ]
+}

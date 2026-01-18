@@ -1,0 +1,2 @@
+class InvalidKeyHandleError(HardwareError):
+    pass

@@ -1,0 +1,23 @@
+import json
+from typing import AsyncIterable
+from mlflow.exceptions import MlflowException
+from mlflow.gateway.config import OpenAIAPIType, OpenAIConfig, RouteConfig
+from mlflow.gateway.providers.base import BaseProvider
+from mlflow.gateway.providers.utils import send_request, send_stream_request
+from mlflow.gateway.schemas import chat, completions, embeddings
+from mlflow.gateway.utils import handle_incomplete_chunks, strip_sse_prefix
+from mlflow.utils.uri import append_to_uri_path, append_to_uri_query_params
+@property
+def _request_base_url(self):
+    api_type = self.openai_config.openai_api_type
+    if api_type == OpenAIAPIType.OPENAI:
+        base_url = self.openai_config.openai_api_base or 'https://api.openai.com/v1'
+        if (api_version := (self.openai_config.openai_api_version is not None)):
+            return append_to_uri_query_params(base_url, ('api-version', api_version))
+        else:
+            return base_url
+    elif api_type in (OpenAIAPIType.AZURE, OpenAIAPIType.AZUREAD):
+        openai_url = append_to_uri_path(self.openai_config.openai_api_base, 'openai', 'deployments', self.openai_config.openai_deployment_name)
+        return append_to_uri_query_params(openai_url, ('api-version', self.openai_config.openai_api_version))
+    else:
+        raise MlflowException.invalid_parameter_value(f"Invalid OpenAI API type '{self.openai_config.openai_api_type}'")

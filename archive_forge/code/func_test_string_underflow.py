@@ -1,0 +1,10 @@
+from oslo_serialization import jsonutils as json
+from heat.common import exception
+from heat.common import identifier
+from heat.engine import parameters
+from heat.engine import template
+from heat.tests import common
+def test_string_underflow(self):
+    schema = {'Type': 'String', 'ConstraintDescription': 'wibble', 'MinLength': '4'}
+    err = self.assertRaises(exception.StackValidationFailed, new_parameter, 'p', schema, 'foo')
+    self.assertIn('wibble', str(err))

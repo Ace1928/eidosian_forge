@@ -1,0 +1,46 @@
+from tkinter import Button, Frame, IntVar, Label, Listbox, Menu, Scrollbar, Tk
+from tkinter.font import Font
+from nltk.draw import CFGEditor, TreeSegmentWidget, tree_to_treesegment
+from nltk.draw.util import CanvasFrame, EntryDialog, ShowText, TextWidget
+from nltk.parse import SteppingShiftReduceParser
+from nltk.tree import Tree
+from nltk.util import in_idle
+def _init_menubar(self, parent):
+    menubar = Menu(parent)
+    filemenu = Menu(menubar, tearoff=0)
+    filemenu.add_command(label='Reset Parser', underline=0, command=self.reset, accelerator='Del')
+    filemenu.add_command(label='Print to Postscript', underline=0, command=self.postscript, accelerator='Ctrl-p')
+    filemenu.add_command(label='Exit', underline=1, command=self.destroy, accelerator='Ctrl-x')
+    menubar.add_cascade(label='File', underline=0, menu=filemenu)
+    editmenu = Menu(menubar, tearoff=0)
+    editmenu.add_command(label='Edit Grammar', underline=5, command=self.edit_grammar, accelerator='Ctrl-g')
+    editmenu.add_command(label='Edit Text', underline=5, command=self.edit_sentence, accelerator='Ctrl-t')
+    menubar.add_cascade(label='Edit', underline=0, menu=editmenu)
+    rulemenu = Menu(menubar, tearoff=0)
+    rulemenu.add_command(label='Step', underline=1, command=self.step, accelerator='Space')
+    rulemenu.add_separator()
+    rulemenu.add_command(label='Shift', underline=0, command=self.shift, accelerator='Ctrl-s')
+    rulemenu.add_command(label='Reduce', underline=0, command=self.reduce, accelerator='Ctrl-r')
+    rulemenu.add_separator()
+    rulemenu.add_command(label='Undo', underline=0, command=self.undo, accelerator='Ctrl-u')
+    menubar.add_cascade(label='Apply', underline=0, menu=rulemenu)
+    viewmenu = Menu(menubar, tearoff=0)
+    viewmenu.add_checkbutton(label='Show Grammar', underline=0, variable=self._show_grammar, command=self._toggle_grammar)
+    viewmenu.add_separator()
+    viewmenu.add_radiobutton(label='Tiny', variable=self._size, underline=0, value=10, command=self.resize)
+    viewmenu.add_radiobutton(label='Small', variable=self._size, underline=0, value=12, command=self.resize)
+    viewmenu.add_radiobutton(label='Medium', variable=self._size, underline=0, value=14, command=self.resize)
+    viewmenu.add_radiobutton(label='Large', variable=self._size, underline=0, value=18, command=self.resize)
+    viewmenu.add_radiobutton(label='Huge', variable=self._size, underline=0, value=24, command=self.resize)
+    menubar.add_cascade(label='View', underline=0, menu=viewmenu)
+    animatemenu = Menu(menubar, tearoff=0)
+    animatemenu.add_radiobutton(label='No Animation', underline=0, variable=self._animate, value=0)
+    animatemenu.add_radiobutton(label='Slow Animation', underline=0, variable=self._animate, value=20, accelerator='-')
+    animatemenu.add_radiobutton(label='Normal Animation', underline=0, variable=self._animate, value=10, accelerator='=')
+    animatemenu.add_radiobutton(label='Fast Animation', underline=0, variable=self._animate, value=4, accelerator='+')
+    menubar.add_cascade(label='Animate', underline=1, menu=animatemenu)
+    helpmenu = Menu(menubar, tearoff=0)
+    helpmenu.add_command(label='About', underline=0, command=self.about)
+    helpmenu.add_command(label='Instructions', underline=0, command=self.help, accelerator='F1')
+    menubar.add_cascade(label='Help', underline=0, menu=helpmenu)
+    parent.config(menu=menubar)

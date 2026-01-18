@@ -1,0 +1,15 @@
+import os
+import pathlib
+import random
+import tempfile
+import pytest
+import networkx as nx
+from networkx.utils.decorators import (
+from networkx.utils.misc import PythonRandomInterface
+def test_py_random_state_invalid_arg_index():
+    with pytest.raises(nx.NetworkXError):
+
+        @py_random_state(2)
+        def make_random_state(rs):
+            pass
+        rstate = make_random_state(1)

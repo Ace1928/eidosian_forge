@@ -1,0 +1,13 @@
+from typing import Generator, Tuple
+from urllib.parse import urljoin
+from scrapy.exceptions import NotSupported
+from scrapy.http.common import obsolete_setter
+from scrapy.http.headers import Headers
+from scrapy.http.request import Request
+from scrapy.link import Link
+from scrapy.utils.trackref import object_ref
+def _set_url(self, url: str):
+    if isinstance(url, str):
+        self._url = url
+    else:
+        raise TypeError(f'{type(self).__name__} url must be str, got {type(url).__name__}')

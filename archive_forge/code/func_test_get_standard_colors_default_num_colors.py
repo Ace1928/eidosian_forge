@@ -1,0 +1,15 @@
+import os
+import numpy as np
+import pytest
+import pandas.util._test_decorators as td
+from pandas import (
+import pandas._testing as tm
+from pandas.tests.plotting.common import (
+def test_get_standard_colors_default_num_colors(self):
+    from pandas.plotting._matplotlib.style import get_standard_colors
+    color1 = get_standard_colors(1, color_type='default')
+    color2 = get_standard_colors(9, color_type='default')
+    color3 = get_standard_colors(20, color_type='default')
+    assert len(color1) == 1
+    assert len(color2) == 9
+    assert len(color3) == 20

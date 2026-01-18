@@ -1,0 +1,37 @@
+import warnings
+import re
+import sys
+import pickle
+from pathlib import Path
+import os
+import json
+import platform
+from numpy.testing import (assert_equal, assert_array_equal,
+import pytest
+from pytest import raises as assert_raises
+import numpy
+import numpy as np
+from numpy import typecodes, array
+from numpy.lib.recfunctions import rec_append_fields
+from scipy import special
+from scipy._lib._util import check_random_state
+from scipy.integrate import (IntegrationWarning, quad, trapezoid,
+import scipy.stats as stats
+from scipy.stats._distn_infrastructure import argsreduce
+import scipy.stats.distributions
+from scipy.special import xlogy, polygamma, entr
+from scipy.stats._distr_params import distcont, invdistcont
+from .test_discrete_basic import distdiscrete, invdistdiscrete
+from scipy.stats._continuous_distns import FitDataError, _argus_phi
+from scipy.optimize import root, fmin, differential_evolution
+from itertools import product
+class TestFatigueLife:
+
+    def test_sf_tail(self):
+        s = stats.fatiguelife.sf(800.0, 2.5)
+        assert_allclose(s, 6.593376447038406e-30, rtol=1e-13)
+
+    def test_isf_tail(self):
+        p = 6.593376447038406e-30
+        q = stats.fatiguelife.isf(p, 2.5)
+        assert_allclose(q, 800.0, rtol=1e-13)

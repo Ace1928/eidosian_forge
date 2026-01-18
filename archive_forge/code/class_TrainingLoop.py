@@ -1,0 +1,60 @@
+import abc
+import atexit
+import collections
+import functools
+import multiprocessing.pool
+import threading
+import time
+import numpy as np
+from tensorflow.core.framework import graph_pb2
+from tensorflow.python import tf2
+from tensorflow.python.data.experimental.ops import cardinality
+from tensorflow.python.data.ops import dataset_ops
+from tensorflow.python.data.ops import iterator_ops
+from tensorflow.python.data.ops import options as options_lib
+from tensorflow.python.eager import context
+from tensorflow.python.framework import composite_tensor
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import errors
+from tensorflow.python.framework import smart_cond
+from tensorflow.python.framework import sparse_tensor
+from tensorflow.python.framework import tensor_conversion
+from tensorflow.python.framework import tensor_spec
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.keras import backend
+from tensorflow.python.keras import callbacks as cbks
+from tensorflow.python.keras import losses
+from tensorflow.python.keras import metrics as metrics_module
+from tensorflow.python.keras.utils import data_utils
+from tensorflow.python.keras.utils import generic_utils
+from tensorflow.python.keras.utils import losses_utils
+from tensorflow.python.keras.utils import tf_inspect
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import gen_array_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import sparse_ops
+from tensorflow.python.ops.ragged import ragged_tensor
+from tensorflow.python.ops.ragged import ragged_tensor_value
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.types import data as data_types
+from tensorflow.python.util import nest
+class TrainingLoop(object):
+    """TrainingLoop is a wrapper class around the training logic.
+
+  This class is trying to encapsulate the different logic of fit/eval/predict
+  with regard to different data input and model condition.
+
+  Note that TrainingLoop is stateless, which means it doesn't contain any
+  internal field and can be reused with different model and inputs.
+  """
+
+    def fit(self, model, x=None, y=None, batch_size=None, epochs=1, verbose=1, callbacks=None, validation_split=0.0, validation_data=None, shuffle=True, class_weight=None, sample_weight=None, initial_epoch=0, steps_per_epoch=None, validation_steps=None, validation_freq=1, **kwargs):
+        """Train the model with the inputs and targets."""
+        raise NotImplementedError()
+
+    def evaluate(self, model, x=None, y=None, batch_size=None, verbose=1, sample_weight=None, steps=None, callbacks=None, **kwargs):
+        """Returns the loss value & metrics values for the model in test mode."""
+        raise NotImplementedError()
+
+    def predict(self, model, x, batch_size=None, verbose=0, steps=None, callbacks=None, **kwargs):
+        raise NotImplementedError()

@@ -1,0 +1,18 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import os
+import unittest
+from fire import inspectutils
+from fire import test_components as tc
+from fire import testutils
+import six
+def testGetFullArgSpecFromNamedTupleSubclass(self):
+    spec = inspectutils.GetFullArgSpec(tc.SubPoint)
+    self.assertEqual(spec.args, ['x', 'y'])
+    self.assertEqual(spec.defaults, ())
+    self.assertEqual(spec.varargs, None)
+    self.assertEqual(spec.varkw, None)
+    self.assertEqual(spec.kwonlyargs, [])
+    self.assertEqual(spec.kwonlydefaults, {})
+    self.assertEqual(spec.annotations, {})

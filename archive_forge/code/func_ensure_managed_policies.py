@@ -1,0 +1,28 @@
+from ansible.module_utils.common.dict_transformations import camel_dict_to_snake_dict
+from ansible_collections.amazon.aws.plugins.module_utils.iam import AnsibleIAMError
+from ansible_collections.amazon.aws.plugins.module_utils.iam import IAMErrorHandler
+from ansible_collections.amazon.aws.plugins.module_utils.iam import convert_managed_policy_names_to_arns
+from ansible_collections.amazon.aws.plugins.module_utils.iam import get_iam_user
+from ansible_collections.amazon.aws.plugins.module_utils.iam import normalize_iam_user
+from ansible_collections.amazon.aws.plugins.module_utils.iam import validate_iam_identifiers
+from ansible_collections.amazon.aws.plugins.module_utils.modules import AnsibleAWSModule
+from ansible_collections.amazon.aws.plugins.module_utils.retries import AWSRetry
+from ansible_collections.amazon.aws.plugins.module_utils.tagging import ansible_dict_to_boto3_tag_list
+from ansible_collections.amazon.aws.plugins.module_utils.tagging import compare_aws_tags
+def ensure_managed_policies(connection, check_mode, user_name, managed_policies, purge_policies):
+    if managed_policies is None:
+        return False
+    managed_policies = convert_managed_policy_names_to_arns(connection, managed_policies)
+    attached_policies_desc = _list_attached_policies(connection, user_name)
+    current_attached_policies = [policy['PolicyArn'] for policy in attached_policies_desc]
+    policies_to_add = list(set(managed_policies) - set(current_attached_policies))
+    policies_to_remove = []
+    if purge_policies:
+        policies_to_remove = list(set(current_attached_policies) - set(managed_policies))
+    if not policies_to_add and (not policies_to_remove):
+        return False
+    if check_mode:
+        return True
+    detach_policies(connection, check_mode, user_name, policies_to_remove)
+    attach_policies(connection, check_mode, user_name, policies_to_add)
+    return True

@@ -1,0 +1,12 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class GoogleCloudVisionV1p3beta1CropHintsAnnotation(_messages.Message):
+    """Set of crop hints that are used to generate new crops when serving
+  images.
+
+  Fields:
+    cropHints: Crop hint results.
+  """
+    cropHints = _messages.MessageField('GoogleCloudVisionV1p3beta1CropHint', 1, repeated=True)

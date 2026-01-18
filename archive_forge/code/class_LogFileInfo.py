@@ -1,0 +1,50 @@
+import argparse
+import errno
+import glob
+import logging
+import logging.handlers
+import os
+import platform
+import re
+import shutil
+import time
+import traceback
+from typing import Callable, List, Optional, Set
+from ray._raylet import GcsClient
+import ray._private.ray_constants as ray_constants
+import ray._private.services as services
+import ray._private.utils
+from ray._private.ray_logging import setup_component_logger
+class LogFileInfo:
+
+    def __init__(self, filename=None, size_when_last_opened=None, file_position=None, file_handle=None, is_err_file=False, job_id=None, worker_pid=None):
+        assert filename is not None and size_when_last_opened is not None and (file_position is not None)
+        self.filename = filename
+        self.size_when_last_opened = size_when_last_opened
+        self.file_position = file_position
+        self.file_handle = file_handle
+        self.is_err_file = is_err_file
+        self.job_id = job_id
+        self.worker_pid = worker_pid
+        self.actor_name = None
+        self.task_name = None
+
+    def reopen_if_necessary(self):
+        """Check if the file's inode has changed and reopen it if necessary.
+        There are a variety of reasons what we would logically consider a file
+        would have different inodes, such as log rotation or file syncing
+        semantics.
+        """
+        try:
+            open_inode = None
+            if self.file_handle and (not self.file_handle.closed):
+                open_inode = os.fstat(self.file_handle.fileno()).st_ino
+            new_inode = os.stat(self.filename).st_ino
+            if open_inode != new_inode:
+                self.file_handle = open(self.filename, 'rb')
+                self.file_handle.seek(self.file_position)
+        except Exception:
+            logger.debug(f'file no longer exists, skip re-opening of {self.filename}')
+
+    def __repr__(self):
+        return f'FileInfo(\n\tfilename: {self.filename}\n\tsize_when_last_opened: {self.size_when_last_opened}\n\tfile_position: {self.file_position}\n\tfile_handle: {self.file_handle}\n\tis_err_file: {self.is_err_file}\n\tjob_id: {self.job_id}\n\tworker_pid: {self.worker_pid}\n\tactor_name: {self.actor_name}\n\ttask_name: {self.task_name}\n)'

@@ -1,0 +1,12 @@
+import copy
+import io
+import errno
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import warnings
+import pydot
+def get_subgraphs(self):
+    return self.get_subgraph_list()

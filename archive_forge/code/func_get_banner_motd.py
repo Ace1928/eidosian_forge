@@ -1,0 +1,25 @@
+from __future__ import absolute_import, division, print_function
+import traceback
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_native
+import ansible_collections.netapp.ontap.plugins.module_utils.netapp as netapp_utils
+from ansible_collections.netapp.ontap.plugins.module_utils.netapp_module import NetAppModule
+from ansible_collections.netapp.ontap.plugins.module_utils.netapp import OntapRestAPI
+from ansible_collections.netapp.ontap.plugins.module_utils import rest_generic
+from ansible_collections.netapp.ontap.plugins.module_utils import rest_vserver
+def get_banner_motd(self):
+    if self.use_rest:
+        api = 'security/login/messages'
+        query = {'fields': 'banner,message,show_cluster_message,uuid', 'scope': 'cluster'}
+        vserver = self.parameters.get('vserver')
+        if vserver:
+            query['scope'] = 'svm'
+            query['svm.name'] = vserver
+        record, error = rest_generic.get_one_record(self.rest_api, api, query)
+        if error:
+            self.module.fail_json(msg='Error fetching login_banner info: %s' % error)
+        if record is None and vserver is None:
+            self.module.fail_json(msg='Error fetching login_banner info for cluster - no data.')
+        return self.form_current(record)
+    motd, show_cluster_motd = self.get_motd_zapi()
+    return {'banner': self.get_login_banner_zapi(), 'motd_message': motd, 'show_cluster_motd': show_cluster_motd}

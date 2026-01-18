@@ -1,0 +1,12 @@
+import secrets
+import string
+import threading
+import time
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
+from wandb.errors import Error
+from wandb.proto import wandb_internal_pb2 as pb
+def _allocate_slot(self) -> _MailboxSlot:
+    address = _generate_address()
+    slot = _MailboxSlot(address=address)
+    self._slots[address] = slot
+    return slot

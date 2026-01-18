@@ -1,0 +1,20 @@
+from nipype.interfaces.base import (
+import os
+class TractographyLabelMapSeedingInputSpec(CommandLineInputSpec):
+    InputVolume = File(position=-2, desc='Input DTI volume', exists=True, argstr='%s')
+    inputroi = File(desc='Label map with seeding ROIs', exists=True, argstr='--inputroi %s')
+    OutputFibers = traits.Either(traits.Bool, File(), position=-1, hash_files=False, desc='Tractography result', argstr='%s')
+    useindexspace = traits.Bool(desc='Seed at IJK voxel grid', argstr='--useindexspace ')
+    seedspacing = traits.Float(desc='Spacing (in mm) between seed points, only matters if use Use Index Space is off', argstr='--seedspacing %f')
+    randomgrid = traits.Bool(desc='Enable random placing of seeds', argstr='--randomgrid ')
+    clthreshold = traits.Float(desc='Minimum Linear Measure for the seeding to start.', argstr='--clthreshold %f')
+    minimumlength = traits.Float(desc='Minimum length of the fibers (in mm)', argstr='--minimumlength %f')
+    maximumlength = traits.Float(desc='Maximum length of fibers (in mm)', argstr='--maximumlength %f')
+    stoppingmode = traits.Enum('LinearMeasure', 'FractionalAnisotropy', desc='Tensor measurement used to stop the tractography', argstr='--stoppingmode %s')
+    stoppingvalue = traits.Float(desc='Tractography will stop when the stopping measurement drops below this value', argstr='--stoppingvalue %f')
+    stoppingcurvature = traits.Float(desc='Tractography will stop if radius of curvature becomes smaller than this number units are degrees per mm', argstr='--stoppingcurvature %f')
+    integrationsteplength = traits.Float(desc='Distance between points on the same fiber in mm', argstr='--integrationsteplength %f')
+    label = traits.Int(desc='Label value that defines seeding region.', argstr='--label %d')
+    writetofile = traits.Bool(desc='Write fibers to disk or create in the scene?', argstr='--writetofile ')
+    outputdirectory = traits.Either(traits.Bool, Directory(), hash_files=False, desc='Directory in which to save fiber(s)', argstr='--outputdirectory %s')
+    name = traits.Str(desc='Name to use for fiber files', argstr='--name %s')

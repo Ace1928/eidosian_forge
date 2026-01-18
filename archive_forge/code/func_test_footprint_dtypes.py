@@ -1,0 +1,27 @@
+import inspect
+import numpy as np
+import pytest
+from skimage import data, morphology, util
+from skimage._shared._warnings import expected_warnings
+from skimage._shared.testing import (
+from skimage.filters import rank
+from skimage.filters.rank import __all__ as all_rank_filters
+from skimage.filters.rank import __3Dfilters as _3d_rank_filters
+from skimage.filters.rank import subtract_mean
+from skimage.morphology import ball, disk, gray
+from skimage.util import img_as_float, img_as_ubyte
+def test_footprint_dtypes(self):
+    image = np.zeros((5, 5), dtype=np.uint8)
+    out = np.zeros_like(image)
+    mask = np.ones_like(image, dtype=np.uint8)
+    image[2, 2] = 255
+    image[2, 3] = 128
+    image[1, 2] = 16
+    for dtype in (bool, np.uint8, np.uint16, np.int32, np.int64, np.float32, np.float64):
+        elem = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]], dtype=dtype)
+        rank.mean(image=image, footprint=elem, out=out, mask=mask, shift_x=0, shift_y=0)
+        assert_equal(image, out)
+        rank.geometric_mean(image=image, footprint=elem, out=out, mask=mask, shift_x=0, shift_y=0)
+        assert_equal(image, out)
+        rank.mean_percentile(image=image, footprint=elem, out=out, mask=mask, shift_x=0, shift_y=0)
+        assert_equal(image, out)

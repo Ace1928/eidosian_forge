@@ -1,0 +1,29 @@
+from itertools import product
+from itertools import permutations
+from numba import njit, typeof
+from numba.core import types
+import unittest
+from numba.tests.support import (TestCase, no_pyobj_flags, MemoryLeakMixin)
+from numba.core.errors import TypingError, UnsupportedError
+from numba.cpython.unicode import _MAX_UNICODE
+from numba.core.types.functions import _header_lead
+from numba.extending import overload
+def test_unicode_type_mro(self):
+
+    def bar(x):
+        return True
+
+    @overload(bar)
+    def ol_bar(x):
+        ok = False
+        if isinstance(x, types.UnicodeType):
+            if isinstance(x, types.Hashable):
+                ok = True
+        return lambda x: ok
+
+    @njit
+    def foo(strinst):
+        return bar(strinst)
+    inst = 'abc'
+    self.assertEqual(foo.py_func(inst), foo(inst))
+    self.assertIn(types.Hashable, types.unicode_type.__class__.__mro__)

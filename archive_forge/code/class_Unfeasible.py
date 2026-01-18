@@ -1,0 +1,2 @@
+class Unfeasible(RuntimeError):
+    pass

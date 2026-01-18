@@ -1,0 +1,1 @@
+Process recorded information after all updates.

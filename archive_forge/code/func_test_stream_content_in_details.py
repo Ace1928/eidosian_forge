@@ -1,0 +1,11 @@
+from testtools import TestCase
+from testtools.matchers import Contains
+from fixtures import (
+def test_stream_content_in_details(self):
+    detail_name = 'test'
+    fixture = StringStream(detail_name)
+    with fixture:
+        stream = fixture.stream
+        content = fixture.getDetails()[detail_name]
+        stream.write('testing 1 2 3')
+        self.assertEqual('testing 1 2 3', content.as_text())

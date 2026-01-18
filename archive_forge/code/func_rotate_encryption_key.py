@@ -1,0 +1,19 @@
+import boto
+from boto.compat import json
+from boto.connection import AWSQueryConnection
+from boto.regioninfo import RegionInfo
+from boto.exception import JSONResponseError
+from boto.redshift import exceptions
+def rotate_encryption_key(self, cluster_identifier):
+    """
+        Rotates the encryption keys for a cluster.
+
+        :type cluster_identifier: string
+        :param cluster_identifier: The unique identifier of the cluster that
+            you want to rotate the encryption keys for.
+        Constraints: Must be the name of valid cluster that has encryption
+            enabled.
+
+        """
+    params = {'ClusterIdentifier': cluster_identifier}
+    return self._make_request(action='RotateEncryptionKey', verb='POST', path='/', params=params)

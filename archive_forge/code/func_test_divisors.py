@@ -1,0 +1,17 @@
+from sympy.concrete.summations import summation
+from sympy.core.containers import Dict
+from sympy.core.mul import Mul
+from sympy.core.power import Pow
+from sympy.core.singleton import S
+from sympy.core.symbol import Symbol
+from sympy.functions.combinatorial.factorials import factorial as fac
+from sympy.core.evalf import bitcount
+from sympy.core.numbers import Integer, Rational
+from sympy.ntheory import (totient,
+from sympy.ntheory.factor_ import (smoothness, smoothness_p, proper_divisors,
+from sympy.testing.pytest import raises, slow
+from sympy.utilities.iterables import capture
+def test_divisors():
+    assert divisors(28) == [1, 2, 4, 7, 14, 28]
+    assert list(divisors(3 * 5 * 7, 1)) == [1, 3, 5, 15, 7, 21, 35, 105]
+    assert divisors(0) == []

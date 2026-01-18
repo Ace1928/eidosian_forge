@@ -1,0 +1,3 @@
+from oslo_serialization import msgpackutils
+from oslo_serialization.serializer.base_serializer import BaseSerializer
+MessagePack serializer based on the msgpackutils module.

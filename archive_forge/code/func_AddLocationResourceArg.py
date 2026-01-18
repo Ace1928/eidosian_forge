@@ -1,0 +1,23 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import textwrap
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope import exceptions
+from googlecloudsdk.calliope import parser_arguments
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.calliope.concepts import deps
+from googlecloudsdk.command_lib.container.gkeonprem import flags
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+from googlecloudsdk.command_lib.util.concepts import presentation_specs
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+def AddLocationResourceArg(parser: parser_arguments.ArgumentInterceptor, verb):
+    """Adds a resource argument for Google Cloud location.
+
+  Args:
+    parser: The argparse.parser to add the resource arg to.
+    verb: str, the verb to describe the resource, such as 'to update'.
+  """
+    concept_parsers.ConceptParser.ForResource('--location', GetLocationResourceSpec(), 'Google Cloud location {}.'.format(verb), required=True).AddToParser(parser)

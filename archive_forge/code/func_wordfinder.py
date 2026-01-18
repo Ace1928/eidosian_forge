@@ -1,0 +1,55 @@
+import random
+def wordfinder(words, rows=20, cols=20, attempts=50, alph='ABCDEFGHIJKLMNOPQRSTUVWXYZ'):
+    """
+    Attempt to arrange words into a letter-grid with the specified
+    number of rows and columns.  Try each word in several positions
+    and directions, until it can be fitted into the grid, or the
+    maximum number of allowable attempts is exceeded.  Returns a tuple
+    consisting of the grid and the words that were successfully
+    placed.
+
+    :param words: the list of words to be put into the grid
+    :type words: list
+    :param rows: the number of rows in the grid
+    :type rows: int
+    :param cols: the number of columns in the grid
+    :type cols: int
+    :param attempts: the number of times to attempt placing a word
+    :type attempts: int
+    :param alph: the alphabet, to be used for filling blank cells
+    :type alph: list
+    :rtype: tuple
+    """
+    words = sorted(words, key=len, reverse=True)
+    grid = []
+    used = []
+    for i in range(rows):
+        grid.append([''] * cols)
+    for word in words:
+        word = word.strip().upper()
+        save = word
+        word = revword(word)
+        for attempt in range(attempts):
+            r = random.randint(0, len(word))
+            dir = random.choice([1, 2, 3, 4])
+            x = random.randint(0, rows)
+            y = random.randint(0, cols)
+            if dir == 1:
+                x += r
+                y += r
+            elif dir == 2:
+                x += r
+            elif dir == 3:
+                x += r
+                y -= r
+            elif dir == 4:
+                y += r
+            if 0 <= x < rows and 0 <= y < cols:
+                if check(word, dir, x, y, grid, rows, cols):
+                    used.append(save)
+                    break
+    for i in range(rows):
+        for j in range(cols):
+            if grid[i][j] == '':
+                grid[i][j] = random.choice(alph)
+    return (grid, used)

@@ -1,0 +1,27 @@
+import unittest
+from numba.cuda.testing import CUDATestCase, skip_on_cudasim
+from numba.tests.support import captured_stdout
+import numpy as np
+def test_ex_cpu_gpu_compat(self):
+    from math import pi
+    import numba
+    from numba import cuda
+    X = cuda.to_device([1, 10, 234])
+    Y = cuda.to_device([2, 2, 4014])
+    Z = cuda.to_device([3, 14, 2211])
+    results = cuda.to_device([0.0, 0.0, 0.0])
+
+    @numba.jit
+    def business_logic(x, y, z):
+        return 4 * z * (2 * x - 4 * y / 2 * pi)
+    print(business_logic(1, 2, 3))
+
+    @cuda.jit
+    def f(res, xarr, yarr, zarr):
+        tid = cuda.grid(1)
+        if tid < len(xarr):
+            res[tid] = business_logic(xarr[tid], yarr[tid], zarr[tid])
+    f.forall(len(X))(results, X, Y, Z)
+    print(results)
+    expect = [business_logic(x, y, z) for x, y, z in zip(X, Y, Z)]
+    np.testing.assert_equal(expect, results.copy_to_host())

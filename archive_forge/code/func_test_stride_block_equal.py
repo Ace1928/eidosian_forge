@@ -1,0 +1,9 @@
+import numpy as np
+from .common import ut, TestCase
+import h5py
+from h5py import h5s, h5t, h5d
+from h5py import File, MultiBlockSlice
+def test_stride_block_equal(self):
+    mbslice = MultiBlockSlice(stride=2, block=2)
+    self.assertEqual(mbslice.indices(10), (0, 2, 5, 2))
+    np.testing.assert_array_equal(self.dset[mbslice], self.arr)

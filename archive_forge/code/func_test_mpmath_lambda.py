@@ -1,0 +1,65 @@
+from itertools import product
+import math
+import inspect
+import mpmath
+from sympy.testing.pytest import raises, warns_deprecated_sympy
+from sympy.concrete.summations import Sum
+from sympy.core.function import (Function, Lambda, diff)
+from sympy.core.numbers import (E, Float, I, Rational, oo, pi)
+from sympy.core.relational import Eq
+from sympy.core.singleton import S
+from sympy.core.symbol import (Dummy, symbols)
+from sympy.functions.combinatorial.factorials import (RisingFactorial, factorial)
+from sympy.functions.combinatorial.numbers import bernoulli, harmonic
+from sympy.functions.elementary.complexes import Abs
+from sympy.functions.elementary.exponential import exp, log
+from sympy.functions.elementary.hyperbolic import acosh
+from sympy.functions.elementary.integers import floor
+from sympy.functions.elementary.miscellaneous import (Max, Min, sqrt)
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import (acos, cos, cot, sin,
+from sympy.functions.special.bessel import (besseli, besselj, besselk, bessely)
+from sympy.functions.special.beta_functions import (beta, betainc, betainc_regularized)
+from sympy.functions.special.delta_functions import (Heaviside)
+from sympy.functions.special.error_functions import (Ei, erf, erfc, fresnelc, fresnels, Si, Ci)
+from sympy.functions.special.gamma_functions import (digamma, gamma, loggamma, polygamma)
+from sympy.integrals.integrals import Integral
+from sympy.logic.boolalg import (And, false, ITE, Not, Or, true)
+from sympy.matrices.expressions.dotproduct import DotProduct
+from sympy.tensor.array import derive_by_array, Array
+from sympy.tensor.indexed import IndexedBase
+from sympy.utilities.lambdify import lambdify
+from sympy.core.expr import UnevaluatedExpr
+from sympy.codegen.cfunctions import expm1, log1p, exp2, log2, log10, hypot
+from sympy.codegen.numpy_nodes import logaddexp, logaddexp2
+from sympy.codegen.scipy_nodes import cosm1, powm1
+from sympy.functions.elementary.complexes import re, im, arg
+from sympy.functions.special.polynomials import \
+from sympy.matrices import Matrix, MatrixSymbol, SparseMatrix
+from sympy.printing.lambdarepr import LambdaPrinter
+from sympy.printing.numpy import NumPyPrinter
+from sympy.utilities.lambdify import implemented_function, lambdastr
+from sympy.testing.pytest import skip
+from sympy.utilities.decorator import conserve_mpmath_dps
+from sympy.utilities.exceptions import ignore_warnings
+from sympy.external import import_module
+from sympy.functions.special.gamma_functions import uppergamma, lowergamma
+import sympy
+@conserve_mpmath_dps
+def test_mpmath_lambda():
+    mpmath.mp.dps = 50
+    sin02 = mpmath.mpf('0.19866933079506121545941262711838975037020672954020')
+    f = lambdify(x, sin(x), 'mpmath')
+    prec = 1e-49
+    assert -prec < f(mpmath.mpf('0.2')) - sin02 < prec
+    raises(TypeError, lambda: f(x))
+    ref2 = mpmath.mpf('1e-30') - mpmath.mpf('1e-45') / 2 + 5 * mpmath.mpf('1e-60') / 6 - 3 * mpmath.mpf('1e-75') / 4 + 33 * mpmath.mpf('1e-90') / 40
+    f2a = lambdify((x, y), x ** y - 1, 'mpmath')
+    f2b = lambdify((x, y), powm1(x, y), 'mpmath')
+    f2c = lambdify((x,), expm1(x * log1p(x)), 'mpmath')
+    ans2a = f2a(mpmath.mpf('1') + mpmath.mpf('1e-15'), mpmath.mpf('1e-15'))
+    ans2b = f2b(mpmath.mpf('1') + mpmath.mpf('1e-15'), mpmath.mpf('1e-15'))
+    ans2c = f2c(mpmath.mpf('1e-15'))
+    assert abs(ans2a - ref2) < 1e-51
+    assert abs(ans2b - ref2) < 1e-67
+    assert abs(ans2c - ref2) < 1e-80

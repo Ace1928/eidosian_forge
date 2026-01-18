@@ -1,0 +1,8 @@
+from __future__ import absolute_import, division, print_function
+import re
+import traceback
+from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible_collections.dellemc.unity.plugins.module_utils.storage.dell \
+def get_nfs_parameters():
+    """ Provides parameters required for the NFS share module on Unity """
+    return dict(nfs_export_name=dict(required=False, type='str'), nfs_export_id=dict(required=False, type='str'), filesystem_id=dict(required=False, type='str'), filesystem_name=dict(required=False, type='str'), snapshot_id=dict(required=False, type='str'), snapshot_name=dict(required=False, type='str'), nas_server_id=dict(required=False, type='str'), nas_server_name=dict(required=False, type='str'), path=dict(required=False, type='str', no_log=True), description=dict(required=False, type='str'), default_access=dict(required=False, type='str', choices=DEFAULT_ACCESS_LIST), min_security=dict(required=False, type='str', choices=MIN_SECURITY_LIST), adv_host_mgmt_enabled=dict(required=False, type='bool', default=None), no_access_hosts=HOST_DICT, read_only_hosts=HOST_DICT, read_only_root_hosts=HOST_DICT, read_write_hosts=HOST_DICT, read_write_root_hosts=HOST_DICT, host_state=dict(required=False, type='str', choices=HOST_STATE_LIST), anonymous_uid=dict(required=False, type='int'), anonymous_gid=dict(required=False, type='int'), state=dict(required=True, type='str', choices=STATE_LIST))

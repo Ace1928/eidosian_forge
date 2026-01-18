@@ -1,0 +1,29 @@
+import copy
+from unittest import mock
+import warnings
+import fixtures
+from oslo_config import cfg
+from oslo_db.sqlalchemy import enginefacade
+from oslo_db.sqlalchemy import provision
+from oslo_db.sqlalchemy import session
+from oslo_messaging import conffixture
+from neutron_lib.api import attributes
+from neutron_lib.api import definitions
+from neutron_lib.callbacks import manager
+from neutron_lib.callbacks import registry
+from neutron_lib.db import api as db_api
+from neutron_lib.db import model_base
+from neutron_lib.db import model_query
+from neutron_lib.db import resource_extend
+from neutron_lib.plugins import directory
+from neutron_lib import rpc
+from neutron_lib.tests.unit import fake_notifier
+class DBQueryHooksFixture(fixtures.Fixture):
+
+    def _setUp(self, query_hooks=None):
+        self._backup = model_query._model_query_hooks
+        model_query._model_query_hooks = query_hooks or {}
+        self.addCleanup(self._restore)
+
+    def _restore(self):
+        model_query._model_query_hooks = self._backup

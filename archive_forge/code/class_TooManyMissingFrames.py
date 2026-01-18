@@ -1,0 +1,2 @@
+class TooManyMissingFrames(PydubException):
+    pass

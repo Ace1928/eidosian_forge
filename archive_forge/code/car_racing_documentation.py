@@ -1,0 +1,84 @@
+import math
+from typing import Optional, Union
+import numpy as np
+import gym
+from gym import spaces
+from gym.envs.box2d.car_dynamics import Car
+from gym.error import DependencyNotInstalled, InvalidAction
+from gym.utils import EzPickle
+
+    ### Description
+    The easiest control task to learn from pixels - a top-down
+    racing environment. The generated track is random every episode.
+
+    Some indicators are shown at the bottom of the window along with the
+    state RGB buffer. From left to right: true speed, four ABS sensors,
+    steering wheel position, and gyroscope.
+    To play yourself (it's rather fast for humans), type:
+    ```
+    python gym/envs/box2d/car_racing.py
+    ```
+    Remember: it's a powerful rear-wheel drive car - don't press the accelerator
+    and turn at the same time.
+
+    ### Action Space
+    If continuous:
+        There are 3 actions: steering (-1 is full left, +1 is full right), gas, and breaking.
+    If discrete:
+        There are 5 actions: do nothing, steer left, steer right, gas, brake.
+
+    ### Observation Space
+    State consists of 96x96 pixels.
+
+    ### Rewards
+    The reward is -0.1 every frame and +1000/N for every track tile visited,
+    where N is the total number of tiles visited in the track. For example,
+    if you have finished in 732 frames, your reward is
+    1000 - 0.1*732 = 926.8 points.
+
+    ### Starting State
+    The car starts at rest in the center of the road.
+
+    ### Episode Termination
+    The episode finishes when all of the tiles are visited. The car can also go
+    outside of the playfield - that is, far off the track, in which case it will
+    receive -100 reward and die.
+
+    ### Arguments
+    `lap_complete_percent` dictates the percentage of tiles that must be visited by
+    the agent before a lap is considered complete.
+
+    Passing `domain_randomize=True` enables the domain randomized variant of the environment.
+    In this scenario, the background and track colours are different on every reset.
+
+    Passing `continuous=False` converts the environment to use discrete action space.
+    The discrete action space has 5 actions: [do nothing, left, right, gas, brake].
+
+    ### Reset Arguments
+    Passing the option `options["randomize"] = True` will change the current colour of the environment on demand.
+    Correspondingly, passing the option `options["randomize"] = False` will not change the current colour of the environment.
+    `domain_randomize` must be `True` on init for this argument to work.
+    Example usage:
+    ```py
+        env = gym.make("CarRacing-v1", domain_randomize=True)
+
+        # normal reset, this changes the colour scheme by default
+        env.reset()
+
+        # reset with colour scheme change
+        env.reset(options={"randomize": True})
+
+        # reset with no colour scheme change
+        env.reset(options={"randomize": False})
+    ```
+
+    ### Version History
+    - v1: Change track completion logic and add domain randomization (0.24.0)
+    - v0: Original version
+
+    ### References
+    - Chris Campbell (2014), http://www.iforce2d.net/b2dtut/top-down-car.
+
+    ### Credits
+    Created by Oleg Klimov
+    

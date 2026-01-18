@@ -1,0 +1,85 @@
+import itertools
+import numpy as np
+from .._shared.utils import _supported_float_type, warn
+from ..util import img_as_float
+from . import rgb_colors
+from .colorconv import gray2rgb, rgb2hsv, hsv2rgb
+def _label2rgb_overlay(label, image=None, colors=None, alpha=0.3, bg_label=-1, bg_color=None, image_alpha=1, saturation=0):
+    """Return an RGB image where color-coded labels are painted over the image.
+
+    Parameters
+    ----------
+    label : ndarray
+        Integer array of labels with the same shape as `image`.
+    image : ndarray, optional
+        Image used as underlay for labels. It should have the same shape as
+        `labels`, optionally with an additional RGB (channels) axis. If `image`
+        is an RGB image, it is converted to grayscale before coloring.
+    colors : list, optional
+        List of colors. If the number of labels exceeds the number of colors,
+        then the colors are cycled.
+    alpha : float [0, 1], optional
+        Opacity of colorized labels. Ignored if image is `None`.
+    bg_label : int, optional
+        Label that's treated as the background. If `bg_label` is specified and
+        `bg_color` is `None`, background is not painted by any colors.
+    bg_color : str or array, optional
+        Background color. Must be a name in ``skimage.color.color_dict`` or RGB float
+        values between [0, 1].
+    image_alpha : float [0, 1], optional
+        Opacity of the image.
+    saturation : float [0, 1], optional
+        Parameter to control the saturation applied to the original image
+        between fully saturated (original RGB, `saturation=1`) and fully
+        unsaturated (grayscale, `saturation=0`).
+
+    Returns
+    -------
+    result : ndarray of float, same shape as `image`
+        The result of blending a cycling colormap (`colors`) for each distinct
+        value in `label` with the image, at a certain alpha value.
+    """
+    if not 0 <= saturation <= 1:
+        warn(f'saturation must be in range [0, 1], got {saturation}')
+    if colors is None:
+        colors = DEFAULT_COLORS
+    colors = [_rgb_vector(c) for c in colors]
+    if image is None:
+        image = np.zeros(label.shape + (3,), dtype=np.float64)
+        alpha = 1
+    else:
+        if image.shape[:label.ndim] != label.shape or image.ndim > label.ndim + 1:
+            raise ValueError('`image` and `label` must be the same shape')
+        if image.ndim == label.ndim + 1 and image.shape[-1] != 3:
+            raise ValueError('`image` must be RGB (image.shape[-1] must be 3).')
+        if image.min() < 0:
+            warn('Negative intensities in `image` are not supported')
+        float_dtype = _supported_float_type(image.dtype)
+        image = img_as_float(image).astype(float_dtype, copy=False)
+        if image.ndim > label.ndim:
+            hsv = rgb2hsv(image)
+            hsv[..., 1] *= saturation
+            image = hsv2rgb(hsv)
+        elif image.ndim == label.ndim:
+            image = gray2rgb(image)
+        image = image * image_alpha + (1 - image_alpha)
+    offset = min(label.min(), bg_label)
+    if offset != 0:
+        label = label - offset
+        bg_label -= offset
+    new_type = np.min_scalar_type(int(label.max()))
+    if new_type == bool:
+        new_type = np.uint8
+    label = label.astype(new_type)
+    mapped_labels_flat, color_cycle = _match_label_with_color(label, colors, bg_label, bg_color)
+    if len(mapped_labels_flat) == 0:
+        return image
+    dense_labels = range(np.max(mapped_labels_flat) + 1)
+    label_to_color = np.stack([c for i, c in zip(dense_labels, color_cycle)])
+    mapped_labels = label
+    mapped_labels.flat = mapped_labels_flat
+    result = label_to_color[mapped_labels] * alpha + image * (1 - alpha)
+    remove_background = 0 in mapped_labels_flat and bg_color is None
+    if remove_background:
+        result[label == bg_label] = image[label == bg_label]
+    return result

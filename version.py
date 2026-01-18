@@ -18,19 +18,34 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import (Any, Callable, Dict, Final, List, Literal, Optional,
-                    Protocol, Tuple, TypedDict, TypeVar, Union, cast)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Final,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    TypedDict,
+    TypeVar,
+    Union,
+    cast,
+)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📐 Type Definitions - Structural contracts as guarantees
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-T = TypeVar('T')
-VersionT = TypeVar('VersionT', bound='VersionProtocol')
+T = TypeVar("T")
+VersionT = TypeVar("VersionT", bound="VersionProtocol")
 ConfigSource = Literal["environment", "local_file", "module", "central_db", "defaults"]
+
 
 class VersionDict(TypedDict, total=False):
     """Version data with structural completeness"""
+
     version: str
     major: int
     minor: int
@@ -39,8 +54,10 @@ class VersionDict(TypedDict, total=False):
     min_version: str
     source: ConfigSource
 
+
 class VersionDelta(TypedDict, total=False):
     """Semantic version difference metrics"""
+
     major: int
     minor: int
     patch: int
@@ -49,18 +66,23 @@ class VersionDelta(TypedDict, total=False):
     is_same: bool
     error: str
 
+
 # Function signatures with precise intent
 VersionData = VersionDict
 SourceLoader = Callable[[], Optional[VersionData]]
-VersionLike = Union[str, 'SimpleVersion', Any]  # Any for external version types
+VersionLike = Union[str, "SimpleVersion", Any]  # Any for external version types
+
 
 class VersionProtocol(Protocol):
     """Contract defining version behavior"""
+
     major: int
     minor: int
     patch: int
+
     def __lt__(self, other: Any) -> bool: ...
     def __eq__(self, other: Any) -> bool: ...
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📝 Logging - Self-aware observability
@@ -69,8 +91,7 @@ class VersionProtocol(Protocol):
 logger = logging.getLogger("forge.version")
 debug_enabled: Final[bool] = os.environ.get("FORGE_DEBUG") == "1"
 repo_debug_vars: Final[List[str]] = [
-    var for var in os.environ
-    if var.endswith("_FORGE_DEBUG") and os.environ[var] == "1"
+    var for var in os.environ if var.endswith("_FORGE_DEBUG") and os.environ[var] == "1"
 ]
 
 if debug_enabled or repo_debug_vars:
@@ -82,56 +103,72 @@ if debug_enabled or repo_debug_vars:
 # 🧩 Repository Detection - Layered fallback strategies
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+
 @dataclass(frozen=True)
 class RepoInfo:
     """Immutable repository identification"""
+
     name: str
     path: Path
     package: str
+
 
 def normalize_repo_name(name: str) -> str:
     """Normalize repository name to forge standard"""
     return f"{name.removesuffix('_repo').removesuffix('_forge')}_forge"
 
+
 @lru_cache(maxsize=1)
 def detect_forge_repo(search_levels: int = 3) -> RepoInfo:
     """Repository detection with multi-strategy fallback"""
+
     def check_path(path: Path) -> Optional[RepoInfo]:
-        if path.name.endswith(('_forge', '_forge_repo')):
+        if path.name.endswith(("_forge", "_forge_repo")):
             name = normalize_repo_name(path.name)
-            return RepoInfo(name, path, name.replace('_forge', ''))
+            return RepoInfo(name, path, name.replace("_forge", ""))
         return None
 
     # Strategies in reverse fallback order - most specific first
     strategies: Dict[str, Callable[[], Optional[RepoInfo]]] = {
         # Explicit environment override - user has declared intent
-        "env": lambda: RepoInfo(
-            normalize_repo_name(env_name),
-            Path(os.environ.get("FORGE_REPO_PATH", str(Path.cwd()))),
-            normalize_repo_name(env_name).replace('_forge', '')
-        ) if (env_name := os.environ.get("FORGE_REPO_NAME")) else None,
-
-        # Stack frame analysis - caller's context reveals identity
-        "frame": lambda: next((
-            check_path(Path(frame.filename).resolve().parents[level])
-            for frame in inspect.stack()
-            if frame.filename != __file__
-            for level in range(search_levels + 1)
-        ), None),
-
-        # Working directory context - location implies identity
-        "cwd": lambda: next((
-            check_path(Path.cwd().parents[level] if level else Path.cwd())
-            for level in range(search_levels + 1)
-        ), None),
-
-        # Module location - file system placement reveals purpose
-        "module": lambda: next((
-            check_path(path) for path in (
-                Path(__file__).resolve().parent,
-                Path(__file__).resolve().parent.parent
+        "env": lambda: (
+            RepoInfo(
+                normalize_repo_name(env_name),
+                Path(os.environ.get("FORGE_REPO_PATH", str(Path.cwd()))),
+                normalize_repo_name(env_name).replace("_forge", ""),
             )
-        ), None),
+            if (env_name := os.environ.get("FORGE_REPO_NAME"))
+            else None
+        ),
+        # Stack frame analysis - caller's context reveals identity
+        "frame": lambda: next(
+            (
+                check_path(Path(frame.filename).resolve().parents[level])
+                for frame in inspect.stack()
+                if frame.filename != __file__
+                for level in range(search_levels + 1)
+            ),
+            None,
+        ),
+        # Working directory context - location implies identity
+        "cwd": lambda: next(
+            (
+                check_path(Path.cwd().parents[level] if level else Path.cwd())
+                for level in range(search_levels + 1)
+            ),
+            None,
+        ),
+        # Module location - file system placement reveals purpose
+        "module": lambda: next(
+            (
+                check_path(path)
+                for path in (
+                    Path(__file__).resolve().parent,
+                    Path(__file__).resolve().parent.parent,
+                )
+            ),
+            None,
+        ),
     }
 
     # Try each strategy in priority order
@@ -147,6 +184,7 @@ def detect_forge_repo(search_levels: int = 3) -> RepoInfo:
     logger.warning("⚠️ Repository detection failed: using generic identity")
     return RepoInfo("generic_forge", Path.cwd(), "generic")
 
+
 # Singleton repository info - calculated once, used everywhere
 REPO: Final[RepoInfo] = detect_forge_repo()
 logger.debug(f"Repo: {REPO.name} at {REPO.path}")
@@ -159,16 +197,20 @@ DEFAULT_VERSION: Final[str] = "0.1.0"
 DEFAULT_MIN_VERSION: Final[str] = "0.1.0"
 DEFAULT_RELEASE_DATE: Final[str] = datetime.now().strftime("%Y-%m-%d")
 
-EIDOSIAN_ROOT: Final[Path] = Path(os.environ.get(
-    "EIDOSIAN_ROOT", str(Path.home() / "repos")
-))
-CENTRAL_VERSIONS_PATH: Final[Path] = Path(os.environ.get(
-    "CENTRAL_VERSIONS_PATH", str(EIDOSIAN_ROOT / "central_versions.json")
-))
+EIDOSIAN_ROOT: Final[Path] = Path(
+    os.environ.get("EIDOSIAN_ROOT", str(Path.home() / "repos"))
+)
+CENTRAL_VERSIONS_PATH: Final[Path] = Path(
+    os.environ.get(
+        "CENTRAL_VERSIONS_PATH", str(EIDOSIAN_ROOT / "central_versions.json")
+    )
+)
+
 
 @dataclass
 class VersionConfig:
     """Version configuration with bidirectional synchronization"""
+
     __version__: str = DEFAULT_VERSION
     min_version: str = DEFAULT_MIN_VERSION
     release_date: str = DEFAULT_RELEASE_DATE
@@ -182,7 +224,7 @@ class VersionConfig:
 
     def _sync_from_version(self) -> None:
         """Extract semantic components from version string"""
-        if match := re.match(r'^(\d+)\.(\d+)\.(\d+)', self.__version__):
+        if match := re.match(r"^(\d+)\.(\d+)\.(\d+)", self.__version__):
             self.major, self.minor, self.patch = map(int, match.groups())
 
     def update(self, **kwargs: Any) -> None:
@@ -198,9 +240,11 @@ class VersionConfig:
         elif any(k in kwargs for k in ("major", "minor", "patch")):
             self.__version__ = f"{self.major}.{self.minor}.{self.patch}"
 
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🔍 Version Source Detection - Strategic cascading fallbacks
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 
 def find_local_version_file() -> Optional[Path]:
     """Find version file using prioritized naming patterns"""
@@ -209,9 +253,12 @@ def find_local_version_file() -> Optional[Path]:
         "version.json",
         ".version.json",
         f"{REPO.name}.version",
-        "version.cfg"
+        "version.cfg",
     )
-    return next((p for p in (REPO.path / name for name in candidates) if p.exists()), None)
+    return next(
+        (p for p in (REPO.path / name for name in candidates) if p.exists()), None
+    )
+
 
 def load_from_source(loader: SourceLoader, source_name: str) -> Optional[VersionData]:
     """Load from source with error handling and logging"""
@@ -223,16 +270,21 @@ def load_from_source(loader: SourceLoader, source_name: str) -> Optional[Version
         logger.debug(f"Source {source_name} failed: {e}")
     return None
 
+
 def load_from_module(module_name: str) -> Optional[VersionData]:
     """Extract version from Python module attributes"""
     try:
         module = __import__(module_name)
 
         # Find first available version attribute
-        version = next((
-            getattr(module, attr) for attr in ("VERSION", "__version__", "version")
-            if hasattr(module, attr)
-        ), None)
+        version = next(
+            (
+                getattr(module, attr)
+                for attr in ("VERSION", "__version__", "version")
+                if hasattr(module, attr)
+            ),
+            None,
+        )
 
         if not version:
             return None
@@ -243,7 +295,7 @@ def load_from_module(module_name: str) -> Optional[VersionData]:
             "minor": ["VERSION_MINOR", "MINOR"],
             "patch": ["VERSION_PATCH", "PATCH"],
             "release_date": ["VERSION_RELEASE_DATE", "RELEASE_DATE"],
-            "min_version": ["MINIMUM_VERSION", "MIN_VERSION"]
+            "min_version": ["MINIMUM_VERSION", "MIN_VERSION"],
         }
 
         # Build result with first matching attributes - efficiency through priority
@@ -257,6 +309,7 @@ def load_from_module(module_name: str) -> Optional[VersionData]:
         return result
     except (ImportError, AttributeError):
         return None
+
 
 def load_from_central_db() -> Optional[VersionData]:
     """Query central version registry for organizational coherence"""
@@ -274,6 +327,7 @@ def load_from_central_db() -> Optional[VersionData]:
 
     return None
 
+
 def load_from_local_file() -> Optional[VersionData]:
     """Extract version from local config files"""
     if not (file_path := find_local_version_file()):
@@ -282,12 +336,16 @@ def load_from_local_file() -> Optional[VersionData]:
     try:
         # Parse based on file extension - adapt to format
         with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f) if file_path.suffix == '.json' else {
-                k.strip(): v.strip().strip('"\'')
-                for line in f
-                if line.strip() and not line.startswith('#')
-                for k, v in (line.split('=', 1),)
-            }
+            data = (
+                json.load(f)
+                if file_path.suffix == ".json"
+                else {
+                    k.strip(): v.strip().strip("\"'")
+                    for line in f
+                    if line.strip() and not line.startswith("#")
+                    for k, v in (line.split("=", 1),)
+                }
+            )
 
         # Map to standardized keys - translation table for semantic consistency
         key_map: Dict[str, str] = {
@@ -297,7 +355,7 @@ def load_from_local_file() -> Optional[VersionData]:
             "minor": "minor",
             "patch": "patch",
             "release_date": "release_date",
-            "min_version": "min_version"
+            "min_version": "min_version",
         }
 
         result = {
@@ -306,11 +364,16 @@ def load_from_local_file() -> Optional[VersionData]:
             if file_key in data
         }
 
-        return cast(VersionData, {"source": "local_file", **result}) if "version" in result else None
+        return (
+            cast(VersionData, {"source": "local_file", **result})
+            if "version" in result
+            else None
+        )
     except Exception as e:
         logger.debug(f"Local file error: {e}")
 
     return None
+
 
 def load_from_env_vars() -> Optional[VersionData]:
     """Extract version from environment variables for explicit control"""
@@ -323,7 +386,7 @@ def load_from_env_vars() -> Optional[VersionData]:
         "minor": (f"{prefix}_MINOR", int),
         "patch": (f"{prefix}_PATCH", int),
         "release_date": (f"{prefix}_RELEASE_DATE", str),
-        "min_version": (f"{prefix}_MIN_VERSION", str)
+        "min_version": (f"{prefix}_MIN_VERSION", str),
     }
 
     result: VersionData = {"source": "environment"}
@@ -335,6 +398,7 @@ def load_from_env_vars() -> Optional[VersionData]:
                 logger.debug(f"Cannot convert {var_name}={value!r}")
 
     return result if "version" in result else None
+
 
 @lru_cache(maxsize=1)
 def load_version_config() -> VersionConfig:
@@ -348,7 +412,7 @@ def load_version_config() -> VersionConfig:
         (lambda: load_from_module(f"{REPO.package}_forge.config"), "config module"),
         (lambda: load_from_module(f"{REPO.package}_forge"), "package module"),
         (lambda: load_from_module(REPO.package), "base module"),
-        (load_from_central_db, "central database")
+        (load_from_central_db, "central database"),
     ]
 
     # First valid source wins - early decision circuit
@@ -362,6 +426,7 @@ def load_version_config() -> VersionConfig:
 
     return config
 
+
 # Initialize singleton version configuration - calculate once, use everywhere
 version_config: Final[VersionConfig] = load_version_config()
 
@@ -374,6 +439,7 @@ import sys
 
 class SimpleVersion:
     """Semantic version with numerical precision and lexical comparison"""
+
     __slots__ = ("major", "minor", "patch", "micro", "prerelease", "_valid")
 
     def __init__(self, version_str: str) -> None:
@@ -386,7 +452,7 @@ class SimpleVersion:
 
     def _parse(self, version_str: str) -> bool:
         """Parse version string with component extraction"""
-        if match := re.match(r'^(\d+)\.(\d+)\.(\d+)(?:[-.]?(.+))?$', version_str):
+        if match := re.match(r"^(\d+)\.(\d+)\.(\d+)(?:[-.]?(.+))?$", version_str):
             self.major, self.minor = int(match.group(1)), int(match.group(2))
             self.patch = self.micro = int(match.group(3))  # synchronize patch/micro
             self.prerelease = match.group(4) or None
@@ -399,8 +465,10 @@ class SimpleVersion:
             return NotImplemented
 
         # Short-circuit numeric comparisons for efficiency
-        for s, o in zip((self.major, self.minor, self.patch),
-                       (other.major, other.minor, other.patch)):
+        for s, o in zip(
+            (self.major, self.minor, self.patch),
+            (other.major, other.minor, other.patch),
+        ):
             if s != o:
                 return s < o
 
@@ -408,20 +476,28 @@ class SimpleVersion:
         if self.prerelease is None:
             return False  # No prerelease is "greater than" any prerelease
         if other.prerelease is None:
-            return True   # Any prerelease is "less than" no prerelease
+            return True  # Any prerelease is "less than" no prerelease
         return self.prerelease < other.prerelease  # Lexical comparison
 
     def __eq__(self, other: Any) -> bool:
         """Versions equal when all components match exactly"""
         if not isinstance(other, SimpleVersion):
             return NotImplemented
-        return ((self.major, self.minor, self.patch, self.prerelease) ==
-                (other.major, other.minor, other.patch, other.prerelease))
+        return (self.major, self.minor, self.patch, self.prerelease) == (
+            other.major,
+            other.minor,
+            other.patch,
+            other.prerelease,
+        )
 
     # Derived comparison operators through mathematical composition
     def __gt__(self, other: Any) -> bool:
         lt_result = self.__lt__(other)
-        return NotImplemented if lt_result is NotImplemented else not (lt_result or self.__eq__(other))
+        return (
+            NotImplemented
+            if lt_result is NotImplemented
+            else not (lt_result or self.__eq__(other))
+        )
 
     def __ge__(self, other: Any) -> bool:
         lt_result = self.__lt__(other)
@@ -455,7 +531,7 @@ class SimpleVersion:
 def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionProtocol:
     """Parse version string with optimal strategy selection"""
     # Normalize input for consistent results
-    cleaned: str = re.sub(r'^[vV]', '', version_str.strip())
+    cleaned: str = re.sub(r"^[vV]", "", version_str.strip())
 
     # Strategy cascade with graceful degradation
     try:
@@ -464,13 +540,15 @@ def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionP
 
         # Create adapter to ensure protocol compliance
         pkg_ver = packaging_parse(cleaned)
-        if hasattr(pkg_ver, 'release'):
+        if hasattr(pkg_ver, "release"):
             # Convert packaging.Version to SimpleVersion for protocol compliance
             release = pkg_ver.release
-            ver = SimpleVersion(f"{release[0]}.{release[1]}.{release[2] if len(release) > 2 else 0}")
+            ver = SimpleVersion(
+                f"{release[0]}.{release[1]}.{release[2] if len(release) > 2 else 0}"
+            )
             # Copy additional attributes for compatibility
-            if hasattr(pkg_ver, 'pre') and pkg_ver.pre:
-                ver.prerelease = '.'.join(str(x) for x in pkg_ver.pre)
+            if hasattr(pkg_ver, "pre") and pkg_ver.pre:
+                ver.prerelease = ".".join(str(x) for x in pkg_ver.pre)
             return ver
 
         # Fallback for unexpected version types
@@ -491,9 +569,9 @@ def format_version(version: VersionLike) -> str:
     try:
         if isinstance(version, str):
             return f"v{version.lstrip('vV')}"
-        elif hasattr(version, '__version__'):
+        elif hasattr(version, "__version__"):
             return f"v{getattr(version, '__version__').lstrip('vV')}"
-        elif hasattr(version, 'version'):
+        elif hasattr(version, "version"):
             return f"v{getattr(version, 'version').lstrip('vV')}"
         else:
             return f"v{str(version).lstrip('vV')}"
@@ -520,12 +598,12 @@ def calculate_delta(v1: str, v2: str) -> VersionDelta:
     try:
         ver1, ver2 = parse_version(v1), parse_version(v2)
         # Extract components safely regardless of version implementation
-        major1: Any | int = getattr(ver1, 'major', 0)
-        major2: Any | int = getattr(ver2, 'major', 0)
-        minor1: Any | int = getattr(ver1, 'minor', 0)
-        minor2: Any | int = getattr(ver2, 'minor', 0)
-        patch1: Any | int = getattr(ver1, 'patch', getattr(ver1, 'micro', 0))
-        patch2: Any | int = getattr(ver2, 'patch', getattr(ver2, 'micro', 0))
+        major1: Any | int = getattr(ver1, "major", 0)
+        major2: Any | int = getattr(ver2, "major", 0)
+        minor1: Any | int = getattr(ver1, "minor", 0)
+        minor2: Any | int = getattr(ver2, "minor", 0)
+        patch1: Any | int = getattr(ver1, "patch", getattr(ver1, "micro", 0))
+        patch2: Any | int = getattr(ver2, "patch", getattr(ver2, "micro", 0))
 
         return {
             "major": major2 - major1,
@@ -533,14 +611,18 @@ def calculate_delta(v1: str, v2: str) -> VersionDelta:
             "patch": patch2 - patch1,
             "is_upgrade": ver2 > ver1,
             "is_downgrade": ver2 < ver1,
-            "is_same": ver2 == ver1
+            "is_same": ver2 == ver1,
         }
     except Exception as e:
         # Graceful error handling with explicit indication
         return {
-            "major": 0, "minor": 0, "patch": 0,
-            "is_upgrade": False, "is_downgrade": False,
-            "is_same": False, "error": str(e)
+            "major": 0,
+            "minor": 0,
+            "patch": 0,
+            "is_upgrade": False,
+            "is_downgrade": False,
+            "is_same": False,
+            "error": str(e),
         }
 
 
@@ -550,15 +632,18 @@ calculate_version_delta = calculate_delta
 
 class VersionUpdateResult(TypedDict):
     """Version update operation metrics"""
-    updated: bool               # Whether any files were modified
-    files_changed: List[str]    # Paths of modified files
-    files_examined: int         # Total files scanned
-    duration_seconds: float     # Operation duration
-    version_from: str           # Original version
-    version_to: str             # Target version
+
+    updated: bool  # Whether any files were modified
+    files_changed: List[str]  # Paths of modified files
+    files_examined: int  # Total files scanned
+    duration_seconds: float  # Operation duration
+    version_from: str  # Original version
+    version_to: str  # Target version
 
 
-def update_version(new_version: str, repo_path: Optional[Path] = None) -> VersionUpdateResult:
+def update_version(
+    new_version: str, repo_path: Optional[Path] = None
+) -> VersionUpdateResult:
     """Update version references throughout codebase with surgical precision."""
     current_version: str = version_config.__version__
     start_time: datetime = datetime.now()
@@ -572,11 +657,11 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
             "files_examined": 0,
             "duration_seconds": 0.0,
             "version_from": current_version,
-            "version_to": new_version
+            "version_to": new_version,
         }
 
     # Validate version format with fail-fast principle
-    if not (version_match := re.match(r'^(\d+)\.(\d+)\.(\d+)', new_version)):
+    if not (version_match := re.match(r"^(\d+)\.(\d+)\.(\d+)", new_version)):
         raise ValueError(f"Invalid version format: {new_version}")
 
     # Parse components once for efficiency
@@ -587,25 +672,38 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
 
     # Surgical replacement patterns with capture groups for precise changes
     version_patterns: List[Tuple[str, str]] = [
-        (rf'(version\s*=\s*["\']){re.escape(current_version)}(["\'])',
-         rf'\g<1>{new_version}\g<2>'),
-        (rf'(__version__\s*=\s*["\']){re.escape(current_version)}(["\'])',
-         rf'\g<1>{new_version}\g<2>'),
-        (rf'(VERSION_MAJOR\s*=\s*){version_config.major}',
-         rf'\g<1>{new_major}'),
-        (rf'(VERSION_MINOR\s*=\s*){version_config.minor}',
-         rf'\g<1>{new_minor}'),
-        (rf'(VERSION_PATCH\s*=\s*){version_config.patch}',
-         rf'\g<1>{new_patch}'),
+        (
+            rf'(version\s*=\s*["\']){re.escape(current_version)}(["\'])',
+            rf"\g<1>{new_version}\g<2>",
+        ),
+        (
+            rf'(__version__\s*=\s*["\']){re.escape(current_version)}(["\'])',
+            rf"\g<1>{new_version}\g<2>",
+        ),
+        (rf"(VERSION_MAJOR\s*=\s*){version_config.major}", rf"\g<1>{new_major}"),
+        (rf"(VERSION_MINOR\s*=\s*){version_config.minor}", rf"\g<1>{new_minor}"),
+        (rf"(VERSION_PATCH\s*=\s*){version_config.patch}", rf"\g<1>{new_patch}"),
     ]
 
     # Exclusion rules for efficiency and safety
     skip_dirs: set[str] = {
-        "__pycache__", "dist", "build", "venv", ".venv",
-        ".git", "node_modules"
+        "__pycache__",
+        "dist",
+        "build",
+        "venv",
+        ".venv",
+        ".git",
+        "node_modules",
     }
     valid_extensions: set[str] = {
-        ".py", ".md", ".rst", ".txt", ".toml", ".yaml", ".yml", ".cfg"
+        ".py",
+        ".md",
+        ".rst",
+        ".txt",
+        ".toml",
+        ".yaml",
+        ".yml",
+        ".cfg",
     }
 
     def update_file(path: Path) -> bool:
@@ -631,11 +729,13 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
             return False
 
     # Process files with efficient filtering
-    for file_path in repo_root.rglob('*'):
+    for file_path in repo_root.rglob("*"):
         # Fast-path exclusions first to minimize work
-        if (file_path.is_dir() or
-            file_path.name.startswith('.') or
-            any(p in file_path.parts for p in skip_dirs)):
+        if (
+            file_path.is_dir()
+            or file_path.name.startswith(".")
+            or any(p in file_path.parts for p in skip_dirs)
+        ):
             continue
 
         # Process only relevant file types
@@ -653,8 +753,7 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
     # Update runtime state for consistency
     if files_updated:
         version_config.update(
-            __version__=new_version,
-            major=new_major, minor=new_minor, patch=new_patch
+            __version__=new_version, major=new_major, minor=new_minor, patch=new_patch
         )
 
         # Message with contextually appropriate wit
@@ -673,7 +772,9 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
                 shown.append(f"...and {len(files_updated) - 3} more")
             logger.debug("Modified: " + ", ".join(shown))
     else:
-        logger.info("No version references found - perfect stealth or nothing to change")
+        logger.info(
+            "No version references found - perfect stealth or nothing to change"
+        )
 
     return {
         "updated": bool(files_updated),
@@ -681,7 +782,7 @@ def update_version(new_version: str, repo_path: Optional[Path] = None) -> Versio
         "files_examined": files_examined,
         "duration_seconds": duration,
         "version_from": current_version,
-        "version_to": new_version
+        "version_to": new_version,
     }
 
 
@@ -691,6 +792,7 @@ update_version_universally = update_version
 
 class VersionStatus(TypedDict):
     """Comprehensive version context"""
+
     version: str
     components: Dict[str, int]
     release_date: str
@@ -707,7 +809,7 @@ def get_version_status() -> VersionStatus:
         "components": {
             "major": version_config.major,
             "minor": version_config.minor,
-            "patch": version_config.patch
+            "patch": version_config.patch,
         },
         "release_date": version_config.release_date,
         "min_version": version_config.min_version,
@@ -716,8 +818,8 @@ def get_version_status() -> VersionStatus:
         "system_info": {
             "python_version": sys.version.split()[0],
             "platform": sys.platform,
-            "timestamp": datetime.now().isoformat()
-        }
+            "timestamp": datetime.now().isoformat(),
+        },
     }
 
 
@@ -732,6 +834,7 @@ if __name__ == "__main__":
     # └────────────────────────────────────────────────────────┘
     class CommandHandler(Protocol):
         """Contract for command execution functions"""
+
         def __call__(self, args: List[str]) -> None: ...
 
     def display_header() -> None:
@@ -745,9 +848,11 @@ if __name__ == "__main__":
         delta: VersionDelta = calculate_delta(v1, v2)
 
         print(f"📊 {v1} → {v2}")
-        print(f"  Major: {delta.get('major', 0)}, Minor: {delta.get('minor', 0)}, Patch: {delta.get('patch', 0)}")
+        print(
+            f"  Major: {delta.get('major', 0)}, Minor: {delta.get('minor', 0)}, Patch: {delta.get('patch', 0)}"
+        )
 
-        if delta.get('error'):
+        if delta.get("error"):
             print(f"  ⚠️ Error: {delta.get('error', '')}")
             return
 
@@ -755,12 +860,13 @@ if __name__ == "__main__":
         state_mapping: Dict[str, Tuple[str, str]] = {
             "upgrade": ("🔼", "Upgrade"),
             "downgrade": ("🔽", "Downgrade"),
-            "equivalent": ("⏸️", "Equivalent")
+            "equivalent": ("⏸️", "Equivalent"),
         }
 
         state_key = (
-            "upgrade" if delta.get('is_upgrade', False) else
-            ("downgrade" if delta.get('is_downgrade', False) else "equivalent")
+            "upgrade"
+            if delta.get("is_upgrade", False)
+            else ("downgrade" if delta.get("is_downgrade", False) else "equivalent")
         )
 
         emoji, label = state_mapping[state_key]
@@ -793,7 +899,9 @@ if __name__ == "__main__":
         result = update_version(args[0])
 
         if result["updated"]:
-            print(f"✅ Updated {len(result['files_changed'])} files to {result['version_to']}")
+            print(
+                f"✅ Updated {len(result['files_changed'])} files to {result['version_to']}"
+            )
             print(f"   Duration: {result['duration_seconds']:.2f}s")
         else:
             print(f"ℹ️ No changes needed for version {result['version_to']}")
@@ -824,7 +932,7 @@ if __name__ == "__main__":
             ("update <VERSION>", "Apply version universally"),
             ("compare <V1> <V2>", "Analyze version differences"),
             ("status", "Show diagnostic information"),
-            ("help", "Display this help message")
+            ("help", "Display this help message"),
         ]
 
         # Display commands with consistent formatting
@@ -841,7 +949,7 @@ if __name__ == "__main__":
         "update": cmd_update,
         "status": cmd_status,
         "compare": cmd_compare,
-        "help": cmd_help
+        "help": cmd_help,
     }
 
     # ┌────────────────────────────────────────────────────────┐

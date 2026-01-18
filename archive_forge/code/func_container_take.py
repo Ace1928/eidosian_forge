@@ -1,0 +1,7 @@
+import itertools
+from future.utils import with_metaclass
+from .util import subvals
+from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
+@primitive
+def container_take(A, idx):
+    return A[idx]

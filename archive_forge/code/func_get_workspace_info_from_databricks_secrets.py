@@ -1,0 +1,24 @@
+import functools
+import json
+import logging
+import os
+import subprocess
+import time
+from sys import stderr
+from typing import NamedTuple, Optional, TypeVar
+import mlflow.utils
+from mlflow.environment_variables import MLFLOW_TRACKING_URI
+from mlflow.exceptions import MlflowException
+from mlflow.legacy_databricks_cli.configure.provider import (
+from mlflow.utils._spark_utils import _get_active_spark_session
+from mlflow.utils.rest_utils import MlflowHostCreds
+from mlflow.utils.uri import get_db_info_from_uri, is_databricks_uri
+def get_workspace_info_from_databricks_secrets(tracking_uri):
+    profile, key_prefix = get_db_info_from_uri(tracking_uri)
+    if key_prefix:
+        dbutils = _get_dbutils()
+        if dbutils:
+            workspace_id = dbutils.secrets.get(scope=profile, key=key_prefix + '-workspace-id')
+            workspace_host = dbutils.secrets.get(scope=profile, key=key_prefix + '-host')
+            return (workspace_host, workspace_id)
+    return (None, None)

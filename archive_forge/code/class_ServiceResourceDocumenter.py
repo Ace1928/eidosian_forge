@@ -1,0 +1,35 @@
+from botocore import xform_name
+from botocore.docs.utils import get_official_service_name
+from boto3.docs.base import BaseDocumenter
+from boto3.docs.action import ActionDocumenter
+from boto3.docs.waiter import WaiterResourceDocumenter
+from boto3.docs.collection import CollectionDocumenter
+from boto3.docs.subresource import SubResourceDocumenter
+from boto3.docs.attr import document_attribute
+from boto3.docs.attr import document_identifier
+from boto3.docs.attr import document_reference
+from boto3.docs.utils import get_identifier_args_for_signature
+from boto3.docs.utils import get_identifier_values_for_example
+from boto3.docs.utils import get_identifier_description
+from boto3.docs.utils import add_resource_type_overview
+class ServiceResourceDocumenter(ResourceDocumenter):
+
+    @property
+    def class_name(self):
+        return '%s.ServiceResource' % self._service_docs_name
+
+    def _add_title(self, section):
+        section.style.h2('Service Resource')
+
+    def _add_description(self, section):
+        official_service_name = get_official_service_name(self._service_model)
+        section.write('A resource representing %s' % official_service_name)
+
+    def _add_example(self, section, identifier_names):
+        section.style.start_codeblock()
+        section.style.new_line()
+        section.write('import boto3')
+        section.style.new_line()
+        section.style.new_line()
+        section.write("%s = boto3.resource('%s')" % (self._service_name, self._service_name))
+        section.style.end_codeblock()

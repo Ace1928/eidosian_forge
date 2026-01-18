@@ -1,0 +1,19 @@
+from collections import defaultdict
+from functools import reduce
+from math import prod
+from sympy.core.function import expand_log, count_ops, _coeff_isneg
+from sympy.core import sympify, Basic, Dummy, S, Add, Mul, Pow, expand_mul, factor_terms
+from sympy.core.sorting import ordered, default_sort_key
+from sympy.core.numbers import Integer, Rational
+from sympy.core.mul import _keep_coeff
+from sympy.core.rules import Transform
+from sympy.functions import exp_polar, exp, log, root, polarify, unpolarify
+from sympy.matrices.expressions.matexpr import MatrixSymbol
+from sympy.polys import lcm, gcd
+from sympy.ntheory.factor_ import multiplicity
+def _terms(e):
+    if e.is_Add:
+        return sum([_terms(ai) for ai in e.args])
+    if e.is_Mul:
+        return prod([_terms(mi) for mi in e.args])
+    return 1

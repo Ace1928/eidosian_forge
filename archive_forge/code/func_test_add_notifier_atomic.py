@@ -1,0 +1,23 @@
+import unittest
+from unittest import mock
+from traits.has_traits import HasTraits
+from traits.trait_types import Instance, Int
+from traits.observation.api import (
+from traits.observation.exceptions import NotifierNotFound
+from traits.observation.expression import compile_expr, trait
+from traits.observation.observe import (
+from traits.observation._observer_graph import ObserverGraph
+from traits.observation._testing import (
+def test_add_notifier_atomic(self):
+
+    class BadNotifier(DummyNotifier):
+
+        def add_to(self, observable):
+            raise ZeroDivisionError()
+    observable = DummyObservable()
+    good_observer = DummyObserver(notify=True, observables=[observable], next_objects=[mock.Mock()], notifier=DummyNotifier(), maintainer=DummyNotifier())
+    bad_observer = DummyObserver(notify=True, observables=[observable], notifier=BadNotifier(), maintainer=DummyNotifier())
+    graph = create_graph(good_observer, bad_observer)
+    with self.assertRaises(ZeroDivisionError):
+        call_add_or_remove_notifiers(object=mock.Mock(), graph=graph)
+    self.assertEqual(observable.notifiers, [])

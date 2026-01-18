@@ -1,0 +1,42 @@
+import pyomo.common.unittest as unittest
+from pyomo.common.fileutils import Executable
+from pyomo.contrib.cp import IntervalVar, Pulse, Step, AlwaysIn
+from pyomo.contrib.cp.repn.docplex_writer import LogicalToDoCplex
+from pyomo.environ import (
+from pyomo.opt import WriterFactory, SolverFactory
+def test_solve_scheduling_problem(self):
+    m = ConcreteModel()
+    m.eat_cookie = IntervalVar([0, 1], length=8, end=(0, 24), optional=False)
+    m.eat_cookie[0].start_time.bounds = (0, 4)
+    m.eat_cookie[1].start_time.bounds = (5, 20)
+    m.read_story = IntervalVar(start=(15, 24), end=(0, 24), length=(2, 3))
+    m.sweep_crumbs = IntervalVar(optional=True, length=1, end=(0, 24))
+    m.do_dishes = IntervalVar(optional=True, length=5, end=(0, 24))
+    m.num_crumbs = Var(domain=Integers, bounds=(0, 100))
+    m.cookies = LogicalConstraint(expr=m.eat_cookie[1].start_time.after(m.eat_cookie[0].end_time))
+    m.cookies_imply_crumbs = LogicalConstraint(expr=m.eat_cookie[0].is_present.implies(m.num_crumbs == 5))
+    m.good_mouse = LogicalConstraint(expr=implies(m.num_crumbs >= 3, m.sweep_crumbs.is_present))
+    m.sweep_after = LogicalConstraint(expr=m.sweep_crumbs.start_time.after(m.eat_cookie[1].end_time))
+    m.mice_occupied = sum((Pulse((m.eat_cookie[i], 1)) for i in range(2))) + Step(m.read_story.start_time, 1) + Pulse((m.sweep_crumbs, 1)) - Pulse((m.do_dishes, 1))
+    m.treat_your_mouse_well = LogicalConstraint(expr=AlwaysIn(cumul_func=m.mice_occupied, bounds=(1, 1), times=(0, 24)))
+    results = SolverFactory('cp_optimizer').solve(m, symbolic_solver_labels=True, tee=True)
+    self.assertEqual(results.solver.termination_condition, TerminationCondition.feasible)
+    self.assertTrue(value(m.eat_cookie[0].is_present))
+    self.assertTrue(value(m.eat_cookie[1].is_present))
+    self.assertEqual(value(m.num_crumbs), 5)
+    self.assertTrue(value(m.sweep_crumbs.is_present))
+    self.assertEqual(value(m.eat_cookie[0].start_time), 0)
+    self.assertEqual(value(m.eat_cookie[0].end_time), 8)
+    self.assertEqual(value(m.eat_cookie[0].length), 8)
+    self.assertEqual(value(m.eat_cookie[1].start_time), 8)
+    self.assertEqual(value(m.eat_cookie[1].end_time), 16)
+    self.assertEqual(value(m.eat_cookie[1].length), 8)
+    self.assertEqual(value(m.sweep_crumbs.start_time), 16)
+    self.assertEqual(value(m.sweep_crumbs.end_time), 17)
+    self.assertEqual(value(m.sweep_crumbs.length), 1)
+    self.assertEqual(value(m.read_story.start_time), 17)
+    self.assertFalse(value(m.do_dishes.is_present))
+    self.assertEqual(results.problem.number_of_objectives, 0)
+    self.assertEqual(results.problem.number_of_constraints, 5)
+    self.assertEqual(results.problem.number_of_integer_vars, 1)
+    self.assertEqual(results.problem.number_of_interval_vars, 5)

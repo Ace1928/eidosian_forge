@@ -1,0 +1,64 @@
+import os
+import pathlib
+import sys
+import traceback
+import click
+import click.exceptions
+from click.types import ParamType
+from click_didyoumean import DYMGroup
+from click_plugins import with_plugins
+from celery import VERSION_BANNER
+from celery.app.utils import find_app
+from celery.bin.amqp import amqp
+from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
+from celery.bin.beat import beat
+from celery.bin.call import call
+from celery.bin.control import control, inspect, status
+from celery.bin.events import events
+from celery.bin.graph import graph
+from celery.bin.list import list_
+from celery.bin.logtool import logtool
+from celery.bin.migrate import migrate
+from celery.bin.multi import multi
+from celery.bin.purge import purge
+from celery.bin.result import result
+from celery.bin.shell import shell
+from celery.bin.upgrade import upgrade
+from celery.bin.worker import worker
+@with_plugins(_PLUGINS)
+@click.group(cls=DYMGroup, invoke_without_command=True)
+@click.option('-A', '--app', envvar='APP', cls=CeleryOption, type=APP, help_group='Global Options')
+@click.option('-b', '--broker', envvar='BROKER_URL', cls=CeleryOption, help_group='Global Options')
+@click.option('--result-backend', envvar='RESULT_BACKEND', cls=CeleryOption, help_group='Global Options')
+@click.option('--loader', envvar='LOADER', cls=CeleryOption, help_group='Global Options')
+@click.option('--config', envvar='CONFIG_MODULE', cls=CeleryOption, help_group='Global Options')
+@click.option('--workdir', cls=CeleryOption, type=pathlib.Path, callback=lambda _, __, wd: os.chdir(wd) if wd else None, is_eager=True, help_group='Global Options')
+@click.option('-C', '--no-color', envvar='NO_COLOR', is_flag=True, cls=CeleryOption, help_group='Global Options')
+@click.option('-q', '--quiet', is_flag=True, cls=CeleryOption, help_group='Global Options')
+@click.option('--version', cls=CeleryOption, is_flag=True, help_group='Global Options')
+@click.option('--skip-checks', envvar='SKIP_CHECKS', cls=CeleryOption, is_flag=True, help_group='Global Options', help='Skip Django core checks on startup. Setting the SKIP_CHECKS environment variable to any non-empty string will have the same effect.')
+@click.pass_context
+def celery(ctx, app, broker, result_backend, loader, config, workdir, no_color, quiet, version, skip_checks):
+    """Celery command entrypoint."""
+    if version:
+        click.echo(VERSION_BANNER)
+        ctx.exit()
+    elif ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit()
+    if loader:
+        os.environ['CELERY_LOADER'] = loader
+    if broker:
+        os.environ['CELERY_BROKER_URL'] = broker
+    if result_backend:
+        os.environ['CELERY_RESULT_BACKEND'] = result_backend
+    if config:
+        os.environ['CELERY_CONFIG_MODULE'] = config
+    if skip_checks:
+        os.environ['CELERY_SKIP_CHECKS'] = 'true'
+    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir, quiet=quiet)
+    worker.params.extend(ctx.obj.app.user_options.get('worker', []))
+    beat.params.extend(ctx.obj.app.user_options.get('beat', []))
+    events.params.extend(ctx.obj.app.user_options.get('events', []))
+    for command in celery.commands.values():
+        command.params.extend(ctx.obj.app.user_options.get('preload', []))

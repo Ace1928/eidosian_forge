@@ -1,0 +1,34 @@
+import collections
+import contextlib
+import dataclasses
+import functools
+import inspect
+import os
+import re
+from itertools import chain, count
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+import sympy
+from sympy import Expr
+import torch
+from torch._dynamo.utils import counters, dynamo_timed
+from torch._inductor.codecache import get_cpp_wrapper_cubin_path_name
+from torch.fx.experimental.symbolic_shapes import free_unbacked_symbols, SymTypes
+from torch.fx.node import _get_qualified_name
+from torch.utils._sympy.singleton_int import SingletonInt
+from .. import codecache, config, ir
+from ..codecache import CudaKernelParamCache
+from ..ir import ComputedBuffer, InputBuffer, ReinterpretView
+from ..triton_heuristics import grid as default_grid
+from ..utils import (
+from ..virtualized import V
+from .common import CodeGen, DeferredLine, IndentedBuffer, PythonPrinter
+from .triton_utils import config_of, signature_to_meta
+@functools.lru_cache(None)
+def codegen_int_array_var(self, int_array: str, writer=None):
+    if writer is None:
+        writer = self
+    var = f'int_array_{next(self.int_array_id)}'
+    if var not in self.declared_int_array_vars:
+        self.declared_int_array_vars.add(var)
+        writer.writeline(f'int64_t {var}[] = {int_array};')
+    return var

@@ -1,0 +1,12 @@
+import unittest
+import unittest.mock
+import os.path
+import sys
+import test.support
+from test.support import os_helper
+from ctypes import *
+from ctypes.util import find_library
+def test_gl(self):
+    if self.gl is None:
+        self.skipTest('lib_gl not available')
+    self.gl.glClearIndex

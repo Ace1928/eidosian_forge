@@ -1,0 +1,2 @@
+class InvalidJobDependency(Exception):
+    pass

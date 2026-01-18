@@ -1,0 +1,46 @@
+import glob
+import os
+import os.path
+import re
+import warnings
+from ..base import (
+from .base import aggregate_filename
+class ExtractInputSpec(StdOutCommandLineInputSpec):
+    input_file = File(desc='input file', exists=True, mandatory=True, argstr='%s', position=-2)
+    output_file = File(desc='output file', position=-1, name_source=['input_file'], hash_files=False, name_template='%s.raw', keep_extension=False)
+    _xor_write = ('write_ascii', 'write_ascii', 'write_byte', 'write_short', 'write_int', 'write_long', 'write_float', 'write_double', 'write_signed', 'write_unsigned')
+    write_ascii = traits.Bool(desc='Write out data as ascii strings (default).', argstr='-ascii', xor=_xor_write)
+    write_byte = traits.Bool(desc='Write out data as bytes.', argstr='-byte', xor=_xor_write)
+    write_short = traits.Bool(desc='Write out data as short integers.', argstr='-short', xor=_xor_write)
+    write_int = traits.Bool(desc='Write out data as 32-bit integers.', argstr='-int', xor=_xor_write)
+    write_long = traits.Bool(desc='Superseded by write_int.', argstr='-long', xor=_xor_write)
+    write_float = traits.Bool(desc='Write out data as single precision floating-point values.', argstr='-float', xor=_xor_write)
+    write_double = traits.Bool(desc='Write out data as double precision floating-point values.', argstr='-double', xor=_xor_write)
+    _xor_signed = ('write_signed', 'write_unsigned')
+    write_signed = traits.Bool(desc='Write out signed data.', argstr='-signed', xor=_xor_signed)
+    write_unsigned = traits.Bool(desc='Write out unsigned data.', argstr='-unsigned', xor=_xor_signed)
+    write_range = traits.Tuple(traits.Float, traits.Float, argstr='-range %s %s', desc='Specify the range of output values\nDefault value: 1.79769e+308 1.79769e+308.')
+    _xor_normalize = ('normalize', 'nonormalize')
+    normalize = traits.Bool(desc='Normalize integer pixel values to file max and min.', argstr='-normalize', xor=_xor_normalize)
+    nonormalize = traits.Bool(desc='Turn off pixel normalization.', argstr='-nonormalize', xor=_xor_normalize)
+    image_range = traits.Tuple(traits.Float, traits.Float, desc='Specify the range of real image values for normalization.', argstr='-image_range %s %s')
+    image_minimum = traits.Float(desc='Specify the minimum real image value for normalization.Default value: 1.79769e+308.', argstr='-image_minimum %s')
+    image_maximum = traits.Float(desc='Specify the maximum real image value for normalization.Default value: 1.79769e+308.', argstr='-image_maximum %s')
+    start = InputMultiPath(traits.Int, desc='Specifies corner of hyperslab (C conventions for indices).', sep=',', argstr='-start %s')
+    count = InputMultiPath(traits.Int, desc='Specifies edge lengths of hyperslab to read.', sep=',', argstr='-count %s')
+    _xor_flip = ('flip_positive_direction', 'flip_negative_direction', 'flip_any_direction')
+    flip_positive_direction = traits.Bool(desc='Flip images to always have positive direction.', argstr='-positive_direction', xor=_xor_flip)
+    flip_negative_direction = traits.Bool(desc='Flip images to always have negative direction.', argstr='-negative_direction', xor=_xor_flip)
+    flip_any_direction = traits.Bool(desc='Do not flip images (Default).', argstr='-any_direction', xor=_xor_flip)
+    _xor_x_flip = ('flip_x_positive', 'flip_x_negative', 'flip_x_any')
+    flip_x_positive = traits.Bool(desc='Flip images to give positive xspace:step value (left-to-right).', argstr='+xdirection', xor=_xor_x_flip)
+    flip_x_negative = traits.Bool(desc='Flip images to give negative xspace:step value (right-to-left).', argstr='-xdirection', xor=_xor_x_flip)
+    flip_x_any = traits.Bool(desc="Don't flip images along x-axis (default).", argstr='-xanydirection', xor=_xor_x_flip)
+    _xor_y_flip = ('flip_y_positive', 'flip_y_negative', 'flip_y_any')
+    flip_y_positive = traits.Bool(desc='Flip images to give positive yspace:step value (post-to-ant).', argstr='+ydirection', xor=_xor_y_flip)
+    flip_y_negative = traits.Bool(desc='Flip images to give negative yspace:step value (ant-to-post).', argstr='-ydirection', xor=_xor_y_flip)
+    flip_y_any = traits.Bool(desc="Don't flip images along y-axis (default).", argstr='-yanydirection', xor=_xor_y_flip)
+    _xor_z_flip = ('flip_z_positive', 'flip_z_negative', 'flip_z_any')
+    flip_z_positive = traits.Bool(desc='Flip images to give positive zspace:step value (inf-to-sup).', argstr='+zdirection', xor=_xor_z_flip)
+    flip_z_negative = traits.Bool(desc='Flip images to give negative zspace:step value (sup-to-inf).', argstr='-zdirection', xor=_xor_z_flip)
+    flip_z_any = traits.Bool(desc="Don't flip images along z-axis (default).", argstr='-zanydirection', xor=_xor_z_flip)

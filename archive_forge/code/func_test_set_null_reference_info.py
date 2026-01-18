@@ -1,0 +1,31 @@
+import errno
+import os
+from io import StringIO
+from ... import branch as _mod_branch
+from ... import config, controldir, errors, merge, osutils
+from ... import revision as _mod_revision
+from ... import tests, trace
+from ... import transport as _mod_transport
+from ... import urlutils
+from ...bzr import bzrdir
+from ...bzr.conflicts import ConflictList, ContentsConflict, TextConflict
+from ...bzr.inventory import Inventory
+from ...bzr.workingtree import InventoryWorkingTree
+from ...errors import PathsNotVersionedError, UnsupportedOperation
+from ...mutabletree import MutableTree
+from ...osutils import getcwd, pathjoin, supports_symlinks
+from ...tree import TreeDirectory, TreeFile, TreeLink
+from ...workingtree import SettingFileIdUnsupported, WorkingTree
+from .. import TestNotApplicable, TestSkipped, features
+from . import TestCaseWithWorkingTree
+def test_set_null_reference_info(self):
+    tree = self.make_branch_and_tree('branch')
+    self.build_tree(['branch/file'])
+    tree.add(['file'])
+    try:
+        tree.set_reference_info('file', 'path/to/location')
+    except errors.UnsupportedOperation:
+        raise tests.TestNotApplicable('Branch cannot hold references.')
+    tree.set_reference_info('file', None)
+    branch_location = tree.get_reference_info('file')
+    self.assertIs(None, branch_location)

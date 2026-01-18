@@ -1,0 +1,114 @@
+from __future__ import absolute_import
+from apitools.base.py import base_api
+from googlecloudsdk.generated_clients.apis.securitycenter.v1 import securitycenter_v1_messages as messages
+class OrganizationsSecurityHealthAnalyticsSettingsCustomModulesService(base_api.BaseApiService):
+    """Service class for the organizations_securityHealthAnalyticsSettings_customModules resource."""
+    _NAME = 'organizations_securityHealthAnalyticsSettings_customModules'
+
+    def __init__(self, client):
+        super(SecuritycenterV1.OrganizationsSecurityHealthAnalyticsSettingsCustomModulesService, self).__init__(client)
+        self._upload_configs = {}
+
+    def Create(self, request, global_params=None):
+        """Creates a resident SecurityHealthAnalyticsCustomModule at the scope of the given CRM parent, and also creates inherited SecurityHealthAnalyticsCustomModules for all CRM descendants of the given parent. These modules are enabled by default.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesCreateRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule) The response message.
+      """
+        config = self.GetMethodConfig('Create')
+        return self._RunMethod(config, request, global_params=global_params)
+    Create.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules', http_method='POST', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.create', ordered_params=['parent'], path_params=['parent'], query_params=[], relative_path='v1/{+parent}/customModules', request_field='googleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesCreateRequest', response_type_name='GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule', supports_download=False)
+
+    def Delete(self, request, global_params=None):
+        """Deletes the specified SecurityHealthAnalyticsCustomModule and all of its descendants in the CRM hierarchy. This method is only supported for resident custom modules.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesDeleteRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (Empty) The response message.
+      """
+        config = self.GetMethodConfig('Delete')
+        return self._RunMethod(config, request, global_params=global_params)
+    Delete.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules/{customModulesId}', http_method='DELETE', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.delete', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesDeleteRequest', response_type_name='Empty', supports_download=False)
+
+    def Get(self, request, global_params=None):
+        """Retrieves a SecurityHealthAnalyticsCustomModule.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesGetRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule) The response message.
+      """
+        config = self.GetMethodConfig('Get')
+        return self._RunMethod(config, request, global_params=global_params)
+    Get.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules/{customModulesId}', http_method='GET', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.get', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}', request_field='', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesGetRequest', response_type_name='GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule', supports_download=False)
+
+    def List(self, request, global_params=None):
+        """Returns a list of all SecurityHealthAnalyticsCustomModules for the given parent. This includes resident modules defined at the scope of the parent, and inherited modules, inherited from CRM ancestors.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesListRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (ListSecurityHealthAnalyticsCustomModulesResponse) The response message.
+      """
+        config = self.GetMethodConfig('List')
+        return self._RunMethod(config, request, global_params=global_params)
+    List.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules', http_method='GET', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.list', ordered_params=['parent'], path_params=['parent'], query_params=['pageSize', 'pageToken'], relative_path='v1/{+parent}/customModules', request_field='', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesListRequest', response_type_name='ListSecurityHealthAnalyticsCustomModulesResponse', supports_download=False)
+
+    def ListDescendant(self, request, global_params=None):
+        """Returns a list of all resident SecurityHealthAnalyticsCustomModules under the given CRM parent and all of the parent's CRM descendants.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesListDescendantRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (ListDescendantSecurityHealthAnalyticsCustomModulesResponse) The response message.
+      """
+        config = self.GetMethodConfig('ListDescendant')
+        return self._RunMethod(config, request, global_params=global_params)
+    ListDescendant.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules:listDescendant', http_method='GET', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.listDescendant', ordered_params=['parent'], path_params=['parent'], query_params=['pageSize', 'pageToken'], relative_path='v1/{+parent}/customModules:listDescendant', request_field='', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesListDescendantRequest', response_type_name='ListDescendantSecurityHealthAnalyticsCustomModulesResponse', supports_download=False)
+
+    def Patch(self, request, global_params=None):
+        """Updates the SecurityHealthAnalyticsCustomModule under the given name based on the given update mask. Updating the enablement state is supported on both resident and inherited modules (though resident modules cannot have an enablement state of "inherited"). Updating the display name and custom config of a module is supported on resident modules only.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesPatchRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule) The response message.
+      """
+        config = self.GetMethodConfig('Patch')
+        return self._RunMethod(config, request, global_params=global_params)
+    Patch.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules/{customModulesId}', http_method='PATCH', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.patch', ordered_params=['name'], path_params=['name'], query_params=['updateMask'], relative_path='v1/{+name}', request_field='googleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesPatchRequest', response_type_name='GoogleCloudSecuritycenterV1SecurityHealthAnalyticsCustomModule', supports_download=False)
+
+    def Simulate(self, request, global_params=None):
+        """Simulates a given SecurityHealthAnalyticsCustomModule and Resource.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesSimulateRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (SimulateSecurityHealthAnalyticsCustomModuleResponse) The response message.
+      """
+        config = self.GetMethodConfig('Simulate')
+        return self._RunMethod(config, request, global_params=global_params)
+    Simulate.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules:simulate', http_method='POST', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.simulate', ordered_params=['parent'], path_params=['parent'], query_params=[], relative_path='v1/{+parent}/customModules:simulate', request_field='simulateSecurityHealthAnalyticsCustomModuleRequest', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesSimulateRequest', response_type_name='SimulateSecurityHealthAnalyticsCustomModuleResponse', supports_download=False)
+
+    def Test(self, request, global_params=None):
+        """Tests a specified or given SecurityHealthAnalyticsCustomModule.
+
+      Args:
+        request: (SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesTestRequest) input message
+        global_params: (StandardQueryParameters, default: None) global arguments
+      Returns:
+        (TestSecurityHealthAnalyticsCustomModuleResponse) The response message.
+      """
+        config = self.GetMethodConfig('Test')
+        return self._RunMethod(config, request, global_params=global_params)
+    Test.method_config = lambda: base_api.ApiMethodInfo(flat_path='v1/organizations/{organizationsId}/securityHealthAnalyticsSettings/customModules/{customModulesId}:test', http_method='POST', method_id='securitycenter.organizations.securityHealthAnalyticsSettings.customModules.test', ordered_params=['name'], path_params=['name'], query_params=[], relative_path='v1/{+name}:test', request_field='testSecurityHealthAnalyticsCustomModuleRequest', request_type_name='SecuritycenterOrganizationsSecurityHealthAnalyticsSettingsCustomModulesTestRequest', response_type_name='TestSecurityHealthAnalyticsCustomModuleResponse', supports_download=False)

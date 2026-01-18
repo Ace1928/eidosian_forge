@@ -1,0 +1,47 @@
+import struct
+import base64
+from os_ken.lib import addrconv
+from os_ken.lib import mac
+from os_ken.lib.pack_utils import msg_pack_into
+from os_ken.lib.packet import packet
+from os_ken import exception
+from os_ken import utils
+from os_ken.ofproto.ofproto_parser import StringifyMixin, MsgBase
+from os_ken.ofproto import ether
+from os_ken.ofproto import nicira_ext
+from os_ken.ofproto import nx_actions
+from os_ken.ofproto import ofproto_parser
+from os_ken.ofproto import ofproto_common
+from os_ken.ofproto import ofproto_v1_3 as ofproto
+import logging
+@_set_msg_type(ofproto.OFPT_TABLE_MOD)
+class OFPTableMod(MsgBase):
+    """
+    Flow table configuration message
+
+    The controller sends this message to configure table state.
+
+    ================ ======================================================
+    Attribute        Description
+    ================ ======================================================
+    table_id         ID of the table (OFPTT_ALL indicates all tables)
+    config           Bitmap of the following flags.
+                     OFPTC_DEPRECATED_MASK (3)
+    ================ ======================================================
+
+    Example::
+
+        def send_table_mod(self, datapath):
+            ofp_parser = datapath.ofproto_parser
+
+            req = ofp_parser.OFPTableMod(datapath, 1, 3)
+            datapath.send_msg(req)
+    """
+
+    def __init__(self, datapath, table_id, config):
+        super(OFPTableMod, self).__init__(datapath)
+        self.table_id = table_id
+        self.config = config
+
+    def _serialize_body(self):
+        msg_pack_into(ofproto.OFP_TABLE_MOD_PACK_STR, self.buf, ofproto.OFP_HEADER_SIZE, self.table_id, self.config)

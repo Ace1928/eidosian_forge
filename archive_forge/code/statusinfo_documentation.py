@@ -1,0 +1,3 @@
+
+    Describes a status message.
+    

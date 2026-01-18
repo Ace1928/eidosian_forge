@@ -1,0 +1,7 @@
+import boto
+from boto.pyami.scriptbase import ScriptBase
+import os, StringIO
+def copy_bucket_acl(self):
+    if boto.config.get(self.name, 'copy_acls', True):
+        acl = self.src.get_xml_acl()
+        self.dst.set_xml_acl(acl)

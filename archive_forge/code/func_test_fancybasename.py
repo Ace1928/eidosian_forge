@@ -1,0 +1,25 @@
+import errno
+import os.path
+import shutil
+import sys
+import warnings
+from typing import Iterable, Mapping, MutableMapping, Sequence
+from unittest import skipIf
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred
+from twisted.internet.error import ProcessDone
+from twisted.internet.interfaces import IReactorProcess
+from twisted.internet.protocol import ProcessProtocol
+from twisted.python import util
+from twisted.python.filepath import FilePath
+from twisted.test.test_process import MockOS
+from twisted.trial.unittest import FailTest, TestCase
+from twisted.trial.util import suppress as SUPPRESS
+def test_fancybasename(self):
+    """
+        If C{fancybasename} is present, C{__str__} uses it instead of the class name.
+        """
+
+    class Foo(util.FancyStrMixin):
+        fancybasename = 'Bar'
+    self.assertEqual(str(Foo()), '<Bar>')

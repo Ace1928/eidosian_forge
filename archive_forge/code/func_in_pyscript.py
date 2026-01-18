@@ -1,0 +1,30 @@
+import argparse
+import cmd
+import functools
+import glob
+import inspect
+import os
+import pydoc
+import re
+import sys
+import threading
+from code import (
+from collections import (
+from contextlib import (
+from types import (
+from typing import (
+from . import (
+from .argparse_custom import (
+from .clipboard import (
+from .command_definition import (
+from .constants import (
+from .decorators import (
+from .exceptions import (
+from .history import (
+from .parsing import (
+from .rl_utils import (
+from .table_creator import (
+from .utils import (
+def in_pyscript(self) -> bool:
+    """Return whether running inside a Python shell or pyscript"""
+    return self._in_py

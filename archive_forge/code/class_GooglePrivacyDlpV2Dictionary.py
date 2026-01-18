@@ -1,0 +1,32 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class GooglePrivacyDlpV2Dictionary(_messages.Message):
+    """Custom information type based on a dictionary of words or phrases. This
+  can be used to match sensitive information specific to the data, such as a
+  list of employee IDs or job titles. Dictionary words are case-insensitive
+  and all characters other than letters and digits in the unicode [Basic
+  Multilingual Plane](https://en.wikipedia.org/wiki/Plane_%28Unicode%29#Basic_
+  Multilingual_Plane) will be replaced with whitespace when scanning for
+  matches, so the dictionary phrase "Sam Johnson" will match all three phrases
+  "sam johnson", "Sam, Johnson", and "Sam (Johnson)". Additionally, the
+  characters surrounding any match must be of a different type than the
+  adjacent characters within the word, so letters must be next to non-letters
+  and digits next to non-digits. For example, the dictionary word "jen" will
+  match the first three letters of the text "jen123" but will return no
+  matches for "jennifer". Dictionary words containing a large number of
+  characters that are not letters or digits may result in unexpected findings
+  because such characters are treated as whitespace. The
+  [limits](https://cloud.google.com/sensitive-data-protection/limits) page
+  contains details about the size limits of dictionaries. For dictionaries
+  that do not fit within these constraints, consider using
+  `LargeCustomDictionaryConfig` in the `StoredInfoType` API.
+
+  Fields:
+    cloudStoragePath: Newline-delimited file of words in Cloud Storage. Only a
+      single file is accepted.
+    wordList: List of words or phrases to search for.
+  """
+    cloudStoragePath = _messages.MessageField('GooglePrivacyDlpV2CloudStoragePath', 1)
+    wordList = _messages.MessageField('GooglePrivacyDlpV2WordList', 2)

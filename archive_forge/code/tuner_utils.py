@@ -1,0 +1,270 @@
+# Copyright 2019 The KerasTuner Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Utilities for Tuner class."""
+
+
+import collections
+import statistics
+
+import numpy as np
+
+from keras_tuner.src import backend
+from keras_tuner.src import errors
+from keras_tuner.src.backend import config
+from keras_tuner.src.backend import keras
+from keras_tuner.src.engine import hyperparameters as hp_module
+from keras_tuner.src.engine import objective as obj_module
+
+
+class TunerCallback(keras.callbacks.Callback):
+    def __init__(self, tuner, trial):
+        super().__init__()
+        self.tuner = tuner
+        self.trial = trial
+
+    def on_epoch_begin(self, epoch, logs=None):
+        self.tuner.on_epoch_begin(self.trial, self.model, epoch, logs=logs)
+
+    def on_batch_begin(self, batch, logs=None):
+        self.tuner.on_batch_begin(self.trial, self.model, batch, logs)
+
+    def on_batch_end(self, batch, logs=None):
+        self.tuner.on_batch_end(self.trial, self.model, batch, logs)
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.tuner.on_epoch_end(self.trial, self.model, epoch, logs=logs)
+
+
+class SaveBestEpoch(keras.callbacks.Callback):
+    """A Keras callback to save the model weights at the best epoch.
+
+    Args:
+        objective: An `Objective` instance.
+        filepath: String. The file path to save the model weights.
+    """
+
+    def __init__(self, objective, filepath):
+        super().__init__()
+        self.objective = objective
+        self.filepath = filepath
+        if self.objective.direction == "max":
+            self.best_value = float("-inf")
+        else:
+            self.best_value = float("inf")
+
+    def on_epoch_end(self, epoch, logs=None):
+        if not self.objective.has_value(logs):
+            # Save on every epoch if metric value is not in the logs. Either no
+            # objective is specified, or objective is computed and returned
+            # after `fit()`.
+            self._save_model()
+            return
+        current_value = self.objective.get_value(logs)
+        if self.objective.better_than(current_value, self.best_value):
+            self.best_value = current_value
+            self._save_model()
+
+    def _save_model(self):
+        if config.backend() != "tensorflow":
+            self.model.save_weights(self.filepath)
+            return
+        # Create temporary saved model files on non-chief workers.
+        write_filepath = backend.io.write_filepath(
+            self.filepath, self.model.distribute_strategy
+        )
+        self.model.save_weights(write_filepath)
+        # Remove temporary saved model files on non-chief workers.
+        backend.io.remove_temp_dir_with_filepath(
+            write_filepath, self.model.distribute_strategy
+        )
+
+
+def average_metrics_dicts(metrics_dicts):
+    """Averages the metrics dictionaries to one metrics dictionary."""
+    metrics = collections.defaultdict(list)
+    for metrics_dict in metrics_dicts:
+        for metric_name, metric_value in metrics_dict.items():
+            metrics[metric_name].append(metric_value)
+    averaged_metrics = {
+        metric_name: np.mean(metric_values)
+        for metric_name, metric_values in metrics.items()
+    }
+
+    return averaged_metrics
+
+
+def _get_best_value_and_best_epoch_from_history(history, objective):
+    # A dictionary to record the metric values through epochs.
+    # Usage: epoch_metric[epoch_number][metric_name] == metric_value
+    epoch_metrics = collections.defaultdict(dict)
+    for metric_name, epoch_values in history.history.items():
+        for epoch, value in enumerate(epoch_values):
+            epoch_metrics[epoch][metric_name] = value
+    best_epoch = 0
+    for epoch, metrics in epoch_metrics.items():
+        objective_value = objective.get_value(metrics)
+        # Support multi-objective.
+        if objective.name not in metrics:
+            metrics[objective.name] = objective_value
+        best_value = epoch_metrics[best_epoch][objective.name]
+        if objective.better_than(objective_value, best_value):
+            best_epoch = epoch
+    return epoch_metrics[best_epoch], best_epoch
+
+
+def convert_to_metrics_dict(results, objective):
+    """Convert any supported results type to a metrics dictionary."""
+    # List of multiple exectuion results to be averaged.
+    # Check this case first to deal each case individually to check for errors.
+    if isinstance(results, list):
+        return average_metrics_dicts(
+            [convert_to_metrics_dict(elem, objective) for elem in results]
+        )
+
+    # Single value.
+    if isinstance(results, (int, float, np.floating)):
+        return {objective.name: float(results)}
+
+    # A dictionary.
+    if isinstance(results, dict):
+        return results
+
+    # A History.
+    if isinstance(results, keras.callbacks.History):
+        best_value, _ = _get_best_value_and_best_epoch_from_history(
+            results, objective
+        )
+        return best_value
+
+
+def validate_trial_results(results, objective, func_name):
+    if isinstance(results, list):
+        for elem in results:
+            validate_trial_results(elem, objective, func_name)
+        return
+
+    # Single value.
+    if isinstance(results, (int, float, np.floating)):
+        return
+
+    # None
+    if results is None:
+        raise errors.FatalTypeError(
+            f"The return value of {func_name} is None. "
+            "Did you forget to return the metrics? "
+        )
+
+    # objective left unspecified,
+    # and objective value is not a single float.
+    if isinstance(objective, obj_module.DefaultObjective) and not (
+        isinstance(results, dict) and objective.name in results
+    ):
+        raise errors.FatalTypeError(
+            f"Expected the return value of {func_name} to be "
+            "a single float when `objective` is left unspecified. "
+            f"Recevied return value: {results} of type {type(results)}."
+        )
+
+    # A dictionary.
+    if isinstance(results, dict):
+        if objective.name not in results:
+            raise errors.FatalValueError(
+                f"Expected the returned dictionary from {func_name} to have "
+                f"the specified objective, {objective.name}, "
+                "as one of the keys. "
+                f"Received: {results}."
+            )
+        return
+
+    # A History.
+    if isinstance(results, keras.callbacks.History):
+        return
+
+    # Other unsupported types.
+    raise errors.FatalTypeError(
+        f"Expected the return value of {func_name} to be "
+        "one of float, dict, keras.callbacks.History, "
+        "or a list of one of these types. "
+        f"Recevied return value: {results} of type {type(results)}."
+    )
+
+
+def get_best_step(results, objective):
+    # Average the best epochs if multiple executions.
+    if isinstance(results, list):
+        return int(
+            statistics.mean(
+                [get_best_step(elem, objective) for elem in results]
+            )
+        )
+
+    # A History.
+    if isinstance(results, keras.callbacks.History):
+        _, best_epoch = _get_best_value_and_best_epoch_from_history(
+            results, objective
+        )
+        return best_epoch
+
+    return 0
+
+
+def convert_hyperparams_to_hparams(hyperparams, hparams_api):
+    """Converts KerasTuner HyperParameters to TensorBoard HParams."""
+    hparams = {}
+    for hp in hyperparams.space:
+        hparams_value = {}
+        try:
+            hparams_value = hyperparams.get(hp.name)
+        except ValueError:  # pragma: no cover
+            continue  # pragma: no cover
+
+        hparams_domain = {}
+        if isinstance(hp, hp_module.Choice):
+            hparams_domain = hparams_api.Discrete(hp.values)
+        elif isinstance(hp, hp_module.Int):
+            if hp.step is not None and hp.step != 1:
+                # Note: `hp.max_value` is inclusive, unlike the end index
+                # of Python `range()`, which is exclusive
+                values = list(range(hp.min_value, hp.max_value + 1, hp.step))
+                hparams_domain = hparams_api.Discrete(values)
+            else:
+                hparams_domain = hparams_api.IntInterval(
+                    hp.min_value, hp.max_value
+                )
+        elif isinstance(hp, hp_module.Float):
+            if hp.step is not None:
+                # Note: `hp.max_value` is inclusive, unlike the end index
+                # of Numpy's arange(), which is exclusive
+                values = np.arange(
+                    hp.min_value, hp.max_value + 1e-7, step=hp.step
+                ).tolist()
+                hparams_domain = hparams_api.Discrete(values)
+            else:
+                hparams_domain = hparams_api.RealInterval(
+                    hp.min_value, hp.max_value
+                )
+        elif isinstance(hp, hp_module.Boolean):
+            hparams_domain = hparams_api.Discrete([True, False])
+        elif isinstance(hp, hp_module.Fixed):
+            hparams_domain = hparams_api.Discrete([hp.value])
+        else:
+            raise ValueError(  # pragma: no cover
+                f"`HyperParameter` type not recognized: {hp}"
+            )
+
+        hparams_key = hparams_api.HParam(hp.name, hparams_domain)
+        hparams[hparams_key] = hparams_value
+
+    return hparams
+

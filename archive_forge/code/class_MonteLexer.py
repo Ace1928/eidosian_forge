@@ -1,0 +1,12 @@
+from pygments.token import Comment, Error, Keyword, Name, Number, Operator, \
+from pygments.lexer import RegexLexer, include, words
+class MonteLexer(RegexLexer):
+    """
+    Lexer for the `Monte <https://monte.readthedocs.io/>`_ programming language.
+
+    .. versionadded:: 2.2
+    """
+    name = 'Monte'
+    aliases = ['monte']
+    filenames = ['*.mt']
+    tokens = {'root': [('#[^\\n]*\\n', Comment), ('/\\*\\*.*?\\*/', String.Doc), ('\\bvar\\b', Keyword.Declaration, 'var'), ('\\binterface\\b', Keyword.Declaration, 'interface'), (words(_methods, prefix='\\b', suffix='\\b'), Keyword, 'method'), (words(_declarations, prefix='\\b', suffix='\\b'), Keyword.Declaration), (words(_keywords, prefix='\\b', suffix='\\b'), Keyword), ('[+-]?0x[_0-9a-fA-F]+', Number.Hex), ('[+-]?[_0-9]+\\.[_0-9]*([eE][+-]?[_0-9]+)?', Number.Float), ('[+-]?[_0-9]+', Number.Integer), ("'", String.Double, 'char'), ('"', String.Double, 'string'), ('`', String.Backtick, 'ql'), (words(_operators), Operator), (_identifier + '=', Operator.Word), (words(_constants, prefix='\\b', suffix='\\b'), Keyword.Pseudo), (words(_guards, prefix='\\b', suffix='\\b'), Keyword.Type), (words(_safeScope, prefix='\\b', suffix='\\b'), Name.Builtin), (_identifier, Name), ('\\(|\\)|\\{|\\}|\\[|\\]|:|,', Punctuation), (' +', Whitespace), ('=', Error)], 'char': [("'", Error, 'root'), (_escape_pattern, String.Escape, 'charEnd'), ('.', String.Char, 'charEnd')], 'charEnd': [("'", String.Char, '#pop:2'), ('.', Error)], 'interface': [(' +', Whitespace), (_identifier, Name.Class, '#pop'), include('root')], 'method': [(' +', Whitespace), (_identifier, Name.Function, '#pop'), include('root')], 'string': [('"', String.Double, 'root'), (_escape_pattern, String.Escape), ('\\n', String.Double), ('.', String.Double)], 'ql': [('`', String.Backtick, 'root'), ('\\$' + _escape_pattern, String.Escape), ('\\$\\$', String.Escape), ('@@', String.Escape), ('\\$\\{', String.Interpol, 'qlNest'), ('@\\{', String.Interpol, 'qlNest'), ('\\$' + _identifier, Name), ('@' + _identifier, Name), ('.', String.Backtick)], 'qlNest': [('\\}', String.Interpol, '#pop'), include('root')], 'var': [(' +', Whitespace), (_identifier, Name.Variable, '#pop'), include('root')]}

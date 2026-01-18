@@ -1,0 +1,26 @@
+from __future__ import absolute_import, division, print_function
+import copy
+import glob
+import json
+import os
+import re
+import sys
+import tempfile
+import random
+import time
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.respawn import has_respawned, probe_interpreters_for_module, respawn_module
+from ansible.module_utils.common.text.converters import to_native
+from ansible.module_utils.six import PY3
+from ansible.module_utils.urls import fetch_url
+from ansible.module_utils.common.locale import get_best_parsable_locale
+@staticmethod
+def _apt_cfg_file(filespec):
+    """
+        Wrapper for `apt_pkg` module for running with Python 2.5
+        """
+    try:
+        result = apt_pkg.config.find_file(filespec)
+    except AttributeError:
+        result = apt_pkg.Config.FindFile(filespec)
+    return result

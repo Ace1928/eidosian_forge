@@ -1,0 +1,10 @@
+from ansible.errors import AnsibleError
+from ansible.module_utils.basic import to_native
+from ansible.utils.display import Display
+from ansible_collections.amazon.aws.plugins.module_utils.botocore import check_sdk_version_supported
+from ansible_collections.amazon.aws.plugins.module_utils.retries import RetryingBotoClientWrapper
+from ansible_collections.amazon.aws.plugins.plugin_utils.botocore import boto3_conn
+from ansible_collections.amazon.aws.plugins.plugin_utils.botocore import get_aws_connection_info
+from ansible_collections.amazon.aws.plugins.plugin_utils.botocore import get_aws_region
+def require_aws_sdk(self, botocore_version=None, boto3_version=None):
+    return check_sdk_version_supported(botocore_version=botocore_version, boto3_version=boto3_version, warn=self.warn)

@@ -1,0 +1,22 @@
+import collections.abc
+import copy
+import errno
+import functools
+import http.client
+import os
+import re
+import urllib.parse as urlparse
+import osprofiler.web
+from oslo_log import log as logging
+from oslo_utils import encodeutils
+from oslo_utils import netutils
+from glance.common import auth
+from glance.common import exception
+from glance.common import utils
+from glance.i18n import _
+def _seekable(self, body):
+    try:
+        os.lseek(body.fileno(), 0, os.SEEK_CUR)
+        return True
+    except OSError as e:
+        return e.errno != errno.ESPIPE

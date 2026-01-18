@@ -1,0 +1,13 @@
+from datetime import datetime
+from boto.compat import six
+class DescribeApplicationsResponse(Response):
+
+    def __init__(self, response):
+        response = response['DescribeApplicationsResponse']
+        super(DescribeApplicationsResponse, self).__init__(response)
+        response = response['DescribeApplicationsResult']
+        self.applications = []
+        if response['Applications']:
+            for member in response['Applications']:
+                application = ApplicationDescription(member)
+                self.applications.append(application)

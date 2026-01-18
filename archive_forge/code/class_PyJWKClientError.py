@@ -1,0 +1,2 @@
+class PyJWKClientError(PyJWTError):
+    pass

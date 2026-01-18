@@ -1,0 +1,13 @@
+import numpy as np
+import numpy.lib.recfunctions
+from statsmodels.compat.python import lmap
+from statsmodels.regression.linear_model import OLS
+def dropname(ss, li):
+    """drop names from a list of strings,
+    names to drop are in space delimited list
+    does not change original list
+    """
+    newli = li[:]
+    for item in ss.split():
+        newli.remove(item)
+    return newli

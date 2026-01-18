@@ -1,0 +1,11 @@
+from pygments.lexer import RegexLexer, include, words
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class FuncLexer(RegexLexer):
+    """
+    For FunC source code.
+    """
+    name = 'FunC'
+    aliases = ['func', 'fc']
+    filenames = ['*.fc', '*.func']
+    identifier = '(?!")(`([^`]+)`|((?=_)_|(?=\\{)\\{|(?=\\})\\}|(?![_`{}]))([^;,\\[\\]\\(\\)\\s~.]+))'
+    tokens = {'root': [('\\n', Whitespace), ('\\s+', Whitespace), include('keywords'), include('strings'), include('directives'), include('numeric'), include('comments'), include('storage'), include('functions'), include('variables'), ('[.;(),\\[\\]~{}]', Punctuation)], 'keywords': [(words(('<=>', '>=', '<=', '!=', '==', '^>>', '~>>', '>>', '<<', '/%', '^%', '~%', '^/', '~/', '+=', '-=', '*=', '/=', '~/=', '^/=', '%=', '^%=', '<<=', '>>=', '~>>=', '^>>=', '&=', '|=', '^=', '^', '=', '~', '/', '%', '-', '*', '+', '>', '<', '&', '|', ':', '?'), prefix='(?<=\\s)', suffix='(?=\\s)'), Operator), (words(('if', 'ifnot', 'else', 'elseif', 'elseifnot', 'while', 'do', 'until', 'repeat', 'return', 'impure', 'method_id', 'forall', 'asm', 'inline', 'inline_ref'), prefix='\\b', suffix='\\b'), Keyword), (words(('true', 'false'), prefix='\\b', suffix='\\b'), Keyword.Constant)], 'directives': [('#include|#pragma', Keyword, 'directive')], 'directive': [include('strings'), ('\\s+', Whitespace), ('version|not-version', Keyword), ('(>=|<=|=|>|<|\\^)?([0-9]+)(.[0-9]+)?(.[0-9]+)?', Number), (';', Text, '#pop')], 'strings': [('\\"([^\\n\\"]+)\\"[Hhcusa]?', String)], 'numeric': [('\\b(-?(?!_)([\\d_]+|0x[\\d_a-fA-F]+)|0b[1_0]+)(?<!_)(?=[\\s\\)\\],;])', Number)], 'comments': [(';;([^\\n]*)', Comment.Singleline), ('\\{-', Comment.Multiline, 'comment')], 'comment': [('[^-}{]+', Comment.Multiline), ('\\{-', Comment.Multiline, '#push'), ('-\\}', Comment.Multiline, '#pop'), ('[-}{]', Comment.Multiline)], 'storage': [(words(('var', 'int', 'slice', 'tuple', 'cell', 'builder', 'cont', '_'), prefix='\\b', suffix='(?=[\\s\\(\\),\\[\\]])'), Keyword.Type), (words(('global', 'const'), prefix='\\b', suffix='\\b'), Keyword.Constant)], 'variables': [(identifier, Name.Variable)], 'functions': [(identifier + '(?=[\\(])', Name.Function)]}

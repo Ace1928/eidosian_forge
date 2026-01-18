@@ -1,0 +1,31 @@
+import copy
+import math
+import os
+import re
+import shutil
+from dataclasses import dataclass
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Union
+import pyarrow as pa
+import pyarrow.parquet as pq
+from tqdm.contrib.concurrent import thread_map
+from .download.download_config import DownloadConfig
+from .naming import _split_re, filenames_for_dataset_split
+from .table import InMemoryTable, MemoryMappedTable, Table, concat_tables
+from .utils import logging
+from .utils import tqdm as hf_tqdm
+from .utils.file_utils import cached_path
+def to_absolute(self, name2len):
+    """Translate instruction into a list of absolute instructions.
+
+        Those absolute instructions are then to be added together.
+
+        Args:
+            name2len (`dict`):
+                Associating split names to number of examples.
+
+        Returns:
+            list of _AbsoluteInstruction instances (corresponds to the + in spec).
+        """
+    return [_rel_to_abs_instr(rel_instr, name2len) for rel_instr in self._relative_instructions]

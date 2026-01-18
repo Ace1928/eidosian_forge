@@ -1,0 +1,2 @@
+class PayloadException(BarbicanException):
+    pass

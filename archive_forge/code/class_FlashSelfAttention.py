@@ -1,0 +1,56 @@
+import math
+from functools import partial
+import torch
+import torch.nn as nn
+from einops import rearrange, repeat
+from flash_attn.utils.distributed import get_dim_for_local_rank
+class FlashSelfAttention(nn.Module):
+    """Implement the scaled dot product attention with softmax.
+    Arguments
+    ---------
+        softmax_scale: The temperature to use for the softmax attention.
+                      (default: 1/sqrt(d_keys) where d_keys is computed at
+                      runtime)
+        attention_dropout: The dropout rate to apply to the attention
+                           (default: 0.0)
+    """
+
+    def __init__(self, causal=False, softmax_scale=None, attention_dropout=0.0, window_size=(-1, -1), alibi_slopes=None, deterministic=False):
+        super().__init__()
+        assert flash_attn_varlen_qkvpacked_func is not None, 'FlashAttention is not installed'
+        assert flash_attn_qkvpacked_func is not None, 'FlashAttention is not installed'
+        self.causal = causal
+        self.softmax_scale = softmax_scale
+        self.drop = nn.Dropout(attention_dropout)
+        self.register_buffer('alibi_slopes', alibi_slopes, persistent=False)
+        self.window_size = window_size
+        self.deterministic = deterministic
+
+    def forward(self, qkv, causal=None, cu_seqlens=None, max_seqlen=None):
+        """Implements the multihead softmax attention.
+        Arguments
+        ---------
+            qkv: The tensor containing the query, key, and value.
+                If cu_seqlens is None and max_seqlen is None, then qkv has shape (B, S, 3, H, D).
+                If cu_seqlens is not None and max_seqlen is not None, then qkv has shape
+                (total, 3, H, D), where total is the sum of the sequence lengths in the batch.
+            causal: if passed, will override self.causal
+            cu_seqlens: (batch_size + 1,), dtype torch.int32. The cumulative sequence lengths
+                of the sequences in the batch, used to index into qkv.
+            max_seqlen: int. Maximum sequence length in the batch.
+        Returns:
+        --------
+            out: (total, H, D) if cu_seqlens is not None and max_seqlen is not None,
+                else (B, S, H, D).
+        """
+        assert qkv.dtype in [torch.float16, torch.bfloat16]
+        assert qkv.is_cuda
+        causal = self.causal if causal is None else causal
+        unpadded = cu_seqlens is not None
+        if unpadded:
+            assert cu_seqlens.dtype == torch.int32
+            assert max_seqlen is not None
+            assert isinstance(max_seqlen, int)
+            return flash_attn_varlen_qkvpacked_func(qkv, cu_seqlens, max_seqlen, self.drop.p if self.training else 0.0, softmax_scale=self.softmax_scale, causal=causal, alibi_slopes=self.alibi_slopes, window_size=self.window_size, deterministic=self.deterministic)
+        else:
+            return flash_attn_qkvpacked_func(qkv, self.drop.p if self.training else 0.0, softmax_scale=self.softmax_scale, causal=causal, alibi_slopes=self.alibi_slopes, window_size=self.window_size, deterministic=self.deterministic)

@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "name": "figlet_forge",
+      "path": "."
+    },
+    {
+      "path": "../../.config/Code"
+    }
+  ]
+}

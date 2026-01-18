@@ -1,0 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from antlr3.constants import UP, DOWN, EOF, INVALID_TOKEN_TYPE
+from antlr3.exceptions import MismatchedTreeNodeException, \
+from antlr3.recognizers import BaseRecognizer, RuleReturnScope
+from antlr3.streams import IntStream
+from antlr3.tokens import CommonToken, Token, INVALID_TOKEN
+import six
+from six.moves import range
+def sanityCheckParentAndChildIndexes(self, parent=None, i=-1):
+    if parent != self.parent:
+        raise ValueError("parents don't match; expected %r found %r" % (parent, self.parent))
+    if i != self.childIndex:
+        raise ValueError("child indexes don't match; expected %d found %d" % (i, self.childIndex))
+    for idx, child in enumerate(self.children):
+        child.sanityCheckParentAndChildIndexes(self, idx)

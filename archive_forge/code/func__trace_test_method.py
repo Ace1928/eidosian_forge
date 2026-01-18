@@ -1,0 +1,13 @@
+import builtins
+import functools
+import io
+import time
+from unittest import mock
+import ddt
+from os_brick import exception
+from os_brick.tests import base
+from os_brick import utils
+@utils.trace
+def _trace_test_method(*args, **kwargs):
+    self.assertEqual('verybadpass', kwargs['connection']['data']['auth_password'])
+    pass

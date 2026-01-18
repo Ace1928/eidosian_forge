@@ -1,0 +1,25 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+def anonymous_seed_generator_eager_fallback(seed: _atypes.TensorFuzzingAnnotation[_atypes.Int64], seed2: _atypes.TensorFuzzingAnnotation[_atypes.Int64], reshuffle: _atypes.TensorFuzzingAnnotation[_atypes.Bool], name, ctx):
+    seed = _ops.convert_to_tensor(seed, _dtypes.int64)
+    seed2 = _ops.convert_to_tensor(seed2, _dtypes.int64)
+    reshuffle = _ops.convert_to_tensor(reshuffle, _dtypes.bool)
+    _inputs_flat = [seed, seed2, reshuffle]
+    _attrs = None
+    _result = _execute.execute(b'AnonymousSeedGenerator', 2, inputs=_inputs_flat, attrs=_attrs, ctx=ctx, name=name)
+    if _execute.must_record_gradient():
+        _execute.record_gradient('AnonymousSeedGenerator', _inputs_flat, _attrs, _result)
+    _result = _AnonymousSeedGeneratorOutput._make(_result)
+    return _result

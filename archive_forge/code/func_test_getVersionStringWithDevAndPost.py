@@ -1,0 +1,13 @@
+from __future__ import division, absolute_import
+import sys
+import unittest
+import operator
+from incremental import getVersionString, IncomparableVersions
+from incremental import Version, _inf
+from twisted.trial.unittest import TestCase
+def test_getVersionStringWithDevAndPost(self):
+    """
+        L{getVersionString} includes the dev release and postrelease, if
+        any.
+        """
+    self.assertEqual(getVersionString(Version('whatever', 8, 0, 0, post=2, dev=1)), 'whatever 8.0.0.post2.dev1')

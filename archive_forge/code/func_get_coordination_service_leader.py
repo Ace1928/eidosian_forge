@@ -1,0 +1,21 @@
+import collections
+import re
+from tensorflow.core.protobuf.tpu import topology_pb2
+from tensorflow.python.distribute.cluster_resolver import cluster_resolver as cluster_resolver_lib
+from tensorflow.python.eager import remote
+from tensorflow.python.framework import config as framework_config
+from tensorflow.python.framework import errors
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.tpu import tpu_strategy_util
+from tensorflow.python.tpu import tpu_system_metadata as tpu_system_metadata_lib
+from tensorflow.python.training import server_lib
+from tensorflow.python.util import compat
+def get_coordination_service_leader(self):
+    """Returns the location for coordination service.
+
+    The coordination service should be located on TPU worker0.
+
+    Returns:
+      A string indicate the location path.
+    """
+    return '/job:' + self.get_job_name() + '/task:0'

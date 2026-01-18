@@ -1,0 +1,20 @@
+import collections
+import dataclasses
+import re
+import sys
+import types
+from typing import Counter, Dict, List, Optional
+import torch.nn
+from . import utils
+from .bytecode_transformation import (
+from .exc import unimplemented
+from .source import AttrSource, Source
+from .utils import is_safe_constant, rot_n_helper
+from .variables.base import VariableTracker
+from .variables.nn_module import NNModuleVariable
+from .variables.tensor import (
+from .variables.torch_function import TensorWithTFOverrideVariable
+def create_load_attr(self, name) -> Instruction:
+    if name not in self.code_options['co_names']:
+        self.code_options['co_names'] += (name,)
+    return create_instruction('LOAD_ATTR', argval=name)

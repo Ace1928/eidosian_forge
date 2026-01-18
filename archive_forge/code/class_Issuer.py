@@ -1,0 +1,13 @@
+import saml2
+from saml2 import SamlBase
+from saml2.ws import wsaddr as wsa
+from saml2.ws import wssec as wsse
+from saml2.ws import wsutil as wsu
+class Issuer(wsa.EndpointReferenceType_):
+    """The http://docs.oasis-open.org/ws-sx/ws-trust/200512/:Issuer element"""
+    c_tag = 'Issuer'
+    c_namespace = NAMESPACE
+    c_children = wsa.EndpointReferenceType_.c_children.copy()
+    c_attributes = wsa.EndpointReferenceType_.c_attributes.copy()
+    c_child_order = wsa.EndpointReferenceType_.c_child_order[:]
+    c_cardinality = wsa.EndpointReferenceType_.c_cardinality.copy()

@@ -1,0 +1,27 @@
+import collections
+import os
+import sys
+import queue
+import subprocess
+import traceback
+import weakref
+from functools import partial
+from threading import Thread
+from jedi._compatibility import pickle_dump, pickle_load
+from jedi import debug
+from jedi.cache import memoize_method
+from jedi.inference.compiled.subprocess import functions
+from jedi.inference.compiled.access import DirectObjectAccess, AccessPath, \
+from jedi.api.exceptions import InternalError
+def _cleanup_process(process, thread):
+    try:
+        process.kill()
+        process.wait()
+    except OSError:
+        pass
+    thread.join()
+    for stream in [process.stdin, process.stdout, process.stderr]:
+        try:
+            stream.close()
+        except OSError:
+            pass

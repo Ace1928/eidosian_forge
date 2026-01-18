@@ -1,0 +1,48 @@
+from __future__ import (absolute_import, division, print_function)
+from ansible.module_utils.six import binary_type, text_type
+from ansible.module_utils.common._collections_compat import MutableMapping, MutableSequence
+from ansible.plugins.callback.default import CallbackModule as CallbackModule_default
+from ansible.utils.color import colorize, hostcolor
+from ansible.utils.display import Display
+import sys
+class vt100:
+    black = '\x1b[0;30m'
+    darkred = '\x1b[0;31m'
+    darkgreen = '\x1b[0;32m'
+    darkyellow = '\x1b[0;33m'
+    darkblue = '\x1b[0;34m'
+    darkmagenta = '\x1b[0;35m'
+    darkcyan = '\x1b[0;36m'
+    gray = '\x1b[0;37m'
+    darkgray = '\x1b[1;30m'
+    red = '\x1b[1;31m'
+    green = '\x1b[1;32m'
+    yellow = '\x1b[1;33m'
+    blue = '\x1b[1;34m'
+    magenta = '\x1b[1;35m'
+    cyan = '\x1b[1;36m'
+    white = '\x1b[1;37m'
+    blackbg = '\x1b[40m'
+    redbg = '\x1b[41m'
+    greenbg = '\x1b[42m'
+    yellowbg = '\x1b[43m'
+    bluebg = '\x1b[44m'
+    magentabg = '\x1b[45m'
+    cyanbg = '\x1b[46m'
+    whitebg = '\x1b[47m'
+    reset = '\x1b[0;0m'
+    bold = '\x1b[1m'
+    reverse = '\x1b[2m'
+    underline = '\x1b[4m'
+    clear = '\x1b[2J'
+    clearline = '\x1b[2K'
+    save = '\x1b[s'
+    restore = '\x1b[u'
+    save_all = '\x1b7'
+    restore_all = '\x1b8'
+    linewrap = '\x1b[7h'
+    nolinewrap = '\x1b[7l'
+    up = '\x1b[1A'
+    down = '\x1b[1B'
+    right = '\x1b[1C'
+    left = '\x1b[1D'

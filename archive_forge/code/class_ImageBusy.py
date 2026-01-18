@@ -1,0 +1,2 @@
+class ImageBusy(Exception):
+    pass

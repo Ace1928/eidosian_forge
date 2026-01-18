@@ -1,0 +1,22 @@
+from __future__ import annotations
+import getopt
+import inspect
+import os
+import sys
+import textwrap
+from os import path
+from typing import Any, Dict, Optional, cast
+from twisted.python import reflect, util
+class CompleteList(Completer):
+    """
+    Completes based on a fixed list of words
+    """
+
+    def __init__(self, items, **kw):
+        Completer.__init__(self, **kw)
+        self._items = items
+
+    def _shellCode(self, optName, shellType):
+        if shellType == _ZSH:
+            return '{}:{}:({})'.format(self._repeatFlag, self._description(optName), ' '.join(self._items))
+        raise NotImplementedError(f'Unknown shellType {shellType!r}')

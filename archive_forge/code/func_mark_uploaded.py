@@ -1,0 +1,6 @@
+import contextlib
+from datetime import datetime
+import sys
+import time
+def mark_uploaded(self, is_uploaded):
+    self._upload_stats.add_blob(self._blob_bytes, is_skipped=not is_uploaded)

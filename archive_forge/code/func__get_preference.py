@@ -1,0 +1,12 @@
+from __future__ import (absolute_import, division, print_function)
+import functools
+import typing as t
+from ansible.galaxy.collection.gpg import get_signature_from_source
+from ansible.galaxy.dependency_resolution.dataclasses import (
+from ansible.galaxy.dependency_resolution.versioning import (
+from ansible.module_utils.six import string_types
+from ansible.utils.version import SemanticVersion, LooseVersion
+def _get_preference(self, candidates):
+    if any((candidate in self._preferred_candidates for candidate in candidates)):
+        return float('-inf')
+    return len(candidates)

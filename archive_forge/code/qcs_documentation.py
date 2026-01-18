@@ -1,0 +1,18 @@
+from typing import List, Optional
+import httpx
+import networkx as nx
+from qcs_api_client.models import InstructionSetArchitecture
+from qcs_api_client.operations.sync import get_instruction_set_architecture
+from pyquil.api import QCSClientConfiguration
+from pyquil.api._qcs_client import qcs_client
+from pyquil.external.rpcq import CompilerISA
+from pyquil.noise import NoiseModel
+from pyquil.quantum_processor import AbstractQuantumProcessor
+from pyquil.quantum_processor.transformers import qcs_isa_to_compiler_isa, qcs_isa_to_graph
+
+        Initialize a new QCSQuantumProcessor.
+
+        :param quantum_processor_id: The id of the quantum processor.
+        :param isa: The QCS API ``InstructionSetArchitecture``.
+        :param noise_model: An optional ``NoiseModel`` for configuring a noisy quantum_processor on the ``QVM``.
+        

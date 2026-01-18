@@ -1,0 +1,58 @@
+import collections
+import copy
+import datetime
+import json
+import logging
+import time
+from unittest import mock
+import eventlet
+import fixtures
+from oslo_config import cfg
+from heat.common import context
+from heat.common import exception
+from heat.common import template_format
+from heat.common import timeutils
+from heat.db import api as db_api
+from heat.engine.clients.os import keystone
+from heat.engine.clients.os.keystone import fake_keystoneclient as fake_ks
+from heat.engine.clients.os import nova
+from heat.engine import environment
+from heat.engine import function
+from heat.engine import node_data
+from heat.engine import resource
+from heat.engine import scheduler
+from heat.engine import service
+from heat.engine import stack
+from heat.engine import stk_defn
+from heat.engine import template
+from heat.engine import update
+from heat.objects import raw_template as raw_template_object
+from heat.objects import resource as resource_objects
+from heat.objects import stack as stack_object
+from heat.objects import stack_tag as stack_tag_object
+from heat.objects import user_creds as ucreds_object
+from heat.tests import common
+from heat.tests import fakes
+from heat.tests import generic_resource as generic_rsrc
+from heat.tests import utils
+def test_update_prev_raw_template(self):
+    self.stack = stack.Stack(self.ctx, 'updated_time_test', self.tmpl)
+    self.assertIsNone(self.stack.updated_time)
+    self.stack.store()
+    self.stack.create()
+    self.assertIsNone(self.stack.prev_raw_template_id)
+    tmpl = {'HeatTemplateFormatVersion': '2012-12-12', 'Resources': {'R1': {'Type': 'GenericResourceType'}}}
+    newstack = stack.Stack(self.ctx, 'updated_time_test', template.Template(tmpl))
+    self.stack.update(newstack)
+    self.assertIsNotNone(self.stack.prev_raw_template_id)
+    prev_t = template.Template.load(self.ctx, self.stack.prev_raw_template_id)
+    self.assertEqual(tmpl, prev_t.t)
+    prev_id = self.stack.prev_raw_template_id
+    tmpl2 = {'HeatTemplateFormatVersion': '2012-12-12', 'Resources': {'R2': {'Type': 'GenericResourceType'}}}
+    newstack2 = stack.Stack(self.ctx, 'updated_time_test', template.Template(tmpl2))
+    self.stack.update(newstack2)
+    self.assertIsNotNone(self.stack.prev_raw_template_id)
+    self.assertNotEqual(prev_id, self.stack.prev_raw_template_id)
+    prev_t2 = template.Template.load(self.ctx, self.stack.prev_raw_template_id)
+    self.assertEqual(tmpl2, prev_t2.t)
+    self.assertRaises(exception.NotFound, template.Template.load, self.ctx, prev_id)

@@ -1,0 +1,16 @@
+import collections
+import functools
+import itertools
+import unittest
+from absl.testing import parameterized
+from tensorflow.python import keras
+from tensorflow.python import tf2
+from tensorflow.python.eager import context
+from tensorflow.python.framework import ops
+from tensorflow.python.keras import testing_utils
+from tensorflow.python.platform import test
+from tensorflow.python.util import nest
+def _v2_function_test(f, test_or_class, *args, **kwargs):
+    with context.eager_mode():
+        with testing_utils.run_eagerly_scope(False):
+            f(test_or_class, *args, **kwargs)

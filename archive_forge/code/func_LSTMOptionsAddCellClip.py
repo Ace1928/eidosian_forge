@@ -1,0 +1,4 @@
+import flatbuffers
+from flatbuffers.compat import import_numpy
+def LSTMOptionsAddCellClip(builder, cellClip):
+    builder.PrependFloat32Slot(1, cellClip, 0.0)

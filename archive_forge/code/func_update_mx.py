@@ -1,0 +1,17 @@
+import copy
+from boto.exception import TooManyRecordsException
+from boto.route53.record import ResourceRecordSets
+from boto.route53.status import Status
+def update_mx(self, name, value, ttl=None, identifier=None, comment=''):
+    """
+        Update the given MX record in this Zone to a new value, ttl,
+        and identifier.  Returns a Status object.
+
+        Will throw TooManyRecordsException is name, value does not match
+        a single record.
+        """
+    name = self.route53connection._make_qualified(name)
+    value = self.route53connection._make_qualified(value)
+    old_record = self.get_mx(name)
+    ttl = ttl or old_record.ttl
+    return self.update_record(old_record, new_value=value, new_ttl=ttl, new_identifier=identifier, comment=comment)

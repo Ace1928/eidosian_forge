@@ -1,0 +1,26 @@
+import os.path
+import pickle
+from tkinter import (
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+from tkinter.font import Font
+from tkinter.messagebox import showerror, showinfo
+from nltk.draw import CFGEditor, TreeSegmentWidget, tree_to_treesegment
+from nltk.draw.util import (
+from nltk.grammar import CFG, Nonterminal
+from nltk.parse.chart import (
+from nltk.tree import Tree
+from nltk.util import in_idle
+def _show_new_edge(self, edge):
+    self._display_rule(self._cp.current_chartrule())
+    self._cv.update()
+    self._cv.draw_tree(edge)
+    self._cv.markonly_edge(edge, '#0df')
+    self._cv.view_edge(edge)
+    if self._matrix:
+        self._matrix.update()
+    if self._matrix:
+        self._matrix.markonly_edge(edge)
+    if self._matrix:
+        self._matrix.view_edge(edge)
+    if self._results:
+        self._results.update(edge)

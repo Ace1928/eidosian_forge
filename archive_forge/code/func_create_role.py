@@ -1,0 +1,28 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def create_role(self, role_name, assume_role_policy_document=None, path=None):
+    """
+        Creates a new role for your AWS account.
+
+        The policy grants permission to an EC2 instance to assume the role.
+        The policy is URL-encoded according to RFC 3986. Currently, only EC2
+        instances can assume roles.
+
+        :type role_name: string
+        :param role_name: Name of the role to create.
+
+        :type assume_role_policy_document: ``string`` or ``dict``
+        :param assume_role_policy_document: The policy that grants an entity
+            permission to assume the role.
+
+        :type path: string
+        :param path: The path to the role.
+        """
+    params = {'RoleName': role_name, 'AssumeRolePolicyDocument': self._build_policy(assume_role_policy_document)}
+    if path is not None:
+        params['Path'] = path
+    return self.get_response('CreateRole', params)

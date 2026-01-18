@@ -1,0 +1,35 @@
+import os
+import sys
+from .gui import *
+from .app_menus import ListedWindow
+def build_cusp_pane(self, master):
+    groupBG = self.style.groupBG
+    self.cusp_frame = cusp_frame = ttk.Frame(master)
+    self.horoballs = Tk_.BooleanVar(value=self.settings['cusp_horoballs'])
+    self.triangulation = Tk_.BooleanVar(value=self.settings['cusp_triangulation'])
+    self.ford = Tk_.BooleanVar(value=self.settings['cusp_ford_domain'])
+    self.labels = Tk_.BooleanVar(value=self.settings['cusp_labels'])
+    self.parallelogram = Tk_.BooleanVar(value=self.settings['cusp_parallelogram'])
+    self.cutoff = Tk_.StringVar(value=self.settings['cusp_cutoff'])
+    self.update_idletasks()
+    cusp_frame.rowconfigure(8, weight=1)
+    cusp_frame.columnconfigure(0, weight=1)
+    cusp_frame.columnconfigure(3, weight=1)
+    strut = ttk.Frame(cusp_frame, width=1)
+    strut.grid(rowspan=8, column=0)
+    next_label = ttk.Label(cusp_frame, text='Which elements should be visible when you first view the cusp neighborhood?')
+    next_label.grid(row=0, column=1, columnspan=2, sticky=Tk_.W, pady=(20, 10))
+    next_check = ttk.Checkbutton(cusp_frame, variable=self.horoballs, text='Horoballs', command=self.set_horoballs)
+    next_check.grid(row=1, column=1, sticky=Tk_.W, padx=(30, 0))
+    next_check = ttk.Checkbutton(cusp_frame, variable=self.triangulation, text='Triangulation', command=self.set_triangulation)
+    next_check.grid(row=2, column=1, sticky=Tk_.W, padx=(30, 0))
+    next_check = ttk.Checkbutton(cusp_frame, variable=self.ford, text='Ford domain', command=self.set_ford)
+    next_check.grid(row=3, column=1, sticky=Tk_.W, padx=(30, 0))
+    next_check = ttk.Checkbutton(cusp_frame, variable=self.labels, text='Labels', command=self.set_labels)
+    next_check.grid(row=4, column=1, sticky=Tk_.W, padx=(30, 0))
+    next_check = ttk.Checkbutton(cusp_frame, variable=self.parallelogram, text='Parallelogram', command=self.set_parallelogram)
+    next_check.grid(row=5, column=1, sticky=Tk_.W, padx=(30, 0))
+    next_label = ttk.Label(cusp_frame, text='What should the initial cutoff be?')
+    next_label.grid(row=6, column=1, columnspan=2, pady=(20, 10), sticky=Tk_.W)
+    cutoff_entry = ttk.Entry(cusp_frame, textvariable=self.cutoff, width=15)
+    cutoff_entry.grid(row=7, column=1, columnspan=2, sticky=Tk_.W, pady=(0, 10), padx=(30, 0))

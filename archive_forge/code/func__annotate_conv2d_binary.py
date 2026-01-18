@@ -1,0 +1,38 @@
+import copy
+import functools
+import itertools
+import operator
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+import torch
+import torch.nn.functional as F
+from torch.ao.quantization.fake_quantize import FusedMovingAvgObsFakeQuantize
+from torch.ao.quantization.observer import (
+from torch.ao.quantization.pt2e.graph_utils import find_sequential_partitions
+from torch.ao.quantization.qconfig import _ObserverOrFakeQuantizeConstructor
+from torch.ao.quantization.quantizer.quantizer import (
+from torch.ao.quantization.quantizer.xnnpack_quantizer_utils import (
+from torch.fx import Node
+from torch.fx.passes.utils.source_matcher_utils import (
+def _annotate_conv2d_binary(self, gm: torch.fx.GraphModule, quantization_config: QuantizationConfig) -> None:
+    fused_partitions = find_sequential_partitions(gm, [torch.nn.Conv2d, operator.add])
+    for fused_partition in fused_partitions:
+        conv_partition, binary_partition = fused_partition
+        conv_node, binary_node = self._get_output_nodes_of_partitions([conv_partition, binary_partition])
+        if len(conv_node.users) != 1:
+            continue
+        conv_node_idx, extra_input_node_idx = self._get_input_idx_for_binary_node(conv_node, binary_node)
+        if conv_node_idx is None or extra_input_node_idx is None:
+            continue
+        if conv_node != binary_node.args[conv_node_idx]:
+            raise ValueError(f"{conv_node} doesn't match input of binary node")
+        extra_input_node = binary_node.args[extra_input_node_idx]
+        assert isinstance(conv_node, Node)
+        if conv_node.op != 'call_function' or conv_node.target != torch.ops.aten.conv2d.default:
+            continue
+        if _is_annotated([binary_node, conv_node]):
+            continue
+        self._annotate_conv_node_helper(conv_node, False, quantization_config)
+        binary_node_input_qspec_map = {}
+        binary_node_input_qspec_map[extra_input_node] = get_input_act_qspec(quantization_config)
+        binary_node.meta[QUANT_ANNOTATION_KEY] = _X86InductorQuantizationAnnotation(input_qspec_map=binary_node_input_qspec_map, _annotated=True, _is_output_of_quantized_pattern=True)

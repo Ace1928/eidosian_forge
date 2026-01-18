@@ -1,0 +1,49 @@
+from __future__ import annotations
+from typing import Callable
+from functools import reduce
+from sympy.core.expr import Expr
+from sympy.core.singleton import S
+from sympy.core.numbers import igcdex, Integer
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.core.cache import cacheit
+@cacheit
+def cos_257() -> Expr:
+    """Computes $\\cos \\frac{\\pi}{257}$ in square roots
+
+    References
+    ==========
+
+    .. [*] https://math.stackexchange.com/questions/516142/how-does-cos2-pi-257-look-like-in-real-radicals
+    .. [*] https://r-knott.surrey.ac.uk/Fibonacci/simpleTrig.html
+    """
+
+    def f1(a: Expr, b: Expr) -> tuple[Expr, Expr]:
+        return ((a + sqrt(a ** 2 + b)) / 2, (a - sqrt(a ** 2 + b)) / 2)
+
+    def f2(a: Expr, b: Expr) -> Expr:
+        return (a - sqrt(a ** 2 + b)) / 2
+    t1, t2 = f1(S.NegativeOne, Integer(256))
+    z1, z3 = f1(t1, Integer(64))
+    z2, z4 = f1(t2, Integer(64))
+    y1, y5 = f1(z1, 4 * (5 + t1 + 2 * z1))
+    y6, y2 = f1(z2, 4 * (5 + t2 + 2 * z2))
+    y3, y7 = f1(z3, 4 * (5 + t1 + 2 * z3))
+    y8, y4 = f1(z4, 4 * (5 + t2 + 2 * z4))
+    x1, x9 = f1(y1, -4 * (t1 + y1 + y3 + 2 * y6))
+    x2, x10 = f1(y2, -4 * (t2 + y2 + y4 + 2 * y7))
+    x3, x11 = f1(y3, -4 * (t1 + y3 + y5 + 2 * y8))
+    x4, x12 = f1(y4, -4 * (t2 + y4 + y6 + 2 * y1))
+    x5, x13 = f1(y5, -4 * (t1 + y5 + y7 + 2 * y2))
+    x6, x14 = f1(y6, -4 * (t2 + y6 + y8 + 2 * y3))
+    x15, x7 = f1(y7, -4 * (t1 + y7 + y1 + 2 * y4))
+    x8, x16 = f1(y8, -4 * (t2 + y8 + y2 + 2 * y5))
+    v1 = f2(x1, -4 * (x1 + x2 + x3 + x6))
+    v2 = f2(x2, -4 * (x2 + x3 + x4 + x7))
+    v3 = f2(x8, -4 * (x8 + x9 + x10 + x13))
+    v4 = f2(x9, -4 * (x9 + x10 + x11 + x14))
+    v5 = f2(x10, -4 * (x10 + x11 + x12 + x15))
+    v6 = f2(x16, -4 * (x16 + x1 + x2 + x5))
+    u1 = -f2(-v1, -4 * (v2 + v3))
+    u2 = -f2(-v4, -4 * (v5 + v6))
+    w1 = -2 * f2(-u1, -4 * u2)
+    return sqrt(sqrt(2) * sqrt(w1 + 4) / 8 + S.Half)

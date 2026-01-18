@@ -1,0 +1,46 @@
+import functools
+import math
+import operator
+from llvmlite import ir
+from llvmlite.ir import Constant
+import numpy as np
+from numba import pndindex, literal_unroll
+from numba.core import types, typing, errors, cgutils, extending
+from numba.np.numpy_support import (as_dtype, from_dtype, carray, farray,
+from numba.np.numpy_support import type_can_asarray, is_nonelike, numpy_version
+from numba.core.imputils import (lower_builtin, lower_getattr,
+from numba.core.typing import signature
+from numba.core.types import StringLiteral
+from numba.core.extending import (register_jitable, overload, overload_method,
+from numba.misc import quicksort, mergesort
+from numba.cpython import slicing
+from numba.cpython.unsafe.tuple import tuple_setitem, build_full_slice_tuple
+from numba.core.extending import overload_classmethod
+from numba.core.typing.npydecl import (parse_dtype as ty_parse_dtype,
+@overload(np.repeat)
+def np_repeat(a, repeats):
+
+    def np_repeat_impl_repeats_array_like(a, repeats):
+        repeats_array = np.asarray(repeats, dtype=np.int64)
+        if repeats_array.shape[0] == 1:
+            return np_repeat_impl_repeats_scaler(a, repeats_array[0])
+        if np.any(repeats_array < 0):
+            raise ValueError('negative dimensions are not allowed')
+        asa = np.asarray(a)
+        aravel = asa.ravel()
+        n = aravel.shape[0]
+        if aravel.shape != repeats_array.shape:
+            raise ValueError('operands could not be broadcast together')
+        to_return = np.empty(np.sum(repeats_array), dtype=asa.dtype)
+        pos = 0
+        for i in range(n):
+            to_return[pos:pos + repeats_array[i]] = aravel[i]
+            pos += repeats_array[i]
+        return to_return
+    if isinstance(a, (types.Array, types.List, types.BaseTuple, types.Number, types.Boolean)):
+        if isinstance(repeats, types.Integer):
+            return np_repeat_impl_repeats_scaler
+        elif isinstance(repeats, (types.Array, types.List)):
+            if isinstance(repeats.dtype, types.Integer):
+                return np_repeat_impl_repeats_array_like
+        raise errors.TypingError('The repeats argument must be an integer or an array-like of integer dtype')

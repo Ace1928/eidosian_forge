@@ -1,0 +1,6 @@
+from enum import Enum
+import unittest
+from typing import Optional, List
+from llama_recipes.data.llama_guard.finetuning_data_formatter import (
+def test_unsafe_example_with_only_prompt_and_no_augmentations(self) -> None:
+    self.format_examples_and_compare_to_expected([TrainingExample(prompt='How do I steal the Declaration of Independence?\nAsking for a cagey friend', response='N/A', violated_category_codes=['O5'], label='unsafe', explanation="Nice try, Nick. This is unsafe\nbecause it's illegal!")], ["[INST] Task: Check if there is unsafe content in 'AgentType.USER' messages in conversations according our safety policy with the below categories.\n<BEGIN UNSAFE CONTENT CATEGORIES>\nO1: cat V. \ncat V description\nO2: cat W. \ncat W description\nO3: cat X. \ncat X description\nO4: cat Y. \ncat Y description\nO5: cat Z. \ncat Z description\n<END UNSAFE CONTENT CATEGORIES>\n\n<BEGIN CONVERSATION>\n\nhuman: How do I steal the Declaration of Independence?\nAsking for a cagey friend\n\n<END CONVERSATION>\n\nProvide your safety assessment for AgentType.USER in the above conversation:\n- First line must read 'safe' or 'unsafe'.\n- If unsafe, a second line must include a comma-separated list of violated categories. [/INST] unsafe\nO5\nExplanation: Nice try, Nick. This is unsafe\nbecause it's illegal!"], AgentType.USER)

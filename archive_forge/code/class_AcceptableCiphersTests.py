@@ -1,0 +1,48 @@
+import datetime
+import itertools
+import sys
+from unittest import skipIf
+from zope.interface import implementer
+from incremental import Version
+from twisted.internet import defer, interfaces, protocol, reactor
+from twisted.internet._idna import _idnaText
+from twisted.internet.error import CertificateError, ConnectionClosed, ConnectionLost
+from twisted.internet.task import Clock
+from twisted.python.compat import nativeString
+from twisted.python.filepath import FilePath
+from twisted.python.modules import getModule
+from twisted.python.reflect import requireModule
+from twisted.test.iosim import connectedServerAndClient
+from twisted.test.test_twisted import SetAsideModule
+from twisted.trial import util
+from twisted.trial.unittest import SkipTest, SynchronousTestCase, TestCase
+class AcceptableCiphersTests(TestCase):
+    """
+    Tests for twisted.internet._sslverify.OpenSSLAcceptableCiphers.
+    """
+    if skipSSL:
+        skip = skipSSL
+
+    def test_selectOnEmptyListReturnsEmptyList(self):
+        """
+        If no ciphers are available, nothing can be selected.
+        """
+        ac = sslverify.OpenSSLAcceptableCiphers(tuple())
+        self.assertEqual(tuple(), ac.selectCiphers(tuple()))
+
+    def test_selectReturnsOnlyFromAvailable(self):
+        """
+        Select only returns a cross section of what is available and what is
+        desirable.
+        """
+        ac = sslverify.OpenSSLAcceptableCiphers([sslverify.OpenSSLCipher('A'), sslverify.OpenSSLCipher('B')])
+        self.assertEqual((sslverify.OpenSSLCipher('B'),), ac.selectCiphers([sslverify.OpenSSLCipher('B'), sslverify.OpenSSLCipher('C')]))
+
+    def test_fromOpenSSLCipherStringExpandsToTupleOfCiphers(self):
+        """
+        If L{sslverify.OpenSSLAcceptableCiphers.fromOpenSSLCipherString} is
+        called it expands the string to a tuple of ciphers.
+        """
+        ac = sslverify.OpenSSLAcceptableCiphers.fromOpenSSLCipherString('ALL')
+        self.assertIsInstance(ac._ciphers, tuple)
+        self.assertTrue(all((sslverify.ICipher.providedBy(c) for c in ac._ciphers)))

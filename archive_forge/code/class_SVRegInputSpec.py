@@ -1,0 +1,26 @@
+import os
+import re as regex
+from ..base import (
+class SVRegInputSpec(CommandLineInputSpec):
+    subjectFilePrefix = traits.Str(argstr="'%s'", mandatory=True, position=0, desc='Absolute path and filename prefix of the subjects output from BrainSuite Cortical Surface Extraction Sequence')
+    dataSinkDelay = traits.List(traits.Str, argstr='%s', desc='Connect datasink out_file to dataSinkDelay to delay execution of SVReg until dataSink has finished sinking CSE outputs.For use with parallel processing workflows including Brainsuites Cortical Surface Extraction sequence (SVReg requires certain files from Brainsuite CSE, which must all be in the pathway specified by subjectFilePrefix. see http://brainsuite.org/processing/svreg/usage/ for list of required inputs ')
+    atlasFilePrefix = traits.Str(position=1, argstr="'%s'", desc='Optional: Absolute Path and filename prefix of atlas files and labels to which the subject will be registered. If unspecified, SVRegwill use its own included atlas files')
+    iterations = traits.Int(argstr="'-H %d'", desc='Assigns a number of iterations in the intensity registration step.if unspecified, performs 100 iterations')
+    refineOutputs = traits.Bool(argstr="'-r'", desc='Refine outputs at the expense of more processing time.')
+    skipToVolumeReg = traits.Bool(argstr="'-s'", desc='If surface registration was already performed at an earlier time and the user would not like to redo this step, then this flag may be used to skip ahead to the volumetric registration. Necessary input files will need to be present in the input directory called by the command.')
+    skipToIntensityReg = traits.Bool(argstr="'-p'", desc='If the p-harmonic volumetric registration was already performed at an earlier time and the user would not like to redo this step, then this flag may be used to skip ahead to the intensity registration and label transfer step.')
+    useManualMaskFile = traits.Bool(argstr="'-cbm'", desc='Can call a manually edited cerebrum mask to limit boundaries. Will use file: subbasename.cerebrum.mask.nii.gz Make sure to correctly replace your manually edited mask file in your input folder with the correct subbasename.')
+    curveMatchingInstructions = traits.Str(argstr="'-cur %s'", desc='Used to take control of the curve matching process between the atlas and subject. One can specify the name of the .dfc file <sulname.dfc> and the sulcal numbers <#sul> to be used as constraints. example: curveMatchingInstructions = "subbasename.right.dfc 1 2 20"')
+    useCerebrumMask = traits.Bool(argstr="'-C'", desc='The cerebrum mask <subbasename.cerebrum.mask.nii.gz> will be used for masking the final labels instead of the default pial surface mask. Every voxel will be labeled within the cerebrum mask regardless of the boundaries of the pial surface.')
+    pialSurfaceMaskDilation = traits.Int(argstr="'-D %d'", desc='Cortical volume labels found in file output subbasename.svreg.label.nii.gz find its boundaries by using the pial surface then dilating by 1 voxel. Use this flag in order to control the number of pial surface mask dilation. (ie. -D 0 will assign no voxel dilation)')
+    keepIntermediates = traits.Bool(argstr="'-k'", desc='Keep the intermediate files after the svreg sequence is complete.')
+    _XOR_verbosity = ('verbosity0', 'verbosity1', 'verbosity2')
+    verbosity0 = traits.Bool(argstr="'-v0'", xor=_XOR_verbosity, desc='no messages will be reported')
+    verbosity1 = traits.Bool(argstr="'-v1'", xor=_XOR_verbosity, desc='messages will be reported but not the iteration-wise detailed messages')
+    verbosity2 = traits.Bool(argstr="'v2'", xor=_XOR_verbosity, desc='all the messages, including per-iteration, will be displayed')
+    shortMessages = traits.Bool(argstr="'-gui'", desc='Short messages instead of detailed messages')
+    displayModuleName = traits.Bool(argstr="'-m'", desc='Module name will be displayed in the messages')
+    displayTimestamps = traits.Bool(argstr="'-t'", desc='Timestamps will be displayed in the messages')
+    skipVolumetricProcessing = traits.Bool(argstr="'-S'", desc='Only surface registration and labeling will be performed. Volumetric processing will be skipped.')
+    useMultiThreading = traits.Bool(argstr="'-P'", desc='If multiple CPUs are present on the system, the code will try to use multithreading to make the execution fast.')
+    useSingleThreading = traits.Bool(argstr="'-U'", desc='Use single threaded mode.')

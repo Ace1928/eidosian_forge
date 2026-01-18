@@ -1,0 +1,7 @@
+import ipaddress
+from functools import lru_cache
+class IsolationLevel(IntEnum):
+    READ_UNCOMMITTED = extensions.ISOLATION_LEVEL_READ_UNCOMMITTED
+    READ_COMMITTED = extensions.ISOLATION_LEVEL_READ_COMMITTED
+    REPEATABLE_READ = extensions.ISOLATION_LEVEL_REPEATABLE_READ
+    SERIALIZABLE = extensions.ISOLATION_LEVEL_SERIALIZABLE

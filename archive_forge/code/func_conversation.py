@@ -1,0 +1,13 @@
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_image import ImageAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_extendedtext import ExtendedTextAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_document import DocumentAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_contact import ContactAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_location import LocationAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_video import VideoAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_audio import AudioAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_sticker import StickerAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_sender_key_distribution_message import \
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_protocol import ProtocolAttributes
+@conversation.setter
+def conversation(self, value):
+    self._conversation = value

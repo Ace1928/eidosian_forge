@@ -1,0 +1,27 @@
+import itertools
+import platform
+import numpy as np
+from numpy.testing import (assert_allclose, assert_equal,
+import pytest
+from pytest import raises as assert_raises
+from scipy import optimize
+from scipy.optimize._minimize import Bounds, NonlinearConstraint
+from scipy.optimize._minimize import (MINIMIZE_METHODS,
+from scipy.optimize._linprog import LINPROG_METHODS
+from scipy.optimize._root import ROOT_METHODS
+from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
+from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
+from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize import rosen, rosen_der, rosen_hess
+from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
+def test_minimize_coerce_args_param(self):
+
+    def Y(x, c):
+        return np.sum((x - c) ** 2)
+
+    def dY_dx(x, c=None):
+        return 2 * (x - c)
+    c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
+    xinit = np.random.randn(len(c))
+    optimize.minimize(Y, xinit, jac=dY_dx, args=c, method='BFGS')

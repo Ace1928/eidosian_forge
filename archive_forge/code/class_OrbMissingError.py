@@ -1,0 +1,2 @@
+class OrbMissingError(VerificationError):
+    pass

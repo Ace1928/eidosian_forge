@@ -1,0 +1,2 @@
+class InvalidPacketError(HidError):
+    pass

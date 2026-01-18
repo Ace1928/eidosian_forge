@@ -1,0 +1,1 @@
+Thrown when failing to connect to dashboard server

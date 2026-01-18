@@ -1,0 +1,17 @@
+from datetime import datetime
+from io import (
+from pathlib import Path
+import numpy as np
+import pytest
+from pandas.errors import EmptyDataError
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.core.arrays import (
+from pandas.io.common import urlopen
+from pandas.io.parsers import (
+def test_widths():
+    data = 'A    B    C            D            E\n2011 58   360.242940   149.910199   11950.7\n2011 59   444.953632   166.985655   11788.4\n2011 60   364.136849   183.628767   11806.2\n2011 61   413.836124   184.375703   11916.8\n2011 62   502.953953   173.237159   12468.3\n'
+    result = read_fwf(StringIO(data), widths=[5, 5, 13, 13, 7])
+    expected = DataFrame([[2011, 58, 360.24294, 149.910199, 11950.7], [2011, 59, 444.953632, 166.985655, 11788.4], [2011, 60, 364.136849, 183.628767, 11806.2], [2011, 61, 413.836124, 184.375703, 11916.8], [2011, 62, 502.953953, 173.237159, 12468.3]], columns=['A', 'B', 'C', 'D', 'E'])
+    tm.assert_frame_equal(result, expected)

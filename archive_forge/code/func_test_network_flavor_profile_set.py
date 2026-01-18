@@ -1,0 +1,15 @@
+from openstackclient.tests.functional.network.v2 import common
+def test_network_flavor_profile_set(self):
+    json_output_1 = self.openstack('network flavor profile create ' + '--description ' + self.DESCRIPTION + ' ' + '--enable ' + '--metainfo ' + self.METAINFO, parse_output=True)
+    ID = json_output_1.get('id')
+    self.assertIsNotNone(ID)
+    self.assertTrue(json_output_1.get('enabled'))
+    self.assertEqual('fakedescription', json_output_1.get('description'))
+    self.assertEqual('Extrainfo', json_output_1.get('meta_info'))
+    self.openstack('network flavor profile set --disable ' + ID)
+    json_output = self.openstack('network flavor profile show ' + ID, parse_output=True)
+    self.assertFalse(json_output.get('enabled'))
+    self.assertEqual('fakedescription', json_output.get('description'))
+    self.assertEqual('Extrainfo', json_output.get('meta_info'))
+    raw_output = self.openstack('network flavor profile delete ' + ID)
+    self.assertOutput('', raw_output)

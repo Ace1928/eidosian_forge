@@ -1,0 +1,11 @@
+from __future__ import annotations
+from typing import final
+import numpy as np
+import pytest
+from pandas._config import using_pyarrow_string_dtype
+from pandas.core.dtypes.common import is_string_dtype
+import pandas as pd
+import pandas._testing as tm
+from pandas.core import ops
+def get_op_from_name(self, op_name: str):
+    return tm.get_op_from_name(op_name)

@@ -1,0 +1,1 @@
+Checks that writing and reading of NWChem input files is consistent.

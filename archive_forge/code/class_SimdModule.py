@@ -1,0 +1,50 @@
+from __future__ import annotations
+import typing as T
+from .. import mesonlib, mlog
+from .. import build
+from ..compilers import Compiler
+from ..interpreter.type_checking import BT_SOURCES_KW, STATIC_LIB_KWS
+from ..interpreterbase.decorators import KwargInfo, permittedKwargs, typed_pos_args, typed_kwargs
+from . import ExtensionModule, ModuleInfo
+class SimdModule(ExtensionModule):
+    INFO = ModuleInfo('SIMD', '0.42.0', unstable=True)
+
+    def __init__(self, interpreter: Interpreter):
+        super().__init__(interpreter)
+        self.methods.update({'check': self.check})
+
+    @typed_pos_args('simd.check', str)
+    @typed_kwargs('simd.check', KwargInfo('compiler', Compiler, required=True), *[BT_SOURCES_KW.evolve(name=iset, default=None) for iset in ISETS], *[a for a in STATIC_LIB_KWS if a.name != 'sources'], allow_unknown=True)
+    @permittedKwargs({'compiler', *ISETS, *build.known_stlib_kwargs})
+    def check(self, state: ModuleState, args: T.Tuple[str], kwargs: CheckKw) -> T.List[T.Union[T.List[build.StaticLibrary], build.ConfigurationData]]:
+        result: T.List[build.StaticLibrary] = []
+        if 'sources' in kwargs:
+            raise mesonlib.MesonException('SIMD module does not support the "sources" keyword')
+        local_kwargs = set((*ISETS, 'compiler'))
+        static_lib_kwargs = T.cast('kwtypes.StaticLibrary', {k: v for k, v in kwargs.items() if k not in local_kwargs})
+        prefix = args[0]
+        compiler = kwargs['compiler']
+        conf = build.ConfigurationData()
+        for iset in ISETS:
+            sources = kwargs[iset]
+            if sources is None:
+                continue
+            compile_args = compiler.get_instruction_set_args(iset)
+            if compile_args is None:
+                mlog.log(f'Compiler supports {iset}:', mlog.red('NO'))
+                continue
+            if not compiler.has_multi_arguments(compile_args, state.environment)[0]:
+                mlog.log(f'Compiler supports {iset}:', mlog.red('NO'))
+                continue
+            mlog.log(f'Compiler supports {iset}:', mlog.green('YES'))
+            conf.values['HAVE_' + iset.upper()] = ('1', f'Compiler supports {iset}.')
+            libname = prefix + '_' + iset
+            lib_kwargs = static_lib_kwargs.copy()
+            lib_kwargs['sources'] = sources
+            langarg_key = compiler.get_language() + '_args'
+            old_lang_args = mesonlib.extract_as_list(lib_kwargs, langarg_key)
+            all_lang_args = old_lang_args + compile_args
+            lib_kwargs[langarg_key] = all_lang_args
+            lib = self.interpreter.build_target(state.current_node, (libname, []), lib_kwargs, build.StaticLibrary)
+            result.append(lib)
+        return [result, conf]

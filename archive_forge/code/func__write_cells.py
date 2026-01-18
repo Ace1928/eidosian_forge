@@ -1,0 +1,42 @@
+from __future__ import annotations
+from collections.abc import (
+import datetime
+from functools import partial
+from io import BytesIO
+import os
+from textwrap import fill
+from typing import (
+import warnings
+import zipfile
+from pandas._config import config
+from pandas._libs import lib
+from pandas._libs.parsers import STR_NA_VALUES
+from pandas.compat._optional import (
+from pandas.errors import EmptyDataError
+from pandas.util._decorators import (
+from pandas.util._exceptions import find_stack_level
+from pandas.util._validators import check_dtype_backend
+from pandas.core.dtypes.common import (
+from pandas.core.frame import DataFrame
+from pandas.core.shared_docs import _shared_docs
+from pandas.util.version import Version
+from pandas.io.common import (
+from pandas.io.excel._util import (
+from pandas.io.parsers import TextParser
+from pandas.io.parsers.readers import validate_integer
+def _write_cells(self, cells, sheet_name: str | None=None, startrow: int=0, startcol: int=0, freeze_panes: tuple[int, int] | None=None) -> None:
+    """
+        Write given formatted cells into Excel an excel sheet
+
+        Parameters
+        ----------
+        cells : generator
+            cell of formatted data to save to Excel sheet
+        sheet_name : str, default None
+            Name of Excel sheet, if None, then use self.cur_sheet
+        startrow : upper left cell row to dump data frame
+        startcol : upper left cell column to dump data frame
+        freeze_panes: int tuple of length 2
+            contains the bottom-most row and right-most column to freeze
+        """
+    raise NotImplementedError

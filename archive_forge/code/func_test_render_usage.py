@@ -1,0 +1,33 @@
+import datetime
+import math
+import os
+import random
+import re
+import subprocess
+import sys
+import time
+import types
+import unittest
+import warnings
+from humanfriendly import (
+from humanfriendly.case import CaseInsensitiveDict, CaseInsensitiveKey
+from humanfriendly.cli import main
+from humanfriendly.compat import StringIO
+from humanfriendly.decorators import cached
+from humanfriendly.deprecation import DeprecationProxy, define_aliases, deprecated_args, get_aliases
+from humanfriendly.prompts import (
+from humanfriendly.sphinx import (
+from humanfriendly.tables import (
+from humanfriendly.terminal import (
+from humanfriendly.terminal.html import html_to_ansi
+from humanfriendly.terminal.spinners import AutomaticSpinner, Spinner
+from humanfriendly.testing import (
+from humanfriendly.text import (
+from humanfriendly.usage import (
+from mock import MagicMock
+def test_render_usage(self):
+    """Test :func:`humanfriendly.usage.render_usage()`."""
+    assert render_usage('Usage: some-command WITH ARGS') == '**Usage:** `some-command WITH ARGS`'
+    assert render_usage('Supported options:') == '**Supported options:**'
+    assert 'code-block' in render_usage(dedent('\n            Here comes a shell command:\n\n              $ echo test\n              test\n        '))
+    assert all((token in render_usage(dedent("\n            Supported options:\n\n              -n, --dry-run\n\n                Don't change anything.\n        ")) for token in ('`-n`', '`--dry-run`')))

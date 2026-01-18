@@ -1,0 +1,43 @@
+import doctest
+import re
+import sys
+import time
+from io import StringIO
+from os import path
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Sequence,
+from docutils import nodes
+from docutils.nodes import Element, Node, TextElement
+from docutils.parsers.rst import directives
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
+from packaging.version import Version
+import sphinx
+from sphinx.builders import Builder
+from sphinx.locale import __
+from sphinx.util import logging
+from sphinx.util.console import bold  # type: ignore
+from sphinx.util.docutils import SphinxDirective
+from sphinx.util.osutil import relpath
+from sphinx.util.typing import OptionSpec
+class SphinxDocTestRunner(doctest.DocTestRunner):
+
+    def summarize(self, out: Callable, verbose: bool=None) -> Tuple[int, int]:
+        string_io = StringIO()
+        old_stdout = sys.stdout
+        sys.stdout = string_io
+        try:
+            res = super().summarize(verbose)
+        finally:
+            sys.stdout = old_stdout
+        out(string_io.getvalue())
+        return res
+
+    def _DocTestRunner__patched_linecache_getlines(self, filename: str, module_globals: Any=None) -> Any:
+        m = self._DocTestRunner__LINECACHE_FILENAME_RE.match(filename)
+        if m and m.group('name') == self.test.name:
+            try:
+                example = self.test.examples[int(m.group('examplenum'))]
+            except IndexError:
+                pass
+            else:
+                return example.source.splitlines(True)
+        return self.save_linecache_getlines(filename, module_globals)

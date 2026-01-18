@@ -1,0 +1,44 @@
+import json
+import struct
+import urllib
+from functools import partial
+import requests
+import requests.exceptions
+import websocket
+from .. import auth
+from ..constants import (DEFAULT_NUM_POOLS, DEFAULT_NUM_POOLS_SSH,
+from ..errors import (DockerException, InvalidVersion, TLSParameterError,
+from ..tls import TLSConfig
+from ..transport import SSLHTTPAdapter, UnixHTTPAdapter
+from ..utils import check_resource, config, update_headers, utils
+from ..utils.json_stream import json_stream
+from ..utils.proxy import ProxyConfig
+from ..utils.socket import consume_socket_output, demux_adaptor, frames_iter
+from .build import BuildApiMixin
+from .config import ConfigApiMixin
+from .container import ContainerApiMixin
+from .daemon import DaemonApiMixin
+from .exec_api import ExecApiMixin
+from .image import ImageApiMixin
+from .network import NetworkApiMixin
+from .plugin import PluginApiMixin
+from .secret import SecretApiMixin
+from .service import ServiceApiMixin
+from .swarm import SwarmApiMixin
+from .volume import VolumeApiMixin
+def _multiplexed_response_stream_helper(self, response):
+    """A generator of multiplexed data blocks coming from a response
+        stream."""
+    socket = self._get_raw_response_socket(response)
+    self._disable_socket_timeout(socket)
+    while True:
+        header = response.raw.read(STREAM_HEADER_SIZE_BYTES)
+        if not header:
+            break
+        _, length = struct.unpack('>BxxxL', header)
+        if not length:
+            continue
+        data = response.raw.read(length)
+        if not data:
+            break
+        yield data

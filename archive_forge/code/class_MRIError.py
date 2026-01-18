@@ -1,0 +1,2 @@
+class MRIError(ValueError):
+    pass

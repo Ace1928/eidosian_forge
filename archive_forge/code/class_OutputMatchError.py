@@ -1,0 +1,2 @@
+class OutputMatchError(ValueError):
+    pass

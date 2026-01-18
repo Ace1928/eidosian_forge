@@ -1,0 +1,96 @@
+from kombu import exceptions as kombu_exc
+from taskflow import exceptions as excp
+from taskflow import logging
+from taskflow.utils import kombu_utils as ku
+class TypeDispatcher(object):
+    """Receives messages and dispatches to type specific handlers."""
+
+    def __init__(self, type_handlers=None, requeue_filters=None):
+        if type_handlers is not None:
+            self._type_handlers = dict(type_handlers)
+        else:
+            self._type_handlers = {}
+        if requeue_filters is not None:
+            self._requeue_filters = list(requeue_filters)
+        else:
+            self._requeue_filters = []
+
+    @property
+    def type_handlers(self):
+        """Dictionary of message type -> callback to handle that message.
+
+        The callback(s) will be activated by looking for a message
+        property 'type' and locating a callback in this dictionary that maps
+        to that type; if one is found it is expected to be a callback that
+        accepts two positional parameters; the first being the message data
+        and the second being the message object. If a callback is not found
+        then the message is rejected and it will be up to the underlying
+        message transport to determine what this means/implies...
+        """
+        return self._type_handlers
+
+    @property
+    def requeue_filters(self):
+        """List of filters (callbacks) to request a message to be requeued.
+
+        The callback(s) will be activated before the message has been acked and
+        it can be used to instruct the dispatcher to requeue the message
+        instead of processing it. The callback, when called, will be provided
+        two positional parameters; the first being the message data and the
+        second being the message object. Using these provided parameters the
+        filter should return a truthy object if the message should be requeued
+        and a falsey object if it should not.
+        """
+        return self._requeue_filters
+
+    def _collect_requeue_votes(self, data, message):
+        requeue_votes = 0
+        for i, cb in enumerate(self._requeue_filters):
+            try:
+                if cb(data, message):
+                    requeue_votes += 1
+            except Exception:
+                LOG.exception("Failed calling requeue filter %s '%s' to determine if message %r should be requeued.", i + 1, cb, message.delivery_tag)
+        return requeue_votes
+
+    def _requeue_log_error(self, message, errors):
+        try:
+            message.requeue()
+        except errors as exc:
+            LOG.critical("Couldn't requeue %r, reason:%r", message.delivery_tag, exc, exc_info=True)
+        else:
+            LOG.debug("Message '%s' was requeued.", ku.DelayedPretty(message))
+
+    def _process_message(self, data, message, message_type):
+        handler = self._type_handlers.get(message_type)
+        if handler is None:
+            message.reject_log_error(logger=LOG, errors=(kombu_exc.MessageStateError,))
+            LOG.warning("Unexpected message type: '%s' in message '%s'", message_type, ku.DelayedPretty(message))
+        else:
+            if handler.validator is not None:
+                try:
+                    handler.validator(data)
+                except excp.InvalidFormat as e:
+                    message.reject_log_error(logger=LOG, errors=(kombu_exc.MessageStateError,))
+                    LOG.warning("Message '%s' (%s) was rejected due to it being in an invalid format: %s", ku.DelayedPretty(message), message_type, e)
+                    return
+            message.ack_log_error(logger=LOG, errors=(kombu_exc.MessageStateError,))
+            if message.acknowledged:
+                LOG.debug("Message '%s' was acknowledged.", ku.DelayedPretty(message))
+                handler.process_message(data, message)
+            else:
+                message.reject_log_error(logger=LOG, errors=(kombu_exc.MessageStateError,))
+
+    def on_message(self, data, message):
+        """This method is called on incoming messages."""
+        LOG.debug("Received message '%s'", ku.DelayedPretty(message))
+        if self._collect_requeue_votes(data, message):
+            self._requeue_log_error(message, errors=(kombu_exc.MessageStateError,))
+        else:
+            try:
+                message_type = message.properties['type']
+            except KeyError:
+                message.reject_log_error(logger=LOG, errors=(kombu_exc.MessageStateError,))
+                LOG.warning("The 'type' message property is missing in message '%s'", ku.DelayedPretty(message))
+            else:
+                self._process_message(data, message, message_type)

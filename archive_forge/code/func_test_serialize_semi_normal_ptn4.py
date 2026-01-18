@@ -1,0 +1,17 @@
+import unittest
+import logging
+import inspect
+import struct
+from os_ken.lib import addrconv
+from os_ken.lib.packet import cfm
+def test_serialize_semi_normal_ptn4(self):
+    ins = cfm.sender_id_tlv(ma_domain=self.ma_domain)
+    buf = ins.serialize()
+    form = '!BHBB2sB'
+    res = struct.unpack_from(form, bytes(buf))
+    self.assertEqual(self._type, res[0])
+    self.assertEqual(5, res[1])
+    self.assertEqual(0, res[2])
+    self.assertEqual(self.ma_domain_length, res[3])
+    self.assertEqual(self.ma_domain, res[4])
+    self.assertEqual(0, res[5])

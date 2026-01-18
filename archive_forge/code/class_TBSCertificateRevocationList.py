@@ -1,0 +1,3 @@
+from pyasn1_modules.rfc2459 import *
+class TBSCertificateRevocationList(univ.Sequence):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('signature', AlgorithmIdentifier()), namedtype.NamedType('issuer', Name()), namedtype.NamedType('lastUpdate', useful.UTCTime()), namedtype.NamedType('nextUpdate', useful.UTCTime()), namedtype.OptionalNamedType('revokedCertificates', univ.SequenceOf(componentType=CRLEntry())))

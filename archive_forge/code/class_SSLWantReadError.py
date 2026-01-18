@@ -1,0 +1,2 @@
+class SSLWantReadError(Exception):
+    pass

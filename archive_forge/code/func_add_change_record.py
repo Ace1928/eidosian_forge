@@ -1,0 +1,5 @@
+from boto.resultset import ResultSet
+def add_change_record(self, action, change):
+    """Add an existing record to a change set with the specified action"""
+    self.changes.append([action, change])
+    return

@@ -1,0 +1,2 @@
+class NewtonMethodConvergenceError(NewtonMethodError):
+    pass

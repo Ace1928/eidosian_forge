@@ -1,0 +1,6 @@
+import grpc
+from . import pubsub_pb2 as src_dot_ray_dot_protobuf_dot_pubsub__pb2
+def add_SubscriberServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {'PubsubLongPolling': grpc.unary_unary_rpc_method_handler(servicer.PubsubLongPolling, request_deserializer=src_dot_ray_dot_protobuf_dot_pubsub__pb2.PubsubLongPollingRequest.FromString, response_serializer=src_dot_ray_dot_protobuf_dot_pubsub__pb2.PubsubLongPollingReply.SerializeToString), 'PubsubCommandBatch': grpc.unary_unary_rpc_method_handler(servicer.PubsubCommandBatch, request_deserializer=src_dot_ray_dot_protobuf_dot_pubsub__pb2.PubsubCommandBatchRequest.FromString, response_serializer=src_dot_ray_dot_protobuf_dot_pubsub__pb2.PubsubCommandBatchReply.SerializeToString)}
+    generic_handler = grpc.method_handlers_generic_handler('ray.rpc.SubscriberService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))

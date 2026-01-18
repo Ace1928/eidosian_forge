@@ -1,0 +1,14 @@
+import boto
+from boto.ec2.ec2object import EC2Object, TaggedEC2Object
+from boto.resultset import ResultSet
+from boto.ec2.address import Address
+from boto.ec2.blockdevicemapping import BlockDeviceMapping
+from boto.ec2.image import ProductCodes
+from boto.ec2.networkinterface import NetworkInterface
+from boto.ec2.group import Group
+import base64
+@property
+def previous_state_code(self):
+    if self._previous_state:
+        return self._previous_state.code
+    return 0

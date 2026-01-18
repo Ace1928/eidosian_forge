@@ -1,0 +1,14 @@
+from __future__ import annotations
+import typing
+from .._utils.registry import alias
+from ..doctools import document
+from .scale_continuous import scale_continuous
+from .scale_discrete import scale_discrete
+
+        Identity map
+
+        Notes
+        -----
+        Identity scales bypass the palette completely since the
+        map is the identity function.
+        

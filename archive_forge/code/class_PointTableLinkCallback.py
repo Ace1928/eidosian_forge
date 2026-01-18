@@ -1,0 +1,11 @@
+import param
+from holoviews.plotting.links import Link, RectanglesTableLink as HvRectanglesTableLink
+from holoviews.plotting.bokeh.links import (
+from holoviews.core.util import dimension_sanitizer
+class PointTableLinkCallback(LinkCallback):
+    source_model = 'cds'
+    target_model = 'cds'
+    on_source_changes = ['data', 'patching']
+    on_target_changes = ['data', 'patching']
+    source_code = '\n    const projections = Bokeh.require("core/util/projections");\n    const [x, y] = point_columns\n    const xs_column = source_cds.data[x];\n    const ys_column = source_cds.data[y];\n    const projected_xs = []\n    const projected_ys = []\n    for (let i = 0; i < xs_column.length; i++) {\n      const xv = xs_column[i]\n      const yv = ys_column[i]\n      const p = projections.wgs84_mercator.invert(xv, yv)\n      projected_xs.push(p[0])\n      projected_ys.push(p[1])\n    }\n    target_cds.data[x] = projected_xs;\n    target_cds.data[y] = projected_ys;\n    for (const col of source_cds.columns()) {\n       if ((col != x) && (col != y)) {\n         target_cds.data[col] = source_cds.data[col]\n       }\n    }\n    target_cds.change.emit()\n    target_cds.data = target_cds.data\n    '
+    target_code = '\n    var projections = Bokeh.require("core/util/projections");\n    const [x, y] = point_columns\n    const xs_column = target_cds.data[x];\n    const ys_column = target_cds.data[y];\n    const projected_xs = []\n    const projected_ys = []\n    const empty = []\n    for (let i = 0; i < xs_column.length; i++) {\n      const xv = xs_column[i]\n      const yv = ys_column[i]\n      const p = projections.wgs84_mercator.compute(xv, yv)\n      projected_xs.push(p[0])\n      projected_ys.push(p[1])\n    }\n    source_cds.data[x] = projected_xs;\n    source_cds.data[y] = projected_ys;\n    for (const col of target_cds.columns()) {\n       if ((col != x) && (col != y)) {\n         source_cds.data[col] = target_cds.data[col]\n       }\n    }\n    source_cds.change.emit()\n    source_cds.properties.data.change.emit()\n    source_cds.data = source_cds.data\n    '

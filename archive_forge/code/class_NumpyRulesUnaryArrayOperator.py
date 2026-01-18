@@ -1,0 +1,15 @@
+import warnings
+import numpy as np
+import operator
+from numba.core import types, utils, config
+from numba.core.typing.templates import (AttributeTemplate, AbstractTemplate,
+from numba.np.numpy_support import (ufunc_find_matching_loop,
+from numba.core.errors import (TypingError, NumbaPerformanceWarning,
+from numba import pndindex
+class NumpyRulesUnaryArrayOperator(NumpyRulesArrayOperator):
+    _op_map = {operator.pos: 'positive', operator.neg: 'negative', operator.invert: 'invert'}
+
+    def generic(self, args, kws):
+        assert not kws
+        if len(args) == 1 and isinstance(args[0], types.ArrayCompatible):
+            return super(NumpyRulesUnaryArrayOperator, self).generic(args, kws)

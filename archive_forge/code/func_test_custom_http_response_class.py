@@ -1,0 +1,34 @@
+from __future__ import absolute_import
+import ssl
+from socket import error as SocketError
+from ssl import SSLError as BaseSSLError
+from test import SHORT_TIMEOUT
+import pytest
+from mock import Mock
+from dummyserver.server import DEFAULT_CA
+from urllib3._collections import HTTPHeaderDict
+from urllib3.connectionpool import (
+from urllib3.exceptions import (
+from urllib3.packages.six.moves import http_client as httplib
+from urllib3.packages.six.moves.http_client import HTTPException
+from urllib3.packages.six.moves.queue import Empty
+from urllib3.response import HTTPResponse
+from urllib3.util.ssl_match_hostname import CertificateError
+from urllib3.util.timeout import Timeout
+from .test_response import MockChunkedEncodingResponse, MockSock
+def test_custom_http_response_class(self):
+
+    class CustomHTTPResponse(HTTPResponse):
+        pass
+
+    class CustomConnectionPool(HTTPConnectionPool):
+        ResponseCls = CustomHTTPResponse
+
+        def _make_request(self, *args, **kwargs):
+            httplib_response = httplib.HTTPResponse(MockSock)
+            httplib_response.fp = MockChunkedEncodingResponse([b'f', b'o', b'o'])
+            httplib_response.headers = httplib_response.msg = HTTPHeaderDict()
+            return httplib_response
+    with CustomConnectionPool(host='localhost', maxsize=1, block=True) as pool:
+        response = pool.request('GET', '/', retries=False, chunked=True, preload_content=False)
+        assert isinstance(response, CustomHTTPResponse)

@@ -1,0 +1,28 @@
+import gc
+import decimal
+import json
+import multiprocessing as mp
+import sys
+import warnings
+from collections import OrderedDict
+from datetime import date, datetime, time, timedelta, timezone
+import hypothesis as h
+import hypothesis.strategies as st
+import numpy as np
+import numpy.testing as npt
+import pytest
+from pyarrow.pandas_compat import get_logical_type, _pandas_api
+from pyarrow.tests.util import invoke_script, random_ascii, rands
+import pyarrow.tests.strategies as past
+import pyarrow.tests.util as test_util
+from pyarrow.vendored.version import Version
+import pyarrow as pa
+def test_pandas_unicode(self):
+    repeats = 1000
+    values = ['foo', None, 'bar', 'mañana', np.nan]
+    df = pd.DataFrame({'strings': values * repeats})
+    field = pa.field('strings', pa.string())
+    schema = pa.schema([field])
+    ex_values = ['foo', None, 'bar', 'mañana', None]
+    expected = pd.DataFrame({'strings': ex_values * repeats})
+    _check_pandas_roundtrip(df, expected=expected, expected_schema=schema)

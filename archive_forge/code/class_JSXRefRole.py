@@ -1,0 +1,36 @@
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
+from docutils import nodes
+from docutils.nodes import Element, Node
+from docutils.parsers.rst import directives
+from sphinx import addnodes
+from sphinx.addnodes import desc_signature, pending_xref
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.directives import ObjectDescription
+from sphinx.domains import Domain, ObjType
+from sphinx.domains.python import _pseudo_parse_arglist
+from sphinx.environment import BuildEnvironment
+from sphinx.locale import _, __
+from sphinx.roles import XRefRole
+from sphinx.util import logging
+from sphinx.util.docfields import Field, GroupedField, TypedField
+from sphinx.util.docutils import SphinxDirective, switch_source_input
+from sphinx.util.nodes import make_id, make_refnode, nested_parse_with_titles
+from sphinx.util.typing import OptionSpec
+class JSXRefRole(XRefRole):
+
+    def process_link(self, env: BuildEnvironment, refnode: Element, has_explicit_title: bool, title: str, target: str) -> Tuple[str, str]:
+        refnode['js:object'] = env.ref_context.get('js:object')
+        refnode['js:module'] = env.ref_context.get('js:module')
+        if not has_explicit_title:
+            title = title.lstrip('.')
+            target = target.lstrip('~')
+            if title[0:1] == '~':
+                title = title[1:]
+                dot = title.rfind('.')
+                if dot != -1:
+                    title = title[dot + 1:]
+        if target[0:1] == '.':
+            target = target[1:]
+            refnode['refspecific'] = True
+        return (title, target)

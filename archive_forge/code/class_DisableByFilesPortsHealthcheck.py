@@ -1,0 +1,49 @@
+import logging
+import os
+from oslo_middleware.healthcheck import opts
+from oslo_middleware.healthcheck import pluginbase
+class DisableByFilesPortsHealthcheck(pluginbase.HealthcheckBaseExtension):
+    """DisableByFilesPorts healthcheck middleware plugin
+
+    This plugin checks presence of a file that is provided for a application
+    running on a certain port to report if the service is unavailable
+    or not.
+
+    Example of middleware configuration:
+
+    .. code-block:: ini
+
+      [filter:healthcheck]
+      paste.filter_factory = oslo_middleware:Healthcheck.factory
+      path = /healthcheck
+      backends = disable_by_files_ports
+      disable_by_file_paths = 5000:/var/run/keystone/healthcheck_disable,             35357:/var/run/keystone/admin_healthcheck_disable
+      # set to True to enable detailed output, False is the default
+      detailed = False
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DisableByFilesPortsHealthcheck, self).__init__(*args, **kwargs)
+        self.oslo_conf.register_opts(opts.DISABLE_BY_FILES_OPTS, group='healthcheck')
+        self.status_files = {}
+        paths = self._conf_get('disable_by_file_paths')
+        self.status_files.update(self._iter_paths_ports(paths))
+
+    @staticmethod
+    def _iter_paths_ports(paths):
+        for port_path in paths:
+            port_path = port_path.strip()
+            if port_path:
+                port, path = port_path.split(':', 1)
+                port = int(port)
+                yield (port, path)
+
+    def healthcheck(self, server_port):
+        path = self.status_files.get(server_port)
+        if not path:
+            LOG.warning('DisableByFilesPorts healthcheck middleware enabled without disable_by_file_paths set for port %s', server_port)
+            return pluginbase.HealthcheckResult(available=True, reason='OK')
+        elif not os.path.exists(path):
+            return pluginbase.HealthcheckResult(available=True, reason='OK')
+        else:
+            return pluginbase.HealthcheckResult(available=False, reason='DISABLED BY FILE')

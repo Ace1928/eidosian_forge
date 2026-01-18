@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+class Ntp_globalArgs(object):
+    """The arg spec for the vyos_ntp module"""
+    argument_spec = {'config': {'type': 'dict', 'options': {'allow_clients': {'type': 'list', 'elements': 'str'}, 'listen_addresses': {'type': 'list', 'elements': 'str'}, 'servers': {'type': 'list', 'elements': 'dict', 'options': {'server': {'type': 'str'}, 'options': {'type': 'list', 'elements': 'str', 'choices': ['noselect', 'dynamic', 'pool', 'preempt', 'prefer']}}}}}, 'running_config': {'type': 'str'}, 'state': {'type': 'str', 'choices': ['deleted', 'merged', 'overridden', 'replaced', 'gathered', 'rendered', 'parsed'], 'default': 'merged'}}

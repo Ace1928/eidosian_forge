@@ -1,0 +1,35 @@
+import atexit
+import collections
+import datetime
+import errno
+import json
+import logging
+import os
+import random
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import traceback
+from collections import defaultdict
+from typing import Dict, Optional, Tuple, IO, AnyStr
+from filelock import FileLock
+import ray
+import ray._private.ray_constants as ray_constants
+import ray._private.services
+from ray._private import storage
+from ray._raylet import GcsClient, get_session_key_from_storage
+from ray._private.resource_spec import ResourceSpec
+from ray._private.services import serialize_config, get_address
+from ray._private.utils import open_log, try_to_create_directory, try_to_symlink
+def check_persisted_session_name(self):
+    if self._ray_params.external_addresses is None:
+        return None
+    self._redis_address = self._ray_params.external_addresses[0]
+    redis_ip_address, redis_port, enable_redis_ssl = get_address(self._redis_address)
+    if int(redis_port) < 0:
+        raise ValueError(f'Invalid Redis port provided: {redis_port}.The port must be a non-negative integer.')
+    return get_session_key_from_storage(redis_ip_address, int(redis_port), self._ray_params.redis_password, enable_redis_ssl, serialize_config(self._config), b'session_name')

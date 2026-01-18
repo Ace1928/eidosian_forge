@@ -1,0 +1,25 @@
+import contextlib
+import hashlib
+import logging
+import os
+import random
+import sys
+import time
+import futurist
+from oslo_utils import uuidutils
+from taskflow import engines
+from taskflow import exceptions as exc
+from taskflow.patterns import graph_flow as gf
+from taskflow.patterns import linear_flow as lf
+from taskflow.persistence import models
+from taskflow import task
+import example_utils as eu  # noqa
+class FormatVolumes(task.Task):
+    """Formats the volumes for the vm."""
+
+    def execute(self, volumes):
+        for v in volumes:
+            print('Formatting volume %s' % v)
+            with slow_down(1):
+                pass
+            print('Formatted volume %s' % v)

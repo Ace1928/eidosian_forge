@@ -124,6 +124,38 @@ def render_template(template_str: str, variables: Dict[str, Any], safe: bool = F
         return template.safe_substitute(variables_with_defaults)
 
 
+class TemplateManager:
+    """
+    Manages template retrieval and rendering using GIS as a backend.
+    """
+    
+    def __init__(self, gis: Optional['GisCore'] = None):
+        # Local import to avoid circular dependency
+        try:
+            from gis_forge import GisCore
+            self.gis = gis or GisCore()
+        except ImportError:
+            self.gis = None
+
+    def get_template(self, name: str) -> Optional[str]:
+        """Retrieve a template from GIS by name."""
+        if not self.gis:
+            return None
+        return self.gis.get(f"repo.templates.{name}")
+
+    def register_template(self, name: str, content: str):
+        """Register a template in GIS."""
+        if self.gis:
+            self.gis.set(f"repo.templates.{name}", content)
+
+    def render(self, name: str, variables: Dict[str, Any], safe: bool = False) -> str:
+        """Render a named template from GIS."""
+        template_str = self.get_template(name)
+        if not template_str:
+            raise ValueError(f"Template '{name}' not found in GIS registry.")
+        return render_template(template_str, variables, safe)
+
+
 def render_comment_block(content: str, style: str = 'python') -> str:
     """
     Wrap content in a language-appropriate comment block.

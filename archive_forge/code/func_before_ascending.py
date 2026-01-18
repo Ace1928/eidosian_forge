@@ -1,0 +1,5 @@
+from googlecloudsdk.third_party.appengine.proto import ProtocolBuffer
+import abc
+import array
+def before_ascending(self):
+    return self.before_ascending_

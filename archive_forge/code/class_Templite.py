@@ -1,0 +1,197 @@
+from __future__ import annotations
+import re
+from typing import (
+class Templite:
+    """A simple template renderer, for a nano-subset of Django syntax.
+
+    Supported constructs are extended variable access::
+
+        {{var.modifier.modifier|filter|filter}}
+
+    loops::
+
+        {% for var in list %}...{% endfor %}
+
+    and ifs::
+
+        {% if var %}...{% endif %}
+
+    Comments are within curly-hash markers::
+
+        {# This will be ignored #}
+
+    Lines between `{% joined %}` and `{% endjoined %}` will have lines stripped
+    and joined.  Be careful, this could join words together!
+
+    Any of these constructs can have a hyphen at the end (`-}}`, `-%}`, `-#}`),
+    which will collapse the white space following the tag.
+
+    Construct a Templite with the template text, then use `render` against a
+    dictionary context to create a finished string::
+
+        templite = Templite('''
+            <h1>Hello {{name|upper}}!</h1>
+            {% for topic in topics %}
+                <p>You are interested in {{topic}}.</p>
+            {% endif %}
+            ''',
+            {"upper": str.upper},
+        )
+        text = templite.render({
+            "name": "Ned",
+            "topics": ["Python", "Geometry", "Juggling"],
+        })
+
+    """
+
+    def __init__(self, text: str, *contexts: dict[str, Any]) -> None:
+        """Construct a Templite with the given `text`.
+
+        `contexts` are dictionaries of values to use for future renderings.
+        These are good for filters and global values.
+
+        """
+        self.context = {}
+        for context in contexts:
+            self.context.update(context)
+        self.all_vars: set[str] = set()
+        self.loop_vars: set[str] = set()
+        code = CodeBuilder()
+        code.add_line('def render_function(context, do_dots):')
+        code.indent()
+        vars_code = code.add_section()
+        code.add_line('result = []')
+        code.add_line('append_result = result.append')
+        code.add_line('extend_result = result.extend')
+        code.add_line('to_str = str')
+        buffered: list[str] = []
+
+        def flush_output() -> None:
+            """Force `buffered` to the code builder."""
+            if len(buffered) == 1:
+                code.add_line('append_result(%s)' % buffered[0])
+            elif len(buffered) > 1:
+                code.add_line('extend_result([%s])' % ', '.join(buffered))
+            del buffered[:]
+        ops_stack = []
+        tokens = re.split('(?s)({{.*?}}|{%.*?%}|{#.*?#})', text)
+        squash = in_joined = False
+        for token in tokens:
+            if token.startswith('{'):
+                start, end = (2, -2)
+                squash = token[-3] == '-'
+                if squash:
+                    end = -3
+                if token.startswith('{#'):
+                    continue
+                elif token.startswith('{{'):
+                    expr = self._expr_code(token[start:end].strip())
+                    buffered.append('to_str(%s)' % expr)
+                else:
+                    flush_output()
+                    words = token[start:end].strip().split()
+                    if words[0] == 'if':
+                        if len(words) != 2:
+                            self._syntax_error("Don't understand if", token)
+                        ops_stack.append('if')
+                        code.add_line('if %s:' % self._expr_code(words[1]))
+                        code.indent()
+                    elif words[0] == 'for':
+                        if len(words) != 4 or words[2] != 'in':
+                            self._syntax_error("Don't understand for", token)
+                        ops_stack.append('for')
+                        self._variable(words[1], self.loop_vars)
+                        code.add_line(f'for c_{words[1]} in {self._expr_code(words[3])}:')
+                        code.indent()
+                    elif words[0] == 'joined':
+                        ops_stack.append('joined')
+                        in_joined = True
+                    elif words[0].startswith('end'):
+                        if len(words) != 1:
+                            self._syntax_error("Don't understand end", token)
+                        end_what = words[0][3:]
+                        if not ops_stack:
+                            self._syntax_error('Too many ends', token)
+                        start_what = ops_stack.pop()
+                        if start_what != end_what:
+                            self._syntax_error('Mismatched end tag', end_what)
+                        if end_what == 'joined':
+                            in_joined = False
+                        else:
+                            code.dedent()
+                    else:
+                        self._syntax_error("Don't understand tag", words[0])
+            else:
+                if in_joined:
+                    token = re.sub('\\s*\\n\\s*', '', token.strip())
+                elif squash:
+                    token = token.lstrip()
+                if token:
+                    buffered.append(repr(token))
+        if ops_stack:
+            self._syntax_error('Unmatched action tag', ops_stack[-1])
+        flush_output()
+        for var_name in self.all_vars - self.loop_vars:
+            vars_code.add_line(f'c_{var_name} = context[{var_name!r}]')
+        code.add_line("return ''.join(result)")
+        code.dedent()
+        self._render_function = cast(Callable[[Dict[str, Any], Callable[..., Any]], str], code.get_globals()['render_function'])
+
+    def _expr_code(self, expr: str) -> str:
+        """Generate a Python expression for `expr`."""
+        if '|' in expr:
+            pipes = expr.split('|')
+            code = self._expr_code(pipes[0])
+            for func in pipes[1:]:
+                self._variable(func, self.all_vars)
+                code = f'c_{func}({code})'
+        elif '.' in expr:
+            dots = expr.split('.')
+            code = self._expr_code(dots[0])
+            args = ', '.join((repr(d) for d in dots[1:]))
+            code = f'do_dots({code}, {args})'
+        else:
+            self._variable(expr, self.all_vars)
+            code = 'c_%s' % expr
+        return code
+
+    def _syntax_error(self, msg: str, thing: Any) -> NoReturn:
+        """Raise a syntax error using `msg`, and showing `thing`."""
+        raise TempliteSyntaxError(f'{msg}: {thing!r}')
+
+    def _variable(self, name: str, vars_set: set[str]) -> None:
+        """Track that `name` is used as a variable.
+
+        Adds the name to `vars_set`, a set of variable names.
+
+        Raises an syntax error if `name` is not a valid name.
+
+        """
+        if not re.match('[_a-zA-Z][_a-zA-Z0-9]*$', name):
+            self._syntax_error('Not a valid name', name)
+        vars_set.add(name)
+
+    def render(self, context: dict[str, Any] | None=None) -> str:
+        """Render this template by applying it to `context`.
+
+        `context` is a dictionary of values to use in this rendering.
+
+        """
+        render_context = dict(self.context)
+        if context:
+            render_context.update(context)
+        return self._render_function(render_context, self._do_dots)
+
+    def _do_dots(self, value: Any, *dots: str) -> Any:
+        """Evaluate dotted expressions at run-time."""
+        for dot in dots:
+            try:
+                value = getattr(value, dot)
+            except AttributeError:
+                try:
+                    value = value[dot]
+                except (TypeError, KeyError) as exc:
+                    raise TempliteValueError(f"Couldn't evaluate {value!r}.{dot}") from exc
+            if callable(value):
+                value = value()
+        return value

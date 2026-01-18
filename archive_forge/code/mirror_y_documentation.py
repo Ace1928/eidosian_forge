@@ -1,0 +1,1 @@
+ flips the clip vertically (and its mask too, by default) 

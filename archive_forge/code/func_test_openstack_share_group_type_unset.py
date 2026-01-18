@@ -1,0 +1,20 @@
+from oslo_serialization import jsonutils
+from tempest.lib.common.utils import data_utils
+from manilaclient.tests.functional.osc import base
+def test_openstack_share_group_type_unset(self):
+    share_group_type_name = data_utils.rand_name('test_share_group_type_create')
+    group_snap_key = 'snapshot_support'
+    group_snap_value = 'False'
+    group_specs = f'{group_snap_key}={group_snap_value}'
+    share_group_type = self.create_share_group_type(name=share_group_type_name, share_types='dhss_false', group_specs=group_specs)
+    shares_group_type_show = self.openstack(f'share group type show {share_group_type_name} -f json')
+    shares_group_type_show = jsonutils.loads(shares_group_type_show)
+    expected_sgt_values = {'id': share_group_type['id'], 'group_specs': {group_snap_key: group_snap_value}}
+    for k, v in expected_sgt_values.items():
+        self.assertEqual(expected_sgt_values[k], shares_group_type_show[k])
+    self.dict_result('share', f'group type unset {share_group_type_name} {group_snap_key}')
+    shares_group_type_show = self.openstack(f'share group type show {share_group_type_name} -f json')
+    shares_group_type_show = jsonutils.loads(shares_group_type_show)
+    expected_sgt_values = {'id': share_group_type['id'], 'group_specs': {}}
+    for k, v in expected_sgt_values.items():
+        self.assertEqual(expected_sgt_values[k], shares_group_type_show[k])

@@ -1,0 +1,14 @@
+from .error import *
+from .tokens import *
+from .events import *
+from .nodes import *
+from .loader import *
+from .dumper import *
+import io
+def safe_dump_all(documents, stream=None, **kwds):
+    """
+    Serialize a sequence of Python objects into a YAML stream.
+    Produce only basic YAML tags.
+    If stream is None, return the produced string instead.
+    """
+    return dump_all(documents, stream, Dumper=SafeDumper, **kwds)

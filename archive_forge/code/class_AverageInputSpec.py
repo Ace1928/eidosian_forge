@@ -1,0 +1,46 @@
+import glob
+import os
+import os.path
+import re
+import warnings
+from ..base import (
+from .base import aggregate_filename
+class AverageInputSpec(CommandLineInputSpec):
+    _xor_input_files = ('input_files', 'filelist')
+    input_files = InputMultiPath(File(exists=True), desc='input file(s)', mandatory=True, sep=' ', argstr='%s', position=-2, xor=_xor_input_files)
+    filelist = File(desc='Specify the name of a file containing input file names.', argstr='-filelist %s', exists=True, mandatory=True, xor=_xor_input_files)
+    output_file = File(desc='output file', genfile=True, argstr='%s', position=-1, name_source=['input_files'], hash_files=False, name_template='%s_averaged.mnc')
+    two = traits.Bool(desc='Create a MINC 2 output file.', argstr='-2')
+    clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
+    _xor_verbose = ('verbose', 'quiet')
+    verbose = traits.Bool(desc='Print out log messages (default).', argstr='-verbose', xor=_xor_verbose)
+    quiet = traits.Bool(desc='Do not print out log messages.', argstr='-quiet', xor=_xor_verbose)
+    debug = traits.Bool(desc='Print out debugging messages.', argstr='-debug')
+    _xor_check_dimensions = ('check_dimensions', 'no_check_dimensions')
+    check_dimensions = traits.Bool(desc='Check that dimension info matches across files (default).', argstr='-check_dimensions', xor=_xor_check_dimensions)
+    no_check_dimensions = traits.Bool(desc='Do not check dimension info.', argstr='-nocheck_dimensions', xor=_xor_check_dimensions)
+    _xor_format = ('format_filetype', 'format_byte', 'format_short', 'format_int', 'format_long', 'format_float', 'format_double', 'format_signed', 'format_unsigned')
+    format_filetype = traits.Bool(desc='Use data type of first file (default).', argstr='-filetype', xor=_xor_format)
+    format_byte = traits.Bool(desc='Write out byte data.', argstr='-byte', xor=_xor_format)
+    format_short = traits.Bool(desc='Write out short integer data.', argstr='-short', xor=_xor_format)
+    format_int = traits.Bool(desc='Write out 32-bit integer data.', argstr='-int', xor=_xor_format)
+    format_long = traits.Bool(desc='Superseded by -int.', argstr='-long', xor=_xor_format)
+    format_float = traits.Bool(desc='Write out single-precision floating-point data.', argstr='-float', xor=_xor_format)
+    format_double = traits.Bool(desc='Write out double-precision floating-point data.', argstr='-double', xor=_xor_format)
+    format_signed = traits.Bool(desc='Write signed integer data.', argstr='-signed', xor=_xor_format)
+    format_unsigned = traits.Bool(desc='Write unsigned integer data (default).', argstr='-unsigned', xor=_xor_format)
+    max_buffer_size_in_kb = traits.Range(low=0, desc='Specify the maximum size of the internal buffers (in kbytes).', value=4096, usedefault=True, argstr='-max_buffer_size_in_kb %d')
+    _xor_normalize = ('normalize', 'nonormalize')
+    normalize = traits.Bool(desc='Normalize data sets for mean intensity.', argstr='-normalize', xor=_xor_normalize)
+    nonormalize = traits.Bool(desc='Do not normalize data sets (default).', argstr='-nonormalize', xor=_xor_normalize)
+    voxel_range = traits.Tuple(traits.Int, traits.Int, argstr='-range %d %d', desc='Valid range for output data.')
+    sdfile = File(desc='Specify an output sd file (default=none).', argstr='-sdfile %s')
+    _xor_copy_header = ('copy_header', 'no_copy_header')
+    copy_header = traits.Bool(desc='Copy all of the header from the first file (default for one file).', argstr='-copy_header', xor=_xor_copy_header)
+    no_copy_header = traits.Bool(desc='Do not copy all of the header from the first file (default for many files)).', argstr='-nocopy_header', xor=_xor_copy_header)
+    avgdim = traits.Str(desc='Specify a dimension along which we wish to average.', argstr='-avgdim %s')
+    binarize = traits.Bool(desc='Binarize the volume by looking for values in a given range.', argstr='-binarize')
+    binrange = traits.Tuple(traits.Float, traits.Float, argstr='-binrange %s %s', desc='Specify a range for binarization. Default value: 1.79769e+308 -1.79769e+308.')
+    binvalue = traits.Float(desc='Specify a target value (+/- 0.5) forbinarization. Default value: -1.79769e+308', argstr='-binvalue %s')
+    weights = InputMultiPath(traits.Str, desc='Specify weights for averaging ("<w1>,<w2>,...").', sep=',', argstr='-weights %s')
+    width_weighted = traits.Bool(desc='Weight by dimension widths when -avgdim is used.', argstr='-width_weighted', requires=('avgdim',))

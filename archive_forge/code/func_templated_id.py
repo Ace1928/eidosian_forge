@@ -1,0 +1,8 @@
+from __future__ import absolute_import
+from ruamel.yaml.error import YAMLError
+from ruamel.yaml.compat import nprint, DBG_NODE, dbg, string_types, nprintf  # NOQA
+from ruamel.yaml.util import RegExp
+from ruamel.yaml.events import (
+from ruamel.yaml.nodes import MappingNode, ScalarNode, SequenceNode
+def templated_id(s):
+    return Serializer.ANCHOR_RE.match(s)

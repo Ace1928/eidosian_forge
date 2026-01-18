@@ -1,0 +1,9 @@
+import math
+import struct
+from contextlib import contextmanager
+from numbers import Integral
+from ..messages import BaseMessage, check_time
+class MetaSpec:
+
+    def check(self, name, value):
+        pass

@@ -1,0 +1,31 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.calliope.concepts import deps
+from googlecloudsdk.command_lib.compute.networks import flags as compute_network_flags
+from googlecloudsdk.command_lib.compute.networks.subnets import flags as compute_subnet_flags
+from googlecloudsdk.command_lib.kms import resource_args as kms_resource_args
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+from googlecloudsdk.command_lib.workbench import completers
+from googlecloudsdk.core import properties
+def AddUpdateInstanceFlags(parser):
+    """Adds accelerator, labels and machine type flags to the parser for update."""
+    accelerator_choices = ['NVIDIA_TESLA_K80', 'NVIDIA_TESLA_P100', 'NVIDIA_TESLA_V100', 'NVIDIA_TESLA_P4', 'NVIDIA_TESLA_T4', 'NVIDIA_TESLA_A100', 'NVIDIA_A100_80GB', 'NVIDIA_TESLA_T4_VWS', 'NVIDIA_TESLA_P100_VWS', 'NVIDIA_TESLA_P4_VWS', 'NVIDIA_L4']
+    AddInstanceResource(parser)
+    gce_setup_group = parser.add_group(help='Gce Setup for the instance')
+    accelerator_group = gce_setup_group.add_group(help='Accelerator configurations.')
+    accelerator_group.add_argument('--accelerator-type', help='Type of this accelerator.', choices=accelerator_choices, default=None)
+    accelerator_group.add_argument('--accelerator-core-count', help='Count of cores of this accelerator.', type=int)
+    gpu_group = gce_setup_group.add_group(help='GPU driver configurations.')
+    gpu_group.add_argument('--install-gpu-driver', help='Install gpu driver', type=bool)
+    gpu_group.add_argument('--custom-gpu-driver-path', help='custom gpu driver path', type=str)
+    shielded_vm_group = gce_setup_group.add_group(help='Shielded VM configurations.')
+    shielded_vm_group.add_argument('--shielded-secure-boot', help='Boot instance with secure boot enabled', type=str)
+    shielded_vm_group.add_argument('--shielded-vtpm', help='Boot instance with TPM (Trusted Platform Module) enabled', type=str)
+    shielded_vm_group.add_argument('--shielded-integrity-monitoring', help='Enable monitoring of the boot integrity of the instance', type=str)
+    parser.add_argument('--labels', help='Labels to apply to this instance. These can be later modified by the setLabels method.', type=arg_parsers.ArgDict(), metavar='KEY=VALUE')
+    gce_setup_group.add_argument('--metadata', help='Custom metadata to apply to this instance.', type=arg_parsers.ArgDict(), metavar='KEY=VALUE')
+    gce_setup_group.add_argument('--machine-type', help='The [Compute Engine machine type](https://cloud.google.com/sdk/gcloud/reference/compute/machine-types) of this instance.')

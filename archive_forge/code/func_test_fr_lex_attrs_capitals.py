@@ -1,0 +1,6 @@
+import pytest
+from spacy.lang.fr.lex_attrs import like_num
+@pytest.mark.parametrize('word', ['onze', 'onzième'])
+def test_fr_lex_attrs_capitals(word):
+    assert like_num(word)
+    assert like_num(word.upper())

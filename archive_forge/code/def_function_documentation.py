@@ -1,0 +1,6 @@
+from tensorflow.python.eager.polymorphic_function.eager_function_run import run_functions_eagerly
+from tensorflow.python.eager.polymorphic_function.eager_function_run import functions_run_eagerly
+from tensorflow.python.eager.polymorphic_function.polymorphic_function import Function
+from tensorflow.python.eager.polymorphic_function.polymorphic_function import function
+from tensorflow.python.eager.polymorphic_function.polymorphic_function import _tf_function_counter
+Supports old symbols supplied by this file while the code is refactored.

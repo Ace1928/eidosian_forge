@@ -1,0 +1,18 @@
+from copy import deepcopy
+from typing import Any, Callable, Dict, List, Optional, Union, cast
+import torch
+from torch import Tensor, nn
+from torch.optim.swa_utils import SWALR
+from typing_extensions import override
+import pytorch_lightning as pl
+from lightning_fabric.utilities.types import LRScheduler
+from pytorch_lightning.callbacks.callback import Callback
+from pytorch_lightning.strategies import DeepSpeedStrategy
+from pytorch_lightning.strategies.fsdp import FSDPStrategy
+from pytorch_lightning.utilities.exceptions import MisconfigurationException
+from pytorch_lightning.utilities.rank_zero import rank_zero_info, rank_zero_warn
+from pytorch_lightning.utilities.types import LRSchedulerConfig
+def _load_average_model_state(self, model_state: Any) -> None:
+    if self._average_model is None:
+        return
+    self._average_model.load_state_dict(model_state)

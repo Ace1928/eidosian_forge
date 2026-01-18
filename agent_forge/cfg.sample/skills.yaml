@@ -1,0 +1,5 @@
+competencies:
+  js_refactor:    { level: 0.50, brier: 0.25 }
+  python_tooling: { level: 0.50, brier: 0.25 }
+  e2e_playwright: { level: 0.40, brier: 0.30 }
+  sql_migrations: { level: 0.45, brier: 0.28 }

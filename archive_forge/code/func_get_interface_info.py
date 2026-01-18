@@ -1,0 +1,17 @@
+from __future__ import absolute_import, division, print_function
+import re
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.nxos.plugins.module_utils.network.nxos.nxos import (
+def get_interface_info(interface, module):
+    if not interface.startswith('loopback'):
+        interface = interface.capitalize()
+    command = 'show run interface {0}'.format(interface)
+    vrf_regex = '.*vrf\\s+member\\s+(?P<vrf>\\S+).*'
+    try:
+        body = execute_show_command(command, module)
+        match_vrf = re.match(vrf_regex, body, re.DOTALL)
+        group_vrf = match_vrf.groupdict()
+        vrf = group_vrf['vrf']
+    except (AttributeError, TypeError):
+        return ''
+    return vrf

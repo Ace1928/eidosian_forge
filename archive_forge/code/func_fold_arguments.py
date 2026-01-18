@@ -1,0 +1,57 @@
+from abc import ABC, abstractmethod
+import functools
+import sys
+import inspect
+import os.path
+from collections import namedtuple
+from collections.abc import Sequence
+from types import MethodType, FunctionType, MappingProxyType
+import numba
+from numba.core import types, utils, targetconfig
+from numba.core.errors import (
+from numba.core.cpu_options import InlineOptions
+def fold_arguments(pysig, args, kws, normal_handler, default_handler, stararg_handler):
+    """
+    Given the signature *pysig*, explicit *args* and *kws*, resolve
+    omitted arguments and keyword arguments. A tuple of positional
+    arguments is returned.
+    Various handlers allow to process arguments:
+    - normal_handler(index, param, value) is called for normal arguments
+    - default_handler(index, param, default) is called for omitted arguments
+    - stararg_handler(index, param, values) is called for a "*args" argument
+    """
+    if isinstance(kws, Sequence):
+        kws = dict(kws)
+    params = pysig.parameters
+    kwonly = []
+    for name, p in params.items():
+        if p.kind == p.KEYWORD_ONLY:
+            kwonly.append(name)
+    if kwonly:
+        bind_args = args[:-len(kwonly)]
+    else:
+        bind_args = args
+    bind_kws = kws.copy()
+    if kwonly:
+        for idx, n in enumerate(kwonly):
+            bind_kws[n] = args[len(kwonly) + idx]
+    ba = pysig.bind(*bind_args, **bind_kws)
+    for i, param in enumerate(pysig.parameters.values()):
+        name = param.name
+        default = param.default
+        if param.kind == param.VAR_POSITIONAL:
+            if name in ba.arguments:
+                argval = ba.arguments[name]
+                if len(argval) == 1 and isinstance(argval[0], (types.StarArgTuple, types.StarArgUniTuple)):
+                    argval = tuple(argval[0])
+            else:
+                argval = ()
+            out = stararg_handler(i, param, argval)
+            ba.arguments[name] = out
+        elif name in ba.arguments:
+            ba.arguments[name] = normal_handler(i, param, ba.arguments[name])
+        else:
+            assert default is not param.empty
+            ba.arguments[name] = default_handler(i, param, default)
+    args = tuple((ba.arguments[param.name] for param in pysig.parameters.values()))
+    return args

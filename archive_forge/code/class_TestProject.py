@@ -1,0 +1,124 @@
+from unittest import mock
+from keystoneauth1 import adapter
+from openstack.identity.v3 import group
+from openstack.identity.v3 import project
+from openstack.identity.v3 import role
+from openstack.identity.v3 import user
+from openstack.tests.unit import base
+class TestProject(base.TestCase):
+
+    def setUp(self):
+        super(TestProject, self).setUp()
+        self.sess = mock.Mock(spec=adapter.Adapter)
+        self.sess.default_microversion = 1
+        self.sess._get_connection = mock.Mock(return_value=self.cloud)
+        self.good_resp = mock.Mock()
+        self.good_resp.body = None
+        self.good_resp.json = mock.Mock(return_value=self.good_resp.body)
+        self.good_resp.status_code = 204
+        self.bad_resp = mock.Mock()
+        self.bad_resp.body = None
+        self.bad_resp.json = mock.Mock(return_value=self.bad_resp.body)
+        self.bad_resp.status_code = 401
+
+    def test_basic(self):
+        sot = project.Project()
+        self.assertEqual('project', sot.resource_key)
+        self.assertEqual('projects', sot.resources_key)
+        self.assertEqual('/projects', sot.base_path)
+        self.assertTrue(sot.allow_create)
+        self.assertTrue(sot.allow_fetch)
+        self.assertTrue(sot.allow_commit)
+        self.assertTrue(sot.allow_delete)
+        self.assertTrue(sot.allow_list)
+        self.assertEqual('PATCH', sot.commit_method)
+        self.assertDictEqual({'domain_id': 'domain_id', 'is_domain': 'is_domain', 'name': 'name', 'parent_id': 'parent_id', 'is_enabled': 'enabled', 'limit': 'limit', 'marker': 'marker', 'tags': 'tags', 'any_tags': 'tags-any', 'not_tags': 'not-tags', 'not_any_tags': 'not-tags-any'}, sot._query_mapping._mapping)
+
+    def test_make_it(self):
+        sot = project.Project(**EXAMPLE)
+        self.assertEqual(EXAMPLE['description'], sot.description)
+        self.assertEqual(EXAMPLE['domain_id'], sot.domain_id)
+        self.assertFalse(sot.is_domain)
+        self.assertTrue(sot.is_enabled)
+        self.assertEqual(EXAMPLE['id'], sot.id)
+        self.assertEqual(EXAMPLE['name'], sot.name)
+        self.assertEqual(EXAMPLE['parent_id'], sot.parent_id)
+        self.assertDictEqual(EXAMPLE['options'], sot.options)
+
+    def test_assign_role_to_user_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.put = mock.Mock(return_value=resp)
+        self.assertTrue(sot.assign_role_to_user(self.sess, user.User(id='1'), role.Role(id='2')))
+        self.sess.put.assert_called_with('projects/IDENTIFIER/users/1/roles/2')
+
+    def test_assign_role_to_user_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.put = mock.Mock(return_value=resp)
+        self.assertFalse(sot.assign_role_to_user(self.sess, user.User(id='1'), role.Role(id='2')))
+
+    def test_validate_user_has_role_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.head = mock.Mock(return_value=resp)
+        self.assertTrue(sot.validate_user_has_role(self.sess, user.User(id='1'), role.Role(id='2')))
+        self.sess.head.assert_called_with('projects/IDENTIFIER/users/1/roles/2')
+
+    def test_validate_user_has_role_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.head = mock.Mock(return_value=resp)
+        self.assertFalse(sot.validate_user_has_role(self.sess, user.User(id='1'), role.Role(id='2')))
+
+    def test_unassign_role_from_user_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.delete = mock.Mock(return_value=resp)
+        self.assertTrue(sot.unassign_role_from_user(self.sess, user.User(id='1'), role.Role(id='2')))
+        self.sess.delete.assert_called_with('projects/IDENTIFIER/users/1/roles/2')
+
+    def test_unassign_role_from_user_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.delete = mock.Mock(return_value=resp)
+        self.assertFalse(sot.unassign_role_from_user(self.sess, user.User(id='1'), role.Role(id='2')))
+
+    def test_assign_role_to_group_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.put = mock.Mock(return_value=resp)
+        self.assertTrue(sot.assign_role_to_group(self.sess, group.Group(id='1'), role.Role(id='2')))
+        self.sess.put.assert_called_with('projects/IDENTIFIER/groups/1/roles/2')
+
+    def test_assign_role_to_group_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.put = mock.Mock(return_value=resp)
+        self.assertFalse(sot.assign_role_to_group(self.sess, group.Group(id='1'), role.Role(id='2')))
+
+    def test_validate_group_has_role_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.head = mock.Mock(return_value=resp)
+        self.assertTrue(sot.validate_group_has_role(self.sess, group.Group(id='1'), role.Role(id='2')))
+        self.sess.head.assert_called_with('projects/IDENTIFIER/groups/1/roles/2')
+
+    def test_validate_group_has_role_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.head = mock.Mock(return_value=resp)
+        self.assertFalse(sot.validate_group_has_role(self.sess, group.Group(id='1'), role.Role(id='2')))
+
+    def test_unassign_role_from_group_good(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.good_resp
+        self.sess.delete = mock.Mock(return_value=resp)
+        self.assertTrue(sot.unassign_role_from_group(self.sess, group.Group(id='1'), role.Role(id='2')))
+        self.sess.delete.assert_called_with('projects/IDENTIFIER/groups/1/roles/2')
+
+    def test_unassign_role_from_group_bad(self):
+        sot = project.Project(**EXAMPLE)
+        resp = self.bad_resp
+        self.sess.delete = mock.Mock(return_value=resp)
+        self.assertFalse(sot.unassign_role_from_group(self.sess, group.Group(id='1'), role.Role(id='2')))

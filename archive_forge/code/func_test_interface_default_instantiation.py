@@ -1,0 +1,23 @@
+from pyomo.common import unittest
+from pyomo.contrib.solver.config import (
+def test_interface_default_instantiation(self):
+    config = PersistentSolverConfig()
+    self.assertIsNone(config._description)
+    self.assertEqual(config._visibility, 0)
+    self.assertFalse(config.tee)
+    self.assertTrue(config.load_solutions)
+    self.assertTrue(config.raise_exception_on_nonoptimal_result)
+    self.assertFalse(config.symbolic_solver_labels)
+    self.assertIsNone(config.timer)
+    self.assertIsNone(config.threads)
+    self.assertIsNone(config.time_limit)
+    self.assertTrue(config.auto_updates.check_for_new_or_removed_constraints)
+    self.assertTrue(config.auto_updates.check_for_new_or_removed_vars)
+    self.assertTrue(config.auto_updates.check_for_new_or_removed_params)
+    self.assertTrue(config.auto_updates.check_for_new_objective)
+    self.assertTrue(config.auto_updates.update_constraints)
+    self.assertTrue(config.auto_updates.update_vars)
+    self.assertTrue(config.auto_updates.update_named_expressions)
+    self.assertTrue(config.auto_updates.update_objective)
+    self.assertTrue(config.auto_updates.update_objective)
+    self.assertTrue(config.auto_updates.treat_fixed_vars_as_params)

@@ -1,0 +1,16 @@
+import datetime
+import decimal
+import re
+import numpy as np
+import pytest
+import pytz
+import pandas as pd
+import pandas._testing as tm
+from pandas.api.extensions import register_extension_dtype
+from pandas.arrays import (
+from pandas.core.arrays import (
+from pandas.tests.extension.decimal import (
+@pytest.mark.parametrize('data, expected', [([pd.Period('2000', 'D'), pd.Period('2001', 'D')], period_array(['2000', '2001'], freq='D')), ([pd.Interval(0, 1), pd.Interval(1, 2)], IntervalArray.from_breaks([0, 1, 2])), ([pd.Timestamp('2000'), pd.Timestamp('2001')], DatetimeArray._from_sequence(['2000', '2001'], dtype='M8[ns]')), ([datetime.datetime(2000, 1, 1), datetime.datetime(2001, 1, 1)], DatetimeArray._from_sequence(['2000', '2001'], dtype='M8[ns]')), (np.array([1, 2], dtype='M8[ns]'), DatetimeArray._from_sequence(np.array([1, 2], dtype='M8[ns]'))), (np.array([1, 2], dtype='M8[us]'), DatetimeArray._simple_new(np.array([1, 2], dtype='M8[us]'), dtype=np.dtype('M8[us]'))), ([pd.Timestamp('2000', tz='CET'), pd.Timestamp('2001', tz='CET')], DatetimeArray._from_sequence(['2000', '2001'], dtype=pd.DatetimeTZDtype(tz='CET', unit='ns'))), ([datetime.datetime(2000, 1, 1, tzinfo=cet), datetime.datetime(2001, 1, 1, tzinfo=cet)], DatetimeArray._from_sequence(['2000', '2001'], dtype=pd.DatetimeTZDtype(tz=cet, unit='ns'))), ([pd.Timedelta('1h'), pd.Timedelta('2h')], TimedeltaArray._from_sequence(['1h', '2h'], dtype='m8[ns]')), (np.array([1, 2], dtype='m8[ns]'), TimedeltaArray._from_sequence(np.array([1, 2], dtype='m8[ns]'))), (np.array([1, 2], dtype='m8[us]'), TimedeltaArray._from_sequence(np.array([1, 2], dtype='m8[us]'))), ([1, 2], IntegerArray._from_sequence([1, 2], dtype='Int64')), ([1, None], IntegerArray._from_sequence([1, None], dtype='Int64')), ([1, pd.NA], IntegerArray._from_sequence([1, pd.NA], dtype='Int64')), ([1, np.nan], IntegerArray._from_sequence([1, np.nan], dtype='Int64')), ([0.1, 0.2], FloatingArray._from_sequence([0.1, 0.2], dtype='Float64')), ([0.1, None], FloatingArray._from_sequence([0.1, pd.NA], dtype='Float64')), ([0.1, np.nan], FloatingArray._from_sequence([0.1, pd.NA], dtype='Float64')), ([0.1, pd.NA], FloatingArray._from_sequence([0.1, pd.NA], dtype='Float64')), ([1.0, 2.0], FloatingArray._from_sequence([1.0, 2.0], dtype='Float64')), ([1.0, None], FloatingArray._from_sequence([1.0, pd.NA], dtype='Float64')), ([1.0, np.nan], FloatingArray._from_sequence([1.0, pd.NA], dtype='Float64')), ([1.0, pd.NA], FloatingArray._from_sequence([1.0, pd.NA], dtype='Float64')), ([1, 2.0], FloatingArray._from_sequence([1.0, 2.0], dtype='Float64')), ([1, np.nan, 2.0], FloatingArray._from_sequence([1.0, None, 2.0], dtype='Float64')), (['a', 'b'], pd.StringDtype().construct_array_type()._from_sequence(['a', 'b'], dtype=pd.StringDtype())), (['a', None], pd.StringDtype().construct_array_type()._from_sequence(['a', None], dtype=pd.StringDtype())), ([True, False], BooleanArray._from_sequence([True, False], dtype='boolean')), ([True, None], BooleanArray._from_sequence([True, None], dtype='boolean'))])
+def test_array_inference(data, expected):
+    result = pd.array(data)
+    tm.assert_equal(result, expected)

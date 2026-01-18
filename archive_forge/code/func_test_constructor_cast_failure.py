@@ -1,0 +1,32 @@
+import array
+from collections import (
+from collections.abc import Iterator
+from dataclasses import make_dataclass
+from datetime import (
+import functools
+import re
+import numpy as np
+from numpy import ma
+from numpy.ma import mrecords
+import pytest
+import pytz
+from pandas._config import using_pyarrow_string_dtype
+from pandas._libs import lib
+from pandas.errors import IntCastingNaNError
+import pandas.util._test_decorators as td
+from pandas.core.dtypes.common import is_integer_dtype
+from pandas.core.dtypes.dtypes import (
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.arrays import (
+def test_constructor_cast_failure(self):
+    msg = 'could not convert string to float'
+    with pytest.raises(ValueError, match=msg):
+        DataFrame({'a': ['a', 'b', 'c']}, dtype=np.float64)
+    df = DataFrame(np.ones((4, 2)))
+    df['foo'] = np.ones((4, 2)).tolist()
+    msg = 'Expected a 1D array, got an array with shape \\(4, 2\\)'
+    with pytest.raises(ValueError, match=msg):
+        df['test'] = np.ones((4, 2))
+    df['foo2'] = np.ones((4, 2)).tolist()

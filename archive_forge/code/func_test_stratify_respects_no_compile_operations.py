@@ -1,0 +1,9 @@
+import pytest
+import cirq
+def test_stratify_respects_no_compile_operations():
+    q1, q2, q3, q4, q5 = cirq.LineQubit.range(5)
+    input_circuit = cirq.Circuit(cirq.Moment([cirq.X(q1).with_tags('nocompile'), cirq.ISWAP(q2, q3).with_tags('nocompile'), cirq.Z(q5)]), cirq.Moment([cirq.X(q1), cirq.ISWAP(q4, q5)]), cirq.Moment([cirq.ISWAP(q1, q2), cirq.X(q4)]))
+    expected = cirq.Circuit([cirq.Moment(cirq.Z(cirq.LineQubit(4))), cirq.Moment(cirq.ISWAP(cirq.LineQubit(3), cirq.LineQubit(4))), cirq.Moment(cirq.TaggedOperation(cirq.X(cirq.LineQubit(0)), 'nocompile'), cirq.TaggedOperation(cirq.ISWAP(cirq.LineQubit(1), cirq.LineQubit(2)), 'nocompile')), cirq.Moment(cirq.X(cirq.LineQubit(0)), cirq.X(cirq.LineQubit(3))), cirq.Moment(cirq.ISWAP(cirq.LineQubit(0), cirq.LineQubit(1)))])
+    cirq.testing.assert_has_diagram(input_circuit, "\n0: ───X['nocompile']───────X───────iSwap───\n                                   │\n1: ───iSwap['nocompile']───────────iSwap───\n      │\n2: ───iSwap────────────────────────────────\n\n3: ────────────────────────iSwap───X───────\n                           │\n4: ───Z────────────────────iSwap───────────\n")
+    cirq.testing.assert_has_diagram(expected, "\n0: ───────────────X['nocompile']───────X───iSwap───\n                                           │\n1: ───────────────iSwap['nocompile']───────iSwap───\n                  │\n2: ───────────────iSwap────────────────────────────\n\n3: ───────iSwap────────────────────────X───────────\n          │\n4: ───Z───iSwap────────────────────────────────────\n")
+    cirq.testing.assert_same_circuits(cirq.stratified_circuit(input_circuit, categories=[cirq.X, cirq.Z], context=cirq.TransformerContext(tags_to_ignore=('nocompile',))), expected)

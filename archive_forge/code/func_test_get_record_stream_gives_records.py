@@ -1,0 +1,23 @@
+import gzip
+import sys
+from io import BytesIO
+from patiencediff import PatienceSequenceMatcher
+from ... import errors, multiparent, osutils, tests
+from ... import transport as _mod_transport
+from ...tests import (TestCase, TestCaseWithMemoryTransport,
+from .. import knit, knitpack_repo, pack, pack_repo
+from ..index import *
+from ..knit import (AnnotatedKnitContent, KnitContent, KnitCorrupt,
+from ..versionedfile import (AbsentContentFactory, ConstantMapper,
+def test_get_record_stream_gives_records(self):
+    vf = self.make_test_knit(name='test')
+    vf.add_lines((b'base',), (), [b'base\n', b'content\n'])
+    vf.add_lines((b'd1',), ((b'base',),), [b'd1\n'])
+    vf.add_lines((b'd2',), ((b'd1',),), [b'd2\n'])
+    keys = [(b'd1',), (b'd2',)]
+    generator = _VFContentMapGenerator(vf, keys, global_map=vf.get_parent_map(keys))
+    for record in generator.get_record_stream():
+        if record.key == (b'd1',):
+            self.assertEqual(b'd1\n', record.get_bytes_as('fulltext'))
+        else:
+            self.assertEqual(b'd2\n', record.get_bytes_as('fulltext'))

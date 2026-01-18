@@ -1,0 +1,51 @@
+import collections
+import copy
+import datetime
+import json
+import logging
+import time
+from unittest import mock
+import eventlet
+import fixtures
+from oslo_config import cfg
+from heat.common import context
+from heat.common import exception
+from heat.common import template_format
+from heat.common import timeutils
+from heat.db import api as db_api
+from heat.engine.clients.os import keystone
+from heat.engine.clients.os.keystone import fake_keystoneclient as fake_ks
+from heat.engine.clients.os import nova
+from heat.engine import environment
+from heat.engine import function
+from heat.engine import node_data
+from heat.engine import resource
+from heat.engine import scheduler
+from heat.engine import service
+from heat.engine import stack
+from heat.engine import stk_defn
+from heat.engine import template
+from heat.engine import update
+from heat.objects import raw_template as raw_template_object
+from heat.objects import resource as resource_objects
+from heat.objects import stack as stack_object
+from heat.objects import stack_tag as stack_tag_object
+from heat.objects import user_creds as ucreds_object
+from heat.tests import common
+from heat.tests import fakes
+from heat.tests import generic_resource as generic_rsrc
+from heat.tests import utils
+def test_restore_with_original_env(self):
+    tmpl = {'heat_template_version': '2013-05-23', 'parameters': {'foo': {'type': 'string'}}, 'resources': {'A': {'type': 'ResourceWithPropsType', 'properties': {'Foo': {'get_param': 'foo'}}}}}
+    self.stack = stack.Stack(self.ctx, 'stack_restore_test', template.Template(tmpl, env=environment.Environment({'foo': 'abc'})))
+    self.stack.store()
+    self.stack.create()
+    self.assertEqual('abc', self.stack.resources['A'].properties['Foo'])
+    data = copy.deepcopy(self.stack.prepare_abandon())
+    fake_snapshot = collections.namedtuple('Snapshot', ('data', 'stack_id'))(data, self.stack.id)
+    updated_stack = stack.Stack(self.ctx, 'updated_stack', template.Template(tmpl, env=environment.Environment({'foo': 'xyz'})))
+    self.stack.update(updated_stack)
+    self.assertEqual('xyz', self.stack.resources['A'].properties['Foo'])
+    self.stack.restore(fake_snapshot)
+    self.assertEqual((stack.Stack.RESTORE, stack.Stack.COMPLETE), self.stack.state)
+    self.assertEqual('abc', self.stack.resources['A'].properties['Foo'])

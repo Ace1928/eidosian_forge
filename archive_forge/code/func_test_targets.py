@@ -1,0 +1,8 @@
+import re, textwrap, os
+from os import sys, path
+from distutils.errors import DistutilsError
+def test_targets(self):
+    self.expect_targets('\n            /*@targets\n                sse sse2 sse41 avx avx2 avx512f\n                vsx vsx2 vsx3 vsx4\n                neon neon_fp16 asimdhp asimddp\n                vx vxe vxe2\n            */\n            ', baseline='avx vsx2 asimd vx vxe', x86='avx512f avx2', armhf='asimddp asimdhp', ppc64='vsx4 vsx3', s390x='vxe2')
+    self.expect_targets('\n            /*@targets\n                sse41 avx avx2 avx512f\n                vsx2 vsx3 vsx4\n                asimd asimdhp asimddp\n                vx vxe vxe2\n            */\n            ', baseline='', dispatch='sse41 avx2 vsx2 asimd asimddp vxe2', x86='avx2 sse41', armhf='asimddp asimd', ppc64='vsx2', s390x='vxe2')
+    self.expect_targets('\n            /*@targets\n                sse2 sse41 avx2 avx512f\n                vsx2 vsx3 vsx4\n                neon asimdhp asimddp\n                vx vxe vxe2\n            */\n            ', baseline='', trap_files='.*(avx2|avx512f|vsx3|vsx4|asimddp|vxe2).c', x86='sse41 sse2', ppc64='vsx2', armhf='asimdhp neon', s390x='vxe vx')
+    self.expect_targets('\n            /*@targets\n                sse sse2 avx fma3 avx2 avx512f avx512cd\n                vsx vsx2 vsx3\n                neon neon_vfpv4 neon_fp16 neon_fp16 asimd asimdhp\n                asimddp asimdfhm\n            */\n            ', baseline='', x86_gcc='avx512cd avx512f avx2 fma3 avx sse2', x86_msvc='avx512cd avx2 avx sse2', x86_icc='avx512cd avx2 avx sse2', x86_iccw='avx512cd avx2 avx sse2', ppc64='vsx3 vsx2 vsx', ppc64le='vsx3 vsx2', armhf='asimdfhm asimddp asimdhp asimd neon_vfpv4 neon_fp16 neon', aarch64='asimdfhm asimddp asimdhp asimd')

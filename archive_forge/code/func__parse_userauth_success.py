@@ -1,0 +1,16 @@
+import weakref
+import threading
+import time
+import re
+from paramiko.common import (
+from paramiko.message import Message
+from paramiko.util import b, u
+from paramiko.ssh_exception import (
+from paramiko.server import InteractiveQuery
+from paramiko.ssh_gss import GSSAuth, GSS_EXCEPTIONS
+def _parse_userauth_success(self, m):
+    self._log(INFO, 'Authentication ({}) successful!'.format(self.auth_method))
+    self.authenticated = True
+    self.transport._auth_trigger()
+    if self.auth_event is not None:
+        self.auth_event.set()

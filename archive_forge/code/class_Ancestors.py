@@ -1,0 +1,21 @@
+from pythran.passmanager import ModuleAnalysis
+class Ancestors(ModuleAnalysis):
+    """
+    Associate each node with the list of its ancestors
+
+    Based on the tree view of the AST: each node has the Module as parent.
+    The result of this analysis is a dictionary with nodes as key,
+    and list of nodes as values.
+    """
+
+    def __init__(self):
+        self.result = dict()
+        self.current = tuple()
+        super(Ancestors, self).__init__()
+
+    def generic_visit(self, node):
+        self.result[node] = current = self.current
+        self.current += (node,)
+        super(Ancestors, self).generic_visit(node)
+        self.current = current
+    visit = generic_visit

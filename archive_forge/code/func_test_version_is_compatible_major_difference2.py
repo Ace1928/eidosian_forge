@@ -1,0 +1,6 @@
+from oslo_messaging._drivers import common
+from oslo_messaging import _utils as utils
+from oslo_messaging.tests import utils as test_utils
+from unittest import mock
+def test_version_is_compatible_major_difference2(self):
+    self.assertFalse(utils.version_is_compatible('1.23', '2.23'))

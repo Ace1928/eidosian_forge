@@ -1,0 +1,3 @@
+from typing import overload, Any, Dict, Iterator, Iterable, Optional, Sequence, ItemsView, \
+def getprevious(self) -> Optional['LxmlElementProtocol']:
+    ...

@@ -1,0 +1,12 @@
+import numpy as np
+from numpy.testing import assert_, assert_allclose
+from numpy import pi
+import pytest
+import itertools
+from scipy._lib import _pep440
+import scipy.special as sc
+from scipy.special._testutils import (
+from scipy.special._mptestutils import (
+from scipy.special._ufuncs import (
+def test_gammaincc(self):
+    assert_mpmath_equal(sc.gammaincc, lambda z, a: mpmath.gammainc(z, a=a, regularized=True), [Arg(0, 10000.0, inclusive_a=False), Arg(0, 10000.0)], nan_ok=False, rtol=1e-11)

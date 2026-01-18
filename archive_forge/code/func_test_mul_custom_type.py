@@ -1,0 +1,36 @@
+import contextlib
+import functools
+import operator
+import platform
+import itertools
+import sys
+from scipy._lib import _pep440
+import numpy as np
+from numpy import (arange, zeros, array, dot, asarray,
+import random
+from numpy.testing import (assert_equal, assert_array_equal,
+from pytest import raises as assert_raises
+import scipy.linalg
+import scipy.sparse as sparse
+from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
+from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
+from scipy.sparse.linalg import splu, expm, inv
+from scipy._lib.decorator import decorator
+from scipy._lib._util import ComplexWarning
+import pytest
+def test_mul_custom_type(self):
+
+    class Custom:
+
+        def __init__(self, scalar):
+            self.scalar = scalar
+
+        def __rmul__(self, other):
+            return other * self.scalar
+    scalar = 2
+    A = self.spcreator([[1], [2], [3]])
+    c = Custom(scalar)
+    A_scalar = A * scalar
+    A_c = A * c
+    assert_array_equal_dtype(A_scalar.toarray(), A_c.toarray())
+    assert_equal(A_scalar.format, A_c.format)

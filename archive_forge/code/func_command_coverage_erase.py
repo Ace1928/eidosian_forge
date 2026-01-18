@@ -1,0 +1,18 @@
+from __future__ import annotations
+import os
+from ...util_common import (
+from ...executor import (
+from ...provisioning import (
+from . import (
+def command_coverage_erase(args: CoverageEraseConfig) -> None:
+    """Erase code coverage data files collected during test runs."""
+    host_state = prepare_profiles(args)
+    if args.delegate:
+        raise Delegate(host_state=host_state)
+    coverage_dir = ResultType.COVERAGE.path
+    for name in os.listdir(coverage_dir):
+        if not name.startswith('coverage') and '=coverage.' not in name:
+            continue
+        path = os.path.join(coverage_dir, name)
+        if not args.explain:
+            os.remove(path)

@@ -1,0 +1,14 @@
+from __future__ import (absolute_import, division, print_function)
+import re
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config, execute_nc_action, ce_argument_spec
+def delete_vlan_batch(self, vlan_list):
+    """Delete vlan batch."""
+    if not vlan_list:
+        return
+    vlan_bitmap = self.vlan_list_to_bitmap(vlan_list)
+    xmlstr = CE_NC_DELETE_VLAN_BATCH % (vlan_bitmap, vlan_bitmap)
+    recv_xml = execute_nc_action(self.module, xmlstr)
+    self.check_response(recv_xml, 'DELETE_VLAN_BATCH')
+    self.updates_cmd.append('undo vlan batch %s' % self.vlan_range.replace(',', ' ').replace('-', ' to '))
+    self.changed = True

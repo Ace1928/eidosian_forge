@@ -1,0 +1,19 @@
+import copy
+from numbers import Integral, Number, Real
+import logging
+import numpy as np
+import matplotlib as mpl
+from . import _api, cbook, colors as mcolors, _docstring
+from .artist import Artist, allow_rasterization
+from .cbook import (
+from .markers import MarkerStyle
+from .path import Path
+from .transforms import Bbox, BboxTransformTo, TransformedPath
+from ._enums import JoinStyle, CapStyle
+from . import _path
+from .markers import (  # noqa
+def get_xydata(self):
+    """Return the *xy* data as a (N, 2) array."""
+    if self._invalidy or self._invalidx:
+        self.recache()
+    return self._xy

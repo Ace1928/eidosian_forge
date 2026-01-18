@@ -1,0 +1,33 @@
+import json
+import os
+import sys
+from typing import Any, Dict
+from mlflow.exceptions import MlflowException
+from mlflow.models import Model
+from mlflow.models.model import MLMODEL_FILE_NAME
+from mlflow.protos.databricks_pb2 import (
+from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository
+from mlflow.store.artifact.models_artifact_repo import ModelsArtifactRepository
+from mlflow.store.artifact.runs_artifact_repo import RunsArtifactRepository
+from mlflow.tracking.artifact_utils import _download_artifact_from_uri
+from mlflow.utils.databricks_utils import is_in_databricks_runtime
+from mlflow.utils.file_utils import _copy_file_or_tree
+from mlflow.utils.uri import append_to_uri_path
+def _get_flavor_configuration(model_path, flavor_name):
+    """Obtains the configuration for the specified flavor from the specified
+    MLflow model path. If the model does not contain the specified flavor,
+    an exception will be thrown.
+
+    Args:
+        model_path: The path to the root directory of the MLflow model for which to load
+            the specified flavor configuration.
+        flavor_name: The name of the flavor configuration to load.
+
+    Returns:
+        The flavor configuration as a dictionary.
+
+    """
+    flavors = _get_all_flavor_configurations(model_path)
+    if flavor_name not in flavors:
+        raise MlflowException(f'Model does not have the "{flavor_name}" flavor', RESOURCE_DOES_NOT_EXIST)
+    return flavors[flavor_name]

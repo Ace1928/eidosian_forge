@@ -1,0 +1,43 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import copy
+import json
+import operator
+from apitools.base.py import encoding
+from apitools.base.py import exceptions as apitools_exceptions
+from apitools.base.py import list_pager
+from googlecloudsdk.api_lib.app import build as app_cloud_build
+from googlecloudsdk.api_lib.app import env
+from googlecloudsdk.api_lib.app import exceptions
+from googlecloudsdk.api_lib.app import instances_util
+from googlecloudsdk.api_lib.app import operations_util
+from googlecloudsdk.api_lib.app import region_util
+from googlecloudsdk.api_lib.app import service_util
+from googlecloudsdk.api_lib.app import util
+from googlecloudsdk.api_lib.app import version_util
+from googlecloudsdk.api_lib.app.api import appengine_api_client_base
+from googlecloudsdk.api_lib.cloudbuild import logs as cloudbuild_logs
+from googlecloudsdk.calliope import base as calliope_base
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+from googlecloudsdk.third_party.appengine.admin.tools.conversion import convert_yaml
+import six
+from six.moves import filter  # pylint: disable=redefined-builtin
+from six.moves import map  # pylint: disable=redefined-builtin
+def GetInstanceResource(self, res):
+    """Describe the given instance of the given version of the given service.
+
+    Args:
+      res: A googlecloudsdk.core.Resource object.
+
+    Raises:
+      apitools_exceptions.HttpNotFoundError: If instance does not
+        exist.
+
+    Returns:
+      Version resource object from the API
+    """
+    request = self.messages.AppengineAppsServicesVersionsInstancesGetRequest(name=res.RelativeName())
+    return self.client.apps_services_versions_instances.Get(request)

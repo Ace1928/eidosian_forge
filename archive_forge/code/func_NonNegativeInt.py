@@ -1,0 +1,31 @@
+import argparse
+import builtins
+import enum
+import importlib
+import inspect
+import io
+import logging
+import os
+import pickle
+import ply.lex
+import re
+import sys
+import textwrap
+import types
+from operator import attrgetter
+from pyomo.common.collections import Sequence, Mapping
+from pyomo.common.deprecation import (
+from pyomo.common.fileutils import import_file
+from pyomo.common.formatting import wrap_reStructuredText
+from pyomo.common.modeling import NOTSET
+def NonNegativeInt(val):
+    """Domain validation function admitting integers >= 0
+
+    This domain will admit non-negative integers (n >= 0), as well as
+    any types that are convertible to non-negative integers.
+
+    """
+    ans = int(val)
+    if ans != float(val) or ans < 0:
+        raise ValueError('Expected non-negative int, but received %s' % (val,))
+    return ans

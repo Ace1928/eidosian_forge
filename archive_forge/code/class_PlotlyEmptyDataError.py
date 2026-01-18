@@ -1,0 +1,2 @@
+class PlotlyEmptyDataError(PlotlyError):
+    pass

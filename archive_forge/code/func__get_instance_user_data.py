@@ -1,0 +1,13 @@
+from __future__ import absolute_import, division, print_function
+import base64
+from ansible.module_utils._text import to_bytes, to_text
+from ansible.module_utils.basic import AnsibleModule
+from ..module_utils.cloudstack import (AnsibleCloudStack, cs_argument_spec,
+def _get_instance_user_data(self, instance):
+    if 'userdata' in instance:
+        return instance['userdata']
+    user_data = ''
+    if self.get_user_data() is not None and instance.get('id'):
+        res = self.query_api('getVirtualMachineUserData', virtualmachineid=instance['id'])
+        user_data = res['virtualmachineuserdata'].get('userdata', '')
+    return user_data

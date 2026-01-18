@@ -1,0 +1,48 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.alloydb import api_util
+from googlecloudsdk.api_lib.alloydb import cluster_operations
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.alloydb import flags
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+@base.ReleaseTracks(base.ReleaseTrack.ALPHA)
+@base.Hidden
+class Switchover(base.UpdateCommand):
+    """Switchover an AlloyDB SECONDARY cluster in a given project and region."""
+    detailed_help = {'DESCRIPTION': '{description}', 'EXAMPLES': '        To switchover a cluster, run:\n\n          $ {command} my-cluster --region=us-central1\n        '}
+
+    @staticmethod
+    def Args(parser):
+        """Specifies additional command flags.
+
+    Args:
+      parser: argparse.Parser: Parser object for command line inputs.
+    """
+        base.ASYNC_FLAG.AddToParser(parser)
+        flags.AddRegion(parser)
+        flags.AddCluster(parser)
+
+    def Run(self, args):
+        """Constructs and sends request.
+
+    Args:
+      args: argparse.Namespace, An object that contains the values for the
+        arguments specified in the .Args() method.
+
+    Returns:
+      ProcessHttpResponse of the request made.
+    """
+        client = api_util.AlloyDBClient(self.ReleaseTrack())
+        alloydb_client = client.alloydb_client
+        alloydb_messages = client.alloydb_messages
+        cluster_ref = client.resource_parser.Create('alloydb.projects.locations.clusters', projectsId=properties.VALUES.core.project.GetOrFail, locationsId=args.region, clustersId=args.cluster)
+        req = alloydb_messages.AlloydbProjectsLocationsClustersSwitchoverRequest(name=cluster_ref.RelativeName(), switchoverClusterRequest=alloydb_messages.SwitchoverClusterRequest())
+        op = alloydb_client.projects_locations_clusters.Switchover(req)
+        op_ref = resources.REGISTRY.ParseRelativeName(op.name, collection='alloydb.projects.locations.operations')
+        log.status.Print('Operation ID: {}'.format(op_ref.Name()))
+        if not args.async_:
+            cluster_operations.Await(op_ref, 'Switchover cluster', self.ReleaseTrack())
+        return op

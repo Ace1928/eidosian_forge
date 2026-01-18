@@ -1,0 +1,17 @@
+import sys
+from types import GeneratorType
+from libcloud.test import MockHttp, unittest
+from libcloud.utils.py3 import ET, httplib
+from libcloud.utils.xml import findall, findtext, fixxpath
+from libcloud.common.types import InvalidCredsError
+from libcloud.compute.base import Node, NodeLocation, NodeAuthPassword
+from libcloud.test.compute import TestCaseMixin
+from libcloud.test.secrets import DIMENSIONDATA_PARAMS
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.common.dimensiondata import (
+from libcloud.compute.drivers.dimensiondata import DimensionDataNic
+from libcloud.compute.drivers.dimensiondata import DimensionDataNodeDriver as DimensionData
+def test_ex_get_image_by_id_customer_img(self):
+    image_id = self.driver.ex_list_customer_images()[0].id
+    image = self.driver.ex_get_customer_image_by_id(image_id)
+    self.assertEqual(image.extra['OS_type'], 'UNIX')

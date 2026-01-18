@@ -1,0 +1,1 @@
+Returns the value corresponding to the given enum name.

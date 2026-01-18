@@ -1,0 +1,52 @@
+import copy
+import logging
+import sys
+import weakref
+import textwrap
+from collections import defaultdict
+from contextlib import contextmanager
+from inspect import isclass, currentframe
+from io import StringIO
+from itertools import filterfalse, chain
+from operator import itemgetter, attrgetter
+from pyomo.common.autoslots import AutoSlots
+from pyomo.common.collections import Mapping
+from pyomo.common.deprecation import deprecated, deprecation_warning, RenamedClass
+from pyomo.common.formatting import StreamIndenter
+from pyomo.common.gc_manager import PauseGC
+from pyomo.common.log import is_debug_set
+from pyomo.common.pyomo_typing import overload
+from pyomo.common.timing import ConstructionTimer
+from pyomo.core.base.component import (
+from pyomo.core.base.enums import SortComponents, TraversalStrategy
+from pyomo.core.base.global_set import UnindexedComponent_index
+from pyomo.core.base.componentuid import ComponentUID
+from pyomo.core.base.set import Any
+from pyomo.core.base.var import Var
+from pyomo.core.base.initializer import Initializer
+from pyomo.core.base.indexed_component import (
+from pyomo.opt.base import ProblemFormat, guess_format
+from pyomo.opt import WriterFactory
+def _ctypewalker(self):
+    """
+        TODO
+        """
+    _decl_order = self._block._decl_order
+    if self._ctypes.__class__ is set:
+        _idx_list = [self._block._ctypes[x][0] for x in self._ctypes if x in self._block._ctypes]
+    else:
+        _idx_list = [self._block._ctypes[x][0] for x in self._block._ctypes if x in self._ctypes]
+    _idx_list.sort(reverse=True)
+    while _idx_list:
+        _idx = _idx_list.pop()
+        _next_ctype = _idx_list[-1] if _idx_list else None
+        while 1:
+            _obj, _idx = _decl_order[_idx]
+            if _obj is not None:
+                yield _obj
+            if _idx is None:
+                break
+            if _next_ctype is not None and _idx > _next_ctype:
+                _idx_list.append(_idx)
+                _idx_list.sort(reverse=True)
+                break

@@ -1,0 +1,17 @@
+from PyQt5 import QtCore  # pylint: disable=import-error
+from ._qt_base import MonitorObserverGenerator
+
+    pyudev.pyqt5
+    ============
+
+    PyQt5 integration.
+
+    :class:`MonitorObserver` integrates device monitoring into the PyQt5_
+    mainloop by turning device events into Qt signals.
+
+    :mod:`PyQt5.QtCore` from PyQt5_ must be available when importing this
+    module.
+
+    .. _gPyQt5: http://riverbankcomputing.co.uk/software/pyqt/intro
+
+    .. moduleauthor::  Tobias Gehring  <mail@tobiasgehring.de>

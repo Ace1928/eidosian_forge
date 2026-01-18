@@ -1,0 +1,30 @@
+import numpy as np
+import cvxpy as cvx
+from cvxpy.expressions.variable import Variable
+from cvxpy.tests.base_test import BaseTest
+def test_sdp_problem(self) -> None:
+    obj = cvx.Minimize(cvx.sum(cvx.square(self.X - self.F)))
+    p = cvx.Problem(obj, [])
+    result = p.solve(solver='SCS')
+    self.assertAlmostEqual(result, 1, places=4)
+    self.assertAlmostEqual(self.X.value[0, 0], 1, places=3)
+    self.assertAlmostEqual(self.X.value[0, 1], 0)
+    self.assertAlmostEqual(self.X.value[1, 0], 0)
+    self.assertAlmostEqual(self.X.value[1, 1], 0)
+    obj = cvx.Minimize(cvx.sum(cvx.square(self.Y - self.F)))
+    p = cvx.Problem(obj, [self.Y == Variable((2, 2), PSD=True)])
+    result = p.solve(solver='SCS')
+    self.assertAlmostEqual(result, 1, places=2)
+    self.assertAlmostEqual(self.Y.value[0, 0], 1, places=3)
+    self.assertAlmostEqual(self.Y.value[0, 1], 0)
+    self.assertAlmostEqual(self.Y.value[1, 0], 0)
+    self.assertAlmostEqual(self.Y.value[1, 1], 0, places=3)
+    obj = cvx.Minimize(cvx.square(self.X[0, 0] - 1) + cvx.square(self.X[1, 0] - 2) + cvx.square(self.X[1, 1] - 4))
+    p = cvx.Problem(obj, [])
+    result = p.solve(solver='SCS')
+    print(self.X.value)
+    self.assertAlmostEqual(result, 0)
+    self.assertAlmostEqual(self.X.value[0, 0], 1, places=2)
+    self.assertAlmostEqual(self.X.value[0, 1], 2, places=2)
+    self.assertAlmostEqual(self.X.value[1, 0], 2, places=2)
+    self.assertAlmostEqual(self.X.value[1, 1], 4, places=3)

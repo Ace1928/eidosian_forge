@@ -1,0 +1,49 @@
+import functools
+import itertools
+import logging
+import os
+import warnings
+from collections import defaultdict
+from collections.abc import Iterable
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import sympy
+import torch
+import torch.fx
+import torch.utils._pytree as pytree
+from torch._higher_order_ops.triton_kernel_wrap import (
+from torch._prims_common import (
+from torch.fx.experimental.sym_node import magic_methods, method_to_operator
+from torch.utils._sympy.functions import CeilDiv, FloorDiv, ModularIndexing
+from .._dynamo.utils import import_submodule
+from . import config, inductor_prims, ir, test_operators  # NOQA: F401
+from .decomposition import decompositions, get_decompositions
+from .ir import (
+from .utils import (
+from .virtualized import ops, V
+from . import kernel
+import_submodule(kernel)
+from . import quantized_lowerings
+def fallback_node_due_to_unsupported_type(node: torch.fx.Node, allow_cpu_inputs=True):
+    if node.target is aten.view_as_complex.default:
+        return False
+    if node.target is aten.lift_fresh_copy.default:
+        return False
+
+    def check_skip_condition(node, parent, is_output):
+        if not isinstance(node, torch.fx.Node):
+            return False
+        if 'val' not in node.meta:
+            return False
+        for meta in pytree.tree_leaves(node.meta['val']):
+            if not isinstance(meta, torch._subclasses.FakeTensor):
+                continue
+            if is_output:
+                if unsupported_output_tensor(meta, parent):
+                    return True
+            elif unsupported_input_tensor(meta, parent):
+                return True
+        return False
+    for arg in pytree.arg_tree_leaves(*node.args, **node.kwargs):
+        if check_skip_condition(arg, node, is_output=False):
+            return True
+    return check_skip_condition(node, node, is_output=True)

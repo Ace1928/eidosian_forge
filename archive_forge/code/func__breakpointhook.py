@@ -1,0 +1,99 @@
+from __future__ import annotations
+import asyncio
+import contextvars
+import os
+import re
+import signal
+import sys
+import threading
+import time
+from asyncio import (
+from contextlib import ExitStack, contextmanager
+from subprocess import Popen
+from traceback import format_tb
+from typing import (
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.cache import SimpleCache
+from prompt_toolkit.clipboard import Clipboard, InMemoryClipboard
+from prompt_toolkit.cursor_shapes import AnyCursorShapeConfig, to_cursor_shape_config
+from prompt_toolkit.data_structures import Size
+from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.eventloop import (
+from prompt_toolkit.eventloop.utils import call_soon_threadsafe
+from prompt_toolkit.filters import Condition, Filter, FilterOrBool, to_filter
+from prompt_toolkit.formatted_text import AnyFormattedText
+from prompt_toolkit.input.base import Input
+from prompt_toolkit.input.typeahead import get_typeahead, store_typeahead
+from prompt_toolkit.key_binding.bindings.page_navigation import (
+from prompt_toolkit.key_binding.defaults import load_key_bindings
+from prompt_toolkit.key_binding.emacs_state import EmacsState
+from prompt_toolkit.key_binding.key_bindings import (
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent, KeyProcessor
+from prompt_toolkit.key_binding.vi_state import ViState
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.layout.containers import Container, Window
+from prompt_toolkit.layout.controls import BufferControl, UIControl
+from prompt_toolkit.layout.dummy import create_dummy_layout
+from prompt_toolkit.layout.layout import Layout, walk
+from prompt_toolkit.output import ColorDepth, Output
+from prompt_toolkit.renderer import Renderer, print_formatted_text
+from prompt_toolkit.search import SearchState
+from prompt_toolkit.styles import (
+from prompt_toolkit.utils import Event, in_main_thread
+from .current import get_app_session, set_app
+from .run_in_terminal import in_terminal, run_in_terminal
+def _breakpointhook(self, *a: object, **kw: object) -> None:
+    """
+        Breakpointhook which uses PDB, but ensures that the application is
+        hidden and input echoing is restored during each debugger dispatch.
+
+        This can be called from any thread. In any case, the application's
+        event loop will be blocked while the PDB input is displayed. The event
+        will continue after leaving the debugger.
+        """
+    app = self
+    import pdb
+    from types import FrameType
+    TraceDispatch = Callable[[FrameType, str, Any], Any]
+
+    @contextmanager
+    def hide_app_from_eventloop_thread() -> Generator[None, None, None]:
+        """Stop application if `__breakpointhook__` is called from within
+            the App's event loop."""
+        app.renderer.erase()
+        with app.input.detach():
+            with app.input.cooked_mode():
+                yield
+
+    @contextmanager
+    def hide_app_from_other_thread() -> Generator[None, None, None]:
+        """Stop application if `__breakpointhook__` is called from a
+            thread other than the App's event loop."""
+        ready = threading.Event()
+        done = threading.Event()
+
+        async def in_loop() -> None:
+            app.renderer.erase()
+            with app.input.detach():
+                with app.input.cooked_mode():
+                    ready.set()
+                    done.wait()
+        self.create_background_task(in_loop())
+        ready.wait()
+        try:
+            yield
+        finally:
+            done.set()
+
+    class CustomPdb(pdb.Pdb):
+
+        def trace_dispatch(self, frame: FrameType, event: str, arg: Any) -> TraceDispatch:
+            if app._loop_thread is None:
+                return super().trace_dispatch(frame, event, arg)
+            if app._loop_thread == threading.current_thread():
+                with hide_app_from_eventloop_thread():
+                    return super().trace_dispatch(frame, event, arg)
+            with hide_app_from_other_thread():
+                return super().trace_dispatch(frame, event, arg)
+    frame = sys._getframe().f_back
+    CustomPdb(stdout=sys.__stdout__).set_trace(frame)

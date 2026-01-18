@@ -1,0 +1,67 @@
+from collections import defaultdict
+from functools import reduce
+from nltk.inference.api import Prover, ProverCommandDecorator
+from nltk.inference.prover9 import Prover9, Prover9Command
+from nltk.sem.logic import (
+def closed_domain_demo():
+    lexpr = Expression.fromstring
+    p1 = lexpr('exists x.walk(x)')
+    p2 = lexpr('man(Socrates)')
+    c = lexpr('walk(Socrates)')
+    prover = Prover9Command(c, [p1, p2])
+    print(prover.prove())
+    cdp = ClosedDomainProver(prover)
+    print('assumptions:')
+    for a in cdp.assumptions():
+        print('   ', a)
+    print('goal:', cdp.goal())
+    print(cdp.prove())
+    p1 = lexpr('exists x.walk(x)')
+    p2 = lexpr('man(Socrates)')
+    p3 = lexpr('-walk(Bill)')
+    c = lexpr('walk(Socrates)')
+    prover = Prover9Command(c, [p1, p2, p3])
+    print(prover.prove())
+    cdp = ClosedDomainProver(prover)
+    print('assumptions:')
+    for a in cdp.assumptions():
+        print('   ', a)
+    print('goal:', cdp.goal())
+    print(cdp.prove())
+    p1 = lexpr('exists x.walk(x)')
+    p2 = lexpr('man(Socrates)')
+    p3 = lexpr('-walk(Bill)')
+    c = lexpr('walk(Socrates)')
+    prover = Prover9Command(c, [p1, p2, p3])
+    print(prover.prove())
+    cdp = ClosedDomainProver(prover)
+    print('assumptions:')
+    for a in cdp.assumptions():
+        print('   ', a)
+    print('goal:', cdp.goal())
+    print(cdp.prove())
+    p1 = lexpr('walk(Socrates)')
+    p2 = lexpr('walk(Bill)')
+    c = lexpr('all x.walk(x)')
+    prover = Prover9Command(c, [p1, p2])
+    print(prover.prove())
+    cdp = ClosedDomainProver(prover)
+    print('assumptions:')
+    for a in cdp.assumptions():
+        print('   ', a)
+    print('goal:', cdp.goal())
+    print(cdp.prove())
+    p1 = lexpr('girl(mary)')
+    p2 = lexpr('dog(rover)')
+    p3 = lexpr('all x.(girl(x) -> -dog(x))')
+    p4 = lexpr('all x.(dog(x) -> -girl(x))')
+    p5 = lexpr('chase(mary, rover)')
+    c = lexpr('exists y.(dog(y) & all x.(girl(x) -> chase(x,y)))')
+    prover = Prover9Command(c, [p1, p2, p3, p4, p5])
+    print(prover.prove())
+    cdp = ClosedDomainProver(prover)
+    print('assumptions:')
+    for a in cdp.assumptions():
+        print('   ', a)
+    print('goal:', cdp.goal())
+    print(cdp.prove())

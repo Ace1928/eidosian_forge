@@ -1,0 +1,96 @@
+import operator
+import _ast
+from mako import _ast_util
+from mako import compat
+from mako import exceptions
+from mako import util
+class FindIdentifiers(_ast_util.NodeVisitor):
+
+    def __init__(self, listener, **exception_kwargs):
+        self.in_function = False
+        self.in_assign_targets = False
+        self.local_ident_stack = set()
+        self.listener = listener
+        self.exception_kwargs = exception_kwargs
+
+    def _add_declared(self, name):
+        if not self.in_function:
+            self.listener.declared_identifiers.add(name)
+        else:
+            self.local_ident_stack.add(name)
+
+    def visit_ClassDef(self, node):
+        self._add_declared(node.name)
+
+    def visit_Assign(self, node):
+        self.visit(node.value)
+        in_a = self.in_assign_targets
+        self.in_assign_targets = True
+        for n in node.targets:
+            self.visit(n)
+        self.in_assign_targets = in_a
+
+    def visit_ExceptHandler(self, node):
+        if node.name is not None:
+            self._add_declared(node.name)
+        if node.type is not None:
+            self.visit(node.type)
+        for statement in node.body:
+            self.visit(statement)
+
+    def visit_Lambda(self, node, *args):
+        self._visit_function(node, True)
+
+    def visit_FunctionDef(self, node):
+        self._add_declared(node.name)
+        self._visit_function(node, False)
+
+    def _expand_tuples(self, args):
+        for arg in args:
+            if isinstance(arg, _ast.Tuple):
+                yield from arg.elts
+            else:
+                yield arg
+
+    def _visit_function(self, node, islambda):
+        inf = self.in_function
+        self.in_function = True
+        local_ident_stack = self.local_ident_stack
+        self.local_ident_stack = local_ident_stack.union([arg_id(arg) for arg in self._expand_tuples(node.args.args)])
+        if islambda:
+            self.visit(node.body)
+        else:
+            for n in node.body:
+                self.visit(n)
+        self.in_function = inf
+        self.local_ident_stack = local_ident_stack
+
+    def visit_For(self, node):
+        self.visit(node.iter)
+        self.visit(node.target)
+        for statement in node.body:
+            self.visit(statement)
+        for statement in node.orelse:
+            self.visit(statement)
+
+    def visit_Name(self, node):
+        if isinstance(node.ctx, _ast.Store):
+            self._add_declared(node.id)
+        elif node.id not in reserved and node.id not in self.listener.declared_identifiers and (node.id not in self.local_ident_stack):
+            self.listener.undeclared_identifiers.add(node.id)
+
+    def visit_Import(self, node):
+        for name in node.names:
+            if name.asname is not None:
+                self._add_declared(name.asname)
+            else:
+                self._add_declared(name.name.split('.')[0])
+
+    def visit_ImportFrom(self, node):
+        for name in node.names:
+            if name.asname is not None:
+                self._add_declared(name.asname)
+            elif name.name == '*':
+                raise exceptions.CompileException("'import *' is not supported, since all identifier names must be explicitly declared.  Please use the form 'from <modulename> import <name1>, <name2>, ...' instead.", **self.exception_kwargs)
+            else:
+                self._add_declared(name.name)

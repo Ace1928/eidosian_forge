@@ -1,0 +1,150 @@
+from __future__ import (absolute_import, division, print_function)
+from ansible.plugins.action import ActionBase
+from ansible.errors import AnsibleActionFail
+from ansible_collections.cisco.meraki.plugins.plugin_utils.meraki import (
+from ansible_collections.cisco.meraki.plugins.plugin_utils.exceptions import (
+class OrganizationsAdaptivePolicyPolicies(object):
+
+    def __init__(self, params, meraki):
+        self.meraki = meraki
+        self.new_object = dict(sourceGroup=params.get('sourceGroup'), destinationGroup=params.get('destinationGroup'), acls=params.get('acls'), lastEntryRule=params.get('lastEntryRule'), organizationId=params.get('organizationId'), id=params.get('id'))
+
+    def get_all_params(self, name=None, id=None):
+        new_object_params = {}
+        if self.new_object.get('organizationId') is not None or self.new_object.get('organization_id') is not None:
+            new_object_params['organizationId'] = self.new_object.get('organizationId') or self.new_object.get('organization_id')
+        return new_object_params
+
+    def get_params_by_id(self, name=None, id=None):
+        new_object_params = {}
+        if self.new_object.get('organizationId') is not None or self.new_object.get('organization_id') is not None:
+            new_object_params['organizationId'] = self.new_object.get('organizationId') or self.new_object.get('organization_id')
+        if self.new_object.get('id') is not None or self.new_object.get('id') is not None:
+            new_object_params['id'] = self.new_object.get('id')
+        return new_object_params
+
+    def create_params(self):
+        new_object_params = {}
+        if self.new_object.get('sourceGroup') is not None or self.new_object.get('source_group') is not None:
+            new_object_params['sourceGroup'] = self.new_object.get('sourceGroup') or self.new_object.get('source_group')
+        if self.new_object.get('destinationGroup') is not None or self.new_object.get('destination_group') is not None:
+            new_object_params['destinationGroup'] = self.new_object.get('destinationGroup') or self.new_object.get('destination_group')
+        if self.new_object.get('acls') is not None or self.new_object.get('acls') is not None:
+            new_object_params['acls'] = self.new_object.get('acls') or self.new_object.get('acls')
+        if self.new_object.get('lastEntryRule') is not None or self.new_object.get('last_entry_rule') is not None:
+            new_object_params['lastEntryRule'] = self.new_object.get('lastEntryRule') or self.new_object.get('last_entry_rule')
+        if self.new_object.get('organizationId') is not None or self.new_object.get('organization_id') is not None:
+            new_object_params['organizationId'] = self.new_object.get('organizationId') or self.new_object.get('organization_id')
+        return new_object_params
+
+    def delete_by_id_params(self):
+        new_object_params = {}
+        if self.new_object.get('organizationId') is not None or self.new_object.get('organization_id') is not None:
+            new_object_params['organizationId'] = self.new_object.get('organizationId') or self.new_object.get('organization_id')
+        if self.new_object.get('id') is not None or self.new_object.get('id') is not None:
+            new_object_params['id'] = self.new_object.get('id') or self.new_object.get('id')
+        return new_object_params
+
+    def update_by_id_params(self):
+        new_object_params = {}
+        if self.new_object.get('sourceGroup') is not None or self.new_object.get('source_group') is not None:
+            new_object_params['sourceGroup'] = self.new_object.get('sourceGroup') or self.new_object.get('source_group')
+        if self.new_object.get('destinationGroup') is not None or self.new_object.get('destination_group') is not None:
+            new_object_params['destinationGroup'] = self.new_object.get('destinationGroup') or self.new_object.get('destination_group')
+        if self.new_object.get('acls') is not None or self.new_object.get('acls') is not None:
+            new_object_params['acls'] = self.new_object.get('acls') or self.new_object.get('acls')
+        if self.new_object.get('lastEntryRule') is not None or self.new_object.get('last_entry_rule') is not None:
+            new_object_params['lastEntryRule'] = self.new_object.get('lastEntryRule') or self.new_object.get('last_entry_rule')
+        if self.new_object.get('organizationId') is not None or self.new_object.get('organization_id') is not None:
+            new_object_params['organizationId'] = self.new_object.get('organizationId') or self.new_object.get('organization_id')
+        if self.new_object.get('id') is not None or self.new_object.get('id') is not None:
+            new_object_params['id'] = self.new_object.get('id') or self.new_object.get('id')
+        return new_object_params
+
+    def get_object_by_name(self, name):
+        result = None
+        try:
+            items = self.meraki.exec_meraki(family='organizations', function='getOrganizationAdaptivePolicyPolicies', params=self.get_all_params(name=name))
+            if isinstance(items, dict):
+                if 'response' in items:
+                    items = items.get('response')
+            result = get_dict_result(items, 'name', name)
+            if result is None:
+                result = items
+        except Exception as e:
+            print('Error: ', e)
+            result = None
+        return result
+
+    def get_object_by_id(self, id):
+        result = None
+        try:
+            items = self.meraki.exec_meraki(family='organizations', function='getOrganizationAdaptivePolicyPolicy', params={'id': id})
+            if isinstance(items, dict):
+                if 'response' in items:
+                    items = items.get('response')
+            result = get_dict_result(items, 'id', id)
+        except Exception as e:
+            print('Error: ', e)
+            result = None
+        return result
+
+    def exists(self):
+        id_exists = False
+        name_exists = False
+        prev_obj = None
+        o_id = self.new_object.get('id')
+        name = self.new_object.get('name')
+        if o_id:
+            prev_obj = self.get_object_by_id(o_id)
+            id_exists = prev_obj is not None and isinstance(prev_obj, dict)
+        if not id_exists and name:
+            prev_obj = self.get_object_by_name(name)
+            name_exists = prev_obj is not None and isinstance(prev_obj, dict)
+        if name_exists:
+            _id = prev_obj.get('id')
+            if id_exists and name_exists and (o_id != _id):
+                raise InconsistentParameters("The 'id' and 'name' params don't refer to the same object")
+            if _id:
+                self.new_object.update(dict(id=_id))
+            if _id:
+                prev_obj = self.get_object_by_id(_id)
+        it_exists = prev_obj is not None and isinstance(prev_obj, dict)
+        return (it_exists, prev_obj)
+
+    def requires_update(self, current_obj):
+        requested_obj = self.new_object
+        obj_params = [('sourceGroup', 'sourceGroup'), ('destinationGroup', 'destinationGroup'), ('acls', 'acls'), ('lastEntryRule', 'lastEntryRule'), ('organizationId', 'organizationId'), ('id', 'id')]
+        return any((not meraki_compare_equality(current_obj.get(meraki_param), requested_obj.get(ansible_param)) for meraki_param, ansible_param in obj_params))
+
+    def create(self):
+        result = self.meraki.exec_meraki(family='organizations', function='createOrganizationAdaptivePolicyPolicy', params=self.create_params(), op_modifies=True)
+        return result
+
+    def update(self):
+        id = self.new_object.get('id')
+        name = self.new_object.get('name')
+        result = None
+        if not id:
+            prev_obj_name = self.get_object_by_name(name)
+            id_ = None
+            if prev_obj_name:
+                id_ = prev_obj_name.get('id')
+            if id_:
+                self.new_object.update(dict(id=id_))
+        result = self.meraki.exec_meraki(family='organizations', function='updateOrganizationAdaptivePolicyPolicy', params=self.update_by_id_params(), op_modifies=True)
+        return result
+
+    def delete(self):
+        id = self.new_object.get('id')
+        name = self.new_object.get('name')
+        result = None
+        if not id:
+            prev_obj_name = self.get_object_by_name(name)
+            id_ = None
+            if prev_obj_name:
+                id_ = prev_obj_name.get('id')
+            if id_:
+                self.new_object.update(dict(id=id_))
+        result = self.meraki.exec_meraki(family='organizations', function='deleteOrganizationAdaptivePolicyPolicy', params=self.delete_by_id_params())
+        return result

@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class MarginValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='margin', parent_name='layout', **kwargs):
+        super(MarginValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Margin'), data_docs=kwargs.pop('data_docs', '\n            autoexpand\n                Turns on/off margin expansion computations.\n                Legends, colorbars, updatemenus, sliders, axis\n                rangeselector and rangeslider are allowed to\n                push the margins by defaults.\n            b\n                Sets the bottom margin (in px).\n            l\n                Sets the left margin (in px).\n            pad\n                Sets the amount of padding (in px) between the\n                plotting area and the axis lines\n            r\n                Sets the right margin (in px).\n            t\n                Sets the top margin (in px).\n'), **kwargs)

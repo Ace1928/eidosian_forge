@@ -1,0 +1,19 @@
+import gc
+from io import StringIO
+import numpy as np
+from numba import njit, vectorize
+from numba import typeof
+from numba.core import utils, types, typing, ir, compiler, cpu, cgutils
+from numba.core.compiler import Compiler, Flags
+from numba.core.registry import cpu_target
+from numba.tests.support import (MemoryLeakMixin, TestCase, temp_directory,
+from numba.extending import (
+import operator
+import textwrap
+import unittest
+@classmethod
+def mk_no_rw_pipeline(cls, args, return_type=None, flags=None, locals={}, library=None, **kws):
+    if not flags:
+        flags = Flags()
+    flags.no_rewrites = True
+    return cls.mk_pipeline(args, return_type, flags, locals, library, **kws)

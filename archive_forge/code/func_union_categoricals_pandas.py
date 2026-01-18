@@ -1,0 +1,20 @@
+from __future__ import annotations
+import warnings
+from collections.abc import Iterable
+import numpy as np
+import pandas as pd
+from pandas.api.types import is_scalar, union_categoricals
+from dask.array.core import Array
+from dask.array.dispatch import percentile_lookup
+from dask.array.percentile import _percentile
+from dask.backends import CreationDispatch, DaskBackendEntrypoint
+from dask.dataframe._compat import PANDAS_GE_220, is_any_real_numeric_dtype
+from dask.dataframe.core import DataFrame, Index, Scalar, Series, _Frame
+from dask.dataframe.dispatch import (
+from dask.dataframe.extensions import make_array_nonempty, make_scalar
+from dask.dataframe.utils import (
+from dask.sizeof import SimpleSizeof, sizeof
+from dask.utils import is_arraylike, is_series_like, typename
+@union_categoricals_dispatch.register((pd.DataFrame, pd.Series, pd.Index, pd.Categorical))
+def union_categoricals_pandas(to_union, sort_categories=False, ignore_order=False):
+    return pd.api.types.union_categoricals(to_union, sort_categories=sort_categories, ignore_order=ignore_order)

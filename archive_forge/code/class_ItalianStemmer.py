@@ -1,0 +1,149 @@
+import re
+from nltk.corpus import stopwords
+from nltk.stem import porter
+from nltk.stem.api import StemmerI
+from nltk.stem.util import prefix_replace, suffix_replace
+class ItalianStemmer(_StandardStemmer):
+    """
+    The Italian Snowball stemmer.
+
+    :cvar __vowels: The Italian vowels.
+    :type __vowels: unicode
+    :cvar __step0_suffixes: Suffixes to be deleted in step 0 of the algorithm.
+    :type __step0_suffixes: tuple
+    :cvar __step1_suffixes: Suffixes to be deleted in step 1 of the algorithm.
+    :type __step1_suffixes: tuple
+    :cvar __step2_suffixes: Suffixes to be deleted in step 2 of the algorithm.
+    :type __step2_suffixes: tuple
+    :note: A detailed description of the Italian
+           stemming algorithm can be found under
+           http://snowball.tartarus.org/algorithms/italian/stemmer.html
+
+    """
+    __vowels = 'aeiouàèìòù'
+    __step0_suffixes = ('gliela', 'gliele', 'glieli', 'glielo', 'gliene', 'sene', 'mela', 'mele', 'meli', 'melo', 'mene', 'tela', 'tele', 'teli', 'telo', 'tene', 'cela', 'cele', 'celi', 'celo', 'cene', 'vela', 'vele', 'veli', 'velo', 'vene', 'gli', 'ci', 'la', 'le', 'li', 'lo', 'mi', 'ne', 'si', 'ti', 'vi')
+    __step1_suffixes = ('atrice', 'atrici', 'azione', 'azioni', 'uzione', 'uzioni', 'usione', 'usioni', 'amento', 'amenti', 'imento', 'imenti', 'amente', 'abile', 'abili', 'ibile', 'ibili', 'mente', 'atore', 'atori', 'logia', 'logie', 'anza', 'anze', 'iche', 'ichi', 'ismo', 'ismi', 'ista', 'iste', 'isti', 'istà', 'istè', 'istì', 'ante', 'anti', 'enza', 'enze', 'ico', 'ici', 'ica', 'ice', 'oso', 'osi', 'osa', 'ose', 'ità', 'ivo', 'ivi', 'iva', 'ive')
+    __step2_suffixes = ('erebbero', 'irebbero', 'assero', 'assimo', 'eranno', 'erebbe', 'eremmo', 'ereste', 'eresti', 'essero', 'iranno', 'irebbe', 'iremmo', 'ireste', 'iresti', 'iscano', 'iscono', 'issero', 'arono', 'avamo', 'avano', 'avate', 'eremo', 'erete', 'erono', 'evamo', 'evano', 'evate', 'iremo', 'irete', 'irono', 'ivamo', 'ivano', 'ivate', 'ammo', 'ando', 'asse', 'assi', 'emmo', 'enda', 'ende', 'endi', 'endo', 'erai', 'erei', 'Yamo', 'iamo', 'immo', 'irai', 'irei', 'isca', 'isce', 'isci', 'isco', 'ano', 'are', 'ata', 'ate', 'ati', 'ato', 'ava', 'avi', 'avo', 'erà', 'ere', 'erò', 'ete', 'eva', 'evi', 'evo', 'irà', 'ire', 'irò', 'ita', 'ite', 'iti', 'ito', 'iva', 'ivi', 'ivo', 'ono', 'uta', 'ute', 'uti', 'uto', 'ar', 'ir')
+
+    def stem(self, word):
+        """
+        Stem an Italian word and return the stemmed form.
+
+        :param word: The word that is stemmed.
+        :type word: str or unicode
+        :return: The stemmed form.
+        :rtype: unicode
+
+        """
+        word = word.lower()
+        if word in self.stopwords:
+            return word
+        step1_success = False
+        word = word.replace('á', 'à').replace('é', 'è').replace('í', 'ì').replace('ó', 'ò').replace('ú', 'ù')
+        for i in range(1, len(word)):
+            if word[i - 1] == 'q' and word[i] == 'u':
+                word = ''.join((word[:i], 'U', word[i + 1:]))
+        for i in range(1, len(word) - 1):
+            if word[i - 1] in self.__vowels and word[i + 1] in self.__vowels:
+                if word[i] == 'u':
+                    word = ''.join((word[:i], 'U', word[i + 1:]))
+                elif word[i] == 'i':
+                    word = ''.join((word[:i], 'I', word[i + 1:]))
+        r1, r2 = self._r1r2_standard(word, self.__vowels)
+        rv = self._rv_standard(word, self.__vowels)
+        for suffix in self.__step0_suffixes:
+            if rv.endswith(suffix):
+                if rv[-len(suffix) - 4:-len(suffix)] in ('ando', 'endo'):
+                    word = word[:-len(suffix)]
+                    r1 = r1[:-len(suffix)]
+                    r2 = r2[:-len(suffix)]
+                    rv = rv[:-len(suffix)]
+                elif rv[-len(suffix) - 2:-len(suffix)] in ('ar', 'er', 'ir'):
+                    word = suffix_replace(word, suffix, 'e')
+                    r1 = suffix_replace(r1, suffix, 'e')
+                    r2 = suffix_replace(r2, suffix, 'e')
+                    rv = suffix_replace(rv, suffix, 'e')
+                break
+        for suffix in self.__step1_suffixes:
+            if word.endswith(suffix):
+                if suffix == 'amente' and r1.endswith(suffix):
+                    step1_success = True
+                    word = word[:-6]
+                    r2 = r2[:-6]
+                    rv = rv[:-6]
+                    if r2.endswith('iv'):
+                        word = word[:-2]
+                        r2 = r2[:-2]
+                        rv = rv[:-2]
+                        if r2.endswith('at'):
+                            word = word[:-2]
+                            rv = rv[:-2]
+                    elif r2.endswith(('os', 'ic')):
+                        word = word[:-2]
+                        rv = rv[:-2]
+                    elif r2.endswith('abil'):
+                        word = word[:-4]
+                        rv = rv[:-4]
+                elif suffix in ('amento', 'amenti', 'imento', 'imenti') and rv.endswith(suffix):
+                    step1_success = True
+                    word = word[:-6]
+                    rv = rv[:-6]
+                elif r2.endswith(suffix):
+                    step1_success = True
+                    if suffix in ('azione', 'azioni', 'atore', 'atori'):
+                        word = word[:-len(suffix)]
+                        r2 = r2[:-len(suffix)]
+                        rv = rv[:-len(suffix)]
+                        if r2.endswith('ic'):
+                            word = word[:-2]
+                            rv = rv[:-2]
+                    elif suffix in ('logia', 'logie'):
+                        word = word[:-2]
+                        rv = word[:-2]
+                    elif suffix in ('uzione', 'uzioni', 'usione', 'usioni'):
+                        word = word[:-5]
+                        rv = rv[:-5]
+                    elif suffix in ('enza', 'enze'):
+                        word = suffix_replace(word, suffix, 'te')
+                        rv = suffix_replace(rv, suffix, 'te')
+                    elif suffix == 'ità':
+                        word = word[:-3]
+                        r2 = r2[:-3]
+                        rv = rv[:-3]
+                        if r2.endswith(('ic', 'iv')):
+                            word = word[:-2]
+                            rv = rv[:-2]
+                        elif r2.endswith('abil'):
+                            word = word[:-4]
+                            rv = rv[:-4]
+                    elif suffix in ('ivo', 'ivi', 'iva', 'ive'):
+                        word = word[:-3]
+                        r2 = r2[:-3]
+                        rv = rv[:-3]
+                        if r2.endswith('at'):
+                            word = word[:-2]
+                            r2 = r2[:-2]
+                            rv = rv[:-2]
+                            if r2.endswith('ic'):
+                                word = word[:-2]
+                                rv = rv[:-2]
+                    else:
+                        word = word[:-len(suffix)]
+                        rv = rv[:-len(suffix)]
+                break
+        if not step1_success:
+            for suffix in self.__step2_suffixes:
+                if rv.endswith(suffix):
+                    word = word[:-len(suffix)]
+                    rv = rv[:-len(suffix)]
+                    break
+        if rv.endswith(('a', 'e', 'i', 'o', 'à', 'è', 'ì', 'ò')):
+            word = word[:-1]
+            rv = rv[:-1]
+            if rv.endswith('i'):
+                word = word[:-1]
+                rv = rv[:-1]
+        if rv.endswith(('ch', 'gh')):
+            word = word[:-1]
+        word = word.replace('I', 'i').replace('U', 'u')
+        return word

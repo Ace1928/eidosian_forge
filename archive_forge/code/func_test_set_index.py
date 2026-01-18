@@ -1,0 +1,48 @@
+from __future__ import annotations
+import pickle
+import re
+import sys
+import warnings
+from collections.abc import Hashable
+from copy import copy, deepcopy
+from io import StringIO
+from textwrap import dedent
+from typing import Any, Literal
+import numpy as np
+import pandas as pd
+import pytest
+from pandas.core.indexes.datetimes import DatetimeIndex
+import xarray as xr
+from xarray import (
+from xarray.coding.cftimeindex import CFTimeIndex
+from xarray.core import dtypes, indexing, utils
+from xarray.core.common import duck_array_ops, full_like
+from xarray.core.coordinates import Coordinates, DatasetCoordinates
+from xarray.core.indexes import Index, PandasIndex
+from xarray.core.utils import is_scalar
+from xarray.namedarray.pycompat import array_type, integer_types
+from xarray.testing import _assert_internal_invariants
+from xarray.tests import (
+def test_set_index(self) -> None:
+    expected = create_test_multiindex()
+    mindex = expected['x'].to_index()
+    indexes = [mindex.get_level_values(n) for n in mindex.names]
+    coords = {idx.name: ('x', idx) for idx in indexes}
+    ds = Dataset({}, coords=coords)
+    obj = ds.set_index(x=mindex.names)
+    assert_identical(obj, expected)
+    ds = create_test_multiindex()
+    coords = {'x': coords['level_1'], 'level_2': coords['level_2']}
+    expected = Dataset({}, coords=coords)
+    obj = ds.set_index(x='level_1')
+    assert_identical(obj, expected)
+    ds = Dataset(data_vars={'x_var': ('x', [0, 1, 2])})
+    expected = Dataset(coords={'x': [0, 1, 2]})
+    assert_identical(ds.set_index(x='x_var'), expected)
+    with pytest.raises(ValueError, match='bar variable\\(s\\) do not exist'):
+        ds.set_index(foo='bar')
+    with pytest.raises(ValueError, match='dimension mismatch.*'):
+        ds.set_index(y='x_var')
+    ds = Dataset(coords={'x': 1})
+    with pytest.raises(ValueError, match='.*cannot set a PandasIndex.*scalar variable.*'):
+        ds.set_index(x='x')

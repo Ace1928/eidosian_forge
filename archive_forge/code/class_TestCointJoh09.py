@@ -1,0 +1,16 @@
+import os
+import warnings
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_equal
+import pandas as pd
+import pytest
+from statsmodels.tools.sm_exceptions import HypothesisTestWarning
+from statsmodels.tsa.vector_ar.vecm import coint_johansen
+class TestCointJoh09(CheckCointJoh):
+
+    @classmethod
+    def setup_class(cls):
+        cls.res = coint_johansen(dta, 0, 9)
+        cls.nobs_r = 173 - 1 - 9
+        cls.res1_m = np.array([307.6888935095814, 205.3839229398245, 129.1330243009336, 83.3101865760208, 52.51955460357912, 30.20027050520502, 13.84158157562689, 0.4117390188204866, 153.6341, 120.3673, 91.109, 65.8202, 44.4929, 27.0669, 13.4294, 2.7055, 159.529, 125.6185, 95.7542, 69.8189, 47.8545, 29.7961, 15.4943, 3.8415, 171.0905, 135.9825, 104.9637, 77.8202, 54.6815, 35.4628, 19.9349, 6.6349])
+        cls.res2_m = np.array([102.3049705697569, 76.25089863889085, 45.82283772491284, 30.7906319724417, 22.31928409837409, 16.35868892957814, 13.4298425568064, 0.4117390188204866, 49.2855, 43.2947, 37.2786, 31.2379, 25.1236, 18.8928, 12.2971, 2.7055, 52.3622, 46.2299, 40.0763, 33.8777, 27.5858, 21.1314, 14.2639, 3.8415, 58.6634, 52.3069, 45.8662, 39.3693, 32.7172, 25.865, 18.52, 6.6349])

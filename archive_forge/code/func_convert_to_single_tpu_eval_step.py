@@ -1,0 +1,108 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import collections
+import copy
+import enum
+import math
+import os
+import signal
+import sys
+import threading
+import time
+import tensorflow as tf
+import numpy as np
+import six
+from six.moves import queue as Queue  # pylint: disable=redefined-builtin
+from six.moves import xrange  # pylint: disable=redefined-builtin
+from tensorflow.core.framework import variable_pb2
+from tensorflow.core.framework.summary_pb2 import Summary
+from tensorflow.core.protobuf.tpu import compilation_result_pb2 as tpu_compilation_result
+from tensorflow.python.data.util import nest as data_nest
+from tensorflow.python.distribute.cluster_resolver import tpu_cluster_resolver
+from tensorflow.python.framework import function
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import control_flow_util
+from tensorflow.python.ops import ref_variable
+from tensorflow.python.ops import summary_ops_v2
+from tensorflow.python.ops import variable_scope
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.tpu import functional as tpu_functional
+from tensorflow.python.tpu import preempted_hook
+from tensorflow.python.tpu import session_support
+from tensorflow.python.tpu import tensor_tracer
+from tensorflow.python.tpu import tpu
+from tensorflow.python.tpu import tpu_embedding_gradient
+from tensorflow.python.tpu import tpu_feed
+from tensorflow.python.tpu import tpu_function
+from tensorflow.python.tpu import tpu_replication
+from tensorflow.python.tpu import training_loop
+from tensorflow.python.tpu.ops import tpu_ops
+from tensorflow.python.training import evaluation
+from tensorflow.python.util import function_utils
+from tensorflow.python.util import tf_inspect
+from tensorflow_estimator.python.estimator import estimator as estimator_lib
+from tensorflow_estimator.python.estimator import model_fn as model_fn_lib
+from tensorflow_estimator.python.estimator.estimator_export import estimator_export
+from tensorflow_estimator.python.estimator.export import export_output as export_output_lib
+from tensorflow_estimator.python.estimator.tpu import _tpu_estimator_embedding
+from tensorflow_estimator.python.estimator.tpu import error_handling
+from tensorflow_estimator.python.estimator.tpu import iteration_count_estimator
+from tensorflow_estimator.python.estimator.tpu import tpu_config
+from tensorflow_estimator.python.estimator.tpu import tpu_context
+from tensorflow_estimator.python.estimator.tpu import util as util_lib
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import AdagradParameters  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import AdamParameters  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import EmbeddingConfigSpec  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import StochasticGradientDescentParameters  # pylint: disable=unused-import
+def convert_to_single_tpu_eval_step(self, dequeue_fn):
+    """Converts user provided model_fn` as a single eval step on TPU.
+
+    Similar to training, the user provided `model_fn` takes input tuple
+    (features, labels) and produces the TPUEstimatorSpec with eval_metrics for
+    eval `mode`. This usually represents a single evaluation computation on CPU.
+
+    For TPU evaluation, a eval (computation) step is first wrapped in a
+    tf.while_loop control flow to repeat for many times and then replicated to
+    all TPU shards. Besides the input and output are slightly different. Input,
+    features and labels, should be taken from TPU infeed rather than input
+    pipeline (input_fn) directly. Output is managed in two stages.  First, the
+    model outputs as the result of evaluation computation, usually model logits,
+    should be transferred from TPU system to CPU. Then, all model outputs are
+    concatenated first on CPU and sent to the metric_fn for metrics computation.
+    To fit TPU evaluation pattern, the original eval computation should be
+    reformed, which is the returned `eval_step`.
+
+    Args:
+      dequeue_fn: The function to retrieve inputs, features and labels, from TPU
+        infeed dequeue channel.
+
+    Returns:
+      A tuple of eval_fn, host_calls, and captured scaffold_fn. The eval_fn
+      representing the eval step for TPU.
+    """
+    host_calls = _OutfeedHostCall(self._ctx)
+    captured_scaffold_fn = _CapturedObject()
+    captured_eval_hooks = _CapturedObject()
+
+    def eval_step(total_loss):
+        """Evaluation step function for use inside a while loop."""
+        inputs = dequeue_fn()
+        features, labels = inputs.features_and_labels()
+        self._add_embedding_features(features, False)
+        tpu_estimator_spec = self._call_model_fn(features, labels)
+        if not isinstance(tpu_estimator_spec, model_fn_lib._TPUEstimatorSpec):
+            raise RuntimeError('estimator_spec used by TPU evaluation must have type`TPUEstimatorSpec`. Got {}'.format(type(tpu_estimator_spec)))
+        loss = tpu_estimator_spec.loss
+        captured_scaffold_fn.capture(tpu_estimator_spec.scaffold_fn)
+        captured_eval_hooks.capture(tpu_estimator_spec.evaluation_hooks)
+        to_record = {}
+        if tpu_estimator_spec.eval_metrics:
+            to_record['eval_metrics'] = tpu_estimator_spec.eval_metrics
+        if tpu_estimator_spec.host_call is not None:
+            to_record['host_call'] = tpu_estimator_spec.host_call
+        host_calls.record(to_record)
+        with tf.control_dependencies(host_calls.create_enqueue_op()):
+            return tf.math.add(total_loss, loss)
+    return (eval_step, host_calls, captured_scaffold_fn, captured_eval_hooks)

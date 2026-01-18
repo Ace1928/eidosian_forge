@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+class Evpn_globalArgs(object):
+    """The arg spec for the ios_evpn_global module"""
+    argument_spec = {'config': {'type': 'dict', 'options': {'default_gateway': {'type': 'dict', 'options': {'advertise': {'type': 'bool'}}}, 'flooding_suppression': {'type': 'dict', 'options': {'address_resolution': {'type': 'dict', 'options': {'disable': {'type': 'bool'}}}}}, 'ip': {'type': 'dict', 'options': {'local_learning': {'type': 'dict', 'options': {'disable': {'type': 'bool'}}}}}, 'replication_type': {'type': 'str', 'choices': ['ingress', 'static']}, 'route_target': {'type': 'dict', 'options': {'auto': {'type': 'dict', 'options': {'vni': {'type': 'bool'}}}}}, 'router_id': {'type': 'str'}}}, 'running_config': {'type': 'str'}, 'state': {'type': 'str', 'choices': ['merged', 'replaced', 'overridden', 'deleted', 'rendered', 'gathered', 'parsed'], 'default': 'merged'}}

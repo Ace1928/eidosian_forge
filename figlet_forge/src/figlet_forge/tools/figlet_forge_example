@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""
+Figlet Forge Example Script.
+
+This script demonstrates various advanced features and usage patterns
+of the Figlet Forge library.
+"""
+
+import sys
+from pathlib import Path
+
+# Add the package to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from figlet_forge import Figlet, print_figlet
+from figlet_forge.color.effects import gradient_colorize, rainbow_colorize
+
+def main():
+    """Run a showcase of Figlet Forge capabilities."""
+    print("\n=== FIGLET FORGE SHOWCASE ===\n")
+
+    # Basic usage
+    print("Basic Usage:")
+    fig = Figlet()
+    result = fig.renderText("Hello")
+    print(result)
+
+    # Using different font
+    print("\nUsing 'slant' font:")
+    try:
+        fig = Figlet(font="slant")
+        result = fig.renderText("Figlet")
+        print(result)
+    except Exception as e:
+        print(f"Error with slant font: {e}")
+
+    # Using color effects
+    print("\nWith Rainbow Colors:")
+    try:
+        result = fig.renderText("Colors")
+        colored = rainbow_colorize(result)
+        print(colored)
+    except Exception as e:
+        print(f"Error with colors: {e}")
+
+    # Using gradient
+    print("\nWith Gradient Colors:")
+    try:
+        result = fig.renderText("Gradient")
+        colored = gradient_colorize(result, "BLUE", "MAGENTA")
+        print(colored)
+    except Exception as e:
+        print(f"Error with gradient: {e}")
+
+    # Using transformation features
+    print("\nWith Transformations:")
+    fig = Figlet(font="standard")
+    result = fig.renderText("Flip")
+    print("Original:")
+    print(result)
+    print("\nFlipped:")
+    print(result.flip())
+    print("\nReversed:")
+    print(result.reverse())
+    print("\nWith Border:")
+    print(result.border())
+
+    # Using convenience function
+    print("\nUsing print_figlet convenience function:")
+    print_figlet("Easy!", font="standard", colors="GREEN:BLACK")
+
+    print("\n=== END OF SHOWCASE ===\n")
+
+if __name__ == "__main__":
+    main()

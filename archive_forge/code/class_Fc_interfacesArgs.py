@@ -1,0 +1,5 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.cisco.nxos.plugins.module_utils.network.nxos.rm_templates.fc_interfaces import (
+class Fc_interfacesArgs(object):
+    """The arg spec for the nxos_fc_interfaces module"""
+    argument_spec = {'running_config': {'type': 'str'}, 'config': {'type': 'list', 'elements': 'dict', 'options': {'name': {'type': 'str', 'required': True}, 'description': {'type': 'str'}, 'enabled': {'type': 'bool'}, 'speed': {'choices': allowed_speed_values, 'type': 'str'}, 'mode': {'choices': allowed_port_modes, 'type': 'str'}, 'trunk_mode': {'choices': ['auto', 'on', 'off'], 'type': 'str'}, 'analytics': {'choices': ['fc-scsi', 'fc-nvme', 'fc-all'], 'type': 'str'}}}, 'state': {'type': 'str', 'choices': ['merged', 'replaced', 'overridden', 'deleted', 'gathered', 'rendered', 'parsed'], 'default': 'merged'}}

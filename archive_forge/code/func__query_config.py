@@ -1,0 +1,37 @@
+import contextlib
+import errno
+import functools
+import os
+import signal
+import sys
+import time
+from collections import namedtuple
+from . import _common
+from ._common import ENCODING
+from ._common import ENCODING_ERRS
+from ._common import AccessDenied
+from ._common import NoSuchProcess
+from ._common import TimeoutExpired
+from ._common import conn_tmap
+from ._common import conn_to_ntuple
+from ._common import debug
+from ._common import isfile_strict
+from ._common import memoize
+from ._common import memoize_when_activated
+from ._common import parse_environ_block
+from ._common import usage_percent
+from ._compat import PY3
+from ._compat import long
+from ._compat import lru_cache
+from ._compat import range
+from ._compat import unicode
+from ._psutil_windows import ABOVE_NORMAL_PRIORITY_CLASS
+from ._psutil_windows import BELOW_NORMAL_PRIORITY_CLASS
+from ._psutil_windows import HIGH_PRIORITY_CLASS
+from ._psutil_windows import IDLE_PRIORITY_CLASS
+from ._psutil_windows import NORMAL_PRIORITY_CLASS
+from ._psutil_windows import REALTIME_PRIORITY_CLASS
+def _query_config(self):
+    with self._wrap_exceptions():
+        display_name, binpath, username, start_type = cext.winservice_query_config(self._name)
+    return dict(display_name=py2_strencode(display_name), binpath=py2_strencode(binpath), username=py2_strencode(username), start_type=py2_strencode(start_type))

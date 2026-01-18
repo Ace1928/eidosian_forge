@@ -1,0 +1,246 @@
+import numpy as np
+import numpy
+import unittest
+from numba import njit, jit
+from numba.core.errors import TypingError, UnsupportedError
+from numba.core import ir
+from numba.tests.support import TestCase, IRPreservingTestPipeline
+def test_bulk_use_cases(self):
+    """ Tests the large number of use cases defined below """
+
+    @njit
+    def fib3(n):
+        if n < 2:
+            return n
+        return fib3(n - 1) + fib3(n - 2)
+
+    def outer1(x):
+        """ Test calling recursive function from inner """
+
+        def inner(x):
+            return fib3(x)
+        return inner(x)
+
+    def outer2(x):
+        """ Test calling recursive function from closure """
+        z = x + 1
+
+        def inner(x):
+            return x + fib3(z)
+        return inner(x)
+
+    def outer3(x):
+        """ Test recursive inner """
+
+        def inner(x):
+            if x < 2:
+                return 10
+            else:
+                inner(x - 1)
+        return inner(x)
+
+    def outer4(x):
+        """ Test recursive closure """
+        y = x + 1
+
+        def inner(x):
+            if x + y < 2:
+                return 10
+            else:
+                inner(x - 1)
+        return inner(x)
+
+    def outer5(x):
+        """ Test nested closure """
+        y = x + 1
+
+        def inner1(x):
+            z = y + x + 2
+
+            def inner2(x):
+                return x + z
+            return inner2(x) + y
+        return inner1(x)
+
+    def outer6(x):
+        """ Test closure with list comprehension in body """
+        y = x + 1
+
+        def inner1(x):
+            z = y + x + 2
+            return [t for t in range(z)]
+        return inner1(x)
+    _OUTER_SCOPE_VAR = 9
+
+    def outer7(x):
+        """ Test use of outer scope var, no closure """
+        z = x + 1
+        return x + z + _OUTER_SCOPE_VAR
+    _OUTER_SCOPE_VAR = 9
+
+    def outer8(x):
+        """ Test use of outer scope var, with closure """
+        z = x + 1
+
+        def inner(x):
+            return x + z + _OUTER_SCOPE_VAR
+        return inner(x)
+
+    def outer9(x):
+        """ Test closure assignment"""
+        z = x + 1
+
+        def inner(x):
+            return x + z
+        f = inner
+        return f(x)
+
+    def outer10(x):
+        """ Test two inner, one calls other """
+        z = x + 1
+
+        def inner(x):
+            return x + z
+
+        def inner2(x):
+            return inner(x)
+        return inner2(x)
+
+    def outer11(x):
+        """ return the closure """
+        z = x + 1
+
+        def inner(x):
+            return x + z
+        return inner
+
+    def outer12(x):
+        """ closure with kwarg"""
+        z = x + 1
+
+        def inner(x, kw=7):
+            return x + z + kw
+        return inner(x)
+
+    def outer13(x, kw=7):
+        """ outer with kwarg no closure"""
+        z = x + 1 + kw
+        return z
+
+    def outer14(x, kw=7):
+        """ outer with kwarg used in closure"""
+        z = x + 1
+
+        def inner(x):
+            return x + z + kw
+        return inner(x)
+
+    def outer15(x, kw=7):
+        """ outer with kwarg as arg to closure"""
+        z = x + 1
+
+        def inner(x, kw):
+            return x + z + kw
+        return inner(x, kw)
+
+    def outer16(x):
+        """ closure is generator, consumed locally """
+        z = x + 1
+
+        def inner(x):
+            yield (x + z)
+        return list(inner(x))
+
+    def outer17(x):
+        """ closure is generator, returned """
+        z = x + 1
+
+        def inner(x):
+            yield (x + z)
+        return inner(x)
+
+    def outer18(x):
+        """ closure is generator, consumed in loop """
+        z = x + 1
+
+        def inner(x):
+            yield (x + z)
+        for i in inner(x):
+            t = i
+        return t
+
+    def outer19(x):
+        """ closure as arg to another closure """
+        z1 = x + 1
+        z2 = x + 2
+
+        def inner(x):
+            return x + z1
+
+        def inner2(f, x):
+            return f(x) + z2
+        return inner2(inner, x)
+
+    def outer20(x):
+        """ Test calling numpy in closure """
+        z = x + 1
+
+        def inner(x):
+            return x + numpy.cos(z)
+        return inner(x)
+
+    def outer21(x):
+        """ Test calling numpy import as in closure """
+        z = x + 1
+
+        def inner(x):
+            return x + np.cos(z)
+        return inner(x)
+
+    def outer22():
+        """Test to ensure that unsupported *args raises correctly"""
+
+        def bar(a, b):
+            pass
+        x = (1, 2)
+        bar(*x)
+    f = [outer1, outer2, outer5, outer6, outer7, outer8, outer9, outer10, outer12, outer13, outer14, outer15, outer19, outer20, outer21]
+    for ref in f:
+        cfunc = njit(ref)
+        var = 10
+        self.assertEqual(cfunc(var), ref(var))
+    with self.assertRaises(NotImplementedError) as raises:
+        cfunc = jit(nopython=True)(outer3)
+        cfunc(var)
+    msg = 'Unsupported use of op_LOAD_CLOSURE encountered'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(NotImplementedError) as raises:
+        cfunc = jit(nopython=True)(outer4)
+        cfunc(var)
+    msg = 'Unsupported use of op_LOAD_CLOSURE encountered'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(TypingError) as raises:
+        cfunc = jit(nopython=True)(outer11)
+        cfunc(var)
+    msg = 'Cannot capture the non-constant value'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(UnsupportedError) as raises:
+        cfunc = jit(nopython=True)(outer16)
+        cfunc(var)
+    msg = 'The use of yield in a closure is unsupported.'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(UnsupportedError) as raises:
+        cfunc = jit(nopython=True)(outer17)
+        cfunc(var)
+    msg = 'The use of yield in a closure is unsupported.'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(UnsupportedError) as raises:
+        cfunc = jit(nopython=True)(outer18)
+        cfunc(var)
+    msg = 'The use of yield in a closure is unsupported.'
+    self.assertIn(msg, str(raises.exception))
+    with self.assertRaises(UnsupportedError) as raises:
+        cfunc = jit(nopython=True)(outer22)
+        cfunc()
+    msg = 'Calling a closure with *args is unsupported.'
+    self.assertIn(msg, str(raises.exception))

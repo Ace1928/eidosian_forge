@@ -1,0 +1,10 @@
+import subprocess
+import os
+import sys
+import random
+import threading
+import collections
+import logging
+import time
+def get_spark_application_driver_host(spark):
+    return spark.conf.get('spark.driver.host')

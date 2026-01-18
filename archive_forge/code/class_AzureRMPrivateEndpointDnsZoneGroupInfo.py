@@ -1,0 +1,48 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+class AzureRMPrivateEndpointDnsZoneGroupInfo(AzureRMModuleBase):
+
+    def __init__(self):
+        self.module_arg_spec = dict(name=dict(type='str'), private_endpoint=dict(type='str', required=True), resource_group=dict(type='str', required=True))
+        self.results = dict(changed=False, groups=[])
+        self.name = None
+        self.private_endpoint = None
+        self.resource_group = None
+        self.results = dict(changed=False)
+        super(AzureRMPrivateEndpointDnsZoneGroupInfo, self).__init__(self.module_arg_spec, supports_check_mode=True, supports_tags=False, facts_module=True)
+
+    def exec_module(self, **kwargs):
+        for key in list(self.module_arg_spec.keys()):
+            setattr(self, key, kwargs[key])
+        if self.name is not None:
+            self.results['groups'] = self.get_item()
+        else:
+            self.results['groups'] = self.list_items()
+        return self.results
+
+    def get_item(self):
+        self.log('Get properties for {0} in {1}'.format(self.name, self.private_endpoint))
+        try:
+            item = self.network_client.private_dns_zone_groups.get(resource_group_name=self.resource_group, private_endpoint_name=self.private_endpoint, private_dns_zone_group_name=self.name)
+            return [self.zone_to_dict(item)]
+        except ResourceNotFoundError:
+            self.log('Could not get info for {0} in {1}'.format(self.name, self.private_endpoint))
+        return []
+
+    def list_items(self):
+        self.log('List all in {0}'.format(self.private_endpoint))
+        try:
+            items = self.network_client.private_dns_zone_groups.list(private_endpoint_name=self.private_endpoint, resource_group_name=self.resource_group)
+            return [self.zone_to_dict(item) for item in items]
+        except ResourceNotFoundError as exc:
+            self.fail('Failed to list all items in {0}: {1}'.format(self.private_endpoint, str(exc)))
+
+    def zone_to_dict(self, zone):
+        zone_dict = zone.as_dict()
+        return dict(id=zone_dict.get('id'), name=zone_dict.get('name'), private_dns_zone_configs=[self.zone_config_to_dict(zone_config) for zone_config in zone_dict.get('private_dns_zone_configs', [])], provisioning_state=zone_dict.get('provisioning_state'))
+
+    def zone_config_to_dict(self, zone_config):
+        return dict(id=zone_config.get('id'), name=zone_config.get('name'), private_dns_zone_id=zone_config.get('private_dns_zone_id'), record_sets=[self.record_set_to_dict(record_set) for record_set in zone_config.get('record_sets', [])])
+
+    def record_set_to_dict(self, record_set):
+        return dict(fqdn=record_set.get('fqdn'), ip_addresses=record_set.get('ip_addresses'), provisioning_state=record_set.get('provisioning_state'), record_set_name=record_set.get('record_set_name'), record_type=record_set.get('record_type'), ttl=record_set.get('ttl'))

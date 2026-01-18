@@ -1,0 +1,95 @@
+import collections
+import itertools
+import json
+import os
+import sys
+import threading
+import warnings
+import weakref
+import numpy as np
+from tensorflow.core.protobuf import config_pb2
+from tensorflow.python import tf2
+from tensorflow.python.client import session as session_module
+from tensorflow.python.distribute import distribute_lib
+from tensorflow.python.eager import context
+from tensorflow.python.eager.context import get_config
+from tensorflow.python.framework import composite_tensor
+from tensorflow.python.framework import config
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import device_spec
+from tensorflow.python.framework import dtypes as dtypes_module
+from tensorflow.python.framework import func_graph
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import sparse_tensor
+from tensorflow.python.framework import tensor as tensor_lib
+from tensorflow.python.framework import tensor_conversion
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.keras import backend_config
+from tensorflow.python.keras.distribute import distribute_coordinator_utils as dc
+from tensorflow.python.keras.engine import keras_tensor
+from tensorflow.python.keras.utils import control_flow_util
+from tensorflow.python.keras.utils import object_identity
+from tensorflow.python.keras.utils import tf_contextlib
+from tensorflow.python.keras.utils import tf_inspect
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import clip_ops
+from tensorflow.python.ops import cond
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import ctc_ops as ctc
+from tensorflow.python.ops import functional_ops
+from tensorflow.python.ops import gradients as gradients_module
+from tensorflow.python.ops import image_ops
+from tensorflow.python.ops import init_ops
+from tensorflow.python.ops import linalg_ops
+from tensorflow.python.ops import logging_ops
+from tensorflow.python.ops import map_fn as map_fn_lib
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn
+from tensorflow.python.ops import random_ops
+from tensorflow.python.ops import sparse_ops
+from tensorflow.python.ops import state_ops
+from tensorflow.python.ops import tensor_array_grad  # pylint: disable=unused-import
+from tensorflow.python.ops import tensor_array_ops
+from tensorflow.python.ops import variable_v1
+from tensorflow.python.ops import variables as variables_module
+from tensorflow.python.ops import while_loop
+from tensorflow.python.ops.ragged import ragged_tensor
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.training import moving_averages
+from tensorflow.python.util import dispatch
+from tensorflow.python.util import nest
+from tensorflow.tools.docs import doc_controls
+@dispatch.add_dispatch_support
+@doc_controls.do_not_generate_docs
+def batch_set_value(tuples):
+    """Sets the values of many tensor variables at once.
+
+  Args:
+      tuples: a list of tuples `(tensor, value)`.
+          `value` should be a Numpy array.
+  """
+    if context.executing_eagerly() or ops.inside_function():
+        for x, value in tuples:
+            x.assign(np.asarray(value, dtype=dtype_numpy(x)))
+    else:
+        with get_graph().as_default():
+            if tuples:
+                assign_ops = []
+                feed_dict = {}
+                for x, value in tuples:
+                    value = np.asarray(value, dtype=dtype_numpy(x))
+                    tf_dtype = dtypes_module.as_dtype(x.dtype.name.split('_')[0])
+                    if hasattr(x, '_assign_placeholder'):
+                        assign_placeholder = x._assign_placeholder
+                        assign_op = x._assign_op
+                    else:
+                        placeholder_shape = tensor_shape.TensorShape([None] * value.ndim)
+                        assign_placeholder = array_ops.placeholder(tf_dtype, shape=placeholder_shape)
+                        assign_op = x.assign(assign_placeholder)
+                        x._assign_placeholder = assign_placeholder
+                        x._assign_op = assign_op
+                    assign_ops.append(assign_op)
+                    feed_dict[assign_placeholder] = value
+                get_session().run(assign_ops, feed_dict=feed_dict)

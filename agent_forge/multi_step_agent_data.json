@@ -1,0 +1,91 @@
+{
+  "memory": [
+    {
+      "role": "system",
+      "content": "Processing task: Summarize the latest ML papers about transformers"
+    },
+    {
+      "role": "assistant",
+      "content": "Thinking about: Summarize the latest ML papers about transformers (step 1/3)"
+    },
+    {
+      "role": "assistant",
+      "content": "Thinking about: Summarize the latest ML papers about transformers (step 2/3)"
+    },
+    {
+      "role": "assistant",
+      "content": "Thinking about: Summarize the latest ML papers about transformers (step 3/3)"
+    },
+    {
+      "role": "assistant",
+      "content": "Completed the task: Summarize the latest ML papers about transformers"
+    },
+    {
+      "role": "assistant",
+      "content": "Reflecting on the summary for additional insights."
+    }
+  ],
+  "logs": [
+    {
+      "level": "INFO",
+      "message": "=== SMOLAGENTS DEMO START ==="
+    },
+    {
+      "level": "INFO",
+      "message": "SMOLAgent - Run Agent\nSummarize the latest ML papers about transformers"
+    },
+    {
+      "level": "DEBUG",
+      "message": "Thinking about: Summarize the latest ML papers about transformers (step 1/3)"
+    },
+    {
+      "level": "DEBUG",
+      "message": "Thinking about: Summarize the latest ML papers about transformers (step 2/3)"
+    },
+    {
+      "level": "DEBUG",
+      "message": "Thinking about: Summarize the latest ML papers about transformers (step 3/3)"
+    },
+    {
+      "level": "INFO",
+      "message": "Completed the task: Summarize the latest ML papers about transformers"
+    },
+    {
+      "level": "INFO",
+      "message": "MultiStepAgent result: Completed the task: Summarize the latest ML papers about transformers"
+    },
+    {
+      "level": "DEBUG",
+      "message": "Agent stepping with memory_step: Reflecting on the summary for additional insights."
+    },
+    {
+      "level": "INFO",
+      "message": "Replaying Memory Steps:"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 1 - {'role': 'system', 'content': 'Processing task: Summarize the latest ML papers about transformers'}"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 2 - {'role': 'assistant', 'content': 'Thinking about: Summarize the latest ML papers about transformers (step 1/3)'}"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 3 - {'role': 'assistant', 'content': 'Thinking about: Summarize the latest ML papers about transformers (step 2/3)'}"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 4 - {'role': 'assistant', 'content': 'Thinking about: Summarize the latest ML papers about transformers (step 3/3)'}"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 5 - {'role': 'assistant', 'content': 'Completed the task: Summarize the latest ML papers about transformers'}"
+    },
+    {
+      "level": "INFO",
+      "message": "Step 6 - {'role': 'assistant', 'content': 'Reflecting on the summary for additional insights.'}"
+    }
+  ],
+  "monitor_tokens": 413
+}

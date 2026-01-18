@@ -1,0 +1,23 @@
+import warnings
+from scipy._lib import _pep440
+import numpy as np
+from numpy.testing import (assert_array_almost_equal,
+import pytest
+from pytest import raises as assert_raises
+from numpy import array, spacing, sin, pi, sort, sqrt
+from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
+from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
+class TestZpk2Tf:
+
+    def test_identity(self):
+        """Test the identity transfer function."""
+        z = []
+        p = []
+        k = 1.0
+        b, a = zpk2tf(z, p, k)
+        b_r = np.array([1.0])
+        a_r = np.array([1.0])
+        assert_array_equal(b, b_r)
+        assert_(isinstance(b, np.ndarray))
+        assert_array_equal(a, a_r)
+        assert_(isinstance(a, np.ndarray))

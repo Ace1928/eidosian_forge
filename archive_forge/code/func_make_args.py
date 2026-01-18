@@ -1,0 +1,21 @@
+from __future__ import annotations
+from operator import attrgetter
+from collections import defaultdict
+from sympy.utilities.exceptions import sympy_deprecation_warning
+from .sympify import _sympify as _sympify_, sympify
+from .basic import Basic
+from .cache import cacheit
+from .sorting import ordered
+from .logic import fuzzy_and
+from .parameters import global_parameters
+from sympy.utilities.iterables import sift
+from sympy.multipledispatch.dispatcher import (Dispatcher,
+@classmethod
+def make_args(cls, expr):
+    """
+        Return a set of args such that cls(*arg_set) == expr.
+        """
+    if isinstance(expr, cls):
+        return expr._argset
+    else:
+        return frozenset([sympify(expr)])

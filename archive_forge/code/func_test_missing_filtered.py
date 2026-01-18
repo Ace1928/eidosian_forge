@@ -1,0 +1,20 @@
+from breezy import osutils, tests
+def test_missing_filtered(self):
+    a_tree = self.make_branch_and_tree('a')
+    self.build_tree_contents([('a/a', b'initial\n')])
+    a_tree.add('a')
+    a_tree.commit(message='r1')
+    b_tree = a_tree.controldir.sprout('b').open_workingtree()
+    for i in range(2, 6):
+        a_tree.commit(message='a%d' % i)
+        b_tree.commit(message='b%d' % i)
+    out, err = self.run_bzr('missing ../b --my-revision 3', retcode=1, working_dir='a')
+    self.assertMessages(out, ('a3', 'b2', 'b3', 'b4', 'b5'), ('a2', 'a4'))
+    out, err = self.run_bzr('missing ../b --my-revision 3..4', retcode=1, working_dir='a')
+    self.assertMessages(out, ('a3', 'a4'), ('a2', 'a5'))
+    out, err = self.run_bzr('missing ../b -r 3', retcode=1, working_dir='a')
+    self.assertMessages(out, ('a2', 'a3', 'a4', 'a5', 'b3'), ('b2', 'b4'))
+    out, err = self.run_bzr('missing ../b -r 3..4', retcode=1, working_dir='a')
+    self.assertMessages(out, ('b3', 'b4'), ('b2', 'b5'))
+    out, err = self.run_bzr('missing ../b --my-revision 3..4 -r 3..4', retcode=1, working_dir='a')
+    self.assertMessages(out, ('a3', 'a4', 'b3', 'b4'), ('a2', 'a5', 'b2', 'b5'))

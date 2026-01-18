@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forgeengine"
+version = "0.1.0"
+description = "Narrative Engine with persistent memory"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name="Lloyd Handyside"}]
+dependencies = [
+    "transformers>=4.39.0",
+    "torch>=2.1.0",
+]
+
+[project.optional-dependencies]
+ dev = ["pytest"]
+
+[project.scripts]
+forgengine = "forgeengine.cli:main"

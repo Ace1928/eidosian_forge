@@ -1,0 +1,2 @@
+class KeystoneMiddlewareException(Exception):
+    pass

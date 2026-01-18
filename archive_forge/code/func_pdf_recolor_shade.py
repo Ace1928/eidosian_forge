@@ -1,0 +1,19 @@
+from sys import version_info as _swig_python_version_info
+import weakref
+import inspect
+import os
+import re
+import sys
+import traceback
+import inspect
+import io
+import os
+import sys
+import traceback
+import types
+def pdf_recolor_shade(self, reshade, opaque):
+    """
+        Class-aware wrapper for `::pdf_recolor_shade()`.
+        	Recolor a shade.
+        """
+    return _mupdf.PdfObj_pdf_recolor_shade(self, reshade, opaque)

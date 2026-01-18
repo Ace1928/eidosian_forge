@@ -1,0 +1,109 @@
+import unittest
+from traits.api import (
+from traits.testing.optional_dependencies import numpy, requires_numpy
+class CommonRangeTests(object):
+
+    def test_accepts_float(self):
+        self.model.percentage = 35.0
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 35.0)
+        with self.assertRaises(TraitError):
+            self.model.percentage = -0.5
+        with self.assertRaises(TraitError):
+            self.model.percentage = 100.5
+
+    def test_accepts_int(self):
+        self.model.percentage = 35
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 35.0)
+        with self.assertRaises(TraitError):
+            self.model.percentage = -1
+        with self.assertRaises(TraitError):
+            self.model.percentage = 101
+
+    def test_accepts_bool(self):
+        self.model.percentage = False
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 0.0)
+        self.model.percentage = True
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 1.0)
+
+    def test_rejects_bad_types(self):
+        non_floats = ['not a number', 'Σ', b'not a number', '3.5', '3', 3 + 4j, 0j, [1.2], (1.2,), None]
+        for non_float in non_floats:
+            with self.assertRaises(TraitError):
+                self.model.percentage = non_float
+
+    @requires_numpy
+    def test_accepts_numpy_types(self):
+        numpy_values = [numpy.uint8(25), numpy.uint16(25), numpy.uint32(25), numpy.uint64(25), numpy.int8(25), numpy.int16(25), numpy.int32(25), numpy.int64(25), numpy.float16(25), numpy.float32(25), numpy.float64(25)]
+        for numpy_value in numpy_values:
+            self.model.percentage = numpy_value
+            self.assertIs(type(self.model.percentage), float)
+            self.assertEqual(self.model.percentage, 25.0)
+
+    def test_accepts_float_subclass(self):
+        self.model.percentage = InheritsFromFloat(44.0)
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 44.0)
+        with self.assertRaises(TraitError):
+            self.model.percentage = InheritsFromFloat(-0.5)
+        with self.assertRaises(TraitError):
+            self.model.percentage = InheritsFromFloat(100.5)
+
+    def test_accepts_float_like(self):
+        self.model.percentage = FloatLike(35.0)
+        self.assertIs(type(self.model.percentage), float)
+        self.assertEqual(self.model.percentage, 35.0)
+        with self.assertRaises(TraitError):
+            self.model.percentage = FloatLike(-0.5)
+        with self.assertRaises(TraitError):
+            self.model.percentage = FloatLike(100.5)
+
+    def test_bad_float_like(self):
+        with self.assertRaises(ZeroDivisionError):
+            self.model.percentage = BadFloatLike()
+
+    def test_endpoints(self):
+        self.model.open = self.model.closed = 50.0
+        self.model.open_closed = self.model.closed_open = 50.0
+        self.assertEqual(self.model.open, 50.0)
+        self.assertEqual(self.model.closed, 50.0)
+        self.assertEqual(self.model.open_closed, 50.0)
+        self.assertEqual(self.model.closed_open, 50.0)
+        self.model.closed = self.model.closed_open = 0.0
+        self.assertEqual(self.model.closed, 0.0)
+        self.assertEqual(self.model.closed_open, 0.0)
+        with self.assertRaises(TraitError):
+            self.model.open = 0.0
+        with self.assertRaises(TraitError):
+            self.model.open_closed = 0.0
+        self.model.closed = self.model.open_closed = 100.0
+        self.assertEqual(self.model.closed, 100.0)
+        self.assertEqual(self.model.open_closed, 100.0)
+        with self.assertRaises(TraitError):
+            self.model.open = 100.0
+        with self.assertRaises(TraitError):
+            self.model.closed_open = 100.0
+
+    def test_half_infinite(self):
+        ice_temperatures = [-273.15, -273.0, -100.0, -1.0, -0.1, -0.001]
+        water_temperatures = [0.001, 0.1, 1.0, 50.0, 99.0, 99.9, 99.999]
+        steam_temperatures = [100.001, 100.1, 101.0, 1000.0, 1e+100]
+        for temperature in steam_temperatures:
+            self.model.steam_temperature = temperature
+            self.assertEqual(self.model.steam_temperature, temperature)
+        for temperature in ice_temperatures + water_temperatures:
+            self.model.steam_temperature = 1729.0
+            with self.assertRaises(TraitError):
+                self.model.steam_temperature = temperature
+            self.assertEqual(self.model.steam_temperature, 1729.0)
+        for temperature in ice_temperatures:
+            self.model.ice_temperature = temperature
+            self.assertEqual(self.model.ice_temperature, temperature)
+        for temperature in water_temperatures + steam_temperatures:
+            self.model.ice_temperature = -1729.0
+            with self.assertRaises(TraitError):
+                self.model.ice_temperature = temperature
+            self.assertEqual(self.model.ice_temperature, -1729.0)

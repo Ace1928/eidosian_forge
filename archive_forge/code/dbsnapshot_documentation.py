@@ -1,0 +1,11 @@
+
+        Update the DB snapshot's status information by making a call to fetch
+        the current snapshot attributes from the service.
+
+        :type validate: bool
+        :param validate: By default, if EC2 returns no data about the
+                         instance the update method returns quietly.  If
+                         the validate param is True, however, it will
+                         raise a ValueError exception if no data is
+                         returned from EC2.
+        

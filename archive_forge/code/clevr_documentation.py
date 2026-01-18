@@ -1,0 +1,21 @@
+import json
+import pathlib
+from typing import Any, Callable, List, Optional, Tuple
+from urllib.parse import urlparse
+from PIL import Image
+from .utils import download_and_extract_archive, verify_str_arg
+from .vision import VisionDataset
+`CLEVR <https://cs.stanford.edu/people/jcjohns/clevr/>`_  classification dataset.
+
+    The number of objects in a scene are used as label.
+
+    Args:
+        root (string): Root directory of dataset where directory ``root/clevr`` exists or will be saved to if download is
+            set to True.
+        split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
+        transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed
+            version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in them target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the internet and puts it in root directory. If
+            dataset is already downloaded, it is not downloaded again.
+    

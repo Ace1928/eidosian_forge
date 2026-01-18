@@ -1,0 +1,142 @@
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
+from modin.logging import ClassLogger
+class BaseDataframeAxisPartition(ABC, ClassLogger, modin_layer='VIRTUAL-PARTITION'):
+    """
+    An abstract class that represents the parent class for any axis partition class.
+
+    This class is intended to simplify the way that operations are performed.
+
+    Attributes
+    ----------
+    _PARTITIONS_METADATA_LEN : int
+        The number of metadata values that the object of `partition_type` consumes.
+    """
+
+    @property
+    @abstractmethod
+    def list_of_blocks(self) -> list:
+        """Get the list of physical partition objects that compose this partition."""
+        pass
+
+    def apply(self, func: Callable, *args: Iterable, num_splits: Optional[int]=None, other_axis_partition: Optional['BaseDataframeAxisPartition']=None, maintain_partitioning: bool=True, lengths: Optional[Iterable]=None, manual_partition: bool=False, **kwargs: dict) -> Any:
+        """
+        Apply a function to this axis partition along full axis.
+
+        Parameters
+        ----------
+        func : callable
+            The function to apply. This will be preprocessed according to
+            the corresponding `BaseDataframePartition` objects.
+        *args : iterable
+            Positional arguments to pass to `func`.
+        num_splits : int, default: None
+            The number of times to split the result object.
+        other_axis_partition : BaseDataframeAxisPartition, default: None
+            Another `BaseDataframeAxisPartition` object to be applied
+            to func. This is for operations that are between two data sets.
+        maintain_partitioning : bool, default: True
+            Whether to keep the partitioning in the same
+            orientation as it was previously or not. This is important because we may be
+            operating on an individual axis partition and not touching the rest.
+            In this case, we have to return the partitioning to its previous
+            orientation (the lengths will remain the same). This is ignored between
+            two axis partitions.
+        lengths : iterable, default: None
+            The list of lengths to shuffle the partition into.
+        manual_partition : bool, default: False
+            If True, partition the result with `lengths`.
+        **kwargs : dict
+            Additional keywords arguments to be passed in `func`.
+
+        Returns
+        -------
+        list
+            A list of `BaseDataframePartition` objects.
+
+        Notes
+        -----
+        The procedures that invoke this method assume full axis
+        knowledge. Implement this method accordingly.
+
+        You must return a list of `BaseDataframePartition` objects from this method.
+        """
+        pass
+    instance_type = None
+    partition_type = None
+    _PARTITIONS_METADATA_LEN = 0
+
+    def _wrap_partitions(self, partitions: list, extract_metadata: Optional[bool]=None) -> list:
+        """
+        Wrap remote partition objects with `BaseDataframePartition` class.
+
+        Parameters
+        ----------
+        partitions : list
+            List of remotes partition objects to be wrapped with `BaseDataframePartition` class.
+        extract_metadata : bool, optional
+            Whether the partitions list contains information about partition's metadata.
+            If `None` was passed will take the argument's value from the value of `cls._PARTITIONS_METADATA_LEN`.
+
+        Returns
+        -------
+        list
+            List of wrapped remote partition objects.
+        """
+        assert self.partition_type is not None
+        assert self.instance_type is not None
+        if extract_metadata is None:
+            extract_metadata = bool(self._PARTITIONS_METADATA_LEN)
+        if extract_metadata:
+            return [self.partition_type(*init_args) for init_args in zip(*[iter(partitions)] * (1 + self._PARTITIONS_METADATA_LEN))]
+        else:
+            return [self.partition_type(object_id) for object_id in partitions]
+
+    def force_materialization(self, get_ip: bool=False) -> 'BaseDataframeAxisPartition':
+        """
+        Materialize axis partitions into a single partition.
+
+        Parameters
+        ----------
+        get_ip : bool, default: False
+            Whether to get node ip address to a single partition or not.
+
+        Returns
+        -------
+        BaseDataframeAxisPartition
+            An axis partition containing only a single materialized partition.
+        """
+        materialized = self.apply(lambda x: x, num_splits=1, maintain_partitioning=False)
+        return type(self)(materialized, get_ip=get_ip)
+
+    def unwrap(self, squeeze: bool=False, get_ip: bool=False) -> Union[list, Tuple[list, list]]:
+        """
+        Unwrap partitions from this axis partition.
+
+        Parameters
+        ----------
+        squeeze : bool, default: False
+            Flag used to unwrap only one partition.
+        get_ip : bool, default: False
+            Whether to get node ip address to each partition or not.
+
+        Returns
+        -------
+        list
+            List of partitions from this axis partition.
+
+        Notes
+        -----
+        If `get_ip=True`, a tuple of lists of Ray.ObjectRef/Dask.Future to node ip addresses and
+        unwrapped partitions, respectively, is returned if Ray/Dask is used as an engine
+        (i.e. [(Ray.ObjectRef/Dask.Future, Ray.ObjectRef/Dask.Future), ...]).
+        """
+        if squeeze and len(self.list_of_blocks) == 1:
+            if get_ip:
+                return (self.list_of_ips[0], self.list_of_blocks[0])
+            else:
+                return self.list_of_blocks[0]
+        elif get_ip:
+            return list(zip(self.list_of_ips, self.list_of_blocks))
+        else:
+            return self.list_of_blocks

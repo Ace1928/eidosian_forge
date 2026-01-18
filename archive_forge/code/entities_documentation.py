@@ -1,0 +1,1 @@
+HTML character entity references.

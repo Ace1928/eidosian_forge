@@ -1,0 +1,18 @@
+from __future__ import annotations
+import datetime
+import functools
+import operator
+import pickle
+from array import array
+import pytest
+from tlz import curry
+from dask import get
+from dask.highlevelgraph import HighLevelGraph
+from dask.optimization import SubgraphCallable
+from dask.utils import (
+from dask.utils_test import inc
+def test_ensure_bytes_pyarrow_buffer():
+    pa = pytest.importorskip('pyarrow')
+    buf = pa.py_buffer(b'123')
+    result = ensure_bytes(buf)
+    assert isinstance(result, bytes)

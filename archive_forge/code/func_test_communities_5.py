@@ -1,0 +1,24 @@
+import logging
+import pyomo.common.unittest as unittest
+from io import StringIO
+from pyomo.common.dependencies import networkx_available, matplotlib_available
+from pyomo.common.log import LoggingIntercept
+from pyomo.common.tempfiles import TempfileManager
+from pyomo.environ import (
+from pyomo.contrib.community_detection.detection import (
+from pyomo.contrib.community_detection.community_graph import generate_model_graph
+from pyomo.solvers.tests.models.LP_unbounded import LP_unbounded
+from pyomo.solvers.tests.models.QP_simple import QP_simple
+from pyomo.solvers.tests.models.LP_inactive_index import LP_inactive_index
+from pyomo.solvers.tests.models.SOS1_simple import SOS1_simple
+def test_communities_5(self):
+    model = m = create_model_5()
+    test_community_maps, test_partitions = _collect_community_maps(model)
+    correct_partitions = [{6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 1, 7: 2, 8: 4, 9: 0, 10: 3, 11: 5}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 1, 7: 2, 8: 4, 9: 0, 10: 3, 11: 5}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 1, 7: 2, 8: 4, 9: 0, 10: 3, 11: 5}, {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}, {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 1, 7: 2, 8: 4, 9: 0, 10: 3, 11: 5}]
+    if correct_partitions == test_partitions:
+        str_test_community_maps = [str(community_map) for community_map in test_community_maps]
+        correct_community_maps = ["{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['obj', 'c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c3'], ['i1']), 1: (['obj'], ['i2']), 2: (['c1'], ['i3']), 3: (['c4'], ['i4']), 4: (['c2'], ['i5']), 5: (['c5'], ['i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c3'], ['i1']), 1: (['obj'], ['i2']), 2: (['c1'], ['i3']), 3: (['c4'], ['i4']), 4: (['c2'], ['i5']), 5: (['c5'], ['i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c3'], ['i1']), 1: (['obj'], ['i2']), 2: (['c1'], ['i3']), 3: (['c4'], ['i4']), 4: (['c2'], ['i5']), 5: (['c5'], ['i6'])}", "{0: (['c1', 'c2', 'c3', 'c4', 'c5'], ['i1', 'i2', 'i3', 'i4', 'i5', 'i6'])}", "{0: (['c3'], ['i1']), 1: (['obj'], ['i2']), 2: (['c1'], ['i3']), 3: (['c4'], ['i4']), 4: (['c2'], ['i5']), 5: (['c5'], ['i6'])}"]
+        self.assertEqual(correct_community_maps, str_test_community_maps)
+    correct_num_communities, correct_num_nodes, test_num_communities, test_num_nodes = _collect_partition_dependent_tests(test_community_maps, test_partitions)
+    self.assertEqual(correct_num_communities, test_num_communities)
+    self.assertEqual(correct_num_nodes, test_num_nodes)

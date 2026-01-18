@@ -1,0 +1,14 @@
+class SUNW_SYMINFO_FLAGS(object):
+    """ Flags for the si_flags field of entries
+        in the .SUNW_syminfo section
+    """
+    SYMINFO_FLG_DIRECT = 1
+    SYMINFO_FLG_FILTER = 2
+    SYMINFO_FLG_COPY = 4
+    SYMINFO_FLG_LAZYLOAD = 8
+    SYMINFO_FLG_DIRECTBIND = 16
+    SYMINFO_FLG_NOEXTDIRECT = 32
+    SYMINFO_FLG_AUXILIARY = 64
+    SYMINFO_FLG_INTERPOSE = 128
+    SYMINFO_FLG_CAP = 256
+    SYMINFO_FLG_DEFERRED = 512

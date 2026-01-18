@@ -1,0 +1,182 @@
+from typing import Sequence, Callable
+import pennylane as qml
+from pennylane.measurements import MidMeasureMP, ProbabilityMP, SampleMP, CountsMP, MeasurementValue
+from pennylane.ops.op_math import ctrl
+from pennylane.tape import QuantumTape
+from pennylane.transforms import transform
+from pennylane.wires import Wires
+from pennylane.queuing import QueuingManager
+@transform
+def defer_measurements(tape: QuantumTape, **kwargs) -> (Sequence[QuantumTape], Callable):
+    """Quantum function transform that substitutes operations conditioned on
+    measurement outcomes to controlled operations.
+
+    This transform uses the `deferred measurement principle
+    <https://en.wikipedia.org/wiki/Deferred_Measurement_Principle>`_ and
+    applies to qubit-based quantum functions.
+
+    Support for mid-circuit measurements is device-dependent. If a device
+    doesn't support mid-circuit measurements natively, then the QNode will
+    apply this transform.
+
+    .. note::
+
+        The transform uses the :func:`~.ctrl` transform to implement operations
+        controlled on mid-circuit measurement outcomes. The set of operations
+        that can be controlled as such depends on the set of operations
+        supported by the chosen device.
+
+    .. note::
+
+        Devices that inherit from :class:`~pennylane.QubitDevice` **must** be initialized
+        with an additional wire for each mid-circuit measurement after which the measured
+        wire is reused or reset for ``defer_measurements`` to transform the quantum tape
+        correctly.
+
+    .. note::
+
+        This transform does not change the list of terminal measurements returned by
+        the quantum function.
+
+    .. note::
+
+        When applying the transform on a quantum function that contains the
+        :class:`~.Snapshot` instruction, state information corresponding to
+        simulating the transformed circuit will be obtained. No
+        post-measurement states are considered.
+
+    .. warning::
+
+        :func:`~.pennylane.state` is not supported with the ``defer_measurements`` transform.
+        Additionally, :func:`~.pennylane.probs`, :func:`~.pennylane.sample` and
+        :func:`~.pennylane.counts` can only be used with ``defer_measurements`` if wires
+        or an observable are explicitly specified.
+
+    .. warning::
+
+        ``defer_measurements`` does not support using custom wire labels if any measured
+        wires are reused or reset.
+
+    Args:
+        tape (QNode or QuantumTape or Callable): a quantum circuit.
+
+    Returns:
+        qnode (QNode) or quantum function (Callable) or tuple[List[QuantumTape], function]: The
+        transformed circuit as described in :func:`qml.transform <pennylane.transform>`.
+
+    Raises:
+        ValueError: If custom wire labels are used with qubit reuse or reset
+        ValueError: If any measurements with no wires or observable are present
+        ValueError: If continuous variable operations or measurements are present
+        ValueError: If using the transform with any device other than
+            :class:`default.qubit <~pennylane.devices.DefaultQubit>` and postselection is used
+
+    **Example**
+
+    Suppose we have a quantum function with mid-circuit measurements and
+    conditional operations:
+
+    .. code-block:: python3
+
+        def qfunc(par):
+            qml.RY(0.123, wires=0)
+            qml.Hadamard(wires=1)
+            m_0 = qml.measure(1)
+            qml.cond(m_0, qml.RY)(par, wires=0)
+            return qml.expval(qml.Z(0))
+
+    The ``defer_measurements`` transform allows executing such quantum
+    functions without having to perform mid-circuit measurements:
+
+    >>> dev = qml.device('default.qubit', wires=2)
+    >>> transformed_qfunc = qml.defer_measurements(qfunc)
+    >>> qnode = qml.QNode(transformed_qfunc, dev)
+    >>> par = np.array(np.pi/2, requires_grad=True)
+    >>> qnode(par)
+    tensor(0.43487747, requires_grad=True)
+
+    We can also differentiate parameters passed to conditional operations:
+
+    >>> qml.grad(qnode)(par)
+    tensor(-0.49622252, requires_grad=True)
+
+    Reusing and reseting measured wires will work as expected with the
+    ``defer_measurements`` transform:
+
+    .. code-block:: python3
+
+        dev = qml.device("default.qubit", wires=3)
+
+        @qml.qnode(dev)
+        def func(x, y):
+            qml.RY(x, wires=0)
+            qml.CNOT(wires=[0, 1])
+            m_0 = qml.measure(1, reset=True)
+
+            qml.cond(m_0, qml.RY)(y, wires=0)
+            qml.RX(np.pi/4, wires=1)
+            return qml.probs(wires=[0, 1])
+
+    Executing this QNode:
+
+    >>> pars = np.array([0.643, 0.246], requires_grad=True)
+    >>> func(*pars)
+    tensor([0.76960924, 0.13204407, 0.08394415, 0.01440254], requires_grad=True)
+    """
+    if not any((isinstance(o, MidMeasureMP) for o in tape.operations)):
+        return ((tape,), null_postprocessing)
+    _check_tape_validity(tape)
+    device = kwargs.get('device', None)
+    device = kwargs.get('device', None)
+    new_operations = []
+    measured_wires, reused_measurement_wires, any_repeated_measurements, is_postselecting = _collect_mid_measure_info(tape)
+    if is_postselecting and device is not None and (not isinstance(device, qml.devices.DefaultQubit)):
+        raise ValueError(f'Postselection is not supported on the {device} device.')
+    if len(reused_measurement_wires) > 0 and (not all((isinstance(w, int) for w in tape.wires))):
+        raise ValueError('qml.defer_measurements does not support custom wire labels with qubit reuse/reset.')
+    control_wires = {}
+    cur_wire = max(tape.wires) + 1 if reused_measurement_wires or any_repeated_measurements else None
+    for op in tape.operations:
+        if isinstance(op, MidMeasureMP):
+            _ = measured_wires.pop(0)
+            if op.postselect is not None:
+                with QueuingManager.stop_recording():
+                    new_operations.append(qml.Projector([op.postselect], wires=op.wires[0]))
+            if op.wires[0] in reused_measurement_wires or op.wires[0] in measured_wires:
+                control_wires[op.id] = cur_wire
+                with QueuingManager.stop_recording():
+                    new_operations.append(qml.CNOT([op.wires[0], cur_wire]))
+                if op.reset:
+                    with QueuingManager.stop_recording():
+                        if op.postselect is None:
+                            new_operations.append(qml.CNOT([cur_wire, op.wires[0]]))
+                        elif op.postselect == 1:
+                            new_operations.append(qml.X(op.wires[0]))
+                cur_wire += 1
+            else:
+                control_wires[op.id] = op.wires[0]
+        elif op.__class__.__name__ == 'Conditional':
+            with QueuingManager.stop_recording():
+                new_operations.extend(_add_control_gate(op, control_wires))
+        else:
+            new_operations.append(op)
+    new_measurements = []
+    for mp in tape.measurements:
+        if mp.mv is not None:
+            if isinstance(mp.mv, MeasurementValue):
+                new_ms = [qml.map_wires(m, {m.wires[0]: control_wires[m.id]}) for m in mp.mv.measurements]
+                new_m = MeasurementValue(new_ms, mp.mv.processing_fn)
+            else:
+                new_m = []
+                for val in mp.mv:
+                    new_ms = [qml.map_wires(m, {m.wires[0]: control_wires[m.id]}) for m in val.measurements]
+                    new_m.append(MeasurementValue(new_ms, val.processing_fn))
+            with QueuingManager.stop_recording():
+                new_mp = type(mp)(obs=new_m) if not isinstance(mp, CountsMP) else CountsMP(obs=new_m, all_outcomes=mp.all_outcomes)
+        else:
+            new_mp = mp
+        new_measurements.append(new_mp)
+    new_tape = type(tape)(new_operations, new_measurements, shots=tape.shots)
+    if is_postselecting and new_tape.batch_size is not None:
+        return qml.transforms.broadcast_expand(new_tape)
+    return ([new_tape], null_postprocessing)

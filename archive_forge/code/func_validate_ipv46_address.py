@@ -1,0 +1,20 @@
+import ipaddress
+import math
+import re
+from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
+from django.utils.encoding import punycode
+from django.utils.ipv6 import is_valid_ipv6_address
+from django.utils.regex_helper import _lazy_re_compile
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext_lazy
+def validate_ipv46_address(value):
+    try:
+        validate_ipv4_address(value)
+    except ValidationError:
+        try:
+            validate_ipv6_address(value)
+        except ValidationError:
+            raise ValidationError(_('Enter a valid IPv4 or IPv6 address.'), code='invalid', params={'value': value})

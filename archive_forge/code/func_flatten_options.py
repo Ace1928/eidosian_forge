@@ -1,0 +1,49 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.community.general.plugins.module_utils.hwc_utils import (
+def flatten_options(response, array_index):
+    r = dict()
+    v = navigate_value(response, ['read', 'OS-EXT-AZ:availability_zone'], array_index)
+    r['availability_zone'] = v
+    v = navigate_value(response, ['read', 'config_drive'], array_index)
+    r['config_drive'] = v
+    v = navigate_value(response, ['read', 'created'], array_index)
+    r['created'] = v
+    v = flatten_data_volumes(response, array_index)
+    r['data_volumes'] = v
+    v = navigate_value(response, ['read', 'description'], array_index)
+    r['description'] = v
+    v = navigate_value(response, ['read', 'OS-DCF:diskConfig'], array_index)
+    r['disk_config_type'] = v
+    v = flatten_enable_auto_recovery(response, array_index)
+    r['enable_auto_recovery'] = v
+    v = navigate_value(response, ['read', 'enterprise_project_id'], array_index)
+    r['enterprise_project_id'] = v
+    v = navigate_value(response, ['read', 'flavor', 'id'], array_index)
+    r['flavor_name'] = v
+    v = navigate_value(response, ['read', 'OS-EXT-SRV-ATTR:hostname'], array_index)
+    r['host_name'] = v
+    v = navigate_value(response, ['read', 'image', 'id'], array_index)
+    r['image_id'] = v
+    v = navigate_value(response, ['read', 'metadata', 'image_name'], array_index)
+    r['image_name'] = v
+    v = navigate_value(response, ['read', 'name'], array_index)
+    r['name'] = v
+    v = flatten_nics(response, array_index)
+    r['nics'] = v
+    v = navigate_value(response, ['read', 'OS-EXT-STS:power_state'], array_index)
+    r['power_state'] = v
+    v = flatten_root_volume(response, array_index)
+    r['root_volume'] = v
+    v = navigate_value(response, ['read', 'OS-EXT-SRV-ATTR:instance_name'], array_index)
+    r['server_alias'] = v
+    v = flatten_server_tags(response, array_index)
+    r['server_tags'] = v
+    v = navigate_value(response, ['read', 'key_name'], array_index)
+    r['ssh_key_name'] = v
+    v = navigate_value(response, ['read', 'status'], array_index)
+    r['status'] = v
+    v = navigate_value(response, ['read', 'OS-EXT-SRV-ATTR:user_data'], array_index)
+    r['user_data'] = v
+    v = navigate_value(response, ['read', 'metadata', 'vpc_id'], array_index)
+    r['vpc_id'] = v
+    return r

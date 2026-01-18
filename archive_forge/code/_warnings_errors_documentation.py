@@ -1,0 +1,1 @@
+Represents an error condition when fitting a distribution to data.

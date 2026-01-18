@@ -1,0 +1,20 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def create_access_key(self, user_name=None):
+    """
+        Create a new AWS Secret Access Key and corresponding AWS Access Key ID
+        for the specified user.  The default status for new keys is Active
+
+        If the user_name is not specified, the user_name is determined
+        implicitly based on the AWS Access Key ID used to sign the request.
+
+        :type user_name: string
+        :param user_name: The username of the user
+
+        """
+    params = {'UserName': user_name}
+    return self.get_response('CreateAccessKey', params)

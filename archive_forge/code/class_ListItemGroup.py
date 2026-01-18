@@ -1,0 +1,12 @@
+from traitlets import (
+from .VuetifyWidget import VuetifyWidget
+class ListItemGroup(VuetifyWidget):
+    _model_name = Unicode('ListItemGroupModel').tag(sync=True)
+    active_class = Unicode(None, allow_none=True).tag(sync=True)
+    color = Unicode(None, allow_none=True).tag(sync=True)
+    dark = Bool(None, allow_none=True).tag(sync=True)
+    light = Bool(None, allow_none=True).tag(sync=True)
+    mandatory = Bool(None, allow_none=True).tag(sync=True)
+    max = Union([Float(), Unicode()], default_value=None, allow_none=True).tag(sync=True)
+    multiple = Bool(None, allow_none=True).tag(sync=True)
+    value = Any(None, allow_none=True).tag(sync=True)

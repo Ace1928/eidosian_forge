@@ -1,0 +1,16 @@
+import array
+import numbers
+from collections.abc import Mapping, Sequence
+from typing import Any, Iterable
+from .const import INT_MAX_VALUE, INT_MIN_VALUE, LONG_MAX_VALUE, LONG_MIN_VALUE
+from ._validate_common import ValidationError, ValidationErrorData
+from .schema import extract_record_type, extract_logical_type, schema_name, parse_schema
+from .logical_writers import LOGICAL_WRITERS
+from ._schema_common import UnknownType
+from .types import Schema, NamedSchemas
+def _validate_fixed(datum, schema, **kwargs):
+    """
+    Check that the data value is fixed width bytes,
+    matching the schema['size'] exactly!
+    """
+    return isinstance(datum, bytes) and len(datum) == schema['size']

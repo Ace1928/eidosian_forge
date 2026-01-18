@@ -1,0 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.container.gkemulticloud import util as api_util
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.command_lib.container.gkemulticloud import constants
+from googlecloudsdk.command_lib.projects import util as project_util
+from googlecloudsdk.command_lib.util.apis import arg_utils
+from googlecloudsdk.core import properties
+def AddClearTags(parser, noun):
+    """Adds flag for clearing the tags.
+
+  Args:
+    parser: The argparse.parser to add the arguments to.
+    noun: The resource type to which the flag is applicable.
+  """
+    parser.add_argument('--clear-tags', action='store_true', default=None, help="Clear any tags associated with the {}'s nodes. ".format(noun))

@@ -1,0 +1,32 @@
+from sympy.calculus.accumulationbounds import AccumBounds
+from sympy.core.add import Add
+from sympy.core.basic import Basic
+from sympy.core.containers import (Dict, Tuple)
+from sympy.core.function import (Derivative, Function, Lambda, Subs)
+from sympy.core.mul import Mul
+from sympy.core.numbers import (Float, I, Integer, Rational, oo, pi, zoo)
+from sympy.core.relational import Eq
+from sympy.core.singleton import S
+from sympy.core.symbol import (Symbol, Wild, symbols)
+from sympy.core.sympify import SympifyError
+from sympy.functions.elementary.exponential import (exp, log)
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import (atan2, cos, cot, sin, tan)
+from sympy.matrices.dense import (Matrix, zeros)
+from sympy.matrices.expressions.special import ZeroMatrix
+from sympy.polys.polytools import factor
+from sympy.polys.rootoftools import RootOf
+from sympy.simplify.cse_main import cse
+from sympy.simplify.simplify import nsimplify
+from sympy.core.basic import _aresame
+from sympy.testing.pytest import XFAIL, raises
+from sympy.abc import a, x, y, z, t
+def test_simultaneous_subs():
+    reps = {x: 0, y: 0}
+    assert (x / y).subs(reps) != (y / x).subs(reps)
+    assert (x / y).subs(reps, simultaneous=True) == (y / x).subs(reps, simultaneous=True)
+    reps = reps.items()
+    assert (x / y).subs(reps) != (y / x).subs(reps)
+    assert (x / y).subs(reps, simultaneous=True) == (y / x).subs(reps, simultaneous=True)
+    assert Derivative(x, y, z).subs(reps, simultaneous=True) == Subs(Derivative(0, y, z), y, 0)

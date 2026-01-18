@@ -1,0 +1,85 @@
+import math
+import os
+import re
+import dis
+import numbers
+import platform
+import sys
+import subprocess
+import types as pytypes
+import warnings
+from functools import reduce
+import numpy as np
+from numpy.random import randn
+import operator
+from collections import defaultdict, namedtuple
+import copy
+from itertools import cycle, chain
+import subprocess as subp
+import numba.parfors.parfor
+from numba import (njit, prange, parallel_chunksize,
+from numba.core import (types, errors, ir, rewrites,
+from numba.extending import (overload_method, register_model,
+from numba.core.registry import cpu_target
+from numba.core.annotations import type_annotations
+from numba.core.ir_utils import (find_callname, guard, build_definitions,
+from numba.np.unsafe.ndarray import empty_inferred as unsafe_empty
+from numba.core.compiler import (CompilerBase, DefaultPassBuilder)
+from numba.core.compiler_machinery import register_pass, AnalysisPass
+from numba.core.typed_passes import IRLegalization
+from numba.tests.support import (TestCase, captured_stdout, MemoryLeakMixin,
+from numba.core.extending import register_jitable
+from numba.core.bytecode import _fix_LOAD_GLOBAL_arg
+from numba.core import utils
+import cmath
+import unittest
+@linux_only
+@TestCase.run_test_in_subprocess(envvars={'NUMBA_BOUNDSCHECK': '0'})
+def test_signed_vs_unsigned_vec_asm(self):
+    """ This checks vectorization for signed vs unsigned variants of a
+        trivial accumulator, the only meaningful difference should be the
+        presence of signed vs. unsigned unpack instructions (for the
+        induction var).
+        """
+
+    def signed_variant():
+        n = 4096
+        A = 0.0
+        for i in range(-n, 0):
+            A += i
+        return A
+
+    def unsigned_variant():
+        n = 4096
+        A = 0.0
+        for i in range(n):
+            A += i
+        return A
+    self.assertFalse(config.BOUNDSCHECK)
+    signed_asm = self.get_gufunc_asm(signed_variant, 'signed', fastmath=True)
+    unsigned_asm = self.get_gufunc_asm(unsigned_variant, 'unsigned', fastmath=True)
+
+    def strip_instrs(asm):
+        acc = []
+        for x in asm.splitlines():
+            spd = x.strip()
+            if spd != '' and (not (spd.startswith('.') or spd.startswith('_') or spd.startswith('"') or ('__numba_parfor_gufunc' in spd))):
+                acc.append(re.sub('[\t]', '', spd))
+        return acc
+    for k, v in signed_asm.items():
+        signed_instr = strip_instrs(v)
+        break
+    for k, v in unsigned_asm.items():
+        unsigned_instr = strip_instrs(v)
+        break
+    from difflib import SequenceMatcher as sm
+    self.assertEqual(len(signed_instr), len(unsigned_instr))
+    for a, b in zip(signed_instr, unsigned_instr):
+        if a == b:
+            continue
+        else:
+            s = sm(lambda x: x == '\t', a, b)
+            ops = s.get_opcodes()
+            for op in ops:
+                if op[0] == 'insert':
+                    self.assertEqual(b[op[-2]:op[-1]], 'u')

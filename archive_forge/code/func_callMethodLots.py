@@ -1,0 +1,11 @@
+import pickle
+import sys
+from unittest import skipIf
+from twisted.python import threadable
+from twisted.trial.unittest import FailTest, SynchronousTestCase
+def callMethodLots():
+    try:
+        for i in range(1000):
+            o.aMethod()
+    except AssertionError as e:
+        errors.append(str(e))

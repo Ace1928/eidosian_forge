@@ -1,0 +1,25 @@
+from __future__ import absolute_import, division, print_function
+from datetime import datetime
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.six import string_types
+from ..module_utils.bigip import F5RestClient
+from ..module_utils.common import (
+from ..module_utils.icontrol import tmos_version
+from ..module_utils.teem import send_teem
+class BaseParameters(AnsibleF5Parameters):
+
+    @property
+    def api_map(self):
+        return {}
+
+    @property
+    def api_attributes(self):
+        return []
+
+    @property
+    def returnables(self):
+        return []
+
+    @property
+    def updatables(self):
+        return []

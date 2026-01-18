@@ -1,0 +1,50 @@
+from typing import Type
+from ..lazy_import import lazy_import
+import itertools
+from breezy import (
+from breezy.bzr import (
+from .. import errors
+from .. import transport as _mod_transport
+from ..repository import InterRepository, IsInWriteGroupError, Repository
+from .repository import RepositoryFormatMetaDir
+from .serializer import Serializer
+from .vf_repository import (InterSameDataRepository,
+class RepositoryFormatKnit4(RepositoryFormatKnit):
+    """Bzr repository knit format 4.
+
+    This repository format has everything in format 3, except for
+    tree-references:
+     - knits for file texts and inventory
+     - hash subdirectory based stores.
+     - knits for revisions and signatures
+     - TextStores for revisions and signatures.
+     - a format marker of its own
+     - an optional 'shared-storage' flag
+     - an optional 'no-working-trees' flag
+     - a LockDir lock
+     - support for recording full info about the tree root
+    """
+    repository_class = KnitRepository
+    _commit_builder_class = VersionedFileCommitBuilder
+    rich_root_data = True
+    supports_tree_reference = False
+
+    @property
+    def _serializer(self):
+        return xml6.serializer_v6
+
+    def _get_matching_bzrdir(self):
+        return controldir.format_registry.make_controldir('rich-root')
+
+    def _ignore_setting_bzrdir(self, format):
+        pass
+    _matchingcontroldir = property(_get_matching_bzrdir, _ignore_setting_bzrdir)
+
+    @classmethod
+    def get_format_string(cls):
+        """See RepositoryFormat.get_format_string()."""
+        return b'Bazaar Knit Repository Format 4 (bzr 1.0)\n'
+
+    def get_format_description(self):
+        """See RepositoryFormat.get_format_description()."""
+        return 'Knit repository format 4'

@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def delete_item_to_dict(bundle):
+    return dict(tags=bundle.properties._tags, kid=bundle.properties.id, version=bundle.properties.version, managed=bundle.properties.managed, attributes=dict(enabled=bundle.properties.enabled, not_before=bundle.properties.not_before, expires=bundle.properties.expires_on, created=bundle.properties.created_on, updated=bundle.properties.updated_on, recovery_level=bundle.properties.recovery_level))

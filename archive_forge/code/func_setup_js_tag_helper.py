@@ -1,0 +1,75 @@
+import html
+import os
+import posixpath
+import re
+import sys
+import warnings
+from datetime import datetime
+from os import path
+from typing import IO, Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type
+from urllib.parse import quote
+import docutils.readers.doctree
+from docutils import nodes
+from docutils.core import Publisher
+from docutils.frontend import OptionParser
+from docutils.io import DocTreeInput, StringOutput
+from docutils.nodes import Node
+from docutils.utils import relative_path
+from sphinx import __display_version__, package_dir
+from sphinx import version_info as sphinx_version
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.config import ENUM, Config
+from sphinx.deprecation import RemovedInSphinx70Warning, deprecated_alias
+from sphinx.domains import Domain, Index, IndexEntry
+from sphinx.environment import BuildEnvironment
+from sphinx.environment.adapters.asset import ImageAdapter
+from sphinx.environment.adapters.indexentries import IndexEntries
+from sphinx.environment.adapters.toctree import TocTree
+from sphinx.errors import ConfigError, ThemeError
+from sphinx.highlighting import PygmentsBridge
+from sphinx.locale import _, __
+from sphinx.search import js_index
+from sphinx.theming import HTMLThemeFactory
+from sphinx.util import isurl, logging, md5, progress_message, status_iterator
+from sphinx.util.docutils import new_document
+from sphinx.util.fileutil import copy_asset
+from sphinx.util.i18n import format_date
+from sphinx.util.inventory import InventoryFile
+from sphinx.util.matching import DOTFILES, Matcher, patmatch
+from sphinx.util.osutil import copyfile, ensuredir, os_path, relative_uri
+from sphinx.util.tags import Tags
+from sphinx.writers.html import HTMLTranslator, HTMLWriter
+from sphinx.writers.html5 import HTML5Translator
+import sphinxcontrib.serializinghtml  # NOQA
+import sphinx.builders.dirhtml  # NOQA
+import sphinx.builders.singlehtml  # NOQA
+def setup_js_tag_helper(app: Sphinx, pagename: str, templatename: str, context: Dict, doctree: Node) -> None:
+    """Set up js_tag() template helper.
+
+    .. note:: This set up function is added to keep compatibility with webhelper.
+    """
+    pathto = context.get('pathto')
+
+    def js_tag(js: JavaScript) -> str:
+        attrs = []
+        body = ''
+        if isinstance(js, JavaScript):
+            for key in sorted(js.attributes):
+                value = js.attributes[key]
+                if value is not None:
+                    if key == 'body':
+                        body = value
+                    elif key == 'data_url_root':
+                        attrs.append('data-url_root="%s"' % pathto('', resource=True))
+                    else:
+                        attrs.append('%s="%s"' % (key, html.escape(value, True)))
+            if js.filename:
+                attrs.append('src="%s"' % pathto(js.filename, resource=True))
+        else:
+            attrs.append('src="%s"' % pathto(js, resource=True))
+        if attrs:
+            return '<script %s>%s</script>' % (' '.join(attrs), body)
+        else:
+            return '<script>%s</script>' % body
+    context['js_tag'] = js_tag

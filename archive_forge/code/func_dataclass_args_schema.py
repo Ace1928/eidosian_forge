@@ -1,0 +1,33 @@
+from __future__ import annotations as _annotations
+import dataclasses
+import inspect
+import math
+import re
+import warnings
+from collections import defaultdict
+from copy import deepcopy
+from dataclasses import is_dataclass
+from enum import Enum
+from typing import (
+import pydantic_core
+from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ComputedField
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+from pydantic.warnings import PydanticDeprecatedSince26
+from ._internal import (
+from .annotated_handlers import GetJsonSchemaHandler
+from .config import JsonDict, JsonSchemaExtraCallable, JsonValue
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
+def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
+    """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+    named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [(field['name'], self.field_is_required(field, total=True), field) for field in schema['fields'] if self.field_is_present(field)]
+    if self.mode == 'serialization':
+        named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
+    return self._named_required_fields_schema(named_required_fields)

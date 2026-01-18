@@ -1,0 +1,7 @@
+from ..image import Reorient
+def test_Reorient_outputs():
+    output_map = dict(out_file=dict(extensions=None), transform=dict(extensions=None))
+    outputs = Reorient.output_spec()
+    for key, metadata in list(output_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(outputs.traits()[key], metakey) == value

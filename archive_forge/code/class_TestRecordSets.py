@@ -1,0 +1,131 @@
+from unittest.mock import patch
+import uuid
+import testtools
+from designateclient import exceptions
+from designateclient.tests import v2
+from designateclient.v2 import zones
+class TestRecordSets(v2.APIV2TestCase, v2.CrudMixin):
+    RESOURCE = 'recordsets'
+
+    def new_ref(self, **kwargs):
+        ref = super().new_ref(**kwargs)
+        ref.setdefault('name', uuid.uuid4().hex)
+        ref.setdefault('type', 'A')
+        ref.setdefault('records', ['10.0.0.1'])
+        return ref
+
+    def test_create_absolute_with_zone_dict(self):
+        ref = self.new_ref()
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE, '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    @patch.object(zones.ZoneController, 'get')
+    def test_create_absolute_with_zone_name(self, zone_get):
+        ref = self.new_ref()
+        zone_get.return_value = ZONE
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['name'], '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    @patch.object(zones.ZoneController, 'get')
+    def test_create_non_absolute_with_zone_name(self, zone_get):
+        ref = self.new_ref()
+        zone_get.return_value = ZONE
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['name'], values['name'], values['type'], values['records'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    @patch.object(zones.ZoneController, 'list')
+    def test_create_non_absolute_with_zone_name_non_unique(self, zone_list):
+        zone_list.return_value = [1, 2]
+        ref = self.new_ref()
+        values = ref.copy()
+        del values['id']
+        with testtools.ExpectedException(exceptions.NoUniqueMatch):
+            self.client.recordsets.create(ZONE['name'], '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'])
+
+    def test_create_absolute_with_zone_id(self):
+        ref = self.new_ref()
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['id'], '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    @patch.object(zones.ZoneController, 'get')
+    def test_create_non_absolute_with_zone_id(self, zone_get):
+        ref = self.new_ref()
+        zone_get.return_value = ZONE
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['id'], values['name'], values['type'], values['records'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    def test_create_with_description(self):
+        ref = self.new_ref(description='Foo')
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['id'], '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'], description=values['description'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    def test_create_with_ttl(self):
+        ref = self.new_ref(ttl=60)
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('POST', parts=parts, json=ref)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.create(ZONE['id'], '{}.{}'.format(values['name'], ZONE['name']), values['type'], values['records'], ttl=values['ttl'])
+        values['name'] = '{}.{}'.format(ref['name'], ZONE['name'])
+        self.assertRequestBodyIs(json=values)
+
+    def test_get(self):
+        ref = self.new_ref()
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_entity('GET', entity=ref, id=ref['id'], parts=parts)
+        response = self.client.recordsets.get(ZONE['id'], ref['id'])
+        self.assertEqual(ref, response)
+
+    def test_list(self):
+        items = [self.new_ref(), self.new_ref()]
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_url('GET', parts=parts, json={'recordsets': items})
+        listed = self.client.recordsets.list(ZONE['id'])
+        self.assertList(items, listed)
+        self.assertQueryStringIs('')
+
+    def test_update(self):
+        ref = self.new_ref()
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_entity('PUT', entity=ref, id=ref['id'], parts=parts)
+        values = ref.copy()
+        del values['id']
+        self.client.recordsets.update(ZONE['id'], ref['id'], values)
+        self.assertRequestBodyIs(json=values)
+
+    def test_delete(self):
+        ref = self.new_ref()
+        parts = ['zones', ZONE['id'], self.RESOURCE]
+        self.stub_entity('DELETE', id=ref['id'], parts=parts)
+        self.client.recordsets.delete(ZONE['id'], ref['id'])
+        self.assertRequestBodyIs(None)

@@ -1,0 +1,31 @@
+import os
+import numpy as np
+import pytest
+from ase.lattice.cubic import FaceCenteredCubic
+from ase.utils.plotting import SimplePlottingAxes
+from ase.visualize.plot import plot_atoms
+class TestPlotManager:
+
+    @pytest.fixture
+    def xy_data(self):
+        return ([1, 2], [3, 4])
+
+    def test_plot_manager_error(self, figure):
+        with pytest.raises(AssertionError):
+            with SimplePlottingAxes(ax=None, show=False, filename=None):
+                raise AssertionError()
+
+    def test_plot_manager_no_file(self, xy_data, figure):
+        x, y = xy_data
+        with SimplePlottingAxes(ax=None, show=False, filename=None) as ax:
+            ax.plot(x, y)
+        assert np.allclose(ax.lines[0].get_xydata().transpose(), xy_data)
+
+    def test_plot_manager_axis_file(self, testdir, xy_data, figure):
+        filename = 'plot.png'
+        x, y = xy_data
+        ax = figure.add_subplot(111)
+        with SimplePlottingAxes(ax=ax, show=False, filename=filename) as return_ax:
+            assert return_ax is ax
+            ax.plot(x, y)
+        assert os.path.isfile(filename)

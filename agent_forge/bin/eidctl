@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""
+eidctl — tiny control CLI for Eidos E3
+
+Usage examples:
+  bin/eidctl state --migrate
+  bin/eidctl state --json
+  bin/eidctl journal --add "first run" --dir state
+"""
+
+from __future__ import annotations
+import argparse, json, sys
+from pathlib import Path
+
+# local import; stdlib only
+from core.state import migrate, snapshot, append_journal  # type: ignore
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="eidctl", description="Eidos control CLI")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    p_state = sub.add_parser("state", help="print state snapshot")
+    p_state.add_argument("--dir", default="state", help="state directory (default: state)")
+    p_state.add_argument("--json", action="store_true", help="print JSON instead of pretty text")
+    p_state.add_argument("--migrate", action="store_true", help="ensure directories/version exist")
+
+    p_journal = sub.add_parser("journal", help="append to journal")
+    p_journal.add_argument("--dir", default="state", help="state directory (default: state)")
+    p_journal.add_argument("--add", metavar="TEXT", help="text to append as a journal note")
+    p_journal.add_argument("--type", default="note", help="event type, e.g. goal.created")
+
+    args = ap.parse_args(argv)
+
+    if args.cmd == "state":
+        if args.migrate:
+            migrate(args.dir)
+        snap = snapshot(args.dir)
+        if args.json:
+            print(json.dumps(snap, indent=2))
+        else:
+            _pretty_print_state(snap)
+        return 0
+
+    if args.cmd == "journal":
+        if not args.add:
+            p_journal.error("journal requires --add TEXT")
+        evt = append_journal(args.dir, args.add, etype=args.type)
+        print(f"[journal] appended: {evt['type']} @ {evt['ts']}")
+        return 0
+
+    return 2
+
+def _pretty_print_state(snap: dict) -> None:
+    print(f"[state] base: {snap.get('base')}")
+    print(f"  schema: {snap.get('schema')}")
+    t = snap.get("totals", {})
+    print("  totals: " + ", ".join(f"{k}={t[k]}" for k in sorted(t.keys())))
+    last = snap.get("last_events", [])
+    if last:
+        print("  last:")
+        for e in last:
+            print(f"    - {e.get('ts')}  {e.get('type')}: {e.get('text')}")
+    files = snap.get("files", {})
+    print("  files:  " + ", ".join(f"{k}={files.get(k,0)}" for k in ["events","vector_store","weights","adapters","snaps"]))
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())
+

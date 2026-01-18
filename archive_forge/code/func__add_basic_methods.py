@@ -1,0 +1,69 @@
+from __future__ import absolute_import
+import six
+from six.moves import zip
+from six import BytesIO
+from six.moves import http_client
+from six.moves.urllib.parse import urlencode, urlparse, urljoin, urlunparse, parse_qsl
+import copy
+from collections import OrderedDict
+from email.mime.multipart import MIMEMultipart
+from email.mime.nonmultipart import MIMENonMultipart
+import json
+import keyword
+import logging
+import mimetypes
+import os
+import re
+import httplib2
+import uritemplate
+import google.api_core.client_options
+from google.auth.transport import mtls
+from google.auth.exceptions import MutualTLSChannelError
+from googleapiclient import _auth
+from googleapiclient import mimeparse
+from googleapiclient.errors import HttpError
+from googleapiclient.errors import InvalidJsonError
+from googleapiclient.errors import MediaUploadSizeError
+from googleapiclient.errors import UnacceptableMimeTypeError
+from googleapiclient.errors import UnknownApiNameOrVersion
+from googleapiclient.errors import UnknownFileType
+from googleapiclient.http import build_http
+from googleapiclient.http import BatchHttpRequest
+from googleapiclient.http import HttpMock
+from googleapiclient.http import HttpMockSequence
+from googleapiclient.http import HttpRequest
+from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaUpload
+from googleapiclient.model import JsonModel
+from googleapiclient.model import MediaModel
+from googleapiclient.model import RawModel
+from googleapiclient.schema import Schemas
+from googleapiclient._helpers import _add_query_parameter
+from googleapiclient._helpers import positional
+def _add_basic_methods(self, resourceDesc, rootDesc, schema):
+    if resourceDesc == rootDesc:
+        batch_uri = '%s%s' % (rootDesc['rootUrl'], rootDesc.get('batchPath', 'batch'))
+
+        def new_batch_http_request(callback=None):
+            """Create a BatchHttpRequest object based on the discovery document.
+
+        Args:
+          callback: callable, A callback to be called for each response, of the
+            form callback(id, response, exception). The first parameter is the
+            request id, and the second is the deserialized response object. The
+            third is an apiclient.errors.HttpError exception object if an HTTP
+            error occurred while processing the request, or None if no error
+            occurred.
+
+        Returns:
+          A BatchHttpRequest object based on the discovery document.
+        """
+            return BatchHttpRequest(callback=callback, batch_uri=batch_uri)
+        self._set_dynamic_attr('new_batch_http_request', new_batch_http_request)
+    if 'methods' in resourceDesc:
+        for methodName, methodDesc in six.iteritems(resourceDesc['methods']):
+            fixedMethodName, method = createMethod(methodName, methodDesc, rootDesc, schema)
+            self._set_dynamic_attr(fixedMethodName, method.__get__(self, self.__class__))
+            if methodDesc.get('supportsMediaDownload', False):
+                fixedMethodName, method = createMethod(methodName + '_media', methodDesc, rootDesc, schema)
+                self._set_dynamic_attr(fixedMethodName, method.__get__(self, self.__class__))

@@ -1,0 +1,44 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.filestore import filestore_client
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope import exceptions
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.command_lib.filestore import flags
+from googlecloudsdk.command_lib.kms import resource_args as kms_resource_args
+from googlecloudsdk.command_lib.util.apis import arg_utils
+from googlecloudsdk.command_lib.util.args import labels_util
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+def AddFileShareArg(parser, api_version, include_snapshot_flags=False, include_backup_flags=False, clear_nfs_export_options_required=False, required=True):
+    """Adds a --file-share flag to the given parser.
+
+  Args:
+    parser: argparse parser.
+    api_version: filestore_client api version.
+    include_snapshot_flags: bool, whether to include --source-snapshot flags.
+    include_backup_flags: bool, whether to include --source-backup flags.
+    clear_nfs_export_options_required: bool, whether to include
+      --clear-nfs-export-options flags.
+    required: bool, passthrough to parser.add_argument.
+  """
+    alpha_beta_help_text = "\nFile share configuration for an instance. Specifying both `name` and `capacity`\nis required.\n\n*capacity*::: The desired capacity of the volume in GB or TB units. If no capacity\nunit is specified, GB is assumed. Acceptable instance capacities for each tier are as follows:\n* BASIC_HDD: 1TB-63.9TB in 1GB increments or its multiples.\n* BASIC_SSD: 2.5TB-63.9TB in 1GB increments or its multiples.\n* HIGH_SCALE_SSD: 10TB-100TB in 2.5TB increments or its multiples.\n* ZONAL: 1TB-100TB:\n  - 1TB-9.75TB in 256GB increments or its multiples.\n  - 10TB-100TB in 2.5TB increments or its multiples.\n* ENTERPRISE: 1TB-10TB in 256GB increments or its multiples.\n* REGIONAL: 1TB-100TB:\n  - 1TB-9.75TB in 256GB increments or its multiples.\n  - 10TB-100TB in 2.5TB increments or its multiples.\n\n*name*::: The desired logical name of the volume.\n\n*nfs-export-options*::: The NfsExportOptions for the Cloud Filestore instance file share.\nConfiguring NfsExportOptions is optional and can only be set using flags-file. Use the `--flags-file`\nflag to specify the path to a JSON or YAML configuration file that contains the required NfsExportOptions flags.\n\n*ip-ranges*::: A list of IPv4 addresses or CIDR ranges that are allowed to mount the file share.\nIPv4 addresses format: {octet 1}.{octet 2}.{octet 3}.{octet 4}.\nCIDR range format: {octet 1}.{octet 2}.{octet 3}.{octet 4}/{mask size}.\nOverlapping IP ranges are allowed for all tiers other than BASIC_HDD and\nBASIC_SSD. The limit of IP ranges/addresses for each FileShareConfig among all\nNfsExportOptions is 64 per instance.\n\n*access-mode*::: The type of access allowed for the specified IP-addresses or CIDR ranges.\nREAD_ONLY: Allows only read requests on the exported file share.\nREAD_WRITE: Allows both read and write requests on the exported file share.\nThe default setting is READ_WRITE.\n\n*squash-mode*::: Enables or disables root squash for the specified\nIP addresses or CIDR ranges.\nNO_ROOT_SQUASH: Disables root squash to allow root access on the exported file share.\nROOT_SQUASH. Enables root squash to remove root access on the exported file share.\nThe default setting is NO_ROOT_SQUASH.\n\n*anon_uid*::: An integer that represents the user ID of anonymous users.\nAnon_uid may only be set when squash_mode is set to ROOT_SQUASH.\nIf NO_ROOT_SQUASH is specified, an error will be returned.\nThe default value is 65534.\n\n*anon_gid*::: An integer that represents the group ID of anonymous groups.\nAnon_gid may only be set when squash_mode is set to ROOT_SQUASH.\nIf NO_ROOT_SQUASH is specified, an error will be returned.\nThe default value is 65534.\n\n*security-flavors*:: A list of security flavors that are allowed to be used\nduring mount command in NFSv4.1 filestore instances.\nThe security flavors supported are:\n- SECURITY_FLAVOR_UNSPECIFIED: SecurityFlavor not set. Defaults to AUTH_SYS.\n- AUTH_SYS: The user's UNIX user-id and group-ids are passed in the clear.\n- KRB5: The end-user authentication is done using Kerberos V5.\n- KRB5I: KRB5 plus integrity protection (data packets are tamper proof).\n- KRB5P: KRB5I plus privacy protection (data packets are tamper proof and\n  encrypted).\n"
+    file_share_help = {filestore_client.V1_API_VERSION: 'File share configuration for an instance.  Specifying both `name` and `capacity`\nis required.\n\n*capacity*::: The desired capacity of the volume in GB or TB units. If no capacity\nunit is specified, GB is assumed. Acceptable instance capacities for each tier are as follows:\n* BASIC_HDD: 1TB-63.9TB in 1GB increments or its multiples.\n* BASIC_SSD: 2.5TB-63.9TB in 1GB increments or its multiples.\n* HIGH_SCALE_SSD: 10TB-100TB in 2.5TB increments or its multiples.\n* ZONAL: 1TB-100TB:\n  - 1TB-9.75TB in 256GB increments or its multiples.\n  - 10TB-100TB in 2.5TB increments or its multiples.\n* ENTERPRISE: 1TB-10TB in 256GB increments or its multiples.\n* REGIONAL: 1TB-100TB:\n  - 1TB-9.75TB in 256GB increments or its multiples.\n  - 10TB-100TB in 2.5TB increments or its multiples.\n\n*name*::: The desired logical name of the volume.\n\n*nfs-export-options*::: The NfsExportOptions for the Cloud Filestore instance file share.\nConfiguring NfsExportOptions is optional and can only be set using flags-file. Use the `--flags-file`\nflag to specify the path to a JSON or YAML configuration file that contains the required NfsExportOptions flags.\n\n*ip-ranges*::: A list of IPv4 addresses or CIDR ranges that are allowed to mount the file share.\nIPv4 addresses format: {octet 1}.{octet 2}.{octet 3}.{octet 4}.\nCIDR range format: {octet 1}.{octet 2}.{octet 3}.{octet 4}/{mask size}.\nOverlapping IP ranges are allowed for all tiers other than BASIC_HDD and\nBASIC_SSD. The limit of IP ranges/addresses for each FileShareConfig among all\nNfsExportOptions is 64 per instance.\n\n*access-mode*::: The type of access allowed for the specified IP-addresses or CIDR ranges.\nREAD_ONLY: Allows only read requests on the exported file share.\nREAD_WRITE: Allows both read and write requests on the exported file share.\nThe default setting is READ_WRITE.\n\n*squash-mode*::: Enables or disables root squash for the specified\nIP addresses or CIDR ranges.\nNO_ROOT_SQUASH: Disables root squash to allow root access on the exported file share.\nROOT_SQUASH. Enables root squash to remove root access on the exported file share.\nThe default setting is NO_ROOT_SQUASH.\n\n*anon_uid*::: An integer that represents the user ID of anonymous users.\nAnon_uid may only be set when squash_mode is set to ROOT_SQUASH.\nIf NO_ROOT_SQUASH is specified, an error will be returned.\nThe default value is 65534.\n\n*anon_gid*::: An integer that represents the group ID of anonymous groups.\nAnon_gid may only be set when squash_mode is set to ROOT_SQUASH.\nIf NO_ROOT_SQUASH is specified, an error will be returned.\nThe default value is 65534.\n', filestore_client.ALPHA_API_VERSION: alpha_beta_help_text, filestore_client.BETA_API_VERSION: alpha_beta_help_text}
+    source_snapshot_help = '\n*source-snapshot*::: The name of the snapshot to restore from. Supported for BASIC instances only.\n\n*source-snapshot-region*::: The region of the source snapshot. If\nunspecified, it is assumed that the Filestore snapshot is local and\ninstance-zone will be used.\n\n'
+    source_backup_help = '\n*source-backup*::: The name of the backup to restore from.\n\n*source-backup-region*::: The region of the source backup.\n\n'
+    spec = FILE_SHARE_ARG_SPEC.copy()
+    if include_backup_flags:
+        spec['source-backup'] = str
+        spec['source-backup-region'] = str
+    if include_snapshot_flags:
+        spec['source-snapshot'] = str
+        spec['source-snapshot-region'] = str
+    file_share_help = file_share_help[api_version]
+    if clear_nfs_export_options_required:
+        required = True
+        file_share_arg_group = parser.add_argument_group(help='Parameters for file-share.')
+        AddClearNfsExportOptionsArg(file_share_arg_group)
+        file_share_arg_group.add_argument('--file-share', type=arg_parsers.ArgDict(spec=spec, required_keys=['name', 'capacity']), required=required, help=file_share_help + (source_snapshot_help if include_snapshot_flags else '') + (source_backup_help if include_backup_flags else ''))
+    else:
+        parser.add_argument('--file-share', type=arg_parsers.ArgDict(spec=spec, required_keys=['name', 'capacity']), required=required, help=file_share_help + (source_snapshot_help if include_snapshot_flags else '') + (source_backup_help if include_backup_flags else ''))

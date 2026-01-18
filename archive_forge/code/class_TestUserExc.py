@@ -1,0 +1,25 @@
+from numba.cuda.testing import unittest, CUDATestCase
+from numba import cuda
+from numba.core import config
+class TestUserExc(CUDATestCase):
+
+    def test_user_exception(self):
+
+        @cuda.jit('void(int32)', debug=True)
+        def test_exc(x):
+            if x == 1:
+                raise MyError
+            elif x == 2:
+                raise MyError('foo')
+        test_exc[1, 1](0)
+        with self.assertRaises(MyError) as cm:
+            test_exc[1, 1](1)
+        if not config.ENABLE_CUDASIM:
+            self.assertRegex(str(cm.exception), regex_pattern)
+        self.assertIn('tid=[0, 0, 0] ctaid=[0, 0, 0]', str(cm.exception))
+        with self.assertRaises(MyError) as cm:
+            test_exc[1, 1](2)
+        if not config.ENABLE_CUDASIM:
+            self.assertRegex(str(cm.exception), regex_pattern)
+            self.assertRegex(str(cm.exception), regex_pattern)
+        self.assertIn('tid=[0, 0, 0] ctaid=[0, 0, 0]: foo', str(cm.exception))

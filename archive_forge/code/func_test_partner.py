@@ -1,0 +1,15 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.hpe.nimble.plugins.module_utils.hpe_nimble import __version__ as NIMBLE_ANSIBLE_VERSION
+import ansible_collections.hpe.nimble.plugins.module_utils.hpe_nimble as utils
+def test_partner(client_obj, downstream_hostname):
+    if utils.is_null_or_empty(downstream_hostname):
+        return (False, False, 'Test replication partner failed as no downstream partner is provided.', {})
+    try:
+        upstream_repl_resp = client_obj.replication_partners.get(id=None, hostname=downstream_hostname)
+        if utils.is_null_or_empty(upstream_repl_resp):
+            return (False, False, f"Replication partner '{downstream_hostname}' cannot be tested as it is not present.", {})
+        client_obj.replication_partners.test(id=upstream_repl_resp.attrs.get('id'))
+        return (True, False, f"Tested replication partner '{downstream_hostname}' successfully.", {})
+    except Exception as ex:
+        return (False, False, f'Test replication partner failed |{ex}', {})

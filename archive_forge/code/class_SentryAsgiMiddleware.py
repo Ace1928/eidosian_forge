@@ -1,0 +1,136 @@
+import asyncio
+import inspect
+from copy import deepcopy
+from sentry_sdk._functools import partial
+from sentry_sdk._types import TYPE_CHECKING
+from sentry_sdk.api import continue_trace
+from sentry_sdk.consts import OP
+from sentry_sdk.hub import Hub
+from sentry_sdk.integrations._asgi_common import (
+from sentry_sdk.sessions import auto_session_tracking
+from sentry_sdk.tracing import (
+from sentry_sdk.utils import (
+from sentry_sdk.tracing import Transaction
+class SentryAsgiMiddleware:
+    __slots__ = ('app', '__call__', 'transaction_style', 'mechanism_type')
+
+    def __init__(self, app, unsafe_context_data=False, transaction_style='endpoint', mechanism_type='asgi'):
+        """
+        Instrument an ASGI application with Sentry. Provides HTTP/websocket
+        data to sent events and basic handling for exceptions bubbling up
+        through the middleware.
+
+        :param unsafe_context_data: Disable errors when a proper contextvars installation could not be found. We do not recommend changing this from the default.
+        """
+        if not unsafe_context_data and (not HAS_REAL_CONTEXTVARS):
+            raise RuntimeError('The ASGI middleware for Sentry requires Python 3.7+ or the aiocontextvars package.' + CONTEXTVARS_ERROR_MESSAGE)
+        if transaction_style not in TRANSACTION_STYLE_VALUES:
+            raise ValueError('Invalid value for transaction_style: %s (must be in %s)' % (transaction_style, TRANSACTION_STYLE_VALUES))
+        asgi_middleware_while_using_starlette_or_fastapi = mechanism_type == 'asgi' and 'starlette' in _get_installed_modules()
+        if asgi_middleware_while_using_starlette_or_fastapi:
+            logger.warning("The Sentry Python SDK can now automatically support ASGI frameworks like Starlette and FastAPI. Please remove 'SentryAsgiMiddleware' from your project. See https://docs.sentry.io/platforms/python/guides/asgi/ for more information.")
+        self.transaction_style = transaction_style
+        self.mechanism_type = mechanism_type
+        self.app = app
+        if _looks_like_asgi3(app):
+            self.__call__ = self._run_asgi3
+        else:
+            self.__call__ = self._run_asgi2
+
+    def _run_asgi2(self, scope):
+
+        async def inner(receive, send):
+            return await self._run_app(scope, receive, send, asgi_version=2)
+        return inner
+
+    async def _run_asgi3(self, scope, receive, send):
+        return await self._run_app(scope, receive, send, asgi_version=3)
+
+    async def _run_app(self, scope, receive, send, asgi_version):
+        is_recursive_asgi_middleware = _asgi_middleware_applied.get(False)
+        is_lifespan = scope['type'] == 'lifespan'
+        if is_recursive_asgi_middleware or is_lifespan:
+            try:
+                if asgi_version == 2:
+                    return await self.app(scope)(receive, send)
+                else:
+                    return await self.app(scope, receive, send)
+            except Exception as exc:
+                _capture_exception(Hub.current, exc, mechanism_type=self.mechanism_type)
+                raise exc from None
+        _asgi_middleware_applied.set(True)
+        try:
+            hub = Hub(Hub.current)
+            with auto_session_tracking(hub, session_mode='request'):
+                with hub:
+                    with hub.configure_scope() as sentry_scope:
+                        sentry_scope.clear_breadcrumbs()
+                        sentry_scope._name = 'asgi'
+                        processor = partial(self.event_processor, asgi_scope=scope)
+                        sentry_scope.add_event_processor(processor)
+                    ty = scope['type']
+                    transaction_name, transaction_source = self._get_transaction_name_and_source(self.transaction_style, scope)
+                    if ty in ('http', 'websocket'):
+                        transaction = continue_trace(_get_headers(scope), op='{}.server'.format(ty), name=transaction_name, source=transaction_source)
+                        logger.debug('[ASGI] Created transaction (continuing trace): %s', transaction)
+                    else:
+                        transaction = Transaction(op=OP.HTTP_SERVER, name=transaction_name, source=transaction_source)
+                        logger.debug('[ASGI] Created transaction (new): %s', transaction)
+                    transaction.set_tag('asgi.type', ty)
+                    logger.debug("[ASGI] Set transaction name and source on transaction: '%s' / '%s'", transaction.name, transaction.source)
+                    with hub.start_transaction(transaction, custom_sampling_context={'asgi_scope': scope}):
+                        logger.debug('[ASGI] Started transaction: %s', transaction)
+                        try:
+
+                            async def _sentry_wrapped_send(event):
+                                is_http_response = event.get('type') == 'http.response.start' and transaction is not None and ('status' in event)
+                                if is_http_response:
+                                    transaction.set_http_status(event['status'])
+                                return await send(event)
+                            if asgi_version == 2:
+                                return await self.app(scope)(receive, _sentry_wrapped_send)
+                            else:
+                                return await self.app(scope, receive, _sentry_wrapped_send)
+                        except Exception as exc:
+                            _capture_exception(hub, exc, mechanism_type=self.mechanism_type)
+                            raise exc from None
+        finally:
+            _asgi_middleware_applied.set(False)
+
+    def event_processor(self, event, hint, asgi_scope):
+        request_data = event.get('request', {})
+        request_data.update(_get_request_data(asgi_scope))
+        event['request'] = deepcopy(request_data)
+        already_set = event['transaction'] != _DEFAULT_TRANSACTION_NAME and event['transaction_info'].get('source') in [TRANSACTION_SOURCE_COMPONENT, TRANSACTION_SOURCE_ROUTE]
+        if not already_set:
+            name, source = self._get_transaction_name_and_source(self.transaction_style, asgi_scope)
+            event['transaction'] = name
+            event['transaction_info'] = {'source': source}
+            logger.debug("[ASGI] Set transaction name and source in event_processor: '%s' / '%s'", event['transaction'], event['transaction_info']['source'])
+        return event
+
+    def _get_transaction_name_and_source(self, transaction_style, asgi_scope):
+        name = None
+        source = SOURCE_FOR_STYLE[transaction_style]
+        ty = asgi_scope.get('type')
+        if transaction_style == 'endpoint':
+            endpoint = asgi_scope.get('endpoint')
+            if endpoint:
+                name = transaction_from_function(endpoint) or ''
+            else:
+                name = _get_url(asgi_scope, 'http' if ty == 'http' else 'ws', host=None)
+                source = TRANSACTION_SOURCE_URL
+        elif transaction_style == 'url':
+            route = asgi_scope.get('route')
+            if route:
+                path = getattr(route, 'path', None)
+                if path is not None:
+                    name = path
+            else:
+                name = _get_url(asgi_scope, 'http' if ty == 'http' else 'ws', host=None)
+                source = TRANSACTION_SOURCE_URL
+        if name is None:
+            name = _DEFAULT_TRANSACTION_NAME
+            source = TRANSACTION_SOURCE_ROUTE
+            return (name, source)
+        return (name, source)

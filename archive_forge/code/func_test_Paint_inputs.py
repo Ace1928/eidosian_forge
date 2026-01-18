@@ -1,0 +1,7 @@
+from ..registration import Paint
+def test_Paint_inputs():
+    input_map = dict(args=dict(argstr='%s'), averages=dict(argstr='-a %d'), environ=dict(nohash=True, usedefault=True), in_surf=dict(argstr='%s', extensions=None, mandatory=True, position=-2), out_file=dict(argstr='%s', extensions=None, hash_files=False, keep_extension=False, name_source=['in_surf'], name_template='%s.avg_curv', position=-1), subjects_dir=dict(), template=dict(argstr='%s', extensions=None, mandatory=True, position=-3), template_param=dict())
+    inputs = Paint.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

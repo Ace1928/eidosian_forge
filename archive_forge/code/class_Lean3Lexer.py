@@ -1,0 +1,15 @@
+import re
+from pygments.lexer import RegexLexer, default, words, include
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+class Lean3Lexer(RegexLexer):
+    """
+    For the Lean 3 theorem prover.
+
+    .. versionadded:: 2.0
+    """
+    name = 'Lean'
+    url = 'https://leanprover-community.github.io/lean3'
+    aliases = ['lean', 'lean3']
+    filenames = ['*.lean']
+    mimetypes = ['text/x-lean', 'text/x-lean3']
+    tokens = {'expression': [('\\s+', Text), ('/--', String.Doc, 'docstring'), ('/-', Comment, 'comment'), ('--.*?$', Comment.Single), (words(('forall', 'fun', 'Pi', 'from', 'have', 'show', 'assume', 'suffices', 'let', 'if', 'else', 'then', 'in', 'with', 'calc', 'match', 'do'), prefix='\\b', suffix='\\b'), Keyword), (words(('sorry', 'admit'), prefix='\\b', suffix='\\b'), Generic.Error), (words(('Sort', 'Prop', 'Type'), prefix='\\b', suffix='\\b'), Keyword.Type), (words(('(', ')', ':', '{', '}', '[', ']', '⟨', '⟩', '‹', '›', '⦃', '⦄', ':=', ',')), Operator), ("[A-Za-z_\\u03b1-\\u03ba\\u03bc-\\u03fb\\u1f00-\\u1ffe\\u2100-\\u214f][.A-Za-z_\\'\\u03b1-\\u03ba\\u03bc-\\u03fb\\u1f00-\\u1ffe\\u2070-\\u2079\\u207f-\\u2089\\u2090-\\u209c\\u2100-\\u214f0-9]*", Name), ('0x[A-Za-z0-9]+', Number.Integer), ('0b[01]+', Number.Integer), ('\\d+', Number.Integer), ('"', String.Double, 'string'), ('\'(?:(\\\\[\\\\\\"\'nt])|(\\\\x[0-9a-fA-F]{2})|(\\\\u[0-9a-fA-F]{4})|.)\'', String.Char), ("[~?][a-z][\\w\\']*:", Name.Variable), ('\\S', Name.Builtin.Pseudo)], 'root': [(words(('import', 'renaming', 'hiding', 'namespace', 'local', 'private', 'protected', 'section', 'include', 'omit', 'section', 'protected', 'export', 'open', 'attribute'), prefix='\\b', suffix='\\b'), Keyword.Namespace), (words(('lemma', 'theorem', 'def', 'definition', 'example', 'axiom', 'axioms', 'constant', 'constants', 'universe', 'universes', 'inductive', 'coinductive', 'structure', 'extends', 'class', 'instance', 'abbreviation', 'noncomputable theory', 'noncomputable', 'mutual', 'meta', 'attribute', 'parameter', 'parameters', 'variable', 'variables', 'reserve', 'precedence', 'postfix', 'prefix', 'notation', 'infix', 'infixl', 'infixr', 'begin', 'by', 'end', 'set_option', 'run_cmd'), prefix='\\b', suffix='\\b'), Keyword.Declaration), ('@\\[', Keyword.Declaration, 'attribute'), (words(('#eval', '#check', '#reduce', '#exit', '#print', '#help'), suffix='\\b'), Keyword), include('expression')], 'attribute': [('\\]', Keyword.Declaration, '#pop'), include('expression')], 'comment': [('[^/-]', Comment.Multiline), ('/-', Comment.Multiline, '#push'), ('-/', Comment.Multiline, '#pop'), ('[/-]', Comment.Multiline)], 'docstring': [('[^/-]', String.Doc), ('-/', String.Doc, '#pop'), ('[/-]', String.Doc)], 'string': [('[^\\\\"]+', String.Double), ('(?:(\\\\[\\\\\\"\'nt])|(\\\\x[0-9a-fA-F]{2})|(\\\\u[0-9a-fA-F]{4}))', String.Escape), ('"', String.Double, '#pop')]}

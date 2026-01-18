@@ -1,0 +1,3 @@
+from __future__ import absolute_import, division, print_function
+def logprofile_to_dict(profile):
+    return dict(id=profile.id, name=profile.name, location=profile.location, locations=profile.locations, categories=profile.categories, storage_account=profile.storage_account_id, service_bus_rule_id=profile.service_bus_rule_id, retention_policy=dict(enabled=profile.retention_policy.enabled, days=profile.retention_policy.days), tags=profile.tags if profile.tags else None)

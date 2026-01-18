@@ -1,0 +1,11 @@
+from __future__ import absolute_import, division
+import ctypes.util
+import functools
+import io
+import platform
+import struct
+import weakref
+from .ffi import ffi
+class XcffibException(Exception):
+    """ Generic XcbException; replaces xcb.Exception. """
+    pass

@@ -1,0 +1,1 @@
+Un-nest data from object implementing __geo_interface__ standard

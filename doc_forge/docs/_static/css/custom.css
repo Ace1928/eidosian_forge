@@ -1,0 +1,13 @@
+/* Custom CSS for documentation */
+:root {
+    --font-size-base: 16px;
+    --line-height-base: 1.5;
+}
+
+.wy-nav-content {
+    max-width: 900px;
+}
+
+.highlight {
+    border-radius: 4px;
+}

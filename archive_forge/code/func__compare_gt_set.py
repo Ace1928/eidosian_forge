@@ -1,0 +1,25 @@
+import collections.abc
+import os
+import pprint
+from typing import AbstractSet
+from typing import Any
+from typing import Callable
+from typing import Iterable
+from typing import List
+from typing import Literal
+from typing import Mapping
+from typing import Optional
+from typing import Protocol
+from typing import Sequence
+from unicodedata import normalize
+from _pytest import outcomes
+import _pytest._code
+from _pytest._io.pprint import PrettyPrinter
+from _pytest._io.saferepr import saferepr
+from _pytest._io.saferepr import saferepr_unlimited
+from _pytest.config import Config
+def _compare_gt_set(left: AbstractSet[Any], right: AbstractSet[Any], highlighter: _HighlightFunc, verbose: int=0) -> List[str]:
+    explanation = _compare_gte_set(left, right, highlighter)
+    if not explanation:
+        return ['Both sets are equal']
+    return explanation

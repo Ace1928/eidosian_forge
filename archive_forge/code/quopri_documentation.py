@@ -1,0 +1,1 @@
+Get the integer value of a hexadecimal number.

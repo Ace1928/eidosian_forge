@@ -1,0 +1,18 @@
+from __future__ import annotations
+import abc
+from typing import Any, ClassVar, Iterable
+import numpy as np
+from onnx import TensorProto
+from onnx.defs import get_all_schemas_with_history, get_schema, onnx_opset_version
+from onnx.helper import make_node, make_tensor_type_proto, np_dtype_to_tensor_dtype
+from onnx.numpy_helper import to_array, unpack_int4
+from onnx.onnx_pb import AttributeProto, GraphProto, NodeProto, TypeProto
+from onnx.reference.custom_element_types import (
+class OpRunExpand(OpRun):
+    """Class any operator to avoid must inherit from."""
+
+    def __init__(self, onnx_node: NodeProto, run_params: dict[str, Any], impl: Any=None):
+        raise RuntimeError(f'The reference implementation must not use this node ({type(self)}).')
+
+    def _run(self, *inputs, **kwargs):
+        raise RuntimeError(f'The reference implementation must not use this node ({type(self)}).')

@@ -1,0 +1,5 @@
+import warnings
+from ._umath_tests import *
+
+Shim for _umath_tests to allow a deprecation period for the new name.
+

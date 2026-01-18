@@ -1,0 +1,1 @@
+Returns the batch_size used by the model.

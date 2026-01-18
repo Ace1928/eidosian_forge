@@ -1,0 +1,37 @@
+from tornado.concurrent import Future
+from tornado import gen
+from tornado.escape import (
+from tornado.httpclient import HTTPClientError
+from tornado.httputil import format_timestamp
+from tornado.iostream import IOStream
+from tornado import locale
+from tornado.locks import Event
+from tornado.log import app_log, gen_log
+from tornado.simple_httpclient import SimpleAsyncHTTPClient
+from tornado.template import DictLoader
+from tornado.testing import AsyncHTTPTestCase, AsyncTestCase, ExpectLog, gen_test
+from tornado.test.util import ignore_deprecation
+from tornado.util import ObjectDict, unicode_type
+from tornado.web import (
+import binascii
+import contextlib
+import copy
+import datetime
+import email.utils
+import gzip
+from io import BytesIO
+import itertools
+import logging
+import os
+import re
+import socket
+import typing  # noqa: F401
+import unittest
+import urllib.parse
+def test_key_versioning_invalid_key(self):
+    value = b'\xe9'
+    signed = create_signed_value(SignedValueTest.SECRET_DICT, 'key', value, clock=self.present, key_version=0)
+    newkeys = SignedValueTest.SECRET_DICT.copy()
+    newkeys.pop(0)
+    decoded = decode_signed_value(newkeys, 'key', signed, clock=self.present)
+    self.assertEqual(None, decoded)

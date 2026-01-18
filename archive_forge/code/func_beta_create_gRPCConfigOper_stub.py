@@ -1,0 +1,18 @@
+from __future__ import absolute_import, division, print_function
+import sys
+from google.protobuf import descriptor as _descriptor
+from google.protobuf import message as _message
+from google.protobuf import reflection as _reflection
+from google.protobuf import symbol_database as _symbol_database
+from google.protobuf.internal import enum_type_wrapper
+import grpc
+from grpc.beta import implementations as beta_implementations
+from grpc.beta import interfaces as beta_interfaces
+from grpc.framework.common import cardinality
+from grpc.framework.interfaces.face import utilities as face_utilities
+def beta_create_gRPCConfigOper_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+    request_serializers = {('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CliConfig'): CliConfigArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CommitConfig'): CommitArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CommitReplace'): CommitReplaceArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'ConfigDiscardChanges'): DiscardChangesArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CreateSubs'): CreateSubsArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'DeleteConfig'): ConfigArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'GetConfig'): ConfigGetArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'GetOper'): GetOperArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'MergeConfig'): ConfigArgs.SerializeToString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'ReplaceConfig'): ConfigArgs.SerializeToString}
+    response_deserializers = {('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CliConfig'): CliConfigReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CommitConfig'): CommitReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CommitReplace'): CommitReplaceReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'ConfigDiscardChanges'): DiscardChangesReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'CreateSubs'): CreateSubsReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'DeleteConfig'): ConfigReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'GetConfig'): ConfigGetReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'GetOper'): GetOperReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'MergeConfig'): ConfigReply.FromString, ('IOSXRExtensibleManagabilityService.gRPCConfigOper', 'ReplaceConfig'): ConfigReply.FromString}
+    cardinalities = {'CliConfig': cardinality.Cardinality.UNARY_UNARY, 'CommitConfig': cardinality.Cardinality.UNARY_UNARY, 'CommitReplace': cardinality.Cardinality.UNARY_UNARY, 'ConfigDiscardChanges': cardinality.Cardinality.UNARY_UNARY, 'CreateSubs': cardinality.Cardinality.UNARY_STREAM, 'DeleteConfig': cardinality.Cardinality.UNARY_UNARY, 'GetConfig': cardinality.Cardinality.UNARY_STREAM, 'GetOper': cardinality.Cardinality.UNARY_STREAM, 'MergeConfig': cardinality.Cardinality.UNARY_UNARY, 'ReplaceConfig': cardinality.Cardinality.UNARY_UNARY}
+    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
+    return beta_implementations.dynamic_stub(channel, 'IOSXRExtensibleManagabilityService.gRPCConfigOper', cardinalities, options=stub_options)

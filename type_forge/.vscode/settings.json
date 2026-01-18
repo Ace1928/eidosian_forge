@@ -1,0 +1,28 @@
+{
+  "cSpell.words": [
+    "aeiou",
+    "amsmath",
+    "cattrs",
+    "childs",
+    "commitizen",
+    "deduplicator",
+    "Deduplicator",
+    "dmath",
+    "isort",
+    "ivar",
+    "linkify",
+    "mkdocs",
+    "mkdocstrings",
+    "mros",
+    "mypy",
+    "pycache",
+    "pydantic",
+    "pytest",
+    "repr",
+    "rtype",
+    "standardizer",
+    "Standardizer",
+    "toctree",
+    "undoc"
+  ]
+}

@@ -1,0 +1,179 @@
+import logging
+import queue
+from multiprocessing import Pool, Queue, cpu_count
+import numpy as np
+from gensim import utils
+from gensim.models.ldamodel import LdaModel, LdaState
+class LdaMulticore(LdaModel):
+    """An optimized implementation of the LDA algorithm, able to harness the power of multicore CPUs.
+    Follows the similar API as the parent class :class:`~gensim.models.ldamodel.LdaModel`.
+
+    """
+
+    def __init__(self, corpus=None, num_topics=100, id2word=None, workers=None, chunksize=2000, passes=1, batch=False, alpha='symmetric', eta=None, decay=0.5, offset=1.0, eval_every=10, iterations=50, gamma_threshold=0.001, random_state=None, minimum_probability=0.01, minimum_phi_value=0.01, per_word_topics=False, dtype=np.float32):
+        """
+
+        Parameters
+        ----------
+        corpus : {iterable of list of (int, float), scipy.sparse.csc}, optional
+            Stream of document vectors or sparse matrix of shape (`num_documents`, `num_terms`).
+            If not given, the model is left untrained (presumably because you want to call
+            :meth:`~gensim.models.ldamodel.LdaModel.update` manually).
+        num_topics : int, optional
+            The number of requested latent topics to be extracted from the training corpus.
+        id2word : {dict of (int, str),  :class:`gensim.corpora.dictionary.Dictionary`}
+            Mapping from word IDs to words. It is used to determine the vocabulary size, as well as for
+            debugging and topic printing.
+        workers : int, optional
+            Number of workers processes to be used for parallelization. If None all available cores
+            (as estimated by `workers=cpu_count()-1` will be used. **Note** however that for
+            hyper-threaded CPUs, this estimation returns a too high number -- set `workers`
+            directly to the number of your **real** cores (not hyperthreads) minus one, for optimal performance.
+        chunksize :  int, optional
+            Number of documents to be used in each training chunk.
+        passes : int, optional
+            Number of passes through the corpus during training.
+        alpha : {float, numpy.ndarray of float, list of float, str}, optional
+            A-priori belief on document-topic distribution, this can be:
+                * scalar for a symmetric prior over document-topic distribution,
+                * 1D array of length equal to num_topics to denote an asymmetric user defined prior for each topic.
+
+            Alternatively default prior selecting strategies can be employed by supplying a string:
+                * 'symmetric': (default) Uses a fixed symmetric prior of `1.0 / num_topics`,
+                * 'asymmetric': Uses a fixed normalized asymmetric prior of `1.0 / (topic_index + sqrt(num_topics))`.
+        eta : {float, numpy.ndarray of float, list of float, str}, optional
+            A-priori belief on topic-word distribution, this can be:
+                * scalar for a symmetric prior over topic-word distribution,
+                * 1D array of length equal to num_words to denote an asymmetric user defined prior for each word,
+                * matrix of shape (num_topics, num_words) to assign a probability for each word-topic combination.
+
+            Alternatively default prior selecting strategies can be employed by supplying a string:
+                * 'symmetric': (default) Uses a fixed symmetric prior of `1.0 / num_topics`,
+                * 'auto': Learns an asymmetric prior from the corpus.
+        decay : float, optional
+            A number between (0.5, 1] to weight what percentage of the previous lambda value is forgotten
+            when each new document is examined. Corresponds to :math:`\\kappa` from
+            `'Online Learning for LDA' by Hoffman et al.`_
+        offset : float, optional
+            Hyper-parameter that controls how much we will slow down the first steps the first few iterations.
+            Corresponds to :math:`\\tau_0` from `'Online Learning for LDA' by Hoffman et al.`_
+        eval_every : int, optional
+            Log perplexity is estimated every that many updates. Setting this to one slows down training by ~2x.
+        iterations : int, optional
+            Maximum number of iterations through the corpus when inferring the topic distribution of a corpus.
+        gamma_threshold : float, optional
+            Minimum change in the value of the gamma parameters to continue iterating.
+        minimum_probability : float, optional
+            Topics with a probability lower than this threshold will be filtered out.
+        random_state : {np.random.RandomState, int}, optional
+            Either a randomState object or a seed to generate one. Useful for reproducibility.
+            Note that results can still vary due to non-determinism in OS scheduling of the worker processes.
+        minimum_phi_value : float, optional
+            if `per_word_topics` is True, this represents a lower bound on the term probabilities.
+        per_word_topics : bool
+            If True, the model also computes a list of topics, sorted in descending order of most likely topics for
+            each word, along with their phi values multiplied by the feature length (i.e. word count).
+        dtype : {numpy.float16, numpy.float32, numpy.float64}, optional
+            Data-type to use during calculations inside model. All inputs are also converted.
+
+        """
+        self.workers = max(1, cpu_count() - 1) if workers is None else workers
+        self.batch = batch
+        if isinstance(alpha, str) and alpha == 'auto':
+            raise NotImplementedError('auto-tuning alpha not implemented in LdaMulticore; use plain LdaModel.')
+        super(LdaMulticore, self).__init__(corpus=corpus, num_topics=num_topics, id2word=id2word, chunksize=chunksize, passes=passes, alpha=alpha, eta=eta, decay=decay, offset=offset, eval_every=eval_every, iterations=iterations, gamma_threshold=gamma_threshold, random_state=random_state, minimum_probability=minimum_probability, minimum_phi_value=minimum_phi_value, per_word_topics=per_word_topics, dtype=dtype)
+
+    def update(self, corpus, chunks_as_numpy=False):
+        """Train the model with new documents, by EM-iterating over `corpus` until the topics converge
+        (or until the maximum number of allowed iterations is reached).
+
+        Train the model with new documents, by EM-iterating over the corpus until the topics converge, or until
+        the maximum number of allowed iterations is reached. `corpus` must be an iterable. The E step is distributed
+        into the several processes.
+
+        Notes
+        -----
+        This update also supports updating an already trained model (`self`) with new documents from `corpus`;
+        the two models are then merged in proportion to the number of old vs. new documents.
+        This feature is still experimental for non-stationary input streams.
+
+        For stationary input (no topic drift in new documents), on the other hand,
+        this equals the online update of `'Online Learning for LDA' by Hoffman et al.`_
+        and is guaranteed to converge for any `decay` in (0.5, 1].
+
+        Parameters
+        ----------
+        corpus : {iterable of list of (int, float), scipy.sparse.csc}, optional
+            Stream of document vectors or sparse matrix of shape (`num_documents`, `num_terms`) used to update the
+            model.
+        chunks_as_numpy : bool
+            Whether each chunk passed to the inference step should be a np.ndarray or not. Numpy can in some settings
+            turn the term IDs into floats, these will be converted back into integers in inference, which incurs a
+            performance hit. For distributed computing it may be desirable to keep the chunks as `numpy.ndarray`.
+
+        """
+        try:
+            lencorpus = len(corpus)
+        except TypeError:
+            logger.warning('input corpus stream has no len(); counting documents')
+            lencorpus = sum((1 for _ in corpus))
+        if lencorpus == 0:
+            logger.warning('LdaMulticore.update() called with an empty corpus')
+            return
+        self.state.numdocs += lencorpus
+        if self.batch:
+            updatetype = 'batch'
+            updateafter = lencorpus
+        else:
+            updatetype = 'online'
+            updateafter = self.chunksize * self.workers
+        eval_every = self.eval_every or 0
+        evalafter = min(lencorpus, eval_every * updateafter)
+        updates_per_pass = max(1, lencorpus / updateafter)
+        logger.info('running %s LDA training, %s topics, %i passes over the supplied corpus of %i documents, updating every %i documents, evaluating every ~%i documents, iterating %ix with a convergence threshold of %f', updatetype, self.num_topics, self.passes, lencorpus, updateafter, evalafter, self.iterations, self.gamma_threshold)
+        if updates_per_pass * self.passes < 10:
+            logger.warning('too few updates, training might not converge; consider increasing the number of passes or iterations to improve accuracy')
+        job_queue = Queue(maxsize=2 * self.workers)
+        result_queue = Queue()
+
+        def rho():
+            return pow(self.offset + pass_ + self.num_updates / self.chunksize, -self.decay)
+
+        def process_result_queue(force=False):
+            """
+            Clear the result queue, merging all intermediate results, and update the
+            LDA model if necessary.
+
+            """
+            merged_new = False
+            while not result_queue.empty():
+                other.merge(result_queue.get())
+                queue_size[0] -= 1
+                merged_new = True
+            if force and merged_new and (queue_size[0] == 0) or other.numdocs >= updateafter:
+                self.do_mstep(rho(), other, pass_ > 0)
+                other.reset()
+                if eval_every > 0 and (force or self.num_updates / updateafter % eval_every == 0):
+                    self.log_perplexity(chunk, total_docs=lencorpus)
+        logger.info('training LDA model using %i processes', self.workers)
+        pool = Pool(self.workers, worker_e_step, (job_queue, result_queue, self))
+        for pass_ in range(self.passes):
+            queue_size, reallen = ([0], 0)
+            other = LdaState(self.eta, self.state.sstats.shape)
+            chunk_stream = utils.grouper(corpus, self.chunksize, as_numpy=chunks_as_numpy)
+            for chunk_no, chunk in enumerate(chunk_stream):
+                reallen += len(chunk)
+                while True:
+                    try:
+                        job_queue.put((chunk_no, chunk, self.state), block=False)
+                        queue_size[0] += 1
+                        logger.info('PROGRESS: pass %i, dispatched chunk #%i = documents up to #%i/%i, outstanding queue size %i', pass_, chunk_no, chunk_no * self.chunksize + len(chunk), lencorpus, queue_size[0])
+                        break
+                    except queue.Full:
+                        process_result_queue()
+                process_result_queue()
+            while queue_size[0] > 0:
+                process_result_queue(force=True)
+            if reallen != lencorpus:
+                raise RuntimeError("input corpus size changed during training (don't use generators as input)")
+        pool.terminate()

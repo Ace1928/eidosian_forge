@@ -1,0 +1,23 @@
+import os
+from copy import copy
+from io import BytesIO
+import patiencediff
+from ..lazy_import import lazy_import
+from breezy import tsort
+from .. import errors, osutils
+from .. import transport as _mod_transport
+from ..errors import RevisionAlreadyPresent, RevisionNotPresent
+from ..osutils import dirname, sha, sha_strings, split_lines
+from ..revision import NULL_REVISION
+from ..trace import mutter
+from .versionedfile import (AbsentContentFactory, ContentFactory,
+from .weavefile import _read_weave_v5, write_weave_v5
+def _inclusions(self, versions):
+    """Return set of all ancestors of given version(s)."""
+    if not len(versions):
+        return set()
+    i = set(versions)
+    for v in range(max(versions), 0, -1):
+        if v in i:
+            i.update(self._parents[v])
+    return i

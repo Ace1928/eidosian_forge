@@ -1,0 +1,32 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+import os
+import re
+import sys
+from unittest import mock
+from gslib.exception import NO_URLS_MATCHED_PREFIX
+from gslib.exception import NO_URLS_MATCHED_TARGET
+import gslib.tests.testcase as testcase
+from gslib.tests.testcase.base import MAX_BUCKET_LENGTH
+from gslib.tests.testcase.integration_testcase import SkipForS3
+import gslib.tests.util as util
+from gslib.tests.util import GenerationFromURI as urigen
+from gslib.tests.util import ObjectToURI as suri
+from gslib.tests.util import SetBotoConfigForTest
+from gslib.tests.util import SetEnvironmentForTest
+from gslib.utils import shim_util
+from gslib.utils.retry_util import Retry
+def _CleanOutputLinesForGcloudStorage(self, stderr):
+    """Remove irrelevant lines from the output lines."""
+    stderr_lines = stderr.splitlines()
+    valid_lines = []
+    strings_to_remove = set(['Removing objects:', 'Removing Buckets:', '  '])
+    for line in stderr_lines:
+        if line in strings_to_remove:
+            continue
+        cleaned_line = line.lstrip('.')
+        if cleaned_line:
+            valid_lines.append(cleaned_line)
+    return os.linesep.join(valid_lines)

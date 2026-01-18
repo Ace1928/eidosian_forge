@@ -1,0 +1,23 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+class FieldABC(ABC):
+    """Abstract base class from which all Field classes inherit."""
+    parent = None
+    name = None
+    root = None
+
+    @abstractmethod
+    def serialize(self, attr, obj, accessor=None):
+        pass
+
+    @abstractmethod
+    def deserialize(self, value):
+        pass
+
+    @abstractmethod
+    def _serialize(self, value, attr, obj, **kwargs):
+        pass
+
+    @abstractmethod
+    def _deserialize(self, value, attr, data, **kwargs):
+        pass

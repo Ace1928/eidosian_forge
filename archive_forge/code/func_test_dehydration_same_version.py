@@ -1,0 +1,23 @@
+import copy
+import datetime
+import jsonschema
+import logging
+import pytz
+from unittest import mock
+from oslo_context import context
+from oslo_serialization import jsonutils
+from oslo_utils import timeutils
+import testtools
+from testtools import matchers
+from oslo_versionedobjects import base
+from oslo_versionedobjects import exception
+from oslo_versionedobjects import fields
+from oslo_versionedobjects import fixture
+from oslo_versionedobjects import test
+def test_dehydration_same_version(self):
+    expected = {'versioned_object.name': 'MyObj', 'versioned_object.namespace': 'versionedobjects', 'versioned_object.version': '1.6', 'versioned_object.data': {'foo': 1}}
+    obj = MyObj(foo=1)
+    obj.obj_reset_changes()
+    with mock.patch.object(obj, 'obj_make_compatible') as mock_compat:
+        self.assertEqual(obj.obj_to_primitive(target_version='1.6'), expected)
+        self.assertFalse(mock_compat.called)

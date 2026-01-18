@@ -1,0 +1,11 @@
+import builtins
+from unittest import mock
+import jsonschema
+from ironicclient import exc
+from ironicclient.tests.unit import utils
+from ironicclient.v1 import create_resources
+@mock.patch.object(builtins, 'open', mock.mock_open(read_data='---\na: b'))
+def test_load_yaml(self):
+    fname = 'abc.yaml'
+    res = create_resources.load_from_file(fname)
+    self.assertEqual({'a': 'b'}, res)

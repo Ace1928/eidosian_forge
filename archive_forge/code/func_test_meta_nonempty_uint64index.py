@@ -1,0 +1,20 @@
+from __future__ import annotations
+import re
+import warnings
+from collections.abc import Iterable
+import numpy as np
+import pandas as pd
+import pytest
+from packaging.version import Version
+import dask
+import dask.dataframe as dd
+from dask.dataframe._compat import PANDAS_GE_200, PANDAS_GE_300, tm
+from dask.dataframe.core import apply_and_enforce
+from dask.dataframe.utils import (
+from dask.local import get_sync
+def test_meta_nonempty_uint64index():
+    idx = pd.Index([1], name='foo', dtype='uint64')
+    res = meta_nonempty(idx)
+    assert type(res) is type(idx)
+    assert res.dtype == 'uint64'
+    assert res.name == idx.name

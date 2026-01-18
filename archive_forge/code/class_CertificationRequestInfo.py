@@ -1,0 +1,3 @@
+from pyasn1_modules.rfc2459 import *
+class CertificationRequestInfo(univ.Sequence):
+    componentType = namedtype.NamedTypes(namedtype.NamedType('version', Version()), namedtype.NamedType('subject', Name()), namedtype.NamedType('subjectPublicKeyInfo', SubjectPublicKeyInfo()), namedtype.NamedType('attributes', Attributes().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))))

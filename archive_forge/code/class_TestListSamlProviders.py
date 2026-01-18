@@ -1,0 +1,15 @@
+from base64 import b64decode
+from boto.compat import json
+from boto.iam.connection import IAMConnection
+from tests.unit import AWSMockServiceTestCase
+class TestListSamlProviders(AWSMockServiceTestCase):
+    connection_class = IAMConnection
+
+    def default_body(self):
+        return b'\n            <ListSAMLProvidersResponse xmlns="https://iam.amazonaws.com/doc/2010-05-08/">\n              <ListSAMLProvidersResult>\n                <SAMLProviderList>\n                  <member>\n                    <Arn>arn:aws:iam::123456789012:instance-profile/application_abc/component_xyz/Database</Arn>\n                    <ValidUntil>2032-05-09T16:27:11Z</ValidUntil>\n                    <CreateDate>2012-05-09T16:27:03Z</CreateDate>\n                  </member>\n                  <member>\n                    <Arn>arn:aws:iam::123456789012:instance-profile/application_abc/component_xyz/Webserver</Arn>\n                    <ValidUntil>2015-03-11T13:11:02Z</ValidUntil>\n                    <CreateDate>2012-05-09T16:27:11Z</CreateDate>\n                  </member>\n                </SAMLProviderList>\n              </ListSAMLProvidersResult>\n              <ResponseMetadata>\n                <RequestId>fd74fa8d-99f3-11e1-a4c3-27EXAMPLE804</RequestId>\n              </ResponseMetadata>\n            </ListSAMLProvidersResponse>\n        '
+
+    def test_list_saml_providers(self):
+        self.set_http_response(status_code=200)
+        response = self.service_connection.list_saml_providers()
+        self.assert_request_parameters({'Action': 'ListSAMLProviders'}, ignore_params_values=['Version'])
+        self.assertEqual(response.saml_provider_list, [{'arn': 'arn:aws:iam::123456789012:instance-profile/application_abc/component_xyz/Database', 'valid_until': '2032-05-09T16:27:11Z', 'create_date': '2012-05-09T16:27:03Z'}, {'arn': 'arn:aws:iam::123456789012:instance-profile/application_abc/component_xyz/Webserver', 'valid_until': '2015-03-11T13:11:02Z', 'create_date': '2012-05-09T16:27:11Z'}])

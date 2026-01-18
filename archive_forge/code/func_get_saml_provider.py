@@ -1,0 +1,19 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def get_saml_provider(self, saml_provider_arn):
+    """
+        Returns the SAML provider metadocument that was uploaded when
+        the provider was created or updated.
+        This operation requires `Signature Version 4`_.
+
+        :type saml_provider_arn: string
+        :param saml_provider_arn: The Amazon Resource Name (ARN) of the SAML
+            provider to get information about.
+
+        """
+    params = {'SAMLProviderArn': saml_provider_arn}
+    return self.get_response('GetSAMLProvider', params)

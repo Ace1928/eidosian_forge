@@ -1,0 +1,33 @@
+import numpy as np
+from patsy.util import have_pandas, no_pickling, assert_no_pickling
+from patsy.state import stateful_transform
+def test_bs_errors():
+    import pytest
+    x = np.linspace(-10, 10, 20)
+    pytest.raises(NotImplementedError, bs, x, 3, lower_bound=0)
+    pytest.raises(NotImplementedError, bs, x, 3, upper_bound=0)
+    pytest.raises(ValueError, bs, x)
+    bs(x, df=10, include_intercept=False, knots=[0] * 7)
+    bs(x, df=10, include_intercept=True, knots=[0] * 6)
+    bs(x, df=10, include_intercept=False, knots=[0] * 9, degree=1)
+    bs(x, df=10, include_intercept=True, knots=[0] * 8, degree=1)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=False, knots=[0] * 8)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=True, knots=[0] * 7)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=False, knots=[0] * 10, degree=1)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=True, knots=[0] * 9, degree=1)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=False, knots=[0] * 6)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=True, knots=[0] * 5)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=False, knots=[0] * 8, degree=1)
+    pytest.raises(ValueError, bs, x, df=10, include_intercept=True, knots=[0] * 7, degree=1)
+    pytest.raises(ValueError, bs, x, df=1, degree=3)
+    pytest.raises(ValueError, bs, x, df=3, degree=5)
+    pytest.raises(ValueError, bs, x, df=10, degree=-1)
+    pytest.raises(ValueError, bs, x, df=10, degree=1.5)
+    pytest.raises(ValueError, bs, x, 3, lower_bound=1, upper_bound=-1)
+    pytest.raises(ValueError, bs, np.column_stack((x, x)), 3)
+    assert np.array_equal(bs(x, knots=[1, 4]), bs(x, knots=[4, 1]))
+    pytest.raises(ValueError, bs, x, knots=[[0], [20]])
+    pytest.raises(ValueError, bs, x, knots=[0, 20])
+    pytest.raises(ValueError, bs, x, knots=[0, 4], upper_bound=3)
+    pytest.raises(ValueError, bs, x, knots=[-20, 0])
+    pytest.raises(ValueError, bs, x, knots=[-4, 0], lower_bound=-3)

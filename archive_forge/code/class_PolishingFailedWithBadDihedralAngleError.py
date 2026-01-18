@@ -1,0 +1,2 @@
+class PolishingFailedWithBadDihedralAngleError(VerificationError):
+    pass

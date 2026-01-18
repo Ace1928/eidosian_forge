@@ -1,0 +1,38 @@
+from __future__ import absolute_import, division, unicode_literals
+from six import unichr as chr
+from collections import deque, OrderedDict
+from sys import version_info
+from .constants import spaceCharacters
+from .constants import entities
+from .constants import asciiLetters, asciiUpper2Lower
+from .constants import digits, hexDigits, EOF
+from .constants import tokenTypes, tagTokenTypes
+from .constants import replacementCharacters
+from ._inputstream import HTMLInputStream
+from ._trie import Trie
+def beforeAttributeNameState(self):
+    data = self.stream.char()
+    if data in spaceCharacters:
+        self.stream.charsUntil(spaceCharacters, True)
+    elif data in asciiLetters:
+        self.currentToken['data'].append([data, ''])
+        self.state = self.attributeNameState
+    elif data == '>':
+        self.emitCurrentToken()
+    elif data == '/':
+        self.state = self.selfClosingStartTagState
+    elif data in ("'", '"', '=', '<'):
+        self.tokenQueue.append({'type': tokenTypes['ParseError'], 'data': 'invalid-character-in-attribute-name'})
+        self.currentToken['data'].append([data, ''])
+        self.state = self.attributeNameState
+    elif data == '\x00':
+        self.tokenQueue.append({'type': tokenTypes['ParseError'], 'data': 'invalid-codepoint'})
+        self.currentToken['data'].append(['�', ''])
+        self.state = self.attributeNameState
+    elif data is EOF:
+        self.tokenQueue.append({'type': tokenTypes['ParseError'], 'data': 'expected-attribute-name-but-got-eof'})
+        self.state = self.dataState
+    else:
+        self.currentToken['data'].append([data, ''])
+        self.state = self.attributeNameState
+    return True

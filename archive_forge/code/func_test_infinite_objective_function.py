@@ -1,0 +1,20 @@
+import multiprocessing
+import platform
+from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
+from scipy.optimize import differential_evolution, OptimizeResult
+from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
+from scipy.optimize import rosen, minimize
+from scipy.sparse import csr_matrix
+from scipy import stats
+import numpy as np
+from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
+from pytest import raises as assert_raises, warns
+import pytest
+def test_infinite_objective_function(self):
+
+    def sometimes_inf(x):
+        if x[0] < 0.5:
+            return np.inf
+        return x[1]
+    bounds = [(0, 1), (0, 1)]
+    differential_evolution(sometimes_inf, bounds=bounds, disp=False)

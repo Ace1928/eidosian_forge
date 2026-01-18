@@ -1,0 +1,31 @@
+from __future__ import annotations
+import gc
+import math
+import os
+import random
+import warnings
+import weakref
+from bz2 import BZ2File
+from collections.abc import Iterator
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
+from gzip import GzipFile
+from itertools import repeat
+import partd
+import pytest
+from tlz import groupby, identity, join, merge, pluck, unique, valmap
+import dask
+import dask.bag as db
+from dask.bag.core import (
+from dask.bag.utils import assert_eq
+from dask.blockwise import Blockwise
+from dask.delayed import Delayed
+from dask.typing import Graph
+from dask.utils import filetexts, tmpdir, tmpfile
+from dask.utils_test import add, hlg_layer, hlg_layer_topological, inc
+@pytest.mark.parametrize('size,npartitions,groups', [(1000, 20, 100), (12345, 234, 1042), (100, 1, 50)])
+def test_groupby_tasks_2(size, npartitions, groups):
+    func = lambda x: x % groups
+    b = db.range(size, npartitions=npartitions).groupby(func, shuffle='tasks')
+    result = b.compute(scheduler='sync')
+    assert dict(result) == groupby(func, range(size))

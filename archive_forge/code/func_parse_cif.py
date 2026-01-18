@@ -1,0 +1,20 @@
+import io
+import re
+import shlex
+import warnings
+from typing import Dict, List, Tuple, Optional, Union, Iterator, Any, Sequence
+import collections.abc
+import numpy as np
+from ase import Atoms
+from ase.cell import Cell
+from ase.spacegroup import crystal
+from ase.spacegroup.spacegroup import spacegroup_from_data, Spacegroup
+from ase.io.cif_unicode import format_unicode, handle_subscripts
+from ase.utils import iofunction
+def parse_cif(fileobj, reader='ase') -> Iterator[CIFBlock]:
+    if reader == 'ase':
+        return parse_cif_ase(fileobj)
+    elif reader == 'pycodcif':
+        return parse_cif_pycodcif(fileobj)
+    else:
+        raise ValueError(f'No such reader: {reader}')

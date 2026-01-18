@@ -1,0 +1,18 @@
+from .. import errors, tests, uncommit
+def test_uncommit_remove_tags_keeps_pending_merges(self):
+    tree, history = self.make_linear_tree()
+    copy = tree.controldir.sprout('copyoftree').open_workingtree()
+    copy.commit(message='merged', rev_id=b'merged')
+    tree.merge_from_branch(copy.branch)
+    tree.branch.tags.set_tag('pointsatmerged', b'merged')
+    history.append(tree.commit('merge'))
+    self.assertEqual(b'merged', tree.branch.tags.lookup_tag('pointsatmerged'))
+    self.assertEqual(history[2], tree.last_revision())
+    self.assertEqual((3, history[2]), tree.branch.last_revision_info())
+    tree.branch.tags.set_tag('pointsatexisting', history[1])
+    tree.branch.tags.set_tag('pointsatremoved', history[2])
+    uncommit.uncommit(tree.branch, tree=tree)
+    self.assertEqual(history[1], tree.last_revision())
+    self.assertEqual((2, history[1]), tree.branch.last_revision_info())
+    self.assertEqual([history[1], b'merged'], tree.get_parent_ids())
+    self.assertEqual({'pointsatexisting': history[1], 'pointsatmerged': b'merged'}, tree.branch.tags.get_tag_dict())

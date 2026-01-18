@@ -1,0 +1,9 @@
+import sys
+from io import BytesIO
+from typing import List, Optional
+from twisted.python import _shellcomp, reflect, usage
+from twisted.python.usage import CompleteFiles, CompleteList, Completer, Completions
+from twisted.trial import unittest
+class OddFighterAceOptions(FighterAceExtendedOptions):
+    optFlags = [['anatra', None, 'Select the Anatra DS as your dogfighter aircraft']]
+    compData = Completions(mutuallyExclusive=[['anatra', 'fokker', 'albatros', 'spad', 'bristol']])

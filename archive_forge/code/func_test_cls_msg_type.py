@@ -1,0 +1,23 @@
+import unittest
+import logging
+import socket
+from struct import *
+from os_ken.ofproto.ofproto_v1_2_parser import *
+from os_ken.ofproto import ofproto_v1_2_parser
+from os_ken.ofproto import ofproto_v1_2
+from os_ken.ofproto import ofproto_protocol
+from os_ken.ofproto import ether
+from os_ken.ofproto.ofproto_parser import MsgBase
+from os_ken import utils
+from os_ken.lib import addrconv
+from os_ken.lib import pack_utils
+def test_cls_msg_type(self):
+    msg_type = 255
+    cls = self._OFPDummy(_Datapath)
+    cls.cls_msg_type = msg_type
+    res = ofproto_v1_2_parser._register_parser(cls)
+    res_parser = ofproto_v1_2_parser._MSG_PARSERS[msg_type]
+    del ofproto_v1_2_parser._MSG_PARSERS[msg_type]
+    self.assertEqual(res.cls_msg_type, msg_type)
+    self.assertTrue(res.dummy)
+    self.assertEqual(res_parser(), 'dummy')

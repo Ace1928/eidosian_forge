@@ -1,0 +1,28 @@
+import copy
+import operator
+from typing import Any, cast, Dict, List, Optional, Sequence, Tuple
+import torch
+from torch._subclasses.fake_tensor import FakeTensor
+from torch.distributed._tensor import DeviceMesh, distribute_tensor, DTensor
+from torch.distributed._tensor.op_schema import (
+from torch.distributed._tensor.placement_types import (
+from torch.distributed._tensor.redistribute import redistribute_local_tensor
+from torch.distributed.tensor.parallel.style import ColwiseParallel, ParallelStyle
+from torch.export import ExportedProgram
+from torch.export.exported_program import ExportGraphSignature
+from torch.fx import GraphModule
+from torch.fx.experimental.proxy_tensor import make_fx
+from torch.fx.node import Node
+from torch.fx.passes.infra.pass_base import PassBase, PassResult
+from torch.fx.passes.shape_prop import _extract_tensor_metadata
+from torch.utils import _pytree as pytree
+def _get_input_node_fqn(input_name: str, graph_signature: ExportGraphSignature) -> str:
+    """
+    Return the FQN of an input node.
+    """
+    if input_name in graph_signature.inputs_to_parameters:
+        return graph_signature.inputs_to_parameters[input_name]
+    elif input_name in graph_signature.inputs_to_buffers:
+        return graph_signature.inputs_to_buffers[input_name]
+    else:
+        raise ValueError(f'{input_name} not found in inputs_to_parameters or inputs_to_buffers')

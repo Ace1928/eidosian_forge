@@ -1,0 +1,11 @@
+import os
+import tempfile
+from ... import controldir, errors, memorytree, osutils
+from ... import revision as _mod_revision
+from ... import revisiontree, tests
+from ...tests import features, test_osutils
+from ...tests.scenarios import load_tests_apply_scenarios
+from .. import dirstate, inventory, inventorytree, workingtree_4
+def test_add_symlink_unicode_to_root_no_parents_all_data(self):
+    self.requireFeature(features.UnicodeFilenameFeature)
+    self._test_add_symlink_to_root_no_parents_all_data('€link', 'targ€et')

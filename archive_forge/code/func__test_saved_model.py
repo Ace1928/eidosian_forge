@@ -1,0 +1,59 @@
+import abc
+import itertools
+import numpy as np
+from tensorflow.python.eager import backprop
+from tensorflow.python.eager import context
+from tensorflow.python.eager import def_function
+from tensorflow.python.framework import composite_tensor
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import random_seed
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.framework import test_util
+from tensorflow.python.module import module
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import gradients_impl
+from tensorflow.python.ops import linalg_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import random_ops
+from tensorflow.python.ops import sort_ops
+from tensorflow.python.ops import variables
+from tensorflow.python.ops import while_v2
+from tensorflow.python.ops.linalg import linalg_impl as linalg
+from tensorflow.python.ops.linalg import linear_operator_util
+from tensorflow.python.platform import test
+from tensorflow.python.saved_model import load as load_model
+from tensorflow.python.saved_model import nested_structure_coder
+from tensorflow.python.saved_model import save as save_model
+from tensorflow.python.util import nest
+@test_util.run_without_tensor_float_32('Use FP32 in matmul')
+def _test_saved_model(use_placeholder, shapes_info, dtype):
+
+    def test_saved_model(self):
+        with self.session(graph=ops.Graph()) as sess:
+            sess.graph.seed = random_seed.DEFAULT_GRAPH_SEED
+            operator, mat = self.operator_and_matrix(shapes_info, dtype, use_placeholder=use_placeholder)
+            x = self.make_x(operator, adjoint=False)
+
+            class Model(module.Module):
+
+                def __init__(self, init_x):
+                    self.x = nest.map_structure(lambda x_: variables.Variable(x_, shape=None), init_x)
+
+                @def_function.function(input_signature=(operator._type_spec,))
+                def do_matmul(self, op):
+                    return op.matmul(self.x)
+            saved_model_dir = self.get_temp_dir()
+            m1 = Model(x)
+            sess.run([v.initializer for v in m1.variables])
+            sess.run(m1.x.assign(m1.x + 1.0))
+            save_model.save(m1, saved_model_dir)
+            m2 = load_model.load(saved_model_dir)
+            sess.run(m2.x.initializer)
+            sess.run(m2.x.assign(m2.x + 1.0))
+            y_op = m2.do_matmul(operator)
+            y_mat = math_ops.matmul(mat, m2.x)
+            y_op_, y_mat_ = sess.run([y_op, y_mat])
+            self.assertAC(y_op_, y_mat_)
+    return test_saved_model

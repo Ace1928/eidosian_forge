@@ -1,0 +1,63 @@
+from __future__ import (absolute_import, division, print_function)
+import sys
+import time
+import socket
+import array
+import json
+import time
+import re
+import os
+from ansible.module_utils.basic import AnsibleModule
+from collections import defaultdict
+def doConfigRollBack(module, prompt, answer):
+    host = module.params['host']
+    server = module.params['serverip']
+    username = module.params['serverusername']
+    password = module.params['serverpassword']
+    protocol = module.params['protocol'].lower()
+    rcPath = module.params['rcpath']
+    configType = module.params['configType']
+    confPath = rcPath
+    retVal = ''
+    command = 'copy ' + protocol + ' ' + protocol + '://'
+    command = command + username + '@' + server + '/' + confPath
+    command = command + ' ' + configType + ' vrf management\n'
+    cnos.debugOutput(command + '\n')
+    cmd = []
+    if protocol == 'scp':
+        scp_cmd1 = [{'command': command, 'prompt': 'timeout:', 'answer': '0'}]
+        scp_cmd2 = [{'command': '\n', 'prompt': 'Password:', 'answer': password}]
+        cmd.extend(scp_cmd1)
+        cmd.extend(scp_cmd2)
+        if configType == 'startup-config':
+            scp_cmd3 = [{'command': 'y', 'prompt': None, 'answer': None}]
+            cmd.extend(scp_cmd3)
+        retVal = retVal + str(cnos.run_cnos_commands(module, cmd))
+    elif protocol == 'sftp':
+        sftp_cmd = [{'command': command, 'prompt': 'Password:', 'answer': password}]
+        cmd.extend(sftp_cmd)
+        if configType == 'startup-config':
+            sftp_cmd2 = [{'command': 'y', 'prompt': None, 'answer': None}]
+            cmd.extend(sftp_cmd2)
+        retVal = retVal + str(cnos.run_cnos_commands(module, cmd))
+    elif protocol == 'ftp':
+        ftp_cmd = [{'command': command, 'prompt': 'Password:', 'answer': password}]
+        cmd.extend(ftp_cmd)
+        if configType == 'startup-config':
+            ftp_cmd2 = [{'command': 'y', 'prompt': None, 'answer': None}]
+            cmd.extend(ftp_cmd2)
+        retVal = retVal + str(cnos.run_cnos_commands(module, cmd))
+    elif protocol == 'tftp':
+        command = 'copy ' + protocol + ' ' + protocol
+        command = command + '://' + server + '/' + confPath
+        command = command + ' ' + configType + ' vrf management\n'
+        cnos.debugOutput(command)
+        tftp_cmd = [{'command': command, 'prompt': None, 'answer': None}]
+        cmd.extend(tftp_cmd)
+        if configType == 'startup-config':
+            tftp_cmd2 = [{'command': 'y', 'prompt': None, 'answer': None}]
+            cmd.extend(tftp_cmd2)
+        retVal = retVal + str(cnos.run_cnos_commands(module, cmd))
+    else:
+        return 'Error-110'
+    return retVal

@@ -1,0 +1,17 @@
+import base64
+import datetime
+import json
+import os
+import shutil
+import tempfile
+import unittest
+import mock
+from ruamel import yaml
+from six import PY3, next
+from kubernetes.client import Configuration
+from .config_exception import ConfigException
+from .kube_config import (ENV_KUBECONFIG_PATH_SEPARATOR, ConfigNode, FileOrData,
+def test_file_given_data_no_base64(self):
+    obj = {TEST_DATA_KEY: TEST_DATA}
+    t = FileOrData(obj=obj, file_key_name=TEST_FILE_KEY, data_key_name=TEST_DATA_KEY, base64_file_content=False)
+    self.assertEqual(TEST_DATA, self.get_file_content(t.as_file()))

@@ -1,0 +1,16 @@
+from datetime import (
+from hypothesis import (
+import numpy as np
+import pytest
+from pandas import (
+import pandas._testing as tm
+@pytest.mark.parametrize('idx1, idx2, expected_sorted, expected_notsorted', [(RangeIndex(0, 10, 1), RangeIndex(0, 10, 1), RangeIndex(0, 10, 1), RangeIndex(0, 10, 1)), (RangeIndex(0, 10, 1), RangeIndex(5, 20, 1), RangeIndex(0, 20, 1), RangeIndex(0, 20, 1)), (RangeIndex(0, 10, 1), RangeIndex(10, 20, 1), RangeIndex(0, 20, 1), RangeIndex(0, 20, 1)), (RangeIndex(0, -10, -1), RangeIndex(0, -10, -1), RangeIndex(0, -10, -1), RangeIndex(0, -10, -1)), (RangeIndex(0, -10, -1), RangeIndex(-10, -20, -1), RangeIndex(-19, 1, 1), RangeIndex(0, -20, -1)), (RangeIndex(0, 10, 2), RangeIndex(1, 10, 2), RangeIndex(0, 10, 1), Index(list(range(0, 10, 2)) + list(range(1, 10, 2)))), (RangeIndex(0, 11, 2), RangeIndex(1, 12, 2), RangeIndex(0, 12, 1), Index(list(range(0, 11, 2)) + list(range(1, 12, 2)))), (RangeIndex(0, 21, 4), RangeIndex(-2, 24, 4), RangeIndex(-2, 24, 2), Index(list(range(0, 21, 4)) + list(range(-2, 24, 4)))), (RangeIndex(0, -20, -2), RangeIndex(-1, -21, -2), RangeIndex(-19, 1, 1), Index(list(range(0, -20, -2)) + list(range(-1, -21, -2)))), (RangeIndex(0, 100, 5), RangeIndex(0, 100, 20), RangeIndex(0, 100, 5), RangeIndex(0, 100, 5)), (RangeIndex(0, -100, -5), RangeIndex(5, -100, -20), RangeIndex(-95, 10, 5), Index(list(range(0, -100, -5)) + [5])), (RangeIndex(0, -11, -1), RangeIndex(1, -12, -4), RangeIndex(-11, 2, 1), Index(list(range(0, -11, -1)) + [1, -11])), (RangeIndex(0), RangeIndex(0), RangeIndex(0), RangeIndex(0)), (RangeIndex(0, -10, -2), RangeIndex(0), RangeIndex(0, -10, -2), RangeIndex(0, -10, -2)), (RangeIndex(0, 100, 2), RangeIndex(100, 150, 200), RangeIndex(0, 102, 2), RangeIndex(0, 102, 2)), (RangeIndex(0, -100, -2), RangeIndex(-100, 50, 102), RangeIndex(-100, 4, 2), Index(list(range(0, -100, -2)) + [-100, 2])), (RangeIndex(0, -100, -1), RangeIndex(0, -50, -3), RangeIndex(-99, 1, 1), RangeIndex(0, -100, -1)), (RangeIndex(0, 1, 1), RangeIndex(5, 6, 10), RangeIndex(0, 6, 5), RangeIndex(0, 10, 5)), (RangeIndex(0, 10, 5), RangeIndex(-5, -6, -20), RangeIndex(-5, 10, 5), Index([0, 5, -5])), (RangeIndex(0, 3, 1), RangeIndex(4, 5, 1), Index([0, 1, 2, 4]), Index([0, 1, 2, 4])), (RangeIndex(0, 10, 1), Index([], dtype=np.int64), RangeIndex(0, 10, 1), RangeIndex(0, 10, 1)), (RangeIndex(0), Index([1, 5, 6]), Index([1, 5, 6]), Index([1, 5, 6])), (RangeIndex(0, 10), RangeIndex(0, 5), RangeIndex(0, 10), RangeIndex(0, 10))], ids=lambda x: repr(x) if isinstance(x, RangeIndex) else x)
+def test_union_sorted(self, idx1, idx2, expected_sorted, expected_notsorted):
+    res1 = idx1.union(idx2, sort=None)
+    tm.assert_index_equal(res1, expected_sorted, exact=True)
+    res1 = idx1.union(idx2, sort=False)
+    tm.assert_index_equal(res1, expected_notsorted, exact=True)
+    res2 = idx2.union(idx1, sort=None)
+    res3 = Index(idx1._values, name=idx1.name).union(idx2, sort=None)
+    tm.assert_index_equal(res2, expected_sorted, exact=True)
+    tm.assert_index_equal(res3, expected_sorted, exact='equiv')

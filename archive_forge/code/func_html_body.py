@@ -1,0 +1,15 @@
+from __future__ import annotations
+from lazyops.types import BaseModel, lazyproperty
+from fastapi.responses import HTMLResponse
+from typing import Optional, Dict, Any
+@lazyproperty
+def html_body(self):
+    """
+        Return the HTML body
+        """
+    head = f'\n            <head>\n            <title>{self.app_title} - Documentation</title>\n            {self.favicon}\n            <meta charset="utf-8"/>\n            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">\n            <link rel="stylesheet" href="{self.css_url}">\n            <script src="{self.js_url}" crossorigin></script>\n            <style>{self.style}</style>\n            </head>\n        '
+    if self.google_analytics_tag_id:
+        head += '\n        <!-- Google tag (gtag.js) -->\n        <script async src="https://www.googletagmanager.com/gtag/js?id=<GOOGLE_TAG_ID>"></script>\n        <script>\n            window.dataLayer = window.dataLayer || [];\n            function gtag(){dataLayer.push(arguments);}\n            gtag(\'js\', new Date());\n\n            gtag(\'config\', \'<GOOGLE_TAG_ID>\');\n        </script>    \n        '.replace('<GOOGLE_TAG_ID>', self.google_analytics_tag_id)
+    _set_header_script = '\n            <script>\n            // Check whether `x-api-key` is present in the headers\n            // and set `TryIt_securitySchemeValues` value in localStorage accordingly\n            // const apiKey = localStorage.getItem(\'x-api-key\');\n            function parseHttpHeaders(httpHeaders) {\n                return httpHeaders.split("\\n")\n                .map(x=>x.split(/: */,2))\n                .filter(x=>x[0])\n                .reduce((ac, x)=>{ac[x[0]] = x[1];return ac;}, {});\n            }\n\n            var req = new XMLHttpRequest();\n            req.open(\'GET\', document.location, false);\n            req.send(null);\n            var headers = parseHttpHeaders(req.getAllResponseHeaders());\n\n            // const apiKey = Headers().get(\'x-api-key\');\n            const apiKey = headers[\'x-api-key\'];\n            const authHeader = headers[\'authorization\'];\n            if (apiKey) {\n                localStorage.setItem(\'TryIt_securitySchemeValues\', JSON.stringify({\n                    \'API Key\': apiKey.trim(),\n                    \'Auth0 Authorization\': authHeader ? authHeader.trim() : \'\'\n                }));\n            }\n            // else if (authHeader) {\n            //     localStorage.setItem(\'TryIt_securitySchemeValues\', JSON.stringify({       \n            // }\n            // if (authHeader) {\n            \n            </script>\n        '
+    body = f'\n            <body>\n            {_set_header_script}\n            <elements-api\n                apiDescriptionUrl="{self.openapi_url}"\n                router="hash"\n                layout="sidebar"\n                tryItCredentialsPolicy="include"\n                {self.logo_data}\n            />\n            </body>\n        '
+    return f'\n        <!DOCTYPE html>\n            <html>\n                {head}\n                {body}\n            </html>\n        '.strip()

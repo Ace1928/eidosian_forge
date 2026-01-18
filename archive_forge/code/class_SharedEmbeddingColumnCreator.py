@@ -1,0 +1,77 @@
+import abc
+import collections
+import math
+import re
+import numpy as np
+import six
+from tensorflow.python.data.experimental.ops import lookup_ops as data_lookup_ops
+from tensorflow.python.data.ops import readers
+from tensorflow.python.eager import context
+from tensorflow.python.feature_column import feature_column as fc_old
+from tensorflow.python.feature_column import feature_column_v2_types as fc_types
+from tensorflow.python.feature_column import serialization
+from tensorflow.python.feature_column import utils as fc_utils
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import sparse_tensor as sparse_tensor_lib
+from tensorflow.python.framework import tensor as tensor_lib
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import check_ops
+from tensorflow.python.ops import cond
+from tensorflow.python.ops import embedding_ops
+from tensorflow.python.ops import init_ops
+from tensorflow.python.ops import lookup_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import parsing_ops
+from tensorflow.python.ops import sparse_ops
+from tensorflow.python.ops import string_ops
+from tensorflow.python.ops import variable_scope
+from tensorflow.python.ops import variables
+from tensorflow.python.platform import gfile
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.trackable import autotrackable
+from tensorflow.python.trackable import base as trackable
+from tensorflow.python.trackable import data_structures
+from tensorflow.python.training import checkpoint_utils
+from tensorflow.python.util import deprecation
+from tensorflow.python.util import nest
+from tensorflow.python.util import tf_inspect
+from tensorflow.python.util.compat import collections_abc
+from tensorflow.python.util.tf_export import tf_export
+from tensorflow.tools.docs import doc_controls
+class SharedEmbeddingColumnCreator(autotrackable.AutoTrackable):
+    """Class that creates a `SharedEmbeddingColumn`."""
+
+    def __init__(self, dimension, initializer, ckpt_to_load_from, tensor_name_in_ckpt, num_buckets, trainable, name='shared_embedding_column_creator', use_safe_embedding_lookup=True):
+        self._dimension = dimension
+        self._initializer = initializer
+        self._ckpt_to_load_from = ckpt_to_load_from
+        self._tensor_name_in_ckpt = tensor_name_in_ckpt
+        self._num_buckets = num_buckets
+        self._trainable = trainable
+        self._name = name
+        self._use_safe_embedding_lookup = use_safe_embedding_lookup
+        self._embedding_weights = {}
+
+    def __call__(self, categorical_column, combiner, max_norm):
+        return SharedEmbeddingColumn(categorical_column, self, combiner, max_norm, self._use_safe_embedding_lookup)
+
+    @property
+    def embedding_weights(self):
+        key = ops.get_default_graph()._graph_key
+        if key not in self._embedding_weights:
+            embedding_shape = (self._num_buckets, self._dimension)
+            var = variable_scope.get_variable(name=self._name, shape=embedding_shape, dtype=dtypes.float32, initializer=self._initializer, trainable=self._trainable)
+            if self._ckpt_to_load_from is not None:
+                to_restore = var
+                if isinstance(to_restore, variables.PartitionedVariable):
+                    to_restore = to_restore._get_variable_list()
+                checkpoint_utils.init_from_checkpoint(self._ckpt_to_load_from, {self._tensor_name_in_ckpt: to_restore})
+            self._embedding_weights[key] = var
+        return self._embedding_weights[key]
+
+    @property
+    def dimension(self):
+        return self._dimension

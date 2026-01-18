@@ -1,0 +1,39 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import abc
+import argparse
+import collections
+import io
+import itertools
+import os
+import re
+import sys
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base  # pylint: disable=unused-import
+from googlecloudsdk.calliope import parser_arguments
+from googlecloudsdk.calliope import parser_errors
+from googlecloudsdk.calliope import suggest_commands
+from googlecloudsdk.calliope import usage_text
+from googlecloudsdk.core import argv_utils
+from googlecloudsdk.core import config
+from googlecloudsdk.core import log
+from googlecloudsdk.core import metrics
+from googlecloudsdk.core.console import console_attr
+from googlecloudsdk.core.console import console_io
+import six
+def IsSpecified(self, dest):
+    """Returns True if args.dest was specified on the command line.
+
+    Args:
+      dest: str, The dest name for the arg to check.
+
+    Raises:
+      UnknownDestinationException: If there is no registered arg for dest.
+
+    Returns:
+      True if args.dest was specified on the command line.
+    """
+    if not hasattr(self, dest):
+        raise parser_errors.UnknownDestinationException('No registered arg for destination [{}].'.format(dest))
+    return dest in self._specified_args

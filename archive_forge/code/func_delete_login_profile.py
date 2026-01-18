@@ -1,0 +1,16 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def delete_login_profile(self, user_name):
+    """
+        Deletes the login profile associated with the specified user.
+
+        :type user_name: string
+        :param user_name: The name of the user to delete.
+
+        """
+    params = {'UserName': user_name}
+    return self.get_response('DeleteLoginProfile', params)

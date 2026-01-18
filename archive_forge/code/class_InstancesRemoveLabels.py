@@ -1,0 +1,41 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.compute import base_classes
+from googlecloudsdk.api_lib.compute.operations import poller
+from googlecloudsdk.api_lib.util import waiter
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.compute import labels_doc_helper
+from googlecloudsdk.command_lib.compute import labels_flags
+from googlecloudsdk.command_lib.compute.instances import flags
+from googlecloudsdk.command_lib.util.args import labels_util
+@base.UniverseCompatible
+@base.ReleaseTracks(base.ReleaseTrack.ALPHA, base.ReleaseTrack.BETA, base.ReleaseTrack.GA)
+class InstancesRemoveLabels(base.UpdateCommand):
+    """remove-labels command for instances."""
+
+    @staticmethod
+    def Args(parser):
+        flags.INSTANCE_ARG.AddArgument(parser)
+        labels_flags.AddArgsForRemoveLabels(parser)
+
+    def Run(self, args):
+        holder = base_classes.ComputeApiHolder(self.ReleaseTrack())
+        client = holder.client.apitools_client
+        messages = holder.client.messages
+        instance_ref = flags.INSTANCE_ARG.ResolveAsResource(args, holder.resources, scope_lister=flags.GetInstanceZoneScopeLister(holder.client))
+        remove_labels = labels_util.GetUpdateLabelsDictFromArgs(args)
+        instance = client.instances.Get(messages.ComputeInstancesGetRequest(**instance_ref.AsDict()))
+        if args.all:
+            remove_labels = {}
+            if instance.labels:
+                for label in instance.labels.additionalProperties:
+                    remove_labels[label.key] = label.value
+        labels_update = labels_util.Diff(subtractions=remove_labels).Apply(messages.InstancesSetLabelsRequest.LabelsValue, instance.labels)
+        if not labels_update.needs_update:
+            return instance
+        request = messages.ComputeInstancesSetLabelsRequest(project=instance_ref.project, instance=instance_ref.instance, zone=instance_ref.zone, instancesSetLabelsRequest=messages.InstancesSetLabelsRequest(labelFingerprint=instance.labelFingerprint, labels=labels_update.labels))
+        operation = client.instances.SetLabels(request)
+        operation_ref = holder.resources.Parse(operation.selfLink, collection='compute.zoneOperations')
+        operation_poller = poller.Poller(client.instances)
+        return waiter.WaitFor(operation_poller, operation_ref, 'Changing labels of instance [{0}]'.format(instance_ref.Name()))

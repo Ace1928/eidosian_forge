@@ -1,0 +1,20 @@
+from __future__ import annotations
+import datetime
+import math
+import numbers
+import re
+import textwrap
+import typing as t
+from collections import deque
+from copy import deepcopy
+from enum import auto
+from functools import reduce
+from sqlglot.errors import ErrorLevel, ParseError
+from sqlglot.helper import (
+from sqlglot.tokens import Token
+class Pivot(Expression):
+    arg_types = {'this': False, 'alias': False, 'expressions': False, 'field': False, 'unpivot': False, 'using': False, 'group': False, 'columns': False, 'include_nulls': False}
+
+    @property
+    def unpivot(self) -> bool:
+        return bool(self.args.get('unpivot'))

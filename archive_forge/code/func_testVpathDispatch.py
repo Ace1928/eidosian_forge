@@ -1,0 +1,21 @@
+import cherrypy
+from cherrypy.test import helper
+def testVpathDispatch(self):
+    self.getPage('/decorated/')
+    self.assertBody('no params')
+    self.getPage('/decorated/hi')
+    self.assertBody("hi was not interpreted as 'a' param")
+    self.getPage('/decorated/yo/')
+    self.assertBody('a:yo')
+    self.getPage('/decorated/yo/there/')
+    self.assertBody('a:yo,b:there')
+    self.getPage('/decorated/yo/there/delete')
+    self.assertBody('deleting yo and there')
+    self.getPage('/decorated/yo/there/handled_by_dispatch/')
+    self.assertBody('custom')
+    self.getPage('/undecorated/blah/')
+    self.assertBody('index: blah')
+    self.getPage('/index_only/a/b/c/d/e/f/g/')
+    self.assertBody('IndexOnly index')
+    self.getPage('/parameter_test/argument2/')
+    self.assertBody('argument2')

@@ -1,0 +1,47 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+class AzureRMWebAppAccessRestrictionInfo(AzureRMModuleBase):
+
+    def __init__(self):
+        self.module_arg_spec = dict(name=dict(type='str', required=True), resource_group=dict(type='str', required=True))
+        self.results = dict(changed=False, ip_security_restrictions=[], scm_ip_security_restrictions=[], scm_ip_security_restrictions_use_main=False)
+        self.name = None
+        self.resource_group = None
+        super(AzureRMWebAppAccessRestrictionInfo, self).__init__(self.module_arg_spec, supports_check_mode=True, supports_tags=False, facts_module=True)
+
+    def exec_module(self, **kwargs):
+        for key in self.module_arg_spec:
+            setattr(self, key, kwargs[key])
+        site_config = self.get_webapp_config()
+        self.results.update(self.set_results(site_config))
+        return self.results
+
+    def get_webapp_config(self):
+        try:
+            return self.web_client.web_apps.get_configuration(resource_group_name=self.resource_group, name=self.name)
+        except Exception as exc:
+            self.fail('Error getting webapp config {0} (rg={1}) - {2}'.format(self.name, self.resource_group, str(exc)))
+
+    def set_results(self, site_config):
+        output = dict()
+        if site_config.ip_security_restrictions:
+            output['ip_security_restrictions'] = self.to_restriction_dict_list(site_config.ip_security_restrictions)
+        if site_config.scm_ip_security_restrictions:
+            output['scm_ip_security_restrictions'] = self.to_restriction_dict_list(site_config.scm_ip_security_restrictions)
+        output['scm_ip_security_restrictions_use_main'] = site_config.scm_ip_security_restrictions_use_main
+        return output
+
+    def to_restriction_dict_list(self, restriction_obj_list):
+        restrictions = []
+        if restriction_obj_list:
+            for r in restriction_obj_list:
+                restriction = self.to_restriction_dict(r)
+                if not self.is_azure_default_restriction(restriction):
+                    restrictions.append(restriction)
+        return restrictions
+
+    def is_azure_default_restriction(self, restriction_obj):
+        return restriction_obj['action'] == 'Allow' and restriction_obj['ip_address'] == 'Any' and (restriction_obj['priority'] == 1) or (restriction_obj['action'] == 'Deny' and restriction_obj['ip_address'] == 'Any' and (restriction_obj['priority'] == 2147483647))
+
+    def to_restriction_dict(self, restriction_obj):
+        return dict(name=restriction_obj.name, description=restriction_obj.description, action=restriction_obj.action, priority=restriction_obj.priority, ip_address=restriction_obj.ip_address)

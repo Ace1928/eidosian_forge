@@ -1,0 +1,19 @@
+import re
+import numpy as np
+import pytest
+from sklearn import datasets
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
+from sklearn.datasets import make_multilabel_classification
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import (
+from sklearn.exceptions import NotFittedError
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.utils._testing import (
+Mock Classifier to check that sample_weight is received as kwargs

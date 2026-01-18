@@ -1,0 +1,12 @@
+from twisted.internet import interfaces
+from twisted.internet.test.connectionmixins import (
+from twisted.internet.test.reactormixins import ReactorBuilder
+from twisted.internet.test.test_tcp import TCPCreator
+from twisted.internet.test.test_tls import (
+from twisted.trial import unittest
+from zope.interface import implementer
+
+        When a non-streaming producer is registered, and then startTLS is
+        called, the producer is re-registered with the
+        C{TLSMemoryBIOProtocol}.
+        

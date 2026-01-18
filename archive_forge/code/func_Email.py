@@ -1,0 +1,5 @@
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.resource_manager import completers
+def Email():
+    return base.Argument('--email', help='An optional email address that can be used for quota related communication between the Google Cloud and the user in case the Google Cloud needs further information to make a decision on whether the user preferred quota can be granted. The Google account for the email address must have quota update permission for the project, folder or organization this quota preference is for. If no contact email address is provided, or the provided email address does not have the required quota update permission, the quota preference request will be denied in case further information is required to make a decision.')

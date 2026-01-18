@@ -1,0 +1,23 @@
+from __future__ import annotations
+import contextlib
+import dataclasses
+import enum
+import functools
+import logging
+import threading
+import traceback
+import unittest.mock
+import weakref
+from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import (
+import torch
+from torch.utils import _pytree as pytree
+from torch.utils._traceback import CapturedTraceback
+from torch.utils.weak import WeakTensorKeyDictionary
+class CompileId(NamedTuple):
+    frame_id: int
+    frame_compile_id: int
+
+    def __str__(self):
+        return f'{self.frame_id}/{self.frame_compile_id}'

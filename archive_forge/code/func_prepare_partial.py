@@ -1,0 +1,22 @@
+from copy import deepcopy
+def prepare_partial(self):
+    """
+        Runs through **ONLY** the changed/deleted fields & encodes them to be
+        handed off to DynamoDB as part of an ``partial_save`` (``update_item``)
+        call.
+
+        Largely internal.
+        """
+    final_data = {}
+    fields = set()
+    alterations = self._determine_alterations()
+    for key, value in alterations['adds'].items():
+        final_data[key] = {'Action': 'PUT', 'Value': self._dynamizer.encode(self._data[key])}
+        fields.add(key)
+    for key, value in alterations['changes'].items():
+        final_data[key] = {'Action': 'PUT', 'Value': self._dynamizer.encode(self._data[key])}
+        fields.add(key)
+    for key in alterations['deletes']:
+        final_data[key] = {'Action': 'DELETE'}
+        fields.add(key)
+    return (final_data, fields)

@@ -1,0 +1,12 @@
+from typing import List
+import numpy as np
+import tree  # pip install dm-tree
+from ray.rllib.utils.typing import ResultDict
+Takes the average of all the leaves in the result dict
+
+    Args:
+        results: list of result dicts to average
+
+    Returns:
+        Averaged result dict
+    

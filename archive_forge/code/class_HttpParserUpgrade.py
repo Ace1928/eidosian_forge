@@ -1,0 +1,2 @@
+class HttpParserUpgrade(Exception):
+    pass

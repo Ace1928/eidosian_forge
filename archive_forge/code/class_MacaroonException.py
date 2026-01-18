@@ -1,0 +1,2 @@
+class MacaroonException(Exception):
+    pass

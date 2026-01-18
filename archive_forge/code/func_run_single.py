@@ -1,0 +1,29 @@
+import collections
+import csv
+import importlib
+import json
+import os
+import pickle
+import sys
+import traceback
+import types
+import warnings
+from abc import ABC, abstractmethod
+from collections import UserDict
+from contextlib import contextmanager
+from os.path import abspath, exists
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from ..dynamic_module_utils import custom_object_save
+from ..feature_extraction_utils import PreTrainedFeatureExtractor
+from ..image_processing_utils import BaseImageProcessor
+from ..modelcard import ModelCard
+from ..models.auto.configuration_auto import AutoConfig
+from ..tokenization_utils import PreTrainedTokenizer
+from ..utils import (
+def run_single(self, inputs, preprocess_params, forward_params, postprocess_params):
+    all_outputs = []
+    for model_inputs in self.preprocess(inputs, **preprocess_params):
+        model_outputs = self.forward(model_inputs, **forward_params)
+        all_outputs.append(model_outputs)
+    outputs = self.postprocess(all_outputs, **postprocess_params)
+    return outputs

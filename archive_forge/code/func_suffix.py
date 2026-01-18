@@ -1,0 +1,33 @@
+import glob
+import io
+import os
+import posixpath
+import re
+import tarfile
+import time
+import xml.dom.minidom
+import zipfile
+from asyncio import TimeoutError
+from io import BytesIO
+from itertools import chain
+from pathlib import Path, PurePosixPath
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Union
+from xml.etree import ElementTree as ET
+import fsspec
+from aiohttp.client_exceptions import ClientError
+from huggingface_hub.utils import EntryNotFoundError
+from packaging import version
+from .. import config
+from ..filesystems import COMPRESSION_FILESYSTEMS
+from ..utils.file_utils import (
+from ..utils.logging import get_logger
+from ..utils.py_utils import map_nested
+from .download_config import DownloadConfig
+@property
+def suffix(self) -> str:
+    """Suffix function for argument of type :obj:`~pathlib.Path` that supports both local paths end remote URLs.
+
+        Returns:
+            `str`
+        """
+    return PurePosixPath(self.as_posix().split('::')[0]).suffix

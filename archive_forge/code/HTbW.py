@@ -1,0 +1,132 @@
+import os
+import time
+import logging
+import shutil
+import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.firefox import GeckoDriverManager
+
+# Constants
+BASE_URL = "https://www.freepik.com/search?format=search&last_filter=type&last_value=vector&query=kids+coloring&selection=1&type=vector"
+DOWNLOAD_DIR = "coloring_images"
+REQUEST_DELAY = 2  # seconds
+FIREFOX_PROFILE_DIR = "firefox_profile"
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+# Log environment details
+logging.info(f"Operating System: {os.name}")
+logging.info(f"Python Version: {os.sys.version}")
+logging.info(f"Requests Version: {requests.__version__}")
+logging.info(f"Selenium Version: {webdriver.__version__}")
+
+# Create download directory if it doesn't exist
+if not os.path.exists(DOWNLOAD_DIR):
+    os.makedirs(DOWNLOAD_DIR)
+    logging.info(f"Created download directory at {DOWNLOAD_DIR}")
+
+# Create Firefox profile directory if it doesn't exist
+if not os.path.exists(FIREFOX_PROFILE_DIR):
+    os.makedirs(FIREFOX_PROFILE_DIR)
+    logging.info(f"Created Firefox profile directory at {FIREFOX_PROFILE_DIR}")
+
+# Ensure the correct GeckoDriver and Firefox version are installed
+try:
+    geckodriver_path = GeckoDriverManager().install()
+    logging.info(f"GeckoDriver installed at {geckodriver_path}")
+except Exception as e:
+    logging.error(f"Failed to install GeckoDriver: {e}")
+    raise
+
+# Create a new Firefox profile
+profile = FirefoxProfile()
+profile.set_preference("browser.download.folderList", 2)
+profile.set_preference("browser.download.manager.showWhenStarting", False)
+profile.set_preference("browser.download.dir", os.path.abspath(DOWNLOAD_DIR))
+profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/zip")
+
+# Save the profile to the specified directory
+profile_path = os.path.abspath(FIREFOX_PROFILE_DIR)
+profile.update_preferences()
+profile_path = profile.path
+
+# Configure Selenium WebDriver for Firefox
+firefox_options = Options()
+firefox_options.profile = profile
+
+try:
+    driver = webdriver.Firefox(
+        service=Service(geckodriver_path), options=firefox_options
+    )
+    logging.info("Firefox WebDriver initialized successfully")
+    logging.info(f"Firefox Version: {driver.capabilities['browserVersion']}")
+except Exception as e:
+    logging.error(f"Failed to initialize Firefox WebDriver: {e}")
+    raise
+
+
+def get_image_links(page_url):
+    driver.get(page_url)
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CLASS_NAME, "showcase__image"))
+    )
+    image_elements = driver.find_elements(By.CLASS_NAME, "showcase__image")
+    image_links = [element.get_attribute("src") for element in image_elements]
+    return image_links
+
+
+def download_image(url, folder, image_num):
+    driver.get(url)
+    try:
+        download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "btn--download"))
+        )
+        download_button.click()
+        free_download_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "btn--free"))
+        )
+        free_download_button.click()
+        logging.info(f"Initiated download for {url}")
+        time.sleep(REQUEST_DELAY)  # Wait for the download to complete
+
+        # Move the downloaded file to the specified folder
+        download_path = os.path.join(DOWNLOAD_DIR, f"image_{image_num}.zip")
+        while not os.path.exists(download_path):
+            time.sleep(1)  # Wait until the file is downloaded
+        shutil.move(download_path, os.path.join(folder, f"image_{image_num}.zip"))
+        logging.info(f"Downloaded and moved {url} to {folder}")
+
+    except Exception as e:
+        logging.error(f"Failed to download {url}: {e}")
+
+
+def main():
+    page_num = 1
+    while True:
+        page_url = f"{BASE_URL}&page={page_num}"
+        logging.info(f"Fetching image links from {page_url}")
+        image_links = get_image_links(page_url)
+        if not image_links:
+            logging.info("No more images found, exiting.")
+            break  # No more images found, exit the loop
+        for image_num, link in enumerate(image_links, start=1):
+            download_image(link, DOWNLOAD_DIR, image_num)
+            time.sleep(REQUEST_DELAY)
+        page_num += 1
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        driver.quit()
+        logging.info("WebDriver closed.")

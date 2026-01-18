@@ -1,0 +1,29 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+@encoding.MapUnrecognizedFields('additionalProperties')
+class NodePosTroubleshootingMetadataMapValue(_messages.Message):
+    """Map between node.id and troubleshooting metadata of this node when the
+    state of this access level is expected to be granted
+
+    Messages:
+      AdditionalProperty: An additional property for a
+        NodePosTroubleshootingMetadataMapValue object.
+
+    Fields:
+      additionalProperties: Additional properties of type
+        NodePosTroubleshootingMetadataMapValue
+    """
+
+    class AdditionalProperty(_messages.Message):
+        """An additional property for a NodePosTroubleshootingMetadataMapValue
+      object.
+
+      Fields:
+        key: Name of the additional property.
+        value: A IdentityCaaIntelFrontendTroubleshootingMetadata attribute.
+      """
+        key = _messages.StringField(1)
+        value = _messages.MessageField('IdentityCaaIntelFrontendTroubleshootingMetadata', 2)
+    additionalProperties = _messages.MessageField('AdditionalProperty', 1, repeated=True)

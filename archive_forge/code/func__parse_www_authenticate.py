@@ -1,0 +1,15 @@
+import base64
+import re
+import pyparsing as pp
+from .error import *
+def _parse_www_authenticate(headers, headername='www-authenticate'):
+    """Returns a dictionary of dictionaries, one dict per auth_scheme."""
+    header = headers.get(headername, '').strip()
+    if not header:
+        return {}
+    try:
+        parsed = www_authenticate.parseString(header)
+    except pp.ParseException as ex:
+        raise MalformedHeader(headername)
+    retval = {challenge['scheme'].lower(): challenge['params'].asDict() if 'params' in challenge else {'token': challenge.get('token')} for challenge in parsed}
+    return retval

@@ -1,0 +1,42 @@
+from tornado import gen, ioloop
+from tornado.httpserver import HTTPServer
+from tornado.locks import Event
+from tornado.testing import AsyncHTTPTestCase, AsyncTestCase, bind_unused_port, gen_test
+from tornado.web import Application
+import asyncio
+import contextlib
+import inspect
+import gc
+import os
+import platform
+import sys
+import traceback
+import unittest
+import warnings
+class AsyncHTTPTestCaseTest(AsyncHTTPTestCase):
+
+    def setUp(self):
+        super().setUp()
+        sock, port = bind_unused_port()
+        app = Application()
+        server = HTTPServer(app, **self.get_httpserver_options())
+        server.add_socket(sock)
+        self.second_port = port
+        self.second_server = server
+
+    def get_app(self):
+        return Application()
+
+    def test_fetch_segment(self):
+        path = '/path'
+        response = self.fetch(path)
+        self.assertEqual(response.request.url, self.get_url(path))
+
+    def test_fetch_full_http_url(self):
+        path = 'http://127.0.0.1:%d/path' % self.second_port
+        response = self.fetch(path)
+        self.assertEqual(response.request.url, path)
+
+    def tearDown(self):
+        self.second_server.stop()
+        super().tearDown()

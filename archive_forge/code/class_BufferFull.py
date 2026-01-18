@@ -1,0 +1,2 @@
+class BufferFull(UnpackException):
+    pass

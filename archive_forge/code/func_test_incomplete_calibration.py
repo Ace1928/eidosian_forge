@@ -1,0 +1,14 @@
+import cirq, cirq_google
+from cirq.devices.noise_utils import OpIdentifier
+from google.protobuf.text_format import Merge
+import numpy as np
+import pytest
+def test_incomplete_calibration():
+    pauli_error = [0.001, 0.002, 0.003]
+    p00_error = [0.004, 0.005, 0.006]
+    p11_error = [0.007, 0.008, 0.009]
+    t1_micros = [10, 20, 30]
+    _CALIBRATION_DATA = Merge(f"\n    timestamp_ms: 1579214873,\n    metrics: [{{\n        name: 'single_qubit_rb_pauli_error_per_gate',\n        targets: ['0_0'],\n        values: [{{\n            double_val: {pauli_error[0]}\n        }}]\n    }}, {{\n        name: 'single_qubit_rb_pauli_error_per_gate',\n        targets: ['0_1'],\n        values: [{{\n            double_val:{pauli_error[1]}\n        }}]\n    }}, {{\n        name: 'single_qubit_rb_pauli_error_per_gate',\n        targets: ['1_0'],\n        values: [{{\n            double_val:{pauli_error[2]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p00_error',\n        targets: ['0_0'],\n        values: [{{\n            double_val: {p00_error[0]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p00_error',\n        targets: ['0_1'],\n        values: [{{\n            double_val: {p00_error[1]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p00_error',\n        targets: ['1_0'],\n        values: [{{\n            double_val: {p00_error[2]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p11_error',\n        targets: ['0_0'],\n        values: [{{\n            double_val: {p11_error[0]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p11_error',\n        targets: ['0_1'],\n        values: [{{\n            double_val: {p11_error[1]}\n        }}]\n    }}, {{\n        name: 'single_qubit_p11_error',\n        targets: ['1_0'],\n        values: [{{\n            double_val: {p11_error[2]}\n        }}]\n    }}, {{\n        name: 'single_qubit_idle_t1_micros',\n        targets: ['0_0'],\n        values: [{{\n            double_val: {t1_micros[0]}\n        }}]\n    }}, {{\n        name: 'single_qubit_idle_t1_micros',\n        targets: ['0_1'],\n        values: [{{\n            double_val: {t1_micros[1]}\n        }}]\n    }}, {{\n        name: 'single_qubit_idle_t1_micros',\n        targets: ['1_0'],\n        values: [{{\n            double_val: {t1_micros[2]}\n        }}]\n    }}]\n", cirq_google.api.v2.metrics_pb2.MetricsSnapshot())
+    calibration = cirq_google.Calibration(_CALIBRATION_DATA)
+    with pytest.raises(ValueError, match='Keys specified for T1 and Tphi are not identical.'):
+        _ = cirq_google.noise_properties_from_calibration(calibration)

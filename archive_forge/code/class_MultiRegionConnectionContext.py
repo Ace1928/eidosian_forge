@@ -1,0 +1,54 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+import abc
+import base64
+import contextlib
+import os
+import re
+import ssl
+import sys
+import tempfile
+from googlecloudsdk.api_lib.run import gke
+from googlecloudsdk.api_lib.run import global_methods
+from googlecloudsdk.api_lib.util import apis
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.run import exceptions as serverless_exceptions
+from googlecloudsdk.command_lib.run import flags
+from googlecloudsdk.command_lib.run import platforms
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import transport
+from googlecloudsdk.core.util import files
+import requests
+import six
+from six.moves.urllib import parse as urlparse
+class MultiRegionConnectionContext(ConnectionInfo):
+    """Context manager to connect to the multi-region endpoint (global)."""
+
+    def __init__(self, api_name, version, region_list):
+        super(MultiRegionConnectionContext, self).__init__(api_name, version)
+        self.region = '-'
+        self.region_list = region_list
+
+    @property
+    def ns_label(self):
+        return 'project'
+
+    @property
+    def operator(self):
+        return 'Cloud Run'
+
+    @property
+    def location_label(self):
+        return ' regions [{{{{bold}}}}{}{{{{reset}}}}]'.format(self.region_list)
+
+    @property
+    def supports_one_platform(self):
+        return True
+
+    @contextlib.contextmanager
+    def Connect(self):
+        self.endpoint = apis.GetEffectiveApiEndpoint(self._api_name, self._version)
+        with _OverrideEndpointOverrides(self._api_name, self.endpoint):
+            yield self

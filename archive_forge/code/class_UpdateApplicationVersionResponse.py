@@ -1,0 +1,12 @@
+from datetime import datetime
+from boto.compat import six
+class UpdateApplicationVersionResponse(Response):
+
+    def __init__(self, response):
+        response = response['UpdateApplicationVersionResponse']
+        super(UpdateApplicationVersionResponse, self).__init__(response)
+        response = response['UpdateApplicationVersionResult']
+        if response['ApplicationVersion']:
+            self.application_version = ApplicationVersionDescription(response['ApplicationVersion'])
+        else:
+            self.application_version = None

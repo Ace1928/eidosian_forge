@@ -1,0 +1,131 @@
+import sys  # @NoMove
+import os
+from _pydevd_bundle import pydevd_constants
+import atexit
+import dis
+import io
+from collections import defaultdict
+from contextlib import contextmanager
+from functools import partial
+import itertools
+import traceback
+import weakref
+import getpass as getpass_mod
+import functools
+import pydevd_file_utils
+from _pydev_bundle import pydev_imports, pydev_log
+from _pydev_bundle._pydev_filesystem_encoding import getfilesystemencoding
+from _pydev_bundle.pydev_is_thread_alive import is_thread_alive
+from _pydev_bundle.pydev_override import overrides
+from _pydev_bundle._pydev_saved_modules import threading, time, thread
+from _pydevd_bundle import pydevd_extension_utils, pydevd_frame_utils
+from _pydevd_bundle.pydevd_filtering import FilesFiltering, glob_matches_path
+from _pydevd_bundle import pydevd_io, pydevd_vm_type, pydevd_defaults
+from _pydevd_bundle import pydevd_utils
+from _pydevd_bundle import pydevd_runpy
+from _pydev_bundle.pydev_console_utils import DebugConsoleStdIn
+from _pydevd_bundle.pydevd_additional_thread_info import set_additional_thread_info
+from _pydevd_bundle.pydevd_breakpoints import ExceptionBreakpoint, get_exception_breakpoint
+from _pydevd_bundle.pydevd_comm_constants import (CMD_THREAD_SUSPEND, CMD_STEP_INTO, CMD_SET_BREAK,
+from _pydevd_bundle.pydevd_constants import (get_thread_id, get_current_thread_id,
+from _pydevd_bundle.pydevd_defaults import PydevdCustomization  # Note: import alias used on pydev_monkey.
+from _pydevd_bundle.pydevd_custom_frames import CustomFramesContainer, custom_frames_container_init
+from _pydevd_bundle.pydevd_dont_trace_files import DONT_TRACE, PYDEV_FILE, LIB_FILE, DONT_TRACE_DIRS
+from _pydevd_bundle.pydevd_extension_api import DebuggerEventHandler
+from _pydevd_bundle.pydevd_frame_utils import add_exception_to_frame, remove_exception_from_frame
+from _pydevd_bundle.pydevd_net_command_factory_xml import NetCommandFactory
+from _pydevd_bundle.pydevd_trace_dispatch import (
+from _pydevd_bundle.pydevd_utils import save_main_module, is_current_thread_main_thread, \
+from _pydevd_frame_eval.pydevd_frame_eval_main import (
+import pydev_ipython  # @UnusedImport
+from _pydevd_bundle.pydevd_source_mapping import SourceMapping
+from _pydevd_bundle.pydevd_concurrency_analyser.pydevd_concurrency_logger import ThreadingLogger, AsyncioLogger, send_concurrency_message, cur_time
+from _pydevd_bundle.pydevd_concurrency_analyser.pydevd_thread_wrappers import wrap_threads
+from pydevd_file_utils import get_abs_path_real_path_and_base_from_frame, NORM_PATHS_AND_BASE_CONTAINER
+from pydevd_file_utils import get_fullname, get_package_dir
+from os.path import abspath as os_path_abspath
+import pydevd_tracing
+from _pydevd_bundle.pydevd_comm import (InternalThreadCommand, InternalThreadCommandForAnyThread,
+from _pydevd_bundle.pydevd_comm import(InternalConsoleExec,
+from _pydevd_bundle.pydevd_daemon_thread import PyDBDaemonThread, mark_as_pydevd_daemon_thread
+from _pydevd_bundle.pydevd_process_net_command_json import PyDevJsonCommandProcessor
+from _pydevd_bundle.pydevd_process_net_command import process_net_command
+from _pydevd_bundle.pydevd_net_command import NetCommand, NULL_NET_COMMAND
+from _pydevd_bundle.pydevd_breakpoints import stop_on_unhandled_exception
+from _pydevd_bundle.pydevd_collect_bytecode_info import collect_try_except_info, collect_return_info, collect_try_except_info_from_source
+from _pydevd_bundle.pydevd_suspended_frames import SuspendedFramesManager
+from socket import SHUT_RDWR
+from _pydevd_bundle.pydevd_api import PyDevdAPI
+from _pydevd_bundle.pydevd_timeout import TimeoutTracker
+from _pydevd_bundle.pydevd_thread_lifecycle import suspend_all_threads, mark_thread_suspended
+from _pydevd_bundle.pydevd_plugin_utils import PluginManager
+def process_internal_commands(self):
+    """
+        This function processes internal commands.
+        """
+    ready_to_run = self.ready_to_run
+    dispose = False
+    with self._main_lock:
+        program_threads_alive = {}
+        if ready_to_run:
+            self.check_output_redirect()
+            all_threads = threadingEnumerate()
+            program_threads_dead = []
+            with self._lock_running_thread_ids:
+                reset_cache = not self._running_thread_ids
+                for t in all_threads:
+                    if getattr(t, 'is_pydev_daemon_thread', False):
+                        pass
+                    elif isinstance(t, PyDBDaemonThread):
+                        pydev_log.error_once('Error in debugger: Found PyDBDaemonThread not marked with is_pydev_daemon_thread=True.')
+                    elif is_thread_alive(t):
+                        if reset_cache:
+                            clear_cached_thread_id(t)
+                        thread_id = get_thread_id(t)
+                        program_threads_alive[thread_id] = t
+                        self.notify_thread_created(thread_id, t, use_lock=False)
+                thread_ids = list(self._running_thread_ids.keys())
+                for thread_id in thread_ids:
+                    if thread_id not in program_threads_alive:
+                        program_threads_dead.append(thread_id)
+                for thread_id in program_threads_dead:
+                    self.notify_thread_not_alive(thread_id, use_lock=False)
+        cmds_to_execute = []
+        if len(program_threads_alive) == 0 and ready_to_run:
+            dispose = True
+        else:
+            curr_thread_id = get_current_thread_id(threadingCurrentThread())
+            if ready_to_run:
+                process_thread_ids = (curr_thread_id, '*')
+            else:
+                process_thread_ids = ('*',)
+            for thread_id in process_thread_ids:
+                queue = self.get_internal_queue(thread_id)
+                cmds_to_add_back = []
+                try:
+                    while True:
+                        int_cmd = queue.get(False)
+                        if not self.mpl_hooks_in_debug_console and isinstance(int_cmd, InternalConsoleExec) and (not self.gui_in_use):
+                            try:
+                                self.init_matplotlib_in_debug_console()
+                                self.gui_in_use = True
+                            except:
+                                pydev_log.debug('Matplotlib support in debug console failed', traceback.format_exc())
+                            self.mpl_hooks_in_debug_console = True
+                        if int_cmd.can_be_executed_by(curr_thread_id):
+                            cmds_to_execute.append(int_cmd)
+                        else:
+                            pydev_log.verbose('NOT processing internal command: %s ', int_cmd)
+                            cmds_to_add_back.append(int_cmd)
+                except _queue.Empty:
+                    for int_cmd in cmds_to_add_back:
+                        queue.put(int_cmd)
+    if dispose:
+        self.dispose_and_kill_all_pydevd_threads()
+    else:
+        for int_cmd in cmds_to_execute:
+            pydev_log.verbose('processing internal command: %s', int_cmd)
+            try:
+                int_cmd.do_it(self)
+            except:
+                pydev_log.exception('Error processing internal command.')

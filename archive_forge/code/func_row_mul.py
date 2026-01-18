@@ -1,0 +1,7 @@
+from __future__ import annotations
+from functools import lru_cache
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+import numpy as np
+import torch
+def row_mul(i: int) -> torch.Tensor:
+    return torch.stack([a[..., i, 0] * b[..., 0, 0] + a[..., i, 1] * b[..., 1, 0] + a[..., i, 2] * b[..., 2, 0], a[..., i, 0] * b[..., 0, 1] + a[..., i, 1] * b[..., 1, 1] + a[..., i, 2] * b[..., 2, 1], a[..., i, 0] * b[..., 0, 2] + a[..., i, 1] * b[..., 1, 2] + a[..., i, 2] * b[..., 2, 2]], dim=-1)

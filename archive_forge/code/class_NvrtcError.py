@@ -1,0 +1,2 @@
+class NvrtcError(RuntimeError):
+    pass

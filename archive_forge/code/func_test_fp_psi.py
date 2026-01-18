@@ -1,0 +1,23 @@
+from mpmath import *
+from mpmath import fp
+def test_fp_psi():
+    assert ae(fp.psi(0, 3.7), 1.1671535393615113)
+    assert ae(fp.psi(0, 0.5), -1.9635100260214235)
+    assert ae(fp.psi(0, 1), -0.5772156649015329)
+    assert ae(fp.psi(0, -2.5), 1.103156640645243)
+    assert ae(fp.psi(0, 12.9), 2.5179671503279155)
+    assert ae(fp.psi(0, 100), 4.600161852738087)
+    assert ae(fp.psi(0, 2500.3), 7.8239660143238545)
+    assert ae(fp.psi(0, 1e+40), 92.10340371976183)
+    assert ae(fp.psi(0, 1e+200), 460.51701859880916)
+    assert ae(fp.psi(0, 3.7 + 0j), 1.1671535393615113 + 0j)
+    assert ae(fp.psi(1, 3), 0.39493406684822646)
+    assert ae(fp.psi(3, 2 + 3j), -0.05383196209159972 + 0.00768909352473648j)
+    assert ae(fp.psi(4, -0.5 + 1j), 1.2719531355492328 - 18.211833410936276j)
+    assert ae(fp.harmonic(0), 0.0)
+    assert ae(fp.harmonic(1), 1.0)
+    assert ae(fp.harmonic(2), 1.5)
+    assert ae(fp.harmonic(100), 5.187377517639621)
+    assert ae(fp.harmonic(-2.5), 1.280372305546776)
+    assert ae(fp.harmonic(2 + 3j), 1.9390425294578375 + 0.8733604498183455j)
+    assert ae(fp.harmonic(-5 - 4j), 2.372575482234944 - 2.416090444480162j)

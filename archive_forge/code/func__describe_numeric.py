@@ -1,0 +1,58 @@
+from __future__ import annotations
+import operator
+import warnings
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from functools import partial, wraps
+from numbers import Integral, Number
+from operator import getitem
+from pprint import pformat
+from typing import Any, ClassVar, Literal, cast
+import numpy as np
+import pandas as pd
+from pandas.api.types import (
+from tlz import first, merge, partition_all, remove, unique
+import dask.array as da
+from dask import config, core
+from dask.array.core import Array, normalize_arg
+from dask.bag import map_partitions as map_bag_partitions
+from dask.base import (
+from dask.blockwise import Blockwise, BlockwiseDep, BlockwiseDepDict, blockwise
+from dask.context import globalmethod
+from dask.dataframe import methods
+from dask.dataframe._compat import (
+from dask.dataframe.accessor import CachedAccessor, DatetimeAccessor, StringAccessor
+from dask.dataframe.categorical import CategoricalAccessor, categorize
+from dask.dataframe.dispatch import (
+from dask.dataframe.optimize import optimize
+from dask.dataframe.utils import (
+from dask.delayed import Delayed, delayed, unpack_collections
+from dask.highlevelgraph import HighLevelGraph
+from dask.layers import DataFrameTreeReduction
+from dask.typing import Graph, NestedKeys, no_default
+from dask.utils import (
+from dask.widgets import get_template
+def _describe_numeric(self, data, split_every=False, percentiles=None, percentiles_method='default', is_timedelta_column=False, is_datetime_column=False):
+    from dask.dataframe.numeric import to_numeric
+    if is_timedelta_column or is_datetime_column:
+        num = to_numeric(data)
+    else:
+        num = data._get_numeric_data()
+    if data.ndim == 2 and len(num.columns) == 0:
+        raise ValueError('DataFrame contains only non-numeric data.')
+    elif data.ndim == 1 and data.dtype == 'object':
+        raise ValueError('Cannot compute ``describe`` on object dtype.')
+    if percentiles is None:
+        percentiles = [0.25, 0.5, 0.75]
+    else:
+        percentiles = np.array(percentiles)
+        percentiles = np.append(percentiles, 0.5)
+        percentiles = np.unique(percentiles)
+        percentiles = list(percentiles)
+    stats = [num.count(split_every=split_every), num.mean(split_every=split_every), num.std(split_every=split_every), num.min(split_every=split_every), num.quantile(percentiles, method=percentiles_method), num.max(split_every=split_every)]
+    stats_names = [(s._name, 0) for s in stats]
+    colname = data._meta.name if is_series_like(data._meta) else None
+    name = 'describe-numeric--' + tokenize(num, split_every)
+    layer = {(name, 0): (methods.describe_numeric_aggregate, stats_names, colname, is_timedelta_column, is_datetime_column)}
+    graph = HighLevelGraph.from_collections(name, layer, dependencies=stats)
+    meta = num._meta_nonempty.describe()
+    return new_dd_object(graph, name, meta, divisions=[None, None])

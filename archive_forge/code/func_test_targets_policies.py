@@ -1,0 +1,10 @@
+import re, textwrap, os
+from os import sys, path
+from distutils.errors import DistutilsError
+def test_targets_policies(self):
+    self.expect_targets('\n            /*@targets\n                $keep_baseline\n                sse2 sse42 avx2 avx512f\n                vsx2 vsx3\n                neon neon_vfpv4 asimd asimddp\n                vx vxe vxe2\n            */\n            ', baseline='sse41 avx2 vsx2 asimd vsx3 vxe', x86='avx512f avx2 sse42 sse2', ppc64='vsx3 vsx2', armhf='asimddp asimd neon_vfpv4 neon', aarch64='asimddp asimd', s390x='vxe2 vxe vx')
+    self.expect_targets('\n            /*@targets\n                $keep_baseline $keep_sort\n                avx512f sse42 avx2 sse2\n                vsx2 vsx3\n                asimd neon neon_vfpv4 asimddp\n                vxe vxe2\n            */\n            ', x86='avx512f sse42 avx2 sse2', ppc64='vsx2 vsx3', armhf='asimd neon neon_vfpv4 asimddp', aarch64='asimd asimddp', s390x='vxe vxe2')
+    self.expect_targets('\n            /*@targets\n                $keep_baseline $keep_sort $autovec\n                avx512f avx2 sse42 sse41 sse2\n                vsx3 vsx2\n                asimddp asimd neon_vfpv4 neon\n            */\n            ', x86_gcc='avx512f avx2 sse42 sse41 sse2', x86_icc='avx512f avx2 sse42 sse41 sse2', x86_iccw='avx512f avx2 sse42 sse41 sse2', x86_msvc='avx512f avx2 sse2' if self.march() == 'x86' else 'avx512f avx2', ppc64='vsx3 vsx2', armhf='asimddp asimd neon_vfpv4 neon', aarch64='asimddp asimd')
+    for policy in ('$maxopt', '$autovec'):
+        self.expect_target_flags('/*@targets baseline %s */' % policy, gcc={'baseline': '.*-O3.*'}, icc={'baseline': '.*-O3.*'}, iccw={'baseline': '.*/O3.*'}, msvc={'baseline': '.*/O2.*'}, unknown={'baseline': '.*'})
+    self.expect_target_flags('/*@targets baseline $werror */', gcc={'baseline': '.*-Werror.*'}, icc={'baseline': '.*-Werror.*'}, iccw={'baseline': '.*/Werror.*'}, msvc={'baseline': '.*/WX.*'}, unknown={'baseline': '.*'})

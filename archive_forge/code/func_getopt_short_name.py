@@ -1,0 +1,9 @@
+import os
+@property
+def getopt_short_name(self):
+    sn = None
+    if self.short_name:
+        sn = '%s' % self.short_name
+        if self.ptype != 'boolean':
+            sn += ':'
+    return sn

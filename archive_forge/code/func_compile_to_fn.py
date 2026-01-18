@@ -1,0 +1,43 @@
+import hashlib
+import logging
+import operator
+import os
+import re
+import sys
+import time
+from collections import defaultdict
+from contextlib import contextmanager
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Set, Tuple
+import sympy
+import torch
+import torch._logging
+import torch.fx
+from torch._decomp import get_decompositions
+from torch._dynamo.utils import defake, dynamo_timed
+from torch._logging import LazyString
+from torch._subclasses.fake_tensor import FakeTensor
+from torch.fx.experimental.sym_node import magic_methods, method_to_operator
+from torch.fx.experimental.symbolic_shapes import has_free_symbols, ShapeEnv, SymTypes
+from torch.utils._mode_utils import no_dispatch
+from . import config, ir
+from .codegen.common import (
+from .codegen.wrapper import CppWrapperCodeGen, CudaWrapperCodeGen, WrapperCodeGen
+from .exc import (
+from .ir import (
+from .lowering import (
+from .sizevars import SizeVarAllocator
+from .utils import convert_shape_to_inductor, gather_origins, get_sympy_Expr_dtype
+from .virtualized import V
+def compile_to_fn(self):
+    if self.aot_mode:
+        from .codecache import AotCodeCache
+        assert self.cpp_wrapper, 'AOT mode only supports C++ wrapper'
+        code, linemap = self.codegen_with_cpp_wrapper()
+        output_code_log.debug('Output code: \n%s', code)
+        serialized_extern_kernel_nodes = None
+        if config.is_fbcode() and self.extern_kernel_nodes and self.extern_node_serializer:
+            serialized_extern_kernel_nodes = self.extern_node_serializer(self.extern_kernel_nodes)
+            output_code_log.debug('Serialized Extern Kernel Nodes: \n%s', serialized_extern_kernel_nodes)
+        return AotCodeCache.compile(self, code, serialized_extern_kernel_nodes, cuda=self.cuda)
+    else:
+        return self.compile_to_module().call

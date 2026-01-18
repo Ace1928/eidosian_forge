@@ -1,0 +1,53 @@
+import fcntl
+import fnmatch
+import getpass
+import glob
+import os
+import pwd
+import stat
+import struct
+import sys
+import tty
+from typing import List, Optional, TextIO, Union
+from twisted.conch.client import connect, default, options
+from twisted.conch.ssh import channel, common, connection, filetransfer
+from twisted.internet import defer, reactor, stdio, utils
+from twisted.protocols import basic
+from twisted.python import failure, log, usage
+from twisted.python.filepath import FilePath
+def _getFilename(self, line):
+    """
+        Parse line received as command line input and return first filename
+        together with the remaining line.
+
+        @param line: Arguments received from command line input.
+        @type line: L{str}
+
+        @return: Tupple with filename and rest. Return empty values when no path was not found.
+        @rtype: C{tupple}
+        """
+    line = line.strip()
+    if not line:
+        return ('', '')
+    if line[0] in '\'"':
+        ret = []
+        line = list(line)
+        try:
+            for i in range(1, len(line)):
+                c = line[i]
+                if c == line[0]:
+                    return (''.join(ret), ''.join(line[i + 1:]).lstrip())
+                elif c == '\\':
+                    del line[i]
+                    if line[i] not in '\'"\\':
+                        raise IndexError(f'bad quote: \\{line[i]}')
+                    ret.append(line[i])
+                else:
+                    ret.append(line[i])
+        except IndexError:
+            raise IndexError('unterminated quote')
+    ret = line.split(None, 1)
+    if len(ret) == 1:
+        return (ret[0], '')
+    else:
+        return (ret[0], ret[1])

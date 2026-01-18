@@ -1,0 +1,15 @@
+import copy
+from unittest import mock
+from neutronclient.common import exceptions as qe
+from neutronclient.v2_0 import client as neutronclient
+from heat.common import exception
+from heat.common import template_format
+from heat.engine.clients.os import neutron
+from heat.engine.resources.openstack.neutron import router
+from heat.engine import rsrc_defn
+from heat.engine import scheduler
+from heat.tests import common
+from heat.tests import utils
+def find_rsrc_for_update(resource, name_or_id, cmd_resource=None):
+    id_mapping = {'subnet': 'sub1234', 'network': '91e47a57-7508-46fe-afc9-fc454e8580e1'}
+    return id_mapping.get(resource)

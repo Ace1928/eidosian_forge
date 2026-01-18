@@ -1,0 +1,11 @@
+import abc
+from typing import List, Tuple
+from ray.rllib.utils.typing import NetworkType
+Returns a list of (target, current) networks.
+
+        This is used for identifying the target networks that are used for stabilizing
+        the updates of the current trainable networks of this RLModule.
+
+        Returns:
+            A list of (target, current) networks.
+        

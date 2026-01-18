@@ -1,0 +1,10 @@
+import time
+from functools import partial
+from io import BytesIO
+from itertools import product
+from threading import Lock, Thread
+import numpy as np
+import pytest
+from numpy.testing import assert_array_equal
+from ..fileslice import (
+Generator returns slice samples for given `shape`

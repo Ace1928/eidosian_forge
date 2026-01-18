@@ -1,0 +1,16 @@
+import itertools
+import math
+import weakref
+from collections import OrderedDict
+import numpy as np
+from .. import Qt, debug
+from .. import functions as fn
+from .. import getConfigOption
+from ..Point import Point
+from ..Qt import QtCore, QtGui
+from .GraphicsObject import GraphicsObject
+@property
+def pixmap(self):
+    if self._pixmap is None:
+        self._pixmap = self._createPixmap()
+    return self._pixmap

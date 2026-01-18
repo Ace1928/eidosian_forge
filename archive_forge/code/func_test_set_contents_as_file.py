@@ -1,0 +1,32 @@
+from tests.unit import unittest
+import time
+import random
+import boto.s3
+from boto.compat import six, StringIO, urllib
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+from boto.exception import S3ResponseError
+def test_set_contents_as_file(self):
+    content = '01234567890123456789'
+    sfp = StringIO(content)
+    k = self.bucket.new_key('k')
+    k.set_contents_from_file(sfp)
+    self.assertEqual(k.size, 20)
+    kn = self.bucket.new_key('k')
+    ks = kn.get_contents_as_string().decode('utf-8')
+    self.assertEqual(ks, content)
+    sfp.seek(5)
+    k = self.bucket.new_key('k')
+    k.set_contents_from_file(sfp)
+    self.assertEqual(k.size, 15)
+    kn = self.bucket.new_key('k')
+    ks = kn.get_contents_as_string().decode('utf-8')
+    self.assertEqual(ks, content[5:])
+    sfp.seek(5)
+    k = self.bucket.new_key('k')
+    k.set_contents_from_file(sfp, size=5)
+    self.assertEqual(k.size, 5)
+    self.assertEqual(sfp.tell(), 10)
+    kn = self.bucket.new_key('k')
+    ks = kn.get_contents_as_string().decode('utf-8')
+    self.assertEqual(ks, content[5:10])

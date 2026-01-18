@@ -1,0 +1,20 @@
+from collections import deque
+import enum
+import time
+from typing import Deque, Dict, Iterable, List, Optional, Tuple, Union, Set
+from vllm.config import CacheConfig, LoRAConfig, SchedulerConfig
+from vllm.core.block_manager import AllocStatus, BlockSpaceManager
+from vllm.core.policy import PolicyFactory
+from vllm.lora.request import LoRARequest
+from vllm.logger import init_logger
+from vllm.sequence import (Sequence, SequenceData, SequenceGroup,
+from vllm.prefix import PrefixPool
+def _append_slot(self, seq_group: SequenceGroup, blocks_to_copy: Dict[int, List[int]]) -> None:
+    for seq in seq_group.get_seqs(status=SequenceStatus.RUNNING):
+        ret = self.block_manager.append_slot(seq)
+        if ret is not None:
+            src_block, dst_block = ret
+            if src_block in blocks_to_copy:
+                blocks_to_copy[src_block].append(dst_block)
+            else:
+                blocks_to_copy[src_block] = [dst_block]

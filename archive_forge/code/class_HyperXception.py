@@ -1,0 +1,74 @@
+from keras_tuner.src.api_export import keras_tuner_export
+from keras_tuner.src.backend import keras
+from keras_tuner.src.backend import ops
+from keras_tuner.src.backend.keras import layers
+from keras_tuner.src.engine import hypermodel
+@keras_tuner_export('keras_tuner.applications.HyperXception')
+class HyperXception(hypermodel.HyperModel):
+    """An Xception hypermodel.
+
+    Models built by `HyperXception` take images with shape (height, width,
+    channels) as input. The output are one-hot encoded with the length matching
+    the number of classes specified by the `classes` argument.
+
+    Args:
+        include_top: Boolean, whether to include the fully-connected layer at
+            the top of the network.
+        input_shape: Optional shape tuple, e.g. `(256, 256, 3)`.  One of
+            `input_shape` or `input_tensor` must be specified.
+        input_tensor: Optional Keras tensor (i.e. output of `layers.Input()`)
+            to use as image input for the model.  One of `input_shape` or
+            `input_tensor` must be specified.
+        classes: Optional number of classes to classify images into, only to be
+            specified if `include_top` is True, and if no `weights` argument is
+            specified.
+        **kwargs: Additional keyword arguments that apply to all hypermodels.
+            See `keras_tuner.HyperModel`.
+    """
+
+    def __init__(self, include_top=True, input_shape=None, input_tensor=None, classes=None, **kwargs):
+        super().__init__(**kwargs)
+        if include_top and classes is None:
+            raise ValueError('You must specify `classes` when `include_top=True`')
+        if input_shape is None and input_tensor is None:
+            raise ValueError('You must specify either `input_shape` or `input_tensor`.')
+        self.include_top = include_top
+        self.input_shape = input_shape
+        self.input_tensor = input_tensor
+        self.classes = classes
+
+    def build(self, hp):
+        activation = hp.Choice('activation', ['relu', 'selu'])
+        if self.input_tensor is not None:
+            inputs = keras.utils.get_source_inputs(self.input_tensor)
+            x = self.input_tensor
+        else:
+            inputs = layers.Input(shape=self.input_shape)
+            x = inputs
+        conv2d_num_filters = hp.Choice('conv2d_num_filters', [32, 64, 128], default=64)
+        kernel_size = hp.Choice('kernel_size', [3, 5])
+        initial_strides = hp.Choice('initial_strides', [2])
+        x = conv(x, conv2d_num_filters, kernel_size=kernel_size, activation=activation, strides=initial_strides)
+        sep_num_filters = hp.Int('sep_num_filters', 128, 768, step=128, default=256)
+        num_residual_blocks = hp.Int('num_residual_blocks', 2, 8, default=4)
+        for _ in range(num_residual_blocks):
+            x = residual(x, sep_num_filters, activation=activation, max_pooling=False)
+        x = residual(x, 2 * sep_num_filters, activation=activation, max_pooling=True)
+        pooling = hp.Choice('pooling', ['avg', 'flatten', 'max'])
+        if pooling == 'flatten':
+            x = layers.Flatten()(x)
+        elif pooling == 'avg':
+            x = layers.GlobalAveragePooling2D()(x)
+        else:
+            x = layers.GlobalMaxPooling2D()(x)
+        if not self.include_top:
+            return keras.Model(inputs, x, name='Xception')
+        num_dense_layers = hp.Int('num_dense_layers', 1, 3)
+        dropout_rate = hp.Float('dropout_rate', 0.0, 0.6, step=0.1, default=0.5)
+        dense_use_bn = hp.Choice('dense_use_bn', [True, False])
+        for _ in range(num_dense_layers):
+            x = dense(x, self.classes, activation=activation, batchnorm=dense_use_bn, dropout_rate=dropout_rate)
+        output = layers.Dense(self.classes, activation='softmax')(x)
+        model = keras.Model(inputs, output, name='Xception')
+        model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', [0.001, 0.0001, 1e-05])), loss='categorical_crossentropy', metrics=['accuracy'])
+        return model

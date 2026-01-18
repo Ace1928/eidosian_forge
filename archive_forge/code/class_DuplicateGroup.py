@@ -1,0 +1,2 @@
+class DuplicateGroup(WordsError):
+    pass

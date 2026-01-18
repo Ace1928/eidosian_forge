@@ -1,0 +1,11 @@
+import os
+import testresources
+import testscenarios
+import unittest
+from unittest import mock
+from oslo_db.sqlalchemy import enginefacade
+from oslo_db.sqlalchemy import provision
+from oslo_db.sqlalchemy import test_fixtures
+from oslo_db.tests import base as test_base
+class FakeDatabaseOpportunisticFixture(test_fixtures.OpportunisticDbFixture):
+    DRIVER = 'postgresql+nosuchdbapi'

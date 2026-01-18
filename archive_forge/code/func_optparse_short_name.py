@@ -1,0 +1,7 @@
+import os
+@property
+def optparse_short_name(self):
+    sn = None
+    if self.short_name:
+        sn = '-%s' % self.short_name
+    return sn

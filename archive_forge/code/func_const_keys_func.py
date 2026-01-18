@@ -1,0 +1,9 @@
+import unittest
+from numba import jit, njit, objmode, typeof, literally
+from numba.extending import overload
+from numba.core import types
+from numba.core.errors import UnsupportedError
+from numba.tests.support import (
+def const_keys_func(a):
+    d = {'A': 1, 'B': 1, 'C': 1, 'D': 1, 'E': 1, 'F': 1, 'G': 1, 'H': 1, 'I': 1, 'J': 1, 'K': 1, 'L': 1, 'M': 1, 'N': 1, 'O': 1, 'P': 1, 'Q': 1, 'R': 1, 'S': a}
+    return d['S']

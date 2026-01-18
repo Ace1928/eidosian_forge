@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+class Evpn_eviArgs(object):
+    """The arg spec for the ios_evpn_evi module"""
+    argument_spec = {'config': {'type': 'list', 'elements': 'dict', 'options': {'evi': {'type': 'int', 'required': True}, 'default_gateway': {'type': 'dict', 'options': {'advertise': {'type': 'dict', 'options': {'enable': {'type': 'bool'}, 'disable': {'type': 'bool'}}}}}, 'ip': {'type': 'dict', 'options': {'local_learning': {'type': 'dict', 'options': {'enable': {'type': 'bool'}, 'disable': {'type': 'bool'}}}}}, 'encapsulation': {'type': 'str', 'choices': ['vxlan'], 'default': 'vxlan'}, 'replication_type': {'type': 'str', 'choices': ['ingress', 'static']}, 'route_distinguisher': {'type': 'str'}}}, 'running_config': {'type': 'str'}, 'state': {'type': 'str', 'choices': ['merged', 'replaced', 'overridden', 'deleted', 'gathered', 'rendered', 'parsed'], 'default': 'merged'}}

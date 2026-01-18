@@ -1,0 +1,25 @@
+import re
+import warnings
+from collections import defaultdict
+from os import path
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, cast
+from docutils import nodes, writers
+from docutils.nodes import Element, Node, Text
+from sphinx import addnodes, highlighting
+from sphinx.deprecation import RemovedInSphinx70Warning
+from sphinx.domains import IndexEntry
+from sphinx.domains.std import StandardDomain
+from sphinx.errors import SphinxError
+from sphinx.locale import _, __, admonitionlabels
+from sphinx.util import logging, split_into, texescape
+from sphinx.util.docutils import SphinxTranslator
+from sphinx.util.nodes import clean_astext, get_prev_node
+from sphinx.util.template import LaTeXRenderer
+from sphinx.util.texescape import tex_replace_map
+from sphinx.builders.latex.nodes import ( # NOQA isort:skip
+def latex_image_length(self, width_str: str, scale: int=100) -> Optional[str]:
+    try:
+        return rstdim_to_latexdim(width_str, scale)
+    except ValueError:
+        logger.warning(__('dimension unit %s is invalid. Ignored.'), width_str)
+        return None

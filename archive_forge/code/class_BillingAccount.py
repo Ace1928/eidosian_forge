@@ -1,0 +1,35 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+class BillingAccount(_messages.Message):
+    """A billing account in the [Google Cloud
+  Console](https://console.cloud.google.com/). You can assign a billing
+  account to one or more projects.
+
+  Fields:
+    displayName: The display name given to the billing account, such as `My
+      Billing Account`. This name is displayed in the Google Cloud Console.
+    masterBillingAccount: If this account is a
+      [subaccount](https://cloud.google.com/billing/docs/concepts), then this
+      will be the resource name of the parent billing account that it is being
+      resold through. Otherwise this will be empty.
+    name: Output only. The resource name of the billing account. The resource
+      name has the form `billingAccounts/{billing_account_id}`. For example,
+      `billingAccounts/012345-567890-ABCDEF` would be the resource name for
+      billing account `012345-567890-ABCDEF`.
+    open: Output only. True if the billing account is open, and will therefore
+      be charged for any usage on associated projects. False if the billing
+      account is closed, and therefore projects associated with it are unable
+      to use paid services.
+    parent: Output only. The billing account's parent resource identifier. Use
+      the `MoveBillingAccount` method to update the account's parent resource
+      if it is a organization. Format: - `organizations/{organization_id}`,
+      for example, `organizations/12345678` -
+      `billingAccounts/{billing_account_id}`, for example,
+      `billingAccounts/012345-567890-ABCDEF`
+  """
+    displayName = _messages.StringField(1)
+    masterBillingAccount = _messages.StringField(2)
+    name = _messages.StringField(3)
+    open = _messages.BooleanField(4)
+    parent = _messages.StringField(5)

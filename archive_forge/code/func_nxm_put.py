@@ -1,0 +1,14 @@
+import struct
+from os_ken import exception
+from os_ken.lib import mac
+from os_ken.lib.pack_utils import msg_pack_into
+from os_ken.ofproto import ether
+from os_ken.ofproto import ofproto_parser
+from os_ken.ofproto import ofproto_v1_0
+from os_ken.ofproto import inet
+import logging
+def nxm_put(buf, offset, header, rule):
+    nxm = NXMatch(header)
+    len_ = nxm.put_header(buf, offset)
+    mf = mf_from_nxm_header(nxm.header)
+    return len_ + mf.put(buf, offset + len_, rule)

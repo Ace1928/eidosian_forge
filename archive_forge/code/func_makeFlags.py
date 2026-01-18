@@ -1,0 +1,13 @@
+from reportlab.pdfbase.pdfdoc import (PDFObject, PDFArray, PDFDictionary, PDFString, pdfdocEnc,
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.lib.colors import Color, CMYKColor, Whiter, Blacker, opaqueColor
+from reportlab.lib.rl_accel import fp_str
+from reportlab.lib.utils import isStr, asNative
+import weakref
+def makeFlags(s, d=annotationFlagValues):
+    if not isinstance(s, int):
+        v = s
+        s = 0
+        for x in v.split():
+            s |= d[x]
+    return s

@@ -1,0 +1,32 @@
+import re
+from fractions import Fraction
+import logging
+import math
+import warnings
+import xml.dom.minidom
+from base64 import b64decode, b64encode
+from binascii import hexlify, unhexlify
+from collections import defaultdict
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
+from re import compile, sub
+from typing import (
+from urllib.parse import urldefrag, urljoin, urlparse
+from isodate import (
+import rdflib
+import rdflib.util
+from rdflib.compat import long_type
+def _is_valid_unicode(value: Union[str, bytes]) -> bool:
+    """
+    Verify that the provided value can be converted into a Python
+    unicode object.
+    """
+    if isinstance(value, bytes):
+        coding_func, param = (getattr(value, 'decode'), 'utf-8')
+    else:
+        coding_func, param = (str, value)
+    try:
+        coding_func(param)
+    except UnicodeError:
+        return False
+    return True

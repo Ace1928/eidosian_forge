@@ -1,0 +1,7 @@
+import numpy as np
+import pytest
+from sklearn.neural_network._base import binary_log_loss, log_loss
+@pytest.mark.parametrize('y_true, y_prob', [(np.array([[1, 0, 0], [0, 1, 0]]), np.array([[0.0, 1.0, 0.0], [0.9, 0.05, 0.05]])), (np.array([[0, 0, 1]]).T, np.array([[0.9, 1.0, 1.0]]).T)])
+def test_log_loss_1_prob_finite(y_true, y_prob):
+    loss = log_loss(y_true, y_prob)
+    assert np.isfinite(loss)

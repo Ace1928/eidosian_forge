@@ -1,0 +1,9 @@
+import logging
+from os_ken.ofproto import ofproto_v1_2
+from os_ken.ofproto import ether
+from os_ken.ofproto import inet
+from os_ken.tests.integrated import tester
+def test_action_set_field_icmpv6_code(self, dp):
+    field = dp.ofproto.OXM_OF_ICMPV6_CODE
+    value = 2
+    self.add_set_field_action(dp, field, value)

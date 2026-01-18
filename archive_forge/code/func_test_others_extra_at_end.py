@@ -1,0 +1,25 @@
+from breezy import multiwalker, revision
+from breezy import tree as _mod_tree
+from breezy.tests import TestCaseWithTransport
+def test_others_extra_at_end(self):
+    tree = self.make_branch_and_tree('tree')
+    self.build_tree(['tree/a', 'tree/b', 'tree/c', 'tree/d', 'tree/e'])
+    tree.add(['a', 'b', 'c', 'd', 'e'], ids=[b'a-id', b'b-id', b'c-id', b'd-id', b'e-id'])
+    tree.commit('first', rev_id=b'first-rev-id')
+    tree.remove(['e'])
+    tree.commit('second', rev_id=b'second-rev-id')
+    tree.remove(['d'])
+    tree.commit('third', rev_id=b'third-rev-id')
+    tree.remove(['c'])
+    basis_tree, root_id = self.lock_and_get_basis_and_root_id(tree)
+    first_tree = tree.branch.repository.revision_tree(b'first-rev-id')
+    second_tree = tree.branch.repository.revision_tree(b'second-rev-id')
+    walker = multiwalker.MultiWalker(tree, [basis_tree, first_tree, second_tree])
+    iterator = walker.iter_all()
+    self.assertWalkerNext('', root_id, True, ['', '', ''], iterator)
+    self.assertWalkerNext('a', b'a-id', True, ['a', 'a', 'a'], iterator)
+    self.assertWalkerNext('b', b'b-id', True, ['b', 'b', 'b'], iterator)
+    self.assertWalkerNext('c', b'c-id', False, ['c', 'c', 'c'], iterator)
+    self.assertWalkerNext('d', b'd-id', False, [None, 'd', 'd'], iterator)
+    self.assertWalkerNext('e', b'e-id', False, [None, 'e', None], iterator)
+    self.assertRaises(StopIteration, next, iterator)

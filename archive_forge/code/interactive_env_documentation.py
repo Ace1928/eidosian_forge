@@ -1,0 +1,1 @@
+Determine if running within IPython or Jupyter.

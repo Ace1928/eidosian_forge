@@ -1,0 +1,83 @@
+import email.message
+import email.parser
+import errno
+import glob
+import io
+import os
+import pickle
+import shutil
+import signal
+import sys
+import tempfile
+import textwrap
+import time
+from hashlib import md5
+from unittest import skipIf
+from zope.interface import Interface, implementer
+from zope.interface.verify import verifyClass
+import twisted.cred.checkers
+import twisted.cred.credentials
+import twisted.cred.portal
+import twisted.mail.alias
+import twisted.mail.mail
+import twisted.mail.maildir
+import twisted.mail.protocols
+import twisted.mail.relay
+import twisted.mail.relaymanager
+from twisted import cred, mail
+from twisted.internet import address, defer, interfaces, protocol, reactor, task
+from twisted.internet.defer import Deferred
+from twisted.internet.error import (
+from twisted.internet.testing import (
+from twisted.mail import pop3, smtp
+from twisted.mail.relaymanager import _AttemptManager
+from twisted.names import dns
+from twisted.names.dns import Record_CNAME, Record_MX, RRHeader
+from twisted.names.error import DNSNameError
+from twisted.python import failure, log
+from twisted.python.filepath import FilePath
+from twisted.python.runtime import platformType
+from twisted.trial.unittest import TestCase
+from twisted.names import client, common, server
+@skipIf(sys.version_info >= (3,), 'not ported to Python 3')
+def testMethods(self):
+    d = {x: x + 10 for x in range(10)}
+    d = mail.mail.DomainWithDefaultDict(d, 'Default')
+    self.assertEqual(len(d), 10)
+    self.assertEqual(list(iter(d)), list(range(10)))
+    self.assertEqual(list(d.iterkeys()), list(iter(d)))
+    items = list(d.iteritems())
+    items.sort()
+    self.assertEqual(items, [(x, x + 10) for x in range(10)])
+    values = list(d.itervalues())
+    values.sort()
+    self.assertEqual(values, list(range(10, 20)))
+    items = d.items()
+    items.sort()
+    self.assertEqual(items, [(x, x + 10) for x in range(10)])
+    values = d.values()
+    values.sort()
+    self.assertEqual(values, list(range(10, 20)))
+    for x in range(10):
+        self.assertEqual(d[x], x + 10)
+        self.assertEqual(d.get(x), x + 10)
+        self.assertTrue(x in d)
+    del d[2], d[4], d[6]
+    self.assertEqual(len(d), 7)
+    self.assertEqual(d[2], 'Default')
+    self.assertEqual(d[4], 'Default')
+    self.assertEqual(d[6], 'Default')
+    d.update({'a': None, 'b': (), 'c': '*'})
+    self.assertEqual(len(d), 10)
+    self.assertEqual(d['a'], None)
+    self.assertEqual(d['b'], ())
+    self.assertEqual(d['c'], '*')
+    d.clear()
+    self.assertEqual(len(d), 0)
+    self.assertEqual(d.setdefault('key', 'value'), 'value')
+    self.assertEqual(d['key'], 'value')
+    self.assertEqual(d.popitem(), ('key', 'value'))
+    self.assertEqual(len(d), 0)
+    dcopy = d.copy()
+    self.assertEqual(d.domains, dcopy.domains)
+    self.assertEqual(d.default, dcopy.default)

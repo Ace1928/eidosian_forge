@@ -1,0 +1,207 @@
+import logging
+import math
+import sys
+from typing import List, Tuple, Dict, Optional, Union, Any
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.patches import FancyArrowPatch
+from mpl_toolkits.mplot3d import Axes3D, proj3d
+import pandas as pd
+
+# Initialize logging for detailed execution tracking
+logging.basicConfig(level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Define type aliases for clarity and type safety
+Point3D = Tuple[float, float, float]
+Hexagon3D = List[Point3D]
+Structure3D = Dict[int, List[Hexagon3D]]
+
+class Arrow3D(FancyArrowPatch):
+    """
+    Draws a 3D arrow using matplotlib's FancyArrowPatch.
+    
+    Attributes:
+        xs (List[float]): x-coordinates of the start and end points.
+        ys (List[float]): y-coordinates of the start and end points.
+        zs (List[float]): z-coordinates of the start and end points.
+    """
+    def __init__(self, xs: List[float], ys: List[float], zs: List[float], 
+                 *args, **kwargs):
+        """
+        Initializes the Arrow3D object with start and end coordinates in 3D space.
+        """
+        logging.info("Initializing 3D arrow with coordinates: xs=%s, ys=%s, zs=%s",
+                     xs, ys, zs)
+        super().__init__((0, 0), (0, 0), *args, **kwargs)
+        self._verts3d = xs, ys, zs
+
+    def do_3d_projection(self, renderer: Optional[Any] = None) -> float:
+        """
+        Projects the 3D arrow onto 2D space using the renderer's projection.
+        """
+        xs, ys, zs = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs, ys, zs, 
+                                           renderer.M if renderer else plt.gca().get_proj())
+        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
+        logging.debug("Projected 3D arrow to 2D with min z-coordinate: %s", np.min(zs))
+        return np.min(zs)
+
+class HexagonalStructure:
+    """
+    Manages the generation, manipulation, and visualization of a 3D hexagonal structure.
+
+    Attributes:
+        layers (int): The number of layers in the hexagonal structure.
+        side_length (float): The side length of each hexagon in the structure.
+        structure (Structure3D): The generated 3D structure stored as a dictionary.
+    """
+    
+    def __init__(self, layers: int, side_length: float):
+        """
+        Initializes the HexagonalStructure with specified layers and side length.
+        """
+        logging.info(f"Creating HexagonalStructure with {layers} layers and side length {side_length}")
+        self.layers = layers
+        self.side_length = side_length
+        self.structure = self._generate_3d_structure()
+
+    def _generate_hexagon(self, center: Point3D, elevation: float) -> Hexagon3D:
+        """
+        Generates the vertices of a hexagon given its center and elevation.
+        """
+        logging.debug(f"Generating hexagon at center: {center} and elevation: {elevation}")
+        vertices = []
+        for i in range(6):
+            angle_rad = 2 * math.pi / 6 * i
+            x = center[0] + self.side_length * math.cos(angle_rad)
+            y = center[1] + self.side_length * math.sin(angle_rad)
+            vertices.append((x, y, elevation))
+        return vertices
+
+    def _generate_3d_structure(self) -> Structure3D:
+        """
+        Generates a sophisticated 3D structure with reversed layering, starting with the most populous
+        layer of hexagons and gradually reducing to a single hexagon at the top. This approach
+        flips the conventional construction, demonstrating a profound understanding and application
+        of geometric principles to achieve an architecturally sound and visually captivating
+        hexagonal prism structure in a three-dimensional space.
+
+        Returns:
+            Structure3D: A meticulously curated dictionary representing the 3D hexagonal architecture,
+            where each key corresponds to a layer index, associated with a list of hexagons
+            within that layer. Each hexagon is further detailed as a list of 3D points.
+        """
+        logging.debug("Initiating the generation of the reversed 3D hexagonal structure.")
+        structure = {}
+        elevation = 0.0  # Base elevation
+        elevation_step = self.side_length * math.sqrt(3) / 2  # Vertical distance between layers
+
+        for layer in range(self.layers):
+            hexagons = []  # Container for the current layer's hexagons
+            # Calculate layer's hexagon placement with the widest layer at the bottom
+            layer_num = self.layers - layer - 1  # Adjust for reverse layering
+            center_offset_x = self.side_length * 1.5 * layer_num
+            center_offset_y = self.side_length * math.sqrt(3) / 2 * layer_num
+
+            # Adjust elevation for each layer starting from the bottom
+            elevation = layer * elevation_step
+
+            # Generate hexagons for the current layer
+            if layer_num == 0:
+                # Top layer with a single hexagon
+                hexagons.append(self._generate_hexagon((0.0, 0.0, elevation), elevation))
+            else:
+                # Generate multiple hexagons for lower layers
+                for i in range(-layer_num, layer_num + 1, 2):
+                    for j in range(-layer_num, layer_num + 1, 2):
+                        if abs(i) + abs(j) <= layer_num * 2:
+                            x = i * self.side_length * 3/2
+                            y = (j * math.sqrt(3)/2 + i * math.sqrt(3)/2) * self.side_length
+                            hexagons.append(self._generate_hexagon((x, y, elevation), elevation))
+
+            # Store the generated layer of hexagons
+            structure[self.layers - layer - 1] = hexagons
+            logging.info(f"Hexagonal layer {self.layers - layer - 1} generated with {len(hexagons)} hexagons.")
+
+        logging.debug("The reversed 3D hexagonal structure has been fully generated.")
+        return structure
+
+    def plot_structure(self):
+        """
+        Plots the 3D hexagonal structure with an interactive matplotlib figure.
+        """
+        logging.info("Plotting 3D hexagonal structure")
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        color_map = plt.get_cmap('viridis')
+
+        for layer, hexagons in self.structure.items():
+            color = color_map(layer / self.layers)
+            for hexagon in hexagons:
+                self.hexagon_connections(hexagon, ax, color=color)
+                xs, ys, zs = zip(*hexagon)
+                ax.plot(xs, ys, zs, color=color)
+
+        ax.set_xlabel('X Axis')
+        ax.set_ylabel('Y Axis')
+        ax.set_zlabel('Z Axis')
+        plt.title('3D Hexagonal Structure')
+        plt.tight_layout()
+        plt.show()
+
+    def hexagon_connections(self, hexagon: Hexagon3D, ax: plt.Axes, color: str):
+        """
+        Draws connections between the vertices of a hexagon and its center, enhancing the 3D visualization.
+        """
+        for i in range(6):  # Adjusted indexing to correctly access hexagon vertices
+            start = hexagon[i]
+            for j in [1, 2, 3]:  # Direct connections and skips
+                end = hexagon[(i + j) % 6]
+                ax.add_artist(Arrow3D([start[0], end[0]], [start[1], end[1]], [start[2], end[2]],
+                                      mutation_scale=10, lw=1, arrowstyle="-|>", color=color))
+        center = np.mean(np.array(hexagon), axis=0)  # Correct calculation of the hexagon's center
+        for vertex in hexagon:
+            ax.add_artist(Arrow3D([vertex[0], center[0]], [vertex[1], center[1]], [vertex[2], center[2]],
+                                  mutation_scale=10, lw=1, arrowstyle="-|>", color=color))
+    
+    def export_to_csv(self, filename: str):
+        """
+        Exports the structure data to a CSV file.
+        """
+        logging.info(f"Exporting structure data to {filename}")
+        data = []
+        for layer, hexagons in self.structure.items():
+            for hexagon in hexagons:
+                for vertex in hexagon:
+                    data.append({"Layer": layer, "X": vertex[0], "Y": vertex[1], "Z": vertex[2]})
+        df = pd.DataFrame(data)
+        df.to_csv(filename, index=False)
+        logging.info(f"Data exported successfully to {filename}")
+
+def main():
+    """
+    Main function to execute the script functionality with reversed layering logic.
+    """
+    logging.info("Starting the reversed hexagonal structure visualization script.")
+    try:
+        layers = int(input("Enter the number of layers: "))
+        side_length = float(input("Enter the side length of each hexagon: "))
+
+        structure = HexagonalStructure(layers, side_length)
+        structure.plot_structure()
+    except ValueError as e:
+        logging.error(f"Invalid input: {e}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+    except KeyboardInterrupt:
+        logging.info("Program execution was interrupted by the user.")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        logging.critical(f"Critical failure: {e}")
+        sys.exit(1)

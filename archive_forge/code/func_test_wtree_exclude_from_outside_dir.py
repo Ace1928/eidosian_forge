@@ -1,0 +1,26 @@
+import os
+import re
+import unicodedata as ud
+from .. import osutils, tests
+from .._termcolor import FG, color_string
+from ..tests.features import UnicodeFilenameFeature
+def test_wtree_exclude_from_outside_dir(self):
+    """(wtree) Ensure --exclude is respected during recursive search.
+        """
+    wd = 'foobar0'
+    self.make_branch_and_tree(wd)
+    os.chdir(wd)
+    self._mk_versioned_dir('dir0')
+    self._mk_versioned_file('dir0/file0.aa')
+    self._mk_versioned_dir('dir1')
+    self._mk_versioned_file('dir1/file1.bb')
+    self._mk_versioned_dir('dir2')
+    self._mk_versioned_file('dir2/file2.cc')
+    out, err = self.run_bzr(['grep', '--exclude', '*.cc', 'l[hijk]ne1'])
+    self.assertContainsRe(out, '^dir0/file0.aa:line1', flags=TestGrep._reflags)
+    self.assertContainsRe(out, '^dir1/file1.bb:line1', flags=TestGrep._reflags)
+    self.assertNotContainsRe(out, 'file1.cc', flags=TestGrep._reflags)
+    out, err = self.run_bzr(['grep', '--exclude', '*.cc', 'line1'])
+    self.assertContainsRe(out, '^dir0/file0.aa:line1', flags=TestGrep._reflags)
+    self.assertContainsRe(out, '^dir1/file1.bb:line1', flags=TestGrep._reflags)
+    self.assertNotContainsRe(out, 'file1.cc', flags=TestGrep._reflags)

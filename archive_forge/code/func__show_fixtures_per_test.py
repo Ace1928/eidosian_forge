@@ -1,0 +1,119 @@
+import abc
+from collections import Counter
+from collections import defaultdict
+import dataclasses
+import enum
+import fnmatch
+from functools import partial
+import inspect
+import itertools
+import os
+from pathlib import Path
+import types
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import final
+from typing import Generator
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Literal
+from typing import Mapping
+from typing import Optional
+from typing import Pattern
+from typing import Sequence
+from typing import Set
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import Union
+import warnings
+import _pytest
+from _pytest import fixtures
+from _pytest import nodes
+from _pytest._code import filter_traceback
+from _pytest._code import getfslineno
+from _pytest._code.code import ExceptionInfo
+from _pytest._code.code import TerminalRepr
+from _pytest._code.code import Traceback
+from _pytest._io import TerminalWriter
+from _pytest._io.saferepr import saferepr
+from _pytest.compat import ascii_escaped
+from _pytest.compat import get_default_arg_names
+from _pytest.compat import get_real_func
+from _pytest.compat import getimfunc
+from _pytest.compat import getlocation
+from _pytest.compat import is_async_function
+from _pytest.compat import is_generator
+from _pytest.compat import LEGACY_PATH
+from _pytest.compat import NOTSET
+from _pytest.compat import safe_getattr
+from _pytest.compat import safe_isclass
+from _pytest.config import Config
+from _pytest.config import ExitCode
+from _pytest.config import hookimpl
+from _pytest.config.argparsing import Parser
+from _pytest.deprecated import check_ispytest
+from _pytest.fixtures import FixtureDef
+from _pytest.fixtures import FixtureRequest
+from _pytest.fixtures import FuncFixtureInfo
+from _pytest.fixtures import get_scope_node
+from _pytest.main import Session
+from _pytest.mark import MARK_GEN
+from _pytest.mark import ParameterSet
+from _pytest.mark.structures import get_unpacked_marks
+from _pytest.mark.structures import Mark
+from _pytest.mark.structures import MarkDecorator
+from _pytest.mark.structures import normalize_mark_list
+from _pytest.outcomes import fail
+from _pytest.outcomes import skip
+from _pytest.pathlib import bestrelpath
+from _pytest.pathlib import fnmatch_ex
+from _pytest.pathlib import import_path
+from _pytest.pathlib import ImportPathMismatchError
+from _pytest.pathlib import scandir
+from _pytest.scope import _ScopeName
+from _pytest.scope import Scope
+from _pytest.stash import StashKey
+from _pytest.warning_types import PytestCollectionWarning
+from _pytest.warning_types import PytestReturnNotNoneWarning
+from _pytest.warning_types import PytestUnhandledCoroutineWarning
+def _show_fixtures_per_test(config: Config, session: Session) -> None:
+    import _pytest.config
+    session.perform_collect()
+    invocation_dir = config.invocation_params.dir
+    tw = _pytest.config.create_terminal_writer(config)
+    verbose = config.getvalue('verbose')
+
+    def get_best_relpath(func) -> str:
+        loc = getlocation(func, invocation_dir)
+        return bestrelpath(invocation_dir, Path(loc))
+
+    def write_fixture(fixture_def: fixtures.FixtureDef[object]) -> None:
+        argname = fixture_def.argname
+        if verbose <= 0 and argname.startswith('_'):
+            return
+        prettypath = _pretty_fixture_path(invocation_dir, fixture_def.func)
+        tw.write(f'{argname}', green=True)
+        tw.write(f' -- {prettypath}', yellow=True)
+        tw.write('\n')
+        fixture_doc = inspect.getdoc(fixture_def.func)
+        if fixture_doc:
+            write_docstring(tw, fixture_doc.split('\n\n')[0] if verbose <= 0 else fixture_doc)
+        else:
+            tw.line('    no docstring available', red=True)
+
+    def write_item(item: nodes.Item) -> None:
+        info: Optional[FuncFixtureInfo] = getattr(item, '_fixtureinfo', None)
+        if info is None or not info.name2fixturedefs:
+            return
+        tw.line()
+        tw.sep('-', f'fixtures used by {item.name}')
+        tw.sep('-', f'({get_best_relpath(item.function)})')
+        for _, fixturedefs in sorted(info.name2fixturedefs.items()):
+            assert fixturedefs is not None
+            if not fixturedefs:
+                continue
+            write_fixture(fixturedefs[-1])
+    for session_item in session.items:
+        write_item(session_item)

@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class DomainValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='domain', parent_name='layout.ternary', **kwargs):
+        super(DomainValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Domain'), data_docs=kwargs.pop('data_docs', '\n            column\n                If there is a layout grid, use the domain for\n                this column in the grid for this ternary\n                subplot .\n            row\n                If there is a layout grid, use the domain for\n                this row in the grid for this ternary subplot .\n            x\n                Sets the horizontal domain of this ternary\n                subplot (in plot fraction).\n            y\n                Sets the vertical domain of this ternary\n                subplot (in plot fraction).\n'), **kwargs)

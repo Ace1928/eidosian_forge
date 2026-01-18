@@ -1,0 +1,9 @@
+import pytest
+import networkx as nx
+def test_les_miserables_graph(self):
+    """Weighted betweenness centrality: Les Miserables graph"""
+    G = nx.les_miserables_graph()
+    b_answer = {'Napoleon': 0.0, 'Myriel': 0.177, 'MlleBaptistine': 0.0, 'MmeMagloire': 0.0, 'CountessDeLo': 0.0, 'Geborand': 0.0, 'Champtercier': 0.0, 'Cravatte': 0.0, 'Count': 0.0, 'OldMan': 0.0, 'Valjean': 0.454, 'Labarre': 0.0, 'Marguerite': 0.009, 'MmeDeR': 0.0, 'Isabeau': 0.0, 'Gervais': 0.0, 'Listolier': 0.0, 'Tholomyes': 0.066, 'Fameuil': 0.0, 'Blacheville': 0.0, 'Favourite': 0.0, 'Dahlia': 0.0, 'Zephine': 0.0, 'Fantine': 0.114, 'MmeThenardier': 0.046, 'Thenardier': 0.129, 'Cosette': 0.075, 'Javert': 0.193, 'Fauchelevent': 0.026, 'Bamatabois': 0.08, 'Perpetue': 0.0, 'Simplice': 0.001, 'Scaufflaire': 0.0, 'Woman1': 0.0, 'Judge': 0.0, 'Champmathieu': 0.0, 'Brevet': 0.0, 'Chenildieu': 0.0, 'Cochepaille': 0.0, 'Pontmercy': 0.023, 'Boulatruelle': 0.0, 'Eponine': 0.023, 'Anzelma': 0.0, 'Woman2': 0.0, 'MotherInnocent': 0.0, 'Gribier': 0.0, 'MmeBurgon': 0.026, 'Jondrette': 0.0, 'Gavroche': 0.285, 'Gillenormand': 0.024, 'Magnon': 0.005, 'MlleGillenormand': 0.036, 'MmePontmercy': 0.005, 'MlleVaubois': 0.0, 'LtGillenormand': 0.015, 'Marius': 0.072, 'BaronessT': 0.004, 'Mabeuf': 0.089, 'Enjolras': 0.003, 'Combeferre': 0.0, 'Prouvaire': 0.0, 'Feuilly': 0.004, 'Courfeyrac': 0.001, 'Bahorel': 0.007, 'Bossuet': 0.028, 'Joly': 0.0, 'Grantaire': 0.036, 'MotherPlutarch': 0.0, 'Gueulemer': 0.025, 'Babet': 0.015, 'Claquesous': 0.042, 'Montparnasse': 0.05, 'Toussaint': 0.011, 'Child1': 0.0, 'Child2': 0.0, 'Brujon': 0.002, 'MmeHucheloup': 0.034}
+    b = nx.betweenness_centrality(G, weight='weight', normalized=True)
+    for n in sorted(G):
+        assert b[n] == pytest.approx(b_answer[n], abs=0.001)

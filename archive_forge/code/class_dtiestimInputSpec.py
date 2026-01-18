@@ -1,0 +1,21 @@
+import os
+from ...base import (
+class dtiestimInputSpec(CommandLineInputSpec):
+    dwi_image = File(desc='DWI image volume (required)', exists=True, argstr='--dwi_image %s')
+    tensor_output = traits.Either(traits.Bool, File(), hash_files=False, desc='Tensor OutputImage', argstr='--tensor_output %s')
+    B0 = traits.Either(traits.Bool, File(), hash_files=False, desc='Baseline image, average of all baseline images', argstr='--B0 %s')
+    idwi = traits.Either(traits.Bool, File(), hash_files=False, desc='idwi output image. Image with isotropic diffusion-weighted information = geometric mean of diffusion images', argstr='--idwi %s')
+    B0_mask_output = traits.Either(traits.Bool, File(), hash_files=False, desc='B0 mask used for the estimation. B0 thresholded either with the -t option value or the automatic OTSU value', argstr='--B0_mask_output %s')
+    brain_mask = File(desc='Brain mask.  Image where for every voxel == 0 the tensors are not estimated. Be aware that in addition a threshold based masking will be performed by default. If such an additional threshold masking is NOT desired, then use option -t 0.', exists=True, argstr='--brain_mask %s')
+    bad_region_mask = File(desc='Bad region mask.  Image where for every voxel > 0 the tensors are not estimated', exists=True, argstr='--bad_region_mask %s')
+    method = traits.Enum('lls', 'wls', 'nls', 'ml', desc='Estimation method (lls:linear least squares, wls:weighted least squares, nls:non-linear least squares, ml:maximum likelihood)', argstr='--method %s')
+    correction = traits.Enum('none', 'zero', 'abs', 'nearest', desc='Correct the tensors if computed tensor is not semi-definite positive', argstr='--correction %s')
+    threshold = traits.Int(desc='Baseline threshold for estimation. If not specified calculated using an OTSU threshold on the baseline image.', argstr='--threshold %d')
+    weight_iterations = traits.Int(desc='Number of iterations to recaluate weightings from tensor estimate', argstr='--weight_iterations %d')
+    step = traits.Float(desc='Gradient descent step size (for nls and ml methods)', argstr='--step %f')
+    sigma = traits.Float(argstr='--sigma %f')
+    DTI_double = traits.Bool(desc='Tensor components are saved as doubles (cannot be visualized in Slicer)', argstr='--DTI_double ')
+    verbose = traits.Bool(desc='produce verbose output', argstr='--verbose ')
+    defaultTensor = InputMultiPath(traits.Float, desc='Default tensor used if estimated tensor is below a given threshold', sep=',', argstr='--defaultTensor %s')
+    shiftNeg = traits.Bool(desc='Shift eigenvalues so all are positive (accounts for bad tensors related to noise or acquisition error). This is the same option as the one available in DWIToDTIEstimation in Slicer (but instead of just adding the minimum eigenvalue to all the eigenvalues if it is smaller than 0, we use a coefficient to have stictly positive eigenvalues', argstr='--shiftNeg ')
+    shiftNegCoeff = traits.Float(desc='Shift eigenvalues so all are positive (accounts for bad tensors related to noise or acquisition error). Instead of just adding the minimum eigenvalue to all the eigenvalues if it is smaller than 0, we use a coefficient to have stictly positive eigenvalues. Coefficient must be between 1.0 and 1.001 (included).', argstr='--shiftNegCoeff %f')

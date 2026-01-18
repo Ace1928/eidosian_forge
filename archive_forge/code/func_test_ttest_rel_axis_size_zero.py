@@ -1,0 +1,34 @@
+import os
+import re
+import warnings
+from collections import namedtuple
+from itertools import product
+import hypothesis.extra.numpy as npst
+import hypothesis
+import contextlib
+from numpy.testing import (assert_, assert_equal,
+import pytest
+from pytest import raises as assert_raises
+import numpy.ma.testutils as mat
+from numpy import array, arange, float32, float64, power
+import numpy as np
+import scipy.stats as stats
+import scipy.stats.mstats as mstats
+import scipy.stats._mstats_basic as mstats_basic
+from scipy.stats._ksstats import kolmogn
+from scipy.special._testutils import FuncData
+from scipy.special import binom
+from scipy import optimize
+from .common_tests import check_named_results
+from scipy.spatial.distance import cdist
+from scipy.stats._axis_nan_policy import _broadcast_concatenate
+from scipy.stats._stats_py import _permutation_distribution_t
+from scipy._lib._util import AxisError
+@pytest.mark.parametrize('b, expected_shape', [(np.empty((1, 5, 0)), (3, 5)), (np.empty((1, 0, 0)), (3, 0))])
+def test_ttest_rel_axis_size_zero(b, expected_shape):
+    a = np.empty((3, 1, 0))
+    result = stats.ttest_rel(a, b, axis=-1)
+    assert isinstance(result, stats._stats_py.TtestResult)
+    expected_value = np.full(expected_shape, fill_value=np.nan)
+    assert_equal(result.statistic, expected_value)
+    assert_equal(result.pvalue, expected_value)

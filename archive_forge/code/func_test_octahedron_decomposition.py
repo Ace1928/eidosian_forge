@@ -1,0 +1,23 @@
+import numpy as np
+import pytest
+from scipy import ndimage as ndi
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
+from skimage import color, data, transform
+from skimage._shared._warnings import expected_warnings
+from skimage._shared.testing import fetch, assert_stacklevel
+from skimage.morphology import gray, footprints
+from skimage.util import img_as_uint, img_as_ubyte
+@pytest.mark.parametrize('function', ['erosion', 'dilation', 'closing', 'opening', 'white_tophat', 'black_tophat'])
+@pytest.mark.parametrize('radius', (3,))
+@pytest.mark.parametrize('decomposition', ['sequence'])
+def test_octahedron_decomposition(cell3d_image, function, radius, decomposition):
+    """Validate footprint decomposition for various shapes.
+
+    comparison is made to the case without decomposition.
+    """
+    footprint_ndarray = footprints.octahedron(radius, decomposition=None)
+    footprint = footprints.octahedron(radius, decomposition=decomposition)
+    func = getattr(gray, function)
+    expected = func(cell3d_image, footprint=footprint_ndarray)
+    out = func(cell3d_image, footprint=footprint)
+    assert_array_equal(expected, out)

@@ -1,0 +1,17 @@
+import copy
+import gyp.common
+import os
+import os.path
+import re
+import shlex
+import subprocess
+import sys
+from gyp.common import GypError
+def GetBundleExecutableFolderPath(self):
+    """Returns the qualified path to the bundle's executables folder. E.g.
+    Chromium.app/Contents/MacOS. Only valid for bundles."""
+    assert self._IsBundle()
+    if self.spec['type'] in 'shared_library' or self.isIOS:
+        return self.GetBundleContentsFolderPath()
+    elif self.spec['type'] in ('executable', 'loadable_module'):
+        return os.path.join(self.GetBundleContentsFolderPath(), 'MacOS')

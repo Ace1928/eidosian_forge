@@ -1,0 +1,24 @@
+import copy
+import io
+import json
+import sys
+from unittest import mock
+from osc_lib.tests import utils as oscutils
+from ironicclient.common import utils as commonutils
+from ironicclient import exc
+from ironicclient.osc.v1 import baremetal_node
+from ironicclient.tests.unit.osc.v1 import fakes as baremetal_fakes
+from ironicclient.v1 import utils as v1_utils
+class TestConsoleShow(TestBaremetal):
+
+    def setUp(self):
+        super(TestConsoleShow, self).setUp()
+        self.cmd = baremetal_node.ConsoleShowBaremetalNode(self.app, None)
+        self.baremetal_mock.node.get_console.return_value = {'console_enabled': False, 'console_info': None}
+
+    def test_console_show(self):
+        arglist = ['node_uuid']
+        verifylist = [('node', 'node_uuid')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        self.cmd.take_action(parsed_args)
+        self.baremetal_mock.node.get_console.assert_called_once_with('node_uuid')

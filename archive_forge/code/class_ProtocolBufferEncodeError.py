@@ -1,0 +1,2 @@
+class ProtocolBufferEncodeError(Exception):
+    pass

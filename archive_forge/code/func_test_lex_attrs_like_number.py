@@ -1,0 +1,6 @@
+import pytest
+@pytest.mark.parametrize('text,match', [('10', True), ('1', True), ('10,000', True), ('10,00', True), ('štyri', True), ('devätnásť', True), ('milión', True), ('pes', False), (',', False), ('1/2', True)])
+def test_lex_attrs_like_number(sk_tokenizer, text, match):
+    tokens = sk_tokenizer(text)
+    assert len(tokens) == 1
+    assert tokens[0].like_num == match

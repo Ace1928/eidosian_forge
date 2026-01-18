@@ -1,0 +1,23 @@
+from unittest import mock
+import datetime
+import duet
+import pytest
+import freezegun
+import numpy as np
+from google.protobuf.duration_pb2 import Duration
+from google.protobuf.text_format import Merge
+from google.protobuf.timestamp_pb2 import Timestamp
+import cirq
+import cirq_google as cg
+from cirq_google.api import v2
+from cirq_google.engine import util
+from cirq_google.engine.engine import EngineContext
+from cirq_google.cloud import quantum
+@mock.patch('cirq_google.engine.engine_client.EngineClient.get_current_calibration_async')
+def test_current_calibration(get_current_calibration):
+    get_current_calibration.return_value = _CALIBRATION
+    processor = cg.EngineProcessor('a', 'p', EngineContext())
+    calibration = processor.get_current_calibration()
+    assert calibration.timestamp == 1562544000021
+    assert set(calibration.keys()) == {'xeb', 't1', 'globalMetric'}
+    get_current_calibration.assert_called_once_with('a', 'p')

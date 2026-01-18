@@ -1,0 +1,24 @@
+import datetime
+from io import BytesIO
+import os
+import shutil
+import numpy as np
+from packaging.version import parse as parse_version
+import pytest
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.testing import _has_tex_package, _check_for_pgf
+from matplotlib.testing.exceptions import ImageComparisonFailure
+from matplotlib.testing.compare import compare_images
+from matplotlib.backends.backend_pgf import PdfPages
+from matplotlib.testing.decorators import (
+from matplotlib.testing._markers import (
+@needs_pgf_xelatex
+def test_tex_restart_after_error():
+    fig = plt.figure()
+    fig.suptitle('\\oops')
+    with pytest.raises(ValueError):
+        fig.savefig(BytesIO(), format='pgf')
+    fig = plt.figure()
+    fig.suptitle('this is ok')
+    fig.savefig(BytesIO(), format='pgf')

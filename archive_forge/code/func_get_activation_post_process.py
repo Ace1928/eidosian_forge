@@ -1,0 +1,19 @@
+import copy
+import itertools
+import warnings
+import torch
+import torch.nn as nn
+import torch.ao.nn.quantized as nnq
+from torch.ao.nn.intrinsic import _FusedModule
+from torch.ao.quantization.quantization_mappings import (
+from .utils import get_qparam_dict, has_no_children_ignoring_parametrizations
+from torch.ao.quantization.stubs import DeQuantStub, QuantWrapper
+from torch.ao.quantization.qconfig import (
+from torch.nn.utils.parametrize import type_before_parametrizations
+from torch.ao.quantization.observer import _is_activation_post_process
+from torch.ao.quantization.observer import (   # noqa: F401
+def get_activation_post_process(qconfig, device, special_act_post_process=None):
+    activation = qconfig.activation() if special_act_post_process is None else special_act_post_process()
+    if device is not None:
+        activation.to(device)
+    return activation

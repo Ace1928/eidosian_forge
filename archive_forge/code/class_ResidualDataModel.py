@@ -1,0 +1,69 @@
+import os
+import logging
+import pyomo.contrib.viewer.qt as myqt
+from pyomo.contrib.viewer.report import value_no_exception, get_residual
+import pyomo.environ as pyo
+from pyomo.common.fileutils import this_file_dir
+class ResidualDataModel(myqt.QAbstractTableModel):
+
+    def __init__(self, parent, ui_data):
+        super().__init__(parent)
+        self.column = ['name', 'residual', 'value', 'ub', 'lb', 'active']
+        self.ui_data = ui_data
+        self.include_inactive = True
+        self.update_model()
+        self.sort()
+
+    def update_model(self):
+        if self.include_inactive:
+            ac = None
+        else:
+            ac = True
+        self._items = list(self.ui_data.model.component_data_objects(pyo.Constraint, active=ac))
+
+    def sort(self):
+
+        def _inactive_to_back(c):
+            if c.active:
+                return float('inf')
+            else:
+                return float('-inf')
+        self._items.sort(key=lambda o: (o is None, get_residual(self.ui_data, o) if get_residual(self.ui_data, o) is not None and (not isinstance(get_residual(self.ui_data, o), str)) else _inactive_to_back(o)), reverse=True)
+
+    def rowCount(self, parent=myqt.QtCore.QModelIndex()):
+        return len(self._items)
+
+    def columnCount(self, parent=myqt.QtCore.QModelIndex()):
+        return len(self.column)
+
+    def data(self, index=myqt.QtCore.QModelIndex(), role=myqt.Qt.ItemDataRole.DisplayRole):
+        row = index.row()
+        col = self.column[index.column()]
+        if role == myqt.Qt.ItemDataRole.DisplayRole:
+            o = self._items[row]
+            if col == 'name':
+                return str(o)
+            elif col == 'residual':
+                return get_residual(self.ui_data, o)
+            elif col == 'active':
+                return o.active
+            elif col == 'ub':
+                return value_no_exception(o.upper)
+            elif col == 'lb':
+                return value_no_exception(o.lower)
+            elif col == 'value':
+                try:
+                    return self.ui_data.value_cache[o]
+                except KeyError:
+                    return None
+        else:
+            return None
+
+    def headerData(self, i, orientation, role=myqt.Qt.ItemDataRole.DisplayRole):
+        """
+        Return the column headings for the horizontal header and
+        index numbers for the vertical header.
+        """
+        if orientation == myqt.Qt.Orientation.Horizontal and role == myqt.Qt.ItemDataRole.DisplayRole:
+            return self.column[i]
+        return None

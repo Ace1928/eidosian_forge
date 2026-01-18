@@ -1,0 +1,28 @@
+import unittest
+import inspect
+import logging
+from struct import pack, unpack_from, pack_into
+from os_ken.ofproto import ether
+from os_ken.ofproto import inet
+from os_ken.lib.packet.ethernet import ethernet
+from os_ken.lib.packet.ipv4 import ipv4
+from os_ken.lib.packet.packet import Packet
+from os_ken.lib.packet.packet_utils import checksum
+from os_ken.lib import addrconv
+from os_ken.lib.packet.igmp import igmp
+from os_ken.lib.packet.igmp import igmpv3_query
+from os_ken.lib.packet.igmp import igmpv3_report
+from os_ken.lib.packet.igmp import igmpv3_report_group
+from os_ken.lib.packet.igmp import IGMP_TYPE_QUERY
+from os_ken.lib.packet.igmp import IGMP_TYPE_REPORT_V3
+from os_ken.lib.packet.igmp import MODE_IS_INCLUDE
+def setUp_with_srcs_and_aux(self):
+    self.srcs = ['192.168.1.1', '192.168.1.2', '192.168.1.3']
+    self.num = len(self.srcs)
+    self.aux = b'\x01\x02\x03\x04\x05\x00\x00\x00'
+    self.aux_len = len(self.aux) // 4
+    self.buf = pack(igmpv3_report_group._PACK_STR, self.type_, self.aux_len, self.num, addrconv.ipv4.text_to_bin(self.address))
+    for src in self.srcs:
+        self.buf += pack('4s', addrconv.ipv4.text_to_bin(src))
+    self.buf += self.aux
+    self.g = igmpv3_report_group(self.type_, self.aux_len, self.num, self.address, self.srcs, self.aux)

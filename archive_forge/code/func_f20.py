@@ -1,0 +1,11 @@
+from sympy.core import Symbol
+from sympy.core.evalf import N
+from sympy.core.numbers import I, Rational
+from sympy.functions import sqrt
+from sympy.polys.polytools import Poly
+from sympy.utilities import public
+@property
+def f20(self):
+    p, q, r, s = (self.p, self.q, self.r, self.s)
+    f20 = q ** 8 - 13 * p * q ** 6 * r + p ** 5 * q ** 2 * r ** 2 + 65 * p ** 2 * q ** 4 * r ** 2 - 4 * p ** 6 * r ** 3 - 128 * p ** 3 * q ** 2 * r ** 3 + 17 * q ** 4 * r ** 3 + 48 * p ** 4 * r ** 4 - 16 * p * q ** 2 * r ** 4 - 192 * p ** 2 * r ** 5 + 256 * r ** 6 - 4 * p ** 5 * q ** 3 * s - 12 * p ** 2 * q ** 5 * s + 18 * p ** 6 * q * r * s + 12 * p ** 3 * q ** 3 * r * s - 124 * q ** 5 * r * s + 196 * p ** 4 * q * r ** 2 * s + 590 * p * q ** 3 * r ** 2 * s - 160 * p ** 2 * q * r ** 3 * s - 1600 * q * r ** 4 * s - 27 * p ** 7 * s ** 2 - 150 * p ** 4 * q ** 2 * s ** 2 - 125 * p * q ** 4 * s ** 2 - 99 * p ** 5 * r * s ** 2 - 725 * p ** 2 * q ** 2 * r * s ** 2 + 1200 * p ** 3 * r ** 2 * s ** 2 + 3250 * q ** 2 * r ** 2 * s ** 2 - 2000 * p * r ** 3 * s ** 2 - 1250 * p * q * r * s ** 3 + 3125 * p ** 2 * s ** 4 - 9375 * r * s ** 4 - (2 * p * q ** 6 - 19 * p ** 2 * q ** 4 * r + 51 * p ** 3 * q ** 2 * r ** 2 - 3 * q ** 4 * r ** 2 - 32 * p ** 4 * r ** 3 - 76 * p * q ** 2 * r ** 3 + 256 * p ** 2 * r ** 4 - 512 * r ** 5 + 31 * p ** 3 * q ** 3 * s + 58 * q ** 5 * s - 117 * p ** 4 * q * r * s - 105 * p * q ** 3 * r * s - 260 * p ** 2 * q * r ** 2 * s + 2400 * q * r ** 3 * s + 108 * p ** 5 * s ** 2 + 325 * p ** 2 * q ** 2 * s ** 2 - 525 * p ** 3 * r * s ** 2 - 2750 * q ** 2 * r * s ** 2 + 500 * p * r ** 2 * s ** 2 - 625 * p * q * s ** 3 + 3125 * s ** 4) * x + (p ** 2 * q ** 4 - 6 * p ** 3 * q ** 2 * r - 8 * q ** 4 * r + 9 * p ** 4 * r ** 2 + 76 * p * q ** 2 * r ** 2 - 136 * p ** 2 * r ** 3 + 400 * r ** 4 - 50 * p * q ** 3 * s + 90 * p ** 2 * q * r * s - 1400 * q * r ** 2 * s + 625 * q ** 2 * s ** 2 + 500 * p * r * s ** 2) * x ** 2 - (2 * q ** 4 - 21 * p * q ** 2 * r + 40 * p ** 2 * r ** 2 - 160 * r ** 3 + 15 * p ** 2 * q * s + 400 * q * r * s - 125 * p * s ** 2) * x ** 3 + (2 * p * q ** 2 - 6 * p ** 2 * r + 40 * r ** 2 - 50 * q * s) * x ** 4 + 8 * r * x ** 5 + x ** 6
+    return Poly(f20, x)

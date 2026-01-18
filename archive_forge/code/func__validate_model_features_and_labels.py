@@ -1,0 +1,90 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+import collections
+import copy
+import enum
+import math
+import os
+import signal
+import sys
+import threading
+import time
+import tensorflow as tf
+import numpy as np
+import six
+from six.moves import queue as Queue  # pylint: disable=redefined-builtin
+from six.moves import xrange  # pylint: disable=redefined-builtin
+from tensorflow.core.framework import variable_pb2
+from tensorflow.core.framework.summary_pb2 import Summary
+from tensorflow.core.protobuf.tpu import compilation_result_pb2 as tpu_compilation_result
+from tensorflow.python.data.util import nest as data_nest
+from tensorflow.python.distribute.cluster_resolver import tpu_cluster_resolver
+from tensorflow.python.framework import function
+from tensorflow.python.framework import ops
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import control_flow_util
+from tensorflow.python.ops import ref_variable
+from tensorflow.python.ops import summary_ops_v2
+from tensorflow.python.ops import variable_scope
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.tpu import functional as tpu_functional
+from tensorflow.python.tpu import preempted_hook
+from tensorflow.python.tpu import session_support
+from tensorflow.python.tpu import tensor_tracer
+from tensorflow.python.tpu import tpu
+from tensorflow.python.tpu import tpu_embedding_gradient
+from tensorflow.python.tpu import tpu_feed
+from tensorflow.python.tpu import tpu_function
+from tensorflow.python.tpu import tpu_replication
+from tensorflow.python.tpu import training_loop
+from tensorflow.python.tpu.ops import tpu_ops
+from tensorflow.python.training import evaluation
+from tensorflow.python.util import function_utils
+from tensorflow.python.util import tf_inspect
+from tensorflow_estimator.python.estimator import estimator as estimator_lib
+from tensorflow_estimator.python.estimator import model_fn as model_fn_lib
+from tensorflow_estimator.python.estimator.estimator_export import estimator_export
+from tensorflow_estimator.python.estimator.export import export_output as export_output_lib
+from tensorflow_estimator.python.estimator.tpu import _tpu_estimator_embedding
+from tensorflow_estimator.python.estimator.tpu import error_handling
+from tensorflow_estimator.python.estimator.tpu import iteration_count_estimator
+from tensorflow_estimator.python.estimator.tpu import tpu_config
+from tensorflow_estimator.python.estimator.tpu import tpu_context
+from tensorflow_estimator.python.estimator.tpu import util as util_lib
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import AdagradParameters  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import AdamParameters  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import EmbeddingConfigSpec  # pylint: disable=unused-import
+from tensorflow_estimator.python.estimator.tpu._tpu_estimator_embedding import StochasticGradientDescentParameters  # pylint: disable=unused-import
+def _validate_model_features_and_labels(self, features, labels, is_export_mode):
+    """Validates that the features and labels for the model function are valid.
+
+    A valid features/labels object is the one with:
+    - Type: A tensor or any nested structure of tensors supported by TF nest,
+        namely nested dictionary, tuple, namedtuple, or sequence of tensors.
+    - Static shape if is_export_mode is False.
+
+    Args:
+      features: the features that would be input to the model function.
+      labels: the labels that would be input to the model function.
+      is_export_mode: boolean value specifying if in export mode.
+
+    Raises:
+      TypeError: If features/labels are not of the correct type.
+      ValueError: If features/labels have dynamic shape.
+    """
+
+    def validate(obj, obj_name):
+        """Helper validate function."""
+        if is_export_mode or self._ctx.is_running_on_cpu(is_export_mode):
+            return
+        if isinstance(obj, tf.Tensor):
+            if not obj.get_shape().is_fully_defined():
+                raise ValueError('The {} to the model returned by input_fn must have static shape. Tensor: {}'.format(obj_name, obj))
+        else:
+            for tensor in data_nest.flatten(obj):
+                if not tensor.get_shape().is_fully_defined():
+                    raise ValueError('The {} to the model returned by input_fn must have static shape. Tensor: {}'.format(obj_name, tensor))
+    validate(features, 'features')
+    if labels is not None:
+        validate(labels, 'labels')

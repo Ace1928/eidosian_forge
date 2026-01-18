@@ -1,0 +1,1 @@
+Test H2 molecule atomization with MOPAC.

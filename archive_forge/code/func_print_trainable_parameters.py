@@ -1,0 +1,19 @@
+from __future__ import annotations
+import os
+from contextlib import contextmanager
+from typing import Any, Optional, Union
+import torch
+from accelerate.hooks import remove_hook_from_submodules
+from torch import nn
+from transformers.utils import PushToHubMixin
+from peft.tuners.mixed import COMPATIBLE_TUNER_TYPES
+from .config import PeftConfig
+from .peft_model import PeftModel
+from .tuners import (
+from .utils import PeftType, _set_adapter, _set_trainable
+def print_trainable_parameters(self):
+    """
+        Prints the number of trainable parameters in the model.
+        """
+    trainable_params, all_param = self.get_nb_trainable_parameters()
+    print(f'trainable params: {trainable_params:,d} || all params: {all_param:,d} || trainable%: {100 * trainable_params / all_param:.4f}')

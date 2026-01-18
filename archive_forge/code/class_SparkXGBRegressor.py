@@ -1,0 +1,143 @@
+import warnings
+from typing import Any, List, Optional, Type, Union
+import numpy as np
+from pyspark import keyword_only
+from pyspark.ml.param import Param, Params
+from pyspark.ml.param.shared import HasProbabilityCol, HasRawPredictionCol
+from xgboost import XGBClassifier, XGBRanker, XGBRegressor
+from .core import (  # type: ignore
+from .utils import get_class_name
+class SparkXGBRegressor(_SparkXGBEstimator):
+    """SparkXGBRegressor is a PySpark ML estimator. It implements the XGBoost regression
+    algorithm based on XGBoost python library, and it can be used in PySpark Pipeline
+    and PySpark ML meta algorithms like
+    - :py:class:`~pyspark.ml.tuning.CrossValidator`/
+    - :py:class:`~pyspark.ml.tuning.TrainValidationSplit`/
+    - :py:class:`~pyspark.ml.classification.OneVsRest`
+
+    SparkXGBRegressor automatically supports most of the parameters in
+    :py:class:`xgboost.XGBRegressor` constructor and most of the parameters used in
+    :py:meth:`xgboost.XGBRegressor.fit` and :py:meth:`xgboost.XGBRegressor.predict`
+    method.
+
+    To enable GPU support, set `device` to `cuda` or `gpu`.
+
+    SparkXGBRegressor doesn't support setting `base_margin` explicitly as well, but
+    support another param called `base_margin_col`. see doc below for more details.
+
+    SparkXGBRegressor doesn't support `validate_features` and `output_margin` param.
+
+    SparkXGBRegressor doesn't support setting `nthread` xgboost param, instead, the
+    `nthread` param for each xgboost worker will be set equal to `spark.task.cpus`
+    config value.
+
+
+    Parameters
+    ----------
+
+    features_col:
+        When the value is string, it requires the features column name to be vector type.
+        When the value is a list of string, it requires all the feature columns to be numeric types.
+    label_col:
+        Label column name. Default to "label".
+    prediction_col:
+        Prediction column name. Default to "prediction"
+    pred_contrib_col:
+        Contribution prediction column name.
+    validation_indicator_col:
+        For params related to `xgboost.XGBRegressor` training with
+        evaluation dataset's supervision,
+        set :py:attr:`xgboost.spark.SparkXGBRegressor.validation_indicator_col`
+        parameter instead of setting the `eval_set` parameter in `xgboost.XGBRegressor`
+        fit method.
+    weight_col:
+        To specify the weight of the training and validation dataset, set
+        :py:attr:`xgboost.spark.SparkXGBRegressor.weight_col` parameter instead of setting
+        `sample_weight` and `sample_weight_eval_set` parameter in `xgboost.XGBRegressor`
+        fit method.
+    base_margin_col:
+        To specify the base margins of the training and validation
+        dataset, set :py:attr:`xgboost.spark.SparkXGBRegressor.base_margin_col` parameter
+        instead of setting `base_margin` and `base_margin_eval_set` in the
+        `xgboost.XGBRegressor` fit method.
+
+    num_workers:
+        How many XGBoost workers to be used to train.
+        Each XGBoost worker corresponds to one spark task.
+    use_gpu:
+        .. deprecated:: 2.0.0
+
+        Use `device` instead.
+
+    device:
+
+        .. versionadded:: 2.0.0
+
+        Device for XGBoost workers, available options are `cpu`, `cuda`, and `gpu`.
+
+    force_repartition:
+        Boolean value to specify if forcing the input dataset to be repartitioned
+        before XGBoost training.
+    repartition_random_shuffle:
+        Boolean value to specify if randomly shuffling the dataset when repartitioning is required.
+    enable_sparse_data_optim:
+        Boolean value to specify if enabling sparse data optimization, if True,
+        Xgboost DMatrix object will be constructed from sparse matrix instead of
+        dense matrix.
+
+    kwargs:
+        A dictionary of xgboost parameters, please refer to
+        https://xgboost.readthedocs.io/en/stable/parameter.html
+
+    Note
+    ----
+
+    The Parameters chart above contains parameters that need special handling.
+    For a full list of parameters, see entries with `Param(parent=...` below.
+
+    This API is experimental.
+
+
+    Examples
+    --------
+
+    >>> from xgboost.spark import SparkXGBRegressor
+    >>> from pyspark.ml.linalg import Vectors
+    >>> df_train = spark.createDataFrame([
+    ...     (Vectors.dense(1.0, 2.0, 3.0), 0, False, 1.0),
+    ...     (Vectors.sparse(3, {1: 1.0, 2: 5.5}), 1, False, 2.0),
+    ...     (Vectors.dense(4.0, 5.0, 6.0), 2, True, 1.0),
+    ...     (Vectors.sparse(3, {1: 6.0, 2: 7.5}), 3, True, 2.0),
+    ... ], ["features", "label", "isVal", "weight"])
+    >>> df_test = spark.createDataFrame([
+    ...     (Vectors.dense(1.0, 2.0, 3.0), ),
+    ...     (Vectors.sparse(3, {1: 1.0, 2: 5.5}), )
+    ... ], ["features"])
+    >>> xgb_regressor = SparkXGBRegressor(max_depth=5, missing=0.0,
+    ... validation_indicator_col='isVal', weight_col='weight',
+    ... early_stopping_rounds=1, eval_metric='rmse')
+    >>> xgb_reg_model = xgb_regressor.fit(df_train)
+    >>> xgb_reg_model.transform(df_test)
+
+    """
+
+    @keyword_only
+    def __init__(self, *, features_col: Union[str, List[str]]='features', label_col: str='label', prediction_col: str='prediction', pred_contrib_col: Optional[str]=None, validation_indicator_col: Optional[str]=None, weight_col: Optional[str]=None, base_margin_col: Optional[str]=None, num_workers: int=1, use_gpu: Optional[bool]=None, device: Optional[str]=None, force_repartition: bool=False, repartition_random_shuffle: bool=False, enable_sparse_data_optim: bool=False, **kwargs: Any) -> None:
+        super().__init__()
+        input_kwargs = self._input_kwargs
+        if use_gpu:
+            _deprecated_use_gpu()
+        self.setParams(**input_kwargs)
+
+    @classmethod
+    def _xgb_cls(cls) -> Type[XGBRegressor]:
+        return XGBRegressor
+
+    @classmethod
+    def _pyspark_model_cls(cls) -> Type['SparkXGBRegressorModel']:
+        return SparkXGBRegressorModel
+
+    def _validate_params(self) -> None:
+        super()._validate_params()
+        if self.isDefined(self.qid_col):
+            raise ValueError('Spark Xgboost regressor estimator does not support `qid_col` param.')

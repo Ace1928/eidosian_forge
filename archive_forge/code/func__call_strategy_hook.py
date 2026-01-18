@@ -1,0 +1,23 @@
+import logging
+from copy import deepcopy
+from typing import Any, Callable, Dict, Optional, Type, Union
+from packaging.version import Version
+import pytorch_lightning as pl
+from lightning_fabric.utilities.device_dtype_mixin import _DeviceDtypeModuleMixin
+from pytorch_lightning.callbacks import Checkpoint, EarlyStopping
+from pytorch_lightning.trainer.states import TrainerStatus
+from pytorch_lightning.utilities.exceptions import _TunerExitException
+from pytorch_lightning.utilities.model_helpers import is_overridden
+from pytorch_lightning.utilities.rank_zero import rank_zero_warn
+def _call_strategy_hook(trainer: 'pl.Trainer', hook_name: str, *args: Any, **kwargs: Any) -> Any:
+    log.debug(f'{trainer.__class__.__name__}: calling strategy hook: {hook_name}')
+    pl_module = trainer.lightning_module
+    prev_fx_name = pl_module._current_fx_name
+    pl_module._current_fx_name = hook_name
+    fn = getattr(trainer.strategy, hook_name)
+    if not callable(fn):
+        return None
+    with trainer.profiler.profile(f'[Strategy]{trainer.strategy.__class__.__name__}.{hook_name}'):
+        output = fn(*args, **kwargs)
+    pl_module._current_fx_name = prev_fx_name
+    return output

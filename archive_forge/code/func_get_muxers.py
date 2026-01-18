@@ -1,0 +1,18 @@
+from typing import Dict, List, Tuple
+import torio
+def get_muxers() -> Dict[str, str]:
+    """Get the available muxers.
+
+    Returns:
+        Dict[str, str]: Mapping from muxer (format) short name to long name.
+
+    Example
+        >>> for k, v in get_muxers().items():
+        >>>     print(f"{k}: {v}")
+        ... a64: a64 - video for Commodore 64
+        ... ac3: raw AC-3
+        ... adts: ADTS AAC (Advanced Audio Coding)
+        ... adx: CRI ADX
+        ... aiff: Audio IFF
+    """
+    return ffmpeg_ext.get_muxers()

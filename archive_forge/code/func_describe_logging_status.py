@@ -1,0 +1,20 @@
+import boto
+from boto.compat import json
+from boto.connection import AWSQueryConnection
+from boto.regioninfo import RegionInfo
+from boto.exception import JSONResponseError
+from boto.redshift import exceptions
+def describe_logging_status(self, cluster_identifier):
+    """
+        Describes whether information, such as queries and connection
+        attempts, is being logged for the specified Amazon Redshift
+        cluster.
+
+        :type cluster_identifier: string
+        :param cluster_identifier: The identifier of the cluster to get the
+            logging status from.
+        Example: `examplecluster`
+
+        """
+    params = {'ClusterIdentifier': cluster_identifier}
+    return self._make_request(action='DescribeLoggingStatus', verb='POST', path='/', params=params)

@@ -1,0 +1,27 @@
+import os
+import pytest
+import sys
+import textwrap
+import unittest
+from contextlib import contextmanager
+from traitlets.config.loader import Config
+from IPython import get_ipython
+from IPython.core import completer
+from IPython.utils.tempdir import TemporaryDirectory, TemporaryWorkingDirectory
+from IPython.utils.generics import complete_object
+from IPython.testing import decorators as dec
+from IPython.core.completer import (
+def test_local_file_completions(self):
+    ip = get_ipython()
+    with TemporaryWorkingDirectory():
+        prefix = './foo'
+        suffixes = ['1', '2']
+        names = [prefix + s for s in suffixes]
+        for n in names:
+            open(n, 'w', encoding='utf-8').close()
+        c = ip.complete(prefix)[1]
+        self.assertEqual(c, names)
+        cmd = 'a = f("%s' % prefix
+        c = ip.complete(prefix, cmd)[1]
+        comp = {prefix + s for s in suffixes}
+        self.assertTrue(comp.issubset(set(c)))

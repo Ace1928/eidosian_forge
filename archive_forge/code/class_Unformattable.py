@@ -1,0 +1,15 @@
+from typing import AnyStr, Dict, Optional, cast
+from twisted.python.failure import Failure
+from twisted.python.test.test_tzhelper import addTZCleanup, mktime, setTZ
+from twisted.trial import unittest
+from twisted.trial.unittest import SkipTest
+from .._format import (
+from .._interfaces import LogEvent
+from .._levels import LogLevel
+class Unformattable:
+    """
+    An object that raises an exception from C{__repr__}.
+    """
+
+    def __repr__(self) -> str:
+        return str(1 / 0)

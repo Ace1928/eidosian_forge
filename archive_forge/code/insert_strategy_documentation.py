@@ -1,0 +1,1 @@
+Indicates preferences on how to add multiple operations to a circuit.

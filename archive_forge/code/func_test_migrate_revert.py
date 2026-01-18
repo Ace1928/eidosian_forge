@@ -1,0 +1,30 @@
+import collections
+import copy
+import getpass
+import json
+import tempfile
+from unittest import mock
+from unittest.mock import call
+import iso8601
+from novaclient import api_versions
+from openstack import exceptions as sdk_exceptions
+from openstack import utils as sdk_utils
+from osc_lib.cli import format_columns
+from osc_lib import exceptions
+from osc_lib import utils as common_utils
+from openstackclient.compute.v2 import server
+from openstackclient.tests.unit.compute.v2 import fakes as compute_fakes
+from openstackclient.tests.unit.image.v2 import fakes as image_fakes
+from openstackclient.tests.unit.network.v2 import fakes as network_fakes
+from openstackclient.tests.unit import utils as test_utils
+from openstackclient.tests.unit.volume.v3 import fakes as volume_fakes
+def test_migrate_revert(self):
+    arglist = [self.server.id]
+    verifylist = [('server', self.server.id)]
+    parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+    with mock.patch.object(self.cmd.log, 'warning') as mock_warning:
+        self.cmd.take_action(parsed_args)
+    self.servers_mock.get.assert_called_with(self.server.id)
+    self.server.revert_resize.assert_called_with()
+    mock_warning.assert_called_once()
+    self.assertIn("The 'server migrate revert' command has been deprecated", str(mock_warning.call_args[0][0]))

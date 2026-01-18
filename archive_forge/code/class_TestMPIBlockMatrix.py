@@ -1,0 +1,834 @@
+import warnings
+import pyomo.common.unittest as unittest
+from pyomo.contrib.pynumero.dependencies import (
+@unittest.pytest.mark.mpi
+class TestMPIBlockMatrix(unittest.TestCase):
+
+    @classmethod
+    @unittest.skipIf(SKIPTESTS, SKIPTESTS)
+    def setUpClass(cls):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        cls.square_serial_mat = serial_bm
+        cls.square_mpi_mat = bm
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm, assert_correct_owners=True)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        cls.square_mpi_mat_no_broadcast = bm
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        bm.set_block(0, 1, m)
+        cls.square_mpi_mat2 = bm
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        serial_bm.set_block(0, 1, m)
+        cls.square_serial_mat2 = serial_bm
+        row = np.array([0, 1, 2, 3])
+        col = np.array([0, 1, 0, 1])
+        data = np.array([1.0, 1.0, 1.0, 1.0])
+        m2 = coo_matrix((data, (row, col)), shape=(4, 2))
+        rank_ownership = [[0, -1, 0], [-1, 1, -1]]
+        bm = MPIBlockMatrix(2, 3, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+            bm.set_block(0, 2, m2)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        cls.rectangular_mpi_mat = bm
+        bm = BlockMatrix(2, 3)
+        bm.set_block(0, 0, m)
+        bm.set_block(0, 2, m2)
+        bm.set_block(1, 1, m)
+        cls.rectangular_serial_mat = bm
+
+    def test_bshape(self):
+        self.assertEqual(self.square_mpi_mat.bshape, (2, 2))
+        self.assertEqual(self.rectangular_mpi_mat.bshape, (2, 3))
+
+    def test_shape(self):
+        self.assertEqual(self.square_mpi_mat.shape, (8, 8))
+        self.assertEqual(self.rectangular_mpi_mat.shape, (8, 10))
+
+    def test_tocoo(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.tocoo()
+
+    def test_tocsr(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.tocsr()
+
+    def test_tocsc(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.tocsc()
+
+    def test_todia(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.todia()
+
+    def test_tobsr(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.tobsr()
+
+    def test_toarray(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.toarray()
+
+    def test_coo_data(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.coo_data()
+
+    def test_getitem(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            if rank == 0:
+                self.assertTrue((m == self.square_mpi_mat.get_block(0, 0)).toarray().all())
+            if rank == 1:
+                self.assertTrue((m == self.square_mpi_mat.get_block(1, 1)).toarray().all())
+            self.assertTrue((m == self.square_mpi_mat2.get_block(0, 1)).toarray().all())
+
+    def test_setitem(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        bm.set_block(0, 1, m)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.assertTrue((m == bm.get_block(0, 1)).toarray().all())
+
+    def test_nnz(self):
+        self.assertEqual(self.square_mpi_mat.nnz, 12)
+        self.assertEqual(self.square_mpi_mat2.nnz, 18)
+        self.assertEqual(self.rectangular_mpi_mat.nnz, 16)
+
+    def test_block_shapes(self):
+        m, n = self.square_mpi_mat.bshape
+        mpi_shapes = self.square_mpi_mat.block_shapes()
+        serial_shapes = self.square_serial_mat.block_shapes()
+        for i in range(m):
+            for j in range(n):
+                self.assertEqual(serial_shapes[i][j], mpi_shapes[i][j])
+
+    def test_reset_brow(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        self.assertTrue(np.allclose(serial_bm.row_block_sizes(), bm.row_block_sizes()))
+        bm.reset_brow(0)
+        serial_bm.reset_brow(0)
+        self.assertTrue(np.allclose(serial_bm.row_block_sizes(), bm.row_block_sizes()))
+        bm.reset_brow(1)
+        serial_bm.reset_brow(1)
+        self.assertTrue(np.allclose(serial_bm.row_block_sizes(), bm.row_block_sizes()))
+
+    def test_reset_bcol(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        self.assertTrue(np.allclose(serial_bm.row_block_sizes(), bm.row_block_sizes()))
+        bm.reset_bcol(0)
+        serial_bm.reset_bcol(0)
+        self.assertTrue(np.allclose(serial_bm.col_block_sizes(), bm.col_block_sizes()))
+        bm.reset_bcol(1)
+        serial_bm.reset_bcol(1)
+        self.assertTrue(np.allclose(serial_bm.col_block_sizes(), bm.col_block_sizes()))
+
+    def test_has_empty_rows(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.has_empty_rows()
+
+    def test_has_empty_cols(self):
+        with self.assertRaises(Exception) as context:
+            self.square_mpi_mat.has_empty_cols()
+
+    def test_transpose(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.rectangular_mpi_mat
+        res = mat1.transpose()
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat1.bshape[1], res.bshape[0])
+        self.assertEqual(mat1.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat1.get_block(j, i).toarray()))
+        res = mat2.transpose()
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat2.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat2.bshape[1], res.bshape[0])
+        self.assertEqual(mat2.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat2.get_block(j, i).toarray()))
+        res = mat1.transpose(copy=True)
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat1.bshape[1], res.bshape[0])
+        self.assertEqual(mat1.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat1.get_block(j, i).toarray()))
+        res = mat2.transpose(copy=True)
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat2.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat2.bshape[1], res.bshape[0])
+        self.assertEqual(mat2.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat2.get_block(j, i).toarray()))
+        res = mat1.T
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat1.bshape[1], res.bshape[0])
+        self.assertEqual(mat1.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat1.get_block(j, i).toarray()))
+        res = mat2.T
+        self.assertIsInstance(res, MPIBlockMatrix)
+        self.assertTrue(np.allclose(mat2.rank_ownership, res.rank_ownership.T))
+        self.assertEqual(mat2.bshape[1], res.bshape[0])
+        self.assertEqual(mat2.bshape[0], res.bshape[1])
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray().T, mat2.get_block(j, i).toarray()))
+
+    def _compare_mpi_and_serial_block_matrices(self, mpi_mat, serial_mat):
+        self.assertTrue(np.allclose(mpi_mat.to_local_array(), serial_mat.toarray()))
+        self.assertIsInstance(mpi_mat, MPIBlockMatrix)
+        rows, columns = np.nonzero(mpi_mat.ownership_mask)
+        for i, j in zip(rows, columns):
+            if mpi_mat.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(mpi_mat.get_block(i, j).toarray(), serial_mat.get_block(i, j).toarray()))
+            else:
+                self.assertIsNone(serial_mat.get_block(i, j))
+
+    def test_add(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        res = mat1 + mat2
+        serial_res = serial_mat1 + serial_mat2
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        res = mat1 + serial_mat2
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        res = serial_mat2 + mat1
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        with self.assertRaises(Exception) as context:
+            res = mat1 + serial_mat2.tocoo()
+        with self.assertRaises(Exception) as context:
+            res = serial_mat2.tocoo() + mat1
+
+    def test_sub(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        res = mat1 - mat2
+        serial_res = serial_mat1 - serial_mat2
+        self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        res = mat1 - serial_mat2
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        res = mat2 - mat1
+        serial_res = serial_mat2 - serial_mat1
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        res = serial_mat2 - mat1
+        self._compare_mpi_and_serial_block_matrices(res, serial_res)
+        with self.assertRaises(Exception) as context:
+            res = mat1 - serial_mat2.tocoo()
+        with self.assertRaises(Exception) as context:
+            res = serial_mat2.tocoo() - mat1
+
+    def test_div(self):
+        mat1 = self.square_mpi_mat
+        serial_mat1 = self.square_serial_mat
+        res = mat1 / 3.0
+        serial_res = serial_mat1 / 3.0
+        self.assertIsInstance(res, MPIBlockMatrix)
+        rows, columns = np.nonzero(res.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+            else:
+                self.assertIsNone(serial_res.get_block(i, j))
+
+    def test_iadd(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m.copy())
+        if rank == 1:
+            bm.set_block(1, 1, m.copy())
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m.copy())
+        serial_bm.set_block(1, 1, m.copy())
+        bm += bm
+        serial_bm += serial_bm
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if bm.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(bm.get_block(i, j).toarray(), serial_bm.get_block(i, j).toarray()))
+        bm += serial_bm
+        serial_bm += serial_bm
+        self._compare_mpi_and_serial_block_matrices(bm, serial_bm)
+
+    def test_isub(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m.copy())
+        if rank == 1:
+            bm.set_block(1, 1, m.copy())
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m.copy())
+        serial_bm.set_block(1, 1, m.copy())
+        bm -= bm
+        serial_bm -= serial_bm
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if bm.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(bm.get_block(i, j).toarray(), serial_bm.get_block(i, j).toarray()))
+        bm -= serial_bm
+        serial_bm -= serial_bm
+        self._compare_mpi_and_serial_block_matrices(bm, serial_bm)
+
+    def test_imul(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        bm *= 2.0
+        serial_bm *= 2.0
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if bm.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(bm.get_block(i, j).toarray(), serial_bm.get_block(i, j).toarray()))
+
+    def test_idiv(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        bm /= 2.0
+        serial_bm /= 2.0
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if bm.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(bm.get_block(i, j).toarray(), serial_bm.get_block(i, j).toarray()))
+
+    def test_neg(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        res = -bm
+        serial_res = -serial_bm
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+
+    def test_abs(self):
+        row = np.array([0, 3, 1, 2, 3, 0])
+        col = np.array([0, 0, 1, 2, 3, 3])
+        data = np.array([2.0, 1, 3, 4, 5, 1])
+        m = coo_matrix((data, (row, col)), shape=(4, 4))
+        rank = comm.Get_rank()
+        rank_ownership = [[0, -1], [-1, 1]]
+        bm = MPIBlockMatrix(2, 2, rank_ownership, comm)
+        if rank == 0:
+            bm.set_block(0, 0, m)
+        if rank == 1:
+            bm.set_block(1, 1, m)
+        serial_bm = BlockMatrix(2, 2)
+        serial_bm.set_block(0, 0, m)
+        serial_bm.set_block(1, 1, m)
+        res = abs(bm)
+        serial_res = abs(serial_bm)
+        rows, columns = np.nonzero(bm.ownership_mask)
+        for i, j in zip(rows, columns):
+            if res.get_block(i, j) is not None:
+                self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+
+    def test_eq(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 == mat2
+            serial_res = serial_mat1 == serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 == serial_mat2
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 == mat1
+            serial_res = serial_mat1 == serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 == serial_mat1
+
+    def test_ne(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 != mat2
+            serial_res = serial_mat1 != serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 != serial_mat2
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 != mat1
+            serial_res = serial_mat1 != serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 != serial_mat1
+        with self.assertRaises(Exception) as context:
+            res = serial_mat1 != mat1
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 != 2
+            serial_res = serial_mat1 != 2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+
+    def test_le(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 <= mat2
+            serial_res = serial_mat1 <= serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 <= serial_mat2
+            serial_res = serial_mat1 <= serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 <= mat1
+            serial_res = serial_mat1 <= serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 <= serial_mat1
+        with self.assertRaises(Exception) as context:
+            res = serial_mat1 <= mat1
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 <= 2
+            serial_res = serial_mat1 <= 2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+
+    def test_lt(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 < mat2
+            serial_res = serial_mat1 < serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 < serial_mat2
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 < mat1
+            serial_res = serial_mat1 < serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 < serial_mat1
+        with self.assertRaises(Exception) as context:
+            res = serial_mat1 < mat1
+
+    def test_ge(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 >= mat2
+            serial_res = serial_mat1 >= serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 >= serial_mat2
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 >= mat1
+            serial_res = serial_mat1 >= serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 >= serial_mat1
+        with self.assertRaises(Exception) as context:
+            res = serial_mat1 >= mat1
+
+    def test_gt(self):
+        mat1 = self.square_mpi_mat
+        mat2 = self.square_mpi_mat2
+        serial_mat1 = self.square_serial_mat
+        serial_mat2 = self.square_serial_mat2
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 > mat2
+            serial_res = serial_mat1 > serial_mat2
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 > serial_mat2
+        mat1 = self.rectangular_mpi_mat
+        serial_mat1 = self.rectangular_serial_mat
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            res = mat1 > mat1
+            serial_res = serial_mat1 > serial_mat1
+            self.assertIsInstance(res, MPIBlockMatrix)
+            self.assertTrue(np.allclose(mat1.rank_ownership, res.rank_ownership))
+            rows, columns = np.nonzero(res.ownership_mask)
+            for i, j in zip(rows, columns):
+                if res.get_block(i, j) is not None:
+                    self.assertTrue(np.allclose(res.get_block(i, j).toarray(), serial_res.get_block(i, j).toarray()))
+                else:
+                    self.assertIsNone(serial_res.get_block(i, j))
+        with self.assertRaises(Exception) as context:
+            res = mat1 > serial_mat1
+        with self.assertRaises(Exception) as context:
+            res = serial_mat1 > mat1
+
+    def test_owned_blocks(self):
+        rank = comm.Get_rank()
+        mat = self.square_mpi_mat
+        owned_blocks = mat.owned_blocks
+        if rank == 0:
+            self.assertEqual(owned_blocks, [(0, 0), (0, 1), (1, 0)])
+        elif rank == 1:
+            self.assertEqual(owned_blocks, [(0, 1), (1, 0), (1, 1)])
+        else:
+            self.assertEqual(owned_blocks, [(0, 1), (1, 0)])
+
+    def test_shared_blocks(self):
+        rank = comm.Get_rank()
+        mat = self.square_mpi_mat
+        shared_blocks = mat.shared_blocks
+        self.assertEqual(shared_blocks, [(0, 1), (1, 0)])
+
+    def test_not_fully_defined_block_matrix(self):
+        m = MPIBlockMatrix(2, 2, [[0, 1], [-1, -1]], comm)
+        rank = comm.Get_rank()
+        m0 = np.array([[4.3, 0], [-2.1, 1.5]])
+        m0 = coo_matrix(m0)
+        m1 = np.array([[0, 0], [0, 3.2]])
+        m1 = coo_matrix(m1)
+        if rank == 0:
+            m.set_block(0, 0, m0)
+        elif rank == 1:
+            m.set_block(0, 1, m1)
+        with self.assertRaises(NotFullyDefinedBlockMatrixError):
+            res = m.shape
+        m = MPIBlockMatrix(2, 2, [[0, -1], [1, -1]], comm)
+        rank = comm.Get_rank()
+        m0 = np.array([[4.3, 0], [-2.1, 1.5]])
+        m0 = coo_matrix(m0)
+        m1 = np.array([[0, 0], [0, 3.2]])
+        m1 = coo_matrix(m1)
+        if rank == 0:
+            m.set_block(0, 0, m0)
+        elif rank == 1:
+            m.set_block(1, 0, m1)
+        with self.assertRaises(NotFullyDefinedBlockMatrixError):
+            res = m.shape
+        m = MPIBlockMatrix(2, 2, [[0, -1], [-1, 1]], comm)
+        rank = comm.Get_rank()
+        m0 = np.array([[4.3, 0], [-2.1, 1.5]])
+        m0 = coo_matrix(m0)
+        m1 = np.array([[0, 0], [0, 3.2]])
+        m1 = coo_matrix(m1)
+        if rank == 0:
+            m.set_block(0, 0, m0)
+        elif rank == 1:
+            m.set_block(1, 1, m1)
+        res = m.shape
+        self.assertEqual(res, (4, 4))
+
+    def test_is_row_size_defined(self):
+        m = MPIBlockMatrix(2, 2, [[0, 1], [-1, -1]], comm)
+        rank = comm.Get_rank()
+        m0 = np.array([[4.3, 0], [-2.1, 1.5]])
+        m0 = coo_matrix(m0)
+        m1 = np.array([[0, 0], [0, 3.2]])
+        m1 = coo_matrix(m1)
+        if rank == 0:
+            m.set_block(0, 0, m0)
+        elif rank == 1:
+            m.set_block(0, 1, m1)
+        self.assertTrue(m.is_row_size_defined(0, False))
+        self.assertFalse(m.is_row_size_defined(1, False))
+        self.assertTrue(m.is_col_size_defined(0, False))
+        self.assertTrue(m.is_col_size_defined(1, False))
+        m = MPIBlockMatrix(2, 2, [[0, -1], [1, -1]], comm)
+        rank = comm.Get_rank()
+        m0 = np.array([[4.3, 0], [-2.1, 1.5]])
+        m0 = coo_matrix(m0)
+        m1 = np.array([[0, 0], [0, 3.2]])
+        m1 = coo_matrix(m1)
+        if rank == 0:
+            m.set_block(0, 0, m0)
+        elif rank == 1:
+            m.set_block(1, 0, m1)
+        self.assertTrue(m.is_row_size_defined(0, False))
+        self.assertTrue(m.is_row_size_defined(1, False))
+        self.assertTrue(m.is_col_size_defined(0, False))
+        self.assertFalse(m.is_col_size_defined(1, False))
+
+    def test_empty_block(self):
+        m = self.square_mpi_mat
+        self.assertFalse(m.is_empty_block(0, 0, False))
+        self.assertFalse(m.is_empty_block(1, 1, False))
+        self.assertTrue(m.is_empty_block(0, 1, False))
+        self.assertTrue(m.is_empty_block(1, 0, False))
+
+    def test_copy(self):
+        m = self.square_mpi_mat
+        m2 = m.copy()
+        self.assertTrue(np.allclose(m.to_local_array(), m2.to_local_array()))
+        rank = comm.Get_rank()
+        if rank == 0:
+            m2.get_block(0, 0).data[0] += 1
+        self.assertFalse(np.allclose(m.to_local_array(), m2.to_local_array()))
+
+    def test_get_block_column_index(self):
+        m = self.square_mpi_mat
+        self.assertEqual(m.get_block_column_index(0), 0)
+        self.assertEqual(m.get_block_column_index(1), 0)
+        self.assertEqual(m.get_block_column_index(2), 0)
+        self.assertEqual(m.get_block_column_index(3), 0)
+        self.assertEqual(m.get_block_column_index(4), 1)
+        self.assertEqual(m.get_block_column_index(5), 1)
+        self.assertEqual(m.get_block_column_index(6), 1)
+        self.assertEqual(m.get_block_column_index(7), 1)
+
+    def test_get_block_row_index(self):
+        m = self.square_mpi_mat
+        self.assertEqual(m.get_block_row_index(0), 0)
+        self.assertEqual(m.get_block_row_index(1), 0)
+        self.assertEqual(m.get_block_row_index(2), 0)
+        self.assertEqual(m.get_block_row_index(3), 0)
+        self.assertEqual(m.get_block_row_index(4), 1)
+        self.assertEqual(m.get_block_row_index(5), 1)
+        self.assertEqual(m.get_block_row_index(6), 1)
+        self.assertEqual(m.get_block_row_index(7), 1)

@@ -1,0 +1,39 @@
+import networkx as nx
+from networkx import is_strongly_regular
+class TestDistanceRegular:
+
+    def test_is_distance_regular(self):
+        assert nx.is_distance_regular(nx.icosahedral_graph())
+        assert nx.is_distance_regular(nx.petersen_graph())
+        assert nx.is_distance_regular(nx.cubical_graph())
+        assert nx.is_distance_regular(nx.complete_bipartite_graph(3, 3))
+        assert nx.is_distance_regular(nx.tetrahedral_graph())
+        assert nx.is_distance_regular(nx.dodecahedral_graph())
+        assert nx.is_distance_regular(nx.pappus_graph())
+        assert nx.is_distance_regular(nx.heawood_graph())
+        assert nx.is_distance_regular(nx.cycle_graph(3))
+        assert not nx.is_distance_regular(nx.path_graph(4))
+
+    def test_not_connected(self):
+        G = nx.cycle_graph(4)
+        nx.add_cycle(G, [5, 6, 7])
+        assert not nx.is_distance_regular(G)
+
+    def test_global_parameters(self):
+        b, c = nx.intersection_array(nx.cycle_graph(5))
+        g = nx.global_parameters(b, c)
+        assert list(g) == [(0, 0, 2), (1, 0, 1), (1, 1, 0)]
+        b, c = nx.intersection_array(nx.cycle_graph(3))
+        g = nx.global_parameters(b, c)
+        assert list(g) == [(0, 0, 2), (1, 1, 0)]
+
+    def test_intersection_array(self):
+        b, c = nx.intersection_array(nx.cycle_graph(5))
+        assert b == [2, 1]
+        assert c == [1, 1]
+        b, c = nx.intersection_array(nx.dodecahedral_graph())
+        assert b == [3, 2, 1, 1, 1]
+        assert c == [1, 1, 1, 2, 3]
+        b, c = nx.intersection_array(nx.icosahedral_graph())
+        assert b == [5, 2, 1]
+        assert c == [1, 2, 5]

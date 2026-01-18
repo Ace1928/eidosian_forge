@@ -1,0 +1,9 @@
+import os, sys, time, re
+import py
+from py import path, process
+from py._path import common
+from py._path import svnwc as svncommon
+from py._path.cacheutil import BuildcostAccessCache, AgingCache
+def _propget(self, name):
+    res = self._svnwithrev('propget', name)
+    return res[:-1]

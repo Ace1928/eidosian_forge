@@ -1,0 +1,1 @@
+Class to save energy.

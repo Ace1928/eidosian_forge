@@ -1,0 +1,30 @@
+import copy
+import errno
+import heapq
+import os
+import shelve
+import sys
+import time
+import traceback
+from calendar import timegm
+from collections import namedtuple
+from functools import total_ordering
+from threading import Event, Thread
+from billiard import ensure_multiprocessing
+from billiard.common import reset_signals
+from billiard.context import Process
+from kombu.utils.functional import maybe_evaluate, reprcall
+from kombu.utils.objects import cached_property
+from . import __version__, platforms, signals
+from .exceptions import reraise
+from .schedules import crontab, maybe_schedule
+from .utils.functional import is_numeric_value
+from .utils.imports import load_extension_class_names, symbol_by_name
+from .utils.log import get_logger, iter_open_logger_fds
+from .utils.time import humanize_seconds, maybe_make_aware
+def install_default_entries(self, data):
+    entries = {}
+    if self.app.conf.result_expires and (not self.app.backend.supports_autoexpire):
+        if 'celery.backend_cleanup' not in data:
+            entries['celery.backend_cleanup'] = {'task': 'celery.backend_cleanup', 'schedule': crontab('0', '4', '*'), 'options': {'expires': 12 * 3600}}
+    self.update_from_dict(entries)

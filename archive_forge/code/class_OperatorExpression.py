@@ -1,0 +1,109 @@
+from __future__ import annotations
+from decimal import Decimal
+from enum import IntEnum
+import itertools
+import operator
+import re
+import typing
+from typing import AbstractSet
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Dict
+from typing import FrozenSet
+from typing import Generic
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import overload
+from typing import Sequence
+from typing import Set
+from typing import Tuple as typing_Tuple
+from typing import Type
+from typing import TYPE_CHECKING
+from typing import TypeVar
+from typing import Union
+from . import coercions
+from . import operators
+from . import roles
+from . import traversals
+from . import type_api
+from ._typing import has_schema_attr
+from ._typing import is_named_from_clause
+from ._typing import is_quoted_name
+from ._typing import is_tuple_type
+from .annotation import Annotated
+from .annotation import SupportsWrappingAnnotations
+from .base import _clone
+from .base import _expand_cloned
+from .base import _generative
+from .base import _NoArg
+from .base import Executable
+from .base import Generative
+from .base import HasMemoized
+from .base import Immutable
+from .base import NO_ARG
+from .base import SingletonConstant
+from .cache_key import MemoizedHasCacheKey
+from .cache_key import NO_CACHE
+from .coercions import _document_text_coercion  # noqa
+from .operators import ColumnOperators
+from .traversals import HasCopyInternals
+from .visitors import cloned_traverse
+from .visitors import ExternallyTraversible
+from .visitors import InternalTraversal
+from .visitors import traverse
+from .visitors import Visitable
+from .. import exc
+from .. import inspection
+from .. import util
+from ..util import HasMemoized_ro_memoized_attribute
+from ..util import TypingOnly
+from ..util.typing import Literal
+from ..util.typing import Self
+class OperatorExpression(ColumnElement[_T]):
+    """base for expressions that contain an operator and operands
+
+    .. versionadded:: 2.0
+
+    """
+    operator: OperatorType
+    type: TypeEngine[_T]
+    group: bool = True
+
+    @property
+    def is_comparison(self):
+        return operators.is_comparison(self.operator)
+
+    def self_group(self, against=None):
+        if self.group and operators.is_precedent(self.operator, against) or (against is operators.inv and (not operators.is_boolean(self.operator))):
+            return Grouping(self)
+        else:
+            return self
+
+    @property
+    def _flattened_operator_clauses(self) -> typing_Tuple[ColumnElement[Any], ...]:
+        raise NotImplementedError()
+
+    @classmethod
+    def _construct_for_op(cls, left: ColumnElement[Any], right: ColumnElement[Any], op: OperatorType, *, type_: TypeEngine[_T], negate: Optional[OperatorType]=None, modifiers: Optional[Mapping[str, Any]]=None) -> OperatorExpression[_T]:
+        if operators.is_associative(op):
+            assert negate is None, f'negate not supported for associative operator {op}'
+            multi = False
+            if getattr(left, 'operator', None) is op and type_._compare_type_affinity(left.type):
+                multi = True
+                left_flattened = left._flattened_operator_clauses
+            else:
+                left_flattened = (left,)
+            if getattr(right, 'operator', None) is op and type_._compare_type_affinity(right.type):
+                multi = True
+                right_flattened = right._flattened_operator_clauses
+            else:
+                right_flattened = (right,)
+            if multi:
+                return ExpressionClauseList._construct_for_list(op, type_, *left_flattened + right_flattened)
+        if right._is_collection_aggregate:
+            negate = None
+        return BinaryExpression(left, right, op, type_=type_, negate=negate, modifiers=modifiers)

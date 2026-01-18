@@ -1,0 +1,20 @@
+import json
+import pickle
+import struct
+import warnings
+import numpy as np
+import pytest
+import shapely
+from shapely import GeometryCollection, LineString, Point, Polygon
+from shapely.errors import UnsupportedGEOSVersionError
+from shapely.testing import assert_geometries_equal
+from shapely.tests.common import all_types, empty_point, empty_point_z, point, point_z
+@pytest.mark.xfail(shapely.geos_version[:2] == (3, 8), reason='GEOS==3.8 never outputs 3D empty points')
+@pytest.mark.parametrize('geom,expected', [(empty_point_z, POINTZ_NAN_WKB), (shapely.multipoints([empty_point_z]), MULTIPOINTZ_NAN_WKB), (shapely.geometrycollections([empty_point_z]), GEOMETRYCOLLECTIONZ_NAN_WKB), (shapely.geometrycollections([shapely.multipoints([empty_point_z])]), NESTED_COLLECTIONZ_NAN_WKB)])
+def test_to_wkb_point_empty_3d(geom, expected):
+    actual = shapely.to_wkb(geom, output_dimension=3, byte_order=1)
+    coordinate_length = 24
+    header_length = len(expected) - coordinate_length
+    assert len(actual) == header_length + coordinate_length
+    assert actual[:header_length] == expected[:header_length]
+    assert np.isnan(struct.unpack('<3d', actual[header_length:])).all()

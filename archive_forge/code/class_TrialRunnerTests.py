@@ -1,0 +1,36 @@
+import os
+import pdb
+import sys
+import unittest as pyunit
+from io import StringIO
+from typing import List
+from zope.interface import implementer
+from zope.interface.verify import verifyObject
+from twisted import plugin
+from twisted.internet import defer
+from twisted.plugins import twisted_trial
+from twisted.python import failure, log, reflect
+from twisted.python.filepath import FilePath
+from twisted.python.reflect import namedAny
+from twisted.scripts import trial
+from twisted.trial import reporter, runner, unittest, util
+from twisted.trial._asyncrunner import _ForceGarbageCollectionDecorator
+from twisted.trial.itrial import IReporter, ITestCase
+class TrialRunnerTests(TrialRunnerTestsMixin, unittest.SynchronousTestCase):
+    """
+    Tests for L{runner.TrialRunner} with the feature to turn unclean errors
+    into warnings disabled.
+    """
+
+    def setUp(self):
+        self.stream = StringIO()
+        self.runner = runner.TrialRunner(CapturingReporter, stream=self.stream)
+        self.test = TrialRunnerTests('test_empty')
+
+    def test_publisher(self):
+        """
+        The reporter constructed by L{runner.TrialRunner} is passed
+        L{twisted.python.log} as the value for the C{publisher} parameter.
+        """
+        result = self.runner._makeResult()
+        self.assertIdentical(result._publisher, log)

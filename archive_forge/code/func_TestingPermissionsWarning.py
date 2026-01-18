@@ -1,0 +1,30 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import binascii
+import re
+import textwrap
+from apitools.base.protorpclite import messages as apitools_messages
+from apitools.base.py import encoding
+from googlecloudsdk.api_lib.util import apis as core_apis
+from googlecloudsdk.api_lib.util import messages as messages_util
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import exceptions as gcloud_exceptions
+from googlecloudsdk.command_lib.iam import completers
+from googlecloudsdk.core import exceptions as core_exceptions
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.util import files
+import six
+def TestingPermissionsWarning(permissions):
+    """Prompt a warning for TESTING permissions with a 'y/n' question.
+
+  Args:
+    permissions: A list of permissions that need to be warned.
+  """
+    if permissions:
+        msg = 'Note: permissions [' + ', '.join(permissions) + "] are in 'TESTING' stage which means the functionality is not mature and they can go away in the future. This can break your workflows, so do not use them in production systems!"
+        console_io.PromptContinue(message=msg, prompt_string='Are you sure you want to make this change?', cancel_on_no=True)

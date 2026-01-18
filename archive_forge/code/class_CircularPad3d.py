@@ -1,0 +1,52 @@
+from .module import Module
+from .utils import _pair, _quadruple, _ntuple
+from .. import functional as F
+from torch import Tensor
+from ..common_types import _size_2_t, _size_4_t, _size_6_t
+from typing import Sequence, Tuple
+class CircularPad3d(_CircularPadNd):
+    """Pads the input tensor using circular padding of the input boundary.
+
+    Tensor values at the beginning of the dimension are used to pad the end,
+    and values at the end are used to pad the beginning. If negative padding is
+    applied then the ends of the tensor get removed.
+
+    For `N`-dimensional padding, use :func:`torch.nn.functional.pad()`.
+
+    Args:
+        padding (int, tuple): the size of the padding. If is `int`, uses the same
+            padding in all boundaries. If a 6-`tuple`, uses
+            (:math:`\\text{padding\\_left}`, :math:`\\text{padding\\_right}`,
+            :math:`\\text{padding\\_top}`, :math:`\\text{padding\\_bottom}`,
+            :math:`\\text{padding\\_front}`, :math:`\\text{padding\\_back}`)
+
+    Shape:
+        - Input: :math:`(N, C, D_{in}, H_{in}, W_{in})` or :math:`(C, D_{in}, H_{in}, W_{in})`.
+        - Output: :math:`(N, C, D_{out}, H_{out}, W_{out})` or :math:`(C, D_{out}, H_{out}, W_{out})`,
+          where
+
+          :math:`D_{out} = D_{in} + \\text{padding\\_front} + \\text{padding\\_back}`
+
+          :math:`H_{out} = H_{in} + \\text{padding\\_top} + \\text{padding\\_bottom}`
+
+          :math:`W_{out} = W_{in} + \\text{padding\\_left} + \\text{padding\\_right}`
+
+    Examples::
+
+        >>> # xdoctest: +IGNORE_WANT("non-deterministic")
+        >>> m = nn.CircularPad3d(3)
+        >>> input = torch.randn(16, 3, 8, 320, 480)
+        >>> output = m(input)
+        >>> # using different paddings for different sides
+        >>> m = nn.CircularPad3d((3, 3, 6, 6, 1, 1))
+        >>> output = m(input)
+    """
+    padding: Tuple[int, int, int, int, int, int]
+
+    def __init__(self, padding: _size_6_t) -> None:
+        super().__init__()
+        self.padding = _ntuple(6)(padding)
+
+    def _check_input_dim(self, input):
+        if input.dim() != 4 and input.dim() != 5:
+            raise ValueError(f'expected 4D or 5D input (got {input.dim()}D input)')

@@ -1,0 +1,15 @@
+from boto.compat import json
+from boto.iam.connection import IAMConnection
+from tests.unit import AWSMockServiceTestCase
+class TestListPolicies(AWSMockServiceTestCase):
+    connection_class = IAMConnection
+
+    def default_body(self):
+        return b'\n<ListPoliciesResponse xmlns="https://iam.amazonaws.com/doc/2010-05-08/">\n  <ListPoliciesResult>\n    <IsTruncated>true</IsTruncated>\n    <Marker>EXAMPLEkakv9BCuUNFDtxWSyfzetYwEx2ADc8dnzfvERF5S6YMvXKx41t6gCl/eeaCX3Jo94/bKqezEAg8TEVS99EKFLxm3jtbpl25FDWEXAMPLE\n    </Marker>\n    <Policies>\n      <member>\n        <PolicyName>ExamplePolicy</PolicyName>\n        <DefaultVersionId>v1</DefaultVersionId>\n        <PolicyId>AGPACKCEVSQ6C2EXAMPLE</PolicyId>\n        <Path>/</Path>\n        <Arn>arn:aws:iam::123456789012:policy/ExamplePolicy</Arn>\n        <AttachmentCount>2</AttachmentCount>\n        <CreateDate>2014-09-15T17:36:14Z</CreateDate>\n        <UpdateDate>2014-09-15T20:31:47Z</UpdateDate>\n      </member>\n      <member>\n        <PolicyName>PowerUserAccess</PolicyName>\n        <DefaultVersionId>v1</DefaultVersionId>\n        <PolicyId>AGPACKCEVSQ6C2EXAMPLE</PolicyId>\n        <Path>/</Path>\n        <Arn>arn:aws:iam::aws:policy/PowerUserAccess</Arn>\n        <AttachmentCount>0</AttachmentCount>\n        <CreateDate>2014-08-21T20:25:01Z</CreateDate>\n        <UpdateDate>2014-08-21T20:25:01Z</UpdateDate>\n      </member>\n      <member>\n        <PolicyName>AdministratorAccess</PolicyName>\n        <DefaultVersionId>v1</DefaultVersionId>\n        <PolicyId>AGPACKCEVSQ6C2EXAMPLE</PolicyId>\n        <Path>/</Path>\n        <Arn>arn:aws:iam::aws:policy/AdministratorAccess</Arn>\n        <AttachmentCount>1</AttachmentCount>\n        <CreateDate>2014-08-21T20:11:25Z</CreateDate>\n        <UpdateDate>2014-08-21T20:11:25Z</UpdateDate>\n      </member>\n      <member>\n        <PolicyName>ReadOnlyAccess</PolicyName>\n        <DefaultVersionId>v1</DefaultVersionId>\n        <PolicyId>AGPACKCEVSQ6C2EXAMPLE</PolicyId>\n        <Path>/</Path>\n        <Arn>arn:aws:iam::aws:policy/ReadOnlyAccess</Arn>\n        <AttachmentCount>6</AttachmentCount>\n        <CreateDate>2014-08-21T20:31:44Z</CreateDate>\n        <UpdateDate>2014-08-21T20:31:44Z</UpdateDate>\n      </member>\n    </Policies>\n  </ListPoliciesResult>\n  <ResponseMetadata>\n    <RequestId>6207e832-3eb7-11e4-9d0d-6f969EXAMPLE</RequestId>\n  </ResponseMetadata>\n</ListPoliciesResponse>\n        '
+
+    def test_list_policies(self):
+        self.set_http_response(status_code=200)
+        response = self.service_connection.list_policies(max_items=4)
+        self.assert_request_parameters({'Action': 'ListPolicies', 'MaxItems': 4}, ignore_params_values=['Version'])
+        self.assertEqual(len(response['list_policies_response']['list_policies_result']['policies']), 4)
+        self.assertEqual(response['list_policies_response']['list_policies_result']['is_truncated'], 'true')

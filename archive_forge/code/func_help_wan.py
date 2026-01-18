@@ -1,0 +1,4 @@
+import sys, re, curl, exceptions
+from the command line first, then standard input.
+def help_wan(self):
+    print("The WAN commands become significant if you are using the BEFSR41 or any of\nthe other Linksys boxes designed as DSL or cable-modem gateways.  You will\nneed to use `wan_type' to declare how you expect to get your address.\n\nIf your ISP has issued you a static address, you'll need to use the\n`wan_address', `wan_netmask', and `wan_gateway' commands to set the address\nof the router as seen from the WAN, the outside. In this case you will also\nneed to use the `dns' command to declare which remote servers your DNS\nrequests should be forwarded to.\n\nSome ISPs may require you to set host and domain for use with dynamic-address\nallocation.")

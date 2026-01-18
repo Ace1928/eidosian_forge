@@ -1,0 +1,8 @@
+from __future__ import absolute_import, division, print_function
+import re
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.rm_base.network_template import (
+class PingTemplate(NetworkTemplate):
+
+    def __init__(self, lines=None):
+        super(PingTemplate, self).__init__(lines=lines, tmplt=self)
+    PARSERS = [{'name': 'rate', 'getval': re.compile('\n                ^Success\\srate\\sis\n                (\\s(?P<pct>\\d+))?\n                (\\spercent\\s\\((?P<rx>\\d+)/(?P<tx>\\d+)\\))?\n                (,\\s+round-trip\\smin/avg/max\\s=)?\n                (\\s(?P<min>\\d+)/(?P<avg>\\d+)/(?P<max>\\d+))?\n                (\\s+\\w+\\s*$|.*\\s*$)?\n                ', re.VERBOSE), 'setval': "ping{{ (' vrf ' + vrf) if vrf is defined else '' }}{{ (' ' + afi|string ) if afi is defined else '' }}{{ (' ' + dest ) if dest is defined else '' }}{{ (' repeat ' + count|string ) if count is defined else '' }}{{ (' df-bit' ) if df_bit|d(False) else '' }}{{ (' timeout ' + timeout|string) if timeout is defined else '' }}{{ (' size ' + size|string) if size is defined else '' }}{{ (' ingress ' + ingress) if ingress is defined else '' }}{{ (' egress ' + egress) if egress is defined else '' }}{{ (' source ' + source) if source is defined else '' }}", 'result': {'ping': {'loss_percentage': '{{ 100 - pct|int }}%', 'loss': '{{ 100 - pct|int }}', 'rx': '{{ rx|int }}', 'tx': '{{ tx|int }}', 'rtt': {'min': '{{ min }}', 'avg': '{{ avg }}', 'max': '{{ max }}'}}}}]

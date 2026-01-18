@@ -1,0 +1,3 @@
+import xml.sax.saxutils
+def append_field(self, field, value):
+    self.append(SimpleField(field, value))

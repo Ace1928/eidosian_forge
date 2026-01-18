@@ -1,0 +1,4 @@
+import ctypes
+from ctypes.wintypes import HANDLE, BYTE, HWND, BOOL, UINT, LONG, WORD, DWORD, WCHAR, LPVOID
+class LOGCONTEXT(ctypes.Structure):
+    _fields_ = (('lcName', WCHAR * LCNAMELEN), ('lcOptions', UINT), ('lcStatus', UINT), ('lcLocks', UINT), ('lcMsgBase', UINT), ('lcDevice', UINT), ('lcPktRate', UINT), ('lcPktData', WTPKT), ('lcPktMode', WTPKT), ('lcMoveMask', WTPKT), ('lcBtnDnMask', DWORD), ('lcBtnUpMask', DWORD), ('lcInOrgX', LONG), ('lcInOrgY', LONG), ('lcInOrgZ', LONG), ('lcInExtX', LONG), ('lcInExtY', LONG), ('lcInExtZ', LONG), ('lcOutOrgX', LONG), ('lcOutOrgY', LONG), ('lcOutOrgZ', LONG), ('lcOutExtX', LONG), ('lcOutExtY', LONG), ('lcOutExtZ', LONG), ('lcSensX', FIX32), ('lcSensY', FIX32), ('lcSensZ', FIX32), ('lcSysMode', BOOL), ('lcSysOrgX', ctypes.c_int), ('lcSysOrgY', ctypes.c_int), ('lcSysExtX', ctypes.c_int), ('lcSysExtY', ctypes.c_int), ('lcSysSensX', FIX32), ('lcSysSensY', FIX32))

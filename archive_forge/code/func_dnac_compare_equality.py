@@ -1,0 +1,21 @@
+from __future__ import (absolute_import, division, print_function)
+from ansible.module_utils._text import to_native
+from ansible.module_utils.common import validation
+from abc import ABCMeta, abstractmethod
+import os.path
+import copy
+import json
+import inspect
+import re
+def dnac_compare_equality(current_value, requested_value):
+    if requested_value is None:
+        return True
+    if current_value is None:
+        return True
+    if isinstance(current_value, dict) and isinstance(requested_value, dict):
+        all_dict_params = list(current_value.keys()) + list(requested_value.keys())
+        return not any((not fn_comp_key(param, current_value, requested_value) for param in all_dict_params))
+    elif isinstance(current_value, list) and isinstance(requested_value, list):
+        return compare_list(current_value, requested_value)
+    else:
+        return current_value == requested_value

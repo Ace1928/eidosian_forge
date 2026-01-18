@@ -1,0 +1,20 @@
+import unittest
+import logging
+from os_ken.ofproto.ofproto_v1_2 import *
+def test_enum_ofp_bad_action_code(self):
+    self.assertEqual(OFPBAC_BAD_TYPE, 0)
+    self.assertEqual(OFPBAC_BAD_LEN, 1)
+    self.assertEqual(OFPBAC_BAD_EXPERIMENTER, 2)
+    self.assertEqual(OFPBAC_BAD_EXP_TYPE, 3)
+    self.assertEqual(OFPBAC_BAD_OUT_PORT, 4)
+    self.assertEqual(OFPBAC_BAD_ARGUMENT, 5)
+    self.assertEqual(OFPBAC_EPERM, 6)
+    self.assertEqual(OFPBAC_TOO_MANY, 7)
+    self.assertEqual(OFPBAC_BAD_QUEUE, 8)
+    self.assertEqual(OFPBAC_BAD_OUT_GROUP, 9)
+    self.assertEqual(OFPBAC_MATCH_INCONSISTENT, 10)
+    self.assertEqual(OFPBAC_UNSUPPORTED_ORDER, 11)
+    self.assertEqual(OFPBAC_BAD_TAG, 12)
+    self.assertEqual(OFPBAC_BAD_SET_TYPE, 13)
+    self.assertEqual(OFPBAC_BAD_SET_LEN, 14)
+    self.assertEqual(OFPBAC_BAD_SET_ARGUMENT, 15)

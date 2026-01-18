@@ -1,0 +1,27 @@
+from __future__ import annotations
+from . import Extension
+from ..treeprocessors import Treeprocessor
+from ..util import parseBoolValue, AMP_SUBSTITUTE, deprecated, HTML_PLACEHOLDER_RE, AtomicString
+from ..treeprocessors import UnescapeTreeprocessor
+from ..serializers import RE_AMP
+import re
+import html
+import unicodedata
+from copy import deepcopy
+import xml.etree.ElementTree as etree
+from typing import TYPE_CHECKING, Any, Iterator, MutableSet
+@deprecated('Use `run_postprocessors`, `render_inner_html` and/or `striptags` instead.')
+def stashedHTML2text(text: str, md: Markdown, strip_entities: bool=True) -> str:
+    """ Extract raw HTML from stash, reduce to plain text and swap with placeholder. """
+
+    def _html_sub(m: re.Match[str]) -> str:
+        """ Substitute raw html with plain text. """
+        try:
+            raw = md.htmlStash.rawHtmlBlocks[int(m.group(1))]
+        except (IndexError, TypeError):
+            return m.group(0)
+        res = re.sub('(<[^>]+>)', '', raw)
+        if strip_entities:
+            res = re.sub('(&[\\#a-zA-Z0-9]+;)', '', res)
+        return res
+    return HTML_PLACEHOLDER_RE.sub(_html_sub, text)

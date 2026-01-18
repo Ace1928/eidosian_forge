@@ -1,0 +1,7 @@
+from ..specialized import FiducialRegistration
+def test_FiducialRegistration_inputs():
+    input_map = dict(args=dict(argstr='%s'), environ=dict(nohash=True, usedefault=True), fixedLandmarks=dict(argstr='--fixedLandmarks %s...'), movingLandmarks=dict(argstr='--movingLandmarks %s...'), outputMessage=dict(argstr='--outputMessage %s'), rms=dict(argstr='--rms %f'), saveTransform=dict(argstr='--saveTransform %s', hash_files=False), transformType=dict(argstr='--transformType %s'))
+    inputs = FiducialRegistration.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

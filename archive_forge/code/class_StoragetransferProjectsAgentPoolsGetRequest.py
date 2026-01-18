@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class StoragetransferProjectsAgentPoolsGetRequest(_messages.Message):
+    """A StoragetransferProjectsAgentPoolsGetRequest object.
+
+  Fields:
+    name: Required. The name of the agent pool to get.
+  """
+    name = _messages.StringField(1, required=True)

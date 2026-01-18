@@ -1,0 +1,23 @@
+import os
+import sys
+import uuid
+import traceback
+import json
+import param
+from ._version import __version__
+class JupyterCommManager(CommManager):
+    """
+    The JupyterCommManager is used to establishing websocket comms on
+    the client and the server via the Jupyter comms interface.
+
+    There are two cases for both the register_target and get_client_comm
+    methods: one to handle the classic notebook frontend and one to
+    handle JupyterLab. The latter case uses the globally available PyViz
+    object which is made available by each PyViz project requiring the
+    use of comms. This object is handled in turn by the JupyterLab
+    extension which keeps track of the kernels associated with each
+    plot, ensuring the corresponding comms can be accessed.
+    """
+    js_manager = "\n    function JupyterCommManager() {\n    }\n\n    JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {\n      if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {\n        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;\n        comm_manager.register_target(comm_id, function(comm) {\n          comm.on_msg(msg_handler);\n        });\n      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {\n        window.PyViz.kernels[plot_id].registerCommTarget(comm_id, function(comm) {\n          comm.onMsg = msg_handler;\n        });\n      } else if (typeof google != 'undefined' && google.colab.kernel != null) {\n        google.colab.kernel.comms.registerTarget(comm_id, (comm) => {\n          var messages = comm.messages[Symbol.asyncIterator]();\n          function processIteratorResult(result) {\n            var message = result.value;\n            console.log(message)\n            var content = {data: message.data, comm_id};\n            var buffers = []\n            for (var buffer of message.buffers || []) {\n              buffers.push(new DataView(buffer))\n            }\n            var metadata = message.metadata || {};\n            var msg = {content, buffers, metadata}\n            msg_handler(msg);\n            return messages.next().then(processIteratorResult);\n          }\n          return messages.next().then(processIteratorResult);\n        })\n      }\n    }\n\n    JupyterCommManager.prototype.get_client_comm = function(plot_id, comm_id, msg_handler) {\n      if (comm_id in window.PyViz.comms) {\n        return window.PyViz.comms[comm_id];\n      } else if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {\n        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;\n        var comm = comm_manager.new_comm(comm_id, {}, {}, {}, comm_id);\n        if (msg_handler) {\n          comm.on_msg(msg_handler);\n        }\n      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {\n        var comm = window.PyViz.kernels[plot_id].connectToComm(comm_id);\n        comm.open();\n        if (msg_handler) {\n          comm.onMsg = msg_handler;\n        }\n      } else if (typeof google != 'undefined' && google.colab.kernel != null) {\n        var comm_promise = google.colab.kernel.comms.open(comm_id)\n        comm_promise.then((comm) => {\n          window.PyViz.comms[comm_id] = comm;\n          if (msg_handler) {\n            var messages = comm.messages[Symbol.asyncIterator]();\n            function processIteratorResult(result) {\n              var message = result.value;\n              var content = {data: message.data};\n              var metadata = message.metadata || {comm_id};\n              var msg = {content, metadata}\n              msg_handler(msg);\n              return messages.next().then(processIteratorResult);\n            }\n            return messages.next().then(processIteratorResult);\n          }\n        }) \n        var sendClosure = (data, metadata, buffers, disposeOnDone) => {\n          return comm_promise.then((comm) => {\n            comm.send(data, metadata, buffers, disposeOnDone);\n          });\n        };\n        var comm = {\n          send: sendClosure\n        };\n      }\n      window.PyViz.comms[comm_id] = comm;\n      return comm;\n    }\n    window.PyViz.comm_manager = new JupyterCommManager();\n    "
+    server_comm = JupyterComm
+    client_comm = JupyterCommJS

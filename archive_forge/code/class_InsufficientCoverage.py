@@ -1,0 +1,8 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class InsufficientCoverage(_messages.Message):
+    """A warning that Robo did not crawl potentially important parts of the
+  app.
+  """

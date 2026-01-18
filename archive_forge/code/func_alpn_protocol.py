@@ -1,0 +1,20 @@
+from __future__ import print_function
+import collections
+import contextlib
+import gzip
+import json
+import logging
+import sys
+import time
+import zlib
+from datetime import datetime, timedelta
+from io import BytesIO
+from tornado import httputil
+from tornado.web import RequestHandler
+from urllib3.packages.six import binary_type, ensure_str
+from urllib3.packages.six.moves.http_client import responses
+from urllib3.packages.six.moves.urllib.parse import urlsplit
+def alpn_protocol(self, request):
+    """Return the selected ALPN protocol."""
+    proto = request.connection.stream.socket.selected_alpn_protocol()
+    return Response(proto.encode('utf8') if proto is not None else u'')

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+# 🌀 Eidosian Documentation System - Direct Command Interface
+
+"""
+Doc Forge - Direct Command Line Interface
+
+This script serves as a standalone executable for the Doc Forge system,
+allowing users to run it directly as 'doc-forge' when properly installed
+or symlinked to their PATH. It follows Eidosian principles of minimal
+friction and universal access.
+"""
+
+import sys
+import importlib.util
+from pathlib import Path
+from typing import Callable, Optional
+
+def find_package_root() -> Path:
+    """
+    Find the doc_forge package root with Eidosian precision.
+
+    :return: A Path pointing to the root of the doc_forge package.
+    :rtype: Path
+    """
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir.parent / "src" / "doc_forge").is_dir():
+        return script_dir.parent
+    if (Path.cwd() / "src" / "doc_forge").is_dir():
+        return Path.cwd()
+    for parent in script_dir.parents:
+        if (parent / "src" / "doc_forge").is_dir():
+            return parent
+    return script_dir.parent
+
+def advanced_import_doc_forge(package_root: Path) -> Callable[..., int]:
+    """
+    Attempt to import the 'doc_forge' package with an advanced dynamic adaptive universal 
+    contextual import system, ensuring high compatibility with Pylance and Sphinx autodoc.
+
+    :param package_root: The root directory of the doc_forge package.
+    :type package_root: Path
+    :return: The 'main' function from the 'doc_forge' module.
+    :rtype: Callable[..., int]
+    """
+    # Try installed package
+    if importlib.util.find_spec("doc_forge"):
+        doc_forge = __import__("doc_forge")
+        return doc_forge.main
+
+    # Try source if installed package not found
+    sys.path.insert(0, str(package_root / "src"))
+    if importlib.util.find_spec("doc_forge"):
+        doc_forge = __import__("doc_forge")
+        return doc_forge.main
+
+    # Final fallback
+    sys.path.insert(0, str(package_root / "src" / "doc_forge"))
+    doc_forge = __import__("doc_forge")
+    return doc_forge.main
+
+if __name__ == "__main__":
+    package_root = find_package_root()
+    main = advanced_import_doc_forge(package_root)
+    sys.exit(main())

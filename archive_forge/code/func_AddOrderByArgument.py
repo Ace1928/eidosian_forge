@@ -1,0 +1,8 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.asset import client_util
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+def AddOrderByArgument(parser):
+    parser.add_argument('--order-by', metavar='ORDER_BY', required=False, help="        Comma-separated list of fields specifying the sorting order of the\n        results. The default order is ascending. Add `` DESC'' after the field\n        name to indicate descending order. Redundant space characters are\n        ignored. Example: ``assetType DESC, resource''. Only singular primitive\n        fields in the response are sortable:\n\n          * `resource`\n          * `assetType`\n          * `project`\n\n        All the other fields such as repeated fields (e.g., `folders`) and\n        non-primitive fields (e.g., `policy`) are not supported.\n\n        Both ```--order-by``` and ```--sort-by``` flags can be used to sort the\n        output, with the following differences:\n\n        * The ```--order-by``` flag performs server-side sorting (better\n          performance), while the ```--sort-by``` flag performs client-side\n          sorting.\n        * The ```--sort-by``` flag supports all the fields in the output, while\n          the ```--order-by``` flag only supports limited fields as shown above.\n        ")

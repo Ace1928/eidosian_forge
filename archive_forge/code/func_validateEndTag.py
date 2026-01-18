@@ -1,0 +1,5 @@
+from boto.exception import InvalidLifecycleConfigError
+def validateEndTag(self, tag):
+    """Verify end tag against the start tag."""
+    if tag != self.current_tag:
+        raise InvalidLifecycleConfigError('Mismatched start and end tags (%s/%s)' % (self.current_tag, tag))

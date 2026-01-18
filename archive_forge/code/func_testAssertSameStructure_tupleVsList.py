@@ -1,0 +1,12 @@
+import collections
+import doctest
+import types
+from typing import Any, Iterator, Mapping
+import unittest
+from absl.testing import parameterized
+import attr
+import numpy as np
+import tree
+import wrapt
+def testAssertSameStructure_tupleVsList(self):
+    self.assertRaises(TypeError, tree.assert_same_structure, (0, 1), [0, 1])

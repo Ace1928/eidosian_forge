@@ -1,0 +1,18 @@
+import dis
+from pprint import pformat
+import logging
+from collections import namedtuple, defaultdict, deque
+from functools import total_ordering
+from numba.core.utils import UniqueDict, PYVERSION, ALL_BINOPS_TO_OPERATORS
+from numba.core.controlflow import NEW_BLOCKERS, CFGraph
+from numba.core.ir import Loc
+from numba.core.errors import UnsupportedError
+def get_outgoing_edgepushed(self):
+    """
+        Returns
+        -------
+        Dict[int, int]
+            where keys are the PC
+            values are the edge-pushed stack values
+        """
+    return {edge.pc: tuple(edge.stack[-edge.npush:]) for edge in self._outedges}

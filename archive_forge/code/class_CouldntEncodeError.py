@@ -1,0 +1,2 @@
+class CouldntEncodeError(PydubException):
+    pass

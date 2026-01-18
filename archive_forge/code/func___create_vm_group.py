@@ -1,0 +1,20 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware import (
+def __create_vm_group(self):
+    if self.__operation == 'add' or (self.__operation == 'edit' and self.__check_if_vms_hosts_changed()):
+        group = vim.cluster.VmGroup()
+        group.name = self.__group_name
+        group.vm = self.__vm_obj_list
+        group_spec = vim.cluster.GroupSpec(info=group, operation=self.__operation)
+        config_spec = vim.cluster.ConfigSpecEx(groupSpec=[group_spec])
+        changed = True
+        if not self.module.check_mode:
+            task = self.__cluster_obj.ReconfigureEx(config_spec, modify=True)
+            changed, result = wait_for_task(task)
+        self.__set_result(group)
+        self.__changed = changed
+    if self.__operation == 'edit':
+        self.__msg = 'Updated vm group %s successfully' % self.__group_name
+    else:
+        self.__msg = 'Created vm group %s successfully' % self.__group_name

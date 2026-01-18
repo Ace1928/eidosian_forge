@@ -1,0 +1,5 @@
+from __future__ import annotations
+from typing import Any
+def default_backend() -> Any:
+    from cryptography.hazmat.backends.openssl.backend import backend
+    return backend

@@ -1,0 +1,9 @@
+from OpenGL.raw.GL.VERSION import GL_1_1,GL_1_2, GL_3_0
+from OpenGL import images, arrays, wrapper
+from OpenGL.arrays import arraydatatype
+from OpenGL._bytes import bytes,integer_types
+from OpenGL.raw.GL import _types
+import ctypes
+def compressedImageFunction(baseFunction):
+    """Set the imageSize and dimensions-as-ints converters for baseFunction"""
+    return setDimensionsAsInts(_setDataSize(baseFunction, argument='imageSize'))

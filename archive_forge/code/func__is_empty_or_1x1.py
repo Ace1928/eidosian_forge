@@ -1,0 +1,14 @@
+from sympy.logic.boolalg import conjuncts
+from sympy.assumptions import Q, ask
+from sympy.assumptions.handlers import test_closed_group
+from sympy.matrices import MatrixBase
+from sympy.matrices.expressions import (BlockMatrix, BlockDiagMatrix, Determinant,
+from sympy.matrices.expressions.blockmatrix import reblock_2x2
+from sympy.matrices.expressions.factorizations import Factorization
+from sympy.matrices.expressions.fourier import DFT
+from sympy.core.logic import fuzzy_and
+from sympy.utilities.iterables import sift
+from sympy.core import Basic
+from ..predicates.matrices import (SquarePredicate, SymmetricPredicate,
+def _is_empty_or_1x1(expr):
+    return expr.shape in ((0, 0), (1, 1))

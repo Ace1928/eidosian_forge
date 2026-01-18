@@ -1,0 +1,1 @@
+od.viewitems() -> a set-like object providing a view on od's items

@@ -1,0 +1,13 @@
+from abc import abstractmethod
+from typing import List
+import numpy as np
+from scipy.sparse import issparse
+from ... import get_config
+from .._dist_metrics import (
+from ._argkmin import (
+from ._argkmin_classmode import (
+from ._base import _sqeuclidean_row_norms32, _sqeuclidean_row_norms64
+from ._radius_neighbors import (
+from ._radius_neighbors_classmode import (
+def is_valid_sparse_matrix(X):
+    return issparse(X) and X.format == 'csr' and (X.nnz > 0) and (X.indices.dtype == X.indptr.dtype == np.int32)

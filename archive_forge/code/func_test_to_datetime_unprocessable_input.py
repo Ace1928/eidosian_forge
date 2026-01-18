@@ -1,0 +1,28 @@
+import calendar
+from collections import deque
+from datetime import (
+from decimal import Decimal
+import locale
+from dateutil.parser import parse
+from dateutil.tz.tz import tzoffset
+import numpy as np
+import pytest
+import pytz
+from pandas._libs import tslib
+from pandas._libs.tslibs import (
+from pandas.errors import (
+import pandas.util._test_decorators as td
+from pandas.core.dtypes.common import is_datetime64_ns_dtype
+import pandas as pd
+from pandas import (
+import pandas._testing as tm
+from pandas.core.arrays import DatetimeArray
+from pandas.core.tools import datetimes as tools
+from pandas.core.tools.datetimes import start_caching_at
+def test_to_datetime_unprocessable_input(self, cache):
+    result = to_datetime([1, '1'], errors='ignore', cache=cache)
+    expected = Index(np.array([1, '1'], dtype='O'))
+    tm.assert_equal(result, expected)
+    msg = '^Given date string "1" not likely a datetime, at position 1$'
+    with pytest.raises(ValueError, match=msg):
+        to_datetime([1, '1'], errors='raise', cache=cache)

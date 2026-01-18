@@ -1,0 +1,210 @@
+import os
+import signal
+import stat
+import sys
+import warnings
+from unittest import skipIf
+from twisted.internet import error, interfaces, reactor, utils
+from twisted.internet.defer import Deferred
+from twisted.python.runtime import platform
+from twisted.python.test.test_util import SuppressedWarningsTests
+from twisted.trial.unittest import SynchronousTestCase, TestCase
+class ProcessUtilsTests(TestCase):
+    """
+    Test running a process using L{getProcessOutput}, L{getProcessValue}, and
+    L{getProcessOutputAndValue}.
+    """
+    if interfaces.IReactorProcess(reactor, None) is None:
+        skip = "reactor doesn't implement IReactorProcess"
+    output = None
+    value = None
+    exe = sys.executable
+
+    def makeSourceFile(self, sourceLines):
+        """
+        Write the given list of lines to a text file and return the absolute
+        path to it.
+        """
+        script = self.mktemp()
+        with open(script, 'wt') as scriptFile:
+            scriptFile.write(os.linesep.join(sourceLines) + os.linesep)
+        return os.path.abspath(script)
+
+    def test_output(self):
+        """
+        L{getProcessOutput} returns a L{Deferred} which fires with the complete
+        output of the process it runs after that process exits.
+        """
+        scriptFile = self.makeSourceFile(['import sys', "for s in b'hello world\\n':", '    s = bytes([s])', '    sys.stdout.buffer.write(s)', '    sys.stdout.flush()'])
+        d = utils.getProcessOutput(self.exe, ['-u', scriptFile])
+        return d.addCallback(self.assertEqual, b'hello world\n')
+
+    def test_outputWithErrorIgnored(self):
+        """
+        The L{Deferred} returned by L{getProcessOutput} is fired with an
+        L{IOError} L{Failure} if the child process writes to stderr.
+        """
+        scriptFile = self.makeSourceFile(['import sys', 'sys.stderr.write("hello world\\n")'])
+        d = utils.getProcessOutput(self.exe, ['-u', scriptFile])
+        d = self.assertFailure(d, IOError)
+
+        def cbFailed(err):
+            return self.assertFailure(err.processEnded, error.ProcessDone)
+        d.addCallback(cbFailed)
+        return d
+
+    def test_outputWithErrorCollected(self):
+        """
+        If a C{True} value is supplied for the C{errortoo} parameter to
+        L{getProcessOutput}, the returned L{Deferred} fires with the child's
+        stderr output as well as its stdout output.
+        """
+        scriptFile = self.makeSourceFile(['import sys', 'sys.stdout.write("foo")', 'sys.stdout.flush()', 'sys.stderr.write("foo")', 'sys.stderr.flush()'])
+        d = utils.getProcessOutput(self.exe, ['-u', scriptFile], errortoo=True)
+        return d.addCallback(self.assertEqual, b'foofoo')
+
+    def test_value(self):
+        """
+        The L{Deferred} returned by L{getProcessValue} is fired with the exit
+        status of the child process.
+        """
+        scriptFile = self.makeSourceFile(['raise SystemExit(1)'])
+        d = utils.getProcessValue(self.exe, ['-u', scriptFile])
+        return d.addCallback(self.assertEqual, 1)
+
+    def test_outputAndValue(self):
+        """
+        The L{Deferred} returned by L{getProcessOutputAndValue} fires with a
+        three-tuple, the elements of which give the data written to the child's
+        stdout, the data written to the child's stderr, and the exit status of
+        the child.
+        """
+        scriptFile = self.makeSourceFile(['import sys', "sys.stdout.buffer.write(b'hello world!\\n')", "sys.stderr.buffer.write(b'goodbye world!\\n')", 'sys.exit(1)'])
+
+        def gotOutputAndValue(out_err_code):
+            out, err, code = out_err_code
+            self.assertEqual(out, b'hello world!\n')
+            self.assertEqual(err, b'goodbye world!\n')
+            self.assertEqual(code, 1)
+        d = utils.getProcessOutputAndValue(self.exe, ['-u', scriptFile])
+        return d.addCallback(gotOutputAndValue)
+
+    @skipIf(platform.isWindows(), "Windows doesn't have real signals.")
+    def test_outputSignal(self):
+        """
+        If the child process exits because of a signal, the L{Deferred}
+        returned by L{getProcessOutputAndValue} fires a L{Failure} of a tuple
+        containing the child's stdout, stderr, and the signal which caused
+        it to exit.
+        """
+        scriptFile = self.makeSourceFile(['import sys, os, signal', "sys.stdout.write('stdout bytes\\n')", "sys.stderr.write('stderr bytes\\n')", 'sys.stdout.flush()', 'sys.stderr.flush()', 'os.kill(os.getpid(), signal.SIGKILL)'])
+
+        def gotOutputAndValue(out_err_sig):
+            out, err, sig = out_err_sig
+            self.assertEqual(out, b'stdout bytes\n')
+            self.assertEqual(err, b'stderr bytes\n')
+            self.assertEqual(sig, signal.SIGKILL)
+        d = utils.getProcessOutputAndValue(self.exe, ['-u', scriptFile])
+        d = self.assertFailure(d, tuple)
+        return d.addCallback(gotOutputAndValue)
+
+    def _pathTest(self, utilFunc, check):
+        dir = os.path.abspath(self.mktemp())
+        os.makedirs(dir)
+        scriptFile = self.makeSourceFile(['import os, sys', 'sys.stdout.write(os.getcwd())'])
+        d = utilFunc(self.exe, ['-u', scriptFile], path=dir)
+        d.addCallback(check, dir.encode(sys.getfilesystemencoding()))
+        return d
+
+    def test_getProcessOutputPath(self):
+        """
+        L{getProcessOutput} runs the given command with the working directory
+        given by the C{path} parameter.
+        """
+        return self._pathTest(utils.getProcessOutput, self.assertEqual)
+
+    def test_getProcessValuePath(self):
+        """
+        L{getProcessValue} runs the given command with the working directory
+        given by the C{path} parameter.
+        """
+
+        def check(result, ignored):
+            self.assertEqual(result, 0)
+        return self._pathTest(utils.getProcessValue, check)
+
+    def test_getProcessOutputAndValuePath(self):
+        """
+        L{getProcessOutputAndValue} runs the given command with the working
+        directory given by the C{path} parameter.
+        """
+
+        def check(out_err_status, dir):
+            out, err, status = out_err_status
+            self.assertEqual(out, dir)
+            self.assertEqual(status, 0)
+        return self._pathTest(utils.getProcessOutputAndValue, check)
+
+    def _defaultPathTest(self, utilFunc, check):
+        dir = os.path.abspath(self.mktemp())
+        os.makedirs(dir)
+        scriptFile = self.makeSourceFile(['import os, sys', 'cdir = os.getcwd()', 'sys.stdout.write(cdir)'])
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(dir)
+        originalMode = stat.S_IMODE(os.stat('.').st_mode)
+        os.chmod(dir, stat.S_IXUSR | stat.S_IRUSR)
+        self.addCleanup(os.chmod, dir, originalMode)
+        d = utilFunc(self.exe, ['-u', scriptFile])
+        d.addCallback(check, dir.encode(sys.getfilesystemencoding()))
+        return d
+
+    def test_getProcessOutputDefaultPath(self):
+        """
+        If no value is supplied for the C{path} parameter, L{getProcessOutput}
+        runs the given command in the same working directory as the parent
+        process and succeeds even if the current working directory is not
+        accessible.
+        """
+        return self._defaultPathTest(utils.getProcessOutput, self.assertEqual)
+
+    def test_getProcessValueDefaultPath(self):
+        """
+        If no value is supplied for the C{path} parameter, L{getProcessValue}
+        runs the given command in the same working directory as the parent
+        process and succeeds even if the current working directory is not
+        accessible.
+        """
+
+        def check(result, ignored):
+            self.assertEqual(result, 0)
+        return self._defaultPathTest(utils.getProcessValue, check)
+
+    def test_getProcessOutputAndValueDefaultPath(self):
+        """
+        If no value is supplied for the C{path} parameter,
+        L{getProcessOutputAndValue} runs the given command in the same working
+        directory as the parent process and succeeds even if the current
+        working directory is not accessible.
+        """
+
+        def check(out_err_status, dir):
+            out, err, status = out_err_status
+            self.assertEqual(out, dir)
+            self.assertEqual(status, 0)
+        return self._defaultPathTest(utils.getProcessOutputAndValue, check)
+
+    def test_get_processOutputAndValueStdin(self):
+        """
+        Standard input can be made available to the child process by passing
+        bytes for the `stdinBytes` parameter.
+        """
+        scriptFile = self.makeSourceFile(['import sys', 'sys.stdout.write(sys.stdin.read())'])
+        stdinBytes = b'These are the bytes to see.'
+        d = utils.getProcessOutputAndValue(self.exe, ['-u', scriptFile], stdinBytes=stdinBytes)
+
+        def gotOutputAndValue(out_err_code):
+            out, err, code = out_err_code
+            self.assertIn(stdinBytes, out)
+            self.assertEqual(0, code)
+        d.addCallback(gotOutputAndValue)
+        return d

@@ -1,0 +1,12 @@
+import copy
+import io
+import errno
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import warnings
+import pydot
+def get_graph_type(self):
+    return self.obj_dict['type']

@@ -1,0 +1,7 @@
+import os
+from neutronclient._i18n import _
+from neutronclient.neutron import v2_0 as neutronv20
+def add_arguments_qos_policy(self, parser):
+    qos_policy_args = super(UpdateQosPolicyMixin, self).add_arguments_qos_policy(parser)
+    qos_policy_args.add_argument('--no-qos-policy', action='store_true', help=_('Detach QoS policy from the resource.'))
+    return qos_policy_args

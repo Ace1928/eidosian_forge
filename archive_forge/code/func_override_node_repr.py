@@ -1,0 +1,30 @@
+import collections
+from collections import defaultdict
+from .node import Node, Argument, Target, map_arg, _type_repr, _get_qualified_name
+import torch.utils._pytree as pytree
+from . import _pytree as fx_pytree
+from ._compatibility import compatibility
+import contextlib
+from typing import TYPE_CHECKING, Callable, Any, List, Dict, NamedTuple, Optional, Tuple, Set, FrozenSet, Type
+from dataclasses import dataclass
+from contextlib import contextmanager
+import copy
+import enum
+import torch
+import keyword
+import re
+import builtins
+import math
+import warnings
+import inspect
+@contextmanager
+def override_node_repr(graph: Graph):
+    orig_repr_fns = {}
+    for node in graph.nodes:
+        orig_repr_fns[node] = node._repr_fn
+        node._repr_fn = node_repr
+    try:
+        yield None
+    finally:
+        for node in graph.nodes:
+            node._repr_fn = orig_repr_fns[node]

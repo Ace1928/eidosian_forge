@@ -1,0 +1,18 @@
+import os
+import numpy as np
+from numpy.testing import assert_array_equal
+from .. import nifti2
+from ..nifti1 import Nifti1Extension, Nifti1Extensions, Nifti1Header, Nifti1PairHeader
+from ..nifti2 import Nifti2Header, Nifti2Image, Nifti2Pair, Nifti2PairHeader
+from ..testing import data_path
+from . import test_nifti1 as tn1
+class TestNifti2General(tn1.TestNifti1General):
+    """Test class to test nifti2 in general
+
+    Tests here which mix the pair and the single type, and that should only be
+    run once (not for each type) because they are slow
+    """
+    single_class = Nifti2Image
+    pair_class = Nifti2Pair
+    module = nifti2
+    example_file = image_file

@@ -1,0 +1,33 @@
+from __future__ import annotations as _annotations
+import dataclasses
+import inspect
+import math
+import re
+import warnings
+from collections import defaultdict
+from copy import deepcopy
+from dataclasses import is_dataclass
+from enum import Enum
+from typing import (
+import pydantic_core
+from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core.core_schema import ComputedField
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never, deprecated, final
+from pydantic.warnings import PydanticDeprecatedSince26
+from ._internal import (
+from .annotated_handlers import GetJsonSchemaHandler
+from .config import JsonDict, JsonSchemaExtraCallable, JsonValue
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
+def encode_default(self, dft: Any) -> Any:
+    """Encode a default value to a JSON-serializable value.
+
+        This is used to encode default values for fields in the generated JSON schema.
+
+        Args:
+            dft: The default value to encode.
+
+        Returns:
+            The encoded default value.
+        """
+    config = self._config
+    return pydantic_core.to_jsonable_python(dft, timedelta_mode=config.ser_json_timedelta, bytes_mode=config.ser_json_bytes)

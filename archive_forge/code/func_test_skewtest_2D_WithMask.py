@@ -1,0 +1,23 @@
+import warnings
+import platform
+import numpy as np
+from numpy import nan
+import numpy.ma as ma
+from numpy.ma import masked, nomask
+import scipy.stats.mstats as mstats
+from scipy import stats
+from .common_tests import check_named_results
+import pytest
+from pytest import raises as assert_raises
+from numpy.ma.testutils import (assert_equal, assert_almost_equal,
+from numpy.testing import suppress_warnings
+from scipy.stats import _mstats_basic
+def test_skewtest_2D_WithMask(self):
+    nx = 2
+    for n in self.get_n():
+        if n > 8:
+            x, y, xm, ym = self.generate_xy_sample2D(n, nx)
+            r = stats.skewtest(x)
+            rm = stats.mstats.skewtest(xm)
+            assert_allclose(r[0][0], rm[0][0], rtol=1e-14)
+            assert_allclose(r[0][1], rm[0][1], rtol=1e-14)

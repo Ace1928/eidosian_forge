@@ -1,0 +1,3 @@
+from boto.ec2.elb.listelement import ListElement
+def get_complex_tuple(self):
+    return (self.load_balancer_port, self.instance_port, self.protocol, self.instance_protocol)

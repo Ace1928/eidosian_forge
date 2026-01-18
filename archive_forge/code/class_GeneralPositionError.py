@@ -1,0 +1,2 @@
+class GeneralPositionError(Exception):
+    pass

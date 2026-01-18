@@ -1,0 +1,207 @@
+from __future__ import absolute_import
+import cython
+import re
+import sys
+import copy
+import os.path
+import operator
+from .Errors import (
+from .Code import UtilityCode, TempitaUtilityCode
+from . import StringEncoding
+from . import Naming
+from . import Nodes
+from .Nodes import Node, utility_code_for_imports, SingleAssignmentNode
+from . import PyrexTypes
+from .PyrexTypes import py_object_type, typecast, error_type, \
+from . import TypeSlots
+from .Builtin import (
+from . import Builtin
+from . import Symtab
+from .. import Utils
+from .Annotate import AnnotationItem
+from . import Future
+from ..Debugging import print_call_chain
+from .DebugFlags import debug_disposal_code, debug_coercion
+from .Pythran import (to_pythran, is_pythran_supported_type, is_pythran_supported_operation_type,
+from .PyrexTypes import PythranExpr
+class PyCFunctionNode(ExprNode, ModuleNameMixin):
+    subexprs = ['code_object', 'defaults_tuple', 'defaults_kwdict', 'annotations_dict']
+    code_object = None
+    binding = False
+    def_node = None
+    defaults = None
+    defaults_struct = None
+    defaults_pyobjects = 0
+    defaults_tuple = None
+    defaults_kwdict = None
+    annotations_dict = None
+    type = py_object_type
+    is_temp = 1
+    specialized_cpdefs = None
+    is_specialization = False
+
+    @classmethod
+    def from_defnode(cls, node, binding):
+        return cls(node.pos, def_node=node, pymethdef_cname=node.entry.pymethdef_cname, binding=binding or node.specialized_cpdefs, specialized_cpdefs=node.specialized_cpdefs, code_object=CodeObjectNode(node))
+
+    def analyse_types(self, env):
+        if self.binding:
+            self.analyse_default_args(env)
+        return self
+
+    def analyse_default_args(self, env):
+        """
+        Handle non-literal function's default arguments.
+        """
+        nonliteral_objects = []
+        nonliteral_other = []
+        default_args = []
+        default_kwargs = []
+        annotations = []
+        must_use_constants = env.is_c_class_scope or (self.def_node.is_wrapper and env.is_module_scope)
+        for arg in self.def_node.args:
+            if arg.default:
+                if not must_use_constants:
+                    if arg.default.is_literal:
+                        arg.default = DefaultLiteralArgNode(arg.pos, arg.default)
+                        if arg.default.type:
+                            arg.default = arg.default.coerce_to(arg.type, env)
+                    else:
+                        arg.is_dynamic = True
+                        if arg.type.is_pyobject:
+                            nonliteral_objects.append(arg)
+                        else:
+                            nonliteral_other.append(arg)
+                if arg.default.type and arg.default.type.can_coerce_to_pyobject(env):
+                    if arg.kw_only:
+                        default_kwargs.append(arg)
+                    else:
+                        default_args.append(arg)
+            if arg.annotation:
+                arg.annotation = arg.annotation.analyse_types(env)
+                annotations.append((arg.pos, arg.name, arg.annotation.string))
+        for arg in (self.def_node.star_arg, self.def_node.starstar_arg):
+            if arg and arg.annotation:
+                arg.annotation = arg.annotation.analyse_types(env)
+                annotations.append((arg.pos, arg.name, arg.annotation.string))
+        annotation = self.def_node.return_type_annotation
+        if annotation:
+            self.def_node.return_type_annotation = annotation.analyse_types(env)
+            annotations.append((annotation.pos, StringEncoding.EncodedString('return'), annotation.string))
+        if nonliteral_objects or nonliteral_other:
+            module_scope = env.global_scope()
+            cname = module_scope.next_id(Naming.defaults_struct_prefix)
+            scope = Symtab.StructOrUnionScope(cname)
+            self.defaults = []
+            for arg in nonliteral_objects:
+                type_ = arg.type
+                if type_.is_buffer:
+                    type_ = type_.base
+                entry = scope.declare_var(arg.name, type_, None, Naming.arg_prefix + arg.name, allow_pyobject=True)
+                self.defaults.append((arg, entry))
+            for arg in nonliteral_other:
+                entry = scope.declare_var(arg.name, arg.type, None, Naming.arg_prefix + arg.name, allow_pyobject=False, allow_memoryview=True)
+                self.defaults.append((arg, entry))
+            entry = module_scope.declare_struct_or_union(None, 'struct', scope, 1, None, cname=cname)
+            self.defaults_struct = scope
+            self.defaults_pyobjects = len(nonliteral_objects)
+            for arg, entry in self.defaults:
+                arg.default_value = '%s->%s' % (Naming.dynamic_args_cname, entry.cname)
+            self.def_node.defaults_struct = self.defaults_struct.name
+        if default_args or default_kwargs:
+            if self.defaults_struct is None:
+                if default_args:
+                    defaults_tuple = TupleNode(self.pos, args=[arg.default for arg in default_args])
+                    self.defaults_tuple = defaults_tuple.analyse_types(env).coerce_to_pyobject(env)
+                if default_kwargs:
+                    defaults_kwdict = DictNode(self.pos, key_value_pairs=[DictItemNode(arg.pos, key=IdentifierStringNode(arg.pos, value=arg.name), value=arg.default) for arg in default_kwargs])
+                    self.defaults_kwdict = defaults_kwdict.analyse_types(env)
+            elif not self.specialized_cpdefs:
+                if default_args:
+                    defaults_tuple = DefaultsTupleNode(self.pos, default_args, self.defaults_struct)
+                else:
+                    defaults_tuple = NoneNode(self.pos)
+                if default_kwargs:
+                    defaults_kwdict = DefaultsKwDictNode(self.pos, default_kwargs, self.defaults_struct)
+                else:
+                    defaults_kwdict = NoneNode(self.pos)
+                defaults_getter = Nodes.DefNode(self.pos, args=[], star_arg=None, starstar_arg=None, body=Nodes.ReturnStatNode(self.pos, return_type=py_object_type, value=TupleNode(self.pos, args=[defaults_tuple, defaults_kwdict])), decorators=None, name=StringEncoding.EncodedString('__defaults__'))
+                module_scope = env.global_scope()
+                defaults_getter.analyse_declarations(module_scope)
+                defaults_getter = defaults_getter.analyse_expressions(module_scope)
+                defaults_getter.body = defaults_getter.body.analyse_expressions(defaults_getter.local_scope)
+                defaults_getter.py_wrapper_required = False
+                defaults_getter.pymethdef_required = False
+                self.def_node.defaults_getter = defaults_getter
+        if annotations:
+            annotations_dict = DictNode(self.pos, key_value_pairs=[DictItemNode(pos, key=IdentifierStringNode(pos, value=name), value=value) for pos, name, value in annotations])
+            self.annotations_dict = annotations_dict.analyse_types(env)
+
+    def may_be_none(self):
+        return False
+    gil_message = 'Constructing Python function'
+
+    def closure_result_code(self):
+        return 'NULL'
+
+    def generate_result_code(self, code):
+        if self.binding:
+            self.generate_cyfunction_code(code)
+        else:
+            self.generate_pycfunction_code(code)
+
+    def generate_pycfunction_code(self, code):
+        py_mod_name = self.get_py_mod_name(code)
+        code.putln('%s = PyCFunction_NewEx(&%s, %s, %s); %s' % (self.result(), self.pymethdef_cname, self.closure_result_code(), py_mod_name, code.error_goto_if_null(self.result(), self.pos)))
+        self.generate_gotref(code)
+
+    def generate_cyfunction_code(self, code):
+        if self.specialized_cpdefs:
+            def_node = self.specialized_cpdefs[0]
+        else:
+            def_node = self.def_node
+        if self.specialized_cpdefs or self.is_specialization:
+            code.globalstate.use_utility_code(UtilityCode.load_cached('FusedFunction', 'CythonFunction.c'))
+            constructor = '__pyx_FusedFunction_New'
+        else:
+            code.globalstate.use_utility_code(UtilityCode.load_cached('CythonFunction', 'CythonFunction.c'))
+            constructor = '__Pyx_CyFunction_New'
+        if self.code_object:
+            code_object_result = self.code_object.py_result()
+        else:
+            code_object_result = 'NULL'
+        flags = []
+        if def_node.is_staticmethod:
+            flags.append('__Pyx_CYFUNCTION_STATICMETHOD')
+        elif def_node.is_classmethod:
+            flags.append('__Pyx_CYFUNCTION_CLASSMETHOD')
+        if def_node.local_scope.parent_scope.is_c_class_scope and (not def_node.entry.is_anonymous):
+            flags.append('__Pyx_CYFUNCTION_CCLASS')
+        if def_node.is_coroutine:
+            flags.append('__Pyx_CYFUNCTION_COROUTINE')
+        if flags:
+            flags = ' | '.join(flags)
+        else:
+            flags = '0'
+        code.putln('%s = %s(&%s, %s, %s, %s, %s, %s, %s); %s' % (self.result(), constructor, self.pymethdef_cname, flags, self.get_py_qualified_name(code), self.closure_result_code(), self.get_py_mod_name(code), Naming.moddict_cname, code_object_result, code.error_goto_if_null(self.result(), self.pos)))
+        self.generate_gotref(code)
+        if def_node.requires_classobj:
+            assert code.pyclass_stack, 'pyclass_stack is empty'
+            class_node = code.pyclass_stack[-1]
+            code.put_incref(self.py_result(), py_object_type)
+            code.putln('PyList_Append(%s, %s);' % (class_node.class_cell.result(), self.result()))
+            self.generate_giveref(code)
+        if self.defaults:
+            code.putln('if (!__Pyx_CyFunction_InitDefaults(%s, sizeof(%s), %d)) %s' % (self.result(), self.defaults_struct.name, self.defaults_pyobjects, code.error_goto(self.pos)))
+            defaults = '__Pyx_CyFunction_Defaults(%s, %s)' % (self.defaults_struct.name, self.result())
+            for arg, entry in self.defaults:
+                arg.generate_assignment_code(code, target='%s->%s' % (defaults, entry.cname))
+        if self.defaults_tuple:
+            code.putln('__Pyx_CyFunction_SetDefaultsTuple(%s, %s);' % (self.result(), self.defaults_tuple.py_result()))
+        if not self.specialized_cpdefs:
+            if self.defaults_kwdict:
+                code.putln('__Pyx_CyFunction_SetDefaultsKwDict(%s, %s);' % (self.result(), self.defaults_kwdict.py_result()))
+            if def_node.defaults_getter:
+                code.putln('__Pyx_CyFunction_SetDefaultsGetter(%s, %s);' % (self.result(), def_node.defaults_getter.entry.pyfunc_cname))
+            if self.annotations_dict:
+                code.putln('__Pyx_CyFunction_SetAnnotationsDict(%s, %s);' % (self.result(), self.annotations_dict.py_result()))

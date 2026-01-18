@@ -1,0 +1,2 @@
+class SockAddr(ctypes.Structure):
+    _fields_ = [('sa_family', ctypes.c_short), ('__pad1', ctypes.c_ushort), ('ipv4_addr', ctypes.c_byte * 4), ('ipv6_addr', ctypes.c_byte * 16), ('__pad2', ctypes.c_ulong)]

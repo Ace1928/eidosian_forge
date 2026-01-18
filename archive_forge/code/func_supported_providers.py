@@ -1,0 +1,5 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.general.plugins.module_utils.manageiq import ManageIQ, manageiq_argument_spec
+def supported_providers():
+    return dict(Openshift=dict(class_name='ManageIQ::Providers::Openshift::ContainerManager', authtype='bearer', default_role='default', metrics_role='prometheus', alerts_role='prometheus_alerts'), Amazon=dict(class_name='ManageIQ::Providers::Amazon::CloudManager'), oVirt=dict(class_name='ManageIQ::Providers::Redhat::InfraManager', default_role='default', metrics_role='metrics'), VMware=dict(class_name='ManageIQ::Providers::Vmware::InfraManager'), Azure=dict(class_name='ManageIQ::Providers::Azure::CloudManager'), Director=dict(class_name='ManageIQ::Providers::Openstack::InfraManager', ssh_keypair_role='ssh_keypair'), OpenStack=dict(class_name='ManageIQ::Providers::Openstack::CloudManager'), GCE=dict(class_name='ManageIQ::Providers::Google::CloudManager'))

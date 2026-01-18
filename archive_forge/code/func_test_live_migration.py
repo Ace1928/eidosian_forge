@@ -1,0 +1,28 @@
+import argparse
+import base64
+import builtins
+import collections
+import datetime
+import io
+import os
+from unittest import mock
+import fixtures
+from oslo_utils import timeutils
+import testtools
+import novaclient
+from novaclient import api_versions
+from novaclient import base
+import novaclient.client
+from novaclient import exceptions
+import novaclient.shell
+from novaclient.tests.unit import utils
+from novaclient.tests.unit.v2 import fakes
+from novaclient.v2 import servers
+import novaclient.v2.shell
+def test_live_migration(self):
+    self.run_command('live-migration sample-server hostname')
+    self.assert_called('POST', '/servers/1234/action', {'os-migrateLive': {'host': 'hostname', 'block_migration': False, 'disk_over_commit': False}})
+    self.run_command('live-migration sample-server hostname --block-migrate')
+    self.assert_called('POST', '/servers/1234/action', {'os-migrateLive': {'host': 'hostname', 'block_migration': True, 'disk_over_commit': False}})
+    self.run_command('live-migration sample-server hostname --block-migrate --disk-over-commit')
+    self.assert_called('POST', '/servers/1234/action', {'os-migrateLive': {'host': 'hostname', 'block_migration': True, 'disk_over_commit': True}})

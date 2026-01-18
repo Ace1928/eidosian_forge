@@ -1,0 +1,11 @@
+import numpy as np
+from textwrap import dedent
+from numba import cuda, uint32, uint64, float32, float64
+from numba.cuda.testing import unittest, CUDATestCase, cc_X_or_above
+from numba.core import config
+def test_atomic_sub_float_2(self):
+    ary = np.random.randint(0, 32, size=32).astype(np.float32).reshape(4, 8)
+    orig = ary.copy()
+    cuda_atomic_sub2 = cuda.jit('void(float32[:,:])')(atomic_sub_float_2)
+    cuda_atomic_sub2[1, (4, 8)](ary)
+    self.assertTrue(np.all(ary == orig - 1))

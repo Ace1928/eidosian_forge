@@ -1,0 +1,78 @@
+from dataclasses import dataclass
+from typing import Callable, Optional, Tuple, Union
+import jax
+import jax.numpy as jnp
+from jax.experimental import sparse
+from jax.tree_util import register_pytree_node_class
+import pennylane as qml
+from .parametrized_hamiltonian import ParametrizedHamiltonian
+from .hardware_hamiltonian import HardwareHamiltonian
+@register_pytree_node_class
+@dataclass
+class ParametrizedHamiltonianPytree:
+    """Jax pytree class that represents a ``ParametrizedHamiltonian``."""
+    mat_fixed: Optional[Union[jnp.ndarray, sparse.BCSR]]
+    mats_parametrized: Tuple[Union[jnp.ndarray, sparse.BCSR], ...]
+    coeffs_parametrized: Tuple[Callable]
+    reorder_fn: Callable
+
+    @staticmethod
+    def from_hamiltonian(H: ParametrizedHamiltonian, *, dense: bool=False, wire_order=None):
+        """Convert a ``ParametrizedHamiltonian`` into a jax pytree object.
+
+        Args:
+            H (ParametrizedHamiltonian): parametrized Hamiltonian to convert
+            dense (bool, optional): Decide wether a dense/sparse matrix is used. Defaults to False.
+            wire_order (list, optional): Wire order of the returned ``JaxParametrizedOperator``.
+                Defaults to None.
+
+        Returns:
+            ParametrizedHamiltonianPytree: pytree object
+        """
+        make_array = jnp.array if dense else sparse.BCSR.fromdense
+        if len(H.ops_fixed) > 0:
+            mat_fixed = make_array(qml.matrix(H.H_fixed(), wire_order=wire_order))
+        else:
+            mat_fixed = None
+        mats_parametrized = tuple((make_array(qml.matrix(op, wire_order=wire_order)) for op in H.ops_parametrized))
+        if isinstance(H, HardwareHamiltonian):
+            return ParametrizedHamiltonianPytree(mat_fixed, mats_parametrized, H.coeffs_parametrized, reorder_fn=H.reorder_fn)
+        return ParametrizedHamiltonianPytree(mat_fixed, mats_parametrized, H.coeffs_parametrized, reorder_fn=None)
+
+    def __call__(self, pars, t):
+        if self.mat_fixed is not None:
+            ops = (self.mat_fixed,)
+            coeffs = (1,)
+        else:
+            ops = ()
+            coeffs = ()
+        if self.reorder_fn:
+            pars = self.reorder_fn(pars, self.coeffs_parametrized)
+        coeffs = coeffs + tuple((f(p, t) for f, p in zip(self.coeffs_parametrized, pars)))
+        return LazyDotPytree(coeffs, ops + self.mats_parametrized)
+
+    def tree_flatten(self):
+        """Function used by ``jax`` to flatten the JaxParametrizedOperator.
+
+        Returns:
+            tuple: tuple containing the matrices and the parametrized coefficients defining the class
+        """
+        matrices = (self.mat_fixed, self.mats_parametrized)
+        param_coeffs = self.coeffs_parametrized
+        reorder_fn = self.reorder_fn
+        return (matrices, param_coeffs, reorder_fn)
+
+    @classmethod
+    def tree_unflatten(cls, param_coeffs: tuple, matrices: tuple, reorder_fn: callable):
+        """Function used by ``jax`` to unflatten the JaxParametrizedOperator.
+
+        Args:
+            param_coeffs (tuple): tuple containing the parametrized coefficients of the class
+            matrices (tuple): tuple containing the matrices of the class
+            reorder_fn(callable): callable or None indicating how parameters should be
+                re-orderd to pass to the __call__ method
+
+        Returns:
+            JaxParametrizedOperator: a JaxParametrizedOperator instance
+        """
+        return cls(*matrices, param_coeffs, reorder_fn)

@@ -1,0 +1,2 @@
+class YaqlException(Exception):
+    pass

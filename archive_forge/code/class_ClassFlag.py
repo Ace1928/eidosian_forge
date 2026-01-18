@@ -1,0 +1,7 @@
+from enum import Flag
+class ClassFlag(Flag):
+    PASS_BY_CONSTREF = 1
+    PASS_BY_REF = 2
+    PASS_BY_VALUE = 4
+    PASS_ON_STACK_MASK = PASS_BY_CONSTREF | PASS_BY_REF | PASS_BY_VALUE
+    INSTANTIATE_ON_STACK = 8

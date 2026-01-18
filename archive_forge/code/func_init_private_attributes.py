@@ -1,0 +1,42 @@
+from __future__ import annotations as _annotations
+import operator
+import typing
+import warnings
+import weakref
+from abc import ABCMeta
+from functools import partial
+from types import FunctionType
+from typing import Any, Callable, Generic
+import typing_extensions
+from pydantic_core import PydanticUndefined, SchemaSerializer
+from typing_extensions import dataclass_transform, deprecated
+from ..errors import PydanticUndefinedAnnotation, PydanticUserError
+from ..plugin._schema_validator import create_schema_validator
+from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
+from ._config import ConfigWrapper
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
+from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._generate_schema import GenerateSchema
+from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._mock_val_ser import MockValSer, set_model_mocks
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._signature import generate_pydantic_signature
+from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
+from ._utils import ClassAttribute, SafeGetItemProxy
+from ._validate_call import ValidateCallWrapper
+def init_private_attributes(self: BaseModel, __context: Any) -> None:
+    """This function is meant to behave like a BaseModel method to initialise private attributes.
+
+    It takes context as an argument since that's what pydantic-core passes when calling it.
+
+    Args:
+        self: The BaseModel instance.
+        __context: The context.
+    """
+    if getattr(self, '__pydantic_private__', None) is None:
+        pydantic_private = {}
+        for name, private_attr in self.__private_attributes__.items():
+            default = private_attr.get_default()
+            if default is not PydanticUndefined:
+                pydantic_private[name] = default
+        object_setattr(self, '__pydantic_private__', pydantic_private)

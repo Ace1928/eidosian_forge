@@ -1,0 +1,21 @@
+import re
+from collections import namedtuple
+from textwrap import dedent
+from itertools import chain
+from functools import wraps
+from inspect import Parameter
+from parso.python.parser import Parser
+from parso.python import tree
+from jedi.inference.base_value import NO_VALUES
+from jedi.inference.syntax_tree import infer_atom
+from jedi.inference.helpers import infer_call_of_leaf
+from jedi.inference.compiled import get_string_value_set
+from jedi.cache import signature_time_cache, memoize_method
+from jedi.parser_utils import get_parent_scope
+def count_positional_arguments(self):
+    count = 0
+    for star_count, key_start, had_equal in self._list_arguments()[:-1]:
+        if star_count or key_start:
+            break
+        count += 1
+    return count

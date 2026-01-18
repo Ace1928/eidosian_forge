@@ -1,0 +1,28 @@
+import errno
+import os
+import sys
+import breezy.bzr
+import breezy.git
+from . import controldir, errors, lazy_import, transport
+import time
+import breezy
+from breezy import (
+from breezy.branch import Branch
+from breezy.transport import memory
+from breezy.smtp_connection import SMTPConnection
+from breezy.workingtree import WorkingTree
+from breezy.i18n import gettext, ngettext
+from .commands import Command, builtin_command_registry, display_command
+from .option import (ListOption, Option, RegistryOption, _parse_revision_str,
+from .revisionspec import RevisionInfo, RevisionSpec
+from .trace import get_verbosity_level, is_quiet, mutter, note, warning
+class cmd_send(Command):
+    __doc__ = 'Mail or create a merge-directive for submitting changes.\n\n    A merge directive provides many things needed for requesting merges:\n\n    * A machine-readable description of the merge to perform\n\n    * An optional patch that is a preview of the changes requested\n\n    * An optional bundle of revision data, so that the changes can be applied\n      directly from the merge directive, without retrieving data from a\n      branch.\n\n    `brz send` creates a compact data set that, when applied using brz\n    merge, has the same effect as merging from the source branch.\n\n    By default the merge directive is self-contained and can be applied to any\n    branch containing submit_branch in its ancestory without needing access to\n    the source branch.\n\n    If --no-bundle is specified, then Breezy doesn\'t send the contents of the\n    revisions, but only a structured request to merge from the\n    public_location.  In that case the public_branch is needed and it must be\n    up-to-date and accessible to the recipient.  The public_branch is always\n    included if known, so that people can check it later.\n\n    The submit branch defaults to the parent of the source branch, but can be\n    overridden.  Both submit branch and public branch will be remembered in\n    branch.conf the first time they are used for a particular branch.  The\n    source branch defaults to that containing the working directory, but can\n    be changed using --from.\n\n    Both the submit branch and the public branch follow the usual behavior with\n    respect to --remember: If there is no default location set, the first send\n    will set it (use --no-remember to avoid setting it). After that, you can\n    omit the location to use the default.  To change the default, use\n    --remember. The value will only be saved if the location can be accessed.\n\n    In order to calculate those changes, brz must analyse the submit branch.\n    Therefore it is most efficient for the submit branch to be a local mirror.\n    If a public location is known for the submit_branch, that location is used\n    in the merge directive.\n\n    The default behaviour is to send the merge directive by mail, unless -o is\n    given, in which case it is sent to a file.\n\n    Mail is sent using your preferred mail program.  This should be transparent\n    on Windows (it uses MAPI).  On Unix, it requires the xdg-email utility.\n    If the preferred client can\'t be found (or used), your editor will be used.\n\n    To use a specific mail program, set the mail_client configuration option.\n    Supported values for specific clients are "claws", "evolution", "kmail",\n    "mail.app" (MacOS X\'s Mail.app), "mutt", and "thunderbird"; generic options\n    are "default", "editor", "emacsclient", "mapi", and "xdg-email".  Plugins\n    may also add supported clients.\n\n    If mail is being sent, a to address is required.  This can be supplied\n    either on the commandline, by setting the submit_to configuration\n    option in the branch itself or the child_submit_to configuration option\n    in the submit branch.\n\n    The merge directives created by brz send may be applied using brz merge or\n    brz pull by specifying a file containing a merge directive as the location.\n\n    brz send makes extensive use of public locations to map local locations into\n    URLs that can be used by other people.  See `brz help configuration` to\n    set them, and use `brz info` to display them.\n    '
+    encoding_type = 'exact'
+    _see_also = ['merge', 'pull']
+    takes_args = ['submit_branch?', 'public_branch?']
+    takes_options = [Option('no-bundle', help='Do not include a bundle in the merge directive.'), Option('no-patch', help='Do not include a preview patch in the merge directive.'), Option('remember', help='Remember submit and public branch.'), Option('from', help='Branch to generate the submission from, rather than the one containing the working directory.', short_name='f', type=str), Option('output', short_name='o', help='Write merge directive to this file or directory; use - for stdout.', type=str), Option('strict', help='Refuse to send if there are uncommitted changes in the working tree, --no-strict disables the check.'), Option('mail-to', help='Mail the request to this address.', type=str), 'revision', 'message', Option('body', help='Body for the email.', type=str), RegistryOption('format', help='Use the specified output format.', lazy_registry=('breezy.send', 'format_registry'))]
+
+    def run(self, submit_branch=None, public_branch=None, no_bundle=False, no_patch=False, revision=None, remember=None, output=None, format=None, mail_to=None, message=None, body=None, strict=None, **kwargs):
+        from .send import send
+        return send(submit_branch, revision, public_branch, remember, format, no_bundle, no_patch, output, kwargs.get('from', '.'), mail_to, message, body, self.outf, strict=strict)

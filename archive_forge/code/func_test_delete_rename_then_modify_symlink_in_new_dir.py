@@ -1,0 +1,14 @@
+import time
+from .... import tests
+from ..helpers import kind_to_mode
+from . import FastimportFeature
+def test_delete_rename_then_modify_symlink_in_new_dir(self):
+    handler, branch = self.get_handler()
+    old_path = b'd1/a'
+    new_path = b'd2/b'
+    handler.process(self.get_command_iter(old_path, new_path, 'symlink'))
+    revtree0, revtree1 = self.assertChanges(branch, 1, expected_added=[(b'd1',), (b'd2',), (old_path,), (new_path,)])
+    revtree1, revtree2 = self.assertChanges(branch, 2, expected_removed=[(b'd1',), (new_path,)], expected_renamed=[(old_path, new_path)])
+    self.assertSymlinkTarget(branch, revtree1, old_path, 'aaa')
+    self.assertSymlinkTarget(branch, revtree1, new_path, 'zzz')
+    self.assertSymlinkTarget(branch, revtree2, new_path, 'bbb')

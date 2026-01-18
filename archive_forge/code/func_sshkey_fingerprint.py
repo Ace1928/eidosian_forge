@@ -1,0 +1,19 @@
+from __future__ import absolute_import, division, print_function
+import base64
+import hashlib
+import re
+from copy import deepcopy
+from functools import partial
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.six import iteritems
+from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.utils import (
+from ansible_collections.cisco.ios.plugins.module_utils.network.ios.ios import (
+def sshkey_fingerprint(sshkey):
+    if not sshkey:
+        return None
+    if ' ' in sshkey:
+        keyparts = sshkey.split(' ')
+        keyparts[1] = hashlib.md5(base64.b64decode(keyparts[1])).hexdigest().upper()
+        return ' '.join(keyparts)
+    else:
+        return 'ssh-rsa %s' % hashlib.md5(base64.b64decode(sshkey)).hexdigest().upper()

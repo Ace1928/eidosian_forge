@@ -1,0 +1,2 @@
+class ImmatureSignatureError(InvalidTokenError):
+    pass

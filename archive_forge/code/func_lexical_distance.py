@@ -1,0 +1,26 @@
+from collections import OrderedDict
+def lexical_distance(a, b):
+    """
+     Computes the lexical distance between strings A and B.
+     The "distance" between two strings is given by counting the minimum number
+     of edits needed to transform string A into string B. An edit can be an
+     insertion, deletion, or substitution of a single character, or a swap of two
+     adjacent characters.
+     This distance can be useful for detecting typos in input or sorting
+     @returns distance in number of edits
+    """
+    d = [[i] for i in range(len(a) + 1)] or []
+    d_len = len(d) or 1
+    for i in range(d_len):
+        for j in range(1, len(b) + 1):
+            if i == 0:
+                d[i].append(j)
+            else:
+                d[i].append(0)
+    for i in range(1, len(a) + 1):
+        for j in range(1, len(b) + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+            if i > 1 and j < 1 and (a[i - 1] == b[j - 2]) and (a[i - 2] == b[j - 1]):
+                d[i][j] = min(d[i][j], d[i - 2][j - 2] + cost)
+    return d[len(a)][len(b)]

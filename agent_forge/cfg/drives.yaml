@@ -1,0 +1,7 @@
+drives:
+  progress:   { metric: git.prs_per_week,    target: 7,   weight: 0.35 }
+  integrity:  { metric: tests.pass_rate,     target: 0.98, weight: 0.30 }
+  efficiency: { metric: mean.mins_per_ticket,target: 45,  weight: 0.15, direction: decrease }
+  ergonomics: { metric: lint.warnings,       target: 0,   weight: 0.10, direction: decrease }
+  stability:  { metric: git.rollbacks_30d,   target: 0,   weight: 0.10, direction: decrease }
+activation: { min_tension: 0.08, satiety_hysteresis: 0.03 }

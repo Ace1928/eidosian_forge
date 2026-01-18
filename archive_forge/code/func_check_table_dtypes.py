@@ -1,0 +1,43 @@
+import collections
+import functools
+import uuid
+from tensorflow.python.checkpoint import saveable_compat
+from tensorflow.python.eager import context
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import sparse_tensor
+from tensorflow.python.framework import tensor as tensor_lib
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import gen_lookup_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import string_ops
+from tensorflow.python.ops.gen_lookup_ops import *
+from tensorflow.python.ops.ragged import ragged_tensor
+from tensorflow.python.saved_model import registration
+from tensorflow.python.trackable import asset
+from tensorflow.python.trackable import base as trackable_base
+from tensorflow.python.trackable import resource
+from tensorflow.python.training.saver import BaseSaverBuilder
+from tensorflow.python.util import compat as compat_util
+from tensorflow.python.util.deprecation import deprecated
+from tensorflow.python.util.tf_export import tf_export
+def check_table_dtypes(table, key_dtype, value_dtype):
+    """Check that the given key_dtype and value_dtype matches the table dtypes.
+
+  Args:
+    table: The table to check types against to.
+    key_dtype: The key data type to check.
+    value_dtype: The value data type to check.
+
+  Raises:
+    TypeError: when 'key_dtype' or 'value_dtype' doesn't match the table data
+      types.
+  """
+    if key_dtype.base_dtype != table.key_dtype:
+        raise TypeError(f'Invalid key dtype for table, expected {table.key_dtype} but got {key_dtype}.')
+    if value_dtype.base_dtype != table.value_dtype:
+        raise TypeError(f'Invalid value dtype for table, expected {table.value_dtype} but got {value_dtype}.')

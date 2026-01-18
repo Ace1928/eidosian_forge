@@ -1,0 +1,6 @@
+from __future__ import absolute_import, division, print_function
+class L2_InterfacesArgs(object):
+
+    def __init__(self, **kwargs):
+        pass
+    argument_spec = {'config': {'elements': 'dict', 'options': {'name': {'type': 'str', 'required': True}, 'native_vlan': {'type': 'int'}, 'l2transport': {'type': 'bool'}, 'l2protocol': {'elements': 'dict', 'options': {'cdp': {'type': 'str', 'choices': ['drop', 'forward', 'tunnel']}, 'pvst': {'type': 'str', 'choices': ['drop', 'forward', 'tunnel']}, 'stp': {'type': 'str', 'choices': ['drop', 'forward', 'tunnel']}, 'vtp': {'type': 'str', 'choices': ['drop', 'forward', 'tunnel']}, 'cpsv': {'type': 'str', 'choices': ['drop', 'reverse-tunnel', 'tunnel']}}, 'type': 'list'}, 'q_vlan': {'type': 'list', 'elements': 'int'}, 'qvlan': {'type': 'list', 'elements': 'str'}, 'propagate': {'type': 'bool'}, 'encapsulation': {'type': 'dict', 'options': {'dot1q': {'type': 'int'}, 'second_dot1q': {'type': 'int'}}}}, 'type': 'list'}, 'running_config': {'type': 'str'}, 'state': {'choices': ['merged', 'replaced', 'overridden', 'deleted', 'gathered', 'parsed', 'rendered'], 'default': 'merged', 'type': 'str'}}

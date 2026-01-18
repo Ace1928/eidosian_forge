@@ -1,0 +1,19 @@
+class EnumNamespace:
+    """A collection of enum values.
+
+    This collection can be used as specification to traitlets.Enum
+    as it supports the `in` operator, and also supports tab completion
+    as the values are attributes.
+    """
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def __contains__(self, key):
+        return key in self.__dict__
+
+    def __iter__(self):
+        yield from filter(lambda e: not e.startswith('_'), dir(self))
+
+    def __repr__(self):
+        return str(list(filter(lambda e: not e.startswith('_'), dir(self))))

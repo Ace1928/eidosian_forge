@@ -1,0 +1,19 @@
+import re
+from pygments.lexer import RegexLexer, include, bygroups
+from pygments.token import Text, Comment, Operator, Name, String, \
+class TeraTermLexer(RegexLexer):
+    """
+    For Tera Term macro source code.
+
+    .. versionadded:: 2.4
+    """
+    name = 'Tera Term macro'
+    url = 'https://ttssh2.osdn.jp/'
+    aliases = ['teratermmacro', 'teraterm', 'ttl']
+    filenames = ['*.ttl']
+    mimetypes = ['text/x-teratermmacro']
+    tokens = {'root': [include('comments'), include('labels'), include('commands'), include('builtin-variables'), include('user-variables'), include('operators'), include('numeric-literals'), include('string-literals'), include('all-whitespace'), ('\\S', Text)], 'comments': [(';[^\\r\\n]*', Comment.Single), ('/\\*', Comment.Multiline, 'in-comment')], 'in-comment': [('\\*/', Comment.Multiline, '#pop'), ('[^*/]+', Comment.Multiline), ('[*/]', Comment.Multiline)], 'labels': [('(?i)^(\\s*)(:[a-z0-9_]+)', bygroups(Text.Whitespace, Name.Label))], 'commands': [('(?i)\\b(basename|beep|bplusrecv|bplussend|break|bringupbox|callmenu|changedir|checksum16|checksum16file|checksum32|checksum32file|checksum8|checksum8file|clearscreen|clipb2var|closesbox|closett|code2str|connect|continue|crc16|crc16file|crc32|crc32file|cygconnect|delpassword|dirname|dirnamebox|disconnect|dispstr|do|else|elseif|enablekeyb|end|endif|enduntil|endwhile|exec|execcmnd|exit|expandenv|fileclose|fileconcat|filecopy|filecreate|filedelete|filelock|filemarkptr|filenamebox|fileopen|fileread|filereadln|filerename|filesearch|fileseek|fileseekback|filestat|filestrseek|filestrseek2|filetruncate|fileunlock|filewrite|filewriteln|findclose|findfirst|findnext|flushrecv|foldercreate|folderdelete|foldersearch|for|getdate|getdir|getenv|getfileattr|gethostname|getipv4addr|getipv6addr|getmodemstatus|getpassword|getspecialfolder|gettime|gettitle|getttdir|getver|if|ifdefined|include|inputbox|int2str|intdim|ispassword|kmtfinish|kmtget|kmtrecv|kmtsend|listbox|loadkeymap|logautoclosemode|logclose|loginfo|logopen|logpause|logrotate|logstart|logwrite|loop|makepath|messagebox|mpause|next|passwordbox|pause|quickvanrecv|quickvansend|random|recvln|regexoption|restoresetup|return|rotateleft|rotateright|scprecv|scpsend|send|sendbreak|sendbroadcast|sendfile|sendkcode|sendln|sendlnbroadcast|sendlnmulticast|sendmulticast|setbaud|setdate|setdebug|setdir|setdlgpos|setdtr|setecho|setenv|setexitcode|setfileattr|setflowctrl|setmulticastname|setpassword|setrts|setspeed|setsync|settime|settitle|show|showtt|sprintf|sprintf2|statusbox|str2code|str2int|strcompare|strconcat|strcopy|strdim|strinsert|strjoin|strlen|strmatch|strremove|strreplace|strscan|strspecial|strsplit|strtrim|testlink|then|tolower|toupper|unlink|until|uptime|var2clipb|wait|wait4all|waitevent|waitln|waitn|waitrecv|waitregex|while|xmodemrecv|xmodemsend|yesnobox|ymodemrecv|ymodemsend|zmodemrecv|zmodemsend)\\b', Keyword), ('(?i)(call|goto)([ \\t]+)([a-z0-9_]+)', bygroups(Keyword, Text.Whitespace, Name.Label))], 'builtin-variables': [('(?i)(groupmatchstr1|groupmatchstr2|groupmatchstr3|groupmatchstr4|groupmatchstr5|groupmatchstr6|groupmatchstr7|groupmatchstr8|groupmatchstr9|inputstr|matchstr|mtimeout|param1|param2|param3|param4|param5|param6|param7|param8|param9|paramcnt|params|result|timeout)\\b', Name.Builtin)], 'user-variables': [('(?i)[a-z_][a-z0-9_]*', Name.Variable)], 'numeric-literals': [('(-?)([0-9]+)', bygroups(Operator, Number.Integer)), ('(?i)\\$[0-9a-f]+', Number.Hex)], 'string-literals': [('(?i)#(?:[0-9]+|\\$[0-9a-f]+)', String.Char), ("'[^'\\n]*'", String.Single), ('"[^"\\n]*"', String.Double), ("('[^']*)(\\n)", bygroups(Error, Text.Whitespace)), ('("[^"]*)(\\n)', bygroups(Error, Text.Whitespace))], 'operators': [('and|not|or|xor', Operator.Word), ('[!%&*+<=>^~\\|\\/-]+', Operator), ('[()]', String.Symbol)], 'all-whitespace': [('\\s+', Text.Whitespace)]}
+
+    def analyse_text(text):
+        if re.search(TeraTermLexer.tokens['commands'][0][0], text):
+            return 0.01

@@ -1,0 +1,9 @@
+from __future__ import absolute_import
+import functools
+import json
+import re
+import sys
+def __lex_string_escape(self, c):
+    self.buffer += c
+    self.lex_state = Parser.__lex_string
+    return True

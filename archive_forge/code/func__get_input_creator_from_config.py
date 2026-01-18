@@ -1,0 +1,81 @@
+import copy
+import importlib.util
+import logging
+import os
+import platform
+import threading
+from collections import defaultdict
+from types import FunctionType
+from typing import (
+import numpy as np
+import tree  # pip install dm_tree
+from gymnasium.spaces import Discrete, MultiDiscrete, Space
+import ray
+from ray import ObjectRef
+from ray import cloudpickle as pickle
+from ray.rllib.connectors.util import (
+from ray.rllib.core.rl_module.rl_module import SingleAgentRLModuleSpec
+from ray.rllib.env.base_env import BaseEnv, convert_to_base_env
+from ray.rllib.env.env_context import EnvContext
+from ray.rllib.env.env_runner import EnvRunner
+from ray.rllib.env.external_multi_agent_env import ExternalMultiAgentEnv
+from ray.rllib.env.multi_agent_env import MultiAgentEnv
+from ray.rllib.env.wrappers.atari_wrappers import is_atari, wrap_deepmind
+from ray.rllib.evaluation.metrics import RolloutMetrics
+from ray.rllib.evaluation.sampler import SyncSampler
+from ray.rllib.models import ModelCatalog
+from ray.rllib.models.preprocessors import Preprocessor
+from ray.rllib.offline import (
+from ray.rllib.policy.policy import Policy, PolicySpec
+from ray.rllib.policy.policy_map import PolicyMap
+from ray.rllib.policy.sample_batch import (
+from ray.rllib.policy.torch_policy import TorchPolicy
+from ray.rllib.policy.torch_policy_v2 import TorchPolicyV2
+from ray.rllib.utils import check_env, force_list
+from ray.rllib.utils.annotations import DeveloperAPI, override
+from ray.rllib.utils.debug import summarize, update_global_seed_if_necessary
+from ray.rllib.utils.deprecation import DEPRECATED_VALUE, deprecation_warning
+from ray.rllib.utils.error import ERR_MSG_NO_GPUS, HOWTO_CHANGE_CONFIG
+from ray.rllib.utils.filter import Filter, NoFilter, get_filter
+from ray.rllib.utils.framework import try_import_tf, try_import_torch
+from ray.rllib.utils.from_config import from_config
+from ray.rllib.utils.policy import create_policy_for_framework, validate_policy_id
+from ray.rllib.utils.sgd import do_minibatch_sgd
+from ray.rllib.utils.tf_run_builder import _TFRunBuilder
+from ray.rllib.utils.tf_utils import get_gpu_devices as get_tf_gpu_devices
+from ray.rllib.utils.tf_utils import get_tf_eager_cls_if_necessary
+from ray.rllib.utils.typing import (
+from ray.tune.registry import registry_contains_input, registry_get_input
+from ray.util.annotations import PublicAPI
+from ray.util.debug import disable_log_once_globally, enable_periodic_logging, log_once
+from ray.util.iter import ParallelIteratorWorker
+def _get_input_creator_from_config(self):
+
+    def valid_module(class_path):
+        if isinstance(class_path, str) and (not os.path.isfile(class_path)) and ('.' in class_path):
+            module_path, class_name = class_path.rsplit('.', 1)
+            try:
+                spec = importlib.util.find_spec(module_path)
+                if spec is not None:
+                    return True
+            except (ModuleNotFoundError, ValueError):
+                print(f'module {module_path} not found while trying to get input {class_path}')
+        return False
+    if isinstance(self.config.input_, FunctionType):
+        return self.config.input_
+    elif self.config.input_ == 'sampler':
+        return lambda ioctx: ioctx.default_sampler_input()
+    elif self.config.input_ == 'dataset':
+        assert self._ds_shards is not None
+        return lambda ioctx: DatasetReader(self._ds_shards[self.worker_index], ioctx)
+    elif isinstance(self.config.input_, dict):
+        return lambda ioctx: ShuffledInput(MixedInput(self.config.input_, ioctx), self.config.shuffle_buffer_size)
+    elif isinstance(self.config.input_, str) and registry_contains_input(self.config.input_):
+        return registry_get_input(self.config.input_)
+    elif 'd4rl' in self.config.input_:
+        env_name = self.config.input_.split('.')[-1]
+        return lambda ioctx: D4RLReader(env_name, ioctx)
+    elif valid_module(self.config.input_):
+        return lambda ioctx: ShuffledInput(from_config(self.config.input_, ioctx=ioctx))
+    else:
+        return lambda ioctx: ShuffledInput(JsonReader(self.config.input_, ioctx), self.config.shuffle_buffer_size)

@@ -1,0 +1,128 @@
+import abc
+import weakref
+from keystoneauth1 import exceptions
+from keystoneauth1.identity import generic
+from keystoneauth1 import plugin
+from oslo_config import cfg
+from oslo_utils import excutils
+import requests
+from heat.common import config
+from heat.common import exception as heat_exception
+class ClientPlugin(object, metaclass=abc.ABCMeta):
+    exceptions_module = None
+    service_types = []
+    default_version = None
+    supported_versions = []
+
+    def __init__(self, context):
+        self._context = weakref.ref(context)
+        self._clients = weakref.ref(context.clients)
+        self._client_instances = {}
+        self._endpoint_existence = {}
+
+    @property
+    def context(self):
+        ctxt = self._context()
+        assert ctxt is not None, 'Need a reference to the context'
+        return ctxt
+
+    @property
+    def clients(self):
+        return self._clients()
+    _get_client_option = staticmethod(config.get_client_option)
+
+    def client(self, version=None):
+        if not version:
+            version = self.default_version
+        if version in self._client_instances:
+            return self._client_instances[version]
+        if version is None:
+            self._client_instances[version] = self._create()
+        else:
+            if version not in self.supported_versions:
+                raise heat_exception.InvalidServiceVersion(version=version, service=self._get_service_name())
+            self._client_instances[version] = self._create(version=version)
+        return self._client_instances[version]
+
+    @abc.abstractmethod
+    def _create(self, version=None):
+        """Return a newly created client."""
+        pass
+
+    def _get_region_name(self):
+        reg = self.context.region_name or cfg.CONF.region_name_for_services
+        shared_services_region_name = cfg.CONF.region_name_for_shared_services
+        shared_services_types = cfg.CONF.shared_services_types
+        if shared_services_region_name:
+            if set(self.service_types) & set(shared_services_types):
+                reg = shared_services_region_name
+        return reg
+
+    def url_for(self, **kwargs):
+        keystone_session = self.context.keystone_session
+
+        def get_endpoint():
+            return keystone_session.get_endpoint(**kwargs)
+        try:
+            kwargs.setdefault('interface', kwargs.pop('endpoint_type'))
+        except KeyError:
+            pass
+        kwargs.setdefault('region_name', self._get_region_name())
+        url = None
+        try:
+            url = get_endpoint()
+        except exceptions.EmptyCatalog:
+            endpoint = keystone_session.get_endpoint(None, interface=plugin.AUTH_INTERFACE)
+            token = keystone_session.get_token(None)
+            token_obj = generic.Token(endpoint, token)
+            auth_ref = token_obj.get_access(keystone_session)
+            if auth_ref.has_service_catalog():
+                self.context.reload_auth_plugin()
+                url = get_endpoint()
+        if url is None:
+            raise exceptions.EndpointNotFound()
+        return url
+
+    def is_client_exception(self, ex):
+        """Returns True if the current exception comes from the client."""
+        if self.exceptions_module:
+            if isinstance(self.exceptions_module, list):
+                for m in self.exceptions_module:
+                    if type(ex) in m.__dict__.values():
+                        return True
+            else:
+                return type(ex) in self.exceptions_module.__dict__.values()
+        return False
+
+    def is_not_found(self, ex):
+        """Returns True if the exception is a not-found."""
+        return False
+
+    def is_over_limit(self, ex):
+        """Returns True if the exception is an over-limit."""
+        return False
+
+    def is_conflict(self, ex):
+        """Returns True if the exception is a conflict."""
+        return False
+
+    @excutils.exception_filter
+    def ignore_not_found(self, ex):
+        """Raises the exception unless it is a not-found."""
+        return self.is_not_found(ex)
+
+    @excutils.exception_filter
+    def ignore_conflict_and_not_found(self, ex):
+        """Raises the exception unless it is a conflict or not-found."""
+        return self.is_conflict(ex) or self.is_not_found(ex)
+
+    def does_endpoint_exist(self, service_type, service_name):
+        endpoint_key = (service_type, service_name)
+        if endpoint_key not in self._endpoint_existence:
+            endpoint_type = self._get_client_option(service_name, 'endpoint_type')
+            try:
+                self.url_for(service_type=service_type, endpoint_type=endpoint_type)
+                self._endpoint_existence[endpoint_key] = True
+            except exceptions.EndpointNotFound:
+                self._endpoint_existence[endpoint_key] = False
+        return self._endpoint_existence[endpoint_key]

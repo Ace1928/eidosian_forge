@@ -1,0 +1,29 @@
+from __future__ import annotations
+import binascii
+import collections
+import datetime
+import enum
+import glob
+import io
+import json
+import logging
+import math
+import os
+import re
+import struct
+import sys
+import threading
+import time
+import warnings
+from concurrent.futures import ThreadPoolExecutor
+from functools import cached_property
+import numpy
+from typing import TYPE_CHECKING, BinaryIO, cast, final, overload
+def kwargs_notnone(**kwargs: Any) -> dict[str, Any]:
+    """Return dict of kwargs which values are not None.
+
+    >>> kwargs_notnone(one=1, none=None)
+    {'one': 1}
+
+    """
+    return dict((item for item in kwargs.items() if item[1] is not None))

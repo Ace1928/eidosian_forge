@@ -1,0 +1,25 @@
+from designateclient.v2.base import V2Controller
+from designateclient.v2 import utils as v2_utils
+class TLDController(V2Controller):
+
+    def create(self, name, description=None):
+        data = {'name': name}
+        if description is not None:
+            data['description'] = description
+        return self._post('/tlds', data=data)
+
+    def list(self, criterion=None, marker=None, limit=None):
+        url = self.build_url('/tlds', criterion, marker, limit)
+        return self._get(url, response_key='tlds')
+
+    def get(self, tld):
+        tld = v2_utils.resolve_by_name(self.list, tld)
+        return self._get(f'/tlds/{tld}')
+
+    def update(self, tld, values):
+        tld = v2_utils.resolve_by_name(self.list, tld)
+        return self._patch(f'/tlds/{tld}', data=values)
+
+    def delete(self, tld):
+        tld = v2_utils.resolve_by_name(self.list, tld)
+        return self._delete(f'/tlds/{tld}')

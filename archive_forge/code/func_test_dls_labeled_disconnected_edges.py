@@ -1,0 +1,6 @@
+import networkx as nx
+def test_dls_labeled_disconnected_edges(self):
+    edges = list(nx.dfs_labeled_edges(self.D, depth_limit=1))
+    assert edges == [(0, 0, 'forward'), (0, 1, 'forward'), (0, 1, 'reverse-depth_limit'), (0, 0, 'reverse'), (2, 2, 'forward'), (2, 3, 'forward'), (2, 3, 'reverse-depth_limit'), (2, 7, 'forward'), (2, 7, 'reverse-depth_limit'), (2, 2, 'reverse'), (8, 8, 'forward'), (8, 7, 'nontree'), (8, 9, 'forward'), (8, 9, 'reverse-depth_limit'), (8, 8, 'reverse'), (10, 10, 'forward'), (10, 9, 'nontree'), (10, 10, 'reverse')]
+    edges = list(nx.dfs_labeled_edges(self.D, depth_limit=19))
+    assert edges == [(0, 0, 'forward'), (0, 1, 'forward'), (1, 0, 'nontree'), (0, 1, 'reverse'), (0, 0, 'reverse'), (2, 2, 'forward'), (2, 3, 'forward'), (3, 2, 'nontree'), (2, 3, 'reverse'), (2, 7, 'forward'), (7, 2, 'nontree'), (7, 8, 'forward'), (8, 7, 'nontree'), (8, 9, 'forward'), (9, 8, 'nontree'), (9, 10, 'forward'), (10, 9, 'nontree'), (9, 10, 'reverse'), (8, 9, 'reverse'), (7, 8, 'reverse'), (2, 7, 'reverse'), (2, 2, 'reverse')]

@@ -1,0 +1,8 @@
+import os
+import sysconfig
+def valid_key(fpath):
+    try:
+        with open(fpath, 'rb') as f:
+            return f.read(4) == b'TZif'
+    except Exception:
+        return False

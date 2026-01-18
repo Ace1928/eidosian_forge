@@ -1,0 +1,46 @@
+from adagio.shells.interfaceless import function_to_taskspec, _get_origin_type, _parse_annotation
+from typing import Any, Dict, List, Union, Optional, Tuple
+from pytest import raises
+import inspect
+def test_function_to_taskspec():
+    ts = function_to_taskspec(f1, lambda ds: [d['data_type'] is not int for d in ds])
+    assert 2 == len(ts.inputs)
+    assert 'a' in ts.inputs and 'b' in ts.inputs
+    assert all((r.required for r in ts.inputs.values()))
+    assert ts.inputs['a'].nullable
+    assert not ts.inputs['b'].nullable
+    assert 2 == len(ts.configs)
+    assert 'c' in ts.configs and 'd' in ts.configs
+    assert not ts.configs['c'].nullable
+    assert ts.configs['c'].required
+    assert ts.configs['d'].nullable
+    assert not ts.configs['d'].required
+    assert ts.configs['d'].default_value == 'x'
+    assert all((r.data_type is str for r in ts.configs.values()))
+    assert 1 == len(ts.outputs)
+    assert '_0' in ts.outputs
+    assert not ts.outputs['_0'].nullable
+    assert ts.outputs['_0'].data_type is int
+    ts = function_to_taskspec(f2, lambda ds: [d['data_type'] is not int for d in ds], deterministic=False, lazy=True)
+    assert ts.lazy
+    assert not ts.deterministic
+    assert 2 == len(ts.inputs)
+    assert 'a' in ts.inputs and 'c' in ts.inputs
+    assert 1 == len(ts.configs)
+    assert 'b' in ts.configs
+    assert ts.configs['b'].data_type is object
+    assert ts.configs['b'].nullable
+    assert 2 == len(ts.outputs)
+    assert '_0' in ts.outputs and '_1' in ts.outputs
+    assert not ts.outputs['_0'].nullable
+    assert ts.outputs['_1'].nullable
+    ts = function_to_taskspec(f3, lambda ds: [d['data_type'] is not int for d in ds])
+    print(ts.to_json(True))
+    assert 0 == len(ts.outputs)
+    ts = function_to_taskspec(f4, lambda ds: [d['data_type'] is not int for d in ds])
+    print(ts.to_json(True))
+    assert 0 == len(ts.outputs)
+    ts = function_to_taskspec(f5, lambda ds: [d['data_type'] is not int for d in ds])
+    print(ts.to_json(True))
+    assert 0 == len(ts.inputs)
+    assert 0 == len(ts.outputs)

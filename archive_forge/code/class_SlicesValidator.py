@@ -1,0 +1,5 @@
+import _plotly_utils.basevalidators
+class SlicesValidator(_plotly_utils.basevalidators.CompoundValidator):
+
+    def __init__(self, plotly_name='slices', parent_name='volume', **kwargs):
+        super(SlicesValidator, self).__init__(plotly_name=plotly_name, parent_name=parent_name, data_class_str=kwargs.pop('data_class_str', 'Slices'), data_docs=kwargs.pop('data_docs', '\n            x\n                :class:`plotly.graph_objects.volume.slices.X`\n                instance or dict with compatible properties\n            y\n                :class:`plotly.graph_objects.volume.slices.Y`\n                instance or dict with compatible properties\n            z\n                :class:`plotly.graph_objects.volume.slices.Z`\n                instance or dict with compatible properties\n'), **kwargs)

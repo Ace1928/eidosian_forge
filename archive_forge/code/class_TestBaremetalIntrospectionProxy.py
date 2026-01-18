@@ -1,0 +1,17 @@
+from unittest import mock
+from keystoneauth1 import adapter
+from openstack.baremetal.v1 import node as _node
+from openstack.baremetal_introspection.v1 import _proxy
+from openstack.baremetal_introspection.v1 import introspection
+from openstack.baremetal_introspection.v1 import introspection_rule
+from openstack import exceptions
+from openstack.tests.unit import base
+from openstack.tests.unit import test_proxy_base
+class TestBaremetalIntrospectionProxy(test_proxy_base.TestProxyBase):
+
+    def setUp(self):
+        super(TestBaremetalIntrospectionProxy, self).setUp()
+        self.proxy = _proxy.Proxy(self.session)
+
+    def test_get_introspection(self):
+        self.verify_get(self.proxy.get_introspection, introspection.Introspection)

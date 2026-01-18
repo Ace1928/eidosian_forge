@@ -1,0 +1,17 @@
+from typing import List, Optional
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch import Tensor
+from torch.nn.modules.batchnorm import BatchNorm2d
+from torch.nn.modules.instancenorm import InstanceNorm2d
+from torchvision.ops import Conv2dNormActivation
+from ...transforms._presets import OpticalFlow
+from ...utils import _log_api_usage_once
+from .._api import register_model, Weights, WeightsEnum
+from .._utils import handle_legacy_interface
+from ._utils import grid_sample, make_coords_grid, upsample_flow
+def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
+    block1 = block(in_channels, out_channels, norm_layer=norm_layer, stride=first_stride)
+    block2 = block(out_channels, out_channels, norm_layer=norm_layer, stride=1)
+    return nn.Sequential(block1, block2)

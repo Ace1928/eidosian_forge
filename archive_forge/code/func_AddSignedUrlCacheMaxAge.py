@@ -1,0 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.calliope import arg_parsers
+def AddSignedUrlCacheMaxAge(parser, required=False, unspecified_help=' If unspecified, the default value is 3600s.'):
+    """Adds the Cloud CDN Signed URL cache max age argument to the argparse."""
+    parser.add_argument('--signed-url-cache-max-age', required=required, type=arg_parsers.Duration(), help='      The amount of time up to which the response to a signed URL request\n      will be cached in the CDN. After this time period, the Signed URL will\n      be revalidated before being served. Cloud CDN will internally act as\n      though all responses from this backend had a\n      `Cache-Control: public, max-age=[TTL]` header, regardless of any\n      existing Cache-Control header. The actual headers served in responses\n      will not be altered.{}\n\n      For example, specifying `12h` will cause the responses to signed URL\n      requests to be cached in the CDN up to 12 hours.\n      See $ gcloud topic datetimes for information on duration formats.\n\n      This flag only affects signed URL requests.\n      '.format(unspecified_help))

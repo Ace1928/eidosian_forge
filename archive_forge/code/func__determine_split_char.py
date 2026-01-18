@@ -1,0 +1,25 @@
+import socket
+import sys
+import time
+import random
+import dns.exception
+import dns.flags
+import dns.ipv4
+import dns.ipv6
+import dns.message
+import dns.name
+import dns.query
+import dns.rcode
+import dns.rdataclass
+import dns.rdatatype
+import dns.reversename
+import dns.tsig
+from ._compat import xrange, string_types
+def _determine_split_char(self, entry):
+    if entry.find(' ') >= 0:
+        split_char = ' '
+    elif entry.find(',') >= 0:
+        split_char = ','
+    else:
+        split_char = ' '
+    return split_char

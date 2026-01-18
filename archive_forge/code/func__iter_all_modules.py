@@ -1,0 +1,25 @@
+import types
+from typing import Iterator
+from typing import List
+from typing import Union
+def _iter_all_modules(package: Union[str, types.ModuleType], prefix: str='') -> Iterator[str]:
+    """Iterate over the names of all modules that can be found in the given
+    package, recursively.
+
+        >>> import _pytest
+        >>> list(_iter_all_modules(_pytest))
+        ['_pytest._argcomplete', '_pytest._code.code', ...]
+    """
+    import os
+    import pkgutil
+    if isinstance(package, str):
+        path = package
+    else:
+        package_path = package.__path__
+        path, prefix = (package_path[0], package.__name__ + '.')
+    for _, name, is_package in pkgutil.iter_modules([path]):
+        if is_package:
+            for m in _iter_all_modules(os.path.join(path, name), prefix=name + '.'):
+                yield (prefix + m)
+        else:
+            yield (prefix + name)

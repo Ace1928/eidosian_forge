@@ -1,0 +1,10 @@
+from typing import Sequence, Any, Union, Dict
+import numpy as np
+import networkx as nx
+import cirq
+from cirq import GridQubit, LineQubit
+from cirq.ops import NamedQubit
+from cirq_pasqal import ThreeDQubit, TwoDQubit, PasqalGateset
+@property
+def maximum_qubit_number(self):
+    return 100

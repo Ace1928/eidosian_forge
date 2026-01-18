@@ -1,0 +1,8 @@
+import pytest
+import cirq
+def test_surface_code_cycle_stratifies_without_growing():
+    g = cirq.GridQubit
+    circuit = cirq.Circuit(cirq.H(g(9, 11)), cirq.H(g(11, 12)), cirq.H(g(12, 9)), cirq.H(g(9, 8)), cirq.H(g(8, 11)), cirq.H(g(11, 9)), cirq.H(g(10, 9)), cirq.H(g(10, 8)), cirq.H(g(11, 10)), cirq.H(g(12, 10)), cirq.H(g(9, 9)), cirq.H(g(9, 10)), cirq.H(g(10, 11)), cirq.CZ(g(10, 9), g(9, 9)), cirq.CZ(g(10, 11), g(9, 11)), cirq.CZ(g(9, 10), g(8, 10)), cirq.CZ(g(11, 10), g(10, 10)), cirq.CZ(g(12, 9), g(11, 9)), cirq.CZ(g(11, 12), g(10, 12)), cirq.H(g(9, 11)), cirq.H(g(9, 9)), cirq.H(g(10, 10)), cirq.H(g(11, 9)), cirq.H(g(10, 12)), cirq.H(g(8, 10)), cirq.CZ(g(11, 10), g(11, 11)), cirq.CZ(g(10, 9), g(10, 8)), cirq.CZ(g(12, 9), g(12, 10)), cirq.CZ(g(10, 11), g(10, 10)), cirq.CZ(g(9, 8), g(9, 9)), cirq.CZ(g(9, 10), g(9, 11)), cirq.CZ(g(8, 11), g(8, 10)), cirq.CZ(g(11, 10), g(11, 9)), cirq.CZ(g(11, 12), g(11, 11)), cirq.H(g(10, 8)), cirq.H(g(12, 10)), cirq.H(g(12, 9)), cirq.CZ(g(9, 10), g(9, 9)), cirq.CZ(g(10, 9), g(10, 10)), cirq.CZ(g(10, 11), g(10, 12)), cirq.H(g(11, 11)), cirq.H(g(9, 11)), cirq.H(g(11, 9)), cirq.CZ(g(9, 8), g(10, 8)), cirq.CZ(g(11, 10), g(12, 10)), cirq.H(g(11, 12)), cirq.H(g(8, 10)), cirq.H(g(10, 10)), cirq.CZ(g(8, 11), g(9, 11)), cirq.CZ(g(10, 9), g(11, 9)), cirq.CZ(g(10, 11), g(11, 11)), cirq.H(g(9, 8)), cirq.H(g(10, 12)), cirq.H(g(11, 10)), cirq.CZ(g(9, 10), g(10, 10)), cirq.H(g(11, 11)), cirq.H(g(9, 11)), cirq.H(g(8, 11)), cirq.H(g(11, 9)), cirq.H(g(10, 9)), cirq.H(g(10, 11)), cirq.H(g(9, 10)))
+    assert len(circuit) == 8
+    stratified = cirq.stratified_circuit(circuit, categories=[cirq.H, cirq.CZ])
+    assert len(stratified) == 9

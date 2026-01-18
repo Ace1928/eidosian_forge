@@ -1,0 +1,10 @@
+from boto.ec2.ec2object import TaggedEC2Object
+from boto.exception import BotoClientError
+def add_grant(self, name=None, owner_id=None, cidr_ip=None, group_id=None, dry_run=False):
+    grant = GroupOrCIDR(self)
+    grant.owner_id = owner_id
+    grant.group_id = group_id
+    grant.name = name
+    grant.cidr_ip = cidr_ip
+    self.grants.append(grant)
+    return grant

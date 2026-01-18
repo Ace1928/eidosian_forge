@@ -1,0 +1,144 @@
+import functools
+import warnings
+import numpy as np
+from numpy.lib import function_base
+from numpy.core import overrides
+@array_function_dispatch(_nanquantile_dispatcher)
+def nanquantile(a, q, axis=None, out=None, overwrite_input=False, method='linear', keepdims=np._NoValue, *, interpolation=None):
+    """
+    Compute the qth quantile of the data along the specified axis,
+    while ignoring nan values.
+    Returns the qth quantile(s) of the array elements.
+
+    .. versionadded:: 1.15.0
+
+    Parameters
+    ----------
+    a : array_like
+        Input array or object that can be converted to an array, containing
+        nan values to be ignored
+    q : array_like of float
+        Probability or sequence of probabilities for the quantiles to compute.
+        Values must be between 0 and 1 inclusive.
+    axis : {int, tuple of int, None}, optional
+        Axis or axes along which the quantiles are computed. The
+        default is to compute the quantile(s) along a flattened
+        version of the array.
+    out : ndarray, optional
+        Alternative output array in which to place the result. It must
+        have the same shape and buffer length as the expected output,
+        but the type (of the output) will be cast if necessary.
+    overwrite_input : bool, optional
+        If True, then allow the input array `a` to be modified by intermediate
+        calculations, to save memory. In this case, the contents of the input
+        `a` after this function completes is undefined.
+    method : str, optional
+        This parameter specifies the method to use for estimating the
+        quantile.  There are many different methods, some unique to NumPy.
+        See the notes for explanation.  The options sorted by their R type
+        as summarized in the H&F paper [1]_ are:
+
+        1. 'inverted_cdf'
+        2. 'averaged_inverted_cdf'
+        3. 'closest_observation'
+        4. 'interpolated_inverted_cdf'
+        5. 'hazen'
+        6. 'weibull'
+        7. 'linear'  (default)
+        8. 'median_unbiased'
+        9. 'normal_unbiased'
+
+        The first three methods are discontinuous.  NumPy further defines the
+        following discontinuous variations of the default 'linear' (7.) option:
+
+        * 'lower'
+        * 'higher',
+        * 'midpoint'
+        * 'nearest'
+
+        .. versionchanged:: 1.22.0
+            This argument was previously called "interpolation" and only
+            offered the "linear" default and last four options.
+
+    keepdims : bool, optional
+        If this is set to True, the axes which are reduced are left in
+        the result as dimensions with size one. With this option, the
+        result will broadcast correctly against the original array `a`.
+
+        If this is anything but the default value it will be passed
+        through (in the special case of an empty array) to the
+        `mean` function of the underlying array.  If the array is
+        a sub-class and `mean` does not have the kwarg `keepdims` this
+        will raise a RuntimeError.
+
+    interpolation : str, optional
+        Deprecated name for the method keyword argument.
+
+        .. deprecated:: 1.22.0
+
+    Returns
+    -------
+    quantile : scalar or ndarray
+        If `q` is a single probability and `axis=None`, then the result
+        is a scalar. If multiple probability levels are given, first axis of
+        the result corresponds to the quantiles. The other axes are
+        the axes that remain after the reduction of `a`. If the input
+        contains integers or floats smaller than ``float64``, the output
+        data-type is ``float64``. Otherwise, the output data-type is the
+        same as that of the input. If `out` is specified, that array is
+        returned instead.
+
+    See Also
+    --------
+    quantile
+    nanmean, nanmedian
+    nanmedian : equivalent to ``nanquantile(..., 0.5)``
+    nanpercentile : same as nanquantile, but with q in the range [0, 100].
+
+    Notes
+    -----
+    For more information please see `numpy.quantile`
+
+    Examples
+    --------
+    >>> a = np.array([[10., 7., 4.], [3., 2., 1.]])
+    >>> a[0][1] = np.nan
+    >>> a
+    array([[10.,  nan,   4.],
+          [ 3.,   2.,   1.]])
+    >>> np.quantile(a, 0.5)
+    nan
+    >>> np.nanquantile(a, 0.5)
+    3.0
+    >>> np.nanquantile(a, 0.5, axis=0)
+    array([6.5, 2. , 2.5])
+    >>> np.nanquantile(a, 0.5, axis=1, keepdims=True)
+    array([[7.],
+           [2.]])
+    >>> m = np.nanquantile(a, 0.5, axis=0)
+    >>> out = np.zeros_like(m)
+    >>> np.nanquantile(a, 0.5, axis=0, out=out)
+    array([6.5, 2. , 2.5])
+    >>> m
+    array([6.5,  2. ,  2.5])
+    >>> b = a.copy()
+    >>> np.nanquantile(b, 0.5, axis=1, overwrite_input=True)
+    array([7., 2.])
+    >>> assert not np.all(a==b)
+
+    References
+    ----------
+    .. [1] R. J. Hyndman and Y. Fan,
+       "Sample quantiles in statistical packages,"
+       The American Statistician, 50(4), pp. 361-365, 1996
+
+    """
+    if interpolation is not None:
+        method = function_base._check_interpolation_as_method(method, interpolation, 'nanquantile')
+    a = np.asanyarray(a)
+    if a.dtype.kind == 'c':
+        raise TypeError('a must be an array of real numbers')
+    q = np.asanyarray(q)
+    if not function_base._quantile_is_valid(q):
+        raise ValueError('Quantiles must be in the range [0, 1]')
+    return _nanquantile_unchecked(a, q, axis, out, overwrite_input, method, keepdims)

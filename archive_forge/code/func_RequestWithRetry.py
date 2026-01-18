@@ -1,0 +1,39 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from google.auth import external_account as google_auth_external_account
+from google.auth.transport import requests as google_auth_requests
+from googlecloudsdk.calliope import base
+from googlecloudsdk.core import exceptions
+from googlecloudsdk.core import requests
+from googlecloudsdk.core import transport as core_transport
+from googlecloudsdk.core.credentials import transport
+def RequestWithRetry(*args, **kwargs):
+    """Retries the request after removing the quota project header.
+
+      Try the request with the X-Goog-User-Project header. If the account does
+      not have the permission to expense the quota of the user project in the
+      header, remove the header and retry.
+
+      Args:
+        *args: *args to send to requests.Session.request method.
+        **kwargs: **kwargs to send to requests.Session.request method.
+
+      Returns:
+        Response from requests.Session.request.
+      """
+    response = wrapped_request(*args, **kwargs)
+    if response.status_code != 403:
+        return response
+    old_encoding = response.encoding
+    response.encoding = response.encoding or core_transport.ENCODING
+    try:
+        err_details = response.json()['error']['details']
+    except (KeyError, ValueError):
+        return response
+    finally:
+        response.encoding = old_encoding
+    for err_detail in err_details:
+        if err_detail.get('@type') == 'type.googleapis.com/google.rpc.ErrorInfo' and err_detail.get('reason') == transport.USER_PROJECT_ERROR_REASON and (err_detail.get('domain') == transport.USER_PROJECT_ERROR_DOMAIN):
+            return orig_request(*args, **kwargs)
+    return response

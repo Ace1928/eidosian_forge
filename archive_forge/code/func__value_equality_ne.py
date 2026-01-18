@@ -1,0 +1,5 @@
+from typing import Any, Callable, Optional, overload, Union
+from typing_extensions import Protocol
+from cirq import protocols, _compat
+def _value_equality_ne(self: _SupportsValueEquality, other: _SupportsValueEquality) -> bool:
+    return not self == other

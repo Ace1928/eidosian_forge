@@ -1,0 +1,59 @@
+from collections import defaultdict
+from unittest import SkipTest
+import pandas as pd
+import param
+import pytest
+from panel.widgets import IntSlider
+import holoviews as hv
+from holoviews.core.spaces import DynamicMap
+from holoviews.core.util import Version
+from holoviews.element import Curve, Histogram, Points, Polygons, Scatter
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.streams import *  # noqa (Test all available streams)
+from holoviews.util import Dynamic, extension
+from holoviews.util.transform import dim
+from .utils import LoggingComparisonTestCase
+class TestBufferArrayStream(ComparisonTestCase):
+
+    def test_init_buffer_array(self):
+        arr = np.array([[0, 1]])
+        buff = Buffer(arr)
+        self.assertEqual(buff.data, arr)
+
+    def test_buffer_array_ndim_exception(self):
+        error = 'Only 2D array data may be streamed by Buffer.'
+        with self.assertRaisesRegex(ValueError, error):
+            Buffer(np.array([0, 1]))
+
+    def test_buffer_array_send(self):
+        buff = Buffer(np.array([[0, 1]]))
+        buff.send(np.array([[1, 2]]))
+        self.assertEqual(buff.data, np.array([[0, 1], [1, 2]]))
+
+    def test_buffer_array_larger_than_length(self):
+        buff = Buffer(np.array([[0, 1]]), length=1)
+        buff.send(np.array([[1, 2]]))
+        self.assertEqual(buff.data, np.array([[1, 2]]))
+
+    def test_buffer_array_patch_larger_than_length(self):
+        buff = Buffer(np.array([[0, 1]]), length=1)
+        buff.send(np.array([[1, 2], [2, 3]]))
+        self.assertEqual(buff.data, np.array([[2, 3]]))
+
+    def test_buffer_array_send_verify_ndim_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = 'Streamed array data must be two-dimensional'
+        with self.assertRaisesRegex(ValueError, error):
+            buff.send(np.array([1]))
+
+    def test_buffer_array_send_verify_shape_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = 'Streamed array data expected to have 2 columns, got 3.'
+        with self.assertRaisesRegex(ValueError, error):
+            buff.send(np.array([[1, 2, 3]]))
+
+    def test_buffer_array_send_verify_type_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = 'Input expected to be of type ndarray, got list.'
+        with self.assertRaisesRegex(TypeError, error):
+            buff.send([1])

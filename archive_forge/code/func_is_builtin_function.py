@@ -1,0 +1,9 @@
+from pythran.passmanager import Transformation
+from pythran.tables import MODULES, pythran_ward
+from pythran.syntax import PythranSyntaxError
+import gast as ast
+import logging
+import os
+def is_builtin_function(func_name):
+    """Test if a function is a builtin (like len(), map(), ...)."""
+    return func_name in MODULES['builtins']

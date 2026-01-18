@@ -1,0 +1,2 @@
+class Sized(object):
+    pass

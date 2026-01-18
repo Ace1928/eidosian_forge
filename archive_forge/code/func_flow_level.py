@@ -1,0 +1,7 @@
+from __future__ import print_function, absolute_import, division, unicode_literals
+from ruamel.yaml.error import MarkedYAMLError
+from ruamel.yaml.tokens import *  # NOQA
+from ruamel.yaml.compat import utf8, unichr, PY3, check_anchorname_char, nprint  # NOQA
+@property
+def flow_level(self):
+    return len(self.flow_context)

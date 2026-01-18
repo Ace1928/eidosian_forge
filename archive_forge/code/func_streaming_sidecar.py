@@ -1,0 +1,7 @@
+from .message_media_downloadable import DownloadableMediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_video import VideoAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@streaming_sidecar.setter
+def streaming_sidecar(self, value):
+    self.media_specific_attributes.streaming_sidecar = value

@@ -1,0 +1,18 @@
+from datetime import datetime
+import re
+from dateutil.parser import parse as du_parse
+from dateutil.tz import tzlocal
+from hypothesis import given
+import numpy as np
+import pytest
+from pandas._libs.tslibs import (
+from pandas._libs.tslibs.parsing import parse_datetime_string_with_reso
+from pandas.compat import (
+import pandas.util._test_decorators as td
+import pandas._testing as tm
+from pandas._testing._hypothesis import DATETIME_NO_TZ
+def test_parse_datetime_string_with_reso():
+    parsed, reso = parse_datetime_string_with_reso('4Q1984')
+    parsed_lower, reso_lower = parse_datetime_string_with_reso('4q1984')
+    assert reso == reso_lower
+    assert parsed == parsed_lower

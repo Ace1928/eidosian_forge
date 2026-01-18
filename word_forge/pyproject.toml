@@ -1,0 +1,94 @@
+[build-system]
+requires      = [ "setuptools>=42", "wheel" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "word_forge"
+version = "0.1.0"
+description = "A lexical data processing and enrichment system"
+readme = "README.md"
+authors = [ { name = "Eidosian Forge Team", email = "info@example.com" } ]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing :: Linguistic",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "nltk>=3.6.0",
+    "torch>=1.9.0",
+    "rdflib>=6.0.0",
+    "transformers>=4.15.0",
+    "networkx>=2.8.0",
+    "numpy>=1.23.0",
+    "pyvis>=0.3.2",
+    "plotly>=5.24.0",
+    "sentence-transformers>=2.2.2",
+    "chromadb>=0.4.24",
+    "faiss-cpu>=1.7.4",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "numpy>=1.23.0",
+    "black",
+    "isort",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pre-commit",
+]
+visualization = [
+    "pyvis>=0.3.2",
+    "plotly>=5.24.0",
+]
+vector = [
+    "sentence-transformers>=2.2.2",
+    "chromadb>=0.4.24",
+    "faiss-cpu>=1.7.4",
+    "pyyaml>=6.0.0",
+]
+
+[tool.setuptools.packages.find]
+where   = [ "src" ]
+include = [ "word_forge*" ]
+
+[tool.setuptools.package-data]
+"word_forge" = [ "py.typed", "*.json", "*.jsonl", "*.ttl" ]
+
+[project.scripts]
+word_forge = "word_forge.forge:main"
+
+[tool.black]
+line-length    = 88
+target-version = [ "py38" ]
+
+[tool.isort]
+profile     = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+exclude = ["src/old"]
+
+[tool.ruff.lint]
+extend-ignore = ["E402"]
+
+[tool.mypy]
+python_version           = "3.8"
+warn_return_any          = true
+warn_unused_configs      = true
+disallow_untyped_defs    = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths    = [ "tests" ]
+python_files = "test_*.py"

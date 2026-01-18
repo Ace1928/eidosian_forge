@@ -1,0 +1,25 @@
+import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from decimal import Decimal
+from itertools import product
+from math import gcd
+import pytest
+from pytest import raises as assert_raises
+from numpy.testing import (
+from numpy import array, arange
+import numpy as np
+from scipy.fft import fft
+from scipy.ndimage import correlate1d
+from scipy.optimize import fmin, linear_sum_assignment
+from scipy import signal
+from scipy.signal import (
+from scipy.signal.windows import hann
+from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
+from scipy.signal._upfirdn import _upfirdn_modes
+from scipy._lib import _testutils
+from scipy._lib._util import ComplexWarning, np_long, np_ulong
+def test_swap_full(self, dt):
+    d = np.array([0.0 + 0j, 1.0 + 1j, 2.0 + 2j], dtype=dt)
+    k = np.array([1.0 + 3j, 2.0 + 4j, 3.0 + 5j, 4.0 + 6j], dtype=dt)
+    y = correlate(d, k)
+    assert_equal(y, [0.0 + 0j, 10.0 - 2j, 28.0 - 6j, 22.0 - 6j, 16.0 - 6j, 8.0 - 4j])

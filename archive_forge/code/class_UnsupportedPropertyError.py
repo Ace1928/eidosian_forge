@@ -1,0 +1,2 @@
+class UnsupportedPropertyError(Exception):
+    pass

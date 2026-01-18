@@ -1,0 +1,4 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def create_endpoint_instance(endpoint):
+    return Endpoint(id=endpoint['id'], name=endpoint['name'], type=endpoint['type'], target_resource_id=endpoint['target_resource_id'], target=endpoint['target'], endpoint_status=endpoint['endpoint_status'], weight=endpoint['weight'], priority=endpoint['priority'], endpoint_location=endpoint['endpoint_location'], min_child_endpoints=endpoint['min_child_endpoints'], geo_mapping=endpoint['geo_mapping'])

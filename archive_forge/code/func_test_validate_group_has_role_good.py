@@ -1,0 +1,13 @@
+from unittest import mock
+from keystoneauth1 import adapter
+from openstack.identity.v3 import domain
+from openstack.identity.v3 import group
+from openstack.identity.v3 import role
+from openstack.identity.v3 import user
+from openstack.tests.unit import base
+def test_validate_group_has_role_good(self):
+    sot = domain.Domain(**EXAMPLE)
+    resp = self.good_resp
+    self.sess.head = mock.Mock(return_value=resp)
+    self.assertTrue(sot.validate_group_has_role(self.sess, group.Group(id='1'), role.Role(id='2')))
+    self.sess.head.assert_called_with('domains/IDENTIFIER/groups/1/roles/2')

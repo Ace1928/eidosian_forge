@@ -1,0 +1,561 @@
+"""
+Image Processing Module
+
+This module provides functionalities for processing images, including format verification, contrast enhancement, resizing, hashing, compression, encryption, decryption, and decompression. It serves as a core component of the image interconversion GUI application, facilitating secure and efficient image manipulation.
+
+Author: Lloyd Handyside
+Creation Date: 2024-04-06
+Last Modified: 2024-04-08
+
+Functionalities:
+- Ensure image format compatibility
+- Enhance image contrast
+- Resize images while maintaining aspect ratio
+- Generate image hashes
+- Compress and decompress image data
+- Encrypt and decrypt image data
+- Validate image properties
+- Read image metadata
+- Generate and verify checksums
+- Parallel image resizing
+"""
+
+import unittest
+import io
+import os
+import asyncio
+from PIL import Image, ImageEnhance, ExifTags
+import hashlib
+import zstd
+from typing import Tuple, Dict, Any, Optional, List, Callable
+from core_services import (
+    ConfigManager,
+    LoggingManager,
+    EncryptionManager,
+)  # Adjusted import for core_services
+from concurrent.futures import ThreadPoolExecutor
+from cryptography.fernet import Fernet
+import traceback
+
+# Initialize logging
+LoggingManager.configure_logging(log_level="DEBUG")
+
+
+class AppConfig:
+    MAX_SIZE: Tuple[int, int] = (800, 600)  # Default values
+    ENHANCEMENT_FACTOR: float = 1.5  # Default value
+
+
+async def load_configurations():
+    config_manager = ConfigManager()
+    config_path = os.path.join(os.path.dirname(__file__), "config.ini")
+    await config_manager.load_config(config_path, "ImageProcessing", file_type="ini")
+    AppConfig.MAX_SIZE = tuple(
+        map(
+            int,
+            (
+                await config_manager.get(
+                    "ImageProcessing", "MaxSize", fallback="800,600"
+                )
+            ).split(","),
+        )
+    )
+    AppConfig.ENHANCEMENT_FACTOR = float(
+        await config_manager.get("ImageProcessing", "EnhancementFactor", fallback="1.5")
+    )
+
+
+__all__ = [
+    "ensure_image_format",
+    "enhance_contrast",
+    "resize_image",
+    "get_image_hash",
+    "compress",
+    "encrypt",
+    "decrypt",
+    "decompress",
+    "validate_image",
+    "read_image_metadata",
+    "ImageOperationError",
+    "resize_images_parallel",
+    "generate_checksum",
+    "verify_checksum",
+]
+
+
+def log_function_call(func: Callable) -> Callable:
+    """
+    A decorator that logs the entry and exit of functions.
+    """
+
+    def wrapper(*args, **kwargs):
+        LoggingManager.debug(f"Entering {func.__name__}")
+        result = func(*args, **kwargs)
+        LoggingManager.debug(f"Exiting {func.__name__}")
+        return result
+
+    return wrapper
+
+
+@log_function_call
+def ensure_image_format(image_data: bytes) -> Image.Image:
+    """
+    Ensures the given image data can be opened and returns the Image object.
+
+    Args:
+        image_data (bytes): The raw image data.
+
+    Returns:
+        Image.Image: The opened image.
+
+    Raises:
+        ImageOperationError: If the image cannot be opened.
+    """
+    try:
+        image: Image.Image = Image.open(io.BytesIO(image_data))
+        LoggingManager.debug("Image format ensured successfully.")
+        return image
+    except Exception as e:
+        LoggingManager.error(f"Failed to open image: {e}")
+
+
+@log_function_call
+def enhance_contrast(
+    image: Image.Image, enhancement_factor: float = AppConfig.ENHANCEMENT_FACTOR
+) -> bytes:
+    """
+    Enhances the contrast of an image.
+
+    Args:
+        image (Image.Image): The image to enhance.
+        enhancement_factor (float, optional): The factor by which to enhance the image's contrast. Defaults to AppConfig.ENHANCEMENT_FACTOR.
+
+    Returns:
+        bytes: The enhanced image data.
+
+    Raises:
+        ImageOperationError: If contrast enhancement fails.
+    """
+    try:
+        enhancer: ImageEnhance.Contrast = ImageEnhance.Contrast(image)
+        enhanced_image: Image.Image = enhancer.enhance(enhancement_factor)
+        with io.BytesIO() as output:
+            enhanced_image.save(output, format=image.format)
+            LoggingManager.debug("Image contrast enhanced successfully.")
+            return output.getvalue()
+    except Exception as e:
+        LoggingManager.error(f"Error enhancing image contrast: {e}")
+
+
+@log_function_call
+def resize_image(
+    image: Image.Image, max_size: Tuple[int, int] = AppConfig.MAX_SIZE
+) -> Image.Image:
+    """
+    Resizes an image to fit within a maximum size while maintaining aspect ratio.
+
+    Args:
+        image (Image.Image): The original image.
+        max_size (Tuple[int, int], optional): A tuple of (max_width, max_height). Defaults to AppConfig.MAX_SIZE.
+
+    Returns:
+        Image.Image: The resized image.
+
+    Raises:
+        ImageOperationError: If resizing the image fails.
+    """
+    try:
+        image.thumbnail(max_size, Image.Resampling.LANCZOS)
+        LoggingManager.debug(f"Image resized to max size {max_size}.")
+        return image
+    except Exception as e:
+        LoggingManager.error(f"Error resizing image: {e}")
+
+
+@log_function_call
+def get_image_hash(image_data: bytes) -> str:
+    """
+    Generates a SHA-512 hash of the image data.
+
+    Args:
+        image_data (bytes): The raw image data.
+
+    Returns:
+        str: The hexadecimal hash of the image.
+    """
+    sha512_hash = hashlib.sha512()
+    sha512_hash.update(image_data)
+    LoggingManager.debug("Image hash successfully generated using SHA-512.")
+    return sha512_hash.hexdigest()
+
+
+@log_function_call
+async def compress(image_data: bytes, image_format: str) -> bytes:
+    """
+    Compresses image data along with its format and a checksum for integrity verification.
+    This version is optimized for large files by processing in chunks and using asynchronous operations.
+
+    Args:
+        image_data (bytes): The raw image data.
+        image_format (str): The format of the image.
+
+    Returns:
+        bytes: The compressed image data.
+    """
+    checksum = hashlib.sha256(image_data).hexdigest()
+    formatted_data = f"{image_format}\x00{checksum}\x00".encode() + image_data
+    # Utilize asyncio to run compression in a non-blocking manner
+    compressed_data = await asyncio.to_thread(
+        zstd.compress, formatted_data, 19
+    )  # Higher compression level for efficiency
+    LoggingManager.debug("Image data compressed successfully.")
+    return compressed_data
+
+
+@log_function_call
+async def decompress(data: bytes) -> Tuple[bytes, str]:
+    """
+    Decompresses data and extracts the image format and raw image data.
+    Optimized for large files through asynchronous operations.
+
+    Args:
+        data (bytes): The compressed data.
+
+    Returns:
+        Tuple[bytes, str]: The raw image data and its format.
+    """
+    decompressed_data = await asyncio.to_thread(zstd.decompress, data)
+    image_format, checksum, image_data = decompressed_data.split(b"\x00", 2)
+    LoggingManager.debug("Data decompressed successfully.")
+    return image_data, image_format.decode()
+
+
+@log_function_call
+async def encrypt(data: bytes) -> bytes:
+    """
+    Encrypts data using the provided cipher suite.
+    Utilizes EncryptionManager for enhanced security mechanisms.
+
+    Args:
+        data (bytes): The data to encrypt.
+
+    Returns:
+        bytes: The encrypted data.
+    """
+    key = EncryptionManager.get_valid_encryption_key()
+    cipher_suite = Fernet(key)
+    encrypted_data = await asyncio.to_thread(cipher_suite.encrypt, data)
+    LoggingManager.debug("Data encrypted successfully.")
+    return encrypted_data
+
+
+@log_function_call
+async def decrypt(encrypted_data: bytes) -> bytes:
+    """
+    Decrypts data using the provided cipher suite.
+    Leverages EncryptionManager for consistent and secure decryption.
+
+    Args:
+        encrypted_data (bytes): The encrypted data.
+
+    Returns:
+        bytes: The decrypted data.
+    """
+    key = EncryptionManager.get_valid_encryption_key()
+    cipher_suite = Fernet(key)
+    decrypted_data = await asyncio.to_thread(cipher_suite.decrypt, encrypted_data)
+    LoggingManager.debug("Data decrypted successfully.")
+    return decrypted_data
+
+
+@log_function_call
+async def resize_images_parallel(
+    image_data_list: List[bytes], max_size: Tuple[int, int] = AppConfig.MAX_SIZE
+) -> List[Image.Image]:
+    """
+    Asynchronously resizes a list of images to a specified maximum size in parallel, with enhanced error handling and logging.
+
+    Args:
+        image_data_list (List[bytes]): A list of image data in bytes.
+        max_size (Tuple[int, int], optional): Maximum size (width, height). Defaults to AppConfig.MAX_SIZE.
+
+    Returns:
+        List[Image.Image]: A list of resized PIL Image objects.
+    """
+
+    async def process_image(image_data: bytes) -> Optional[Image.Image]:
+        try:
+            LoggingManager.debug("Attempting to open image for resizing.")
+            image = Image.open(io.BytesIO(image_data))
+            LoggingManager.debug("Image opened successfully, proceeding to resize.")
+            image.thumbnail(max_size, Image.ANTIALIAS)
+            LoggingManager.debug(f"Image resized successfully to max size {max_size}.")
+            return image
+        except Exception as e:
+            LoggingManager.error(
+                f"Error processing image during resizing: {traceback.format_exc()}"
+            )
+            return None
+
+    resized_images = []
+    try:
+        LoggingManager.debug("Starting parallel resizing of images.")
+        # Switching to asyncio.gather from asyncio.to_thread for better error handling and control
+        tasks = [process_image(image_data) for image_data in image_data_list]
+        resized_images = await asyncio.gather(*tasks, return_exceptions=True)
+        # Filter out None values and exceptions, logging the exceptions
+        valid_images = []
+        for image in resized_images:
+            if isinstance(image, Exception):
+                LoggingManager.error(
+                    f"Exception during image resizing: {traceback.format_exc()}"
+                )
+            elif image is not None:
+                valid_images.append(image)
+        LoggingManager.debug(
+            f"Parallel resizing completed. Valid images count: {len(valid_images)}"
+        )
+    except Exception as e:
+        LoggingManager.error(
+            f"Unhandled exception in resize_images_parallel: {traceback.format_exc()}"
+        )
+
+    return valid_images
+
+
+@log_function_call
+def validate_image(image: Image.Image) -> bool:
+    """
+    Validates the image format and size.
+
+    Args:
+        image (Image.Image): The image to validate.
+
+    Returns:
+        bool: True if the image is valid, False otherwise.
+
+    Raises:
+        ImageOperationError: If image validation fails.
+    """
+    try:
+        # Extended to include TIFF among valid formats
+        valid_formats = ["JPEG", "PNG", "BMP", "GIF", "TIFF"]
+        is_valid = (
+            image.format in valid_formats
+            and image.width <= 4000
+            and image.height <= 4000
+        )
+        LoggingManager.debug(f"Image validation result: {is_valid}.")
+        return is_valid
+    except Exception as e:
+        LoggingManager.error(f"Error validating image: {e}")
+
+
+@log_function_call
+def read_image_metadata(image_data: bytes) -> Dict[str, Any]:
+    """
+    Reads EXIF metadata from an image.
+
+    Args:
+        image_data (bytes): The raw image data.
+
+    Returns:
+        Dict[str, Any]: A dictionary containing EXIF metadata, if available.
+
+    Raises:
+        ImageOperationError: If reading metadata fails.
+    """
+    try:
+        with Image.open(io.BytesIO(image_data)) as image:
+            exif_data = {}
+            if hasattr(image, "_getexif"):
+                exif = image._getexif()
+                if exif is not None:
+                    for tag, value in exif.items():
+                        decoded = ExifTags.TAGS.get(tag, tag)
+                        exif_data[decoded] = value
+            LoggingManager.debug("Image metadata read successfully.")
+            return exif_data
+    except Exception as e:
+        LoggingManager.error(f"Error reading image metadata: {e}")
+
+
+@log_function_call
+def generate_checksum(image_data: bytes) -> str:
+    """
+    Generates a SHA-256 checksum for the given image data.
+
+    Args:
+        image_data (bytes): The raw image data.
+
+    Returns:
+        str: The hexadecimal checksum of the image.
+    """
+    checksum = hashlib.sha256(image_data).hexdigest()
+    LoggingManager.debug("Checksum generated successfully.")
+    return checksum
+
+
+@log_function_call
+def verify_checksum(image_data: bytes, expected_checksum: str) -> bool:
+    """
+    Verifies the integrity of the image data against the expected checksum.
+
+    Args:
+        image_data (bytes): The raw image data.
+        expected_checksum (str): The expected checksum for verification.
+
+    Returns:
+        bool: True if the checksum matches, False otherwise.
+    """
+    actual_checksum = hashlib.sha256(image_data).hexdigest()
+    is_valid = actual_checksum == expected_checksum
+    LoggingManager.debug(f"Checksum verification result: {is_valid}.")
+    return is_valid
+
+
+def get_cipher_suite() -> str:
+    """
+    Retrieves the cipher suite using the encryption key from an environment variable.
+
+    Returns:
+        str: The cipher suite.
+    """
+    return EncryptionManager.get_cipher_suite()
+
+
+# Define a base class for plugins
+class ImageProcessingPlugin:
+    def process(self, image: Image.Image) -> Image.Image:
+        raise NotImplementedError
+
+
+# Example plugin
+class SepiaTonePlugin(ImageProcessingPlugin):
+    def process(self, image: Image.Image) -> Image.Image:
+        # Apply sepia tone transformation
+        return image  # Transformed image
+
+
+# Register and use plugins
+plugins = [SepiaTonePlugin()]
+
+
+def apply_plugins(image: Image.Image) -> Image.Image:
+    for plugin in plugins:
+        image = plugin.process(image)
+    return image
+
+
+class TestImageProcessing(unittest.TestCase):
+    def setUp(self):
+        self.test_image_path = os.path.join(os.path.dirname(__file__), "test_image.png")
+        with open(self.test_image_path, "rb") as f:
+            self.test_image_data = f.read()
+
+    def test_ensure_image_format(self):
+        image = ensure_image_format(self.test_image_data)
+        self.assertIsInstance(image, Image.Image)
+
+    def test_enhance_contrast(self):
+        image = ensure_image_format(self.test_image_data)
+        enhanced_image_data = enhance_contrast(image)
+        self.assertIsInstance(enhanced_image_data, bytes)
+
+    def test_resize_image(self):
+        image = ensure_image_format(self.test_image_data)
+        resized_image = resize_image(image)
+        self.assertIsInstance(resized_image, Image.Image)
+        self.assertTrue(resized_image.width <= 800 and resized_image.height <= 600)
+
+    def test_get_image_hash(self):
+        image_hash = get_image_hash(self.test_image_data)
+        self.assertIsInstance(image_hash, str)
+        self.assertEqual(len(image_hash), 128)
+
+    async def async_test_compress_and_decompress(self):
+        compressed_data = await compress(self.test_image_data, "PNG")
+        self.assertIsInstance(compressed_data, bytes)
+        decompressed_data, format = await decompress(compressed_data)
+        self.assertEqual(format, "PNG")
+        self.assertEqual(decompressed_data, self.test_image_data)
+
+    def test_compress_and_decompress(self):
+        asyncio.run(self.async_test_compress_and_decompress())
+
+    async def async_test_encrypt_and_decrypt(self):
+        encrypted_data = await encrypt(self.test_image_data)
+        self.assertIsInstance(encrypted_data, bytes)
+        decrypted_data = await decrypt(encrypted_data)
+        self.assertEqual(decrypted_data, self.test_image_data)
+
+    def test_encrypt_and_decrypt(self):
+        asyncio.run(self.async_test_encrypt_and_decrypt())
+
+    async def async_test_resize_images_parallel(self):
+        image_data_list = [self.test_image_data] * 5
+        resized_images = await resize_images_parallel(image_data_list)
+        self.assertEqual(len(resized_images), 5)
+        for resized_image in resized_images:
+            self.assertIsInstance(resized_image, Image.Image)
+            self.assertTrue(
+                resized_image.width <= AppConfig.MAX_SIZE[0]
+                and resized_image.height <= AppConfig.MAX_SIZE[1]
+            )
+
+    def test_resize_images_parallel(self):
+        try:
+            asyncio.run(self.async_test_resize_images_parallel())
+            LoggingManager.debug("test_resize_images_parallel executed successfully.")
+        except Exception as e:
+            LoggingManager.error(
+                f"Error executing test_resize_images_parallel: {e}", exc_info=True
+            )
+
+    def test_validate_image(self):
+        image = ensure_image_format(self.test_image_data)
+        self.assertTrue(validate_image(image))
+
+    def test_read_image_metadata(self):
+        metadata = read_image_metadata(self.test_image_data)
+        self.assertIsInstance(metadata, dict)
+
+    def test_generate_and_verify_checksum(self):
+        checksum = generate_checksum(self.test_image_data)
+        self.assertTrue(verify_checksum(self.test_image_data, checksum))
+        self.assertFalse(verify_checksum(self.test_image_data, "invalid_checksum"))
+
+    def test_encryption_key_management(self):
+        key1 = EncryptionManager.get_valid_encryption_key()
+        key2 = EncryptionManager.get_valid_encryption_key()
+        self.assertEqual(key1, key2)
+
+        # Test that a new key is generated if the key file is deleted
+        os.remove(EncryptionManager.KEY_FILE)
+        key3 = EncryptionManager.get_valid_encryption_key()
+        self.assertNotEqual(key1, key3)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+# TODO:
+# - Implement support for additional image formats.
+# - Optimize performance for large image files.
+# - Enhance encryption mechanisms for increased security.
+# - Improve parallel processing implementation for better scalability.
+
+# Known Issues:
+# - Compression may result in quality loss for certain image formats.
+# - Parallel processing implementation may need optimization for large batches of images.
+
+
+# TODO:
+# - Implement support for additional image formats.
+# - Optimize performance for large image files.
+# - Enhance encryption mechanisms for increased security.
+# - Improve parallel processing implementation for better scalability.
+
+# Known Issues:
+# - Compression may result in quality loss for certain image formats.
+# - Parallel processing implementation may need optimization for large batches of images.

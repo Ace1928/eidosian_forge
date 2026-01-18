@@ -1,0 +1,22 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.firebase.test import arg_file
+from googlecloudsdk.api_lib.firebase.test import arg_validate
+from googlecloudsdk.api_lib.firebase.test import exceptions
+from googlecloudsdk.calliope import actions
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.core import log
+import six
+def AddAndroidBetaArgs(parser):
+    """Register args which are only available in the Android beta run command.
+
+  Args:
+    parser: An argparse parser used to add args that follow a command.
+  """
+    sharding_options = parser.add_group(mutex=True, help='Sharding options.')
+    sharding_options.add_argument('--num-uniform-shards', metavar='int', type=arg_validate.POSITIVE_INT_PARSER, help='      Specifies the number of shards across which to distribute test cases. The\n      shards are run in parallel on separate devices. For example, if your test\n      execution contains 20 test cases and you specify four shards, the\n      instrumentation command passes arguments of `-e numShards 4` to\n      AndroidJUnitRunner and each shard executes about five test cases. Based on\n      the sharding mechanism AndroidJUnitRunner uses, there is no guarantee that\n      test cases will be distributed with perfect uniformity.\n\n      The number of shards specified must always be a positive number that is no\n      greater than the total number of test cases. When you select one or more\n      physical devices, the number of shards specified must be <= 50. When you\n      select one or more Arm virtual devices, the number of shards specified\n      must be <= 200. When you select only x86 virtual devices, the number of\n      shards specified must be <= 500.\n      ')
+    sharding_options.add_argument('--test-targets-for-shard', metavar='TEST_TARGETS_FOR_SHARD', action='append', help='      Specifies a group of packages, classes, and/or test cases to run in\n      each shard (a group of test cases). Each time this flag is repeated, it\n      creates a new shard. The shards are run in parallel on separate devices.\n      You can repeat this flag up to 50 times when you select one or more\n      physical devices, up to 200 times when you select one or more Arm virtual\n      devices, and up to 500 times when you select only x86 virtual devices.\n\n      Note: If you include the flags *--environment-variable* or\n      *--test-targets* when running *--test-targets-for-shard*, the former flags\n      are applied to all of the shards you create.\n\n      Examples:\n\n      You can also specify multiple packages, classes, or test cases in the\n      same shard by separating each item with a comma. For example:\n\n      ```\n      --test-targets-for-shard\n      "package com.package1.for.shard1,com.package2.for.shard1"\n      ```\n\n      ```\n      --test-targets-for-shard\n      "class com.foo.ClassForShard2#testMethod1,com.foo.ClassForShard2#testMethod2"\n      ```\n\n      To specify both package and class in the same shard, separate `package`\n      and `class` with semicolons:\n\n      ```\n      --test-targets-for-shard\n      "class com.foo.ClassForShard3;package com.package.for.shard3"\n      ```\n      ')
+    parser.add_argument('--grant-permissions', metavar='PERMISSIONS', help='Whether to grant runtime permissions on the device before the test begins. By default, all permissions are granted.', default=None, choices=['all', 'none'])
+    parser.add_argument('--resign', category=ANDROID_ROBO_TEST, action='store_true', default=None, help='Make Robo re-sign the app-under-test APK for a higher quality crawl. If your app cannot properly function when re-signed, disable this feature. When an app-under-test APK is not re-signed, Robo crawl is slower and Robo has access to less information about the state of the crawled app, which reduces crawl quality. Consequently, if your Roboscript has actions on elements of RecyclerView or AdapterView, and you disable APK re-signing, those actions might require manual tweaking because Robo does not identify RecyclerView and AdapterView in this mode. Enabled by default, use `--no-resign` to disable.')

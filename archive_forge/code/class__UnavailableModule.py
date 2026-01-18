@@ -1,0 +1,62 @@
+import contextlib
+import warnings
+from cupy._environment import get_cuda_path  # NOQA
+from cupy._environment import get_nvcc_path  # NOQA
+from cupy._environment import get_rocm_path  # NOQA
+from cupy._environment import get_hipcc_path  # NOQA
+from cupy.cuda import compiler  # NOQA
+from cupy.cuda import device  # NOQA
+from cupy.cuda import function  # NOQA
+from cupy.cuda import memory  # NOQA
+from cupy.cuda import memory_hook  # NOQA
+from cupy.cuda import memory_hooks  # NOQA
+from cupy.cuda import pinned_memory  # NOQA
+from cupy.cuda import stream  # NOQA
+from cupy.cuda import texture  # NOQA
+from cupy_backends.cuda.api import driver  # NOQA
+from cupy_backends.cuda.api import runtime  # NOQA
+from cupy_backends.cuda.libs import cublas  # NOQA
+from cupy_backends.cuda.libs import curand  # NOQA
+from cupy_backends.cuda.libs import cusolver  # NOQA
+from cupy_backends.cuda.libs import cusparse  # NOQA
+from cupy_backends.cuda.libs import nvrtc  # NOQA
+from cupy_backends.cuda.libs import profiler  # NOQA
+from cupy.cuda import cub  # NOQA
+from cupy.cuda.device import Device  # NOQA
+from cupy.cuda.device import get_cublas_handle  # NOQA
+from cupy.cuda.device import get_device_id  # NOQA
+from cupy.cuda.function import Function  # NOQA
+from cupy.cuda.function import Module  # NOQA
+from cupy.cuda.memory import alloc  # NOQA
+from cupy.cuda.memory import BaseMemory  # NOQA
+from cupy.cuda.memory import malloc_managed  # NOQA
+from cupy.cuda.memory import malloc_async  # NOQA
+from cupy.cuda.memory import ManagedMemory  # NOQA
+from cupy.cuda.memory import Memory  # NOQA
+from cupy.cuda.memory import MemoryAsync  # NOQA
+from cupy.cuda.memory import MemoryPointer  # NOQA
+from cupy.cuda.memory import MemoryPool  # NOQA
+from cupy.cuda.memory import MemoryAsyncPool  # NOQA
+from cupy.cuda.memory import PythonFunctionAllocator  # NOQA
+from cupy.cuda.memory import CFunctionAllocator  # NOQA
+from cupy.cuda.memory import set_allocator  # NOQA
+from cupy.cuda.memory import get_allocator  # NOQA
+from cupy.cuda.memory import UnownedMemory  # NOQA
+from cupy.cuda.memory_hook import MemoryHook  # NOQA
+from cupy.cuda.pinned_memory import alloc_pinned_memory  # NOQA
+from cupy.cuda.pinned_memory import PinnedMemory  # NOQA
+from cupy.cuda.pinned_memory import PinnedMemoryPointer  # NOQA
+from cupy.cuda.pinned_memory import PinnedMemoryPool  # NOQA
+from cupy.cuda.pinned_memory import set_pinned_memory_allocator  # NOQA
+from cupy.cuda.stream import Event  # NOQA
+from cupy.cuda.stream import get_current_stream  # NOQA
+from cupy.cuda.stream import get_elapsed_time  # NOQA
+from cupy.cuda.stream import Stream  # NOQA
+from cupy.cuda.stream import ExternalStream  # NOQA
+from cupy.cuda.graph import Graph  # NOQA
+from cupy.cuda.compiler import compile_with_cache  # NOQA
+class _UnavailableModule:
+    available = False
+
+    def __init__(self, name):
+        self.__name__ = name

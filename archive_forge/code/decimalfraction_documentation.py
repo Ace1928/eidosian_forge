@@ -1,0 +1,1 @@
+Returns the string with decimal separators normalized.

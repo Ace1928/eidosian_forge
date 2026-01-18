@@ -1,0 +1,16 @@
+import flask_restful
+import functools
+import http.client
+from oslo_log import log
+from keystone.api._shared import json_home_relations
+from keystone.common import json_home
+from keystone.common import provider_api
+from keystone.common import rbac_enforcer
+from keystone import exception
+from keystone.server import flask as ks_flask
+class OSInheritAPI(ks_flask.APIBase):
+    _name = 'OS-INHERIT'
+    _import_name = __name__
+    _api_url_prefix = '/OS-INHERIT'
+    resources = []
+    resource_mapping = [ks_flask.construct_resource_map(resource=OSInheritDomainGroupRolesResource, url='/domains/<string:domain_id>/groups/<string:group_id>/roles/<string:role_id>/inherited_to_projects', resource_kwargs={}, rel='domain_group_role_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'domain_id': json_home.Parameters.DOMAIN_ID, 'group_id': json_home.Parameters.GROUP_ID, 'role_id': json_home.Parameters.ROLE_ID}), ks_flask.construct_resource_map(resource=OSInheritDomainGroupRolesListResource, url='/domains/<string:domain_id>/groups/<string:group_id>/roles/inherited_to_projects', resource_kwargs={}, rel='domain_group_roles_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'domain_id': json_home.Parameters.DOMAIN_ID, 'group_id': json_home.Parameters.GROUP_ID}), ks_flask.construct_resource_map(resource=OSInheritDomainUserRolesResource, url='/domains/<string:domain_id>/users/<string:user_id>/roles/<string:role_id>/inherited_to_projects', resource_kwargs={}, rel='domain_user_role_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'domain_id': json_home.Parameters.DOMAIN_ID, 'user_id': json_home.Parameters.USER_ID, 'role_id': json_home.Parameters.ROLE_ID}), ks_flask.construct_resource_map(resource=OSInheritDomainUserRolesListResource, url='/domains/<string:domain_id>/users/<string:user_id>/roles/inherited_to_projects', resource_kwargs={}, rel='domain_user_roles_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'domain_id': json_home.Parameters.DOMAIN_ID, 'user_id': json_home.Parameters.USER_ID}), ks_flask.construct_resource_map(resource=OSInheritProjectUserResource, url='projects/<string:project_id>/users/<string:user_id>/roles/<string:role_id>/inherited_to_projects', resource_kwargs={}, rel='project_user_role_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'project_id': json_home.Parameters.PROJECT_ID, 'user_id': json_home.Parameters.USER_ID, 'role_id': json_home.Parameters.ROLE_ID}), ks_flask.construct_resource_map(resource=OSInheritProjectGroupResource, url='projects/<string:project_id>/groups/<string:group_id>/roles/<string:role_id>/inherited_to_projects', resource_kwargs={}, rel='project_group_role_inherited_to_projects', resource_relation_func=_build_resource_relation, path_vars={'project_id': json_home.Parameters.PROJECT_ID, 'group_id': json_home.Parameters.GROUP_ID, 'role_id': json_home.Parameters.ROLE_ID})]

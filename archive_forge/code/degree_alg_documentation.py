@@ -1,0 +1,41 @@
+import networkx as nx
+from networkx.utils.decorators import not_implemented_for
+Compute the out-degree centrality for nodes.
+
+    The out-degree centrality for a node v is the fraction of nodes its
+    outgoing edges are connected to.
+
+    Parameters
+    ----------
+    G : graph
+        A NetworkX graph
+
+    Returns
+    -------
+    nodes : dictionary
+        Dictionary of nodes with out-degree centrality as values.
+
+    Raises
+    ------
+    NetworkXNotImplemented
+        If G is undirected.
+
+    Examples
+    --------
+    >>> G = nx.DiGraph([(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)])
+    >>> nx.out_degree_centrality(G)
+    {0: 1.0, 1: 0.6666666666666666, 2: 0.0, 3: 0.0}
+
+    See Also
+    --------
+    degree_centrality, in_degree_centrality
+
+    Notes
+    -----
+    The degree centrality values are normalized by dividing by the maximum
+    possible degree in a simple graph n-1 where n is the number of nodes in G.
+
+    For multigraphs or graphs with self loops the maximum degree might
+    be higher than n-1 and values of degree centrality greater than 1
+    are possible.
+    

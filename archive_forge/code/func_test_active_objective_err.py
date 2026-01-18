@@ -1,0 +1,13 @@
+import pyomo.common.unittest as unittest
+from pyomo.environ import (
+from pyomo.gdp import GDP_Error
+from pyomo.gdp.plugins.cuttingplane import create_cuts_fme
+import pyomo.opt
+import pyomo.gdp.tests.models as models
+from pyomo.repn import generate_standard_repn
+from pyomo.gdp.tests.common_tests import diff_apply_to_and_create_using
+@unittest.skipIf('ipopt' not in solvers, 'Ipopt solver not available')
+def test_active_objective_err(self):
+    m = models.makeTwoTermDisj_boxes()
+    m.obj.deactivate()
+    self.assertRaisesRegex(GDP_Error, 'Cannot apply cutting planes transformation without an active objective in the model*', TransformationFactory('gdp.cuttingplane').apply_to, m)

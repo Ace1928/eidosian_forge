@@ -1,0 +1,17 @@
+import pickle
+from pyomo.common.dependencies import dill
+from pyomo.environ import (
+from pyomo.gdp import Disjunct, Disjunction, GDP_Error
+from pyomo.core.expr.compare import assertExpressionsEqual
+from pyomo.core.base import constraint, ComponentUID
+from pyomo.core.base.block import _BlockData
+from pyomo.repn import generate_standard_repn
+import pyomo.core.expr as EXPR
+import pyomo.gdp.tests.models as models
+from io import StringIO
+import random
+import pyomo.opt
+def check_disjunction_target_err(self, transformation, **kwargs):
+    m = models.makeNestedDisjunctions()
+    m.simpledisjunct.innerdisjunction.deactivate()
+    self.assertRaisesRegex(GDP_Error, "Found active disjunct 'simpledisjunct.innerdisjunct0' in disjunct 'simpledisjunct'!.*", TransformationFactory('gdp.%s' % transformation).apply_to, m, targets=[m.disjunction], **kwargs)

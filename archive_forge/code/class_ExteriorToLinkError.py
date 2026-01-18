@@ -1,0 +1,2 @@
+class ExteriorToLinkError(Exception):
+    pass

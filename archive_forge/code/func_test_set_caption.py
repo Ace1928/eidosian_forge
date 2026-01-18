@@ -1,0 +1,13 @@
+import unittest
+import os
+import sys
+import time
+import pygame, pygame.transform
+from pygame.tests.test_utils import question
+from pygame import display
+def test_set_caption(self):
+    TEST_CAPTION = 'test'
+    screen = display.set_mode((100, 100))
+    self.assertIsNone(display.set_caption(TEST_CAPTION))
+    self.assertEqual(display.get_caption()[0], TEST_CAPTION)
+    self.assertEqual(display.get_caption()[1], TEST_CAPTION)

@@ -1,0 +1,17 @@
+import json
+from typing import Optional, Type
+from langchain_core.callbacks import AsyncCallbackManagerForToolRun
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_community.tools.ainetwork.base import AINBaseTool
+class AINTransfer(AINBaseTool):
+    """Tool for transfer operations."""
+    name: str = 'AINtransfer'
+    description: str = 'Transfers AIN to a specified address'
+    args_schema: Type[TransferSchema] = TransferSchema
+
+    async def _arun(self, address: str, amount: int, run_manager: Optional[AsyncCallbackManagerForToolRun]=None) -> str:
+        try:
+            res = await self.interface.wallet.transfer(address, amount, nonce=-1)
+            return json.dumps(res, ensure_ascii=False)
+        except Exception as e:
+            return f'{type(e).__name__}: {str(e)}'

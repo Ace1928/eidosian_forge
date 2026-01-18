@@ -1,0 +1,13 @@
+import boto.exception
+from boto.compat import json
+import requests
+import boto
+def clear_sdf(self):
+    """
+        Clear the working documents from this DocumentServiceConnection
+
+        This should be used after :func:`commit` if the connection will be reused
+        for another set of documents.
+        """
+    self._sdf = None
+    self.documents_batch = []

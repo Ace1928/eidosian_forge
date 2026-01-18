@@ -1,0 +1,84 @@
+from abc import ABCMeta
+import os
+import logging
+import threading
+import warnings
+import re
+import sys
+from copy import copy as _copy
+from operator import attrgetter
+from typing import cast, Callable, ItemsView, List, Optional, Dict, Any, \
+from xml.etree.ElementTree import Element, ParseError
+from elementpath import XPathToken, SchemaElementNode, build_schema_node_tree
+from ..exceptions import XMLSchemaTypeError, XMLSchemaKeyError, XMLSchemaRuntimeError, \
+from ..names import VC_MIN_VERSION, VC_MAX_VERSION, VC_TYPE_AVAILABLE, \
+from ..aliases import ElementType, XMLSourceType, NamespacesType, LocationsType, \
+from ..translation import gettext as _
+from ..helpers import prune_etree, get_namespace, get_qname, is_defuse_error
+from ..namespaces import NamespaceResourcesMap, NamespaceView
+from ..resources import is_local_url, is_remote_url, url_path_is_file, \
+from ..converters import XMLSchemaConverter
+from ..xpath import XsdSchemaProtocol, XMLSchemaProxy, ElementPathMixin
+from .. import dataobjects
+from .exceptions import XMLSchemaParseError, XMLSchemaValidationError, XMLSchemaEncodeError, \
+from .helpers import get_xsd_derivation_attribute
+from .xsdbase import check_validation_mode, XsdValidator, XsdComponent, XsdAnnotation
+from .notations import XsdNotation
+from .identities import XsdIdentity, XsdKey, XsdKeyref, XsdUnique, \
+from .facets import XSD_10_FACETS, XSD_11_FACETS
+from .simple_types import XsdSimpleType, XsdList, XsdUnion, XsdAtomicRestriction, \
+from .attributes import XsdAttribute, XsdAttributeGroup, Xsd11Attribute
+from .complex_types import XsdComplexType, Xsd11ComplexType
+from .groups import XsdGroup, Xsd11Group
+from .elements import XsdElement, Xsd11Element
+from .wildcards import XsdAnyElement, XsdAnyAttribute, Xsd11AnyElement, \
+from .global_maps import XsdGlobals
+class XMLSchema11(XMLSchemaBase):
+    """
+    XSD 1.1 schema class.
+
+    <schema
+      attributeFormDefault = (qualified | unqualified) : unqualified
+      blockDefault = (#all | List of (extension | restriction | substitution)) : ''
+      defaultAttributes = QName
+      xpathDefaultNamespace = (anyURI | (##defaultNamespace | ##targetNamespace| ##local)) : ##local
+      elementFormDefault = (qualified | unqualified) : unqualified
+      finalDefault = (#all | List of (extension | restriction | list | union))  : ''
+      id = ID
+      targetNamespace = anyURI
+      version = token
+      xml:lang = language
+      {any attributes with non-schema namespace . . .}>
+      Content: ((include | import | redefine | override | annotation)*,
+      (defaultOpenContent, annotation*)?, ((simpleType | complexType |
+      group | attributeGroup | element | attribute | notation), annotation*)*)
+    </schema>
+
+    <schema
+      attributeFormDefault = (qualified | unqualified) : unqualified
+      blockDefault = (#all | List of (extension | restriction | substitution))  : ''
+      elementFormDefault = (qualified | unqualified) : unqualified
+      finalDefault = (#all | List of (extension | restriction | list | union))  : ''
+      id = ID
+      targetNamespace = anyURI
+      version = token
+      xml:lang = language
+      {any attributes with non-schema namespace . . .}>
+      Content: ((include | import | redefine | annotation)*, (((simpleType | complexType | group |
+      attributeGroup) | element | attribute | notation), annotation*)*)
+    </schema>
+    """
+    meta_schema = os.path.join(SCHEMAS_DIR, 'XSD_1.1/XMLSchema.xsd')
+    XSD_VERSION = '1.1'
+    BASE_SCHEMAS = {XML_NAMESPACE: os.path.join(SCHEMAS_DIR, 'XML/xml_minimal.xsd'), XSI_NAMESPACE: os.path.join(SCHEMAS_DIR, 'XSI/XMLSchema-instance_minimal.xsd'), XSD_NAMESPACE: os.path.join(SCHEMAS_DIR, 'XSD_1.1/xsd11-extra.xsd'), VC_NAMESPACE: os.path.join(SCHEMAS_DIR, 'VC/XMLSchema-versioning.xsd')}
+    xsd_complex_type_class = Xsd11ComplexType
+    xsd_attribute_class = Xsd11Attribute
+    xsd_any_attribute_class = Xsd11AnyAttribute
+    xsd_group_class = Xsd11Group
+    xsd_element_class = Xsd11Element
+    xsd_any_class = Xsd11AnyElement
+    xsd_atomic_restriction_class = Xsd11AtomicRestriction
+    xsd_union_class = Xsd11Union
+    xsd_key_class = Xsd11Key
+    xsd_keyref_class = Xsd11Keyref
+    xsd_unique_class = Xsd11Unique

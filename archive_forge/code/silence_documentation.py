@@ -1,0 +1,3 @@
+import itertools
+from .utils import db_to_float
+s -> (s0,s1), (s1,s2), (s2, s3), ...

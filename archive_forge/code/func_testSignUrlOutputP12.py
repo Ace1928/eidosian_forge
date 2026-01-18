@@ -1,0 +1,36 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from datetime import datetime
+from datetime import timedelta
+import os
+import pkgutil
+import boto
+import gslib.commands.signurl
+from gslib.commands.signurl import HAVE_OPENSSL
+from gslib.exception import CommandException
+from gslib.gcs_json_api import GcsJsonApi
+from gslib.iamcredentials_api import IamcredentailsApi
+from gslib.impersonation_credentials import ImpersonationCredentials
+import gslib.tests.testcase as testcase
+from gslib.tests.testcase.integration_testcase import (SkipForS3, SkipForXML)
+from gslib.tests.util import ObjectToURI as suri
+from gslib.tests.util import SetBotoConfigForTest
+from gslib.tests.util import SetEnvironmentForTest
+from gslib.tests.util import unittest
+import gslib.tests.signurl_signatures as sigs
+from oauth2client import client
+from oauth2client.service_account import ServiceAccountCredentials
+from six import add_move, MovedModule
+from six.moves import mock
+def testSignUrlOutputP12(self):
+    """Tests signurl output of a sample object with pkcs12 keystore."""
+    bucket_uri = self.CreateBucket()
+    object_uri = self.CreateObject(bucket_uri=bucket_uri, contents=b'z')
+    cmd = ['signurl', '-p', 'notasecret', '-m', 'PUT', self._GetKsFile(), suri(object_uri)]
+    stdout = self.RunGsUtil(cmd, return_stdout=True)
+    self.assertIn('x-goog-credential=test.apps.googleusercontent.com', stdout)
+    self.assertIn('x-goog-expires=3600', stdout)
+    self.assertIn('%2Fus-central1%2F', stdout)
+    self.assertIn('\tPUT\t', stdout)

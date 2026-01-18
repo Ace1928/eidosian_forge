@@ -1,0 +1,25 @@
+import collections
+import weakref
+import gc
+import operator
+from itertools import takewhile
+import unittest
+from numba import njit, jit
+from numba.core.compiler import CompilerBase, DefaultPassBuilder
+from numba.core.untyped_passes import PreserveIR
+from numba.core.typed_passes import IRLegalization
+from numba.core import types, ir
+from numba.tests.support import TestCase, override_config, SerialMixin
+def assertRecordOrder(self, rec, expected):
+    """
+        Check that the *expected* markers occur in that order in *rec*'s
+        recorded events.
+        """
+    actual = []
+    recorded = rec.recorded
+    remaining = list(expected)
+    for d in recorded:
+        if d in remaining:
+            actual.append(d)
+            remaining.remove(d)
+    self.assertEqual(actual, expected, 'the full list of recorded events is: %r' % (recorded,))

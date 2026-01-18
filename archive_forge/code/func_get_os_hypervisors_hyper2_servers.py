@@ -1,0 +1,15 @@
+import copy
+import datetime
+import re
+from unittest import mock
+from urllib import parse
+from oslo_utils import strutils
+import novaclient
+from novaclient import api_versions
+from novaclient import client as base_client
+from novaclient import exceptions
+from novaclient.tests.unit import fakes
+from novaclient.tests.unit import utils
+from novaclient.v2 import client
+def get_os_hypervisors_hyper2_servers(self, **kw):
+    return (200, {}, {'hypervisors': [{'id': 5678, 'hypervisor_hostname': 'hyper2', 'servers': [{'name': 'inst3', 'uuid': 'uuid3'}, {'name': 'inst4', 'uuid': 'uuid4'}]}]})

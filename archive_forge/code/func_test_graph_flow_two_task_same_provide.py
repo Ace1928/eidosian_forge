@@ -1,0 +1,11 @@
+from taskflow import exceptions as exc
+from taskflow.patterns import graph_flow as gf
+from taskflow import retry
+from taskflow import test
+from taskflow.tests import utils
+def test_graph_flow_two_task_same_provide(self):
+    task1 = _task(name='task1', provides=['a', 'b'])
+    task2 = _task(name='task2', provides=['a', 'c'])
+    f = gf.Flow('test')
+    f.add(task2, task1)
+    self.assertEqual(set(['a', 'b', 'c']), f.provides)

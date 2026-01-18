@@ -1,0 +1,12 @@
+import unittest
+import webtest
+from wsme import WSRoot, expose, validate
+from wsme.rest import scan_api
+from wsme import types
+from wsme import exc
+import wsme.api as wsme_api
+import wsme.types
+from wsme.tests.test_protocols import DummyProtocol
+def _test_format_exception(self, exception, debug=False):
+    fake_exc_info = (None, exception, None)
+    return wsme_api.format_exception(fake_exc_info, debug=debug)

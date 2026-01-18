@@ -1,0 +1,11 @@
+from datetime import datetime
+from .. import errors
+from .. import utils
+from ..constants import DEFAULT_DATA_CHUNK_SIZE
+from ..types import CancellableStream
+from ..types import ContainerConfig
+from ..types import EndpointConfig
+from ..types import HostConfig
+from ..types import NetworkingConfig
+def create_container_config(self, *args, **kwargs):
+    return ContainerConfig(self._version, *args, **kwargs)

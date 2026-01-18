@@ -1,0 +1,17 @@
+import functools
+import itertools
+import math
+import numpy
+from numpy.testing import (assert_equal, assert_allclose,
+import pytest
+from pytest import raises as assert_raises
+from scipy import ndimage
+from scipy.ndimage._filters import _gaussian_kernel1d
+from . import types, float_types, complex_types
+def test_minimum_filter07(self):
+    array = numpy.array([[3, 2, 5, 1, 4], [7, 6, 9, 3, 5], [5, 8, 3, 7, 1]])
+    footprint = [[1, 0, 1], [1, 1, 0]]
+    output = ndimage.minimum_filter(array, footprint=footprint)
+    assert_array_almost_equal([[2, 2, 1, 1, 1], [2, 3, 1, 3, 1], [5, 5, 3, 3, 1]], output)
+    with assert_raises(RuntimeError):
+        ndimage.minimum_filter(array, footprint=footprint, mode=['reflect', 'constant'])

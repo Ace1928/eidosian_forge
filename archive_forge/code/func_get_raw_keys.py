@@ -1,0 +1,11 @@
+from copy import deepcopy
+def get_raw_keys(self):
+    """
+        Returns a DynamoDB-style dict of the keys/values.
+
+        Largely internal.
+        """
+    raw_key_data = {}
+    for key, value in self.get_keys().items():
+        raw_key_data[key] = self._dynamizer.encode(value)
+    return raw_key_data

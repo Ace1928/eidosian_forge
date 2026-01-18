@@ -1,0 +1,20 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def create_instance_profile(self, instance_profile_name, path=None):
+    """
+        Creates a new instance profile.
+
+        :type instance_profile_name: string
+        :param instance_profile_name: Name of the instance profile to create.
+
+        :type path: string
+        :param path: The path to the instance profile.
+        """
+    params = {'InstanceProfileName': instance_profile_name}
+    if path is not None:
+        params['Path'] = path
+    return self.get_response('CreateInstanceProfile', params)

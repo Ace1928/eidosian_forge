@@ -1,0 +1,47 @@
+import glob
+import os
+import os.path
+import re
+import warnings
+from ..base import (
+from .base import aggregate_filename
+class CalcInputSpec(CommandLineInputSpec):
+    _xor_input_files = ('input_files', 'filelist')
+    input_files = InputMultiPath(File(exists=True), desc='input file(s) for calculation', mandatory=True, sep=' ', argstr='%s', position=-2)
+    output_file = File(desc='output file', genfile=True, argstr='%s', position=-1, name_source=['input_files'], hash_files=False, name_template='%s_calc.mnc')
+    two = traits.Bool(desc='Create a MINC 2 output file.', argstr='-2')
+    clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
+    _xor_verbose = ('verbose', 'quiet')
+    verbose = traits.Bool(desc='Print out log messages (default).', argstr='-verbose', xor=_xor_verbose)
+    quiet = traits.Bool(desc='Do not print out log messages.', argstr='-quiet', xor=_xor_verbose)
+    debug = traits.Bool(desc='Print out debugging messages.', argstr='-debug')
+    filelist = File(desc='Specify the name of a file containing input file names.', argstr='-filelist %s', mandatory=True, xor=_xor_input_files)
+    _xor_copy_header = ('copy_header', 'no_copy_header')
+    copy_header = traits.Bool(desc='Copy all of the header from the first file.', argstr='-copy_header', xor=_xor_copy_header)
+    no_copy_header = traits.Bool(desc='Do not copy all of the header from the first file.', argstr='-nocopy_header', xor=_xor_copy_header)
+    _xor_format = ('format_filetype', 'format_byte', 'format_short', 'format_int', 'format_long', 'format_float', 'format_double', 'format_signed', 'format_unsigned')
+    format_filetype = traits.Bool(desc='Use data type of first file (default).', argstr='-filetype', xor=_xor_format)
+    format_byte = traits.Bool(desc='Write out byte data.', argstr='-byte', xor=_xor_format)
+    format_short = traits.Bool(desc='Write out short integer data.', argstr='-short', xor=_xor_format)
+    format_int = traits.Bool(desc='Write out 32-bit integer data.', argstr='-int', xor=_xor_format)
+    format_long = traits.Bool(desc='Superseded by -int.', argstr='-long', xor=_xor_format)
+    format_float = traits.Bool(desc='Write out single-precision floating-point data.', argstr='-float', xor=_xor_format)
+    format_double = traits.Bool(desc='Write out double-precision floating-point data.', argstr='-double', xor=_xor_format)
+    format_signed = traits.Bool(desc='Write signed integer data.', argstr='-signed', xor=_xor_format)
+    format_unsigned = traits.Bool(desc='Write unsigned integer data (default).', argstr='-unsigned', xor=_xor_format)
+    voxel_range = traits.Tuple(traits.Int, traits.Int, argstr='-range %d %d', desc='Valid range for output data.')
+    max_buffer_size_in_kb = traits.Range(low=0, desc='Specify the maximum size of the internal buffers (in kbytes).', argstr='-max_buffer_size_in_kb %d')
+    _xor_check_dimensions = ('check_dimensions', 'no_check_dimensions')
+    check_dimensions = traits.Bool(desc='Check that files have matching dimensions (default).', argstr='-check_dimensions', xor=_xor_check_dimensions)
+    no_check_dimensions = traits.Bool(desc='Do not check that files have matching dimensions.', argstr='-nocheck_dimensions', xor=_xor_check_dimensions)
+    ignore_nan = traits.Bool(desc='Ignore invalid data (NaN) for accumulations.', argstr='-ignore_nan')
+    propagate_nan = traits.Bool(desc='Invalid data in any file at a voxel produces a NaN (default).', argstr='-propagate_nan')
+    _xor_nan_zero_illegal = ('output_nan', 'output_zero', 'output_illegal_value')
+    output_nan = traits.Bool(desc='Output NaN when an illegal operation is done (default).', argstr='-nan', xor=_xor_nan_zero_illegal)
+    output_zero = traits.Bool(desc='Output zero when an illegal operation is done.', argstr='-zero', xor=_xor_nan_zero_illegal)
+    output_illegal = traits.Bool(desc='Value to write out when an illegal operation is done. Default value: 1.79769e+308', argstr='-illegal_value', xor=_xor_nan_zero_illegal)
+    _xor_expression = ('expression', 'expfile')
+    expression = traits.Str(desc='Expression to use in calculations.', argstr="-expression '%s'", xor=_xor_expression, mandatory=True)
+    expfile = File(desc='Name of file containing expression.', argstr='-expfile %s', xor=_xor_expression, mandatory=True)
+    outfiles = traits.List(traits.Tuple(traits.Str, File, argstr='-outfile %s %s', desc='List of (symbol, file) tuples indicating that output should be writtento the specified file, taking values from the symbol which should becreated in the expression (see the EXAMPLES section). If this optionis given, then all non-option arguments are taken as input files.This option can be used multiple times for multiple output files.'))
+    eval_width = traits.Int(desc='Number of voxels to evaluate simultaneously.', argstr='-eval_width %s')

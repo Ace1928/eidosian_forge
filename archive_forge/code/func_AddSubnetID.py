@@ -1,0 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.container.gkemulticloud import util as api_util
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.command_lib.container.gkemulticloud import constants
+from googlecloudsdk.command_lib.projects import util as project_util
+from googlecloudsdk.command_lib.util.apis import arg_utils
+from googlecloudsdk.core import properties
+def AddSubnetID(parser, help_text, required=True):
+    """Add the --subnet-id flag."""
+    parser.add_argument('--subnet-id', required=required, help='Subnet ID of an existing VNET to use for {}.'.format(help_text))

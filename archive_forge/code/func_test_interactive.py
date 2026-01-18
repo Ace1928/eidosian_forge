@@ -1,0 +1,31 @@
+import code
+import os
+import sys
+import tempfile
+import io
+from typing import cast
+import unittest
+from contextlib import contextmanager
+from functools import partial
+from unittest import mock
+from bpython.curtsiesfrontend import repl as curtsiesrepl
+from bpython.curtsiesfrontend import interpreter
+from bpython.curtsiesfrontend import events as bpythonevents
+from bpython.curtsiesfrontend.repl import LineType
+from bpython import autocomplete
+from bpython import config
+from bpython import args
+from bpython.test import (
+from curtsies import events
+from curtsies.window import CursorAwareWindow
+from importlib import invalidate_caches
+def test_interactive(self):
+    interp = code.InteractiveInterpreter(locals={})
+    with captured_output() as (out, err):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py') as f:
+            f.write('print(1/2)\n')
+            f.flush()
+            args.exec_code(interp, [f.name])
+        repl = create_repl(interp=interp)
+        repl.push('1 / 2')
+    self.assertEqual(out.getvalue(), '0.5\n0.5\n')

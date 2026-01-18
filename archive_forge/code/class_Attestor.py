@@ -1,0 +1,24 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+class Attestor(_messages.Message):
+    """An attestor that attests to container image artifacts. An existing
+  attestor cannot be modified except where indicated.
+
+  Fields:
+    description: Optional. A descriptive comment. This field may be updated.
+      The field may be displayed in chooser dialogs.
+    etag: Optional. A checksum, returned by the server, that can be sent on
+      update requests to ensure the attestor has an up-to-date value before
+      attempting to update it. See https://google.aip.dev/154.
+    name: Required. The resource name, in the format:
+      `projects/*/attestors/*`. This field may not be updated.
+    updateTime: Output only. Time when the attestor was last updated.
+    userOwnedDrydockNote: A Drydock ATTESTATION_AUTHORITY Note, created by the
+      user.
+  """
+    description = _messages.StringField(1)
+    etag = _messages.StringField(2)
+    name = _messages.StringField(3)
+    updateTime = _messages.StringField(4)
+    userOwnedDrydockNote = _messages.MessageField('UserOwnedDrydockNote', 5)

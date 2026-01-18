@@ -1,0 +1,2 @@
+class BadRequiredStrength(Exception):
+    pass

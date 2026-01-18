@@ -1,0 +1,96 @@
+import copy
+import datetime
+import random
+from unittest import mock
+import uuid
+from openstackclient.tests.unit.identity.v3 import fakes as identity_fakes
+from manilaclient.tests.unit.osc import osc_fakes
+from manilaclient.tests.unit.osc import osc_utils
+class FakeShare(object):
+    """Fake one or more shares."""
+
+    @staticmethod
+    def create_one_share(attrs=None, methods=None):
+        """Create a fake share.
+
+        :param Dictionary attrs:
+            A dictionary with all attributes
+        :return:
+            A FakeResource object, with flavor_id, image_id, and so on
+        """
+        attrs = attrs or {}
+        methods = methods or {}
+        share_info = {'status': None, 'share_server_id': None, 'project_id': 'project-id-' + uuid.uuid4().hex, 'name': 'share-name-' + uuid.uuid4().hex, 'share_type': 'share-type-' + uuid.uuid4().hex, 'share_type_name': 'default', 'availability_zone': None, 'created_at': 'time-' + uuid.uuid4().hex, 'share_network_id': None, 'share_group_id': None, 'share_proto': 'NFS', 'host': None, 'access_rules_status': 'active', 'has_replicas': False, 'replication_type': None, 'task_state': None, 'snapshot_support': True, 'snapshot_id': None, 'is_public': True, 'metadata': {}, 'id': 'share-id-' + uuid.uuid4().hex, 'size': random.randint(1, 20), 'description': 'share-description-' + uuid.uuid4().hex, 'user_id': 'share-user-id-' + uuid.uuid4().hex, 'create_share_from_snapshot_support': False, 'mount_snapshot_support': False, 'revert_to_snapshot_support': False, 'source_share_group_snapshot_member_id': None, 'scheduler_hints': {}}
+        share_info.update(attrs)
+        share = osc_fakes.FakeResource(info=copy.deepcopy(share_info), methods=methods, loaded=True)
+        return share
+
+    @staticmethod
+    def create_shares(attrs=None, count=2):
+        """Create multiple fake shares.
+
+        :param Dictionary attrs:
+            A dictionary with all share attributes
+        :param Integer count:
+            The number of shares to be faked
+        :return:
+            A list of FakeResource objects
+        """
+        shares = []
+        for n in range(0, count):
+            shares.append(FakeShare.create_one_share(attrs))
+        return shares
+
+    @staticmethod
+    def get_shares(shares=None, count=2):
+        """Get an iterable MagicMock object with a list of faked shares.
+
+        If a shares list is provided, then initialize the Mock object with the
+        list. Otherwise create one.
+        :param List shares:
+            A list of FakeResource objects faking shares
+        :param Integer count:
+            The number of shares to be faked
+        :return
+            An iterable Mock object with side_effect set to a list of faked
+            shares
+        """
+        if shares is None:
+            shares = FakeShare.create_shares(count)
+        return mock.Mock(side_effect=shares)
+
+    @staticmethod
+    def get_share_columns(share=None):
+        """Get the shares columns from a faked shares object.
+
+        :param shares:
+            A FakeResource objects faking shares
+        :return
+            A tuple which may include the following keys:
+            ('id', 'name', 'description', 'status', 'size', 'share_type',
+             'metadata', 'snapshot', 'availability_zone')
+        """
+        if share is not None:
+            return tuple((k for k in sorted(share.keys())))
+        return tuple([])
+
+    @staticmethod
+    def get_share_data(share=None):
+        """Get the shares data from a faked shares object.
+
+        :param shares:
+            A FakeResource objects faking shares
+        :return
+            A tuple which may include the following values:
+            ('ce26708d', 'fake name', 'fake description', 'available',
+             20, 'fake share type', "Manila='zorilla', Zorilla='manila',
+             Zorilla='zorilla'", 1, 'nova')
+        """
+        data_list = []
+        if share is not None:
+            for x in sorted(share.keys()):
+                if x == 'tags':
+                    data_list.append(format_columns.ListColumn(share.info.get(x)))
+                else:
+                    data_list.append(share.info.get(x))
+        return tuple(data_list)

@@ -1,0 +1,2 @@
+class YFinanceException(Exception):
+    pass

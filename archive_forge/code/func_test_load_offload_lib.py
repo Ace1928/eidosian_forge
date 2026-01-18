@@ -1,0 +1,14 @@
+import base64
+import ctypes
+import os
+import mock
+import pytest  # type: ignore
+from requests.packages.urllib3.util.ssl_ import create_urllib3_context  # type: ignore
+import urllib3.contrib.pyopenssl  # type: ignore
+from google.auth import exceptions
+from google.auth.transport import _custom_tls_signer
+def test_load_offload_lib():
+    with mock.patch('ctypes.CDLL', return_value=mock.MagicMock()):
+        lib = _custom_tls_signer.load_offload_lib('/path/to/offload/lib')
+    assert lib.ConfigureSslContext.argtypes == [_custom_tls_signer.SIGN_CALLBACK_CTYPE, ctypes.c_char_p, ctypes.c_void_p]
+    assert lib.ConfigureSslContext.restype == ctypes.c_int

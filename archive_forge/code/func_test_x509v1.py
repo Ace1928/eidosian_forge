@@ -1,0 +1,18 @@
+import unittest
+import re
+from Cryptodome.PublicKey import DSA
+from Cryptodome.SelfTest.st_common import *
+from Cryptodome.Util.py3compat import *
+from binascii import unhexlify
+def test_x509v1(self):
+    x509_v1_cert = '\n-----BEGIN CERTIFICATE-----\nMIIDUjCCArsCAQIwDQYJKoZIhvcNAQEFBQAwfjENMAsGA1UEChMEQWNtZTELMAkG\nA1UECxMCUkQxHDAaBgkqhkiG9w0BCQEWDXNwYW1AYWNtZS5vcmcxEzARBgNVBAcT\nCk1ldHJvcG9saXMxETAPBgNVBAgTCE5ldyBZb3JrMQswCQYDVQQGEwJVUzENMAsG\nA1UEAxMEdGVzdDAeFw0xNDA3MTEyMDM4NDNaFw0xNzA0MDYyMDM4NDNaME0xCzAJ\nBgNVBAYTAlVTMREwDwYDVQQIEwhOZXcgWW9yazENMAsGA1UEChMEQWNtZTELMAkG\nA1UECxMCUkQxDzANBgNVBAMTBnBvbGFuZDCCAbYwggErBgcqhkjOOAQBMIIBHgKB\ngQDOrN4Ox4+t3T6wKeHfhzArhcrNEFMQ4Ss+4PIKyimDy9Bn64WPkL1B/9dvYIga\n23GLu6tVJmXo6EdJnVOHEMhr99EeOwuDWWeP7Awq7RSlKEejokr4BEzMTW/tExSD\ncO6/GI7xzh0eTH+VTTPDfyrJMYCkh0rJAfCP+5xrmPNetwIVALtXYOV1yoRrzJ2Q\nM5uEjidH6GiZAoGAfUqA1SAm5g5U68SILMVX9l5rq0OpB0waBMpJQ31/R/yXNDqo\nc3gGWZTOJFU4IzwNpGhrGNADUByz/lc1SAOAdEJIr0JVrhbGewQjB4pWqoLGbBKz\nRoavTNDc/zD7SYa12evWDHADwvlXoeQg+lWop1zS8OqaDC7aLGKpWN3/m8kDgYQA\nAoGAKoirPAfcp1rbbl4y2FFAIktfW8f4+T7d2iKSg73aiVfujhNOt1Zz1lfC0NI2\neonLWO3tAM4XGKf1TLjb5UXngGn40okPsaA81YE6ZIKm20ywjlOY3QkAEdMaLVY3\n9PJvM8RGB9m7pLKxyHfGMfF40MVN4222zKeGp7xhM0CNiCUwDQYJKoZIhvcNAQEF\nBQADgYEAfbNZfpYa2KlALEM1FZnwvQDvJHntHz8LdeJ4WM7CXDlKi67wY2HKM30w\ns2xej75imkVOFd1kF2d0A8sjfriXLVIt1Hwq9ANZomhu4Edx0xpH8tqdh/bDtnM2\nTmduZNY9OWkb07h0CtWD6Zt8fhRllVsSSrlWd/2or7FXNC5weFQ=\n-----END CERTIFICATE-----\n        '.strip()
+    y_str = '\n2a:88:ab:3c:07:dc:a7:5a:db:6e:5e:32:d8:51:40:\n22:4b:5f:5b:c7:f8:f9:3e:dd:da:22:92:83:bd:da:\n89:57:ee:8e:13:4e:b7:56:73:d6:57:c2:d0:d2:36:\n7a:89:cb:58:ed:ed:00:ce:17:18:a7:f5:4c:b8:db:\ne5:45:e7:80:69:f8:d2:89:0f:b1:a0:3c:d5:81:3a:\n64:82:a6:db:4c:b0:8e:53:98:dd:09:00:11:d3:1a:\n2d:56:37:f4:f2:6f:33:c4:46:07:d9:bb:a4:b2:b1:\nc8:77:c6:31:f1:78:d0:c5:4d:e3:6d:b6:cc:a7:86:\na7:bc:61:33:40:8d:88:25\n        '
+    p_str = '\n00:ce:ac:de:0e:c7:8f:ad:dd:3e:b0:29:e1:df:87:\n30:2b:85:ca:cd:10:53:10:e1:2b:3e:e0:f2:0a:ca:\n29:83:cb:d0:67:eb:85:8f:90:bd:41:ff:d7:6f:60:\n88:1a:db:71:8b:bb:ab:55:26:65:e8:e8:47:49:9d:\n53:87:10:c8:6b:f7:d1:1e:3b:0b:83:59:67:8f:ec:\n0c:2a:ed:14:a5:28:47:a3:a2:4a:f8:04:4c:cc:4d:\n6f:ed:13:14:83:70:ee:bf:18:8e:f1:ce:1d:1e:4c:\n7f:95:4d:33:c3:7f:2a:c9:31:80:a4:87:4a:c9:01:\nf0:8f:fb:9c:6b:98:f3:5e:b7\n        '
+    q_str = '\n00:bb:57:60:e5:75:ca:84:6b:cc:9d:90:33:9b:84:\n8e:27:47:e8:68:99\n        '
+    g_str = '\n7d:4a:80:d5:20:26:e6:0e:54:eb:c4:88:2c:c5:57:\nf6:5e:6b:ab:43:a9:07:4c:1a:04:ca:49:43:7d:7f:\n47:fc:97:34:3a:a8:73:78:06:59:94:ce:24:55:38:\n23:3c:0d:a4:68:6b:18:d0:03:50:1c:b3:fe:57:35:\n48:03:80:74:42:48:af:42:55:ae:16:c6:7b:04:23:\n07:8a:56:aa:82:c6:6c:12:b3:46:86:af:4c:d0:dc:\nff:30:fb:49:86:b5:d9:eb:d6:0c:70:03:c2:f9:57:\na1:e4:20:fa:55:a8:a7:5c:d2:f0:ea:9a:0c:2e:da:\n2c:62:a9:58:dd:ff:9b:c9\n        '
+    key = DSA.importKey(x509_v1_cert)
+    for comp_name in ('y', 'p', 'q', 'g'):
+        comp_str = locals()[comp_name + '_str']
+        comp = int(re.sub('[^0-9a-f]', '', comp_str), 16)
+        self.assertEqual(getattr(key, comp_name), comp)
+    self.assertFalse(key.has_private())

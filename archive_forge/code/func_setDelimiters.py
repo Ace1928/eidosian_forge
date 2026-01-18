@@ -1,0 +1,20 @@
+from antlr4.CommonTokenStream import CommonTokenStream
+from antlr4.InputStream import InputStream
+from antlr4.ParserRuleContext import ParserRuleContext
+from antlr4.Lexer import Lexer
+from antlr4.ListTokenSource import ListTokenSource
+from antlr4.Token import Token
+from antlr4.error.ErrorStrategy import BailErrorStrategy
+from antlr4.error.Errors import RecognitionException, ParseCancellationException
+from antlr4.tree.Chunk import TagChunk, TextChunk
+from antlr4.tree.RuleTagToken import RuleTagToken
+from antlr4.tree.TokenTagToken import TokenTagToken
+from antlr4.tree.Tree import ParseTree, TerminalNode, RuleNode
+def setDelimiters(self, start: str, stop: str, escapeLeft: str):
+    if start is None or len(start) == 0:
+        raise Exception('start cannot be null or empty')
+    if stop is None or len(stop) == 0:
+        raise Exception('stop cannot be null or empty')
+    self.start = start
+    self.stop = stop
+    self.escape = escapeLeft

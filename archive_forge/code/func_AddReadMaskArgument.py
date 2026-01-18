@@ -1,0 +1,8 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.asset import client_util
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+def AddReadMaskArgument(parser):
+    parser.add_argument('--read-mask', metavar='READ_MASK', required=False, help='        A comma-separated list of fields specifying which fields to be returned\n        in the results. Only `"*"` or combination of top level fields can be\n        specified. Examples: `"*"`, `"name,location"`, `"name,versionedResources"`.\n\n        The read_mask paths must be valid field paths listed but not limited to\n        the following (both snake_case and camelCase are supported):\n          * `name`\n          * `asset_type` or `assetType`\n          * `project`\n          * `display_name` or `displayName`\n          * `description`\n          * `location`\n          * `labels`\n          * `tags`\n          * `effective_tags` or `effectiveTags`\n          * `network_tags` or `networkTags`\n          * `kms_keys` or `kmsKeys`\n          * `create_time` or `createTime`\n          * `update_time` or `updateTime`\n          * `state`\n          * `additional_attributes` or `additionalAttributes`\n          * `versioned_resources` or `versionedResources`\n\n        If read_mask is not specified, all fields except versionedResources\n        will be returned.\n\n        If only `"*"` is specified, all fields including versionedResources will\n        be returned.\n        ')

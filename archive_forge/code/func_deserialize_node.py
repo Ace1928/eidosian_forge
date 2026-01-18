@@ -1,0 +1,59 @@
+import copy
+import inspect
+import warnings
+import tree
+from keras.src import backend
+from keras.src import ops
+from keras.src.backend.common import global_state
+from keras.src.layers.input_spec import InputSpec
+from keras.src.layers.layer import Layer
+from keras.src.legacy.saving import saving_utils
+from keras.src.legacy.saving import serialization as legacy_serialization
+from keras.src.models.model import Model
+from keras.src.ops.function import Function
+from keras.src.ops.function import make_node_key
+from keras.src.saving import serialization_lib
+from keras.src.utils import tracking
+def deserialize_node(node_data, created_layers):
+    """Return (args, kwargs) for calling the node layer."""
+    if not node_data:
+        return ([], {})
+    if isinstance(node_data, list):
+        input_tensors = []
+        for input_data in node_data:
+            inbound_layer_name = input_data[0]
+            inbound_node_index = input_data[1]
+            inbound_tensor_index = input_data[2]
+            if len(input_data) == 3:
+                kwargs = {}
+            elif len(input_data) == 4:
+                kwargs = input_data[3]
+            else:
+                raise ValueError('Cannot deserialize the model (invalid config data?)')
+            inbound_layer = created_layers[inbound_layer_name]
+            if len(inbound_layer._inbound_nodes) <= inbound_node_index:
+                raise IndexError(f'Layer node index out of bounds.\ninbound_layer = {inbound_layer}\ninbound_layer._inbound_nodes = {inbound_layer._inbound_nodes}\ninbound_node_index = {inbound_node_index}')
+            inbound_node = inbound_layer._inbound_nodes[inbound_node_index]
+            input_tensors.append(inbound_node.output_tensors[inbound_tensor_index])
+        return ([unpack_singleton(input_tensors)], kwargs)
+    args = serialization_lib.deserialize_keras_object(node_data['args'])
+    kwargs = serialization_lib.deserialize_keras_object(node_data['kwargs'])
+
+    def convert_revived_tensor(x):
+        if isinstance(x, backend.KerasTensor):
+            history = x._pre_serialization_keras_history
+            if history is None:
+                return x
+            layer = created_layers.get(history[0], None)
+            if layer is None:
+                raise ValueError(f'Unknown layer: {history[0]}')
+            inbound_node_index = history[1]
+            inbound_tensor_index = history[2]
+            if len(layer._inbound_nodes) <= inbound_node_index:
+                raise ValueError(f'Layer node index out of bounds.\ninbound_layer = {layer}\ninbound_layer._inbound_nodes = {layer._inbound_nodes}\ninbound_node_index = {inbound_node_index}')
+            inbound_node = layer._inbound_nodes[inbound_node_index]
+            return inbound_node.output_tensors[inbound_tensor_index]
+        return x
+    args = tree.map_structure(convert_revived_tensor, args)
+    kwargs = tree.map_structure(convert_revived_tensor, kwargs)
+    return (args, kwargs)

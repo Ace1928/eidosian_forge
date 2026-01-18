@@ -1,0 +1,21 @@
+from unittest import mock
+from unittest.mock import call
+from cinderclient import api_versions
+from osc_lib.cli import format_columns
+from osc_lib import exceptions
+from osc_lib import utils
+from openstackclient.tests.unit.identity.v3 import fakes as identity_fakes
+from openstackclient.tests.unit.image.v2 import fakes as image_fakes
+from openstackclient.tests.unit import utils as test_utils
+from openstackclient.tests.unit.volume.v2 import fakes as volume_fakes
+from openstackclient.volume.v2 import volume
+def test_volume_unset_image_property(self):
+    arglist = ['--image-property', 'Alpha=a', '--image-property', 'Beta=b', self.new_volume.id]
+    verifylist = [('image_property', {'Alpha': 'a', 'Beta': 'b'}), ('volume', self.new_volume.id)]
+    parsed_args = self.check_parser(self.cmd_set, arglist, verifylist)
+    self.cmd_set.take_action(parsed_args)
+    arglist_unset = ['--image-property', 'Alpha', self.new_volume.id]
+    verifylist_unset = [('image_property', ['Alpha']), ('volume', self.new_volume.id)]
+    parsed_args_unset = self.check_parser(self.cmd_unset, arglist_unset, verifylist_unset)
+    self.cmd_unset.take_action(parsed_args_unset)
+    self.volumes_mock.delete_image_metadata.assert_called_with(self.new_volume.id, parsed_args_unset.image_property)

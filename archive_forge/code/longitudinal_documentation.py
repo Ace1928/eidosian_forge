@@ -1,0 +1,19 @@
+import os
+from ... import logging
+from ..base import TraitedSpec, File, traits, InputMultiPath, OutputMultiPath, isdefined
+from .base import FSCommand, FSTraitedSpec, FSCommandOpenMP, FSTraitedSpecOpenMP
+fuse segmentations together from multiple timepoints
+
+    Examples
+    --------
+    >>> from nipype.interfaces.freesurfer import FuseSegmentations
+    >>> fuse = FuseSegmentations()
+    >>> fuse.inputs.subject_id = 'tp.long.A.template'
+    >>> fuse.inputs.timepoints = ['tp1', 'tp2']
+    >>> fuse.inputs.out_file = 'aseg.fused.mgz'
+    >>> fuse.inputs.in_segmentations = ['aseg.mgz', 'aseg.mgz']
+    >>> fuse.inputs.in_segmentations_noCC = ['aseg.mgz', 'aseg.mgz']
+    >>> fuse.inputs.in_norms = ['norm.mgz', 'norm.mgz', 'norm.mgz']
+    >>> fuse.cmdline
+    'mri_fuse_segmentations -n norm.mgz -a aseg.mgz -c aseg.mgz tp.long.A.template tp1 tp2'
+    

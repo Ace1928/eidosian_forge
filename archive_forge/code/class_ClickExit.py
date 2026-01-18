@@ -1,0 +1,2 @@
+class ClickExit(RuntimeError):
+    pass

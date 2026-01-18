@@ -1,0 +1,1 @@
+ luminosity-contrast correction of a clip 

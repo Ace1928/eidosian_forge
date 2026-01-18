@@ -1,0 +1,15 @@
+import re
+from pygments.lexer import RegexLexer, bygroups, default
+from pygments.token import Operator, Comment, Keyword, Literal, Name, String, \
+class LdifLexer(RegexLexer):
+    """
+    Lexer for LDIF
+
+    .. versionadded:: 2.17
+    """
+    name = 'LDIF'
+    aliases = ['ldif']
+    filenames = ['*.ldif']
+    mimetypes = ['text/x-ldif']
+    url = 'https://datatracker.ietf.org/doc/html/rfc2849'
+    tokens = {'root': [('\\s*\\n', Whitespace), ('(-)(\\n)', bygroups(Punctuation, Whitespace)), ('(#.*)(\\n)', bygroups(Comment.Single, Whitespace)), ('(version)(:)([ \\t]*)(.*)([ \\t]*\\n)', bygroups(Keyword, Punctuation, Whitespace, Number.Integer, Whitespace)), ('(control)(:)([ \\t]*)([\\.0-9]+)([ \\t]+)((?:true|false)?)([ \\t]*)', bygroups(Keyword, Punctuation, Whitespace, Name.Other, Whitespace, Keyword, Whitespace), 'after-control'), ('(deleteoldrdn)(:)([ \\n]*)([0-1]+)([ \\t]*\\n)', bygroups(Keyword, Punctuation, Whitespace, Number, Whitespace)), ('(add|delete|replace)(::?)(\\s*)(.*)([ \\t]*\\n)', bygroups(Keyword, Punctuation, Whitespace, Name.Attribute, Whitespace)), ('(changetype)(:)([ \\t]*)([a-z]*)([ \\t]*\\n)', bygroups(Keyword, Punctuation, Whitespace, Keyword, Whitespace)), ('(dn|newrdn)(::)', bygroups(Keyword, Punctuation), 'base64-dn'), ('(dn|newrdn)(:)', bygroups(Keyword, Punctuation), 'dn'), ('(objectclass)(:)([ \\t]*)([^ \\t\\n]*)([ \\t]*\\n)', bygroups(Keyword, Punctuation, Whitespace, Name.Class, Whitespace)), ('([a-zA-Z]*|[0-9][0-9\\.]*[0-9])(;)', bygroups(Name.Attribute, Punctuation), 'property'), ('([a-zA-Z]*|[0-9][0-9\\.]*[0-9])(:<)', bygroups(Name.Attribute, Punctuation), 'url'), ('([a-zA-Z]*|[0-9][0-9\\.]*[0-9])(::?)', bygroups(Name.Attribute, Punctuation), 'value')], 'after-control': [(':<', Punctuation, ('#pop', 'url')), ('::?', Punctuation, ('#pop', 'value')), default('#pop')], 'property': [('([-a-zA-Z0-9]*)(;)', bygroups(Name.Property, Punctuation)), ('([-a-zA-Z0-9]*)(:<)', bygroups(Name.Property, Punctuation), ('#pop', 'url')), ('([-a-zA-Z0-9]*)(::?)', bygroups(Name.Property, Punctuation), ('#pop', 'value'))], 'value': [('(\\s*)([^\\n]+\\S)(\\n )', bygroups(Whitespace, String, Whitespace)), ('(\\s*)([^\\n]+\\S)(\\n)', bygroups(Whitespace, String, Whitespace), '#pop')], 'url': [('([ \\t]*)(\\S*)([ \\t]*\\n )', bygroups(Whitespace, Comment.PreprocFile, Whitespace)), ('([ \\t]*)(\\S*)([ \\t]*\\n)', bygroups(Whitespace, Comment.PreprocFile, Whitespace), '#pop')], 'dn': [('([ \\t]*)([-a-zA-Z0-9\\.]+)(=)', bygroups(Whitespace, Name.Attribute, Operator), ('#pop', 'dn-value'))], 'dn-value': [('\\\\[^\\n]', Escape), (',', Punctuation, ('#pop', 'dn')), ('\\+', Operator, ('#pop', 'dn')), ('[^,\\+\\n]+', String), ('\\n ', Whitespace), ('\\n', Whitespace, '#pop')], 'base64-dn': [('([ \\t]*)([^ \\t\\n][^ \\t\\n]*[^\\n])([ \\t]*\\n )', bygroups(Whitespace, Name, Whitespace)), ('([ \\t]*)([^ \\t\\n][^ \\t\\n]*[^\\n])([ \\t]*\\n)', bygroups(Whitespace, Name, Whitespace), '#pop')]}

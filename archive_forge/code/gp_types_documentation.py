@@ -1,0 +1,1 @@
+Final output data type of pipelines.

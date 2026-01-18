@@ -1,0 +1,26 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import textwrap
+from googlecloudsdk.calliope import arg_parsers
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope import exceptions
+from googlecloudsdk.calliope import parser_arguments
+from googlecloudsdk.calliope.concepts import concepts
+from googlecloudsdk.calliope.concepts import deps
+from googlecloudsdk.command_lib.container.gkeonprem import flags
+from googlecloudsdk.command_lib.util.concepts import concept_parsers
+from googlecloudsdk.command_lib.util.concepts import presentation_specs
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources
+def _AddIpConfiguration(vmware_network_config_group, for_update=False):
+    """Adds flags to specify IP configuration used by the VMware User Cluster.
+
+  Args:
+    vmware_network_config_group: The parent group to add the flag to.
+    for_update: bool, True to add flags for update command, False to add flags
+      for create command.
+  """
+    ip_configuration_mutex_group = vmware_network_config_group.add_group(mutex=True, help='IP configuration used by the VMware User Cluster')
+    _AddVmwareDhcpIpConfig(ip_configuration_mutex_group, for_update=for_update)
+    _AddVmwareStaticIpConfig(ip_configuration_mutex_group)

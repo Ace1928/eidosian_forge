@@ -1,0 +1,19 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class DataprocProjectsRegionsJobsCancelRequest(_messages.Message):
+    """A DataprocProjectsRegionsJobsCancelRequest object.
+
+  Fields:
+    cancelJobRequest: A CancelJobRequest resource to be passed as the request
+      body.
+    jobId: Required. The job ID.
+    projectId: Required. The ID of the Google Cloud Platform project that the
+      job belongs to.
+    region: Required. The Dataproc region in which to handle the request.
+  """
+    cancelJobRequest = _messages.MessageField('CancelJobRequest', 1)
+    jobId = _messages.StringField(2, required=True)
+    projectId = _messages.StringField(3, required=True)
+    region = _messages.StringField(4, required=True)

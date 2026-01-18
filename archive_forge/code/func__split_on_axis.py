@@ -1,0 +1,35 @@
+import builtins
+import enum
+import functools
+import math
+import numbers
+import numpy as np
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor as tensor_lib
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import clip_ops
+from tensorflow.python.ops import control_flow_assert
+from tensorflow.python.ops import linalg_ops
+from tensorflow.python.ops import manip_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import sort_ops
+from tensorflow.python.ops.numpy_ops import np_arrays
+from tensorflow.python.ops.numpy_ops import np_dtypes
+from tensorflow.python.ops.numpy_ops import np_utils
+from tensorflow.python.util import nest
+from tensorflow.python.util import tf_export
+def _split_on_axis(np_fun_name, axis):
+
+    @np_utils.np_doc(np_fun_name)
+    def f(ary, indices_or_sections):
+        new_axis = np_utils.cond(math_ops.equal(axis, 1), lambda: np_utils.cond(math_ops.equal(array_ops.rank(ary), 1), lambda: 0, lambda: axis), lambda: axis)
+        if isinstance(indices_or_sections, int):
+            ary_shape = ary.shape[new_axis]
+            if ary_shape is not None and ary_shape % indices_or_sections:
+                raise ValueError('array split does not result in an equal division')
+        return split(ary, indices_or_sections, axis=new_axis)
+    return f

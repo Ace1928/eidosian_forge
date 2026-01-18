@@ -1,0 +1,19 @@
+from and back to a string/file is not guaranteed to be reversible, i.e. a diff on the output
+from __future__ import annotations
+import datetime
+import re
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Literal
+from monty.io import zopen
+from monty.json import MSONable
+from pymatgen.core import Element, Lattice, PeriodicSite, Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.io.core import ParseError
+@property
+def appearances(self) -> int:
+    """
+        This is sometimes the number of times a structure was found in an AIRSS search.
+        Using the cryan tool that comes with AIRSS may be a better approach than relying
+        on this property.
+        """
+    return self._TITL.appearances

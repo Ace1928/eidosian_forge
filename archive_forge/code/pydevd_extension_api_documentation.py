@@ -1,0 +1,8 @@
+import abc
+from typing import Any
+
+        This method invoked after all debugger modules are loaded. Useful for importing and/or patching debugger
+        modules at a safe time
+        :param kwargs: This is intended to be flexible dict passed from the debugger.
+        Currently passes the debugger version
+        

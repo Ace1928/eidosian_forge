@@ -1,0 +1,19 @@
+import sys
+import os
+from pygame.base import *  # pylint: disable=wildcard-import; lgtm[py/polluting-import]
+from pygame.constants import *  # now has __all__ pylint: disable=wildcard-import; lgtm[py/polluting-import]
+from pygame.version import *  # pylint: disable=wildcard-import; lgtm[py/polluting-import]
+from pygame.rect import Rect
+from pygame.rwobject import encode_string, encode_file_path
+import pygame.surflock
+import pygame.color
+import pygame.bufferproxy
+import pygame.math
+import copyreg
+def packager_imports():
+    """some additional imports that py2app/py2exe will want to see"""
+    import atexit
+    import numpy
+    import OpenGL.GL
+    import pygame.macosx
+    import pygame.colordict

@@ -1,0 +1,8 @@
+def _add_dtype_helper(DType, alias):
+    from numpy import dtypes
+    setattr(dtypes, DType.__name__, DType)
+    __all__.append(DType.__name__)
+    if alias:
+        alias = alias.removeprefix('numpy.dtypes.')
+        setattr(dtypes, alias, DType)
+        __all__.append(alias)

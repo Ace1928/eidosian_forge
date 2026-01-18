@@ -1,0 +1,26 @@
+import sys
+import platform
+import struct
+from contextlib import contextmanager
+from ctypes import *
+from ctypes import util
+from .cocoatypes import *
+class DeallocationObserver_Implementation:
+    DeallocationObserver = ObjCSubclass('NSObject', 'DeallocationObserver', register=False)
+    DeallocationObserver.add_ivar('observed_object', c_void_p)
+    DeallocationObserver.register()
+
+    @DeallocationObserver.rawmethod('@@')
+    def initWithObject_(self, cmd, objc_ptr):
+        self = send_super(self, 'init')
+        self = self.value
+        set_instance_variable(self, 'observed_object', objc_ptr, c_void_p)
+        return self
+
+    @DeallocationObserver.rawmethod('v')
+    def dealloc(self, cmd):
+        _obj_observer_dealloc(self, 'dealloc')
+
+    @DeallocationObserver.rawmethod('v')
+    def finalize(self, cmd):
+        _obj_observer_dealloc(self, 'finalize')

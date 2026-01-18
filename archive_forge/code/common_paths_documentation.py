@@ -1,0 +1,1 @@
+Common cache root for torchvision.datasets and others.

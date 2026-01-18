@@ -1,0 +1,212 @@
+from sympy.core.numbers import (Float, Rational, oo, pi)
+from sympy.core.singleton import S
+from sympy.core.symbol import (Symbol, symbols)
+from sympy.functions.elementary.complexes import Abs
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.trigonometric import (acos, cos, sin)
+from sympy.functions.elementary.trigonometric import tan
+from sympy.geometry import (Circle, Ellipse, GeometryError, Point, Point2D,
+from sympy.testing.pytest import raises, slow, warns
+from sympy.core.random import verify_numerically
+from sympy.geometry.polygon import rad, deg
+from sympy.integrals.integrals import integrate
+@slow
+def test_polygon():
+    x = Symbol('x', real=True)
+    y = Symbol('y', real=True)
+    q = Symbol('q', real=True)
+    u = Symbol('u', real=True)
+    v = Symbol('v', real=True)
+    w = Symbol('w', real=True)
+    x1 = Symbol('x1', real=True)
+    half = S.Half
+    a, b, c = (Point(0, 0), Point(2, 0), Point(3, 3))
+    t = Triangle(a, b, c)
+    assert Polygon(Point(0, 0)) == Point(0, 0)
+    assert Polygon(a, Point(1, 0), b, c) == t
+    assert Polygon(Point(1, 0), b, c, a) == t
+    assert Polygon(b, c, a, Point(1, 0)) == t
+    assert Polygon(a, Point(3, 0), b, c) == t
+    assert Polygon(a, b, Point(3, -1), b, c) == t
+    assert Polygon(Point(-4, 15), Point(-11, 15), Point(-15, 15), Point(-15, 33 / 5), Point(-15, -87 / 10), Point(-15, -15), Point(-42 / 5, -15), Point(-2, -15), Point(7, -15), Point(15, -15), Point(15, -3), Point(15, 10), Point(15, 15)) == Polygon(Point(-15, -15), Point(15, -15), Point(15, 15), Point(-15, 15))
+    p1 = Polygon(Point(0, 0), Point(3, -1), Point(6, 0), Point(4, 5), Point(2, 3), Point(0, 3))
+    p2 = Polygon(Point(6, 0), Point(3, -1), Point(0, 0), Point(0, 3), Point(2, 3), Point(4, 5))
+    p3 = Polygon(Point(0, 0), Point(3, 0), Point(5, 2), Point(4, 4))
+    p4 = Polygon(Point(0, 0), Point(4, 4), Point(5, 2), Point(3, 0))
+    p5 = Polygon(Point(0, 0), Point(4, 4), Point(0, 4))
+    p6 = Polygon(Point(-11, 1), Point(-9, 6.6), Point(-4, -3), Point(-8.4, -8.7))
+    p7 = Polygon(Point(x, y), Point(q, u), Point(v, w))
+    p8 = Polygon(Point(x, y), Point(v, w), Point(q, u))
+    p9 = Polygon(Point(0, 0), Point(4, 4), Point(3, 0), Point(5, 2))
+    p10 = Polygon(Point(0, 2), Point(2, 2), Point(0, 0), Point(2, 0))
+    p11 = Polygon(Point(0, 0), 1, n=3)
+    p12 = Polygon(Point(0, 0), 1, 0, n=3)
+    r = Ray(Point(-9, 6.6), Point(-9, 5.5))
+    assert p1 == p2
+    assert len(p1.args) == 6
+    assert len(p1.sides) == 6
+    assert p1.perimeter == 5 + 2 * sqrt(10) + sqrt(29) + sqrt(8)
+    assert p1.area == 22
+    assert not p1.is_convex()
+    assert Polygon((-1, 1), (2, -1), (2, 1), (-1, -1), (3, 0)).is_convex() is False
+    assert p3.is_convex()
+    assert p4.is_convex()
+    dict5 = p5.angles
+    assert dict5[Point(0, 0)] == pi / 4
+    assert dict5[Point(0, 4)] == pi / 2
+    assert p5.encloses_point(Point(x, y)) is None
+    assert p5.encloses_point(Point(1, 3))
+    assert p5.encloses_point(Point(0, 0)) is False
+    assert p5.encloses_point(Point(4, 0)) is False
+    assert p1.encloses(Circle(Point(2.5, 2.5), 5)) is False
+    assert p1.encloses(Ellipse(Point(2.5, 2), 5, 6)) is False
+    assert p5.plot_interval('x') == [x, 0, 1]
+    assert p5.distance(Polygon(Point(10, 10), Point(14, 14), Point(10, 14))) == 6 * sqrt(2)
+    assert p5.distance(Polygon(Point(1, 8), Point(5, 8), Point(8, 12), Point(1, 12))) == 4
+    with warns(UserWarning, match='Polygons may intersect producing erroneous output'):
+        Polygon(Point(0, 0), Point(1, 0), Point(1, 1)).distance(Polygon(Point(0, 0), Point(0, 1), Point(1, 1)))
+    assert hash(p5) == hash(Polygon(Point(0, 0), Point(4, 4), Point(0, 4)))
+    assert hash(p1) == hash(p2)
+    assert hash(p7) == hash(p8)
+    assert hash(p3) != hash(p9)
+    assert p5 == Polygon(Point(4, 4), Point(0, 4), Point(0, 0))
+    assert Polygon(Point(4, 4), Point(0, 4), Point(0, 0)) in p5
+    assert p5 != Point(0, 4)
+    assert Point(0, 1) in p5
+    assert p5.arbitrary_point('t').subs(Symbol('t', real=True), 0) == Point(0, 0)
+    raises(ValueError, lambda: Polygon(Point(x, 0), Point(0, y), Point(x, y)).arbitrary_point('x'))
+    assert p6.intersection(r) == [Point(-9, Rational(-84, 13)), Point(-9, Rational(33, 5))]
+    assert p10.area == 0
+    assert p11 == RegularPolygon(Point(0, 0), 1, 3, 0)
+    assert p11 == p12
+    assert p11.vertices[0] == Point(1, 0)
+    assert p11.args[0] == Point(0, 0)
+    p11.spin(pi / 2)
+    assert p11.vertices[0] == Point(0, 1)
+    p1 = RegularPolygon(Point(0, 0), 10, 5)
+    p2 = RegularPolygon(Point(0, 0), 5, 5)
+    raises(GeometryError, lambda: RegularPolygon(Point(0, 0), Point(0, 1), Point(1, 1)))
+    raises(GeometryError, lambda: RegularPolygon(Point(0, 0), 1, 2))
+    raises(ValueError, lambda: RegularPolygon(Point(0, 0), 1, 2.5))
+    assert p1 != p2
+    assert p1.interior_angle == pi * Rational(3, 5)
+    assert p1.exterior_angle == pi * Rational(2, 5)
+    assert p2.apothem == 5 * cos(pi / 5)
+    assert p2.circumcenter == p1.circumcenter == Point(0, 0)
+    assert p1.circumradius == p1.radius == 10
+    assert p2.circumcircle == Circle(Point(0, 0), 5)
+    assert p2.incircle == Circle(Point(0, 0), p2.apothem)
+    assert p2.inradius == p2.apothem == 5 * (1 + sqrt(5)) / 4
+    p2.spin(pi / 10)
+    dict1 = p2.angles
+    assert dict1[Point(0, 5)] == 3 * pi / 5
+    assert p1.is_convex()
+    assert p1.rotation == 0
+    assert p1.encloses_point(Point(0, 0))
+    assert p1.encloses_point(Point(11, 0)) is False
+    assert p2.encloses_point(Point(0, 4.9))
+    p1.spin(pi / 3)
+    assert p1.rotation == pi / 3
+    assert p1.vertices[0] == Point(5, 5 * sqrt(3))
+    for var in p1.args:
+        if isinstance(var, Point):
+            assert var == Point(0, 0)
+        else:
+            assert var in (5, 10, pi / 3)
+    assert p1 != Point(0, 0)
+    assert p1 != p5
+    p1_old = p1
+    assert p1.rotate(pi / 3) == RegularPolygon(Point(0, 0), 10, 5, pi * Rational(2, 3))
+    assert p1 == p1_old
+    assert p1.area == (-250 * sqrt(5) + 1250) / (4 * tan(pi / 5))
+    assert p1.length == 20 * sqrt(-sqrt(5) / 8 + Rational(5, 8))
+    assert p1.scale(2, 2) == RegularPolygon(p1.center, p1.radius * 2, p1._n, p1.rotation)
+    assert RegularPolygon((0, 0), 1, 4).scale(2, 3) == Polygon(Point(2, 0), Point(0, 3), Point(-2, 0), Point(0, -3))
+    assert repr(p1) == str(p1)
+    angles = p4.angles
+    assert feq(angles[Point(0, 0)].evalf(), Float('0.7853981633974483'))
+    assert feq(angles[Point(4, 4)].evalf(), Float('1.2490457723982544'))
+    assert feq(angles[Point(5, 2)].evalf(), Float('1.8925468811915388'))
+    assert feq(angles[Point(3, 0)].evalf(), Float('2.3561944901923449'))
+    angles = p3.angles
+    assert feq(angles[Point(0, 0)].evalf(), Float('0.7853981633974483'))
+    assert feq(angles[Point(4, 4)].evalf(), Float('1.2490457723982544'))
+    assert feq(angles[Point(5, 2)].evalf(), Float('1.8925468811915388'))
+    assert feq(angles[Point(3, 0)].evalf(), Float('2.3561944901923449'))
+    p1 = Point(0, 0)
+    p2 = Point(5, 0)
+    p3 = Point(0, 5)
+    t1 = Triangle(p1, p2, p3)
+    t2 = Triangle(p1, p2, Point(Rational(5, 2), sqrt(Rational(75, 4))))
+    t3 = Triangle(p1, Point(x1, 0), Point(0, x1))
+    s1 = t1.sides
+    assert Triangle(p1, p2, p1) == Polygon(p1, p2, p1) == Segment(p1, p2)
+    raises(GeometryError, lambda: Triangle(Point(0, 0)))
+    assert Triangle(p1, p1, p1) == p1
+    assert Triangle(p2, p2 * 2, p2 * 3) == Segment(p2, p2 * 3)
+    assert t1.area == Rational(25, 2)
+    assert t1.is_right()
+    assert t2.is_right() is False
+    assert t3.is_right()
+    assert p1 in t1
+    assert t1.sides[0] in t1
+    assert Segment((0, 0), (1, 0)) in t1
+    assert Point(5, 5) not in t2
+    assert t1.is_convex()
+    assert feq(t1.angles[p1].evalf(), pi.evalf() / 2)
+    assert t1.is_equilateral() is False
+    assert t2.is_equilateral()
+    assert t3.is_equilateral() is False
+    assert are_similar(t1, t2) is False
+    assert are_similar(t1, t3)
+    assert are_similar(t2, t3) is False
+    assert t1.is_similar(Point(0, 0)) is False
+    assert t1.is_similar(t2) is False
+    bisectors = t1.bisectors()
+    assert bisectors[p1] == Segment(p1, Point(Rational(5, 2), Rational(5, 2)))
+    assert t2.bisectors()[p2] == Segment(Point(5, 0), Point(Rational(5, 4), 5 * sqrt(3) / 4))
+    p4 = Point(0, x1)
+    assert t3.bisectors()[p4] == Segment(p4, Point(x1 * (sqrt(2) - 1), 0))
+    ic = (250 - 125 * sqrt(2)) / 50
+    assert t1.incenter == Point(ic, ic)
+    assert t1.inradius == t1.incircle.radius == 5 - 5 * sqrt(2) / 2
+    assert t2.inradius == t2.incircle.radius == 5 * sqrt(3) / 6
+    assert t3.inradius == t3.incircle.radius == x1 ** 2 / ((2 + sqrt(2)) * Abs(x1))
+    assert t1.exradii[t1.sides[2]] == 5 * sqrt(2) / 2
+    assert t1.excenters[t1.sides[2]] == Point2D(25 * sqrt(2), -5 * sqrt(2) / 2)
+    assert t1.circumcircle.center == Point(2.5, 2.5)
+    m = t1.medians
+    assert t1.centroid == Point(Rational(5, 3), Rational(5, 3))
+    assert m[p1] == Segment(p1, Point(Rational(5, 2), Rational(5, 2)))
+    assert t3.medians[p1] == Segment(p1, Point(x1 / 2, x1 / 2))
+    assert intersection(m[p1], m[p2], m[p3]) == [t1.centroid]
+    assert t1.medial == Triangle(Point(2.5, 0), Point(0, 2.5), Point(2.5, 2.5))
+    assert t1.nine_point_circle == Circle(Point(2.5, 0), Point(0, 2.5), Point(2.5, 2.5))
+    assert t1.nine_point_circle == Circle(Point(0, 0), Point(0, 2.5), Point(2.5, 2.5))
+    altitudes = t1.altitudes
+    assert altitudes[p1] == Segment(p1, Point(Rational(5, 2), Rational(5, 2)))
+    assert altitudes[p2].equals(s1[0])
+    assert altitudes[p3] == s1[2]
+    assert t1.orthocenter == p1
+    t = S('Triangle(\n    Point(100080156402737/5000000000000, 79782624633431/500000000000),\n    Point(39223884078253/2000000000000, 156345163124289/1000000000000),\n    Point(31241359188437/1250000000000, 338338270939941/1000000000000000))')
+    assert t.orthocenter == S('Point(-78066086905059984021699779471538701955848721853/80368430960602242240789074233100000000000000,20151573611150265741278060334545897615974257/160736861921204484481578148466200000000000)')
+    assert len(intersection(*bisectors.values())) == 1
+    assert len(intersection(*altitudes.values())) == 1
+    assert len(intersection(*m.values())) == 1
+    p1 = Polygon(Point(0, 0), Point(1, 0), Point(1, 1), Point(0, 1))
+    p2 = Polygon(Point(0, Rational(5) / 4), Point(1, Rational(5) / 4), Point(1, Rational(9) / 4), Point(0, Rational(9) / 4))
+    p3 = Polygon(Point(1, 2), Point(2, 2), Point(2, 1))
+    p4 = Polygon(Point(1, 1), Point(Rational(6) / 5, 1), Point(1, Rational(6) / 5))
+    pt1 = Point(half, half)
+    pt2 = Point(1, 1)
+    'Polygon to Point'
+    assert p1.distance(pt1) == half
+    assert p1.distance(pt2) == 0
+    assert p2.distance(pt1) == Rational(3) / 4
+    assert p3.distance(pt2) == sqrt(2) / 2
+    'Polygon to Polygon'
+    with warns(UserWarning, match='Polygons may intersect producing erroneous output'):
+        assert p1.distance(p2) == half / 2
+    assert p1.distance(p3) == sqrt(2) / 2
+    with warns(UserWarning, match='Polygons may intersect producing erroneous output'):
+        assert p3.distance(p4) == sqrt(2) / 2 - sqrt(Rational(2) / 25) / 2

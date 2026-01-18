@@ -1,0 +1,14 @@
+from ray.rllib.utils.annotations import override, PublicAPI
+from ray.rllib.utils.typing import SampleBatchType
+@PublicAPI
+class OutputWriter:
+    """Writer API for saving experiences from policy evaluation."""
+
+    @PublicAPI
+    def write(self, sample_batch: SampleBatchType):
+        """Saves a batch of experiences.
+
+        Args:
+            sample_batch: SampleBatch or MultiAgentBatch to save.
+        """
+        raise NotImplementedError

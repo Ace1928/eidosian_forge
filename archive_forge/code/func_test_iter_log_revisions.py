@@ -1,0 +1,53 @@
+from .. import missing, tests
+from ..missing import iter_log_revisions
+from . import TestCaseWithTransport
+def test_iter_log_revisions(self):
+    base_tree = self.make_branch_and_tree('base')
+    self.build_tree(['base/a'])
+    base_tree.add(['a'], ids=[b'a-id'])
+    base_tree.commit('add a', rev_id=b'b-1')
+    child_tree = base_tree.controldir.sprout('child').open_workingtree()
+    self.build_tree(['child/b'])
+    child_tree.add(['b'], ids=[b'b-id'])
+    child_tree.commit('adding b', rev_id=b'c-2')
+    child_tree.remove(['a'])
+    child_tree.commit('removing a', rev_id=b'c-3')
+    self.build_tree_contents([('child/b', b'new contents for b\n')])
+    child_tree.commit('modifying b', rev_id=b'c-4')
+    child_tree.rename_one('b', 'c')
+    child_tree.commit('rename b=>c', rev_id=b'c-5')
+    base_extra, child_extra = missing.find_unmerged(base_tree.branch, child_tree.branch)
+    results = list(iter_log_revisions(base_extra, base_tree.branch.repository, verbose=True))
+    self.assertEqual([], results)
+    results = list(iter_log_revisions(child_extra, child_tree.branch.repository, verbose=True))
+    self.assertEqual(4, len(results))
+    r0, r1, r2, r3 = results
+    self.assertEqual([('2', b'c-2'), ('3', b'c-3'), ('4', b'c-4'), ('5', b'c-5')], [(r.revno, r.rev.revision_id) for r in results])
+    delta0 = r0.delta
+    self.assertNotEqual(None, delta0)
+    self.assertEqual([('b', 'file')], [(c.path[1], c.kind[1]) for c in delta0.added])
+    self.assertEqual([], delta0.removed)
+    self.assertEqual([], delta0.renamed)
+    self.assertEqual([], delta0.copied)
+    self.assertEqual([], delta0.modified)
+    delta1 = r1.delta
+    self.assertNotEqual(None, delta1)
+    self.assertEqual([], delta1.added)
+    self.assertEqual([('a', 'file')], [(c.path[0], c.kind[0]) for c in delta1.removed])
+    self.assertEqual([], delta1.renamed)
+    self.assertEqual([], delta1.copied)
+    self.assertEqual([], delta1.modified)
+    delta2 = r2.delta
+    self.assertNotEqual(None, delta2)
+    self.assertEqual([], delta2.added)
+    self.assertEqual([], delta2.removed)
+    self.assertEqual([], delta2.renamed)
+    self.assertEqual([], delta2.copied)
+    self.assertEqual([('b', 'file', True, False)], [(c.path[1], c.kind[1], c.changed_content, c.meta_modified()) for c in delta2.modified])
+    delta3 = r3.delta
+    self.assertNotEqual(None, delta3)
+    self.assertEqual([], delta3.added)
+    self.assertEqual([], delta3.copied)
+    self.assertEqual([], delta3.removed)
+    self.assertEqual([('b', 'c', 'file', False, False)], [(c.path[0], c.path[1], c.kind[1], c.changed_content, c.meta_modified()) for c in delta3.renamed])
+    self.assertEqual([], delta3.modified)

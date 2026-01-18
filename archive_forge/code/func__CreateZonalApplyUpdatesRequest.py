@@ -1,0 +1,13 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+from googlecloudsdk.api_lib.compute import base_classes
+from googlecloudsdk.api_lib.compute import instance_groups_utils
+from googlecloudsdk.calliope import base
+from googlecloudsdk.command_lib.compute import flags
+from googlecloudsdk.command_lib.compute import scope as compute_scope
+from googlecloudsdk.command_lib.compute.instance_groups import flags as instance_groups_flags
+from googlecloudsdk.command_lib.compute.instance_groups.managed import flags as instance_groups_managed_flags
+from googlecloudsdk.command_lib.compute.managed_instance_groups import update_instances_utils
+def _CreateZonalApplyUpdatesRequest(self, igm_ref, minimal_action, most_disruptive_allowed_action, client):
+    return client.messages.ComputeInstanceGroupManagersApplyUpdatesToInstancesRequest(instanceGroupManager=igm_ref.Name(), instanceGroupManagersApplyUpdatesRequest=client.messages.InstanceGroupManagersApplyUpdatesRequest(instances=[], minimalAction=minimal_action, mostDisruptiveAllowedAction=most_disruptive_allowed_action), project=igm_ref.project, zone=igm_ref.zone)

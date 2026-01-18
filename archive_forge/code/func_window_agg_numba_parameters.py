@@ -1,0 +1,5 @@
+from __future__ import annotations
+from textwrap import dedent
+from pandas.core.shared_docs import _shared_docs
+def window_agg_numba_parameters(version: str='1.3') -> str:
+    return dedent("\n    engine : str, default None\n        * ``'cython'`` : Runs the operation through C-extensions from cython.\n        * ``'numba'`` : Runs the operation through JIT compiled code from numba.\n        * ``None`` : Defaults to ``'cython'`` or globally setting ``compute.use_numba``\n\n          .. versionadded:: {version}.0\n\n    engine_kwargs : dict, default None\n        * For ``'cython'`` engine, there are no accepted ``engine_kwargs``\n        * For ``'numba'`` engine, the engine can accept ``nopython``, ``nogil``\n          and ``parallel`` dictionary keys. The values must either be ``True`` or\n          ``False``. The default ``engine_kwargs`` for the ``'numba'`` engine is\n          ``{{'nopython': True, 'nogil': False, 'parallel': False}}``\n\n          .. versionadded:: {version}.0\n\n    ").replace('\n', '', 1).replace('{version}', version)

@@ -1,0 +1,9 @@
+from decimal import Decimal
+from boto.compat import filter, map
+class GetTransactionResult(ResponseElement):
+
+    def startElement(self, name, attrs, connection):
+        if name == 'Transaction':
+            setattr(self, name, Transaction(name=name))
+            return getattr(self, name)
+        return super(GetTransactionResult, self).startElement(name, attrs, connection)

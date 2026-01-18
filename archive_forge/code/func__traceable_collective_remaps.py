@@ -1,0 +1,17 @@
+import functools
+import inspect
+import itertools
+import types
+from typing import Dict, List
+import torch
+from .. import variables
+from ..bytecode_transformation import create_call_function, create_rot_n
+from ..exc import unimplemented, Unsupported
+from ..source import AttrSource, ConstantSource, DefaultsSource, GetItemSource
+from ..utils import make_cell
+from .base import typestr, VariableTracker
+def _traceable_collective_remaps():
+    if torch.distributed.is_available():
+        from torch.distributed._functional_collectives import traceable_collective_remaps
+        return traceable_collective_remaps
+    return {}

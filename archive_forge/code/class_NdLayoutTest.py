@@ -1,0 +1,62 @@
+import numpy as np
+import pytest
+from holoviews import (
+from holoviews.element import Curve, HLine, Image
+from holoviews.element.comparison import ComparisonTestCase
+class NdLayoutTest(CompositeTest):
+
+    def test_ndlayout_init(self):
+        grid = NdLayout([(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)])
+        self.assertEqual(grid.shape, (1, 4))
+
+    def test_ndlayout_overlay_element(self):
+        items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
+        grid = NdLayout(items)
+        hline = HLine(0)
+        overlaid_grid = grid * hline
+        expected = NdLayout([(k, v * hline) for k, v in items])
+        self.assertEqual(overlaid_grid, expected)
+
+    def test_ndlayout_overlay_reverse(self):
+        items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
+        grid = NdLayout(items)
+        hline = HLine(0)
+        overlaid_grid = hline * grid
+        expected = NdLayout([(k, hline * v) for k, v in items])
+        self.assertEqual(overlaid_grid, expected)
+
+    def test_ndlayout_overlay_ndlayout(self):
+        items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
+        grid = NdLayout(items)
+        items2 = [(0, self.view2), (1, self.view1), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2)
+        expected_items = [(0, self.view1 * self.view2), (1, self.view2 * self.view1), (2, self.view3 * self.view2), (3, self.view2 * self.view3)]
+        expected = NdLayout(expected_items)
+        self.assertEqual(grid * grid2, expected)
+
+    def test_ndlayout_overlay_ndlayout_reverse(self):
+        items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
+        grid = NdLayout(items)
+        items2 = [(0, self.view2), (1, self.view1), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2)
+        expected_items = [(0, self.view2 * self.view1), (1, self.view1 * self.view2), (2, self.view2 * self.view3), (3, self.view3 * self.view2)]
+        expected = NdLayout(expected_items)
+        self.assertEqual(grid2 * grid, expected)
+
+    def test_ndlayout_overlay_ndlayout_partial(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = NdLayout(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2, 'X')
+        expected_items = [(0, Overlay([self.view1, self.view2])), (1, Overlay([self.view2])), (2, Overlay([self.view2])), (3, Overlay([self.view2, self.view3]))]
+        expected = NdLayout(expected_items, 'X')
+        self.assertEqual(grid * grid2, expected)
+
+    def test_ndlayout_overlay_ndlayout_partial_reverse(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = NdLayout(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2, 'X')
+        expected_items = [(0, Overlay([self.view2, self.view1])), (1, Overlay([self.view2])), (2, Overlay([self.view2])), (3, Overlay([self.view3, self.view2]))]
+        expected = NdLayout(expected_items, 'X')
+        self.assertEqual(grid2 * grid, expected)

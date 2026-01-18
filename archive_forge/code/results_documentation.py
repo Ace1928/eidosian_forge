@@ -1,0 +1,6 @@
+
+        When the iterator runs out of results, this method is run to re-execute
+        the callable (& arguments) to fetch the next page.
+
+        Largely internal.
+        

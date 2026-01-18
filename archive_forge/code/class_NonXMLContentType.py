@@ -1,0 +1,2 @@
+class NonXMLContentType(ThingsNobodyCaresAboutButMe):
+    pass

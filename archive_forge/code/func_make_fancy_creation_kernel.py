@@ -1,0 +1,96 @@
+import numpy as np
+from numba.core import config
+from numba.cuda.testing import CUDATestCase
+from numba import cuda
+def make_fancy_creation_kernel(vtype):
+    """
+    Returns a jit compiled kernel that constructs a vector type using the
+    "fancy" construction, that is, with arbitrary combinations of primitive
+    types and vector types, as long as the total element of the construction
+    is the same as the number of elements of the vector type.
+    """
+    base_type = vtype.base_type
+    v1 = getattr(cuda, f'{vtype.name[:-1]}1')
+    v2 = getattr(cuda, f'{vtype.name[:-1]}2')
+    v3 = getattr(cuda, f'{vtype.name[:-1]}3')
+    v4 = getattr(cuda, f'{vtype.name[:-1]}4')
+
+    def kernel(res):
+        one = base_type(1.0)
+        two = base_type(2.0)
+        three = base_type(3.0)
+        four = base_type(4.0)
+        j = 0
+        f1_1 = v1(one)
+        f1_2 = v1(f1_1)
+        res[0] = f1_1.x
+        res[1] = f1_2.x
+        j += 2
+        f2_1 = v2(two, three)
+        f2_2 = v2(f1_1, three)
+        f2_3 = v2(two, f1_1)
+        f2_4 = v2(f1_1, f1_1)
+        f2_5 = v2(f2_1)
+        for v in (f2_1, f2_2, f2_3, f2_4, f2_5):
+            res[j] = v.x
+            res[j + 1] = v.y
+            j += 2
+        f3_1 = v3(f2_1, one)
+        f3_2 = v3(f2_1, f1_1)
+        f3_3 = v3(one, f2_1)
+        f3_4 = v3(f1_1, f2_1)
+        f3_5 = v3(one, two, three)
+        f3_6 = v3(f1_1, two, three)
+        f3_7 = v3(one, f1_1, three)
+        f3_8 = v3(one, two, f1_1)
+        f3_9 = v3(f1_1, f1_1, three)
+        f3_10 = v3(one, f1_1, f1_1)
+        f3_11 = v3(f1_1, two, f1_1)
+        f3_12 = v3(f1_1, f1_1, f1_1)
+        f3_13 = v3(f3_1)
+        for v in (f3_1, f3_2, f3_3, f3_4, f3_5, f3_6, f3_7, f3_8, f3_9, f3_10, f3_11, f3_12, f3_13):
+            res[j] = v.x
+            res[j + 1] = v.y
+            res[j + 2] = v.z
+            j += 3
+        f4_1 = v4(one, two, three, four)
+        f4_2 = v4(f1_1, two, three, four)
+        f4_3 = v4(one, f1_1, three, four)
+        f4_4 = v4(one, two, f1_1, four)
+        f4_5 = v4(one, two, three, f1_1)
+        f4_6 = v4(f1_1, f1_1, three, four)
+        f4_7 = v4(f1_1, two, f1_1, four)
+        f4_8 = v4(f1_1, two, three, f1_1)
+        f4_9 = v4(one, f1_1, f1_1, four)
+        f4_10 = v4(one, f1_1, three, f1_1)
+        f4_11 = v4(one, two, f1_1, f1_1)
+        f4_12 = v4(f1_1, f1_1, f1_1, four)
+        f4_13 = v4(f1_1, f1_1, three, f1_1)
+        f4_14 = v4(f1_1, two, f1_1, f1_1)
+        f4_15 = v4(one, f1_1, f1_1, f1_1)
+        f4_16 = v4(f1_1, f1_1, f1_1, f1_1)
+        f4_17 = v4(f2_1, two, three)
+        f4_18 = v4(f2_1, f1_1, three)
+        f4_19 = v4(f2_1, two, f1_1)
+        f4_20 = v4(f2_1, f1_1, f1_1)
+        f4_21 = v4(one, f2_1, three)
+        f4_22 = v4(f1_1, f2_1, three)
+        f4_23 = v4(one, f2_1, f1_1)
+        f4_24 = v4(f1_1, f2_1, f1_1)
+        f4_25 = v4(one, four, f2_1)
+        f4_26 = v4(f1_1, four, f2_1)
+        f4_27 = v4(one, f1_1, f2_1)
+        f4_28 = v4(f1_1, f1_1, f2_1)
+        f4_29 = v4(f2_1, f2_1)
+        f4_30 = v4(f3_1, four)
+        f4_31 = v4(f3_1, f1_1)
+        f4_32 = v4(four, f3_1)
+        f4_33 = v4(f1_1, f3_1)
+        f4_34 = v4(f4_1)
+        for v in (f4_1, f4_2, f4_3, f4_4, f4_5, f4_6, f4_7, f4_8, f4_9, f4_10, f4_11, f4_12, f4_13, f4_14, f4_15, f4_16, f4_17, f4_18, f4_19, f4_20, f4_21, f4_22, f4_23, f4_24, f4_25, f4_26, f4_27, f4_28, f4_29, f4_30, f4_31, f4_32, f4_33, f4_34):
+            res[j] = v.x
+            res[j + 1] = v.y
+            res[j + 2] = v.z
+            res[j + 3] = v.w
+            j += 4
+    return cuda.jit(kernel)

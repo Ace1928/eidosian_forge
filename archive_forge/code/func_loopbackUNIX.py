@@ -1,0 +1,23 @@
+import tempfile
+from zope.interface import implementer
+from twisted.internet import defer, interfaces, main, protocol
+from twisted.internet.interfaces import IAddress
+from twisted.internet.task import deferLater
+from twisted.protocols import policies
+from twisted.python import failure
+def loopbackUNIX(server, client, noisy=True):
+    """Run session between server and client protocol instances over UNIX socket."""
+    path = tempfile.mktemp()
+    from twisted.internet import reactor
+    f = policies.WrappingFactory(protocol.Factory())
+    serverWrapper = _FireOnClose(f, server)
+    f.noisy = noisy
+    f.buildProtocol = lambda addr: serverWrapper
+    serverPort = reactor.listenUNIX(path, f)
+    clientF = LoopbackClientFactory(client)
+    clientF.noisy = noisy
+    reactor.connectUNIX(path, clientF)
+    d = clientF.deferred
+    d.addCallback(lambda x: serverWrapper.deferred)
+    d.addCallback(lambda x: serverPort.stopListening())
+    return d

@@ -1,0 +1,19 @@
+import unittest
+import logging
+from os_ken.ofproto.ofproto_v1_2 import *
+def test_enum_ofp_action_type(self):
+    self.assertEqual(OFPAT_OUTPUT, 0)
+    self.assertEqual(OFPAT_COPY_TTL_OUT, 11)
+    self.assertEqual(OFPAT_COPY_TTL_IN, 12)
+    self.assertEqual(OFPAT_SET_MPLS_TTL, 15)
+    self.assertEqual(OFPAT_DEC_MPLS_TTL, 16)
+    self.assertEqual(OFPAT_PUSH_VLAN, 17)
+    self.assertEqual(OFPAT_POP_VLAN, 18)
+    self.assertEqual(OFPAT_PUSH_MPLS, 19)
+    self.assertEqual(OFPAT_POP_MPLS, 20)
+    self.assertEqual(OFPAT_SET_QUEUE, 21)
+    self.assertEqual(OFPAT_GROUP, 22)
+    self.assertEqual(OFPAT_SET_NW_TTL, 23)
+    self.assertEqual(OFPAT_DEC_NW_TTL, 24)
+    self.assertEqual(OFPAT_SET_FIELD, 25)
+    self.assertEqual(OFPAT_EXPERIMENTER, 65535)

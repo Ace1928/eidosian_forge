@@ -1,0 +1,11 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class CopyLogEntriesResponse(_messages.Message):
+    """Response type for CopyLogEntries long running operations.
+
+  Fields:
+    logEntriesCopiedCount: Number of log entries copied.
+  """
+    logEntriesCopiedCount = _messages.IntegerField(1)

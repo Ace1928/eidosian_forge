@@ -1,0 +1,41 @@
+from __future__ import annotations
+import contextlib
+import sys
+import typing
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Iterable
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import NoReturn
+from typing import Optional
+from typing import overload
+from typing import Tuple
+from typing import Type
+from typing import TypeVar
+from typing import Union
+from .interfaces import BindTyping
+from .interfaces import ConnectionEventsTarget
+from .interfaces import DBAPICursor
+from .interfaces import ExceptionContext
+from .interfaces import ExecuteStyle
+from .interfaces import ExecutionContext
+from .interfaces import IsolationLevel
+from .util import _distill_params_20
+from .util import _distill_raw_params
+from .util import TransactionalContext
+from .. import exc
+from .. import inspection
+from .. import log
+from .. import util
+from ..sql import compiler
+from ..sql import util as sql_util
+@util.memoized_property
+def _message_formatter(self) -> Any:
+    if 'logging_token' in self._execution_options:
+        token = self._execution_options['logging_token']
+        return lambda msg: '[%s] %s' % (token, msg)
+    else:
+        return None

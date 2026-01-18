@@ -1,0 +1,17 @@
+from contextlib import contextmanager
+import os
+import sqlite3
+import tempfile
+import time
+from unittest import mock
+import uuid
+from oslo_config import cfg
+from glance import sqlite_migration
+import glance.tests.unit.utils as unit_test_utils
+import glance.tests.utils as test_utils
+def test_migrate_duplicate_node_reference(self):
+    self.migrate.migrate()
+    with mock.patch.object(sqlite_migration, 'LOG') as mock_log:
+        self.migrate.migrate()
+        expected_calls = [mock.call('Adding local node reference %(node)s in centralized db', {'node': 'http://worker1.example.com'}), mock.call('Node reference %(node)s is already recorded, ignoring it', {'node': 'http://worker1.example.com'}), mock.call('Connecting to SQLite db %s', self.db)]
+        mock_log.debug.assert_has_calls(expected_calls)

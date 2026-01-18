@@ -1,0 +1,40 @@
+import numpy
+import numpy as np
+import datetime
+import pytest
+from numpy.testing import (
+from numpy.compat import pickle
+def test_datetime_scalar_construction(self):
+    assert_equal(np.datetime64('1950-03-12', 'D'), np.datetime64('1950-03-12'))
+    assert_equal(np.datetime64('1950-03-12T13', 's'), np.datetime64('1950-03-12T13', 'm'))
+    assert_equal(np.datetime64(), np.datetime64('NaT'))
+    assert_equal(str(np.datetime64('NaT')), 'NaT')
+    assert_equal(repr(np.datetime64('NaT')), "numpy.datetime64('NaT')")
+    assert_equal(str(np.datetime64('2011-02')), '2011-02')
+    assert_equal(repr(np.datetime64('2011-02')), "numpy.datetime64('2011-02')")
+    assert_equal(np.datetime64(None), np.datetime64('NaT'))
+    assert_equal(np.datetime64().dtype, np.dtype('M8'))
+    assert_equal(np.datetime64('NaT').dtype, np.dtype('M8'))
+    assert_raises(ValueError, np.datetime64, 17)
+    a = np.datetime64('2000-03-18T16', 'h')
+    b = np.array('2000-03-18T16', dtype='M8[h]')
+    assert_equal(a.dtype, np.dtype('M8[h]'))
+    assert_equal(b.dtype, np.dtype('M8[h]'))
+    assert_equal(np.datetime64(a), a)
+    assert_equal(np.datetime64(a).dtype, np.dtype('M8[h]'))
+    assert_equal(np.datetime64(b), a)
+    assert_equal(np.datetime64(b).dtype, np.dtype('M8[h]'))
+    assert_equal(np.datetime64(a, 's'), a)
+    assert_equal(np.datetime64(a, 's').dtype, np.dtype('M8[s]'))
+    assert_equal(np.datetime64(b, 's'), a)
+    assert_equal(np.datetime64(b, 's').dtype, np.dtype('M8[s]'))
+    assert_equal(np.datetime64('1945-03-25'), np.datetime64(datetime.date(1945, 3, 25)))
+    assert_equal(np.datetime64('2045-03-25', 'D'), np.datetime64(datetime.date(2045, 3, 25), 'D'))
+    assert_equal(np.datetime64('1980-01-25T14:36:22.5'), np.datetime64(datetime.datetime(1980, 1, 25, 14, 36, 22, 500000)))
+    assert_equal(np.datetime64('1920-03-13', 'h'), np.datetime64('1920-03-13T00'))
+    assert_equal(np.datetime64('1920-03', 'm'), np.datetime64('1920-03-01T00:00'))
+    assert_equal(np.datetime64('1920', 's'), np.datetime64('1920-01-01T00:00:00'))
+    assert_equal(np.datetime64(datetime.date(2045, 3, 25), 'ms'), np.datetime64('2045-03-25T00:00:00.000'))
+    assert_equal(np.datetime64('1920-03-13T18', 'D'), np.datetime64('1920-03-13'))
+    assert_equal(np.datetime64('1920-03-13T18:33:12', 'M'), np.datetime64('1920-03'))
+    assert_equal(np.datetime64('1920-03-13T18:33:12.5', 'Y'), np.datetime64('1920'))

@@ -1,0 +1,4 @@
+# Core dependencies for figlet_forge
+colorama>=0.4.3; sys_platform == "win32"
+importlib-resources>=1.4.0; python_version < "3.9"
+typing-extensions>=4.0.0; python_version < "3.8"

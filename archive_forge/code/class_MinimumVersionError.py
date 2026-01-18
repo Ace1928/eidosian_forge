@@ -1,0 +1,2 @@
+class MinimumVersionError(ValueError):
+    pass

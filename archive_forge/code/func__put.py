@@ -1,0 +1,34 @@
+import json
+import logging
+import os
+import time
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+import ray
+from ray import cloudpickle
+from ray._private import storage
+from ray.types import ObjectRef
+from ray.workflow.common import (
+from ray.workflow.exceptions import WorkflowNotFoundError
+from ray.workflow import workflow_context
+from ray.workflow import serialization
+from ray.workflow import serialization_context
+from ray.workflow.workflow_state import WorkflowExecutionState
+from ray.workflow.storage import DataLoadError, DataSaveError, KeyNotFoundError
+def _put(self, key: str, data: Any, is_json: bool=False) -> str:
+    """Serialize and put an object in the object store.
+
+        Args:
+            key: The key of the object.
+            data: The data to be stored.
+            is_json: If true, json encode the data, otherwise pickle it.
+        """
+    try:
+        if not is_json:
+            serialization.dump_to_storage(key, data, self._workflow_id, storage=self)
+        else:
+            serialized_data = json.dumps(data).encode()
+            self._storage.put(key, serialized_data)
+    except Exception as e:
+        raise DataSaveError from e
+    return key

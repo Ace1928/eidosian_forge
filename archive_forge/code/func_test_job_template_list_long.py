@@ -1,0 +1,14 @@
+from osc_lib.tests import utils as osc_utils
+from unittest import mock
+from saharaclient.api.v2 import job_templates as api_j
+from saharaclient.osc.v2 import job_templates as osc_j
+from saharaclient.tests.unit.osc.v1 import test_job_templates as tjt_v1
+def test_job_template_list_long(self):
+    arglist = ['--long']
+    verifylist = [('long', True)]
+    parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+    columns, data = self.cmd.take_action(parsed_args)
+    expected_columns = ['Name', 'Id', 'Type', 'Description', 'Is public', 'Is protected']
+    self.assertEqual(expected_columns, columns)
+    expected_data = [('pig-job', 'job_id', 'Pig', 'Job for test', False, False)]
+    self.assertEqual(expected_data, list(data))

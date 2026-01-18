@@ -1,0 +1,44 @@
+import itertools
+import math
+import sys
+import unittest
+from contextlib import redirect_stdout
+from functools import wraps
+from io import StringIO
+from os import getenv
+from textwrap import dedent
+from typing import Sequence, Tuple
+import numpy as np
+import parameterized
+import version_utils
+from numpy.testing import assert_allclose
+import onnx.reference.custom_element_types as custom
+from onnx import (
+from onnx.backend.test.case.node.roialign import get_roi_align_input_values
+from onnx.checker import check_model
+from onnx.defs import onnx_opset_version
+from onnx.helper import (
+from onnx.numpy_helper import float8e4m3_to_float32, float8e5m2_to_float32, from_array
+from onnx.reference import ReferenceEvaluator
+from onnx.reference.op_run import OpRun, OpRunExpand
+from onnx.reference.ops import load_op
+from onnx.reference.ops._op_common_indices import _get_indices, _is_out
+from onnx.reference.ops._op_list import Cast_19, Celu
+from onnx.reference.ops.aionnx_preview_training._op_list import Adam
+from onnx.reference.ops.op_celu import _vcelu1
+from onnx.reference.ops.op_col2im import (
+from onnx.reference.ops.op_conv import Conv, _conv_implementation
+from onnx.reference.ops_optimized import Conv as ConvOptimized
+from onnx.reference.ops_optimized.op_conv_optimized import _conv_implementation_im2col
+def test_cast_float8_output(self):
+    X = make_tensor_value_info('X', TensorProto.FLOAT, [None])
+    F1 = make_tensor_value_info('F1', TensorProto.FLOAT8E4M3FN, [None])
+    F2 = make_tensor_value_info('F2', TensorProto.FLOAT8E5M2, [None])
+    model = make_model(make_graph([make_node('Cast', ['X'], ['F1'], to=TensorProto.FLOAT8E4M3FN), make_node('Cast', ['X'], ['F2'], to=TensorProto.FLOAT8E5M2)], 'g', [X], [F1, F2]))
+    ref = ReferenceEvaluator(model)
+    data = np.array([0, 1, 2, 0.05, 200], dtype=np.float32)
+    expected1 = np.array([float32_to_float8e4m3(x) for x in data])
+    expected2 = np.array([float32_to_float8e5m2(x) for x in data])
+    got = ref.run(None, {'X': data})
+    self.assertEqual(expected1.tolist(), got[0].tolist())
+    self.assertEqual(expected2.tolist(), got[1].tolist())

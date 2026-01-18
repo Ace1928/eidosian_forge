@@ -1,0 +1,2 @@
+class DirectConnectServerException(Exception):
+    pass

@@ -1,0 +1,43 @@
+import os
+import unittest
+from distutils.core import PyPIRCCommand
+from distutils.core import Distribution
+from distutils.log import set_threshold
+from distutils.log import WARN
+from distutils.tests import support
+class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
+
+    def test_server_registration(self):
+        self.write_file(self.rc, PYPIRC)
+        cmd = self._cmd(self.dist)
+        config = cmd._read_pypirc()
+        config = list(sorted(config.items()))
+        waited = [('password', 'secret'), ('realm', 'pypi'), ('repository', 'https://upload.pypi.org/legacy/'), ('server', 'server1'), ('username', 'me')]
+        self.assertEqual(config, waited)
+        self.write_file(self.rc, PYPIRC_OLD)
+        config = cmd._read_pypirc()
+        config = list(sorted(config.items()))
+        waited = [('password', 'secret'), ('realm', 'pypi'), ('repository', 'https://upload.pypi.org/legacy/'), ('server', 'server-login'), ('username', 'tarek')]
+        self.assertEqual(config, waited)
+
+    def test_server_empty_registration(self):
+        cmd = self._cmd(self.dist)
+        rc = cmd._get_rc_file()
+        self.assertFalse(os.path.exists(rc))
+        cmd._store_pypirc('tarek', 'xxx')
+        self.assertTrue(os.path.exists(rc))
+        f = open(rc)
+        try:
+            content = f.read()
+            self.assertEqual(content, WANTED)
+        finally:
+            f.close()
+
+    def test_config_interpolation(self):
+        self.write_file(self.rc, PYPIRC)
+        cmd = self._cmd(self.dist)
+        cmd.repository = 'server3'
+        config = cmd._read_pypirc()
+        config = list(sorted(config.items()))
+        waited = [('password', 'yh^%#rest-of-my-password'), ('realm', 'pypi'), ('repository', 'https://upload.pypi.org/legacy/'), ('server', 'server3'), ('username', 'cbiggles')]
+        self.assertEqual(config, waited)

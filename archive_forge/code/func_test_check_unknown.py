@@ -1,0 +1,8 @@
+import pickle
+import numpy as np
+import pytest
+from numpy.testing import assert_array_equal
+from sklearn.utils._encode import _check_unknown, _encode, _get_counts, _unique
+@pytest.mark.parametrize('values, uniques, expected_diff, expected_mask', [(np.array([1, 2, 3, 4]), np.array([1, 2, 3]), [4], [True, True, True, False]), (np.array([2, 1, 4, 5]), np.array([2, 5, 1]), [4], [True, True, False, True]), (np.array([2, 1, np.nan]), np.array([2, 5, 1]), [np.nan], [True, True, False]), (np.array([2, 1, 4, np.nan]), np.array([2, 5, 1, np.nan]), [4], [True, True, False, True]), (np.array([2, 1, 4, np.nan]), np.array([2, 5, 1]), [4, np.nan], [True, True, False, False]), (np.array([2, 1, 4, 5]), np.array([2, 5, 1, np.nan]), [4], [True, True, False, True]), (np.array(['a', 'b', 'c', 'd'], dtype=object), np.array(['a', 'b', 'c'], dtype=object), np.array(['d'], dtype=object), [True, True, True, False]), (np.array(['d', 'c', 'a', 'b'], dtype=object), np.array(['a', 'c', 'b'], dtype=object), np.array(['d'], dtype=object), [False, True, True, True]), (np.array(['a', 'b', 'c', 'd']), np.array(['a', 'b', 'c']), np.array(['d']), [True, True, True, False]), (np.array(['d', 'c', 'a', 'b']), np.array(['a', 'c', 'b']), np.array(['d']), [False, True, True, True])])
+def test_check_unknown(values, uniques, expected_diff, expected_mask):
+    _assert_check_unknown(values, uniques, expected_diff, expected_mask)

@@ -1,0 +1,18 @@
+import warnings
+import tensorflow.compat.v2 as tf
+from keras.src import backend
+from keras.src import constraints
+from keras.src import initializers
+from keras.src import regularizers
+from keras.src.dtensor import utils
+from keras.src.engine.base_layer import Layer
+from keras.src.engine.input_spec import InputSpec
+from keras.src.utils import control_flow_util
+from keras.src.utils import tf_utils
+from tensorflow.python.ops.control_flow_ops import (
+from tensorflow.python.platform import tf_logging as logging
+from tensorflow.python.util import deprecation
+from tensorflow.python.util.tf_export import keras_export
+def true_branch_renorm():
+    moving_stddev = _do_update(self.moving_stddev, tf.sqrt(new_variance + self.epsilon))
+    return self._assign_new_value(self.moving_variance, backend.relu(moving_stddev * moving_stddev - self.epsilon))

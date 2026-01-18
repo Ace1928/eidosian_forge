@@ -1,0 +1,35 @@
+from sympy.simplify.epathtools import epath, EPath
+from sympy.testing.pytest import raises
+from sympy.core.numbers import E
+from sympy.functions.elementary.trigonometric import (cos, sin)
+from sympy.abc import x, y, z, t
+def test_epath_select():
+    expr = [((x, 1, t), 2), ((3, y, 4), z)]
+    assert epath('/*', expr) == [((x, 1, t), 2), ((3, y, 4), z)]
+    assert epath('/*/*', expr) == [(x, 1, t), 2, (3, y, 4), z]
+    assert epath('/*/*/*', expr) == [x, 1, t, 3, y, 4]
+    assert epath('/*/*/*/*', expr) == []
+    assert epath('/[:]', expr) == [((x, 1, t), 2), ((3, y, 4), z)]
+    assert epath('/[:]/[:]', expr) == [(x, 1, t), 2, (3, y, 4), z]
+    assert epath('/[:]/[:]/[:]', expr) == [x, 1, t, 3, y, 4]
+    assert epath('/[:]/[:]/[:]/[:]', expr) == []
+    assert epath('/*/[:]', expr) == [(x, 1, t), 2, (3, y, 4), z]
+    assert epath('/*/[0]', expr) == [(x, 1, t), (3, y, 4)]
+    assert epath('/*/[1]', expr) == [2, z]
+    assert epath('/*/[2]', expr) == []
+    assert epath('/*/int', expr) == [2]
+    assert epath('/*/Symbol', expr) == [z]
+    assert epath('/*/tuple', expr) == [(x, 1, t), (3, y, 4)]
+    assert epath('/*/__iter__?', expr) == [(x, 1, t), (3, y, 4)]
+    assert epath('/*/int|tuple', expr) == [(x, 1, t), 2, (3, y, 4)]
+    assert epath('/*/Symbol|tuple', expr) == [(x, 1, t), (3, y, 4), z]
+    assert epath('/*/int|Symbol|tuple', expr) == [(x, 1, t), 2, (3, y, 4), z]
+    assert epath('/*/int|__iter__?', expr) == [(x, 1, t), 2, (3, y, 4)]
+    assert epath('/*/Symbol|__iter__?', expr) == [(x, 1, t), (3, y, 4), z]
+    assert epath('/*/int|Symbol|__iter__?', expr) == [(x, 1, t), 2, (3, y, 4), z]
+    assert epath('/*/[0]/int', expr) == [1, 3, 4]
+    assert epath('/*/[0]/Symbol', expr) == [x, t, y]
+    assert epath('/*/[0]/int[1:]', expr) == [1, 4]
+    assert epath('/*/[0]/Symbol[1:]', expr) == [t, y]
+    assert epath('/Symbol', x + y + z + 1) == [x, y, z]
+    assert epath('/*/*/Symbol', t + sin(x + 1) + cos(x + y + E)) == [x, x, y]

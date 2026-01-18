@@ -1,0 +1,20 @@
+import copy
+import itertools
+from oslo_log import log
+from keystone.common import cache
+from keystone.common import driver_hints
+from keystone.common import manager
+from keystone.common import provider_api
+from keystone.common.resource_options import options as ro_opt
+import keystone.conf
+from keystone import exception
+from keystone.i18n import _
+from keystone import notifications
+def get_grant(self, role_id, user_id=None, group_id=None, domain_id=None, project_id=None, inherited_to_projects=False):
+    role_ref = PROVIDERS.role_api.get_role(role_id)
+    if domain_id:
+        PROVIDERS.resource_api.get_domain(domain_id)
+    if project_id:
+        PROVIDERS.resource_api.get_project(project_id)
+    self.check_grant_role_id(role_id, user_id=user_id, group_id=group_id, domain_id=domain_id, project_id=project_id, inherited_to_projects=inherited_to_projects)
+    return role_ref

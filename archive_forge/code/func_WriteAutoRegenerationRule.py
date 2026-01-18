@@ -1,0 +1,16 @@
+import os
+import re
+import subprocess
+import gyp
+import gyp.common
+import gyp.xcode_emulation
+from gyp.common import GetEnvironFallback
+import hashlib
+def WriteAutoRegenerationRule(params, root_makefile, makefile_name, build_files):
+    """Write the target to regenerate the Makefile."""
+    options = params['options']
+    build_files_args = [gyp.common.RelativePath(filename, options.toplevel_dir) for filename in params['build_files_arg']]
+    gyp_binary = gyp.common.FixIfRelativePath(params['gyp_binary'], options.toplevel_dir)
+    if not gyp_binary.startswith(os.sep):
+        gyp_binary = os.path.join('.', gyp_binary)
+    root_makefile.write('quiet_cmd_regen_makefile = ACTION Regenerating $@\ncmd_regen_makefile = cd $(srcdir); %(cmd)s\n%(makefile_name)s: %(deps)s\n\t$(call do_cmd,regen_makefile)\n\n' % {'makefile_name': makefile_name, 'deps': ' '.join((SourceifyAndQuoteSpaces(bf) for bf in build_files)), 'cmd': gyp.common.EncodePOSIXShellList([gyp_binary, '-fmake'] + gyp.RegenerateFlags(options) + build_files_args)})

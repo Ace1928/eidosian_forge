@@ -1,0 +1,388 @@
+Implement these changes. Ensuring that all current features and functions and details are retained and added to. Ensuring that every aspect is funcitonal, adaptive, dynamic, robust, scalable, completely abstracted, functional.
+Ensuring that the prioritisation of processing for all information/data/layers/inputs etc.
+
+Is Priority 1: Disk
+Priority 2: CPU
+Priority 3: (if available) GPU
+
+Ensuring that any part of the program can handle the mixture of devices and transfer between them perfectly and seemlessly. 
+
+Functional, all things retained, scalable, production quality, fucntional, commented, detailed, complete code to th e highest possible wuality and detail in all regards. 
+
+
+
+
+
+
+
+
+
+
+
+# ⚙️ Core Configuration - Environment Variables and Defaults
+DEFAULT_DEVELOPMENT_DIR = "/Development"
+EIDOS_PROJECT_DIR_ENV = "EIDOS_PROJECT_DIR"
+DEFAULT_EIDOS_PROJECT_DIR = os.path.join(DEFAULT_DEVELOPMENT_DIR, "eidos_project")
+EIDOS_PROJECT_DIR = os.environ.get(EIDOS_PROJECT_DIR_ENV, DEFAULT_EIDOS_PROJECT_DIR)
+
+LOGGING_CONFIG_DIR_ENV = "LOGGING_CONFIG_DIR"
+DEFAULT_LOGGING_CONFIG_DIR = os.path.join(EIDOS_PROJECT_DIR, "config")
+LOGGING_CONFIG_DIR = os.environ.get(LOGGING_CONFIG_DIR_ENV, DEFAULT_LOGGING_CONFIG_DIR)
+
+UNIVERSAL_LOGGING_CONFIG_FILE_ENV = "UNIVERSAL_LOGGING_CONFIG_FILE"
+DEFAULT_UNIVERSAL_LOGGING_CONFIG_FILE = "universal_logging_config.json"
+UNIVERSAL_LOGGING_CONFIG_PATH = os.path.join(
+    LOGGING_CONFIG_DIR,
+    os.environ.get(
+        UNIVERSAL_LOGGING_CONFIG_FILE_ENV, DEFAULT_UNIVERSAL_LOGGING_CONFIG_FILE
+    ),
+)
+
+DEFAULT_LOG_LEVEL_ENV = "DEFAULT_LOG_LEVEL"
+DEFAULT_LOG_LEVEL_STR = os.environ.get(DEFAULT_LOG_LEVEL_ENV, "INFO").upper()
+DEFAULT_LOG_LEVEL = getattr(logging, DEFAULT_LOG_LEVEL_STR, logging.INFO)
+
+DEFAULT_LOG_FORMAT_TEXT_ENV = "DEFAULT_LOG_FORMAT_TEXT"
+DEFAULT_LOG_FORMAT_TEXT = os.environ.get(
+    DEFAULT_LOG_FORMAT_TEXT_ENV,
+    "%(asctime)s - %(levelname)s - [%(name)s] - %(filename)s:%(lineno)d - %(message)s",
+)
+
+DEFAULT_LOG_FORMAT_JSON_ENV = "DEFAULT_LOG_FORMAT_JSON"
+DEFAULT_LOG_FORMAT_JSON = os.environ.get(
+    DEFAULT_LOG_FORMAT_JSON_ENV,
+    '{"time": "%(asctime)s", "level": "%(levelname)s", "name": "%(name)s", "module": "%(module)s", '
+    '"function": "%(funcName)s", "line": "%(lineno)d", "message": "%(message)s"}',
+)
+
+DEFAULT_DATETIME_FORMAT_ENV = "DEFAULT_DATETIME_FORMAT"
+DEFAULT_DATETIME_FORMAT = os.environ.get(
+    DEFAULT_DATETIME_FORMAT_ENV, "%Y-%m-%d %H:%M:%S"
+)
+
+# 🔬 Enhanced Log Levels - Fully Customizable
+LLM_TRACE_LEVEL_ENV = "LLM_TRACE_LEVEL"
+LLM_TRACE_LEVEL_DEFAULT = 5
+LLM_TRACE: int = int(os.environ.get(LLM_TRACE_LEVEL_ENV, str(LLM_TRACE_LEVEL_DEFAULT)))
+logging.addLevelName(LLM_TRACE, "LLM_TRACE")
+
+
+def add_enhanced_log_level(level_name: str, level_value: int) -> None:
+    """✨ Adds a custom log level to the logging module."""
+    level_name_upper = level_name.upper()
+    if level_value not in logging._levelToName:
+        logging.addLevelName(level_value, level_name_upper)
+        logging._nameToLevel[level_name_upper] = level_value
+    elif logging._levelToName[level_value] != level_name_upper:
+        logging.warning(
+            f"Log level value {level_value} already associated with name '{logging._levelToName[level_value]}'. Ignoring request for '{level_name_upper}'."
+        )
+
+
+def log_enhanced(
+    self: logging.Logger,
+    level: int,
+    message: str,
+    *args: Any,
+    model: Any = None,
+    profile: bool = False,
+    context: Optional[str] = None,
+    include_trace: bool = True,
+    **kwargs: Any,
+) -> None:
+    """🚀 Logs a message at a specified custom level."""
+    if self.isEnabledFor(level):
+        enhanced_message = message
+        if model is not None:
+            enhanced_message += f"\nModel Info: {model}"
+        if context:
+            enhanced_message += f"\nContext: {context}"
+        if profile and hasattr(
+            self, "gather_profiling_info"
+        ):  # Check for method existence
+            profiling_info = self.gather_profiling_info()
+            enhanced_message += f"\nProfile: {profiling_info}"
+        elif profile:
+            enhanced_message += "\nProfile: Profiling not available"
+
+        self._log(level, enhanced_message, args, **kwargs)
+
+
+def configure_enhanced_levels(enhanced_levels: Optional[Dict[str, int]] = None) -> None:
+    """⚙️ Configures enhanced log levels dynamically."""
+    if enhanced_levels:
+        for name, value in enhanced_levels.items():
+            add_enhanced_log_level(name, value)
+            setattr(
+                logging.Logger,
+                name.lower(),
+                lambda self, message, *args, model=None, profile=False, context=None, include_trace=True, **kwargs: log_enhanced(
+                    self,
+                    value,
+                    message,
+                    *args,
+                    model=model,
+                    profile=profile,
+                    context=context,
+                    include_trace=include_trace,
+                    **kwargs,
+                ),
+            )
+    else:
+        add_enhanced_log_level("LLM_TRACE", LLM_TRACE)
+        setattr(
+            logging.Logger,
+            "llm_trace",
+            lambda self, message, *args, model=None, profile=False, context=None, include_trace=True, **kwargs: log_enhanced(
+                self,
+                LLM_TRACE,
+                message,
+                *args,
+                model=model,
+                profile=profile,
+                context=context,
+                include_trace=include_trace,
+                **kwargs,
+            ),
+        )
+
+
+configure_enhanced_levels()  # Initialize default enhanced levels on module load
+
+_config_loaded = False  # Module-level flag to track config loading
+
+
+def _create_default_logging_config(
+    config_path: str,
+    default_level: Union[str, int],
+    default_format_text: str,
+    default_format_json: str,
+    default_datetime_format: str,
+) -> Dict[str, Any]:
+    """🛠️ Creates a default logging configuration JSON."""
+    default_config: Dict[str, Any] = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "text": {"format": default_format_text, "datefmt": default_datetime_format},
+            "json": {"format": default_format_json, "datefmt": default_datetime_format},
+            "eidos": {
+                "()": EidosFormatter,
+                "format": default_format_text,
+                "datefmt": default_datetime_format,
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "eidos",
+                "stream": "ext://sys.stdout",
+                "level": (
+                    logging.getLevelName(default_level)
+                    if isinstance(default_level, int)
+                    else default_level.upper()
+                ),
+            }
+        },
+        "root": {
+            "level": (
+                logging.getLevelName(default_level)
+                if isinstance(default_level, int)
+                else default_level.upper()
+            ),
+            "handlers": ["console"],
+        },
+    }
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+    with open(config_path, "w") as f:
+        json.dump(default_config, f, indent=4)
+    return default_config
+
+
+def configure_logging(
+    config_path: str = UNIVERSAL_LOGGING_CONFIG_PATH,
+    default_level: Union[str, int] = DEFAULT_LOG_LEVEL_STR,
+    default_format_text: str = DEFAULT_LOG_FORMAT_TEXT,
+    default_format_json: str = DEFAULT_LOG_FORMAT_JSON,
+    log_to_console: bool = True,
+    console_log_level: Optional[Union[str, int]] = None,
+    console_log_format_type: str = "text",
+    console_stream: Any = sys.stdout,
+    log_to_file: Optional[str] = None,
+    file_log_level: Optional[Union[str, int]] = None,
+    file_log_format_type: str = "text",
+    logger_name: str = "universal_logger",
+    propagate: bool = False,
+    enhanced_levels: Optional[Dict[str, int]] = None,
+    disable_existing: bool = False,
+    include_uuid: bool = False,
+    datetime_format: Optional[str] = None,
+    use_color: bool = True,
+    color_map: Optional[Dict[str, str]] = None,
+    formatter_type: str = "text",
+) -> logging.Logger:
+    """⚙️ Configures logging with ultimate adaptability and Eidosian robustness.
+
+    Prioritizes programmatic configurations, falling back to a JSON file if it exists.
+    If no configuration is found, a default configuration is created and saved.
+    Supports highly customizable console and file logging with text or JSON formats.
+
+    Args:
+        config_path (str): Path to the logging configuration JSON file.
+        default_level (Union[str, int]): Default logging level.
+        default_format_text (str): Default log message format string for 'text' format.
+        default_format_json (str): Default log message format string for 'json' format.
+        log_to_console (bool): Enable logging to the console.
+        console_log_level (Optional[Union[str, int]]): Logging level for the console output.
+        console_log_format_type (str): 'text' for standard or 'json' for JSON console output.
+        console_stream (Any): The stream for console output (e.g., sys.stdout, sys.stderr).
+        log_to_file (Optional[str]): Path to a log file. If provided, logs will be written to this file.
+        file_log_level (Optional[Union[str, int]]): Logging level for the file output.
+        file_log_format_type (str): 'text' for standard or 'json' for JSON file output.
+        logger_name (str): The name of the logger to configure.
+        propagate (bool): Whether to propagate messages to ancestor loggers.
+        enhanced_levels (Optional[Dict[str, int]]): Custom log levels to configure.
+        disable_existing (bool): Whether to disable existing loggers when applying file config.
+        include_uuid (bool): Whether to include a UUID in log messages.
+        datetime_format (Optional[str]): Optional string for custom datetime formatting.
+        use_color (bool): Whether to use color in log messages.
+        color_map (Optional[Dict[str, str]]): Optional color mapping for log levels.
+        formatter_type (str): 'text', 'json', or 'eidos' for the log formatter.
+
+    Returns:
+        logging.Logger: The configured logger instance.
+    """
+    global _config_loaded
+    logger = logging.getLogger(logger_name)
+    logger.propagate = propagate
+
+    if enhanced_levels:
+        configure_enhanced_levels(enhanced_levels)
+
+    if isinstance(logger, EidosLogger):
+        logger.include_uuid = include_uuid
+        logger.datetime_format = datetime_format or DEFAULT_DATETIME_FORMAT
+        logger.use_color = use_color
+        if color_map:
+            logger.color_map = color_map
+
+    if not _config_loaded:
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    config["disable_existing_loggers"] = disable_existing
+                    logging.config.dictConfig(config)
+                    _config_loaded = True
+                    print(f"✅ Universal logging configured from: {config_path}")
+            except Exception as e:
+                print(
+                    f"🔥 Error configuring universal logging from '{config_path}': {e}."
+                )
+        else:
+            print(
+                f"⚠️ Universal logging configuration file not found at '{config_path}'. Creating default configuration."
+            )
+            _create_default_logging_config(
+                config_path,
+                default_level,
+                default_format_text,
+                default_format_json,
+                DEFAULT_DATETIME_FORMAT,
+            )
+            try:
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    logging.config.dictConfig(config)
+                    _config_loaded = True
+                    print(
+                        f"✅ Default universal logging configured and saved to: {config_path}"
+                    )
+            except Exception as e:
+                print(
+                    f"🔥 Error loading default universal logging config from '{config_path}': {e}."
+                )
+
+    if not _config_loaded:
+        logging.basicConfig(level=default_level)
+
+    def _get_formatter(formatter_type: str) -> logging.Formatter:
+        if formatter_type == "json":
+            return logging.Formatter(
+                default_format_json, datefmt=DEFAULT_DATETIME_FORMAT
+            )
+        elif formatter_type == "eidos":
+            return EidosFormatter()
+        else:
+            return logging.Formatter(
+                default_format_text, datefmt=DEFAULT_DATETIME_FORMAT
+            )
+
+    if log_to_console:
+        console_handler = logging.StreamHandler(console_stream)
+        console_log_lvl = (
+            console_log_level if console_log_level is not None else default_level
+        )
+        try:
+            console_handler.setLevel(
+                getattr(logging, str(console_log_lvl).upper())
+                if isinstance(console_log_lvl, str)
+                else console_log_lvl
+            )
+        except (AttributeError, ValueError):
+            logging.warning(
+                f"⚠️ Invalid console log level '{console_log_lvl}'. Falling back to default: {default_level}"
+            )
+            console_handler.setLevel(DEFAULT_LOG_LEVEL)
+
+        console_handler.setFormatter(_get_formatter(console_log_format_type))
+
+        if not any(
+            isinstance(h, logging.StreamHandler) and h.stream == console_stream
+            for h in logger.handlers
+        ):
+            logger.addHandler(console_handler)
+
+    if log_to_file:
+        log_dir = "/Development/logs"
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+        except OSError:
+            log_dir = "./Development/logs"
+            os.makedirs(log_dir, exist_ok=True)
+
+        log_file_path = os.path.join(log_dir, log_to_file)
+
+        file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+        file_log_lvl = file_log_level if file_log_level is not None else default_level
+
+        try:
+            file_handler.setLevel(
+                getattr(logging, str(file_log_lvl).upper())
+                if isinstance(file_log_lvl, str)
+                else file_log_lvl
+            )
+        except (AttributeError, ValueError):
+            logging.warning(
+                f"⚠️ Invalid file log level '{file_log_level}'. Falling back to default: {default_level}"
+            )
+            file_handler.setLevel(DEFAULT_LOG_LEVEL)
+
+        file_handler.setFormatter(_get_formatter(file_log_format_type))
+
+        if not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+            logger.addHandler(file_handler)
+    elif not logger.handlers:
+        basic_handler = logging.StreamHandler()
+        basic_handler.setFormatter(
+            logging.Formatter(default_format_text, datefmt=DEFAULT_DATETIME_FORMAT)
+        )
+        logger.addHandler(basic_handler)
+        logger.setLevel(default_level)
+
+    return logger
+
+
+def get_universal_logger(name: str, **kwargs) -> logging.Logger:
+    """Returns a configured logger instance."""
+    return UniversalLogger(name=name, **kwargs).get_logger()

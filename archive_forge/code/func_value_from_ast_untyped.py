@@ -1,0 +1,26 @@
+from math import nan
+from typing import Any, Callable, Dict, Optional, Union
+from ..language import (
+from ..pyutils import inspect, Undefined
+def value_from_ast_untyped(value_node: ValueNode, variables: Optional[Dict[str, Any]]=None) -> Any:
+    """Produce a Python value given a GraphQL Value AST.
+
+    Unlike :func:`~graphql.utilities.value_from_ast`, no type is provided.
+    The resulting Python value will reflect the provided GraphQL value AST.
+
+    =================== ============== ================
+       GraphQL Value      JSON Value     Python Value
+    =================== ============== ================
+       Input Object       Object         dict
+       List               Array          list
+       Boolean            Boolean        bool
+       String / Enum      String         str
+       Int / Float        Number         int / float
+       Null               null           None
+    =================== ============== ================
+
+    """
+    func = _value_from_kind_functions.get(value_node.kind)
+    if func:
+        return func(value_node, variables)
+    raise TypeError(f'Unexpected value node: {inspect(value_node)}.')

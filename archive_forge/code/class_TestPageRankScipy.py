@@ -1,0 +1,31 @@
+import random
+import pytest
+import networkx as nx
+from networkx.classes.tests import dispatch_interface
+from networkx.algorithms.link_analysis.pagerank_alg import (
+class TestPageRankScipy(TestPageRank):
+
+    def test_scipy_pagerank(self):
+        G = self.G
+        p = _pagerank_scipy(G, alpha=0.9, tol=1e-08)
+        for n in G:
+            assert p[n] == pytest.approx(G.pagerank[n], abs=0.0001)
+        personalize = {n: random.random() for n in G}
+        p = _pagerank_scipy(G, alpha=0.9, tol=1e-08, personalization=personalize)
+        nstart = {n: random.random() for n in G}
+        p = _pagerank_scipy(G, alpha=0.9, tol=1e-08, nstart=nstart)
+        for n in G:
+            assert p[n] == pytest.approx(G.pagerank[n], abs=0.0001)
+
+    def test_scipy_pagerank_max_iter(self):
+        with pytest.raises(nx.PowerIterationFailedConvergence):
+            _pagerank_scipy(self.G, max_iter=0)
+
+    def test_dangling_scipy_pagerank(self):
+        pr = _pagerank_scipy(self.G, dangling=self.dangling_edges)
+        for n in self.G:
+            assert pr[n] == pytest.approx(self.G.dangling_pagerank[n], abs=0.0001)
+
+    def test_empty_scipy(self):
+        G = nx.Graph()
+        assert _pagerank_scipy(G) == {}

@@ -1,0 +1,26 @@
+from breezy import errors, tests, workingtree
+def test_subsume_tree(self):
+    base_tree, sub_tree = self.make_trees()
+    self.assertNotEqual(base_tree.path2id(''), sub_tree.path2id(''))
+    sub_root_id = sub_tree.path2id('')
+    self.assertPathExists('tree/subtree/.bzr')
+    base_tree.subsume(sub_tree)
+    self.assertEqual([b'tree-1', b'subtree-1'], base_tree.get_parent_ids())
+    self.assertEqual(sub_root_id, base_tree.path2id('subtree'))
+    self.assertEqual(b'file2-id', base_tree.path2id('subtree/file2'))
+    self.assertPathDoesNotExist('tree/subtree/.bzr')
+    with open('tree/subtree/file2', 'rb') as file2:
+        file2_contents = file2.read()
+    base_tree = workingtree.WorkingTree.open('tree')
+    base_tree.commit('combined', rev_id=b'combined-1')
+    self.assertEqual(b'file2-id', base_tree.path2id('subtree/file2'))
+    if base_tree.supports_setting_file_ids():
+        self.assertEqual('subtree/file2', base_tree.id2path(b'file2-id'))
+    self.assertEqualDiff(file2_contents, base_tree.get_file_text('subtree/file2'))
+    basis_tree = base_tree.basis_tree()
+    basis_tree.lock_read()
+    self.addCleanup(basis_tree.unlock)
+    self.assertEqualDiff(file2_contents, base_tree.get_file_text('subtree/file2'))
+    self.assertEqualDiff(file2_contents, basis_tree.get_file_text('subtree/file2'))
+    self.assertEqual(b'subtree-1', basis_tree.get_file_revision('subtree/file2'))
+    self.assertEqual(b'combined-1', basis_tree.get_file_revision('subtree'))

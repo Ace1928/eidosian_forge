@@ -1,0 +1,22 @@
+def decode_entities(self, element, data):
+    data = data.replace('&#60;', '&lt;')
+    data = data.replace('&#x3c;', '&lt;')
+    data = data.replace('&#x3C;', '&lt;')
+    data = data.replace('&#62;', '&gt;')
+    data = data.replace('&#x3e;', '&gt;')
+    data = data.replace('&#x3E;', '&gt;')
+    data = data.replace('&#38;', '&amp;')
+    data = data.replace('&#x26;', '&amp;')
+    data = data.replace('&#34;', '&quot;')
+    data = data.replace('&#x22;', '&quot;')
+    data = data.replace('&#39;', '&apos;')
+    data = data.replace('&#x27;', '&apos;')
+    if not self.contentparams.get('type', 'xml').endswith('xml'):
+        data = data.replace('&lt;', '<')
+        data = data.replace('&gt;', '>')
+        data = data.replace('&amp;', '&')
+        data = data.replace('&quot;', '"')
+        data = data.replace('&apos;', "'")
+        data = data.replace('&#x2f;', '/')
+        data = data.replace('&#x2F;', '/')
+    return data

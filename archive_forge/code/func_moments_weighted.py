@@ -1,0 +1,22 @@
+import inspect
+from functools import wraps
+from math import atan2
+from math import pi as PI
+from math import sqrt
+from warnings import warn
+import numpy as np
+from scipy import ndimage as ndi
+from scipy.spatial.distance import pdist
+from . import _moments
+from ._find_contours import find_contours
+from ._marching_cubes_lewiner import marching_cubes
+from ._regionprops_utils import (
+@property
+@_cached
+def moments_weighted(self):
+    image = self._image_intensity_double()
+    if self._multichannel:
+        moments = np.stack([_moments.moments(image[..., i], order=3, spacing=self._spacing) for i in range(image.shape[-1])], axis=-1)
+    else:
+        moments = _moments.moments(image, order=3, spacing=self._spacing)
+    return moments

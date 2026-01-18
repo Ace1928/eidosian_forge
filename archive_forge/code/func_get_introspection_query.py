@@ -1,0 +1,18 @@
+from textwrap import dedent
+from typing import Any, Dict, List, Optional, Union
+from ..language import DirectiveLocation
+def get_introspection_query(descriptions: bool=True, specified_by_url: bool=False, directive_is_repeatable: bool=False, schema_description: bool=False, input_value_deprecation: bool=False) -> str:
+    """Get a query for introspection.
+
+    Optionally, you can exclude descriptions, include specification URLs,
+    include repeatability of directives, and specify whether to include
+    the schema description as well.
+    """
+    maybe_description = 'description' if descriptions else ''
+    maybe_specified_by_url = 'specifiedByURL' if specified_by_url else ''
+    maybe_directive_is_repeatable = 'isRepeatable' if directive_is_repeatable else ''
+    maybe_schema_description = maybe_description if schema_description else ''
+
+    def input_deprecation(string: str) -> Optional[str]:
+        return string if input_value_deprecation else ''
+    return dedent(f'\n        query IntrospectionQuery {{\n          __schema {{\n            {maybe_schema_description}\n            queryType {{ name }}\n            mutationType {{ name }}\n            subscriptionType {{ name }}\n            types {{\n              ...FullType\n            }}\n            directives {{\n              name\n              {maybe_description}\n              {maybe_directive_is_repeatable}\n              locations\n              args{input_deprecation('(includeDeprecated: true)')} {{\n                ...InputValue\n              }}\n            }}\n          }}\n        }}\n\n        fragment FullType on __Type {{\n          kind\n          name\n          {maybe_description}\n          {maybe_specified_by_url}\n          fields(includeDeprecated: true) {{\n            name\n            {maybe_description}\n            args{input_deprecation('(includeDeprecated: true)')} {{\n              ...InputValue\n            }}\n            type {{\n              ...TypeRef\n            }}\n            isDeprecated\n            deprecationReason\n          }}\n          inputFields{input_deprecation('(includeDeprecated: true)')} {{\n            ...InputValue\n          }}\n          interfaces {{\n            ...TypeRef\n          }}\n          enumValues(includeDeprecated: true) {{\n            name\n            {maybe_description}\n            isDeprecated\n            deprecationReason\n          }}\n          possibleTypes {{\n            ...TypeRef\n          }}\n        }}\n\n        fragment InputValue on __InputValue {{\n          name\n          {maybe_description}\n          type {{ ...TypeRef }}\n          defaultValue\n          {input_deprecation('isDeprecated')}\n          {input_deprecation('deprecationReason')}\n        }}\n\n        fragment TypeRef on __Type {{\n          kind\n          name\n          ofType {{\n            kind\n            name\n            ofType {{\n              kind\n              name\n              ofType {{\n                kind\n                name\n                ofType {{\n                  kind\n                  name\n                  ofType {{\n                    kind\n                    name\n                    ofType {{\n                      kind\n                      name\n                      ofType {{\n                        kind\n                        name\n                      }}\n                    }}\n                  }}\n                }}\n              }}\n            }}\n          }}\n        }}\n        ')

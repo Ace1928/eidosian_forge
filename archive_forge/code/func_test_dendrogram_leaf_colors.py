@@ -1,0 +1,20 @@
+import numpy as np
+from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+import pytest
+from pytest import raises as assert_raises
+import scipy.cluster.hierarchy
+from scipy.cluster.hierarchy import (
+from scipy.spatial.distance import pdist
+from scipy.cluster._hierarchy import Heap
+from scipy.conftest import (
+from scipy._lib._array_api import xp_assert_close
+from . import hierarchy_test_data
+@skip_if_array_api_gpu
+@array_api_compatible
+def test_dendrogram_leaf_colors(self, xp):
+    x = xp.asarray([[1, 0, 0], [0, 0, 1.1], [0, 2, 0], [0, 0, 1], [0, 1, 0], [0, 1, 0]])
+    z = linkage(x, 'single')
+    d = dendrogram(z, no_plot=True)
+    exp_colors = ['C0', 'C1', 'C1', 'C0', 'C2', 'C2']
+    colors = d['leaves_color_list']
+    assert_equal(colors, exp_colors)

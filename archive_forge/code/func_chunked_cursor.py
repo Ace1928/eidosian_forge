@@ -1,0 +1,33 @@
+import asyncio
+import threading
+import warnings
+from contextlib import contextmanager
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+from django.db import DatabaseError as WrappedDatabaseError
+from django.db import connections
+from django.db.backends.base.base import BaseDatabaseWrapper
+from django.db.backends.utils import CursorDebugWrapper as BaseCursorDebugWrapper
+from django.utils.asyncio import async_unsafe
+from django.utils.functional import cached_property
+from django.utils.safestring import SafeString
+from django.utils.version import get_version_tuple
+from .psycopg_any import IsolationLevel, is_psycopg3  # NOQA isort:skip
+from .client import DatabaseClient  # NOQA isort:skip
+from .creation import DatabaseCreation  # NOQA isort:skip
+from .features import DatabaseFeatures  # NOQA isort:skip
+from .introspection import DatabaseIntrospection  # NOQA isort:skip
+from .operations import DatabaseOperations  # NOQA isort:skip
+from .schema import DatabaseSchemaEditor  # NOQA isort:skip
+@async_unsafe
+def chunked_cursor(self):
+    self._named_cursor_idx += 1
+    try:
+        current_task = asyncio.current_task()
+    except RuntimeError:
+        current_task = None
+    if current_task:
+        task_ident = str(id(current_task))
+    else:
+        task_ident = 'sync'
+    return self._cursor(name='_django_curs_%d_%s_%d' % (threading.current_thread().ident, task_ident, self._named_cursor_idx))

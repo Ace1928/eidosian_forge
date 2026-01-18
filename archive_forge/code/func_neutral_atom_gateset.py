@@ -1,0 +1,3 @@
+from cirq import ops
+def neutral_atom_gateset(max_parallel_z=None, max_parallel_xy=None):
+    return ops.Gateset(ops.AnyIntegerPowerGateFamily(ops.CNotPowGate), ops.AnyIntegerPowerGateFamily(ops.CCNotPowGate), ops.AnyIntegerPowerGateFamily(ops.CZPowGate), ops.AnyIntegerPowerGateFamily(ops.CCZPowGate), ops.ParallelGateFamily(ops.ZPowGate, max_parallel_allowed=max_parallel_z), ops.ParallelGateFamily(ops.XPowGate, max_parallel_allowed=max_parallel_xy), ops.ParallelGateFamily(ops.YPowGate, max_parallel_allowed=max_parallel_xy), ops.ParallelGateFamily(ops.PhasedXPowGate, max_parallel_allowed=max_parallel_xy), ops.MeasurementGate, ops.IdentityGate, unroll_circuit_op=False)

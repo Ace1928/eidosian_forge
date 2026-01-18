@@ -1,0 +1,237 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm, mathtools, enumitem, geometry, hyperref, algorithm, algpseudocode}
+\geometry{letterpaper, margin=1in}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\title{Module D: Multidimensional Vocabulary and Tokenization System\\[0.5em]
+\large Part of the Eidos Unified Framework for Persistent, Dynamic, and Adaptive Multimodal Intelligence}
+\author{---}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+This module rigorously defines the \emph{Multidimensional Vocabulary and Tokenization System} of the Eidos framework. It provides a comprehensive vocabulary that unifies traditional lexicons---including English words, Unicode characters, and programming language symbols---with dynamically learned multi-token sequences. Each token is endowed with a structured, multidimensional representation capturing its intrinsic properties and contextual statistics. We define unique identifier mappings, token structures, and associated embedding representations in full mathematical detail. This vocabulary serves as the linguistic and symbolic foundation for downstream embedding, knowledge graph construction, and deep model architectures. The design is modular, extensible, and engineered to support large-scale vocabularies with millions of tokens.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction and Motivation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The effectiveness of natural language understanding and processing systems fundamentally relies on a rich and comprehensive vocabulary. In the Eidos framework, the \emph{Multidimensional Vocabulary} is the bedrock upon which all higher-level representations (e.g., contextual embeddings and knowledge graphs) are built. The objectives of this module are:
+\begin{enumerate}[label=(\alph*)]
+    \item To unify diverse token sources---such as natural language words, Unicode symbols, and programming language constructs---into a single, comprehensive vocabulary.
+    \item To associate each token with a unique identifier and a structured set of attributes that capture semantic, syntactic, morphological, and contextual properties.
+    \item To support the inclusion of dynamically learned multi-token sequences, allowing the vocabulary to grow and adapt over time.
+    \item To provide a foundation for subsequent embedding and tokenization modules, ensuring that all downstream processes have access to robust and multi-faceted token representations.
+\end{enumerate}
+This module is essential for ensuring that the entire Eidos system operates on a deep and unified understanding of the input symbols.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Preliminaries and Notation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We introduce the following notation to ensure clarity and prevent redundancy:
+\begin{itemize}[label=\(\bullet\)]
+    \item \(\Sigma\): The base alphabet (e.g., Unicode) from which raw text is composed.
+    \item \(X_{\mathrm{proc}} \in \mathcal{X}_{\mathrm{proc}}\): Preprocessed input text.
+    \item \(\mathcal{V}^{(0)}\): The base vocabulary consisting of natural language tokens (e.g., English words), Unicode characters, and programming symbols.
+    \item \(\mathcal{V}^{(1)}\): The set of learned multi-token sequences (e.g., frequent n-grams or phrases) discovered through unsupervised segmentation.
+    \item \(\mathcal{V}\): The complete vocabulary, defined as 
+    \[
+    \mathcal{V} = \mathcal{V}^{(0)} \cup \mathcal{V}^{(1)}.
+    \]
+    \item For any token \( t \in \mathcal{V} \):
+    \[
+    t = \bigl(u, \, \pi, \, \chi\bigr),
+    \]
+    where:
+    \begin{itemize}[label=\(\circ\)]
+        \item \( u \) is the underlying unit (a string or symbol),
+        \item \( \pi \in \Pi \subseteq \mathbb{R}^{d_{\pi}} \) is a vector of intrinsic properties (e.g., syntactic category, morphological features),
+        \item \( \chi \in \mathbb{R}^{d_{\chi}} \) is a vector of contextual statistics (e.g., frequency, co-occurrence distribution).
+    \end{itemize}
+    \item Unique identifier mapping:
+    \[
+    \eta: \mathcal{V} \to \mathbb{N},
+    \]
+    which is injective. For each token \( t \), define:
+    \[
+    \operatorname{ID}(t) = \eta(t).
+    \]
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Formal Definitions and Mathematical Formulation}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection*{Definition D.1 (Base Token Spaces)}
+We define several foundational token sets:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Natural Language Tokens:}
+    \[
+    \mathcal{V}_{\mathrm{NL}} = \{ w \mid w \text{ is a valid natural language token (e.g., an English word)} \}.
+    \]
+    \item \textbf{Unicode Characters:}
+    \[
+    \mathcal{V}_{\mathrm{UC}} = \{ c \mid c \in \Sigma \}.
+    \]
+    \item \textbf{Programming Language Symbols:}
+    \[
+    \mathcal{V}_{\mathrm{PL}} = \{ p \mid p \text{ is a keyword, operator, or symbolic token in a programming language} \}.
+    \]
+\end{enumerate}
+Define the \emph{base vocabulary} as:
+\[
+\mathcal{V}_{\mathrm{base}} = \mathcal{V}_{\mathrm{NL}} \cup \mathcal{V}_{\mathrm{UC}} \cup \mathcal{V}_{\mathrm{PL}}.
+\]
+Additionally, let \(\mathcal{V}_{\mathrm{LT}} \subset \mathcal{P}(\Sigma^*)\) denote the set of \emph{learned tokens} (multi-token sequences). The complete vocabulary is then:
+\[
+\mathcal{V} = \mathcal{V}_{\mathrm{base}} \cup \mathcal{V}_{\mathrm{LT}}.
+\]
+
+\subsection*{Definition D.2 (Token Structure and Attributes)}
+Each token \( t \in \mathcal{V} \) is represented as a tuple:
+\[
+t = \bigl( u, \, \pi, \, \chi \bigr),
+\]
+with:
+\begin{itemize}[label=\(\circ\)]
+    \item \( u \): The underlying unit (e.g., the string ``cat'' or the symbol ``\texttt{for}''),
+    \item \( \pi \in \Pi \subseteq \mathbb{R}^{d_{\pi}} \): A vector of intrinsic properties, capturing aspects such as part-of-speech, morphological features, or syntactic roles,
+    \item \( \chi \in \mathbb{R}^{d_{\chi}} \): A vector of contextual statistics, such as token frequency, co-occurrence distributions, or learned contextual signatures.
+\end{itemize}
+
+\subsection*{Definition D.3 (Unique Identification)}
+We define an injective mapping:
+\[
+\eta: \mathcal{V} \to \mathbb{N},
+\]
+which assigns each token a unique identifier:
+\[
+\operatorname{ID}(t) = \eta(t).
+\]
+The total vocabulary size is denoted by:
+\[
+M = |\mathcal{V}|,
+\]
+with \( M \) typically on the order of millions (e.g., \( M \ge 2 \times 10^6 \)).
+
+\subsection*{Definition D.4 (Embedding Function)}
+Although the primary focus of this module is vocabulary construction and tokenization, we briefly define the embedding function for completeness:
+\[
+E: \mathcal{V} \to \mathbb{R}^{d_E},
+\]
+which maps each token \( t \) to a high-dimensional vector \( E(t) \). Often, this is computed as a composition:
+\[
+E(t) = E_u(u) \oplus E_\pi(\pi) \oplus E_\chi(\chi),
+\]
+where \( E_u \), \( E_\pi \), and \( E_\chi \) are sub-embeddings corresponding to each component, and \(\oplus\) denotes concatenation or another combination method.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithmic Description: Tokenization Process}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The tokenization process uses the defined vocabulary to segment preprocessed input into tokens.
+\begin{algorithm}[H]
+\caption{Multidimensional Tokenization Process}
+\label{alg:tokenization}
+\begin{algorithmic}[1]
+    \State \textbf{Input:} Preprocessed input \( X_{\mathrm{proc}} \in \mathcal{X}_{\mathrm{proc}} \)
+    \State \textbf{Output:} Token sequence \( (t_1, t_2, \dots, t_n) \) with \( t_i \in \mathcal{V} \)
+    \State \textbf{Initialize:} \( S \gets \text{empty list} \)
+    \For{each segment \( s \) in \( X_{\mathrm{proc}} \)}
+        \State Identify candidate tokens \( \{ t \in \mathcal{V} \mid t \text{ matches a substring of } s \} \)
+        \State Resolve ambiguities via a scoring function (e.g., frequency or context-based likelihood)
+        \State Append the highest-scoring token to \( S \)
+    \EndFor
+    \State \textbf{Return:} \( S = (t_1, t_2, \dots, t_n) \)
+\end{algorithmic}
+\end{algorithm}
+
+\noindent \textbf{Remark:} The tokenization process can be refined by incorporating advanced segmentation algorithms (e.g., Byte-Pair Encoding or SentencePiece) and may dynamically update \(\mathcal{V}_{\mathrm{LT}}\) based on statistical analyses of the input corpus.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theoretical Analysis and Guarantees}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection*{Theorem D.1 (Uniqueness of Token Identifiers)}
+\textbf{Statement:} The mapping \(\eta: \mathcal{V} \to \mathbb{N}\) is injective, ensuring that for any two distinct tokens \( t_1, t_2 \in \mathcal{V} \), we have \(\operatorname{ID}(t_1) \neq \operatorname{ID}(t_2)\).
+
+\textbf{Proof Sketch:} By construction, \(\eta\) is defined to be injective. Standard dictionary or hash–based methods guarantee unique assignment when collisions are resolved, ensuring the property holds. \(\Box\)
+
+\subsection*{Proposition D.2 (Extensibility of the Vocabulary)}
+New tokens, particularly in \(\mathcal{V}_{\mathrm{LT}}\), can be added without affecting existing token mappings. Formally, if
+\[
+\mathcal{V}' = \mathcal{V} \cup \Delta \mathcal{V},
+\]
+then there exists an extension \(\eta': \mathcal{V}' \to \mathbb{N}\) such that
+\[
+\eta'(t) = \eta(t) \quad \text{for all } t \in \mathcal{V}.
+\]
+Thus, the vocabulary is modular and extensible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Integration with the Overall Eidos Framework}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The Multidimensional Vocabulary and Tokenization System (Module D) is foundational for Eidos. Its outputs serve as the basis for:
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Contextual NLU/NLP Embedding (Module E):} The token sequence \( (t_1,\dots,t_n) \) and unique IDs are used for embedding lookup and contextualization.
+    \item \textbf{Knowledge Graph Construction (Module F):} Tokens and their associated multidimensional attributes form nodes in the knowledge graphs.
+    \item \textbf{Model Loading and Indexing (Module C):} Unique identifiers assist in managing token-related parameters across the system.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Implementation Considerations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{itemize}[label=\(\bullet\)]
+    \item \textbf{Corpus Collection:} The initial construction of \(\mathcal{V}^{(0)}\) and \(\mathcal{V}^{(1)}\) requires a large, diverse corpus covering natural language, code, and other relevant modalities.
+    \item \textbf{Segmentation Algorithms:} Methods such as Byte-Pair Encoding (BPE) or SentencePiece can be employed to extract frequent multi-token sequences for \(\mathcal{V}_{\mathrm{LT}}\).
+    \item \textbf{Storage:} The vocabulary and its associated attributes (intrinsic and contextual) should be stored in a structured database to allow efficient lookup and updates.
+    \item \textbf{Integration with Embedding Layers:} The function \(E\) must be designed to combine sub-embeddings (e.g., \(E_u\), \(E_\pi\), \(E_\chi\)) in a manner that preserves all linguistic nuances.
+    \item \textbf{Dynamic Updates:} The system should allow for periodic or continuous updates to \(\mathcal{V}_{\mathrm{LT}}\) as new data is processed.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+In this module, we have defined a comprehensive, multidimensional vocabulary that serves as the fundamental building block for the Eidos framework. Key contributions include:
+\begin{itemize}[label=\(\bullet\)]
+    \item A unified vocabulary \( \mathcal{V} \) combining base tokens (natural language, Unicode, programming symbols) with learned multi-token sequences.
+    \item A formal token structure \( t = (u, \pi, \chi) \) that captures semantic, syntactic, and contextual attributes.
+    \item An injective mapping \(\eta: \mathcal{V} \to \mathbb{N}\) ensuring unique identification.
+    \item An algorithmic tokenization process that segments preprocessed input into a sequence of tokens from \( \mathcal{V} \).
+    \item Theoretical guarantees regarding uniqueness and extensibility.
+\end{itemize}
+This module forms the cornerstone of the Eidos system, ensuring that all subsequent processing is grounded in a deep and richly structured understanding of the input symbols.
+
+\vspace{1em}
+\textbf{Module Summary:}\\
+\textbf{Completed:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module A: Input Processing.
+    \item Module B: Universal Communication \& Data Handling Interface and Coordination.
+    \item Module C: Universal Streaming/Handling/Loading/Indexing Module.
+    \item Module D: Multidimensional Vocabulary and Tokenization System.
+\end{itemize}
+\textbf{Remaining Modules:}
+\begin{itemize}[label=\(\bullet\)]
+    \item Module E: Contextual NLU/NLP Embedding and Multidimensional Tokenization.
+    \item Module F: Deep Knowledge Graphs System (Base and Personal).
+    \item Module G: Infinite RoPE Context Scaling and Dynamic Vocabulary Updating.
+    \item Module H: Core Model Architectures (RWKV and Transformer Modules, Mixture-of-Experts Style).
+    \item Module I: Titans Memory Architecture (Multi-Layer Memory Module).
+    \item Module J: Recursive Adaptive Dynamic Idempotent Feedback and State-Based Runtime Learning and Inference.
+    \item Module K: Universal Training System.
+    \item Module L: Final Decoding and Multimodal Output.
+\end{itemize}
+
+\end{document}

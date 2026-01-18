@@ -1,0 +1,36 @@
+import argparse
+import builtins
+import enum
+import importlib
+import inspect
+import io
+import logging
+import os
+import pickle
+import ply.lex
+import re
+import sys
+import textwrap
+import types
+from operator import attrgetter
+from pyomo.common.collections import Sequence, Mapping
+from pyomo.common.deprecation import (
+from pyomo.common.fileutils import import_file
+from pyomo.common.formatting import wrap_reStructuredText
+from pyomo.common.modeling import NOTSET
+@deprecated()
+class ConfigEnum(enum.Enum):
+
+    @deprecated("The ConfigEnum base class is deprecated.  Directly inherit from enum.Enum and then use In() or InEnum() as the ConfigValue 'domain' for validation and int/string type conversions.", version='6.0')
+    def __new__(cls, value, *args):
+        member = object.__new__(cls)
+        member._value_ = value
+        member._args = args
+        return member
+
+    @classmethod
+    def from_enum_or_string(cls, arg):
+        if type(arg) is str:
+            return cls[arg]
+        else:
+            return cls(arg)

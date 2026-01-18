@@ -1,0 +1,23 @@
+from __future__ import annotations
+import os
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+import numpy as np
+import yaml
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
+from typing_extensions import TYPE_CHECKING, Literal
+from langchain_community.vectorstores.redis.constants import REDIS_VECTOR_DTYPE_MAP
+class HNSWVectorField(RedisVectorField):
+    """Schema for HNSW vector fields in Redis."""
+    algorithm: Literal['HNSW'] = 'HNSW'
+    m: int = Field(default=16)
+    ef_construction: int = Field(default=200)
+    ef_runtime: int = Field(default=10)
+    epsilon: float = Field(default=0.01)
+
+    def as_field(self) -> VectorField:
+        from redis.commands.search.field import VectorField
+        field_data = super()._fields()
+        field_data.update({'M': self.m, 'EF_CONSTRUCTION': self.ef_construction, 'EF_RUNTIME': self.ef_runtime, 'EPSILON': self.epsilon})
+        return VectorField(self.name, self.algorithm, field_data)

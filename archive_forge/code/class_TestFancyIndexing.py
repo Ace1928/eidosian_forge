@@ -1,0 +1,198 @@
+import itertools
+import numpy as np
+import unittest
+from numba import jit, typeof, njit
+from numba.core import types
+from numba.core.errors import TypingError
+from numba.tests.support import MemoryLeakMixin, TestCase
+class TestFancyIndexing(MemoryLeakMixin, TestCase):
+
+    def generate_advanced_indices(self, N, many=True):
+        choices = [np.int16([0, N - 1, -2])]
+        if many:
+            choices += [np.uint16([0, 1, N - 1]), np.bool_([0, 1, 1, 0])]
+        return choices
+
+    def generate_basic_index_tuples(self, N, maxdim, many=True):
+        """
+        Generate basic index tuples with 0 to *maxdim* items.
+        """
+        if many:
+            choices = [slice(None, None, None), slice(1, N - 1, None), slice(0, None, 2), slice(N - 1, None, -2), slice(-N + 1, -1, None), slice(-1, -N, -2)]
+        else:
+            choices = [slice(0, N - 1, None), slice(-1, -N, -2)]
+        for ndim in range(maxdim + 1):
+            for tup in itertools.product(choices, repeat=ndim):
+                yield tup
+
+    def generate_advanced_index_tuples(self, N, maxdim, many=True):
+        """
+        Generate advanced index tuples by generating basic index tuples
+        and adding a single advanced index item.
+        """
+        choices = list(self.generate_advanced_indices(N, many=many))
+        for i in range(maxdim + 1):
+            for tup in self.generate_basic_index_tuples(N, maxdim - 1, many):
+                for adv in choices:
+                    yield (tup[:i] + (adv,) + tup[i:])
+
+    def generate_advanced_index_tuples_with_ellipsis(self, N, maxdim, many=True):
+        """
+        Same as generate_advanced_index_tuples(), but also insert an
+        ellipsis at various points.
+        """
+        for tup in self.generate_advanced_index_tuples(N, maxdim, many):
+            for i in range(len(tup) + 1):
+                yield (tup[:i] + (Ellipsis,) + tup[i:])
+
+    def check_getitem_indices(self, arr, indices):
+        pyfunc = getitem_usecase
+        cfunc = jit(nopython=True)(pyfunc)
+        orig = arr.copy()
+        orig_base = arr.base or arr
+        for index in indices:
+            expected = pyfunc(arr, index)
+            assert expected.base is not orig_base
+            got = cfunc(arr, index)
+            self.assertEqual(got.shape, expected.shape)
+            self.assertEqual(got.dtype, expected.dtype)
+            np.testing.assert_equal(got, expected)
+            if got.size:
+                got.fill(42)
+                np.testing.assert_equal(arr, orig)
+
+    def test_getitem_tuple(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32)
+        indices = self.generate_advanced_index_tuples(N, ndim)
+        self.check_getitem_indices(arr, indices)
+
+    def test_getitem_tuple_and_ellipsis(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32)
+        indices = self.generate_advanced_index_tuples_with_ellipsis(N, ndim, many=False)
+        self.check_getitem_indices(arr, indices)
+
+    def test_ellipsis_getsetitem(self):
+
+        @jit(nopython=True)
+        def foo(arr, v):
+            arr[..., 0] = arr[..., 1]
+        arr = np.arange(2)
+        foo(arr, 1)
+        self.assertEqual(arr[0], arr[1])
+
+    def test_getitem_array(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32)
+        indices = self.generate_advanced_indices(N)
+        self.check_getitem_indices(arr, indices)
+
+    def check_setitem_indices(self, arr, indices):
+        pyfunc = setitem_usecase
+        cfunc = jit(nopython=True)(pyfunc)
+        for index in indices:
+            src = arr[index]
+            expected = np.zeros_like(arr)
+            got = np.zeros_like(arr)
+            pyfunc(expected, index, src)
+            cfunc(got, index, src)
+            self.assertEqual(got.shape, expected.shape)
+            self.assertEqual(got.dtype, expected.dtype)
+            np.testing.assert_equal(got, expected)
+
+    def test_setitem_tuple(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32)
+        indices = self.generate_advanced_index_tuples(N, ndim)
+        self.check_setitem_indices(arr, indices)
+
+    def test_setitem_tuple_and_ellipsis(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32)
+        indices = self.generate_advanced_index_tuples_with_ellipsis(N, ndim, many=False)
+        self.check_setitem_indices(arr, indices)
+
+    def test_setitem_array(self):
+        N = 4
+        ndim = 3
+        arr = np.arange(N ** ndim).reshape((N,) * ndim).astype(np.int32) + 10
+        indices = self.generate_advanced_indices(N)
+        self.check_setitem_indices(arr, indices)
+
+    def test_setitem_0d(self):
+        pyfunc = setitem_usecase
+        cfunc = jit(nopython=True)(pyfunc)
+        inps = [(np.zeros(3), np.array(3.14)), (np.zeros(2), np.array(2)), (np.zeros(3, dtype=np.int64), np.array(3, dtype=np.int64)), (np.zeros(3, dtype=np.float64), np.array(1, dtype=np.int64)), (np.zeros(5, dtype='<U3'), np.array('abc')), (np.zeros((3,), dtype='<U3'), np.array('a')), (np.array(['abc', 'def', 'ghi'], dtype='<U3'), np.array('WXYZ', dtype='<U4')), (np.zeros(3, dtype=complex), np.array(2 + 3j, dtype=complex))]
+        for x1, v in inps:
+            x2 = x1.copy()
+            pyfunc(x1, 0, v)
+            cfunc(x2, 0, v)
+            self.assertPreciseEqual(x1, x2)
+
+    def test_np_take(self):
+        pyfunc = np_take
+        cfunc = jit(nopython=True)(pyfunc)
+
+        def check(arr, ind):
+            expected = pyfunc(arr, ind)
+            got = cfunc(arr, ind)
+            self.assertPreciseEqual(expected, got)
+            if hasattr(expected, 'order'):
+                self.assertEqual(expected.order == got.order)
+        test_indices = []
+        test_indices.append(1)
+        test_indices.append(np.array([1, 5, 1, 11, 3]))
+        test_indices.append(np.array([[[1], [5]], [[1], [11]]]))
+        test_indices.append([1, 5, 1, 11, 3])
+        test_indices.append((1, 5, 1))
+        test_indices.append(((1, 5, 1), (11, 3, 2)))
+        for dt in [np.int64, np.complex128]:
+            A = np.arange(12, dtype=dt).reshape((4, 3))
+            for ind in test_indices:
+                check(A, ind)
+        szA = A.size
+        illegal_indices = [szA, -szA - 1, np.array(szA), np.array(-szA - 1), [szA], [-szA - 1]]
+        for x in illegal_indices:
+            with self.assertRaises(IndexError):
+                cfunc(A, x)
+        with self.assertRaises(TypingError):
+            cfunc(A, [1.7])
+        with self.assertRaises(TypingError):
+            take_kws = jit(nopython=True)(np_take_kws)
+            take_kws(A, 1, 1)
+        with self.assertRaises(TypingError):
+            take_kws = jit(nopython=True)(np_take_kws)
+            take_kws(A, 1, axis=1)
+        self.disable_leak_check()
+
+    def test_newaxis(self):
+
+        @njit
+        def np_new_axis_getitem(a, idx):
+            return a[idx]
+
+        @njit
+        def np_new_axis_setitem(a, idx, item):
+            a[idx] = item
+            return a
+        a = np.arange(4 * 5 * 6 * 7).reshape((4, 5, 6, 7))
+        idx_cases = [(slice(None), np.newaxis), (np.newaxis, slice(None)), (slice(1), np.newaxis, np.array([1, 2, 1])), (np.newaxis, np.array([1, 2, 1]), slice(None)), (slice(1), Ellipsis, np.newaxis, np.array([1, 2, 1])), (np.array([1, 2, 1]), np.newaxis, Ellipsis), (np.newaxis, slice(1), np.newaxis, np.array([1, 2, 1])), (np.array([1, 2, 1]), Ellipsis, None, np.newaxis), (np.newaxis, slice(1), Ellipsis, np.newaxis, np.array([1, 2, 1])), (np.array([1, 2, 1]), np.newaxis, np.newaxis, Ellipsis), (np.newaxis, np.array([1, 2, 1]), np.newaxis, Ellipsis), (slice(3), np.array([1, 2, 1]), np.newaxis, None), (np.newaxis, np.array([1, 2, 1]), Ellipsis, None)]
+        pyfunc_getitem = np_new_axis_getitem.py_func
+        cfunc_getitem = np_new_axis_getitem
+        pyfunc_setitem = np_new_axis_setitem.py_func
+        cfunc_setitem = np_new_axis_setitem
+        for idx in idx_cases:
+            expected = pyfunc_getitem(a, idx)
+            got = cfunc_getitem(a, idx)
+            np.testing.assert_equal(expected, got)
+            a_empty = np.zeros_like(a)
+            item = a[idx]
+            expected = pyfunc_setitem(a_empty.copy(), idx, item)
+            got = cfunc_setitem(a_empty.copy(), idx, item)
+            np.testing.assert_equal(expected, got)

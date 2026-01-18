@@ -1,0 +1,1 @@
+Test that FixAtoms constraints are written properly.

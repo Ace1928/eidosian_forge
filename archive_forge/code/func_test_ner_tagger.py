@@ -1,0 +1,14 @@
+from unittest import TestCase
+from unittest.mock import MagicMock
+import pytest
+from nltk.parse import corenlp
+from nltk.tree import Tree
+def test_ner_tagger(self):
+    corenlp_tagger = corenlp.CoreNLPParser(tagtype='ner')
+    api_return_value = {'sentences': [{'index': 0, 'tokens': [{'after': ' ', 'before': '', 'characterOffsetBegin': 0, 'characterOffsetEnd': 4, 'index': 1, 'lemma': 'Rami', 'ner': 'PERSON', 'originalText': 'Rami', 'pos': 'NNP', 'word': 'Rami'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 5, 'characterOffsetEnd': 8, 'index': 2, 'lemma': 'Eid', 'ner': 'PERSON', 'originalText': 'Eid', 'pos': 'NNP', 'word': 'Eid'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 9, 'characterOffsetEnd': 11, 'index': 3, 'lemma': 'be', 'ner': 'O', 'originalText': 'is', 'pos': 'VBZ', 'word': 'is'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 12, 'characterOffsetEnd': 20, 'index': 4, 'lemma': 'study', 'ner': 'O', 'originalText': 'studying', 'pos': 'VBG', 'word': 'studying'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 21, 'characterOffsetEnd': 23, 'index': 5, 'lemma': 'at', 'ner': 'O', 'originalText': 'at', 'pos': 'IN', 'word': 'at'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 24, 'characterOffsetEnd': 29, 'index': 6, 'lemma': 'Stony', 'ner': 'ORGANIZATION', 'originalText': 'Stony', 'pos': 'NNP', 'word': 'Stony'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 30, 'characterOffsetEnd': 35, 'index': 7, 'lemma': 'Brook', 'ner': 'ORGANIZATION', 'originalText': 'Brook', 'pos': 'NNP', 'word': 'Brook'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 36, 'characterOffsetEnd': 46, 'index': 8, 'lemma': 'University', 'ner': 'ORGANIZATION', 'originalText': 'University', 'pos': 'NNP', 'word': 'University'}, {'after': ' ', 'before': ' ', 'characterOffsetBegin': 47, 'characterOffsetEnd': 49, 'index': 9, 'lemma': 'in', 'ner': 'O', 'originalText': 'in', 'pos': 'IN', 'word': 'in'}, {'after': '', 'before': ' ', 'characterOffsetBegin': 50, 'characterOffsetEnd': 52, 'index': 10, 'lemma': 'NY', 'ner': 'O', 'originalText': 'NY', 'pos': 'NNP', 'word': 'NY'}]}]}
+    corenlp_tagger.api_call = MagicMock(return_value=api_return_value)
+    input_tokens = 'Rami Eid is studying at Stony Brook University in NY'.split()
+    expected_output = [('Rami', 'PERSON'), ('Eid', 'PERSON'), ('is', 'O'), ('studying', 'O'), ('at', 'O'), ('Stony', 'ORGANIZATION'), ('Brook', 'ORGANIZATION'), ('University', 'ORGANIZATION'), ('in', 'O'), ('NY', 'O')]
+    tagged_output = corenlp_tagger.tag(input_tokens)
+    corenlp_tagger.api_call.assert_called_once_with('Rami Eid is studying at Stony Brook University in NY', properties={'ssplit.isOneSentence': 'true', 'annotators': 'tokenize,ssplit,ner'})
+    self.assertEqual(expected_output, tagged_output)

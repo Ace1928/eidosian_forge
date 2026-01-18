@@ -1,0 +1,29 @@
+import uuid
+from tensorflow.python.eager import context
+from tensorflow.python.eager import def_function
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import device
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import function
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import sparse_tensor
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import array_ops_stack
+from tensorflow.python.ops import custom_gradient
+from tensorflow.python.ops import functional_ops
+from tensorflow.python.ops import gen_ctc_ops
+from tensorflow.python.ops import inplace_ops
+from tensorflow.python.ops import linalg_ops
+from tensorflow.python.ops import map_fn
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import nn_ops
+from tensorflow.python.ops import sparse_ops
+from tensorflow.python.ops.nn_grad import _BroadcastMul
+from tensorflow.python.util import deprecation
+from tensorflow.python.util import dispatch
+from tensorflow.python.util import nest
+from tensorflow.python.util.tf_export import tf_export
+def _generate_defun_backend(unique_api_name, preferred_device, func):
+    function_attributes = {_DEFUN_API_NAME_ATTRIBUTE: unique_api_name, _DEFUN_DEVICE_ATTRIBUTE: preferred_device}
+    return def_function.function(func=func, experimental_attributes=function_attributes, autograph=False)

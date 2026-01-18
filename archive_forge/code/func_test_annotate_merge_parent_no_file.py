@@ -1,0 +1,16 @@
+from breezy.tests.per_workingtree import TestCaseWithWorkingTree
+def test_annotate_merge_parent_no_file(self):
+    builder = self.make_branch_builder('branch')
+    builder.start_series()
+    revid1 = builder.build_snapshot(None, [('add', ('', None, 'directory', None))])
+    revid2 = builder.build_snapshot([revid1], [('add', ('file', None, 'file', b'initial content\n'))])
+    revid3 = builder.build_snapshot([revid1], [])
+    builder.finish_series()
+    b = builder.get_branch()
+    tree = b.create_checkout('tree', revision_id=revid2, lightweight=True)
+    tree.lock_write()
+    self.addCleanup(tree.unlock)
+    tree.set_parent_ids([revid2, revid3])
+    self.build_tree_contents([('tree/file', b'initial content\nnew content\n')])
+    annotations = tree.annotate_iter('file')
+    self.assertEqual([(revid2, b'initial content\n'), (b'current:', b'new content\n')], annotations)

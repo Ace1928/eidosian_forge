@@ -1,0 +1,105 @@
+from __future__ import annotations
+import itertools
+from typing import Any
+from typing import cast
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Type
+from typing import TYPE_CHECKING
+from typing import TypeVar
+from typing import Union
+from . import attributes
+from . import interfaces
+from . import loading
+from .base import _is_aliased_class
+from .interfaces import ORMColumnDescription
+from .interfaces import ORMColumnsClauseRole
+from .path_registry import PathRegistry
+from .util import _entity_corresponds_to
+from .util import _ORMJoin
+from .util import _TraceAdaptRole
+from .util import AliasedClass
+from .util import Bundle
+from .util import ORMAdapter
+from .util import ORMStatementAdapter
+from .. import exc as sa_exc
+from .. import future
+from .. import inspect
+from .. import sql
+from .. import util
+from ..sql import coercions
+from ..sql import expression
+from ..sql import roles
+from ..sql import util as sql_util
+from ..sql import visitors
+from ..sql._typing import _TP
+from ..sql._typing import is_dml
+from ..sql._typing import is_insert_update
+from ..sql._typing import is_select_base
+from ..sql.base import _select_iterables
+from ..sql.base import CacheableOptions
+from ..sql.base import CompileState
+from ..sql.base import Executable
+from ..sql.base import Generative
+from ..sql.base import Options
+from ..sql.dml import UpdateBase
+from ..sql.elements import GroupedElement
+from ..sql.elements import TextClause
+from ..sql.selectable import CompoundSelectState
+from ..sql.selectable import LABEL_STYLE_DISAMBIGUATE_ONLY
+from ..sql.selectable import LABEL_STYLE_NONE
+from ..sql.selectable import LABEL_STYLE_TABLENAME_PLUS_COL
+from ..sql.selectable import Select
+from ..sql.selectable import SelectLabelStyle
+from ..sql.selectable import SelectState
+from ..sql.selectable import TypedReturnsRows
+from ..sql.visitors import InternalTraversal
+class _QueryEntity:
+    """represent an entity column returned within a Query result."""
+    __slots__ = ()
+    supports_single_entity: bool
+    _non_hashable_value = False
+    _null_column_type = False
+    use_id_for_hash = False
+    _label_name: Optional[str]
+    type: Union[Type[Any], TypeEngine[Any]]
+    expr: Union[_InternalEntityType, ColumnElement[Any]]
+    entity_zero: Optional[_InternalEntityType]
+
+    def setup_compile_state(self, compile_state: ORMCompileState) -> None:
+        raise NotImplementedError()
+
+    def setup_dml_returning_compile_state(self, compile_state: ORMCompileState, adapter: DMLReturningColFilter) -> None:
+        raise NotImplementedError()
+
+    def row_processor(self, context, result):
+        raise NotImplementedError()
+
+    @classmethod
+    def to_compile_state(cls, compile_state, entities, entities_collection, is_current_entities):
+        for idx, entity in enumerate(entities):
+            if entity._is_lambda_element:
+                if entity._is_sequence:
+                    cls.to_compile_state(compile_state, entity._resolved, entities_collection, is_current_entities)
+                    continue
+                else:
+                    entity = entity._resolved
+            if entity.is_clause_element:
+                if entity.is_selectable:
+                    if 'parententity' in entity._annotations:
+                        _MapperEntity(compile_state, entity, entities_collection, is_current_entities)
+                    else:
+                        _ColumnEntity._for_columns(compile_state, entity._select_iterable, entities_collection, idx, is_current_entities)
+                elif entity._annotations.get('bundle', False):
+                    _BundleEntity(compile_state, entity, entities_collection, is_current_entities)
+                elif entity._is_clause_list:
+                    _ColumnEntity._for_columns(compile_state, entity._select_iterable, entities_collection, idx, is_current_entities)
+                else:
+                    _ColumnEntity._for_columns(compile_state, [entity], entities_collection, idx, is_current_entities)
+            elif entity.is_bundle:
+                _BundleEntity(compile_state, entity, entities_collection)
+        return entities_collection

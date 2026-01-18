@@ -1,0 +1,18 @@
+import re
+from pygments.lexer import Lexer, RegexLexer, bygroups, do_insertions, \
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
+from pygments import unistring as uni
+class HaskellLexer(RegexLexer):
+    """
+    A Haskell lexer based on the lexemes defined in the Haskell 98 Report.
+
+    .. versionadded:: 0.8
+    """
+    name = 'Haskell'
+    aliases = ['haskell', 'hs']
+    filenames = ['*.hs']
+    mimetypes = ['text/x-haskell']
+    flags = re.MULTILINE | re.UNICODE
+    reserved = ('case', 'class', 'data', 'default', 'deriving', 'do', 'else', 'family', 'if', 'in', 'infix[lr]?', 'instance', 'let', 'newtype', 'of', 'then', 'type', 'where', '_')
+    ascii = ('NUL', 'SOH', '[SE]TX', 'EOT', 'ENQ', 'ACK', 'BEL', 'BS', 'HT', 'LF', 'VT', 'FF', 'CR', 'S[OI]', 'DLE', 'DC[1-4]', 'NAK', 'SYN', 'ETB', 'CAN', 'EM', 'SUB', 'ESC', '[FGRU]S', 'SP', 'DEL')
+    tokens = {'root': [('\\s+', Text), ('--(?![!#$%&*+./<=>?@^|_~:\\\\]).*?$', Comment.Single), ('\\{-', Comment.Multiline, 'comment'), ('\\bimport\\b', Keyword.Reserved, 'import'), ('\\bmodule\\b', Keyword.Reserved, 'module'), ('\\berror\\b', Name.Exception), ("\\b(%s)(?!\\')\\b" % '|'.join(reserved), Keyword.Reserved), ("'[^\\\\]'", String.Char), ('^[_' + uni.Ll + "][\\w\\']*", Name.Function), ("'?[_" + uni.Ll + "][\\w']*", Name), ("('')?[" + uni.Lu + "][\\w\\']*", Keyword.Type), ("(')[" + uni.Lu + "][\\w\\']*", Keyword.Type), ("(')\\[[^\\]]*\\]", Keyword.Type), ("(')\\([^)]*\\)", Keyword.Type), ('\\\\(?![:!#$%&*+.\\\\/<=>?@^|~-]+)', Name.Function), ('(<-|::|->|=>|=)(?![:!#$%&*+.\\\\/<=>?@^|~-]+)', Operator.Word), (':[:!#$%&*+.\\\\/<=>?@^|~-]*', Keyword.Type), ('[:!#$%&*+.\\\\/<=>?@^|~-]+', Operator), ('\\d+[eE][+-]?\\d+', Number.Float), ('\\d+\\.\\d+([eE][+-]?\\d+)?', Number.Float), ('0[oO][0-7]+', Number.Oct), ('0[xX][\\da-fA-F]+', Number.Hex), ('\\d+', Number.Integer), ("'", String.Char, 'character'), ('"', String, 'string'), ('\\[\\]', Keyword.Type), ('\\(\\)', Name.Builtin), ('[][(),;`{}]', Punctuation)], 'import': [('\\s+', Text), ('"', String, 'string'), ('\\)', Punctuation, '#pop'), ('qualified\\b', Keyword), ('([' + uni.Lu + '][\\w.]*)(\\s+)(as)(\\s+)([' + uni.Lu + '][\\w.]*)', bygroups(Name.Namespace, Text, Keyword, Text, Name), '#pop'), ('([' + uni.Lu + '][\\w.]*)(\\s+)(hiding)(\\s+)(\\()', bygroups(Name.Namespace, Text, Keyword, Text, Punctuation), 'funclist'), ('([' + uni.Lu + '][\\w.]*)(\\s+)(\\()', bygroups(Name.Namespace, Text, Punctuation), 'funclist'), ('[\\w.]+', Name.Namespace, '#pop')], 'module': [('\\s+', Text), ('([' + uni.Lu + '][\\w.]*)(\\s+)(\\()', bygroups(Name.Namespace, Text, Punctuation), 'funclist'), ('[' + uni.Lu + '][\\w.]*', Name.Namespace, '#pop')], 'funclist': [('\\s+', Text), ('[' + uni.Lu + ']\\w*', Keyword.Type), ("(_[\\w\\']+|[" + uni.Ll + "][\\w\\']*)", Name.Function), ('--(?![!#$%&*+./<=>?@^|_~:\\\\]).*?$', Comment.Single), ('\\{-', Comment.Multiline, 'comment'), (',', Punctuation), ('[:!#$%&*+.\\\\/<=>?@^|~-]+', Operator), ('\\(', Punctuation, ('funclist', 'funclist')), ('\\)', Punctuation, '#pop:2')], 'comment': [('[^-{}]+', Comment.Multiline), ('\\{-', Comment.Multiline, '#push'), ('-\\}', Comment.Multiline, '#pop'), ('[-{}]', Comment.Multiline)], 'character': [("[^\\\\']'", String.Char, '#pop'), ('\\\\', String.Escape, 'escape'), ("'", String.Char, '#pop')], 'string': [('[^\\\\"]+', String), ('\\\\', String.Escape, 'escape'), ('"', String, '#pop')], 'escape': [('[abfnrtv"\\\'&\\\\]', String.Escape, '#pop'), ('\\^[][' + uni.Lu + '@^_]', String.Escape, '#pop'), ('|'.join(ascii), String.Escape, '#pop'), ('o[0-7]+', String.Escape, '#pop'), ('x[\\da-fA-F]+', String.Escape, '#pop'), ('\\d+', String.Escape, '#pop'), ('\\s+\\\\', String.Escape, '#pop')]}

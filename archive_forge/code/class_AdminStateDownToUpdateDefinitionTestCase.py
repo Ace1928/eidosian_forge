@@ -1,0 +1,4 @@
+from neutron_lib.api.definitions import router_admin_state_down_before_update
+from neutron_lib.tests.unit.api.definitions import base
+class AdminStateDownToUpdateDefinitionTestCase(base.DefinitionBaseTestCase):
+    extension_module = router_admin_state_down_before_update

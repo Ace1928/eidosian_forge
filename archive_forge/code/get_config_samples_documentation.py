@@ -1,0 +1,1 @@
+Sample `get_config` results for testing backwards compatibility.

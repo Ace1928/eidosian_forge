@@ -1,0 +1,6 @@
+import gc
+import unittest
+from traits import trait_notifiers
+from traits.api import Event, Float, HasTraits, List, on_trait_change
+def low_priority_first(self):
+    self.prioritized_notifications.append(0)

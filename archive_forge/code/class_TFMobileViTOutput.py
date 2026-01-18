@@ -1,0 +1,31 @@
+from __future__ import annotations
+from typing import Dict, Optional, Tuple, Union
+import tensorflow as tf
+from ...activations_tf import get_tf_activation
+from ...file_utils import (
+from ...modeling_tf_outputs import (
+from ...modeling_tf_utils import (
+from ...tf_utils import shape_list, stable_softmax
+from ...utils import logging
+from .configuration_mobilevit import MobileViTConfig
+class TFMobileViTOutput(keras.layers.Layer):
+
+    def __init__(self, config: MobileViTConfig, hidden_size: int, intermediate_size: int, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.dense = keras.layers.Dense(hidden_size, name='dense')
+        self.dropout = keras.layers.Dropout(config.hidden_dropout_prob)
+        self.intermediate_size = intermediate_size
+
+    def call(self, hidden_states: tf.Tensor, input_tensor: tf.Tensor, training: bool=False) -> tf.Tensor:
+        hidden_states = self.dense(hidden_states)
+        hidden_states = self.dropout(hidden_states, training=training)
+        hidden_states = hidden_states + input_tensor
+        return hidden_states
+
+    def build(self, input_shape=None):
+        if self.built:
+            return
+        self.built = True
+        if getattr(self, 'dense', None) is not None:
+            with tf.name_scope(self.dense.name):
+                self.dense.build([None, None, self.intermediate_size])

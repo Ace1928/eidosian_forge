@@ -1,0 +1,41 @@
+from __future__ import annotations
+from collections.abc import (
+import datetime
+from functools import partial
+from typing import (
+import uuid
+import warnings
+import numpy as np
+from pandas._libs import (
+from pandas._libs.lib import is_range_indexer
+from pandas._typing import (
+from pandas.errors import MergeError
+from pandas.util._decorators import (
+from pandas.util._exceptions import find_stack_level
+from pandas.core.dtypes.base import ExtensionDtype
+from pandas.core.dtypes.cast import find_common_type
+from pandas.core.dtypes.common import (
+from pandas.core.dtypes.dtypes import (
+from pandas.core.dtypes.generic import (
+from pandas.core.dtypes.missing import (
+from pandas import (
+import pandas.core.algorithms as algos
+from pandas.core.arrays import (
+from pandas.core.arrays.string_ import StringDtype
+import pandas.core.common as com
+from pandas.core.construction import (
+from pandas.core.frame import _merge_doc
+from pandas.core.indexes.api import default_index
+from pandas.core.sorting import (
+def _left_join_on_index(left_ax: Index, right_ax: Index, join_keys: list[ArrayLike], sort: bool=False) -> tuple[Index, npt.NDArray[np.intp] | None, npt.NDArray[np.intp]]:
+    if isinstance(right_ax, MultiIndex):
+        lkey, rkey = _get_multiindex_indexer(join_keys, right_ax, sort=sort)
+    else:
+        lkey = join_keys[0]
+        rkey = right_ax._values
+    left_key, right_key, count = _factorize_keys(lkey, rkey, sort=sort)
+    left_indexer, right_indexer = libjoin.left_outer_join(left_key, right_key, count, sort=sort)
+    if sort or len(left_ax) != len(left_indexer):
+        join_index = left_ax.take(left_indexer)
+        return (join_index, left_indexer, right_indexer)
+    return (left_ax, None, right_indexer)

@@ -1,0 +1,21 @@
+import warnings
+import pytest
+import numpy as np
+from numpy.testing import assert_allclose, assert_equal
+from statsmodels.discrete.discrete_model import Poisson, Logit, Probit
+from statsmodels.genmod.generalized_linear_model import GLM
+from statsmodels.genmod.families import family
+from statsmodels.sandbox.regression.penalized import TheilGLS
+from statsmodels.base._penalized import PenalizedMixin
+import statsmodels.base._penalties as smpen
+class TestPenalizedGLMPoissonNoPenal(CheckPenalizedPoisson):
+
+    @classmethod
+    def _initialize(cls):
+        y, x = (cls.y, cls.x)
+        modp = GLM(y, x, family=family.Poisson())
+        cls.res2 = modp.fit()
+        mod = GLMPenalized(y, x, family=family.Poisson(), penal=cls.penalty)
+        mod.pen_weight = 0
+        cls.res1 = mod.fit(method='bfgs', maxiter=100, disp=0)
+        cls.atol = 5e-06

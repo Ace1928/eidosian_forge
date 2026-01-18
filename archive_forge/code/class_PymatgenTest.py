@@ -1,0 +1,102 @@
+from __future__ import annotations
+import json
+import pickle  # use pickle, not cPickle so that we get the traceback in case of errors
+import string
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar
+from unittest import TestCase
+import pytest
+from monty.json import MontyDecoder, MontyEncoder, MSONable
+from monty.serialization import loadfn
+from pymatgen.core import ROOT, SETTINGS, Structure
+class PymatgenTest(TestCase):
+    """Extends unittest.TestCase with several assert methods for array and str comparison."""
+    TEST_STRUCTURES: ClassVar[dict[str | Path, Structure | None]] = dict.fromkeys(STRUCTURES_DIR.glob('*'))
+
+    @pytest.fixture(autouse=True)
+    def _tmp_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.chdir(tmp_path)
+        self.tmp_path = tmp_path
+
+    @classmethod
+    def get_structure(cls, name: str) -> Structure:
+        """
+        Lazily load a structure from pymatgen/util/testing/structures.
+
+        Args:
+            name (str): Name of structure file.
+
+        Returns:
+            Structure
+        """
+        struct = cls.TEST_STRUCTURES.get(name) or loadfn(f'{STRUCTURES_DIR}/{name}.json')
+        cls.TEST_STRUCTURES[name] = struct
+        return struct.copy()
+
+    @staticmethod
+    def assert_str_content_equal(actual, expected):
+        """Tests if two strings are equal, ignoring things like trailing spaces, etc."""
+        strip_whitespace = {ord(c): None for c in string.whitespace}
+        return actual.translate(strip_whitespace) == expected.translate(strip_whitespace)
+
+    def serialize_with_pickle(self, objects: Any, protocols: Sequence[int] | None=None, test_eq: bool=True):
+        """Test whether the object(s) can be serialized and deserialized with
+        pickle. This method tries to serialize the objects with pickle and the
+        protocols specified in input. Then it deserializes the pickle format
+        and compares the two objects with the __eq__ operator if
+        test_eq is True.
+
+        Args:
+            objects: Object or list of objects.
+            protocols: List of pickle protocols to test. If protocols is None,
+                HIGHEST_PROTOCOL is tested.
+            test_eq: If True, the deserialized object is compared with the
+                original object using the __eq__ method.
+
+        Returns:
+            Nested list with the objects deserialized with the specified
+            protocols.
+        """
+        got_single_object = False
+        if not isinstance(objects, (list, tuple)):
+            got_single_object = True
+            objects = [objects]
+        protocols = protocols or [pickle.HIGHEST_PROTOCOL]
+        objects_by_protocol, errors = ([], [])
+        for protocol in protocols:
+            tmpfile = self.tmp_path / f'tempfile_{protocol}.pkl'
+            try:
+                with open(tmpfile, 'wb') as file:
+                    pickle.dump(objects, file, protocol=protocol)
+            except Exception as exc:
+                errors.append(f'pickle.dump with protocol={protocol!r} raised:\n{exc}')
+                continue
+            try:
+                with open(tmpfile, 'rb') as file:
+                    unpickled_objs = pickle.load(file)
+            except Exception as exc:
+                errors.append(f'pickle.load with protocol={protocol!r} raised:\n{exc}')
+                continue
+            if test_eq:
+                for orig, unpickled in zip(objects, unpickled_objs):
+                    assert orig == unpickled, f'Unpickled and original objects are unequal for protocol={protocol!r}\norig={orig!r}\nunpickled={unpickled!r}'
+            objects_by_protocol.append(unpickled_objs)
+        if errors:
+            raise ValueError('\n'.join(errors))
+        if got_single_object:
+            return [o[0] for o in objects_by_protocol]
+        return objects_by_protocol
+
+    def assert_msonable(self, obj: MSONable, test_is_subclass: bool=True) -> str:
+        """Test if obj is MSONable and verify the contract is fulfilled.
+
+        By default, the method tests whether obj is an instance of MSONable.
+        This check can be deactivated by setting test_is_subclass=False.
+        """
+        if test_is_subclass:
+            assert isinstance(obj, MSONable)
+        assert obj.as_dict() == type(obj).from_dict(obj.as_dict()).as_dict()
+        json_str = json.dumps(obj.as_dict(), cls=MontyEncoder)
+        round_trip = json.loads(json_str, cls=MontyDecoder)
+        assert issubclass(type(round_trip), type(obj)), f'{type(round_trip)} != {type(obj)}'
+        return json_str

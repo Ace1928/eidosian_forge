@@ -1,0 +1,10 @@
+import testtools
+from testtools import matchers
+from openstack import exceptions
+from openstack.tests.unit import base
+def test_grant_role_user_name_domain_exists(self):
+    uris = self._get_mock_role_query_urls(self.role_data, domain_data=self.domain_data, user_data=self.user_data, use_role_name=True, use_user_name=True)
+    uris.extend([dict(method='HEAD', uri=self.get_mock_url(resource='domains', append=[self.domain_data.domain_id, 'users', self.user_data.user_id, 'roles', self.role_data.role_id]), complete_qs=True, status_code=204)])
+    self.register_uris(uris)
+    self.assertFalse(self.cloud.grant_role(self.role_data.role_name, user=self.user_data.name, domain=self.domain_data.domain_id))
+    self.assert_calls()

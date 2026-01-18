@@ -1,0 +1,11 @@
+import unittest
+from binascii import unhexlify
+from Cryptodome.SelfTest.st_common import list_test_cases
+from Cryptodome.SelfTest.loader import load_test_vectors
+from Cryptodome.PublicKey import ECC
+from Cryptodome.PublicKey.ECC import EccPoint, _curves, EccKey
+from Cryptodome.Math.Numbers import Integer
+class TestEccPoint_PAI_P256(unittest.TestCase):
+    """Test vectors from http://point-at-infinity.org/ecc/nisttv"""
+    curve = _curves['p256']
+    pointG = EccPoint(curve.Gx, curve.Gy, 'p256')

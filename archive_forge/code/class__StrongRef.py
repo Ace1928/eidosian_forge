@@ -1,0 +1,36 @@
+import collections
+import collections.abc
+import contextlib
+import functools
+import gzip
+import itertools
+import math
+import operator
+import os
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+import traceback
+import types
+import weakref
+import numpy as np
+import matplotlib
+from matplotlib import _api, _c_internal_utils
+class _StrongRef:
+    """
+    Wrapper similar to a weakref, but keeping a strong reference to the object.
+    """
+
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __call__(self):
+        return self._obj
+
+    def __eq__(self, other):
+        return isinstance(other, _StrongRef) and self._obj == other._obj
+
+    def __hash__(self):
+        return hash(self._obj)

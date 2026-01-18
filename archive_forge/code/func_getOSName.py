@@ -1,0 +1,5 @@
+from .env import YowsupEnv
+import base64
+import hashlib
+def getOSName(self):
+    return self.__class__._OS_NAME

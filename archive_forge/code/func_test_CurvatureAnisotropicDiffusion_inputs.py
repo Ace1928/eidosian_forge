@@ -1,0 +1,7 @@
+from ..denoising import CurvatureAnisotropicDiffusion
+def test_CurvatureAnisotropicDiffusion_inputs():
+    input_map = dict(args=dict(argstr='%s'), conductance=dict(argstr='--conductance %f'), environ=dict(nohash=True, usedefault=True), inputVolume=dict(argstr='%s', extensions=None, position=-2), iterations=dict(argstr='--iterations %d'), outputVolume=dict(argstr='%s', hash_files=False, position=-1), timeStep=dict(argstr='--timeStep %f'))
+    inputs = CurvatureAnisotropicDiffusion.input_spec()
+    for key, metadata in list(input_map.items()):
+        for metakey, value in list(metadata.items()):
+            assert getattr(inputs.traits()[key], metakey) == value

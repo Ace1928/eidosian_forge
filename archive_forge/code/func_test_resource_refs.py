@@ -1,0 +1,30 @@
+import copy
+import hashlib
+import json
+import fixtures
+from stevedore import extension
+from heat.common import exception
+from heat.common import template_format
+from heat.engine.cfn import functions as cfn_funcs
+from heat.engine.cfn import parameters as cfn_p
+from heat.engine.cfn import template as cfn_t
+from heat.engine.clients.os import nova
+from heat.engine import environment
+from heat.engine import function
+from heat.engine.hot import template as hot_t
+from heat.engine import node_data
+from heat.engine import rsrc_defn
+from heat.engine import stack
+from heat.engine import stk_defn
+from heat.engine import template
+from heat.tests import common
+from heat.tests.openstack.nova import fakes as fakes_nova
+from heat.tests import utils
+def test_resource_refs(self):
+    tmpl = template.Template(resource_template)
+    stk = stack.Stack(self.ctx, 'test', tmpl)
+    stk.validate()
+    data = node_data.NodeData.from_dict({'reference_id': 'bar'})
+    stk_defn.update_resource_data(stk.defn, 'foo', data)
+    r_snippet = {'Ref': 'foo'}
+    self.assertEqual('bar', self.resolve(r_snippet, tmpl, stk))

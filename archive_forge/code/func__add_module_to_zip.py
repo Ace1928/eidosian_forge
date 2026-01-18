@@ -1,0 +1,45 @@
+from __future__ import (absolute_import, division, print_function)
+import ast
+import base64
+import datetime
+import json
+import os
+import shlex
+import time
+import zipfile
+import re
+import pkgutil
+from ast import AST, Import, ImportFrom
+from io import BytesIO
+from ansible.release import __version__, __author__
+from ansible import constants as C
+from ansible.errors import AnsibleError
+from ansible.executor.interpreter_discovery import InterpreterDiscoveryRequiredError
+from ansible.executor.powershell import module_manifest as ps_manifest
+from ansible.module_utils.common.json import AnsibleJSONEncoder
+from ansible.module_utils.common.text.converters import to_bytes, to_text, to_native
+from ansible.plugins.loader import module_utils_loader
+from ansible.utils.collection_loader._collection_finder import _get_collection_metadata, _nested_dict_get
+from ansible.executor import action_write_locks
+from ansible.utils.display import Display
+from collections import namedtuple
+import importlib.util
+import importlib.machinery
+import sys
+import {1} as mod
+def _add_module_to_zip(zf, date_time, remote_module_fqn, b_module_data):
+    """Add a module from ansible or from an ansible collection into the module zip"""
+    module_path_parts = remote_module_fqn.split('.')
+    module_path = '/'.join(module_path_parts) + '.py'
+    zf.writestr(_make_zinfo(module_path, date_time, zf=zf), b_module_data)
+    if module_path_parts[0] == 'ansible':
+        start = 2
+        existing_paths = frozenset()
+    else:
+        start = 1
+        existing_paths = frozenset(zf.namelist())
+    for idx in range(start, len(module_path_parts)):
+        package_path = '/'.join(module_path_parts[:idx]) + '/__init__.py'
+        if package_path in existing_paths:
+            continue
+        zf.writestr(_make_zinfo(package_path, date_time, zf=zf), b'')

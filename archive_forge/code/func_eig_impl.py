@@ -1,0 +1,72 @@
+import contextlib
+import warnings
+from llvmlite import ir
+import numpy as np
+import operator
+from numba.core.imputils import (lower_builtin, impl_ret_borrowed,
+from numba.core.typing import signature
+from numba.core.extending import intrinsic, overload, register_jitable
+from numba.core import types, cgutils
+from numba.core.errors import TypingError, NumbaTypeError, \
+from .arrayobj import make_array, _empty_nd_impl, array_copy
+from numba.np import numpy_support as np_support
+@overload(np.linalg.eig)
+def eig_impl(a):
+    ensure_lapack()
+    _check_linalg_matrix(a, 'eig')
+    numba_ez_rgeev = _LAPACK().numba_ez_rgeev(a.dtype)
+    numba_ez_cgeev = _LAPACK().numba_ez_cgeev(a.dtype)
+    kind = ord(get_blas_kind(a.dtype, 'eig'))
+    JOBVL = ord('N')
+    JOBVR = ord('V')
+
+    def real_eig_impl(a):
+        """
+        eig() implementation for real arrays.
+        """
+        n = a.shape[-1]
+        if a.shape[-2] != n:
+            msg = 'Last 2 dimensions of the array must be square.'
+            raise np.linalg.LinAlgError(msg)
+        _check_finite_matrix(a)
+        acpy = _copy_to_fortran_order(a)
+        ldvl = 1
+        ldvr = n
+        wr = np.empty(n, dtype=a.dtype)
+        wi = np.empty(n, dtype=a.dtype)
+        vl = np.empty((n, ldvl), dtype=a.dtype)
+        vr = np.empty((n, ldvr), dtype=a.dtype)
+        if n == 0:
+            return (wr, vr.T)
+        r = numba_ez_rgeev(kind, JOBVL, JOBVR, n, acpy.ctypes, n, wr.ctypes, wi.ctypes, vl.ctypes, ldvl, vr.ctypes, ldvr)
+        _handle_err_maybe_convergence_problem(r)
+        if np.any(wi):
+            raise ValueError('eig() argument must not cause a domain change.')
+        _dummy_liveness_func([acpy.size, vl.size, vr.size, wr.size, wi.size])
+        return (wr, vr.T)
+
+    def cmplx_eig_impl(a):
+        """
+        eig() implementation for complex arrays.
+        """
+        n = a.shape[-1]
+        if a.shape[-2] != n:
+            msg = 'Last 2 dimensions of the array must be square.'
+            raise np.linalg.LinAlgError(msg)
+        _check_finite_matrix(a)
+        acpy = _copy_to_fortran_order(a)
+        ldvl = 1
+        ldvr = n
+        w = np.empty(n, dtype=a.dtype)
+        vl = np.empty((n, ldvl), dtype=a.dtype)
+        vr = np.empty((n, ldvr), dtype=a.dtype)
+        if n == 0:
+            return (w, vr.T)
+        r = numba_ez_cgeev(kind, JOBVL, JOBVR, n, acpy.ctypes, n, w.ctypes, vl.ctypes, ldvl, vr.ctypes, ldvr)
+        _handle_err_maybe_convergence_problem(r)
+        _dummy_liveness_func([acpy.size, vl.size, vr.size, w.size])
+        return (w, vr.T)
+    if isinstance(a.dtype, types.scalars.Complex):
+        return cmplx_eig_impl
+    else:
+        return real_eig_impl

@@ -1,0 +1,14 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class AlloydbProjectsLocationsClustersUpgradeRequest(_messages.Message):
+    """A AlloydbProjectsLocationsClustersUpgradeRequest object.
+
+  Fields:
+    name: Required. The resource name of the cluster.
+    upgradeClusterRequest: A UpgradeClusterRequest resource to be passed as
+      the request body.
+  """
+    name = _messages.StringField(1, required=True)
+    upgradeClusterRequest = _messages.MessageField('UpgradeClusterRequest', 2)

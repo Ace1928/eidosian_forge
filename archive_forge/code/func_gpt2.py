@@ -1,0 +1,4 @@
+from tiktoken.load import data_gym_to_mergeable_bpe_ranks, load_tiktoken_bpe
+def gpt2():
+    mergeable_ranks = data_gym_to_mergeable_bpe_ranks(vocab_bpe_file='https://openaipublic.blob.core.windows.net/gpt-2/encodings/main/vocab.bpe', encoder_json_file='https://openaipublic.blob.core.windows.net/gpt-2/encodings/main/encoder.json', vocab_bpe_hash='1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5', encoder_json_hash='196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783')
+    return {'name': 'gpt2', 'explicit_n_vocab': 50257, 'pat_str': "'(?:[sdmt]|ll|ve|re)| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+", 'mergeable_ranks': mergeable_ranks, 'special_tokens': {ENDOFTEXT: 50256}}

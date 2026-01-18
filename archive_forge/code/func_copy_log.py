@@ -1,0 +1,6 @@
+import boto
+from boto.pyami.scriptbase import ScriptBase
+import os, StringIO
+def copy_log(self):
+    key = self.dst.new_key(self.log_file)
+    key.set_contents_from_filename(self.log_path)

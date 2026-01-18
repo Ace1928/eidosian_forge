@@ -1,0 +1,56 @@
+import pickle
+from sympy.polys.polytools import (
+from sympy.polys.polyerrors import (
+from sympy.polys.polyclasses import DMP
+from sympy.polys.fields import field
+from sympy.polys.domains import FF, ZZ, QQ, ZZ_I, QQ_I, RR, EX
+from sympy.polys.domains.realfield import RealField
+from sympy.polys.domains.complexfield import ComplexField
+from sympy.polys.orderings import lex, grlex, grevlex
+from sympy.combinatorics.galois import S4TransitiveSubgroups
+from sympy.core.add import Add
+from sympy.core.basic import _aresame
+from sympy.core.containers import Tuple
+from sympy.core.expr import Expr
+from sympy.core.function import (Derivative, diff, expand)
+from sympy.core.mul import _keep_coeff, Mul
+from sympy.core.numbers import (Float, I, Integer, Rational, oo, pi)
+from sympy.core.power import Pow
+from sympy.core.relational import Eq
+from sympy.core.singleton import S
+from sympy.core.symbol import Symbol
+from sympy.functions.elementary.complexes import (im, re)
+from sympy.functions.elementary.exponential import exp
+from sympy.functions.elementary.hyperbolic import tanh
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.piecewise import Piecewise
+from sympy.functions.elementary.trigonometric import sin
+from sympy.matrices.dense import Matrix
+from sympy.matrices.expressions.matexpr import MatrixSymbol
+from sympy.polys.rootoftools import rootof
+from sympy.simplify.simplify import signsimp
+from sympy.utilities.iterables import iterable
+from sympy.utilities.exceptions import SymPyDeprecationWarning
+from sympy.testing.pytest import raises, warns_deprecated_sympy, warns
+from sympy.abc import a, b, c, d, p, q, t, w, x, y, z
+def test_resultant():
+    f, g, h = (x ** 2 - 2 * x + 1, x ** 2 - 1, 0)
+    F, G = (Poly(f), Poly(g))
+    assert F.resultant(G) == h
+    assert resultant(f, g) == h
+    assert resultant(f, g, x) == h
+    assert resultant(f, g, (x,)) == h
+    assert resultant(F, G) == h
+    assert resultant(f, g, polys=True) == h
+    assert resultant(F, G, polys=False) == h
+    assert resultant(f, g, includePRS=True) == (h, [f, g, 2 * x - 2])
+    f, g, h = (x - a, x - b, a - b)
+    F, G, H = (Poly(f), Poly(g), Poly(h))
+    assert F.resultant(G) == H
+    assert resultant(f, g) == h
+    assert resultant(f, g, x) == h
+    assert resultant(f, g, (x,)) == h
+    assert resultant(F, G) == H
+    assert resultant(f, g, polys=True) == H
+    assert resultant(F, G, polys=False) == h
+    raises(ComputationFailed, lambda: resultant(4, 2))

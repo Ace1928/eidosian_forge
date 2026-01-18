@@ -1,0 +1,40 @@
+from ._internal import NDArrayBase
+from ..base import _Null
+def generalized_negative_binomial(mu=_Null, alpha=_Null, shape=_Null, ctx=_Null, dtype=_Null, out=None, name=None, **kwargs):
+    """Draw random samples from a generalized negative binomial distribution.
+
+    Samples are distributed according to a generalized negative binomial distribution parametrized by
+    *mu* (mean) and *alpha* (dispersion). *alpha* is defined as *1/k* where *k* is the failure limit of the
+    number of unsuccessful experiments (generalized to real numbers).
+    Samples will always be returned as a floating point data type.
+
+    Example::
+
+       generalized_negative_binomial(mu=2.0, alpha=0.3, shape=(2,2)) = [[ 2.,  1.],
+                                                                        [ 6.,  4.]]
+
+
+    Defined in ../src/operator/random/sample_op.cc:L178
+
+    Parameters
+    ----------
+    mu : float, optional, default=1
+        Mean of the negative binomial distribution.
+    alpha : float, optional, default=1
+        Alpha (dispersion) parameter of the negative binomial distribution.
+    shape : Shape(tuple), optional, default=None
+        Shape of the output.
+    ctx : string, optional, default=''
+        Context of output, in format [cpu|gpu|cpu_pinned](n). Only used for imperative calls.
+    dtype : {'None', 'float16', 'float32', 'float64'},optional, default='None'
+        DType of the output in case this can't be inferred. Defaults to float32 if not defined (dtype=None).
+
+    out : NDArray, optional
+        The output NDArray to hold the result.
+
+    Returns
+    -------
+    out : NDArray or list of NDArrays
+        The output of this function.
+    """
+    return (0,)

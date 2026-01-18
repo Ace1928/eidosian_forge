@@ -1,0 +1,17 @@
+import sys
+from google.protobuf import message
+from tensorflow.core.profiler import tfprof_options_pb2
+from tensorflow.core.profiler import tfprof_output_pb2
+from tensorflow.python.eager import context
+from tensorflow.python.framework import errors
+from tensorflow.python.framework import ops
+from tensorflow.python.profiler import option_builder
+from tensorflow.python.profiler import tfprof_logger
+from tensorflow.python.util import _pywrap_tfprof as print_mdl
+from tensorflow.python.util.tf_export import tf_export
+def _graph_string(graph):
+    """Helper to serialize a graph to string."""
+    if graph:
+        return graph.as_graph_def(add_shapes=True).SerializeToString()
+    else:
+        return b''

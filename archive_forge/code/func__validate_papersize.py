@@ -1,0 +1,18 @@
+import ast
+from functools import lru_cache, reduce
+from numbers import Real
+import operator
+import os
+import re
+import numpy as np
+from matplotlib import _api, cbook
+from matplotlib.cbook import ls_mapper
+from matplotlib.colors import Colormap, is_color_like
+from matplotlib._fontconfig_pattern import parse_fontconfig_pattern
+from matplotlib._enums import JoinStyle, CapStyle
+from cycler import Cycler, cycler as ccycler
+def _validate_papersize(s):
+    s = ValidateInStrings('ps.papersize', ['figure', 'auto', 'letter', 'legal', 'ledger', *[f'{ab}{i}' for ab in 'ab' for i in range(11)]], ignorecase=True)(s)
+    if s == 'auto':
+        _api.warn_deprecated('3.8', name="ps.papersize='auto'", addendum='Pass an explicit paper type, figure, or omit the *ps.papersize* rcParam entirely.')
+    return s

@@ -1,0 +1,11 @@
+import math
+from itertools import product
+import numpy as np
+from numpy.testing import assert_allclose, assert_equal, assert_
+from pytest import raises as assert_raises
+from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
+from scipy.optimize._numdiff import (
+def test_no_precomputed_groups(self):
+    A = self.structure(self.n)
+    J = approx_derivative(self.fun, self.x0, sparsity=A)
+    assert_allclose(J.toarray(), self.J_true, rtol=1e-06)

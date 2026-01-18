@@ -1,0 +1,21 @@
+import warnings
+import entrypoints
+def fetch_auth(request_auth):
+    """
+    Find the request auth from registered providers based on the auth provider's name.
+    The auth provider's name can be provided through environment variable `MLFLOW_TRACKING_AUTH`.
+
+    This function iterates through all request auth providers in the registry. Additional context
+    providers can be registered as described in
+    :py:class:`mlflow.tracking.request_auth.RequestAuthProvider`.
+
+    Args:
+        request_auth: The name of request auth provider.
+
+    Returns:
+        The auth object.
+    """
+    for auth_provider in _request_auth_provider_registry:
+        if auth_provider.get_name() == request_auth:
+            return auth_provider.get_auth()
+    warnings.warn(f'Could not find any registered plugin for {request_auth}. No authentication header will be added. Please check your provider documentation for installing the right plugin or correct provider name.')

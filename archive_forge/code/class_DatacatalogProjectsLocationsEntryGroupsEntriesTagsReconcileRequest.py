@@ -1,0 +1,16 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class DatacatalogProjectsLocationsEntryGroupsEntriesTagsReconcileRequest(_messages.Message):
+    """A DatacatalogProjectsLocationsEntryGroupsEntriesTagsReconcileRequest
+  object.
+
+  Fields:
+    googleCloudDatacatalogV1ReconcileTagsRequest: A
+      GoogleCloudDatacatalogV1ReconcileTagsRequest resource to be passed as
+      the request body.
+    parent: Required. Name of Entry to be tagged.
+  """
+    googleCloudDatacatalogV1ReconcileTagsRequest = _messages.MessageField('GoogleCloudDatacatalogV1ReconcileTagsRequest', 1)
+    parent = _messages.StringField(2, required=True)

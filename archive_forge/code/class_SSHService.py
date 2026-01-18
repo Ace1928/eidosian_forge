@@ -1,0 +1,33 @@
+from typing import Dict
+from twisted.logger import Logger
+class SSHService:
+    name: bytes = None
+    protocolMessages: Dict[int, str] = {}
+    transport = None
+    _log = Logger()
+
+    def serviceStarted(self):
+        """
+        called when the service is active on the transport.
+        """
+
+    def serviceStopped(self):
+        """
+        called when the service is stopped, either by the connection ending
+        or by another service being started
+        """
+
+    def logPrefix(self):
+        return 'SSHService {!r} on {}'.format(self.name, self.transport.transport.logPrefix())
+
+    def packetReceived(self, messageNum, packet):
+        """
+        called when we receive a packet on the transport
+        """
+        if messageNum in self.protocolMessages:
+            messageType = self.protocolMessages[messageNum]
+            f = getattr(self, 'ssh_%s' % messageType[4:], None)
+            if f is not None:
+                return f(packet)
+        self._log.info("couldn't handle {messageNum} {packet!r}", messageNum=messageNum, packet=packet)
+        self.transport.sendUnimplemented()

@@ -1,0 +1,2 @@
+class ListparserError(Exception):
+    pass

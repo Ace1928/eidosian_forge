@@ -1,0 +1,16 @@
+import warnings
+import sys
+import numpy as np
+from numpy.testing import (
+import pytest
+from pytest import raises as assert_raises
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
+from scipy.cluster import _vq
+from scipy.conftest import (
+from scipy.sparse._sputils import matrix
+from scipy._lib._array_api import (
+@skip_if_array_api
+def test_kmeans_0k(self):
+    assert_raises(ValueError, kmeans, X, 0)
+    assert_raises(ValueError, kmeans2, X, 0)
+    assert_raises(ValueError, kmeans2, X, np.array([]))

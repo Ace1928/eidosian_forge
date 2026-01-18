@@ -1,0 +1,105 @@
+from __future__ import absolute_import, division, print_function
+import base64
+import io
+import os
+import stat
+import traceback
+from ansible.module_utils._text import to_bytes, to_native, to_text
+from ansible_collections.community.docker.plugins.module_utils._api.errors import APIError, DockerException, NotFound
+from ansible_collections.community.docker.plugins.module_utils.common_api import (
+from ansible_collections.community.docker.plugins.module_utils.copy import (
+from ansible_collections.community.docker.plugins.module_utils._scramble import generate_insecure_key, scramble
+def is_file_idempotent(client, container, managed_path, container_path, follow_links, local_follow_links, owner_id, group_id, mode, force=False, diff=None, max_file_size_for_diff=1):
+    try:
+        file_stat = os.stat(managed_path) if local_follow_links else os.lstat(managed_path)
+    except OSError as exc:
+        if exc.errno == 2:
+            raise DockerFileNotFound('Cannot find local file {managed_path}'.format(managed_path=managed_path))
+        raise
+    if mode is None:
+        mode = stat.S_IMODE(file_stat.st_mode)
+    if not stat.S_ISLNK(file_stat.st_mode) and (not stat.S_ISREG(file_stat.st_mode)):
+        raise DockerFileCopyError('Local path {managed_path} is not a symbolic link or file')
+    if diff is not None:
+        if file_stat.st_size > max_file_size_for_diff > 0:
+            diff['src_larger'] = max_file_size_for_diff
+        elif stat.S_ISLNK(file_stat.st_mode):
+            diff['after_header'] = managed_path
+            diff['after'] = os.readlink(managed_path)
+        else:
+            with open(managed_path, 'rb') as f:
+                content = f.read()
+            if is_binary(content):
+                diff['src_binary'] = 1
+            else:
+                diff['after_header'] = managed_path
+                diff['after'] = to_text(content)
+    if force and (not follow_links):
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff)
+        return (container_path, mode, False)
+    real_container_path, regular_stat, link_target = stat_file(client, container, in_path=container_path, follow_links=follow_links)
+    if follow_links:
+        container_path = real_container_path
+    if regular_stat is None:
+        if diff is not None:
+            diff['before_header'] = container_path
+            diff['before'] = ''
+        return (container_path, mode, False)
+    if force:
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, False)
+    if force is False:
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        copy_dst_to_src(diff)
+        return (container_path, mode, True)
+    if stat.S_ISLNK(file_stat.st_mode):
+        if link_target is None:
+            retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+            return (container_path, mode, False)
+        local_link_target = os.readlink(managed_path)
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, local_link_target == link_target)
+    if link_target is not None:
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, False)
+    if is_container_file_not_regular_file(regular_stat):
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, False)
+    if file_stat.st_size != regular_stat['size']:
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, False)
+    if mode != get_container_file_mode(regular_stat):
+        retrieve_diff(client, container, container_path, follow_links, diff, max_file_size_for_diff, regular_stat, link_target)
+        return (container_path, mode, False)
+
+    def process_none(in_path):
+        return (container_path, mode, False)
+
+    def process_regular(in_path, tar, member):
+        if any([member.mode & 4095 != mode, member.uid != owner_id, member.gid != group_id, not stat.S_ISREG(file_stat.st_mode), member.size != file_stat.st_size]):
+            add_diff_dst_from_regular_member(diff, max_file_size_for_diff, in_path, tar, member)
+            return (container_path, mode, False)
+        tar_f = tar.extractfile(member)
+        with open(managed_path, 'rb') as local_f:
+            is_equal = are_fileobjs_equal_with_diff_of_first(tar_f, local_f, member.size, diff, max_file_size_for_diff, in_path)
+        return (container_path, mode, is_equal)
+
+    def process_symlink(in_path, member):
+        if diff is not None:
+            diff['before_header'] = in_path
+            diff['before'] = member.linkname
+        if member.mode & 4095 != mode:
+            return (container_path, mode, False)
+        if member.uid != owner_id:
+            return (container_path, mode, False)
+        if member.gid != group_id:
+            return (container_path, mode, False)
+        if not stat.S_ISLNK(file_stat.st_mode):
+            return (container_path, mode, False)
+        local_link_target = os.readlink(managed_path)
+        return (container_path, mode, member.linkname == local_link_target)
+
+    def process_other(in_path, member):
+        add_other_diff(diff, in_path, member)
+        return (container_path, mode, False)
+    return fetch_file_ex(client, container, in_path=container_path, process_none=process_none, process_regular=process_regular, process_symlink=process_symlink, process_other=process_other, follow_links=follow_links)

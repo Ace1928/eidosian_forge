@@ -1,0 +1,5 @@
+import networkx as nx
+import pytest
+import cirq
+def construct_valid_circuit():
+    return cirq.Circuit([cirq.Moment(cirq.CNOT(cirq.NamedQubit('3'), cirq.NamedQubit('9')), cirq.CNOT(cirq.NamedQubit('8'), cirq.NamedQubit('12'))), cirq.Moment(cirq.CNOT(cirq.NamedQubit('10'), cirq.NamedQubit('11')), cirq.CNOT(cirq.NamedQubit('8'), cirq.NamedQubit('12')), cirq.CNOT(cirq.NamedQubit('14'), cirq.NamedQubit('6')), cirq.CNOT(cirq.NamedQubit('5'), cirq.NamedQubit('4'))), cirq.Moment(cirq.CNOT(cirq.NamedQubit('8'), cirq.NamedQubit('2')), cirq.CNOT(cirq.NamedQubit('3'), cirq.NamedQubit('9')), cirq.CNOT(cirq.NamedQubit('6'), cirq.NamedQubit('0')), cirq.CNOT(cirq.NamedQubit('14'), cirq.NamedQubit('10'))), cirq.Moment(cirq.CNOT(cirq.NamedQubit('14'), cirq.NamedQubit('6')), cirq.CNOT(cirq.NamedQubit('1'), cirq.NamedQubit('4'))), cirq.Moment(cirq.CNOT(cirq.NamedQubit('8'), cirq.NamedQubit('12')), cirq.CNOT(cirq.NamedQubit('14'), cirq.NamedQubit('10')))])

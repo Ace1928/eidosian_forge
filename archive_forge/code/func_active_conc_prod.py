@@ -1,0 +1,13 @@
+from collections import OrderedDict
+from functools import reduce
+import math
+from operator import add
+from ..units import get_derived_unit, default_units, energy, concentration
+from ..util._dimensionality import dimension_codes, base_registry
+from ..util.pyutil import memoize, deprecated
+from ..util._expr import Expr, UnaryWrapper, Symbol
+def active_conc_prod(self, variables, backend=math, reaction=None):
+    result = 1
+    for k, v in reaction.reac.items():
+        result *= variables[k] ** v
+    return result

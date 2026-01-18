@@ -1,0 +1,30 @@
+import re
+from functools import lru_cache
+from typing import Callable, List
+from ._cell_widths import CELL_WIDTHS
+@lru_cache(maxsize=4096)
+def _get_codepoint_cell_size(codepoint: int) -> int:
+    """Get the cell size of a character.
+
+    Args:
+        codepoint (int): Codepoint of a character.
+
+    Returns:
+        int: Number of cells (0, 1 or 2) occupied by that character.
+    """
+    _table = CELL_WIDTHS
+    lower_bound = 0
+    upper_bound = len(_table) - 1
+    index = (lower_bound + upper_bound) // 2
+    while True:
+        start, end, width = _table[index]
+        if codepoint < start:
+            upper_bound = index - 1
+        elif codepoint > end:
+            lower_bound = index + 1
+        else:
+            return 0 if width == -1 else width
+        if upper_bound < lower_bound:
+            break
+        index = (lower_bound + upper_bound) // 2
+    return 1

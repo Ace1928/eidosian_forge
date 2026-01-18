@@ -1,0 +1,82 @@
+from tensorflow.python.saved_model import save_options
+from tensorflow.python.util.tf_export import tf_export
+Creates an object that stores options for SavedModel loading.
+
+    *When to set `allow_partial_checkpoint=True`?*
+
+    This can be used when loading a Keras model (`tf.keras.models.load_model`)
+    with custom objects. When new variables are added to the custom object
+    class, loading will fail the assertion check that all loaded variables have
+    been restored, because the SavedModel checkpoint only contains the variables
+    that were in original the custom object.
+    See the following example:
+
+    ```
+    class Custom(tf.keras.Model):
+      def __init__(self):
+        super(Custom, self).__init__()
+        self.v = tf.Variable(...)
+
+      def call(self, inputs):
+        return ...
+
+    model = Custom()
+    model.save(...)
+    ```
+
+    After saving, say that `Custom` is updated to include an additional
+    variable.
+
+    ```
+    class Custom(tf.keras.Model):
+      def __init__(self):
+        super(Custom, self).__init__()
+        self.v = tf.Variable(...)
+        self.w = tf.Variable(...)
+
+      def call(self, inputs):
+        return ...
+    ```
+
+    `tf.keras.models.load_model(path, custom_objects={'Custom': Custom})` fails
+    to load since `Custom.w` does not exist in the SavedModel checkpoint. To
+    acknowledge that there are variables that are not restored from the
+    checkpoint and successfully load the model, call:
+
+    ```
+    tf.keras.models.load_model(
+      path, custom_objects={'Custom': Custom},
+      options=tf.saved_model.LoadOptions(allow_partial_checkpoint=True))
+    ```
+
+    Args:
+      allow_partial_checkpoint: bool. Defaults to `False`. When enabled, allows
+        the SavedModel checkpoint to not entirely match the loaded object.
+      experimental_io_device: string. Applies in a distributed setting.
+        Tensorflow device to use to access the filesystem. If `None` (default)
+        then for each variable the filesystem is accessed from the CPU:0 device
+        of the host where that variable is assigned. If specified, the
+        filesystem is instead accessed from that device for all variables.
+        This is for example useful if you want to load from a local directory,
+        such as "/tmp" when running in a distributed setting. In that case
+        pass a device for the host where the "/tmp" directory is accessible.
+      experimental_skip_checkpoint: bool. Defaults to `False`. If set to `True`,
+        checkpoints will not be restored. Note that this in the majority of
+        cases will generate an unusable model.
+      experimental_variable_policy: string. The policy to apply to variables
+        when loading. This is either a `saved_model.experimental.VariablePolicy`
+        enum instance or one of its value strings (case is not important). See
+        that enum documentation for details. A value of `None` corresponds to
+        the default policy.
+      experimental_load_function_aliases: bool. Defaults to `False`. If set to
+        `True`, a `function_aliases` attribute will be added to the loaded
+        SavedModel object.
+
+    Example:
+
+      load_options = tf.saved_model.LoadOptions(experimental_io_device=
+        '/job:localhost')
+      restoredmodel = tf.keras.models.load_model(saved_model_path,
+                                                 options=load_options)
+
+    

@@ -1,0 +1,26 @@
+import contextlib
+import errno
+import logging
+import os
+import signal
+import time
+from enum import Enum
+from multiprocessing import Process
+from typing import Dict, List, NamedTuple, Optional, Type, Union
+from uuid import uuid4
+from redis import ConnectionPool, Redis
+from rq.serializers import DefaultSerializer
+from .connections import parse_connection
+from .defaults import DEFAULT_LOGGING_DATE_FORMAT, DEFAULT_LOGGING_FORMAT
+from .job import Job
+from .logutils import setup_loghandlers
+from .queue import Queue
+from .utils import parse_names
+from .worker import BaseWorker, Worker
+def handle_dead_worker(self, worker_data: WorkerData):
+    """
+        Handle a dead worker
+        """
+    self.log.info('Worker %s with pid %d is dead', worker_data.name, worker_data.pid)
+    with contextlib.suppress(KeyError):
+        self.worker_dict.pop(worker_data.name)

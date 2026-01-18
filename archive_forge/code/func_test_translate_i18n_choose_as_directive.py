@@ -1,0 +1,16 @@
+from datetime import datetime
+from gettext import NullTranslations
+import unittest
+import six
+from genshi.core import Attrs
+from genshi.template import MarkupTemplate, Context
+from genshi.filters.i18n import Translator, extract
+from genshi.input import HTML
+from genshi.compat import IS_PYTHON2, StringIO
+from genshi.tests.test_utils import doctest_suite
+def test_translate_i18n_choose_as_directive(self):
+    tmpl = MarkupTemplate('<html xmlns:py="http://genshi.edgewall.org/"\n            xmlns:i18n="http://genshi.edgewall.org/i18n">\n        <i18n:choose numeral="two">\n          <p i18n:singular="">FooBar</p>\n          <p i18n:plural="">FooBars</p>\n        </i18n:choose>\n        <i18n:choose numeral="one">\n          <p i18n:singular="">FooBar</p>\n          <p i18n:plural="">FooBars</p>\n        </i18n:choose>\n        </html>')
+    translations = DummyTranslations()
+    translator = Translator(translations)
+    translator.setup(tmpl)
+    self.assertEqual('<html>\n          <p>FooBars</p>\n          <p>FooBar</p>\n        </html>', tmpl.generate(one=1, two=2).render())

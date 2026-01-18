@@ -1,0 +1,1614 @@
+import sys
+import logging
+import json
+import requests
+from typing import List, Dict, Optional
+from PyQt5.QtCore import QUrl, Qt, QTimer
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QToolBar,
+    QAction,
+    QLineEdit,
+    QStatusBar,
+    QDialog,
+    QVBoxLayout,
+    QWidget,
+    QFileDialog,
+    QDialogButtonBox,
+    QListWidget,
+    QListWidgetItem,
+    QTabWidget,
+    QLabel,
+    QMenu,
+    QTextEdit,
+    QInputDialog,
+)
+from PyQt5.QtWebEngineWidgets import (
+    QWebEngineView,
+    QWebEnginePage,
+    QWebEngineProfile,
+    QWebEngineFullScreenRequest,
+    QWebEngineDownloadItem,
+    QWebEngineSettings,
+)
+from PyQt5.QtGui import QKeySequence, QIcon
+from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
+from PyQt5.QtNetwork import QAuthenticator, QNetworkProxy
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+class CustomWebEnginePage(QWebEnginePage):
+    """
+    CustomWebEnginePage extends QWebEnginePage to handle SSL certificate errors and other custom behaviors.
+    """
+
+    def certificateError(
+        self, certificateError: QWebEnginePage.certificateError
+    ) -> bool:
+        logging.error(f"SSL Error: {certificateError.errorDescription()}")
+        if certificateError.isOverridable():
+            logging.info("SSL Error is overridable, proceeding.")
+            return True
+        else:
+            logging.info("SSL Error is not overridable, blocking.")
+            return False
+
+    def javaScriptConsoleMessage(
+        self,
+        level: QWebEnginePage.JavaScriptConsoleMessageLevel,
+        message: str,
+        lineNumber: int,
+        sourceID: str,
+    ):
+        if level == QWebEnginePage.JavaScriptConsoleMessageLevel.InfoMessageLevel:
+            logging.info(f"JS Info: {message} (Source: {sourceID}, Line: {lineNumber})")
+        elif level == QWebEnginePage.JavaScriptConsoleMessageLevel.WarningMessageLevel:
+            logging.warning(
+                f"JS Warning: {message} (Source: {sourceID}, Line: {lineNumber})"
+            )
+        elif level == QWebEnginePage.JavaScriptConsoleMessageLevel.ErrorMessageLevel:
+            logging.error(
+                f"JS Error: {message} (Source: {sourceID}, Line: {lineNumber})"
+            )
+
+    def acceptNavigationRequest(
+        self, url: QUrl, _type: QWebEnginePage.NavigationType, isMainFrame: bool
+    ) -> bool:
+        logging.info(
+            f"Navigation request to: {url.toString()} (Type: {_type}, MainFrame: {isMainFrame})"
+        )
+        return super().acceptNavigationRequest(url, _type, isMainFrame)
+
+    def featurePermissionRequested(
+        self, securityOrigin: QUrl, feature: QWebEnginePage.Feature
+    ):
+        logging.info(
+            f"Feature permission requested: {feature} from {securityOrigin.toString()}"
+        )
+        self.setFeaturePermission(
+            securityOrigin, feature, QWebEnginePage.PermissionGrantedByUser
+        )
+
+    def fullScreenRequested(self, request: QWebEngineFullScreenRequest):
+        logging.info(
+            f"Full-screen request: {'Entering' if request.toggleOn() else 'Exiting'} full-screen mode."
+        )
+        request.accept()
+
+    def handleUnsupportedContent(self, reply: QWebEngineDownloadItem):
+        logging.info(f"Unsupported content detected: {reply.url().toString()}")
+        reply.accept()
+
+    def downloadRequested(self, download: QWebEngineDownloadItem):
+        logging.info(f"Download requested: {download.url().toString()}")
+        save_path, _ = QFileDialog.getSaveFileName(None, "Save File", download.path())
+        if save_path:
+            download.setPath(save_path)
+            download.accept()
+        else:
+            download.cancel()
+
+    def handleAuthenticationRequired(self, requestUrl: QUrl, auth: QAuthenticator):
+        logging.info(f"Authentication required for: {requestUrl.toString()}")
+        dialog = QDialog()
+        dialog.setWindowTitle("Authentication Required")
+        layout = QVBoxLayout(dialog)
+        username_input = QLineEdit(dialog)
+        username_input.setPlaceholderText("Username")
+        password_input = QLineEdit(dialog)
+        password_input.setPlaceholderText("Password")
+        password_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(username_input)
+        layout.addWidget(password_input)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog
+        )
+        layout.addWidget(buttons)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        if dialog.exec() == QDialog.Accepted:
+            auth.setUser(username_input.text())
+            auth.setPassword(password_input.text())
+        else:
+            auth.abort()
+
+    def handleProxyAuthenticationRequired(
+        self, proxy: QNetworkProxy, auth: QAuthenticator
+    ):
+        logging.info(f"Proxy authentication required for: {proxy.hostName()}")
+        dialog = QDialog()
+        dialog.setWindowTitle("Proxy Authentication Required")
+        layout = QVBoxLayout(dialog)
+        username_input = QLineEdit(dialog)
+        username_input.setPlaceholderText("Username")
+        password_input = QLineEdit(dialog)
+        password_input.setPlaceholderText("Password")
+        password_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(username_input)
+        layout.addWidget(password_input)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog
+        )
+        layout.addWidget(buttons)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        if dialog.exec() == QDialog.Accepted:
+            auth.setUser(username_input.text())
+            auth.setPassword(password_input.text())
+        else:
+            auth.abort()
+
+
+class Browser(QWebEngineView):
+    """
+    Browser class that extends QWebEngineView to provide a custom web browser with enhanced features.
+    """
+
+    def __init__(self, home_url: str = "http://www.google.com"):
+        super().__init__()
+        self.setPage(CustomWebEnginePage(self))
+        self.setUrl(QUrl(home_url))
+        self.home_url = home_url
+        self.history = []
+        self.init_ui()
+        logging.info(f"Browser initialized with home page: {home_url}")
+
+    def init_ui(self):
+        self.loadFinished.connect(self.on_load_finished)
+        self.urlChanged.connect(self.on_url_changed)
+        self.titleChanged.connect(self.on_title_changed)
+        self.iconChanged.connect(self.on_icon_changed)
+        logging.info("UI components initialized and signals connected.")
+
+    def on_load_finished(self, success: bool):
+        if success:
+            logging.info("Page loaded successfully.")
+        else:
+            logging.error("Failed to load the page.")
+
+    def on_url_changed(self, url: QUrl):
+        self.history.append(url.toString())
+        logging.info(f"URL changed to: {url.toString()}")
+
+    def on_title_changed(self, title: str):
+        self.parent().setWindowTitle(f"{title} - Custom Browser")
+        logging.info(f"Title changed to: {title}")
+
+    def on_icon_changed(self, icon: QIcon):
+        self.parent().setWindowIcon(icon)
+        logging.info("Icon changed.")
+
+    def navigate_to(self, url: str):
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = "http://" + url
+        self.setUrl(QUrl(url))
+        logging.info(f"Navigating to URL: {url}")
+
+    def navigate_home(self):
+        self.setUrl(QUrl(self.home_url))
+        logging.info(f"Navigating to home URL: {self.home_url}")
+
+    def reload_page(self):
+        self.reload()
+        logging.info("Page reloaded.")
+
+    def stop_loading(self):
+        self.stop()
+        logging.info("Page loading stopped.")
+
+    def zoom_in(self):
+        self.setZoomFactor(self.zoomFactor() + 0.1)
+        logging.info(f"Zoomed in. Current zoom factor: {self.zoomFactor()}")
+
+    def zoom_out(self):
+        self.setZoomFactor(self.zoomFactor() - 0.1)
+        logging.info(f"Zoomed out. Current zoom factor: {self.zoomFactor()}")
+
+    def reset_zoom(self):
+        self.setZoomFactor(1.0)
+        logging.info("Zoom reset to default.")
+
+    def print_page(self):
+        printer = QPrinter()
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec_() == QDialog.Accepted:
+            self.page().print(
+                printer,
+                lambda success: logging.info(
+                    "Printing completed" if success else "Printing failed"
+                ),
+            )
+        logging.info("Print dialog executed.")
+
+    def save_page_as_pdf(self, file_path: str):
+        self.page().printToPdf(
+            file_path, lambda path: logging.info(f"Page saved as PDF: {path}")
+        )
+
+    def view_page_source(self):
+        def callback(html):
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Page Source")
+            layout = QVBoxLayout(dialog)
+            text_edit = QTextEdit(dialog)
+            text_edit.setPlainText(html)
+            layout.addWidget(text_edit)
+            dialog.exec_()
+            logging.info("Page source viewed.")
+
+        self.page().toHtml(callback)
+
+    def clear_cache(self):
+        self.page().profile().clearHttpCache()
+        logging.info("Browser cache cleared.")
+
+    def enable_do_not_track(self):
+        self.page().profile().setHttpUserAgent(
+            self.page().profile().httpUserAgent() + " DNT/1.0"
+        )
+        logging.info("Do Not Track enabled.")
+
+    def disable_javascript(self):
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptEnabled, False)
+        logging.info("JavaScript disabled.")
+
+    def enable_javascript(self):
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        logging.info("JavaScript enabled.")
+
+
+class TabManager(QTabWidget):
+    """
+    TabManager class to manage browser tabs within the application.
+    """
+
+    def __init__(self, parent: QWidget = None):
+        super().__init__(parent)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.close_tab)
+        self.tabBarDoubleClicked.connect(self.open_new_tab)
+        self.setDocumentMode(True)
+        self.setMovable(True)
+        self.tab_context_menu = QMenu(self)
+        self.setup_context_menu()
+        logging.info("TabManager initialized.")
+
+    def setup_context_menu(self):
+        close_action = QAction("Close Tab", self)
+        close_action.triggered.connect(lambda: self.close_tab(self.currentIndex()))
+        self.tab_context_menu.addAction(close_action)
+
+        reload_action = QAction("Reload Tab", self)
+        reload_action.triggered.connect(self.reload_current_tab)
+        self.tab_context_menu.addAction(reload_action)
+
+        navigate_home_action = QAction("Navigate Home", self)
+        navigate_home_action.triggered.connect(self.navigate_home_current_tab)
+        self.tab_context_menu.addAction(navigate_home_action)
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def show_context_menu(self, position):
+        self.tab_context_menu.exec_(self.mapToGlobal(position))
+
+    def add_tab(self, url: str = "http://www.google.com", label: str = "New Tab"):
+        browser = Browser()
+        browser.setUrl(QUrl(url))
+        index = self.addTab(browser, label)
+        self.setCurrentIndex(index)
+        logging.info(f"New tab added with URL: {url} and label: {label}")
+
+    def close_tab(self, index: int):
+        if self.count() > 1:
+            self.widget(index).deleteLater()
+            self.removeTab(index)
+            logging.info(f"Tab at index {index} closed.")
+        else:
+            logging.warning("Attempted to close the last remaining tab.")
+
+    def open_new_tab(self, index: int):
+        if index == -1:  # Double-click on empty space
+            self.add_tab()
+            logging.info("New tab opened via double-click.")
+
+    def current_browser(self) -> Browser:
+        return self.currentWidget()
+
+    def reload_current_tab(self):
+        browser = self.current_browser()
+        if browser:
+            browser.reload()
+            logging.info("Current tab reloaded.")
+
+    def navigate_home_current_tab(self):
+        browser = self.current_browser()
+        if browser:
+            browser.setUrl(QUrl("http://www.google.com"))
+            logging.info("Current tab navigated to home page.")
+
+    def close_all_tabs(self):
+        while self.count() > 1:
+            self.close_tab(0)
+        logging.info("All tabs closed except the last one.")
+
+    def close_other_tabs(self, index: int):
+        for i in reversed(range(self.count())):
+            if i != index:
+                self.close_tab(i)
+        logging.info(f"All tabs except the one at index {index} closed.")
+
+    def move_tab(self, from_index: int, to_index: int):
+        widget = self.widget(from_index)
+        label = self.tabText(from_index)
+        self.removeTab(from_index)
+        self.insertTab(to_index, widget, label)
+        self.setCurrentIndex(to_index)
+        logging.info(f"Tab moved from index {from_index} to {to_index}")
+
+
+class BookmarkManager(QWidget):
+    """
+    BookmarkManager class to manage and display bookmarks.
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.bookmarks = QListWidget()
+        self.layout.addWidget(self.bookmarks)
+        self.bookmark_data = []
+        self.load_bookmarks()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setWindowTitle("Bookmark Manager")
+        self.setGeometry(300, 300, 400, 300)
+        self.show()
+
+    def add_bookmark(self, title: str, url: str):
+        item = QListWidgetItem(f"{title} - {url}")
+        self.bookmarks.addItem(item)
+        self.bookmark_data.append({"title": title, "url": url})
+        self.save_bookmarks()
+        logging.info(f"Bookmark added: {title} - {url}")
+
+    def load_bookmarks(self):
+        try:
+            with open("bookmarks.json", "r") as file:
+                self.bookmark_data = json.load(file)
+                for entry in self.bookmark_data:
+                    item = QListWidgetItem(f"{entry['title']} - {entry['url']}")
+                    self.bookmarks.addItem(item)
+            logging.info("Bookmarks loaded successfully.")
+        except FileNotFoundError:
+            logging.warning("Bookmarks file not found. Starting with an empty list.")
+        except Exception as e:
+            logging.error(f"Failed to load bookmarks: {e}")
+
+    def save_bookmarks(self):
+        try:
+            with open("bookmarks.json", "w") as file:
+                json.dump(self.bookmark_data, file, indent=4)
+            logging.info("Bookmarks saved successfully.")
+        except Exception as e:
+            logging.error(f"Failed to save bookmarks: {e}")
+
+    def remove_bookmark(self, index: int):
+        if 0 <= index < len(self.bookmark_data):
+            self.bookmarks.takeItem(index)
+            del self.bookmark_data[index]
+            self.save_bookmarks()
+            logging.info(f"Bookmark at index {index} removed successfully.")
+        else:
+            logging.warning(f"Invalid index {index} for bookmark removal.")
+
+    def search_bookmarks(self, query: str) -> List[Dict[str, str]]:
+        results = [
+            entry
+            for entry in self.bookmark_data
+            if query.lower() in entry["title"].lower()
+            or query.lower() in entry["url"].lower()
+        ]
+        logging.info(f"Search for '{query}' returned {len(results)} results.")
+        return results
+
+    def clear_bookmarks(self):
+        self.bookmarks.clear()
+        self.bookmark_data = []
+        self.save_bookmarks()
+        logging.info("All bookmarks cleared.")
+
+    def export_bookmarks(self, file_path: str):
+        try:
+            with open(file_path, "w") as file:
+                json.dump(self.bookmark_data, file, indent=4)
+            logging.info(f"Bookmarks exported to {file_path} successfully.")
+        except Exception as e:
+            logging.error(f"Failed to export bookmarks: {e}")
+
+    def import_bookmarks(self, file_path: str):
+        try:
+            with open(file_path, "r") as file:
+                imported_data = json.load(file)
+                self.bookmark_data.extend(imported_data)
+                for entry in imported_data:
+                    item = QListWidgetItem(f"{entry['title']} - {entry['url']}")
+                    self.bookmarks.addItem(item)
+            self.save_bookmarks()
+            logging.info(f"Bookmarks imported from {file_path} successfully.")
+        except FileNotFoundError:
+            logging.warning(f"Import file {file_path} not found.")
+        except Exception as e:
+            logging.error(f"Failed to import bookmarks: {e}")
+
+
+class DownloadManager(QDialog):
+    """
+    DownloadManager class to manage and display download tasks.
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.downloads = QListWidget()
+        self.layout.addWidget(self.downloads)
+        self.download_tasks = []
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle("Download Manager")
+        self.setGeometry(300, 300, 400, 300)
+        self.show()
+
+    def start_download(self, url: str):
+        download_task = {"url": url, "progress": 0, "status": "Starting"}
+        self.download_tasks.append(download_task)
+        item = QListWidgetItem(f"{url} - {download_task['status']}")
+        self.downloads.addItem(item)
+        self.download_file(url, item)
+
+    def download_file(self, url: str, item: QListWidgetItem):
+        import time
+        import threading
+
+        def download():
+            for i in range(1, 101):
+                time.sleep(0.1)  # Simulate download time
+                self.update_download(item, i)
+            item.setText(f"{url} - Completed")
+            self.update_task_status(url, "Completed")
+
+        threading.Thread(target=download).start()
+
+    def update_download(self, item: QListWidgetItem, progress: int):
+        """
+        Updates the download progress.
+
+        Args:
+            item (QListWidgetItem): The list widget item representing the download.
+            progress (int): The current progress of the download.
+        """
+        item.setText(f"{item.text().split(' - ')[0]} - {progress}%")
+        self.update_task_progress(item.text().split(" - ")[0], progress)
+
+    def update_task_progress(self, url: str, progress: int):
+        """
+        Updates the progress of a download task.
+
+        Args:
+            url (str): The URL of the download task.
+            progress (int): The current progress of the download.
+        """
+        for task in self.download_tasks:
+            if task["url"] == url:
+                task["progress"] = progress
+                break
+
+    def update_task_status(self, url: str, status: str):
+        """
+        Updates the status of a download task.
+
+        Args:
+            url (str): The URL of the download task.
+            status (str): The new status of the download task.
+        """
+        for task in self.download_tasks:
+            if task["url"] == url:
+                task["status"] = status
+                break
+
+    def cancel_download(self, index: int):
+        """
+        Cancels an ongoing download.
+
+        Args:
+            index (int): The index of the download to be canceled.
+        """
+        if 0 <= index < len(self.download_tasks):
+            self.download_tasks[index]["status"] = "Canceled"
+            self.downloads.item(index).setText(
+                f"{self.download_tasks[index]['url']} - Canceled"
+            )
+            logging.info(f"Download canceled: {self.download_tasks[index]['url']}")
+        else:
+            logging.warning(f"Invalid index {index} for download cancellation.")
+
+    def remove_download(self, index: int):
+        """
+        Removes a download from the list.
+
+        Args:
+            index (int): The index of the download to be removed.
+        """
+        if 0 <= index < len(self.download_tasks):
+            self.download_tasks.pop(index)
+            self.downloads.takeItem(index)
+            logging.info(f"Download removed at index {index}")
+        else:
+            logging.warning(f"Invalid index {index} for download removal.")
+
+    def clear_downloads(self):
+        """
+        Clears all downloads from the list.
+        """
+        self.download_tasks.clear()
+        self.downloads.clear()
+        logging.info("All downloads cleared.")
+
+
+class HistoryManager(QWidget):
+    """
+    HistoryManager class to manage and display browsing history.
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        """
+        Initializes the HistoryManager with a layout and history list widget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        super().__init__(parent)
+        self.layout = QVBoxLayout(self)
+        self.history_list = QListWidget()
+        self.layout.addWidget(self.history_list)
+        self.history_data: List[Dict[str, str]] = []
+        self.load_history()
+
+    def add_history_item(self, title: str, url: str):
+        """
+        Adds a new history item to the history list and saves it.
+
+        Args:
+            title (str): The title of the web page.
+            url (str): The URL of the web page.
+        """
+        item = QListWidgetItem(f"{title} - {url}")
+        self.history_list.addItem(item)
+        self.history_data.append({"title": title, "url": url})
+        self.save_history()
+        logging.info(f"History item added: {title} - {url}")
+
+    def clear_history(self):
+        """
+        Clears the history list and deletes the saved history.
+        """
+        self.history_list.clear()
+        self.history_data = []
+        self.save_history()
+        logging.info("History cleared.")
+
+    def load_history(self):
+        """
+        Loads the browsing history from a file.
+        """
+        try:
+            with open("history.json", "r") as file:
+                self.history_data = json.load(file)
+                for entry in self.history_data:
+                    item = QListWidgetItem(f"{entry['title']} - {entry['url']}")
+                    self.history_list.addItem(item)
+            logging.info("History loaded successfully.")
+        except FileNotFoundError:
+            logging.warning("History file not found. Starting with an empty history.")
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to decode history JSON: {e}")
+        except Exception as e:
+            logging.error(f"Failed to load history: {e}")
+
+    def save_history(self):
+        """
+        Saves the current browsing history to a file.
+        """
+        try:
+            with open("history.json", "w") as file:
+                json.dump(self.history_data, file, indent=4)
+            logging.info("History saved successfully.")
+        except Exception as e:
+            logging.error(f"Failed to save history: {e}")
+
+    def remove_history_item(self, index: int):
+        """
+        Removes a specific history item by index.
+
+        Args:
+            index (int): The index of the item to be removed.
+        """
+        if 0 <= index < len(self.history_data):
+            self.history_list.takeItem(index)
+            del self.history_data[index]
+            self.save_history()
+            logging.info(f"History item at index {index} removed successfully.")
+        else:
+            logging.warning(f"Invalid index {index} for history removal.")
+
+    def search_history(self, query: str) -> List[Dict[str, str]]:
+        """
+        Searches the history for items matching the query.
+
+        Args:
+            query (str): The search query.
+
+        Returns:
+            list: A list of matching history items.
+        """
+        results = [
+            entry
+            for entry in self.history_data
+            if query.lower() in entry["title"].lower()
+            or query.lower() in entry["url"].lower()
+        ]
+        logging.info(f"Search for '{query}' returned {len(results)} results.")
+        return results
+
+
+class AdBlocker:
+    """
+    AdBlocker class to manage and enforce ad blocking rules.
+    """
+
+    def __init__(self):
+        """
+        Initializes the AdBlocker with a blocklist.
+        """
+        self.blocklist = self.load_blocklist()
+
+    def load_blocklist(self) -> set:
+        """
+        Loads the blocklist from a file or online source.
+
+        Returns:
+            set: A set of URLs to be blocked.
+        """
+        try:
+            with open("blocklist.txt", "r") as file:
+                blocklist = set(line.strip() for line in file if line.strip())
+            logging.info("Blocklist loaded successfully.")
+            return blocklist
+        except FileNotFoundError:
+            logging.error("Blocklist file not found.")
+            return set()
+        except Exception as e:
+            logging.error(f"Failed to load blocklist: {e}")
+            return set()
+
+    def should_block(self, request_url: str) -> bool:
+        """
+        Determines if the given URL should be blocked.
+
+        Args:
+            request_url (str): The URL to be checked.
+
+        Returns:
+            bool: True if the URL should be blocked, False otherwise.
+        """
+        for blocked_url in self.blocklist:
+            if blocked_url in request_url:
+                logging.info(f"Blocking URL: {request_url}")
+                return True
+        logging.info(f"Allowing URL: {request_url}")
+        return False
+
+    def update_blocklist(self, new_entries: list):
+        """
+        Updates the blocklist with new entries.
+
+        Args:
+            new_entries (list): A list of new URLs to be added to the blocklist.
+        """
+        self.blocklist.update(new_entries)
+        self.save_blocklist()
+        logging.info("Blocklist updated successfully.")
+
+    def save_blocklist(self):
+        """
+        Saves the current blocklist to a file.
+        """
+        try:
+            with open("blocklist.txt", "w") as file:
+                for url in self.blocklist:
+                    file.write(f"{url}\n")
+            logging.info("Blocklist saved successfully.")
+        except Exception as e:
+            logging.error(f"Failed to save blocklist: {e}")
+
+    def remove_from_blocklist(self, url: str):
+        """
+        Removes a URL from the blocklist.
+
+        Args:
+            url (str): The URL to be removed from the blocklist.
+        """
+        if url in self.blocklist:
+            self.blocklist.remove(url)
+            self.save_blocklist()
+            logging.info(f"URL {url} removed from blocklist.")
+        else:
+            logging.warning(f"URL {url} not found in blocklist.")
+
+    def clear_blocklist(self):
+        """
+        Clears the entire blocklist.
+        """
+        self.blocklist.clear()
+        self.save_blocklist()
+        logging.info("Blocklist cleared.")
+
+    def get_blocklist(self) -> set:
+        """
+        Returns the current blocklist.
+
+        Returns:
+            set: The current set of blocked URLs.
+        """
+        return self.blocklist
+
+    def load_blocklist_from_url(self, url: str):
+        """
+        Loads the blocklist from an online source.
+
+        Args:
+            url (str): The URL of the online blocklist source.
+        """
+        try:
+            import requests
+
+            response = requests.get(url)
+            response.raise_for_status()
+            self.blocklist = set(response.text.splitlines())
+            self.save_blocklist()
+            logging.info("Blocklist loaded from online source successfully.")
+        except requests.RequestException as e:
+            logging.error(f"Failed to load blocklist from URL {url}: {e}")
+
+
+class PrivacyModeBrowser(Browser):
+    """
+    A specialized browser class that operates in privacy mode, ensuring no persistent cookies or history are stored.
+    """
+
+    def __init__(self):
+        """
+        Initializes the PrivacyModeBrowser with settings to disable persistent cookies and history.
+        """
+        super().__init__()
+        self._configure_privacy_settings()
+
+    def _configure_privacy_settings(self):
+        """
+        Configures the browser to disable persistent cookies and history.
+        """
+        profile = self.page().profile()
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+        profile.setHistoryType(QWebEngineProfile.NoHistory)
+        logging.info("Privacy mode enabled: No persistent cookies, no history.")
+
+    def clear_cache(self):
+        """
+        Clears the browser's cache to ensure no data is retained.
+        """
+        self.page().profile().clearHttpCache()
+        logging.info("Browser cache cleared.")
+
+    def enable_do_not_track(self):
+        """
+        Enables the 'Do Not Track' feature to enhance privacy.
+        """
+        self.page().profile().setHttpUserAgent(
+            self.page().profile().httpUserAgent() + " DNT/1.0"
+        )
+        logging.info("Do Not Track enabled.")
+
+    def disable_javascript(self):
+        """
+        Disables JavaScript execution for enhanced privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptEnabled, False)
+        logging.info("JavaScript disabled.")
+
+    def enable_ad_blocking(self):
+        """
+        Enables ad blocking by integrating with an AdBlocker instance.
+        """
+        self.ad_blocker = AdBlocker()
+        self.page().profile().setRequestInterceptor(self.ad_blocker)
+        logging.info("Ad blocking enabled.")
+
+    def set_custom_user_agent(self, user_agent: str):
+        """
+        Sets a custom user agent string for the browser.
+
+        Args:
+            user_agent (str): The custom user agent string to be set.
+        """
+        self.page().profile().setHttpUserAgent(user_agent)
+        logging.info(f"Custom user agent set: {user_agent}")
+
+    def disable_cookies(self):
+        """
+        Disables all cookies to enhance privacy.
+        """
+        profile = self.page().profile()
+        profile.setPersistentCookiesPolicy(QWebEngineProfile.NoPersistentCookies)
+        profile.setHttpAcceptCookiePolicy(QWebEngineProfile.NoCookies)
+        logging.info("All cookies disabled.")
+
+    def clear_local_storage(self):
+        """
+        Clears the browser's local storage to ensure no data is retained.
+        """
+        self.page().profile().clearAllVisitedLinks()
+        self.page().profile().clearAllLocalStorage()
+        logging.info("Local storage cleared.")
+
+    def disable_plugins(self):
+        """
+        Disables all plugins to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.PluginsEnabled, False)
+        logging.info("Plugins disabled.")
+
+    def enable_https_only_mode(self):
+        """
+        Enables HTTPS-Only mode to ensure all connections are secure.
+        """
+        self.page().profile().setHttpSecureTransportPolicy(
+            QWebEngineProfile.SecureTransportPolicy.HTTPSOnly
+        )
+        logging.info("HTTPS-Only mode enabled.")
+
+    def set_proxy(self, proxy_url: str):
+        """
+        Sets a proxy server for the browser.
+
+        Args:
+            proxy_url (str): The URL of the proxy server.
+        """
+        proxy = QNetworkProxy()
+        proxy.setType(QNetworkProxy.HttpProxy)
+        proxy.setHostName(proxy_url)
+        QNetworkProxy.setApplicationProxy(proxy)
+        logging.info(f"Proxy set to: {proxy_url}")
+
+    def disable_webgl(self):
+        """
+        Disables WebGL to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.WebGLEnabled, False)
+        logging.info("WebGL disabled.")
+
+    def disable_webrtc(self):
+        """
+        Disables WebRTC to prevent IP leaks.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.WebRTCPublicInterfacesOnly, True)
+        logging.info("WebRTC disabled.")
+
+    def disable_autofill(self):
+        """
+        Disables autofill to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.AutoFillEnabled, False)
+        logging.info("Autofill disabled.")
+
+    def disable_geolocation(self):
+        """
+        Disables geolocation to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.GeolocationEnabled, False)
+        logging.info("Geolocation disabled.")
+
+    def disable_popups(self):
+        """
+        Disables pop-ups to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, False)
+        logging.info("Pop-ups disabled.")
+
+    def disable_referrer(self):
+        """
+        Disables sending the referrer header to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SendReferrer, False)
+        logging.info("Referrer header disabled.")
+
+    def disable_safebrowsing(self):
+        """
+        Disables Safe Browsing to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SafeBrowsingEnabled, False)
+        logging.info("Safe Browsing disabled.")
+
+    def disable_spellcheck(self):
+        """
+        Disables spellcheck to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SpellCheckEnabled, False)
+        logging.info("Spellcheck disabled.")
+
+    def disable_tracking_protection(self):
+        """
+        Disables tracking protection to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.TrackingProtectionEnabled, False)
+        logging.info("Tracking protection disabled.")
+
+    def disable_webgl(self):
+        """
+        Disables WebGL to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.WebGLEnabled, False)
+        logging.info("WebGL disabled.")
+
+    def disable_webrtc(self):
+        """
+        Disables WebRTC to prevent IP leaks.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.WebRTCPublicInterfacesOnly, True)
+        logging.info("WebRTC disabled.")
+
+    def disable_autofill(self):
+        """
+        Disables autofill to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.AutoFillEnabled, False)
+        logging.info("Autofill disabled.")
+
+    def disable_geolocation(self):
+        """
+        Disables geolocation to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.GeolocationEnabled, False)
+        logging.info("Geolocation disabled.")
+
+    def disable_popups(self):
+        """
+        Disables pop-ups to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, False)
+        logging.info("Pop-ups disabled.")
+
+    def disable_referrer(self):
+        """
+        Disables sending the referrer header to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SendReferrer, False)
+        logging.info("Referrer header disabled.")
+
+    def disable_safebrowsing(self):
+        """
+        Disables Safe Browsing to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SafeBrowsingEnabled, False)
+        logging.info("Safe Browsing disabled.")
+
+    def disable_spellcheck(self):
+        """
+        Disables spellcheck to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.SpellCheckEnabled, False)
+        logging.info("Spellcheck disabled.")
+
+    def disable_tracking_protection(self):
+        """
+        Disables tracking protection to enhance privacy.
+        """
+        settings = self.page().settings()
+        settings.setAttribute(QWebEngineSettings.TrackingProtectionEnabled, False)
+        logging.info("Tracking protection disabled.")
+
+
+class ExtensionManager:
+    """
+    Manages browser extensions, allowing for loading, unloading, enabling, disabling, and listing extensions.
+    """
+
+    def __init__(self):
+        """
+        Initializes the ExtensionManager with an empty list of extensions.
+        """
+        self.extensions = []
+
+    def load_extension(self, extension_path: str) -> bool:
+        """
+        Loads and initializes an extension from the given path.
+
+        Args:
+            extension_path (str): The file path to the extension.
+
+        Returns:
+            bool: True if the extension was loaded successfully, False otherwise.
+        """
+        try:
+            extension = self._initialize_extension(extension_path)
+            self.extensions.append(extension)
+            logging.info(f"Extension loaded from {extension_path}")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to load extension from {extension_path}: {e}")
+            return False
+
+    def unload_extension(self, extension_name: str) -> bool:
+        """
+        Unloads an extension by its name.
+
+        Args:
+            extension_name (str): The name of the extension to unload.
+
+        Returns:
+            bool: True if the extension was unloaded successfully, False otherwise.
+        """
+        try:
+            self.extensions = [
+                ext for ext in self.extensions if ext["name"] != extension_name
+            ]
+            logging.info(f"Extension {extension_name} unloaded successfully")
+            return True
+        except Exception as e:
+            logging.error(f"Failed to unload extension {extension_name}: {e}")
+            return False
+
+    def enable_extension(self, extension_name: str) -> bool:
+        """
+        Enables an extension by its name.
+
+        Args:
+            extension_name (str): The name of the extension to enable.
+
+        Returns:
+            bool: True if the extension was enabled successfully, False otherwise.
+        """
+        try:
+            for ext in self.extensions:
+                if ext["name"] == extension_name:
+                    ext["enabled"] = True
+                    logging.info(f"Extension {extension_name} enabled successfully")
+                    return True
+            logging.warning(f"Extension {extension_name} not found")
+            return False
+        except Exception as e:
+            logging.error(f"Failed to enable extension {extension_name}: {e}")
+            return False
+
+    def disable_extension(self, extension_name: str) -> bool:
+        """
+        Disables an extension by its name.
+
+        Args:
+            extension_name (str): The name of the extension to disable.
+
+        Returns:
+            bool: True if the extension was disabled successfully, False otherwise.
+        """
+        try:
+            for ext in self.extensions:
+                if ext["name"] == extension_name:
+                    ext["enabled"] = False
+                    logging.info(f"Extension {extension_name} disabled successfully")
+                    return True
+            logging.warning(f"Extension {extension_name} not found")
+            return False
+        except Exception as e:
+            logging.error(f"Failed to disable extension {extension_name}: {e}")
+            return False
+
+    def list_extensions(self) -> list:
+        """
+        Lists all currently loaded extensions.
+
+        Returns:
+            list: A list of dictionaries containing extension details.
+        """
+        return self.extensions
+
+    def _initialize_extension(self, extension_path: str) -> dict:
+        """
+        Initializes an extension from the given path. This is a private method.
+
+        Args:
+            extension_path (str): The file path to the extension.
+
+        Returns:
+            dict: A dictionary containing extension details.
+        """
+        # Placeholder for actual extension initialization logic
+        extension = {
+            "name": extension_path.split("/")[-1],  # Example: Extracting name from path
+            "path": extension_path,
+            "version": "1.0.0",  # Example version
+            "enabled": True,
+        }
+        return extension
+
+
+class BrowserUI(QMainWindow):
+    """
+    BrowserUI class to manage the main user interface of the browser application.
+    """
+
+    def __init__(self):
+        """
+        Initializes the BrowserUI and sets up the UI components.
+        """
+        super().__init__()
+        self.browser = Browser()
+        self.web_page_handler = WebPageHandler(self.browser)
+        self.init_ui()
+
+    def init_ui(self):
+        """
+        Initializes the user interface by setting up the central widget, navigation bar, menu, status bar, and other components.
+        """
+        try:
+            self.setup_central_widget()
+            self.create_navbar()
+            self.create_menu()
+            self.create_status_bar()
+            self.create_tab_manager()
+            self.create_bookmark_manager()
+            self.create_download_manager()
+            self.create_history_manager()
+            self.create_privacy_mode()
+            logging.info("UI initialized successfully.")
+            self.showMaximized()
+        except Exception as e:
+            logging.error(f"Failed to initialize UI: {e}")
+
+    def setup_central_widget(self):
+        """
+        Sets up the central widget of the main window.
+        """
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.layout = QVBoxLayout(self.central_widget)
+        self.layout.addWidget(self.browser)
+        logging.info("Central widget set up successfully.")
+
+    def create_status_bar(self):
+        """
+        Creates and sets up the status bar.
+        """
+        try:
+            self.status = QStatusBar()
+            self.setStatusBar(self.status)
+            logging.info("Status bar created successfully.")
+        except Exception as e:
+            logging.error(f"Failed to create status bar: {e}")
+
+    def create_navbar(self):
+        """
+        Creates and sets up the navigation bar with actions and a URL bar.
+        """
+        try:
+            self.navbar = QToolBar("Navigation")
+            self.addToolBar(self.navbar)
+            self.add_navbar_actions()
+            logging.info("Navigation bar created successfully.")
+        except Exception as e:
+            logging.error(f"Failed to create navigation bar: {e}")
+
+    def add_navbar_actions(self):
+        """
+        Adds actions to the navigation bar.
+        """
+        actions = [
+            ("⬅️ Back", QKeySequence.Back, self.browser.back),
+            ("➡️ Forward", QKeySequence.Forward, self.browser.forward),
+            ("🔄 Reload", QKeySequence.Refresh, self.browser.reload),
+            ("🏠 Home", "Ctrl+H", self.navigate_home),
+            ("⛔ Stop", "Esc", self.browser.stop),
+            ("🔍 Scrape", "Ctrl+S", self.scrape_page),
+            ("📄 List Extensions", "Ctrl+L", self.list_extensions),
+            ("❌ Disable Extension", "Ctrl+D", self.disable_extension),
+            ("📑 New Tab", "Ctrl+T", self.new_tab),
+            ("❌ Close Tab", "Ctrl+W", self.close_tab),
+            ("🔖 Bookmark Page", "Ctrl+B", self.bookmark_page),
+            ("📥 Downloads", "Ctrl+J", self.show_downloads),
+            ("📜 History", "Ctrl+H", self.show_history),
+            ("🔒 Privacy Mode", "Ctrl+Shift+P", self.toggle_privacy_mode),
+        ]
+        for name, shortcut, handler in actions:
+            action = QAction(name, self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            self.navbar.addAction(action)
+            logging.info(f"Action '{name}' added to navigation bar.")
+
+        self.url_bar = QLineEdit()
+        self.url_bar.returnPressed.connect(self.navigate_to_url)
+        self.navbar.addWidget(self.url_bar)
+        logging.info("URL bar added to navigation bar.")
+
+    def create_menu(self):
+        """
+        Creates and sets up the menu bar with file and view menus.
+        """
+        try:
+            menubar = self.menuBar()
+            self.create_file_menu(menubar)
+            self.create_view_menu(menubar)
+            logging.info("Menu created successfully.")
+        except Exception as e:
+            logging.error(f"Failed to create menu: {e}")
+
+    def create_file_menu(self, menubar):
+        """
+        Creates the file menu with actions for printing and exiting the application.
+
+        Args:
+            menubar (QMenuBar): The menu bar to which the file menu will be added.
+        """
+        file_menu = menubar.addMenu("&File")
+        actions = [
+            ("🖨️ Print", QKeySequence.Print, self.print_page),
+            ("❌ Exit", QKeySequence.Quit, self.close),
+        ]
+        for name, shortcut, handler in actions:
+            action = QAction(name, self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            file_menu.addAction(action)
+            logging.info(f"Action '{name}' added to file menu.")
+
+    def create_view_menu(self, menubar):
+        """
+        Creates the view menu with actions for zooming in, zooming out, and resetting zoom.
+
+        Args:
+            menubar (QMenuBar): The menu bar to which the view menu will be added.
+        """
+        view_menu = menubar.addMenu("&View")
+        actions = [
+            (
+                "🔍➕ Zoom In",
+                QKeySequence.ZoomIn,
+                lambda: self.browser.setZoomFactor(self.browser.zoomFactor() + 0.1),
+            ),
+            (
+                "🔍➖ Zoom Out",
+                QKeySequence.ZoomOut,
+                lambda: self.browser.setZoomFactor(self.browser.zoomFactor() - 0.1),
+            ),
+            ("🔄 Reset Zoom", "Ctrl+0", lambda: self.browser.setZoomFactor(1.0)),
+        ]
+        for name, shortcut, handler in actions:
+            action = QAction(name, self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(handler)
+            view_menu.addAction(action)
+            logging.info(f"Action '{name}' added to view menu.")
+
+    def navigate_home(self):
+        """
+        Navigates the browser to the home page.
+        """
+        try:
+            self.browser.setUrl(QUrl("http://www.google.com"))
+            logging.info("Navigated to home.")
+        except Exception as e:
+            logging.error(f"Failed to navigate home: {e}")
+
+    def navigate_to_url(self):
+        """
+        Navigates the browser to the URL entered in the URL bar.
+        """
+        try:
+            url = self.url_bar.text()
+            if not url.startswith("http://") and not url.startswith("https://"):
+                url = "http://" + url
+            self.browser.setUrl(QUrl(url))
+            logging.info(f"Navigated to URL: {url}")
+        except Exception as e:
+            logging.error(f"Failed to navigate to URL: {e}")
+
+    def print_page(self):
+        """
+        Opens the print dialog and prints the current page if the user accepts.
+        """
+        try:
+            printer = QPrinter()
+            dialog = QPrintDialog(printer, self)
+            if dialog.exec_() == QDialog.Accepted:
+                self.browser.page().print(
+                    printer,
+                    lambda success: self.status.showMessage(
+                        "Printing completed" if success else "Printing failed"
+                    ),
+                )
+                logging.info("Print dialog executed.")
+        except Exception as e:
+            logging.error(f"Failed to print page: {e}")
+
+    def scrape_page(self):
+        """
+        Initiates scraping of the current page's HTML content.
+        """
+        try:
+            self.browser.page().toHtml(self.handle_scrape_result)
+            logging.info("Scrape page initiated.")
+        except Exception as e:
+            logging.error(f"Failed to scrape page: {e}")
+
+    def handle_scrape_result(self, html: str):
+        """
+        Handles the result of the page scrape by logging and printing the HTML content.
+
+        Args:
+            html (str): The HTML content of the scraped page.
+        """
+        try:
+            logging.info("Scraped page content")
+            print(html)
+        except Exception as e:
+            logging.error(f"Failed to handle scrape result: {e}")
+
+    def list_extensions(self):
+        """
+        Lists all currently loaded extensions.
+        """
+        try:
+            extensions = self.browser.list_extensions()
+            logging.info("Listing extensions:")
+            for ext in extensions:
+                logging.info(f"Extension: {ext['name']}, Enabled: {ext['enabled']}")
+        except Exception as e:
+            logging.error(f"Failed to list extensions: {e}")
+
+    def disable_extension(self):
+        """
+        Disables an extension by its name entered in a dialog.
+        """
+        try:
+            extension_name, ok = QInputDialog.getText(
+                self, "Disable Extension", "Enter extension name:"
+            )
+            if ok and extension_name:
+                success = self.browser.disable_extension(extension_name)
+                if success:
+                    self.status.showMessage(
+                        f"Extension {extension_name} disabled successfully."
+                    )
+                else:
+                    self.status.showMessage(
+                        f"Failed to disable extension {extension_name}."
+                    )
+        except Exception as e:
+            logging.error(f"Failed to disable extension: {e}")
+
+    def new_tab(self):
+        """
+        Opens a new tab in the browser.
+        """
+        try:
+            new_browser = Browser()
+            self.layout.addWidget(new_browser)
+            logging.info("New tab opened.")
+        except Exception as e:
+            logging.error(f"Failed to open new tab: {e}")
+
+    def close_tab(self):
+        """
+        Closes the current tab in the browser.
+        """
+        try:
+            current_browser = self.layout.currentWidget()
+            self.layout.removeWidget(current_browser)
+            current_browser.deleteLater()
+            logging.info("Tab closed.")
+        except Exception as e:
+            logging.error(f"Failed to close tab: {e}")
+
+    def bookmark_page(self):
+        """
+        Bookmarks the current page.
+        """
+        try:
+            current_url = self.browser.url().toString()
+            # Assuming a method to add bookmark exists
+            self.browser.add_bookmark(current_url)
+            logging.info(f"Page bookmarked: {current_url}")
+        except Exception as e:
+            logging.error(f"Failed to bookmark page: {e}")
+
+    def show_downloads(self):
+        """
+        Shows the download manager.
+        """
+        try:
+            # Assuming a method to show downloads exists
+            self.browser.show_downloads()
+            logging.info("Download manager opened.")
+        except Exception as e:
+            logging.error(f"Failed to open download manager: {e}")
+
+    def show_history(self):
+        """
+        Shows the history manager.
+        """
+        try:
+            # Assuming a method to show history exists
+            self.browser.show_history()
+            logging.info("History manager opened.")
+        except Exception as e:
+            logging.error(f"Failed to open history manager: {e}")
+
+    def toggle_privacy_mode(self):
+        """
+        Toggles the privacy mode of the browser.
+        """
+        try:
+            # Assuming a method to toggle privacy mode exists
+            self.browser.toggle_privacy_mode()
+            logging.info("Privacy mode toggled.")
+        except Exception as e:
+            logging.error(f"Failed to toggle privacy mode: {e}")
+
+    def closeEvent(self, event):
+        """
+        Handles the close event of the application.
+
+        Args:
+            event (QCloseEvent): The close event.
+        """
+        try:
+            event.accept()
+            logging.info("Application closed.")
+        except Exception as e:
+            logging.error(f"Failed to close application: {e}")
+
+
+class WebPageHandler:
+    """
+    WebPageHandler class to manage and handle web page events and updates.
+    """
+
+    def __init__(self, browser: QWebEngineView):
+        """
+        Initializes the WebPageHandler with the given browser instance and connects signals.
+
+        Args:
+            browser (QWebEngineView): The browser instance to handle.
+        """
+        self.browser = browser
+        self.connect_signals()
+
+    def connect_signals(self):
+        """
+        Connects browser signals to their respective handler methods.
+        """
+        self.browser.urlChanged.connect(self.update_url)
+        self.browser.loadFinished.connect(self.update_title)
+        self.browser.loadFinished.connect(self.on_load_finished)
+        self.browser.loadProgress.connect(self.on_load_progress)
+        self.browser.loadStarted.connect(self.on_load_started)
+        logging.info("Signals connected to their respective slots.")
+
+    def on_load_started(self):
+        """
+        Handles the load started event by updating the status bar and logging the event.
+        """
+        self.browser.parent().status.showMessage("Loading started...")
+        logging.info("Loading started...")
+
+    def on_load_progress(self, progress: int):
+        """
+        Handles the load progress event by updating the status bar and logging the progress.
+
+        Args:
+            progress (int): The current loading progress as a percentage.
+        """
+        self.browser.parent().statusTip.showMessage(f"Loading... {progress}%")
+        logging.info(f"Loading progress: {progress}%")
+
+    def on_load_finished(self, ok: bool):
+        """
+        Handles the load finished event by updating the status bar and logging the result.
+
+        Args:
+            ok (bool): True if the page loaded successfully, False otherwise.
+        """
+        if not ok:
+            logging.error("Failed to load the page.")
+            self.browser.parent().status.showMessage("Failed to load the page.")
+        else:
+            self.browser.parent().status.showMessage("Loading finished.")
+            logging.info("Loading finished.")
+
+    def update_url(self, q: QUrl):
+        """
+        Updates the URL bar with the current URL and logs the update.
+
+        Args:
+            q (QUrl): The current URL.
+        """
+        try:
+            self.browser.parent().url_bar.setText(q.toString())
+            logging.info(f"URL updated to: {q.toString()}")
+        except Exception as e:
+            logging.error(f"Failed to update URL: {e}")
+
+    def update_title(self):
+        """
+        Updates the window title with the current page title and logs the update.
+        """
+        try:
+            title = self.browser.page().title()
+            self.browser.parent().setWindowTitle(f"{title} - Advanced Web Browser")
+            logging.info(f"Title updated to: {title}")
+        except Exception as e:
+            logging.error(f"Failed to update title: {e}")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = BrowserUI()
+    WebPageHandler(window.browser)
+    window.show()
+    sys.exit(app.exec_())

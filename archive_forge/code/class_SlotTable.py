@@ -1,0 +1,48 @@
+from __future__ import absolute_import
+from . import Naming
+from . import PyrexTypes
+from .Errors import error
+import copy
+class SlotTable(object):
+
+    def __init__(self, old_binops):
+        method_name_to_slot = {}
+        self._get_slot_by_method_name = method_name_to_slot.get
+        self.substructures = []
+        bf = binaryfunc if old_binops else ibinaryfunc
+        ptf = powternaryfunc if old_binops else ipowternaryfunc
+        self.PyNumberMethods = (BinopSlot(bf, 'nb_add', '__add__', method_name_to_slot), BinopSlot(bf, 'nb_subtract', '__sub__', method_name_to_slot), BinopSlot(bf, 'nb_multiply', '__mul__', method_name_to_slot), BinopSlot(bf, 'nb_divide', '__div__', method_name_to_slot, ifdef=PyNumberMethods_Py2only_GUARD), BinopSlot(bf, 'nb_remainder', '__mod__', method_name_to_slot), BinopSlot(bf, 'nb_divmod', '__divmod__', method_name_to_slot), BinopSlot(ptf, 'nb_power', '__pow__', method_name_to_slot), MethodSlot(unaryfunc, 'nb_negative', '__neg__', method_name_to_slot), MethodSlot(unaryfunc, 'nb_positive', '__pos__', method_name_to_slot), MethodSlot(unaryfunc, 'nb_absolute', '__abs__', method_name_to_slot), MethodSlot(inquiry, 'nb_bool', '__bool__', method_name_to_slot, py2=('nb_nonzero', '__nonzero__')), MethodSlot(unaryfunc, 'nb_invert', '__invert__', method_name_to_slot), BinopSlot(bf, 'nb_lshift', '__lshift__', method_name_to_slot), BinopSlot(bf, 'nb_rshift', '__rshift__', method_name_to_slot), BinopSlot(bf, 'nb_and', '__and__', method_name_to_slot), BinopSlot(bf, 'nb_xor', '__xor__', method_name_to_slot), BinopSlot(bf, 'nb_or', '__or__', method_name_to_slot), EmptySlot('nb_coerce', ifdef=PyNumberMethods_Py2only_GUARD), MethodSlot(unaryfunc, 'nb_int', '__int__', method_name_to_slot, fallback='__long__'), MethodSlot(unaryfunc, 'nb_long', '__long__', method_name_to_slot, fallback='__int__', py3='<RESERVED>'), MethodSlot(unaryfunc, 'nb_float', '__float__', method_name_to_slot), MethodSlot(unaryfunc, 'nb_oct', '__oct__', method_name_to_slot, ifdef=PyNumberMethods_Py2only_GUARD), MethodSlot(unaryfunc, 'nb_hex', '__hex__', method_name_to_slot, ifdef=PyNumberMethods_Py2only_GUARD), MethodSlot(ibinaryfunc, 'nb_inplace_add', '__iadd__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_subtract', '__isub__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_multiply', '__imul__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_divide', '__idiv__', method_name_to_slot, ifdef=PyNumberMethods_Py2only_GUARD), MethodSlot(ibinaryfunc, 'nb_inplace_remainder', '__imod__', method_name_to_slot), MethodSlot(ptf, 'nb_inplace_power', '__ipow__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_lshift', '__ilshift__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_rshift', '__irshift__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_and', '__iand__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_xor', '__ixor__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_or', '__ior__', method_name_to_slot), BinopSlot(bf, 'nb_floor_divide', '__floordiv__', method_name_to_slot), BinopSlot(bf, 'nb_true_divide', '__truediv__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_floor_divide', '__ifloordiv__', method_name_to_slot), MethodSlot(ibinaryfunc, 'nb_inplace_true_divide', '__itruediv__', method_name_to_slot), MethodSlot(unaryfunc, 'nb_index', '__index__', method_name_to_slot), BinopSlot(bf, 'nb_matrix_multiply', '__matmul__', method_name_to_slot, ifdef='PY_VERSION_HEX >= 0x03050000'), MethodSlot(ibinaryfunc, 'nb_inplace_matrix_multiply', '__imatmul__', method_name_to_slot, ifdef='PY_VERSION_HEX >= 0x03050000'))
+        self.PySequenceMethods = (MethodSlot(lenfunc, 'sq_length', '__len__', method_name_to_slot), EmptySlot('sq_concat'), EmptySlot('sq_repeat'), SyntheticSlot('sq_item', ['__getitem__'], '0'), MethodSlot(ssizessizeargfunc, 'sq_slice', '__getslice__', method_name_to_slot), EmptySlot('sq_ass_item'), SyntheticSlot('sq_ass_slice', ['__setslice__', '__delslice__'], '0'), MethodSlot(cmpfunc, 'sq_contains', '__contains__', method_name_to_slot), EmptySlot('sq_inplace_concat'), EmptySlot('sq_inplace_repeat'))
+        self.PyMappingMethods = (MethodSlot(lenfunc, 'mp_length', '__len__', method_name_to_slot), MethodSlot(objargfunc, 'mp_subscript', '__getitem__', method_name_to_slot), SyntheticSlot('mp_ass_subscript', ['__setitem__', '__delitem__'], '0'))
+        self.PyBufferProcs = (MethodSlot(readbufferproc, 'bf_getreadbuffer', '__getreadbuffer__', method_name_to_slot, py3=False), MethodSlot(writebufferproc, 'bf_getwritebuffer', '__getwritebuffer__', method_name_to_slot, py3=False), MethodSlot(segcountproc, 'bf_getsegcount', '__getsegcount__', method_name_to_slot, py3=False), MethodSlot(charbufferproc, 'bf_getcharbuffer', '__getcharbuffer__', method_name_to_slot, py3=False), MethodSlot(getbufferproc, 'bf_getbuffer', '__getbuffer__', method_name_to_slot), MethodSlot(releasebufferproc, 'bf_releasebuffer', '__releasebuffer__', method_name_to_slot))
+        self.PyAsyncMethods = (MethodSlot(unaryfunc, 'am_await', '__await__', method_name_to_slot), MethodSlot(unaryfunc, 'am_aiter', '__aiter__', method_name_to_slot), MethodSlot(unaryfunc, 'am_anext', '__anext__', method_name_to_slot), EmptySlot('am_send', ifdef='PY_VERSION_HEX >= 0x030A00A3'))
+        self.slot_table = (ConstructorSlot('tp_dealloc', '__dealloc__'), EmptySlot('tp_print', ifdef='PY_VERSION_HEX < 0x030800b4'), EmptySlot('tp_vectorcall_offset', ifdef='PY_VERSION_HEX >= 0x030800b4'), EmptySlot('tp_getattr'), EmptySlot('tp_setattr'), MethodSlot(cmpfunc, 'tp_compare', '__cmp__', method_name_to_slot, ifdef='PY_MAJOR_VERSION < 3'), SuiteSlot(self.PyAsyncMethods, '__Pyx_PyAsyncMethodsStruct', 'tp_as_async', self.substructures, ifdef='PY_MAJOR_VERSION >= 3'), MethodSlot(reprfunc, 'tp_repr', '__repr__', method_name_to_slot), SuiteSlot(self.PyNumberMethods, 'PyNumberMethods', 'tp_as_number', self.substructures), SuiteSlot(self.PySequenceMethods, 'PySequenceMethods', 'tp_as_sequence', self.substructures), SuiteSlot(self.PyMappingMethods, 'PyMappingMethods', 'tp_as_mapping', self.substructures), MethodSlot(hashfunc, 'tp_hash', '__hash__', method_name_to_slot, inherited=False), MethodSlot(callfunc, 'tp_call', '__call__', method_name_to_slot), MethodSlot(reprfunc, 'tp_str', '__str__', method_name_to_slot), SyntheticSlot('tp_getattro', ['__getattr__', '__getattribute__'], '0'), SyntheticSlot('tp_setattro', ['__setattr__', '__delattr__'], '0'), SuiteSlot(self.PyBufferProcs, 'PyBufferProcs', 'tp_as_buffer', self.substructures), TypeFlagsSlot('tp_flags'), DocStringSlot('tp_doc'), GCDependentSlot('tp_traverse'), GCClearReferencesSlot('tp_clear'), RichcmpSlot(richcmpfunc, 'tp_richcompare', '__richcmp__', method_name_to_slot, inherited=False), EmptySlot('tp_weaklistoffset'), MethodSlot(getiterfunc, 'tp_iter', '__iter__', method_name_to_slot), MethodSlot(iternextfunc, 'tp_iternext', '__next__', method_name_to_slot), MethodTableSlot('tp_methods'), MemberTableSlot('tp_members'), GetSetSlot('tp_getset'), BaseClassSlot('tp_base'), EmptySlot('tp_dict'), SyntheticSlot('tp_descr_get', ['__get__'], '0'), SyntheticSlot('tp_descr_set', ['__set__', '__delete__'], '0'), DictOffsetSlot('tp_dictoffset', ifdef='!CYTHON_USE_TYPE_SPECS'), MethodSlot(initproc, 'tp_init', '__init__', method_name_to_slot), EmptySlot('tp_alloc'), ConstructorSlot('tp_new', '__cinit__'), EmptySlot('tp_free'), EmptySlot('tp_is_gc'), EmptySlot('tp_bases'), EmptySlot('tp_mro'), EmptySlot('tp_cache'), EmptySlot('tp_subclasses'), EmptySlot('tp_weaklist'), EmptySlot('tp_del'), EmptySlot('tp_version_tag'), SyntheticSlot('tp_finalize', ['__del__'], '0', ifdef='PY_VERSION_HEX >= 0x030400a1', used_ifdef='CYTHON_USE_TP_FINALIZE'), EmptySlot('tp_vectorcall', ifdef='PY_VERSION_HEX >= 0x030800b1 && (!CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07030800)'), EmptySlot('tp_print', ifdef='__PYX_NEED_TP_PRINT_SLOT == 1'), EmptySlot('tp_watched', ifdef='PY_VERSION_HEX >= 0x030C0000'), EmptySlot('tp_pypy_flags', ifdef='CYTHON_COMPILING_IN_PYPY && PY_VERSION_HEX >= 0x03090000 && PY_VERSION_HEX < 0x030a0000'))
+        MethodSlot(initproc, '', '__cinit__', method_name_to_slot)
+        MethodSlot(destructor, '', '__dealloc__', method_name_to_slot)
+        MethodSlot(destructor, '', '__del__', method_name_to_slot)
+        MethodSlot(objobjargproc, '', '__setitem__', method_name_to_slot)
+        MethodSlot(objargproc, '', '__delitem__', method_name_to_slot)
+        MethodSlot(ssizessizeobjargproc, '', '__setslice__', method_name_to_slot)
+        MethodSlot(ssizessizeargproc, '', '__delslice__', method_name_to_slot)
+        MethodSlot(getattrofunc, '', '__getattr__', method_name_to_slot)
+        MethodSlot(getattrofunc, '', '__getattribute__', method_name_to_slot)
+        MethodSlot(setattrofunc, '', '__setattr__', method_name_to_slot)
+        MethodSlot(delattrofunc, '', '__delattr__', method_name_to_slot)
+        MethodSlot(descrgetfunc, '', '__get__', method_name_to_slot)
+        MethodSlot(descrsetfunc, '', '__set__', method_name_to_slot)
+        MethodSlot(descrdelfunc, '', '__delete__', method_name_to_slot)
+
+    def get_special_method_signature(self, name):
+        slot = self._get_slot_by_method_name(name)
+        if slot:
+            return slot.signature
+        elif name in richcmp_special_methods:
+            return ibinaryfunc
+        else:
+            return None
+
+    def get_slot_by_method_name(self, method_name):
+        return self._get_slot_by_method_name(method_name)
+
+    def __iter__(self):
+        return iter(self.slot_table)

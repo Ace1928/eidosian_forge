@@ -1,0 +1,6 @@
+from oslo_log import log as logging
+from heat.common.i18n import _
+from heat.engine.resources.openstack.heat import none_resource
+from heat.engine import support
+class Restarter(none_resource.NoneResource):
+    support_status = support.SupportStatus(status=support.HIDDEN, version='10.0.0', message=_('The HARestarter resource type has been removed. Existing stacks containing HARestarter resources can still be used, but the HARestarter resource will be a placeholder that does nothing.'), previous_status=support.SupportStatus(status=support.DEPRECATED, message=_('The HARestarter resource type is deprecated and will be removed in a future release of Heat, once it has support for auto-healing any type of resource. Note that HARestarter does *not* actually restart servers - it deletes and then recreates them. It also does the same to all dependent resources, and may therefore exhibit unexpected and undesirable behaviour. Instead, use the mark-unhealthy API to mark a resource as needing replacement, and then a stack update to perform the replacement while respecting  the dependencies and not deleting them unnecessarily.'), version='2015.1'))

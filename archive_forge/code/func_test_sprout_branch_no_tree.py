@@ -1,0 +1,25 @@
+import breezy.branch
+from breezy import branch as _mod_branch
+from breezy import check, controldir, errors, gpg, osutils
+from breezy import repository as _mod_repository
+from breezy import revision as _mod_revision
+from breezy import transport, ui, urlutils, workingtree
+from breezy.bzr import bzrdir as _mod_bzrdir
+from breezy.bzr.remote import (RemoteBzrDir, RemoteBzrDirFormat,
+from breezy.tests import (ChrootedTestCase, TestNotApplicable, TestSkipped,
+from breezy.tests.per_controldir import TestCaseWithControlDir
+from breezy.transport.local import LocalTransport
+from breezy.ui import CannedInputUIFactory
+def test_sprout_branch_no_tree(self):
+    tree = self.make_branch_and_tree('source')
+    self.build_tree(['source/foo'])
+    tree.add('foo')
+    tree.commit('revision 1')
+    tree.commit('revision 2', allow_pointless=True)
+    dir = tree.controldir
+    try:
+        target = dir.sprout(self.get_url('target'), create_tree_if_local=False)
+    except controldir.MustHaveWorkingTree:
+        raise TestNotApplicable('control dir format requires working tree')
+    self.assertPathDoesNotExist('target/foo')
+    self.assertEqual(tree.branch.last_revision(), target.open_branch().last_revision())

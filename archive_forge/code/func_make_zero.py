@@ -1,0 +1,21 @@
+import numpy as np
+from tensorflow.python.data.ops import dataset_ops
+from tensorflow.python.data.util import nest
+from tensorflow.python.data.util import structure
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import smart_cond
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import tensor_spec
+from tensorflow.python.framework import tensor_util
+from tensorflow.python.ops import gen_dataset_ops
+def make_zero(t):
+    if t.base_dtype == dtypes.string:
+        return ''
+    elif t.base_dtype == dtypes.variant:
+        raise TypeError("Unable to create default padding value for a component of type 'variant'.")
+    elif t.base_dtype == dtypes.bfloat16:
+        return constant_op.constant(0, dtype=dtypes.bfloat16)
+    else:
+        return np.zeros_like(t.as_numpy_dtype())

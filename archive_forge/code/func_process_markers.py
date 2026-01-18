@@ -1,0 +1,16 @@
+import sys
+import os
+import boto
+import optparse
+import copy
+import boto.exception
+import boto.roboto.awsqueryservice
+import bdb
+import traceback
+def process_markers(self, fmt, prev_name=None):
+    if fmt and fmt['type'] == 'object':
+        for prop in fmt['properties']:
+            self.process_markers(prop, fmt['name'])
+    elif fmt and fmt['type'] == 'array':
+        self.list_markers.append(prev_name)
+        self.item_markers.append(fmt['name'])

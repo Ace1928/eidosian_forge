@@ -1,0 +1,10 @@
+from typing import Optional, List
+import pytest
+import cirq
+from cirq.transformers.transformer_primitives import MAPPED_CIRCUIT_OP_TAG
+def test_merge_2q_unitaries_to_circuit_op():
+    c_orig = _create_circuit_to_merge()
+    c_orig[-1] = c_orig[-1].with_operations(cirq.measure(cirq.LineQubit(2)))
+    cirq.testing.assert_has_diagram(c_orig, "\n0: ───H───@───@───H───@───X───────@───────X───X['ignore']───@───\n          │   │       │           │                         │\n1: ───H───┼───X───────@───────Y───X───@───────Y─────────────X───\n          │                           │\n2: ───H───X───────────────────────────X─────────────────────M───\n")
+    c_new = cirq.merge_k_qubit_unitaries_to_circuit_op(c_orig, k=2, merged_circuit_op_tag='merged', tags_to_ignore=['ignore'])
+    cirq.testing.assert_has_diagram(cirq.drop_empty_moments(c_new), "\n      [ 0: ───H───@─── ]             [ 0: ───────@───H───@───X───@───X─── ]\n0: ───[           │    ]─────────────[           │       │       │        ]────────────────────────────────────────────X['ignore']───@───\n      [ 2: ───H───X─── ]['merged']   [ 1: ───H───X───────@───Y───X─────── ]['merged']                                                │\n      │                              │                                                                                               │\n      │                              │                                                  [ 1: ───@───Y─── ]                           │\n1: ───┼──────────────────────────────#2─────────────────────────────────────────────────[       │        ]───────────────────────────X───\n      │                                                                                 [ 2: ───X─────── ]['merged']\n      │                                                                                 │\n2: ───#2────────────────────────────────────────────────────────────────────────────────#2───────────────────────────────────────────M───")

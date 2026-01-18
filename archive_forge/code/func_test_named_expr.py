@@ -1,0 +1,85 @@
+import pyomo.common.unittest as unittest
+from pyomo.common.log import LoggingIntercept
+from pyomo.common.dependencies import numpy, numpy_available
+from pyomo.core.expr.compare import assertExpressionsEqual
+from pyomo.core.expr.numeric_expr import LinearExpression, MonomialTermExpression
+from pyomo.core.expr import Expr_if, inequality, LinearExpression, NPV_SumExpression
+import pyomo.repn.linear as linear
+from pyomo.repn.linear import LinearRepn, LinearRepnVisitor
+from pyomo.repn.util import InvalidNumber
+from pyomo.environ import (
+def test_named_expr(self):
+    m = ConcreteModel()
+    m.x = Var(range(3))
+    m.e = Expression(expr=sum(((i + 2) * m.x[i] for i in range(3))))
+    e = m.e * 2
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(e)
+    self.assertEqual(len(cfg.subexpr), 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].multiplier, 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].constant, 0)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].linear, {id(m.x[0]): 2, id(m.x[1]): 3, id(m.x[2]): 4})
+    self.assertEqual(cfg.subexpr[id(m.e)][1].nonlinear, None)
+    self.assertEqual(cfg.var_map, {id(m.x[0]): m.x[0], id(m.x[1]): m.x[1], id(m.x[2]): m.x[2]})
+    self.assertEqual(cfg.var_order, {id(m.x[0]): 0, id(m.x[1]): 1, id(m.x[2]): 2})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, 0)
+    self.assertEqual(repn.linear, {id(m.x[0]): 4, id(m.x[1]): 6, id(m.x[2]): 8})
+    self.assertEqual(repn.nonlinear, None)
+    e = m.e * 2 + 3 * m.e
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(e)
+    self.assertEqual(len(cfg.subexpr), 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].multiplier, 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].constant, 0)
+    self.assertEqual(cfg.subexpr[id(m.e)][1].linear, {id(m.x[0]): 2, id(m.x[1]): 3, id(m.x[2]): 4})
+    self.assertEqual(cfg.subexpr[id(m.e)][1].nonlinear, None)
+    self.assertEqual(cfg.var_map, {id(m.x[0]): m.x[0], id(m.x[1]): m.x[1], id(m.x[2]): m.x[2]})
+    self.assertEqual(cfg.var_order, {id(m.x[0]): 0, id(m.x[1]): 1, id(m.x[2]): 2})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, 0)
+    self.assertEqual(repn.linear, {id(m.x[0]): 10, id(m.x[1]): 15, id(m.x[2]): 20})
+    self.assertEqual(repn.nonlinear, None)
+    m = ConcreteModel()
+    m.e = Expression(expr=10)
+    e = m.e * 2
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(e)
+    self.assertEqual(len(cfg.subexpr), 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1], 10)
+    self.assertEqual(cfg.var_map, {})
+    self.assertEqual(cfg.var_order, {})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, 20)
+    self.assertEqual(repn.linear, {})
+    self.assertEqual(repn.nonlinear, None)
+    e = m.e * 2 + 3 * m.e
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(e)
+    self.assertEqual(len(cfg.subexpr), 1)
+    self.assertEqual(cfg.subexpr[id(m.e)][1], 10)
+    self.assertEqual(cfg.var_map, {})
+    self.assertEqual(cfg.var_order, {})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, 50)
+    self.assertEqual(repn.linear, {})
+    self.assertEqual(repn.nonlinear, None)
+    m.e = None
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(m.e)
+    self.assertEqual(cfg.subexpr, {id(m.e): (linear._CONSTANT, InvalidNumber(None))})
+    self.assertEqual(cfg.var_map, {})
+    self.assertEqual(cfg.var_order, {})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, InvalidNumber(None))
+    self.assertEqual(repn.linear, {})
+    self.assertEqual(repn.nonlinear, None)
+    cfg = VisitorConfig()
+    repn = LinearRepnVisitor(*cfg).walk_expression(2 * m.e)
+    self.assertEqual(cfg.subexpr, {id(m.e): (linear._CONSTANT, InvalidNumber(None))})
+    self.assertEqual(cfg.var_map, {})
+    self.assertEqual(cfg.var_order, {})
+    self.assertEqual(repn.multiplier, 1)
+    self.assertEqual(repn.constant, InvalidNumber(None))
+    self.assertEqual(repn.linear, {})
+    self.assertEqual(repn.nonlinear, None)

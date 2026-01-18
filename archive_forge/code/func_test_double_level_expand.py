@@ -1,0 +1,3 @@
+from pyxnat import select
+def test_double_level_expand():
+    assert set(select.compute('//experiments//files')) == set(['/projects/*/subjects/*/experiments/*/resources/*/files/*', '/projects/*/subjects/*/experiments/*/reconstructions/*/in_resources/*/files/*', '/projects/*/subjects/*/experiments/*/scans/*/resources/*/files/*', '/projects/*/subjects/*/experiments/*/assessors/*/out_resources/*/files/*', '/projects/*/subjects/*/experiments/*/assessors/*/in_resources/*/files/*', '/projects/*/subjects/*/experiments/*/reconstructions/*/out_resources/*/files/*', '/projects/*/subjects/*/experiments/*/assessors/*/resources/*/files/*'])

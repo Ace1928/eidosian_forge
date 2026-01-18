@@ -1,0 +1,16 @@
+import struct
+from io import BytesIO
+from zope.interface.verify import verifyClass
+from twisted.internet import address, task
+from twisted.internet.error import CannotListenError, ConnectionDone
+from twisted.names import dns
+from twisted.python.failure import Failure
+from twisted.python.util import FancyEqMixin, FancyStrMixin
+from twisted.test import proto_helpers
+from twisted.test.testutils import ComparisonTestsMixin
+from twisted.trial import unittest
+def test_invalidSuffix(self) -> None:
+    """
+        If an invalid suffix is given, L{dns.str2time} raises L{ValueError}.
+        """
+    self.assertRaises(ValueError, dns.str2time, '1Q')

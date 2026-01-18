@@ -1,0 +1,28 @@
+from __future__ import annotations
+import copy
+import itertools
+import os
+import xml.dom.minidom
+import xml.etree.ElementTree as ET
+import uuid
+import typing as T
+from pathlib import Path, PurePath, PureWindowsPath
+import re
+from collections import Counter
+from . import backends
+from .. import build
+from .. import mlog
+from .. import compilers
+from .. import mesonlib
+from ..mesonlib import (
+from ..environment import Environment, build_filename
+from .. import coredata
+def _get_cl_compiler(self, target):
+    for lang, c in target.compilers.items():
+        if lang in {'c', 'cpp'}:
+            return c
+    if len(target.objects) > 0:
+        for lang, c in self.environment.coredata.compilers[target.for_machine].items():
+            if lang in {'c', 'cpp'}:
+                return c
+    raise MesonException('Could not find a C or C++ compiler. MSVC can only build C/C++ projects.')

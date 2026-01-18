@@ -1,0 +1,7 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+import time
+def namespace_to_dict(item):
+    namespace = item.as_dict()
+    result = dict(additional_properties=namespace.get('additional_properties', {}), name=namespace.get('name', None), type=namespace.get('type', None), location=namespace.get('location', '').replace(' ', '').lower(), sku=namespace.get('sku').get('name'), tags=namespace.get('tags', None), provisioning_state=namespace.get('provisioning_state', None), region=namespace.get('region', None), metric_id=namespace.get('metric_id', None), service_bus_endpoint=namespace.get('service_bus_endpoint', None), scale_unit=namespace.get('scale_unit', None), enabled=namespace.get('enabled', None), critical=namespace.get('critical', None), data_center=namespace.get('data_center', None), namespace_type=namespace.get('namespace_type', None), updated_at=namespace.get('updated_at', None), created_at=namespace.get('created_at', None), is_auto_inflate_enabled=namespace.get('is_auto_inflate_enabled', None), maximum_throughput_units=namespace.get('maximum_throughput_units', None))
+    return result

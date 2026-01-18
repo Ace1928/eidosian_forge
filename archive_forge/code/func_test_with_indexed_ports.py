@@ -1,0 +1,80 @@
+import pyomo.common.unittest as unittest
+from io import StringIO
+import logging
+from pyomo.environ import (
+from pyomo.network import Arc, Port
+from pyomo.core.expr.visitor import identify_variables
+from pyomo.common.collections.component_set import ComponentSet
+def test_with_indexed_ports(self):
+
+    def rule1(m, i):
+        return dict(source=m.prt1[i], destination=m.prt2[i])
+
+    def rule2(m, i):
+        return dict(ports=(m.prt1[i], m.prt2[i]))
+
+    def rule3(m, i):
+        return (c for c in (m.prt1[i], m.prt2[i]))
+    m = ConcreteModel()
+    m.s = RangeSet(1, 5)
+    m.prt1 = Port(m.s)
+    m.prt2 = Port(m.s)
+    m.c1 = Arc(m.s, rule=rule1)
+    self.assertEqual(len(m.c1), 5)
+    self.assertTrue(m.c1[4].directed)
+    self.assertIs(m.c1[4].source, m.prt1[4])
+    self.assertIs(m.c1[4].destination, m.prt2[4])
+    self.assertIs(m.c1[4].ports[0], m.prt1[4])
+    self.assertIs(m.c1[4].ports[1], m.prt2[4])
+    m.c2 = Arc(m.s, rule=rule2)
+    self.assertEqual(len(m.c2), 5)
+    self.assertFalse(m.c2[4].directed)
+    self.assertIsInstance(m.c2[4].ports, tuple)
+    self.assertEqual(len(m.c2[4].ports), 2)
+    self.assertIs(m.c2[4].ports[0], m.prt1[4])
+    self.assertIs(m.c2[4].ports[1], m.prt2[4])
+    self.assertIsNone(m.c2[4].source)
+    self.assertIsNone(m.c2[4].destination)
+    m.c3 = Arc(m.s, rule=rule3, directed=True)
+    self.assertEqual(len(m.c3), 5)
+    self.assertTrue(m.c3[4].directed)
+    self.assertIs(m.c3[4].source, m.prt1[4])
+    self.assertIs(m.c3[4].destination, m.prt2[4])
+    self.assertIs(m.c3[4].ports[0], m.prt1[4])
+    self.assertIs(m.c3[4].ports[1], m.prt2[4])
+    m.c4 = Arc(m.s, rule=rule3)
+    self.assertEqual(len(m.c4), 5)
+    self.assertFalse(m.c4[4].directed)
+    self.assertIsInstance(m.c4[4].ports, tuple)
+    self.assertEqual(len(m.c4[4].ports), 2)
+    self.assertIs(m.c4[4].ports[0], m.prt1[4])
+    self.assertIs(m.c4[4].ports[1], m.prt2[4])
+    self.assertIsNone(m.c4[4].source)
+    self.assertIsNone(m.c4[4].destination)
+    logging.disable(logging.ERROR)
+    with self.assertRaises(ValueError):
+        m.c5 = Arc(m.s, rule=rule1, directed=False)
+    logging.disable(logging.NOTSET)
+    m = AbstractModel()
+    m.s = RangeSet(1, 5)
+    m.prt1 = Port(m.s)
+    m.prt2 = Port(m.s)
+    m.c1 = Arc(m.s, rule=rule1)
+    self.assertEqual(len(m.c1), 0)
+    self.assertIs(m.c1.ctype, Arc)
+    m.c2 = Arc(m.s, rule=rule2)
+    self.assertEqual(len(m.c2), 0)
+    self.assertIs(m.c1.ctype, Arc)
+    inst = m.create_instance()
+    self.assertEqual(len(inst.c1), 5)
+    self.assertTrue(inst.c1[4].directed)
+    self.assertIs(inst.c1[4].source, inst.prt1[4])
+    self.assertIs(inst.c1[4].destination, inst.prt2[4])
+    self.assertIs(inst.c2[4].ports[0], inst.prt1[4])
+    self.assertIs(inst.c2[4].ports[1], inst.prt2[4])
+    self.assertEqual(len(inst.c2), 5)
+    self.assertFalse(inst.c2[4].directed)
+    self.assertIs(inst.c2[4].ports[0], inst.prt1[4])
+    self.assertIs(inst.c2[4].ports[1], inst.prt2[4])
+    self.assertIsNone(inst.c2[4].source)
+    self.assertIsNone(inst.c2[4].destination)

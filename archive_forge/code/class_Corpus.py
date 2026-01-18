@@ -1,0 +1,105 @@
+import random
+import warnings
+from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, List, Optional, Union
+import srsly
+from .. import util
+from ..errors import Errors, Warnings
+from ..tokens import Doc, DocBin
+from ..vocab import Vocab
+from .augment import dont_augment
+from .example import Example
+class Corpus:
+    """Iterate Example objects from a file or directory of DocBin (.spacy)
+    formatted data files.
+
+    path (Path): The directory or filename to read from.
+    gold_preproc (bool): Whether to set up the Example object with gold-standard
+        sentences and tokens for the predictions. Gold preprocessing helps
+        the annotations align to the tokenization, and may result in sequences
+        of more consistent length. However, it may reduce run-time accuracy due
+        to train/test skew. Defaults to False.
+    max_length (int): Maximum document length. Longer documents will be
+        split into sentences, if sentence boundaries are available. Defaults to
+        0, which indicates no limit.
+    limit (int): Limit corpus to a subset of examples, e.g. for debugging.
+        Defaults to 0, which indicates no limit.
+    augment (Callable[Example, Iterable[Example]]): Optional data augmentation
+        function, to extrapolate additional examples from your annotations.
+    shuffle (bool): Whether to shuffle the examples.
+
+    DOCS: https://spacy.io/api/corpus
+    """
+
+    def __init__(self, path: Union[str, Path], *, limit: int=0, gold_preproc: bool=False, max_length: int=0, augmenter: Optional[Callable]=None, shuffle: bool=False) -> None:
+        self.path = util.ensure_path(path)
+        self.gold_preproc = gold_preproc
+        self.max_length = max_length
+        self.limit = limit
+        self.augmenter = augmenter if augmenter is not None else dont_augment
+        self.shuffle = shuffle
+
+    def __call__(self, nlp: 'Language') -> Iterator[Example]:
+        """Yield examples from the data.
+
+        nlp (Language): The current nlp object.
+        YIELDS (Example): The examples.
+
+        DOCS: https://spacy.io/api/corpus#call
+        """
+        ref_docs = self.read_docbin(nlp.vocab, walk_corpus(self.path, FILE_TYPE))
+        if self.shuffle:
+            ref_docs = list(ref_docs)
+            random.shuffle(ref_docs)
+        if self.gold_preproc:
+            examples = self.make_examples_gold_preproc(nlp, ref_docs)
+        else:
+            examples = self.make_examples(nlp, ref_docs)
+        for real_eg in examples:
+            for augmented_eg in self.augmenter(nlp, real_eg):
+                yield augmented_eg
+
+    def _make_example(self, nlp: 'Language', reference: Doc, gold_preproc: bool) -> Example:
+        if gold_preproc or reference.has_unknown_spaces:
+            return Example(Doc(nlp.vocab, words=[word.text for word in reference], spaces=[bool(word.whitespace_) for word in reference]), reference)
+        else:
+            return Example(nlp.make_doc(reference.text), reference)
+
+    def make_examples(self, nlp: 'Language', reference_docs: Iterable[Doc]) -> Iterator[Example]:
+        for reference in reference_docs:
+            if len(reference) == 0:
+                continue
+            elif self.max_length == 0 or len(reference) < self.max_length:
+                yield self._make_example(nlp, reference, False)
+            elif reference.has_annotation('SENT_START'):
+                for ref_sent in reference.sents:
+                    if len(ref_sent) == 0:
+                        continue
+                    elif self.max_length == 0 or len(ref_sent) < self.max_length:
+                        yield self._make_example(nlp, ref_sent.as_doc(), False)
+
+    def make_examples_gold_preproc(self, nlp: 'Language', reference_docs: Iterable[Doc]) -> Iterator[Example]:
+        for reference in reference_docs:
+            if reference.has_annotation('SENT_START'):
+                ref_sents = [sent.as_doc() for sent in reference.sents]
+            else:
+                ref_sents = [reference]
+            for ref_sent in ref_sents:
+                eg = self._make_example(nlp, ref_sent, True)
+                if len(eg.x):
+                    yield eg
+
+    def read_docbin(self, vocab: Vocab, locs: Iterable[Union[str, Path]]) -> Iterator[Doc]:
+        """Yield training examples as example dicts"""
+        i = 0
+        for loc in locs:
+            loc = util.ensure_path(loc)
+            if loc.parts[-1].endswith(FILE_TYPE):
+                doc_bin = DocBin().from_disk(loc)
+                docs = doc_bin.get_docs(vocab)
+                for doc in docs:
+                    if len(doc):
+                        yield doc
+                        i += 1
+                        if self.limit >= 1 and i >= self.limit:
+                            break

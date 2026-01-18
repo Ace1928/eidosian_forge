@@ -1,0 +1,18 @@
+import math, sys, os, codecs, base64
+from io import BytesIO, StringIO
+from reportlab.pdfbase.pdfmetrics import stringWidth # for font info
+from reportlab.lib.rl_accel import fp_str
+from reportlab.lib.utils import asNative
+from reportlab.graphics.renderbase import getStateDelta, Renderer, renderScaledDrawing
+from reportlab.graphics.shapes import STATE_DEFAULTS, Path, UserNode
+from reportlab.graphics.shapes import * # (only for test0)
+from reportlab import rl_config
+from reportlab.lib.utils import RLString, isUnicode, isBytes
+from reportlab.pdfgen.canvas import FILL_EVEN_ODD, FILL_NON_ZERO
+from .renderPM import _getImage
+from xml.dom import getDOMImplementation
+def _add_link(self, dom_object, link_info):
+    assert isinstance(link_info, dict)
+    link = transformNode(self.doc, 'a', **link_info)
+    link.appendChild(dom_object)
+    return link

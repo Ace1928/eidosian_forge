@@ -1,0 +1,76 @@
+import abc
+import copy as copy_module
+import inspect
+import os
+import pickle
+import re
+import types
+import warnings
+import weakref
+from types import FunctionType
+from . import __version__ as TraitsVersion
+from .adaptation.adaptation_error import AdaptationError
+from .constants import DefaultValue, TraitKind
+from .ctrait import CTrait, __newobj__
+from .ctraits import CHasTraits
+from .observation import api as observe_api
+from .traits import (
+from .trait_types import Any, Bool, Disallow, Event, Python, Str
+from .trait_notifiers import (
+from .trait_base import (
+from .trait_errors import TraitError
+from .util.deprecated import deprecated
+from .util._traitsui_helpers import check_traitsui_major_version
+from .trait_converters import check_trait, mapped_trait_for, trait_for
+def weak_arg(arg):
+    """ Create a weak reference to arg and wrap the function so that the
+    dereferenced weakref is passed as the first argument. If arg has been
+    deleted then the function is not called.
+    """
+    weak_arg = weakref.ref(arg)
+
+    def decorator(function):
+
+        def wrapper0():
+            arg = weak_arg()
+            if arg is not None:
+                return function(arg)
+
+        def wrapper1(arg1):
+            arg = weak_arg()
+            if arg is not None:
+                return function(arg, arg1)
+
+        def wrapper2(arg1, arg2):
+            arg = weak_arg()
+            if arg is not None:
+                return function(arg, arg1, arg2)
+
+        def wrapper3(arg1, arg2, arg3):
+            arg = weak_arg()
+            if arg is not None:
+                return function(arg, arg1, arg2, arg3)
+
+        def wrapper4(arg1, arg2, arg3, arg4):
+            arg = weak_arg()
+            if arg is not None:
+                return function(arg, arg1, arg2, arg3, arg4)
+
+        def wrappern(*args):
+            arg = weak_arg()
+            if arg is not None:
+                function(arg, *args)
+        args = function.__code__.co_argcount - 1
+        if args == 0:
+            return wrapper0
+        elif args == 1:
+            return wrapper1
+        elif args == 2:
+            return wrapper2
+        elif args == 3:
+            return wrapper3
+        elif args == 4:
+            return wrapper4
+        else:
+            return wrappern
+    return decorator

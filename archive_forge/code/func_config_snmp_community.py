@@ -1,0 +1,16 @@
+from __future__ import absolute_import, division, print_function
+import re
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.cisco.nxos.plugins.module_utils.network.nxos.nxos import (
+def config_snmp_community(delta, community):
+    CMDS = {'group': 'snmp-server community {0} group {group}', 'acl': 'snmp-server community {0} use-acl {acl}', 'no_acl': 'no snmp-server community {0} use-acl {no_acl}'}
+    commands = []
+    for k in delta.keys():
+        cmd = CMDS.get(k).format(community, **delta)
+        if cmd:
+            if 'group' in cmd:
+                commands.insert(0, cmd)
+            else:
+                commands.append(cmd)
+            cmd = None
+    return commands

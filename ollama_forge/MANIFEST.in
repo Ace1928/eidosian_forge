@@ -1,0 +1,67 @@
+# ------------------------------------------------------------------------------
+# Include core project files
+# ------------------------------------------------------------------------------
+include README.md
+include LICENSE
+include pyproject.toml
+include setup.py
+include setup.cfg
+include version.py
+include eidosian_refinement_instructions.md
+
+# Include any top‐level Python files
+include *.py
+
+# ------------------------------------------------------------------------------
+# Package directories (source code)
+# ------------------------------------------------------------------------------
+recursive-include ollama_forge *.py *.json *.yaml
+recursive-include helpers *.py
+recursive-include tests *.py
+recursive-include examples *.py
+recursive-include tools *.py
+recursive-include extensions *
+recursive-include notebooks *
+
+# ------------------------------------------------------------------------------
+# Documentation files
+# ------------------------------------------------------------------------------
+include docs/requirements.txt
+include docs/Makefile
+include docs/make.bat
+include docs/README.md
+include docs/conf.py
+include .readthedocs.yaml
+recursive-include docs *.md *.rst *.html *.txt *.py
+recursive-include docs/_static *
+recursive-include docs/_templates *
+recursive-include docs/docs *
+
+# ------------------------------------------------------------------------------
+# GitHub configuration
+# ------------------------------------------------------------------------------
+recursive-include .github *
+
+# ------------------------------------------------------------------------------
+# Development configuration (if you wish to include these)
+# ------------------------------------------------------------------------------
+include .editorconfig
+
+# ------------------------------------------------------------------------------
+# Exclude files and directories that are not needed in the distribution
+# ------------------------------------------------------------------------------
+exclude .gitignore
+exclude .git*
+exclude .pypirc
+exclude publish_to_pypi.sh
+exclude publish.py
+exclude build_docs.sh
+exclude .coverage
+exclude .pytest_cache
+exclude .mypy_cache
+exclude .vscode
+exclude .idea
+recursive-exclude __pycache__ *
+recursive-exclude *.egg-info *
+recursive-exclude dist *
+recursive-exclude build *

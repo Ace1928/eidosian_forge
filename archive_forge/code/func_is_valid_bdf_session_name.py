@@ -1,0 +1,12 @@
+from __future__ import (absolute_import, division, print_function)
+from xml.etree import ElementTree
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.six import string_types
+from ansible_collections.community.network.plugins.module_utils.network.cloudengine.ce import get_nc_config, set_nc_config
+def is_valid_bdf_session_name(session_name):
+    """check if the bfd_session_name is valid"""
+    if session_name.find(' ') != -1:
+        return False
+    if len(session_name) < 1 or len(session_name) > 15:
+        return False
+    return True

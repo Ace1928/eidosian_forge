@@ -1,0 +1,77 @@
+import os
+import fcntl
+import ctypes
+import warnings
+from ctypes import c_int as _int
+from ctypes import c_uint8 as _u8
+from ctypes import c_uint16 as _u16
+from ctypes import c_int16 as _s16
+from ctypes import c_uint32 as _u32
+from ctypes import c_int32 as _s32
+from ctypes import c_int64 as _s64
+from ctypes import create_string_buffer
+from concurrent.futures import ThreadPoolExecutor
+import pyglet
+from pyglet.app.xlib import XlibSelectDevice
+from pyglet.input.base import Device, RelativeAxis, AbsoluteAxis, Button, Joystick, Controller
+from pyglet.input.base import DeviceOpenException, ControllerManager
+from pyglet.input.linux.evdev_constants import *
+from pyglet.input.controller import get_mapping, Relation, create_guid
+class HIDRawDevice(XlibSelectDevice, Device):
+    _fileno = None
+
+    def __init__(self, display, filename):
+        self._filename = filename
+        fileno = os.open(filename, os.O_RDWR | os.O_NONBLOCK)
+        self.info = HIDIOCGRAWINFO(fileno)
+        self.bus_type = {BUS_USB: 'usb', BUS_BLUETOOTH: 'bluetooth'}.get(self.info.bustype)
+        self.phys = HIDIOCGRAWPHYS(fileno).decode('utf-8')
+        self.uniq = HIDIOCGRAWUNIQ(fileno).decode('utf-8')
+        name = HIDIOCGRAWNAME(fileno).decode('utf-8')
+        desc_size = HIDIOCGRDESCSIZE(fileno).value
+        _report_descriptor = HIDIOCGRDESC(fileno, HIDRawReportDescriptor(size=desc_size))
+        self.report_descriptor = bytes(_report_descriptor.values[:desc_size])
+        self.controls = []
+        self.control_map = {}
+        os.close(fileno)
+        super().__init__(display, name)
+
+    def get_feature_report(self, number=0, length=256) -> bytes:
+        buffer = create_string_buffer(length + 1)
+        buffer[0] = number
+        HIDIOCGFEATURE(self._fileno, buffer=buffer)
+        return buffer.raw
+
+    def open(self, window=None, exclusive=False):
+        super().open(window, exclusive)
+        try:
+            self._fileno = os.open(self._filename, os.O_RDWR | os.O_NONBLOCK)
+        except OSError as e:
+            raise DeviceOpenException(e)
+        pyglet.app.platform_event_loop.select_devices.add(self)
+
+    def close(self):
+        super().close()
+        if not self._fileno:
+            return
+        pyglet.app.platform_event_loop.select_devices.remove(self)
+        os.close(self._fileno)
+        self._fileno = None
+
+    def get_controls(self):
+        return self.controls
+
+    def fileno(self):
+        return self._fileno
+
+    def poll(self):
+        return False
+
+    def select(self):
+        if not self._fileno:
+            return
+        try:
+            pass
+        except OSError:
+            self.close()
+            return

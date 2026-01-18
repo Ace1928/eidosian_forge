@@ -1,0 +1,20 @@
+from __future__ import absolute_import, division, print_function
+import re
+import traceback
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_native
+import ansible_collections.netapp.ontap.plugins.module_utils.netapp as netapp_utils
+from ansible_collections.netapp.ontap.plugins.module_utils.netapp_module import NetAppModule
+from ansible_collections.netapp.ontap.plugins.module_utils.netapp import OntapRestAPI
+from ansible_collections.netapp.ontap.plugins.module_utils import rest_generic
+@staticmethod
+def strip_password(url):
+    """ if url matches user:password@address return user@address
+            otherwise return None
+        """
+    if url:
+        needle = '(.*):(.*)@(.*)'
+        matched = re.match(needle, url)
+        if matched:
+            return matched.group(1, 3)
+    return (None, None)

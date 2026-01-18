@@ -1,0 +1,23 @@
+from abc import abstractmethod
+import tempfile
+import unittest
+from copy import deepcopy
+from functools import reduce, partial, wraps
+from itertools import product
+from operator import mul
+from math import pi
+import torch
+import torch.cuda
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn import _reduction as _Reduction
+from torch.testing._internal.common_utils import TestCase, to_gpu, freeze_rng_state, is_iterable, \
+from torch.testing._internal.common_cuda import TEST_CUDA, SM90OrLater
+from torch.autograd.gradcheck import _get_numerical_jacobian, _iter_tensors
+from torch.autograd import Variable
+from torch.types import _TensorOrTensors
+import torch.backends.cudnn
+from typing import Dict, Callable, Tuple, List, Sequence, Union, Any
+def huberloss_delta_test():
+    t = torch.randn(2, 3, 4)
+    return dict(fullname='HuberLoss_delta', constructor=wrap_functional(lambda i: F.huber_loss(i, t.type_as(i), reduction='none', delta=0.5)), cpp_function_call='F::huber_loss(\n            i, t.to(i.options()), F::HuberLossFuncOptions().reduction(torch::kNone).delta(0.5))', input_fn=lambda: torch.randn(2, 3, 4), cpp_var_map={'i': '_get_input()', 't': t}, reference_fn=lambda i, *_: loss_reference_fns['HuberLoss'](i, t.type_as(i), reduction='none', delta=0.5), supports_forward_ad=True, pickle=False, default_dtype=torch.double)

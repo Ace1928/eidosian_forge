@@ -1,0 +1,15 @@
+import sys
+import json
+import unittest
+import libcloud.compute.drivers.equinixmetal
+from libcloud.test import MockHttp
+from libcloud.utils.py3 import httplib
+from libcloud.compute.base import Node, KeyPair
+from libcloud.test.compute import TestCaseMixin
+from libcloud.compute.types import NodeState
+from libcloud.test.file_fixtures import ComputeFileFixtures
+from libcloud.compute.drivers.equinixmetal import EquinixMetalNodeDriver
+def _metal_v1_devices_905037a4_967c_4e81_b364_3a0603aa071b_bgp_sessions(self, method, url, body, headers):
+    if method == 'GET':
+        body = self.fixtures.load('bgp_sessions.json')
+        return (httplib.OK, body, {}, httplib.responses[httplib.OK])

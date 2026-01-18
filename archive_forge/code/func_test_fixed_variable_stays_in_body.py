@@ -1,0 +1,90 @@
+import pickle
+import pyomo.common.unittest as unittest
+from pyomo.core.expr import inequality, RangedExpression, EqualityExpression
+from pyomo.kernel import pprint
+from pyomo.core.tests.unit.kernel.test_dict_container import (
+from pyomo.core.tests.unit.kernel.test_tuple_container import (
+from pyomo.core.tests.unit.kernel.test_list_container import (
+from pyomo.core.kernel.base import ICategorizedObject
+from pyomo.core.kernel.constraint import (
+from pyomo.core.kernel.variable import variable
+from pyomo.core.kernel.parameter import parameter
+from pyomo.core.kernel.expression import expression, data_expression
+from pyomo.core.kernel.block import block
+def test_fixed_variable_stays_in_body(self):
+    x = variable(value=0.5)
+    c = linear_constraint([x], [1], lb=0, ub=1)
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 0.5)
+    self.assertEqual(c(), 0.5)
+    self.assertEqual(c.ub, 1)
+    repn = c.canonical_form()
+    self.assertEqual(len(repn.linear_vars), 1)
+    self.assertIs(repn.linear_vars[0], x)
+    self.assertEqual(repn.linear_coefs, (1,))
+    self.assertEqual(repn.constant, 0)
+    x.value = 2
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 2)
+    self.assertEqual(c(), 2)
+    self.assertEqual(c.ub, 1)
+    repn = c.canonical_form()
+    self.assertEqual(len(repn.linear_vars), 1)
+    self.assertIs(repn.linear_vars[0], x)
+    self.assertEqual(repn.linear_coefs, (1,))
+    self.assertEqual(repn.constant, 0)
+    x.fix(0.5)
+    c = linear_constraint([x], [2], lb=0, ub=1)
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 1)
+    self.assertEqual(c(), 1)
+    self.assertEqual(c.ub, 1)
+    repn = c.canonical_form()
+    self.assertEqual(repn.linear_vars, ())
+    self.assertEqual(repn.linear_coefs, ())
+    self.assertEqual(repn.constant, 1)
+    x.value = 2
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 4)
+    self.assertEqual(c(), 4)
+    self.assertEqual(c.ub, 1)
+    repn = c.canonical_form()
+    self.assertEqual(repn.linear_vars, ())
+    self.assertEqual(repn.linear_coefs, ())
+    self.assertEqual(repn.constant, 4)
+    x.free()
+    x.value = 1
+    c = linear_constraint([x], [1], rhs=0)
+    self.assertEqual(c.equality, True)
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 1)
+    self.assertEqual(c(), 1)
+    self.assertEqual(c.ub, 0)
+    repn = c.canonical_form()
+    self.assertEqual(len(repn.linear_vars), 1)
+    self.assertIs(repn.linear_vars[0], x)
+    self.assertEqual(repn.linear_coefs, (1,))
+    self.assertEqual(repn.constant, 0)
+    x.fix()
+    c = linear_constraint([x], [1], rhs=0)
+    self.assertEqual(c.equality, True)
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 1)
+    self.assertEqual(c(), 1)
+    self.assertEqual(c.ub, 0)
+    repn = c.canonical_form()
+    self.assertEqual(repn.linear_vars, ())
+    self.assertEqual(repn.linear_coefs, ())
+    self.assertEqual(repn.constant, 1)
+    x.free()
+    c = linear_constraint([x], [1], rhs=0)
+    x.fix()
+    self.assertEqual(c.equality, True)
+    self.assertEqual(c.lb, 0)
+    self.assertEqual(c.body(), 1)
+    self.assertEqual(c(), 1)
+    self.assertEqual(c.ub, 0)
+    repn = c.canonical_form()
+    self.assertEqual(repn.linear_vars, ())
+    self.assertEqual(repn.linear_coefs, ())
+    self.assertEqual(repn.constant, 1)

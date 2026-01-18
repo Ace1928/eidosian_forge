@@ -1,0 +1,2 @@
+class CannotSeekException(MediaException):
+    pass

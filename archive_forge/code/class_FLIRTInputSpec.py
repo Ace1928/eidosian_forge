@@ -1,0 +1,57 @@
+import os
+import os.path as op
+from warnings import warn
+import numpy as np
+from nibabel import load
+from ... import LooseVersion
+from ...utils.filemanip import split_filename
+from ..base import (
+from .base import FSLCommand, FSLCommandInputSpec, Info
+class FLIRTInputSpec(FSLCommandInputSpec):
+    in_file = File(exists=True, argstr='-in %s', mandatory=True, position=0, desc='input file')
+    reference = File(exists=True, argstr='-ref %s', mandatory=True, position=1, desc='reference file')
+    out_file = File(argstr='-out %s', desc='registered output file', name_source=['in_file'], name_template='%s_flirt', position=2, hash_files=False)
+    out_matrix_file = File(argstr='-omat %s', name_source=['in_file'], keep_extension=True, name_template='%s_flirt.mat', desc='output affine matrix in 4x4 asciii format', position=3, hash_files=False)
+    out_log = File(name_source=['in_file'], keep_extension=True, requires=['save_log'], name_template='%s_flirt.log', desc='output log')
+    in_matrix_file = File(argstr='-init %s', desc='input 4x4 affine matrix')
+    apply_xfm = traits.Bool(argstr='-applyxfm', desc='apply transformation supplied by in_matrix_file or uses_qform to use the affine matrix stored in the reference header')
+    apply_isoxfm = traits.Float(argstr='-applyisoxfm %f', xor=['apply_xfm'], desc='as applyxfm but forces isotropic resampling')
+    datatype = traits.Enum('char', 'short', 'int', 'float', 'double', argstr='-datatype %s', desc='force output data type')
+    cost = traits.Enum('mutualinfo', 'corratio', 'normcorr', 'normmi', 'leastsq', 'labeldiff', 'bbr', argstr='-cost %s', desc='cost function')
+    cost_func = traits.Enum('mutualinfo', 'corratio', 'normcorr', 'normmi', 'leastsq', 'labeldiff', 'bbr', argstr='-searchcost %s', desc='cost function')
+    uses_qform = traits.Bool(argstr='-usesqform', desc='initialize using sform or qform')
+    display_init = traits.Bool(argstr='-displayinit', desc='display initial matrix')
+    angle_rep = traits.Enum('quaternion', 'euler', argstr='-anglerep %s', desc='representation of rotation angles')
+    interp = traits.Enum('trilinear', 'nearestneighbour', 'sinc', 'spline', argstr='-interp %s', desc='final interpolation method used in reslicing')
+    sinc_width = traits.Int(argstr='-sincwidth %d', units='voxels', desc='full-width in voxels')
+    sinc_window = traits.Enum('rectangular', 'hanning', 'blackman', argstr='-sincwindow %s', desc='sinc window')
+    bins = traits.Int(argstr='-bins %d', desc='number of histogram bins')
+    dof = traits.Int(argstr='-dof %d', desc='number of transform degrees of freedom')
+    no_resample = traits.Bool(argstr='-noresample', desc='do not change input sampling')
+    force_scaling = traits.Bool(argstr='-forcescaling', desc='force rescaling even for low-res images')
+    min_sampling = traits.Float(argstr='-minsampling %f', units='mm', desc='set minimum voxel dimension for sampling')
+    padding_size = traits.Int(argstr='-paddingsize %d', units='voxels', desc='for applyxfm: interpolates outside image by size')
+    searchr_x = traits.List(traits.Int, minlen=2, maxlen=2, units='degrees', argstr='-searchrx %s', desc='search angles along x-axis, in degrees')
+    searchr_y = traits.List(traits.Int, minlen=2, maxlen=2, units='degrees', argstr='-searchry %s', desc='search angles along y-axis, in degrees')
+    searchr_z = traits.List(traits.Int, minlen=2, maxlen=2, units='degrees', argstr='-searchrz %s', desc='search angles along z-axis, in degrees')
+    no_search = traits.Bool(argstr='-nosearch', desc='set all angular searches to ranges 0 to 0')
+    coarse_search = traits.Int(argstr='-coarsesearch %d', units='degrees', desc='coarse search delta angle')
+    fine_search = traits.Int(argstr='-finesearch %d', units='degrees', desc='fine search delta angle')
+    schedule = File(exists=True, argstr='-schedule %s', desc='replaces default schedule')
+    ref_weight = File(exists=True, argstr='-refweight %s', desc='File for reference weighting volume')
+    in_weight = File(exists=True, argstr='-inweight %s', desc='File for input weighting volume')
+    no_clamp = traits.Bool(argstr='-noclamp', desc='do not use intensity clamping')
+    no_resample_blur = traits.Bool(argstr='-noresampblur', desc='do not use blurring on downsampling')
+    rigid2D = traits.Bool(argstr='-2D', desc='use 2D rigid body mode - ignores dof')
+    save_log = traits.Bool(desc='save to log file')
+    verbose = traits.Int(argstr='-verbose %d', desc='verbose mode, 0 is least')
+    bgvalue = traits.Float(0, argstr='-setbackground %f', desc='use specified background value for points outside FOV')
+    wm_seg = File(argstr='-wmseg %s', min_ver='5.0.0', desc='white matter segmentation volume needed by BBR cost function')
+    wmcoords = File(argstr='-wmcoords %s', min_ver='5.0.0', desc='white matter boundary coordinates for BBR cost function')
+    wmnorms = File(argstr='-wmnorms %s', min_ver='5.0.0', desc='white matter boundary normals for BBR cost function')
+    fieldmap = File(argstr='-fieldmap %s', min_ver='5.0.0', desc='fieldmap image in rads/s - must be already registered to the reference image')
+    fieldmapmask = File(argstr='-fieldmapmask %s', min_ver='5.0.0', desc='mask for fieldmap image')
+    pedir = traits.Int(argstr='-pedir %d', min_ver='5.0.0', desc='phase encode direction of EPI - 1/2/3=x/y/z & -1/-2/-3=-x/-y/-z')
+    echospacing = traits.Float(argstr='-echospacing %f', min_ver='5.0.0', desc='value of EPI echo spacing - units of seconds')
+    bbrtype = traits.Enum('signed', 'global_abs', 'local_abs', argstr='-bbrtype %s', min_ver='5.0.0', desc='type of bbr cost function: signed [default], global_abs, local_abs')
+    bbrslope = traits.Float(argstr='-bbrslope %f', min_ver='5.0.0', desc='value of bbr slope')

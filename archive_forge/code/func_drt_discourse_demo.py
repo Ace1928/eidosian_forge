@@ -1,0 +1,27 @@
+import os
+from abc import ABCMeta, abstractmethod
+from functools import reduce
+from operator import add, and_
+from nltk.data import show_cfg
+from nltk.inference.mace import MaceCommand
+from nltk.inference.prover9 import Prover9Command
+from nltk.parse import load_parser
+from nltk.parse.malt import MaltParser
+from nltk.sem.drt import AnaphoraResolutionException, resolve_anaphora
+from nltk.sem.glue import DrtGlue
+from nltk.sem.logic import Expression
+from nltk.tag import RegexpTagger
+def drt_discourse_demo(reading_command=None):
+    """
+    Illustrate the various methods of ``DiscourseTester``
+    """
+    dt = DiscourseTester(['every dog chases a boy', 'he runs'], reading_command)
+    dt.models()
+    print()
+    dt.sentences()
+    print()
+    dt.readings()
+    print()
+    dt.readings(show_thread_readings=True)
+    print()
+    dt.readings(filter=True, show_thread_readings=True)

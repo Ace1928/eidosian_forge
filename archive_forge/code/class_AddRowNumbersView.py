@@ -1,0 +1,17 @@
+from __future__ import absolute_import, print_function, division
+from itertools import islice, chain
+from collections import deque
+from itertools import count
+from petl.compat import izip, izip_longest, next, string_types, text_type
+from petl.util.base import asindices, rowgetter, Record, Table
+import logging
+class AddRowNumbersView(Table):
+
+    def __init__(self, table, start=1, step=1, field='row'):
+        self.table = table
+        self.start = start
+        self.step = step
+        self.field = field
+
+    def __iter__(self):
+        return iteraddrownumbers(self.table, self.start, self.step, self.field)

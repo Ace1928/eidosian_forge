@@ -1,0 +1,36 @@
+import abc
+import warnings
+from typing import Hashable, List, Optional
+import numpy as np
+import pandas
+import pandas.core.resample
+from pandas._typing import DtypeBackend, IndexLabel, Suffixes
+from pandas.core.dtypes.common import is_number, is_scalar
+from modin.config import StorageFormat
+from modin.core.dataframe.algebra.default2pandas import (
+from modin.error_message import ErrorMessage
+from modin.logging import ClassLogger
+from modin.utils import MODIN_UNNAMED_SERIES_LABEL, try_cast_to_pandas
+from . import doc_utils
+def __wrap_in_qc(self, obj):
+    """
+        Wrap `obj` in query compiler.
+
+        Parameters
+        ----------
+        obj : any
+            Object to wrap.
+
+        Returns
+        -------
+        BaseQueryCompiler
+            Query compiler wrapping the object.
+        """
+    if isinstance(obj, pandas.Series):
+        if obj.name is None:
+            obj.name = MODIN_UNNAMED_SERIES_LABEL
+        obj = obj.to_frame()
+    if isinstance(obj, pandas.DataFrame):
+        return self.from_pandas(obj, type(self._modin_frame))
+    else:
+        return obj

@@ -1,0 +1,17 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def get_role_policy(self, role_name, policy_name):
+    """
+        Retrieves the specified policy document for the specified role.
+
+        :type role_name: string
+        :param role_name: Name of the role associated with the policy.
+
+        :type policy_name: string
+        :param policy_name: Name of the policy to get.
+        """
+    return self.get_response('GetRolePolicy', {'RoleName': role_name, 'PolicyName': policy_name})

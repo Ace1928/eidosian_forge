@@ -1,0 +1,217 @@
+from parlai.core.opt import Opt
+from parlai.utils.torch import PipelineHelper
+from parlai.core.torch_agent import TorchAgent, Output
+from parlai.utils.misc import round_sigfigs, warn_once
+from parlai.core.metrics import Metric, AverageMetric
+from typing import List, Optional, Tuple, Dict
+from parlai.utils.typing import TScalar
+import parlai.utils.logging as logging
+import torch
+import torch.nn.functional as F
+class TorchClassifierAgent(TorchAgent):
+    """
+    Abstract Classifier agent. Only meant to be extended.
+
+    TorchClassifierAgent aims to handle much of the bookkeeping any classification
+    model.
+    """
+
+    @staticmethod
+    def add_cmdline_args(parser):
+        """
+        Add CLI args.
+        """
+        TorchAgent.add_cmdline_args(parser)
+        parser = parser.add_argument_group('Torch Classifier Arguments')
+        parser.add_argument('--classes', type=str, nargs='*', default=None, help='the name of the classes.')
+        parser.add_argument('--class-weights', type=float, nargs='*', default=None, help='weight of each of the classes for the softmax')
+        parser.add_argument('--ref-class', type=str, default=None, hidden=True, help='the class that will be used to compute precision and recall. By default the first class.')
+        parser.add_argument('--threshold', type=float, default=0.5, help='during evaluation, threshold for choosing ref class; only applies to binary classification')
+        parser.add_argument('--print-scores', type='bool', default=False, help='print probability of chosen class during interactive mode')
+        parser.add_argument('--data-parallel', type='bool', default=False, help='uses nn.DataParallel for multi GPU')
+        parser.add_argument('--classes-from-file', type=str, default=None, help='loads the list of classes from a file')
+        parser.add_argument('--ignore-labels', type='bool', default=None, help='Ignore labels provided to model')
+
+    def __init__(self, opt: Opt, shared=None):
+        init_model, self.is_finetune = self._get_init_model(opt, shared)
+        super().__init__(opt, shared)
+        if opt.get('classes') is None and opt.get('classes_from_file') is None:
+            raise RuntimeError('Must specify --classes or --classes-from-file argument.')
+        if not shared:
+            if opt['classes_from_file'] is not None:
+                with open(opt['classes_from_file']) as f:
+                    self.class_list = f.read().splitlines()
+            else:
+                self.class_list = opt['classes']
+            self.class_dict = {val: i for i, val in enumerate(self.class_list)}
+            if opt.get('class_weights', None) is not None:
+                self.class_weights = opt['class_weights']
+            else:
+                self.class_weights = [1.0 for c in self.class_list]
+            self.reset_metrics()
+        else:
+            self.class_list = shared['class_list']
+            self.class_dict = shared['class_dict']
+            self.class_weights = shared['class_weights']
+        if opt['ref_class'] is None or opt['ref_class'] not in self.class_dict:
+            self.ref_class = self.class_list[0]
+        else:
+            self.ref_class = opt['ref_class']
+            ref_class_id = self.class_list.index(self.ref_class)
+            if ref_class_id != 0:
+                self.class_list.insert(0, self.class_list.pop(ref_class_id))
+        if len(self.class_list) == 2 and opt.get('threshold', 0.5) != 0.5:
+            self.threshold = opt['threshold']
+        else:
+            self.threshold = None
+        if shared:
+            self.model = shared['model']
+        else:
+            self.model = self.build_model()
+            self.criterion = self.build_criterion()
+            if self.model is None or self.criterion is None:
+                raise AttributeError('build_model() and build_criterion() need to return the model or criterion')
+            if init_model:
+                logging.info(f'Loading existing model parameters from {init_model}')
+                self.load(init_model)
+            if self.use_cuda:
+                if self.model_parallel:
+                    self.model = PipelineHelper().make_parallel(self.model)
+                else:
+                    self.model.cuda()
+                if self.data_parallel:
+                    self.model = torch.nn.DataParallel(self.model)
+                self.criterion.cuda()
+        if shared:
+            if 'optimizer' in shared:
+                self.optimizer = shared['optimizer']
+        elif self._should_initialize_optimizer():
+            optim_params = [p for p in self.model.parameters() if p.requires_grad]
+            self.init_optim(optim_params)
+            self.build_lr_scheduler()
+
+    def build_criterion(self):
+        weight_tensor = torch.FloatTensor(self.class_weights)
+        return torch.nn.CrossEntropyLoss(weight=weight_tensor, reduction='none')
+
+    def share(self):
+        """
+        Share model parameters.
+        """
+        shared = super().share()
+        shared['class_dict'] = self.class_dict
+        shared['class_list'] = self.class_list
+        shared['class_weights'] = self.class_weights
+        shared['model'] = self.model
+        if hasattr(self, 'optimizer'):
+            shared['optimizer'] = self.optimizer
+        return shared
+
+    def _get_labels(self, batch):
+        """
+        Obtain the correct labels.
+
+        Raises a ``KeyError`` if one of the labels is not in the class list.
+        """
+        try:
+            labels_indices_list = [self.class_dict[label] for label in batch.labels]
+        except KeyError as e:
+            warn_once('One of your labels is not in the class list.')
+            raise e
+        labels_tensor = torch.LongTensor(labels_indices_list)
+        if self.use_cuda:
+            labels_tensor = labels_tensor.cuda()
+        return labels_tensor
+
+    def _update_confusion_matrix(self, batch, predictions):
+        """
+        Update the confusion matrix given the batch and predictions.
+
+        :param predictions:
+            (list of string of length batchsize) label predicted by the
+            classifier
+        :param batch:
+            a Batch object (defined in torch_agent.py)
+        """
+        f1_dict = {}
+        for class_name in self.class_list:
+            prec_str = f'class_{class_name}_prec'
+            recall_str = f'class_{class_name}_recall'
+            f1_str = f'class_{class_name}_f1'
+            precision, recall, f1 = ConfusionMatrixMetric.compute_metrics(predictions, batch.labels, class_name)
+            f1_dict[class_name] = f1
+            self.record_local_metric(prec_str, precision)
+            self.record_local_metric(recall_str, recall)
+            self.record_local_metric(f1_str, f1)
+        self.record_local_metric('weighted_f1', WeightedF1Metric.compute_many(f1_dict))
+
+    def _format_interactive_output(self, probs, prediction_id):
+        """
+        Format interactive mode output with scores.
+        """
+        preds = []
+        for i, pred_id in enumerate(prediction_id.tolist()):
+            prob = round_sigfigs(probs[i][pred_id], 4)
+            preds.append('Predicted class: {}\nwith probability: {}'.format(self.class_list[pred_id], prob))
+        return preds
+
+    def train_step(self, batch):
+        """
+        Train on a single batch of examples.
+        """
+        if batch.text_vec is None:
+            return Output()
+        self.model.train()
+        self.optimizer.zero_grad()
+        labels = self._get_labels(batch)
+        scores = self.score(batch)
+        loss = self.criterion(scores, labels)
+        self.record_local_metric('loss', AverageMetric.many(loss))
+        loss = loss.mean()
+        loss.backward()
+        self.update_params()
+        _, prediction_id = torch.max(scores.cpu(), 1)
+        preds = [self.class_list[idx] for idx in prediction_id]
+        self._update_confusion_matrix(batch, preds)
+        return Output(preds)
+
+    def eval_step(self, batch):
+        """
+        Train on a single batch of examples.
+        """
+        if batch.text_vec is None:
+            return
+        self.model.eval()
+        scores = self.score(batch)
+        probs = F.softmax(scores, dim=1)
+        if self.threshold is None:
+            _, prediction_id = torch.max(probs.cpu(), 1)
+        else:
+            ref_prob = probs.cpu()[:, 0]
+            prediction_id = (ref_prob <= self.threshold).to(torch.int64)
+        preds = [self.class_list[idx] for idx in prediction_id]
+        if batch.labels is None or self.opt['ignore_labels']:
+            if self.opt.get('print_scores', False):
+                preds = self._format_interactive_output(probs, prediction_id)
+        else:
+            labels = self._get_labels(batch)
+            loss = self.criterion(scores, labels)
+            self.record_local_metric('loss', AverageMetric.many(loss))
+            loss = loss.mean()
+            self._update_confusion_matrix(batch, preds)
+        if self.opt.get('print_scores', False):
+            return Output(preds, probs=probs.cpu())
+        else:
+            return Output(preds)
+
+    def score(self, batch):
+        """
+        Given a batch and labels, returns the scores.
+
+        :param batch:
+            a Batch object (defined in torch_agent.py)
+        :return:
+            a [bsz, num_classes] FloatTensor containing the score of each
+            class.
+        """
+        raise NotImplementedError('Abstract class: user must implement score()')

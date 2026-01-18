@@ -1,0 +1,85 @@
+from unittest import mock
+from unittest.mock import call
+from openstack import exceptions as sdk_exceptions
+from openstack import utils as sdk_utils
+from osc_lib.cli import format_columns
+from osc_lib import exceptions
+from openstackclient.compute.v2 import aggregate
+from openstackclient.tests.unit.compute.v2 import fakes as compute_fakes
+from openstackclient.tests.unit.image.v2 import fakes as image_fakes
+class TestAggregateSet(TestAggregate):
+
+    def setUp(self):
+        super(TestAggregateSet, self).setUp()
+        self.compute_sdk_client.find_aggregate.return_value = self.fake_ag
+        self.cmd = aggregate.SetAggregate(self.app, None)
+
+    def test_aggregate_set_no_option(self):
+        arglist = ['ag1']
+        verifylist = [('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.assertNotCalled(self.compute_sdk_client.update_aggregate)
+        self.assertNotCalled(self.compute_sdk_client.set_aggregate_metadata)
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_name(self):
+        arglist = ['--name', 'new_name', 'ag1']
+        verifylist = [('name', 'new_name'), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.compute_sdk_client.update_aggregate.assert_called_once_with(self.fake_ag.id, name=parsed_args.name)
+        self.assertNotCalled(self.compute_sdk_client.set_aggregate_metadata)
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_zone(self):
+        arglist = ['--zone', 'new_zone', 'ag1']
+        verifylist = [('zone', 'new_zone'), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.compute_sdk_client.update_aggregate.assert_called_once_with(self.fake_ag.id, availability_zone=parsed_args.zone)
+        self.assertNotCalled(self.compute_sdk_client.set_aggregate_metadata)
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_property(self):
+        arglist = ['--property', 'key1=value1', '--property', 'key2=value2', 'ag1']
+        verifylist = [('properties', {'key1': 'value1', 'key2': 'value2'}), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.assertNotCalled(self.compute_sdk_client.update_aggregate)
+        self.compute_sdk_client.set_aggregate_metadata.assert_called_once_with(self.fake_ag.id, parsed_args.properties)
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_no_property_and_property(self):
+        arglist = ['--no-property', '--property', 'key2=value2', 'ag1']
+        verifylist = [('no_property', True), ('properties', {'key2': 'value2'}), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.assertNotCalled(self.compute_sdk_client.update_aggregate)
+        self.compute_sdk_client.set_aggregate_metadata.assert_called_once_with(self.fake_ag.id, {'key1': None, 'key2': 'value2'})
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_no_property(self):
+        arglist = ['--no-property', 'ag1']
+        verifylist = [('no_property', True), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.assertNotCalled(self.compute_sdk_client.update_aggregate)
+        self.compute_sdk_client.set_aggregate_metadata.assert_called_once_with(self.fake_ag.id, {'key1': None})
+        self.assertIsNone(result)
+
+    def test_aggregate_set_with_zone_and_no_property(self):
+        arglist = ['--zone', 'new_zone', '--no-property', 'ag1']
+        verifylist = [('zone', 'new_zone'), ('no_property', True), ('aggregate', 'ag1')]
+        parsed_args = self.check_parser(self.cmd, arglist, verifylist)
+        result = self.cmd.take_action(parsed_args)
+        self.compute_sdk_client.find_aggregate.assert_called_once_with(parsed_args.aggregate, ignore_missing=False)
+        self.compute_sdk_client.update_aggregate.assert_called_once_with(self.fake_ag.id, availability_zone=parsed_args.zone)
+        self.compute_sdk_client.set_aggregate_metadata.assert_called_once_with(self.fake_ag.id, {'key1': None})
+        self.assertIsNone(result)

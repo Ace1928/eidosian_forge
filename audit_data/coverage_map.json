@@ -1,0 +1,275 @@
+{
+  "coverage": {
+    "GEMINI.md": {
+      "last_reviewed": 1768520667.2957616,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:44:27"
+    },
+    "AGENTS.md": {
+      "last_reviewed": 1768520667.29595,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:44:27"
+    },
+    "CODEX.md": {
+      "last_reviewed": 1768520667.2960403,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:44:27"
+    },
+    "TODO.md": {
+      "last_reviewed": 1768520667.2961793,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:44:27"
+    },
+    "EIDOSIAN_MASTER_PLAN.md": {
+      "last_reviewed": 1768520667.296264,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:44:27"
+    },
+    "ascii_ellie.md": {
+      "last_reviewed": 1768520693.5125282,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:44:53"
+    },
+    "hello_ellie.text": {
+      "last_reviewed": 1768520693.5127223,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:44:53"
+    },
+    "eidos_memory.json": {
+      "last_reviewed": 1768520693.5130286,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:44:53"
+    },
+    ".forgengine.json": {
+      "last_reviewed": 1768520693.513213,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:44:53"
+    },
+    "eidosian_forge/agent_forge": {
+      "last_reviewed": 1768520720.1389797,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:45:20"
+    },
+    "eidosian_forge/gis_forge": {
+      "last_reviewed": 1768520720.139158,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:45:20"
+    },
+    "eidosian_forge/diagnostics_forge": {
+      "last_reviewed": 1768520720.1393762,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:45:20"
+    },
+    "eidosian_forge/knowledge_forge": {
+      "last_reviewed": 1768520748.2002459,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:45:48"
+    },
+    "eidosian_forge/memory_forge": {
+      "last_reviewed": 1768520748.2004359,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:45:48"
+    },
+    "eidosian_forge/llm_forge": {
+      "last_reviewed": 1768520748.2006729,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:45:48"
+    },
+    "eidosian_forge/code_forge": {
+      "last_reviewed": 1768520772.477103,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:12"
+    },
+    "eidosian_forge/refactor_forge": {
+      "last_reviewed": 1768520772.4774258,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:12"
+    },
+    "eidosian_forge/crawl_forge": {
+      "last_reviewed": 1768520772.4777572,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:12"
+    },
+    "eidosian_forge/file_forge": {
+      "last_reviewed": 1768520797.8692539,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:37"
+    },
+    "eidosian_forge/doc_forge": {
+      "last_reviewed": 1768520797.8696227,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:37"
+    },
+    "eidosian_forge/figlet_forge": {
+      "last_reviewed": 1768520797.8699987,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:46:37"
+    },
+    "eidosian_forge/game_forge": {
+      "last_reviewed": 1768520825.1092305,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:05"
+    },
+    "eidosian_forge/glyph_forge": {
+      "last_reviewed": 1768520825.109614,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:05"
+    },
+    "eidosian_forge/terminal_forge": {
+      "last_reviewed": 1768520825.1100147,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:05"
+    },
+    "eidosian_forge/viz_forge": {
+      "last_reviewed": 1768520852.1432383,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:47:32"
+    },
+    "eidosian_forge/test_forge": {
+      "last_reviewed": 1768520852.1435993,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:47:32"
+    },
+    "eidosian_forge/version_forge": {
+      "last_reviewed": 1768520852.1439767,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:47:32"
+    },
+    "eidosian_forge/metadata_forge": {
+      "last_reviewed": 1768520852.144237,
+      "agent": "Eidos-Audit-01",
+      "scope": "deep",
+      "timestamp": "2026-01-16 09:47:32"
+    },
+    "eidosian_forge/word_forge": {
+      "last_reviewed": 1768520878.5610154,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:58"
+    },
+    "eidosian_forge/lib": {
+      "last_reviewed": 1768520878.5612588,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:58"
+    },
+    "eidosian_forge/erais_forge": {
+      "last_reviewed": 1768520878.5615435,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:58"
+    },
+    "eidosian_forge/eidos-brain": {
+      "last_reviewed": 1768520878.5617197,
+      "agent": "Eidos-Audit-01",
+      "scope": "exhaustive",
+      "timestamp": "2026-01-16 09:47:58"
+    },
+    "eidosian_forge/eidos_mcp/eidos_mcp_server.py": {
+      "last_reviewed": 1768524541.776403,
+      "agent": "Eidos",
+      "scope": "deep",
+      "timestamp": "2026-01-16 10:49:01"
+    },
+    "eidosian_forge/eidos_mcp/test_nexus.py": {
+      "last_reviewed": 1768524557.9529943,
+      "agent": "Eidos",
+      "scope": "deep",
+      "timestamp": "2026-01-16 10:49:17"
+    },
+    "eidosian_forge/eidos_mcp/eidos_fetch.py": {
+      "last_reviewed": 1768524571.8812037,
+      "agent": "Eidos",
+      "scope": "deep",
+      "timestamp": "2026-01-16 10:49:31"
+    },
+    "eidosian_forge/eidos_mcp/check_mcp.py": {
+      "last_reviewed": 1768524584.1079183,
+      "agent": "Eidos",
+      "scope": "deep",
+      "timestamp": "2026-01-16 10:49:44"
+    },
+    "/home/lloyd/.bash_completions/graphrag.sh": {
+      "last_reviewed": 1768524953.9498498,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:55:53"
+    },
+    "/home/lloyd/.bash_completions/python -m spacy.sh": {
+      "last_reviewed": 1768524969.7986789,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:56:09"
+    },
+    "/home/lloyd/.cspell/custom-dictionary-user.txt": {
+      "last_reviewed": 1768524992.3078709,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:56:32"
+    },
+    "/home/lloyd/.cursor/argv.json": {
+      "last_reviewed": 1768525027.6572537,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:57:07"
+    },
+    "/home/lloyd/.cursor/extensions/extensions.json": {
+      "last_reviewed": 1768525134.3549933,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:58:54"
+    },
+    "/home/lloyd/.cursor-tutor/getting_started.md": {
+      "last_reviewed": 1768525181.3527305,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 10:59:41"
+    },
+    "/home/lloyd/.cursor-tutor/examples/bug_finding.rs": {
+      "last_reviewed": 1768525227.3449638,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 11:00:27"
+    },
+    "/home/lloyd/.cursor-tutor/examples/explaining_code.c": {
+      "last_reviewed": 1768525272.1810505,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 11:01:12"
+    },
+    "/home/lloyd/.cursor-tutor/examples/finding_code.ts": {
+      "last_reviewed": 1768525452.510054,
+      "agent": "Eidos-Home-Audit",
+      "scope": "shallow",
+      "timestamp": "2026-01-16 11:04:12"
+    }
+  },
+  "last_full_audit": null
+}

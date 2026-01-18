@@ -1,0 +1,13 @@
+import re
+from datetime import date, datetime, time, timedelta, timezone
+from typing import Dict, Optional, Type, Union
+from . import errors
+def from_unix_seconds(seconds: Union[int, float]) -> datetime:
+    if seconds > MAX_NUMBER:
+        return datetime.max
+    elif seconds < -MAX_NUMBER:
+        return datetime.min
+    while abs(seconds) > MS_WATERSHED:
+        seconds /= 1000
+    dt = EPOCH + timedelta(seconds=seconds)
+    return dt.replace(tzinfo=timezone.utc)

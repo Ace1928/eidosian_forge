@@ -1,0 +1,12 @@
+import pandas.util._test_decorators as td
+import pandas as pd
+import pandas._testing as tm
+@td.skip_if_no('pyarrow')
+def test_shares_memory_string():
+    import pyarrow as pa
+    obj = pd.array(['a', 'b'], dtype='string[pyarrow]')
+    assert tm.shares_memory(obj, obj)
+    obj = pd.array(['a', 'b'], dtype='string[pyarrow_numpy]')
+    assert tm.shares_memory(obj, obj)
+    obj = pd.array(['a', 'b'], dtype=pd.ArrowDtype(pa.string()))
+    assert tm.shares_memory(obj, obj)

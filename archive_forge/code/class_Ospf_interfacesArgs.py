@@ -1,0 +1,7 @@
+from __future__ import absolute_import, division, print_function
+class Ospf_interfacesArgs(object):
+    """The arg spec for the vyos_ospf_interfaces module"""
+
+    def __init__(self, **kwargs):
+        pass
+    argument_spec = {'running_config': {}, 'state': {'default': 'merged', 'type': 'str', 'choices': ['merged', 'replaced', 'overridden', 'deleted', 'gathered', 'parsed', 'rendered']}, 'config': {'elements': 'dict', 'type': 'list', 'options': {'name': {'type': 'str'}, 'address_family': {'elements': 'dict', 'type': 'list', 'options': {'passive': {'type': 'bool'}, 'retransmit_interval': {'type': 'int'}, 'cost': {'type': 'int'}, 'afi': {'required': True, 'type': 'str', 'choices': ['ipv4', 'ipv6']}, 'authentication': {'type': 'dict', 'options': {'plaintext_password': {'type': 'str', 'no_log': True}, 'md5_key': {'type': 'dict', 'no_log': False, 'options': {'key_id': {'type': 'int'}, 'key': {'type': 'str', 'no_log': True}}}}}, 'mtu_ignore': {'type': 'bool'}, 'priority': {'type': 'int'}, 'instance': {'type': 'str'}, 'bandwidth': {'type': 'int'}, 'dead_interval': {'type': 'int'}, 'ifmtu': {'type': 'int'}, 'hello_interval': {'type': 'int'}, 'transmit_delay': {'type': 'int'}, 'network': {'type': 'str'}}}}}}

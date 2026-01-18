@@ -1,0 +1,20 @@
+from __future__ import annotations as _annotations
+import sys
+import warnings
+from collections.abc import Mapping
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Tuple, Type, Union
+from typing_extensions import deprecated
+class UnionSchema(TypedDict, total=False):
+    type: Required[Literal['union']]
+    choices: Required[List[Union[CoreSchema, Tuple[CoreSchema, str]]]]
+    auto_collapse: bool
+    custom_error_type: str
+    custom_error_message: str
+    custom_error_context: Dict[str, Union[str, int, float]]
+    mode: Literal['smart', 'left_to_right']
+    strict: bool
+    ref: str
+    metadata: Any
+    serialization: SerSchema

@@ -1,0 +1,6 @@
+from ...kdf.hkdfv3 import HKDFv3
+from ...util.byteutil import ByteUtil
+
+        :type iteration: int
+        :type seed: bytearray
+        

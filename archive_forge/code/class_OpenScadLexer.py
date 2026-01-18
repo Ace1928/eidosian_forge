@@ -1,0 +1,13 @@
+from pygments.lexer import RegexLexer, bygroups, words, include
+from pygments.token import Text, Comment, Punctuation, Operator, Keyword, Name, Number, Whitespace, Literal, String
+class OpenScadLexer(RegexLexer):
+    """For openSCAD code.
+
+    .. versionadded:: 2.16
+    """
+    name = 'OpenSCAD'
+    url = 'https://openscad.org/'
+    aliases = ['openscad']
+    filenames = ['*.scad']
+    mimetypes = ['application/x-openscad']
+    tokens = {'root': [('[^\\S\\n]+', Whitespace), ('//', Comment.Single, 'comment-single'), ('/\\*', Comment.Multiline, 'comment-multi'), ('[{}\\[\\]\\(\\),;:]', Punctuation), ('[*!#%\\-+=?/]', Operator), ('<=|<|==|!=|>=|>|&&|\\|\\|', Operator), ('\\$(f[asn]|t|vp[rtd]|children)', Operator), ('(undef|PI)\\b', Keyword.Constant), ('(use|include)((?:\\s|\\\\\\\\s)+)', bygroups(Keyword.Namespace, Text), 'includes'), ('(module)(\\s*)([^\\s\\(]+)', bygroups(Keyword.Namespace, Whitespace, Name.Namespace)), ('(function)(\\s*)([^\\s\\(]+)', bygroups(Keyword.Declaration, Whitespace, Name.Function)), (words(('true', 'false'), prefix='\\b', suffix='\\b'), Literal), (words(('function', 'module', 'include', 'use', 'for', 'intersection_for', 'if', 'else', 'return'), prefix='\\b', suffix='\\b'), Keyword), (words(('circle', 'square', 'polygon', 'text', 'sphere', 'cube', 'cylinder', 'polyhedron', 'translate', 'rotate', 'scale', 'resize', 'mirror', 'multmatrix', 'color', 'offset', 'hull', 'minkowski', 'union', 'difference', 'intersection', 'abs', 'sign', 'sin', 'cos', 'tan', 'acos', 'asin', 'atan', 'atan2', 'floor', 'round', 'ceil', 'ln', 'log', 'pow', 'sqrt', 'exp', 'rands', 'min', 'max', 'concat', 'lookup', 'str', 'chr', 'search', 'version', 'version_num', 'norm', 'cross', 'parent_module', 'echo', 'import', 'import_dxf', 'dxf_linear_extrude', 'linear_extrude', 'rotate_extrude', 'surface', 'projection', 'render', 'dxf_cross', 'dxf_dim', 'let', 'assign', 'len'), prefix='\\b', suffix='\\b'), Name.Builtin), ('\\bchildren\\b', Name.Builtin.Pseudo), ('""".*?"""', String.Double), ('"(\\\\\\\\|\\\\[^\\\\]|[^"\\\\])*"', String.Double), ('-?\\d+(\\.\\d+)?(e[+-]?\\d+)?', Number), ('\\w+', Name)], 'includes': [('(<)([^>]*)(>)', bygroups(Punctuation, Comment.PreprocFile, Punctuation))], 'comment': [(':param: [a-zA-Z_]\\w*|:returns?:|(FIXME|MARK|TODO):', Comment.Special)], 'comment-single': [('\\n', Text, '#pop'), include('comment'), ('[^\\n]+', Comment.Single)], 'comment-multi': [include('comment'), ('[^*/]+', Comment.Multiline), ('/\\*', Comment.Multiline, '#push'), ('\\*/', Comment.Multiline, '#pop'), ('[*/]', Comment.Multiline)]}

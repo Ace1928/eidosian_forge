@@ -1,0 +1,2 @@
+def serialize_url(value):
+    return ''.join(("\\'" if c == "'" else '\\"' if c == '"' else '\\\\' if c == '\\' else '\\ ' if c == ' ' else '\\9 ' if c == '\t' else '\\A ' if c == '\n' else '\\D ' if c == '\r' else '\\C ' if c == '\x0c' else '\\(' if c == '(' else '\\)' if c == ')' else c for c in value))

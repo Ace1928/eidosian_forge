@@ -1,0 +1,76 @@
+import json
+import logging
+import shutil
+import subprocess
+import sys
+import threading
+from collections import deque
+from typing import TYPE_CHECKING, Any, Dict, List, Union
+from wandb.sdk.lib import telemetry
+from .aggregators import aggregate_mean
+from .asset_registry import asset_registry
+from .interfaces import Interface, Metric, MetricsMonitor
+class GPUAMDStats:
+    """Stats for AMD GPU devices."""
+    name = 'gpu.{gpu_id}.{key}'
+    samples: 'Deque[List[_Stats]]'
+
+    def __init__(self) -> None:
+        self.samples = deque()
+
+    @staticmethod
+    def parse_stats(stats: Dict[str, str]) -> _Stats:
+        """Parse stats from rocm-smi output."""
+        parsed_stats: _Stats = {}
+        try:
+            parsed_stats['gpu'] = float(stats.get('GPU use (%)'))
+        except (TypeError, ValueError):
+            logger.warning('Could not parse GPU usage as float')
+        try:
+            parsed_stats['memoryAllocated'] = float(stats.get('GPU memory use (%)'))
+        except (TypeError, ValueError):
+            logger.warning('Could not parse GPU memory allocation as float')
+        try:
+            parsed_stats['temp'] = float(stats.get('Temperature (Sensor memory) (C)'))
+        except (TypeError, ValueError):
+            logger.warning('Could not parse GPU temperature as float')
+        try:
+            parsed_stats['powerWatts'] = float(stats.get('Average Graphics Package Power (W)'))
+        except (TypeError, ValueError):
+            logger.warning('Could not parse GPU power as float')
+        try:
+            parsed_stats['powerPercent'] = float(stats.get('Average Graphics Package Power (W)')) / float(stats.get('Max Graphics Package Power (W)')) * 100
+        except (TypeError, ValueError):
+            logger.warning('Could not parse GPU average/max power as float')
+        return parsed_stats
+
+    def sample(self) -> None:
+        try:
+            raw_stats = get_rocm_smi_stats()
+            cards = []
+            card_keys = [key for key in sorted(raw_stats.keys()) if key.startswith('card')]
+            for card_key in card_keys:
+                card_stats = raw_stats[card_key]
+                stats = self.parse_stats(card_stats)
+                if stats:
+                    cards.append(stats)
+            if cards:
+                self.samples.append(cards)
+        except (OSError, ValueError, TypeError, subprocess.CalledProcessError) as e:
+            logger.exception(f'GPU stats error: {e}')
+
+    def clear(self) -> None:
+        self.samples.clear()
+
+    def aggregate(self) -> dict:
+        if not self.samples:
+            return {}
+        stats = {}
+        device_count = len(self.samples[0])
+        for i in range(device_count):
+            samples = [sample[i] for sample in self.samples]
+            for key in samples[0].keys():
+                samples_key = [s[key] for s in samples]
+                aggregate = aggregate_mean(samples_key)
+                stats[self.name.format(gpu_id=i, key=key)] = aggregate
+        return stats

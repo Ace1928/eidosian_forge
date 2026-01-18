@@ -1,0 +1,19 @@
+from __future__ import (absolute_import, division, print_function)
+import json
+import time
+from ssl import SSLError
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.dellemc.openmanage.plugins.module_utils.ome import RestOME, ome_auth_params
+from ansible.module_utils.six.moves.urllib.error import URLError, HTTPError
+from ansible.module_utils.urls import ConnectionError, SSLValidationError
+from ansible_collections.dellemc.openmanage.plugins.module_utils.utils import apply_diff_key, job_tracking
+def get_group_devices_all(rest_obj, uri):
+    total_items = []
+    next_link = uri
+    while next_link:
+        resp = rest_obj.invoke_request('GET', next_link)
+        data = resp.json_data
+        total_items.extend(data.get('value', []))
+        next_link_list = str(data.get('@odata.nextLink', '')).split('/api')
+        next_link = next_link_list[-1]
+    return total_items

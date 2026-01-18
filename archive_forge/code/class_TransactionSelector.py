@@ -1,0 +1,21 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class TransactionSelector(_messages.Message):
+    """This message is used to select the transaction in which a Read or
+  ExecuteSql call runs. See TransactionOptions for more information about
+  transactions.
+
+  Fields:
+    begin: Begin a new transaction and execute this read or SQL query in it.
+      The transaction ID of the new transaction is returned in
+      ResultSetMetadata.transaction, which is a Transaction.
+    id: Execute the read or SQL query in a previously-started transaction.
+    singleUse: Execute the read or SQL query in a temporary transaction. This
+      is the most efficient way to execute a transaction that consists of a
+      single SQL query.
+  """
+    begin = _messages.MessageField('TransactionOptions', 1)
+    id = _messages.BytesField(2)
+    singleUse = _messages.MessageField('TransactionOptions', 3)

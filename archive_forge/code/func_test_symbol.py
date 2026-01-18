@@ -1,0 +1,27 @@
+from sympy import abc
+from sympy.concrete.summations import Sum
+from sympy.core.add import Add
+from sympy.core.function import (Derivative, Function, diff)
+from sympy.core.mul import Mul
+from sympy.core.numbers import (Float, I, Integer, Rational, oo, pi)
+from sympy.core.singleton import S
+from sympy.core.symbol import (Symbol, Wild, symbols)
+from sympy.functions.elementary.exponential import (exp, log)
+from sympy.functions.elementary.miscellaneous import sqrt
+from sympy.functions.elementary.trigonometric import (cos, sin)
+from sympy.functions.special.hyper import meijerg
+from sympy.polys.polytools import Poly
+from sympy.simplify.radsimp import collect
+from sympy.simplify.simplify import signsimp
+from sympy.testing.pytest import XFAIL
+def test_symbol():
+    x = Symbol('x')
+    a, b, c, p, q = map(Wild, 'abcpq')
+    e = x
+    assert e.match(x) == {}
+    assert e.matches(x) == {}
+    assert e.match(a) == {a: x}
+    e = Rational(5)
+    assert e.match(c) == {c: 5}
+    assert e.match(e) == {}
+    assert e.match(e + 1) is None

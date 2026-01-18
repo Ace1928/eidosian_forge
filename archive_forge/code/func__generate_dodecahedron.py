@@ -1,0 +1,15 @@
+import numpy as np
+import itertools
+from numpy.testing import (assert_equal,
+import pytest
+from pytest import raises as assert_raises
+from scipy.spatial import SphericalVoronoi, distance
+from scipy.optimize import linear_sum_assignment
+from scipy.constants import golden as phi
+from scipy.special import gamma
+def _generate_dodecahedron():
+    x1 = _generate_cube()
+    x2 = np.array([[0, -phi, -1 / phi], [0, -phi, +1 / phi], [0, +phi, -1 / phi], [0, +phi, +1 / phi]])
+    x3 = np.array([[-1 / phi, 0, -phi], [+1 / phi, 0, -phi], [-1 / phi, 0, +phi], [+1 / phi, 0, +phi]])
+    x4 = np.array([[-phi, -1 / phi, 0], [-phi, +1 / phi, 0], [+phi, -1 / phi, 0], [+phi, +1 / phi, 0]])
+    return np.concatenate((x1, x2, x3, x4))

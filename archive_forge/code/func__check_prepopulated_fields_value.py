@@ -1,0 +1,22 @@
+import collections
+from itertools import chain
+from django.apps import apps
+from django.conf import settings
+from django.contrib.admin.exceptions import NotRegistered
+from django.contrib.admin.utils import NotRelationField, flatten, get_fields_from_path
+from django.core import checks
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
+from django.db.models.constants import LOOKUP_SEP
+from django.db.models.expressions import Combinable
+from django.forms.models import BaseModelForm, BaseModelFormSet, _get_foreign_key
+from django.template import engines
+from django.template.backends.django import DjangoTemplates
+from django.utils.module_loading import import_string
+def _check_prepopulated_fields_value(self, obj, val, label):
+    """Check a value of `prepopulated_fields` dictionary, i.e. it's an
+        iterable of existing fields."""
+    if not isinstance(val, (list, tuple)):
+        return must_be('a list or tuple', option=label, obj=obj, id='admin.E029')
+    else:
+        return list(chain.from_iterable((self._check_prepopulated_fields_value_item(obj, subfield_name, '%s[%r]' % (label, index)) for index, subfield_name in enumerate(val))))

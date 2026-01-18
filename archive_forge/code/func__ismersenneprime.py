@@ -1,0 +1,28 @@
+from collections import defaultdict
+from functools import reduce
+import random
+import math
+from sympy.core import sympify
+from sympy.core.containers import Dict
+from sympy.core.evalf import bitcount
+from sympy.core.expr import Expr
+from sympy.core.function import Function
+from sympy.core.logic import fuzzy_and
+from sympy.core.mul import Mul
+from sympy.core.numbers import igcd, ilcm, Rational, Integer
+from sympy.core.power import integer_nthroot, Pow, integer_log
+from sympy.core.singleton import S
+from sympy.external.gmpy import SYMPY_INTS
+from .primetest import isprime
+from .generate import sieve, primerange, nextprime
+from .digits import digits
+from sympy.utilities.iterables import flatten
+from sympy.utilities.misc import as_int, filldedent
+from .ecm import _ecm_one_factor
+def _ismersenneprime(n):
+    global MERSENNES
+    j = len(MERSENNES)
+    while n > MERSENNES[-1] and j < len(MERSENNE_PRIME_EXPONENTS):
+        MERSENNES.append(2 ** MERSENNE_PRIME_EXPONENTS[j] - 1)
+        j += 1
+    return n in MERSENNES

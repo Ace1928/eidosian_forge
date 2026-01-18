@@ -1,0 +1,20 @@
+from __future__ import annotations
+import io
+from pathlib import Path
+import platform
+import re
+import shlex
+from xml.etree import ElementTree as ET
+from typing import Any
+import numpy as np
+from packaging.version import parse as parse_version
+import pyparsing
+import pytest
+import matplotlib as mpl
+from matplotlib.testing.decorators import check_figures_equal, image_comparison
+import matplotlib.pyplot as plt
+from matplotlib import mathtext, _mathtext
+def test_math_to_image(tmpdir):
+    mathtext.math_to_image('$x^2$', str(tmpdir.join('example.png')))
+    mathtext.math_to_image('$x^2$', io.BytesIO())
+    mathtext.math_to_image('$x^2$', io.BytesIO(), color='Maroon')

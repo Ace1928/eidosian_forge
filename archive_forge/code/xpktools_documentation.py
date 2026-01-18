@@ -1,0 +1,1 @@
+Write header lines from input file to handle ``outfn``.

@@ -1,0 +1,19 @@
+import numpy as np
+from ase.ga.utilities import get_nnmat
+def looks_like(self, a1, a2):
+    """ Return if structure a1 or a2 are similar or not. """
+    elements = self.elements
+    if elements == []:
+        elements = sorted(set(a1.get_chemical_symbols()))
+    a1, a2 = (a1.copy(), a2.copy())
+    a1.set_constraint()
+    a2.set_constraint()
+    del a1[[a.index for a in a1 if a.symbol not in elements]]
+    del a2[[a.index for a in a2 if a.symbol not in elements]]
+    nnmat_a1 = get_nnmat(a1, mic=self.mic)
+    nnmat_a2 = get_nnmat(a2, mic=self.mic)
+    diff = np.linalg.norm(nnmat_a1 - nnmat_a2)
+    if diff < self.d:
+        return True
+    else:
+        return False

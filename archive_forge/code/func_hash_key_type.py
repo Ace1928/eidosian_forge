@@ -1,0 +1,3 @@
+@property
+def hash_key_type(self):
+    return self._dict['HashKeyElement']['AttributeType']

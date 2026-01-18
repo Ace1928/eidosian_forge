@@ -1,0 +1,48 @@
+from unittest import mock
+from oslo_config import cfg
+from osprofiler.drivers import jaeger
+from osprofiler import opts
+from osprofiler.tests import test
+from jaeger_client import Config
+class JaegerTestCase(test.TestCase):
+
+    def setUp(self):
+        super(JaegerTestCase, self).setUp()
+        opts.set_defaults(cfg.CONF)
+        cfg.CONF.set_default('process_tags', 'k1:v1,k2:v2', 'profiler_jaeger')
+        self.payload_start = {'name': 'api-start', 'base_id': '4e3e0ec6-2938-40b1-8504-09eb1d4b0dee', 'trace_id': '1c089ea8-28fe-4f3d-8c00-f6daa2bc32f1', 'parent_id': 'e2715537-3d1c-4f0c-b3af-87355dc5fc5b', 'timestamp': '2018-05-03T04:31:51.781381', 'info': {'host': 'test'}}
+        self.payload_stop = {'name': 'api-stop', 'base_id': '4e3e0ec6-2938-40b1-8504-09eb1d4b0dee', 'trace_id': '1c089ea8-28fe-4f3d-8c00-f6daa2bc32f1', 'parent_id': 'e2715537-3d1c-4f0c-b3af-87355dc5fc5b', 'timestamp': '2018-05-03T04:31:51.781381', 'info': {'host': 'test', 'function': {'result': 1}}}
+        Config._initialized = False
+        self.driver = jaeger.Jaeger('jaeger://127.0.0.1:6831', project='nova', service='api', conf=cfg.CONF)
+
+    @mock.patch('osprofiler._utils.shorten_id')
+    def test_notify_start(self, mock_shorten_id):
+        self.driver.notify(self.payload_start)
+        calls = [mock.call(self.payload_start['base_id']), mock.call(self.payload_start['parent_id']), mock.call(self.payload_start['trace_id'])]
+        mock_shorten_id.assert_has_calls(calls, any_order=True)
+
+    @mock.patch('jaeger_client.span.Span')
+    @mock.patch('time.time')
+    def test_notify_stop(self, mock_time, mock_span):
+        fake_time = 1525416065.5958152
+        mock_time.return_value = fake_time
+        span = mock_span()
+        self.driver.spans.append(mock_span())
+        self.driver.notify(self.payload_stop)
+        mock_time.assert_called_once()
+        mock_time.reset_mock()
+        span.finish.assert_called_once_with(finish_time=fake_time)
+
+    def test_service_name_default(self):
+        self.assertEqual('pr1-svc1', self.driver._get_service_name(cfg.CONF, 'pr1', 'svc1'))
+
+    def test_service_name_prefix(self):
+        cfg.CONF.set_default('service_name_prefix', 'prx1', 'profiler_jaeger')
+        self.assertEqual('prx1-pr1-svc1', self.driver._get_service_name(cfg.CONF, 'pr1', 'svc1'))
+
+    def test_process_tags(self):
+        tags = self.driver.tracer.tags
+        del tags['hostname']
+        del tags['jaeger.version']
+        del tags['ip']
+        self.assertEqual({'k1': 'v1', 'k2': 'v2'}, tags)

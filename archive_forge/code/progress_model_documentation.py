@@ -1,0 +1,1 @@
+Return the total width of the operation.

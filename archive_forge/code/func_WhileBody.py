@@ -1,0 +1,29 @@
+from tensorflow.core.framework import attr_value_pb2
+from tensorflow.python.eager import context
+from tensorflow.python.framework import constant_op
+from tensorflow.python.framework import dtypes
+from tensorflow.python.framework import function
+from tensorflow.python.framework import ops
+from tensorflow.python.framework import tensor
+from tensorflow.python.framework import tensor_shape
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import gen_functional_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import tensor_array_ops
+from tensorflow.python.ops import variable_scope as vs
+from tensorflow.python.ops import while_loop
+from tensorflow.python.ops.gen_functional_ops import remote_call
+from tensorflow.python.ops.gen_functional_ops import symbolic_gradient
+from tensorflow.python.util import deprecation
+from tensorflow.python.util import dispatch
+from tensorflow.python.util import nest
+from tensorflow.python.util.tf_export import tf_export
+@function.Defun(*body_sig, func_name=body_name)
+def WhileBody(i, n, start, delta, *args):
+    """A While wrapper for forbody that handles loop-carried captured inputs."""
+    for_result = forbody(start + i * delta, *args)
+    if isinstance(for_result, ops.Operation):
+        for_result = ()
+    elif isinstance(for_result, tensor.Tensor):
+        for_result = (for_result,)
+    return (i + 1, n, start, delta) + tuple(for_result)

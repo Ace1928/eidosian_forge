@@ -1,0 +1,1 @@
+Test Atoms.__delitem__ with FixAtoms constraint.

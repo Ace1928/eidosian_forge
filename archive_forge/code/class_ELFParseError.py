@@ -1,0 +1,2 @@
+class ELFParseError(ELFError):
+    pass

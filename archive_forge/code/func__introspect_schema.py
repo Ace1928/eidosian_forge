@@ -1,0 +1,27 @@
+import boto
+from boto.dynamodb2 import exceptions
+from boto.dynamodb2.fields import (HashKey, RangeKey,
+from boto.dynamodb2.items import Item
+from boto.dynamodb2.layer1 import DynamoDBConnection
+from boto.dynamodb2.results import ResultSet, BatchGetResultSet
+from boto.dynamodb2.types import (NonBooleanDynamizer, Dynamizer, FILTER_OPERATORS,
+from boto.exception import JSONResponseError
+def _introspect_schema(self, raw_schema, raw_attributes=None):
+    """
+        Given a raw schema structure back from a DynamoDB response, parse
+        out & build the high-level Python objects that represent them.
+        """
+    schema = []
+    sane_attributes = {}
+    if raw_attributes:
+        for field in raw_attributes:
+            sane_attributes[field['AttributeName']] = field['AttributeType']
+    for field in raw_schema:
+        data_type = sane_attributes.get(field['AttributeName'], STRING)
+        if field['KeyType'] == 'HASH':
+            schema.append(HashKey(field['AttributeName'], data_type=data_type))
+        elif field['KeyType'] == 'RANGE':
+            schema.append(RangeKey(field['AttributeName'], data_type=data_type))
+        else:
+            raise exceptions.UnknownSchemaFieldError('%s was seen, but is unknown. Please report this at https://github.com/boto/boto/issues.' % field['KeyType'])
+    return schema

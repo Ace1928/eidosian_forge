@@ -1,0 +1,42 @@
+from __future__ import with_statement
+from binascii import unhexlify
+import contextlib
+from functools import wraps, partial
+import hashlib
+import logging; log = logging.getLogger(__name__)
+import random
+import re
+import os
+import sys
+import tempfile
+import threading
+import time
+from passlib.exc import PasslibHashWarning, PasslibConfigWarning
+from passlib.utils.compat import PY3, JYTHON
+import warnings
+from warnings import warn
+from passlib import exc
+from passlib.exc import MissingBackendError
+import passlib.registry as registry
+from passlib.tests.backports import TestCase as _TestCase, skip, skipIf, skipUnless, SkipTest
+from passlib.utils import has_rounds_info, has_salt_info, rounds_cost_values, \
+from passlib.utils.compat import iteritems, irange, u, unicode, PY2, nullcontext
+from passlib.utils.decor import classproperty
+import passlib.utils.handlers as uh
+def fuzz_verifier_crypt(self):
+    """test results against OS crypt()"""
+    handler = self.handler
+    if self.using_patched_crypt or hasattr(handler, 'wrapped'):
+        return None
+    from crypt import crypt
+    from passlib.utils import _safe_crypt_lock
+    encoding = self.FuzzHashGenerator.password_encoding
+
+    def check_crypt(secret, hash):
+        """stdlib-crypt"""
+        if not self.crypt_supports_variant(hash):
+            return 'skip'
+        secret = to_native_str(secret, encoding)
+        with _safe_crypt_lock:
+            return crypt(secret, hash) == hash
+    return check_crypt

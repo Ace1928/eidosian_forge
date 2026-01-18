@@ -1,0 +1,5 @@
+from __future__ import absolute_import, division, print_function
+from ansible_collections.azure.azcollection.plugins.module_utils.azure_rm_common import AzureRMModuleBase
+def managed_disk_to_dict(managed_disk):
+    create_data = managed_disk.creation_data
+    return dict(id=managed_disk.id, name=managed_disk.name, location=managed_disk.location, tags=managed_disk.tags, create_option=create_data.create_option.lower(), source_uri=create_data.source_uri or create_data.source_resource_id, disk_size_gb=managed_disk.disk_size_gb, os_type=managed_disk.os_type.lower() if managed_disk.os_type else None, storage_account_type=managed_disk.sku.name if managed_disk.sku else None, managed_by=managed_disk.managed_by, max_shares=managed_disk.max_shares, managed_by_extended=managed_disk.managed_by_extended, zone=managed_disk.zones[0] if managed_disk.zones and len(managed_disk.zones) > 0 else '')

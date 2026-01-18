@@ -1,0 +1,12 @@
+import numpy as np
+import pytest
+from pandas import (
+import pandas._testing as tm
+@pytest.mark.parametrize('s, adjust, ignore_na, w', [(Series([np.nan, 1.0, 101.0]), True, False, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0]), (Series([np.nan, 1.0, 101.0]), True, True, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0]), (Series([np.nan, 1.0, 101.0]), False, False, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0 / (1.0 + 2.0)]), (Series([np.nan, 1.0, 101.0]), False, True, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0 / (1.0 + 2.0)]), (Series([1.0, np.nan, 101.0]), True, False, [(1.0 - 1.0 / (1.0 + 2.0)) ** 2, np.nan, 1.0]), (Series([1.0, np.nan, 101.0]), True, True, [1.0 - 1.0 / (1.0 + 2.0), np.nan, 1.0]), (Series([1.0, np.nan, 101.0]), False, False, [(1.0 - 1.0 / (1.0 + 2.0)) ** 2, np.nan, 1.0 / (1.0 + 2.0)]), (Series([1.0, np.nan, 101.0]), False, True, [1.0 - 1.0 / (1.0 + 2.0), np.nan, 1.0 / (1.0 + 2.0)]), (Series([np.nan, 1.0, np.nan, np.nan, 101.0, np.nan]), True, False, [np.nan, (1.0 - 1.0 / (1.0 + 2.0)) ** 3, np.nan, np.nan, 1.0, np.nan]), (Series([np.nan, 1.0, np.nan, np.nan, 101.0, np.nan]), True, True, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), np.nan, np.nan, 1.0, np.nan]), (Series([np.nan, 1.0, np.nan, np.nan, 101.0, np.nan]), False, False, [np.nan, (1.0 - 1.0 / (1.0 + 2.0)) ** 3, np.nan, np.nan, 1.0 / (1.0 + 2.0), np.nan]), (Series([np.nan, 1.0, np.nan, np.nan, 101.0, np.nan]), False, True, [np.nan, 1.0 - 1.0 / (1.0 + 2.0), np.nan, np.nan, 1.0 / (1.0 + 2.0), np.nan]), (Series([1.0, np.nan, 101.0, 50.0]), True, False, [(1.0 - 1.0 / (1.0 + 2.0)) ** 3, np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0]), (Series([1.0, np.nan, 101.0, 50.0]), True, True, [(1.0 - 1.0 / (1.0 + 2.0)) ** 2, np.nan, 1.0 - 1.0 / (1.0 + 2.0), 1.0]), (Series([1.0, np.nan, 101.0, 50.0]), False, False, [(1.0 - 1.0 / (1.0 + 2.0)) ** 3, np.nan, (1.0 - 1.0 / (1.0 + 2.0)) * (1.0 / (1.0 + 2.0)), 1.0 / (1.0 + 2.0) * ((1.0 - 1.0 / (1.0 + 2.0)) ** 2 + 1.0 / (1.0 + 2.0))]), (Series([1.0, np.nan, 101.0, 50.0]), False, True, [(1.0 - 1.0 / (1.0 + 2.0)) ** 2, np.nan, (1.0 - 1.0 / (1.0 + 2.0)) * (1.0 / (1.0 + 2.0)), 1.0 / (1.0 + 2.0)])])
+def test_ewma_nan_handling_cases(s, adjust, ignore_na, w):
+    expected = (s.multiply(w).cumsum() / Series(w).cumsum()).ffill()
+    result = s.ewm(com=2.0, adjust=adjust, ignore_na=ignore_na).mean()
+    tm.assert_series_equal(result, expected)
+    if ignore_na is False:
+        result = s.ewm(com=2.0, adjust=adjust).mean()
+        tm.assert_series_equal(result, expected)

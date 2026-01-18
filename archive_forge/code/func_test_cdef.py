@@ -1,0 +1,3 @@
+from Cython.TestUtils import CythonTest
+def test_cdef(self):
+    self.t(u'\n                    cdef f(x, y, z):\n                        pass\n                    cdef public void (x = 34, y = 54, z):\n                        pass\n                    cdef f(int *x, void *y, Value *z):\n                        pass\n                    cdef f(int **x, void **y, Value **z):\n                        pass\n                    cdef inline f(int &x, Value &z):\n                        pass\n               ')

@@ -1,0 +1,33 @@
+import logging
+from pyomo.common.config import (
+from pyomo.contrib.gdpopt.util import _DoNothing, a_logger
+from pyomo.common.deprecation import deprecation_warning
+def _add_common_configs(CONFIG):
+    CONFIG.declare('iteration_limit', ConfigValue(default=50, domain=NonNegativeInt, description='Iteration limit', doc='Number of maximum iterations in the decomposition methods.'))
+    CONFIG.declare('stalling_limit', ConfigValue(default=15, domain=PositiveInt, description='Stalling limit', doc='Stalling limit for primal bound progress in the decomposition methods.'))
+    CONFIG.declare('time_limit', ConfigValue(default=600, domain=PositiveInt, description='Time limit (seconds, default=600)', doc='Seconds allowed until terminated. Note that the time limit cancurrently only be enforced between subsolver invocations. You mayneed to set subsolver time limits as well.'))
+    CONFIG.declare('strategy', ConfigValue(default='OA', domain=In(['OA', 'ECP', 'GOA', 'FP']), description='Decomposition strategy', doc='MINLP Decomposition strategy to be applied to the method. Currently available Outer Approximation (OA), Extended Cutting Plane (ECP), Global Outer Approximation (GOA) and Feasibility Pump (FP).'))
+    CONFIG.declare('add_regularization', ConfigValue(default=None, domain=In(['level_L1', 'level_L2', 'level_L_infinity', 'grad_lag', 'hess_lag', 'hess_only_lag', 'sqp_lag']), description='add regularization', doc='Solving a regularization problem before solve the fixed subproblemthe objective function of the regularization problem.'))
+    CONFIG.declare('call_after_main_solve', ConfigValue(default=_DoNothing(), domain=None, description='Function to be executed after every main problem', doc='Callback hook after a solution of the main problem.'))
+    CONFIG.declare('call_after_subproblem_solve', ConfigValue(default=_DoNothing(), domain=None, description='Function to be executed after every subproblem', doc='Callback hook after a solution of the nonlinear subproblem.'))
+    CONFIG.declare('call_after_subproblem_feasible', ConfigValue(default=_DoNothing(), domain=None, description='Function to be executed after every feasible subproblem', doc='Callback hook after a feasible solution of the nonlinear subproblem.'))
+    CONFIG.declare('tee', ConfigValue(default=False, description='Stream output to terminal.', domain=bool))
+    CONFIG.declare('logger', ConfigValue(default='pyomo.contrib.mindtpy', description='The logger object or name to use for reporting.', domain=a_logger))
+    CONFIG.declare('logging_level', ConfigValue(default=logging.INFO, domain=NonNegativeInt, description='The logging level for MindtPy.CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10, NOTSET = 0'))
+    CONFIG.declare('integer_to_binary', ConfigValue(default=False, description='Convert integer variables to binaries (for no-good cuts).', domain=bool))
+    CONFIG.declare('add_no_good_cuts', ConfigValue(default=False, description='Add no-good cuts (no-good cuts) to binary variables to disallow same integer solution again.Note that integer_to_binary flag needs to be used to apply it to actual integers and not just binaries.', domain=bool))
+    CONFIG.declare('use_tabu_list', ConfigValue(default=False, description='Use tabu list and incumbent callback to disallow same integer solution again.', domain=bool))
+    CONFIG.declare('single_tree', ConfigValue(default=False, description='Use single tree implementation in solving the MIP main problem.', domain=bool))
+    CONFIG.declare('solution_pool', ConfigValue(default=False, description='Use solution pool in solving the MIP main problem.', domain=bool))
+    CONFIG.declare('num_solution_iteration', ConfigValue(default=5, description='The number of MIP solutions (from the solution pool) used to generate the fixed NLP subproblem in each iteration.', domain=PositiveInt))
+    CONFIG.declare('cycling_check', ConfigValue(default=True, description='Check if OA algorithm is stalled in a cycle and terminate.', domain=bool))
+    CONFIG.declare('feasibility_norm', ConfigValue(default='L_infinity', domain=In(['L1', 'L2', 'L_infinity']), description='Different forms of objective function in feasibility subproblem.'))
+    CONFIG.declare('differentiate_mode', ConfigValue(default='reverse_symbolic', domain=In(['reverse_symbolic', 'sympy']), description='Differentiate mode to calculate jacobian.'))
+    CONFIG.declare('use_mcpp', ConfigValue(default=False, description="Use package MC++ to set a bound for variable 'objective_value', which is introduced when the original problem's objective function is nonlinear.", domain=bool))
+    CONFIG.declare('calculate_dual_at_solution', ConfigValue(default=False, description='Calculate duals of the NLP subproblem.', domain=bool))
+    CONFIG.declare('use_fbbt', ConfigValue(default=False, description='Use fbbt to tighten the feasible region of the problem.', domain=bool))
+    CONFIG.declare('use_dual_bound', ConfigValue(default=True, description='Add dual bound constraint to enforce the objective satisfies best-found dual bound.', domain=bool))
+    CONFIG.declare('partition_obj_nonlinear_terms', ConfigValue(default=True, description='Partition objective with the sum of nonlinear terms using epigraph reformulation.', domain=bool))
+    CONFIG.declare('quadratic_strategy', ConfigValue(default=0, domain=In([0, 1, 2]), description='How to treat the quadratic terms in MINLP.0 : treat as nonlinear terms1 : only use quadratic terms in objective function directly in main problem2 : use quadratic terms in objective function and constraints in main problem'))
+    CONFIG.declare('move_objective', ConfigValue(default=False, domain=bool, description='Whether to replace the objective function to constraint using epigraph constraint.'))
+    CONFIG.declare('add_cuts_at_incumbent', ConfigValue(default=False, description='Whether to add lazy cuts to the main problem at the incumbent solution found in the branch & bound tree', domain=bool))

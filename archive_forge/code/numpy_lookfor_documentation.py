@@ -1,0 +1,48 @@
+import sys
+import os
+import re
+from numpy import ufunc
+
+    Do a keyword search on docstrings.
+
+    A list of objects that matched the search is displayed,
+    sorted by relevance. All given keywords need to be found in the
+    docstring for it to be returned as a result, but the order does
+    not matter.
+
+    Parameters
+    ----------
+    what : str
+        String containing words to look for.
+    module : str or list, optional
+        Name of module(s) whose docstrings to go through.
+    import_modules : bool, optional
+        Whether to import sub-modules in packages. Default is True.
+    regenerate : bool, optional
+        Whether to re-generate the docstring cache. Default is False.
+    output : file-like, optional
+        File-like object to write the output to. If omitted, use a pager.
+
+    See Also
+    --------
+    source, info
+
+    Notes
+    -----
+    Relevance is determined only roughly, by checking if the keywords occur
+    in the function name, at the start of a docstring, etc.
+
+    Examples
+    --------
+    >>> np.lookfor('binary representation') # doctest: +SKIP
+    Search results for 'binary representation'
+    ------------------------------------------
+    numpy.binary_repr
+        Return the binary representation of the input number as a string.
+    numpy.core.setup_common.long_double_representation
+        Given a binary dump as given by GNU od -b, look for long double
+    numpy.base_repr
+        Return a string representation of a number in the given base system.
+    ...
+
+    

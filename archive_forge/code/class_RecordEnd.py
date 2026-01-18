@@ -1,0 +1,2 @@
+class RecordEnd(Action):
+    pass

@@ -1,0 +1,18 @@
+from __future__ import annotations
+import abc
+import datetime
+import contextlib
+from pydantic import BaseModel, model_validator, Field, PrivateAttr, validator
+from lazyops.utils.logs import logger
+from .static import SqliteTemplates
+from .registry import get_or_register_sqlite_schema, get_or_register_sqlite_connection, retrieve_sqlite_model_schema, get_sqlite_model_pkey, get_or_register_sqlite_tablename, SQLiteModelConfig, get_sqlite_model_config
+from .utils import normalize_sql_text
+from typing import Optional, List, Tuple, Dict, Union, TypeVar, Any, overload, TYPE_CHECKING
+def sql_delete(self, conn: 'sqlite3.Connection', tablename: Optional[str]=None, **kwargs):
+    """
+        Deletes the object from the database
+        """
+    delete_script = SqliteTemplates['delete'].render(**self.sql_schema)
+    cur = conn.cursor()
+    cur.execute(delete_script, (self.sql_pkey,))
+    conn.commit()

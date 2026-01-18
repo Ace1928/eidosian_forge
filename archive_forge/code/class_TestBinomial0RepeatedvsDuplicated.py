@@ -1,0 +1,35 @@
+import warnings
+import numpy as np
+from numpy.testing import assert_allclose, assert_raises
+import pandas as pd
+import pytest
+import statsmodels.api as sm
+from statsmodels.datasets.cpunish import load
+from statsmodels.genmod.generalized_linear_model import GLM
+from statsmodels.tools.sm_exceptions import SpecificationWarning
+from statsmodels.tools.tools import add_constant
+from .results import (
+class TestBinomial0RepeatedvsDuplicated(CheckWeight):
+
+    @classmethod
+    def setup_class(cls):
+        np.random.seed(4321)
+        n = 10000
+        p = 5
+        exog = np.empty((n, p))
+        exog[:, 0] = 1
+        exog[:, 1] = np.random.randint(low=-5, high=5, size=n)
+        x = np.repeat(np.array([1, 2, 3, 4]), n / 4)
+        exog[:, 2:] = get_dummies(x)
+        beta = np.array([-1, 0.1, -0.05, 0.2, 0.35])
+        lin_pred = (exog * beta).sum(axis=1)
+        family = sm.families.Binomial
+        link = sm.families.links.Logit
+        endog = gen_endog(lin_pred, family, link, binom_version=0)
+        wt = np.random.randint(1, 5, n)
+        mod1 = sm.GLM(endog, exog, family=family(link=link()), freq_weights=wt)
+        cls.res1 = mod1.fit()
+        exog_dup = np.repeat(exog, wt, axis=0)
+        endog_dup = np.repeat(endog, wt)
+        mod2 = sm.GLM(endog_dup, exog_dup, family=family(link=link()))
+        cls.res2 = mod2.fit()

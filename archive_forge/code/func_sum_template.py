@@ -1,0 +1,17 @@
+import itertools
+import logging
+import sys
+import builtins
+from contextlib import nullcontext
+from pyomo.common.errors import TemplateExpressionError
+from pyomo.core.expr.base import ExpressionBase, ExpressionArgs_Mixin, NPV_Mixin
+from pyomo.core.expr.logical_expr import BooleanExpression
+from pyomo.core.expr.numeric_expr import (
+from pyomo.core.expr.numvalue import (
+from pyomo.core.expr.relational_expr import tuple_to_relational_expr
+from pyomo.core.expr.visitor import (
+def sum_template(self, generator):
+    init_cache = len(self.cache)
+    expr = next(generator)
+    final_cache = len(self.cache)
+    return TemplateSumExpression((expr,), self.npop_cache(final_cache - init_cache))

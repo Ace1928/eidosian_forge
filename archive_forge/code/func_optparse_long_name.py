@@ -1,0 +1,7 @@
+import os
+@property
+def optparse_long_name(self):
+    ln = None
+    if self.long_name:
+        ln = '--%s' % self.long_name
+    return ln

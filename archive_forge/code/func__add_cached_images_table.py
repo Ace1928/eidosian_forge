@@ -1,0 +1,5 @@
+from alembic import op
+from sqlalchemy.schema import (
+from glance.db.sqlalchemy.schema import (
+def _add_cached_images_table():
+    op.create_table('cached_images', Column('id', BigInteger().with_variant(Integer, 'sqlite'), autoincrement=True, nullable=False), Column('image_id', String(length=36), nullable=False), Column('last_accessed', DateTime(), nullable=False), Column('last_modified', DateTime(), nullable=False), Column('size', BigInteger(), nullable=False), Column('hits', Integer(), nullable=False), Column('checksum', String(length=32), nullable=True), Column('node_reference_id', BigInteger().with_variant(Integer, 'sqlite'), nullable=False), PrimaryKeyConstraint('id'), ForeignKeyConstraint(['node_reference_id'], ['node_reference.node_reference_id']), UniqueConstraint('image_id', 'node_reference_id', name='ix_cached_images_image_id_node_reference_id'), mysql_engine='InnoDB', mysql_charset='utf8', extend_existing=True)

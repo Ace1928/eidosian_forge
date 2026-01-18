@@ -1,0 +1,1 @@
+Release the import lock regardless of any raised exceptions.

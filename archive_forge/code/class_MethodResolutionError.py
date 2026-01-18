@@ -1,0 +1,2 @@
+class MethodResolutionError(ResolutionError):
+    pass

@@ -1,0 +1,2 @@
+class PolishingError(VerificationError):
+    pass

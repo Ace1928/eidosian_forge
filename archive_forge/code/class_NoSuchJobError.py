@@ -1,0 +1,2 @@
+class NoSuchJobError(Exception):
+    pass

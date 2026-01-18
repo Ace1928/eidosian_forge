@@ -1,0 +1,70 @@
+from __future__ import annotations
+import operator
+import typing
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+from typing import Type
+class BaseRow:
+    __slots__ = ('_parent', '_data', '_key_to_index')
+    _parent: ResultMetaData
+    _key_to_index: Mapping[_KeyType, int]
+    _data: _RawRowType
+
+    def __init__(self, parent: ResultMetaData, processors: Optional[_ProcessorsType], key_to_index: Mapping[_KeyType, int], data: _RawRowType):
+        """Row objects are constructed by CursorResult objects."""
+        object.__setattr__(self, '_parent', parent)
+        object.__setattr__(self, '_key_to_index', key_to_index)
+        if processors:
+            object.__setattr__(self, '_data', tuple([proc(value) if proc else value for proc, value in zip(processors, data)]))
+        else:
+            object.__setattr__(self, '_data', tuple(data))
+
+    def __reduce__(self) -> Tuple[Callable[..., BaseRow], Tuple[Any, ...]]:
+        return (rowproxy_reconstructor, (self.__class__, self.__getstate__()))
+
+    def __getstate__(self) -> Dict[str, Any]:
+        return {'_parent': self._parent, '_data': self._data}
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        parent = state['_parent']
+        object.__setattr__(self, '_parent', parent)
+        object.__setattr__(self, '_data', state['_data'])
+        object.__setattr__(self, '_key_to_index', parent._key_to_index)
+
+    def _values_impl(self) -> List[Any]:
+        return list(self)
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __hash__(self) -> int:
+        return hash(self._data)
+
+    def __getitem__(self, key: Any) -> Any:
+        return self._data[key]
+
+    def _get_by_key_impl_mapping(self, key: str) -> Any:
+        try:
+            return self._data[self._key_to_index[key]]
+        except KeyError:
+            pass
+        self._parent._key_not_found(key, False)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._data[self._key_to_index[name]]
+        except KeyError:
+            pass
+        self._parent._key_not_found(name, True)
+
+    def _to_tuple_instance(self) -> Tuple[Any, ...]:
+        return self._data

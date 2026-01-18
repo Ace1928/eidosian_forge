@@ -1,0 +1,9 @@
+import sympy
+import cirq
+from cirq.interop.quirk.cells.testing import assert_url_to_circuit_returns
+def test_fixed_single_qubit_rotations():
+    a, b, c, d = cirq.LineQubit.range(4)
+    assert_url_to_circuit_returns('{"cols":[["H","X","Y","Z"]]}', cirq.Circuit(cirq.H(a), cirq.X(b), cirq.Y(c), cirq.Z(d)))
+    assert_url_to_circuit_returns('{"cols":[["X^½","X^⅓","X^¼"],["X^⅛","X^⅟₁₆","X^⅟₃₂"],["X^-½","X^-⅓","X^-¼"],["X^-⅛","X^-⅟₁₆","X^-⅟₃₂"]]}', cirq.Circuit(cirq.X(a) ** (1 / 2), cirq.X(b) ** (1 / 3), cirq.X(c) ** (1 / 4), cirq.X(a) ** (1 / 8), cirq.X(b) ** (1 / 16), cirq.X(c) ** (1 / 32), cirq.X(a) ** (-1 / 2), cirq.X(b) ** (-1 / 3), cirq.X(c) ** (-1 / 4), cirq.X(a) ** (-1 / 8), cirq.X(b) ** (-1 / 16), cirq.X(c) ** (-1 / 32)))
+    assert_url_to_circuit_returns('{"cols":[["Y^½","Y^⅓","Y^¼"],["Y^⅛","Y^⅟₁₆","Y^⅟₃₂"],["Y^-½","Y^-⅓","Y^-¼"],["Y^-⅛","Y^-⅟₁₆","Y^-⅟₃₂"]]}', cirq.Circuit(cirq.Y(a) ** (1 / 2), cirq.Y(b) ** (1 / 3), cirq.Y(c) ** (1 / 4), cirq.Y(a) ** (1 / 8), cirq.Y(b) ** (1 / 16), cirq.Y(c) ** (1 / 32), cirq.Y(a) ** (-1 / 2), cirq.Y(b) ** (-1 / 3), cirq.Y(c) ** (-1 / 4), cirq.Y(a) ** (-1 / 8), cirq.Y(b) ** (-1 / 16), cirq.Y(c) ** (-1 / 32)))
+    assert_url_to_circuit_returns('{"cols":[["Z^½","Z^⅓","Z^¼"],["Z^⅛","Z^⅟₁₆","Z^⅟₃₂"],["Z^⅟₆₄","Z^⅟₁₂₈"],["Z^-½","Z^-⅓","Z^-¼"],["Z^-⅛","Z^-⅟₁₆"]]}', cirq.Circuit(cirq.Z(a) ** (1 / 2), cirq.Z(b) ** (1 / 3), cirq.Z(c) ** (1 / 4), cirq.Z(a) ** (1 / 8), cirq.Z(b) ** (1 / 16), cirq.Z(c) ** (1 / 32), cirq.Z(a) ** (1 / 64), cirq.Z(b) ** (1 / 128), cirq.Moment([cirq.Z(a) ** (-1 / 2), cirq.Z(b) ** (-1 / 3), cirq.Z(c) ** (-1 / 4)]), cirq.Z(a) ** (-1 / 8), cirq.Z(b) ** (-1 / 16)))

@@ -1,0 +1,55 @@
+from abc import abstractmethod
+import warnings
+import numpy as np
+from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
+from pytest import raises as assert_raises
+from pytest import warns
+from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+from scipy.signal._filter_design import BadCoefficients
+import scipy.linalg as linalg
+def test_simo_round_trip(self):
+    tf = ([[1, 2], [1, 1]], [1, 2])
+    A, B, C, D = tf2ss(*tf)
+    assert_allclose(A, [[-2]], rtol=1e-13)
+    assert_allclose(B, [[1]], rtol=1e-13)
+    assert_allclose(C, [[0], [-1]], rtol=1e-13)
+    assert_allclose(D, [[1], [1]], rtol=1e-13)
+    num, den = ss2tf(A, B, C, D)
+    assert_allclose(num, [[1, 2], [1, 1]], rtol=1e-13)
+    assert_allclose(den, [1, 2], rtol=1e-13)
+    tf = ([[1, 0, 1], [1, 1, 1]], [1, 1, 1])
+    A, B, C, D = tf2ss(*tf)
+    assert_allclose(A, [[-1, -1], [1, 0]], rtol=1e-13)
+    assert_allclose(B, [[1], [0]], rtol=1e-13)
+    assert_allclose(C, [[-1, 0], [0, 0]], rtol=1e-13)
+    assert_allclose(D, [[1], [1]], rtol=1e-13)
+    num, den = ss2tf(A, B, C, D)
+    assert_allclose(num, [[1, 0, 1], [1, 1, 1]], rtol=1e-13)
+    assert_allclose(den, [1, 1, 1], rtol=1e-13)
+    tf = ([[1, 2, 3], [1, 2, 3]], [1, 2, 3, 4])
+    A, B, C, D = tf2ss(*tf)
+    assert_allclose(A, [[-2, -3, -4], [1, 0, 0], [0, 1, 0]], rtol=1e-13)
+    assert_allclose(B, [[1], [0], [0]], rtol=1e-13)
+    assert_allclose(C, [[1, 2, 3], [1, 2, 3]], rtol=1e-13)
+    assert_allclose(D, [[0], [0]], rtol=1e-13)
+    num, den = ss2tf(A, B, C, D)
+    assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
+    assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
+    tf = (np.array([1, [2, 3]], dtype=object), [1, 6])
+    A, B, C, D = tf2ss(*tf)
+    assert_allclose(A, [[-6]], rtol=1e-31)
+    assert_allclose(B, [[1]], rtol=1e-31)
+    assert_allclose(C, [[1], [-9]], rtol=1e-31)
+    assert_allclose(D, [[0], [2]], rtol=1e-31)
+    num, den = ss2tf(A, B, C, D)
+    assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
+    assert_allclose(den, [1, 6], rtol=1e-13)
+    tf = (np.array([[1, -3], [1, 2, 3]], dtype=object), [1, 6, 5])
+    A, B, C, D = tf2ss(*tf)
+    assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
+    assert_allclose(B, [[1], [0]], rtol=1e-13)
+    assert_allclose(C, [[1, -3], [-4, -2]], rtol=1e-13)
+    assert_allclose(D, [[0], [1]], rtol=1e-13)
+    num, den = ss2tf(A, B, C, D)
+    assert_allclose(num, [[0, 1, -3], [1, 2, 3]], rtol=1e-13)
+    assert_allclose(den, [1, 6, 5], rtol=1e-13)

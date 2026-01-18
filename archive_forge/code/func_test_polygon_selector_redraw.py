@@ -1,0 +1,23 @@
+import functools
+import io
+from unittest import mock
+import matplotlib as mpl
+from matplotlib.backend_bases import MouseEvent
+import matplotlib.colors as mcolors
+import matplotlib.widgets as widgets
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.lines import Line2D
+from matplotlib.testing.decorators import check_figures_equal, image_comparison
+from matplotlib.testing.widgets import (click_and_drag, do_event, get_ax,
+import numpy as np
+from numpy.testing import assert_allclose
+import pytest
+@pytest.mark.parametrize('draw_bounding_box', [False, True])
+def test_polygon_selector_redraw(ax, draw_bounding_box):
+    verts = [(50, 50), (150, 50), (50, 150)]
+    event_sequence = [*polygon_place_vertex(*verts[0]), *polygon_place_vertex(*verts[1]), *polygon_place_vertex(*verts[2]), *polygon_place_vertex(*verts[0]), *polygon_remove_vertex(*verts[1]), *polygon_remove_vertex(*verts[2]), *polygon_place_vertex(*verts[1])]
+    tool = widgets.PolygonSelector(ax, onselect=noop, draw_bounding_box=draw_bounding_box)
+    for etype, event_args in event_sequence:
+        do_event(tool, etype, **event_args)
+    assert tool.verts == verts[0:2]

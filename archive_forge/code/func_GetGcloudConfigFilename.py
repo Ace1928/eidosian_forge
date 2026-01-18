@@ -1,0 +1,37 @@
+import codecs
+import copy
+import http.client
+import json
+import logging
+import os
+import pkgutil
+import platform
+import sys
+import textwrap
+import time
+import traceback
+from typing import Any, Dict, List, Optional, TextIO
+from absl import app
+from absl import flags
+from google.auth import version as google_auth_version
+from google.oauth2 import credentials as google_oauth2
+import googleapiclient
+import httplib2
+import oauth2client_4_0.client
+import requests
+import urllib3
+from utils import bq_error
+from utils import bq_logging
+from pyglib import stringutil
+def GetGcloudConfigFilename() -> str:
+    """Returns the best guess for the user's gcloud configuration file."""
+    home = os.environ.get('HOME')
+    if not home:
+        return ''
+    try:
+        with open(home + '/.config/gcloud/active_config') as active_config_file:
+            active_config = active_config_file.read().strip()
+            return home + '/.config/gcloud/configurations/config_' + active_config
+    except IOError:
+        logging.warning('Could not find gcloud config file')
+        return ''

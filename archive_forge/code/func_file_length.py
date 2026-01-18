@@ -1,0 +1,7 @@
+from .message_media_downloadable import DownloadableMediaMessageProtocolEntity
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message_meta import MessageMetaAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_document import DocumentAttributes
+from yowsup.layers.protocol_messages.protocolentities.attributes.attributes_message import MessageAttributes
+@file_length.setter
+def file_length(self, value):
+    self.media_specific_attributes.file_length = value

@@ -1,0 +1,32 @@
+import itertools
+import logging
+from cliff import command
+from cliff import show
+from designateclient.v2.cli import common
+class SetQuotasCommand(show.ShowOne):
+    """Set quotas"""
+
+    def _build_options_list(self):
+        return itertools.chain(DNS_QUOTAS.items())
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        common.add_all_common_options(parser)
+        parser.add_argument('--project-id', help='Project ID')
+        for k, v in self._build_options_list():
+            parser.add_argument(f'--{v}', metavar=f'<{v}>', dest=k, type=int, help=f'New value for the {v} quota')
+        return parser
+
+    def take_action(self, parsed_args):
+        client = self.app.client_manager.dns
+        common.set_all_common_headers(client, parsed_args)
+        quotas = {}
+        for k, v in DNS_QUOTAS.items():
+            value = getattr(parsed_args, k, None)
+            if value is not None:
+                quotas[k] = value
+        proj_id = parsed_args.project_id or client.session.get_project_id()
+        if parsed_args.project_id != client.session.get_project_id():
+            common.set_all_projects(client, True)
+        updated = client.quotas.update(proj_id, quotas)
+        return zip(*sorted(updated.items()))

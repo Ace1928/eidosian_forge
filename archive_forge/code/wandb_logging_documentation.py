@@ -1,0 +1,1 @@
+Wrap a standard python function and log to W&B.

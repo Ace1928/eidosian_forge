@@ -1,0 +1,44 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import unicode_literals
+import os
+import time
+from apitools.base.py import exceptions as apitools_exceptions
+from apitools.base.py import http_wrapper
+from googlecloudsdk.api_lib.compute import constants
+from googlecloudsdk.api_lib.container import constants as gke_constants
+from googlecloudsdk.api_lib.container import util
+from googlecloudsdk.api_lib.util import apis as core_apis
+from googlecloudsdk.calliope import base
+from googlecloudsdk.calliope import exceptions
+from googlecloudsdk.command_lib.util.apis import arg_utils
+from googlecloudsdk.command_lib.util.args import labels_util
+from googlecloudsdk.core import log
+from googlecloudsdk.core import properties
+from googlecloudsdk.core import resources as cloud_resources
+from googlecloudsdk.core import yaml
+from googlecloudsdk.core.console import console_io
+from googlecloudsdk.core.console import progress_tracker
+from googlecloudsdk.core.util import times
+import six
+from six.moves import range  # pylint: disable=redefined-builtin
+import six.moves.http_client
+from cmd argument to set a surge upgrade strategy.
+def _GetMasterForClusterUpdate(options, messages):
+    """Gets the Master from update options."""
+    if options.no_master_logs:
+        options.master_logs = []
+    if options.master_logs is not None:
+        config = messages.MasterSignalsConfig()
+        if APISERVER in options.master_logs:
+            config.logEnabledComponents.append(messages.MasterSignalsConfig.LogEnabledComponentsValueListEntryValuesEnum.APISERVER)
+        if SCHEDULER in options.master_logs:
+            config.logEnabledComponents.append(messages.MasterSignalsConfig.LogEnabledComponentsValueListEntryValuesEnum.SCHEDULER)
+        if CONTROLLER_MANAGER in options.master_logs:
+            config.logEnabledComponents.append(messages.MasterSignalsConfig.LogEnabledComponentsValueListEntryValuesEnum.CONTROLLER_MANAGER)
+        if ADDON_MANAGER in options.master_logs:
+            config.logEnabledComponents.append(messages.MasterSignalsConfig.LogEnabledComponentsValueListEntryValuesEnum.ADDON_MANAGER)
+        return messages.Master(signalsConfig=config)
+    if options.enable_master_metrics is not None:
+        config = messages.MasterSignalsConfig(enableMetrics=options.enable_master_metrics, logEnabledComponents=[messages.MasterSignalsConfig.LogEnabledComponentsValueListEntryValuesEnum.COMPONENT_UNSPECIFIED])
+        return messages.Master(signalsConfig=config)

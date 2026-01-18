@@ -1,0 +1,40 @@
+from unittest import mock
+from unittest.mock import call
+from osc_lib import exceptions
+from openstackclient.identity.v3 import credential
+from openstackclient.tests.unit.identity.v3 import fakes as identity_fakes
+from openstackclient.tests.unit import utils
+class TestCredentialSet(TestCredential):
+    credential = identity_fakes.FakeCredential.create_one_credential()
+
+    def setUp(self):
+        super(TestCredentialSet, self).setUp()
+        self.cmd = credential.SetCredential(self.app, None)
+
+    def test_credential_set_no_options(self):
+        arglist = [self.credential.id]
+        self.assertRaises(utils.ParserException, self.check_parser, self.cmd, arglist, [])
+
+    def test_credential_set_missing_user(self):
+        arglist = ['--type', 'ec2', '--data', self.credential.blob, self.credential.id]
+        self.assertRaises(utils.ParserException, self.check_parser, self.cmd, arglist, [])
+
+    def test_credential_set_missing_type(self):
+        arglist = ['--user', self.credential.user_id, '--data', self.credential.blob, self.credential.id]
+        self.assertRaises(utils.ParserException, self.check_parser, self.cmd, arglist, [])
+
+    def test_credential_set_missing_data(self):
+        arglist = ['--user', self.credential.user_id, '--type', 'ec2', self.credential.id]
+        self.assertRaises(utils.ParserException, self.check_parser, self.cmd, arglist, [])
+
+    def test_credential_set_valid(self):
+        arglist = ['--user', self.credential.user_id, '--type', 'ec2', '--data', self.credential.blob, self.credential.id]
+        parsed_args = self.check_parser(self.cmd, arglist, [])
+        result = self.cmd.take_action(parsed_args)
+        self.assertIsNone(result)
+
+    def test_credential_set_valid_with_project(self):
+        arglist = ['--user', self.credential.user_id, '--type', 'ec2', '--data', self.credential.blob, '--project', self.credential.project_id, self.credential.id]
+        parsed_args = self.check_parser(self.cmd, arglist, [])
+        result = self.cmd.take_action(parsed_args)
+        self.assertIsNone(result)

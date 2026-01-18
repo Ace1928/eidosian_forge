@@ -1,0 +1,19 @@
+from doctest import ELLIPSIS
+from pprint import pformat
+import sys
+import _thread
+import unittest
+from testtools import (
+from testtools.compat import (
+from testtools.content import (
+from testtools.matchers import (
+from testtools.testcase import (
+from testtools.testresult.doubles import (
+from testtools.tests.helpers import (
+from testtools.tests.samplecases import (
+class MyExMeta(type):
+
+    def __init__(cls, name, bases, dct):
+        """ Do some dummy metaclass stuff """
+        dct.update({'answer': 42})
+        type.__init__(cls, name, bases, dct)

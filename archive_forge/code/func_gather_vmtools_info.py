@@ -1,0 +1,6 @@
+from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.vmware.plugins.module_utils.vmware import PyVmomi, vmware_argument_spec
+def gather_vmtools_info(self):
+    vmtools_info = dict(vm_name=self.name, vm_uuid=self.uuid, vm_moid=self.moid, vm_use_instance_uuid=self.use_instance_uuid, vm_hw_version=self.current_vm_obj.config.version, vm_guest_id=self.current_vm_obj.summary.guest.guestId, vm_guest_fullname=self.current_vm_obj.summary.guest.guestFullName, vm_guest_hostname=self.current_vm_obj.summary.guest.hostName, vm_ipaddress=self.current_vm_obj.summary.guest.ipAddress, vm_tools_running_status=self.current_vm_obj.summary.guest.toolsRunningStatus, vm_tools_install_status=self.current_vm_obj.summary.guest.toolsStatus, vm_tools_version_status=self.current_vm_obj.summary.guest.toolsVersionStatus, vm_tools_install_type=self.current_vm_obj.config.tools.toolsInstallType, vm_tools_version=self.current_vm_obj.config.tools.toolsVersion, vm_tools_upgrade_policy=self.current_vm_obj.config.tools.toolsUpgradePolicy, vm_tools_last_install_count=self.current_vm_obj.config.tools.lastInstallInfo.counter)
+    return {'changed': False, 'failed': False, 'vmtools_info': vmtools_info}

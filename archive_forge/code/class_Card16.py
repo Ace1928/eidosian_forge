@@ -1,0 +1,10 @@
+from array import array
+import struct
+import sys
+import traceback
+import types
+from Xlib import X
+from Xlib.support import lock
+class Card16(ValueField):
+    structcode = 'H'
+    structvalues = 1

@@ -1,0 +1,97 @@
+import collections
+from tensorflow.python import pywrap_tfe as pywrap_tfe
+from tensorflow.python.eager import context as _context
+from tensorflow.python.eager import core as _core
+from tensorflow.python.eager import execute as _execute
+from tensorflow.python.framework import dtypes as _dtypes
+from tensorflow.security.fuzzing.py import annotation_types as _atypes
+from tensorflow.python.framework import op_def_registry as _op_def_registry
+from tensorflow.python.framework import ops as _ops
+from tensorflow.python.framework import op_def_library as _op_def_library
+from tensorflow.python.util.deprecation import deprecated_endpoints
+from tensorflow.python.util import dispatch as _dispatch
+from tensorflow.python.util.tf_export import tf_export
+from typing import TypeVar, List
+def non_max_suppression_v5(boxes: _atypes.TensorFuzzingAnnotation[TV_NonMaxSuppressionV5_T], scores: _atypes.TensorFuzzingAnnotation[TV_NonMaxSuppressionV5_T], max_output_size: _atypes.TensorFuzzingAnnotation[_atypes.Int32], iou_threshold: _atypes.TensorFuzzingAnnotation[TV_NonMaxSuppressionV5_T], score_threshold: _atypes.TensorFuzzingAnnotation[TV_NonMaxSuppressionV5_T], soft_nms_sigma: _atypes.TensorFuzzingAnnotation[TV_NonMaxSuppressionV5_T], pad_to_max_output_size: bool=False, name=None):
+    """Greedily selects a subset of bounding boxes in descending order of score,
+
+  pruning away boxes that have high intersection-over-union (IOU) overlap
+  with previously selected boxes.  Bounding boxes with score less than
+  `score_threshold` are removed.  Bounding boxes are supplied as
+  [y1, x1, y2, x2], where (y1, x1) and (y2, x2) are the coordinates of any
+  diagonal pair of box corners and the coordinates can be provided as normalized
+  (i.e., lying in the interval [0, 1]) or absolute.  Note that this algorithm
+  is agnostic to where the origin is in the coordinate system and more
+  generally is invariant to orthogonal transformations and translations
+  of the coordinate system; thus translating or reflections of the coordinate
+  system result in the same boxes being selected by the algorithm.
+  The output of this operation is a set of integers indexing into the input
+  collection of bounding boxes representing the selected boxes.  The bounding
+  box coordinates corresponding to the selected indices can then be obtained
+  using the `tf.gather operation`.  For example:
+    selected_indices = tf.image.non_max_suppression_v2(
+        boxes, scores, max_output_size, iou_threshold, score_threshold)
+    selected_boxes = tf.gather(boxes, selected_indices)
+  This op also supports a Soft-NMS (with Gaussian weighting) mode (c.f.
+  Bodla et al, https://arxiv.org/abs/1704.04503) where boxes reduce the score
+  of other overlapping boxes instead of directly causing them to be pruned.
+  To enable this Soft-NMS mode, set the `soft_nms_sigma` parameter to be
+  larger than 0.
+
+  Args:
+    boxes: A `Tensor`. Must be one of the following types: `half`, `float32`.
+      A 2-D float tensor of shape `[num_boxes, 4]`.
+    scores: A `Tensor`. Must have the same type as `boxes`.
+      A 1-D float tensor of shape `[num_boxes]` representing a single
+      score corresponding to each box (each row of boxes).
+    max_output_size: A `Tensor` of type `int32`.
+      A scalar integer tensor representing the maximum number of
+      boxes to be selected by non max suppression.
+    iou_threshold: A `Tensor`. Must have the same type as `boxes`.
+      A 0-D float tensor representing the threshold for deciding whether
+      boxes overlap too much with respect to IOU.
+    score_threshold: A `Tensor`. Must have the same type as `boxes`.
+      A 0-D float tensor representing the threshold for deciding when to remove
+      boxes based on score.
+    soft_nms_sigma: A `Tensor`. Must have the same type as `boxes`.
+      A 0-D float tensor representing the sigma parameter for Soft NMS; see Bodla et
+      al (c.f. https://arxiv.org/abs/1704.04503).  When `soft_nms_sigma=0.0` (which
+      is default), we fall back to standard (hard) NMS.
+    pad_to_max_output_size: An optional `bool`. Defaults to `False`.
+      If true, the output `selected_indices` is padded to be of length
+      `max_output_size`. Defaults to false.
+    name: A name for the operation (optional).
+
+  Returns:
+    A tuple of `Tensor` objects (selected_indices, selected_scores, valid_outputs).
+
+    selected_indices: A `Tensor` of type `int32`.
+    selected_scores: A `Tensor`. Has the same type as `boxes`.
+    valid_outputs: A `Tensor` of type `int32`.
+  """
+    _ctx = _context._context or _context.context()
+    tld = _ctx._thread_local_data
+    if tld.is_eager:
+        try:
+            _result = pywrap_tfe.TFE_Py_FastPathExecute(_ctx, 'NonMaxSuppressionV5', name, boxes, scores, max_output_size, iou_threshold, score_threshold, soft_nms_sigma, 'pad_to_max_output_size', pad_to_max_output_size)
+            _result = _NonMaxSuppressionV5Output._make(_result)
+            return _result
+        except _core._NotOkStatusException as e:
+            _ops.raise_from_not_ok_status(e, name)
+        except _core._FallbackException:
+            pass
+        try:
+            return non_max_suppression_v5_eager_fallback(boxes, scores, max_output_size, iou_threshold, score_threshold, soft_nms_sigma, pad_to_max_output_size=pad_to_max_output_size, name=name, ctx=_ctx)
+        except _core._SymbolicException:
+            pass
+    if pad_to_max_output_size is None:
+        pad_to_max_output_size = False
+    pad_to_max_output_size = _execute.make_bool(pad_to_max_output_size, 'pad_to_max_output_size')
+    _, _, _op, _outputs = _op_def_library._apply_op_helper('NonMaxSuppressionV5', boxes=boxes, scores=scores, max_output_size=max_output_size, iou_threshold=iou_threshold, score_threshold=score_threshold, soft_nms_sigma=soft_nms_sigma, pad_to_max_output_size=pad_to_max_output_size, name=name)
+    _result = _outputs[:]
+    if _execute.must_record_gradient():
+        _attrs = ('T', _op._get_attr_type('T'), 'pad_to_max_output_size', _op._get_attr_bool('pad_to_max_output_size'))
+        _inputs_flat = _op.inputs
+        _execute.record_gradient('NonMaxSuppressionV5', _inputs_flat, _attrs, _result)
+    _result = _NonMaxSuppressionV5Output._make(_result)
+    return _result

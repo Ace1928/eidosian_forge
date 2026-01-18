@@ -1,0 +1,39 @@
+from __future__ import annotations
+import collections.abc as c
+import json
+import os
+import re
+import typing as t
+from ...encoding import (
+from ...io import (
+from ...util import (
+from ...util_common import (
+from ...config import (
+from ...python_requirements import (
+from ...target import (
+from ...data import (
+from ...pypi_proxy import (
+from ...provisioning import (
+from ...coverage_util import (
+def enumerate_powershell_lines(path: str, collection_search_re: t.Optional[t.Pattern], collection_sub_re: t.Optional[t.Pattern]) -> c.Generator[tuple[str, dict[int, int]], None, None]:
+    """Enumerate PowerShell code coverage lines in the given file."""
+    if os.path.getsize(path) == 0:
+        display.warning('Empty coverage file: %s' % path, verbosity=2)
+        return
+    try:
+        coverage_run = read_json_file(path)
+    except Exception as ex:
+        display.error('%s' % ex)
+        return
+    for filename, hits in coverage_run.items():
+        filename = sanitize_filename(filename, collection_search_re=collection_search_re, collection_sub_re=collection_sub_re)
+        if not filename:
+            continue
+        if isinstance(hits, dict) and (not hits.get('Line')):
+            hits = dict(((int(key), value) for key, value in hits.items()))
+            yield (filename, hits)
+            continue
+        if not isinstance(hits, list):
+            hits = [hits]
+        hits = dict(((hit['Line'], hit['HitCount']) for hit in hits if hit))
+        yield (filename, hits)

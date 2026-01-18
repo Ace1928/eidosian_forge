@@ -1,0 +1,51 @@
+import warnings
+import itertools
+import pytest
+import numpy as np
+from numpy.core.numeric import normalize_axis_tuple
+from numpy.testing import (
+from numpy.ma.testutils import (
+from numpy.ma.core import (
+from numpy.ma.extras import (
+class TestShapeBase:
+
+    def test_atleast_2d(self):
+        a = masked_array([0, 1, 2], mask=[0, 1, 0])
+        b = atleast_2d(a)
+        assert_equal(b.shape, (1, 3))
+        assert_equal(b.mask.shape, b.data.shape)
+        assert_equal(a.shape, (3,))
+        assert_equal(a.mask.shape, a.data.shape)
+        assert_equal(b.mask.shape, b.data.shape)
+
+    def test_shape_scalar(self):
+        b = atleast_1d(1.0)
+        assert_equal(b.shape, (1,))
+        assert_equal(b.mask.shape, b.shape)
+        assert_equal(b.data.shape, b.shape)
+        b = atleast_1d(1.0, 2.0)
+        for a in b:
+            assert_equal(a.shape, (1,))
+            assert_equal(a.mask.shape, a.shape)
+            assert_equal(a.data.shape, a.shape)
+        b = atleast_2d(1.0)
+        assert_equal(b.shape, (1, 1))
+        assert_equal(b.mask.shape, b.shape)
+        assert_equal(b.data.shape, b.shape)
+        b = atleast_2d(1.0, 2.0)
+        for a in b:
+            assert_equal(a.shape, (1, 1))
+            assert_equal(a.mask.shape, a.shape)
+            assert_equal(a.data.shape, a.shape)
+        b = atleast_3d(1.0)
+        assert_equal(b.shape, (1, 1, 1))
+        assert_equal(b.mask.shape, b.shape)
+        assert_equal(b.data.shape, b.shape)
+        b = atleast_3d(1.0, 2.0)
+        for a in b:
+            assert_equal(a.shape, (1, 1, 1))
+            assert_equal(a.mask.shape, a.shape)
+            assert_equal(a.data.shape, a.shape)
+        b = diagflat(1.0)
+        assert_equal(b.shape, (1, 1))
+        assert_equal(b.mask.shape, b.data.shape)

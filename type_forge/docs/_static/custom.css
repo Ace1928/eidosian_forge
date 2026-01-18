@@ -1,0 +1,15 @@
+/* Custom styling for Type Forge documentation */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Better code block styling */
+.highlight {
+    background: #f8f8f8;
+    border-radius: 4px;
+}
+
+/* Styling for admonitions */
+.admonition {
+    border-radius: 4px;
+}

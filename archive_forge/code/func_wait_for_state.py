@@ -1,0 +1,10 @@
+import time
+from boto.compat import json
+def wait_for_state(self, state):
+    """
+        Performs polling of CloudSearch to wait for the ``state``
+        of this object to change to the provided state.
+        """
+    while self.state != state:
+        time.sleep(5)
+        self.refresh()

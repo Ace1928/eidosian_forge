@@ -1,0 +1,39 @@
+import copy
+import dataclasses
+import logging
+import functools
+import time
+import numpy as np
+import rustworkx as rx
+from qiskit.converters import dag_to_circuit
+from qiskit.circuit import QuantumRegister
+from qiskit.dagcircuit import DAGCircuit
+from qiskit.transpiler.passes.layout.set_layout import SetLayout
+from qiskit.transpiler.passes.layout.full_ancilla_allocation import FullAncillaAllocation
+from qiskit.transpiler.passes.layout.enlarge_with_ancilla import EnlargeWithAncilla
+from qiskit.transpiler.passes.layout.apply_layout import ApplyLayout
+from qiskit.transpiler.passes.layout import disjoint_utils
+from qiskit.transpiler.passmanager import PassManager
+from qiskit.transpiler.layout import Layout
+from qiskit.transpiler.basepasses import TransformationPass
+from qiskit.transpiler.exceptions import TranspilerError
+from qiskit._accelerate.nlayout import NLayout
+from qiskit._accelerate.sabre_layout import sabre_layout_and_routing
+from qiskit._accelerate.sabre_swap import (
+from qiskit.transpiler.passes.routing.sabre_swap import _build_sabre_dag, _apply_sabre_result
+from qiskit.transpiler.target import Target
+from qiskit.transpiler.coupling import CouplingMap
+from qiskit.utils.parallel import CPU_COUNT
+def _compose_layouts(self, initial_layout, pass_final_layout, qregs):
+    """Return the real final_layout resulting from the composition
+        of an initial_layout with the final_layout reported by a pass.
+
+        The routing passes internally start with a trivial layout, as the
+        layout gets applied to the circuit prior to running them. So the
+        ``"final_layout"`` they report must be amended to account for the actual
+        initial_layout that was selected.
+        """
+    trivial_layout = Layout.generate_trivial_layout(*qregs)
+    qubit_map = Layout.combine_into_edge_map(initial_layout, trivial_layout)
+    final_layout = {v: pass_final_layout._v2p[qubit_map[v]] for v in initial_layout._v2p}
+    return Layout(final_layout)

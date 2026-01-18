@@ -1,0 +1,11 @@
+import os
+from ...utils.filemanip import split_filename
+from ..base import (
+class PicoPDFsInputSpec(StdOutCommandLineInputSpec):
+    in_file = File(exists=True, argstr='< %s', mandatory=True, position=1, desc='voxel-order data filename')
+    inputmodel = traits.Enum('dt', 'multitensor', 'pds', argstr='-inputmodel %s', position=2, desc='input model type', usedefault=True)
+    luts = InputMultiPath(File(exists=True), argstr='-luts %s', mandatory=True, desc='Files containing the lookup tables.For tensor data, one lut must be specified for each type of inversion used in the image (one-tensor, two-tensor, three-tensor).For pds, the number of LUTs must match -numpds (it is acceptable to use the same LUT several times - see example, above).These LUTs may be generated with dtlutgen.')
+    pdf = traits.Enum('bingham', 'watson', 'acg', argstr='-pdf %s', position=4, desc='Specifies the PDF to use. There are three choices:\n\n  * watson - The Watson distribution. This distribution is rotationally symmetric.\n  * bingham - The Bingham distributionn, which allows elliptical probability density contours.\n  * acg - The Angular Central Gaussian distribution, which also allows elliptical probability\n    density contours.\n\n', usedefault=True)
+    directmap = traits.Bool(argstr='-directmap', desc='Only applicable when using pds as the inputmodel. Use direct mapping between the eigenvalues and the distribution parameters instead of the log of the eigenvalues.')
+    maxcomponents = traits.Int(argstr='-maxcomponents %d', units='NA', desc='The maximum number of tensor components in a voxel (default 2) for multitensor data.Currently, only the default is supported, but future releases may allow the input of three-tensor data using this option.')
+    numpds = traits.Int(argstr='-numpds %d', units='NA', desc='The maximum number of PDs in a voxel (default 3) for PD data.This option determines the size of the input and output voxels.This means that the data file may be large enough to accommodate three or more PDs,but does not mean that any of the voxels are classified as containing three or more PDs.')

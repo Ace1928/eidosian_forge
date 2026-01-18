@@ -1,0 +1,19 @@
+import copy
+from io import BytesIO
+import os
+from pathlib import Path
+import pickle
+import warnings
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal as assert_arr_almost_eq
+import pyproj
+import pytest
+import shapely.geometry as sgeom
+import cartopy.crs as ccrs
+def test_transform_points_180(self):
+    x = np.array([-190, 190])
+    y = np.array([0, 0])
+    proj = ccrs.PlateCarree()
+    res = proj.transform_points(x=x, y=y, src_crs=proj)
+    assert_array_equal(res[..., :2], [[170, 0], [-170, 0]])

@@ -1,0 +1,50 @@
+import inspect
+import logging
+import sys
+import textwrap
+import pyomo.core.expr as EXPR
+import pyomo.core.base as BASE
+from pyomo.core.base.indexed_component_slice import IndexedComponent_slice
+from pyomo.core.base.initializer import Initializer
+from pyomo.core.base.component import Component, ActiveComponent
+from pyomo.core.base.config import PyomoOptions
+from pyomo.core.base.enums import SortComponents
+from pyomo.core.base.global_set import UnindexedComponent_set
+from pyomo.core.expr.numeric_expr import _ndarray
+from pyomo.core.pyomoobject import PyomoObject
+from pyomo.common import DeveloperError
+from pyomo.common.autoslots import fast_deepcopy
+from pyomo.common.collections import ComponentSet
+from pyomo.common.deprecation import deprecated, deprecation_warning
+from pyomo.common.errors import TemplateExpressionError
+from pyomo.common.modeling import NOTSET
+from pyomo.common.numeric_types import native_types
+from pyomo.common.sorting import sorted_robust
+from collections.abc import Sequence
+class ActiveIndexedComponent(IndexedComponent, ActiveComponent):
+    """
+    This is the base class for all indexed modeling components
+    whose data members are subclasses of ActiveComponentData, e.g.,
+    can be activated or deactivated.
+
+    The activate and deactivate methods activate both the
+    component as well as all component data values.
+    """
+
+    def __init__(self, *args, **kwds):
+        IndexedComponent.__init__(self, *args, **kwds)
+        self._active = True
+
+    def activate(self):
+        """Set the active attribute to True"""
+        super(ActiveIndexedComponent, self).activate()
+        if self.is_indexed():
+            for component_data in self.values():
+                component_data.activate()
+
+    def deactivate(self):
+        """Set the active attribute to False"""
+        super(ActiveIndexedComponent, self).deactivate()
+        if self.is_indexed():
+            for component_data in self.values():
+                component_data.deactivate()

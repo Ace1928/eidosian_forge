@@ -1,0 +1,67 @@
+import random
+from sympy import tensordiagonal, eye, KroneckerDelta, Array
+from sympy.core.symbol import symbols
+from sympy.functions.elementary.trigonometric import (cos, sin)
+from sympy.matrices.expressions.diagonal import DiagMatrix
+from sympy.matrices.expressions.matexpr import MatrixSymbol
+from sympy.matrices.expressions.special import ZeroMatrix
+from sympy.tensor.array.arrayop import (permutedims, tensorcontraction, tensorproduct)
+from sympy.tensor.array.dense_ndim_array import ImmutableDenseNDimArray
+from sympy.combinatorics import Permutation
+from sympy.tensor.array.expressions.array_expressions import ZeroArray, OneArray, ArraySymbol, ArrayElement, \
+from sympy.testing.pytest import raises
+def test_arrayexpr_array_flatten():
+    expr1 = _array_tensor_product(M, N)
+    expr2 = _array_tensor_product(P, Q)
+    expr = _array_tensor_product(expr1, expr2)
+    assert expr == _array_tensor_product(M, N, P, Q)
+    assert expr.args == (M, N, P, Q)
+    cg1 = _array_contraction(expr1, (1, 2))
+    cg2 = _array_contraction(expr2, (0, 3))
+    expr = _array_tensor_product(cg1, cg2)
+    assert expr == _array_contraction(_array_tensor_product(M, N, P, Q), (1, 2), (4, 7))
+    expr = _array_tensor_product(M, cg1)
+    assert expr == _array_contraction(_array_tensor_product(M, M, N), (3, 4))
+    cgnested = _array_contraction(cg1, (0, 1))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N), (0, 3), (1, 2))
+    cgnested = _array_contraction(_array_tensor_product(cg1, cg2), (0, 3))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N, P, Q), (0, 6), (1, 2), (4, 7))
+    cg3 = _array_contraction(_array_tensor_product(M, N, P, Q), (1, 3), (2, 4))
+    cgnested = _array_contraction(cg3, (0, 1))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N, P, Q), (0, 5), (1, 3), (2, 4))
+    cgnested = _array_contraction(cg3, (0, 3), (1, 2))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N, P, Q), (0, 7), (1, 3), (2, 4), (5, 6))
+    cg4 = _array_contraction(_array_tensor_product(M, N, P, Q), (1, 5), (3, 7))
+    cgnested = _array_contraction(cg4, (0, 1))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N, P, Q), (0, 2), (1, 5), (3, 7))
+    cgnested = _array_contraction(cg4, (0, 1), (2, 3))
+    assert cgnested == _array_contraction(_array_tensor_product(M, N, P, Q), (0, 2), (1, 5), (3, 7), (4, 6))
+    cg = _array_diagonal(cg4)
+    assert cg == cg4
+    assert isinstance(cg, type(cg4))
+    cg1 = _array_diagonal(expr1, (1, 2))
+    cg2 = _array_diagonal(expr2, (0, 3))
+    cg3 = _array_diagonal(_array_tensor_product(M, N, P, Q), (1, 3), (2, 4))
+    cg4 = _array_diagonal(_array_tensor_product(M, N, P, Q), (1, 5), (3, 7))
+    cgnested = _array_diagonal(cg1, (0, 1))
+    assert cgnested == _array_diagonal(_array_tensor_product(M, N), (1, 2), (0, 3))
+    cgnested = _array_diagonal(cg3, (1, 2))
+    assert cgnested == _array_diagonal(_array_tensor_product(M, N, P, Q), (1, 3), (2, 4), (5, 6))
+    cgnested = _array_diagonal(cg4, (1, 2))
+    assert cgnested == _array_diagonal(_array_tensor_product(M, N, P, Q), (1, 5), (3, 7), (2, 4))
+    cg = _array_add(M, N)
+    cg2 = _array_add(cg, P)
+    assert isinstance(cg2, ArrayAdd)
+    assert cg2.args == (M, N, P)
+    assert cg2.shape == (k, k)
+    expr = _array_tensor_product(_array_diagonal(X, (0, 1)), _array_diagonal(A, (0, 1)))
+    assert expr == _array_diagonal(_array_tensor_product(X, A), (0, 1), (2, 3))
+    expr1 = _array_diagonal(_array_tensor_product(X, A), (1, 2))
+    expr2 = _array_tensor_product(expr1, a)
+    assert expr2 == _permute_dims(_array_diagonal(_array_tensor_product(X, A, a), (1, 2)), [0, 1, 4, 2, 3])
+    expr1 = _array_contraction(_array_tensor_product(X, A), (1, 2))
+    expr2 = _array_tensor_product(expr1, a)
+    assert isinstance(expr2, ArrayContraction)
+    assert isinstance(expr2.expr, ArrayTensorProduct)
+    cg = _array_tensor_product(_array_diagonal(_array_tensor_product(A, X, Y), (0, 3), (1, 5)), a, b)
+    assert cg == _permute_dims(_array_diagonal(_array_tensor_product(A, X, Y, a, b), (0, 3), (1, 5)), [0, 1, 6, 7, 2, 3, 4, 5])

@@ -1,0 +1,2 @@
+class GimbalDerivativeNotInvertibleError(VerificationError):
+    pass

@@ -1,0 +1,12 @@
+from __future__ import absolute_import
+from apitools.base.protorpclite import messages as _messages
+from apitools.base.py import encoding
+from apitools.base.py import extra_types
+class ComputeHeadCursorResponse(_messages.Message):
+    """Response containing the head cursor for the requested topic and
+  partition.
+
+  Fields:
+    headCursor: The head cursor.
+  """
+    headCursor = _messages.MessageField('Cursor', 1)

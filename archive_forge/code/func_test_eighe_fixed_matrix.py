@@ -1,0 +1,21 @@
+from mpmath import mp
+from mpmath import libmp
+def test_eighe_fixed_matrix():
+    A = mp.matrix([[2, 3], [3, 5]])
+    run_eigsy(A)
+    run_eighe(A)
+    A = mp.matrix([[7, -11], [-11, 13]])
+    run_eigsy(A)
+    run_eighe(A)
+    A = mp.matrix([[2, 11, 7], [11, 3, 13], [7, 13, 5]])
+    run_eigsy(A)
+    run_eighe(A)
+    A = mp.matrix([[2, 0, 7], [0, 3, 1], [7, 1, 5]])
+    run_eigsy(A)
+    run_eighe(A)
+    A = mp.matrix([[2, 3 + 7j], [3 - 7j, 5]])
+    run_eighe(A)
+    A = mp.matrix([[2, -11j, 0], [+11j, 3, 29j], [0, -29j, 5]])
+    run_eighe(A)
+    A = mp.matrix([[2, 11 + 17j, 7 + 19j], [11 - 17j, 3, -13 + 23j], [7 - 19j, -13 - 23j, 5]])
+    run_eighe(A)

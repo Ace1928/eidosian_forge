@@ -1,0 +1,17 @@
+import boto
+import boto.jsonresponse
+from boto.compat import json, six
+from boto.resultset import ResultSet
+from boto.iam.summarymap import SummaryMap
+from boto.connection import AWSQueryConnection
+def get_account_alias(self):
+    """
+        Get the alias for the current account.
+
+        This is referred to in the docs as list_account_aliases,
+        but it seems you can only have one account alias currently.
+
+        For more information on account id aliases, please see
+        http://goo.gl/ToB7G
+        """
+    return self.get_response('ListAccountAliases', {}, list_marker='AccountAliases')

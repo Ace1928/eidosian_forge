@@ -1,0 +1,2 @@
+class InvalidPrivilegeError(PostgresDeclareError):
+    pass

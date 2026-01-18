@@ -1,0 +1,48 @@
+from __future__ import absolute_import, division, unicode_literals
+from .._utils import default_etree
+def getTreeBuilder(treeType, implementation=None, **kwargs):
+    """Get a TreeBuilder class for various types of trees with built-in support
+
+    :arg treeType: the name of the tree type required (case-insensitive). Supported
+        values are:
+
+        * "dom" - A generic builder for DOM implementations, defaulting to a
+          xml.dom.minidom based implementation.
+        * "etree" - A generic builder for tree implementations exposing an
+          ElementTree-like interface, defaulting to xml.etree.cElementTree if
+          available and xml.etree.ElementTree if not.
+        * "lxml" - A etree-based builder for lxml.etree, handling limitations
+          of lxml's implementation.
+
+    :arg implementation: (Currently applies to the "etree" and "dom" tree
+        types). A module implementing the tree type e.g. xml.etree.ElementTree
+        or xml.etree.cElementTree.
+
+    :arg kwargs: Any additional options to pass to the TreeBuilder when
+        creating it.
+
+    Example:
+
+    >>> from html5lib.treebuilders import getTreeBuilder
+    >>> builder = getTreeBuilder('etree')
+
+    """
+    treeType = treeType.lower()
+    if treeType not in treeBuilderCache:
+        if treeType == 'dom':
+            from . import dom
+            if implementation is None:
+                from xml.dom import minidom
+                implementation = minidom
+            return dom.getDomModule(implementation, **kwargs).TreeBuilder
+        elif treeType == 'lxml':
+            from . import etree_lxml
+            treeBuilderCache[treeType] = etree_lxml.TreeBuilder
+        elif treeType == 'etree':
+            from . import etree
+            if implementation is None:
+                implementation = default_etree
+            return etree.getETreeModule(implementation, **kwargs).TreeBuilder
+        else:
+            raise ValueError('Unrecognised treebuilder "%s" ' % treeType)
+    return treeBuilderCache.get(treeType)

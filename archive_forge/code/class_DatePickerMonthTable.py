@@ -1,0 +1,19 @@
+from traitlets import (
+from .VuetifyWidget import VuetifyWidget
+class DatePickerMonthTable(VuetifyWidget):
+    _model_name = Unicode('DatePickerMonthTableModel').tag(sync=True)
+    color = Unicode(None, allow_none=True).tag(sync=True)
+    current = Unicode(None, allow_none=True).tag(sync=True)
+    dark = Bool(None, allow_none=True).tag(sync=True)
+    disabled = Bool(None, allow_none=True).tag(sync=True)
+    event_color = Union([List(Any()), Dict(), Unicode()], default_value=None, allow_none=True).tag(sync=True)
+    events = Union([List(Any()), Dict()], default_value=None, allow_none=True).tag(sync=True)
+    light = Bool(None, allow_none=True).tag(sync=True)
+    locale = Unicode(None, allow_none=True).tag(sync=True)
+    max = Unicode(None, allow_none=True).tag(sync=True)
+    min = Unicode(None, allow_none=True).tag(sync=True)
+    range = Bool(None, allow_none=True).tag(sync=True)
+    readonly = Bool(None, allow_none=True).tag(sync=True)
+    scrollable = Bool(None, allow_none=True).tag(sync=True)
+    table_date = Unicode(None, allow_none=True).tag(sync=True)
+    value = Union([Unicode(), List(Any())], default_value=None, allow_none=True).tag(sync=True)

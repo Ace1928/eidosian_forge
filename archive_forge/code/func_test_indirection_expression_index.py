@@ -1,0 +1,25 @@
+import pyomo.common.unittest as unittest
+from pyomo.contrib.cp import IntervalVar
+from pyomo.contrib.cp.scheduling_expr.step_function_expressions import (
+from pyomo.contrib.cp.repn.docplex_writer import docplex_available, LogicalToDoCplex
+from pyomo.core.base.range import NumericRange
+from pyomo.core.expr.numeric_expr import MinExpression, MaxExpression
+from pyomo.core.expr.logical_expr import (
+from pyomo.core.expr.relational_expr import NotEqualExpression
+from pyomo.environ import (
+def test_indirection_expression_index(self):
+    m = self.get_model()
+    m.a.domain = Integers
+    m.y = Var(within=[1, 3, 5])
+    e = m.a[m.x - m.y]
+    visitor = self.get_visitor()
+    expr = visitor.walk_expression((e, e, 0))
+    a = {}
+    for i in range(1, 8):
+        self.assertIn(id(m.a[i]), visitor.var_map)
+        a[i] = visitor.var_map[id(m.a[i])]
+    self.assertIn(id(m.x), visitor.var_map)
+    x = visitor.var_map[id(m.x)]
+    self.assertIn(id(m.y), visitor.var_map)
+    y = visitor.var_map[id(m.y)]
+    self.assertTrue(expr[1].equals(cp.element([a[i] for i in range(1, 8)], 0 + 1 * (x + -1 * y - 1) // 1)))

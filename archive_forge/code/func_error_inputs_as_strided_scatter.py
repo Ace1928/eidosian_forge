@@ -1,0 +1,39 @@
+from functools import wraps, partial
+from itertools import product, chain, islice
+import itertools
+import functools
+import copy
+import operator
+import random
+import unittest
+import math
+import enum
+import torch
+import numpy as np
+from torch import inf, nan
+from typing import Any, Dict, List, Tuple, Union, Sequence
+from torch.testing import make_tensor
+from torch.testing._internal.common_dtype import (
+from torch.testing._internal.common_device_type import \
+from torch.testing._internal.common_cuda import (
+from torch.testing._internal.common_utils import (
+import torch._refs as refs  # noqa: F401
+import torch._refs.nn.functional
+import torch._refs.special
+import torch._refs.linalg
+import torch._prims as prims  # noqa: F401
+from torch.utils import _pytree as pytree
+from packaging import version
+from torch.testing._internal.opinfo.core import (  # noqa: F401
+from torch.testing._internal.opinfo.refs import (  # NOQA: F401
+from torch.testing._internal.opinfo.utils import (
+from torch.testing._internal import opinfo
+from torch.testing._internal.opinfo.definitions.linalg import (
+from torch.testing._internal.opinfo.definitions.special import (
+from torch.testing._internal.opinfo.definitions._masked import (
+from torch.testing._internal.opinfo.definitions.sparse import (
+def error_inputs_as_strided_scatter(op_info, device, **kwargs):
+    make_arg = partial(make_tensor, device=device, dtype=torch.float32, requires_grad=False)
+    input_t = make_arg([4, 4])
+    input_src = make_arg([2, 2])
+    yield ErrorInput(SampleInput(input_t, input_src, [2, 2], [200, 200], storage_offset=0), error_regex='itemsize 4 requiring a storage size of 1604 are out of bounds for storage of size 64')

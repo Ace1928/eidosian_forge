@@ -1,0 +1,8 @@
+import os
+@classmethod
+def convert_boolean(cls, param, value):
+    """
+        For command line arguments, just the presence
+        of the option means True so just return True
+        """
+    return True

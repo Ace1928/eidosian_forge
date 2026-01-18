@@ -1,0 +1,75 @@
+import base64
+import datetime
+import hashlib
+import itertools
+import logging
+import os
+import re
+from subprocess import PIPE
+from subprocess import Popen
+import sys
+from tempfile import NamedTemporaryFile
+from time import mktime
+from uuid import uuid4 as gen_random_key
+import dateutil
+from urllib import parse
+from OpenSSL import crypto
+import pytz
+from saml2 import ExtensionElement
+from saml2 import SamlBase
+from saml2 import SAMLError
+from saml2 import class_name
+from saml2 import extension_elements_to_elements
+from saml2 import saml
+from saml2 import samlp
+from saml2.cert import CertificateError
+from saml2.cert import OpenSSLWrapper
+from saml2.cert import read_cert_from_file
+import saml2.cryptography.asymmetric
+import saml2.cryptography.pki
+import saml2.data.templates as _data_template
+from saml2.extension import pefim
+from saml2.extension.pefim import SPCertEnc
+from saml2.s_utils import Unsupported
+from saml2.saml import EncryptedAssertion
+from saml2.time_util import str_to_time
+from saml2.xml.schema import XMLSchemaError
+from saml2.xml.schema import validate as validate_doc_with_schema
+from saml2.xmldsig import ALLOWED_CANONICALIZATIONS
+from saml2.xmldsig import ALLOWED_TRANSFORMS
+from saml2.xmldsig import SIG_RSA_SHA1
+from saml2.xmldsig import SIG_RSA_SHA224
+from saml2.xmldsig import SIG_RSA_SHA256
+from saml2.xmldsig import SIG_RSA_SHA384
+from saml2.xmldsig import SIG_RSA_SHA512
+from saml2.xmldsig import TRANSFORM_C14N
+from saml2.xmldsig import TRANSFORM_ENVELOPED
+import saml2.xmldsig as ds
+from saml2.xmlenc import CipherData
+from saml2.xmlenc import CipherValue
+from saml2.xmlenc import EncryptedData
+from saml2.xmlenc import EncryptedKey
+from saml2.xmlenc import EncryptionMethod
+def cert_from_key_info_dict(key_info, ignore_age=False):
+    """Get all X509 certs from a KeyInfo dictionary. Care is taken to make sure
+    that the certs are continues sequences of bytes.
+
+    All certificates appearing in an X509Data element MUST relate to the
+    validation key by either containing it or being part of a certification
+    chain that terminates in a certificate containing the validation key.
+
+    :param key_info: The KeyInfo dictionary
+    :return: A possibly empty list of certs in their text representation
+    """
+    res = []
+    if 'x509_data' not in key_info:
+        return res
+    for x509_data in key_info['x509_data']:
+        x509_certificate = x509_data['x509_certificate']
+        cert = x509_certificate['text'].strip()
+        cert = '\n'.join(split_len(''.join([s.strip() for s in cert.split()]), 64))
+        if ignore_age or active_cert(cert):
+            res.append(cert)
+        else:
+            logger.info('Inactive cert')
+    return res

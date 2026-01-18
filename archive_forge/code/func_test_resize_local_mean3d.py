@@ -1,0 +1,29 @@
+import numpy as np
+import pytest
+from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
+from scipy.ndimage import map_coordinates
+from skimage._shared.testing import expected_warnings, run_in_parallel
+from skimage._shared.utils import _supported_float_type
+from skimage.color.colorconv import rgb2gray
+from skimage.data import checkerboard, astronaut
+from skimage.draw.draw import circle_perimeter_aa
+from skimage.feature.peak import peak_local_max
+from skimage.transform._warps import (
+from skimage.transform._geometric import (
+from skimage.util.dtype import img_as_float, _convert
+def test_resize_local_mean3d():
+    x = np.zeros((5, 5, 2), dtype=np.float64)
+    x[1, 1, 0] = 0
+    x[1, 1, 1] = 1
+    resized = resize_local_mean(x, (10, 10, 1))
+    ref = np.zeros((10, 10, 1))
+    ref[2:4, 2:4, :] = 0.5
+    assert_array_almost_equal(resized, ref)
+    resized = resize_local_mean(x, (10, 10, 1), grid_mode=False)
+    ref[1, 1, :] = 0.0703125
+    ref[2, 2, :] = 0.5
+    ref[3, 3, :] = 0.3828125
+    ref[1, 2, :] = ref[2, 1, :] = 0.1875
+    ref[1, 3, :] = ref[3, 1, :] = 0.1640625
+    ref[2, 3, :] = ref[3, 2, :] = 0.4375
+    assert_array_almost_equal(resized, ref)

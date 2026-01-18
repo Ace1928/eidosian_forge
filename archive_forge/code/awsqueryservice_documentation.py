@@ -1,0 +1,17 @@
+from __future__ import print_function
+import os
+import urlparse
+import boto
+import boto.connection
+import boto.jsonresponse
+import boto.exception
+from boto.roboto import awsqueryrequest
+
+        First checks to see if a url argument was explicitly passed
+        in.  If so, that will be used.  If not, it checks for the
+        existence of the environment variable specified in ENV_URL.
+        If this is set, it should contain a fully qualified URL to the
+        service you want to use.
+        Note that any values passed explicitly to the class constructor
+        will take precedence.
+        

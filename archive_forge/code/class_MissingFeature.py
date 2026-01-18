@@ -1,0 +1,10 @@
+import time
+from io import BytesIO
+from ... import errors as bzr_errors
+from ... import tests
+from ...tests.features import Feature, ModuleAvailableFeature
+from .. import import_dulwich
+class MissingFeature(tests.TestCase):
+
+    def test_dulwich(self):
+        self.requireFeature(DulwichFeature)

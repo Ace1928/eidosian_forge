@@ -1,0 +1,2 @@
+class DrillGeodesicError(RuntimeError):
+    pass
