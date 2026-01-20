@@ -1,13 +1,12 @@
 # TODO: knowledge_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Refactor**: Move `knowledge_core.py` into `src/knowledge_forge/` package.
+- [ ] **Integration**: Create a bridge to `graphrag` (e.g. `graphrag_adapter.py`).
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Standards**: Implement RDFLib export/import.
+- [ ] **Visualization**: Add `pyvis` support for interactive graph exploration.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Reasoning**: Experiment with OWL reasoners.

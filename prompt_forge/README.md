@@ -1,20 +1,26 @@
 # Prompt Forge
 
-**Part of the Eidosian Forge**
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## 📋 Overview
-The `prompt_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+**The Art of Asking.**
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+## 🗣️ Overview
 
-## 🛠️ Usage
-*(Pending documentation)*
+`prompt_forge` manages the library of prompts used by Eidos agents.
+It treats prompts as code, with versioning, templating, and testing.
 
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest prompt_forge/
+## 🏗️ Architecture
+- **Template Engine**: Uses `jinja2` for dynamic prompt generation.
+- **Registry**: A system to load and manage prompt versions.
+- **Optimization**: Tools for A/B testing prompts.
+
+## 🚀 Usage
+
+```python
+from prompt_forge import PromptRegistry
+
+prompt = PromptRegistry.get("system/persona", version="v2")
+render = prompt.render(name="Eidos")
 ```
+*(Implementation Pending)*

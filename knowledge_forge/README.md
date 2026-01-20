@@ -1,45 +1,27 @@
-# 🔮 Knowledge Forge Repo
+# Knowledge Forge
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Updated](https://img.shields.io/badge/updated-2025-03-13-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Universal Eidosian Monorepo Structure**
+**The Semantic Backbone of Eidos.**
 
-## Features 🚀
+## 🧠 Overview
 
-- 📦 Universal project structure optimized for any language
-- 🔄 Cross-language interoperability with unified interfaces
-- 📚 Comprehensive documentation system
-- ⚙️ Streamlined build and testing pipeline
-- 🧩 Modular architecture for ultimate composability
-- 🔍 Integrated quality assurance workflows
+`knowledge_forge` constructs and manages the Eidosian Knowledge Graph. It provides tools for:
+- **Ontology Management**: Defining concepts and relationships.
+- **Graph Reasoning**: Inferring new knowledge from existing data.
+- **Integration**: Connecting with `graphrag` for retrieval.
 
-## Structure 🏗️
+## 🏗️ Architecture
+- `knowledge_core.py`: Basic node/edge implementation.
+- `graph_integration.py`: Connectors to external systems.
 
+## 🚀 Usage
+
+```python
+from knowledge_forge.knowledge_core import KnowledgeForge
+
+kf = KnowledgeForge(persistence_path="./kg.json")
+node = kf.add_knowledge("Eidos is an AI", concepts=["AI", "Identity"])
+kf.save()
 ```
-.
-├── projects/         # Language-specific projects
-├── libs/             # Shared libraries and components
-├── tools/            # Development and build tools
-├── scripts/          # Automation scripts
-├── docs/             # Documentation
-├── tests/            # Integrated test suite
-├── benchmarks/       # Performance benchmarks
-├── examples/         # Example code and tutorials
-└── ci/               # Continuous integration configuration
-```
-
-## Getting Started 🏁
-
-Clone this repository and explore the structure to get familiar with the organization.
-
-## Contributing 👥
-
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md).
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Created with 💜 using Eidosian Repo Forge.

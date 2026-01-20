@@ -1,13 +1,11 @@
 # TODO: prompt_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Scaffold**: Create `src/prompt_forge/__init__.py`.
+- [ ] **Implementation**: Implement `PromptRegistry` class.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Migration**: Move existing prompt text files into a `templates/` directory.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Optimizer**: Implement DSPy-like automatic prompt optimization.
