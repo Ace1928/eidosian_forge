@@ -44,6 +44,11 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `knowledge_forge` - *Renamed repo, added RDF/NetworkX deps*.
 - [x] **Manual Deep Dive**: `llm_forge` - *Migrated to hatchling, clarified architecture*.
 - [x] **Manual Deep Dive**: `prompt_forge` - *Scaffolded pyproject, defined roadmap*.
+- [x] **Manual Deep Dive**: `eidos_mcp` - *Defined Central Nervous System role, added pyproject*.
+- [x] **Manual Deep Dive**: `diagnostics_forge` - *Standardized logging core*.
+- [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
+- [x] **Manual Deep Dive**: `file_forge` - *Fixed .gitignore, standardized*.
+- [x] **Manual Deep Dive**: `game_forge` - *Identified sub-projects, standardized*.
 
 ## 4. Module Status Tracker
 
@@ -51,19 +56,19 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **Root** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `agent_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `archive_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `archive_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `article_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `audit_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `code_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `crawl_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `diagnostics_forge`| ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `diagnostics_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
 | `doc_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `eidos_mcp` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `eidos_mcp` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `eidos-brain` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `erais_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `figlet_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `file_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `game_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `file_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `game_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `gis_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `glyph_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |
 | `graphrag` | ✅ | ✅ | ✅ | ✅ | ✅ |

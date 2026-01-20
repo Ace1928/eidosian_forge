@@ -1,13 +1,12 @@
 # TODO: diagnostics_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Persist**: Auto-save metrics on exit.
+- [ ] **Rotation**: Verify log rotation works as expected in high-volume scenarios.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Format**: Move to pure JSON logging (structlog style) for production.
+- [ ] **Dashboard**: Create a simple CLI dashboard to view metrics json.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Prometheus**: Add an exporter endpoint.

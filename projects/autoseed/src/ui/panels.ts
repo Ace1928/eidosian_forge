@@ -36,6 +36,30 @@ export type PanelAction =
 
 let lastRenderKey = "";
 
+const tooltipText = {
+  tick: "Current simulation tick.",
+  status: "Simulation state.",
+  speed: "Simulation speed multiplier.",
+  zoom: "Camera zoom level.",
+  probes: "Active probes under your control.",
+  mass: "Mass stockpile. Used for construction and replication.",
+  energy: "Energy stockpile. Used for upkeep and construction.",
+  exotic: "Exotic stockpile. Required for advanced structures.",
+  centerSelected: "Center the camera on the selected body.",
+  centerProbe: "Center the camera on your first probe.",
+  pause: "Pause or resume the simulation.",
+  speedDown: "Decrease the simulation speed.",
+  speedUp: "Increase the simulation speed.",
+  zoomOut: "Zoom the camera out.",
+  zoomIn: "Zoom the camera in."
+};
+
+const structureTooltips: Record<StructureType, string> = {
+  extractor: "Extractor: harvests mass, energy, and exotic per tick. Conflicts with Replicator.",
+  replicator: "Replicator: builds new probes over time. Conflicts with Extractor.",
+  defense: "Defense: infrastructure for future combat upgrades."
+};
+
 export const updatePanels = (
   state: GameState,
   view: ViewState,
@@ -77,19 +101,31 @@ export const updatePanels = (
   }
   lastRenderKey = key;
 
+  const statusLabel = view.paused ? "Paused" : "Running";
   resourceInfo.innerHTML = `
     <div class="resource-row">
-      <div>Tick ${state.tick} ${view.paused ? "(Paused)" : ""}</div>
-      <div>Speed ${view.speed.toFixed(1)} · Zoom ${view.zoom.toFixed(1)} · Probes ${player.probes.length}</div>
+      <div class="hud-group">
+        <span class="hud-tooltip" data-tooltip="${tooltipText.tick}">Tick ${state.tick}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.status}">${statusLabel}</span>
+      </div>
+      <div class="hud-group">
+        <span class="hud-tooltip" data-tooltip="${tooltipText.speed}">Speed ${view.speed.toFixed(1)}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.zoom}">Zoom ${view.zoom.toFixed(1)}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.probes}">Probes ${player.probes.length}</span>
+      </div>
     </div>
     <div class="resource-row">
-      <div>Mass ${player.resources.mass.toFixed(1)} · Energy ${player.resources.energy.toFixed(1)} · Exotic ${player.resources.exotic.toFixed(1)}</div>
+      <div class="hud-group">
+        <span class="hud-tooltip" data-tooltip="${tooltipText.mass}">Mass ${player.resources.mass.toFixed(1)}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.energy}">Energy ${player.resources.energy.toFixed(1)}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.exotic}">Exotic ${player.resources.exotic.toFixed(1)}</span>
+      </div>
       <div class="controls">
-        <button data-action="pause">${view.paused ? "Resume" : "Pause"}</button>
-        <button data-action="speed-down">Slower</button>
-        <button data-action="speed-up">Faster</button>
-        <button data-action="zoom-out">Zoom -</button>
-        <button data-action="zoom-in">Zoom +</button>
+        <button data-action="pause" data-tooltip="${tooltipText.pause}">${view.paused ? "Resume" : "Pause"}</button>
+        <button data-action="speed-down" data-tooltip="${tooltipText.speedDown}">Slower</button>
+        <button data-action="speed-up" data-tooltip="${tooltipText.speedUp}">Faster</button>
+        <button data-action="zoom-out" data-tooltip="${tooltipText.zoomOut}">Zoom -</button>
+        <button data-action="zoom-in" data-tooltip="${tooltipText.zoomIn}">Zoom +</button>
       </div>
     </div>
   `;
@@ -134,8 +170,8 @@ export const updatePanels = (
 
   const navigation = `
     <div class="build-row">
-      <button data-action="center-selected" ${selectedBody ? "" : "disabled"}>Center Body</button>
-      <button data-action="center-probe">Center Probe</button>
+      <button data-action="center-selected" data-tooltip="${tooltipText.centerSelected}" ${selectedBody ? "" : "disabled"}>Center Body</button>
+      <button data-action="center-probe" data-tooltip="${tooltipText.centerProbe}">Center Probe</button>
     </div>
   `;
 
@@ -173,7 +209,7 @@ export const updatePanels = (
         ? "Conflict"
         : "Available";
     return `
-      <button data-structure="${type}" ${disabled}>${label}</button>
+      <button data-structure="${type}" data-tooltip="${structureTooltips[type]}" ${disabled}>${label}</button>
       <span class="muted">${formatCost(adjustedCost)} · ${blueprint.ticks} ticks · ${status}</span>
     `;
   };

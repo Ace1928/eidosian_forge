@@ -1,13 +1,11 @@
 # TODO: file_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Refactor**: Move `file_core.py` to `src/file_forge/__init__.py`.
+- [ ] **Cleanup**: Delete unused template directories (`ethics/`, `evolution/`, etc.) if empty.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Feature**: Add fuzzy file finding.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Optimization**: Use `ripgrep` (via subprocess) for faster searching.

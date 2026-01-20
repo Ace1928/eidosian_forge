@@ -1,20 +1,30 @@
 # Diagnostics Forge
 
-**Part of the Eidosian Forge**
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## 📋 Overview
-The `diagnostics_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+**The Pulse of Eidos.**
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+## 🩺 Overview
 
-## 🛠️ Usage
-*(Pending documentation)*
+`diagnostics_forge` handles the observability of the Eidosian System.
+It provides:
+- **Structured Logging**: JSON-enhanced logs for machine parsing.
+- **Metrics**: Timer and counter aggregations.
+- **Health Checks**: (Planned) System status verification.
 
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest diagnostics_forge/
+## 🏗️ Architecture
+- `diagnostics_core.py`: Main class `DiagnosticsForge` wrapping `logging` and internal metrics lists.
+
+## 🚀 Usage
+
+```python
+from diagnostics_forge.diagnostics_core import DiagnosticsForge
+
+diag = DiagnosticsForge(service_name="my_agent")
+diag.log_event("INFO", "Agent started", agent_id="123")
+
+timer = diag.start_timer("inference")
+# ... do work ...
+duration = diag.stop_timer(timer)
 ```

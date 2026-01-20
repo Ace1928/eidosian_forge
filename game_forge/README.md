@@ -1,20 +1,25 @@
 # Game Forge
 
-**Part of the Eidosian Forge**
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## 📋 Overview
-The `game_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+**The Playground of Eidos.**
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+## 🎮 Overview
 
-## 🛠️ Usage
-*(Pending documentation)*
+`game_forge` hosts simulations and game environments used for:
+1.  **Testing Agent Cognition**: Games as benchmarks.
+2.  **Creative Expression**: Procedural generation and art.
+3.  **Simulation**: Evolution and particle systems.
 
-## 🧪 Testing
-Run tests from the project root:
+## 🕹️ Modules
+- **`agentic_chess`**: Chess environment for agent battles.
+- **`gene_particles`**: Artificial life simulation.
+- **`eidosian_universe`**: 3D/2D procedural world.
+
+## 🚀 Usage
+
 ```bash
-pytest game_forge/
+# Run Gene Particles simulation
+python -m gene_particles.main
 ```

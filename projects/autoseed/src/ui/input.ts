@@ -1,10 +1,5 @@
-import type { GameState, Vector2 } from "../core/types.js";
-import { orbitPosition } from "../core/animation.js";
-import { listSystems } from "../core/procgen.js";
-import type { ViewState } from "./render.js";
-
-const distance = (a: Vector2, b: Vector2): number =>
-  Math.hypot(a.x - b.x, a.y - b.y);
+import type { GameCommand } from "../core/commands.js";
+import type { Vector2 } from "../core/types.js";
 
 export interface InputState {
   keys: Set<string>;
@@ -13,21 +8,9 @@ export interface InputState {
   dragMoved: boolean;
 }
 
-const toWorld = (canvas: HTMLCanvasElement, view: ViewState, screen: Vector2): Vector2 => {
-  const rect = canvas.getBoundingClientRect();
-  const localX = screen.x - rect.left;
-  const localY = screen.y - rect.top;
-  return {
-    x: (localX - rect.width / 2) / view.zoom + view.camera.x,
-    y: (localY - rect.height / 2) / view.zoom + view.camera.y
-  };
-};
-
 export const attachInput = (
   canvas: HTMLCanvasElement,
-  getState: () => GameState,
-  view: ViewState,
-  getTime: () => number
+  enqueue: (command: GameCommand) => void
 ): InputState => {
   const input: InputState = {
     keys: new Set<string>(),
@@ -41,58 +24,33 @@ export const attachInput = (
       input.dragMoved = false;
       return;
     }
-    const click = toWorld(canvas, view, { x: event.clientX, y: event.clientY });
-    const systems = listSystems(getState().galaxy);
-    let selectedBody: string | null = null;
-    let selectedSystem = view.selectedSystemId;
-    let bestBodyDistance = Number.POSITIVE_INFINITY;
-    const time = getTime();
-
-    for (const system of systems) {
-      const systemDistance = distance(click, system.position);
-      if (systemDistance < 80) {
-        const local = {
-          x: click.x - system.position.x,
-          y: click.y - system.position.y
-        };
-        for (const body of system.bodies) {
-          const pos = orbitPosition(body, time, { x: 0, y: 0 });
-          const bodyDistance = distance(local, pos);
-          if (bodyDistance < 10 && bodyDistance < bestBodyDistance) {
-            selectedBody = body.id;
-            selectedSystem = system.id;
-            bestBodyDistance = bodyDistance;
-          }
-        }
-        if (!selectedBody) {
-          selectedSystem = system.id;
-        }
-      }
-    }
-
-    view.selectedSystemId = selectedSystem;
-    view.selectedBodyId = selectedBody;
+    enqueue({ type: "select-at", screen: { x: event.clientX, y: event.clientY } });
   });
 
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
-    if (key === " ") {
-      view.paused = !view.paused;
+    if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+      event.preventDefault();
     }
-    if (key === "+" || key === "=" || event.code === "NumpadAdd") {
-      view.speed = Math.min(4, view.speed + 0.5);
-    }
-    if (key === "-" || key === "_" || event.code === "NumpadSubtract") {
-      view.speed = Math.max(0.5, view.speed - 0.5);
-    }
-    if (key === "z") {
-      view.zoom = Math.max(0.4, view.zoom - 0.1);
-    }
-    if (key === "x") {
-      view.zoom = Math.min(2.4, view.zoom + 0.1);
-    }
-    if (key === "0") {
-      view.zoom = 1;
+    if (!event.repeat) {
+      if (key === " ") {
+        enqueue({ type: "toggle-pause" });
+      }
+      if (key === "+" || key === "=" || event.code === "NumpadAdd") {
+        enqueue({ type: "speed-change", delta: 0.5 });
+      }
+      if (key === "-" || key === "_" || event.code === "NumpadSubtract") {
+        enqueue({ type: "speed-change", delta: -0.5 });
+      }
+      if (key === "z") {
+        enqueue({ type: "zoom-change", delta: -0.1 });
+      }
+      if (key === "x") {
+        enqueue({ type: "zoom-change", delta: 0.1 });
+      }
+      if (key === "0") {
+        enqueue({ type: "zoom-set", value: 1 });
+      }
     }
     if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
       input.keys.add(key);
@@ -117,10 +75,7 @@ export const attachInput = (
     if (Math.hypot(delta.x, delta.y) > 2) {
       input.dragMoved = true;
     }
-    view.camera = {
-      x: view.camera.x - delta.x / view.zoom,
-      y: view.camera.y - delta.y / view.zoom
-    };
+    enqueue({ type: "pan-camera", delta });
     input.lastPointer = { x, y };
   };
 
@@ -152,7 +107,7 @@ export const attachInput = (
   canvas.addEventListener("wheel", (event) => {
     event.preventDefault();
     const zoomDelta = event.deltaY > 0 ? -0.08 : 0.08;
-    view.zoom = Math.min(2.6, Math.max(0.4, view.zoom + zoomDelta));
+    enqueue({ type: "zoom-change", delta: zoomDelta });
   }, { passive: false });
 
   return input;
