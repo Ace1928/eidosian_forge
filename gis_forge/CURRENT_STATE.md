@@ -1,15 +1,15 @@
 # Current State: gis_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Critical Core Component
 
 ## 📊 Metrics
-- **Python Files**: 4191
-- **Test Coverage**: Unknown
+- **Dependencies**: Minimal.
+- **Files**: `gis_core.py`.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Thread-safe dictionary wrapper with persistence and environment variable support.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- `eidos_venv/` directory included in the repo (should be ignored).
+- `global_info.py` in the root also exists here (duplicate?).

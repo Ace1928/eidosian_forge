@@ -1,13 +1,9 @@
 # TODO: gis_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Cleanup**: Remove `eidos_venv/` from git tracking.
+- [ ] **Consolidate**: Decide if `global_info.py` lives here or in the root. (Currently Root is master).
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
-
-## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Feature**: Support YAML/TOML in addition to JSON.
+- [ ] **Validation**: Integrate `pydantic` schemas for config validation.

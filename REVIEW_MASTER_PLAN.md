@@ -47,13 +47,8 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `eidos_mcp` - *Defined Central Nervous System role, added pyproject*.
 - [x] **Manual Deep Dive**: `diagnostics_forge` - *Standardized logging core*.
 - [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
-- [x] **Manual Deep Dive**: `file_forge` - *Fixed .gitignore, standardized*.
-- [x] **Manual Deep Dive**: `game_forge` - *Identified sub-projects, standardized*.
-- [x] **Manual Deep Dive**: `article_forge` - *Identified as Content Repo*.
-- [x] **Manual Deep Dive**: `crawl_forge` - *Standardized, planned BS4 upgrade*.
-- [x] **Manual Deep Dive**: `doc_forge` - *Standardized, planned Sphinx auto-gen*.
-- [x] **Manual Deep Dive**: `erais_forge` - *Marked as Placeholder/Inception*.
-- [x] **Manual Deep Dive**: `figlet_forge` - *Migrated build system, preserved metadata*.
+- [x] **Manual Deep Dive**: `gis_forge` - *Standardized core config system*.
+- [x] **Manual Deep Dive**: `glyph_forge` - *Migrated to hatchling*.
 
 ## 4. Module Status Tracker
 
@@ -74,8 +69,14 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `figlet_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `file_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `game_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `gis_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `glyph_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |
+| `gis_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `glyph_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `graphrag` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `knowledge_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
+| `llm_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `lyrics_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `memory_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `metadata_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `graphrag` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `knowledge_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
 | `llm_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |

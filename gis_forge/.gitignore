@@ -1,3 +1,4 @@
+eidos_venv/
 __pycache__/
 *.pyc
 *.pyo

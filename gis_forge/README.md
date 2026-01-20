@@ -1,20 +1,28 @@
-# Gis Forge
+# GIS Forge
 
-**Part of the Eidosian Forge**
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## 📋 Overview
-The `gis_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+**The Map of Eidos.**
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+## 🗺️ Overview
 
-## 🛠️ Usage
-*(Pending documentation)*
+`gis_forge` (Global Information System) is the centralized configuration registry for the Eidosian system.
+It supports:
+- **Hierarchical Keys**: Dot notation (`server.host`).
+- **Environment Overrides**: `EIDOS_SERVER_HOST` overrides `server.host`.
+- **Persistence**: Save/Load to JSON.
+- **Pub/Sub**: Listen for config changes.
 
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest gis_forge/
+## 🏗️ Architecture
+- `gis_core.py`: Main `GisCore` class.
+
+## 🚀 Usage
+
+```python
+from gis_forge.gis_core import GisCore
+
+gis = GisCore(persistence_path="config.json")
+gis.set("server.port", 8080)
+print(gis.get("server.port"))
 ```
