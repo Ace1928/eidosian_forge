@@ -47,9 +47,8 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `eidos_mcp` - *Defined Central Nervous System role, added pyproject*.
 - [x] **Manual Deep Dive**: `diagnostics_forge` - *Standardized logging core*.
 - [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
-- [x] **Manual Deep Dive**: `lyrics_forge` - *Marked as Content Repo*.
-- [x] **Manual Deep Dive**: `metadata_forge` - *Standardized schema plans*.
-- [x] **Manual Deep Dive**: `mkey_forge` - *Identified as external utility (GPL)*.
+- [x] **Manual Deep Dive**: `ollama_forge` - *Standardized wrapper for Ollama API*.
+- [x] **Manual Deep Dive**: `refactor_forge` - *Standardized LibCST tools*.
 
 ## 4. Module Status Tracker
 
@@ -79,7 +78,10 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `memory_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `metadata_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `mkey_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `ollama_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `ollama_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `refactor_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `repo_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `refactor_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `repo_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |

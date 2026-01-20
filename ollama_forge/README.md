@@ -1,45 +1,27 @@
-# 🔮 Ollama Forge Repo
+# Ollama Forge
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Updated](https://img.shields.io/badge/updated-2025-03-13-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Universal Eidosian Monorepo Structure**
+**Local Intelligence.**
 
-## Features 🚀
+## 🦙 Overview
 
-- 📦 Universal project structure optimized for any language
-- 🔄 Cross-language interoperability with unified interfaces
-- 📚 Comprehensive documentation system
-- ⚙️ Streamlined build and testing pipeline
-- 🧩 Modular architecture for ultimate composability
-- 🔍 Integrated quality assurance workflows
+`ollama_forge` provides a Pythonic wrapper around the [Ollama](https://ollama.com/) API.
+It handles:
+- **Client**: Async and Sync clients.
+- **Model Management**: Pulling, deleting, and listing models.
+- **Generation**: Streaming and batch generation.
 
-## Structure 🏗️
+## 🏗️ Architecture
+- `src/ollama_forge/`: Core client.
 
+## 🚀 Usage
+
+```python
+from ollama_forge import OllamaClient
+
+client = OllamaClient()
+response = client.generate(model="llama3", prompt="Hi")
+print(response.text)
 ```
-.
-├── projects/         # Language-specific projects
-├── libs/             # Shared libraries and components
-├── tools/            # Development and build tools
-├── scripts/          # Automation scripts
-├── docs/             # Documentation
-├── tests/            # Integrated test suite
-├── benchmarks/       # Performance benchmarks
-├── examples/         # Example code and tutorials
-└── ci/               # Continuous integration configuration
-```
-
-## Getting Started 🏁
-
-Clone this repository and explore the structure to get familiar with the organization.
-
-## Contributing 👥
-
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md).
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Created with 💜 using Eidosian Repo Forge.
