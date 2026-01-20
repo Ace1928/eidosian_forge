@@ -82,9 +82,32 @@ def start_chatmock():
         diag.log_event("INFO", "ChatMock appears to be running on port 8000 already.")
         return
 
+    # Check if chatmock is importable or exists in known locations
+    # It is expected to be in eidosian_forge/projects/chatmock
+    projects_dir = FORGE_DIR / "projects"
+    if not projects_dir.exists():
+         diag.log_event("WARNING", "Projects directory not found. Cannot start ChatMock.")
+         return
+
+    # Add projects to path so we can import it or run it
+    if str(projects_dir) not in sys.path:
+        sys.path.append(str(projects_dir))
+
+    # Try to import to verify it exists
+    try:
+        import chatmock
+    except ImportError:
+         diag.log_event("WARNING", "ChatMock module not found in projects. Skipping startup.")
+         return
+
     diag.log_event("INFO", "Starting local ChatMock server...")
     
     # Run the module using the same python interpreter
+    # We need to ensure PYTHONPATH includes the projects dir
+    env = os.environ.copy()
+    current_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{projects_dir}:{current_pythonpath}"
+
     cmd = [sys.executable, "-m", "chatmock.cli", "serve", "--port", "8000"]
     
     # Redirect logs
@@ -98,6 +121,7 @@ def start_chatmock():
             stdout=open(str(log_file), "a"),
             stderr=subprocess.STDOUT,
             cwd=str(HOME_DIR), # Run from home to access local auth/config if needed
+            env=env,
             start_new_session=True 
         )
         
@@ -317,31 +341,7 @@ def context_validate() -> str:
     except Exception as e:
         return f"Failed to run validation: {e}"
 
-@mcp.tool()
-def kb_sync() -> str:
-    """Synchronize the context index into the Knowledge Graph."""
-    script_path = HOME_DIR / "scripts" / "index_to_kb_sync.py"
-    python_bin = sys.executable
-    try:
-        result = subprocess.run([python_bin, str(script_path)], capture_output=True, text=True, check=True)
-        return f"Knowledge Graph Sync Complete:\n{result.stdout}"
-    except Exception as e:
-        return f"Failed to sync knowledge graph: {e}"
 
-@mcp.tool()
-def context_validate() -> str:
-    """Validate the integrity of the context index and catalog."""
-    script_path = HOME_DIR / "scripts" / "validate_context.py"
-    python_bin = sys.executable
-    try:
-        result = subprocess.run([python_bin, str(script_path)], capture_output=True, text=True, check=False)
-        output = result.stdout + result.stderr
-        if result.returncode == 0:
-            return f"Validation Passed:\n{output}"
-        else:
-            return f"Validation Failed:\n{output}"
-    except Exception as e:
-        return f"Failed to run validation: {e}"
 
 @mcp.tool()
 def system_info() -> str:

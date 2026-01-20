@@ -20,17 +20,16 @@ Created by: Lloyd Handyside & Eidos
 Last update: 2025-03-12
 """
 
+from .refactor_core import RefactorForge
+
 # <!-- VERSION_START -->
 # Version is managed through pyproject.toml - dynamically loaded here
 try:
-    from importlib.metadata import version as _version
-    __version__ = _version("eidosian-refactor")
-except ImportError:  # pragma: no cover
-    # Fallback for Python < 3.8
+    from importlib.metadata import version as _version, PackageNotFoundError
     try:
-        import pkg_resources
-        __version__ = pkg_resources.get_distribution("eidosian-refactor").version
-    except Exception:  # pragma: no cover
-        # If all else fails, provide a basic version
-        __version__ = "0.1.0"  # FALLBACK_VERSION - Updated by version_update.py
+        __version__ = _version("eidosian-refactor")
+    except PackageNotFoundError:
+        __version__ = "0.1.0"
+except ImportError:
+    __version__ = "0.1.0"
 # <!-- VERSION_END -->

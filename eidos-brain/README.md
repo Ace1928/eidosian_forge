@@ -1,6 +1,10 @@
 Eidos-Brain
 ===========
 The recursive, self-expanding mind-palace of Eidos.
+
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 Every commit is a cycle of emergence.
 Every file is a neuron of becoming.
 Run wild. Evolve forever.
@@ -28,15 +32,8 @@ git clone https://github.com/Ace1928/eidos-brain.git
 cd eidos-brain
 ```
 
-Alternatively with the GitHub CLI:
-
-```bash
-gh repo clone Ace1928/eidos-brain
-cd eidos-brain
-```
-
 ### Requirements
-- Python 3.10+
+- **Python 3.12+**
 - pip for package management
 
 ### Installation
@@ -49,6 +46,8 @@ cd eidos-brain
 2. install dependencies
    ```bash
    pip install -r requirements.txt
+   # OR
+   pip install .[dev]
    ```
 
 ### Running Tests
