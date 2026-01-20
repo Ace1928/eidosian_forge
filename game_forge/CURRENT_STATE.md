@@ -1,15 +1,15 @@
 # Current State: game_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Experimental
 
 ## 📊 Metrics
-- **Python Files**: 30
-- **Test Coverage**: Unknown
+- **Dependencies**: `pygame`, `numpy`.
+- **Projects**: 3 distinct sub-projects in `src/`.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Collection of independent simulation modules.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- `README.md` was generic.
+- Needs unification on how to run these simulations ( CLI entry points).

@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "file_forge"
+name = "diagnostics_forge"
 version = "0.1.0"
-description = "Eidosian File Forge - Advanced File System Operations."
+description = "Eidosian Diagnostics Forge - Logging, Metrics, and Telemetry."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["files", "filesystem", "search", "grep"]
+keywords = ["logging", "telemetry", "metrics", "observability"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["file_core.py"]
+packages = ["."]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

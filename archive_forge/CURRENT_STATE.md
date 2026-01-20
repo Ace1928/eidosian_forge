@@ -1,15 +1,14 @@
 # Current State: archive_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Archived / Static
 
 ## 📊 Metrics
-- **Python Files**: 722372
-- **Test Coverage**: Unknown
+- **Files**: ~100+ Python scripts and experiments.
+- **Maintenance**: None.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Unstructured flat list of files + some directories (`code/`, `notebooks/`).
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- Everything here is potentially broken.

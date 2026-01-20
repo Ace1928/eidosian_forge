@@ -1,13 +1,12 @@
 # TODO: eidos_mcp
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Refactor**: Split `eidos_mcp_server.py` into multiple files (routers) per Forge to reduce the massive file size.
+- [ ] **Dependency Management**: Ensure all local forges are importable (editable installs).
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Testing**: Mock the other Forges to test the MCP server in isolation.
+- [ ] **Configuration**: Unify config loading completely via `gis_forge`.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **ChatMock**: Evaluate if `ChatMock` should be its own Forge or stay in `projects/`.

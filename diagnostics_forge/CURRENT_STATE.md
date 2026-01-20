@@ -1,15 +1,15 @@
 # Current State: diagnostics_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Stable Core Component
 
 ## 📊 Metrics
-- **Python Files**: 3
-- **Test Coverage**: Unknown
+- **Dependencies**: Minimal (Standard Library + Pydantic).
+- **Files**: `diagnostics_core.py`.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Simple wrapper around Python's `logging` module with added in-memory metrics storage.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- In-memory metrics are not persisted automatically (must call `save_metrics`).
+- No integration with external monitoring (Prometheus/Grafana) yet.

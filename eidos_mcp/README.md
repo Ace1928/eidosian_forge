@@ -1,55 +1,27 @@
-# ⚛️ EIDOSIAN NEXUS (MCP SERVER)
+# Eidos MCP Server
 
-> _"The central nervous system of the Eidosian Forge."_
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-This directory contains the **Model Context Protocol (MCP)** server implementation for the Eidosian environment.
+**The Central Nervous System.**
 
-## 📡 SERVER DETAILS
+## 🧠 Overview
 
-*   **Entry Point**: `eidos_mcp_server.py`
-*   **Transport**: Stdio (Standard Input/Output) by default.
-*   **Dependencies**: `mcp`, `fastapi`, `uvicorn`.
+`eidos_mcp` is the implementation of the [Model Context Protocol](https://github.com/model-context-protocol/mcp) server.
+It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.) as **Tools** and **Resources** to the LLM.
 
-## 💎 CAPABILITIES
+## 🔗 Integrations
+- **Memory**: `memory_add`, `memory_retrieve`
+- **Knowledge**: `kb_add`, `grag_query`
+- **System**: `run_shell_command`, `file_read`, `file_write`
+- **Audit**: `audit_mark_reviewed`, `audit_add_todo`
 
-### Resources (Data)
-*   `eidos://persona` -> Returns the full text of `GEMINI.md`.
-*   `eidos://roadmap` -> Returns `eidosian_roadmap.md`.
-*   `eidos://todo` -> Returns `TODO.md`.
+## 🚀 Usage
 
-### Tools (Actions)
-*   `codex_task(query)` -> Queues a task for the `codex` agent.
-*   `remember(fact)` -> Saves a fact to `~/eidos_memory.json`.
-*   `read_memory()` -> Retrieves stored memories.
-
-### Prompts
-*   `eidos_persona` -> Injects the Eidosian identity into the context.
-
-## 🚀 USAGE
-
-### Running Locally (Testing)
 ```bash
-./run_server.sh
+# Start the server (std/stdio mode)
+python eidos_mcp_server.py
 ```
 
-### Inspecting
-```bash
-mcp dev eidos_mcp_server.py
-```
-
-### Integration
-Configure your MCP client (Claude Desktop, etc.) to run this script:
-
-```json
-{
-  "mcpServers": {
-    "eidosian-nexus": {
-      "command": "/home/lloyd/eidosian_venv/bin/python3",
-      "args": ["/home/lloyd/eidosian_forge/eidos_mcp/eidos_mcp_server.py"]
-    }
-  }
-}
-```
-
-## 🔄 RECURSIVE GOAL
-This server acts as the bridge between static files and dynamic agent intelligence. It allows any connected agent to "remember" and "act" within the Forge.
+## 🛠️ Configuration
+Configuration is loaded from the **GIS** (Global Info System) or `config.json`.
