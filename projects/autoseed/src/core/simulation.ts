@@ -7,6 +7,7 @@ import { applyExtractorIncome, applyUpkeep } from "./economy.js";
 import { advanceConstruction, advanceReplication, structureConflict } from "./construction.js";
 import { applyAiPlanning } from "./ai.js";
 import { getBodyById } from "./selectors.js";
+import { applyCombat } from "./combat.js";
 
 export { queueStructure } from "./construction.js";
 
@@ -140,8 +141,30 @@ export const createInitialState = (config: GameConfig): GameState => {
   ];
 
   const withSeeds = [
-    applyAiPlanning({ tick: 0, galaxy, techTree, factions: [player, ai], lastEvent: null }, player, 1),
-    applyAiPlanning({ tick: 0, galaxy, techTree, factions: [player, ai], lastEvent: null }, ai, 2)
+    applyAiPlanning(
+      {
+        tick: 0,
+        galaxy,
+        techTree,
+        factions: [player, ai],
+        combat: { damagePools: {}, contestedSystems: [], lastTickLosses: {} },
+        lastEvent: null
+      },
+      player,
+      1
+    ),
+    applyAiPlanning(
+      {
+        tick: 0,
+        galaxy,
+        techTree,
+        factions: [player, ai],
+        combat: { damagePools: {}, contestedSystems: [], lastTickLosses: {} },
+        lastEvent: null
+      },
+      ai,
+      2
+    )
   ];
 
   return {
@@ -149,6 +172,7 @@ export const createInitialState = (config: GameConfig): GameState => {
     galaxy,
     techTree,
     factions: withSeeds,
+    combat: { damagePools: {}, contestedSystems: [], lastTickLosses: {} },
     lastEvent: null
   };
 };
@@ -168,12 +192,13 @@ export const advanceTick = (state: GameState): GameState => {
     return updated;
   });
 
-  return {
+  const withTick = {
     ...state,
     tick: nextTick,
     factions: updatedFactions,
     lastEvent: null
   };
+  return applyCombat(withTick);
 };
 
 export const getResourceSummary = (faction: Faction): Record<ResourceKey, number> => ({

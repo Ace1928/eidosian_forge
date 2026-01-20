@@ -106,7 +106,14 @@ export interface GameState {
   galaxy: Galaxy;
   techTree: TechTree;
   factions: Faction[];
+  combat: CombatState;
   lastEvent: string | null;
+}
+
+export interface CombatState {
+  damagePools: Record<string, Record<string, number>>;
+  contestedSystems: string[];
+  lastTickLosses: Record<string, number>;
 }
 
 export interface GameConfig {

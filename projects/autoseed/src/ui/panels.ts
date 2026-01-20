@@ -42,6 +42,8 @@ const tooltipText = {
   speed: "Simulation speed multiplier.",
   zoom: "Camera zoom level.",
   probes: "Active probes under your control.",
+  combat: "Systems where multiple factions have active probes.",
+  losses: "Probe losses resolved during the most recent tick.",
   mass: "Mass stockpile. Used for construction and replication.",
   energy: "Energy stockpile. Used for upkeep and construction.",
   exotic: "Exotic stockpile. Required for advanced structures.",
@@ -57,7 +59,7 @@ const tooltipText = {
 const structureTooltips: Record<StructureType, string> = {
   extractor: "Extractor: harvests mass, energy, and exotic per tick. Conflicts with Replicator.",
   replicator: "Replicator: builds new probes over time. Conflicts with Extractor.",
-  defense: "Defense: infrastructure for future combat upgrades."
+  defense: "Defense: reduces combat losses for your probes in this system."
 };
 
 export const updatePanels = (
@@ -78,9 +80,27 @@ export const updatePanels = (
 
   const system = listSystems(state.galaxy).find((sys) => sys.id === view.selectedSystemId) ?? null;
   const selectedBody = system?.bodies.find((body) => body.id === view.selectedBodyId) ?? null;
+  const activeProbeCount = player.probes.filter((probe) => probe.active).length;
   const playerProbesInSystem = system
-    ? player.probes.filter((probe) => probe.systemId === system.id).length
+    ? player.probes.filter((probe) => probe.systemId === system.id && probe.active).length
     : 0;
+  const probeCountsByFaction = system
+    ? state.factions.map(
+      (faction) => faction.probes.filter((probe) => probe.active && probe.systemId === system.id).length
+    )
+    : [];
+  const hostileProbesInSystem = probeCountsByFaction.reduce(
+    (sum, count, index) => (index === 0 ? sum : sum + count),
+    0
+  );
+  const systemContested = probeCountsByFaction.filter((count) => count > 0).length > 1;
+  const playerProbeSystems = new Set(
+    player.probes.filter((probe) => probe.active).map((probe) => probe.systemId)
+  );
+  const contestedCount = state.combat.contestedSystems.filter((systemId) =>
+    playerProbeSystems.has(systemId)
+  ).length;
+  const recentLosses = state.combat.lastTickLosses[player.id] ?? 0;
 
   const key = [
     state.tick,
@@ -92,7 +112,7 @@ export const updatePanels = (
     player.resources.mass.toFixed(1),
     player.resources.energy.toFixed(1),
     player.resources.exotic.toFixed(1),
-    player.probes.length,
+    activeProbeCount,
     player.structures.length
   ].join("|");
 
@@ -111,7 +131,7 @@ export const updatePanels = (
       <div class="hud-group">
         <span class="hud-tooltip" data-tooltip="${tooltipText.speed}">Speed ${view.speed.toFixed(1)}</span>
         <span class="hud-tooltip" data-tooltip="${tooltipText.zoom}">Zoom ${view.zoom.toFixed(1)}</span>
-        <span class="hud-tooltip" data-tooltip="${tooltipText.probes}">Probes ${player.probes.length}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.probes}">Probes ${activeProbeCount}</span>
       </div>
     </div>
     <div class="resource-row">
@@ -126,6 +146,12 @@ export const updatePanels = (
         <button data-action="speed-up" data-tooltip="${tooltipText.speedUp}">Faster</button>
         <button data-action="zoom-out" data-tooltip="${tooltipText.zoomOut}">Zoom -</button>
         <button data-action="zoom-in" data-tooltip="${tooltipText.zoomIn}">Zoom +</button>
+      </div>
+    </div>
+    <div class="resource-row">
+      <div class="hud-group">
+        <span class="hud-tooltip" data-tooltip="${tooltipText.combat}">Combat ${contestedCount}</span>
+        <span class="hud-tooltip" data-tooltip="${tooltipText.losses}">Losses ${recentLosses}</span>
       </div>
     </div>
   `;
@@ -143,7 +169,8 @@ export const updatePanels = (
       <p>Star ${system.starClass} · Grid ${system.grid.x}, ${system.grid.y}</p>
       <p>Bodies ${system.bodies.length} · Rocky ${byType.rocky ?? 0} · Gas ${byType.gas ?? 0}</p>
       <p>Ice ${byType.ice ?? 0} · Belts ${byType.belt ?? 0}</p>
-      <p>Probes in system ${playerProbesInSystem}</p>
+      <p>Probes in system ${playerProbesInSystem} · Hostiles ${hostileProbesInSystem}</p>
+      <p>Combat ${systemContested ? "Contested" : "Clear"}</p>
     `;
   } else {
     systemInfo.innerHTML = "<h3>No system selected</h3>";

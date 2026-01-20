@@ -3,8 +3,11 @@ import { ensureSystem, getSystemSpacing, listSystems } from "./core/procgen.js";
 import { orbitPosition } from "./core/animation.js";
 import type { GameCommand } from "./core/commands.js";
 import type { GameConfig, GameState, Vector2 } from "./core/types.js";
+import { CommandQueue } from "./core/command-queue.js";
+import { resolveCanvasMetrics } from "./core/canvas.js";
 import { attachInput, type InputState } from "./ui/input.js";
 import { renderFrame, type ViewState } from "./ui/render.js";
+import { commandFromBuildRequest, commandFromPanelAction } from "./ui/panel-commands.js";
 import { updatePanels } from "./ui/panels.js";
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -23,7 +26,8 @@ export class GameEngine {
   private viewTime = 0;
   private last = 0;
   private accumulator = 0;
-  private commandQueue: GameCommand[] = [];
+  private frameSize = { width: 0, height: 0 };
+  private commandQueue = new CommandQueue();
 
   constructor(canvas: HTMLCanvasElement, config: GameConfig) {
     this.canvas = canvas;
@@ -55,12 +59,21 @@ export class GameEngine {
   }
 
   private enqueue = (command: GameCommand): void => {
-    this.commandQueue.push(command);
+    this.commandQueue.enqueue(command);
   };
 
   private resize = (): void => {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const metrics = resolveCanvasMetrics(
+      window.innerWidth,
+      window.innerHeight,
+      window.devicePixelRatio ?? 1
+    );
+    this.canvas.style.width = `${metrics.cssWidth}px`;
+    this.canvas.style.height = `${metrics.cssHeight}px`;
+    this.canvas.width = metrics.pixelWidth;
+    this.canvas.height = metrics.pixelHeight;
+    this.ctx.setTransform(metrics.ratio, 0, 0, metrics.ratio, 0, 0);
+    this.frameSize = { width: metrics.cssWidth, height: metrics.cssHeight };
   };
 
   private loop = (time: number): void => {
@@ -80,35 +93,12 @@ export class GameEngine {
       this.accumulator -= this.tickDuration;
     }
 
-    renderFrame(this.ctx, this.state, this.view, this.viewTime);
+    renderFrame(this.ctx, this.state, this.view, this.viewTime, this.frameSize);
     updatePanels(
       this.state,
       this.view,
-      (payload) => {
-        this.enqueue({
-          type: "build-structure",
-          factionId: payload.factionId,
-          bodyId: payload.bodyId,
-          structure: payload.type
-        });
-      },
-      (action) => {
-        if (action === "center-selected") {
-          this.enqueue({ type: "center-selected" });
-        } else if (action === "center-probe") {
-          this.enqueue({ type: "center-probe" });
-        } else if (action === "pause") {
-          this.enqueue({ type: "toggle-pause" });
-        } else if (action === "speed-up") {
-          this.enqueue({ type: "speed-change", delta: 0.5 });
-        } else if (action === "speed-down") {
-          this.enqueue({ type: "speed-change", delta: -0.5 });
-        } else if (action === "zoom-in") {
-          this.enqueue({ type: "zoom-change", delta: 0.1 });
-        } else if (action === "zoom-out") {
-          this.enqueue({ type: "zoom-change", delta: -0.1 });
-        }
-      }
+      (payload) => this.enqueue(commandFromBuildRequest(payload)),
+      (action) => this.enqueue(commandFromPanelAction(action))
     );
     requestAnimationFrame(this.loop);
   };
@@ -130,11 +120,10 @@ export class GameEngine {
   }
 
   private processCommands(): void {
-    if (this.commandQueue.length === 0) {
+    if (this.commandQueue.size() === 0) {
       return;
     }
-    const commands = this.commandQueue;
-    this.commandQueue = [];
+    const commands = this.commandQueue.drain();
     for (const command of commands) {
       this.applyCommand(command);
     }

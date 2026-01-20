@@ -89,19 +89,21 @@ export const attachInput = (
   window.addEventListener("mouseup", endDrag);
 
   canvas.addEventListener("touchstart", (event) => {
+    event.preventDefault();
     const touch = event.touches[0];
     if (!touch) {
       return;
     }
     startDrag(touch.clientX, touch.clientY);
-  });
+  }, { passive: false });
   canvas.addEventListener("touchmove", (event) => {
+    event.preventDefault();
     const touch = event.touches[0];
     if (!touch) {
       return;
     }
     moveDrag(touch.clientX, touch.clientY);
-  });
+  }, { passive: false });
   canvas.addEventListener("touchend", endDrag);
 
   canvas.addEventListener("wheel", (event) => {
