@@ -107,7 +107,8 @@ Thumbs.db
 *.bak
 
 # Exclude sibling repositories
-../*/
+# ../*/
+
 !../README.md
 .pypirc
 **/.pypirc

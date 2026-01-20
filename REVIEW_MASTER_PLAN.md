@@ -49,6 +49,9 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
 - [x] **Manual Deep Dive**: `ollama_forge` - *Standardized wrapper for Ollama API*.
 - [x] **Manual Deep Dive**: `refactor_forge` - *Standardized LibCST tools*.
+- [x] **Manual Deep Dive**: `repo_forge` - *Standardized cookiecutter usage*.
+- [x] **Manual Deep Dive**: `terminal_forge` - *Standardized Rich/Textual deps*.
+- [x] **Manual Deep Dive**: `type_forge` - *Standardized schema validation*.
 
 ## 4. Module Status Tracker
 
@@ -81,14 +84,11 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `ollama_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `refactor_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `repo_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `refactor_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `repo_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `repo_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `sms_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `terminal_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `terminal_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `test_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `type_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `type_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `version_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `viz_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `word_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |

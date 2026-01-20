@@ -1,13 +1,5 @@
 # TODO: repo_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
-
-## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
-
-## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Update Templates**: Update the cookiecutter template to match the lean `pyproject.toml` based structure we are defining today.
+- [ ] **Remove Bloat**: The current template adds too many empty directories (`ci/`, `benchmarks/`, `wheelhouse/`). Simplify.

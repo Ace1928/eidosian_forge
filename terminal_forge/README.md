@@ -1,45 +1,21 @@
-# 🔮 Terminal Forge Repo
+# Terminal Forge
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Updated](https://img.shields.io/badge/updated-2025-03-13-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Universal Eidosian Monorepo Structure**
+**The Face of Eidos.**
 
-## Features 🚀
+## 📟 Overview
 
-- 📦 Universal project structure optimized for any language
-- 🔄 Cross-language interoperability with unified interfaces
-- 📚 Comprehensive documentation system
-- ⚙️ Streamlined build and testing pipeline
-- 🧩 Modular architecture for ultimate composability
-- 🔍 Integrated quality assurance workflows
+`terminal_forge` builds beautiful Terminal User Interfaces (TUI).
+It leverages `rich` for formatting and `textual` for interactive applications.
 
-## Structure 🏗️
+## 🏗️ Architecture
+- `src/terminal_forge/`: Core widgets and layouts.
 
+## 🚀 Usage
+
+```python
+from terminal_forge import App
+App.run()
 ```
-.
-├── projects/         # Language-specific projects
-├── libs/             # Shared libraries and components
-├── tools/            # Development and build tools
-├── scripts/          # Automation scripts
-├── docs/             # Documentation
-├── tests/            # Integrated test suite
-├── benchmarks/       # Performance benchmarks
-├── examples/         # Example code and tutorials
-└── ci/               # Continuous integration configuration
-```
-
-## Getting Started 🏁
-
-Clone this repository and explore the structure to get familiar with the organization.
-
-## Contributing 👥
-
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md).
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Created with 💜 using Eidosian Repo Forge.
