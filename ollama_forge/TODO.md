@@ -1,13 +1,8 @@
 # TODO: ollama_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Verify**: Check `src/ollama_forge` for actual implementation code.
+- [ ] **Sync**: Ensure API parity with latest Ollama release.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
-
-## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Integration**: Use `llm_forge` as the abstract interface, with `ollama_forge` as a provider.
