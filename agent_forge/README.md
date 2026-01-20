@@ -1,4 +1,7 @@
-# Eidos E3 Agent Forge
+# Agent Forge (Eidos E3)
+
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Minimal scaffolding for the Eidos E3 system.
 

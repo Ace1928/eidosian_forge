@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Autoseed</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #e9eefc;
+        --muted: rgba(233, 238, 252, 0.65);
+        --panel: rgba(12, 16, 30, 0.72);
+        --panel-border: rgba(144, 170, 255, 0.25);
+        --accent: #ffcf6e;
+        --accent-strong: #ff9f6e;
+        --glow: rgba(255, 207, 110, 0.25);
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: "Space Grotesk", "Futura", "Avenir Next", sans-serif;
+        background: radial-gradient(circle at 20% 20%, #1c2a42, #0a0f20 40%, #070a16 70%);
+      }
+      #game {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      #hud {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        grid-template-rows: auto 1fr auto;
+        gap: 16px;
+        padding: 20px;
+        color: var(--ink);
+        letter-spacing: 0.02em;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 12px 30px rgba(5, 10, 25, 0.35);
+        backdrop-filter: blur(6px);
+      }
+      .panel h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+      }
+      .panel p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .panel .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      #resource-info {
+        grid-column: 1 / -1;
+        font-size: 14px;
+        color: var(--ink);
+      }
+      .resource-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .controls {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #system-panel {
+        grid-column: 2;
+        grid-row: 2;
+      }
+      #body-panel {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      #build-panel {
+        grid-column: 2;
+        grid-row: 3;
+      }
+      .build-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      button {
+        pointer-events: auto;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 207, 110, 0.5);
+        background: rgba(255, 207, 110, 0.15);
+        color: var(--ink);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .hint {
+        position: fixed;
+        left: 20px;
+        bottom: 18px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+      @media (max-width: 900px) {
+        #hud {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto auto;
+        }
+        #system-panel,
+        #body-panel,
+        #build-panel {
+          grid-column: 1;
+          grid-row: auto;
+        }
+        .hint {
+          left: 14px;
+          right: 14px;
+          font-size: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div id="hud">
+      <div id="resource-info" class="panel">Mass 0 Energy 0 Exotic 0</div>
+      <div id="body-panel" class="panel">
+        <div id="body-info"></div>
+      </div>
+      <div id="system-panel" class="panel">
+        <div id="system-info"></div>
+      </div>
+      <div id="build-panel" class="panel">
+        <div id="build-info"></div>
+      </div>
+    </div>
+    <div class="hint">Drag to pan · WASD/arrows · Scroll or Z/X to zoom · Click a body to build · Space to pause</div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
