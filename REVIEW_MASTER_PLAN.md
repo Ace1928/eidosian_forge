@@ -49,6 +49,11 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
 - [x] **Manual Deep Dive**: `file_forge` - *Fixed .gitignore, standardized*.
 - [x] **Manual Deep Dive**: `game_forge` - *Identified sub-projects, standardized*.
+- [x] **Manual Deep Dive**: `article_forge` - *Identified as Content Repo*.
+- [x] **Manual Deep Dive**: `crawl_forge` - *Standardized, planned BS4 upgrade*.
+- [x] **Manual Deep Dive**: `doc_forge` - *Standardized, planned Sphinx auto-gen*.
+- [x] **Manual Deep Dive**: `erais_forge` - *Marked as Placeholder/Inception*.
+- [x] **Manual Deep Dive**: `figlet_forge` - *Migrated build system, preserved metadata*.
 
 ## 4. Module Status Tracker
 
@@ -57,16 +62,16 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | **Root** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `agent_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `archive_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `article_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `article_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `audit_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `code_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `crawl_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `crawl_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `diagnostics_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
-| `doc_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `doc_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `eidos_mcp` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `eidos-brain` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `erais_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `figlet_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `erais_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `figlet_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `file_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `game_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `gis_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |

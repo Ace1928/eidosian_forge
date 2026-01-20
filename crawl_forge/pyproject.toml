@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "doc_forge"
+name = "crawl_forge"
 version = "0.1.0"
-description = "Eidosian Doc Forge - Automated Documentation Generation."
+description = "Eidosian Crawl Forge - Ethical Web Spidering and Extraction."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["documentation", "sphinx", "api-docs"]
+keywords = ["crawler", "scraper", "robots.txt", "extraction"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -21,8 +21,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "sphinx>=8.0.0",
-    "pdoc>=14.0.0", # Simple API docs
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0", # Upgrade from regex to BS4
+    "pydantic>=2.6.0",
 ]
 
 [project.optional-dependencies]
@@ -31,7 +32,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["doc_core.py"]
+packages = ["."]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

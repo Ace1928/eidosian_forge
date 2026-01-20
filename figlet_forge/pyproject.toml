@@ -1,164 +1,46 @@
-# ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║ 🌀 Figlet Forge - Eidosian Typography Engine                              ║
-# ╚═══════════════════════════════════════════════════════════════════════════╝
-# An Eidosian reimplementation extending the original pyfiglet package
-# (itself a pure Python port of FIGlet) with:
-# - Full colorized ANSI code support for vibrant text art
-# - Unicode character rendering with comprehensive mapping
-# - Expanded font ecosystem with careful attention to licensing
-# - Intelligent fallbacks for compatibility with older systems
-# - Significant performance optimizations without sacrificing quality
-# - Enhanced maintainability through modern Python practices
-# - Comprehensive documentation for all use cases
-# - Full backward compatibility with pyfiglet
-#
-# A central component of the Eidosian Forge ecosystem.
-
 [build-system]
-requires      = [ "setuptools>=61.0", "wheel" ]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# 📦 Core Project Identity - The recursive, self-referential nucleus
 [project]
 name = "figlet_forge"
 version = "0.1.2"
 description = "Eidosian reimplementation extending pyfiglet with colorized ANSI support, Unicode rendering and intelligent fallbacks"
 readme = "README.md"
-requires-python = ">=3.7"
-license = { text = "MIT" }
-authors = [ { name = "Lloyd Handyside", email = "ace1928@gmail.com" } ]
-maintainers = [
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = [
-    "figlet",
-    "ascii-art",
-    "text",
-    "forge",
-    "eidosian",
-    "typography",
-    "cli",
-    "ansi",
-    "color",
-    "unicode",
-    "terminal-art",
-    "pyfiglet-extension",
-    "text-rendering",
-    "backwards-compatible",
-]
+keywords = ["figlet", "ascii-art", "text", "forge", "eidosian", "typography", "cli", "ansi", "color"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Topic :: Text Processing :: Fonts",
-    "Topic :: Artistic Software",
-    "Topic :: Software Development :: Libraries :: Python Modules",
     "Intended Audience :: Developers",
-    "Environment :: Console",
-    "Typing :: Typed",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
 ]
-
-# ✨ Dependencies - Surgical precision, zero bloat, maximum capability
 dependencies = [
-    "pyfiglet>=0.8.0", # Original ASCII art engine we're extending
-    "rich>=12.0.0",    # Terminal aesthetics for colorized output
-    "typer>=0.7.0",    # CLI framework that doesn't waste your time
-    "colorama>=0.4.6", # Cross-platform ANSI color support
-    "wcwidth>=0.2.6",  # Correct width calculation for Unicode characters
+    "pyfiglet>=0.8.0",
+    "rich>=12.0.0",
+    "typer>=0.7.0",
+    "colorama>=0.4.6",
+    "wcwidth>=0.2.6",
 ]
 
-# 🧩 Optional modules - Perfect symbiosis of components
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",     # Tests that verify truth
-    "black>=23.0.0",     # Code formatting that brooks no argument
-    "isort>=5.12.0",     # Import sorting that creates harmony
-    "mypy>=1.0.0",       # Type checking that prevents chaos
-    "ruff>=0.0.256",     # Linting at the speed of thought
-    "pre-commit>=3.3.0", # Git hooks that enforce excellence
-    "tox>=4.0.0",        # Multi-environment torture chamber
-    "bandit>=1.7.5",     # Security scanner for suspicious code
-    "pyright>=1.1.0",    # Microsoft's opinion on your types
-    "coverage>=7.2.0",   # Code coverage that measures truth
-]
-docs = [
-    "sphinx>=6.0.0",                    # Documentation that illuminates
-    "sphinx-rtd-theme>=1.2.0",          # Aesthetic documentation presentation
-    "sphinx-autodoc-typehints>=1.23.0", # Type hints that explain themselves
-    "myst-parser>=2.0.0",               # Markdown support for Sphinx
-]
-full = [
-    "pillow>=9.5.0",    # Image manipulation for font visualizations
-    "pygments>=2.15.0", # Syntax highlighting for documentation examples
+    "pytest>=8.0.0",
+    "black>=24.0.0",
 ]
 
-# 🔗 Project Connections - The synapses of our ecosystem
-[project.urls]
-"Homepage"         = "https://github.com/Ace1928/figlet_forge"
-"Bug Tracker"      = "https://github.com/Ace1928/figlet_forge/issues"
-"Documentation"    = "https://figlet-forge.readthedocs.io/"
-"Source Code"      = "https://github.com/Ace1928/figlet_forge"
-"Changelog"        = "https://github.com/Ace1928/figlet_forge/blob/main/CHANGELOG.md"
-"Original Project" = "https://github.com/pwaller/pyfiglet"
-"Eidosian Forge"   = "https://github.com/Ace1928/eidosian_forge"
-"Neuroforge"       = "https://neuroforge.io"
-
-# 🚀 CLI Entry Point - Zero friction, maximum impact
 [project.scripts]
 figlet_forge = "figlet_forge.cli:main"
 
-# 📂 Package Structure - Digital architecture with precision
-[tool.setuptools]
-package-dir = { "" = "src" }
-
-[tool.setuptools.packages.find]
-where = [ "src" ]
-
-# 🔧 Development Tools - Recursively refined excellence
-[tool.black]
-line-length    = 88
-target-version = [ "py37", "py38", "py39", "py310", "py311", "py312", "py313" ]
-include        = '\.pyi?$'
-# Life's too short for style debates - black decides
-
-[tool.isort]
-profile           = "black"
-line-length       = 88
-multi_line_output = 3
-# Imports ordered like a well-designed library
-
-[tool.mypy]
-python_version              = "3.12"
-warn_return_any             = true
-warn_unused_configs         = true
-disallow_untyped_defs       = true
-disallow_incomplete_defs    = true
-check_untyped_defs          = true
-disallow_untyped_decorators = true
-no_implicit_optional        = true
-# Types: because assuming is the mother of all bugs
-
-[tool.ruff]
-select         = [ "E", "F", "B", "I", "N", "UP", "ANN", "S", "A" ]
-line-length    = 88
-target-version = "py38"
-# Clean code moves at the speed of thought
+[tool.hatch.build.targets.wheel]
+packages = ["src/figlet_forge", "figlet_core.py"]
 
 [tool.pytest.ini_options]
-testpaths = [ "tests" ]
-python_files = "test_*.py"
-markers = [
-    "fonts: tests for font rendering integrity",
-    "unicode: tests for full Unicode support",
-    "color: tests for ANSI color implementation",
-    "compatibility: tests for pyfiglet compatibility",
-]
-# Tests that verify truth at every scale
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
