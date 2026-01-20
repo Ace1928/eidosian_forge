@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "viz_forge"
+name = "version_forge"
 version = "0.1.0"
-description = "Eidosian Viz Forge - Data Visualization and Plotting."
+description = "Eidosian Version Forge - Semantic Versioning and Dependency Resolution."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["visualization", "plotting", "matplotlib", "seaborn"]
+keywords = ["semver", "versioning", "dependencies"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -21,9 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "matplotlib>=3.8.0",
-    "seaborn>=0.13.0",
-    "pandas>=2.2.0",
+    "pydantic>=2.6.0",
 ]
 
 [project.optional-dependencies]
@@ -32,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/viz_forge"]
+packages = ["."]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
