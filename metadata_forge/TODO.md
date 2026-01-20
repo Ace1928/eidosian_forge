@@ -1,13 +1,8 @@
 # TODO: metadata_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
-
-## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Refactor**: Flatten directory structure.
+- [ ] **Schema**: Define core schemas (Memory, Persona, Task).
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Sync**: Auto-sync schemas to `eidos_mcp` for validation.

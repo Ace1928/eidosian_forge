@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mkey_forge"
+version = "0.1.0"
+description = "Console Parental Controls Key Generator."
+readme = "README.md"
+requires-python = ">=3.7"
+license = "GPL-3.0"
+authors = [
+    { name = "SALT" },
+    { name = "Dazzozo" },
+    { name = "Lloyd Handyside" },
+]
+dependencies = [
+    "pycryptodome>=3.0.0",
+]
+
+[project.scripts]
+mkey = "mkey_forge.mkey:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
