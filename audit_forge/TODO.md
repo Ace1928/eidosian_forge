@@ -1,13 +1,11 @@
 # TODO: audit_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Verify**: Ensure `coverage.py` and `tasks.py` exist and work.
+- [ ] **Test**: Add unit tests for `IdempotentTaskManager`.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Feature**: Add CLI for `audit_forge`.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Visuals**: Generate coverage heatmaps.

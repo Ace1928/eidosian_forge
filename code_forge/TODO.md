@@ -1,13 +1,13 @@
 # TODO: code_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Refactor**: Isolate `forgeengine` and propose migration to `game_forge` or `llm_forge`.
+- [ ] **Implementation**: Create `code_forge/` package structure.
+- [ ] **CLI**: Implement `code_forge.cli` using `typer`.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Feature**: Implement basic AST traversal using `libcst`.
+- [ ] **Feature**: Create a "Code Doctor" tool to fix common linting errors automatically.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Integration**: Connect with `eidos-brain` for "Agentic Coding".

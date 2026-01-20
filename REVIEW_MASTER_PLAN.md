@@ -38,8 +38,12 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `eidos-brain` (The Core) - *Added pyproject.toml, refined docs*.
 - [x] **Manual Deep Dive**: `agent_forge` (E3) - *Refined pyproject.toml, identified structure*.
 - [x] **Manual Deep Dive**: `memory_forge` - *Fixed .gitignore issue, added dependencies*.
-- [ ] **Manual Deep Dive**: `code_forge`.
-- [ ] **Manual Deep Dive**: `graphrag`.
+- [x] **Manual Deep Dive**: `code_forge` - *Renamed from forgeengine, added static analysis deps*.
+- [x] **Manual Deep Dive**: `graphrag` - *Identified as Vendor/Fork, kept poetry config*.
+- [x] **Manual Deep Dive**: `audit_forge` - *Fixed paths, verified core files*.
+- [ ] **Manual Deep Dive**: `knowledge_forge`.
+- [ ] **Manual Deep Dive**: `llm_forge`.
+- [ ] **Manual Deep Dive**: `prompt_forge`.
 
 ## 4. Module Status Tracker
 
@@ -49,8 +53,8 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `agent_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `archive_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `article_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `audit_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `code_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `audit_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `code_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `crawl_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `diagnostics_forge`| ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `doc_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
@@ -62,7 +66,7 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `game_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `gis_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `glyph_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |
-| `graphrag` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `graphrag` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `knowledge_forge`| ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `llm_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `lyrics_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
