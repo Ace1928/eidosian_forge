@@ -1,15 +1,16 @@
 # Current State: llm_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Functional Refinement
 
 ## 📊 Metrics
-- **Python Files**: 25
-- **Test Coverage**: Unknown
+- **Build System**: Migrated to `hatchling` (Python 3.12).
+- **Structure**: `src` layout.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+- **CLI**: `llm-forge` entry point.
+- **Model Manager**: Abstract factory for LLMs.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- `src` layout is good, but `llm_core.py` (legacy) exists in root. Needs cleanup.
+- Needs integration with `eidos-brain` to be the primary model provider.

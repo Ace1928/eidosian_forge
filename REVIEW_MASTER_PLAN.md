@@ -41,9 +41,9 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `code_forge` - *Renamed from forgeengine, added static analysis deps*.
 - [x] **Manual Deep Dive**: `graphrag` - *Identified as Vendor/Fork, kept poetry config*.
 - [x] **Manual Deep Dive**: `audit_forge` - *Fixed paths, verified core files*.
-- [ ] **Manual Deep Dive**: `knowledge_forge`.
-- [ ] **Manual Deep Dive**: `llm_forge`.
-- [ ] **Manual Deep Dive**: `prompt_forge`.
+- [x] **Manual Deep Dive**: `knowledge_forge` - *Renamed repo, added RDF/NetworkX deps*.
+- [x] **Manual Deep Dive**: `llm_forge` - *Migrated to hatchling, clarified architecture*.
+- [x] **Manual Deep Dive**: `prompt_forge` - *Scaffolded pyproject, defined roadmap*.
 
 ## 4. Module Status Tracker
 
@@ -67,14 +67,14 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `gis_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `glyph_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |
 | `graphrag` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `knowledge_forge`| ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `llm_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `knowledge_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
+| `llm_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `lyrics_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `memory_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `metadata_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `mkey_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `ollama_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
-| `prompt_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `refactor_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `repo_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `sms_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
