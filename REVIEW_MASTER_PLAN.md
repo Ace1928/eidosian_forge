@@ -48,10 +48,11 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `diagnostics_forge` - *Standardized logging core*.
 - [x] **Manual Deep Dive**: `archive_forge` - *Marked as legacy/museum*.
 - [x] **Manual Deep Dive**: `ollama_forge` - *Standardized wrapper for Ollama API*.
-- [x] **Manual Deep Dive**: `refactor_forge` - *Standardized LibCST tools*.
-- [x] **Manual Deep Dive**: `repo_forge` - *Standardized cookiecutter usage*.
-- [x] **Manual Deep Dive**: `terminal_forge` - *Standardized Rich/Textual deps*.
-- [x] **Manual Deep Dive**: `type_forge` - *Standardized schema validation*.
+- [x] **Manual Deep Dive**: `sms_forge` - *Identified as Planned/Placeholder*.
+- [x] **Manual Deep Dive**: `test_forge` - *Standardized fixtures*.
+- [x] **Manual Deep Dive**: `version_forge` - *Standardized SemVer impl*.
+- [x] **Manual Deep Dive**: `viz_forge` - *Standardized plotting wrapper*.
+- [x] **Manual Deep Dive**: `word_forge` - *Standardized NLP pipeline*.
 
 ## 4. Module Status Tracker
 
@@ -85,10 +86,13 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `refactor_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `repo_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `sms_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `sms_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `terminal_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `test_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
+| `test_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `type_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `version_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `viz_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `word_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `version_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `viz_forge` | ⏳ | ✅ | ✅ | ✅ | ⏳ |
 | `word_forge` | ⏳ | ✅ | ✅ | ⏳ | ⏳ |

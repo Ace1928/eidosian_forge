@@ -1,0 +1,5 @@
+# Exclude sibling repositories
+# ../*/
+__pycache__/
+*.py[cod]
+.venv/

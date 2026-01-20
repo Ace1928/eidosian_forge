@@ -1,13 +1,7 @@
 # TODO: version_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Consolidate**: Move `version_core.py` to `src/version_forge/`.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
-
-## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Refactor**: Replace custom regex with `packaging` library.
