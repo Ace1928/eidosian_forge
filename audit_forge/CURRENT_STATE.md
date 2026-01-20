@@ -1,15 +1,14 @@
 # Current State: audit_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Functional / Core Tool
 
 ## 📊 Metrics
-- **Python Files**: 5
-- **Test Coverage**: Unknown
+- **Dependencies**: Minimal (Pydantic).
+- **Integration**: Used by agents to track their own progress (theoretically).
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Simple Python module. Relies on `global_info` for root path resolution.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- `tasks.py` and `coverage.py` need verification (assumed to exist based on imports in `audit_core.py`).
