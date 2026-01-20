@@ -3,30 +3,24 @@
 [![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**The Eidosian Foundry for Source Code Manipulation.**
+**The Architect.**
 
 ## 🛠️ Overview
 
-`code_forge` is the domain responsible for understanding, modifying, and generating code.
-It combines traditional static analysis (AST/CST) with modern LLM-driven synthesis.
+`code_forge` analyzes, decomposes, and stores source code.
+It is the engine behind the "Universal Repository" of Eidosian code snippets.
 
 ## 🏗️ Architecture
-- **Static Analysis**: Uses `libcst` and `rope` for safe, structural refactoring.
-- **Polyglot Parsing**: Uses `tree-sitter` for understanding non-Python languages.
-- **Legacy Engine**: Contains `forgeengine`, a narrative engine prototype (scheduled for migration).
-
-## 📦 Capabilities
-- **Refactoring**: Rename, Extract Method, Move Class.
-- **Auditing**: Scan for patterns and anti-patterns.
-- **Generation**: Scaffold boilerplate and tests.
+- **Analyzer**: Extracts structure (Classes, Functions) from source code using AST.
+- **Librarian**: Manages a persistent store of code snippets (JSON/Vector).
+- **Enricher**: (Planned) Uses LLMs to generate docs and tests for snippets.
 
 ## 🚀 Usage
 
 ```bash
 # Analyze a file
-codeforge analyze path/to/file.py
+code-forge analyze src/main.py
 
-# Refactor a symbol
-codeforge rename --from "OldName" --to "NewName" .
+# Ingest into library
+code-forge ingest src/main.py
 ```
-*(CLI implementation pending)*

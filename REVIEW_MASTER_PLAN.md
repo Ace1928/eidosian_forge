@@ -53,6 +53,9 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 - [x] **Manual Deep Dive**: `version_forge` - *Standardized SemVer impl*.
 - [x] **Manual Deep Dive**: `viz_forge` - *Standardized plotting wrapper*.
 - [x] **Manual Deep Dive**: `word_forge` - *Standardized NLP pipeline*.
+- [x] **Architecture**: Extracted `narrative_forge` from `code_forge`.
+- [x] **Architecture**: Implemented `code_forge` V2 (Analyzer/Librarian).
+- [x] **Architecture**: Forked `graphrag` to Eidosian control.
 
 ## 4. Module Status Tracker
 
@@ -82,6 +85,7 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 | `memory_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `metadata_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `mkey_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `narrative_forge`| ✅ | ✅ | ✅ | ✅ | ✅ |
 | `ollama_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `prompt_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `refactor_forge` | ✅ | ✅ | ✅ | ✅ | ✅ |

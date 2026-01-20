@@ -30,6 +30,7 @@
     - [x] Move resource counters and selected object info to HTML elements layered over the canvas.
     - [x] Add tooltips for resources and structures.
     - [x] Add hover feedback for HUD stats and controls.
+    - [x] Add combat status + loss feedback to the HUD.
 - [ ] **Tech Tree UI**
     - [ ] Create a visualization for the tech tree so players can see what they are researching/have unlocked.
 
@@ -38,21 +39,24 @@
 - [x] **Expand Test Coverage**
     - [x] Add tests for `TechEffect` application (verify costs drop/yields rise).
     - [ ] Add tests for Game Over / Win states (if any).
-- [ ] **Engine/Input Tests**
-    - [ ] Add unit tests for the command queue (input -> engine).
-    - [ ] Add interaction tests for HUD actions and selection logic.
+- [x] **Combat & Rendering Tests**
+    - [x] Add unit tests for combat resolution and defense mitigation.
+    - [x] Add unit tests for canvas scaling metrics.
+- [x] **Engine/Input Tests**
+    - [x] Add unit tests for the command queue (input -> engine).
+    - [x] Add interaction tests for HUD action mapping.
 - [ ] **CI/CD Pipeline**
     - [ ] Create a GitHub Actions workflow (or similar) to run `npm test` and `npm run lint` on push.
 
 ## UX & Rendering Polish
 
-- [ ] **Mobile Input**
-    - [ ] Prevent touch drag from scrolling the page (use `passive: false` + `preventDefault`).
-- [ ] **Canvas Scaling**
-    - [ ] Add devicePixelRatio-aware canvas sizing for sharper rendering and accurate picking.
+- [x] **Mobile Input**
+    - [x] Prevent touch drag from scrolling the page (use `passive: false` + `preventDefault`).
+- [x] **Canvas Scaling**
+    - [x] Add devicePixelRatio-aware canvas sizing for sharper rendering and accurate picking.
 
 ## Future Gameplay Features
 
-- [ ] **Combat System:** Simple probe-vs-probe combat logic.
+- [x] **Combat System:** Simple probe-vs-probe combat logic.
 - [ ] **Fog of War:** Hide systems/bodies not currently visited by a probe.
 - [ ] **Ship Design:** Allow players to customize probe stats instead of auto-deriving from bodies.

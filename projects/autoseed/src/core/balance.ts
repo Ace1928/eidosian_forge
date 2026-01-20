@@ -11,6 +11,13 @@ export const BalanceConfig = {
     replicator: { ticks: 14, cost: { mass: 40, energy: 26, exotic: 6 } },
     defense: { ticks: 10, cost: { mass: 30, energy: 20, exotic: 4 } }
   } satisfies Record<StructureType, StructureBlueprint>,
+  defenseStructure: {
+    mitigation: 0.18,
+    maxMitigation: 0.6
+  },
+  combat: {
+    lossRate: 0.2
+  },
   replicationCycle: {
     ticks: 12,
     cost: { mass: 34, energy: 18, exotic: 3 }

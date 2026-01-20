@@ -128,9 +128,11 @@ export const renderFrame = (
   ctx: CanvasRenderingContext2D,
   state: GameState,
   view: ViewState,
-  time: number
+  time: number,
+  frameSize?: { width: number; height: number }
 ): void => {
-  const { width, height } = ctx.canvas;
+  const width = frameSize?.width ?? ctx.canvas.width;
+  const height = frameSize?.height ?? ctx.canvas.height;
   drawBackground(ctx, width, height, time, view.camera);
   const center = { x: width / 2, y: height / 2 };
 
