@@ -1,20 +1,17 @@
 # Lyrics Forge
 
-**Part of the Eidosian Forge**
+**The Song of Eidos.**
 
-## 📋 Overview
-The `lyrics_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+## 🎵 Overview
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+`lyrics_forge` stores generated lyrics and musical concepts.
+Content is organized by genre.
 
-## 🛠️ Usage
-*(Pending documentation)*
+## 📂 Genres
+- **Electronic Angst**: Industrial/Cyberpunk themes.
+- **Modern Alt Pop**: Contemporary styles.
 
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest lyrics_forge/
-```
+## 🚀 Workflow
+1.  Generate concepts in `llm_forge`.
+2.  Refine lyrics here.
+3.  (Future) Pipe to `suno_forge` or similar for audio generation.

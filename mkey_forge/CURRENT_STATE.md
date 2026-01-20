@@ -1,15 +1,14 @@
 # Current State: mkey_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Legacy / External
 
 ## 📊 Metrics
-- **Python Files**: 1
-- **Test Coverage**: Unknown
+- **Dependencies**: `pycryptodome`.
+- **Files**: Single script `mkey.py`.
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Standalone script.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- Uses GPL-3.0 license (different from the rest of the project's MIT). Be careful with linking.
