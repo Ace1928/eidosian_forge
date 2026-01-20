@@ -1,13 +1,11 @@
 # TODO: doc_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Refactor**: Move `doc_core.py` to `src/doc_forge/__init__.py`.
+- [ ] **Integration**: Connect to `scripts/eidos_standardize.py` to auto-generate API docs during standardization.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Feature**: Add support for Mermaid/PlantUML diagram generation from code.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Theme**: Create custom Sphinx theme matching Eidosian aesthetics.

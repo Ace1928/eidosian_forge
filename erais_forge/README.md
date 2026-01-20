@@ -1,20 +1,12 @@
-# Erais Forge
+# ERAIS Forge
 
-**Part of the Eidosian Forge**
+**Eidosian Recursive Artificial Intelligence System.**
 
-## 📋 Overview
-The `erais_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+## 🌌 Overview
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+`erais_forge` is the incubator for next-generation recursive self-improvement algorithms.
+Currently in the **Concept** phase.
 
-## 🛠️ Usage
-*(Pending documentation)*
-
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest erais_forge/
-```
+## 🏗️ Architecture
+- Planned: Meta-learning loop.
+- Planned: Self-modification constraints.

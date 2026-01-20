@@ -1,15 +1,16 @@
 # Current State: figlet_forge
 
 **Date**: 2026-01-20
-**Status**: Analysis Pending
+**Status**: Stable
 
 ## 📊 Metrics
-- **Python Files**: 88
-- **Test Coverage**: Unknown
+- **Dependencies**: `pyfiglet`, `rich`.
+- **Files**: `figlet_core.py` (Simple implementation), `src/` (Full package).
 
 ## 🏗️ Architecture
-*(Describe the current architectural state)*
+Hybrid:
+1.  `figlet_core.py`: Lightweight box-drawing.
+2.  `src/figlet_forge`: Full Figlet wrapper.
 
 ## 🐛 Known Issues
-- Documentation needs update.
-- Type coverage verification needed.
+- Split between root `figlet_core.py` and `src/` implementation needs consolidation.

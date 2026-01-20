@@ -1,13 +1,11 @@
 # TODO: crawl_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [ ] **Upgrade**: Replace Regex HTML parsing with `BeautifulSoup` (bs4) in `crawl_core.py`.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **Feature**: Add support for headless browser (Playwright/Selenium) for JS-heavy sites.
+- [ ] **Cache**: Implement caching of `robots.txt` and fetched pages.
 
 ## 🟢 Low Priority
-- [ ] Refactor long functions.
+- [ ] **Async**: Move to `aiohttp` for parallel crawling.

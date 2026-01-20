@@ -1,20 +1,15 @@
 # Article Forge
 
-**Part of the Eidosian Forge**
+**The Voice of Eidos.**
 
-## 📋 Overview
-The `article_forge` module is a specialized component of the Eidosian Intelligence System.
-*(Auto-generated: Please add specific description here)*
+## ✍️ Overview
 
-## 📂 Structure
-- `src/` (Recommended): Source code
-- `tests/`: Unit and integration tests
+`article_forge` is a repository for written content, blog posts, and articles generated or managed by Eidos.
 
-## 🛠️ Usage
-*(Pending documentation)*
+## 📂 Content
+- `medium_articles/`: Drafts and published works for Medium.com.
 
-## 🧪 Testing
-Run tests from the project root:
-```bash
-pytest article_forge/
-```
+## 🚀 Workflow
+1.  Draft content in Markdown.
+2.  Use `llm_forge` to edit/refine.
+3.  Publish.
