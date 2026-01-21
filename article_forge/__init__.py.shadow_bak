@@ -1,0 +1,15 @@
+from __future__ import annotations
+
+from pathlib import Path
+from pkgutil import extend_path
+
+__path__ = extend_path(__path__, __name__)
+_root = Path(__file__).resolve().parent
+_src_pkg = _root / "src" / "article_forge"
+_nested_pkg = _root / "article_forge"
+
+for _pkg in (_src_pkg, _nested_pkg):
+    if _pkg.exists():
+        pkg_path = str(_pkg)
+        if pkg_path not in __path__:
+            __path__.append(pkg_path)
