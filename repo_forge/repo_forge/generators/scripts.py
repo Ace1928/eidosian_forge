@@ -270,7 +270,7 @@ if [ -d "$PROJECTS_DIR" ]; then
                 build_go_project "$project_dir"
             elif [[ "$project_dir" == *rust_project ]]; then
                 build_rust_project "$project_dir"
-            else:
+            else
                 echo "⚠️ Unknown project type: $(basename "$project_dir"). Skipping."
             fi
         fi

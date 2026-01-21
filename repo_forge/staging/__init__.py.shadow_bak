@@ -1,0 +1,49 @@
+from __future__ import annotations
+
+from pathlib import Path
+from pkgutil import extend_path
+
+__path__ = extend_path(__path__, __name__)
+_root = Path(__file__).resolve().parent
+_src_pkg = _root / "src" / "repo_forge"
+_nested_pkg = _root / "repo_forge"
+
+for _pkg in (_src_pkg, _nested_pkg):
+    if _pkg.exists():
+        pkg_path = str(_pkg)
+        if pkg_path not in __path__:
+            __path__.append(pkg_path)
+
+from .repo_forge import (
+    create_directory_structure,
+    generate_files,
+    write_file,
+    render_template,
+    render_comment_block,
+    run_command,
+    make_executable,
+    detect_environment,
+    create_configuration_files,
+    create_eidosian_json,
+    create_documentation_structure,
+    create_project_scaffold,
+    create_script_files,
+    __version__,
+)
+
+__all__ = [
+    "create_directory_structure",
+    "generate_files",
+    "write_file",
+    "render_template",
+    "render_comment_block",
+    "run_command",
+    "make_executable",
+    "detect_environment",
+    "create_configuration_files",
+    "create_eidosian_json",
+    "create_documentation_structure",
+    "create_project_scaffold",
+    "create_script_files",
+    "__version__",
+]

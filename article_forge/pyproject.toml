@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "article_forge"
+version = "0.0.1"
+description = "Eidosian module: article_forge"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
+    { name = "Eidos", email = "syntheticeidos@gmail.com" },
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/article_forge"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
