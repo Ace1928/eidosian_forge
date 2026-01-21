@@ -1,13 +1,19 @@
 # TODO: llm_forge
 
 ## 🚨 High Priority
-- [ ] **Audit**: specific files in this module.
-- [ ] **Docs**: Fill in `README.md` Overview.
-- [ ] **Style**: Run `black` and `isort`.
+- [x] **Architecture**: Implemented `ModelManager`, `LLMProvider` interface.
+- [x] **Provider**: Implemented `OpenAIProvider`.
+- [x] **Tests**: Added core manager tests.
+- [x] **Ollama**: Implemented `OllamaProvider` with real integration tests.
 
 ## 🟡 Medium Priority
-- [ ] Add docstrings to all public functions.
-- [ ] Create unit tests for core logic.
+- [ ] **HuggingFace**: Implement `LocalProvider` using `transformers`.
+- [x] **Caching**: Implemented `SQLiteCache`.
+
+## 🟢 Low Priority
+- [ ] **Redis**: Add Redis backend for cache.
+
+
 
 ## 🟢 Low Priority
 - [ ] Refactor long functions.

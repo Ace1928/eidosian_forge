@@ -1,5 +1,4 @@
 import { BalanceConfig } from "./balance.js";
-import { listSystems } from "./procgen.js";
 import type { CombatState, GameState, Probe } from "./types.js";
 
 const casualtyOrder = (a: Probe, b: Probe): number => {
@@ -34,7 +33,10 @@ export const applyCombat = (state: GameState): GameState => {
   }
 
   if (systemProbes.size === 0) {
-    if (Object.keys(state.combat.damagePools).length === 0 && state.combat.contestedSystems.length === 0) {
+    if (
+      Object.keys(state.combat.damagePools).length === 0 &&
+      state.combat.contestedSystems.length === 0
+    ) {
       return state;
     }
     return {
@@ -43,17 +45,13 @@ export const applyCombat = (state: GameState): GameState => {
     };
   }
 
-  const bodyToSystem = new Map<string, string>();
-  listSystems(state.galaxy).forEach((system) => {
-    system.bodies.forEach((body) => bodyToSystem.set(body.id, system.id));
-  });
-
   const defenseCounts: Record<string, Record<string, number>> = {};
   state.factions.forEach((faction) => {
     faction.structures
       .filter((structure) => structure.completed && structure.type === "defense")
       .forEach((structure) => {
-        const systemId = bodyToSystem.get(structure.bodyId);
+        const body = state.bodyIndex[structure.bodyId];
+        const systemId = body?.systemId;
         if (!systemId) {
           return;
         }
@@ -76,21 +74,25 @@ export const applyCombat = (state: GameState): GameState => {
     }
     activeSystems.add(systemId);
     combatState.contestedSystems.push(systemId);
-    const powerByFaction = new Map<string, number>();
-    let totalPower = 0;
+    const attackByFaction = new Map<string, number>();
+    const defenseByFaction = new Map<string, number>();
+    let totalAttack = 0;
     for (const [factionId, probes] of factions.entries()) {
-      const power = probes.reduce((sum, probe) => sum + probe.stats.defense, 0);
-      powerByFaction.set(factionId, power);
-      totalPower += power;
+      const attack = probes.reduce((sum, probe) => sum + probe.stats.attack, 0);
+      const defense = probes.reduce((sum, probe) => sum + probe.stats.defense, 0);
+      attackByFaction.set(factionId, attack);
+      defenseByFaction.set(factionId, defense);
+      totalAttack += attack;
     }
-    if (totalPower <= 0) {
+    if (totalAttack <= 0) {
       continue;
     }
 
     for (const [factionId, probes] of factions.entries()) {
-      const power = powerByFaction.get(factionId) ?? 0;
-      const enemyPower = totalPower - power;
-      if (enemyPower <= 0) {
+      const attack = attackByFaction.get(factionId)!;
+      const defense = defenseByFaction.get(factionId)!;
+      const enemyAttack = totalAttack - attack;
+      if (enemyAttack <= 0) {
         continue;
       }
       const defenseCount = defenseCounts[systemId]?.[factionId] ?? 0;
@@ -98,8 +100,8 @@ export const applyCombat = (state: GameState): GameState => {
         BalanceConfig.defenseStructure.maxMitigation,
         defenseCount * BalanceConfig.defenseStructure.mitigation
       );
-      const rawLosses =
-        (enemyPower / totalPower) * probes.length * BalanceConfig.combat.lossRate * (1 - mitigation);
+      const pressure = enemyAttack / Math.max(1, enemyAttack + defense);
+      const rawLosses = pressure * probes.length * BalanceConfig.combat.lossRate * (1 - mitigation);
       if (rawLosses <= 0) {
         continue;
       }
@@ -111,8 +113,9 @@ export const applyCombat = (state: GameState): GameState => {
 
       if (losses > 0) {
         const casualties = [...probes].sort(casualtyOrder).slice(0, losses);
-        removals[factionId] = removals[factionId] ?? new Set<string>();
-        casualties.forEach((probe) => removals[factionId].add(probe.id));
+        const removalSet = removals[factionId] ?? new Set<string>();
+        removals[factionId] = removalSet;
+        casualties.forEach((probe) => removalSet.add(probe.id));
       }
     }
   }

@@ -53,6 +53,7 @@ export interface ProbeStats {
   mining: number;
   replication: number;
   defense: number;
+  attack: number;
   speed: number;
 }
 
@@ -66,8 +67,16 @@ export interface Probe {
 }
 
 export interface TechEffect {
-  key: ResourceKey | "replication" | "defense" | "speed" | "efficiency";
+  key: ResourceKey | "replication" | "defense" | "attack" | "speed" | "efficiency";
   value: number;
+}
+
+export interface ProbeDesign {
+  mining: number;
+  replication: number;
+  defense: number;
+  attack: number;
+  speed: number;
 }
 
 export interface TechNode {
@@ -97,6 +106,8 @@ export interface Faction {
   resources: ResourceStockpile;
   structures: Structure[];
   probes: Probe[];
+  probeDesign: ProbeDesign;
+  discoveredSystems: string[];
   techs: string[];
   aiControlled: boolean;
 }
@@ -104,9 +115,11 @@ export interface Faction {
 export interface GameState {
   tick: number;
   galaxy: Galaxy;
+  bodyIndex: Record<string, CelestialBody>;
   techTree: TechTree;
   factions: Faction[];
   combat: CombatState;
+  outcome: GameOutcome | null;
   lastEvent: string | null;
 }
 
@@ -114,6 +127,11 @@ export interface CombatState {
   damagePools: Record<string, Record<string, number>>;
   contestedSystems: string[];
   lastTickLosses: Record<string, number>;
+}
+
+export interface GameOutcome {
+  winnerId: string | null;
+  reason: "elimination" | "stalemate";
 }
 
 export interface GameConfig {

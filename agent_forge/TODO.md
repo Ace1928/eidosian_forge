@@ -1,13 +1,11 @@
 # TODO: agent_forge
 
 ## 🚨 High Priority
-- [ ] **Standardize**: Ensure `bin/` scripts work with the new `pyproject.toml` entry points.
-- [ ] **Audit**: Investigate `src/` vs `core/`.
-    - *Hypothesis*: `core` is the engine, `src` might be legacy or specific implementations.
+- [x] **Standardize**: Moved `core` and `bin` to `src/agent_forge/`.
+- [x] **Capabilities**: Implemented `capabilities.py` connecting to `code_forge`.
 
 ## 🟡 Medium Priority
 - [ ] **Docs**: Document the "Journal" architecture.
-- [ ] **Features**: Enhance `eidtop` (TUI).
+- [ ] **Fix Imports**: Check python files in `src/agent_forge` for broken imports.
 
-## 🟢 Low Priority
-- [ ] **Cleanup**: Remove `uv.lock` if we are moving to standard pip/venv, or fully embrace `uv`.
+- [ ] **Features**: Enhance `eidtop` (TUI).

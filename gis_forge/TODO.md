@@ -1,9 +1,12 @@
 # TODO: gis_forge
 
 ## 🚨 High Priority
-- [ ] **Cleanup**: Remove `eidos_venv/` from git tracking.
-- [ ] **Consolidate**: Decide if `global_info.py` lives here or in the root. (Currently Root is master).
+- [x] **Cleanup**: Remove `eidos_venv/` from git tracking.
+- [x] **Consolidate**: Moved `global_info.py` to `gis_forge.defaults`.
 
 ## 🟡 Medium Priority
-- [ ] **Feature**: Support YAML/TOML in addition to JSON.
-- [ ] **Validation**: Integrate `pydantic` schemas for config validation.
+- [x] **Feature**: Support YAML/TOML in addition to JSON.
+- [x] **Validation**: Integrate `pydantic` schemas for config validation.
+
+## 🟢 Low Priority
+- [ ] **Etcd/Consul**: Support distributed key-value stores for multi-node deployments.

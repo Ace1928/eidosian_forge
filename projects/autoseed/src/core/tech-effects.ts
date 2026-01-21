@@ -5,6 +5,7 @@ export interface TechModifiers {
   costEfficiency: number;
   replicationSpeed: number;
   defense: number;
+  attack: number;
   speed: number;
   replication: number;
 }
@@ -14,6 +15,7 @@ const defaultModifiers = (): TechModifiers => ({
   costEfficiency: 1,
   replicationSpeed: 1,
   defense: 1,
+  attack: 1,
   speed: 1,
   replication: 1
 });
@@ -38,6 +40,9 @@ const applyEffect = (modifiers: TechModifiers, effect: TechEffect): void => {
       return;
     case "defense":
       modifiers.defense *= effect.value;
+      return;
+    case "attack":
+      modifiers.attack *= effect.value;
       return;
     case "speed":
       modifiers.speed *= effect.value;

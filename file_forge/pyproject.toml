@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["file_core.py"]
+packages = ["src/file_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

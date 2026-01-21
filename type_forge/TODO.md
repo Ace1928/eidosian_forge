@@ -1,7 +1,10 @@
 # TODO: type_forge
 
 ## 🚨 High Priority
-- [ ] **Consolidate**: Move `type_core.py` to `src/type_forge/`.
+- [x] **Consolidate**: Move `type_core.py` to `src/type_forge/core.py`.
 
 ## 🟡 Medium Priority
-- [ ] **Upgrade**: Replace custom validation logic with `pydantic` or `jsonschema` library for better standard compliance.
+- [x] **Upgrade**: Implemented Pydantic dynamic model compilation (`core.py`).
+
+## 🟢 Low Priority
+- [ ] **Schema Registry**: Persist registered schemas to disk using `gis_forge`.

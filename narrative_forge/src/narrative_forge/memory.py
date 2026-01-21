@@ -22,7 +22,8 @@ class MemoryStore:
     def __init__(self, path: str = "memory.json") -> None:
         self.path = path
         self.data = Memory()
-        self.load()
+        if self.path != ":memory:":
+            self.load()
 
     def load(self) -> None:
         if os.path.exists(self.path):
@@ -36,6 +37,9 @@ class MemoryStore:
             self.data = Memory()
 
     def save(self) -> None:
+        if self.path == ":memory:":
+            return
+            
         with open(self.path, "w", encoding="utf-8") as fh:
             json.dump(
                 {
@@ -46,4 +50,3 @@ class MemoryStore:
                 fh,
                 indent=2,
             )
-

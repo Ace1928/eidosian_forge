@@ -48,7 +48,7 @@ export class RNG {
     const total = weights.reduce((sum, value) => sum + value, 0);
     let roll = this.next() * total;
     for (let i = 0; i < items.length; i += 1) {
-      roll -= weights[i] ?? 0;
+      roll -= weights[i];
       if (roll <= 0) {
         return items[i] as T;
       }

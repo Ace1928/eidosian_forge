@@ -1,13 +1,18 @@
-import type { CelestialBody, Faction, GameState, Structure, StructureType } from "./types.js";
+import type { Faction, GameState, Structure, StructureType } from "./types.js";
 import type { TechModifiers } from "./tech-effects.js";
 import { BalanceConfig } from "./balance.js";
 import { canAfford, perTickCost, subtractResources } from "./economy.js";
 import { getBodyById } from "./selectors.js";
+import { deriveProbeStats } from "./probes.js";
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
 
-export const structureConflict = (faction: Faction, bodyId: string, type: StructureType): boolean => {
+export const structureConflict = (
+  faction: Faction,
+  bodyId: string,
+  type: StructureType
+): boolean => {
   if (type === "extractor") {
     return faction.structures.some(
       (structure) => structure.bodyId === bodyId && structure.type === "replicator"
@@ -30,7 +35,9 @@ const buildStructure = (
   if (structureConflict(faction, bodyId, type)) {
     return faction;
   }
-  if (faction.structures.some((structure) => structure.bodyId === bodyId && structure.type === type)) {
+  if (
+    faction.structures.some((structure) => structure.bodyId === bodyId && structure.type === type)
+  ) {
     return faction;
   }
 
@@ -67,13 +74,6 @@ export const queueStructure = (
     factions
   };
 };
-
-const deriveProbeStats = (body: CelestialBody, modifiers: TechModifiers) => ({
-  mining: clamp(0.6 + body.properties.richness * 1.2, 0.6, 2.2),
-  replication: clamp((0.7 + body.properties.exoticness) * modifiers.replication, 0.7, 2.4),
-  defense: clamp((0.6 + body.properties.gravity) * modifiers.defense, 0.6, 2.4),
-  speed: clamp((0.7 + (1 - body.properties.gravity) * 0.5) * modifiers.speed, 0.7, 2.2)
-});
 
 export const advanceConstruction = (faction: Faction, modifiers: TechModifiers): Faction => {
   let resources = { ...faction.resources };
@@ -146,7 +146,7 @@ export const advanceReplication = (
           ownerId: faction.id,
           systemId: body.systemId,
           bodyId: body.id,
-          stats: deriveProbeStats(body, modifiers),
+          stats: deriveProbeStats(body, modifiers, faction.probeDesign),
           active: true
         });
       }

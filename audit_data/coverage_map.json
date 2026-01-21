@@ -269,6 +269,24 @@
       "agent": "Eidos-Home-Audit",
       "scope": "shallow",
       "timestamp": "2026-01-16 11:04:12"
+    },
+    "/home/lloyd/eidosian_forge/projects/autoseed/src": {
+      "last_reviewed": 1768957609.6043258,
+      "agent": "codex",
+      "scope": "review",
+      "timestamp": "2026-01-21 11:06:49"
+    },
+    "/home/lloyd/eidosian_forge/projects/autoseed/tests": {
+      "last_reviewed": 1768959482.9715238,
+      "agent": "codex",
+      "scope": "review",
+      "timestamp": "2026-01-21 11:38:02"
+    },
+    "/home/lloyd/eidosian_forge/projects/autoseed/docs": {
+      "last_reviewed": 1768959489.3315496,
+      "agent": "codex",
+      "scope": "review",
+      "timestamp": "2026-01-21 11:38:09"
     }
   },
   "last_full_audit": null
