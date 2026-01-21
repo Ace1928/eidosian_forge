@@ -1,4 +1,5 @@
 import type { GameCommand } from "../core/commands.js";
+import type { ProbeDesign } from "../core/types.js";
 import type { BuildRequest, PanelAction } from "./panels.js";
 
 export const commandFromPanelAction = (action: PanelAction): GameCommand => {
@@ -29,4 +30,9 @@ export const commandFromBuildRequest = (request: BuildRequest): GameCommand => (
   factionId: request.factionId,
   bodyId: request.bodyId,
   structure: request.type
+});
+
+export const commandFromProbeDesign = (design: ProbeDesign): GameCommand => ({
+  type: "set-probe-design",
+  design
 });

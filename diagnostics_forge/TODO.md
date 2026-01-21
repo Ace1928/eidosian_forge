@@ -1,12 +1,16 @@
 # TODO: diagnostics_forge
 
 ## 🚨 High Priority
-- [ ] **Persist**: Auto-save metrics on exit.
-- [ ] **Rotation**: Verify log rotation works as expected in high-volume scenarios.
+- [x] **Persist**: Auto-save metrics on exit (via `atexit`).
+- [x] **Rotation**: Verified log rotation works (`tests/test_diag.py`).
 
 ## 🟡 Medium Priority
-- [ ] **Format**: Move to pure JSON logging (structlog style) for production.
+- [x] **Format**: Added JSON logging option.
 - [ ] **Dashboard**: Create a simple CLI dashboard to view metrics json.
+
+## 🟢 Low Priority
+- [ ] **Prometheus**: Add an exporter endpoint.
+
 
 ## 🟢 Low Priority
 - [ ] **Prometheus**: Add an exporter endpoint.

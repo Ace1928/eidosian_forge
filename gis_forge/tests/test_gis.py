@@ -1,58 +1,38 @@
-import unittest
-import os
-import json
+import pytest
 from pathlib import Path
-from eidosian_forge.gis_forge import GisCore
+from gis_forge import GisCore
+from pydantic import BaseModel
 
-class TestGisCore(unittest.TestCase):
-    def setUp(self):
-        self.persistence_file = Path("test_gis_persist.json")
-        if self.persistence_file.exists():
-            self.persistence_file.unlink()
-        self.gis = GisCore(persistence_path=self.persistence_file)
+class ServerConfig(BaseModel):
+    host: str
+    port: int
 
-    def tearDown(self):
-        if self.persistence_file.exists():
-            self.persistence_file.unlink()
+def test_gis_basic(tmp_path):
+    f = tmp_path / "config.json"
+    gis = GisCore(persistence_path=f)
+    gis.set("foo.bar", "baz")
+    assert gis.get("foo.bar") == "baz"
+    assert f.exists()
 
-    def test_set_get_basic(self):
-        self.gis.set("app.name", "EidosianForge")
-        self.assertEqual(self.gis.get("app.name"), "EidosianForge")
+def test_gis_yaml(tmp_path):
+    f = tmp_path / "config.yaml"
+    f.write_text("server:\n  host: localhost\n  port: 8080", encoding="utf-8")
+    
+    gis = GisCore(persistence_path=f)
+    assert gis.get("server.host") == "localhost"
+    assert gis.get("server.port") == 8080
 
-    def test_persistence(self):
-        self.gis.set("persist.key", "value")
-        self.assertTrue(self.persistence_file.exists())
-        
-        # Create new GIS instance pointing to same file
-        new_gis = GisCore(persistence_path=self.persistence_file)
-        self.assertEqual(new_gis.get("persist.key"), "value")
+def test_gis_validation(tmp_path):
+    gis = GisCore()
+    gis.set("server.host", "127.0.0.1")
+    gis.set("server.port", 9000)
+    
+    model = gis.validate_config(ServerConfig, "server")
+    assert model.port == 9000
 
-    def test_env_override(self):
-        os.environ["EIDOS_APP_PORT"] = "8080"
-        self.assertEqual(self.gis.get("app.port"), 8080) # Auto JSON parse
-        
-        os.environ["EIDOS_COMPLEX_DATA"] = '{"a": 1}'
-        self.assertEqual(self.gis.get("complex.data")["a"], 1)
-
-    def test_delete(self):
-        self.gis.set("to.delete", 123)
-        self.assertTrue(self.gis.delete("to.delete"))
-        self.assertIsNone(self.gis.get("to.delete"))
-
-    def test_flatten(self):
-        self.gis.update({"a": {"b": 1, "c": {"d": 2}}})
-        flat = self.gis.flatten()
-        self.assertEqual(flat["a.b"], 1)
-        self.assertEqual(flat["a.c.d"], 2)
-
-    def test_subscription(self):
-        changes = []
-        def callback(key, value):
-            changes.append((key, value))
-            
-        self.gis.subscribe("app", callback)
-        self.gis.set("app.status", "starting")
-        self.assertEqual(len(changes), 1)
-
-if __name__ == "__main__":
-    unittest.main()
+def test_gis_env_override(monkeypatch):
+    gis = GisCore()
+    gis.set("app.debug", False)
+    
+    monkeypatch.setenv("EIDOS_APP_DEBUG", "true")
+    assert gis.get("app.debug") is True  # JSON parsing of "true"

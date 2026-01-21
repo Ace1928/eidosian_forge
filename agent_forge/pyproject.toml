@@ -27,21 +27,12 @@ dependencies = [
 ]
 
 [project.scripts]
-eidctl = "bin.eidctl:main"
-eidosd = "bin.eidosd:main"
-eidtop = "bin.eidtop:main"
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "black>=24.0.0",
-    "flake8>=7.0.0",
-    "mypy>=1.8.0",
-    "isort>=5.13.0",
-]
+eidctl = "agent_forge.cli.eidctl:main"
+eidosd = "agent_forge.cli.eidosd:main"
+eidtop = "agent_forge.cli.eidtop:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["core", "src", "actuators", "planners"]
+packages = ["src/agent_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

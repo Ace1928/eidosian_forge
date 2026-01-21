@@ -24,30 +24,19 @@ dependencies = [
     "chromadb>=0.4.0",
     "pydantic>=2.6.0",
     "numpy>=1.26.0",
-    "networkx>=3.0",  # For Knowledge Graph basics
+    "networkx>=3.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
-    "black>=24.0.0",
-    "flake8>=7.0.0",
-    "mypy>=1.8.0",
-    "isort>=5.13.0",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["libs", "tools", "projects"]  # Adjust based on actual structure
+packages = ["src/memory_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-ra -q --cov=memory_forge --cov-report=term-missing"
 testpaths = ["tests"]
-
-[tool.black]
-line-length = 88
-target-version = ["py312"]
-
-[tool.isort]
-profile = "black"
-line_length = 88

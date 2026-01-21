@@ -18,8 +18,10 @@ const clamp = (value: number, min: number, max: number): number =>
 export const generateTechTree = (galaxy: Galaxy, seed: number): TechTree => {
   const rng = new RNG(seed);
   const bodies = listSystems(galaxy).flatMap((system) => system.bodies);
-  const avgRichness = bodies.reduce((sum, body) => sum + body.properties.richness, 0) / bodies.length;
-  const avgExotic = bodies.reduce((sum, body) => sum + body.properties.exoticness, 0) / bodies.length;
+  const avgRichness =
+    bodies.reduce((sum, body) => sum + body.properties.richness, 0) / bodies.length;
+  const avgExotic =
+    bodies.reduce((sum, body) => sum + body.properties.exoticness, 0) / bodies.length;
 
   const miningBoost = clamp(0.8 + avgRichness, 1.1, 2.0);
   const exoticBoost = clamp(0.6 + avgExotic, 0.9, 2.2);
@@ -52,6 +54,15 @@ export const generateTechTree = (galaxy: Galaxy, seed: number): TechTree => {
     dependsOn: [baseMining.id]
   } satisfies TechNode;
 
+  const weaponry = {
+    id: "tech-weaponry",
+    name: randomTechName(rng),
+    tier: 2,
+    description: describe("weaponry", "probe offensive suites"),
+    effects: [{ key: "attack", value: 1.15 + avgExotic * 0.6 }],
+    dependsOn: [baseMining.id]
+  } satisfies TechNode;
+
   const propulsion = {
     id: "tech-propulsion",
     name: randomTechName(rng),
@@ -79,7 +90,15 @@ export const generateTechTree = (galaxy: Galaxy, seed: number): TechTree => {
     dependsOn: [exoticSynthesis.id, propulsion.id]
   } satisfies TechNode;
 
-  nodes.push(baseMining, baseReplication, defensive, propulsion, exoticSynthesis, fusionMerge);
+  nodes.push(
+    baseMining,
+    baseReplication,
+    defensive,
+    weaponry,
+    propulsion,
+    exoticSynthesis,
+    fusionMerge
+  );
 
   return {
     seed,

@@ -22,6 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.6.0",
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src/gis_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

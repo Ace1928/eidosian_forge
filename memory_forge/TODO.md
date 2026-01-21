@@ -1,13 +1,13 @@
 # TODO: memory_forge
 
 ## 🚨 High Priority
-- [ ] **Refactor Structure**: Move `memory_core.py`, `retrievers.py`, etc., into a `src/memory_forge/` package structure.
-- [ ] **Install**: Verify `pip install .` works.
-- [ ] **Fix .gitignore**: Remove the `../*/` line and cleanup.
-
-## 🟡 Medium Priority
-- [ ] **Implement**: Basic Vector DB wrapper (ChromaDB).
-- [ ] **Tests**: Add tests for `memory_core.py`.
+- [x] **Refactor**: Moved `memory_core.py` to `src/memory_forge/core/`.
+- [x] **Install**: Verified `pip install .` works.
+- [x] **Fix .gitignore**: Fixed ignoring issues.
+- [x] **Implement**: Basic Vector DB wrapper (ChromaDB).
+- [x] **Tests**: Add tests for `MemoryForge` flow.
+- [x] **Compression**: Implemented `MemoryCompressor`.
 
 ## 🟢 Low Priority
-- [ ] **Benchmarks**: Use `benchmarks/` folder.
+- [x] **Benchmarks**: Use `benchmarks/` folder to measure read/write latency.
+- [ ] **Compression**: Implement semantic compression for old memories.

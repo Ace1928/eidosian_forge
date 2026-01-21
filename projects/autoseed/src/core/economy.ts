@@ -3,7 +3,10 @@ import type { TechModifiers } from "./tech-effects.js";
 import { BalanceConfig } from "./balance.js";
 import { getBodyById } from "./selectors.js";
 
-export const addResources = (base: ResourceStockpile, delta: ResourceStockpile): ResourceStockpile => ({
+export const addResources = (
+  base: ResourceStockpile,
+  delta: ResourceStockpile
+): ResourceStockpile => ({
   mass: base.mass + delta.mass,
   energy: base.energy + delta.energy,
   exotic: base.exotic + delta.exotic
@@ -80,10 +83,7 @@ export const applyExtractorIncome = (
       const body = getBodyById(state, structure.bodyId);
       return body ? extractorYield(body, modifiers) : { mass: 0, energy: 0, exotic: 0 };
     })
-    .reduce(
-      (sum, current) => addResources(sum, current),
-      { mass: 0, energy: 0, exotic: 0 }
-    );
+    .reduce((sum, current) => addResources(sum, current), { mass: 0, energy: 0, exotic: 0 });
 
   return {
     ...faction,

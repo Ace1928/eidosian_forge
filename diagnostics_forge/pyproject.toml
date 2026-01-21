@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src/diagnostics_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Autoseed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         color-scheme: dark;
@@ -47,6 +53,7 @@
         padding: 16px;
         box-shadow: 0 12px 30px rgba(5, 10, 25, 0.35);
         backdrop-filter: blur(6px);
+        pointer-events: auto;
       }
       .panel h3 {
         margin: 0 0 8px;
@@ -91,7 +98,9 @@
         border-radius: 8px;
         pointer-events: auto;
         cursor: help;
-        transition: color 0.15s ease, background 0.15s ease;
+        transition:
+          color 0.15s ease,
+          background 0.15s ease;
       }
       .hud-tooltip:hover {
         color: var(--accent);
@@ -120,7 +129,9 @@
         max-width: 240px;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.15s ease, transform 0.15s ease;
+        transition:
+          opacity 0.15s ease,
+          transform 0.15s ease;
         z-index: 20;
       }
       [data-tooltip]:hover::after,
@@ -141,9 +152,67 @@
         grid-column: 2;
         grid-row: 1;
       }
+      #tech-panel {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+        max-height: calc(100vh - 220px);
+        overflow: auto;
+      }
+      #design-panel {
+        grid-column: 1;
+        grid-row: 3;
+        align-self: start;
+      }
       #build-panel {
         grid-column: 2;
         grid-row: 3;
+      }
+      .tech-tier {
+        margin-bottom: 12px;
+      }
+      .tech-tier h4 {
+        margin: 12px 0 8px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: var(--muted);
+      }
+      .tech-node {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: rgba(5, 10, 25, 0.4);
+      }
+      .tech-node.unlocked {
+        border-color: rgba(255, 207, 110, 0.45);
+        box-shadow: inset 0 0 0 1px rgba(255, 207, 110, 0.2);
+      }
+      .tech-title {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .tech-meta {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .tech-effects {
+        font-size: 11px;
+        color: var(--ink);
+        margin-top: 6px;
+      }
+      .design-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      .design-row input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
       }
       .build-row {
         display: flex;
@@ -163,15 +232,25 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        transition:
+          background 0.15s ease,
+          box-shadow 0.15s ease,
+          transform 0.15s ease;
       }
       button:disabled {
         opacity: 0.4;
         cursor: not-allowed;
       }
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px rgba(7, 12, 24, 0.8);
+      }
       button:not(:disabled):hover {
         background: rgba(255, 207, 110, 0.3);
-        box-shadow: 0 0 0 1px rgba(255, 207, 110, 0.45), 0 10px 20px rgba(5, 10, 25, 0.45);
+        box-shadow:
+          0 0 0 1px rgba(255, 207, 110, 0.45),
+          0 10px 20px rgba(5, 10, 25, 0.45);
         transform: translateY(-1px);
       }
       button:not(:disabled):active {
@@ -194,7 +273,9 @@
         }
         #system-panel,
         #body-panel,
-        #build-panel {
+        #build-panel,
+        #tech-panel,
+        #design-panel {
           grid-column: 1;
           grid-row: auto;
         }
@@ -209,18 +290,29 @@
   <body>
     <canvas id="game"></canvas>
     <div id="hud">
-      <div id="resource-info" class="panel">Mass 0 Energy 0 Exotic 0</div>
-      <div id="body-panel" class="panel">
+      <div id="resource-info" class="panel" role="status" aria-live="polite" aria-atomic="true">
+        Mass 0 Energy 0 Exotic 0
+      </div>
+      <div id="tech-panel" class="panel" role="region" aria-label="Tech tree">
+        <div id="tech-info"></div>
+      </div>
+      <div id="design-panel" class="panel" role="region" aria-label="Probe design">
+        <div id="design-info"></div>
+      </div>
+      <div id="body-panel" class="panel" role="region" aria-label="Selected body">
         <div id="body-info"></div>
       </div>
-      <div id="system-panel" class="panel">
+      <div id="system-panel" class="panel" role="region" aria-label="Selected system">
         <div id="system-info"></div>
       </div>
-      <div id="build-panel" class="panel">
+      <div id="build-panel" class="panel" role="region" aria-label="Build menu">
         <div id="build-info"></div>
       </div>
     </div>
-    <div class="hint">Drag to pan · WASD/arrows · Scroll or Z/X to zoom · Click a body to build · Space to pause</div>
+    <div class="hint">
+      Drag to pan · WASD/arrows · Scroll or Z/X to zoom · Click a body to build · 1/2/3 to build ·
+      Space to pause
+    </div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

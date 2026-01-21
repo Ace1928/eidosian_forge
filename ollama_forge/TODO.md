@@ -1,8 +1,9 @@
 # TODO: ollama_forge
 
 ## 🚨 High Priority
-- [ ] **Verify**: Check `src/ollama_forge` for actual implementation code.
-- [ ] **Sync**: Ensure API parity with latest Ollama release.
+- [x] **Verify**: Checked and flattened `src/ollama_forge`.
+- [x] **Sync**: Implemented basic `generate` and `tags` endpoints.
 
 ## 🟡 Medium Priority
 - [ ] **Integration**: Use `llm_forge` as the abstract interface, with `ollama_forge` as a provider.
+- [ ] **Streaming**: Implement generator support for streaming responses.

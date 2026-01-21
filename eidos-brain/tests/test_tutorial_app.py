@@ -13,16 +13,18 @@ def test_main_exits_quickly():
 def test_save_and_load_memory(tmp_path: Path) -> None:
     """Save a memory then load it back and confirm output."""
     memory_file = tmp_path / "mem.txt"
-    with patch("rich.prompt.Prompt.ask", side_effect=["add", "hello", "exit"]), patch(
-        "rich.console.Console.print"
-    ) as mock_print:
+    with (
+        patch("rich.prompt.Prompt.ask", side_effect=["add", "hello", "exit"]),
+        patch("rich.console.Console.print") as mock_print,
+    ):
         tutorial_app.main(save=str(memory_file))
         outputs = "".join(call.args[0] for call in mock_print.call_args_list)
     assert memory_file.exists()
     assert outputs.count("Memories saved") == 1
-    with patch("rich.prompt.Prompt.ask", side_effect=["reflect", "exit"]), patch(
-        "rich.console.Console.print"
-    ) as mock_print:
+    with (
+        patch("rich.prompt.Prompt.ask", side_effect=["reflect", "exit"]),
+        patch("rich.console.Console.print") as mock_print,
+    ):
         tutorial_app.main(load=str(memory_file))
         prints = "".join(call.args[0] for call in mock_print.call_args_list)
     assert "Loaded 1 memories" in prints
@@ -31,8 +33,9 @@ def test_save_and_load_memory(tmp_path: Path) -> None:
 def test_save_called_once(tmp_path: Path) -> None:
     """``save_memory`` should be invoked exactly once on exit."""
     memory_file = tmp_path / "mem.txt"
-    with patch("labs.tutorial_app.save_memory") as mock_save, patch(
-        "rich.prompt.Prompt.ask", side_effect=["exit"]
+    with (
+        patch("labs.tutorial_app.save_memory") as mock_save,
+        patch("rich.prompt.Prompt.ask", side_effect=["exit"]),
     ):
         tutorial_app.main(save=str(memory_file))
     assert mock_save.call_count == 1

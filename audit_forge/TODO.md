@@ -1,11 +1,15 @@
 # TODO: audit_forge
 
 ## 🚨 High Priority
-- [ ] **Verify**: Ensure `coverage.py` and `tasks.py` exist and work.
-- [ ] **Test**: Add unit tests for `IdempotentTaskManager`.
+- [x] **Verify**: Verified `coverage.py` and `tasks.py` exist and work.
+- [x] **Test**: Added unit tests for `IdempotentTaskManager`.
 
 ## 🟡 Medium Priority
-- [ ] **Feature**: Add CLI for `audit_forge`.
+- [x] **Feature**: Added CLI for `audit_forge`.
+
+## 🟢 Low Priority
+- [ ] **Visuals**: Generate coverage heatmaps.
+
 
 ## 🟢 Low Priority
 - [ ] **Visuals**: Generate coverage heatmaps.

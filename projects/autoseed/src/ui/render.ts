@@ -1,6 +1,7 @@
 import type { GameState, StarSystem, Vector2 } from "../core/types.js";
 import { orbitPosition } from "../core/animation.js";
 import { listSystems } from "../core/procgen.js";
+import { isSystemInView } from "../core/view.js";
 
 export interface ViewState {
   selectedSystemId: string;
@@ -48,8 +49,7 @@ const drawBackground = (
     ctx.fillStyle = `rgba(255, 255, 255, ${layer.alpha})`;
     for (let i = 0; i < layer.count; i += 1) {
       const offset = i * 97 + index * 131;
-      const x =
-        (offset + camera.x * layer.speed + time * 0.0008 * (index + 1)) % width;
+      const x = (offset + camera.x * layer.speed + time * 0.0008 * (index + 1)) % width;
       const y = (offset * 1.7 + camera.y * layer.speed + time * 0.0004) % height;
       const size = layer.size + ((i + index) % 2) * 0.6;
       ctx.fillRect(x, y, size, size);
@@ -123,7 +123,6 @@ const drawSystem = (
   ctx.fillText(system.name, systemScreen.x + 24, systemScreen.y - 18);
 };
 
-
 export const renderFrame = (
   ctx: CanvasRenderingContext2D,
   state: GameState,
@@ -135,18 +134,24 @@ export const renderFrame = (
   const height = frameSize?.height ?? ctx.canvas.height;
   drawBackground(ctx, width, height, time, view.camera);
   const center = { x: width / 2, y: height / 2 };
-
-  listSystems(state.galaxy).forEach((system) =>
-    drawSystem(
-      ctx,
-      system,
-      center,
-      time,
-      system.id === view.selectedSystemId,
-      view.selectedBodyId,
-      view.camera,
-      view.zoom
-    )
+  const player = state.factions[0];
+  const discovered = new Set(player?.discoveredSystems ?? []);
+  const visibleSystems = listSystems(state.galaxy).filter(
+    (system) => discovered.size === 0 || discovered.has(system.id)
   );
 
+  visibleSystems
+    .filter((system) => isSystemInView(system, view.camera, view.zoom, { width, height }))
+    .forEach((system) =>
+      drawSystem(
+        ctx,
+        system,
+        center,
+        time,
+        system.id === view.selectedSystemId,
+        view.selectedBodyId,
+        view.camera,
+        view.zoom
+      )
+    );
 };

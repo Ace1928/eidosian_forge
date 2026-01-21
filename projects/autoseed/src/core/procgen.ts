@@ -75,7 +75,10 @@ const createSystem = (seed: number, coords: Vector2): StarSystem => {
   const bodies: CelestialBody[] = [];
   let orbitIndex = 0;
   for (let i = 0; i < totalBodies; i += 1) {
-    const type = rng.weightedPick(BODY_TYPES, BODY_TYPES.map((t) => typeWeights[t]));
+    const type = rng.weightedPick(
+      BODY_TYPES,
+      BODY_TYPES.map((t) => typeWeights[t])
+    );
     bodies.push(createBody(rng, type, id, orbitIndex));
     orbitIndex += 1;
   }

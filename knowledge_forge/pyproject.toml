@@ -37,7 +37,7 @@ viz = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["libs", "projects", "knowledge_core.py"] # Temp structure fix
+packages = ["src/knowledge_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

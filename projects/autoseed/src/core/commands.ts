@@ -1,4 +1,4 @@
-import type { StructureType, Vector2 } from "./types.js";
+import type { ProbeDesign, StructureType, Vector2 } from "./types.js";
 
 export type GameCommand =
   | { type: "pan-camera"; delta: Vector2 }
@@ -9,4 +9,6 @@ export type GameCommand =
   | { type: "zoom-set"; value: number }
   | { type: "center-selected" }
   | { type: "center-probe" }
-  | { type: "build-structure"; factionId: string; bodyId: string; structure: StructureType };
+  | { type: "build-structure"; factionId: string; bodyId: string; structure: StructureType }
+  | { type: "build-selected"; structure: StructureType }
+  | { type: "set-probe-design"; design: ProbeDesign };

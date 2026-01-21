@@ -35,10 +35,10 @@ dev = [
 ]
 
 [project.scripts]
-eidos-mcp = "eidos_mcp.eidos_mcp_server:mcp.run"
+eidos-mcp = "eidos_mcp.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
+packages = ["src/eidos_mcp"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
