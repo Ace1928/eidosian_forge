@@ -18,9 +18,7 @@ describe("panel commands", () => {
 
   it("throws for unknown panel actions", () => {
     const invalidAction = "unknown" as unknown as Parameters<typeof commandFromPanelAction>[0];
-    expect(() => commandFromPanelAction(invalidAction)).toThrow(
-      "Unknown panel action: unknown"
-    );
+    expect(() => commandFromPanelAction(invalidAction)).toThrow("Unknown panel action: unknown");
   });
 
   it("maps build requests to build commands", () => {

@@ -114,4 +114,23 @@ describe("ui input", () => {
 
     binding.destroy();
   });
+
+  it("keeps dragMoved false for tiny drags", () => {
+    const canvas = document.createElement("canvas");
+    document.body.append(canvas);
+    const commands: GameCommand[] = [];
+    const binding = attachInput(canvas, (command) => commands.push(command));
+
+    canvas.dispatchEvent(new MouseEvent("mousedown", { clientX: 10, clientY: 10 }));
+    window.dispatchEvent(new MouseEvent("mousemove", { clientX: 11, clientY: 11 }));
+    window.dispatchEvent(new MouseEvent("mouseup"));
+    canvas.dispatchEvent(new MouseEvent("click", { clientX: 11, clientY: 11 }));
+
+    expect(binding.state.dragMoved).toBe(false);
+    expect(commands).toEqual(
+      expect.arrayContaining([{ type: "select-at", screen: { x: 11, y: 11 } }])
+    );
+
+    binding.destroy();
+  });
 });

@@ -29,10 +29,8 @@ const getSystemCandidates = (system: { id: string; bodies: CelestialBody[] }) =>
   const entry = { extractor, replicator };
   systemCache.set(system.id, entry);
   if (systemCache.size > SYSTEM_CACHE_LIMIT) {
-    const oldestKey = systemCache.keys().next().value;
-    if (oldestKey) {
-      systemCache.delete(oldestKey);
-    }
+    const oldestKey = systemCache.keys().next().value as string;
+    systemCache.delete(oldestKey);
   }
   return entry;
 };
@@ -112,25 +110,20 @@ export const applyAiPlanning = (state: GameState, faction: Faction, idSeed: numb
   if (recentLosses > 0 || state.combat.contestedSystems.length > 0) {
     const defenseBody = findDefenseBody(state, updated);
     if (defenseBody) {
-      const hasDefense = updated.structures.some(
-        (structure) => structure.type === "defense" && structure.bodyId === defenseBody.id
-      );
-      if (!hasDefense) {
-        updated = {
-          ...updated,
-          structures: [
-            ...updated.structures,
-            {
-              id: `${faction.id}-defense-${idSeed}`,
-              type: "defense",
-              bodyId: defenseBody.id,
-              ownerId: faction.id,
-              progress: 0,
-              completed: false
-            }
-          ]
-        };
-      }
+      updated = {
+        ...updated,
+        structures: [
+          ...updated.structures,
+          {
+            id: `${faction.id}-defense-${idSeed}`,
+            type: "defense",
+            bodyId: defenseBody.id,
+            ownerId: faction.id,
+            progress: 0,
+            completed: false
+          }
+        ]
+      };
     }
   }
   if (!hasReplicator) {

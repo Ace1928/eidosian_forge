@@ -14,6 +14,51 @@ describe("view helpers", () => {
     expect(radius).toBeGreaterThan(40);
   });
 
+  it("does not shrink radius for smaller follow-up bodies", () => {
+    const system = {
+      id: "sys-test",
+      name: "Test",
+      starClass: "G",
+      position: { x: 0, y: 0 },
+      grid: { x: 0, y: 0 },
+      bodies: [
+        {
+          id: "body-large",
+          name: "Large",
+          type: "rocky",
+          systemId: "sys-test",
+          orbitIndex: 5,
+          properties: {
+            richness: 0.5,
+            exoticness: 0.5,
+            gravity: 0.5,
+            temperature: 0.5,
+            size: 1
+          }
+        },
+        {
+          id: "body-small",
+          name: "Small",
+          type: "rocky",
+          systemId: "sys-test",
+          orbitIndex: 0,
+          properties: {
+            richness: 0.2,
+            exoticness: 0.2,
+            gravity: 0.2,
+            temperature: 0.2,
+            size: 0.1
+          }
+        }
+      ]
+    };
+
+    const radius = estimateSystemRadius(system);
+    const cached = estimateSystemRadius(system);
+    expect(radius).toBeGreaterThan(0);
+    expect(cached).toBe(radius);
+  });
+
   it("detects systems within the camera bounds", () => {
     let galaxy = createGalaxy(13);
     galaxy = ensureSystem(galaxy, { x: 0, y: 0 });

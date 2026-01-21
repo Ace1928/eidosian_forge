@@ -6,5 +6,5 @@
 - [ ] Ensure 85%+ test coverage.
 
 ## 🔭 Long-term Vision
-- Integrate fully with `eidos-brain`.
+- Integrate fully with `eidos_brain`.
 - Optimize for performance and scalability.

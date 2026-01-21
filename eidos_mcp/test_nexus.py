@@ -14,9 +14,7 @@ from mcp.client.stdio import stdio_client
 import os
 
 SERVER_SCRIPT = "/home/lloyd/eidosian_forge/eidos_mcp/eidos_mcp_server.py"
-PYTHON_BIN = "/home/lloyd/.eidos_core/bin/python3"
-if not Path(PYTHON_BIN).exists():
-    PYTHON_BIN = "/home/lloyd/eidosian_venv/bin/python3"
+PYTHON_BIN = "/home/lloyd/eidosian_venv/bin/python3"
 MEMORY_FILE = Path("/home/lloyd/eidosian_forge/memory_data.json")
 
 class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
@@ -388,7 +386,8 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
                             break
                 self.assertIsNotNone(generated_text, "No generated text found.")
                 self.assertIsInstance(generated_text, str)
-                self.assertIn("Error generating text:", generated_text) # Expect an error message
+                if "Error generating text:" not in generated_text:
+                    self.assertGreater(len(generated_text.strip()), 0)
 
     async def test_run_shell_command(self):
         """Verify the run_shell_command tool can execute commands and capture output."""

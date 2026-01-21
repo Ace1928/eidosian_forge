@@ -1,9 +1,0 @@
-I still need to solve the task I was given:
-```
-{task}
-```
-
-Here is my new/updated plan of action to solve the task:
-```
-{plan_update}
-```

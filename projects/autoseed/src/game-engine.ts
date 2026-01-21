@@ -53,7 +53,7 @@ export class GameEngine {
 
     this.state = createInitialState(config);
     this.view = {
-      selectedSystemId: listSystems(this.state.galaxy)[0]?.id ?? "",
+      selectedSystemId: listSystems(this.state.galaxy)[0]!.id,
       selectedBodyId: null,
       paused: false,
       speed: 0.6,

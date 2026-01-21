@@ -39,6 +39,30 @@ This installs dependencies (if needed), builds, and serves the game.
 - `npm run format`
 - `npm run test`
 - `npm run test:integration`
+- `npm run headless`
+- `npm run selfplay`
+
+## Headless simulation
+
+Run deterministic simulations without the browser renderer:
+
+```bash
+npm run headless -- --ticks 300 --seed 42 --systems 9
+```
+
+Replay and snapshot support:
+
+```bash
+npm run headless -- --replay ./replay.json --save-state ./state.json --save-replay ./replay.out.json
+```
+
+## Self-play harness
+
+Run AI vs AI headless matches with built-in policies:
+
+```bash
+npm run selfplay -- --ticks 300 --seed 42 --systems 9
+```
 
 ## Controls
 

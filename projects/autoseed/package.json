@@ -17,19 +17,21 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "benchmark": "npm run build && node scripts/benchmark.mjs"
+    "benchmark": "npm run build && node scripts/benchmark.mjs",
+    "headless": "npm run build && node scripts/headless.mjs",
+    "selfplay": "npm run build && node scripts/selfplay.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/node": "^22.10.1",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "^4.0.17",
     "eslint": "^9.20.1",
     "eslint-config-prettier": "^10.0.1",
     "happy-dom": "^20.3.4",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^4.0.17"
   }
 }

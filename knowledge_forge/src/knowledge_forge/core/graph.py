@@ -62,6 +62,25 @@ class KnowledgeForge:
             if self.persistence_path:
                 self.save()
 
+    def delete_node(self, node_id: str) -> bool:
+        """Delete a node and remove all references."""
+        if node_id not in self.nodes:
+            return False
+        del self.nodes[node_id]
+        for node in self.nodes.values():
+            if node_id in node.links:
+                node.links.discard(node_id)
+        for concept, node_ids in list(self.concept_map.items()):
+            if node_id in node_ids:
+                filtered = [nid for nid in node_ids if nid != node_id]
+                if filtered:
+                    self.concept_map[concept] = filtered
+                else:
+                    del self.concept_map[concept]
+        if self.persistence_path:
+            self.save()
+        return True
+
     def get_by_tag(self, tag: str) -> List[KnowledgeNode]:
         """Find nodes by tag."""
         return [n for n in self.nodes.values() if tag in n.tags]

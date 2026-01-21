@@ -76,6 +76,24 @@ class GisCore:
                     return default
             return target
 
+    def delete(self, key: str, persist: bool = True) -> bool:
+        """Remove a key from the registry."""
+        with self._lock:
+            parts = key.split('.')
+            target = self._registry
+            for part in parts[:-1]:
+                if isinstance(target, dict) and part in target:
+                    target = target[part]
+                else:
+                    return False
+            
+            if isinstance(target, dict) and parts[-1] in target:
+                del target[parts[-1]]
+                if persist and self.persistence_path:
+                    self.save(self.persistence_path)
+                return True
+        return False
+
     def validate_config(self, schema: Type[BaseModel], key_prefix: str = "") -> BaseModel:
         """
         Validate a section of the config against a Pydantic model.
@@ -107,7 +125,8 @@ class GisCore:
                 else:
                     raise ValueError(f"Unsupported config format: {suffix}")
                 
-                self.update(data, prefix, persist=False)
+                if data:
+                    self.update(data, prefix, persist=False)
             except Exception as e:
                 logging.error(f"Failed to decode GIS persistence file {path}: {e}")
                 raise
@@ -144,6 +163,15 @@ class GisCore:
         
         if persist and self.persistence_path:
             self.save(self.persistence_path)
+
+    def subscribe(self, key_prefix: str, callback: Callable[[str, Any], None]) -> None:
+        """
+        Subscribe to changes on keys starting with key_prefix.
+        """
+        with self._lock:
+            if key_prefix not in self._subscribers:
+                self._subscribers[key_prefix] = []
+            self._subscribers[key_prefix].append(callback)
 
     def _notify(self, key: str, value: Any) -> None:
         """Notify subscribers of a change."""

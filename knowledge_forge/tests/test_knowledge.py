@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from eidosian_forge.knowledge_forge import KnowledgeForge
+from knowledge_forge import KnowledgeForge
 
 class TestKnowledgeForge(unittest.TestCase):
     def setUp(self):

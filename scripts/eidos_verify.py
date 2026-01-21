@@ -60,7 +60,7 @@ def check_module(module_path: Path) -> Dict[str, List[str]]:
         has_src = (module_path / "src").exists()
         has_flat = (module_path / f"{module_path.name}.py").exists() or (module_path / "__init__.py").exists()
         # Some exceptions
-        if module_path.name == "eidos-brain": has_flat = True # core/
+        if module_path.name == "eidos_brain": has_flat = True # core/
         
         # if not has_src and not has_flat:
              # issues.append("Missing source structure (src/ or flat package)")

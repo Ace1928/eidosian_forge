@@ -39,10 +39,10 @@
         inset: 0;
         pointer-events: none;
         display: grid;
-        grid-template-columns: 1fr 320px;
+        grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(260px, 340px);
         grid-template-rows: auto 1fr auto;
         gap: 16px;
-        padding: 20px;
+        padding: 18px 20px 20px;
         color: var(--ink);
         letter-spacing: 0.02em;
       }
@@ -71,7 +71,6 @@
         font-size: 12px;
       }
       #resource-info {
-        grid-column: 1 / -1;
         font-size: 14px;
         color: var(--ink);
       }
@@ -144,29 +143,93 @@
         gap: 6px;
         flex-wrap: wrap;
       }
-      #system-panel {
-        grid-column: 2;
-        grid-row: 2;
-      }
-      #body-panel {
-        grid-column: 2;
+      #top-bar {
+        grid-column: 1 / -1;
         grid-row: 1;
+        min-width: 0;
       }
-      #tech-panel {
+      #left-dock {
         grid-column: 1;
         grid-row: 2;
-        align-self: start;
-        max-height: calc(100vh - 220px);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         overflow: auto;
+        min-width: 0;
+        min-height: 0;
+        scrollbar-gutter: stable;
       }
-      #design-panel {
-        grid-column: 1;
-        grid-row: 3;
-        align-self: start;
+      #right-dock {
+        grid-column: 3;
+        grid-row: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: auto;
+        min-width: 0;
+        min-height: 0;
+        scrollbar-gutter: stable;
       }
-      #build-panel {
+      #viewport-frame {
         grid-column: 2;
+        grid-row: 2;
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+          0 20px 40px rgba(5, 10, 25, 0.35);
+        background: linear-gradient(135deg, rgba(12, 16, 30, 0.2), transparent 45%);
+        pointer-events: none;
+      }
+      #viewport-frame::before {
+        content: "";
+        position: absolute;
+        inset: 14px;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+        opacity: 0.5;
+      }
+      #bottom-bar {
+        grid-column: 1 / -1;
         grid-row: 3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-width: 0;
+      }
+      .dock-panel {
+        padding-top: 12px;
+      }
+      .dock-panel summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: -2px 0 12px;
+      }
+      .dock-panel summary::-webkit-details-marker {
+        display: none;
+      }
+      .dock-panel summary::after {
+        content: "+";
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dock-panel[open] summary {
+        color: var(--ink);
+      }
+      .dock-panel[open] summary::after {
+        content: "-";
+        color: var(--accent);
       }
       .tech-tier {
         margin-bottom: 12px;
@@ -257,31 +320,42 @@
         transform: translateY(0);
       }
       .hint {
-        position: fixed;
-        left: 20px;
-        bottom: 18px;
         color: rgba(255, 255, 255, 0.7);
         font-size: 12px;
         letter-spacing: 0.16em;
         text-transform: uppercase;
         pointer-events: none;
       }
-      @media (max-width: 900px) {
+      @media (max-width: 1100px) {
         #hud {
           grid-template-columns: 1fr;
-          grid-template-rows: auto auto auto;
+          grid-template-rows: auto auto auto auto auto;
+          padding: 14px;
         }
-        #system-panel,
-        #body-panel,
-        #build-panel,
-        #tech-panel,
-        #design-panel {
+        #top-bar {
           grid-column: 1;
-          grid-row: auto;
+          grid-row: 1;
+        }
+        #viewport-frame {
+          grid-column: 1;
+          grid-row: 2;
+          min-height: 220px;
+        }
+        #left-dock {
+          grid-column: 1;
+          grid-row: 3;
+        }
+        #right-dock {
+          grid-column: 1;
+          grid-row: 4;
+        }
+        #bottom-bar {
+          grid-column: 1;
+          grid-row: 5;
+          flex-direction: column;
+          align-items: flex-start;
         }
         .hint {
-          left: 14px;
-          right: 14px;
           font-size: 10px;
         }
       }
@@ -290,28 +364,42 @@
   <body>
     <canvas id="game"></canvas>
     <div id="hud">
-      <div id="resource-info" class="panel" role="status" aria-live="polite" aria-atomic="true">
-        Mass 0 Energy 0 Exotic 0
+      <div id="top-bar" class="panel">
+        <div id="resource-info" role="status" aria-live="polite" aria-atomic="true">
+          Mass 0 Energy 0 Exotic 0
+        </div>
       </div>
-      <div id="tech-panel" class="panel" role="region" aria-label="Tech tree">
-        <div id="tech-info"></div>
+      <div id="left-dock" class="dock">
+        <details id="tech-panel" class="panel dock-panel" open>
+          <summary>Tech</summary>
+          <div id="tech-info" role="region" aria-label="Tech tree"></div>
+        </details>
+        <details id="design-panel" class="panel dock-panel" open>
+          <summary>Design</summary>
+          <div id="design-info" role="region" aria-label="Probe design"></div>
+        </details>
       </div>
-      <div id="design-panel" class="panel" role="region" aria-label="Probe design">
-        <div id="design-info"></div>
+      <div id="viewport-frame" aria-hidden="true"></div>
+      <div id="right-dock" class="dock">
+        <details id="system-panel" class="panel dock-panel" open>
+          <summary>System</summary>
+          <div id="system-info" role="region" aria-label="Selected system"></div>
+        </details>
+        <details id="body-panel" class="panel dock-panel" open>
+          <summary>Body</summary>
+          <div id="body-info" role="region" aria-label="Selected body"></div>
+        </details>
+        <details id="build-panel" class="panel dock-panel" open>
+          <summary>Build</summary>
+          <div id="build-info" role="region" aria-label="Build menu"></div>
+        </details>
       </div>
-      <div id="body-panel" class="panel" role="region" aria-label="Selected body">
-        <div id="body-info"></div>
+      <div id="bottom-bar" class="panel">
+        <div class="hint">
+          Drag to pan · WASD/arrows · Scroll or Z/X to zoom · Click a body to build · 1/2/3 to build
+          · Space to pause
+        </div>
       </div>
-      <div id="system-panel" class="panel" role="region" aria-label="Selected system">
-        <div id="system-info"></div>
-      </div>
-      <div id="build-panel" class="panel" role="region" aria-label="Build menu">
-        <div id="build-info"></div>
-      </div>
-    </div>
-    <div class="hint">
-      Drag to pan · WASD/arrows · Scroll or Z/X to zoom · Click a body to build · 1/2/3 to build ·
-      Space to pause
     </div>
     <script type="module" src="./app.js"></script>
   </body>

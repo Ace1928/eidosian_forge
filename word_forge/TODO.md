@@ -1,5 +1,13 @@
 # TODO: word_forge
 
+## 🚨 High Priority
+- [x] **Cleanup**: Removed legacy/template code.
+- [x] **Integration**: Connected to `nltk` and `llm_forge`.
+- [x] **Architecture**: Implemented `Lexeme`, `WordGraph`, `LinguistEngine`, `DiscoveryQueue`.
+
+## 🟡 Medium Priority
+- [x] **Phonology**: Integrated via LLM extraction.
+- [x] **Etymology**: Integrated via LLM extraction.
+
 ## 🟢 Low Priority
-- [ ] **Cleanup**: Remove `src/old/`.
-- [ ] **Integration**: Connect to `knowledge_forge` to feed concepts into the graph.
+- [x] **Discovery**: Implemented recursive discovery queue.

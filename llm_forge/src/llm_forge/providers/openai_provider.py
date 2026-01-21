@@ -1,9 +1,18 @@
+import os
 import openai
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ..core.interfaces import LLMProvider, LLMResponse, EmbeddingProvider
 
 class OpenAIProvider(LLMProvider, EmbeddingProvider):
-    def __init__(self, api_key: str, base_url: str = None, embedding_model: str = "text-embedding-3-small"):
+    @staticmethod
+    def is_available() -> bool:
+        return "OPENAI_API_KEY" in os.environ
+
+    def __init__(self, api_key: Optional[str] = None, base_url: str = None, embedding_model: str = "text-embedding-3-small"):
+        if api_key is None:
+            api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OpenAI API key not provided and not found in environment variables.")
         self.client = openai.Client(api_key=api_key, base_url=base_url)
         self.embedding_model = embedding_model
 

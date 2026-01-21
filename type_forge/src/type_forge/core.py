@@ -21,14 +21,43 @@ class TypeCore:
         self._schemas: Dict[str, Dict[str, Any]] = {}
         self._models: Dict[str, Type[BaseModel]] = {}
 
-    def register_schema(self, name: str, schema: Dict[str, Any]):
-        """Register a schema definition."""
+    def register_schema(self, name: str, schema: Dict[str, Any]) -> bool:
+        """Register a schema definition. Returns True if updated."""
+        if self._schemas.get(name) == schema:
+            return False
         self._schemas[name] = schema
         # Attempt to compile to Pydantic model for performance
         try:
             self._models[name] = self._compile_to_pydantic(name, schema)
         except Exception:
-            pass # Fallback to manual validation if compilation fails
+            self._models.pop(name, None)
+        return True
+
+    def delete_schema(self, name: str) -> bool:
+        """Delete a registered schema definition."""
+        if name not in self._schemas:
+            return False
+        del self._schemas[name]
+        self._models.pop(name, None)
+        return True
+
+    def get_schema(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get a registered schema definition."""
+        return self._schemas.get(name)
+
+    def snapshot(self) -> Dict[str, Dict[str, Any]]:
+        """Return a snapshot of registered schemas."""
+        return dict(self._schemas)
+
+    def restore(self, snapshot: Dict[str, Dict[str, Any]]) -> None:
+        """Restore registered schemas from a snapshot."""
+        self._schemas = dict(snapshot)
+        self._models = {}
+        for name, schema in self._schemas.items():
+            try:
+                self._models[name] = self._compile_to_pydantic(name, schema)
+            except Exception:
+                continue
 
     def validate(self, name: str, data: Any) -> bool:
         """Validate data against a registered schema."""

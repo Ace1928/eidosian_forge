@@ -18,7 +18,7 @@ The repository is organized into specialized domains:
 
 | Forge | Description |
 | :--- | :--- |
-| **`eidos-brain`** | The central cognitive core, managing agent orchestration and reasoning. |
+| **`eidos_brain`** | The central cognitive core, managing agent orchestration and reasoning. |
 | **`agent_forge`** | Toolkit for building, managing, and deploying autonomous agents. |
 | **`memory_forge`** | Long-term memory, semantic storage, and context management. |
 | **`code_forge`** | Source code analysis, generation, and refactoring tools. |
@@ -56,9 +56,9 @@ The repository is organized into specialized domains:
     pip install -r requirements.txt
     ```
 
-3.  **Bootstrap a Specific Forge** (e.g., `eidos-brain`):
+3.  **Bootstrap a Specific Forge** (e.g., `eidos_brain`):
     ```bash
-    cd eidos-brain
+    cd eidos_brain
     pip install -r requirements.txt
     ```
 

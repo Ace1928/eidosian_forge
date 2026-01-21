@@ -42,7 +42,7 @@ diag = DiagnosticsForge(log_dir=str(BASE_DIR / "eidosian_forge" / "logs"), servi
 # Configuration via GisCore with defaults
 QUEUE_FILE = Path(gis.get("codex.queue_file", str(BASE_DIR / "codex_task_queue.json")))
 LOCK_FILE = Path(gis.get("codex.lock_file", str(BASE_DIR / "codex_task_queue.lock")))
-PYTHON_BIN = Path(gis.get("codex.python_bin", str(BASE_DIR / ".eidos_core" / "bin" / "python")))
+PYTHON_BIN = Path(gis.get("codex.python_bin", str(BASE_DIR / "eidosian_venv" / "bin" / "python3")))
 RUNNER_SCRIPT = Path(__file__).resolve().parent / "codex_run.py"
 POLL_INTERVAL = float(gis.get("codex.poll_interval", 1.0))
 

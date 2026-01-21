@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
 ]
 
 [project.scripts]
@@ -44,3 +45,7 @@ packages = ["src/eidos_mcp"]
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+pythonpath = [
+    "/home/lloyd/eidosian_forge/eidos_mcp/src",
+    "/home/lloyd/eidosian_forge",
+]
