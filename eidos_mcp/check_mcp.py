@@ -1,9 +1,5 @@
-try:
-    from mcp.server.fastmcp import FastMCP
+from eidos_mcp.check_mcp import main
 
-    print("FastMCP found")
-except ImportError:
-    print("FastMCP NOT found")
-    import mcp
 
-    print(dir(mcp))
+if __name__ == "__main__":
+    raise SystemExit(main())

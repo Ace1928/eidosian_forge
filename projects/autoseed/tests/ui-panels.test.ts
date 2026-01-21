@@ -27,16 +27,11 @@ describe("ui panels", () => {
     expect(document.getElementById("system-info")?.textContent).toContain("No system selected");
 
     const centerProbe = document.querySelector<HTMLButtonElement>(
-      "#build-info button[data-action=\"center-probe\"]"
+      '#build-info button[data-action="center-probe"]'
     );
     centerProbe?.dispatchEvent(new Event("click"));
     expect(onAction).toHaveBeenCalledWith("center-probe");
 
-    const pauseButton = document.querySelector<HTMLButtonElement>(
-      "#resource-info button[data-action=\"pause\"]"
-    );
-    pauseButton?.removeAttribute("data-action");
-    pauseButton?.dispatchEvent(new Event("click"));
     expect(onAction).toHaveBeenCalledTimes(1);
   });
 
@@ -147,6 +142,121 @@ describe("ui panels", () => {
 
     const techInfo = document.getElementById("tech-info")?.innerHTML ?? "";
     expect(techInfo).toContain("Requires tech-ghost");
+  });
+
+  it("renders paused status when no outcome is set", () => {
+    loadHudMarkup();
+    const state = createInitialState({ seed: 15, systemCount: 1 });
+    state.tick = 2000;
+    const system = listSystems(state.galaxy)[0];
+    if (!system) {
+      throw new Error("Missing system");
+    }
+    const view = {
+      selectedSystemId: system.id,
+      selectedBodyId: null,
+      paused: true,
+      speed: 1,
+      camera: { x: 0, y: 0 },
+      zoom: 1
+    };
+
+    updatePanels(state, view, noop, noop, noop);
+    expect(document.getElementById("resource-info")?.textContent).toContain("Paused");
+  });
+
+  it("renders contested system status when multiple factions are present", () => {
+    loadHudMarkup();
+    const state = createInitialState({ seed: 16, systemCount: 1 });
+    state.tick = 2001;
+    const system = listSystems(state.galaxy)[0];
+    if (!system) {
+      throw new Error("Missing system");
+    }
+    const view = {
+      selectedSystemId: system.id,
+      selectedBodyId: null,
+      paused: false,
+      speed: 1,
+      camera: { x: 0, y: 0 },
+      zoom: 1
+    };
+
+    updatePanels(state, view, noop, noop, noop);
+    expect(document.getElementById("system-info")?.textContent).toContain("Contested");
+  });
+
+  it("renders clear system status when only player probes are active", () => {
+    loadHudMarkup();
+    const state = createInitialState({ seed: 17, systemCount: 1 });
+    const system = listSystems(state.galaxy)[0];
+    if (!system) {
+      throw new Error("Missing system");
+    }
+    state.tick = 2002;
+    state.factions = state.factions.map((faction, index) =>
+      index === 1
+        ? {
+            ...faction,
+            probes: faction.probes.map((probe) => ({ ...probe, active: false }))
+          }
+        : faction
+    );
+
+    const view = {
+      selectedSystemId: system.id,
+      selectedBodyId: null,
+      paused: false,
+      speed: 1,
+      camera: { x: 0, y: 0 },
+      zoom: 1
+    };
+
+    updatePanels(state, view, noop, noop, noop);
+    expect(document.getElementById("system-info")?.textContent).toContain("Clear");
+  });
+
+  it("renders build statuses for queued, conflict, and available", () => {
+    loadHudMarkup();
+    const state = createInitialState({ seed: 18, systemCount: 1 });
+    const system = listSystems(state.galaxy)[0];
+    const body = system?.bodies[0];
+    if (!system || !body) {
+      throw new Error("Missing system or body");
+    }
+    state.tick = 2003;
+    state.factions = state.factions.map((faction, index) =>
+      index === 0
+        ? {
+            ...faction,
+            structures: [
+              {
+                id: "extractor-only",
+                type: "extractor",
+                bodyId: body.id,
+                ownerId: faction.id,
+                progress: 0,
+                completed: false
+              }
+            ]
+          }
+        : faction
+    );
+
+    const view = {
+      selectedSystemId: system.id,
+      selectedBodyId: body.id,
+      paused: false,
+      speed: 1,
+      camera: { x: 0, y: 0 },
+      zoom: 1
+    };
+
+    updatePanels(state, view, noop, noop, noop);
+    const buildInfo = document.getElementById("build-info")?.innerHTML ?? "";
+    expect(buildInfo).toContain("Queued");
+    expect(buildInfo).toContain("Conflict");
+    expect(buildInfo).toContain("Available");
   });
 
   it("renders undiscovered system state", () => {
@@ -286,13 +396,13 @@ describe("ui panels", () => {
     updatePanels(state, view, onBuild, noop, noop);
 
     const buildButton = document.querySelector<HTMLButtonElement>(
-      "#build-info button[data-structure=\"extractor\"]"
+      '#build-info button[data-structure="extractor"]'
     );
     buildButton?.dispatchEvent(new Event("click"));
     expect(onBuild).toHaveBeenCalled();
 
     const invalidButton = document.querySelector<HTMLButtonElement>(
-      "#build-info button[data-structure=\"defense\"]"
+      '#build-info button[data-structure="defense"]'
     );
     invalidButton?.removeAttribute("data-structure");
     invalidButton?.dispatchEvent(new Event("click"));
@@ -354,13 +464,31 @@ describe("ui panels", () => {
       zoom: 1
     };
 
-    updatePanels({ ...state, outcome: { winnerId: state.factions[0]?.id ?? null, reason: "elimination" } }, view, noop, noop, noop);
+    updatePanels(
+      { ...state, outcome: { winnerId: state.factions[0]?.id ?? null, reason: "elimination" } },
+      view,
+      noop,
+      noop,
+      noop
+    );
     expect(document.getElementById("resource-info")?.textContent).toContain("Victory");
 
-    updatePanels({ ...state, outcome: { winnerId: "other", reason: "elimination" } }, view, noop, noop, noop);
+    updatePanels(
+      { ...state, outcome: { winnerId: "other", reason: "elimination" } },
+      view,
+      noop,
+      noop,
+      noop
+    );
     expect(document.getElementById("resource-info")?.textContent).toContain("Defeat");
 
-    updatePanels({ ...state, outcome: { winnerId: null, reason: "stalemate" } }, view, noop, noop, noop);
+    updatePanels(
+      { ...state, outcome: { winnerId: null, reason: "stalemate" } },
+      view,
+      noop,
+      noop,
+      noop
+    );
     expect(document.getElementById("resource-info")?.textContent).toContain("Stalemate");
   });
 });

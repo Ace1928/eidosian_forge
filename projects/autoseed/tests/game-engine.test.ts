@@ -91,11 +91,17 @@ describe("game engine", () => {
       loop: (time: number) => void;
       last: number;
       tickDuration: number;
-      view: { speed: number };
-      state: { tick: number };
+      view: { speed: number; selectedBodyId: string | null; selectedSystemId: string };
+      state: { tick: number; factions: Faction[] };
+      commandQueue: CommandQueue;
     };
 
     engineAny.view.speed = 1;
+    const probe = engineAny.state.factions[0]?.probes[0];
+    if (probe) {
+      engineAny.view.selectedBodyId = probe.bodyId;
+      engineAny.view.selectedSystemId = probe.systemId;
+    }
     engine.start();
     if (!rafCallback) {
       throw new Error("Expected requestAnimationFrame to be scheduled.");
@@ -103,6 +109,21 @@ describe("game engine", () => {
     rafCallback(engineAny.last + engineAny.tickDuration + 1);
     expect(engineAny.state.tick).toBe(1);
     expect(document.getElementById("resource-info")?.innerHTML).toContain("Tick");
+
+    const buildButton = document.querySelector<HTMLButtonElement>(
+      '#build-info button[data-structure="extractor"]'
+    );
+    buildButton?.dispatchEvent(new Event("click"));
+    const centerProbeButton = document.querySelector<HTMLButtonElement>(
+      '#build-info button[data-action="center-probe"]'
+    );
+    centerProbeButton?.dispatchEvent(new Event("click"));
+    const designInput = document.querySelector<HTMLInputElement>('input[data-design="mining"]');
+    if (designInput) {
+      designInput.value = "70";
+      designInput.dispatchEvent(new Event("change"));
+    }
+    expect(engineAny.commandQueue.size()).toBeGreaterThan(0);
 
     engineAny.state.outcome = {
       winnerId: engineAny.state.factions[0]?.id ?? null,
@@ -165,6 +186,42 @@ describe("game engine", () => {
     const probeBodyId = engineAny.state.factions[0]?.probes[0]?.bodyId;
     engineAny.applyCommand({ type: "center-probe" });
     expect(engineAny.view.selectedBodyId).toBe(probeBodyId);
+
+    engineAny.view.selectedBodyId = null;
+    engineAny.applyCommand({ type: "center-selected" });
+
+    engineAny.view.selectedBodyId = "missing-body";
+    engineAny.applyCommand({ type: "center-selected" });
+
+    engineAny.state = {
+      ...engineAny.state,
+      factions: engineAny.state.factions.map((faction, index) =>
+        index === 0 ? { ...faction, probes: [] } : faction
+      )
+    };
+    engineAny.applyCommand({ type: "center-probe" });
+
+    engineAny.state = {
+      ...engineAny.state,
+      factions: engineAny.state.factions.map((faction, index) =>
+        index === 0
+          ? {
+              ...faction,
+              probes: [
+                {
+                  id: "probe-missing",
+                  ownerId: faction.id,
+                  systemId: system.id,
+                  bodyId: "missing-body",
+                  stats: { mining: 1, replication: 1, defense: 1, attack: 1, speed: 1 },
+                  active: true
+                }
+              ]
+            }
+          : faction
+      )
+    };
+    engineAny.applyCommand({ type: "center-probe" });
 
     const systemScreen = {
       x: 400 + (system.position.x - engineAny.view.camera.x),
@@ -262,12 +319,15 @@ describe("game engine", () => {
     const engine = new GameEngine(canvas, { seed: 12, systemCount: 2 });
     const engineAny = engine as unknown as {
       commandQueue: CommandQueue;
+      enqueue: (command: GameCommand) => void;
       processCommands: () => void;
       applyCameraKeys: (delta: number) => void;
       view: { camera: { x: number; y: number }; zoom: number };
       input: { keys: Set<string> };
     };
 
+    engineAny.enqueue({ type: "toggle-pause" });
+    expect(engineAny.commandQueue.size()).toBe(1);
     engineAny.commandQueue.enqueue({ type: "zoom-set", value: 2 });
     engineAny.commandQueue.enqueue({ type: "toggle-pause" });
     engineAny.processCommands();
@@ -315,6 +375,42 @@ describe("game engine", () => {
     expect(engineAny.frameRequest).toBeNull();
     engineAny.loop(100);
     expect(engineAny.last).toBe(0);
+  });
+
+  it("falls back to a default pixel ratio when none is available", () => {
+    const canvas = document.createElement("canvas");
+    document.body.append(canvas);
+
+    const engine = new GameEngine(canvas, { seed: 14, systemCount: 1 });
+    const engineAny = engine as unknown as { resize: () => void };
+
+    Object.defineProperty(window, "devicePixelRatio", { value: undefined, configurable: true });
+    engineAny.resize();
+    expect(canvas.width).toBe(800);
+    Object.defineProperty(window, "devicePixelRatio", { value: 1, configurable: true });
+  });
+
+  it("handles selection when no player faction exists", () => {
+    const canvas = document.createElement("canvas");
+    document.body.append(canvas);
+    canvas.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        width: 800,
+        height: 600
+      }) as DOMRect;
+
+    const engine = new GameEngine(canvas, { seed: 15, systemCount: 1 });
+    const engineAny = engine as unknown as {
+      selectAt: (screen: { x: number; y: number }) => void;
+      state: { factions: unknown[] };
+      view: { selectedBodyId: string | null };
+    };
+
+    engineAny.state = { ...engineAny.state, factions: [] };
+    engineAny.selectAt({ x: 10, y: 10 });
+    expect(engineAny.view.selectedBodyId).toBeNull();
   });
 
   it("cancels frames on destroy", () => {

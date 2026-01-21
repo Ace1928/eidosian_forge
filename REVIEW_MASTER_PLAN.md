@@ -25,7 +25,7 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 ### Phase 2: Automation (The `eidos_standardize.py` Script)
 - [x] Develop `scripts/eidos_standardize.py`.
     - Functionality:
-        - Scan all `*_forge` directories + `eidos-brain` + `graphrag`.
+        - Scan all `*_forge` directories + `eidos_brain` + `graphrag`.
         - For each directory:
             - Generate `README.md` (if missing or outdated) using `global_info` templates.
             - Generate `CURRENT_STATE.md` (Stub for analysis).
@@ -35,7 +35,7 @@ To perform a comprehensive, detailed, and granular review of the entire `eidosia
 
 ### Phase 3: Granular Review & Execution
 - [x] Run `scripts/eidos_standardize.py`.
-- [x] **Manual Deep Dive**: `eidos-brain` (The Core) - *Added pyproject.toml, refined docs*.
+- [x] **Manual Deep Dive**: `eidos_brain` (The Core) - *Added pyproject.toml, refined docs*.
 - [x] **Manual Deep Dive**: `agent_forge` (E3) - *Refined pyproject.toml, identified structure*.
 - [x] **Manual Deep Dive**: `memory_forge` - *Fixed .gitignore issue, added dependencies*.
 - [x] **Manual Deep Dive**: `code_forge` - *Renamed from forgeengine, added static analysis deps*.

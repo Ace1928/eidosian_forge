@@ -13,4 +13,4 @@
 
 ## 🐛 Known Issues
 - `src` layout is good, but `llm_core.py` (legacy) exists in root. Needs cleanup.
-- Needs integration with `eidos-brain` to be the primary model provider.
+- Needs integration with `eidos_brain` to be the primary model provider.

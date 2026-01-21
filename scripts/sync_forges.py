@@ -62,7 +62,7 @@ def main():
     # Identify forge directories
     forges = [
         d.name for d in FORGE_ROOT.iterdir() 
-        if d.is_dir() and (d.name.endswith("_forge") or d.name in ["eidos-brain", "graphrag"])
+        if d.is_dir() and (d.name.endswith("_forge") or d.name in ["eidos_brain", "graphrag"])
     ]
     
     # Sort for cleaner logs

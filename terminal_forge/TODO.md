@@ -1,8 +1,8 @@
 # TODO: terminal_forge
 
 ## 🚨 High Priority
-- [ ] **Refactor**: Flatten directory structure.
-- [ ] **Widgets**: Create standard Eidosian widgets (Log viewer, Memory inspector).
+- [x] **Refactor**: Flatten directory structure (Done).
+- [x] **Widgets**: Create standard Eidosian widgets (Basic TUI wrapper).
 
 ## 🟢 Low Priority
 - [ ] **Theme**: Create an Eidosian color theme for `rich`.

@@ -35,7 +35,7 @@ dev = [
 refactor = "refactor_forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["refactor_forge", "refactor_core.py", "analyzer.py", "cli.py"]
+packages = ["src/refactor_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

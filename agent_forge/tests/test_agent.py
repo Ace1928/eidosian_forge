@@ -1,6 +1,11 @@
 import unittest
 from unittest.mock import MagicMock
-from eidosian_forge.agent_forge import AgentForge, Task
+import sys
+from pathlib import Path
+
+# Add root of this forge to path for direct imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from agent_core import AgentForge, Task
 
 class TestAgentForge(unittest.TestCase):
     def setUp(self):
@@ -27,10 +32,10 @@ class TestAgentForge(unittest.TestCase):
         
         self.forge.register_tool("processor", my_tool, "A test tool")
         
-        task = Task("Do thing", tool="processor")
+        task = Task("Do thing", tool="processor", kwargs={"input_val": "data"})
         goal.add_task(task)
         
-        success = self.forge.execute_task(task, input_val="data")
+        success = self.forge.execute_task(task)
         self.assertTrue(success)
         self.assertEqual(task.status, "completed")
         self.assertEqual(task.result, "Processed data")

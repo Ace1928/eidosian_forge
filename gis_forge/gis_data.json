@@ -5,5 +5,309 @@
     "model": "12",
     "max_tokens": 512,
     "adapter": ""
+  },
+  "index": {
+    "name": "lloyd-home-context",
+    "version": 1,
+    "description": "Machine-readable overview of /home/lloyd with key directories, commands, and environments.",
+    "contact": "lloyd"
+  },
+  "overview": {
+    "root_path": "/home/lloyd",
+    "summary": "Primary home folder for the Eidos research environment, containing personal assets, automation tools, and large Development workspaces.",
+    "last_notes": [
+      "/home is mounted from /dev/nvme0n1p5 (199G total, ~186G used currently).",
+      "Bash is the default shell (see ~/.bashrc) and Python 3.12 is the system interpreter.",
+      "Scripts under ./scripts form the automation toolkit referenced throughout the workspace."
+    ]
+  },
+  "sections": [
+    {
+      "name": "Personal",
+      "description": "Desktop and media folders synced with the desktop environment.",
+      "entries": [
+        "Desktop",
+        "Documents",
+        "Downloads",
+        "Music",
+        "Pictures",
+        "Public",
+        "Templates"
+      ]
+    },
+    {
+      "name": "Workspaces",
+      "description": "Development, data, and tooling-specific roots.",
+      "entries": [
+        "Development",
+        "scripts",
+        "go",
+        "data",
+        "graphrag-local-index",
+        "word_forge",
+        "eidosian_forge",
+        "Stratum",
+        "falling_sand"
+      ]
+    },
+    {
+      "name": "Support",
+      "description": "Virtual environments, caches, and helper directories.",
+      "entries": [
+        "eidos_venv",
+        "nltk_data",
+        "lib",
+        "snap"
+      ]
+    }
+  ],
+  "manual_notes": {
+    "": {
+      "": {
+        "description": "Home directory for lloyd, mounted under /home on NVMe storage with <2 GB free space remaining.",
+        "tags": [
+          "root",
+          "core"
+        ]
+      }
+    },
+    "Development": {
+      "description": "Primary research workspace that holds the Eidos project alongside models, benchmarks, logs, and document archives.",
+      "tags": [
+        "workspace",
+        "git"
+      ],
+      "highlights": [
+        "Development/eidos",
+        "Development/models",
+        "Development/js",
+        "Development/applications"
+      ]
+    },
+    "scripts": {
+      "description": "Automation script library (see scripts/README.md) covering clipboard tools, glyph rendering, PDF helpers, and publish helpers.",
+      "tags": [
+        "tooling",
+        "bash",
+        "python"
+      ]
+    },
+    "go": {
+      "description": "Go workspace with modules, helpers, and presumably GOPATH-managed code under ~/go.",
+      "tags": [
+        "go",
+        "workspace"
+      ]
+    },
+    "data": {
+      "description": "Loose data, csv exports, datasets, and intermediate files from experiments and crawls; contains csv/ and datasets/ subfolders.",
+      "tags": [
+        "data"
+      ]
+    },
+    "graphrag-local-index": {
+      "description": "Locally cached GraphRAG index data and prompt library (inputs, prompts, and output backups).",
+      "tags": [
+        "cache",
+        "index"
+      ]
+    },
+    "word_forge": {
+      "description": "Word Forge project with sqlite databases tracking wordcraft progress (see word_forge.sqlite* files).",
+      "tags": [
+        "project",
+        "sqlite"
+      ]
+    },
+    "eidosian_forge": {
+      "description": "Artifacts and builds related to the Eidosian Forge environment.",
+      "tags": [
+        "forge"
+      ]
+    },
+    "Stratum": {
+      "description": "Additional research/workspace folder (Stratum).",
+      "tags": [
+        "project"
+      ]
+    },
+    "falling_sand": {
+      "description": "Small falling sand simulation assets and experiments.",
+      "tags": [
+        "personal",
+        "sandbox"
+      ]
+    },
+    "eidos_venv": {
+      "description": "Primary Python 3.12.3 virtual environment that powers the eidos tooling and is activated by scripts or shells.",
+      "tags": [
+        "venv"
+      ]
+    },
+    "nltk_data": {
+      "description": "Natural language corpora/cache for NLTK-based research, stored in ~/nltk_data.",
+      "tags": [
+        "data",
+        "nlp"
+      ]
+    },
+    "lib": {
+      "description": "Custom local libraries, possibly symlinked code for experimentation.",
+      "tags": [
+        "library"
+      ]
+    },
+    "snap": {
+      "description": "User snap data and configuration simmering in ~/snap/.",
+      "tags": [
+        "system",
+        "snap"
+      ]
+    },
+    "ascii_ellie": {
+      "md": {
+        "description": "Document with ASCII art or notes referencing Ellie.",
+        "tags": [
+          "notes",
+          "ascii"
+        ]
+      }
+    },
+    "hello_ellie": {
+      "text": {
+        "description": "Plain text note addressed to Ellie.",
+        "tags": [
+          "notes"
+        ]
+      }
+    },
+    "context": {
+      "description": "Holds the configuration, generated index, and notes that describe the home directory.",
+      "tags": [
+        "context",
+        "generated"
+      ]
+    }
+  },
+  "environments": [
+    {
+      "name": "eidos_venv",
+      "path": "eidos_venv",
+      "description": "Primary env that bundles the system packages referenced by eidos tooling and the scripts directory.",
+      "notes": [
+        "python3 -m pip list inside this env"
+      ],
+      "type": "global"
+    },
+    {
+      "name": "Development/eidos_env",
+      "path": "Development/eidos_env",
+      "description": "Project-specific env used to isolate Development/eidos work.",
+      "type": "nested"
+    }
+  ],
+  "commands": [
+    {
+      "name": "refresh-context",
+      "cmd": "python scripts/context_index.py",
+      "description": "Regenerates context/index.json after directory changes or after updating manual_notes."
+    },
+    {
+      "name": "context-ui",
+      "cmd": "python scripts/context_ui.py",
+      "description": "Launches the simple command-line overview UI that references the latest index file."
+    },
+    {
+      "name": "scripts-list",
+      "cmd": "ls scripts",
+      "description": "Shows the local scripts that drive development workflows; each script respects --help/--json."
+    },
+    {
+      "name": "rg-files",
+      "cmd": "rg --files",
+      "description": "Fast file discovery inside tracked projects; freezes when path is deep but still useful for quick listing."
+    },
+    {
+      "name": "disk-space",
+      "cmd": "df -h ~"
+    }
+  ],
+  "supporting_files": {
+    "scripts/README": {
+      "md": "Documentation for the modular scripts library that acts as the automation hub."
+    },
+    "Development/Development": {
+      "code-workspace": "VS Code workspace file linking major folders in Development."
+    },
+    "Development/eidos": "Large cognitive research project housing Eidos modules and logs."
+  },
+  "catalog": {
+    "scan_depth": 3,
+    "max_files_per_dir": 40,
+    "summary": {
+      "model": "qwen2.5:0.5b",
+      "max_chars": 1600,
+      "min_chars": 512,
+      "concurrency": 1,
+      "timeout_seconds": 0,
+      "ignore_patterns": [
+        "*.bash_history",
+        "*.bash_eternal_history",
+        "*.bash_eternal_history.*",
+        ".bash_completions/*",
+        ".bash_completion.d/*",
+        ".bash_eternal_history",
+        ".bash_history",
+        ".bash_eternal_history",
+        ".bashrc",
+        ".profile",
+        ".apport*",
+        ".aspell*",
+        ".bash*",
+        ".env",
+        ".cursorignore",
+        ".git*",
+        ".DS_Store"
+      ],
+      "ignore_prefixes": [
+        ".cache/",
+        ".npm/",
+        ".local/",
+        ".config/",
+        ".codex/",
+        "node_modules/",
+        ".gvfs/",
+        ".mypy_cache/",
+        "Development/backups/",
+        "Development/benchmark_results/",
+        "Development/chat_history_gpt/"
+      ]
+    },
+    "include_extensions": [
+      ".py",
+      ".md",
+      ".txt",
+      ".rst",
+      ".yaml",
+      ".yml"
+    ],
+    "hash_algorithm": "md5",
+    "roots": [
+      "Development",
+      "scripts",
+      "go",
+      "data",
+      "graphrag-local-index",
+      "word_forge",
+      "eidosian_forge",
+      "Stratum",
+      "falling_sand"
+    ],
+    "profiling": true
+  },
+  "logging": {
+    "level": "DEBUG",
+    "path": "context/context.log",
+    "format": "%(asctime)s %(levelname)s %(name)s %(message)s"
   }
 }

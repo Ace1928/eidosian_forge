@@ -1,13 +1,14 @@
 # TODO: code_forge
 
 ## 🚨 High Priority
-- [ ] **Refactor**: Isolate `forgeengine` and propose migration to `game_forge` or `llm_forge`.
-- [ ] **Implementation**: Create `code_forge/` package structure.
-- [ ] **CLI**: Implement `code_forge.cli` using `typer`.
+- [x] **Refactor**: Isolate `forgeengine` (Done -> narrative_forge).
+- [x] **Implementation**: Created `code_forge/` package structure.
+- [x] **CLI**: Implemented `code_forge.cli` using `typer`.
 
 ## 🟡 Medium Priority
-- [ ] **Feature**: Implement basic AST traversal using `libcst`.
-- [ ] **Feature**: Create a "Code Doctor" tool to fix common linting errors automatically.
+- [x] **Feature**: Implemented basic AST traversal using `ast`.
+- [x] **Feature**: Implemented `CodeLibrarian` (JSON backend).
 
 ## 🟢 Low Priority
-- [ ] **Integration**: Connect with `eidos-brain` for "Agentic Coding".
+- [ ] **Integration**: Connect with `eidos_brain` for "Agentic Coding".
+- [ ] **Vector**: Upgrade Librarian to use ChromaDB.

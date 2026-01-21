@@ -1,9 +1,10 @@
 import unittest
+import tempfile
 import os
-import shutil
 import json
+import shutil
 from pathlib import Path
-from eidosian_forge.diagnostics_forge import DiagnosticsForge
+from diagnostics_forge import DiagnosticsForge
 
 class TestDiagnosticsForge(unittest.TestCase):
     def setUp(self):
@@ -17,10 +18,10 @@ class TestDiagnosticsForge(unittest.TestCase):
     def test_log_creation(self):
         self.diag.log_event("INFO", "Test message")
         # Check if log file exists
-        log_files = list(self.test_log_dir.glob("test_service_*.log"))
-        self.assertTrue(len(log_files) > 0)
+        log_file = self.test_log_dir / "test_service.log"
+        self.assertTrue(log_file.exists())
         
-        with open(log_files[0], 'r') as f:
+        with open(log_file, 'r') as f:
             content = f.read()
             self.assertIn("Test message", content)
 

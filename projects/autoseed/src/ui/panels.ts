@@ -1,4 +1,5 @@
 import type {
+  BodyType,
   Faction,
   GameState,
   ProbeDesign,
@@ -212,18 +213,15 @@ export const updatePanels = (
 
   const systemDiscovered = system ? player.discoveredSystems.includes(system.id) : false;
   if (system && systemDiscovered) {
-    const byType = system.bodies.reduce(
-      (acc, body) => {
-        acc[body.type] = (acc[body.type] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+    const byType: Record<BodyType, number> = { rocky: 0, gas: 0, ice: 0, belt: 0 };
+    system.bodies.forEach((body) => {
+      byType[body.type] += 1;
+    });
     systemInfo.innerHTML = `
       <h3>${system.name}</h3>
       <p>Star ${system.starClass} · Grid ${system.grid.x}, ${system.grid.y}</p>
-      <p>Bodies ${system.bodies.length} · Rocky ${byType.rocky ?? 0} · Gas ${byType.gas ?? 0}</p>
-      <p>Ice ${byType.ice ?? 0} · Belts ${byType.belt ?? 0}</p>
+      <p>Bodies ${system.bodies.length} · Rocky ${byType.rocky} · Gas ${byType.gas}</p>
+      <p>Ice ${byType.ice} · Belts ${byType.belt}</p>
       <p>Probes in system ${playerProbesInSystem} · Hostiles ${hostileProbesInSystem}</p>
       <p>Combat ${systemContested ? "Contested" : "Clear"}</p>
     `;
@@ -351,14 +349,12 @@ export const updatePanels = (
       : "Deploy a probe to unlock construction.";
     buildInfo.innerHTML = `<h3>Build</h3>${navigation}<p>${message}</p>`;
     [resourceInfo, buildInfo].forEach((panel) => {
-      panel.querySelectorAll("button[data-action], .controls button").forEach((button) => {
+      panel.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
+        const action = button.getAttribute("data-action") as PanelAction;
         button.addEventListener(
           "click",
           () => {
-            const action = button.getAttribute("data-action") as PanelAction | null;
-            if (action) {
-              onAction(action);
-            }
+            onAction(action);
           },
           { once: true }
         );
@@ -415,14 +411,12 @@ export const updatePanels = (
   });
 
   [resourceInfo, buildInfo].forEach((panel) => {
-    panel.querySelectorAll("button[data-action], .controls button").forEach((button) => {
+    panel.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
+      const action = button.getAttribute("data-action") as PanelAction;
       button.addEventListener(
         "click",
         () => {
-          const action = button.getAttribute("data-action") as PanelAction | null;
-          if (action) {
-            onAction(action);
-          }
+          onAction(action);
         },
         { once: true }
       );

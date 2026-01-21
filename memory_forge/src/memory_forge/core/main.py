@@ -3,7 +3,12 @@ Central Memory Controller.
 """
 from typing import Optional, List, Protocol, Union
 from .interfaces import MemoryItem, MemoryType, StorageBackend
-from ..backends.chroma_store import ChromaBackend
+try:
+    from ..backends.chroma_store import ChromaBackend
+    _CHROMA_IMPORT_ERROR: Optional[Exception] = None
+except ModuleNotFoundError as exc:
+    ChromaBackend = None
+    _CHROMA_IMPORT_ERROR = exc
 from ..backends.json_store import JsonBackend
 from .config import MemoryConfig
 
@@ -18,9 +23,13 @@ class MemoryForge:
         
         # Initialize Episodic Backend
         if self.config.episodic.type == "chroma":
+            if ChromaBackend is None:
+                raise RuntimeError(
+                    "Chroma backend requested but chromadb is not installed."
+                ) from _CHROMA_IMPORT_ERROR
             self.episodic = ChromaBackend(
-                self.config.episodic.collection_name, 
-                self.config.episodic.connection_string
+                self.config.episodic.collection_name,
+                self.config.episodic.connection_string,
             )
         elif self.config.episodic.type == "json":
             self.episodic = JsonBackend(self.config.episodic.connection_string)

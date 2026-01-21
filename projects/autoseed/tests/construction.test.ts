@@ -68,4 +68,30 @@ describe("construction", () => {
     expect(next.probes).toHaveLength(depleted.probes.length);
     expect(next.resources).toEqual(depleted.resources);
   });
+
+  it("handles missing bodies during replication completion", () => {
+    const state = createInitialState({ seed: 27, systemCount: 1 });
+    const faction = state.factions[0];
+    if (!faction) {
+      throw new Error("Missing faction");
+    }
+    const replicator = {
+      id: "replicator-missing-body",
+      type: "replicator",
+      bodyId: "missing-body",
+      ownerId: faction.id,
+      progress: 1,
+      completed: true
+    } as const;
+    const boosted = {
+      ...faction,
+      resources: { mass: 1000, energy: 1000, exotic: 1000 },
+      structures: [replicator]
+    };
+    const modifiers = getFactionTechModifiers(state.techTree, boosted);
+    const next = advanceReplication(state, boosted, 2, modifiers);
+
+    expect(next.probes).toHaveLength(boosted.probes.length);
+    expect(next.structures[0]?.progress).toBe(0);
+  });
 });

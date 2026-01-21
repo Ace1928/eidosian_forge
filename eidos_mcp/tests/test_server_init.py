@@ -52,6 +52,9 @@ def test_server_imports_and_initialization(mock_dependencies):
     # We reload it to ensure fresh execution for the test if it was already imported
     if 'eidos_mcp.eidos_mcp_server' in sys.modules:
         del sys.modules['eidos_mcp.eidos_mcp_server']
+    for module_name in list(sys.modules.keys()):
+        if module_name.startswith("eidos_mcp.core") or module_name.startswith("eidos_mcp.routers"):
+            del sys.modules[module_name]
         
     import eidos_mcp.eidos_mcp_server as server
     

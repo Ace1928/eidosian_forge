@@ -63,9 +63,7 @@ describe("ai cache", () => {
       throw new Error("Missing AI faction");
     }
     applyAiPlanning(stateB, factionB, 2);
-    expect(getSystemCacheSize()).toBeLessThanOrEqual(
-      Object.keys(stateB.galaxy.systems).length
-    );
+    expect(getSystemCacheSize()).toBeLessThanOrEqual(Object.keys(stateB.galaxy.systems).length);
     expect(getSystemCacheSize()).not.toBe(sizeAfterA);
   });
 });
