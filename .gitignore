@@ -70,6 +70,7 @@ pyrightconfig.json
 Pipfile
 Pipfile.lock
 poetry.lock
+node_modules/
 
 # ┌─────────────────────────────────────────┐
 # │ OS DETRITUS                             │
