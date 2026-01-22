@@ -309,5 +309,10 @@
     "level": "DEBUG",
     "path": "context/context.log",
     "format": "%(asctime)s %(levelname)s %(name)s %(message)s"
+  },
+  "mcp": {
+    "test": {
+      "key": "ok"
+    }
   }
 }

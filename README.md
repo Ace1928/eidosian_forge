@@ -1,107 +1,64 @@
-# Eidosian Forge
+# 💎 Eidosian Forge
 
-> **Brutal Clarity, Unmistakably Eidosian.**
+The **Eidosian Forge** is the central monorepo for the Eidosian ecosystem. It houses the tools, agents, and libraries that power the Eidosian Nexus.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+## 🏗️ Structure
 
-## 📋 Overview
+All components follow the Strict Eidosian Structure:
 
-The **Eidosian Forge** is a monolithic repository containing a suite of specialized "Forges" (modules) designed to construct the **Eidosian Intelligence System**. It serves as the central foundry for developing distributed AI agents, knowledge graphs, code analysis tools, and memory systems.
+```
+eidosian_forge/
+├── <forge_name>/
+│   ├── src/
+│   │   └── <package_name>/
+│   │       ├── __init__.py
+│   │       └── ...
+│   ├── tests/
+│   ├── pyproject.toml
+│   ├── README.md
+│   └── ...
+```
 
-The project follows a strict "Forge" architecture where each `*_forge` directory represents a composable, self-contained domain of capability, all governed by the unified standards defined in `global_info.py`.
+### Core Forges
+*   **eidos_mcp**: The Central Nervous System (Model Context Protocol server).
+*   **agent_forge**: Autonomous agent framework.
+*   **memory_forge**: Episodic and semantic memory systems.
+*   **knowledge_forge**: Knowledge graph and RAG capabilities.
+*   **gis_forge**: Global Identity System (Configuration state).
 
-## 🏗️ Project Structure
+### Game & Simulation
+*   **game_forge**: A collection of simulation projects (Stratum, Falling Sand, Gene Particles, etc.).
 
-The repository is organized into specialized domains:
+## 🛠️ Development Standards
 
-| Forge | Description |
-| :--- | :--- |
-| **`eidos_brain`** | The central cognitive core, managing agent orchestration and reasoning. |
-| **`agent_forge`** | Toolkit for building, managing, and deploying autonomous agents. |
-| **`memory_forge`** | Long-term memory, semantic storage, and context management. |
-| **`code_forge`** | Source code analysis, generation, and refactoring tools. |
-| **`knowledge_forge`** | Knowledge graph construction and ontology management. |
-| **`graphrag`** | Graph-based Retrieval Augmented Generation implementation. |
-| **`llm_forge`** | Interfaces and abstractions for Large Language Models. |
-| **`prompt_forge`** | Prompt engineering, templating, and management. |
-| **`tool_forge`** | (Implied) Tool definitions and Actuators. |
-
-*See `REVIEW_MASTER_PLAN.md` for a full list of active modules.*
+*   **Python**: 3.12+
+*   **Type Hinting**: Strict (`mypy`).
+*   **Linting**: `ruff` (configuration in `ruff.toml`).
+*   **Testing**: `pytest` (configuration in `pytest.ini`).
+*   **Version Control**:
+    *   Root `eidosian_forge` tracks the entire ecosystem.
+    *   Each sub-forge is also a granular git repository.
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- **Python**: 3.12+
-- **Node.js**: 18+ (for web components)
-- **Rust**: 1.70+ (for high-performance extensions)
-
-### Installation
-
-1.  **Clone the Repository**:
+1.  **Install the environment**:
     ```bash
-    git clone https://github.com/Neuroforge/eidosian_forge.git
-    cd eidosian_forge
-    ```
-
-2.  **Set up the Environment**:
-    ```bash
-    # Create and activate virtual environment
-    python3.12 -m venv .venv
+    # Assuming you have uv or pip
+    uv venv .venv
     source .venv/bin/activate
-    
-    # Install shared dependencies
-    pip install -r requirements.txt
+    uv pip install -e eidos_mcp/
     ```
 
-3.  **Bootstrap a Specific Forge** (e.g., `eidos_brain`):
+2.  **Run the MCP Server**:
     ```bash
-    cd eidos_brain
-    pip install -r requirements.txt
+    python -m eidos_mcp.server
     ```
 
-## 🛠️ Usage
+3.  **Run Tests**:
+    ```bash
+    pytest
+    ```
 
-This repository is a collection of tools. Typical usage involves importing specific forges or running their CLI entry points.
+## 📜 License
 
-**Example: Running the Global Info System**
-```bash
-python global_info.py
-```
-
-**Example: Agent Task (Theoretical)**
-```bash
-python agent_forge/bin/run_agent.py --task "Analyze codebase"
-```
-
-## 🧪 Testing
-
-We use `pytest` with a strict configuration.
-
-```bash
-# Run all tests
-pytest
-
-# Run core tests
-pytest -m unit
-```
-
-## 🤝 Contributing
-
-We follow the **Eidosian Standards**.
-
-1.  **Code Style**: Black (88 chars), Isort, Flake8.
-2.  **Documentation**: Google-style docstrings, Sphinx-ready.
-3.  **Typing**: Strict `mypy` compliance.
-
-See `global_info.py` for the definitive configuration source.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-**Maintained by**: Lloyd Handyside (Neuroforge)
-**Contributor**: Eidos
+MIT License. See `LICENSE` for details.
