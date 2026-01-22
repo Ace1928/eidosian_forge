@@ -55,15 +55,13 @@ SEMANTIC_MEMORY_PATH = FORGE_DIR / "data" / "semantic_memory.json"
         "required": ["content"],
     },
 )
-def memory_add(content: str) -> str:
-    """Add to episodic memory."""
-    try:
-        if memory is None:
-            return "Error storing memory: memory backend unavailable"
+def memory_add_semantic(content: str) -> str:
+    """Add to semantic memory."""
+    if memory is None:
+        return "Error storing memory: memory backend unavailable"
+    with begin_transaction("memory_add_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
         mid = memory.remember(content)
-        return f"Stored memory: {mid}"
-    except Exception as exc:
-        return f"Error storing memory: {exc}"
+        return f"Stored semantic memory: {mid} ({txn.id})"
 
 
 @tool(
@@ -102,17 +100,10 @@ def kb_add_fact(fact: str, tags: List[str]) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    txn = begin_transaction("kb_add", [persistence_path]) if persistence_path else None
-    try:
+    
+    with begin_transaction("kb_add", [persistence_path]) as txn:
         node = kb.add_knowledge(fact, tags=tags)
-        if txn:
-            txn.commit()
-            return f"Added node: {node.id} ({txn.id})"
-        return f"Added node: {node.id}"
-    except Exception as exc:
-        if txn:
-            txn.rollback(f"exception: {exc}")
-        return f"Error adding knowledge: {exc}"
+        return f"Added node: {node.id} ({txn.id})"
 
 
 @tool(
@@ -146,17 +137,10 @@ def kb_link(node_id_a: str, node_id_b: str) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    txn = begin_transaction("kb_link", [persistence_path]) if persistence_path else None
-    try:
+    
+    with begin_transaction("kb_link", [persistence_path]) as txn:
         kb.link_nodes(node_id_a, node_id_b)
-        if txn:
-            txn.commit()
-            return f"Linked {node_id_a} <-> {node_id_b} ({txn.id})"
-        return f"Linked {node_id_a} <-> {node_id_b}"
-    except Exception as exc:
-        if txn:
-            txn.rollback(f"exception: {exc}")
-        return f"Error linking nodes: {exc}"
+        return f"Linked {node_id_a} <-> {node_id_b} ({txn.id})"
 
 
 @tool(
@@ -173,21 +157,13 @@ def kb_delete(node_id: str) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    txn = begin_transaction("kb_delete", [persistence_path]) if persistence_path else None
-    try:
+    
+    with begin_transaction("kb_delete", [persistence_path]) as txn:
         deleted = kb.delete_node(node_id)
         if not deleted:
-            if txn:
-                txn.rollback("no-op: not found")
+            txn.rollback("no-op: not found")
             return "No-op: Not found"
-        if txn:
-            txn.commit()
-            return f"Deleted node {node_id} ({txn.id})"
-        return f"Deleted node {node_id}"
-    except Exception as exc:
-        if txn:
-            txn.rollback(f"exception: {exc}")
-        return f"Error deleting node: {exc}"
+        return f"Deleted node {node_id} ({txn.id})"
 
 
 @tool(
@@ -227,17 +203,12 @@ def memory_delete_semantic(item_id: str) -> str:
     """Delete a semantic memory entry by id."""
     if memory is None:
         return "Error deleting memory: memory backend unavailable"
-    txn = begin_transaction("memory_delete_semantic", [SEMANTIC_MEMORY_PATH])
-    try:
+    with begin_transaction("memory_delete_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
         deleted = memory.episodic.delete(item_id)
         if not deleted:
             txn.rollback("no-op: not found")
             return "No-op: Not found"
-        txn.commit()
         return f"Deleted ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error deleting memory: {exc}"
 
 
 @tool(
@@ -250,17 +221,12 @@ def memory_clear_semantic() -> str:
         return "Error clearing memory: memory backend unavailable"
     if memory.episodic.count() == 0:
         return "No-op: Memory already empty"
-    txn = begin_transaction("memory_clear_semantic", [SEMANTIC_MEMORY_PATH])
-    try:
+    with begin_transaction("memory_clear_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
         memory.episodic.clear()
         if memory.episodic.count() != 0:
             txn.rollback("verification_failed: not_empty")
             return f"Error: Verification failed; rolled back ({txn.id})"
-        txn.commit()
         return f"Memory cleared ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error clearing memory: {exc}"
 
 
 @tool(

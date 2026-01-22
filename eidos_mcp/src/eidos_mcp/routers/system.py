@@ -167,18 +167,14 @@ def file_write(file_path: str, content: str, overwrite: bool = True) -> str:
         existing = path.read_text(encoding="utf-8")
         if existing == content:
             return "No-op: Content unchanged"
-    txn = begin_transaction("file_write", [path])
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
+    
+    with begin_transaction("file_write", [path]) as txn:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         if path.read_text(encoding="utf-8") != content:
             txn.rollback("verification_failed: content_mismatch")
             return f"Error: Verification failed; rolled back ({txn.id})"
-        txn.commit()
         return f"Committed file_write ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error: {exc} (rolled back {txn.id})"
 
 
 @tool(
@@ -196,18 +192,14 @@ def file_create(file_path: str) -> str:
         return "Error: Path not allowed"
     if path.exists():
         return "No-op: Path already exists"
-    txn = begin_transaction("file_create", [path])
-    try:
+    
+    with begin_transaction("file_create", [path]) as txn:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch(exist_ok=True)
         if not path.exists():
             txn.rollback("verification_failed: missing_file")
             return f"Error: Verification failed; rolled back ({txn.id})"
-        txn.commit()
         return f"Committed file_create ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error: {exc} (rolled back {txn.id})"
 
 
 @tool(
@@ -225,31 +217,20 @@ def file_delete(file_path: str) -> str:
         return "Error: Path not allowed"
     if not path.exists():
         return "No-op: Path not found"
-    if path.is_dir():
-        if any(path.iterdir()):
-            return "Error: Directory is not empty"
-        txn = begin_transaction("file_delete", [path])
-        try:
+    
+    with begin_transaction("file_delete", [path]) as txn:
+        if path.is_dir():
+            if any(path.iterdir()):
+                txn.rollback("error: directory not empty")
+                return "Error: Directory is not empty"
             path.rmdir()
-            if path.exists():
-                txn.rollback("verification_failed: dir_exists")
-                return f"Error: Verification failed; rolled back ({txn.id})"
-            txn.commit()
-            return f"Committed file_delete ({txn.id})"
-        except Exception as exc:
-            txn.rollback(f"exception: {exc}")
-            return f"Error: {exc} (rolled back {txn.id})"
-    txn = begin_transaction("file_delete", [path])
-    try:
-        path.unlink()
+        else:
+            path.unlink()
+            
         if path.exists():
-            txn.rollback("verification_failed: file_exists")
+            txn.rollback("verification_failed: path_still_exists")
             return f"Error: Verification failed; rolled back ({txn.id})"
-        txn.commit()
         return f"Committed file_delete ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error: {exc} (rolled back {txn.id})"
 
 
 @tool(
@@ -314,6 +295,7 @@ def run_shell_command(
             if not _is_allowed(resolved):
                 return json.dumps({"error": "Path not allowed", "path": str(resolved)})
             targets.append(resolved)
+    
     if safe_mode and not _is_read_only_command(command) and not targets:
         return json.dumps(
             {
@@ -321,61 +303,60 @@ def run_shell_command(
                 "command": command,
             }
         )
-    txn = None
-    if targets:
-        if idempotency_key:
-            target_state = hash_paths(targets)
-            if check_idempotency(idempotency_key, command, target_state):
-                return json.dumps(
-                    {
-                        "command": command,
-                        "stdout": "",
-                        "stderr": "",
-                        "exit_code": 0,
-                        "status": "no-op",
-                        "idempotency_key": idempotency_key,
-                    }
-                )
-        txn = begin_transaction("run_shell_command", targets)
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            cwd=cwd or None,
-            timeout=timeout_sec,
-        )
-    except subprocess.TimeoutExpired as exc:
-        if txn:
+    
+    if targets and idempotency_key:
+        target_state = hash_paths(targets)
+        if check_idempotency(idempotency_key, command, target_state):
+            return json.dumps(
+                {
+                    "command": command,
+                    "stdout": "",
+                    "stderr": "",
+                    "exit_code": 0,
+                    "status": "no-op",
+                    "idempotency_key": idempotency_key,
+                }
+            )
+
+    with begin_transaction("run_shell_command", targets) as txn:
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                cwd=cwd or None,
+                timeout=timeout_sec,
+            )
+        except subprocess.TimeoutExpired as exc:
             txn.rollback("timeout")
+            payload = {
+                "command": command,
+                "cwd": cwd or "",
+                "stdout": exc.stdout or "",
+                "stderr": exc.stderr or "Command timed out",
+                "exit_code": -1,
+                "transaction_id": txn.id if txn else None,
+                "rolled_back": True,
+            }
+            return json.dumps(payload)
+
+        verify_error = _run_verify_command(verify_command, Path(cwd) if cwd else None)
+        if result.returncode != 0 or verify_error:
+            txn.rollback(verify_error or f"exit_code={result.returncode}")
+        elif idempotency_key and targets:
+            record_idempotency(idempotency_key, command, hash_paths(targets))
+
         payload = {
             "command": command,
             "cwd": cwd or "",
-            "stdout": exc.stdout or "",
-            "stderr": exc.stderr or "Command timed out",
-            "exit_code": -1,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "exit_code": result.returncode,
             "transaction_id": txn.id if txn else None,
-            "rolled_back": bool(txn),
+            "rolled_back": txn.status == "ROLLED_BACK",
         }
         return json.dumps(payload)
-    verify_error = _run_verify_command(verify_command, Path(cwd) if cwd else None)
-    if txn and (result.returncode != 0 or verify_error):
-        txn.rollback(verify_error or f"exit_code={result.returncode}")
-    elif txn:
-        txn.commit()
-        if idempotency_key:
-            record_idempotency(idempotency_key, command, hash_paths(targets))
-    payload = {
-        "command": command,
-        "cwd": cwd or "",
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-        "exit_code": result.returncode,
-        "transaction_id": txn.id if txn else None,
-        "rolled_back": bool(txn and (result.returncode != 0 or verify_error)),
-    }
-    return json.dumps(payload)
 
 
 @tool(

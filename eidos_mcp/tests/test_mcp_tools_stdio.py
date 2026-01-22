@@ -253,6 +253,6 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
                 venv_run = await _call_tool(
                     session,
                     "venv_run",
-                    {"venv_path": "/home/lloyd/eidosian_venv", "command": "python -V"},
+                    {"venv_path": "/home/lloyd/eidosian_forge/eidosian_venv", "command": "python -V"},
                 )
                 self.assertIn("Python 3.12", venv_run)

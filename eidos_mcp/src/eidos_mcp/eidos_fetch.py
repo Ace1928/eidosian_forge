@@ -25,9 +25,15 @@ async def _fetch(uri: str, python_bin: str) -> str:
     server_args = ["-m", "eidos_mcp.eidos_mcp_server"]
     env = dict(os.environ)
     pythonpath = env.get("PYTHONPATH", "")
-    root = os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")
-    if root not in pythonpath:
-        env["PYTHONPATH"] = f"{root}:{pythonpath}" if pythonpath else root
+    forge_dir = os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")
+    mcp_src = os.path.join(forge_dir, "eidos_mcp", "src")
+    
+    paths_to_add = [mcp_src, forge_dir]
+    for p in paths_to_add:
+        if p not in pythonpath:
+             pythonpath = f"{p}:{pythonpath}" if pythonpath else p
+    
+    env["PYTHONPATH"] = pythonpath
 
     params = StdioServerParameters(command=python_bin, args=server_args, env=env)
     async with stdio_client(params) as (read, write):
