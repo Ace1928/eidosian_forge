@@ -1,0 +1,328 @@
+{
+  "nodes": {
+    "752ea060-d511-4ba9-9c84-e34a204629e1": {
+      "id": "752ea060-d511-4ba9-9c84-e34a204629e1",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": []
+    },
+    "2d213bb9-5a64-4046-965e-db5a14fea7fd": {
+      "id": "2d213bb9-5a64-4046-965e-db5a14fea7fd",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "d6b0228e-f92f-4b5f-9749-bdd751cd4e94"
+      ]
+    },
+    "d6b0228e-f92f-4b5f-9749-bdd751cd4e94": {
+      "id": "d6b0228e-f92f-4b5f-9749-bdd751cd4e94",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "2d213bb9-5a64-4046-965e-db5a14fea7fd"
+      ]
+    },
+    "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3": {
+      "id": "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "cf98e653-fce9-4077-a393-906d75bb38d8"
+      ]
+    },
+    "cf98e653-fce9-4077-a393-906d75bb38d8": {
+      "id": "cf98e653-fce9-4077-a393-906d75bb38d8",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3"
+      ]
+    },
+    "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d": {
+      "id": "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "5f9cac19-5c06-4d75-ab67-a4df86153d62"
+      ]
+    },
+    "5f9cac19-5c06-4d75-ab67-a4df86153d62": {
+      "id": "5f9cac19-5c06-4d75-ab67-a4df86153d62",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d"
+      ]
+    },
+    "f10987b1-d06e-405c-bdd4-01c5ae0be2a3": {
+      "id": "f10987b1-d06e-405c-bdd4-01c5ae0be2a3",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "9024205c-4e25-4781-b28a-0652216cebea"
+      ]
+    },
+    "9024205c-4e25-4781-b28a-0652216cebea": {
+      "id": "9024205c-4e25-4781-b28a-0652216cebea",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "f10987b1-d06e-405c-bdd4-01c5ae0be2a3"
+      ]
+    },
+    "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780": {
+      "id": "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "c108f026-5f0e-4afe-8272-ff968b7c95e5"
+      ]
+    },
+    "c108f026-5f0e-4afe-8272-ff968b7c95e5": {
+      "id": "c108f026-5f0e-4afe-8272-ff968b7c95e5",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780"
+      ]
+    },
+    "5a18a935-7936-4257-a589-a2b76d2f956a": {
+      "id": "5a18a935-7936-4257-a589-a2b76d2f956a",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782"
+      ]
+    },
+    "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782": {
+      "id": "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "5a18a935-7936-4257-a589-a2b76d2f956a"
+      ]
+    },
+    "16e54b64-2a6d-4f94-8678-b6ba18da1d03": {
+      "id": "16e54b64-2a6d-4f94-8678-b6ba18da1d03",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "770ac12b-d967-4d0a-bf7c-3888438af852"
+      ]
+    },
+    "770ac12b-d967-4d0a-bf7c-3888438af852": {
+      "id": "770ac12b-d967-4d0a-bf7c-3888438af852",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "16e54b64-2a6d-4f94-8678-b6ba18da1d03"
+      ]
+    },
+    "5726bee3-7ef4-4d5d-a78d-4712d9e17c08": {
+      "id": "5726bee3-7ef4-4d5d-a78d-4712d9e17c08",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "004f3925-aad3-45b2-9892-a8892996ee9a"
+      ]
+    },
+    "004f3925-aad3-45b2-9892-a8892996ee9a": {
+      "id": "004f3925-aad3-45b2-9892-a8892996ee9a",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "5726bee3-7ef4-4d5d-a78d-4712d9e17c08"
+      ]
+    },
+    "8e42500d-146a-44c1-bc9c-b2a40ec74680": {
+      "id": "8e42500d-146a-44c1-bc9c-b2a40ec74680",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "d239b075-291b-4fef-95fa-ee3ba541b7e1"
+      ]
+    },
+    "d239b075-291b-4fef-95fa-ee3ba541b7e1": {
+      "id": "d239b075-291b-4fef-95fa-ee3ba541b7e1",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "8e42500d-146a-44c1-bc9c-b2a40ec74680"
+      ]
+    },
+    "7b357aa9-a4a3-4144-8ed2-0de174696d02": {
+      "id": "7b357aa9-a4a3-4144-8ed2-0de174696d02",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "b5e9fe63-ce4a-4e13-b94d-6d5503de1608"
+      ]
+    },
+    "b5e9fe63-ce4a-4e13-b94d-6d5503de1608": {
+      "id": "b5e9fe63-ce4a-4e13-b94d-6d5503de1608",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "7b357aa9-a4a3-4144-8ed2-0de174696d02"
+      ]
+    },
+    "daa0d805-e3f8-4dd9-bd97-0b714afd04c1": {
+      "id": "daa0d805-e3f8-4dd9-bd97-0b714afd04c1",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "177f579d-d89c-44b1-879c-dab71c54c742"
+      ]
+    },
+    "177f579d-d89c-44b1-879c-dab71c54c742": {
+      "id": "177f579d-d89c-44b1-879c-dab71c54c742",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "daa0d805-e3f8-4dd9-bd97-0b714afd04c1"
+      ]
+    },
+    "ae982719-654f-4116-ad70-bc6bb0318e5d": {
+      "id": "ae982719-654f-4116-ad70-bc6bb0318e5d",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "9ed5f538-d106-46c0-9797-5c46a9c5d7bf"
+      ]
+    },
+    "9ed5f538-d106-46c0-9797-5c46a9c5d7bf": {
+      "id": "9ed5f538-d106-46c0-9797-5c46a9c5d7bf",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "ae982719-654f-4116-ad70-bc6bb0318e5d"
+      ]
+    }
+  },
+  "concept_map": {}
+}
