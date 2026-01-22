@@ -13,17 +13,19 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import os
 
-SERVER_SCRIPT = "/home/lloyd/eidosian_forge/eidos_mcp/eidos_mcp_server.py"
 PYTHON_BIN = "/home/lloyd/eidosian_venv/bin/python3"
+SERVER_ARGS = ["-m", "eidos_mcp.eidos_mcp_server"]
 MEMORY_FILE = Path("/home/lloyd/eidosian_forge/memory_data.json")
 
 class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
+        pythonpath = "/home/lloyd/eidosian_forge/eidos_mcp/src:/home/lloyd/eidosian_forge"
+        env = {**os.environ, "PYTHONPATH": pythonpath}
         self.server_params = StdioServerParameters(
             command=PYTHON_BIN,
-            args=[SERVER_SCRIPT],
-            env={**os.environ, "PYTHONPATH": "/home/lloyd"},
+            args=SERVER_ARGS,
+            env=env,
         )
 
     async def test_server_connection_and_initialization(self):

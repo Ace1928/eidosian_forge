@@ -22,6 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "libcst>=1.1.0",
+    "networkx>=3.0",
     "rich>=13.0.0",
     "typer>=0.9.0",
 ]

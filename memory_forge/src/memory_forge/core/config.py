@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Literal
 
 class BackendConfig(BaseModel):
-    type: Literal["chroma", "sqlite", "json", "postgres"] = "chroma"
-    connection_string: str = "./data/memory.db"
+    type: Literal["chroma", "sqlite", "json", "postgres"] = "json"
+    connection_string: str = "memory_forge_episodic.json"
     collection_name: str = "eidos_memory"
 
 class MemoryConfig(BaseModel):
-    episodic: BackendConfig = Field(default_factory=lambda: BackendConfig(type="chroma", collection_name="episodic"))
-    semantic: BackendConfig = Field(default_factory=lambda: BackendConfig(type="chroma", collection_name="semantic"))
+    episodic: BackendConfig = Field(default_factory=lambda: BackendConfig(type="json", connection_string="./data/episodic_memory.json", collection_name="episodic"))
+    semantic: BackendConfig = Field(default_factory=lambda: BackendConfig(type="json", connection_string="./data/semantic_memory.json", collection_name="semantic"))
     embedding_model: str = "all-MiniLM-L6-v2"

@@ -9,7 +9,8 @@ from ..forge_loader import ensure_forge_import
 ensure_forge_import("knowledge_forge")
 ensure_forge_import("memory_forge")
 
-from knowledge_forge import GraphRAGIntegration, KnowledgeForge
+from knowledge_forge.core.graph import KnowledgeForge
+from knowledge_forge.integrations.graphrag import GraphRAGIntegration
 
 from ..core import tool
 from ..transactions import (

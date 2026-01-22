@@ -69,6 +69,8 @@ def test_server_imports_and_initialization(mock_dependencies):
     assert server.mcp == mock_mcp_instance
     
     # Verify critical tools are registered
+    from eidos_mcp.core import list_tool_metadata, list_resource_metadata
+    tool_names = {tool["name"] for tool in list_tool_metadata()}
     expected_tools = [
         "gis_get", "gis_set",
         "memory_add", "memory_retrieve",
@@ -78,9 +80,10 @@ def test_server_imports_and_initialization(mock_dependencies):
     ]
     
     for tool in expected_tools:
-        assert tool in registered_tools, f"Tool {tool} was not registered"
+        assert tool in tool_names, f"Tool {tool} was not registered"
 
     # Verify critical resources are registered
+    resource_uris = {res["uri"] for res in list_resource_metadata()}
     expected_resources = [
         "eidos://config",
         "eidos://persona",
@@ -88,4 +91,4 @@ def test_server_imports_and_initialization(mock_dependencies):
     ]
     
     for res in expected_resources:
-        assert res in registered_resources, f"Resource {res} was not registered"
+        assert res in resource_uris, f"Resource {res} was not registered"
