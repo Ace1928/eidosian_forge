@@ -15,11 +15,8 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 
 from . import __version__
-from .core.types import AnalysisResult, TransformationResult, RefactorOptions
 from .analyzer import analyze_code
 from .reporter import print_analysis_report
-from .transformer import transform_code
-from .transformer.filesystem import generate_files
 
 # ╭──────────────────────────────────────────────────────╮
 # │  🎮 Command Interface - Argument Processing          │
@@ -102,18 +99,14 @@ def main(args: Optional[List[str]] = None) -> int:
     parsed_args = parse_args(args)
     
     try:
-        # Convert CLI args to options object
-        options = RefactorOptions(
-            source_path=parsed_args.source,
+        result = execute_refactoring(
+            parsed_args.source,
             output_dir=parsed_args.output_dir,
-            package_name=parsed_args.package_name,
             analyze_only=parsed_args.analyze_only,
             dry_run=parsed_args.dry_run,
-            verbose=parsed_args.verbose
+            verbose=parsed_args.verbose,
+            clean=parsed_args.clean,
         )
-        
-        # Execute the refactoring process
-        result = execute_refactoring(options, clean=parsed_args.clean)
         return 0 if result["success"] else 1
         
     except Exception as e:
@@ -125,8 +118,12 @@ def main(args: Optional[List[str]] = None) -> int:
 
 
 def execute_refactoring(
-    options: RefactorOptions, 
-    clean: bool = False
+    source_path: Union[str, Path],
+    output_dir: Optional[Union[str, Path]] = None,
+    analyze_only: bool = False,
+    dry_run: bool = False,
+    verbose: bool = False,
+    clean: bool = False,
 ) -> Dict[str, Any]:
     """Execute the refactoring process based on given options.
     
@@ -140,63 +137,31 @@ def execute_refactoring(
     Raises:
         FileNotFoundError: If source file doesn't exist
     """
-    source_path = Path(options.source_path)
+    source_path = Path(source_path)
     if not source_path.exists():
         raise FileNotFoundError(f"Source file not found: {source_path}")
     
     print(f"🔍 Analyzing {source_path}...")
     analysis_results = analyze_code(source_path)
     
-    if options.analyze_only or options.dry_run or options.verbose:
+    if analyze_only or dry_run or verbose:
         print_analysis_report(analysis_results)
         
-    if options.analyze_only:
+    if analyze_only:
         return {"success": True, "analysis": analysis_results}
-    
-    print(f"🔮 Transforming {source_path}...")
-    transform_results = transform_code(
-        analysis_results, 
-        output_dir=options.output_dir, 
-        package_name=options.package_name
-    )
-    
-    if clean:
-        from .transformer.filesystem import clean_output_directory
-        print(f"🧹 Cleaning output directory...")
-        clean_output_directory(
-            transform_results["output_path"], 
-            dry_run=options.dry_run
-        )
-    
-    # Generate files
-    if not options.dry_run:
-        print(f"📝 Generating files...")
-        generated_files = generate_files(transform_results)
-        print(f"✨ Generated {len(generated_files)} files")
-        
-        if options.verbose:
-            for file_path in generated_files:
-                print(f"  - {file_path}")
-        
-        print(f"✅ Transformation complete! Results in {transform_results['output_path']}")
-    else:
-        print("📋 Dry run completed - no files were modified")
-    
-    return {
-        "success": True, 
-        "analysis": analysis_results, 
-        "transformation": transform_results
-    }
+
+    print("⚠️ Transformation is not implemented in this minimal CLI.")
+    if output_dir or clean:
+        print("⚠️ Output directory options are ignored in this mode.")
+    return {"success": True, "analysis": analysis_results}
 
 
 def refactor(
     source_path: Union[str, Path],
-    output_dir: Optional[Union[str, Path]] = None,
-    package_name: Optional[str] = None,
     analyze_only: bool = False,
     dry_run: bool = False,
     verbose: bool = False,
-    clean: bool = False
+    clean: bool = False,
 ) -> Dict[str, Any]:
     """High-level API for programmatic refactoring - maintains full compatibility.
     
@@ -215,16 +180,13 @@ def refactor(
     Raises:
         FileNotFoundError: If source file doesn't exist
     """
-    options = RefactorOptions(
-        source_path=source_path,
-        output_dir=output_dir,
-        package_name=package_name,
+    return execute_refactoring(
+        source_path,
         analyze_only=analyze_only,
         dry_run=dry_run,
-        verbose=verbose
+        verbose=verbose,
+        clean=clean,
     )
-    
-    return execute_refactoring(options, clean=clean)
 
 
 if __name__ == "__main__":

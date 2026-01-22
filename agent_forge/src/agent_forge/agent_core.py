@@ -2,59 +2,32 @@
 Agent Forge - Tool-using autonomous system.
 Provides goal-directed behavior and task orchestration.
 """
-from typing import Dict, Any, List, Optional, Callable, Union
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Union
 import uuid
 import json
 import os
-import sys
 from pathlib import Path
 
-# Add src to sys.path for local discovery if running from forge root
-_src_path = str(Path(__file__).parent / "src")
-if _src_path not in sys.path:
-    sys.path.insert(0, _src_path)
+from eidos_mcp.transactions import begin_transaction, load_transaction, list_transactions
+from agent_forge.utils.parsing import extract_json_from_text
 
-try:
-    from agent_forge.core.transactions import TransactionManager
-    from agent_forge.utils.parsing import extract_json_from_text
-except ImportError:
-    # Fallback/Emergency logic for decoupled execution
-    class TransactionManager:
-        def __init__(self, base_dir, backup_dir): pass
-        def stage_write(self, p, c): return "Staged (Mock)"
-        def commit(self): return "Committed (Mock)"
-        def rollback(self): return "Rolled back (Mock)"
-        def start_transaction(self, desc): pass
 
-    def extract_json_from_text(text):
-        try:
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0]
-            elif "```" in text:
-                text = text.split("```")[1]
-            return json.loads(text)
-        except:
-            return None
-
+@dataclass
 class Task:
-    """A specific unit of work."""
-    def __init__(self, description: str, tool: Optional[str] = None, kwargs: Optional[Dict[str, Any]] = None):
-        self.id = str(uuid.uuid4())
-        self.description = description
-        self.tool = tool
-        self.kwargs = kwargs or {}
-        self.status = "pending" # pending, running, completed, failed, staged
-        self.result = None
+    description: str
+    tool: Optional[str] = None
+    kwargs: Dict[str, Any] = field(default_factory=dict)
+    status: str = "pending"
+    result: Optional[str] = None
 
+
+@dataclass
 class Goal:
-    """A high-level objective composed of tasks."""
-    def __init__(self, objective: str):
-        self.id = str(uuid.uuid4())
-        self.objective = objective
-        self.tasks: List[Task] = []
-        self.status = "active"
+    objective: str
+    tasks: List[Task] = field(default_factory=list)
 
-    def add_task(self, task: Task):
+    def add_task(self, task: Task) -> None:
         self.tasks.append(task)
 
 class AgentForge:
@@ -69,25 +42,46 @@ class AgentForge:
         self.llm = llm
         self.require_approval = require_approval
         
-        # Initialize Transaction Manager
-        self.base_dir = Path(base_dir).resolve()
-        self.backup_dir = self.base_dir / ".eidos" / "backups"
-        self.txn_manager = TransactionManager(self.base_dir, self.backup_dir)
+        # Transactional operations are managed directly by eidos_mcp.transactions functions
+        # We don't instantiate a TransactionManager class here.
         
         # Register default safe tools
         self.register_tool("write_file", self._safe_write_file, "Safely write/stage a file. Args: path, content")
-        self.register_tool("commit_transaction", self.txn_manager.commit, "Commit staged changes to filesystem.")
-        self.register_tool("rollback_transaction", self.txn_manager.rollback, "Rollback transaction. Args: txn_id (optional)")
+        self.register_tool("commit_transaction", self._commit_transaction_tool, "Commit staged changes to filesystem by transaction ID.")
+        self.register_tool("rollback_transaction", self._rollback_transaction_tool, "Rollback transaction by ID. Args: txn_id")
 
     def _safe_write_file(self, path: str, content: str) -> str:
-        """Internal safe write handler."""
-        if self.require_approval:
-            return self.txn_manager.stage_write(path, content)
-        else:
-            # Start a transaction just for this write to ensure backup
-            self.txn_manager.start_transaction(f"Immediate write: {path}")
-            self.txn_manager.stage_write(path, content)
-            return self.txn_manager.commit()
+        """Internal safe write handler using eidos_mcp.transactions."""
+        target_path = Path(path).resolve()
+        txn = begin_transaction("agent_write_file", [target_path])
+        try:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_text(content, encoding="utf-8")
+            # Verify write operation
+            if target_path.read_text(encoding="utf-8") != content:
+                txn.rollback("verification_failed: content_mismatch")
+                return f"Error: Verification failed; rolled back ({txn.id})"
+            txn.commit()
+            return f"Committed file_write with transaction ID: {txn.id}"
+        except Exception as e:
+            txn.rollback(f"exception: {e}")
+            return f"Error writing file: {e} (rolled back {txn.id})"
+
+    def _commit_transaction_tool(self, txn_id: str) -> str:
+        """Tool to commit a specific transaction."""
+        txn = load_transaction(txn_id)
+        if txn:
+            txn.commit()
+            return f"Transaction {txn_id} committed."
+        return f"Error: Transaction {txn_id} not found."
+
+    def _rollback_transaction_tool(self, txn_id: str) -> str:
+        """Tool to rollback a specific transaction."""
+        txn = load_transaction(txn_id)
+        if txn:
+            txn.rollback("manual_rollback_by_agent")
+            return f"Transaction {txn_id} rolled back."
+        return f"Error: Transaction {txn_id} not found."
 
     def register_tool(self, name: str, func: Callable, description: str = ""):
         """Register a tool function with description for LLM awareness."""
@@ -101,14 +95,14 @@ class AgentForge:
         tools_desc = "\n".join([f"- {n}: {t['description']}" for n, t in self._tools.items()])
         prompt = f"Objective: {objective}\n\nAvailable Tools:\n{tools_desc}\n\nGenerate a sequential list of tasks to achieve this objective. Each task must specify a tool, arguments for that tool, and a clear description. Format as JSON: {{'tasks': [{{'tool': 'tool_name', 'args': {{'arg_name': 'value'}}, 'description': '...'}}]}}"
         
-        res = self.llm.generate(prompt, system="You are the Eidosian Reasoning Engine. Plan meticulously.")
-        if res["success"]:
-            try:
-                data = extract_json_from_text(res["response"])
-                if data:
-                    return [Task(t["description"], tool=t.get("tool"), kwargs=t.get("args")) for t in data.get("tasks", [])]
-            except Exception:
-                pass
+        res_obj = self.llm.generate(prompt, system="You are the Eidosian Reasoning Engine. Plan meticulously.")
+        
+        # Assume res_obj is an LLMResponse object, which implies success if returned.
+        # Extract JSON from the text, handling potential Markdown formatting.
+        if res_obj.text:
+            data = extract_json_from_text(res_obj.text)
+            if data:
+                return [Task(t["description"], tool=t.get("tool"), kwargs=t.get("args")) for t in data.get("tasks", [])]
         return [Task(objective)]
 
     def create_goal(self, objective: str, plan: bool = True) -> Goal:

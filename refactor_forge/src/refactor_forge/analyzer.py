@@ -68,6 +68,10 @@ class CodeAnalyzer:
             
         self.source_code = self.source_path.read_text(encoding='utf-8')
         self.tree = ast.parse(self.source_code)
+        # Attach parent links for boundary detection.
+        for parent in ast.walk(self.tree):
+            for child in ast.iter_child_nodes(parent):
+                child.parent = parent
         self.modules = []
         self.dependencies = nx.DiGraph()
         self.symbol_table = {}
@@ -198,14 +202,13 @@ class CodeAnalyzer:
             # Convert "Section Name" to "section_name"
             section_name = header_match.group(1).strip().lower().replace(' ', '_')
             return section_name
-        
         # Look for main function
         func_match = re.search(r"def ([a-z][a-zA-Z0-9_]*)\(", content)
         if func_match:
             return func_match.group(1)
-        
+
         return default
-    
+
     def _build_dependency_graph(self) -> None:
         """Build a directed graph of dependencies between modules."""
         # Add nodes for all modules

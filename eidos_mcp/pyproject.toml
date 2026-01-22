@@ -37,6 +37,8 @@ dev = [
 
 [project.scripts]
 eidos-mcp = "eidos_mcp.server:main"
+eidos-fetch = "eidos_mcp.eidos_fetch:main"
+eidos-mcp-check = "eidos_mcp.check_mcp:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/eidos_mcp"]

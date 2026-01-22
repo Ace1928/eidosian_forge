@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import functools
 import inspect
 import os
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
 from mcp.server.fastmcp import FastMCP
+from .logging_utils import log_tool_call, log_resource_read
 
 
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
@@ -101,11 +103,48 @@ def tool(
         params = parameters or _infer_parameters(func)
         register_tool_metadata(tool_name, desc, params)
 
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                sig = inspect.signature(func)
+                try:
+                    bound = sig.bind(*args, **kwargs)
+                    bound.apply_defaults()
+                    log_args = bound.arguments
+                except Exception:
+                    log_args = {"args": args, "kwargs": kwargs}
+
+                try:
+                    result = await func(*args, **kwargs)
+                    log_tool_call(tool_name, log_args, result)
+                    return result
+                except Exception as e:
+                    log_tool_call(tool_name, log_args, None, error=str(e))
+                    raise
+        else:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                sig = inspect.signature(func)
+                try:
+                    bound = sig.bind(*args, **kwargs)
+                    bound.apply_defaults()
+                    log_args = bound.arguments
+                except Exception:
+                    log_args = {"args": args, "kwargs": kwargs}
+
+                try:
+                    result = func(*args, **kwargs)
+                    log_tool_call(tool_name, log_args, result)
+                    return result
+                except Exception as e:
+                    log_tool_call(tool_name, log_args, None, error=str(e))
+                    raise
+
         if name is None:
             mcp_decorator = mcp.tool()
         else:
             mcp_decorator = mcp.tool(tool_name)
-        return mcp_decorator(func)
+        return mcp_decorator(wrapper)
 
     return decorator
 
@@ -114,6 +153,28 @@ def resource(uri: str, description: Optional[str] = None):
     def decorator(func):
         desc = (description or func.__doc__ or "").strip()
         register_resource_metadata(uri, desc)
-        return mcp.resource(uri)(func)
+
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                try:
+                    result = await func(*args, **kwargs)
+                    log_resource_read(uri, result)
+                    return result
+                except Exception as e:
+                    log_resource_read(uri, None, error=str(e))
+                    raise
+        else:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    result = func(*args, **kwargs)
+                    log_resource_read(uri, result)
+                    return result
+                except Exception as e:
+                    log_resource_read(uri, None, error=str(e))
+                    raise
+
+        return mcp.resource(uri)(wrapper)
 
     return decorator

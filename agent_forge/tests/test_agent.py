@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Add root of this forge to path for direct imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from agent_core import AgentForge, Task
+from agent_forge.agent_core import AgentForge, Task
 
 class TestAgentForge(unittest.TestCase):
     def setUp(self):

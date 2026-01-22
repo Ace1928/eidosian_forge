@@ -8,8 +8,9 @@
 - **Complexity**: High (Depends on everything).
 
 ## 🏗️ Architecture
-- `eidos_mcp_server.py`: Monolithic server file defining all tools.
-- Uses `fastmcp` for easy decorator-based tool definition.
+- `src/eidos_mcp/eidos_mcp_server.py`: Server bootstrap; registers resources and loads routers.
+- `src/eidos_mcp/routers/`: Modular tool routers (system, memory, knowledge, gis, audit, diagnostics, types, nexus).
+- Uses `fastmcp` for decorator-based tool/resource definition.
 
 ## 🐛 Known Issues
 - Hardcoded paths to `HOME_DIR` and `FORGE_DIR` might be brittle if moved.

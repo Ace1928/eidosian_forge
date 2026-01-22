@@ -20,7 +20,7 @@ It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.
 
 ```bash
 # Start the server (std/stdio mode)
-python eidos_mcp_server.py
+python -m eidos_mcp.eidos_mcp_server
 ```
 
 ## 🛠️ Configuration

@@ -21,8 +21,8 @@ from ..transactions import (
 ensure_forge_import("diagnostics_forge")
 ensure_forge_import("file_forge")
 
-from diagnostics_forge import DiagnosticsForge
-from file_forge import FileForge
+from diagnostics_forge.core import DiagnosticsForge
+from file_forge.core import FileForge
 
 from ..core import tool
 
