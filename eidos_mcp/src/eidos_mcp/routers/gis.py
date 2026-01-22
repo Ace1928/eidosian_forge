@@ -45,14 +45,9 @@ def gis_set(key: str, value: Any) -> str:
     """Set a configuration value in GIS."""
     if not gis:
         return "Error: GIS unavailable"
-    txn = begin_transaction("gis_set", [Path(GIS_PATH)])
-    try:
+    with begin_transaction("gis_set", [Path(GIS_PATH)]) as txn:
         gis.set(key, value)
-        txn.commit()
         return f"GIS updated ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error: {exc}"
 
 
 @tool(

@@ -11,6 +11,7 @@ import sys
 from starlette.responses import JSONResponse
 
 from .core import mcp, resource, list_tool_metadata
+from .logging_utils import log_startup, log_error
 from .state import gis, llm, refactor, agent, ROOT_DIR, FORGE_DIR
 from . import routers as _routers  # noqa: F401
 
@@ -20,6 +21,7 @@ def _ensure_router_tools() -> None:
         return
     router_modules = [
         "eidos_mcp.routers.audit",
+        "eidos_mcp.routers.auth",
         "eidos_mcp.routers.diagnostics",
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.knowledge",
@@ -30,10 +32,17 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.types",
     ]
     for module_name in router_modules:
-        if module_name in sys.modules:
-            importlib.reload(sys.modules[module_name])
-        else:
-            importlib.import_module(module_name)
+        try:
+            if module_name in sys.modules:
+                importlib.reload(sys.modules[module_name])
+            else:
+                importlib.import_module(module_name)
+        except ImportError as e:
+            print(f"Warning: Failed to load router {module_name}: {e}", file=sys.stderr)
+            log_error(f"load_router:{module_name}", str(e))
+        except Exception as e:
+            print(f"Error: Unexpected error loading router {module_name}: {e}", file=sys.stderr)
+            log_error(f"load_router:{module_name}", str(e))
 
 
 _ensure_router_tools()
@@ -104,4 +113,12 @@ async def health_check(_request):
 def main() -> None:
     """Run the Eidosian MCP server (stdio by default)."""
     transport = os.environ.get("EIDOS_MCP_TRANSPORT", "stdio")
-    mcp.run(transport=transport)
+    print(f"Starting Eidosian MCP Server (Transport: {transport})...", file=sys.stderr)
+    log_startup(transport)
+    try:
+        mcp.run(transport=transport)
+    except Exception as e:
+        msg = f"Critical Error: MCP Server failed to start: {e}"
+        print(msg, file=sys.stderr)
+        log_error("startup", msg)
+        sys.exit(1)

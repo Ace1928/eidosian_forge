@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import functools
 import json
 import os
 import shutil
-from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 import uuid
 
 # Define a base directory for storing transaction snapshots
@@ -32,12 +32,23 @@ class Transaction:
         self.id = txn_id
         self.action = action
         self.timestamp = datetime.now().isoformat()
-        self.paths = paths
+        self.paths = [p.resolve() if p else None for p in paths if p]
+        self.paths = [p for p in self.paths if p] # Filter out None
         self.snapshots: Dict[Path, Optional[Path]] = {}  # original_path: snapshot_path
         self.status = "PENDING"  # PENDING, COMMITTED, ROLLED_BACK, FAILED
         self.error_reason: Optional[str] = None
+        
         if create_snapshot:
-            self._create_snapshot()
+            # Save pending state immediately so we track the attempt
+            _save_transaction(self)
+            try:
+                self._create_snapshot()
+                _save_transaction(self) # Update with snapshot info
+            except Exception as e:
+                self.status = "FAILED"
+                self.error_reason = f"Snapshot failed: {e}"
+                _save_transaction(self)
+                raise
 
     def _create_snapshot(self):
         """Creates snapshots of the current state of the paths."""
@@ -46,38 +57,60 @@ class Transaction:
 
         for path in self.paths:
             if path.exists():
-                snapshot_file = txn_snapshot_dir / path.name
+                # We use a unique name in the snapshot dir to avoid collisions if multiple paths have same name
+                rel_id = str(uuid.uuid4())[:8]
+                snapshot_file = txn_snapshot_dir / f"{rel_id}_{path.name}"
                 if path.is_file():
                     shutil.copy2(path, snapshot_file)
                     self.snapshots[path] = snapshot_file
                 elif path.is_dir():
-                    shutil.copytree(path, snapshot_file / path.name)
-                    self.snapshots[path] = snapshot_file / path.name # Point to the copied dir
+                    shutil.copytree(path, snapshot_file)
+                    self.snapshots[path] = snapshot_file
             else:
                 self.snapshots[path] = None  # Record that it didn't exist
 
-    def commit(self, _reason: Optional[str] = None):
+    def commit(self, reason: Optional[str] = None):
         """Marks the transaction as committed."""
         self.status = "COMMITTED"
+        if reason:
+            self.error_reason = reason
         _save_transaction(self)
 
     def rollback(self, reason: str = "unknown"):
         """Restores the paths to their snapshot state."""
+        rollback_errors = []
         for original_path, snapshot_path in self.snapshots.items():
-            if original_path.exists():
-                if original_path.is_file():
-                    original_path.unlink()
-                elif original_path.is_dir():
-                    shutil.rmtree(original_path)
+            try:
+                if original_path.exists():
+                    if original_path.is_file():
+                        original_path.unlink()
+                    elif original_path.is_dir():
+                        shutil.rmtree(original_path)
 
-            if snapshot_path and snapshot_path.exists():
-                if snapshot_path.is_file():
-                    shutil.copy2(snapshot_path, original_path)
-                elif snapshot_path.is_dir():
-                    shutil.copytree(snapshot_path, original_path)
+                if snapshot_path and snapshot_path.exists():
+                    if snapshot_path.is_file():
+                        shutil.copy2(snapshot_path, original_path)
+                    elif snapshot_path.is_dir():
+                        shutil.copytree(snapshot_path, original_path)
+            except Exception as e:
+                rollback_errors.append(f"{original_path}: {e}")
+        
         self.status = "ROLLED_BACK"
-        self.error_reason = reason
+        if rollback_errors:
+            self.status = "PARTIAL_ROLLBACK"
+            self.error_reason = f"Rollback reason: {reason}. Errors: {'; '.join(rollback_errors)}"
+        else:
+            self.error_reason = reason
         _save_transaction(self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self.rollback(f"Exception: {exc_val}")
+        elif self.status == "PENDING":
+            self.commit()
 
 
 def _save_transaction(txn: Transaction):
@@ -150,10 +183,18 @@ def find_latest_transaction_for_path(path: Path) -> Optional[str]:
     return latest_txn_id
 
 
+def rollback_all(reason: str = "emergency_reset"):
+    """Rolls back all recent PENDING or COMMITTED transactions in reverse order."""
+    txns = list_transactions(limit=None)
+    for txn_data in txns:
+        if txn_data["status"] in ["PENDING", "COMMITTED"]:
+            txn = load_transaction(txn_data["id"])
+            if txn:
+                txn.rollback(reason)
+
+
 def hash_paths(paths: List[Path]) -> str:
     """Generates a hash of the content of the given paths."""
-    # Simplified hash for now, just combining file sizes and last modified times
-    # A more robust hash would involve content hashing, but that can be slow.
     details = []
     for path in paths:
         if path.exists():
@@ -185,3 +226,22 @@ def record_idempotency(idempotency_key: str, command: str, target_state_hash: st
         "timestamp": datetime.now().isoformat(),
     }
     record_file.write_text(json.dumps(record, indent=2))
+
+
+def transactional(action_name: str, get_paths_func: Any):
+    """
+    Decorator for tools to automatically wrap them in a transaction.
+    get_paths_func should take the same arguments as the tool and return List[Path].
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                paths = get_paths_func(*args, **kwargs)
+            except Exception:
+                paths = []
+                
+            with begin_transaction(action_name, paths) as txn:
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator

@@ -23,8 +23,10 @@ def ensure_forge_import(module_name: str) -> bool:
     _ensure_forge_subdir(module_name)
     try:
         importlib.import_module(module_name)
+        # print(f"Loaded Forge: {module_name}", file=sys.stderr)
         return True
-    except Exception:
+    except Exception as e:
+        # print(f"Failed to load Forge {module_name}: {e}", file=sys.stderr)
         try:
             importlib.import_module(module_name)
             return True

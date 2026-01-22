@@ -108,6 +108,7 @@ else:
 
 
 @tool(
+    name="memory_add",
     description="Add a new memory to episodic storage.",
     parameters={
         "type": "object",
@@ -127,6 +128,7 @@ def memory_add(
     metadata: Optional[dict] = None,
 ) -> str:
     """Add a new memory (episodic or semantic)."""
+    txn = begin_transaction("memory_add", [MEMORY_PATH])
     try:
         meta = {"is_fact": is_fact}
         if key:
@@ -134,8 +136,10 @@ def memory_add(
         if metadata:
             meta.update(metadata)
         mid = memory.remember(content, metadata=meta)
-        return f"Memory added with ID: {mid}"
+        txn.commit()
+        return f"Memory added with ID: {mid} ({txn.id})"
     except Exception as exc:
+        txn.rollback(f"exception: {exc}")
         return f"Error storing memory: {exc}"
 
 
@@ -169,17 +173,12 @@ def memory_retrieve(query: str, limit: int = 5) -> str:
 def memory_delete(item_id: str) -> str:
     """Delete a memory item by id."""
     backend = memory.episodic if hasattr(memory, "episodic") else memory
-    txn = begin_transaction("memory_delete", [MEMORY_PATH])
-    try:
+    with begin_transaction("memory_delete", [MEMORY_PATH]) as txn:
         deleted = backend.delete(item_id)
         if not deleted:
             txn.rollback("no-op: not found")
             return "No-op: Not found"
-        txn.commit()
         return f"Deleted ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error deleting memory: {exc}"
 
 
 @tool(
@@ -192,17 +191,12 @@ def memory_clear() -> str:
     count = backend.count() if hasattr(backend, "count") else None
     if count == 0:
         return "No-op: Memory already empty"
-    txn = begin_transaction("memory_clear", [MEMORY_PATH])
-    try:
+    with begin_transaction("memory_clear", [MEMORY_PATH]) as txn:
         backend.clear()
         if hasattr(backend, "count") and backend.count() != 0:
             txn.rollback("verification_failed: not_empty")
             return f"Error: Verification failed; rolled back ({txn.id})"
-        txn.commit()
         return f"Memory cleared ({txn.id})"
-    except Exception as exc:
-        txn.rollback(f"exception: {exc}")
-        return f"Error clearing memory: {exc}"
 
 
 @tool(

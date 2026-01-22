@@ -24,5 +24,6 @@
     "Standardizer",
     "toctree",
     "undoc"
-  ]
+  ],
+  "python.defaultInterpreterPath": "/home/lloyd/eidosian_forge/eidosian_venv/bin/python"
 }

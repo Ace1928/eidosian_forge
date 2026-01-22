@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 import json
+import time
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
@@ -24,32 +24,70 @@ def _rotate_if_needed() -> None:
 
 
 def log_event(event: Dict[str, Any]) -> None:
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    _rotate_if_needed()
-    event["timestamp"] = _utc_now()
-    with LOG_FILE.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(event, ensure_ascii=True))
-        handle.write("\n")
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        _rotate_if_needed()
+        event["timestamp"] = _utc_now()
+        with LOG_FILE.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, ensure_ascii=True))
+            handle.write("\n")
+    except Exception:
+        # Fallback: don't crash the server if logging fails
+        pass
 
 
-def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str | None = None) -> None:
+def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str | None = None, start_time: float | None = None) -> None:
+    duration = None
+    if start_time:
+        duration = time.time() - start_time
+    
+    event = {
+        "type": "tool",
+        "name": name,
+        "arguments": arguments,
+        "result": result,
+        "error": error,
+        "duration": duration,
+    }
+    if error:
+        event["traceback"] = traceback.format_exc()
+        
+    log_event(event)
+
+
+def log_resource_read(uri: str, result: Any, error: str | None = None, start_time: float | None = None) -> None:
+    duration = None
+    if start_time:
+        duration = time.time() - start_time
+
+    event = {
+        "type": "resource",
+        "uri": uri,
+        "result": result,
+        "error": error,
+        "duration": duration,
+    }
+    if error:
+        event["traceback"] = traceback.format_exc()
+
+    log_event(event)
+
+
+def log_startup(transport: str) -> None:
     log_event(
         {
-            "type": "tool",
-            "name": name,
-            "arguments": arguments,
-            "result": result,
-            "error": error,
+            "type": "startup",
+            "transport": transport,
+            "message": "Eidosian MCP Server started",
         }
     )
 
 
-def log_resource_read(uri: str, result: Any, error: str | None = None) -> None:
+def log_error(context: str, error: str) -> None:
     log_event(
         {
-            "type": "resource",
-            "uri": uri,
-            "result": result,
+            "type": "error",
+            "context": context,
             "error": error,
         }
     )

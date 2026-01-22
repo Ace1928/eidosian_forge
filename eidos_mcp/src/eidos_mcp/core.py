@@ -92,6 +92,8 @@ def _infer_parameters(func) -> Dict[str, Any]:
     return schema
 
 
+import time
+
 def tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -114,12 +116,13 @@ def tool(
                 except Exception:
                     log_args = {"args": args, "kwargs": kwargs}
 
+                start = time.time()
                 try:
                     result = await func(*args, **kwargs)
-                    log_tool_call(tool_name, log_args, result)
+                    log_tool_call(tool_name, log_args, result, start_time=start)
                     return result
                 except Exception as e:
-                    log_tool_call(tool_name, log_args, None, error=str(e))
+                    log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
         else:
             @functools.wraps(func)
@@ -132,12 +135,13 @@ def tool(
                 except Exception:
                     log_args = {"args": args, "kwargs": kwargs}
 
+                start = time.time()
                 try:
                     result = func(*args, **kwargs)
-                    log_tool_call(tool_name, log_args, result)
+                    log_tool_call(tool_name, log_args, result, start_time=start)
                     return result
                 except Exception as e:
-                    log_tool_call(tool_name, log_args, None, error=str(e))
+                    log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
 
         if name is None:
@@ -157,22 +161,24 @@ def resource(uri: str, description: Optional[str] = None):
         if inspect.iscoroutinefunction(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
+                start = time.time()
                 try:
                     result = await func(*args, **kwargs)
-                    log_resource_read(uri, result)
+                    log_resource_read(uri, result, start_time=start)
                     return result
                 except Exception as e:
-                    log_resource_read(uri, None, error=str(e))
+                    log_resource_read(uri, None, error=str(e), start_time=start)
                     raise
         else:
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
+                start = time.time()
                 try:
                     result = func(*args, **kwargs)
-                    log_resource_read(uri, result)
+                    log_resource_read(uri, result, start_time=start)
                     return result
                 except Exception as e:
-                    log_resource_read(uri, None, error=str(e))
+                    log_resource_read(uri, None, error=str(e), start_time=start)
                     raise
 
         return mcp.resource(uri)(wrapper)

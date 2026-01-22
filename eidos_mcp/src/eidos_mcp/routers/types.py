@@ -15,6 +15,16 @@ _TYPE_SNAPSHOT_PATH = Path(
 ).expanduser()
 
 
+def _ensure_type_persistence():
+    """Ensure in-memory types are saved to disk."""
+    if not type_forge:
+        return
+    _TYPE_SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _TYPE_SNAPSHOT_PATH.write_text(
+        json.dumps(type_forge.snapshot(), indent=2), encoding="utf-8"
+    )
+
+
 @tool(
     name="type_register",
     description="Register or update a schema in Type Forge.",
@@ -31,8 +41,14 @@ def type_register(name: str, schema: Dict[str, Any]) -> str:
     """Register or update a schema in Type Forge."""
     if not type_forge:
         return "Error: Type forge unavailable"
-    changed = type_forge.register_schema(name, schema)
-    return "Updated" if changed else "No-op: Schema unchanged"
+    
+    with begin_transaction("type_register", [_TYPE_SNAPSHOT_PATH]) as txn:
+        changed = type_forge.register_schema(name, schema)
+        if changed:
+            _ensure_type_persistence()
+            return f"Updated ({txn.id})"
+        txn.rollback("no-op: unchanged")
+        return "No-op: Schema unchanged"
 
 
 @tool(
@@ -67,13 +83,9 @@ def type_snapshot() -> str:
     """Snapshot registered schemas to disk."""
     if not type_forge:
         return "Error: Type forge unavailable"
-    txn = begin_transaction("type_snapshot", [_TYPE_SNAPSHOT_PATH])
-    _TYPE_SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _TYPE_SNAPSHOT_PATH.write_text(
-        json.dumps(type_forge.snapshot(), indent=2), encoding="utf-8"
-    )
-    txn.commit()
-    return f"Snapshot created ({txn.id})"
+    with begin_transaction("type_snapshot", [_TYPE_SNAPSHOT_PATH]) as txn:
+        _ensure_type_persistence()
+        return f"Snapshot created ({txn.id})"
 
 
 @tool(

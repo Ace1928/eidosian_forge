@@ -35,28 +35,25 @@ main() {
   say "Seeding minimal config files (only if absent)"
   seed_cfg
 
-  say "Making Python venv"
-  if [ ! -d "$root_dir/.venv" ]; then
-    if command -v uv >/dev/null 2>&1; then
-      uv venv "$root_dir/.venv"
-    else
-      python3 -m venv "$root_dir/.venv"
-    fi
+  say "Preparing canonical Eidosian venv"
+  canonical_venv="/home/lloyd/eidosian_forge/eidosian_venv"
+  if [ ! -d "$canonical_venv" ]; then
+    say "Creating canonical venv at $canonical_venv"
+    python3 -m venv "$canonical_venv"
   fi
   # shellcheck disable=SC1091
-  source "$root_dir/.venv/bin/activate"
-  if command -v uv >/dev/null 2>&1; then
-    uv sync --dev >/dev/null
-  else
-    python -m pip install -U pip wheel >/dev/null
-    python -m pip install --quiet 'pyyaml>=6,<7' 'pytest>=8.4'
-    if [ -f "$root_dir/uv.lock" ]; then
-      uv sync >/dev/null
-    else
-      uv pip install -r "$root_dir/pyproject.toml" >/dev/null
-    fi
-    uv pip install pytest >/dev/null
+  source "$canonical_venv/bin/activate"
+  
+  python -m pip install -U pip wheel >/dev/null
+  python -m pip install --quiet 'pyyaml>=6,<7' 'pytest>=8.4'
+  
+  if [ -f "$root_dir/pyproject.toml" ]; then
+    pip install -e "$root_dir" >/dev/null
+  elif [ -f "$root_dir/requirements.txt" ]; then
+    pip install -r "$root_dir/requirements.txt" >/dev/null
   fi
+  pip install pytest >/dev/null
+
 
   say "Touch state files"
   : >"$root_dir/state/events/.keep"

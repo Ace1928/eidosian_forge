@@ -35,7 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-figlet_forge = "figlet_forge.cli:main"
+figlet_forge = ">=0.1.2"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/figlet_forge", "figlet_core.py"]

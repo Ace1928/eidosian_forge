@@ -1,0 +1,20 @@
+[Unit]
+Description=Eidosian MCP Server (StreamableHTTP)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/lloyd/eidosian_forge/eidos_mcp
+Environment=PYTHONPATH=/home/lloyd/eidosian_forge/eidos_mcp/src
+Environment=EIDOS_FORGE_DIR=/home/lloyd/eidosian_forge
+Environment=EIDOS_MCP_TRANSPORT=sse
+Environment=FASTMCP_HOST=127.0.0.1
+Environment=FASTMCP_PORT=8765
+Environment=EIDOS_MCP_SERVICE_STATE=/home/lloyd/.eidosian/run/mcp_service_state.json
+Environment=EIDOS_MCP_BACKUP_DIR=/home/lloyd/.eidosian/backups/eidos_mcp
+ExecStart=/home/lloyd/eidosian_forge/eidosian_venv/bin/python3 -c "import eidos_mcp.eidos_mcp_server as s; s.main()"
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
