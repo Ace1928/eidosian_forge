@@ -13,11 +13,13 @@ import logging
 
 from data_structures import Rule, RuleSpecies, Position
 import config
+from eidosian_core import eidosian
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 
+@eidosian()
 def safe_cast(val: Any, to_type: type, default: Any) -> Any:
     """Safely cast a value to a specified type."""
     try:
@@ -26,6 +28,7 @@ def safe_cast(val: Any, to_type: type, default: Any) -> Any:
         return default
 
 
+@eidosian()
 def get_operand_value(species: RuleSpecies, operand: Any) -> Any:
     """
     Handle operands that might be references to memory.
@@ -36,11 +39,13 @@ def get_operand_value(species: RuleSpecies, operand: Any) -> Any:
     return operand
 
 
+@eidosian()
 def execute_nop(species: RuleSpecies, rule: Rule) -> None:
     """No operation - does nothing but consumes a cycle."""
     pass
 
 
+@eidosian()
 def execute_arithmetic(species: RuleSpecies, rule: Rule, opcode: str) -> None:
     """
     Execute arithmetic operations (ADD, SUB, MUL, DIV, MOD).
@@ -86,6 +91,7 @@ def execute_arithmetic(species: RuleSpecies, rule: Rule, opcode: str) -> None:
         rule.operands[0] = result
 
 
+@eidosian()
 def execute_logic(species: RuleSpecies, rule: Rule, opcode: str) -> None:
     """
     Execute logical operations (XOR, AND, OR).
@@ -125,6 +131,7 @@ def execute_logic(species: RuleSpecies, rule: Rule, opcode: str) -> None:
         rule.operands[0] = result
 
 
+@eidosian()
 def execute_not(species: RuleSpecies, rule: Rule) -> None:
     """
     Execute logical NOT operation.
@@ -149,6 +156,7 @@ def execute_not(species: RuleSpecies, rule: Rule) -> None:
         rule.operands[0] = result
 
 
+@eidosian()
 def execute_shift(species: RuleSpecies, rule: Rule, direction: str) -> None:
     """
     Execute bit shift operations (SHIFT_LEFT, SHIFT_RIGHT).
@@ -186,6 +194,7 @@ def execute_shift(species: RuleSpecies, rule: Rule, direction: str) -> None:
         rule.operands[0] = result
 
 
+@eidosian()
 def execute_jump(species: RuleSpecies, rule: Rule, condition: str) -> int:
     """
     Execute jump operations (JUMP, JUMP_IF, JUMP_UNLESS).
@@ -223,6 +232,7 @@ def execute_jump(species: RuleSpecies, rule: Rule, condition: str) -> int:
     return 0  # Default: no jump
 
 
+@eidosian()
 def execute_stack(species: RuleSpecies, rule: Rule, operation: str) -> None:
     """
     Execute stack operations (STACK_PUSH, STACK_POP).
@@ -250,6 +260,7 @@ def execute_stack(species: RuleSpecies, rule: Rule, operation: str) -> None:
                 rule.operands[0] = value
 
 
+@eidosian()
 def execute_memory(species: RuleSpecies, rule: Rule, operation: str) -> None:
     """
     Execute memory operations (STORE, LOAD).
@@ -284,6 +295,7 @@ def execute_memory(species: RuleSpecies, rule: Rule, operation: str) -> None:
                 rule.operands[1] = value
 
 
+@eidosian()
 def execute_copy(species: RuleSpecies, rule: Rule) -> None:
     """
     Copy a rule within the species.
@@ -309,6 +321,7 @@ def execute_copy(species: RuleSpecies, rule: Rule) -> None:
     species.rules.append(cloned_rule)
 
 
+@eidosian()
 def execute_mutate(species: RuleSpecies, rule: Rule) -> None:
     """
     Mutate a random rule in the species.
@@ -403,6 +416,7 @@ def execute_mutate(species: RuleSpecies, rule: Rule) -> None:
             target_rule.modifiers[mod_key] = random.randint(1, 5)
 
 
+@eidosian()
 def execute_recombine(species: RuleSpecies, rule: Rule) -> None:
     """
     Combine two rules to create a new hybrid rule.
@@ -460,6 +474,7 @@ def execute_recombine(species: RuleSpecies, rule: Rule) -> None:
     species.rules.append(new_rule)
 
 
+@eidosian()
 def execute_erase(species: RuleSpecies, rule: Rule) -> None:
     """
     Remove a rule from the species.
@@ -483,6 +498,7 @@ def execute_erase(species: RuleSpecies, rule: Rule) -> None:
     species.rules.pop(idx)
 
 
+@eidosian()
 def execute_reflect(species: RuleSpecies, rule: Rule) -> None:
     """
     Self-inspection: examine and potentially modify rules based on their properties.
@@ -519,6 +535,7 @@ def execute_reflect(species: RuleSpecies, rule: Rule) -> None:
         r.modifiers["reflected"] = True
 
 
+@eidosian()
 def execute_interpret(species: RuleSpecies, rule: Rule) -> None:
     """
     Interpret operand(s) as new rule(s) or instructions.
@@ -571,6 +588,7 @@ def execute_interpret(species: RuleSpecies, rule: Rule) -> None:
             species.rules.append(new_rule)
 
 
+@eidosian()
 def execute_encode_decode(species: RuleSpecies, rule: Rule, operation: str) -> None:
     """
     Encode or decode rules for compression or transformation.
@@ -631,6 +649,7 @@ def execute_encode_decode(species: RuleSpecies, rule: Rule, operation: str) -> N
                     pass
 
 
+@eidosian()
 def execute_suppress(species: RuleSpecies, rule: Rule) -> None:
     """
     Temporarily disable or reduce effectiveness of rules.
@@ -661,6 +680,7 @@ def execute_suppress(species: RuleSpecies, rule: Rule) -> None:
     target_rule.modifiers["suppressed"] = True
 
 
+@eidosian()
 def execute_amplify(species: RuleSpecies, rule: Rule) -> None:
     """
     Enhance effectiveness of rules.
@@ -691,6 +711,7 @@ def execute_amplify(species: RuleSpecies, rule: Rule) -> None:
     target_rule.modifiers["amplified"] = True
 
 
+@eidosian()
 def execute_merge(species: RuleSpecies, rule: Rule) -> None:
     """
     Merge two rules into one.
@@ -749,6 +770,7 @@ def execute_merge(species: RuleSpecies, rule: Rule) -> None:
         species.rules.remove(r2)
 
 
+@eidosian()
 def execute_split(species: RuleSpecies, rule: Rule) -> None:
     """
     Split a rule into two separate rules.
@@ -799,6 +821,7 @@ def execute_split(species: RuleSpecies, rule: Rule) -> None:
     species.rules.append(new_rule2)
 
 
+@eidosian()
 def execute_energy_transfer(species: RuleSpecies, rule: Rule) -> None:
     """
     Transfer energy between species or to the environment.
@@ -833,6 +856,7 @@ def execute_energy_transfer(species: RuleSpecies, rule: Rule) -> None:
         species.energy += amount * 0.5  # Only get 50% of what you try to absorb
 
 
+@eidosian()
 def execute_sense(species: RuleSpecies, rule: Rule) -> None:
     """
     Sense environmental conditions or neighbors.
@@ -868,6 +892,7 @@ def execute_sense(species: RuleSpecies, rule: Rule) -> None:
         species.execution_memory.store(rule.operands[1][1:], result)
 
 
+@eidosian()
 def execute_move(species: RuleSpecies, rule: Rule) -> None:
     """
     Request movement in the world.
@@ -899,6 +924,7 @@ def execute_move(species: RuleSpecies, rule: Rule) -> None:
         )
 
 
+@eidosian()
 def execute_eval(species: RuleSpecies, rule: Rule) -> None:
     """
     High-level meta-execution that treats operands as executable code.
@@ -953,6 +979,7 @@ def execute_eval(species: RuleSpecies, rule: Rule) -> None:
         species.execution_memory.store(rule.operands[1][1:], result)
 
 
+@eidosian()
 def execute_meta_mutate(species: RuleSpecies, rule: Rule) -> None:
     """
     Mutate the mutation parameters themselves.
@@ -984,6 +1011,7 @@ def execute_meta_mutate(species: RuleSpecies, rule: Rule) -> None:
         species.modifiers["recombination_rate_factor"] = adjustment
 
 
+@eidosian()
 def execute_recurse(species: RuleSpecies, rule: Rule) -> None:
     """
     Create a recursive pattern by duplicating rules with modifications.
@@ -1025,6 +1053,7 @@ def execute_recurse(species: RuleSpecies, rule: Rule) -> None:
         species.rules.append(new_rule)
 
 
+@eidosian()
 def execute_halt(species: RuleSpecies, rule: Rule) -> None:
     """
     Halt execution for this cycle.
@@ -1035,6 +1064,7 @@ def execute_halt(species: RuleSpecies, rule: Rule) -> None:
     pass
 
 
+@eidosian()
 def execute_resource_cost(species: RuleSpecies, rule: Rule) -> None:
     """
     Special opcode to handle resource accounting.
@@ -1061,6 +1091,7 @@ def execute_resource_cost(species: RuleSpecies, rule: Rule) -> None:
     logger.debug(f"Resource cost: {amount} {resource_type}")
 
 
+@eidosian()
 def execute_timeout(species: RuleSpecies, rule: Rule) -> None:
     """
     Special opcode to handle execution timeout.

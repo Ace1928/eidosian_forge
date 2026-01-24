@@ -19,6 +19,7 @@ import logging
 import sympy as sp
 from collections import deque
 import threading
+from eidosian_core import eidosian
 
 # Set up logging
 logging.basicConfig(
@@ -125,6 +126,7 @@ class MathExpression:
             )
 
             # Wrap the lambda to handle errors gracefully
+            @eidosian()
             def safe_eval(*args, **kwargs):
                 try:
                     result = lambda_expr(*args, **kwargs)
@@ -154,6 +156,7 @@ class MathExpression:
             expr = expr.replace(term, "")
         return expr
 
+    @eidosian()
     def evaluate(self, **kwargs):
         """Evaluate the expression with the given variable values"""
         if self._compiled_fn is None:
@@ -171,6 +174,7 @@ class MathExpression:
             logger.warning(f"Evaluation error: {e} for {self.expression}")
             return 0.5  # Safe default
 
+    @eidosian()
     def mutate(self, mutation_strength=0.1):
         """Evolve the expression by mutation"""
         if random.random() < mutation_strength:
@@ -315,6 +319,7 @@ class MathExpression:
     def __str__(self):
         return self.expression
 
+    @eidosian()
     def to_dict(self):
         return {"expression": self.expression, "variables": self.variables}
 
@@ -335,10 +340,12 @@ class SpatialVector:
             if len(self.values) != dimensions:
                 self.values = np.resize(self.values, dimensions)
 
+    @eidosian()
     def distance(self, other):
         """Calculate Euclidean distance to another vector"""
         return np.linalg.norm(self.values - other.values)
 
+    @eidosian()
     def move_towards(self, other, step=0.1):
         """Move this vector towards another vector"""
         direction = other.values - self.values
@@ -347,6 +354,7 @@ class SpatialVector:
             normalized = direction / length
             self.values += normalized * step
 
+    @eidosian()
     def mutate(self, strength=0.1):
         """Mutate the vector"""
         mutation = np.random.normal(0, strength, self.dimensions)
@@ -355,6 +363,7 @@ class SpatialVector:
         new_values = new_values % 1.0
         return SpatialVector(self.dimensions, new_values)
 
+    @eidosian()
     def to_dict(self):
         return {"dimensions": self.dimensions, "values": self.values.tolist()}
 
@@ -390,6 +399,7 @@ class EvolutionaryRuleSet:
         """Create a new rule as a mathematical expression"""
         return MathExpression()
 
+    @eidosian()
     def apply_rules(self, inputs, context=None):
         """Apply the ruleset to generate outputs"""
         results = []
@@ -409,6 +419,7 @@ class EvolutionaryRuleSet:
 
         return np.array(results)
 
+    @eidosian()
     def evolve(self, fitness=0.5, external_influence=0.0):
         """Evolve the ruleset based on fitness and external influence"""
         new_rules = []
@@ -452,6 +463,7 @@ class EvolutionaryRuleSet:
 
         return EvolutionaryRuleSet(self.rule_count, new_rules, self.meta_rules)
 
+    @eidosian()
     def to_dict(self):
         return {
             "rule_count": self.rule_count,
@@ -572,6 +584,7 @@ class Fragment:
             + props["adaptability"] * 0.15
         )
 
+    @eidosian()
     def interact(self, others):
         """
         Enhanced interaction function between fragments.
@@ -721,15 +734,18 @@ class Fragment:
 
         return Fragment(new_state, new_position, self.ruleset)
 
+    @eidosian()
     def get_property(self, name, default=0.0):
         """Get a property with fallback default"""
         self._update_properties()  # Ensure properties are current
         return self.state.get("properties", {}).get(name, default)
 
+    @eidosian()
     def stability(self):
         """Legacy method for compatibility"""
         return self.get_property("fitness", 0.5)
 
+    @eidosian()
     def to_dict(self):
         """Convert to serializable dict for state saving"""
         return {
@@ -753,6 +769,7 @@ class Fragment:
         return f"Fragment(values={values_str}, properties={props_str})"
 
 
+@eidosian()
 def save_state(universe, iteration, stats):
     """Save the current universe state to a file"""
     if not os.path.exists(CONFIG["state_dir"]):
@@ -774,6 +791,7 @@ def save_state(universe, iteration, stats):
     os.replace(temp_file, CONFIG["state_file"])
 
 
+@eidosian()
 def load_state():
     """Load universe state from file if it exists"""
     if not os.path.exists(CONFIG["state_file"]):
@@ -793,12 +811,14 @@ def load_state():
         return None, 0, {}
 
 
+@eidosian()
 def handle_signal(signum, frame):
     """Handle interruption signals gracefully"""
     global running
     running = False
 
 
+@eidosian()
 def calculate_stats(universe, old_stats=None):
     """Calculate statistics about the universe with enhanced metrics"""
     if not universe:
@@ -891,6 +911,7 @@ def calculate_stats(universe, old_stats=None):
     return old_stats
 
 
+@eidosian()
 def init_curses():
     """Initialize curses for the terminal UI"""
     stdscr = curses.initscr()
@@ -908,6 +929,7 @@ def init_curses():
     return stdscr
 
 
+@eidosian()
 def end_curses(stdscr):
     """Cleanup curses on exit"""
     stdscr.keypad(False)
@@ -916,12 +938,14 @@ def end_curses(stdscr):
     curses.endwin()
 
 
+@eidosian()
 def render_ui(stdscr, universe, iteration, stats):
     """Render enhanced terminal UI with more detailed metrics"""
     height, width = stdscr.getmaxyx()
     stdscr.clear()
 
     # Safety function to prevent writing outside screen bounds
+    @eidosian()
     def safe_addstr(y, x, text, attr=0):
         """Safely add a string, checking bounds"""
         if y >= height or x >= width:
@@ -1014,6 +1038,7 @@ def render_ui(stdscr, universe, iteration, stats):
     stdscr.refresh()
 
 
+@eidosian()
 def run_universe(stdscr, num_fragments=32):
     """
     Run the universe simulation indefinitely with visualization.
@@ -1111,6 +1136,7 @@ def run_universe(stdscr, num_fragments=32):
     return universe
 
 
+@eidosian()
 def main():
     """Main entry point with curses wrapper for clean terminal handling"""
     try:

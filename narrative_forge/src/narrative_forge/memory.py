@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, Deque
 from collections import deque
+from eidosian_core import eidosian
 
 
 @dataclass
@@ -25,6 +26,7 @@ class MemoryStore:
         if self.path != ":memory:":
             self.load()
 
+    @eidosian()
     def load(self) -> None:
         if os.path.exists(self.path):
             with open(self.path, "r", encoding="utf-8") as fh:
@@ -36,6 +38,7 @@ class MemoryStore:
         else:
             self.data = Memory()
 
+    @eidosian()
     def save(self) -> None:
         if self.path == ":memory:":
             return

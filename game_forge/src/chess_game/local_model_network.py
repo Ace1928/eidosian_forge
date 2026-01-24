@@ -17,6 +17,7 @@ import requests
 import httpx
 import torch
 from transformers import (  # type: ignore[import]
+from eidosian_core import eidosian
     AutoModelForCausalLM,
     AutoTokenizer,
     pipeline,
@@ -90,6 +91,7 @@ class EnhancedPromptBuilder:
             ),
         }
 
+    @eidosian()
     def build_prompt(self, prompt_type, **kwargs):
         """Generate validated prompts with LangChain templates"""
         if prompt_type not in self.templates:
@@ -101,6 +103,7 @@ class EnhancedPromptBuilder:
 # ------------------
 # CORE FUNCTIONALITY
 # ------------------
+@eidosian()
 @lru_cache(maxsize=1)
 def load_model(model_name):
     """
@@ -124,6 +127,7 @@ def load_model(model_name):
     return model
 
 
+@eidosian()
 @lru_cache(maxsize=1)
 def load_tokenizer(model_name):
     """
@@ -135,6 +139,7 @@ def load_tokenizer(model_name):
     )  # Tokenizer is loaded from the same model_name
 
 
+@eidosian()
 @lru_cache(maxsize=1)
 def load_text_generation_pipeline(model, tokenizer):
     """
@@ -162,12 +167,14 @@ def load_text_generation_pipeline(model, tokenizer):
     )
 
 
+@eidosian()
 def remove_think_tags(text):
     """Utility function to remove <think> and </think> tags."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
 # Add as utility function
+@eidosian()
 def sanitize_response(response: str) -> str:
     """Remove unsafe patterns from model responses"""
     patterns = [
@@ -196,6 +203,7 @@ class CentralOrchestrator:
         )
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    @eidosian()
     def initialize_submodules(self):
         """
         Initialize submodules with proper async event loop handling
@@ -221,6 +229,7 @@ class CentralOrchestrator:
             loop.close()
 
     # Main workflow
+    @eidosian()
     def run(self, input_text):
         """
         Main method to run the orchestrator.
@@ -233,6 +242,7 @@ class CentralOrchestrator:
         update_queue.put("All tasks have been processed.")
         self.compile_results()
 
+    @eidosian()
     def break_into_topics(self, input_text: str) -> list:
         """Split input into focused topics using the language model"""
         prompt = f"""Break this input into focused discussion topics:
@@ -251,6 +261,7 @@ class CentralOrchestrator:
         except json.JSONDecodeError:
             return [input_text]  # Fallback to original input
 
+    @eidosian()
     def distribute_tasks(self, topics):
         """
         Distribute each topic to a submodule for processing.
@@ -260,6 +271,7 @@ class CentralOrchestrator:
             task_queue.put(task)
             update_queue.put(f"Task for topic '{topic}' has been queued.")
 
+    @eidosian()
     def compile_results(self):
         """Compile all results into a structured JSON output with history"""
         update_queue.put("Compiling all results into JSON output.")
@@ -301,6 +313,7 @@ class CentralOrchestrator:
         update_queue.put(f"JSON output saved to {OUTPUT_JSON_PATH}")
 
     # Result handling
+    @eidosian()
     def collect_results(self):
         """
         Collect results from submodules.
@@ -315,6 +328,7 @@ class CentralOrchestrator:
             except queue.Empty:
                 break
 
+    @eidosian()
     def send_updates(self):
         """
         Send frequent updates to the user about the progress of tasks.
@@ -439,6 +453,7 @@ class SubModule:
             logging.error(f"Ollama failed: {e}")
             return ""
 
+    @eidosian()
     async def emotional_context(self, topic: str) -> dict:
         """
         Analyzes the emotional context of a given topic and returns a structured JSON.
@@ -539,6 +554,7 @@ class SubModule:
         return data
 
     # Web/search functionality
+    @eidosian()
     async def perform_web_searches(self, web_queries):
         """
         Enhanced with LangChain document processing to perform web searches and store results.
@@ -640,6 +656,7 @@ class SubModule:
         """Placeholder for filtering new documents - implement actual filtering logic"""
         return documents  # For now, return all documents without filtering
 
+    @eidosian()
     async def run(self):
         """
         Continuously processes tasks from the task queue until stopped.
@@ -831,6 +848,7 @@ class SubModule:
             logging.error(f"JSON update failed: {str(e)}")
 
     # Core processing pipeline
+    @eidosian()
     async def identify_python_code(self, topic):
         """
         Identifies fundamental Python code for a given topic using a language model.
@@ -872,6 +890,7 @@ class SubModule:
             )
             return ""
 
+    @eidosian()
     async def construct_web_queries(self, topic):
         """
         Constructs web queries to gather reference material for a given topic.
@@ -908,6 +927,7 @@ class SubModule:
             )
             return []
 
+    @eidosian()
     async def analyze_query(self, topic):
         """
         Analyzes the given query to determine better approaches or validity.
@@ -938,6 +958,7 @@ class SubModule:
             )
             return ""
 
+    @eidosian()
     async def compare_outputs(
         self, topic, python_code, web_queries, analysis, emotional_context
     ):
@@ -980,6 +1001,7 @@ class SubModule:
             )
             return ""
 
+    @eidosian()
     async def fill_gaps(self, gaps):
         """
         Fills in the identified gaps in the query processing.
@@ -1008,6 +1030,7 @@ class SubModule:
             logging.error(f"Error in fill_gaps: {e}", exc_info=True)
             return ""
 
+    @eidosian()
     async def summarize(
         self, topic, python_code, web_queries, analysis, emotional_context, filled_gaps
     ):
@@ -1050,6 +1073,7 @@ class SubModule:
             logging.error(f"Error in summarize for topic '{topic}': {e}", exc_info=True)
             return ""
 
+    @eidosian()
     async def construct_code(self, topic):
         """
         Constructs the necessary Python code to solve the query based on summarized information.
@@ -1085,6 +1109,7 @@ class SubModule:
             )
             return ""
 
+    @eidosian()
     async def final_summary(self, complete_outputs):
         """
         Summarizes all complete outputs to produce a final summary.
@@ -1113,6 +1138,7 @@ class SubModule:
             logging.error(f"Error in final_summary: {e}", exc_info=True)
             return ""
 
+    @eidosian()
     def compile_all(self, final_summary, complete_outputs):
         """
         Compiles the final summary and detailed outputs into a formatted string.
@@ -1133,6 +1159,7 @@ class SubModule:
         """Processes the query before searching (currently just returns the query)"""
         return query
 
+    @eidosian()
     def search_searxng(self, query, num_results=5):
         """
         Performs a SearxNG search against the configured SEARXNG_URL.
@@ -1157,6 +1184,7 @@ class SubModule:
             print(f"Error during SearxNG search: {e}")
             return {"results": []}  # Return empty results in case of error
 
+    @eidosian()
     def scrape_and_save_content(self, search_results, query):
         """
         Scrapes content from SearxNG search results and saves it.
@@ -1175,6 +1203,7 @@ class SubModule:
             urls
         )  # Directly use perform_web_searches to process URLs
 
+    @eidosian()
     def extract_content_with_tika(self, url):
         """
         Fetches content from a URL and extracts text and metadata using Tika.
@@ -1204,6 +1233,7 @@ class SubModule:
         return tika_data
 
     # Output management
+    @eidosian()
     def provide_complete_outputs(
         self,
         python_code,
@@ -1245,6 +1275,7 @@ class SubModule:
             "search_results": search_results,
         }
 
+    @eidosian()
     def save_output(self, topic, compiled_output):
         """
         Robust output saving with checksum validation to ensure data integrity.
@@ -1352,6 +1383,7 @@ class SubModule:
             logging.warning(f"Ollama call failed: {str(e)}")
             return ""
 
+    @eidosian()
     async def extract_content(self, url: str) -> str:
         """Unified content extraction"""
         try:
@@ -1367,6 +1399,7 @@ class SubModule:
                 else ""
             )
 
+    @eidosian()
     async def score_relevance(self, content: str, query: str) -> float:
         """Score content relevance using local model"""
         prompt = f"Rate relevance (0-1) between:\nQ: {query}\nC: {content[:2000]}"

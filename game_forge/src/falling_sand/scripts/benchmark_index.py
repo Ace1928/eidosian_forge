@@ -10,8 +10,10 @@ from pathlib import Path
 from typing import Sequence
 
 from falling_sand.indexer import index_project
+from eidosian_core import eidosian
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI arguments for benchmarking."""
 
@@ -23,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def benchmark_index(source_root: Path, tests_root: Path, runs: int) -> list[float]:
     """Benchmark the indexer and return run durations in seconds."""
 
@@ -37,6 +40,7 @@ def benchmark_index(source_root: Path, tests_root: Path, runs: int) -> list[floa
     return samples
 
 
+@eidosian()
 def write_benchmark_report(samples: list[float], output: Path) -> None:
     """Write benchmark stats to a JSON report."""
 
@@ -53,6 +57,7 @@ def write_benchmark_report(samples: list[float], output: Path) -> None:
     output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the benchmark CLI."""
 

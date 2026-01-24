@@ -12,6 +12,7 @@ from typing import Any, Iterable, cast
 import pstats
 
 from falling_sand.models import (
+from eidosian_core import eidosian
     BenchmarkCase,
     BenchmarkSummary,
     ProfileFunctionStat,
@@ -122,6 +123,7 @@ def _parse_suite(root: ET.Element) -> ParsedTestSuite:
     )
 
 
+@eidosian()
 def read_junit_reports(paths: Iterable[Path]) -> TestSummary:
     """Parse one or more JUnit XML reports into a summary."""
 
@@ -158,6 +160,7 @@ def read_junit_reports(paths: Iterable[Path]) -> TestSummary:
     )
 
 
+@eidosian()
 def read_profile_stats(path: Path, top_n: int = 20) -> ProfileSummary:
     """Parse a cProfile stats file into a summary."""
 
@@ -193,6 +196,7 @@ def read_profile_stats(path: Path, top_n: int = 20) -> ProfileSummary:
     )
 
 
+@eidosian()
 def read_benchmark_report(path: Path) -> BenchmarkSummary:
     """Parse a benchmark JSON report into a summary."""
 

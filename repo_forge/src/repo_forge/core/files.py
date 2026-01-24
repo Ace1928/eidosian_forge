@@ -6,8 +6,10 @@ This module handles the creation and population of files with structured content
 from pathlib import Path
 from typing import Dict, Any, Union, Optional
 import logging
+from eidosian_core import eidosian
 
 
+@eidosian()
 def write_file(path: Path, content: str, overwrite: bool = True) -> bool:
     """
     Write content to a file, creating parent directories if needed.
@@ -33,6 +35,7 @@ def write_file(path: Path, content: str, overwrite: bool = True) -> bool:
     return True
 
 
+@eidosian()
 def generate_files(
     base_path: Path, 
     files_dict: Dict[str, str],

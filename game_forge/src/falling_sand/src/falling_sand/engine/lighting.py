@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from eidosian_core import eidosian
 
 try:
     from panda3d.core import DirectionalLight, AmbientLight, Vec4  # type: ignore[import-untyped]
@@ -28,6 +29,7 @@ class LightingConfig:
             raise ValueError("direction must be XYZ")
 
 
+@eidosian()
 def attach_default_lights(render: Any, config: LightingConfig | None = None) -> None:
     """Attach ambient and directional lights to the scene."""
 

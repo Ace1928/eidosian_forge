@@ -8,6 +8,7 @@ import logging  # Logging module for informative messages.
 from typing import Optional, Dict  # Type hinting for clarity and static analysis.
 
 from init import (
+from eidosian_core import eidosian
     SQUARE_SIZE,
     PIECE_IMAGES_PATH,
     COLOR_TEXT,
@@ -69,6 +70,7 @@ class PieceRenderer:
             f"PieceRenderer initialized with image size: {image_size}, font: {self.font}"
         )
 
+    @eidosian()
     def clear_cache(self):
         """
         Clears the piece surface cache.
@@ -84,6 +86,7 @@ class PieceRenderer:
             {}
         )  # Reset the cache to an empty dictionary, effectively clearing it.
 
+    @eidosian()
     def get_piece_surface(self, symbol: str) -> pygame.Surface:
         """
         Retrieves a Pygame Surface for the given chess piece symbol.

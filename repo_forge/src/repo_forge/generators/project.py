@@ -10,12 +10,14 @@ import logging
 
 from ..core.files import write_file
 from ..constants.content import (
+from eidosian_core import eidosian
     PROJECT_READMES,
     PROJECT_CONFIG_FILES,
     PROJECT_MAIN_FILES
 )
 
 
+@eidosian()
 def create_project_scaffold_single(
     base_path: Path, 
     language: str, 
@@ -132,6 +134,7 @@ mod tests {
     }
 
 
+@eidosian()
 def create_project_scaffold(
     base_path: Path, 
     languages: Union[str, List[str], Dict], 

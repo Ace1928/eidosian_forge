@@ -17,6 +17,7 @@ import os
 import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Callable, Optional
+from eidosian_core import eidosian
 
 
 @dataclass
@@ -81,6 +82,7 @@ class SpeciesRegistry:
         with open(self.path, 'w') as f:
             json.dump(data, f, indent=2)
 
+    @eidosian()
     def quantise_props(self, he_props: Dict[str, float], bins: int = 256) -> Dict[str, int]:
         """Quantise continuous HE property values to integer bins.
 
@@ -95,6 +97,7 @@ class SpeciesRegistry:
             q[name] = int(round(val * (bins - 1)))
         return q
 
+    @eidosian()
     def dequantise_props(self, q: Dict[str, int], bins: int = 256) -> Dict[str, float]:
         """Inverse of quantisation: map integers back to floats in [0,1]."""
         return {k: v / (bins - 1) for k, v in q.items()}
@@ -107,6 +110,7 @@ class SpeciesRegistry:
         # produce 12 char base32-like id
         return m.hexdigest()[:12]
 
+    @eidosian()
     def get_or_create_species(self, he_props: Dict[str, float], provenance: Optional[Dict[str, object]] = None) -> Species:
         """Return existing species or create a new entry.
 
@@ -131,6 +135,7 @@ class SpeciesRegistry:
         self.species[sid] = s
         return s
 
+    @eidosian()
     def get_or_create_species_quantised(
         self,
         q: Dict[str, int],
@@ -149,15 +154,18 @@ class SpeciesRegistry:
         self.species[sid] = s
         return s
 
+    @eidosian()
     def save(self) -> None:
         self._save()
 
+    @eidosian()
     def mark_stable(self, species_id: str, stability_data: Dict[str, object]) -> None:
         if species_id not in self.species:
             return
         self.species[species_id].stability_stats = stability_data
         # Optionally persist periodically; for now this is deferred to caller
 
+    @eidosian()
     def migrate_le_properties(self, new_props: Dict[str, Callable[[Dict[str, float], str], float]], new_version: int) -> None:
         """Add new LE properties by computing them from HE props.
 

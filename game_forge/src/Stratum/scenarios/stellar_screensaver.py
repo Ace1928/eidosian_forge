@@ -62,6 +62,7 @@ from ..core.ledger import Ledger
 from ..core.quanta import Quanta
 from ..core.registry import SpeciesRegistry
 from ..domains.materials.fundamentals import MaterialsFundamentals
+from eidosian_core import eidosian
 
 
 # -----------------------------------------------------------------------------
@@ -135,6 +136,7 @@ class DynamicLOD:
     ema_fps: float = 0.0
     ema_alpha: float = 0.08
 
+    @eidosian()
     def update(self, measured_fps: float) -> None:
         """Update the EMA of the measured FPS."""
         if self.ema_fps <= 0.0:
@@ -142,6 +144,7 @@ class DynamicLOD:
         else:
             self.ema_fps = (1.0 - self.ema_alpha) * self.ema_fps + self.ema_alpha * measured_fps
 
+    @eidosian()
     def apply(self, cfg: EngineConfig, base_active: int, base_micro_cap: int) -> None:
         """
         Adjust ``cfg.active_region_max`` and ``cfg.microtick_cap_per_region``
@@ -267,6 +270,7 @@ def _build_engine(
 # -----------------------------------------------------------------------------
 
 
+@eidosian()
 def run_stellar_screensaver(
     grid_size: int = 0,
     microticks_per_tick: int = 50,
@@ -349,6 +353,7 @@ def run_stellar_screensaver(
     last_fps_update = time.time()
     frames_since = 0
 
+    @eidosian()
     def restart() -> None:
         nonlocal cfg, fabric, ledger, registry, materials, quanta, base_active, base_micro_cap, seed, tick
         seed = int(time.time()) & 0xFFFFFFFF
@@ -493,6 +498,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def main(argv: list[str] | None = None) -> None:
     """Entry point for the stellar screensaver."""
     parser = _build_parser()

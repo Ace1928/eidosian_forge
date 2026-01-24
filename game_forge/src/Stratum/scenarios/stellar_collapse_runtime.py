@@ -32,6 +32,7 @@ from typing import List, Optional
 
 import numpy as np
 import matplotlib
+from eidosian_core import eidosian
 
 # Use non‑interactive backend for headless image generation.
 matplotlib.use("Agg")  # type: ignore
@@ -46,6 +47,7 @@ from ..core.registry import SpeciesRegistry
 from ..domains.materials.fundamentals import MaterialsFundamentals
 
 
+@eidosian()
 def run_stellar_collapse_runtime(
     grid_size: int = 32,
     runtime_seconds: float = 30.0,
@@ -165,6 +167,7 @@ def run_stellar_collapse_runtime(
             mix.species_ids = [stellar_id]
             mix.masses = [1.0]
     # Snapshot helper
+    @eidosian()
     def save_snapshot(idx: int, tick: int) -> str:
         """Save a snapshot of the current density and temperature fields.
 
@@ -235,6 +238,7 @@ def run_stellar_collapse_runtime(
     print(f"Snapshots zipped at {zip_path}")
 
 
+@eidosian()
 def main():
     """Entry point for the runtime-controlled stellar collapse scenario."""
     import argparse

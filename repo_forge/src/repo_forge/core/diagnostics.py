@@ -14,6 +14,7 @@ import traceback
 from typing import Any, Dict, Optional, Union
 from datetime import datetime
 from pathlib import Path
+from eidosian_core import eidosian
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # ⚡ Core Diagnostic Functions - Quantum-Level Precision
@@ -50,6 +51,7 @@ class DiagnosticLogger:
             except Exception as e:
                 self.logger.warning(f"Failed to create log file at {log_path}: {e}")
     
+    @eidosian()
     def trace(self, message: str, data: Any = None, stack_level: int = 1) -> None:
         """Log with ultra-precise stack trace and data inspection."""
         frame = sys._getframe(stack_level)
@@ -112,6 +114,7 @@ class DiagnosticLogger:
             
         self.logger.debug(log_msg)
 
+    @eidosian()
     def capture_serialization(self, data: Any) -> Dict[str, Any]:
         """
         Analyze data for JSON serialization issues with surgical precision.
@@ -210,6 +213,7 @@ class DiagnosticLogger:
 # Create globally accessible instance with standard configuration
 diagnostics = DiagnosticLogger()
 
+@eidosian()
 def verify_json_serializable(data: Any, key: str = "root") -> None:
     """
     Verify an object is JSON serializable with detailed diagnostics.
@@ -231,6 +235,7 @@ def verify_json_serializable(data: Any, key: str = "root") -> None:
         diagnostics.logger.error(f"Diagnostic report: {json.dumps(report, indent=2)}")
         raise ValueError(f"JSON serialization error in {key}: {str(e)}") from e
 
+@eidosian()
 def safe_int(value: Any) -> int:
     """
     Convert value to int with exhaustive validation and diagnostics.
@@ -264,6 +269,7 @@ def safe_int(value: Any) -> int:
         # Fall back to zero with an error log
         return 0
 
+@eidosian()
 def sanitize_for_json(obj: Any) -> Any:
     """
     Aggressively sanitize any object for JSON serialization.

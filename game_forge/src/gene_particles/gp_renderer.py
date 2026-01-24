@@ -21,6 +21,7 @@ import numpy as np
 import pygame
 
 from game_forge.src.gene_particles.gp_config import (
+from eidosian_core import eidosian
     FPS_COLOR,
     PARTICLES_COLOR,
     SPECIES_COLOR,
@@ -87,6 +88,7 @@ class Renderer:
         pygame.font.init()
         self.font: pygame.font.Font = pygame.font.SysFont("Arial", 20)
 
+    @eidosian()
     def draw_component(
         self,
         x: float,
@@ -145,6 +147,7 @@ class Renderer:
         # Render the component as a circle on the particle surface
         pygame.draw.circle(self.particle_surface, c, (int(x), int(y)), particle_size)
 
+    @eidosian()
     def draw_cellular_type(self, ct: CellularTypeData) -> None:
         """Draw all alive components of a specific cellular type.
 
@@ -210,6 +213,7 @@ class Renderer:
         # Apply the completed stats overlay to the main surface
         self.surface.blit(self.stats_surface, (0, 0))
 
+    @eidosian()
     def render(self, stats: Dict[str, float]) -> None:
         """Render all visualization elements to the main surface.
 

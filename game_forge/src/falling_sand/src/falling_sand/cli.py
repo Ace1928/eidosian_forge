@@ -8,10 +8,12 @@ from typing import Callable, Sequence
 
 from falling_sand import benchmarks, indexer, ingest, reporting
 from falling_sand.engine.demo import run_demo
+from eidosian_core import eidosian
 
 Command = Callable[[Sequence[str] | None], int]
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI parser with subcommands."""
 
@@ -51,6 +53,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def resolve_command(name: str) -> Command:
     """Resolve a subcommand to its handler."""
 
@@ -73,6 +76,7 @@ _COMMANDS: dict[str, Command] = {
 }
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI entrypoint."""
 

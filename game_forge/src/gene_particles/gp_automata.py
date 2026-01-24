@@ -18,6 +18,7 @@ from game_forge.src.gene_particles.gp_manager import CellularTypeManager
 from game_forge.src.gene_particles.gp_renderer import Renderer
 from game_forge.src.gene_particles.gp_rules import InteractionRules
 from game_forge.src.gene_particles.gp_types import (
+from eidosian_core import eidosian
     BoolArray,
     CellularTypeData,
     FloatArray,
@@ -51,6 +52,7 @@ except ImportError:
             # Suppress unused parameter warnings with no-op
             _ = data, leafsize
 
+        @eidosian()
         def query_ball_point(
             self, x: NDArray[np.float64], r: float, p: float = 2.0, eps: float = 0
         ) -> List[List[int]]:
@@ -172,6 +174,7 @@ class CellularAutomata:
         self.species_count: DefaultDict[int, int] = defaultdict(int)
         self.update_species_count()
 
+    @eidosian()
     def update_species_count(self) -> None:
         """
         Update the count of unique species across all cellular types.
@@ -187,6 +190,7 @@ class CellularAutomata:
             for species_id, count in zip(unique, counts):
                 self.species_count[int(species_id)] += int(count)
 
+    @eidosian()
     def main_loop(self) -> None:
         """
         Execute the main simulation loop until termination conditions are met.
@@ -269,6 +273,7 @@ class CellularAutomata:
         # Clean up Pygame resources on exit
         pygame.quit()
 
+    @eidosian()
     def display_fps(self, surface: pygame.Surface, fps: float) -> None:
         """
         Display the current FPS counter in the top-left corner of the screen.
@@ -281,6 +286,7 @@ class CellularAutomata:
         fps_text: pygame.Surface = font.render(f"FPS: {fps:.2f}", True, (255, 255, 255))
         surface.blit(fps_text, (10, 10))
 
+    @eidosian()
     def apply_all_interactions(self) -> None:
         """
         Process all type-to-type interactions defined in the rules matrix.
@@ -309,6 +315,7 @@ class CellularAutomata:
                 # Skip values that don't match our expected types
             self.apply_interaction_between_types(i, j, typed_params)
 
+    @eidosian()
     def apply_interaction_between_types(
         self, i: int, j: int, params: Dict[str, Union[float, bool, FloatArray]]
     ) -> None:
@@ -512,6 +519,7 @@ class CellularAutomata:
         ct_i.update_states()
         ct_i.update_alive()
 
+    @eidosian()
     def handle_boundary_reflections(
         self, ct: Optional[CellularTypeData] = None
     ) -> None:
@@ -548,6 +556,7 @@ class CellularAutomata:
             np.clip(ct.x, self.screen_bounds[0], self.screen_bounds[1], out=ct.x)
             np.clip(ct.y, self.screen_bounds[2], self.screen_bounds[3], out=ct.y)
 
+    @eidosian()
     def cull_oldest_particles(self) -> None:
         """
         Remove oldest particles from populated cellular types to maintain performance.
@@ -594,6 +603,7 @@ class CellularAutomata:
             if ct.mass_based and ct.mass is not None:
                 ct.mass = ct.mass[keep_mask]
 
+    @eidosian()
     def add_global_energy(self) -> None:
         """
         Increase energy levels of all particles across the simulation.
@@ -608,6 +618,7 @@ class CellularAutomata:
             # Add energy with bound checking (10% increase with ceiling)
             ct.energy = np.clip(ct.energy * 1.1, 0.0, self.config.max_energy)
 
+    @eidosian()
     def apply_clustering(self, ct: CellularTypeData) -> None:
         """
         Apply flocking behavior within a cellular type using the Boids algorithm.

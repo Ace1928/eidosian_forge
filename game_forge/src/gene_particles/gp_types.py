@@ -8,6 +8,7 @@ and emergent behavior algorithms with rigorous type safety.
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
+from eidosian_core import eidosian
     TYPE_CHECKING,
     Any,
     Dict,
@@ -36,6 +37,7 @@ except ImportError:
         def __init__(self, data: NDArray[np.float64], leafsize: int = 10):
             pass
 
+        @eidosian()
         def query(
             self,
             x: Any,
@@ -202,6 +204,7 @@ class CellularTypeProtocol(Protocol):
 
 
 # Helper function to generate random coordinates
+@eidosian()
 def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray":
     """Generate random position coordinates within window boundaries.
 
@@ -544,6 +547,7 @@ class CellularTypeData:
             n_particles, initial_cooldown, dtype=np.float64
         )
 
+    @eidosian()
     def is_alive_mask(self) -> BoolArray:
         """Compute a mask of alive cellular components based on conditions.
 
@@ -562,10 +566,12 @@ class CellularTypeData:
 
         return mask
 
+    @eidosian()
     def update_alive(self) -> None:
         """Update the alive status of cellular components based on current conditions."""
         self.alive = self.is_alive_mask()
 
+    @eidosian()
     def age_components(self) -> None:
         """Increment the age of each cellular component.
 
@@ -574,6 +580,7 @@ class CellularTypeData:
         self.age += 1.0
         self.energy = np.clip(self.energy, 0.0, None)
 
+    @eidosian()
     def update_states(self) -> None:
         """Update the state of cellular components.
 
@@ -581,6 +588,7 @@ class CellularTypeData:
         """
         pass
 
+    @eidosian()
     def remove_dead(self, config: "SimulationConfig") -> None:
         """Remove dead cellular components and redistribute their energy.
 
@@ -852,6 +860,7 @@ class CellularTypeData:
 
             self.synergy_connections = new_connections
 
+    @eidosian()
     def add_component(
         self,
         x: float,

@@ -51,6 +51,7 @@ import pkgutil
 import sys
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple
+from eidosian_core import eidosian
 
 
 class ClassRegistry:
@@ -71,6 +72,7 @@ class ClassRegistry:
     # ------------------------------------------------------------------
     # Module discovery
 
+    @eidosian()
     def list_modules(self) -> List[str]:
         """Return a list of importable module names under the root package.
 
@@ -88,6 +90,7 @@ class ClassRegistry:
             modules.append(name)
         return sorted(modules)
 
+    @eidosian()
     def load_module(self, module_name: str) -> ModuleType:
         """Import a module by name and cache it.
 
@@ -105,6 +108,7 @@ class ClassRegistry:
     # ------------------------------------------------------------------
     # Class and function discovery
 
+    @eidosian()
     def list_classes(self, module_name: str) -> List[str]:
         """List the names of top level classes defined in the given module.
 
@@ -123,6 +127,7 @@ class ClassRegistry:
                 classes.append(name)
         return sorted(classes)
 
+    @eidosian()
     def list_functions(self, module_name: str) -> List[str]:
         """List the names of top level functions defined in the given module.
 
@@ -143,6 +148,7 @@ class ClassRegistry:
     # ------------------------------------------------------------------
     # Source retrieval
 
+    @eidosian()
     def get_source(self, module_name: str, obj_name: str) -> Optional[str]:
         """Return the source code for a class or function.
 

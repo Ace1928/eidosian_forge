@@ -11,6 +11,7 @@ from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.config import VoxelConfig
 from falling_sand.engine.coords import ChunkCoord, VoxelCoord, world_to_chunk
 from falling_sand.engine.materials import Material
+from eidosian_core import eidosian
 
 
 @dataclass
@@ -20,11 +21,13 @@ class World:
     config: VoxelConfig
     chunks: Dict[ChunkCoord, Chunk] = field(default_factory=dict)
 
+    @eidosian()
     def get_chunk(self, coord: ChunkCoord) -> Chunk | None:
         """Return chunk at coord if present."""
 
         return self.chunks.get(coord)
 
+    @eidosian()
     def ensure_chunk(self, coord: ChunkCoord) -> Chunk:
         """Get or create a chunk at the given coordinate."""
 
@@ -34,11 +37,13 @@ class World:
             self.chunks[coord] = chunk
         return chunk
 
+    @eidosian()
     def iter_chunks(self) -> Iterable[Chunk]:
         """Iterate over chunks in the world."""
 
         return self.chunks.values()
 
+    @eidosian()
     def get_voxel(self, voxel: VoxelCoord) -> Material:
         """Get material at world voxel coordinates."""
 
@@ -48,6 +53,7 @@ class World:
             return Material.AIR
         return chunk.get(*local)
 
+    @eidosian()
     def set_voxel(self, voxel: VoxelCoord, material: Material) -> None:
         """Set material at world voxel coordinates."""
 
@@ -55,6 +61,7 @@ class World:
         chunk = self.ensure_chunk(chunk_coord)
         chunk.set(*local, material)
 
+    @eidosian()
     def fill_chunk(self, coord: ChunkCoord, material: Material) -> None:
         """Fill an entire chunk with a material."""
 
@@ -62,6 +69,7 @@ class World:
         chunk.data.fill(int(material))
         chunk.dirty = True
 
+    @eidosian()
     def prune_empty(self) -> None:
         """Remove chunks that are empty to save memory."""
 
@@ -69,11 +77,13 @@ class World:
         for coord in to_remove:
             del self.chunks[coord]
 
+    @eidosian()
     def snapshot(self) -> Dict[ChunkCoord, np.ndarray]:
         """Return a copy of chunk data arrays."""
 
         return {coord: chunk.data.copy() for coord, chunk in self.chunks.items()}
 
+    @eidosian()
     def surface_height(self, x: int, y: int, default: int = 0) -> int:
         """Return the highest solid voxel at (x, y) or default."""
 

@@ -31,6 +31,7 @@ import logging
 from typing import Dict, List, Optional, Any, Tuple
 import threading
 import random
+from eidosian_core import eidosian
 
 # -------------------------------------------------------------------------------------
 # GLOBAL CONFIGURATION SECTION
@@ -193,6 +194,7 @@ class TextProcessor:
         self.lock = threading.Lock()
         self.cache: Dict[int, pygame.Surface] = {}
 
+    @eidosian()
     def process_text(self, raw_text: str, personalities: Dict[str, Any]) -> None:
         """
         Runs text through emoji insertion, color coding, and line wrapping, then auto-scrolls.
@@ -289,12 +291,14 @@ class PieceRenderer:
         self.piece_cache: Dict[str, pygame.Surface] = {}
         self.image_size = SQUARE_SIZE
 
+    @eidosian()
     def clear_cache(self):
         """
         Clears the piece surface cache to force re-render or re-load images.
         """
         self.piece_cache = {}
 
+    @eidosian()
     def get_piece_surface(self, symbol: str) -> pygame.Surface:
         """
         Returns a surface for the given piece symbol, using cache, images, or Unicode fallback.
@@ -340,6 +344,7 @@ class PieceRenderer:
 # -------------------------------------------------------------------------------------
 
 
+@eidosian()
 def load_player_profiles() -> Dict[str, Dict[str, Any]]:
     """
     Loads player profiles from a JSON file, applying defaults for any missing fields.
@@ -363,6 +368,7 @@ def load_player_profiles() -> Dict[str, Dict[str, Any]]:
         return {}
 
 
+@eidosian()
 def save_player_profiles(profiles: Dict[str, Dict[str, Any]]) -> None:
     """
     Saves player profiles to a JSON file using an atomic write strategy.
@@ -383,6 +389,7 @@ def save_player_profiles(profiles: Dict[str, Dict[str, Any]]) -> None:
 # -------------------------------------------------------------------------------------
 
 
+@eidosian()
 def get_ollama_endpoint() -> Optional[str]:
     """
     Checks for an available Ollama endpoint, returning the first responsive one.
@@ -406,6 +413,7 @@ def get_ollama_endpoint() -> Optional[str]:
 OLLAMA_API_BASE_URL = get_ollama_endpoint()
 
 
+@eidosian()
 def generate_llm_story(
     board: chess.Board,
     personalities: Dict[str, Dict[str, Any]],
@@ -482,6 +490,7 @@ def generate_llm_story(
         )
 
 
+@eidosian()
 def warmup_llm_connection(screen: pygame.Surface):
     """
     Simple check to ensure LLM is reachable and loaded. Exits if no connection available.
@@ -577,6 +586,7 @@ class PersonalityChessGame:
 
         logging.info("PersonalityChessGame initialization complete.")
 
+    @eidosian()
     def draw_board(self) -> None:
         """
         Renders the chessboard squares and pieces, plus the story panel at the bottom.
@@ -664,6 +674,7 @@ class PersonalityChessGame:
                 x += surface.get_width() + 5
             y_start += line_height
 
+    @eidosian()
     def highlight_moves(self, moves: List[int]) -> None:
         """
         Highlights legal moves with a semi-transparent overlay.
@@ -679,6 +690,7 @@ class PersonalityChessGame:
             )
             self.screen.blit(highlight_surface, (col * SQUARE_SIZE, row * SQUARE_SIZE))
 
+    @eidosian()
     def get_square_under_mouse(self) -> Optional[int]:
         """
         Returns the chess square index (0-63) under the mouse cursor, or None if outside.
@@ -690,6 +702,7 @@ class PersonalityChessGame:
             return None
         return (7 - row) * 8 + col
 
+    @eidosian()
     def get_legal_moves_for_square(self, square: int) -> List[int]:
         """
         Returns a list of target squares (0-63) for legal moves from the given square.
@@ -700,6 +713,7 @@ class PersonalityChessGame:
                 moves.append(m.to_square)
         return moves
 
+    @eidosian()
     def handle_resize(self) -> None:
         """
         Adjusts UI elements and squares after a window resize event.
@@ -720,6 +734,7 @@ class PersonalityChessGame:
         self.selected_square = None
         logging.info("UI resized and adjusted.")
 
+    @eidosian()
     def main_loop(self) -> None:
         """
         Main game loop for handling events, rendering, and updating.
@@ -795,6 +810,7 @@ class PersonalityChessGame:
         logging.info("Pygame quit. Exiting main loop.")
         sys.exit()
 
+    @eidosian()
     def handle_click(self) -> None:
         """
         Manages piece selection and move attempts when the user clicks on the board.
@@ -813,6 +829,7 @@ class PersonalityChessGame:
         else:
             self.selected_square = clicked_square
 
+    @eidosian()
     def update_player_profile_stats(self, result: str) -> None:
         """
         Increments profile stats based on game result and player's preferred color.
@@ -834,6 +851,7 @@ class PersonalityChessGame:
 
         save_player_profiles(self.player_profiles)
 
+    @eidosian()
     def wrap_text(self, text: str, max_width: int) -> List[str]:
         """
         Wraps text into multiple lines to fit within max_width using the story font.
@@ -853,6 +871,7 @@ class PersonalityChessGame:
         lines.append(" ".join(current_line))
         return lines
 
+    @eidosian()
     def update_story(self, new_text: str) -> None:
         """
         Safely updates the story text and triggers asynchronous processing if changed.
@@ -902,6 +921,7 @@ class PersonalityChessGame:
 # -------------------------------------------------------------------------------------
 
 
+@eidosian()
 def main() -> None:
     """
     Initializes and runs the Personality Chess Game.

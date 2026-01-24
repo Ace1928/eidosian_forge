@@ -9,6 +9,7 @@ from typing import Callable, Iterable, Set
 from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.coords import ChunkCoord, VoxelCoord, world_to_chunk
 from falling_sand.engine.world import World
+from eidosian_core import eidosian
 
 
 ChunkProvider = Callable[[ChunkCoord, int], Chunk]
@@ -28,12 +29,14 @@ class StreamConfig:
             raise ValueError("cache_limit must be non-negative")
 
 
+@eidosian()
 def default_provider(coord: ChunkCoord, size: int) -> Chunk:
     """Create a default empty chunk."""
 
     return Chunk.empty(coord, size)
 
 
+@eidosian()
 def coords_in_radius(center: ChunkCoord, radius: int) -> Iterable[ChunkCoord]:
     """Yield chunk coords within a cubic radius."""
 
@@ -61,12 +64,14 @@ class ChunkStreamer:
         self.active: Set[ChunkCoord] = set()
         self._cache: "OrderedDict[ChunkCoord, Chunk]" = OrderedDict()
 
+    @eidosian()
     def focus_from_voxel(self, voxel: VoxelCoord) -> ChunkCoord:
         """Return chunk coordinate for a voxel coordinate."""
 
         chunk, _ = world_to_chunk(voxel, self.world.config.chunk_size_voxels)
         return chunk
 
+    @eidosian()
     def update_focus(self, focus: ChunkCoord) -> None:
         """Update active chunks around a focus chunk coordinate."""
 
@@ -91,6 +96,7 @@ class ChunkStreamer:
 
         self.active = desired
 
+    @eidosian()
     def update_focus_voxel(self, voxel: VoxelCoord) -> None:
         """Update active chunks based on a voxel coordinate."""
 

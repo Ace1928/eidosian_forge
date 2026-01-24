@@ -10,6 +10,7 @@ adaptation, and complex emergent phenomena through vectorized particle operation
 """
 
 from typing import TYPE_CHECKING, List, Optional, cast
+from eidosian_core import eidosian
 
 # Use TYPE_CHECKING for circular imports
 if TYPE_CHECKING:
@@ -78,6 +79,7 @@ class GeneticInterpreter:
         self.apply_movement_gene = apply_movement_gene
         self.apply_reproduction_gene = apply_reproduction_gene
 
+    @eidosian()
     def decode(
         self,
         particle: "CellularTypeData",

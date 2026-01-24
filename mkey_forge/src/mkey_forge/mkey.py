@@ -26,6 +26,7 @@ from Crypto.Hash import SHA256, HMAC
 from Crypto.Util import Counter
 from Crypto.Util.strxor import strxor
 from Crypto.Util.number import bytes_to_long, long_to_bytes
+from eidosian_core import eidosian
 
 # Only require hexdump for debugging.
 try: import hexdump
@@ -426,6 +427,7 @@ class mkey_generator():
         master_key = output % 100000000
         return "%08d" % master_key
 
+    @eidosian()
     def generate(self, inquiry, month = None, day = None, aux = None, device = None):
         inquiry = inquiry.replace(" ", "")
         if not inquiry.isdigit():
@@ -479,6 +481,7 @@ class mkey_generator():
 
         return output
 
+@eidosian()
 def main():
     import argparse
     desc = "mkey (c) 2015-2016, SALT"

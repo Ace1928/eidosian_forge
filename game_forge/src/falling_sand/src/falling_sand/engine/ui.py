@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:
     from direct.gui.OnscreenText import OnscreenText as OnscreenTextType  # type: ignore[import-not-found]
@@ -45,6 +46,7 @@ class UiOverlay:
             mayChange=True,
         )
 
+    @eidosian()
     def set_text(self, value: str) -> None:
         """Set overlay text."""
 

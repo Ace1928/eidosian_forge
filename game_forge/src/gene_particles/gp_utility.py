@@ -19,6 +19,7 @@ import math
 from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 import numpy as np
+from eidosian_core import eidosian
 
 # Break circular import with TYPE_CHECKING conditional
 if TYPE_CHECKING:
@@ -64,6 +65,7 @@ def mutate_trait(
 ) -> "FloatArray": ...
 
 
+@eidosian()
 def mutate_trait(
     base_values: TraitValue,
     mutation_mask: Union[bool, "BoolArray"] = True,
@@ -148,6 +150,7 @@ def mutate_trait(
     )
 
 
+@eidosian()
 def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray":
     """Generate random position coordinates within window boundaries.
 
@@ -177,6 +180,7 @@ def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray"
     return coords
 
 
+@eidosian()
 def apply_growth_gene(
     energy: "FloatArray",
     growth_factor: float,
@@ -202,6 +206,7 @@ def apply_growth_gene(
     return new_energy
 
 
+@eidosian()
 def generate_vibrant_colors(n: int) -> List[ColorRGB]:
     """Generate distinct vibrant color tuples with maximum visual separation.
 
@@ -250,6 +255,7 @@ def generate_vibrant_colors(n: int) -> List[ColorRGB]:
     return colors
 
 
+@eidosian()
 def apply_interaction(
     a_x: float,
     a_y: float,
@@ -318,6 +324,7 @@ def apply_interaction(
     return fx, fy
 
 
+@eidosian()
 def give_take_interaction(
     giver_energy: "FloatArray",
     receiver_energy: "FloatArray",
@@ -370,6 +377,7 @@ def give_take_interaction(
     return updated_giver, updated_receiver, updated_giver_mass, updated_receiver_mass
 
 
+@eidosian()
 def apply_synergy(
     energyA: "FloatArray", energyB: "FloatArray", synergy_factor: float
 ) -> Tuple["FloatArray", "FloatArray"]:

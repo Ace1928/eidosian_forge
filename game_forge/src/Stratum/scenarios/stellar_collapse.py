@@ -41,6 +41,7 @@ from __future__ import annotations
 import os
 import numpy as np
 import matplotlib
+from eidosian_core import eidosian
 
 # Use non‑interactive backend to allow headless image generation.
 matplotlib.use("Agg")  # type: ignore
@@ -55,6 +56,7 @@ from ..core.registry import SpeciesRegistry
 from ..domains.materials.fundamentals import MaterialsFundamentals
 
 
+@eidosian()
 def run_stellar_collapse(
     grid_size: int = 32,
     # run for many ticks to allow high‑energy interactions to develop
@@ -165,6 +167,7 @@ def run_stellar_collapse(
     if snapshot_ticks is None:
         snapshot_ticks = [0, num_ticks // 2, num_ticks]
     # Function to save a snapshot image
+    @eidosian()
     def save_snapshot(tick: int) -> None:
         rho = fabric.rho.copy()
         T_field = np.divide(fabric.E_heat, np.maximum(fabric.rho, 1e-8))
@@ -205,6 +208,7 @@ def run_stellar_collapse(
     print(f"Simulation complete. Snapshots saved to {output_dir}")
 
 
+@eidosian()
 def main():
     """Entry point for the stellar collapse scenario."""
     import argparse

@@ -21,6 +21,7 @@ from enum import Enum
 import warnings
 
 import numpy as np
+from eidosian_core import eidosian
 
 
 class InvariantViolation(Exception):
@@ -140,6 +141,7 @@ class Diagnostics:
         self.issues: List[str] = []
         self.last_stable_tick: int = 0
 
+    @eidosian()
     def check_field(
         self,
         field: np.ndarray,
@@ -233,6 +235,7 @@ class Diagnostics:
         
         return is_ok
 
+    @eidosian()
     def check_all_fields(self, fabric: 'Fabric', tick: int) -> bool:
         """Check all fabric fields for issues.
         
@@ -264,6 +267,7 @@ class Diagnostics:
         
         return all_ok
 
+    @eidosian()
     def compute_field_stats(self, field: np.ndarray, name: str) -> FieldStats:
         """Compute statistics for a field.
         
@@ -301,6 +305,7 @@ class Diagnostics:
             negative_count=negative_count
         )
 
+    @eidosian()
     def take_snapshot(self, fabric: 'Fabric', tick: int) -> DiagnosticSnapshot:
         """Take a diagnostic snapshot of the simulation state.
         
@@ -382,11 +387,13 @@ class Diagnostics:
         elif self.warn_on_issue:
             warnings.warn(issue_str)
 
+    @eidosian()
     def clear_issues(self) -> None:
         """Clear recorded issues."""
         self.issues.clear()
 
 
+@eidosian()
 def clamp_non_negative(
     field: np.ndarray,
     name: str = "field",
@@ -414,6 +421,7 @@ def clamp_non_negative(
     return loss
 
 
+@eidosian()
 def clamp_to_finite(field: np.ndarray, default: float = 0.0) -> int:
     """Replace NaN and Inf with default value.
     
@@ -431,6 +439,7 @@ def clamp_to_finite(field: np.ndarray, default: float = 0.0) -> int:
     return count
 
 
+@eidosian()
 def check_stability_bounds(
     max_velocity: float,
     diffusivity: float,

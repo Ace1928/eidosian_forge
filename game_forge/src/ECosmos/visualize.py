@@ -14,6 +14,7 @@ import matplotlib.colors as mcolors
 
 from data_structures import Cell, RuleSpecies
 import config
+from eidosian_core import eidosian
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -87,6 +88,7 @@ class WorldVisualizer:
                 config.VISUALIZATION_ENABLED = False
                 logger.info("Continuing without visualization")
 
+    @eidosian()
     def update(self, world: List[List[Cell]], tick: int, stats: Dict[str, any]) -> None:
         """
         Update the visualization with the current world state.
@@ -140,6 +142,7 @@ class WorldVisualizer:
             config.VISUALIZATION_ENABLED = False
             logger.info("Continuing without visualization")
 
+    @eidosian()
     def show_species_details(self, species: Optional[RuleSpecies]) -> None:
         """
         Display detailed information about a selected species.
@@ -180,6 +183,7 @@ class WorldVisualizer:
         plt.tight_layout()
         plt.show()
 
+    @eidosian()
     def close(self) -> None:
         """Close the visualization."""
         if self.fig is not None:

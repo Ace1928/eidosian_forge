@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Iterable, Iterator, Literal
 
 from falling_sand.models import IndexDocument, IndexEntry, TestCaseResult
+from eidosian_core import eidosian
 
 CURRENT_DB_VERSION = 3
 
@@ -45,6 +46,7 @@ class DbConfig:
             raise ValueError("batch_size must be positive")
 
 
+@eidosian()
 def connect_db(config: DbConfig) -> sqlite3.Connection:
     """Connect to the SQLite database with foreign keys enabled."""
 
@@ -195,6 +197,7 @@ def _migrations() -> list[tuple[int, str]]:
     ]
 
 
+@eidosian()
 def migrate_db(connection: sqlite3.Connection) -> None:
     """Apply database migrations to the latest version."""
 
@@ -212,6 +215,7 @@ def migrate_db(connection: sqlite3.Connection) -> None:
             )
 
 
+@eidosian()
 def insert_run(connection: sqlite3.Connection, document: IndexDocument) -> int:
     """Insert a run and return its ID."""
 
@@ -233,6 +237,7 @@ def insert_run(connection: sqlite3.Connection, document: IndexDocument) -> int:
     return int(cursor.lastrowid)
 
 
+@eidosian()
 def insert_entries(
     connection: sqlite3.Connection,
     run_id: int,
@@ -270,6 +275,7 @@ def insert_entries(
         )
 
 
+@eidosian()
 def insert_test_summary(
     connection: sqlite3.Connection,
     run_id: int,
@@ -318,6 +324,7 @@ def insert_test_summary(
         )
 
 
+@eidosian()
 def insert_profile_summary(
     connection: sqlite3.Connection,
     run_id: int,
@@ -351,6 +358,7 @@ def insert_profile_summary(
         )
 
 
+@eidosian()
 def insert_benchmark_summary(
     connection: sqlite3.Connection,
     run_id: int,
@@ -374,6 +382,7 @@ def insert_benchmark_summary(
         )
 
 
+@eidosian()
 def ingest_document(connection: sqlite3.Connection, document: IndexDocument, batch_size: int = 1000) -> int:
     """Insert a full index document and return the run ID."""
 

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 from falling_sand.db import DbConfig, connect_db, migrate_db
+from eidosian_core import eidosian
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,7 @@ class BenchmarkTrend:
     name: str
     points: tuple[TrendPoint, ...]
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the benchmark trend for JSON output."""
 
@@ -81,6 +83,7 @@ class ReportDocument:
     test_trend: tuple[TestTrendPoint, ...]
     hotspots: tuple[Hotspot, ...]
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the report for JSON output."""
 
@@ -198,6 +201,7 @@ def _fetch_hotspots(
     ]
 
 
+@eidosian()
 def generate_report(db_path: Path, run_limit: int, top_n: int) -> ReportDocument:
     """Generate a report document from the SQLite database."""
 
@@ -231,6 +235,7 @@ def generate_report(db_path: Path, run_limit: int, top_n: int) -> ReportDocument
     )
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI arguments for reporting."""
 
@@ -242,6 +247,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the reporting CLI."""
 

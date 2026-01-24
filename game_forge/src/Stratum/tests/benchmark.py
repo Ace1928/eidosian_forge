@@ -19,6 +19,7 @@ import tempfile
 from typing import Dict, List, Tuple
 
 import numpy as np
+from eidosian_core import eidosian
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -31,6 +32,7 @@ from core.registry import SpeciesRegistry
 from domains.materials.fundamentals import MaterialsFundamentals
 
 
+@eidosian()
 def benchmark_simulation(
     grid_size: int,
     num_ticks: int,
@@ -118,6 +120,7 @@ def benchmark_simulation(
         }
 
 
+@eidosian()
 def run_scaling_benchmark(
     grid_sizes: List[int] = [16, 32, 64],
     num_ticks: int = 20
@@ -144,6 +147,7 @@ def run_scaling_benchmark(
     return results
 
 
+@eidosian()
 def profile_simulation(grid_size: int = 64, num_ticks: int = 20):
     """Profile the simulation to identify hotspots.
     
@@ -201,6 +205,7 @@ def profile_simulation(grid_size: int = 64, num_ticks: int = 20):
         print(s.getvalue())
 
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(description="Stratum performance benchmarks")
     parser.add_argument('--grid', type=int, default=0, help='Single grid size to benchmark (0 for scaling test)')

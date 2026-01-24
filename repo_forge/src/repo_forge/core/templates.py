@@ -8,11 +8,13 @@ from string import Template
 from typing import Dict, Any, Optional
 import re
 from datetime import datetime
+from eidosian_core import eidosian
 
 
 class EidosianTemplate(Template):
     """Enhanced template class with Eidosian principles applied."""
     
+    @eidosian()
     def substitute(self, mapping: Dict[str, Any], **kws: Any) -> str:
         """
         Perform template substitution with enhanced error handling.
@@ -57,6 +59,7 @@ class EidosianTemplate(Template):
             # Ultimate fallback for resilience
             return self.safe_substitute(merged_mapping)
 
+    @eidosian()
     def safe_substitute(self, mapping: Dict[str, Any], **kws: Any) -> str:
         """
         Perform template substitution with fallback for missing variables.
@@ -94,6 +97,7 @@ class EidosianTemplate(Template):
             return super().safe_substitute(merged_mapping)
 
 
+@eidosian()
 def render_template(template_str: str, variables: Dict[str, Any], safe: bool = False) -> str:
     """
     Render a template string with provided variables.
@@ -124,6 +128,7 @@ def render_template(template_str: str, variables: Dict[str, Any], safe: bool = F
         return template.safe_substitute(variables_with_defaults)
 
 
+@eidosian()
 def render_comment_block(content: str, style: str = 'python') -> str:
     """
     Wrap content in a language-appropriate comment block.

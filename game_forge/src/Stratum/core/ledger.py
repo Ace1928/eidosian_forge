@@ -25,6 +25,7 @@ from typing import Dict
 import numpy as np
 
 from .types import Vec2, dot, clamp
+from eidosian_core import eidosian
 
 # Numerical stability constants
 # These limits are chosen to be well within float64 range (~1e308) while
@@ -186,6 +187,7 @@ class EntropySource:
             self._cond_hash_cache.popitem(last=False)
         return value
 
+    @eidosian()
     def sample_uniform_prehashed(
         self,
         checkpoint_id: str,
@@ -211,6 +213,7 @@ class EntropySource:
             )
         return u
 
+    @eidosian()
     def sample_uniform(self, checkpoint_id: str, tick: int, cell: tuple[int, int], attempt: int, conditioning: Dict[str, float]) -> float:
         """Return a uniform random sample in [0,1].
 
@@ -297,6 +300,7 @@ class Ledger:
             return KINETIC_ENERGY_MAX
         return result
 
+    @eidosian()
     def barrier_crossed(
         self,
         event_id: str,
@@ -349,6 +353,7 @@ class Ledger:
         )
         return u < p
 
+    @eidosian()
     def convert_kinetic_to_heat(self, i: int, j: int, delta_E: float, rad_fraction: float) -> None:
         """Convert kinetic energy to heat and optional radiation at a grid cell.
 
@@ -365,6 +370,7 @@ class Ledger:
         self.fabric.E_heat[i, j] += heat_delta
         self.fabric.E_rad[i, j] += rad_delta
 
+    @eidosian()
     def finalize_tick(self, tick: int) -> None:
         """End-of-tick housekeeping. Currently a no-op.
 

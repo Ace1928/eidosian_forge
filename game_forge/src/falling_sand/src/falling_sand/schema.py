@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from typing import Any
+from eidosian_core import eidosian
 
 CURRENT_SCHEMA_VERSION = 3
 
 
+@eidosian()
 def migrate_document_dict(payload: dict[str, Any]) -> dict[str, Any]:
     """Upgrade an index document dict to the current schema version."""
 

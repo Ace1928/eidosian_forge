@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List
 
 from .eu_agent import Agent
+from eidosian_core import eidosian
 
 
 @dataclass
@@ -15,6 +16,7 @@ class GravityRule:
     strength: float = 0.05
     max_range: float = 100.0
 
+    @eidosian()
     def apply(self, agents: List[Agent]) -> None:
         """Modify agent velocities based on mutual attraction."""
         count = len(agents)
@@ -47,6 +49,7 @@ class MetabolismRule:
     maintenance_cost: float = 0.02
     max_energy: float = 100.0
 
+    @eidosian()
     def energy_loss(self, temperature: float) -> float:
         """Return base energy loss adjusted by environment."""
         return self.base_decay * (1.0 + temperature * 0.1)

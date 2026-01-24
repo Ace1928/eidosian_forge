@@ -6,6 +6,7 @@ from queue import Queue
 from lark import logger
 from tenacity import retry, wait_exponential, stop_after_attempt
 from transformers import (  # type: ignore[import]
+from eidosian_core import eidosian
     AutoModelForCausalLM,
     AutoTokenizer,
     pipeline,
@@ -767,24 +768,28 @@ class ModelPoolInterface(Protocol):
     and releasing models back to the pool.
     """
 
+    @eidosian()
     def get_adaptive_model(self, model_type: str) -> Any:
         """
         Retrieves an adaptive model instance based on the specified type.
         """
         raise NotImplementedError("get_adaptive_model method must be implemented.")
 
+    @eidosian()
     def preload_models(self, model_types: List[str]) -> None:
         """
         Preloads models of specified types into the pool.
         """
         raise NotImplementedError("preload_models method must be implemented.")
 
+    @eidosian()
     def release_model(self, model_type: str) -> None:
         """
         Releases a model back to the pool, making it available for other tasks.
         """
         raise NotImplementedError("release_model method must be implemented.")
 
+    @eidosian()
     def get_optimizer(self) -> ModelOptimizerInterface:
         """Get model optimization component"""
         raise NotImplementedError
@@ -802,6 +807,7 @@ class VectorCacheInterface(Protocol):
     is intended to optimize vector retrieval and reduce computational overhead.
     """
 
+    @eidosian()
     def get_store(self) -> IVectorStore:
         """
         Retrieves the vector store instance.
@@ -828,6 +834,7 @@ class TelemetryCollectorInterface(Protocol):
     various types of metrics.
     """
 
+    @eidosian()
     def start_span(
         self,
         task_id: str,
@@ -852,6 +859,7 @@ class TelemetryCollectorInterface(Protocol):
         """
         ...
 
+    @eidosian()
     def end_span(self, span: Any, attributes: Optional[Dict[str, Any]] = None) -> None:
         """
         Ends a telemetry span.
@@ -1197,6 +1205,7 @@ class SubModuleInterface(Protocol):
     This interface promotes modularity and interchangeability of submodules within the system.
     """
 
+    @eidosian()
     async def process(self, task: "Task") -> Any:
         """
         Processes a given task.
@@ -1227,6 +1236,7 @@ class ContentExtractorInterface(Protocol):
     pieces of information from unstructured or semi-structured data within the context.
     """
 
+    @eidosian()
     async def process(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Processes the context to extract content.
@@ -1253,6 +1263,7 @@ class CodeAnalyzerInterface(Protocol):
     security vulnerability detection, or code complexity assessment.
     """
 
+    @eidosian()
     async def process(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Processes the context to analyze code snippets.
@@ -1279,6 +1290,7 @@ class EmotionalAnalyzerInterface(Protocol):
     such as sentiment analysis, emotion recognition, or tone detection.
     """
 
+    @eidosian()
     async def process(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Processes the context to analyze emotional tone.
@@ -1305,6 +1317,7 @@ class SummaryGeneratorInterface(Protocol):
     informative summaries, preserving the key information and main points.
     """
 
+    @eidosian()
     async def process(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Processes the context to generate summaries.
@@ -1331,6 +1344,7 @@ class GapAnalyzerInterface(Protocol):
     discrepancies in data, knowledge, or processes within the given context.
     """
 
+    @eidosian()
     async def process(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Processes the context to analyze gaps or discrepancies.
@@ -1361,6 +1375,7 @@ class ErrorHandlerInterface(Protocol):
     system resilience and graceful degradation in the face of unexpected issues.
     """
 
+    @eidosian()
     async def handle_error(
         self,
         task_id: str,
@@ -1391,6 +1406,7 @@ class ErrorHandlerInterface(Protocol):
         """
         ...
 
+    @eidosian()
     def log_error(
         self,
         error: Exception,
@@ -1480,6 +1496,7 @@ class FallbackHandlerInterface(Protocol):
     of service. Fallback handlers are invoked when errors occur or when primary systems are down.
     """
 
+    @eidosian()
     async def handle_fallback(
         self, task_id: str, context: Dict[str, Any], strategy_name: Optional[str] = None
     ) -> Any:
@@ -1518,6 +1535,7 @@ class BenchmarkSuiteInterface(Protocol):
     and improve system capabilities.
     """
 
+    @eidosian()
     async def find_optimal_config(
         self, task: "Task", context: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -1860,6 +1878,7 @@ class ConfigManager:
                 f"Failed to load config from {self.config_path}"
             ) from e
 
+    @eidosian()
     def get_config(self) -> Dict[str, Any]:
         """
         Returns the current configuration dictionary.
@@ -1869,6 +1888,7 @@ class ConfigManager:
         """
         return self.config
 
+    @eidosian()
     def set_config(self, new_config: Dict[str, Any]) -> None:
         """
         Sets a new configuration and notifies all registered listeners.
@@ -1885,6 +1905,7 @@ class ConfigManager:
         self.config = new_config
         self._notify_listeners()
 
+    @eidosian()
     def add_listener(self, listener: Callable[[Dict[str, Any]], None]) -> None:
         """
         Adds a listener function to be notified when the configuration changes.
@@ -1913,6 +1934,7 @@ class ConfigManager:
             except Exception as e:
                 logging.error(f"Error notifying listener {listener}: {e}")
 
+    @eidosian()
     def hot_reload_config(self) -> None:
         """
         Reloads the configuration from the file and notifies listeners.
@@ -1972,6 +1994,7 @@ class FeatureFlagManager:
         self.feature_flag_prefix = feature_flag_prefix
         """Prefix used to identify feature flags in the configuration."""
 
+    @eidosian()
     def is_enabled(self, flag_name: str) -> bool:
         """
         Checks if a feature flag is enabled.
@@ -2132,6 +2155,7 @@ class PluginManager:
                         f"Error instantiating plugin {obj.__name__} from module {module.__name__}: {e}"
                     )
 
+    @eidosian()
     def load_plugin(self, plugin_path: str) -> None:
         """
         Loads a single plugin from a given path and registers it.
@@ -2155,6 +2179,7 @@ class PluginManager:
         except Exception as e:
             logging.error(f"Error loading single plugin from {plugin_path}: {e}")
 
+    @eidosian()
     def register_plugins(self) -> None:
         """
         Registers hooks for all loaded plugins.
@@ -2194,6 +2219,7 @@ class DependencyContainer:
         self.singletons: Dict[Type, Any] = {}
         """Dictionary storing singleton instances, keyed by interface type."""
 
+    @eidosian()
     def register_singleton(self, interface: Type, implementation: Type) -> None:
         """
         Registers a dependency as a singleton.
@@ -2223,6 +2249,7 @@ class DependencyContainer:
         self.dependencies[interface] = implementation
         self.singletons[interface] = None  # Initialize singleton instance to None
 
+    @eidosian()
     def register_transient(self, interface: Type, implementation: Type) -> None:
         """
         Registers a dependency as transient.
@@ -2272,6 +2299,7 @@ class DependencyContainer:
                 f"Implementation must be a type, got {type(implementation)}"
             )
 
+    @eidosian()
     def resolve(self, interface: Type) -> Any:
         """
         Resolves a dependency and returns an instance of the implementation.
@@ -2359,6 +2387,7 @@ class InMemoryPersistenceBackend:
         """
         self._state: Dict[str, Any] = {}
 
+    @eidosian()
     def load_state(self) -> Dict[str, Any]:
         """
         Loads state data from in-memory storage.
@@ -2371,6 +2400,7 @@ class InMemoryPersistenceBackend:
         """
         return self._state
 
+    @eidosian()
     def save_state(
         self, state_data: Dict[str, Any], task_id: Optional[str] = None
     ) -> None:
@@ -2428,6 +2458,7 @@ class StateManager:
         self._cluster_state: Dict[str, Any] = loaded_state.get("cluster_state", {})
         self._node_state: Dict[str, Any] = loaded_state.get("node_state", {})
 
+    @eidosian()
     def get_cluster_state(self) -> Dict[str, Any]:
         """
         Retrieves the current cluster state.
@@ -2441,6 +2472,7 @@ class StateManager:
         """
         return self._cluster_state
 
+    @eidosian()
     def update_cluster_state(self, update_data: Dict[str, Any]) -> None:
         """
         Updates the cluster state and persists it using the backend.
@@ -2455,6 +2487,7 @@ class StateManager:
         self._cluster_state.update(update_data)
         self._persist_state()
 
+    @eidosian()
     def get_node_state(self, node_id: str) -> Dict[str, Any]:
         """
         Retrieves the state for a specific node.
@@ -2471,6 +2504,7 @@ class StateManager:
         """
         return self._node_state.get(node_id, {})
 
+    @eidosian()
     def update_node_state(self, node_id: str, update_data: Dict[str, Any]) -> None:
         """
         Updates the state for a specific node and persists it using the backend.
@@ -2541,6 +2575,7 @@ class InMemoryMetricsBackend:
         """Initializes the InMemoryMetricsBackend with an empty metrics store."""
         self.metrics: Dict[str, Any] = {}
 
+    @eidosian()
     def create_counter(
         self,
         name: str,
@@ -2566,6 +2601,7 @@ class InMemoryMetricsBackend:
         self.metrics[name] = {"type": "counter", "value": 0}
         return self.metrics[name]
 
+    @eidosian()
     def create_gauge(
         self,
         name: str,
@@ -2591,6 +2627,7 @@ class InMemoryMetricsBackend:
         self.metrics[name] = {"type": "gauge", "value": 0.0}
         return self.metrics[name]
 
+    @eidosian()
     def create_histogram(
         self,
         name: str,
@@ -2628,6 +2665,7 @@ class InMemoryMetricsBackend:
         }
         return self.metrics[name]
 
+    @eidosian()
     def increment_counter(
         self, name: str, value: int = 1, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2649,6 +2687,7 @@ class InMemoryMetricsBackend:
             raise ValueError(f"Metric '{name}' is not a counter.")
         metric_data["value"] += value
 
+    @eidosian()
     def set_gauge(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2670,6 +2709,7 @@ class InMemoryMetricsBackend:
             raise ValueError(f"Metric '{name}' is not a gauge.")
         metric_data["value"] = value
 
+    @eidosian()
     def observe_histogram(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2735,6 +2775,7 @@ class MetricsRegistry:
         """Backend for storing and exporting metrics data."""
         self.metrics: Dict[str, Any] = {}  # Metric name to metric object mapping
 
+    @eidosian()
     def create_metric(
         self,
         name: str,
@@ -2779,6 +2820,7 @@ class MetricsRegistry:
         self.metrics[name] = metric
         return metric  # Return the created metric object
 
+    @eidosian()
     def increment_counter(
         self, name: str, value: int = 1, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2797,6 +2839,7 @@ class MetricsRegistry:
         """
         self.metrics_backend.increment_counter(name, value, labels)
 
+    @eidosian()
     def set_gauge(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2815,6 +2858,7 @@ class MetricsRegistry:
         """
         self.metrics_backend.set_gauge(name, value, labels)
 
+    @eidosian()
     def observe_histogram(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -2875,6 +2919,7 @@ class ResourceMonitor(IResourceMonitor):  # Inherit from interface
         self._is_baseline_established = False
         self.anomaly_thresholds = anomaly_thresholds or {}
 
+    @eidosian()
     def start_monitoring(self, interval: int = 5) -> None:
         """
         Starts resource monitoring with a specified interval and establishes baselines.
@@ -2891,6 +2936,7 @@ class ResourceMonitor(IResourceMonitor):  # Inherit from interface
         # Baselines are established upon the first call to get_usage or monitor_resources
         # or explicitly calling establish_baselines if needed immediately after start_monitoring.
 
+    @eidosian()
     async def establish_baselines(self) -> None:
         """
         Asynchronously measures and establishes initial system resource baselines.
@@ -2993,6 +3039,7 @@ class ResourceMonitor(IResourceMonitor):  # Inherit from interface
             logging.error(f"Error getting GPU utilization: {e}")
             return 0.0
 
+    @eidosian()
     async def monitor_resources(self) -> Dict[str, float]:
         """
         Asynchronously monitors current system resources and compares them against established baselines.
@@ -3034,6 +3081,7 @@ class ResourceMonitor(IResourceMonitor):  # Inherit from interface
                         f"Resource anomaly detected: {resource_name} deviation from baseline is {deviation:.2f}%, exceeding threshold {threshold:.2f}%."
                     )
 
+    @eidosian()
     async def get_usage(self) -> Dict[str, float]:  # Keep async implementation
         """
         Asynchronously retrieves the current resource usage.
@@ -3063,6 +3111,7 @@ class InMemoryTelemetryBackend(ITelemetryBackend):
         self.events: List[Dict[str, Any]] = []  # Initialize events storage
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     def start_span(
         self,
         task_id: str,
@@ -3088,6 +3137,7 @@ class InMemoryTelemetryBackend(ITelemetryBackend):
         )
         return span
 
+    @eidosian()
     def end_span(
         self, span: "TelemetrySpan", attributes: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -3109,6 +3159,7 @@ class InMemoryTelemetryBackend(ITelemetryBackend):
                 f"Attempted to end non-existent telemetry span for task: {span.task_id}"
             )
 
+    @eidosian()
     def record_metric(
         self, name: str, value: float, tags: Optional[Dict[str, str]] = None
     ) -> None:
@@ -3126,6 +3177,7 @@ class InMemoryTelemetryBackend(ITelemetryBackend):
         tags_str = f" with tags: {tags}" if tags else ""
         self.logging.debug(f"Metric recorded: {name}={value}{tags_str}")
 
+    @eidosian()
     def capture_event(
         self, event_name: str, properties: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -3167,6 +3219,7 @@ class TelemetryCollector(ITelemetryCollector):
             {}
         )  # Maps task IDs to active TelemetrySpan instances
 
+    @eidosian()
     def start_span(
         self,
         task_id: str,
@@ -3192,6 +3245,7 @@ class TelemetryCollector(ITelemetryCollector):
         )
         return span
 
+    @eidosian()
     def end_span(
         self, span: "TelemetrySpan", attributes: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -3213,6 +3267,7 @@ class TelemetryCollector(ITelemetryCollector):
                 f"Attempted to end non-existent telemetry span for task: {span.task_id}"
             )
 
+    @eidosian()
     def record_metric(
         self, name: str, value: float, tags: Optional[Dict[str, str]] = None
     ) -> None:
@@ -3228,6 +3283,7 @@ class TelemetryCollector(ITelemetryCollector):
         """
         self.telemetry_backend.record_metric(name, value, tags)
 
+    @eidosian()
     def capture_event(
         self, event_name: str, properties: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -3342,6 +3398,7 @@ class Profiler(IProfiler):  # Inherit from interface
             self.output_path, exist_ok=True
         )  # Ensure the output directory exists
 
+    @eidosian()
     def start_profiling(self, context: Dict[str, Any]) -> cProfile.Profile:
         """
         Starts profiling using cProfile.
@@ -3356,6 +3413,7 @@ class Profiler(IProfiler):  # Inherit from interface
         logging.debug(f"Profiling started with context: {context}")
         return profile
 
+    @eidosian()
     def stop_profiling(
         self, profiler: cProfile.Profile, context: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -3388,6 +3446,7 @@ class Profiler(IProfiler):  # Inherit from interface
             sys.stdout = sys.__stdout__  # Restore standard output
         return {}
 
+    @eidosian()
     def profile_task(
         self, task: Callable[..., Any], task_id: str, sort_by: str = "cumulative"
     ) -> Any:
@@ -3443,6 +3502,7 @@ class InMemoryTracingBackend:
         self.logger = logger if logger is not None else logging.getLogger(__name__)
         self.logging_level = logging_level
 
+    @eidosian()
     def trace(
         self, task_id: str, message: str, attributes: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -3491,6 +3551,7 @@ class Tracing:
             tracing_backend or InMemoryTracingBackend()
         )
 
+    @eidosian()
     def trace(
         self,
         task_id: str,
@@ -3549,6 +3610,7 @@ class ValidationEngine(ValidationEngineInterface):
         self.logging_level = logging_level
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     def register_validator(
         self,
         validator_name: str,
@@ -3579,6 +3641,7 @@ class ValidationEngine(ValidationEngineInterface):
             )
         self.validators[validator_name] = validator_func
 
+    @eidosian()
     def validate(
         self,
         output: Any,
@@ -3685,6 +3748,7 @@ class FallbackHandler(FallbackHandlerInterface):
         self.logging_level = logging_level
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     def register_fallback_strategy(
         self, strategy_name: str, fallback_func: Callable[[str], Any]
     ) -> None:
@@ -3711,6 +3775,7 @@ class FallbackHandler(FallbackHandlerInterface):
             )
         self.fallback_strategies[strategy_name] = fallback_func
 
+    @eidosian()
     async def handle_fallback(
         self,
         task_id: str,
@@ -3759,6 +3824,7 @@ class FallbackHandler(FallbackHandlerInterface):
             )
             return {"status": "fallback_error", "error_message": str(e)}
 
+    @eidosian()
     def execute_fallback(
         self, task_id: str, strategy_name: Optional[str] = None
     ) -> Any:
@@ -3803,6 +3869,7 @@ class ErrorHandler(IErrorHandler):
         self.logging_level: int = logging_level
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     async def handle_error(
         self,
         task_id: str,  # Interface-required parameter: Unique ID of the task
@@ -3922,6 +3989,7 @@ class ErrorHandler(IErrorHandler):
 
         return error_info  # Return error info if no fallback handler or fallback not executed
 
+    @eidosian()
     def log_error(
         self,
         error: Exception,
@@ -4006,6 +4074,7 @@ class MessageFormatter(IMessageFormatter):  # Inherit from IMessageFormatter int
         self.format_string = format_string
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     def format_message(
         self, message: str, context: Optional[Dict[str, Any]] = None
     ) -> str:
@@ -4096,6 +4165,7 @@ class MessageColorer(IMessageColorer):  # Inherit from IMessageColorer interface
         self.enable_keyword_lookup = enable_keyword_lookup
         self.logging = logging.getLogger(__name__)
 
+    @eidosian()
     def color_message(self, message: str, severity: str = "debug") -> str:
         """
         Colours a message based on keywords found in the message and the configured color map.
@@ -4199,6 +4269,7 @@ class LoggingAndMonitoring:
 
     ##### Logging Functionality
 
+    @eidosian()
     def log_message(self, message: str, level: int = logging.INFO) -> None:
         """
         Logs a message, applying formatting and coloring if configured.
@@ -4234,6 +4305,7 @@ class LoggingAndMonitoring:
 
     ##### Resource Monitoring Functionality
 
+    @eidosian()
     async def monitor_resources(self) -> Dict[str, float]:
         """
         Asynchronously monitors system resources.
@@ -4250,6 +4322,7 @@ class LoggingAndMonitoring:
 
     ##### Profiling Functionality
 
+    @eidosian()
     def profile_task(
         self,
         task: Callable[..., Any],
@@ -4294,6 +4367,7 @@ class LoggingAndMonitoring:
 
     ##### Tracing Functionality
 
+    @eidosian()
     def trace_event(
         self,
         task_id: str,
@@ -4324,6 +4398,7 @@ class LoggingAndMonitoring:
 
     ##### Telemetry Functionality
 
+    @eidosian()
     def start_telemetry_span(
         self,
         task_id: str,
@@ -4362,6 +4437,7 @@ class LoggingAndMonitoring:
             operation_name, task_id, attributes=attributes
         )
 
+    @eidosian()
     def end_telemetry_span(
         self,
         task_id: str,
@@ -4395,6 +4471,7 @@ class LoggingAndMonitoring:
 
     ##### Error Handling Functionality
 
+    @eidosian()
     async def handle_error(
         self,
         task_id: str,
@@ -4485,6 +4562,7 @@ class Unilog:
 
     ##### LoggingAndMonitoring Methods
 
+    @eidosian()
     def log_message(self, message: str, level: int = logging.INFO) -> None:
         """
         Logs a message using the integrated :class:`LoggingAndMonitoring` component.
@@ -4493,6 +4571,7 @@ class Unilog:
         """
         self.logging_monitoring.log_message(message, level)
 
+    @eidosian()
     async def monitor_resources(self) -> Dict[str, float]:
         """
         Monitors system resources using the integrated :class:`LoggingAndMonitoring` component.
@@ -4501,6 +4580,7 @@ class Unilog:
         """
         return await self.logging_monitoring.monitor_resources()
 
+    @eidosian()
     def profile_task(
         self,
         task: Callable[..., Any],
@@ -4514,6 +4594,7 @@ class Unilog:
         """
         return self.logging_monitoring.profile_task(task, context, sort_by=sort_by)
 
+    @eidosian()
     def trace_event(self, task_id: str, message: str) -> None:
         """
         Traces an event using the integrated :class:`LoggingAndMonitoring` component.
@@ -4522,6 +4603,7 @@ class Unilog:
         """
         self.logging_monitoring.trace_event(task_id, message)
 
+    @eidosian()
     def start_telemetry_span(
         self, task_id: str, operation_name: str
     ) -> "TelemetrySpan":
@@ -4532,6 +4614,7 @@ class Unilog:
         """
         return self.logging_monitoring.start_telemetry_span(operation_name, task_id)
 
+    @eidosian()
     def end_telemetry_span(self, task_id: str) -> None:
         """
         Ends a telemetry span using the integrated :class:`LoggingAndMonitoring` component.
@@ -4540,6 +4623,7 @@ class Unilog:
         """
         self.logging_monitoring.end_telemetry_span(task_id)
 
+    @eidosian()
     async def handle_error(
         self,
         task_id: str,
@@ -4559,6 +4643,7 @@ class Unilog:
 
     ##### MetricsRegistry Methods
 
+    @eidosian()
     def create_metric(
         self,
         name: str,
@@ -4575,6 +4660,7 @@ class Unilog:
             name, metric_type, description=description, labels=labels
         )
 
+    @eidosian()
     def increment_counter(
         self, name: str, value: int = 1, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -4585,6 +4671,7 @@ class Unilog:
         """
         self.metrics_registry.increment_counter(name, value, labels=labels)
 
+    @eidosian()
     def set_gauge(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -4595,6 +4682,7 @@ class Unilog:
         """
         self.metrics_registry.set_gauge(name, value, labels=labels)
 
+    @eidosian()
     def observe_histogram(
         self, name: str, value: float, labels: Optional[Dict[str, str]] = None
     ) -> None:
@@ -4645,6 +4733,7 @@ class ModelLoader:
         )
         self.default_model_type = default_model_type
 
+    @eidosian()
     def load_model_for_type(self, model_type: str) -> Any:
         """
         Loads a model for a specific model type.
@@ -4691,6 +4780,7 @@ class ModelLoader:
             # Placeholder for default model loading logic
             return f"default-model-{model_type}"  # Placeholder return value
 
+    @eidosian()
     def load_optimal_model(self, current_mem: int, gpu_mem: int) -> Any:
         """
         Selects and loads the optimal model based on available system resources.
@@ -4757,6 +4847,7 @@ class ModelFactory:
         else:
             self.model_loader = ModelLoader(**loader_kwargs)
 
+    @eidosian()
     def get_loader(self) -> ModelLoader:
         """
         Retrieves the ModelLoader instance managed by this factory.
@@ -4766,6 +4857,7 @@ class ModelFactory:
         """
         return self.model_loader
 
+    @eidosian()
     def load_model_for_type(self, model_type: str) -> Any:
         """
         Loads a model for a specific type using the associated ModelLoader.
@@ -4780,6 +4872,7 @@ class ModelFactory:
         """
         return self.model_loader.load_model_for_type(model_type)
 
+    @eidosian()
     def load_optimal_model(self, current_mem: int, gpu_mem: int) -> Any:
         """
         Loads the optimal model based on available resources using the associated ModelLoader.
@@ -4796,6 +4889,7 @@ class ModelFactory:
         """
         return self.model_loader.load_optimal_model(current_mem, gpu_mem)
 
+    @eidosian()
     def preload_models(self, model_types: List[str]) -> None:
         """
         Preloads models for specified module types using the associated ModelLoader.
@@ -4832,6 +4926,7 @@ class ModelVersionManager:
         self.model_versions: Dict[str, Dict[str, Any]] = {}
         print("ModelVersionManager initialized.")
 
+    @eidosian()
     def register_version(self, model_type: str, version: str, model: Any) -> None:
         """
         Registers a specific version of a model for a given model type.
@@ -4854,6 +4949,7 @@ class ModelVersionManager:
         self.model_versions[model_type][version] = model
         print(f"Registered version '{version}' for model type '{model_type}'.")
 
+    @eidosian()
     def get_version(self, model_type: str, version: str) -> Optional[Any]:
         """
         Retrieves a specific version of a model for a given model type.
@@ -4877,6 +4973,7 @@ class ModelVersionManager:
             print(f"Version '{version}' not found for model type '{model_type}'.")
             return None
 
+    @eidosian()
     def get_latest_version(self, model_type: str) -> Optional[Any]:
         """
         Retrieves the latest registered version of a model for a given model type.
@@ -4944,6 +5041,7 @@ class ModelServingLayer:
             f"ModelServingLayer initialized with ModelFactory, caching up to {max_cached_models} models."
         )
 
+    @eidosian()
     def get_adaptive_model(self) -> Any:
         """
         Retrieves the optimal model based on current system resources, using caching.
@@ -5057,6 +5155,7 @@ class TaskManager:
         """
         self.tasks: Dict[str, Task] = {}
 
+    @eidosian()
     def create_task(self, task_payload: Dict[str, Any]) -> Task:
         """
         Creates a new task and registers it with the TaskManager.
@@ -5078,6 +5177,7 @@ class TaskManager:
         self.tasks[task_id] = task
         return task
 
+    @eidosian()
     def get_task(self, task_id: str) -> "Task":
         """
         Retrieves a task from the TaskManager by its unique ID.
@@ -5096,6 +5196,7 @@ class TaskManager:
             raise KeyError(f"Task with id '{task_id}' not found.")
         return task
 
+    @eidosian()
     def update_task_status(self, task_id: str, status: str) -> None:
         """
         Updates the status of a task.
@@ -5115,6 +5216,7 @@ class TaskManager:
         task = self.get_task(task_id)  # Will raise KeyError if task not found
         task.status = status
 
+    @eidosian()
     def complete_task(self, task_id: str, result: Any) -> None:
         """
         Marks a task as completed and stores its result.
@@ -5171,6 +5273,7 @@ class QualityControlGateway:
         """
         return bool(task.task_type)
 
+    @eidosian()
     def validate_task(self, task: "Task") -> bool:
         """
         Validates the given task against all configured validation criteria.
@@ -5220,6 +5323,7 @@ class QualityAssuranceGateway:
                 "Ensure to configure them for actual quality assurance."
             )
 
+    @eidosian()
     def ensure_quality(self, task: "Task") -> bool:
         """
         Executes quality assurance processes for the given task.
@@ -5277,6 +5381,7 @@ class QualityVerificationGateway:
                 "Verification will always pass by default."
             )
 
+    @eidosian()
     def verify_quality(self, task: "Task") -> bool:
         """
         Verifies the quality of the processed task using configured verification criteria.
@@ -5334,6 +5439,7 @@ class QualityValidationGateway:
                 "Validation will always pass by default."
             )
 
+    @eidosian()
     def validate_quality(self, task: "Task") -> bool:
         """
         Validates the quality of the processed task against high-level validation criteria.
@@ -5394,6 +5500,7 @@ class ContentExtractor(ISubModule):
         )
         self._stage = ContentExtractorStage()  # Instantiate the stage class
 
+    @eidosian()
     async def process(self, task: Task) -> Task:
         """
         Processes the task to extract content from its context.
@@ -5450,6 +5557,7 @@ class CodeAnalyzer(ISubModule):
         )
         self._stage = CodeAnalyzerStage()  # Instantiate the stage class
 
+    @eidosian()
     async def process(self, task: Task) -> Task:
         """
         Processes the task to analyze code snippets within its context.
@@ -5506,6 +5614,7 @@ class EmotionalAnalyzer(ISubModule):
         )
         self._stage = EmotionalAnalyzerStage()  # Instantiate the stage class
 
+    @eidosian()
     async def process(self, task: Task) -> Task:
         """
         Processes the task to analyze emotional tone within its context.
@@ -5564,6 +5673,7 @@ class GapAnalyzer(ISubModule):
         )
         self._stage = GapAnalyzerStage()  # Instantiate the stage class
 
+    @eidosian()
     async def process(self, task: Task) -> Task:
         """
         Processes the task to analyze gaps or discrepancies within its context.
@@ -5620,6 +5730,7 @@ class SummaryGenerator(ISubModule):
         )
         self._stage = SummaryGeneratorStage()  # Instantiate the stage class
 
+    @eidosian()
     async def process(self, task: Task) -> Task:
         """
         Processes the task to generate summaries from its context.
@@ -5717,6 +5828,7 @@ class SubModuleAllocator:
         )
         logging.info("SubModuleAllocator initialized.")
 
+    @eidosian()
     def register_submodule_type(
         self, module_type: str, submodule_class: Type["BaseSubModule"]
     ) -> None:
@@ -5741,6 +5853,7 @@ class SubModuleAllocator:
         self.submodule_classes[module_type] = submodule_class
         logging.info(f"Submodule type '{module_type}' registered.")
 
+    @eidosian()
     def create_submodule(self, module_type: str) -> "BaseSubModule":
         """
         Creates and registers a submodule of the specified type.
@@ -5822,6 +5935,7 @@ class BaseSubModule(SubModuleInterface):
             f"BaseSubModule initialized by allocator: {allocator.__class__.__name__}"
         )
 
+    @eidosian()
     async def process(self, task: Task) -> Any:
         """
         Processes a task through the submodule's lifecycle.
@@ -6029,6 +6143,7 @@ class OptimizationSubModule(BaseSubModule, SubModuleInterface):
         )
         self._stage = OptimizationStage()  # Instantiate the stage class
 
+    @eidosian()
     async def tune_parameters(self, task: Task) -> Any:
         """
         Tunes model parameters for optimal performance using benchmarking.
@@ -6153,6 +6268,7 @@ class AnalysisSubModule(BaseSubModule):
 class RoutingRuleBook:
     """Rule book for routing tasks to modules."""
 
+    @eidosian()
     def select_module(self, task: "Task") -> str:
         """Selects a module type based on the task type."""
         task_type = task.task_type
@@ -6181,6 +6297,7 @@ class WorkflowCoordinator:
         )  # Gate for quality checks on incoming tasks (defined elsewhere)
         self.task_manager = TaskManager()  # Manages tasks lifecycle (defined elsewhere)
 
+    @eidosian()
     def distribute_task(
         self, task_payload: dict, load_balancer: "LoadBalancer"
     ):  # Accepts task payload as dict and LoadBalancer instance
@@ -6226,6 +6343,7 @@ class LoadBalancer:
         )
         self.resource_monitor = ResourceMonitor()
 
+    @eidosian()
     async def initialize(self):
         """Cold start initialization with resource pre-warming.
         Establishes resource baselines and preloads models into the ModelPool.
@@ -6235,6 +6353,7 @@ class LoadBalancer:
             ["research", "codegen", "analysis"]
         )  # Preload models for common module types
 
+    @eidosian()
     def create_submodule_for_task(self, target_module: str):
         """Creates submodule instance using SubModuleAllocator based on resource availability.
         Args:
@@ -6269,6 +6388,7 @@ class PipelineTemplates:
             {}
         )  # Dictionary to store pipeline templates, e.g., by task type
 
+    @eidosian()
     def register_template(self, template_id: str, template_config: Dict[str, list]):
         """Registers a new pipeline template.
         Args:
@@ -6278,6 +6398,7 @@ class PipelineTemplates:
         """
         self.templates[template_id] = template_config
 
+    @eidosian()
     def get_template(self, template_id: str) -> Dict[str, list]:
         """Retrieves a pipeline template by its ID.
         Args:
@@ -6287,6 +6408,7 @@ class PipelineTemplates:
         """
         return self.templates.get(template_id)
 
+    @eidosian()
     def has_template(self, template_id: str) -> bool:
         """Checks if a template with the given ID exists.
         Args:
@@ -6320,6 +6442,7 @@ class PipelineBuilder:
             }
         )
 
+    @eidosian()
     def build_pipeline(self, template_id: str) -> List[Any]:
         """Constructs a pipeline (list of stages) from a template.
         Args:
@@ -6354,6 +6477,7 @@ class PipelineOptimizer:
     Optimizes a given pipeline based on runtime conditions and task characteristics.
     """
 
+    @eidosian()
     def optimize_pipeline(self, pipeline: List[Any], task: "Task") -> List[Any]:
         """Optimizes the pipeline based on task and system conditions.
         Args:
@@ -6374,6 +6498,7 @@ class PipelineOptimizer:
             "OptimizationStagePlaceholder": 1,
         }  # Higher number means higher priority (executed later)
 
+        @eidosian()
         def get_stage_order(stage_instance):
             stage_name = stage_instance.__class__.__name__
             return stage_priority.get(stage_name, 0)  # Default priority 0 if not found
@@ -6435,6 +6560,7 @@ class WorkflowEngine:
             {"stages": ["OptimizationStagePlaceholder"]},
         )
 
+    @eidosian()
     def route_task(self, task: "Task") -> List[Any]:
         """Routes the task to a pipeline based on task type and routing rules.
         Returns:
@@ -6461,6 +6587,7 @@ class WorkflowEngine:
 
         return optimized_pipeline
 
+    @eidosian()
     def get_system_load(self):
         """Simulated system load (replace with actual metrics).
         Placeholder for a method to retrieve or calculate the current system load.
@@ -6473,6 +6600,7 @@ class WorkflowEngine:
 class TaskPipeline(TaskPipelineInterface):
     """Executes a dynamically built pipeline for task processing."""
 
+    @eidosian()
     async def execute(self, pipeline: List[Any], task: "Task") -> Dict[str, Any]:
         """Executes a given pipeline (list of stages) sequentially on the task context.
         Args:
@@ -6486,6 +6614,7 @@ class TaskPipeline(TaskPipelineInterface):
             context = await stage.process(context)
         return context
 
+    @eidosian()
     async def process(self, task: "Task") -> "Task":
         """Processes a task using a dynamically determined and executed pipeline.
         Args:
@@ -6512,6 +6641,7 @@ class VectorDBManager:
     Manages vector database operations, including storing and retrieving vector embeddings.
     """
 
+    @eidosian()
     def store(self, documents):
         """Incorporates FAISS logic from original _store_documents.
         Placeholder for storing documents and their vector embeddings in the vector database.
@@ -6531,6 +6661,7 @@ class VectorCache:
     Provides access to a VectorDBManager instance, potentially using caching mechanisms.
     """
 
+    @eidosian()
     def get_store(self):
         """Gets a VectorDBManager instance, potentially from a cache.
         For now, it returns a new instance each time. Caching logic can be added here.
@@ -6548,6 +6679,7 @@ class VectorCache:
 class GraphManager:
     """Knowledge graph operations"""
 
+    @eidosian()
     def create_entity(self):
         pass
 
@@ -6555,6 +6687,7 @@ class GraphManager:
 class ExplainabilityEngine:
     """Model decision explanations"""
 
+    @eidosian()
     def generate_shap_values(self):
         pass
 
@@ -6690,6 +6823,7 @@ class WebSearchHandler:
         except Exception as e:
             logging.error(f"Error crawling {start_url}: {e}")
 
+    @eidosian()
     async def execute_search(self, query):
         """
         Executes a web search for the given query using SearxNG,
@@ -6749,6 +6883,7 @@ class ModelPool(ModelPoolInterface):
         )
         self.hf_optimizer_name = "adamw_hf_name"  # Example name
 
+    @eidosian()
     def get_adaptive_model(self, model_type: str = "qwen") -> Any:
         """
         Retrieves a model instance from the pool. If the model_type is not found
@@ -6765,6 +6900,7 @@ class ModelPool(ModelPoolInterface):
         logging.info(f"Serving model of type: {model_type} from ModelPool.")
         return self.models[model_type]
 
+    @eidosian()
     def get_optimizer(self, optimizer_type: str = "adamw") -> Any:
         """
         Retrieves an optimizer model instance from the pool.
@@ -6842,6 +6978,7 @@ class ModelPool(ModelPoolInterface):
             logging.error(f"Error loading optimizer {optimizer_type}: {e}")
             raise
 
+    @eidosian()
     def preload_models(self, model_types: List[str]) -> None:
         """
         Preloads specified model types into the ModelPool. For each model type,
@@ -6874,6 +7011,7 @@ class ModelPool(ModelPoolInterface):
                     f"Model type '{model_type}' already loaded. Skipping preload."
                 )
 
+    @eidosian()
     def preload_optimizers(self, optimizer_types: List[str]) -> None:
         """
         Preloads specified optimizer types into the ModelPool.
@@ -6902,6 +7040,7 @@ class ModelPool(ModelPoolInterface):
                     f"Optimizer type '{optimizer_type}' already loaded. Skipping preload."
                 )
 
+    @eidosian()
     def release_model(self, model_type: str) -> None:
         """
         Releases a model type back to the pool, conceptually making it available for reuse.
@@ -6915,6 +7054,7 @@ class ModelPool(ModelPoolInterface):
         else:
             logging.warning(f"Attempted to release unknown model type: {model_type}")
 
+    @eidosian()
     def release_optimizer(self, optimizer_type: str) -> None:
         """
         Releases an optimizer type back to the pool.
@@ -6928,24 +7068,28 @@ class ModelPool(ModelPoolInterface):
                 f"Attempted to release unknown optimizer type: {optimizer_type}"
             )
 
+    @eidosian()
     def is_model_loaded(self, model_type: str) -> bool:
         """
         Checks if a model type is currently loaded in the pool.
         """
         return model_type in self.models
 
+    @eidosian()
     def is_optimizer_loaded(self, optimizer_type: str) -> bool:
         """
         Checks if an optimizer type is currently loaded in the pool.
         """
         return optimizer_type in self.optimizers
 
+    @eidosian()
     def get_available_model_types(self) -> List[str]:
         """
         Returns a list of currently available model types in the pool.
         """
         return list(self.models.keys())
 
+    @eidosian()
     def get_available_optimizer_types(self) -> List[str]:
         """
         Returns a list of currently available optimizer types in the pool.
@@ -6956,6 +7100,7 @@ class ModelPool(ModelPoolInterface):
 class QualityGateway:
     """Temporary quality gate implementation"""
 
+    @eidosian()
     def validate_task(
         self, task: "Task"
     ) -> (
@@ -6974,12 +7119,14 @@ class QualityGateway:
         return True
 
 
+@eidosian()
 def main():
     import asyncio
     import logging
 
     logging.basicConfig(level=logging.INFO)
 
+    @eidosian()
     async def test_architecture():
         """Tests the modular local model network architecture with the updated ModelPool."""
         try:

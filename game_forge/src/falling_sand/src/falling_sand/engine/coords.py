@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Tuple
+from eidosian_core import eidosian
 
 
 VoxelCoord = Tuple[int, int, int]
@@ -22,6 +23,7 @@ class CoordConfig:
             raise ValueError("chunk_size must be positive")
 
 
+@eidosian()
 def world_to_chunk(voxel: VoxelCoord, chunk_size: int) -> tuple[ChunkCoord, LocalCoord]:
     """Convert world voxel coordinates to chunk and local coordinates."""
 
@@ -34,12 +36,14 @@ def world_to_chunk(voxel: VoxelCoord, chunk_size: int) -> tuple[ChunkCoord, Loca
     return (cx, cy, cz), (lx, ly, lz)
 
 
+@eidosian()
 def chunk_origin(chunk: ChunkCoord, chunk_size: int) -> VoxelCoord:
     """Return the world voxel origin for a chunk."""
 
     return (chunk[0] * chunk_size, chunk[1] * chunk_size, chunk[2] * chunk_size)
 
 
+@eidosian()
 def local_to_world(chunk: ChunkCoord, local: LocalCoord, chunk_size: int) -> VoxelCoord:
     """Convert local chunk coordinates to world voxel coordinates."""
 

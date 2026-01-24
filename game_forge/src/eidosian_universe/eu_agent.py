@@ -8,6 +8,7 @@ from math import hypot
 from typing import List, Tuple, TYPE_CHECKING
 
 from .eu_config import UniverseConfig
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:  # pragma: no cover - for type hints only
     from .eu_rules import EnvironmentRule, MetabolismRule
@@ -21,6 +22,7 @@ class Component:
     mass: float
     efficiency: float = 1.0
 
+    @eidosian()
     def mutate(self) -> "Component":
         """Return a slightly mutated copy of this component."""
         ox, oy = self.offset
@@ -44,10 +46,12 @@ class Agent:
     components: List[Component]
     color: Tuple[int, int, int]
 
+    @eidosian()
     def total_mass(self) -> float:
         """Return aggregate mass including components."""
         return self.mass + sum(c.mass for c in self.components)
 
+    @eidosian()
     def update(
         self,
         config: "UniverseConfig",
@@ -78,10 +82,12 @@ class Agent:
         if self.y < 0 or self.y > config.height:
             self.dy *= -1
 
+    @eidosian()
     def can_reproduce(self, config: "UniverseConfig") -> bool:
         """Return True if agent has enough energy to reproduce."""
         return self.energy >= config.reproduction_energy + config.reproduction_cost
 
+    @eidosian()
     def reproduce(self, config: "UniverseConfig") -> "Agent":
         """Create a mutated child agent."""
         self.energy -= config.reproduction_cost

@@ -7,12 +7,14 @@ from typing import List
 
 from .engine import NarrativeEngine
 from .memory import MemoryStore
+from eidosian_core import eidosian
 
 PRIMARY_MODEL = "gpt-3.5-turbo"
 
 CONFIG_PATH = os.path.expanduser("~/.forgengine.json")
 
 
+@eidosian()
 def discover_local_models(directories: List[str] | None = None) -> List[str]:
     """Return possible local model directories."""
     if directories is None:
@@ -30,6 +32,7 @@ def discover_local_models(directories: List[str] | None = None) -> List[str]:
                 found.append(root)
     return sorted(found)
 
+@eidosian()
 def load_config(path: str = CONFIG_PATH, force_setup: bool = False) -> dict:
     """Load configuration or run interactive setup."""
     path = os.path.expanduser(path)
@@ -69,6 +72,7 @@ def load_config(path: str = CONFIG_PATH, force_setup: bool = False) -> dict:
         return json.load(fh)
 
 
+@eidosian()
 def run_chat(args: argparse.Namespace) -> None:
     try:
         engine = NarrativeEngine(
@@ -95,27 +99,32 @@ def run_chat(args: argparse.Namespace) -> None:
         engine.shutdown()
 
 
+@eidosian()
 def show_memory(args: argparse.Namespace) -> None:
     store = MemoryStore(args.memory)
     for item in store.data.interactions:
         print(f"{item['timestamp']}: {item['user']} -> {item['response']}")
 
 
+@eidosian()
 def show_events(args: argparse.Namespace) -> None:
     store = MemoryStore(args.memory)
     for evt in store.data.events:
         print(f"{evt['timestamp']}: {evt['event']}")
 
 
+@eidosian()
 def show_glossary(args: argparse.Namespace) -> None:
     store = MemoryStore(args.memory)
     for word, count in sorted(store.data.glossary.items()):
         print(f"{word}: {count}")
 
+@eidosian()
 def list_models(args: argparse.Namespace) -> None:
     for path in discover_local_models():
         print(path)
 
+@eidosian()
 def build_parser(config: dict) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Narrative Engine CLI")
     parser.add_argument("--memory", default=config.get("memory", "memory.json"), help="Memory file path")
@@ -158,6 +167,7 @@ def build_parser(config: dict) -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def main() -> None:
     base = argparse.ArgumentParser(add_help=False)
     base.add_argument("--config", default=CONFIG_PATH)

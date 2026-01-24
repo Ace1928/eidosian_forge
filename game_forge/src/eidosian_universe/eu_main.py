@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import pygame
+from eidosian_core import eidosian
 
 # When executed directly, ``__package__`` will be ``None`` and relative imports
 # fail.  To support ``python eu_main.py`` from within the ``src`` directory we
@@ -24,6 +25,7 @@ else:
     from .eu_ai import EidosAI
 
 
+@eidosian()
 def main() -> None:
     """Run the Eidosian Universe simulation."""
     pygame.init()

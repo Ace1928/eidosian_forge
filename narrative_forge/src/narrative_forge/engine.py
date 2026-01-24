@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 from .memory import MemoryStore
 from llm_forge import ModelManager, OpenAIProvider, OllamaProvider
+from eidosian_core import eidosian
 
 class NarrativeEngine:
     """Self-referential engine backed by LLM Forge."""
@@ -37,6 +38,7 @@ class NarrativeEngine:
         self._timer.daemon = True
         self._timer.start()
 
+    @eidosian()
     def record_interaction(self, user_input: str, response: str) -> None:
         self.store.data.interactions.append(
             {
@@ -48,6 +50,7 @@ class NarrativeEngine:
         self._reset_timer()
         self.store.save()
 
+    @eidosian()
     def respond(self, user_input: str) -> str:
         try:
             result = self.manager.generate(user_input, self.provider_name, model=self.model_name)
@@ -58,6 +61,7 @@ class NarrativeEngine:
         self.record_interaction(user_input, response)
         return response
 
+    @eidosian()
     def free_thought(self) -> None:
         """Called during idle periods to generate autonomous output."""
         if self.store.data.interactions:
@@ -77,6 +81,7 @@ class NarrativeEngine:
         self.store.save()
         self._reset_timer()
 
+    @eidosian()
     def shutdown(self) -> None:
         if self._timer:
             self._timer.cancel()

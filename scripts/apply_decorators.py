@@ -77,7 +77,6 @@ class ApplicationState:
     consecutive_failures: int = 0
     results: List[ApplicationResult] = field(default_factory=list)
     
-    @eidosian()
     def to_dict(self):
         return {
             "total": self.total_functions,
@@ -130,7 +129,6 @@ class DecoratorApplicator:
         self.state = ApplicationState()
         self._backups: dict[Path, Path] = {}
     
-    @eidosian()
     def discover_functions(self) -> List[FunctionInfo]:
         """Discover all functions that could be decorated."""
         functions = []
@@ -223,7 +221,6 @@ class DecoratorApplicator:
                         return True
         return False
     
-    @eidosian()
     def backup_file(self, file_path: Path) -> Path:
         """Create backup of a file."""
         self.backup_dir.mkdir(parents=True, exist_ok=True)
@@ -239,7 +236,6 @@ class DecoratorApplicator:
         self._backups[file_path] = backup_path
         return backup_path
     
-    @eidosian()
     def restore_file(self, file_path: Path) -> bool:
         """Restore file from backup."""
         backup_path = self._backups.get(file_path)
@@ -248,7 +244,6 @@ class DecoratorApplicator:
             return True
         return False
     
-    @eidosian()
     def apply_decorator(self, func: FunctionInfo) -> bool:
         """Apply @eidosian decorator to a single function."""
         file_path = func.file_path
@@ -326,7 +321,6 @@ class DecoratorApplicator:
         lines.insert(insert_pos, self.EIDOSIAN_IMPORT)
         return lines
     
-    @eidosian()
     def verify(self) -> bool:
         """Run verification command."""
         if not self.verify_command:
@@ -345,7 +339,6 @@ class DecoratorApplicator:
         except Exception:
             return False
     
-    @eidosian()
     def run(self) -> ApplicationState:
         """Run the decorator application process."""
         print("╔═══════════════════════════════════════════════════════════════╗")
@@ -459,7 +452,6 @@ class DecoratorApplicator:
         return self.state
 
 
-@eidosian()
 def main():
     parser = argparse.ArgumentParser(
         description="Apply @eidosian decorator to Python functions",
