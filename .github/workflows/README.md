@@ -300,13 +300,32 @@ All workflows support manual triggering with optional parameters. Access via:
 - Click on the failed workflow run
 - Review the "Summary" tab for high-level errors
 - Check job-specific summaries for details
+- Look for specific error messages in the annotations
 
-### 2. View Logs
+### 2. View Detailed Logs
 - Click on the failed job
 - Expand log groups to see detailed output
 - Look for `::error::` and `::warning::` annotations
+- Each step shows its own exit code and output
 
-### 3. Local Reproduction
+### 3. Common Issues
+
+#### "Maximum call stack size exceeded" during Python setup
+- **Cause**: Large monorepo with many dependency files causes caching to fail
+- **Fixed**: Removed pip caching to avoid this issue
+- **Note**: Workflows may take slightly longer but are more reliable
+
+#### Python setup fails
+- Check the Python version is available (3.10, 3.11, 3.12)
+- Verify `pyproject.toml` or `setup.py` is properly formatted
+- Look for dependency conflicts in the logs
+
+#### Tests fail
+- Check the test output for specific failures
+- Look for import errors or missing dependencies
+- Verify test files are properly structured
+
+### 4. Local Reproduction
 ```bash
 # Run the same commands locally
 # Example for lint failures:
@@ -317,9 +336,10 @@ ruff check .
 pytest -v
 ```
 
-### 4. Use Workflow Dispatch
+### 5. Use Workflow Dispatch
 - Trigger workflows manually with debug flags
 - Test specific scenarios without committing
+- View logs in real-time as jobs run
 
 ---
 
@@ -397,6 +417,11 @@ When modifying workflows:
 ---
 
 ## 📝 Changelog
+
+### v4.0.1 (2026-01-24)
+- 🐛 Fixed "Maximum call stack size exceeded" error by removing pip caching
+- 📚 Added detailed troubleshooting section for common CI failures
+- ⚡ Workflows now more reliable for large monorepos
 
 ### v4.0.0 (2026-01-24)
 - ✨ Added comprehensive formatting workflow

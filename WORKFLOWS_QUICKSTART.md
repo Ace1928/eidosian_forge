@@ -99,6 +99,18 @@ cd game_forge/src/autoseed && npm run lint --fix
 
 ---
 
+### ❌ Workflow fails with "Maximum call stack size exceeded"
+
+**This issue has been fixed!** 
+
+The error was caused by pip caching trying to scan too many dependency files in this large monorepo. We've removed pip caching from all workflows.
+
+**If you still see this error:**
+1. Re-run the workflow (it should work now)
+2. Check that you're using the latest version of the workflows
+
+---
+
 ### ❌ Tests are failing
 
 1. **Run tests locally:**
