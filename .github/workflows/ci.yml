@@ -1,5 +1,6 @@
-# 🚀 Eidosian CI Pipeline v3.15.0
-# Fractal test architecture that scales from unit to integration seamlessly
+# 🚀 Eidosian CI Pipeline v4.0.0
+# Comprehensive CI/CD with formatting, linting, testing, and deployment
+# Format → Lint → Test → Build → Deploy workflow
 
 name: Eidosian Universal CI
 
@@ -40,13 +41,93 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
+      has_python: ${{ steps.check.outputs.has_python }}
+      has_typescript: ${{ steps.check.outputs.has_typescript }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - id: check
-        run: echo "should_run=true" >> $GITHUB_OUTPUT
+        name: 🔍 Check what to run
+        run: |
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          
+          # Check if Python files changed
+          if git diff --name-only HEAD~1 2>/dev/null | grep -q '\.py$' || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "has_python=true" >> $GITHUB_OUTPUT
+            echo "::notice::Python files detected"
+          else
+            echo "has_python=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Check if TypeScript/JavaScript files changed
+          if git diff --name-only HEAD~1 2>/dev/null | grep -qE '\.(ts|tsx|js|jsx)$' || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "has_typescript=true" >> $GITHUB_OUTPUT
+            echo "::notice::TypeScript/JavaScript files detected"
+          else
+            echo "has_typescript=false" >> $GITHUB_OUTPUT
+          fi
+
+  format-check:
+    name: 🎨 Format Check
+    needs: validate
+    if: needs.validate.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        if: needs.validate.outputs.has_python == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 📦 Install Python formatters
+        if: needs.validate.outputs.has_python == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort
+
+      - name: 🎨 Check Python formatting
+        if: needs.validate.outputs.has_python == 'true'
+        continue-on-error: true
+        id: python_format
+        run: |
+          echo "::group::Black format check"
+          black . --check --diff --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || FORMAT_FAIL=1
+          echo "::endgroup::"
+          
+          echo "::group::isort import check"
+          isort . --check --diff --profile=black --line-length=120 --skip-gitignore || FORMAT_FAIL=1
+          echo "::endgroup::"
+          
+          if [ -n "$FORMAT_FAIL" ]; then
+            echo "::error::Python formatting issues found. Run the 'Auto Format Code' workflow or run locally: black . --line-length=120 && isort . --profile=black"
+            exit 1
+          fi
+
+      - name: 📦 Set up Node.js
+        if: needs.validate.outputs.has_typescript == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 📥 Install Prettier
+        if: needs.validate.outputs.has_typescript == 'true'
+        run: npm install -g prettier@3.4.2
+
+      - name: 🎨 Check TypeScript formatting
+        if: needs.validate.outputs.has_typescript == 'true'
+        run: |
+          echo "::group::Prettier format check"
+          prettier "**/*.{ts,tsx,js,jsx,json}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
+          echo "::endgroup::"
 
   lint:
     name: 🧹 Lint
-    needs: validate
+    needs: [validate, format-check]
     if: needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -82,13 +163,17 @@ jobs:
       - name: 🔍 Check code formatting
         run: |
           if command -v black >/dev/null 2>&1; then
-            black . --check --diff || echo "::warning::Code formatting issues detected"
+            echo "::group::Black format check"
+            black . --check --diff --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || echo "::warning::Code formatting issues detected"
+            echo "::endgroup::"
           else
             echo "::warning::black not installed, skipping format check"
           fi
 
           if command -v isort >/dev/null 2>&1; then
-            isort . --check --diff || echo "::warning::Import sorting issues detected"
+            echo "::group::isort import check"
+            isort . --check --diff --profile=black --line-length=120 --skip-gitignore || echo "::warning::Import sorting issues detected"
+            echo "::endgroup::"
           else
             echo "::warning::isort not installed, skipping import check"
           fi
@@ -172,6 +257,46 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-typescript:
+    name: 🧪 Test TypeScript
+    needs: [validate, lint]
+    if: always() && needs.validate.outputs.should_run == 'true' && needs.validate.outputs.has_typescript == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 🧪 Test autoseed project
+        run: |
+          if [ -d "game_forge/src/autoseed" ]; then
+            echo "::group::Testing autoseed"
+            cd game_forge/src/autoseed
+            npm install
+            npm run typecheck
+            npm run test:coverage
+            echo "::endgroup::"
+            
+            # Upload coverage if exists
+            if [ -f "coverage/coverage-summary.json" ]; then
+              echo "### 📊 TypeScript Coverage" >> $GITHUB_STEP_SUMMARY
+              cat coverage/coverage-summary.json | python3 -c "import json,sys; data=json.load(sys.stdin); total=data.get('total',{}); print(f\"Lines: {total.get('lines',{}).get('pct',0):.2f}%\")" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "::notice::autoseed directory not found, skipping TypeScript tests"
+          fi
+
+      - name: 📁 Upload TypeScript coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-coverage
+          path: game_forge/src/autoseed/coverage/
+          retention-days: 7
 
   docs:
     name: 📚 Documentation
@@ -324,7 +449,7 @@ jobs:
 
   pipeline:
     name: 🚀 Pipeline
-    needs: [lint, test, docs, build, integration]
+    needs: [lint, test, test-typescript, docs, build, integration]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -333,17 +458,32 @@ jobs:
           FAILED_JOBS=()
 
           # Check each job result
-          for job in lint test docs build integration; do
-            if [ "${{ needs[format('{0}', job)].result }}" == "failure" ]; then
+          for job in lint test test-typescript docs build integration; do
+            RESULT="${{ needs[format('{0}', job)].result }}"
+            if [ "$RESULT" == "failure" ]; then
               FAILED_JOBS+=("$job")
             fi
           done
 
           # Report results
+          echo "## 🚀 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test (Python) | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test (TypeScript) | ${{ needs.test-typescript.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docs | ${{ needs.docs.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration | ${{ needs.integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
           if [ ${#FAILED_JOBS[@]} -gt 0 ]; then
               echo "::error::Pipeline failed in jobs: ${FAILED_JOBS[*]}"
+              echo "### ❌ Failed Jobs: ${FAILED_JOBS[*]}" >> $GITHUB_STEP_SUMMARY
               exit 1
           else
-              echo "::notice::All checks passed successfully"
+              echo "::notice::All checks passed successfully ✅"
+              echo "### ✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
               exit 0
           fi
