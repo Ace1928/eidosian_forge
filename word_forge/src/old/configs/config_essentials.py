@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 This module defines all essential types and constants used throughout the
 configuration system, providing a consistent way to handle various
@@ -93,6 +94,7 @@ LOGS_ROOT: Final[Path] = PROJECT_ROOT / "logs"
 # ==========================================
 
 
+@eidosian()
 def serialize_dataclass(obj: Any) -> Dict[str, Any]:
     """
     Serialize a dataclass to a dictionary, handling special types like Enums.
@@ -148,6 +150,7 @@ def serialize_dataclass(obj: Any) -> Dict[str, Any]:
     return result
 
 
+@eidosian()
 def serialize_config(obj: Any) -> ConfigValue:
     """
     Convert configuration objects to dictionaries for display or serialization.

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Configuration System ⚡
 
@@ -183,6 +184,7 @@ class ConfigManager:
             result[section] = {k: v for k, v in values.items()}
         return result
     
+    @eidosian()
     def get(self, section: str, key: str, default: Any = None) -> Any:
         """
         Get configuration value with deterministic resolution.
@@ -201,6 +203,7 @@ class ConfigManager:
             except KeyError:
                 return default
     
+    @eidosian()
     def set(self, section: str, key: str, value: Any, 
             scope: ConfigScope = ConfigScope.USER) -> None:
         """
@@ -272,6 +275,7 @@ class ConfigManager:
                 except:
                     pass
     
+    @eidosian()
     def reset_to_defaults(self, section: Optional[str] = None) -> None:
         """
         Reset configuration to system defaults.
@@ -294,11 +298,13 @@ class ConfigManager:
             
             logger.info("Reset configuration to defaults%s", f" for section '{section}'" if section else "")
     
+    @eidosian()
     def get_sections(self) -> List[str]:
         """Get list of all configuration sections."""
         with self._lock:
             return list(self.config.keys())
     
+    @eidosian()
     def get_section(self, section: str) -> Dict[str, Any]:
         """
         Get all settings in a section.
@@ -317,6 +323,7 @@ class ConfigManager:
 _config_instance: Optional[ConfigManager] = None
 _config_lock = threading.Lock()
 
+@eidosian()
 def get_config() -> ConfigManager:
     """
     Get the global configuration manager instance with zero redundant initialization.

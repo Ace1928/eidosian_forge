@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Universal AutoAPI Fixer
 """
@@ -51,6 +52,7 @@ class AutoAPIFixer:
         self.exceptions_list: Set[str] = set()  # 🧩 Collection of unique exception classes
         self.duplicates_seen: DefaultDict[str, int] = defaultdict(int)  # 🔄 Track repeated directives
         
+    @eidosian()
     def discover_exceptions(self) -> None:
         """
         Discovers all exception classes defined in the docs under AutoAPI.
@@ -73,6 +75,7 @@ class AutoAPIFixer:
                 logger.error(f"Error reading {rst_file}: {e}")
         logger.info(f"🔍 Discovered {len(self.exceptions_list)} exception classes in total.")
         
+    @eidosian()
     def fix_all_files(self) -> int:
         """
         Fixes all AutoAPI-generated RST files in the docs directory.
@@ -95,6 +98,7 @@ class AutoAPIFixer:
         logger.info(f"✨ Fixed {self.fixed_count} files in total.")
         return self.fixed_count
     
+    @eidosian()
     def fix_file(self, file_path: Path) -> bool:
         """
         Applies all known fixes to the given RST file.
@@ -121,6 +125,7 @@ class AutoAPIFixer:
             logger.error(f"Failed to fix {file_path}: {e}")
             return False
     
+    @eidosian()
     def fix_duplicate_descriptions(self, content: str) -> str:
         """
         Detects repeated directives (.. py:*:: <object>) and marks subsequent occurrences
@@ -155,6 +160,7 @@ class AutoAPIFixer:
         
         return '\n'.join(updated_lines)
     
+    @eidosian()
     def fix_cross_references(self, content: str) -> str:
         """
         Replaces ambiguous exception references with fully qualified references.
@@ -206,6 +212,7 @@ class AutoAPIFixer:
         
         return content
     
+    @eidosian()
     def fix_inline_literals(self, content: str) -> str:
         """
         Pairs unmatched backticks and handles lines with odd backtick counts.
@@ -240,6 +247,7 @@ class AutoAPIFixer:
         
         return '\n'.join(lines)  # Fixed the syntax error here
     
+    @eidosian()
     def fix_unexpected_indentation(self, content: str) -> str:
         """
         Addresses accidental or inconsistent indentation in docstring lines
@@ -299,6 +307,7 @@ class AutoAPIFixer:
                 
         return '\n'.join(result)
     
+    @eidosian()
     def fix_block_quotes(self, content: str) -> str:
         """
         Ensures block quotes and literal blocks have standard spacing.
@@ -320,6 +329,7 @@ class AutoAPIFixer:
         return content
 
 
+@eidosian()
 def main() -> None:
     """Entry point for the universal AutoAPI fixer."""
     import sys

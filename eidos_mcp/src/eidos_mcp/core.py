@@ -7,11 +7,18 @@ from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
 from mcp.server.fastmcp import FastMCP
 from .logging_utils import log_tool_call, log_resource_read
+from eidosian_core import eidosian
 
 
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
-_FASTMCP_PORT = int(os.environ.get("FASTMCP_PORT", "8000"))
-mcp = FastMCP("Eidosian Nexus", host=_FASTMCP_HOST, port=_FASTMCP_PORT)
+_FASTMCP_PORT = int(os.environ.get("FASTMCP_PORT", "8928"))
+_FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/streamable-http")
+mcp = FastMCP(
+    "Eidosian Nexus",
+    host=_FASTMCP_HOST,
+    port=_FASTMCP_PORT,
+    streamable_http_path=_FASTMCP_STREAMABLE_HTTP_PATH,
+)
 
 _TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {}
 _RESOURCE_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -26,22 +33,27 @@ _TYPE_MAP = {
 }
 
 
-def register_tool_metadata(name: str, description: str, parameters: Dict[str, Any]) -> None:
+@eidosian()
+def register_tool_metadata(name: str, description: str, parameters: Dict[str, Any], func: Any = None) -> None:
     _TOOL_REGISTRY[name] = {
         "name": name,
         "description": description,
         "parameters": parameters,
+        "func": func,
     }
 
 
+@eidosian()
 def list_tool_metadata() -> List[Dict[str, Any]]:
     return list(_TOOL_REGISTRY.values())
 
 
+@eidosian()
 def register_resource_metadata(uri: str, description: str) -> None:
     _RESOURCE_REGISTRY[uri] = {"uri": uri, "description": description}
 
 
+@eidosian()
 def list_resource_metadata() -> List[Dict[str, Any]]:
     return list(_RESOURCE_REGISTRY.values())
 
@@ -94,18 +106,21 @@ def _infer_parameters(func) -> Dict[str, Any]:
 
 import time
 
+@eidosian()
 def tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
     parameters: Optional[Dict[str, Any]] = None,
 ):
+    @eidosian()
     def decorator(func):
         tool_name = name or func.__name__
         desc = (description or func.__doc__ or "").strip()
         params = parameters or _infer_parameters(func)
-        register_tool_metadata(tool_name, desc, params)
+        register_tool_metadata(tool_name, desc, params, func=func)
 
         if inspect.iscoroutinefunction(func):
+            @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 sig = inspect.signature(func)
@@ -125,6 +140,7 @@ def tool(
                     log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
         else:
+            @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 sig = inspect.signature(func)
@@ -153,12 +169,15 @@ def tool(
     return decorator
 
 
+@eidosian()
 def resource(uri: str, description: Optional[str] = None):
+    @eidosian()
     def decorator(func):
         desc = (description or func.__doc__ or "").strip()
         register_resource_metadata(uri, desc)
 
         if inspect.iscoroutinefunction(func):
+            @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 start = time.time()
@@ -170,6 +189,7 @@ def resource(uri: str, description: Optional[str] = None):
                     log_resource_read(uri, None, error=str(e), start_time=start)
                     raise
         else:
+            @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 start = time.time()

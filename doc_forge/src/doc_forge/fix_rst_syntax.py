@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian RST Syntax Perfector
 """
@@ -51,6 +52,7 @@ class RstSyntaxPerfector:
             "malformed_directive": re.compile(r'(\.\.\s+[a-z]+::.*?)(?:\n)(?:\S)'),
         }
     
+    @eidosian()
     def fix_inline_text_issues(self, target_path: Optional[Path] = None) -> int:
         """
         Fix inline interpreted text syntax issues in RST files.
@@ -182,6 +184,7 @@ class RstSyntaxPerfector:
         pattern = self._get_syntax_pattern("triple_backtick")
         
         # Function to process each match and convert to RST format
+        @eidosian()
         def replace_triple_backticks(match):
             code_content = match.group(1).strip()
             self.issue_tracker["triple_backtick_blocks"] += 1
@@ -203,6 +206,7 @@ class RstSyntaxPerfector:
         # First, fix general indentation issues
         pattern = self._get_syntax_pattern("indentation_issue")
         
+        @eidosian()
         def fix_indent(match):
             self.issue_tracker["indentation"] += 1
             return f"{match.group(1)}    {match.group(2).lstrip()}"
@@ -256,6 +260,7 @@ class RstSyntaxPerfector:
         """
         pattern = self._get_syntax_pattern("malformed_directive")
         
+        @eidosian()
         def fix_directive(match):
             self.issue_tracker["directive_spacing"] += 1
             return f"{match.group(1)}\n\n"
@@ -270,6 +275,7 @@ class RstSyntaxPerfector:
         # Fix 'Bases: :py:obj:exception.Exception`' pattern
         base_pattern = r'(Bases: :py:obj:`[^`]+)(?!\`)'
         
+        @eidosian()
         def fix_base_reference(match):
             self.issue_tracker["inheritance_references"] += 1
             return f"{match.group(1)}`"
@@ -284,6 +290,7 @@ class RstSyntaxPerfector:
         # Fix double backtick code that should be single
         double_pattern = self._get_syntax_pattern("double_backtick_code")
         
+        @eidosian()
         def fix_double_backticks(match):
             code = match.group(1)
             # Only fix if it doesn't contain any backticks already
@@ -299,6 +306,7 @@ class RstSyntaxPerfector:
         
         return content
 
+@eidosian()
 def main():
     """Main entry point with command-line interface magic."""
     # Display our beautiful ASCII art banner - because docs deserve style!

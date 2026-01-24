@@ -5,11 +5,13 @@ import shutil
 import argparse
 from pathlib import Path
 from typing import Tuple, List, Dict, Set
+from eidosian_core import eidosian
 
 # Configure logging for self-awareness
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+@eidosian()
 def collect_documents(
     docs_dir: Path,
     handle_auto: bool,
@@ -34,6 +36,7 @@ def collect_documents(
             
     return matched_files
 
+@eidosian()
 def is_recognized_doc(path_item: Path, handle_auto: bool) -> bool:
     """
     Checks if a file is a recognized markdown document.
@@ -54,6 +57,7 @@ def is_recognized_doc(path_item: Path, handle_auto: bool) -> bool:
         
     return True
 
+@eidosian()
 def ensure_directories(docs_dir: Path, universal_dirs: List[str]) -> None:
     """
     Ensures that the required directories exist.
@@ -70,6 +74,7 @@ def ensure_directories(docs_dir: Path, universal_dirs: List[str]) -> None:
         except Exception as e:
             logger.error(f"Failed to create directory {full_dir}: {e}")
 
+@eidosian()
 def copy_file(src_path: Path, dest_path: Path, skip_existing: bool) -> bool:
     """
     Copies a file from source to destination.
@@ -95,6 +100,7 @@ def copy_file(src_path: Path, dest_path: Path, skip_existing: bool) -> bool:
         logger.error(f"Failed to copy {src_path.name} to {dest_path.parent}: {e}")
         return False
 
+@eidosian()
 def ensure_reference_files(docs_dir: Path, reference_files: Dict[str, str]) -> Set[str]:
     """
     Ensures reference files exist, creating empty ones if needed.
@@ -129,6 +135,7 @@ def ensure_reference_files(docs_dir: Path, reference_files: Dict[str, str]) -> S
     
     return created_files
 
+@eidosian()
 def migrate_docs(
     docs_dir: Path = Path("docs"),
     handle_auto: bool = False,

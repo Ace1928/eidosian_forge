@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["metadata_forge"]
+packages = ["src/metadata_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

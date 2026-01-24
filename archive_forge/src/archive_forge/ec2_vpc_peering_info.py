@@ -46,7 +46,7 @@ EXAMPLES = r"""
   community.aws.ec2_vpc_peering_info:
     peer_connection_ids:
       - pcx-12345678
-      - pcx-87654321
+      - pcx-89284321
     region: ap-southeast-2
   register: all_vpc_peers
 

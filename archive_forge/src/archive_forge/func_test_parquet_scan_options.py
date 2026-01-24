@@ -25,7 +25,7 @@ def test_parquet_scan_options():
     opts2 = ds.ParquetFragmentScanOptions(buffer_size=4096)
     opts3 = ds.ParquetFragmentScanOptions(buffer_size=2 ** 13, use_buffered_stream=True)
     opts4 = ds.ParquetFragmentScanOptions(buffer_size=2 ** 13, pre_buffer=False)
-    opts5 = ds.ParquetFragmentScanOptions(thrift_string_size_limit=123456, thrift_container_size_limit=987654)
+    opts5 = ds.ParquetFragmentScanOptions(thrift_string_size_limit=123456, thrift_container_size_limit=989284)
     opts6 = ds.ParquetFragmentScanOptions(page_checksum_verification=True)
     cache_opts = pa.CacheOptions(hole_size_limit=2 ** 10, range_size_limit=8 * 2 ** 10, lazy=True)
     opts7 = ds.ParquetFragmentScanOptions(pre_buffer=True, cache_options=cache_opts)
@@ -45,7 +45,7 @@ def test_parquet_scan_options():
     assert opts4.buffer_size == 2 ** 13
     assert opts4.pre_buffer is False
     assert opts5.thrift_string_size_limit == 123456
-    assert opts5.thrift_container_size_limit == 987654
+    assert opts5.thrift_container_size_limit == 989284
     assert opts6.page_checksum_verification is True
     assert opts7.pre_buffer is True
     assert opts7.cache_options == cache_opts

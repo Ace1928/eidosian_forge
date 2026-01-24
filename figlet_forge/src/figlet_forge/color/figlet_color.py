@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Color support for Figlet Forge.
 
@@ -11,6 +12,9 @@ from typing import Optional, Tuple
 
 from ..core.exceptions import InvalidColor
 from ..version import COLOR_CODES, RESET_COLORS
+
+# Alias for backward compatibility
+COLORS = COLOR_CODES
 
 
 class ColorMode:
@@ -75,6 +79,7 @@ class ColorScheme:
         else:
             return ColorMode.NONE
 
+    @eidosian()
     def apply(self, text: str) -> str:
         """
         Apply the color scheme to text.
@@ -109,6 +114,7 @@ class ColorScheme:
         return cls(fg, bg, name=color_spec)
 
 
+@eidosian()
 def parse_color(color_spec: str) -> Tuple[str, str]:
     """
     Parse a color specification string into foreground and background ANSI codes.
@@ -158,6 +164,7 @@ def parse_color(color_spec: str) -> Tuple[str, str]:
     return fg_code, bg_code
 
 
+@eidosian()
 def color_to_ansi(color_part: str, is_background: bool = False) -> str:
     """
     Convert a color name or RGB value to an ANSI escape code.
@@ -237,6 +244,7 @@ def _process_color_part(color_part: str, is_background: bool = False) -> str:
     )
 
 
+@eidosian()
 def colored_format(
     text: str, fg_color: Optional[str] = None, bg_color: Optional[str] = None
 ) -> str:
@@ -277,6 +285,7 @@ def colored_format(
         return text
 
 
+@eidosian()
 def get_coloring_functions():
     """
     Get available coloring functions.

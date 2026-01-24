@@ -4,6 +4,7 @@ import json
 
 from ..core import tool
 from ..forge_loader import ensure_forge_import
+from eidosian_core import eidosian
 
 ensure_forge_import("diagnostics_forge")
 
@@ -21,6 +22,7 @@ diag = DiagnosticsForge(service_name="eidos_mcp") if DiagnosticsForge else None
     description="Return basic diagnostics status.",
     parameters={"type": "object", "properties": {}},
 )
+@eidosian()
 def diagnostics_ping() -> str:
     """Return basic diagnostics status."""
     if not diag:
@@ -37,6 +39,7 @@ def diagnostics_ping() -> str:
         "properties": {"name": {"type": "string"}},
     },
 )
+@eidosian()
 def diagnostics_metrics(name: str | None = None) -> str:
     """Return diagnostics metrics summary."""
     if not diag:

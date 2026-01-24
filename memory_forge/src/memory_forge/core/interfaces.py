@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Memory Forge - The Persistence Layer of Eidos.
 """
@@ -24,6 +25,7 @@ class MemoryItem:
     metadata: Dict[str, Any] = field(default_factory=dict)
     importance: float = 1.0
     
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,

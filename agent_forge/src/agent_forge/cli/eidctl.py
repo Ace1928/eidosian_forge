@@ -9,6 +9,7 @@ Usage examples:
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 import argparse, json, dataclasses as dc
 
 # add repo root to sys.path so local 'core' can be imported without PYTHONPATH
@@ -33,6 +34,7 @@ from agent_forge.core.state import (  # type: ignore
 )
 from agent_forge.core.artifacts import run_dir
 
+@eidosian()
 def main(argv: list[str] | None = None) -> int:
     try:
         ap = argparse.ArgumentParser(

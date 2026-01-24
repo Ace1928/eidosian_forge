@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Memory system for Eidosian Forge.
 
@@ -73,6 +74,7 @@ class MemorySystem:
                 f"Git integration disabled or unavailable, using directory-based storage at {memory_path}"
             )
 
+    @eidosian()
     def save_thought(self, thought: Thought) -> str:
         """
         Save a thought to memory.
@@ -101,6 +103,7 @@ class MemorySystem:
     # Add an alias for backward compatibility
     add_thought = save_thought
 
+    @eidosian()
     def save_memory(self, memory: Memory) -> str:
         """
         Save a memory.
@@ -127,6 +130,7 @@ class MemorySystem:
         logger.debug(f"Saved memory: {memory_id}")
         return memory_id
 
+    @eidosian()
     def save_task(self, task: Task) -> str:
         """
         Save a task.
@@ -151,6 +155,7 @@ class MemorySystem:
         logger.debug(f"Saved task: {task.task_id}")
         return task.task_id
 
+    @eidosian()
     def get_thought(self, thought_id: str) -> Optional[Thought]:
         """
         Retrieve a thought by ID.
@@ -192,6 +197,7 @@ class MemorySystem:
 
         return None
 
+    @eidosian()
     def get_recent_thoughts(
         self, n: int = 10, thought_type: Optional[str] = None
     ) -> List[Thought]:
@@ -237,6 +243,7 @@ class MemorySystem:
 
         return thoughts
 
+    @eidosian()
     def get_task(self, task_id: str) -> Optional[Task]:
         """
         Retrieve a task by ID.
@@ -272,6 +279,7 @@ class MemorySystem:
 
         return None
 
+    @eidosian()
     def search_thoughts(self, query: str, max_results: int = 10) -> List[Thought]:
         """
         Search for thoughts containing the query string.
@@ -312,6 +320,7 @@ class MemorySystem:
     # Alias for search_memories method expected by some components
     search_memories = search_thoughts
 
+    @eidosian()
     def get_memories(self, query: str, max_results: int = 10) -> List[Memory]:
         """
         Retrieve memories that match a query.
@@ -327,6 +336,7 @@ class MemorySystem:
         # This is a fallback for components that expect a get_memories method
         return []  # In future versions, implement actual memory search
 
+    @eidosian()
     def commit_changes(self, message: str) -> bool:
         """
         Manually commit changes to Git repository.
@@ -343,6 +353,7 @@ class MemorySystem:
 
         return self.git.commit(message)
 
+    @eidosian()
     def close(self) -> None:
         """Clean up resources."""
         if self.git_enabled and hasattr(self, "git"):

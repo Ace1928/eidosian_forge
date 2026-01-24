@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Prompt templates for the Eidosian Forge agent system.
 
@@ -513,6 +514,7 @@ Returns:
 # ---------------------- TEMPLATE REGISTRY FUNCTIONS ---------------------- #
 
 
+@eidosian()
 def register_template_metadata() -> None:
     """
     Register metadata for all templates in the module.
@@ -672,6 +674,7 @@ def _register_all_templates() -> None:
         }
 
 
+@eidosian()
 def format_template_with_validation(
     template_name: str, parameters: Dict[str, Union[str, int, float, bool]]
 ) -> str:
@@ -740,6 +743,7 @@ def format_template_with_validation(
         )
 
 
+@eidosian()
 def get_template_parameters(template_name: str) -> List[TemplateParameter]:
     """
     Get the parameters required by a specific template.
@@ -759,6 +763,7 @@ def get_template_parameters(template_name: str) -> List[TemplateParameter]:
     return TEMPLATE_REGISTRY[template_name]["parameters"]
 
 
+@eidosian()
 def get_templates_by_category(category: Union[str, TemplateCategory]) -> List[str]:
     """
     Get all template names within a specific category.
@@ -782,6 +787,7 @@ def get_templates_by_category(category: Union[str, TemplateCategory]) -> List[st
     ]
 
 
+@eidosian()
 def compose_templates(
     templates: List[str],
     section_headers: Optional[List[str]] = None,
@@ -855,6 +861,7 @@ def compose_templates(
     return composite, remaining_parameters
 
 
+@eidosian()
 @lru_cache(maxsize=128)
 def extract_template_parameters(template: str) -> Set[str]:
     """
@@ -873,6 +880,7 @@ def extract_template_parameters(template: str) -> Set[str]:
     return set(re.findall(r"{([^{}]*)}", template))
 
 
+@eidosian()
 def validate_template_format(template: str) -> bool:
     """
     Validate that a template string has proper formatting.
@@ -920,6 +928,7 @@ def validate_template_format(template: str) -> bool:
     return True
 
 
+@eidosian()
 def list_all_templates() -> Dict[str, List[str]]:
     """
     List all available templates grouped by category.
@@ -938,6 +947,7 @@ def list_all_templates() -> Dict[str, List[str]]:
     return result
 
 
+@eidosian()
 def create_template_catalog() -> str:
     """
     Generate a markdown catalog of all available templates.
@@ -982,6 +992,7 @@ def create_template_catalog() -> str:
     return "\n".join(lines)
 
 
+@eidosian()
 def format_default_system_prompt(
     custom_instructions: str = "",
     agent_name: str = "Eidos",

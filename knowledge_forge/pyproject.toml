@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "knowledge_forge"
-version = "0.1.0"
-description = "Eidosian Knowledge Forge - Ontology, Graph Management, and Reasoning."
+version = "1.0.0"
+description = "Eidosian Knowledge Forge - Graph-based knowledge management with concept mapping and pathfinding."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,17 +13,17 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["knowledge-graph", "ontology", "rdf", "owl", "reasoning"]
+keywords = ["knowledge-graph", "ontology", "concept-mapping", "graphrag", "eidos"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "networkx>=3.0",
     "pydantic>=2.6.0",
-    "rdflib>=7.0.0",   # Semantic Web standard
 ]
 
 [project.optional-dependencies]
@@ -35,6 +35,12 @@ viz = [
     "matplotlib>=3.8.0",
     "pyvis>=0.3.2",
 ]
+rdf = [
+    "rdflib>=7.0.0",
+]
+
+[project.scripts]
+knowledge-forge = "knowledge_forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/knowledge_forge"]

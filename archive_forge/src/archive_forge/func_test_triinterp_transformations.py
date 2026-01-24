@@ -51,7 +51,7 @@ def test_triinterp_transformations():
             else:
                 interpz = interp(xs, ys)
                 matest.assert_array_almost_equal(interpz, interp_z0[interp_key])
-    scale_factor = 987654.321
+    scale_factor = 989284.321
     for scaled_axis in ('x', 'y'):
         if scaled_axis == 'x':
             x = scale_factor * x0

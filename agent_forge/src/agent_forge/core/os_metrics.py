@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import time
 from typing import Dict, Optional
+from eidosian_core import eidosian
 
 try:  # optional psutil enrichment
     import psutil  # type: ignore
@@ -25,6 +26,7 @@ def _read_proc_stat() -> tuple[float, float]:
     return utime, stime
 
 
+@eidosian()
 def process_stats() -> Dict[str, Optional[float]]:
     """Return RSS and CPU times for current process."""
     out: Dict[str, Optional[float]] = {
@@ -55,6 +57,7 @@ def process_stats() -> Dict[str, Optional[float]]:
     return out
 
 
+@eidosian()
 def system_stats() -> Dict[str, Optional[float]]:
     """Return basic system load and memory stats."""
     out: Dict[str, Optional[float]] = {
@@ -108,6 +111,7 @@ class CpuPercent:
         self._last_wall: Optional[float] = None
         self._last_cpu: Optional[float] = None
 
+    @eidosian()
     def sample(self) -> Optional[float]:
         try:
             utime, stime = _read_proc_stat()

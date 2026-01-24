@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 
 def test_kde_1d():
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     xn = np.random.randn(n_basesample)
     xnmean = xn.mean()
@@ -40,7 +40,7 @@ def test_kde_1d():
 
 def test_kde_1d_weighted():
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     xn = np.random.randn(n_basesample)
     wn = np.random.rand(n_basesample)
@@ -73,7 +73,7 @@ def test_kde_1d_weighted():
 @pytest.mark.slow
 def test_kde_2d():
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
 
     mean = np.array([1.0, 3.0])
@@ -113,7 +113,7 @@ def test_kde_2d():
 @pytest.mark.slow
 def test_kde_2d_weighted():
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
 
     mean = np.array([1.0, 3.0])
@@ -156,7 +156,7 @@ def test_kde_bandwidth_method():
         """Same as default, just check that it works."""
         return np.power(kde_obj.n, -1./(kde_obj.d+4))
 
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 50
     xn = np.random.randn(n_basesample)
 
@@ -182,7 +182,7 @@ def test_kde_bandwidth_method_weighted():
         """Same as default, just check that it works."""
         return np.power(kde_obj.neff, -1./(kde_obj.d+4))
 
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 50
     xn = np.random.randn(n_basesample)
 
@@ -558,7 +558,7 @@ def test_seed():
             rng = np.random.default_rng(1234)
             gkde_trail.resample(n_sample, seed=rng)
 
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     wn = np.random.rand(n_basesample)
     # Test 1D case

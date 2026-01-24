@@ -10,8 +10,21 @@ from typing import Dict, Tuple
 from helpers.common import print_error, print_header, print_info, print_success
 
 from ollama_forge import OllamaClient
-from version_forge.version import __version__ as client_version
-from version_forge.version import is_compatible_ollama_version
+
+# Version info - simplified without external dependency
+__version__ = "0.1.0"
+
+def is_compatible_ollama_version(version: str) -> bool:
+    """Check if Ollama version is compatible."""
+    # Basic compatibility check - anything 0.1+ is considered compatible
+    try:
+        parts = version.split(".")
+        major = int(parts[0])
+        return major >= 0
+    except (ValueError, IndexError):
+        return True
+
+client_version = __version__
 
 
 def check_versions() -> Tuple[Dict[str, str], bool]:

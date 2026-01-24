@@ -5,6 +5,7 @@ import os
 from typing import Dict, Any
 
 from ..core import tool
+from eidosian_core import eidosian
 
 
 @tool(
@@ -16,6 +17,7 @@ from ..core import tool
         "required": [],
     },
 )
+@eidosian()
 def auth_whoami() -> str:
     """
     Returns the current authentication status.

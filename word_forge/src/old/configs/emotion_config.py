@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Emotional Configuration module for Word Forge.
 
@@ -201,6 +202,7 @@ class EmotionConfig:
     # Validation Methods
     # ==========================================
 
+    @eidosian()
     def is_valid_valence(self, value: float) -> bool:
         """
         Check if a valence value is within the configured range.
@@ -224,6 +226,7 @@ class EmotionConfig:
         min_val, max_val = self.valence_range
         return min_val <= value <= max_val
 
+    @eidosian()
     def is_valid_arousal(self, value: float) -> bool:
         """
         Check if an arousal value is within the configured range.
@@ -247,6 +250,7 @@ class EmotionConfig:
         min_val, max_val = self.arousal_range
         return min_val <= value <= max_val
 
+    @eidosian()
     def is_valid_confidence(self, value: float) -> bool:
         """
         Check if a confidence value is within the configured range.

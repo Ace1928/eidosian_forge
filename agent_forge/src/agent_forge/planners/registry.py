@@ -1,7 +1,9 @@
 from __future__ import annotations
 from agent_forge.core.contracts import Goal
+from eidosian_core import eidosian
 
 
+@eidosian()
 def choose(goal: Goal) -> tuple[str, dict]:
     title = goal.title.lower()
     if "lint" in title:

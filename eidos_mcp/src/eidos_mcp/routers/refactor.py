@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..core import tool
 from ..forge_loader import ensure_forge_import
+from eidosian_core import eidosian
 
 ensure_forge_import("refactor_forge")
 
@@ -23,6 +24,7 @@ except Exception:  # pragma: no cover - optional dependency
         "required": ["path"],
     },
 )
+@eidosian()
 def refactor_analyze(path: str) -> str:
     """Analyze a Python file for structural boundaries and dependencies."""
     if not CodeAnalyzer:

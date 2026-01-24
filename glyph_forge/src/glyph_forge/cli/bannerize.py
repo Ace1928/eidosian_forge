@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 ⚡ GLYPH FORGE - EIDOSIAN BANNERIZER ⚡
@@ -62,6 +63,7 @@ class Style:
         return detect_text_color_support() > 0
 
 
+@eidosian()
 def setup_logging(debug: bool = False) -> None:
     """Configure optimal logging with zero waste."""
     level = logging.DEBUG if debug else logging.INFO
@@ -93,6 +95,7 @@ def setup_logging(debug: bool = False) -> None:
     logging.debug("Logging initialized with level: %s", "DEBUG" if debug else "INFO")
 
 
+@eidosian()
 def print_header() -> None:
     """Print stylish Glyph Forge header with adaptive color support."""
     term_width, _ = get_terminal_size()
@@ -109,6 +112,7 @@ def print_header() -> None:
         print("=" * term_width + "\n")
 
 
+@eidosian()
 def measure_performance(func):
     """
     Decorator for surgical performance measurement with minimal overhead.
@@ -116,6 +120,7 @@ def measure_performance(func):
     Times function execution with microsecond precision and logs the duration
     at different granularities based on execution time.
     """
+    @eidosian()
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Record start time with maximum precision
@@ -156,6 +161,7 @@ def measure_performance(func):
     return wrapper
 
 
+@eidosian()
 def preview_style(api, text: str, style: str) -> None:
     """
     Generate and display a pixel-perfect style preview.
@@ -192,6 +198,7 @@ def preview_style(api, text: str, style: str) -> None:
     print(separator + "\n")
 
 
+@eidosian()
 def list_items(items: List[str], title: str, columns: int = 4) -> None:
     """
     Display items in multi-column format with optimal terminal utilization.
@@ -236,6 +243,7 @@ def list_items(items: List[str], title: str, columns: int = 4) -> None:
     print("\n")
 
 
+@eidosian()
 @measure_performance
 def generate_banner(api, args) -> None:
     """
@@ -289,6 +297,7 @@ def generate_banner(api, args) -> None:
         print(banner.rstrip('\n'))
 
 
+@eidosian()
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command line arguments with quantum precision.
@@ -411,12 +420,14 @@ Examples:
     return args
 
 
+@eidosian()
 def signal_handler(sig, frame):
     """Handle interrupt signals gracefully."""
     print("\nOperation cancelled by user")
     sys.exit(130)  # 128 + SIGINT value (2)
 
 
+@eidosian()
 def show_version():
     """Display version information with precision."""
     try:
@@ -444,6 +455,7 @@ def show_version():
     print("⚡ https://github.com/your-username/glyph_forge ⚡\n")
 
 
+@eidosian()
 def create_banner(text: str, font: str = "slant", style: str = "minimal") -> str:
     """
     Create a banner with the given text, font and style.
@@ -460,6 +472,7 @@ def create_banner(text: str, font: str = "slant", style: str = "minimal") -> str
     return api.generate_banner(text=text, font=font, style=style)
 
 
+@eidosian()
 def main() -> int:
     """
     Main entry point with hyper-optimized execution flow.
@@ -529,6 +542,7 @@ def main() -> int:
 app = typer.Typer(help="Generate Glyph banners")
 
 
+@eidosian()
 @app.command()
 def cli(
     text: str = typer.Argument(None, help="Text to transform"),

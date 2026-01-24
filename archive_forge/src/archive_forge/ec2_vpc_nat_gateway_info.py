@@ -46,7 +46,7 @@ EXAMPLES = r"""
   amazon.aws.ec2_vpc_nat_gateway_info:
     nat_gateway_ids:
       - nat-1234567891234567
-      - nat-7654321987654321
+      - nat-7654321989284321
     region: ap-southeast-2
   register: specific_ngws
 

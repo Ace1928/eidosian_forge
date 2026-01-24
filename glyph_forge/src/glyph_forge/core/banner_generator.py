@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Banner Generator ⚡
 
@@ -186,6 +187,7 @@ class BannerGenerator:
         except (UnicodeEncodeError, UnicodeDecodeError):
             return False
 
+    @eidosian()
     def generate(self, 
                 text: str, 
                 style: str = "minimal",
@@ -568,6 +570,7 @@ class BannerGenerator:
         colored_text = f"{colors['bold']}{colors['cyan']}{text}{colors['reset']}"
         return colored_text
         
+    @eidosian()
     def available_fonts(self) -> List[str]:
         """
         Return a list of all available FIGlet fonts.
@@ -577,6 +580,7 @@ class BannerGenerator:
         """
         return sorted(self.figlet.getFonts())
     
+    @eidosian()
     def preview_fonts(self, text: str = "Glyph Forge", limit: int = 5) -> str:
         """
         Generate previews of multiple fonts using sample text.
@@ -601,6 +605,7 @@ class BannerGenerator:
                 
         return "\n".join(previews)
     
+    @eidosian()
     def render_template(self, template: str, variables: Dict[str, str]) -> str:
         """
         Render a banner template with variable substitution.
@@ -619,6 +624,7 @@ class BannerGenerator:
                 result = result.replace(placeholder, value)
         return self.generate(result)
     
+    @eidosian()
     def get_metrics(self) -> Dict[str, int]:
         """
         Return performance metrics from the banner generator.
@@ -637,6 +643,7 @@ class BannerGenerator:
             "unique_banners": len(self.cache) if self.cache else 0
         }
     
+    @eidosian()
     def reset_metrics(self) -> None:
         """Reset all performance metrics to zero."""
         self._render_count = 0

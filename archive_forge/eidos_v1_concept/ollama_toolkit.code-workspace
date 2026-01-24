@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../scripts"
+		},
+		{
+			"path": "ollama_forge_repo"
+		},
+		{
+			"path": "doc_forge_repo"
+		},
+		{
+			"path": "repo_forge_repo"
+		}
+	],
+	"settings": {}
+}

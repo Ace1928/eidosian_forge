@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from ..core import tool
 from ..transactions import (
+from eidosian_core import eidosian
     begin_transaction,
     find_latest_transaction_for_path,
     load_transaction,
@@ -54,6 +55,7 @@ class _SimpleMemoryStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(self.data, indent=2), encoding="utf-8")
 
+    @eidosian()
     def remember(self, content: str, metadata: Optional[dict] = None) -> str:
         item_id = str(uuid.uuid4())
         embedding = self.embedder.embed_text(content)
@@ -63,6 +65,7 @@ class _SimpleMemoryStore:
         self._save()
         return item_id
 
+    @eidosian()
     def recall(self, query: str, limit: int = 5) -> List[_SimpleMemoryItem]:
         q_vec = self.embedder.embed_text(query)
         q_norm = sum(v * v for v in q_vec) ** 0.5
@@ -80,6 +83,7 @@ class _SimpleMemoryStore:
             _SimpleMemoryItem(item_id=e["id"], content=e["content"]) for _, e in scored[:limit]
         ]
 
+    @eidosian()
     def delete(self, item_id: str) -> bool:
         before = len(self.data)
         self.data = [entry for entry in self.data if entry.get("id") != item_id]
@@ -88,10 +92,12 @@ class _SimpleMemoryStore:
             return True
         return False
 
+    @eidosian()
     def clear(self) -> None:
         self.data = []
         self._save()
 
+    @eidosian()
     def count(self) -> int:
         return len(self.data)
 
@@ -121,6 +127,7 @@ else:
         "required": ["content"],
     },
 )
+@eidosian()
 def memory_add(
     content: str,
     is_fact: bool = False,
@@ -154,6 +161,7 @@ def memory_add(
         "required": ["query"],
     },
 )
+@eidosian()
 def memory_retrieve(query: str, limit: int = 5) -> str:
     """Search for relevant memories by query."""
     try:
@@ -170,6 +178,7 @@ def memory_retrieve(query: str, limit: int = 5) -> str:
     name="memory_delete",
     description="Delete a memory item by id.",
 )
+@eidosian()
 def memory_delete(item_id: str) -> str:
     """Delete a memory item by id."""
     backend = memory.episodic if hasattr(memory, "episodic") else memory
@@ -185,6 +194,7 @@ def memory_delete(item_id: str) -> str:
     name="memory_clear",
     description="Clear the episodic memory store.",
 )
+@eidosian()
 def memory_clear() -> str:
     """Clear the episodic memory store."""
     backend = memory.episodic if hasattr(memory, "episodic") else memory
@@ -203,6 +213,7 @@ def memory_clear() -> str:
     name="memory_stats",
     description="Return memory store statistics.",
 )
+@eidosian()
 def memory_stats() -> str:
     """Return memory store statistics."""
     try:
@@ -222,6 +233,7 @@ def memory_stats() -> str:
     description="Create a snapshot of the episodic memory store.",
     parameters={"type": "object", "properties": {}},
 )
+@eidosian()
 def memory_snapshot() -> str:
     """Create a snapshot of the episodic memory store."""
     txn = begin_transaction("memory_snapshot", [MEMORY_PATH])
@@ -237,6 +249,7 @@ def memory_snapshot() -> str:
         "properties": {"transaction_id": {"type": "string"}},
     },
 )
+@eidosian()
 def memory_restore(transaction_id: Optional[str] = None) -> str:
     """Restore episodic memory from a snapshot transaction."""
     txn_id = transaction_id or find_latest_transaction_for_path(MEMORY_PATH)

@@ -243,7 +243,7 @@ class IDriveBackend(duplicity.backend.Backend):
             el = self.request(
                 f"{self.cmd}{self.auth_switch} "
                 f"--create-bucket --bucket-type=D --nick-name={self.bucket} "
-                f"--os=Linux --uid=987654321 "
+                f"--os=Linux --uid=989284321 "
                 f"{self.idriveid}@{self.idriveserver}::home/"
             ).find("item")
             # prefix and suffix reverse-engineered from Common.pl!

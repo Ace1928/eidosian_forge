@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation Manifest Manager
 """
@@ -110,6 +111,7 @@ class DocManifestManager:
         }
         logger.info("📝 Initialized default manifest structure")
     
+    @eidosian()
     def save_manifest(self) -> None:
         """Save the manifest with elegant precision."""
         try:
@@ -127,6 +129,7 @@ class DocManifestManager:
         except Exception as e:
             logger.error(f"❌ Failed to save manifest: {e}")
     
+    @eidosian()
     def discover_documentation(self) -> None:
         """
         Discover all documentation sources and update the manifest.
@@ -363,6 +366,7 @@ class DocManifestManager:
                     "title": docs["title"]
                 }
     
+    @eidosian()
     def validate_documentation(self) -> Dict[str, List[str]]:
         """
         Validate documentation for completeness and consistency.
@@ -457,6 +461,7 @@ class DocManifestManager:
         
         return orphaned_docs
     
+    @eidosian()
     def update_build_info(self, status: str) -> None:
         """
         Update the build information in the manifest.
@@ -471,6 +476,7 @@ class DocManifestManager:
         }
         self.save_manifest()
     
+    @eidosian()
     def get_manifest_data(self) -> Dict[str, Any]:
         """
         Get the current manifest data.
@@ -481,6 +487,7 @@ class DocManifestManager:
         """
         return self.manifest
     
+    @eidosian()
     def generate_index(self) -> str:
         """
         Generate a documentation index based on the manifest.
@@ -510,6 +517,7 @@ class DocManifestManager:
         
         return index_content
     
+    @eidosian()
     def sync_manifest_with_filesystem(self) -> None:
         """
         Synchronize the manifest with the filesystem.
@@ -524,6 +532,7 @@ class DocManifestManager:
         # Save the manifest
         self.save_manifest()
 
+@eidosian()
 def load_doc_manifest(repo_path: Optional[Union[str, Path]]) -> Dict[str, Any]:
     """
     Load and synchronize the documentation manifest with Eidosian precision.

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Reporter - Analysis Visualization Engine 📊
 
@@ -10,6 +11,7 @@ import networkx as nx
 import textwrap
 
 
+@eidosian()
 def print_analysis_report(results: Dict[str, Any]) -> None:
     """Print a human-readable report from analysis results.
     

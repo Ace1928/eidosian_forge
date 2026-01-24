@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Style Manager ⚡
 
@@ -107,6 +108,7 @@ BORDERS = {
 }
 
 
+@eidosian()
 def apply_style(Glyph_art: str, style_name: str = "minimal", **kwargs: Any) -> str:
     """
     Apply visual styling to Glyph art text with atomic precision.
@@ -191,6 +193,7 @@ def apply_style(Glyph_art: str, style_name: str = "minimal", **kwargs: Any) -> s
     return '\n'.join(lines)
 
 
+@eidosian()
 def get_available_styles() -> Dict[str, Dict[str, Any]]:
     """
     Get all available style presets with their configurations.
@@ -205,6 +208,7 @@ def get_available_styles() -> Dict[str, Dict[str, Any]]:
     return STYLE_PRESETS.copy()
 
 
+@eidosian()
 def get_available_borders() -> List[str]:
     """
     Get list of available border styles.
@@ -215,6 +219,7 @@ def get_available_borders() -> List[str]:
     return list(BORDERS.keys()) + ["custom"]
 
 
+@eidosian()
 def create_custom_style(name: str, 
                       border: Optional[str] = None,
                       padding: Union[int, Tuple[int, int]] = 0,
@@ -250,6 +255,7 @@ def create_custom_style(name: str,
     return style
 
 
+@eidosian()
 def register_style(name: str, style_config: Dict[str, Any]) -> None:
     """
     Register a new style in the global preset collection.
@@ -262,6 +268,7 @@ def register_style(name: str, style_config: Dict[str, Any]) -> None:
     logger.debug(f"Registered new style: '{name}'")
 
 
+@eidosian()
 def register_border(name: str, border_config: Dict[str, str]) -> None:
     """
     Register a new border style in the global collection.
@@ -287,6 +294,7 @@ def register_border(name: str, border_config: Dict[str, str]) -> None:
     logger.debug(f"Registered new border style: '{name}'")
 
 
+@eidosian()
 def detect_border_style(text: str) -> Optional[str]:
     """
     Detect border style of existing Glyph art.
@@ -321,6 +329,7 @@ def detect_border_style(text: str) -> Optional[str]:
     return None
 
 
+@eidosian()
 def remove_border(text: str) -> str:
     """
     Remove border from Glyph art text.

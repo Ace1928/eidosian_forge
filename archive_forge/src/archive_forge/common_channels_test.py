@@ -653,15 +653,15 @@ def test_phase_flip_channel_invalid_probability():
 
 
 def test_phase_flip_channel_text_diagram():
-    pf = cirq.phase_flip(0.987654)
+    pf = cirq.phase_flip(0.989284)
     assert cirq.circuit_diagram_info(pf, args=round_to_6_prec) == cirq.CircuitDiagramInfo(
-        wire_symbols=('PF(0.987654)',)
+        wire_symbols=('PF(0.989284)',)
     )
     assert cirq.circuit_diagram_info(pf, args=round_to_2_prec) == cirq.CircuitDiagramInfo(
         wire_symbols=('PF(0.99)',)
     )
     assert cirq.circuit_diagram_info(pf, no_precision) == cirq.CircuitDiagramInfo(
-        wire_symbols=('PF(0.987654)',)
+        wire_symbols=('PF(0.989284)',)
     )
 
 

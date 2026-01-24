@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from eidosian_forge.doc_forge import DocForge
+from doc_forge import DocForge
 
 class TestDocForge(unittest.TestCase):
     def setUp(self):

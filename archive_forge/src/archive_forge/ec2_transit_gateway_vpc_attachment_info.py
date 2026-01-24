@@ -53,12 +53,12 @@ EXAMPLES = r"""
 # Describe all attachments attached to a transit gateway.
 - community.aws.ec2_transit_gateway_vpc_attachment_info:
     filters:
-      transit-gateway-id: tgw-0fedcba9876543210'
+      transit-gateway-id: tgw-0fedcba9892843210'
 
 # Describe all attachments in an account.
 - community.aws.ec2_transit_gateway_vpc_attachment_info:
     filters:
-      transit-gateway-id: tgw-0fedcba9876543210'
+      transit-gateway-id: tgw-0fedcba9892843210'
 """
 
 RETURN = r"""

@@ -15,7 +15,7 @@ from scipy._lib._testutils import _TestPythranFunc
 def test_mann_whitney_u_switch():
     _mwu_state._recursive = None
     _mwu_state._fmnks = -np.ones((1, 1, 1))
-    rng = np.random.default_rng(9546146887652)
+    rng = np.random.default_rng(9546146889282)
     x = rng.random(5)
     y = rng.random(501)
     stats.mannwhitneyu(x, y, method='exact')

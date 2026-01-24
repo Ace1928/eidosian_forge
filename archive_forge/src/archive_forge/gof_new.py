@@ -188,19 +188,19 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     >>> kstest(x,'norm')
     (0.44435602715924361, 0.038850142705171065)
 
-    >>> np.random.seed(987654321) # set random seed to get the same result
+    >>> np.random.seed(989284321) # set random seed to get the same result
     >>> kstest('norm','',N=100)
     (0.058352892479417884, 0.88531190944151261)
 
     is equivalent to this
 
-    >>> np.random.seed(987654321)
+    >>> np.random.seed(989284321)
     >>> kstest(stats.norm.rvs(size=100),'norm')
     (0.058352892479417884, 0.88531190944151261)
 
     Test against one-sided alternative hypothesis:
 
-    >>> np.random.seed(987654321)
+    >>> np.random.seed(989284321)
 
     Shift distribution to larger values, so that cdf_dgp(x)< norm.cdf(x):
 
@@ -225,7 +225,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     distribution, and the kstest does not reject the hypothesis that the sample
     came from the normal distribution
 
-    >>> np.random.seed(987654321)
+    >>> np.random.seed(989284321)
     >>> stats.kstest(stats.t.rvs(100,size=100),'norm')
     (0.072018929165471257, 0.67630062862479168)
 
@@ -233,7 +233,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative = 'two_sided', mode='approx',**k
     from the normal distribution, that we can reject the hypothesis that the
     sample came from the normal distribution at a alpha=10% level
 
-    >>> np.random.seed(987654321)
+    >>> np.random.seed(989284321)
     >>> stats.kstest(stats.t.rvs(3,size=100),'norm')
     (0.131016895759829, 0.058826222555312224)
     """

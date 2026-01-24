@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "memory_forge"
-version = "0.1.0"
-description = "Eidosian Memory Forge - Episodic, Semantic, and Procedural Memory Systems."
+version = "1.0.0"
+description = "Eidosian Memory Forge - Tiered memory system with auto-context and introspection."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,12 +13,13 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["memory", "vector-db", "rag", "knowledge-graph"]
+keywords = ["memory", "vector-db", "rag", "knowledge-graph", "tiered-memory", "eidos"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "chromadb>=0.4.0",
@@ -32,6 +33,9 @@ dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
 ]
+
+[project.scripts]
+memory-forge = "memory_forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/memory_forge"]

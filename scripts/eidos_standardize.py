@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Eidosian Standardization Script
@@ -120,6 +121,7 @@ def _infer_kind(path: Path) -> str:
         return "python"
     return "misc"
 
+@eidosian()
 def generate_readme(module_name: str, report: Dict[str, Any]) -> str:
     """Generate a standardized README content."""
     title = module_name.replace("_", " ").title()
@@ -148,6 +150,7 @@ def generate_readme(module_name: str, report: Dict[str, Any]) -> str:
 - Tests: `{module_name}/tests/` (if present)
 """
 
+@eidosian()
 def generate_current_state(module_name: str, report: Dict[str, Any]) -> str:
     """Generate CURRENT_STATE.md content."""
     status = "Needs standardization" if report["gaps"] else "Baseline ok"
@@ -173,6 +176,7 @@ Status: {status}
 {gaps_text}
 """
 
+@eidosian()
 def generate_goals(module_name: str, report: Dict[str, Any]) -> str:
     """Generate GOALS.md content."""
     goals = []
@@ -195,6 +199,7 @@ def generate_goals(module_name: str, report: Dict[str, Any]) -> str:
 {goals_text}
 """
 
+@eidosian()
 def generate_todo(module_name: str, report: Dict[str, Any]) -> str:
     """Generate TODO.md content."""
     tasks = []
@@ -258,6 +263,7 @@ def _write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+@eidosian()
 def process_module(module_path: Path, mode: str) -> Dict[str, Any]:
     """Check and create standard files for a module."""
     report = _build_report(module_path)
@@ -354,6 +360,7 @@ testpaths = ["tests"]
         _write_file(init_path, content)
         print("  ➕ Added src bridge package")
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(description="Eidosian standardization tool")
     parser.add_argument(

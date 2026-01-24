@@ -16,7 +16,7 @@ import numpy as np
 from statsmodels.sandbox.gam import AdditiveModel
 from statsmodels.regression.linear_model import OLS
 
-np.random.seed(8765993)
+np.random.seed(8928993)
 #seed is chosen for nice result, not randomly
 #other seeds are pretty off in the prediction
 

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Syncs context/index.json entries to the KnowledgeForge graph.
@@ -41,6 +42,7 @@ except ImportError as e:
         logger.critical(f"Critical Import Error: {e2}")
         sys.exit(1)
 
+@eidosian()
 def load_index() -> Dict[str, Any]:
     if not CONTEXT_INDEX_PATH.exists():
         logger.error(f"Context index missing at {CONTEXT_INDEX_PATH}")
@@ -51,6 +53,7 @@ def load_index() -> Dict[str, Any]:
         logger.error(f"Invalid JSON in index: {e}")
         sys.exit(1)
 
+@eidosian()
 def sync_index_to_kb():
     logger.info(f"Loading Knowledge Graph from {KB_DATA_PATH}...")
     # Ensure parent dir exists

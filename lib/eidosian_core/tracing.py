@@ -2,12 +2,9 @@
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                       EIDOSIAN TRACING SYSTEM                                  ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-
 Execution tracing with call stack tracking and detailed introspection.
 """
-
 from __future__ import annotations
-
 import inspect
 import time
 import threading
@@ -19,8 +16,6 @@ from typing import Any, Callable, Dict, List, Optional, Set
 from contextlib import contextmanager
 import traceback
 import uuid
-
-
 @dataclass
 class TraceSpan:
     """
@@ -46,7 +41,6 @@ class TraceSpan:
     
     # Children
     children: List["TraceSpan"] = field(default_factory=list)
-    
     def finish(self, result: Any = None, error: Exception = None):
         """Complete the span."""
         self.end_time = time.perf_counter()
@@ -56,7 +50,6 @@ class TraceSpan:
             self.error = f"{type(error).__name__}: {error}"
         else:
             self.result = self._safe_repr(result)
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -85,7 +78,6 @@ class TraceSpan:
             return s
         except Exception:
             return f"<{type(obj).__name__}>"
-    
     def to_string(self, indent: int = 0) -> str:
         """Human-readable string with tree structure."""
         prefix = "  " * indent
@@ -102,8 +94,6 @@ class TraceSpan:
             lines.append(child.to_string(indent + 1))
         
         return "\n".join(lines)
-
-
 class Tracer:
     """
     Execution tracer with call stack tracking.
@@ -150,7 +140,6 @@ class Tracer:
     def depth(self) -> int:
         """Current trace depth."""
         return len(self._stack)
-    
     def start_span(
         self,
         name: str,
@@ -183,7 +172,6 @@ class Tracer:
         
         self._stack.append(span)
         return span
-    
     def end_span(self, result: Any = None, error: Exception = None) -> Optional[TraceSpan]:
         """End current span."""
         if not self._stack:
@@ -219,7 +207,6 @@ class Tracer:
             except Exception:
                 safe[key] = f"<{type(value).__name__}>"
         return safe
-    
     @contextmanager
     def span(
         self,
@@ -235,18 +222,15 @@ class Tracer:
         except Exception as e:
             self.end_span(error=e)
             raise
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert all traces to dictionary."""
         return {
             "timestamp": datetime.now().isoformat(),
             "traces": [s.to_dict() for s in self.root_spans],
         }
-    
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON."""
         return json.dumps(self.to_dict(), indent=indent)
-    
     def to_string(self) -> str:
         """Human-readable trace output."""
         lines = ["Trace Report:", ""]
@@ -254,7 +238,6 @@ class Tracer:
             lines.append(span.to_string())
             lines.append("")
         return "\n".join(lines)
-    
     def save(self, path: Optional[Path] = None) -> None:
         """Save trace to file."""
         path = path or self.output_file
@@ -262,17 +245,13 @@ class Tracer:
             path = Path(path)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(self.to_json())
-    
     def clear(self) -> None:
         """Clear all traces."""
         self.root_spans.clear()
         if hasattr(self._local, "stack"):
             self._local.stack.clear()
-
-
 # Global tracer instance
 _global_tracer: Optional[Tracer] = None
-
 
 def get_tracer() -> Tracer:
     """Get or create global tracer."""
@@ -280,7 +259,6 @@ def get_tracer() -> Tracer:
     if _global_tracer is None:
         _global_tracer = Tracer()
     return _global_tracer
-
 
 @contextmanager
 def trace_context(

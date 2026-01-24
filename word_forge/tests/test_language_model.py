@@ -7,10 +7,24 @@ import importlib.util
 import pytest
 
 # Check if LLM dependencies are available
-_LLM_AVAILABLE = (
-    importlib.util.find_spec("transformers") is not None
-    and importlib.util.find_spec("torch") is not None
-)
+def _llm_available() -> bool:
+    if (
+        importlib.util.find_spec("transformers") is None
+        or importlib.util.find_spec("torch") is None
+    ):
+        return False
+    try:
+        import word_forge.parser.language_model as language_model
+    except Exception:
+        return False
+    return (
+        language_model.AutoTokenizer is not None
+        and language_model.AutoModelForCausalLM is not None
+        and language_model.torch is not None
+    )
+
+
+_LLM_AVAILABLE = _llm_available()
 
 from word_forge.parser.language_model import ModelState
 

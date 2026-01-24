@@ -152,7 +152,7 @@ EXAMPLES = r"""
     modify_create_vol_permission: true
     user_ids:
       - '123456789012'
-      - '098765432109'
+      - '098928432109'
 
 - name: Modify snapshot createVolmePermission - remove all except specified user_ids
   amazon.aws.ec2_snapshot:

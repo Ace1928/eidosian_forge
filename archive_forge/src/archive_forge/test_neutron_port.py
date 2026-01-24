@@ -678,7 +678,7 @@ class NeutronPortTest(common.HeatTestCase):
             'allowed_address_pairs': [],
             'admin_state_up': True,
             'network_id': 'net1234',
-            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec87650532',
+            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec89280532',
             'mac_address': 'fa:16:3e:75:67:60',
             'tenant_id': '58a61fc3992944ce971404a2ece6ff98',
             'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'],
@@ -703,7 +703,7 @@ class NeutronPortTest(common.HeatTestCase):
         self.assertEqual('fa:16:3e:75:67:60', port.FnGetAtt('mac_address'))
         self.assertEqual(utils.PhysName(stack.name, 'port'),
                          port.FnGetAtt('name'))
-        self.assertEqual('dc68eg2c-b60g-4b3f-bd82-67ec87650532',
+        self.assertEqual('dc68eg2c-b60g-4b3f-bd82-67ec89280532',
                          port.FnGetAtt('device_id'))
         self.assertEqual('58a61fc3992944ce971404a2ece6ff98',
                          port.FnGetAtt('tenant_id'))
@@ -733,7 +733,7 @@ class NeutronPortTest(common.HeatTestCase):
             'allowed_address_pairs': [],
             'admin_state_up': True,
             'network_id': 'net1234',
-            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec87650532',
+            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec89280532',
             'mac_address': 'fa:16:3e:75:67:60',
             'tenant_id': '58a61fc3992944ce971404a2ece6ff98',
             'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'],
@@ -775,7 +775,7 @@ class NeutronPortTest(common.HeatTestCase):
             'allowed_address_pairs': [],
             'admin_state_up': True,
             'network_id': 'net1234',
-            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec87650532',
+            'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec89280532',
             'mac_address': 'fa:16:3e:75:67:60',
             'tenant_id': '58a61fc3992944ce971404a2ece6ff98',
             'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'],

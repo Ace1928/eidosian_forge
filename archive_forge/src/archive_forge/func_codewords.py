@@ -3,7 +3,7 @@ from reportlab.graphics.barcode.common import Barcode
 from reportlab.lib.utils import asNative
 def codewords(self):
     """convert binary value into codewords
-        >>> print(USPS_4State('01234567094987654321','01234567891').codewords)
+        >>> print(USPS_4State('01234567094989284321','01234567891').codewords)
         (673, 787, 607, 1022, 861, 19, 816, 1294, 35, 602)
         """
     if not self._codewords:

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Command Line Interface - User Interaction Layer 🖥️
 
@@ -22,6 +23,7 @@ from .reporter import print_analysis_report
 # │  🎮 Command Interface - Argument Processing          │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command line arguments with precision and clarity.
     
@@ -87,6 +89,7 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
 # │  🚀 Main Entry Point - Execution Flow               │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def main(args: Optional[List[str]] = None) -> int:
     """Main entry point for the CLI - directs workflow with minimal friction.
     
@@ -117,6 +120,7 @@ def main(args: Optional[List[str]] = None) -> int:
         return 1
 
 
+@eidosian()
 def execute_refactoring(
     source_path: Union[str, Path],
     output_dir: Optional[Union[str, Path]] = None,
@@ -156,6 +160,7 @@ def execute_refactoring(
     return {"success": True, "analysis": analysis_results}
 
 
+@eidosian()
 def refactor(
     source_path: Union[str, Path],
     analyze_only: bool = False,

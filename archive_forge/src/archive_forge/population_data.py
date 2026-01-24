@@ -58,7 +58,7 @@ LANGUAGE_SPEAKING_POPULATION = {
     'ar-CY': 1267,
     'ar-DJ': 67292,
     'ar-DZ': 31799946,
-    'ar-EG': 97876560,
+    'ar-EG': 97892860,
     'ar-EH': 652271,
     'ar-ER': 297979,
     'ar-GB': 197283,

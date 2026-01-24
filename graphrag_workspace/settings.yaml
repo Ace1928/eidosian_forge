@@ -1,0 +1,64 @@
+models:
+  default_chat_model:
+    type: openai_chat
+    model: phi3:mini
+    api_base: http://localhost:11434/v1
+    api_key: ollama
+    max_tokens: 4096
+    temperature: 0
+    encoding_model: cl100k_base
+    
+  default_embedding_model:
+    type: openai_embedding
+    model: nomic-embed-text:latest
+    api_base: http://localhost:11434/v1
+    api_key: ollama
+    encoding_model: cl100k_base
+    
+storage:
+  type: file
+  base_dir: ./output
+
+input:
+  type: file
+  base_dir: ./input
+  file_pattern: ".*\\.txt"
+
+cache:
+  type: file
+  base_dir: ./cache
+
+reporting:
+  type: file
+  base_dir: ./reports
+
+chunks:
+  size: 1200
+  overlap: 100
+
+entity_extraction:
+  max_gleanings: 1
+
+summarize_descriptions:
+  max_length: 500
+
+claim_extraction:
+  enabled: false
+
+community_reports:
+  max_length: 2000
+  max_input_length: 8000
+
+local_search:
+  text_unit_prop: 0.5
+  community_prop: 0.1
+  conversation_history_max_turns: 5
+  top_k_entities: 10
+  top_k_relationships: 10
+
+global_search:
+  max_tokens: 12000
+  data_max_tokens: 12000
+  map_max_tokens: 1000
+  reduce_max_tokens: 2000
+  concurrency: 32

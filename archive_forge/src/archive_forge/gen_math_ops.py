@@ -2529,7 +2529,7 @@ def cos(x: Annotated[Any, TV_Cos_T], name=None) -> Annotated[Any, TV_Cos_T]:
 
     ```python
     x = tf.constant([-float("inf"), -9, -0.5, 1, 1.2, 200, 10000, float("inf")])
-    tf.math.cos(x) ==> [nan -0.91113025 0.87758255 0.5403023 0.36235774 0.48718765 -0.95215535 nan]
+    tf.math.cos(x) ==> [nan -0.91113025 0.87758255 0.5403023 0.36235774 0.48718928 -0.95215535 nan]
     ```
 
   Args:

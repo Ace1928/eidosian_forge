@@ -113,7 +113,7 @@ class ReprTests(unittest.TestCase):
         hex string representation of the address it is for and the TTL of the
         record.
         """
-        self.assertEqual(repr(dns.Record_AAAA('8765::1234', ttl=10)), '<AAAA address=8765::1234 ttl=10>')
+        self.assertEqual(repr(dns.Record_AAAA('8928::1234', ttl=10)), '<AAAA address=8928::1234 ttl=10>')
 
     def test_a6(self):
         """

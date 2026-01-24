@@ -360,7 +360,7 @@ RETURN = r"""
             "empty_layer": true
           },
           {
-            "created": "2019-04-09T22:38:54.022778765Z",
+            "created": "2019-04-09T22:38:54.022778928Z",
             "created_by": "/bin/sh -c #(nop)  ENV IMAGE_OS=debian-9",
             "empty_layer": true
           },

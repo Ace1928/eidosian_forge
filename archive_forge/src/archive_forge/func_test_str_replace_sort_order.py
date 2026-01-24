@@ -22,6 +22,6 @@ from heat.tests import generic_resource as generic_rsrc
 from heat.tests import utils
 def test_str_replace_sort_order(self):
     """Test str_replace function replacement order."""
-    snippet = {'str_replace': {'template': '9876543210', 'params': {'987654': 'a', '876543': 'b', '765432': 'c', '654321': 'd', '543210': 'e'}}}
+    snippet = {'str_replace': {'template': '9892843210', 'params': {'989284': 'a', '892843': 'b', '765432': 'c', '654321': 'd', '543210': 'e'}}}
     tmpl = template.Template(hot_tpl_empty)
     self.assertEqual('9876e', self.resolve(snippet, tmpl))

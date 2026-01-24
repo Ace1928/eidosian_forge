@@ -7,6 +7,7 @@ import argparse
 
 from .doc_forge import create_parser as create_doc_forge_parser
 from .doc_forge import main as doc_forge_main
+from eidosian_core import eidosian
 # Fixed import by using relative import and proper path structure
 # Importing from package root is problematic during development
 try:
@@ -24,6 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("doc_forge")
 
+@eidosian()
 def main() -> int:
     """
     Orchestrates argument parsing, sets debug flags, shows version info if requested,
@@ -59,6 +61,7 @@ def main() -> int:
             logger.debug(traceback.format_exc())
         return 1
 
+@eidosian()
 def create_main_parser() -> argparse.ArgumentParser:
     """
     Creates the main parser with subcommands for documentation and testing.

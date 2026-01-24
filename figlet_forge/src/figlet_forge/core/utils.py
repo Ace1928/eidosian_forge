@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Core utilities for Figlet Forge.
 
@@ -15,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 unicode_string = str
 
 
+@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """
     Get the terminal size in a cross-platform way.
@@ -58,6 +60,7 @@ def get_terminal_size() -> Tuple[int, int]:
     return 80, 25
 
 
+@eidosian()
 def is_redirected() -> bool:
     """
     Check if stdout is being redirected.
@@ -71,6 +74,7 @@ def is_redirected() -> bool:
         return False
 
 
+@eidosian()
 def normalize_newlines(text: str) -> str:
     """
     Normalize different newline styles to the platform's default.
@@ -94,6 +98,7 @@ def normalize_newlines(text: str) -> str:
     return normalized
 
 
+@eidosian()
 def strip_ansi_codes(text: str) -> str:
     """
     Remove ANSI escape codes from text.
@@ -109,6 +114,7 @@ def strip_ansi_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
+@eidosian()
 def get_char_width(char: str) -> int:
     """
     Get the display width of a character, accounting for wide characters.
@@ -134,6 +140,7 @@ def get_char_width(char: str) -> int:
         return 1
 
 
+@eidosian()
 def find_fonts(search_paths: Optional[List[Path]] = None) -> List[str]:
     """
     Find all available font files.
@@ -166,6 +173,7 @@ def find_fonts(search_paths: Optional[List[Path]] = None) -> List[str]:
     return sorted(list(fonts))
 
 
+@eidosian()
 def ensure_dir(directory: Union[str, Path]) -> Path:
     """
     Ensure a directory exists, creating it if necessary.
@@ -181,6 +189,7 @@ def ensure_dir(directory: Union[str, Path]) -> Path:
     return path
 
 
+@eidosian()
 def is_interactive() -> bool:
     """
     Check if running in an interactive environment.
@@ -194,6 +203,7 @@ def is_interactive() -> bool:
 # Additional utility functions to support tests
 
 
+@eidosian()
 def normalize_path(path: str) -> str:
     """
     Normalize a path for the current platform.
@@ -207,6 +217,7 @@ def normalize_path(path: str) -> str:
     return os.path.normpath(path)
 
 
+@eidosian()
 def merge_dicts(dict1: Dict[Any, Any], dict2: Dict[Any, Any]) -> Dict[Any, Any]:
     """
     Merge two dictionaries, with dict2 values taking precedence.
@@ -223,6 +234,7 @@ def merge_dicts(dict1: Dict[Any, Any], dict2: Dict[Any, Any]) -> Dict[Any, Any]:
     return result
 
 
+@eidosian()
 def safe_read_file(file_path: str) -> str:
     """
     Safely read a file with proper error handling.

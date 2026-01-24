@@ -8,7 +8,7 @@ def test_kde_bandwidth_method_weighted():
     def scotts_factor(kde_obj):
         """Same as default, just check that it works."""
         return np.power(kde_obj.neff, -1.0 / (kde_obj.d + 4))
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 50
     xn = np.random.randn(n_basesample)
     gkde = stats.gaussian_kde(xn)

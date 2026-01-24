@@ -4,6 +4,7 @@ from ..core import tool
 from ..state import audit, ROOT_DIR, FORGE_DIR
 from ..transactions import begin_transaction
 from pathlib import Path
+from eidosian_core import eidosian
 
 
 @tool(
@@ -19,6 +20,7 @@ from pathlib import Path
         "required": ["section", "task_text"],
     },
 )
+@eidosian()
 def audit_add_todo(section: str, task_text: str, task_id: str | None = None) -> str:
     """Append a TODO item to the system TODO list."""
     if not audit:
@@ -53,6 +55,7 @@ def audit_add_todo(section: str, task_text: str, task_id: str | None = None) -> 
         "required": ["path", "agent_id"],
     },
 )
+@eidosian()
 def audit_mark_reviewed(path: str, agent_id: str, scope: str = "shallow") -> str:
     """Mark a path as reviewed in the audit coverage map."""
     if not audit:

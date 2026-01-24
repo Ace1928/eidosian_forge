@@ -20,7 +20,7 @@ from statsmodels.genmod.families import family
 from statsmodels.genmod.generalized_linear_model import GLM
 
 np.seterr(all='raise')
-np.random.seed(8765993)
+np.random.seed(8928993)
 #seed is chosen for nice result, not randomly
 #other seeds are pretty off in the prediction or end in overflow
 

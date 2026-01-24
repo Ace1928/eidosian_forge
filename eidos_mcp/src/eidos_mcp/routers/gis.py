@@ -7,6 +7,7 @@ from typing import Any, Optional
 from ..core import tool
 from ..state import gis, GIS_PATH
 from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
+from eidosian_core import eidosian
 
 
 @tool(
@@ -21,6 +22,7 @@ from ..transactions import begin_transaction, find_latest_transaction_for_path, 
         "required": ["key"],
     },
 )
+@eidosian()
 def gis_get(key: str, default: Optional[str] = None) -> str:
     """Retrieve a configuration value from GIS."""
     if not gis:
@@ -41,6 +43,7 @@ def gis_get(key: str, default: Optional[str] = None) -> str:
         "required": ["key", "value"],
     },
 )
+@eidosian()
 def gis_set(key: str, value: Any) -> str:
     """Set a configuration value in GIS."""
     if not gis:
@@ -55,6 +58,7 @@ def gis_set(key: str, value: Any) -> str:
     description="Create a snapshot of the GIS persistence store.",
     parameters={"type": "object", "properties": {}},
 )
+@eidosian()
 def gis_snapshot() -> str:
     """Snapshot GIS persistence store."""
     if not gis:
@@ -72,6 +76,7 @@ def gis_snapshot() -> str:
         "properties": {"transaction_id": {"type": "string"}},
     },
 )
+@eidosian()
 def gis_restore(transaction_id: Optional[str] = None) -> str:
     """Restore GIS persistence store from a snapshot transaction."""
     if not gis:

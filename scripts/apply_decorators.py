@@ -77,6 +77,7 @@ class ApplicationState:
     consecutive_failures: int = 0
     results: List[ApplicationResult] = field(default_factory=list)
     
+    @eidosian()
     def to_dict(self):
         return {
             "total": self.total_functions,
@@ -129,6 +130,7 @@ class DecoratorApplicator:
         self.state = ApplicationState()
         self._backups: dict[Path, Path] = {}
     
+    @eidosian()
     def discover_functions(self) -> List[FunctionInfo]:
         """Discover all functions that could be decorated."""
         functions = []
@@ -177,6 +179,10 @@ class DecoratorApplicator:
                 if any(d in SKIP_DECORATORS for d in decorators):
                     continue
                 
+                # Skip property setters/deleters (e.g., @name.setter, @name.deleter)
+                if any(d.endswith('.setter') or d.endswith('.deleter') for d in decorators):
+                    continue
+                
                 # Skip Protocol stubs (ellipsis body)
                 if len(node.body) == 1 and isinstance(node.body[0], ast.Expr):
                     if isinstance(node.body[0].value, ast.Constant) and node.body[0].value.value is ...:
@@ -217,6 +223,7 @@ class DecoratorApplicator:
                         return True
         return False
     
+    @eidosian()
     def backup_file(self, file_path: Path) -> Path:
         """Create backup of a file."""
         self.backup_dir.mkdir(parents=True, exist_ok=True)
@@ -232,6 +239,7 @@ class DecoratorApplicator:
         self._backups[file_path] = backup_path
         return backup_path
     
+    @eidosian()
     def restore_file(self, file_path: Path) -> bool:
         """Restore file from backup."""
         backup_path = self._backups.get(file_path)
@@ -240,6 +248,7 @@ class DecoratorApplicator:
             return True
         return False
     
+    @eidosian()
     def apply_decorator(self, func: FunctionInfo) -> bool:
         """Apply @eidosian decorator to a single function."""
         file_path = func.file_path
@@ -279,10 +288,36 @@ class DecoratorApplicator:
             if "from eidosian_core import" in line and "eidosian" in line:
                 return lines
         
-        # Find best place to insert import
+        # Find best place to insert import (after docstrings, __future__, encoding comments)
         insert_pos = 0
+        in_docstring = False
+        docstring_char = None
+        
         for i, line in enumerate(lines):
             stripped = line.strip()
+            
+            # Track docstrings
+            if not in_docstring:
+                if stripped.startswith('"""') or stripped.startswith("'''"):
+                    docstring_char = stripped[:3]
+                    if stripped.count(docstring_char) >= 2 and len(stripped) > 6:
+                        # Single-line docstring
+                        insert_pos = i + 1
+                        continue
+                    in_docstring = True
+                    continue
+            else:
+                if docstring_char and docstring_char in stripped:
+                    in_docstring = False
+                    insert_pos = i + 1
+                continue
+            
+            # Always place after __future__ imports
+            if stripped.startswith("from __future__"):
+                insert_pos = i + 1
+                continue
+            
+            # Place after other imports, but track position
             if stripped.startswith("import ") or stripped.startswith("from "):
                 insert_pos = i + 1
             elif stripped and not stripped.startswith("#") and not stripped.startswith('"""'):
@@ -291,6 +326,7 @@ class DecoratorApplicator:
         lines.insert(insert_pos, self.EIDOSIAN_IMPORT)
         return lines
     
+    @eidosian()
     def verify(self) -> bool:
         """Run verification command."""
         if not self.verify_command:
@@ -309,6 +345,7 @@ class DecoratorApplicator:
         except Exception:
             return False
     
+    @eidosian()
     def run(self) -> ApplicationState:
         """Run the decorator application process."""
         print("╔═══════════════════════════════════════════════════════════════╗")
@@ -422,6 +459,7 @@ class DecoratorApplicator:
         return self.state
 
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(
         description="Apply @eidosian decorator to Python functions",

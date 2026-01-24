@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Simple JSON Backend for testing and portability.
 """
@@ -26,6 +27,7 @@ class JsonBackend(StorageBackend):
         with open(self.file_path, "w") as f:
             json.dump(self.data, f, indent=2)
 
+    @eidosian()
     def add(self, item: MemoryItem) -> bool:
         self.data[item.id] = item.to_dict()
         if item.embedding:
@@ -33,6 +35,7 @@ class JsonBackend(StorageBackend):
         self._save()
         return True
 
+    @eidosian()
     def get(self, item_id: str) -> Optional[MemoryItem]:
         d = self.data.get(item_id)
         if not d: return None
@@ -41,6 +44,7 @@ class JsonBackend(StorageBackend):
         # ... fill other fields ...
         return item
 
+    @eidosian()
     def search(self, query_embedding: List[float], limit: int = 10, filters: Optional[Dict] = None) -> List[MemoryItem]:
         # Naive cosine similarity
         results = []
@@ -59,6 +63,7 @@ class JsonBackend(StorageBackend):
             items.append(MemoryItem(content=d["content"], id=d["id"])) # Simplified
         return items
 
+    @eidosian()
     def delete(self, item_id: str) -> bool:
         if item_id in self.data:
             del self.data[item_id]
@@ -66,9 +71,11 @@ class JsonBackend(StorageBackend):
             return True
         return False
 
+    @eidosian()
     def count(self) -> int:
         return len(self.data)
 
+    @eidosian()
     def clear(self) -> None:
         self.data = {}
         self._save()

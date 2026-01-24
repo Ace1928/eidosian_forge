@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 File Forge - Pattern-aware filesystem intelligence.
 Provides organization optimization and content-based categorization.
@@ -18,6 +19,7 @@ class FileForge:
     def __init__(self, base_path: Optional[Path] = None):
         self.base_path = base_path or Path.cwd()
 
+    @eidosian()
     def calculate_hash(self, file_path: Path) -> str:
         """Calculate the SHA-256 hash of a file."""
         sha256_hash = hashlib.sha256()
@@ -26,6 +28,7 @@ class FileForge:
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
 
+    @eidosian()
     def find_duplicates(self, directory: Path) -> Dict[str, List[Path]]:
         """Find duplicate files in a directory based on their content hash."""
         hashes: Dict[str, List[Path]] = {}
@@ -39,6 +42,7 @@ class FileForge:
         
         return {h: paths for h, paths in hashes.items() if len(paths) > 1}
 
+    @eidosian()
     def sync_directories(self, source: Path, target: Path):
         """Mirror source directory to target (one-way sync)."""
         if not target.exists():
@@ -52,6 +56,7 @@ class FileForge:
                 if not target_item.exists() or self.calculate_hash(item) != self.calculate_hash(target_item):
                     shutil.copy2(item, target_item)
 
+    @eidosian()
     def categorize_files(self, target_dir: Path) -> Dict[str, List[str]]:
         """Categorize files in a directory by their extension."""
         categories = {}
@@ -63,6 +68,7 @@ class FileForge:
                 categories[ext].append(item.name)
         return categories
 
+    @eidosian()
     def search_content(self, pattern: str, directory: Optional[Path] = None) -> List[Path]:
         """Search for files containing a specific string pattern."""
         search_dir = directory or self.base_path
@@ -77,6 +83,7 @@ class FileForge:
                     pass
         return matches
 
+    @eidosian()
     def find_files(self, pattern: str, directory: Optional[Path] = None) -> List[Path]:
         """Search for files by filename pattern (glob)."""
         search_dir = directory or self.base_path
@@ -87,6 +94,7 @@ class FileForge:
                     matches.append(Path(root) / name)
         return matches
 
+    @eidosian()
     def ensure_structure(self, structure: Dict[str, Any], root: Optional[Path] = None):
         """Recursively ensure a directory structure exists."""
         current_root = root or self.base_path

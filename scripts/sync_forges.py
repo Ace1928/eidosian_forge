@@ -3,12 +3,14 @@ import subprocess
 import shutil
 from pathlib import Path
 import tempfile
+from eidosian_core import eidosian
 
 # Configuration
 GITHUB_USER = "Ace1928"
 FORGE_ROOT = Path("/home/lloyd/eidosian_forge")
 IGNORE_PATTERNS = shutil.ignore_patterns(".git", "__pycache__", ".venv", "venv", "*.pyc")
 
+@eidosian()
 def sync_forge(forge_name):
     repo_url = f"https://github.com/{GITHUB_USER}/{forge_name}.git"
     target_dir = FORGE_ROOT / forge_name
@@ -58,6 +60,7 @@ def sync_forge(forge_name):
             print(f"❌ Failed to copy files for {forge_name}: {e}")
             return False
 
+@eidosian()
 def main():
     # Identify forge directories
     forges = [

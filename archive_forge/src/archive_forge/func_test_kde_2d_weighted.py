@@ -5,7 +5,7 @@ import pytest
 from pytest import raises as assert_raises
 @pytest.mark.slow
 def test_kde_2d_weighted():
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     mean = np.array([1.0, 3.0])
     covariance = np.array([[1.0, 2.0], [2.0, 6.0]])

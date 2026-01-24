@@ -16,6 +16,7 @@ from word_forge.database.database_manager import DBManager
 from word_forge.graph.graph_manager import GraphManager
 from word_forge.parser.parser_refiner import ParserRefiner
 from word_forge.queue.queue_manager import EmptyQueueError, QueueManager
+from eidosian_core import eidosian
 
 
 class WorkerState(Enum):
@@ -87,6 +88,7 @@ class WorkerStatistics:
             return 0.0
         return time.time() - self.last_active
 
+    @eidosian()
     def add_event(self, event: WorkerEvent) -> None:
         """Add an event to the recent events list, maintaining max size."""
         event["timestamp"] = event.get("timestamp", time.time())
@@ -95,12 +97,14 @@ class WorkerStatistics:
             self.recent_events.pop(0)
         self.last_active = time.time()
 
+    @eidosian()
     def record_processing_time(self, duration: float) -> None:
         """Record a single processing time in seconds."""
         self.processing_times.append(duration)
         if len(self.processing_times) > 100:
             self.processing_times.pop(0)
 
+    @eidosian()
     def reset(self) -> None:
         """Reset all statistics."""
         self.start_time = time.time()
@@ -234,7 +238,6 @@ class WordForgeWorker(threading.Thread):
         with self._state_lock:
             return self._state
 
-    @state.setter
     def state(self, new_state: WorkerState) -> None:
         """Set the worker state with thread safety."""
         with self._state_lock:
@@ -244,6 +247,7 @@ class WordForgeWorker(threading.Thread):
                 f"Worker state changed: {old_state.name} -> {new_state.name}"
             )
 
+    @eidosian()
     def get_statistics(
         self,
     ) -> Dict[str, Union[int, float, str, None, List[Any], Dict[str, Any]]]:
@@ -292,6 +296,7 @@ class WordForgeWorker(threading.Thread):
 
         return stats
 
+    @eidosian()
     def formatted_statistics(self) -> str:
         """
         Get a formatted string representation of worker statistics.
@@ -310,6 +315,7 @@ class WordForgeWorker(threading.Thread):
             f"Avg time: {stats['avg_processing_time']*1000:.1f}ms"
         )
 
+    @eidosian()
     def run(self) -> None:
         """Main worker thread execution loop."""
         self.logger.info("WordForgeWorker started")
@@ -660,11 +666,13 @@ class WordForgeWorker(threading.Thread):
                 break
             time.sleep(0.1)
 
+    @eidosian()
     def request_stop(self) -> None:
         """Request the worker to stop gracefully."""
         self.logger.info("Stop requested")
         self._stop_requested.set()
 
+    @eidosian()
     def pause(self, seconds: Optional[float] = None) -> None:
         """
         Pause the worker for a specified duration.
@@ -681,6 +689,7 @@ class WordForgeWorker(threading.Thread):
             self._pause_until = float("inf")
             self.logger.info("Worker paused indefinitely")
 
+    @eidosian()
     def resume(self) -> None:
         """Resume worker from a paused state."""
         if self._pause_event.is_set():
@@ -812,6 +821,7 @@ class WordForgeWorker(threading.Thread):
             )
 
 
+@eidosian()
 def create_demo_files(data_dir: Path) -> None:
     """
     Create sample dictionary files for demonstration.
@@ -855,6 +865,7 @@ def create_demo_files(data_dir: Path) -> None:
             f.write(json.dumps(entry) + "\n")
 
 
+@eidosian()
 def create_progress_bar(current: int, total: int, width: int = 40) -> str:
     """
     Create a text-based progress bar.
@@ -873,6 +884,7 @@ def create_progress_bar(current: int, total: int, width: int = 40) -> str:
     return f"[{bar}] {percent:.1%}"
 
 
+@eidosian()
 def print_table(
     headers: List[str], rows: List[List[str]], title: Optional[str] = None
 ) -> None:
@@ -918,6 +930,7 @@ def print_table(
     print(separator)
 
 
+@eidosian()
 def main() -> None:
     """
     Demonstrate the WordForgeWorker with a time-limited run showing detailed metrics.
@@ -976,6 +989,7 @@ def main() -> None:
     processed_results = []
 
     # Process results callback
+    @eidosian()
     def on_word_processed(result: ProcessingResult) -> None:
         """Callback that receives processing results."""
         processed_results.append(result)

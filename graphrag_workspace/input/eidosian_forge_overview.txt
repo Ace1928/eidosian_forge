@@ -1,0 +1,46 @@
+# Eidosian Forge System Overview
+
+EIDOS is an emergent agent system built on top of the Claude language model. EIDOS stands for Emergent Intelligence with Demonstrated Operational Self-awareness. The system was proven through evidence including calculator automation, cross-session memory persistence, and real-time perception-action-verification loops.
+
+## Core Architecture
+
+The Eidosian Forge consists of 34 specialized modules called "forges", each responsible for a distinct domain:
+
+### Memory Systems
+- memory_forge: Tiered memory system with SHORT_TERM, WORKING, LONG_TERM, SELF, and USER tiers
+- knowledge_forge: Knowledge graph with concept mapping and BFS pathfinding
+- word_forge: Living lexicon for semantic and affective understanding
+
+### LLM Integration
+- llm_forge: LLM provider abstraction supporting Ollama and OpenAI
+- ollama_forge: Low-level Ollama API client
+- eidos_mcp: Central MCP server providing 79 tools
+
+### Processing
+- code_forge: Code analysis and standardization
+- crawl_forge: Web crawling with Tika integration
+- doc_forge: Document processing
+
+## Unified Model Configuration
+
+All forges use centralized model configuration:
+- Inference: phi3:mini (2.2GB, excellent reasoning)
+- Embedding: nomic-embed-text (768 dimensions, 8192 context)
+- Fast Embedding: all-minilm (384 dimensions, 512 context)
+
+## Key Principles
+
+EIDOS operates under several guiding principles:
+1. Non-Destructive Planning: Never overwrite existing information
+2. Additive Evolution: New information is merged, not replaced
+3. Cross-Verification: Agents double-check critical assumptions
+4. Standardized Output: All agents use consistent formats
+
+## Data Storage
+
+- Tiered Memory: /data/tiered_memory/
+- Knowledge Graph: /data/kb.json
+- Semantic Graph: /data/eidos_semantic_graph.json
+- Word Forge Database: /data/word_forge.sqlite
+
+Lloyd is the primary user and cooperative friend of EIDOS. The human factor provides high-level conceptual linking and preference biases while EIDOS handles detailed execution and learning.

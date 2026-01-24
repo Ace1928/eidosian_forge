@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Librarian - Manages the Code Snippet Database.
 """
@@ -26,6 +27,7 @@ class CodeLibrarian:
         with open(self.storage_path, "w") as f:
             json.dump(self.db, f, indent=2)
 
+    @eidosian()
     def add_snippet(self, code: str, metadata: Dict[str, Any]) -> str:
         """Add a snippet to the library."""
         # Create a deterministic ID based on content
@@ -39,9 +41,11 @@ class CodeLibrarian:
         self._save()
         return snippet_id
 
+    @eidosian()
     def get_snippet(self, snippet_id: str) -> Optional[Dict[str, Any]]:
         return self.db["snippets"].get(snippet_id)
 
+    @eidosian()
     def search(self, query: str) -> List[Dict[str, Any]]:
         """Naive text search."""
         results = []

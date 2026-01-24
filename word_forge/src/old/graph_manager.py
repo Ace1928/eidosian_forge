@@ -26,6 +26,7 @@ Key Components:
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 
 import logging
 import sqlite3
@@ -141,7 +142,6 @@ class GraphManager:
         """
         return self._dimensions
 
-    @dimensions.setter
     def dimensions(self, dims: int) -> None:
         """
         Set the number of dimensions for the graph layout.
@@ -211,6 +211,7 @@ class GraphManager:
             if conn:
                 conn.close()
 
+    @eidosian()
     def build_graph(self) -> None:
         """
         Clear existing in-memory graph and rebuild from database.
@@ -462,6 +463,7 @@ class GraphManager:
                 f"Layout function could not be determined for algorithm '{algorithm}' and dimension {self._dimensions}"
             )
 
+    @eidosian()
     def save_to_gexf(self, path: Optional[str] = None) -> None:
         """
         Save the current graph to a GEXF format file.
@@ -500,6 +502,7 @@ class GraphManager:
             error_msg = f"Failed to save graph to {gexf_path}: {e}"
             raise GraphError(error_msg, e) from e
 
+    @eidosian()
     def load_from_gexf(self, path: Optional[str] = None) -> None:
         """
         Load a graph from a GEXF format file.
@@ -589,6 +592,7 @@ class GraphManager:
             error_msg = f"Failed to load graph from {gexf_path}: {e}"
             raise GraphError(error_msg, e) from e
 
+    @eidosian()
     def update_graph(self) -> int:
         """
         Update existing graph with new words and relationships from the database.
@@ -889,6 +893,7 @@ class GraphManager:
         else:  # Fallback for unexpected position format
             return self._get_zero_position()
 
+    @eidosian()
     def ensure_sample_data(self) -> bool:
         """
         Ensure the database contains sample data if it's empty.
@@ -1087,6 +1092,7 @@ class GraphManager:
             # Ensure proper error propagation with cause parameter
             raise GraphError(f"Failed to fetch graph data: {e}", e) from e
 
+    @eidosian()
     def get_related_terms(self, term: str, rel_type: Optional[str] = None) -> List[str]:
         """
         Find terms related to the given term, optionally filtered by relationship type.
@@ -1148,6 +1154,7 @@ class GraphManager:
 
         return related_terms
 
+    @eidosian()
     def get_node_count(self) -> int:
         """
         Get the number of word nodes in the graph.
@@ -1163,6 +1170,7 @@ class GraphManager:
         """
         return self.g.number_of_nodes()
 
+    @eidosian()
     def get_edge_count(self) -> int:
         """
         Get the number of relationship edges in the graph.
@@ -1178,6 +1186,7 @@ class GraphManager:
         """
         return self.g.number_of_edges()
 
+    @eidosian()
     def get_term_by_id(self, word_id: int) -> Optional[str]:  # Ensure WordId is int
         """
         Retrieve the term associated with a given word ID.
@@ -1201,6 +1210,7 @@ class GraphManager:
             return str(term) if term is not None else None
         return None
 
+    @eidosian()
     def get_graph_info(self) -> GraphInfoDict:
         """
         Get detailed information about the graph structure.
@@ -1287,6 +1297,7 @@ class GraphManager:
             error_msg = f"Error generating graph information: {e}"
             raise GraphDataError(error_msg, e) from e
 
+    @eidosian()
     def display_graph_summary(self) -> None:
         """
         Display a summary of the graph structure to the console.
@@ -1343,6 +1354,7 @@ class GraphManager:
         except Exception as e:
             print(f"An unexpected error occurred while displaying graph summary: {e}")
 
+    @eidosian()
     def visualize(
         self,
         output_path: Optional[str] = None,
@@ -1683,6 +1695,7 @@ class GraphManager:
         # Store legend data on the network object if needed later (e.g., for custom HTML)
         # setattr(net, 'relationship_legend', relationship_legend) # Optional
 
+    @eidosian()
     def visualize_3d(self, output_path: Optional[str] = None) -> None:
         """
         Generate a 3D interactive visualization of the graph.
@@ -1738,6 +1751,7 @@ class GraphManager:
                 # Optionally recompute layout back to original dimension if needed elsewhere
                 # self._compute_layout()
 
+    @eidosian()
     def get_subgraph(self, term: str, depth: int = 1) -> nx.Graph:
         """
         Extract a subgraph centered on the given term with specified radius (depth).
@@ -1794,6 +1808,7 @@ class GraphManager:
                 f"Failed to extract subgraph for '{term}' with depth {depth}: {e}", e
             ) from e
 
+    @eidosian()
     def export_subgraph(
         self, term: str, depth: int = 1, output_path: Optional[str] = None
     ) -> str:
@@ -1849,6 +1864,7 @@ class GraphManager:
             error_msg = f"Failed to export subgraph to {export_path}: {e}"
             raise GraphError(error_msg, e) from e
 
+    @eidosian()
     def analyze_semantic_clusters(
         self,
         min_community_size: int = 3,
@@ -1916,6 +1932,7 @@ class GraphManager:
                 import community as community_louvain  # type: ignore
 
                 # Wrapper to match expected signature (graph, weight_key, resolution)
+                @eidosian()
                 def louvain_wrapper(graph, weight="weight", resolution=1.0):
                     return community_louvain.best_partition(
                         graph, weight=weight, resolution=resolution
@@ -1929,6 +1946,7 @@ class GraphManager:
                 try:
                     if hasattr(nx.algorithms.community, "louvain_communities"):
                         # Wrapper for NetworkX's function to return partition dict
+                        @eidosian()
                         def nx_louvain_wrapper(graph, weight="weight", resolution=1.0):
                             communities_list = list(
                                 nx.algorithms.community.louvain_communities(
@@ -2100,6 +2118,7 @@ class GraphManager:
             logging.error(error_msg, exc_info=True)
             raise GraphError(error_msg, e) from e
 
+    @eidosian()
     def get_relationships_by_dimension(
         self,
         dimension: str = "lexical",
@@ -2196,6 +2215,7 @@ class GraphManager:
 
         return results
 
+    @eidosian()
     def get_emotional_subgraph(
         self,
         term: str,
@@ -2381,6 +2401,7 @@ class GraphManager:
 
         return emotional_subgraph
 
+    @eidosian()
     def analyze_multidimensional_relationships(self) -> Dict[str, Any]:
         """
         Analyze relationships across different dimensions with emotional intelligence.
@@ -2646,6 +2667,7 @@ class GraphManager:
 
         return results
 
+    @eidosian()
     def extract_meta_emotional_patterns(self) -> Dict[str, List[Dict[str, Any]]]:
         """
         Extract patterns of meta-emotions (emotions about emotions) from the graph.
@@ -2737,6 +2759,7 @@ class GraphManager:
 
         return patterns
 
+    @eidosian()
     def analyze_emotional_valence_distribution(self, dimension: str = "emotional"):
         """
         Analyze the distribution of emotional valence across the graph.
@@ -2898,6 +2921,7 @@ class GraphManager:
             },  # Only include non-empty clusters
         }
 
+    @eidosian()
     def integrate_emotional_context(
         self, context_name: str, context_weights: Dict[str, float]
     ) -> int:
@@ -2994,6 +3018,7 @@ class GraphManager:
 
         return updated_count
 
+    @eidosian()
     def analyze_emotional_transitions(
         self, path_length: int = 2, min_transition_strength: float = 0.3
     ) -> List[Dict[str, Any]]:
@@ -3150,6 +3175,7 @@ class GraphManager:
 
         return paths
 
+    @eidosian()
     def verify_database_tables(self) -> bool:
         """Verify that required database tables exist.
 

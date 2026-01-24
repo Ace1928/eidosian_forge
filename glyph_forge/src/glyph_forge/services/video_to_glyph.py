@@ -5,8 +5,10 @@ from PIL import Image
 
 from .image_to_glyph import ImageGlyphConverter
 from .video_to_images import video_to_images
+from eidosian_core import eidosian
 
 
+@eidosian()
 def video_to_glyph_frames(
     video_path: str,
     width: int = 80,

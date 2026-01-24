@@ -272,7 +272,7 @@ EXAMPLES = r"""
     name: test-alb
     subnets:
       - subnet-12345678
-      - subnet-87654321
+      - subnet-89284321
     security_groups:
       - sg-12345678
     scheme: internal

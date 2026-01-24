@@ -67,7 +67,7 @@ EXAMPLES = r"""
   community.aws.ec2_vpc_peer:
     region: ap-southeast-2
     vpc_id: vpc-12345678
-    peer_vpc_id: vpc-87654321
+    peer_vpc_id: vpc-89284321
     state: present
     tags:
       Name: Peering connection for VPC 21 to VPC 22
@@ -87,7 +87,7 @@ EXAMPLES = r"""
   community.aws.ec2_vpc_peer:
     region: ap-southeast-2
     vpc_id: vpc-12345678
-    peer_vpc_id: vpc-87654321
+    peer_vpc_id: vpc-89284321
     state: present
     tags:
       Name: Peering connection for VPC 21 to VPC 22
@@ -129,7 +129,7 @@ EXAMPLES = r"""
   community.aws.ec2_vpc_peer:
     region: us-east-1
     vpc_id: vpc-12345678
-    peer_vpc_id: vpc-87654321
+    peer_vpc_id: vpc-89284321
     peer_region: us-west-2
     state: present
     tags:
@@ -150,7 +150,7 @@ EXAMPLES = r"""
   community.aws.ec2_vpc_peer:
     region: ap-southeast-2
     vpc_id: vpc-12345678
-    peer_vpc_id: vpc-87654321
+    peer_vpc_id: vpc-89284321
     state: present
     tags:
       Name: Peering connection for VPC 21 to VPC 22

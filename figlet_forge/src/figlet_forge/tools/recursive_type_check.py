@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Recursive Type System for Figlet Forge
 
@@ -176,6 +177,7 @@ class ValidationResult(Generic[T]):
         """
         return self.valid
 
+    @eidosian()
     def merge(self, other: "ValidationResult[object]") -> "ValidationResult[T]":
         """
         Merge another validation result into this one.
@@ -200,6 +202,7 @@ class ValidationResult(Generic[T]):
 # ──────────────────────────────────────────────────────────────
 
 
+@eidosian()
 def safe_int_convert(value: object) -> Optional[int]:
     """
     Safely convert a value to int or return None if invalid.
@@ -228,6 +231,7 @@ def safe_int_convert(value: object) -> Optional[int]:
         return None
 
 
+@eidosian()
 def safe_bool_convert(value: object) -> bool:
     """
     Safely convert a value to bool with semantic interpretation.
@@ -275,6 +279,7 @@ def safe_bool_convert(value: object) -> bool:
     return bool(value)
 
 
+@eidosian()
 def safe_float_convert(value: object) -> Optional[float]:
     """
     Safely convert a value to float or return None if invalid.
@@ -303,6 +308,7 @@ def safe_float_convert(value: object) -> Optional[float]:
         return None
 
 
+@eidosian()
 def safe_str_convert(value: object) -> str:
     """
     Safely convert a value to string with proper handling of various types.
@@ -720,6 +726,7 @@ def validate_type(
 ) -> ValidationResult[object]: ...
 
 
+@eidosian()
 def validate_type(
     value: object,
     expected_type: Union[Type[T], Sequence[Type[object]]],
@@ -737,6 +744,7 @@ def validate_type(
     return TypeChecker.validate_type(value, expected_type)
 
 
+@eidosian()
 def validate_and_convert(
     value: object, target_type: Type[T], path: str = "$"
 ) -> ValidationResult[T]:
@@ -754,6 +762,7 @@ def validate_and_convert(
     return TypeChecker.validate_type(value, target_type, path, convert=True)
 
 
+@eidosian()
 def validate_dict_schema(
     data: object,
     schema: DictSchemaT,
@@ -785,6 +794,7 @@ def check_type(value: object, expected_type: Type[T]) -> bool: ...
 def check_type(value: object, expected_type: Tuple[Type[object], ...]) -> bool: ...
 
 
+@eidosian()
 def check_type(
     value: object, expected_type: Union[Type[object], Tuple[Type[object], ...]]
 ) -> bool:
@@ -815,6 +825,7 @@ def assert_type(
 ) -> object: ...
 
 
+@eidosian()
 def assert_type(
     value: object,
     expected_type: Union[Type[T], Tuple[Type[object], ...]],

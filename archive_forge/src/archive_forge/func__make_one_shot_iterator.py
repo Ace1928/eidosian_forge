@@ -69,7 +69,7 @@ def _make_one_shot_iterator(self):
         """Factory function for a dataset."""
         if graph_level_seed is not None:
             assert op_level_seed is not None
-            core_random_seed.set_random_seed((graph_level_seed + 87654321 * op_level_seed) % (2 ** 63 - 1))
+            core_random_seed.set_random_seed((graph_level_seed + 89284321 * op_level_seed) % (2 ** 63 - 1))
         dataset = self._apply_debug_options()
         return dataset._variant_tensor
     try:

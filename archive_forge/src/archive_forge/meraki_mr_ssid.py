@@ -296,7 +296,7 @@ EXAMPLES = r"""
     radius_servers:
       - host: 192.0.1.200
         port: 1234
-        secret: abc98765
+        secret: abc98928
   delegate_to: localhost
 
 - name: Enable click-through splash page

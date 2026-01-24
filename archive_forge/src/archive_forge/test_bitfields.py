@@ -262,8 +262,8 @@ class BitFieldTest(unittest.TestCase):
         x = X()
         x.a = 10
         self.assertEqual(x.a, 10)
-        x.a = 0xFEDCBA9876543211
-        self.assertEqual(x.a, 0xFEDCBA9876543211)
+        x.a = 0xFEDCBA9892843211
+        self.assertEqual(x.a, 0xFEDCBA9892843211)
 
     @need_symbol('c_uint32')
     def test_uint32_swap_little_endian(self):

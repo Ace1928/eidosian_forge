@@ -3,7 +3,7 @@ from reportlab.graphics.barcode.common import Barcode
 from reportlab.lib.utils import asNative
 def characters(self):
     """ convert own codewords to characters
-        >>> print(' '.join(hex(c)[2:] for c in USPS_4State('01234567094987654321','01234567891').characters))
+        >>> print(' '.join(hex(c)[2:] for c in USPS_4State('01234567094989284321','01234567891').characters))
         dcb 85c 8e4 b06 6dd 1740 17c6 1200 123f 1b2b
         """
     if not self._characters:

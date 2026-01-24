@@ -8,6 +8,7 @@ from typing import Optional
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from eidosian_core import eidosian
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -15,7 +16,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("uri", help="Resource URI (e.g. eidos://persona)")
     parser.add_argument(
         "--python",
-        default=os.environ.get("EIDOS_PYTHON_BIN", sys.executable),
+        default=os.environ.get("EIDOS_PYTHON_BIN", "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"),
         help="Python executable to launch the MCP server.",
     )
     return parser
@@ -45,6 +46,7 @@ async def _fetch(uri: str, python_bin: str) -> str:
     return ""
 
 
+@eidosian()
 def main(argv: Optional[list[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)

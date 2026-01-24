@@ -12,6 +12,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from eidosian_core import eidosian
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -25,6 +26,7 @@ DEFAULT_INDEX_PATH = CONTEXT_DIR / "index.json"
 DEFAULT_CATALOG_PATH = CONTEXT_DIR / "catalog.json"
 
 
+@eidosian()
 def parse_os_release():
     data = {}
     release_path = Path("/etc/os-release")
@@ -38,6 +40,7 @@ def parse_os_release():
     return data
 
 
+@eidosian()
 def run_command(cmd):
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -45,6 +48,7 @@ def run_command(cmd):
         return ""
     return result.stdout.strip()
 
+@eidosian()
 def gather_system_performance():
     """Captures CPU load and RAM usage."""
     perf = {"cpu": {}, "memory": {}}
@@ -88,6 +92,7 @@ def gather_system_performance():
         
     return perf
 
+@eidosian()
 def git_info(path: Path):
     git_dir = path / ".git"
     try:
@@ -105,6 +110,7 @@ def git_info(path: Path):
         return {}
     return {"git_branch": branch, "git_status": status}
 
+@eidosian()
 def describe_entry(path: Path, manual_note, section_names, preview_limit=6):
     entry = {}
     relative_path = "." if path == HOME else str(path.relative_to(HOME))
@@ -206,6 +212,7 @@ def describe_entry(path: Path, manual_note, section_names, preview_limit=6):
     return entry
 
 
+@eidosian()
 def gather_directories(config, preview_limit=6):
     manual_notes = config.get("manual_notes", {})
     section_map = {}
@@ -238,6 +245,7 @@ def gather_directories(config, preview_limit=6):
     return data
 
 
+@eidosian()
 def gather_storage_info():
     usage = shutil.disk_usage(HOME)
     filesystem = {}
@@ -260,6 +268,7 @@ def gather_storage_info():
     }
 
 
+@eidosian()
 def gather_metadata(config):
     uname = platform.uname()
     return {
@@ -276,6 +285,7 @@ def gather_metadata(config):
         "config": config.get("index", {}),
     }
 
+@eidosian()
 def build_index(args):
     config = load_config()
     logger = setup_logging(config)
@@ -315,6 +325,7 @@ def build_index(args):
         fh.write("\n")
     return payload
 
+@eidosian()
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Create a richly annotated context index for the home folder."
@@ -344,6 +355,7 @@ def parse_args():
     )
     return parser.parse_args()
 
+@eidosian()
 def main():
     args = parse_args()
     build_index(args)

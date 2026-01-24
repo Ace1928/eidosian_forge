@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Ollama Forge - Python Client.
 
@@ -26,6 +27,7 @@ class OllamaClient:
         self.base_url = base_url
         self.timeout = timeout
 
+    @eidosian()
     def generate(
         self,
         model: str,
@@ -54,6 +56,7 @@ class OllamaClient:
             
             return OllamaResponse(**resp.json())
 
+    @eidosian()
     def list_models(self) -> List[str]:
         url = f"{self.base_url}/api/tags"
         with httpx.Client() as client:

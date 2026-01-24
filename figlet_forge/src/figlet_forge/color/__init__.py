@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Color utilities for Figlet text.
 
@@ -39,6 +40,7 @@ from .figlet_color import (
 )
 
 
+@eidosian()
 def colored_format(
     text: str, font: Optional[str] = None, color: Optional[str] = None, **kwargs
 ) -> str:
@@ -70,6 +72,7 @@ def colored_format(
     return rendered
 
 
+@eidosian()
 def get_coloring_functions(color_spec: str) -> Optional[Callable[[str], str]]:
     """
     Get the appropriate coloring function based on the specification.
@@ -129,6 +132,7 @@ def get_coloring_functions(color_spec: str) -> Optional[Callable[[str], str]]:
         return None
 
 
+@eidosian()
 def apply_color(text: str, fg_code: str, bg_code: str = "") -> str:
     """
     Apply ANSI color codes to text.

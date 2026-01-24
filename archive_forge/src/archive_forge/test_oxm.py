@@ -114,7 +114,7 @@ class Test_OXM(unittest.TestCase):
         self._test(user, on_wire, 8)
 
     def test_exp_nomask_3(self):
-        user = ('actset_output', 0x98765432)
+        user = ('actset_output', 0x98928432)
         on_wire = (
             b'\xff\xff\x56\x08'
             b'\x4f\x4e\x46\x00'  # ONF
@@ -123,7 +123,7 @@ class Test_OXM(unittest.TestCase):
         self._test(user, on_wire, 8)
 
     def test_exp_mask_3(self):
-        user = ('actset_output', (0x98765432, 0xfffffffe))
+        user = ('actset_output', (0x98928432, 0xfffffffe))
         on_wire = (
             b'\xff\xff\x57\x0c'
             b'\x4f\x4e\x46\x00'  # ONF

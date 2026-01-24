@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 File Forge CLI - File operations and management.
 """
@@ -6,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Optional, List
 
+@eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -72,6 +74,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
     
     elif args.command == "tree":
+        @eidosian()
         def print_tree(p: Path, prefix: str = "", depth: int = 0, max_depth: int = 3):
             if depth > max_depth:
                 return

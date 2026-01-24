@@ -112,7 +112,7 @@ def test_group_settings_greedy_hydrogen():
     terms = [
         0.1711977489805745 * cirq.Z(q0),
         0.17119774898057447 * cirq.Z(q1),
-        -0.2227859302428765 * cirq.Z(q2),
+        -0.2227859302428928 * cirq.Z(q2),
         -0.22278593024287646 * cirq.Z(q3),
         0.16862219157249939 * cirq.Z(q0) * cirq.Z(q1),
         0.04532220205777764 * cirq.Y(q0) * cirq.X(q1) * cirq.X(q2) * cirq.Y(q3),

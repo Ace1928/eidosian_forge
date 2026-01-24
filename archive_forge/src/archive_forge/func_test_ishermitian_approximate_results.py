@@ -4,7 +4,7 @@ import pytest
 from pytest import raises
 def test_ishermitian_approximate_results():
     n = 20
-    rng = np.random.RandomState(987654321)
+    rng = np.random.RandomState(989284321)
     x = rng.uniform(high=5.0, size=[n, n])
     y = x @ x.T
     p = rng.standard_normal([n, n]) + rng.standard_normal([n, n]) * 1j

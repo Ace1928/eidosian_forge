@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Figlet Font Handler for Figlet Forge.
 
@@ -78,6 +79,7 @@ class FigletFont:
         self.info: str = ""
         self.info_dict: Dict[str, str] = {}
 
+    @eidosian()
     def load_font(
         self,
         font_path: Optional[Union[str, Path]] = None,
@@ -218,6 +220,7 @@ class FigletFont:
 
         return False
 
+    @eidosian()
     def parse_font(self, data: str) -> bool:
         """
         Parse font data and load character definitions.
@@ -637,6 +640,7 @@ class FigletFont:
             self.chars[char] = [empty_line] * self.height
             self.width[char] = self.max_length
 
+    @eidosian()
     def get_character(self, char: str) -> List[str]:
         """
         Get the ASCII art for a specific character.
@@ -671,6 +675,7 @@ class FigletFont:
             # Default fallback
             return [" " * self.max_length] * self.height
 
+    @eidosian()
     def get_width(self, char: str) -> int:
         """
         Get the width of a specific character.
@@ -771,6 +776,7 @@ class FigletFont:
         # Convert to sorted list for consistent output
         return sorted(list(fonts))
 
+    @eidosian()
     def info_font(self, font_name: Optional[str] = None) -> Optional[FontInfo]:
         """
         Get information about a specific font.
@@ -809,6 +815,7 @@ class FigletFont:
 
         return None
 
+    @eidosian()
     def install_fonts(self, zip_path: Union[str, Path]) -> List[str]:
         """
         Install fonts from a zip file to user fonts directory.
@@ -847,10 +854,12 @@ class FigletFont:
 
     # Methods for backward compatibility with older tests
     # Using proper noqa comments to suppress linter warnings for camelCase names
+    @eidosian()
     def getCharacter(self, char: str) -> List[str]:  # noqa: N802
         """Backward compatibility method for get_character."""
         return self.get_character(char)
 
+    @eidosian()
     def getWidth(self, char: str) -> int:  # noqa: N802
         """Backward compatibility method for get_width."""
         return self.get_width(char)

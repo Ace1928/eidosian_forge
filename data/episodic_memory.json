@@ -1,0 +1,35 @@
+{
+  "cf28d51b-3a68-4d72-98b5-b4fb40dba68f": {
+    "id": "cf28d51b-3a68-4d72-98b5-b4fb40dba68f",
+    "content": "Session 2026-01-24 Progress:\n- All 35 forges operational via central CLI hub (bin/eidosian)\n- Created Eidosian Core Library with universal @eidosian decorator\n- Fixed figlet_forge font parsing, agent_forge imports, narrative_forge, gis_forge\n- GraphRAG config created with local Ollama models\n- 2 commits pushed to GitHub",
+    "created_at": "2026-01-24T21:51:29.005919",
+    "type": "episodic",
+    "metadata": {
+      "type": "session_summary",
+      "date": "2026-01-24"
+    },
+    "importance": 1.0
+  },
+  "0593c7c3-4348-4940-8447-b1ae9311144f": {
+    "id": "0593c7c3-4348-4940-8447-b1ae9311144f",
+    "content": "MILESTONE: GraphRAG now fully operational with local Ollama models!\nChat: qwen2.5:1.5b-Instruct, Embedding: nomic-embed-text, Timeout: 3600s.\nEntities, relationships, communities extracted. Query test successful.",
+    "created_at": "2026-01-25T02:09:44.424695",
+    "type": "episodic",
+    "metadata": {
+      "type": "milestone",
+      "component": "graphrag"
+    },
+    "importance": 1.0
+  },
+  "fa835da6-3a0d-4688-bd89-4d6680570afc": {
+    "id": "fa835da6-3a0d-4688-bd89-4d6680570afc",
+    "content": "Decorator applicator script fixed and tested.\n- Processes files bottom-to-top to prevent line number shifts\n- Skips @property, @abstractmethod, @staticmethod, @classmethod, @cached_property\n- Skips Protocol stubs (ellipsis body functions)\n- Applied to diagnostics_forge (8 functions) and version_forge (41 functions)\n- All functions verified working after decoration",
+    "created_at": "2026-01-25T08:08:05.823897",
+    "type": "episodic",
+    "metadata": {
+      "type": "implementation",
+      "component": "decorator_applicator"
+    },
+    "importance": 1.0
+  }
+}

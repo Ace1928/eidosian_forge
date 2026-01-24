@@ -13,6 +13,7 @@ from pathlib import Path
 __version__ = "0.1.0"
 VERSION = __version__
 __package_name__ = "figlet-forge"
+PROGRAM_NAME = "figlet-forge"
 __author__ = "Lloyd Handyside"
 __author_email__ = "ace1928@gmail.com"
 __description__ = "Advanced FIGlet text rendering with color and Unicode support"
@@ -50,6 +51,9 @@ COLOR_CODES = {
     "LIGHT_CYAN": "\033[96m",
     "LIGHT_WHITE": "\033[97m",
 }
+
+# Alias for backward compatibility
+COLORS = COLOR_CODES
 
 # Background color codes
 BG_COLOR_CODES = {

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Crawl Forge - Intelligent and ethical data harvesting.
 Provides structured extraction with respect for boundaries.
@@ -9,6 +10,16 @@ import re
 from typing import Dict, Any, List, Optional
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
+
+# Export Tika integration
+try:
+    from .tika_extractor import TikaExtractor, TikaKnowledgeIngester
+except ImportError:
+    TikaExtractor = None
+    TikaKnowledgeIngester = None
+
+__all__ = ["CrawlForge", "TikaExtractor", "TikaKnowledgeIngester"]
+
 
 class CrawlForge:
     """
@@ -33,11 +44,13 @@ class CrawlForge:
             self._robot_parsers[base_url] = rp
         return self._robot_parsers[base_url]
 
+    @eidosian()
     def can_fetch(self, url: str) -> bool:
         """Check if robots.txt allows fetching the URL."""
         rp = self._get_robot_parser(url)
         return rp.can_fetch(self.user_agent, url)
 
+    @eidosian()
     def fetch_page(self, url: str) -> Optional[str]:
         """Fetch a page with respect to rate limits and robots.txt."""
         if not self.can_fetch(url):
@@ -58,6 +71,7 @@ class CrawlForge:
             logging.error(f"Error fetching {url}: {e}")
             return None
 
+    @eidosian()
     def extract_structured_data(self, html: str) -> Dict[str, Any]:
         """
         Extract basic metadata from HTML using regex.

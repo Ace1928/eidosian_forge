@@ -1488,7 +1488,7 @@ def AddServiceAccountNameArg(parser, action='to act on'):
       help=('The service account {}. The account should be '
             'formatted either as a numeric service account ID '
             'or as an email, like this: '
-            '123456789876543212345 or '
+            '123456789892843212345 or '
             'my-iam-account@somedomain.com.'.format(action)))
 
 

@@ -127,7 +127,7 @@ EXAMPLES = r"""
     policy: " {{ lookup( 'template', 'endpoint_policy.json.j2') }} "
     route_table_ids:
       - rtb-12345678
-      - rtb-87654321
+      - rtb-89284321
   register: new_vpc_endpoint
 
 - name: Create new vpc endpoint with the default policy
@@ -138,7 +138,7 @@ EXAMPLES = r"""
     service: com.amazonaws.ap-southeast-2.s3
     route_table_ids:
       - rtb-12345678
-      - rtb-87654321
+      - rtb-89284321
   register: new_vpc_endpoint
 
 - name: Delete newly created vpc endpoint

@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from ..forge_loader import ensure_forge_import
 from ..transactions import (
+from eidosian_core import eidosian
     begin_transaction,
     check_idempotency,
     find_latest_transaction_for_path,
@@ -108,6 +109,7 @@ def _run_verify_command(command: Optional[str], cwd: Optional[Path]) -> Optional
     description="Get system details.",
     parameters={"type": "object", "properties": {}},
 )
+@eidosian()
 def system_info() -> str:
     """Get system details."""
     return json.dumps(
@@ -128,6 +130,7 @@ def system_info() -> str:
         "required": ["file_path"],
     },
 )
+@eidosian()
 def file_read(file_path: str, max_bytes: int = MAX_READ_BYTES) -> str:
     """Read a file."""
     path = _resolve_path(file_path)
@@ -154,6 +157,7 @@ def file_read(file_path: str, max_bytes: int = MAX_READ_BYTES) -> str:
         "required": ["file_path", "content"],
     },
 )
+@eidosian()
 def file_write(file_path: str, content: str, overwrite: bool = True) -> str:
     """Write a file."""
     path = _resolve_path(file_path)
@@ -185,6 +189,7 @@ def file_write(file_path: str, content: str, overwrite: bool = True) -> str:
         "required": ["file_path"],
     },
 )
+@eidosian()
 def file_create(file_path: str) -> str:
     """Create an empty file."""
     path = _resolve_path(file_path)
@@ -210,6 +215,7 @@ def file_create(file_path: str) -> str:
         "required": ["file_path"],
     },
 )
+@eidosian()
 def file_delete(file_path: str) -> str:
     """Delete a file or empty directory."""
     path = _resolve_path(file_path)
@@ -245,6 +251,7 @@ def file_delete(file_path: str) -> str:
         "required": ["file_path"],
     },
 )
+@eidosian()
 def file_restore(file_path: str, transaction_id: Optional[str] = None) -> str:
     """Restore a file or directory from a transaction snapshot."""
     path = _resolve_path(file_path)
@@ -277,6 +284,7 @@ def file_restore(file_path: str, transaction_id: Optional[str] = None) -> str:
         "required": ["command"],
     },
 )
+@eidosian()
 def run_shell_command(
     command: str,
     cwd: Optional[str] = None,
@@ -371,6 +379,7 @@ def run_shell_command(
         "required": ["test_command"],
     },
 )
+@eidosian()
 def run_tests(
     test_command: str,
     test_path: Optional[str] = None,
@@ -415,6 +424,7 @@ def run_tests(
         "required": ["venv_path", "command"],
     },
 )
+@eidosian()
 def venv_run(
     venv_path: str,
     command: str,
@@ -475,6 +485,7 @@ def venv_run(
         "properties": {"limit": {"type": "integer"}},
     },
 )
+@eidosian()
 def transaction_list(limit: int = 50) -> str:
     """List recent transactional snapshots."""
     return json.dumps(list_transactions(limit=limit), indent=2)
@@ -489,6 +500,7 @@ def transaction_list(limit: int = 50) -> str:
         "required": ["transaction_id"],
     },
 )
+@eidosian()
 def transaction_restore(transaction_id: str) -> str:
     """Restore a transaction snapshot by id."""
     txn = load_transaction(transaction_id)
@@ -502,6 +514,7 @@ def transaction_restore(transaction_id: str) -> str:
     name="file_search",
     description="Search file contents for a string pattern.",
 )
+@eidosian()
 def file_search(pattern: str, root_path: Optional[str] = None, max_results: int = 100) -> str:
     """Search file contents for a string pattern."""
     root = _resolve_path(root_path) if root_path else FORGE_DIR
@@ -516,6 +529,7 @@ def file_search(pattern: str, root_path: Optional[str] = None, max_results: int 
     name="file_find_duplicates",
     description="Find duplicate files by content hash.",
 )
+@eidosian()
 def file_find_duplicates(
     root_path: Optional[str] = None, max_groups: int = 50
 ) -> str:

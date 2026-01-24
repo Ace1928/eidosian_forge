@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Inline References Fixer
 """
@@ -47,6 +48,7 @@ class InlineReferenceFixer:
             "html_links": re.compile(r'<a\s+href="([^"]+)"[^>]*>([^<]+)</a>')
         }
         
+    @eidosian()
     def fix_all_files(self) -> int:
         """
         Fix inline references in all documentation files.
@@ -172,6 +174,7 @@ class InlineReferenceFixer:
         file_dir = file_path.parent
         
         # Fix markdown links [text](link)
+        @eidosian()
         def fix_md_link(match: re.Match) -> str:
             text = match.group(1)
             link = match.group(2)
@@ -220,6 +223,7 @@ class InlineReferenceFixer:
         file_dir = file_path.parent
         
         # Fix RST doc references :doc:`link`
+        @eidosian()
         def fix_rst_doc_ref(match: re.Match) -> str:
             link = match.group(1)
             
@@ -296,6 +300,7 @@ class InlineReferenceFixer:
         
         return None
 
+@eidosian()
 def fix_inline_references(docs_dir: Optional[Path] = None) -> int:
     """
     Fix inline references in all documentation files.

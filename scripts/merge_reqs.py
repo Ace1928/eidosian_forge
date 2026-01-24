@@ -1,5 +1,7 @@
 import re
+from eidosian_core import eidosian
 
+@eidosian()
 def clean_req(line):
     line = line.strip()
     if not line or line.startswith('#'):

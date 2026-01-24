@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Database configuration system for Word Forge.
 
@@ -253,6 +254,7 @@ class DatabaseConfig:
     # Public Methods
     # ==========================================
 
+    @eidosian()
     def get_connection_uri(self) -> str:
         """
         Build SQLite connection URI with pragmas.
@@ -279,6 +281,7 @@ class DatabaseConfig:
         params = "&".join(f"{k}={v}" for k, v in self.effective_pragmas.items())
         return f"file:{self.db_path}?{params}"
 
+    @eidosian()
     def get_pool_settings(self) -> PoolSettingsDict:
         """
         Get connection pool settings as a dictionary.
@@ -299,6 +302,7 @@ class DatabaseConfig:
             "recycle": self.pool_recycle,
         }
 
+    @eidosian()
     def with_path(self, path: PathLike) -> "DatabaseConfig":
         """
         Create a new instance with a modified path.
@@ -316,6 +320,7 @@ class DatabaseConfig:
         """
         return self._create_modified_instance(db_path=str(path))
 
+    @eidosian()
     def with_dialect(self, dialect: DatabaseDialect) -> "DatabaseConfig":
         """
         Create a new instance with a different database dialect.
@@ -333,6 +338,7 @@ class DatabaseConfig:
         """
         return self._create_modified_instance(dialect=dialect)
 
+    @eidosian()
     def optimize_for_reads(self) -> "DatabaseConfig":
         """
         Create a new instance optimized for read operations.
@@ -371,6 +377,7 @@ class DatabaseConfig:
             cache_size=8000,  # Larger cache size
         )
 
+    @eidosian()
     def optimize_for_writes(self) -> "DatabaseConfig":
         """
         Create a new instance optimized for write operations.
@@ -410,6 +417,7 @@ class DatabaseConfig:
             cache_size=4000,  # Moderate cache size
         )
 
+    @eidosian()
     def validate(self) -> None:
         """
         Validate the entire configuration for consistency and correctness.

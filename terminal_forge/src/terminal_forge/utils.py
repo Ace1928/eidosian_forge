@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Utils
@@ -24,6 +25,7 @@ from typing import Tuple, List, Dict, Any, Callable, Optional
 # ┃ Terminal & Text Manipulation Utilities    ┃
 # ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """
     Quantum-detect terminal dimensions with fallback intelligence.
@@ -34,6 +36,7 @@ def get_terminal_size() -> Tuple[int, int]:
     except (AttributeError, OSError):
         return (80, 24)  # Universal constants in the terminal multiverse
 
+@eidosian()
 def strip_ansi(text: str) -> str:
     """
     Remove ANSI escape sequences with regex precision.
@@ -42,6 +45,7 @@ def strip_ansi(text: str) -> str:
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
+@eidosian()
 def text_length(text: str) -> int:
     """
     Calculate visual length of text, ignoring invisible ANSI codes.
@@ -49,6 +53,7 @@ def text_length(text: str) -> int:
     """
     return len(strip_ansi(text))
 
+@eidosian()
 def center_text(text: str, width: int) -> str:
     """
     Center text with perfect mathematical balance.
@@ -60,6 +65,7 @@ def center_text(text: str, width: int) -> str:
     padding = (width - text_width) // 2  # Integer division ensures symmetry
     return " " * padding + text
 
+@eidosian()
 def right_align(text: str, width: int) -> str:
     """
     Right-align text with perfect precision.
@@ -70,6 +76,7 @@ def right_align(text: str, width: int) -> str:
         return text
     return " " * (width - text_width) + text
 
+@eidosian()
 def truncate_text(text: str, max_length: int, suffix: str = "...") -> str:
     """
     Truncate text while preserving ANSI formatting—surgical precision.
@@ -100,11 +107,13 @@ def truncate_text(text: str, max_length: int, suffix: str = "...") -> str:
     # Add suffix and reset any unclosed color codes
     return result + suffix + '\033[0m'
 
+@eidosian()
 def measure_execution_time(func: Callable) -> Callable:
     """
     Decorator that measures function execution time—quantum precision.
     Time is the ultimate currency; spend it wisely.
     """
+    @eidosian()
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
@@ -113,6 +122,7 @@ def measure_execution_time(func: Callable) -> Callable:
         return result
     return wrapper
 
+@eidosian()
 def split_text_into_lines(text: str, max_width: int) -> List[str]:
     """
     Split text into lines of maximum width with smart word wrapping.
@@ -141,6 +151,7 @@ def split_text_into_lines(text: str, max_width: int) -> List[str]:
         
     return lines
 
+@eidosian()
 def create_progress_bar(progress: float, width: int = 20, fill_char: str = "█", empty_char: str = "░") -> str:
     """
     Generate a beautiful progress bar with precise proportions.

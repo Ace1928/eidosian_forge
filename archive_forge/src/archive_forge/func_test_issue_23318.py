@@ -37,9 +37,9 @@ from sympy.abc import (a, b, c, d, e, f, g, h, i, j, k, l, m, n, q, r,
 def test_issue_23318():
     eqs_eq = [Eq(53.5780461486929, x * log(y / (5.0 - y) + 1) / y), Eq(x, 0.0015 * z), Eq(0.0015, 7845.32 * y / z)]
     eqs_expr = [eq.rewrite(Add) for eq in eqs_eq]
-    sol = {(266.97755814852, 0.0340301680681629, 177985.03876568)}
+    sol = {(266.97755814852, 0.0340301680681629, 177985.03892868)}
     assert_close_nl(nonlinsolve(eqs_eq, [x, y, z]), sol)
     assert_close_nl(nonlinsolve(eqs_expr, [x, y, z]), sol)
     logterm = log(1.91196789933362e-07 * z / (5.0 - 1.91196789933362e-07 * z) + 1)
     eq = -0.0015 * z * logterm + 1.02439504345316e-05 * z
-    assert_close_ss(solveset(eq, z), {0, 177985.038765679})
+    assert_close_ss(solveset(eq, z), {0, 177985.038928679})

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ASCII Art - Visual Transformation Engine 🖼️
 
@@ -781,6 +782,7 @@ class ColorSystem:
         return f"{fg_code}{bg_code}{char}\033[0m"
 
 # Replace the existing function with ColorSystem's optimized version
+@eidosian()
 def apply_terminal_color(
     char: str, 
     r: int, 
@@ -834,6 +836,7 @@ class ColorDithering:
         pixels = img.load()
         
         # Function to quantize a color to target palette
+        @eidosian()
         def quantize_color(r: int, g: int, b: int) -> Tuple[int, int, int]:
             if palette_size == 8 or palette_size == 16:
                 # Map to ANSI colors
@@ -908,6 +911,7 @@ class ColorDithering:
 # │  🖼️ Core Transformation Engine - Pixel Alchemy      │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def convert(
     image_path: Union[str, Path],
     style: Literal["minimal", "detailed", "artistic"] = "detailed",
@@ -1044,6 +1048,7 @@ def convert(
 # │  🛠️ Utility Functions - Precision Tools             │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 @lru_cache(maxsize=32)
 def get_terminal_size() -> Tuple[int, int]:
     """Get terminal dimensions with caching for performance.
@@ -1065,6 +1070,7 @@ def get_terminal_size() -> Tuple[int, int]:
             # Default fallback values
             return (80, 24)
 
+@eidosian()
 def detect_color_support() -> int:
     """Detect terminal color support level.
     
@@ -1090,6 +1096,7 @@ def detect_color_support() -> int:
     # Default to monochrome if unsure
     return 1
 
+@eidosian()
 def create_figlet_art(text: str, font: str = "standard") -> str:
     """Create ASCII text art using Figlet-style fonts.
     
@@ -1133,6 +1140,7 @@ def create_figlet_art(text: str, font: str = "standard") -> str:
     
     return '\n'.join(result)
 
+@eidosian()
 def create_banner(title: str, width: int = 40, char: str = '*') -> str:
     """Create a simple banner with a title.
     
@@ -1158,6 +1166,7 @@ def create_banner(title: str, width: int = 40, char: str = '*') -> str:
 # │  🔌 Integration Point - Public Interface             │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def transform_image(
     source: Union[str, Path],
     **options
@@ -1195,6 +1204,7 @@ def transform_image(
 # │  🧠 Image Processing - Visual Intelligence Core      │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def load_image(source: ImageSource) -> 'Image.Image':
     """Load image from various source types with intelligent handling.
     
@@ -1244,6 +1254,7 @@ def load_image(source: ImageSource) -> 'Image.Image':
     raise ValueError(f"Unsupported image source type: {type(source)}")
 
 
+@eidosian()
 def preprocess_image(
     image: 'Image.Image',
     style: str = "detailed",
@@ -1341,6 +1352,7 @@ def preprocess_image(
     return img
 
 
+@eidosian()
 def resize_image_with_aspect(
     image: 'Image.Image',
     width: int,
@@ -1427,6 +1439,7 @@ class AsciiRenderer:
         
         self.calc_brightness = brightness_strategies[brightness_strategy]
     
+    @eidosian()
     def map_pixel_to_char(self, pixel: Union[Tuple[int, ...], int]) -> str:
         """Map a pixel to a character based on brightness.
         
@@ -1453,6 +1466,7 @@ class AsciiRenderer:
         
         return self.chars[char_idx]
     
+    @eidosian()
     def render_image(self, 
                      image: 'Image.Image', 
                      color_mode: int = 8,
@@ -1516,6 +1530,7 @@ class AsciiRenderer:
 
 
 # Enhanced core transformation function
+@eidosian()
 def convert(
     image_source: ImageSource,
     style: str = "detailed",
@@ -1602,6 +1617,7 @@ def convert(
 # │  🔌 Integration Point - Public Interface             │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def transform_image(
     source: ImageSource,
     **options
@@ -1695,6 +1711,7 @@ class AsciiArtBuilder:
         self.options = {}
         self.result = None
     
+    @eidosian()
     def from_source(self, source: ImageSource) -> 'AsciiArtBuilder':
         """Set the image source.
         
@@ -1707,6 +1724,7 @@ class AsciiArtBuilder:
         self.source = source
         return self
     
+    @eidosian()
     def width(self, width: int) -> 'AsciiArtBuilder':
         """Set the output width in characters.
         
@@ -1719,6 +1737,7 @@ class AsciiArtBuilder:
         self.options['width'] = width
         return self
     
+    @eidosian()
     def height(self, height: int) -> 'AsciiArtBuilder':
         """Set the output height in characters.
         
@@ -1731,6 +1750,7 @@ class AsciiArtBuilder:
         self.options['height'] = height
         return self
     
+    @eidosian()
     def style(self, style: str) -> 'AsciiArtBuilder':
         """Set the art style.
         
@@ -1743,6 +1763,7 @@ class AsciiArtBuilder:
         self.options['style'] = style
         return self
     
+    @eidosian()
     def character_set(self, char_set: str) -> 'AsciiArtBuilder':
         """Set the character set.
         
@@ -1755,6 +1776,7 @@ class AsciiArtBuilder:
         self.options['character_set'] = char_set
         return self
     
+    @eidosian()
     def custom_chars(self, chars: str) -> 'AsciiArtBuilder':
         """Set custom character sequence.
         
@@ -1768,6 +1790,7 @@ class AsciiArtBuilder:
         self.options['custom_chars'] = chars
         return self
     
+    @eidosian()
     def color(self, mode: int = -1) -> 'AsciiArtBuilder':
         """Enable color output with optional mode specification.
         
@@ -1784,6 +1807,7 @@ class AsciiArtBuilder:
             self.options['color_mode'] = mode
         return self
     
+    @eidosian()
     def monochrome(self, dither: str = "floyd-steinberg") -> 'AsciiArtBuilder':
         """Set monochrome mode with dithering.
         
@@ -1797,6 +1821,7 @@ class AsciiArtBuilder:
         self.options['dithering'] = dither
         return self
     
+    @eidosian()
     def brightness(self, value: float) -> 'AsciiArtBuilder':
         """Set brightness adjustment.
         
@@ -1809,6 +1834,7 @@ class AsciiArtBuilder:
         self.options['brightness'] = value
         return self
     
+    @eidosian()
     def contrast(self, value: float) -> 'AsciiArtBuilder':
         """Set contrast adjustment.
         
@@ -1821,6 +1847,7 @@ class AsciiArtBuilder:
         self.options['contrast'] = value
         return self
     
+    @eidosian()
     def invert(self, value: bool = True) -> 'AsciiArtBuilder':
         """Set image inversion.
         
@@ -1833,6 +1860,7 @@ class AsciiArtBuilder:
         self.options['invert'] = value
         return self
     
+    @eidosian()
     def render(self) -> str:
         """Render the ASCII art with current configuration.
         
@@ -1848,6 +1876,7 @@ class AsciiArtBuilder:
         self.result = transform_image(self.source, **self.options)
         return self.result
     
+    @eidosian()
     def save(self, path: Union[str, Path]) -> 'AsciiArtBuilder':
         """Save the rendered ASCII art to a file.
         
@@ -1870,6 +1899,7 @@ class AsciiArtBuilder:
         
         return self
     
+    @eidosian()
     def print(self) -> 'AsciiArtBuilder':
         """Print the rendered ASCII art to console.
         
@@ -1888,6 +1918,7 @@ class AsciiArtBuilder:
         return self
 
 # Create shorthand function for fluent API
+@eidosian()
 def art(source: Optional[ImageSource] = None) -> AsciiArtBuilder:
     """Create an AsciiArtBuilder for fluent configuration.
     

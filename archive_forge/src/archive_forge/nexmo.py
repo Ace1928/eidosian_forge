@@ -66,7 +66,7 @@ EXAMPLES = """
     api_secret: 0ce239a6
     src: 12345678901
     dest:
-      - 10987654321
+      - 10989284321
       - 16789012345
     msg: '{{ inventory_hostname }} completed'
   delegate_to: localhost

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Git integration for Eidosian Forge.
 
@@ -130,6 +131,7 @@ class GitMemoryManager:
             logger.error(f"Failed to check Git status: {e}")
             return False
 
+    @eidosian()
     def commit(self, message: str) -> bool:
         """
         Commit changes to the repository.
@@ -176,6 +178,7 @@ class GitMemoryManager:
             logger.error(f"Failed to commit changes: {e}")
             return False
 
+    @eidosian()
     def save_memory(
         self, memory_type: str, memory_id: str, content: Dict[str, Any]
     ) -> bool:
@@ -207,6 +210,7 @@ class GitMemoryManager:
             logger.error(f"Failed to save memory {memory_type}/{memory_id}: {e}")
             return False
 
+    @eidosian()
     def load_memory(self, memory_type: str, memory_id: str) -> Optional[Dict[str, Any]]:
         """
         Load memory content from the repository.
@@ -230,6 +234,7 @@ class GitMemoryManager:
             logger.error(f"Failed to load memory {memory_type}/{memory_id}: {e}")
             return None
 
+    @eidosian()
     def list_memories(self, memory_type: str) -> List[str]:
         """
         List all memories of a specific type.
@@ -250,6 +255,7 @@ class GitMemoryManager:
             if f.is_file() and not f.name.startswith(".")
         ]
 
+    @eidosian()
     def get_history(self, path: str, max_entries: int = 10) -> List[Dict[str, str]]:
         """
         Get commit history for a specific file or directory.
@@ -302,6 +308,7 @@ class GitMemoryManager:
             logger.error(f"Failed to get history for {path}: {e}")
             return []
 
+    @eidosian()
     def close(self) -> None:
         """Clean up resources and stop auto-commit thread."""
         if self.auto_commit:

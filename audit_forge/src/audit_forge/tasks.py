@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from typing import Optional
+from eidosian_core import eidosian
 
 
 class IdempotentTaskManager:
@@ -20,6 +21,7 @@ class IdempotentTaskManager:
     def _write_content(self, content: str):
         self.file_path.write_text(content)
 
+    @eidosian()
     def add_task(
         self, section: str, task_text: str, task_id: Optional[str] = None
     ) -> bool:
@@ -56,6 +58,7 @@ class IdempotentTaskManager:
         self._write_content("\n".join(new_lines) + "\n")
         return True
 
+    @eidosian()
     def cross_off_task(self, task_identifier: str) -> bool:
         """
         Crosses off a task (changes [ ] to [x]) based on a string match or ID.
@@ -70,6 +73,7 @@ class IdempotentTaskManager:
         self._write_content(new_content)
         return True
 
+    @eidosian()
     def extend_task_details(self, task_identifier: str, details: str) -> bool:
         """
         Adds nested details below a task.

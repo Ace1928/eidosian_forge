@@ -5,7 +5,9 @@ from agent_forge.core.state import add_run  # DB write
 from .approvals import allowed_cmd
 from .sandbox import run_sandboxed, SandboxError
 from agent_forge.core.artifacts import write_run_artifacts
+from eidosian_core import eidosian
 
+@eidosian()
 def run_step(base_dir: str, step_id: str, cmd: Sequence[str], *, cwd: str,
              budget_s: float, template: str | None = None) -> dict:
     """Gate + execute + persist run row. Returns run dict (for logs)."""

@@ -1,4 +1,6 @@
+from eidosian_core import eidosian
 
+@eidosian()
 def get_pyproject_content(name):
     return f"""[build-system]
 requires = ["setuptools>=61.0.0", "wheel"]

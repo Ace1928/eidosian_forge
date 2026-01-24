@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Compatibility module for terminal environment detection and adaptation.
 
@@ -55,6 +56,8 @@ class TerminalAdjuster:
         self._capabilities = None
         self._dimensions = None
         self._term_type = self._detect_terminal_type()
+        # Must detect capabilities before color depth
+        self.capabilities  # This calls the property which sets _capabilities
         self._color_depth = self._detect_color_depth()
 
     def _detect_terminal_type(self) -> int:
@@ -275,6 +278,7 @@ class TerminalAdjuster:
         # Default to 16 colors
         return 16
 
+    @eidosian()
     def has_capability(self, capability: int) -> bool:
         """
         Check if the terminal supports a specific capability.
@@ -358,6 +362,7 @@ class TerminalAdjuster:
         """Get the terminal's color depth."""
         return self._color_depth
 
+    @eidosian()
     def wrap_text(self, text: str, width: Optional[int] = None) -> str:
         """
         Wrap text to fit within terminal width.
@@ -397,6 +402,7 @@ class TerminalAdjuster:
 
         return "\n".join(lines)
 
+    @eidosian()
     def strip_formatting(self, text: str) -> str:
         """
         Strip ANSI formatting if the terminal doesn't support it.
@@ -414,6 +420,7 @@ class TerminalAdjuster:
             return ansi_escape.sub("", text)
         return text
 
+    @eidosian()
     def adjust_output_for_terminal(self, text: str, enforce_ascii: bool = False) -> str:
         """
         Adjust output to match terminal capabilities.
@@ -499,6 +506,7 @@ class TerminalAdjuster:
         # Final fallback: just drop all non-ASCII
         return text.encode("ascii", "replace").decode("ascii")
 
+    @eidosian()
     def reset_capabilities(self) -> None:
         """Reset cached capabilities and dimensions."""
         self._capabilities = None
@@ -652,6 +660,7 @@ terminal = TerminalAdjuster()
 
 
 # Convenience functions for external use
+@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """
     Get terminal dimensions.
@@ -662,6 +671,7 @@ def get_terminal_size() -> Tuple[int, int]:
     return terminal.dimensions
 
 
+@eidosian()
 def supports_color() -> bool:
     """
     Check if terminal supports color.
@@ -672,6 +682,7 @@ def supports_color() -> bool:
     return terminal.supports_color
 
 
+@eidosian()
 def supports_unicode() -> bool:
     """
     Check if terminal supports Unicode.
@@ -682,6 +693,7 @@ def supports_unicode() -> bool:
     return terminal.supports_unicode
 
 
+@eidosian()
 def adjust_output(text: str, enforce_ascii: bool = False) -> str:
     """
     Adjust output for terminal capabilities.

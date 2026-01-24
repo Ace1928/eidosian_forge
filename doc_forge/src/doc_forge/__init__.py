@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation System - Central Package Interface
 """
@@ -51,6 +52,7 @@ except ImportError:
     from .doc_forge import main as run_cli
 
 # Core execution entry points
+@eidosian()
 def main() -> int:
     """
     Command-line entry point for direct script execution.
@@ -61,6 +63,7 @@ def main() -> int:
     logger.debug("🚀 Doc Forge main entry point invoked")
     return run_cli()
 
+@eidosian()
 def forge_docs(
     docs_dir: Optional[Union[str, Path]] = None, 
     fix_toc: bool = True, 
@@ -165,6 +168,98 @@ def forge_docs(
 # Convenient aliases - different tools for different crafters
 update_docs = forge_docs  # For those who prefer literal naming
 perfect_docs = forge_docs  # For the perfectionists among us
+
+
+class DocForge:
+    """
+    Main DocForge class for documentation generation and management.
+    
+    Provides methods to generate README files and API documentation
+    from project source code.
+    """
+    
+    def __init__(self, docs_dir: Optional[Union[str, Path]] = None):
+        """Initialize DocForge with optional documentation directory."""
+        self.docs_dir = Path(docs_dir) if docs_dir else get_docs_dir()
+        self.repo_root = get_repo_root()
+    
+    @eidosian()
+    def generate_readme(self, info: dict) -> str:
+        """
+        Generate a README file from project info.
+        
+        Args:
+            info: Dictionary with keys:
+                - name: Project name
+                - description: Project description
+                - features: List of feature strings
+                
+        Returns:
+            Markdown string for README
+        """
+        name = info.get("name", "Project")
+        description = info.get("description", "")
+        features = info.get("features", [])
+        
+        readme = f"# 🔮 {name}\n\n"
+        readme += f"{description}\n\n"
+        
+        if features:
+            readme += "## ✨ Features\n\n"
+            for feature in features:
+                readme += f"- {feature}\n"
+            readme += "\n"
+        
+        return readme
+    
+    @eidosian()
+    def extract_and_generate_api_docs(self, source_dir: Union[str, Path]) -> str:
+        """
+        Extract docstrings and generate API documentation.
+        
+        Args:
+            source_dir: Directory containing Python source files
+            
+        Returns:
+            Markdown string with API documentation
+        """
+        import ast
+        
+        source_dir = Path(source_dir)
+        api_docs = "# API Reference\n\n"
+        
+        for py_file in source_dir.glob("**/*.py"):
+            if py_file.name.startswith("_"):
+                continue
+                
+            try:
+                source = py_file.read_text(encoding="utf-8")
+                tree = ast.parse(source)
+                
+                module_doc = ast.get_docstring(tree) or ""
+                api_docs += f"## Module: `{py_file.name}`\n\n"
+                if module_doc:
+                    api_docs += f"{module_doc}\n\n"
+                
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        func_doc = ast.get_docstring(node) or ""
+                        args = [a.arg for a in node.args.args]
+                        api_docs += f"### `def {node.name}({', '.join(args)})`\n\n"
+                        if func_doc:
+                            api_docs += f"{func_doc}\n\n"
+                    elif isinstance(node, ast.ClassDef):
+                        class_doc = ast.get_docstring(node) or ""
+                        api_docs += f"### `class {node.name}`\n\n"
+                        if class_doc:
+                            api_docs += f"{class_doc}\n\n"
+                            
+            except Exception as e:
+                logger.warning(f"Error parsing {py_file}: {e}")
+                continue
+        
+        return api_docs
+
 
 # When imported as a module, show our banner
 logger.debug(f"🌀 Doc Forge v{get_version_string()} loaded - Eidosian Documentation System")

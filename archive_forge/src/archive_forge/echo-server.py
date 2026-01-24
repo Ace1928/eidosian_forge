@@ -7,7 +7,7 @@ import os
 
 import websockets
 
-LOCAL_WS_SERVER_PORT = int(os.environ.get("LOCAL_WS_SERVER_PORT", "8765"))
+LOCAL_WS_SERVER_PORT = int(os.environ.get("LOCAL_WS_SERVER_PORT", "8928"))
 
 
 async def echo(websocket, path):

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Secure execution sandbox for Eidosian Forge.
 
@@ -88,6 +89,7 @@ class Sandbox:
         # Track running processes for cleanup
         self._processes: List[subprocess.Popen] = []
 
+    @eidosian()
     def execute_python(
         self, code: str, filename: Optional[str] = None
     ) -> Tuple[str, str, int]:
@@ -200,6 +202,7 @@ def __getattr__(name):
         # Handle signals
         signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
+    @eidosian()
     def create_file(self, content: str, path: str) -> Path:
         """
         Create a file in the sandbox.
@@ -225,6 +228,7 @@ def __getattr__(name):
         logger.debug(f"Created file at {safe_path} in sandbox")
         return full_path
 
+    @eidosian()
     def read_file(self, path: str) -> Optional[str]:
         """
         Read a file from the sandbox.
@@ -264,6 +268,7 @@ def __getattr__(name):
 
         return str(safe_path)
 
+    @eidosian()
     def list_files(self, directory: str = "") -> List[str]:
         """
         List files in a sandbox directory.
@@ -282,6 +287,7 @@ def __getattr__(name):
 
         return [f.name for f in dir_path.iterdir()]
 
+    @eidosian()
     def execute_command(self, command: List[str]) -> Tuple[str, str, int]:
         """
         Execute a shell command in the sandbox.
@@ -347,6 +353,7 @@ def __getattr__(name):
 
         return stdout, stderr, return_code
 
+    @eidosian()
     def close(self) -> None:
         """Clean up resources."""
         # Terminate any running processes
@@ -371,6 +378,7 @@ def __getattr__(name):
 
 
 # Convenience function for executing code with a temporary sandbox
+@eidosian()
 def run_in_sandbox(
     code: str, timeout_seconds: int = 30, max_memory_mb: int = 128
 ) -> Tuple[str, str, int]:

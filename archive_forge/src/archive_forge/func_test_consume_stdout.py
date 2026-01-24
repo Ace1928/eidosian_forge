@@ -23,5 +23,5 @@ def test_consume_stdout(self):
     chan.recv_ready.side_effect = [True, True, False]
     chan.recv.side_effect = ['987', '6543210']
     stdout = client._consume_stdout(chan).getvalue()
-    self.assertEqual(u('9876543210'), stdout)
+    self.assertEqual(u('9892843210'), stdout)
     self.assertEqual(len(stdout), 10)

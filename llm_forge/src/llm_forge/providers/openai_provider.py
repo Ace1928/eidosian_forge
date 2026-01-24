@@ -2,6 +2,7 @@ import os
 import openai
 from typing import List, Dict, Any, Optional
 from ..core.interfaces import LLMProvider, LLMResponse, EmbeddingProvider
+from eidosian_core import eidosian
 
 class OpenAIProvider(LLMProvider, EmbeddingProvider):
     @staticmethod
@@ -16,6 +17,7 @@ class OpenAIProvider(LLMProvider, EmbeddingProvider):
         self.client = openai.Client(api_key=api_key, base_url=base_url)
         self.embedding_model = embedding_model
 
+    @eidosian()
     def generate(self, prompt: str, model: str = "gpt-3.5-turbo", **kwargs) -> LLMResponse:
         response = self.client.chat.completions.create(
             model=model,
@@ -28,13 +30,16 @@ class OpenAIProvider(LLMProvider, EmbeddingProvider):
             model_name=model
         )
 
+    @eidosian()
     def list_models(self) -> List[str]:
         return [m.id for m in self.client.models.list().data]
 
+    @eidosian()
     def embed_text(self, text: str) -> List[float]:
         text = text.replace("\n", " ")
         return self.client.embeddings.create(input=[text], model=self.embedding_model).data[0].embedding
 
+    @eidosian()
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         # OpenAI handles batching automatically up to a limit
         texts = [t.replace("\n", " ") for t in texts]

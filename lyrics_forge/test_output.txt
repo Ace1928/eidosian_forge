@@ -1,0 +1,8 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/lloyd/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.12.1, devtools-0.12.2, cov-7.0.0, Faker-40.1.2
+collected 0 items
+
+============================ no tests ran in 0.02s =============================

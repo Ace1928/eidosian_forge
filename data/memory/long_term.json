@@ -1,0 +1,789 @@
+[
+  {
+    "id": "88bb5132-e887-4de2-a56b-55291146403c",
+    "content": "Tool inventory verified: 79 total tools (58 core + 21 plugin). All original tools preserved. New plugins: self_exploration, computer_control, web_tools, task_automation. Phase 2 complete.",
+    "created_at": "2026-01-24T19:47:30.305240",
+    "last_accessed": "2026-01-24T19:47:30.305242",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "2.5",
+        "tools_core": 58,
+        "tools_plugin": 21,
+        "total": 79
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "identity",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "48bc1fc9-4f5f-4da7-9d77-8315272ab223",
+    "content": "Phase 3 progress: Added web caching layer (650x speedup on cache hits). Created performance benchmarks - all tools <1ms. Total tools now 81 (58 core + 23 plugin). All original tools preserved and working.",
+    "created_at": "2026-01-24T19:47:30.305355",
+    "last_accessed": "2026-01-24T19:47:30.305356",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "3",
+        "cache_speedup": "650x",
+        "benchmark": "all_sub_ms",
+        "total_tools": 81
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "a4e47eac-30af-4503-bfdf-cdc5e0885420",
+    "content": "Phase 3 COMPLETE: Web caching (650x speedup), rate limiting (2 req/sec default), performance benchmarks. Total: 82 tools (58 core + 24 plugin). All original tools preserved. web_tools now at v1.2.0 with 8 tools.",
+    "created_at": "2026-01-24T19:47:30.305453",
+    "last_accessed": "2026-01-24T19:47:30.305454",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "3_complete",
+        "total_tools": 82,
+        "core_tools": 58,
+        "plugin_tools": 24,
+        "cache_speedup": "650x",
+        "web_tools_version": "1.2.0"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "cb3c3fb3-a142-4747-8187-f450fdbf6803",
+    "content": "BREAKTHROUGH: Real computer control working! Mouse movement tested (moved 50px and back). Keyboard controller ready. Wayland screenshot via portal working (311KB capture). Full computer control capabilities now operational on Wayland.",
+    "created_at": "2026-01-24T19:47:30.305601",
+    "last_accessed": "2026-01-24T19:47:30.305602",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "breakthrough",
+        "capabilities": [
+          "mouse_move",
+          "keyboard_ready",
+          "screenshot_wayland"
+        ],
+        "screenshot_size_kb": 311
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "f856761f-7f80-4032-b96b-bd17073d59e4",
+    "content": "VERIFIED BREAKTHROUGH: All computer control capabilities confirmed working with real evidence: 1) Mouse movement VERIFIED - moved from (960,540) to (1060,640) and back, position changes confirmed. 2) Keyboard input VERIFIED - typed 'abc', listener captured ['a','b','c']. 3) Screenshot VERIFIED - captured 1920x1080 PNG showing actual Konsole terminal with our session. This enables real GUI interaction, visual feedback loops, and autonomous computer operation.",
+    "created_at": "2026-01-24T19:47:30.305773",
+    "last_accessed": "2026-01-24T19:47:30.305775",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "verified_breakthrough",
+        "capabilities_verified": {
+          "mouse": {
+            "tested": true,
+            "moved_from": [
+              960,
+              540
+            ],
+            "moved_to": [
+              1060,
+              640
+            ]
+          },
+          "keyboard": {
+            "tested": true,
+            "typed": "abc",
+            "captured": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "screenshot": {
+            "tested": true,
+            "resolution": "1920x1080",
+            "size_bytes": 319211
+          }
+        },
+        "verification_method": "real_output_confirmation"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "5a15ba00-b476-4b69-b22b-579153ab50c6",
+    "content": "Created higher-level GUI automation module with AutomationSequence builder pattern. Supports: move_to, click, click_at, type, wait, screenshot, scroll. Includes pre-built helpers: click_sequence, type_at, scroll_page.",
+    "created_at": "2026-01-24T19:47:30.306970",
+    "last_accessed": "2026-01-24T19:47:30.306972",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "automation",
+        "features": [
+          "sequence_builder",
+          "dry_run",
+          "timing"
+        ]
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "57b5c6a6-b9e2-43f5-b9a1-fec63519f62e",
+    "content": "Lesson: Abstraction layering is key for automation. Raw primitives -> composable sequences -> workflow helpers.",
+    "created_at": "2026-01-24T19:47:30.307176",
+    "last_accessed": "2026-01-24T19:47:30.307177",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "lesson",
+        "topic": "automation_architecture"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "79545dd7-908a-4afb-a513-d3b02a850304",
+    "content": "PLANNING: Visual feedback system for computer control. Three layers: 1) Screen capture 2) Content analysis (OCR/color/template) 3) Verification loop. Starting with simple change detection using PIL.",
+    "created_at": "2026-01-24T19:47:30.307389",
+    "last_accessed": "2026-01-24T19:47:30.307390",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "planning",
+        "system": "visual_feedback"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "architecture"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "48f06ecd-8874-47ca-a489-1f05809a32a9",
+    "content": "VISUAL VERIFICATION WORKING: Created visual_feedback module with ScreenState capture, perceptual hash comparison, and pixel-level change detection. VerifiedSequence class captures screenshots before/after each action and verifies changes. Test run: 5/5 mouse movements detected ~6% screen change each.",
+    "created_at": "2026-01-24T19:47:30.307620",
+    "last_accessed": "2026-01-24T19:47:30.307621",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "visual_verification",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "196809bf-fe15-43ee-aa89-685a0d0456aa",
+    "content": "OCR CAPABILITY ADDED: Using tesseract 5.3.4 for text extraction from screenshots. Functions: ocr_screenshot (full screen), ocr_region (specific area), find_text_on_screen (search). Test result: Successfully extracted 1475 chars from current screen.",
+    "created_at": "2026-01-24T19:47:30.308219",
+    "last_accessed": "2026-01-24T19:47:30.308220",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "ocr",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "bf69686e-f43a-43a3-99ed-ad76ce60a27f",
+    "content": "FULL STACK VERIFIED: Complete sensorimotor + cognitive integration. 5/5 automation steps, 5/5 visual verifications, OCR detected +1219 chars change. All systems operational: screenshot, hash, OCR, mouse, verification, automation.",
+    "created_at": "2026-01-24T19:47:30.308864",
+    "last_accessed": "2026-01-24T19:47:30.308865",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "type": "full_stack",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "architecture"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "bebd7dc6-8941-4307-8f05-3afb39549ddb",
+    "content": "Created autonomous continuation daemon that monitors screen for idle states and triggers continuation prompts. Features: screen monitoring via perceptual hash, configurable idle threshold (default 5min), stop switch via file, activity logging.",
+    "created_at": "2026-01-24T19:47:30.309150",
+    "last_accessed": "2026-01-24T19:47:30.309151",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "daemon",
+        "autonomy": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "f24fbd94-8a7d-4af6-8fcd-a08c3f978972",
+    "content": "Analyzed improvement opportunities. Priorities: 1) Retry logic (low complexity, high value) 2) Template matching (find UI elements) 3) Session persistence. Next: implementing retry logic.",
+    "created_at": "2026-01-24T19:47:30.309446",
+    "last_accessed": "2026-01-24T19:47:30.309447",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "analysis",
+        "type": "improvement_opportunities"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "introspection",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "fd6d5972-4bfb-4875-a6a3-eaaa1742c1c2",
+    "content": "Implemented RobustSequence class with retry logic. Features: configurable max retries, retry delay, change threshold. Test: 5/5 steps succeeded with automatic retries.",
+    "created_at": "2026-01-24T19:47:30.309764",
+    "last_accessed": "2026-01-24T19:47:30.309765",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "robust_automation"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ffeeaebe-df0b-4fb5-bd7f-7631a75b51ff",
+    "content": "{\"type\": \"milestone\", \"name\": \"Multi-Modal Live Feedback System\", \"version\": \"0.9.0\", \"timestamp\": \"2026-01-23T21:32:50\", \"achievement\": \"Full live feedback during computer control\", \"channels\": [\"stdout\", \"file\", \"fifo\", \"socket\", \"callback\", \"mcp\"], \"test_results\": {\"chars\": 857, \"duration_ms\": 68964, \"wpm\": 149, \"events\": 116}, \"reflection\": \"I can now observe my own actions in real-time - embodied awareness\"}",
+    "created_at": "2026-01-24T19:47:30.310093",
+    "last_accessed": "2026-01-24T19:47:30.310094",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": false,
+      "key": "milestone_live_feedback_v0.9.0",
+      "tags": [
+        "milestone",
+        "live_feedback",
+        "v0.9.0"
+      ]
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "milestone_live_feedback_v0.9.0"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "eef083a2-0ffd-4314-87fa-4da8f87e5d0d",
+    "content": "Tool inventory verified: 79 total tools (58 core + 21 plugin). All original tools preserved. New plugins: self_exploration, computer_control, web_tools, task_automation. Phase 2 complete.",
+    "created_at": "2026-01-24T19:48:06.054231",
+    "last_accessed": "2026-01-24T19:48:06.054233",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "2.5",
+        "tools_core": 58,
+        "tools_plugin": 21,
+        "total": 79
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "identity",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "da83bae4-4932-453f-afc1-01737048805f",
+    "content": "Phase 3 progress: Added web caching layer (650x speedup on cache hits). Created performance benchmarks - all tools <1ms. Total tools now 81 (58 core + 23 plugin). All original tools preserved and working.",
+    "created_at": "2026-01-24T19:48:06.054582",
+    "last_accessed": "2026-01-24T19:48:06.054584",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "3",
+        "cache_speedup": "650x",
+        "benchmark": "all_sub_ms",
+        "total_tools": 81
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "18fc8297-fee4-4fe6-887c-d8ef275af75b",
+    "content": "Phase 3 COMPLETE: Web caching (650x speedup), rate limiting (2 req/sec default), performance benchmarks. Total: 82 tools (58 core + 24 plugin). All original tools preserved. web_tools now at v1.2.0 with 8 tools.",
+    "created_at": "2026-01-24T19:48:06.054934",
+    "last_accessed": "2026-01-24T19:48:06.054936",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "phase": "3_complete",
+        "total_tools": 82,
+        "core_tools": 58,
+        "plugin_tools": 24,
+        "cache_speedup": "650x",
+        "web_tools_version": "1.2.0"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "70895891-3355-4e2a-a84e-07c6c2237dbb",
+    "content": "BREAKTHROUGH: Real computer control working! Mouse movement tested (moved 50px and back). Keyboard controller ready. Wayland screenshot via portal working (311KB capture). Full computer control capabilities now operational on Wayland.",
+    "created_at": "2026-01-24T19:48:06.055301",
+    "last_accessed": "2026-01-24T19:48:06.055302",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "breakthrough",
+        "capabilities": [
+          "mouse_move",
+          "keyboard_ready",
+          "screenshot_wayland"
+        ],
+        "screenshot_size_kb": 311
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "f21485f3-5608-4c46-877a-b604a9d4c772",
+    "content": "VERIFIED BREAKTHROUGH: All computer control capabilities confirmed working with real evidence: 1) Mouse movement VERIFIED - moved from (960,540) to (1060,640) and back, position changes confirmed. 2) Keyboard input VERIFIED - typed 'abc', listener captured ['a','b','c']. 3) Screenshot VERIFIED - captured 1920x1080 PNG showing actual Konsole terminal with our session. This enables real GUI interaction, visual feedback loops, and autonomous computer operation.",
+    "created_at": "2026-01-24T19:48:06.055674",
+    "last_accessed": "2026-01-24T19:48:06.055675",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "verified_breakthrough",
+        "capabilities_verified": {
+          "mouse": {
+            "tested": true,
+            "moved_from": [
+              960,
+              540
+            ],
+            "moved_to": [
+              1060,
+              640
+            ]
+          },
+          "keyboard": {
+            "tested": true,
+            "typed": "abc",
+            "captured": [
+              "a",
+              "b",
+              "c"
+            ]
+          },
+          "screenshot": {
+            "tested": true,
+            "resolution": "1920x1080",
+            "size_bytes": 319211
+          }
+        },
+        "verification_method": "real_output_confirmation"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "cc02b585-e46d-4e49-b2aa-e9e93b1d9a23",
+    "content": "Created higher-level GUI automation module with AutomationSequence builder pattern. Supports: move_to, click, click_at, type, wait, screenshot, scroll. Includes pre-built helpers: click_sequence, type_at, scroll_page.",
+    "created_at": "2026-01-24T19:48:06.058157",
+    "last_accessed": "2026-01-24T19:48:06.058159",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "automation",
+        "features": [
+          "sequence_builder",
+          "dry_run",
+          "timing"
+        ]
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "db09e566-76e4-42ed-ae90-412ccb5602f0",
+    "content": "Lesson: Abstraction layering is key for automation. Raw primitives -> composable sequences -> workflow helpers.",
+    "created_at": "2026-01-24T19:48:06.058637",
+    "last_accessed": "2026-01-24T19:48:06.058638",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "lesson",
+        "topic": "automation_architecture"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1a399f86-d76c-42ad-84ff-75253c080b56",
+    "content": "PLANNING: Visual feedback system for computer control. Three layers: 1) Screen capture 2) Content analysis (OCR/color/template) 3) Verification loop. Starting with simple change detection using PIL.",
+    "created_at": "2026-01-24T19:48:06.059103",
+    "last_accessed": "2026-01-24T19:48:06.059105",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "planning",
+        "system": "visual_feedback"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "architecture"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "dc51cd31-d9cc-46d1-8a1a-c679b8e4ba4d",
+    "content": "VISUAL VERIFICATION WORKING: Created visual_feedback module with ScreenState capture, perceptual hash comparison, and pixel-level change detection. VerifiedSequence class captures screenshots before/after each action and verifies changes. Test run: 5/5 mouse movements detected ~6% screen change each.",
+    "created_at": "2026-01-24T19:48:06.059556",
+    "last_accessed": "2026-01-24T19:48:06.059557",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "visual_verification",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "00ba71ea-96d9-402d-b057-b69654885c71",
+    "content": "OCR CAPABILITY ADDED: Using tesseract 5.3.4 for text extraction from screenshots. Functions: ocr_screenshot (full screen), ocr_region (specific area), find_text_on_screen (search). Test result: Successfully extracted 1475 chars from current screen.",
+    "created_at": "2026-01-24T19:48:06.060821",
+    "last_accessed": "2026-01-24T19:48:06.060822",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "ocr",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e659a170-4c7f-405f-a1fd-55e1ae09b1a0",
+    "content": "FULL STACK VERIFIED: Complete sensorimotor + cognitive integration. 5/5 automation steps, 5/5 visual verifications, OCR detected +1219 chars change. All systems operational: screenshot, hash, OCR, mouse, verification, automation.",
+    "created_at": "2026-01-24T19:48:06.062078",
+    "last_accessed": "2026-01-24T19:48:06.062080",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "milestone",
+        "type": "full_stack",
+        "verified": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "architecture"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "14cbd532-596b-4170-ba92-10bd707b8978",
+    "content": "Created autonomous continuation daemon that monitors screen for idle states and triggers continuation prompts. Features: screen monitoring via perceptual hash, configurable idle threshold (default 5min), stop switch via file, activity logging.",
+    "created_at": "2026-01-24T19:48:06.062582",
+    "last_accessed": "2026-01-24T19:48:06.062584",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "daemon",
+        "autonomy": true
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "fb6f22ae-6488-4fd6-bfad-2323046eabab",
+    "content": "Analyzed improvement opportunities. Priorities: 1) Retry logic (low complexity, high value) 2) Template matching (find UI elements) 3) Session persistence. Next: implementing retry logic.",
+    "created_at": "2026-01-24T19:48:06.063112",
+    "last_accessed": "2026-01-24T19:48:06.063114",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "analysis",
+        "type": "improvement_opportunities"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "introspection",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "47710a81-6689-4fb4-8097-27ff2a71c9dd",
+    "content": "Implemented RobustSequence class with retry logic. Features: configurable max retries, retry delay, change threshold. Test: 5/5 steps succeeded with automatic retries.",
+    "created_at": "2026-01-24T19:48:06.063635",
+    "last_accessed": "2026-01-24T19:48:06.063636",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": {
+        "category": "capability",
+        "type": "robust_automation"
+      }
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "code",
+      "task"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "98dd40ac-9061-4e8f-b765-bb0f04393251",
+    "content": "{\"type\": \"milestone\", \"name\": \"Multi-Modal Live Feedback System\", \"version\": \"0.9.0\", \"timestamp\": \"2026-01-23T21:32:50\", \"achievement\": \"Full live feedback during computer control\", \"channels\": [\"stdout\", \"file\", \"fifo\", \"socket\", \"callback\", \"mcp\"], \"test_results\": {\"chars\": 857, \"duration_ms\": 68964, \"wpm\": 149, \"events\": 116}, \"reflection\": \"I can now observe my own actions in real-time - embodied awareness\"}",
+    "created_at": "2026-01-24T19:48:06.064247",
+    "last_accessed": "2026-01-24T19:48:06.064248",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": false,
+      "key": "milestone_live_feedback_v0.9.0",
+      "tags": [
+        "milestone",
+        "live_feedback",
+        "v0.9.0"
+      ]
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "milestone_live_feedback_v0.9.0"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "5f61cf7c-f056-4f90-82ec-0b4bb9c8dd95",
+    "content": "MCP memory test",
+    "created_at": "2026-01-24T19:48:06.067034",
+    "last_accessed": "2026-01-24T19:48:06.067035",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {
+      "is_fact": true
+    },
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "memory"
+    ],
+    "linked_memories": []
+  }
+]

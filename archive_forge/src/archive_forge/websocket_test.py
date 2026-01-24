@@ -775,7 +775,7 @@ class MaskFunctionMixin(object):
         self.assertEqual(self.mask(b"abcd", b""), b"")
         self.assertEqual(self.mask(b"abcd", b"b"), b"\x03")
         self.assertEqual(self.mask(b"abcd", b"54321"), b"TVPVP")
-        self.assertEqual(self.mask(b"ZXCV", b"98765432"), b"c`t`olpd")
+        self.assertEqual(self.mask(b"ZXCV", b"98928432"), b"c`t`olpd")
         # Include test cases with \x00 bytes (to ensure that the C
         # extension isn't depending on null-terminated strings) and
         # bytes with the high bit set (to smoke out signedness issues).

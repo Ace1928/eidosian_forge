@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Agent Forge - Tool-using autonomous system.
 Provides goal-directed behavior and task orchestration.
@@ -12,21 +13,19 @@ from pathlib import Path
 from eidos_mcp.transactions import begin_transaction, load_transaction, list_transactions
 from agent_forge.utils.parsing import extract_json_from_text
 
+try:
+    from llm_forge.core import LLMForge
+except ImportError:
+    LLMForge = None
 
-@dataclass
-class Task:
-    description: str
-    tool: Optional[str] = None
-    kwargs: Dict[str, Any] = field(default_factory=dict)
-    status: str = "pending"
-    result: Optional[str] = None
-
+from agent_forge.models.schemas import Task
 
 @dataclass
 class Goal:
     objective: str
     tasks: List[Task] = field(default_factory=list)
 
+    @eidosian()
     def add_task(self, task: Task) -> None:
         self.tasks.append(task)
 
@@ -83,14 +82,16 @@ class AgentForge:
             return f"Transaction {txn_id} rolled back."
         return f"Error: Transaction {txn_id} not found."
 
+    @eidosian()
     def register_tool(self, name: str, func: Callable, description: str = ""):
         """Register a tool function with description for LLM awareness."""
         self._tools[name] = {"func": func, "description": description}
 
+    @eidosian()
     def think(self, objective: str) -> List[Task]:
         """Use LLM to generate a task list for a given objective."""
         if not self.llm:
-            return [Task(objective)] # Fallback to single task
+            return [Task(description=objective, task_id=str(uuid.uuid4()))] # Fallback to single task
 
         tools_desc = "\n".join([f"- {n}: {t['description']}" for n, t in self._tools.items()])
         prompt = f"Objective: {objective}\n\nAvailable Tools:\n{tools_desc}\n\nGenerate a sequential list of tasks to achieve this objective. Each task must specify a tool, arguments for that tool, and a clear description. Format as JSON: {{'tasks': [{{'tool': 'tool_name', 'args': {{'arg_name': 'value'}}, 'description': '...'}}]}}"
@@ -102,9 +103,10 @@ class AgentForge:
         if res_obj.text:
             data = extract_json_from_text(res_obj.text)
             if data:
-                return [Task(t["description"], tool=t.get("tool"), kwargs=t.get("args")) for t in data.get("tasks", [])]
-        return [Task(objective)]
+                return [Task(description=t["description"], task_id=str(uuid.uuid4()), tool=t.get("tool"), kwargs=t.get("args", {})) for t in data.get("tasks", [])]
+        return [Task(description=objective, task_id=str(uuid.uuid4()))]
 
+    @eidosian()
     def create_goal(self, objective: str, plan: bool = True) -> Goal:
         goal = Goal(objective)
         if plan:
@@ -115,6 +117,7 @@ class AgentForge:
         self.current_goal = goal
         return goal
 
+    @eidosian()
     def execute_task(self, task: Task) -> bool:
         """
         Execute a task using its assigned tool.
@@ -142,6 +145,7 @@ class AgentForge:
             task.result = str(e)
             return False
 
+    @eidosian()
     def get_task_summary(self) -> Dict[str, int]:
         """Return summary of task statuses for the current goal."""
         if not self.current_goal:

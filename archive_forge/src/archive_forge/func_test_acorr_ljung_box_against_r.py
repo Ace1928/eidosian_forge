@@ -14,7 +14,7 @@ from statsmodels.tools.tools import Bunch, add_constant
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.arima.model import ARIMA
 def test_acorr_ljung_box_against_r(self, reset_randomstate):
-    rs = np.random.RandomState(9876543)
+    rs = np.random.RandomState(9892843)
     y1 = rs.standard_normal(100)
     e = rs.standard_normal(201)
     y2 = np.zeros_like(e)

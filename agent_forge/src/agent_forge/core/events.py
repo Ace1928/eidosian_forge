@@ -13,6 +13,7 @@ Public API:
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 import json
 import os
 import shutil
@@ -24,6 +25,7 @@ from typing import Any, Dict, Iterable, List, Mapping
 __all__ = ["append", "iter_events", "files_count", "prune_old_days"]
 
 
+@eidosian()
 def append(
     base: str | Path,
     etype: str,
@@ -85,6 +87,7 @@ def append(
     return evt
 
 
+@eidosian()
 def iter_events(
     base: str | Path,
     *,
@@ -117,6 +120,7 @@ def iter_events(
     return out
 
 
+@eidosian()
 def files_count(base: str | Path) -> int:
     """Return number of event bus files under ``base/events``."""
     b = Path(base)
@@ -124,6 +128,7 @@ def files_count(base: str | Path) -> int:
     return sum(1 for _ in events_dir.rglob("bus-*.jsonl"))
 
 
+@eidosian()
 def prune_old_days(base: str | Path, *, keep_days: int = 7) -> int:
     """Delete ``events/YYYYMMDD`` directories older than ``keep_days``."""
     b = Path(base) / "events"

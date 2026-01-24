@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Data models for the Eidosian Forge agent.
 
@@ -79,6 +80,7 @@ class Thought:
     metadata: Dict[str, Any] = field(default_factory=dict)
     context: Optional[Dict[str, Any]] = None
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert thought to dictionary for storage."""
         result = {
@@ -141,6 +143,7 @@ class Memory:
     metadata: Dict[str, Any] = field(default_factory=dict)
     decay_rate: float = 0.01  # How quickly memories fade without reinforcement
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert memory to dictionary for storage."""
         return {
@@ -191,7 +194,10 @@ class Task:
     assigned_to: Optional[str] = None  # Name of agent assigned to the task
     deadline: Optional[datetime.datetime] = None
     progress: float = 0.0  # 0.0 to 1.0 representing completion percentage
+    tool: Optional[str] = None
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert task to dictionary for storage."""
         result = {
@@ -203,6 +209,8 @@ class Task:
             "dependencies": self.dependencies,
             "result": self.result,
             "progress": self.progress,
+            "tool": self.tool,
+            "kwargs": self.kwargs,
         }
 
         if self.assigned_to:
@@ -241,6 +249,8 @@ class Task:
             assigned_to=data.get("assigned_to"),
             deadline=deadline,
             progress=data.get("progress", 0.0),
+            tool=data.get("tool"),
+            kwargs=data.get("kwargs", {}),
         )
 
 
@@ -263,6 +273,7 @@ class ModelConfig:
     base_url: Optional[str] = None
     custom_settings: Dict[str, Any] = field(default_factory=dict)
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary for storage."""
         return {
@@ -341,6 +352,7 @@ class SmolAgent:
     memory_capacity: int = 100
     """How many memories this agent can retain before forgetting"""
 
+    @eidosian()
     def add_thought(
         self,
         content: str,
@@ -356,6 +368,7 @@ class SmolAgent:
             Thought(content=content, thought_type=thought_type, context=context)
         )
 
+    @eidosian()
     def update_state(self, key: str, value: Any) -> None:
         """
         Update a specific value in the agent's state.
@@ -364,6 +377,7 @@ class SmolAgent:
         """
         self.state[key] = value
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert smol agent to dictionary for storage.

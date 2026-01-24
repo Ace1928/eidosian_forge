@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Queue configuration for Word Forge asynchronous processing.
 
@@ -112,6 +113,7 @@ class QueueConfig:
             return float(self.batch_size)  # Avoid division by zero
         return self.batch_size / self.throttle_seconds
 
+    @eidosian()
     def with_batch_size(self, batch_size: int) -> "QueueConfig":
         """
         Create a new config instance with modified batch size.
@@ -136,6 +138,7 @@ class QueueConfig:
             performance_profile=self.performance_profile,
         )
 
+    @eidosian()
     def with_performance_profile(
         self, profile: QueuePerformanceProfile
     ) -> "QueueConfig":
@@ -180,6 +183,7 @@ class QueueConfig:
 
         return config
 
+    @eidosian()
     def optimize_for_threading(self, enable: bool) -> "QueueConfig":
         """
         Optimize configuration for threaded or non-threaded operation.
@@ -215,6 +219,7 @@ class QueueConfig:
 
         return config
 
+    @eidosian()
     def get_metrics_config(self) -> Dict[str, Union[bool, str, int]]:
         """
         Get configuration subset for metrics collection.

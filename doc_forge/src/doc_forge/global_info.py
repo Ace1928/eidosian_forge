@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Global Information System
 """
@@ -113,6 +114,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 # 🧪 Functions for working with global information
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+@eidosian()
 def get_project_info() -> Dict[str, str]:
     """
     Get project information with Eidosian clarity.
@@ -122,6 +124,7 @@ def get_project_info() -> Dict[str, str]:
     """
     return PROJECT
 
+@eidosian()
 def get_doc_structure(repo_root: Optional[Path] = None) -> Dict[str, Path]:
     """
     Get documentation directory structure with absolute paths.
@@ -158,6 +161,7 @@ def get_doc_structure(repo_root: Optional[Path] = None) -> Dict[str, Path]:
     
     return result
 
+@eidosian()
 def get_config() -> Dict[str, Any]:
     """
     Get configuration with environment overrides.
@@ -185,6 +189,7 @@ def get_config() -> Dict[str, Any]:
     
     return config
 
+@eidosian()
 def ensure_doc_structure(repo_root: Optional[Path] = None) -> Dict[str, Path]:
     """
     Ensure all documentation directories exist with Eidosian perfection.
@@ -207,6 +212,7 @@ def ensure_doc_structure(repo_root: Optional[Path] = None) -> Dict[str, Path]:
 _global_paths: Dict[str, Any] = {}
 GLOBAL_PATHS_OVERRIDE: Dict[str, Any] = {}
 
+@eidosian()
 def get_paths() -> Dict[str, Path]:
     """
     Get global paths with Eidosian precision.
@@ -227,6 +233,7 @@ def get_paths() -> Dict[str, Path]:
     
     return _global_paths
 
+@eidosian()
 def get_global_config() -> Dict[str, Any]:
     """
     Get global configuration with Eidosian clarity.

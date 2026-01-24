@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation Command Center
 """
@@ -45,6 +46,7 @@ logger.debug(f"🔍 BUILD_DIR set to: {BUILD_DIR}")
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🎭 Command execution
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+@eidosian()
 def run_command(command: Union[List[str], str], cwd: Optional[Path] = None) -> Tuple[int, str, str]:
     start_time = time.time()
     process_cwd = cwd or REPO_ROOT
@@ -78,6 +80,7 @@ def run_command(command: Union[List[str], str], cwd: Optional[Path] = None) -> T
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📋 Command implementations
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+@eidosian()
 def cmd_setup(args: argparse.Namespace) -> int:
     logger.info("🏗️ Setting up documentation environment")
     requirements_path = DOCS_DIR / "requirements.txt"
@@ -120,6 +123,7 @@ def cmd_setup(args: argparse.Namespace) -> int:
     logger.info("✅ Documentation environment setup complete")
     return 0
 
+@eidosian()
 def cmd_build(args: argparse.Namespace) -> int:
     formats = getattr(args, 'formats', None) or ["html"]
     fix = getattr(args, 'fix', False)
@@ -184,6 +188,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     logger.info(f"📚 Documentation build complete. Output in: {BUILD_DIR}")
     return 0
 
+@eidosian()
 def cmd_clean(_: argparse.Namespace) -> int:
     logger.info("🧹 Cleaning documentation build artifacts")
     import shutil
@@ -209,6 +214,7 @@ def cmd_clean(_: argparse.Namespace) -> int:
         logger.error(f"❌ Clean operation failed: {e}")
         return 1
 
+@eidosian()
 def cmd_check(args: argparse.Namespace) -> int:
     logger.info("🔍 Checking documentation for issues")
     markdown_files = list(DOCS_DIR.glob("**/*.md"))
@@ -252,6 +258,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     logger.info("✅ Documentation check completed")
     return 0
 
+@eidosian()
 def cmd_serve(args: argparse.Namespace) -> int:
     port = getattr(args, 'port', 8000)
 
@@ -290,6 +297,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📚 CLI infrastructure
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+@eidosian()
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="🌀 Doc Forge - Universal Documentation Command System",
@@ -315,6 +323,7 @@ def create_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument('-p', '--port', type=int, default=8000, help='Port to serve on')
     return parser
 
+@eidosian()
 def main() -> int:
     print(r"""
 ╔═════════════════════════════════════════════════════════════════════════════════╗

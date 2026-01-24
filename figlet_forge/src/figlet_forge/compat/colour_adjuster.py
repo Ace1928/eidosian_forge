@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Color support detection and adjustment for Figlet Forge.
 
@@ -174,6 +175,7 @@ class ColorDetection:
         except Exception:
             return False
 
+    @eidosian()
     def supports_color(self) -> bool:
         """
         Check if the terminal supports color output.
@@ -185,6 +187,7 @@ class ColorDetection:
             self._capabilities["color_support"] and not self._capabilities["no_color"]
         )
 
+    @eidosian()
     def supports_truecolor(self) -> bool:
         """
         Check if the terminal supports 24-bit true color.
@@ -194,6 +197,7 @@ class ColorDetection:
         """
         return self._capabilities["truecolor_support"] and self.supports_color()
 
+    @eidosian()
     def supports_256color(self) -> bool:
         """
         Check if the terminal supports 256 colors.
@@ -203,6 +207,7 @@ class ColorDetection:
         """
         return self._capabilities["256color_support"] and self.supports_color()
 
+    @eidosian()
     def get_color_depth(self) -> int:
         """
         Get the maximum color depth supported by the terminal.
@@ -218,6 +223,7 @@ class ColorDetection:
             return self.ANSI_256_COLOR
         return self.ANSI_16_COLOR
 
+    @eidosian()
     def get_terminal_type(self) -> str:
         """
         Get the detected terminal type.
@@ -549,6 +555,7 @@ class ColourAdjuster:
             self._color_supported = False
             return False
 
+    @eidosian()
     def colorize(
         self,
         text: str,
@@ -593,6 +600,7 @@ class ColourAdjuster:
         ansi_code = f'\033[{";".join(codes)}m'
         return f"{ansi_code}{text}{ANSI_RESET}"
 
+    @eidosian()
     def strip_colors(self, text: str) -> str:
         """
         Remove ANSI color codes from text.
@@ -624,6 +632,7 @@ class ColourAdjuster:
         base = "4" if is_background else "3"
         return f"\033[{base}{COLOR_MAP[color_name]}m"
 
+    @eidosian()
     def adapt_for_environment(self, text: str) -> str:
         """
         Adapt colored text for the current terminal environment.
@@ -650,6 +659,7 @@ class ColourAdjuster:
 
 
 # For backwards compatibility with code using original module
+@eidosian()
 def supports_color() -> bool:
     """
     Check if the current terminal supports color output.
@@ -661,6 +671,7 @@ def supports_color() -> bool:
     return adjuster.color_supported
 
 
+@eidosian()
 def colorize(text: str, color: str) -> str:
     """
     Apply color to text if the terminal supports it.
@@ -854,6 +865,7 @@ class ColourAdjuster:
 
         return self._color_depth
 
+    @eidosian()
     def strip_colors(self, text: str) -> str:
         """
         Remove all ANSI color codes from text.
@@ -866,6 +878,7 @@ class ColourAdjuster:
         """
         return self._ansi_color_regex.sub("", text)
 
+    @eidosian()
     def downgrade_colors(self, text: str) -> str:
         """
         Adapt color codes to the terminal's capabilities.
@@ -894,6 +907,7 @@ class ColourAdjuster:
     def _downgrade_truecolor_to_256(self, text: str) -> str:
         """Convert 24-bit color codes to 256 color codes."""
 
+        @eidosian()
         def replace_truecolor(match):
             r, g, b = map(int, match.groups())
             color_256 = self._rgb_to_256(r, g, b)
@@ -904,6 +918,7 @@ class ColourAdjuster:
     def _downgrade_256_to_16(self, text: str) -> str:
         """Convert 256 color codes to 16 color codes."""
 
+        @eidosian()
         def replace_256color(match):
             color = int(match.group(1))
             ansi_code = self._256_to_16(color, "3")
@@ -1017,6 +1032,7 @@ class ColourAdjuster:
         return f"{base_code}{color}"
 
 
+@eidosian()
 def adapt_colors_to_terminal(text: str) -> str:
     """
     Convert color codes in text to match terminal capabilities.
@@ -1033,6 +1049,7 @@ def adapt_colors_to_terminal(text: str) -> str:
     return colour.downgrade_colors(text)
 
 
+@eidosian()
 def strip_colors(text: str) -> str:
     """
     Remove all color codes from text.
@@ -1049,6 +1066,7 @@ def strip_colors(text: str) -> str:
     return colour.strip_colors(text)
 
 
+@eidosian()
 def supports_color() -> bool:
     """
     Check if the terminal supports color output.

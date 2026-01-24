@@ -6,6 +6,7 @@ import sys
 
 from . import eidos_mcp_server  # noqa: F401
 from .core import list_tool_metadata, list_resource_metadata
+from eidosian_core import eidosian
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -14,6 +15,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)

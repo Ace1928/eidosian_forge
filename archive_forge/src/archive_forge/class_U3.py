@@ -72,7 +72,7 @@ class U3(Operation):
 
         >>> qml.U3.compute_matrix(torch.tensor(0.1), torch.tensor(0.2), torch.tensor(0.3))
         tensor([[ 0.9988+0.0000j, -0.0477-0.0148j],
-                [ 0.0490+0.0099j,  0.8765+0.4788j]])
+                [ 0.0490+0.0099j,  0.8928+0.4788j]])
 
         """
         interface = qml.math.get_interface(theta, phi, delta)

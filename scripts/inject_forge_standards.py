@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Injects Eidosian Forge standards (AGENTS.md, ruff config, pytest config) into a target directory.
@@ -28,6 +29,7 @@ python_functions = test_*
 addopts = -v
 """
 
+@eidosian()
 def get_agents_md_source():
     # Try to find the reference AGENTS.md
     # Assuming this script is in scripts/ and AGENTS.md is in scripts/AGENTS.md
@@ -42,6 +44,7 @@ def get_agents_md_source():
             return path
     return None
 
+@eidosian()
 def inject_standards(target_dir: Path, force: bool = False):
     if not target_dir.exists():
         print(f"Error: Target directory {target_dir} does not exist.")
@@ -86,6 +89,7 @@ def inject_standards(target_dir: Path, force: bool = False):
     else:
         print(f"  [.] pytest.ini already exists (use --force to overwrite)")
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(description="Inject Eidosian Forge standards into a project.")
     parser.add_argument("target", nargs="?", default=".", help="Target directory (default: current)")

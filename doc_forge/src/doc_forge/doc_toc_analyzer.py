@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian TOC Analysis System
 """
@@ -47,6 +48,7 @@ class TocAnalyzer:
         self.metrics: Dict[str, Any] = {}
         self.recommendations: List[str] = []
         
+    @eidosian()
     def analyze_toc_structure(self) -> Dict[str, Any]:
         """
         Analyze the TOC structure with Eidosian precision.
@@ -188,6 +190,7 @@ class TocAnalyzer:
             }
         }
     
+    @eidosian()
     def visualize_structure(self, output_path: Optional[Path] = None) -> Path:
         """
         Generate a visual representation of the TOC structure.
@@ -463,6 +466,7 @@ class TocAnalyzer:
 """
 
 
+@eidosian()
 def analyze_toc(docs_dir: Optional[Path] = None) -> Dict[str, Any]:
     """
     Analyze the TOC structure of documentation with Eidosian precision.

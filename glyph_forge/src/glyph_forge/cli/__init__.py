@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ⚡ Glyph Forge CLI ⚡
 
@@ -61,6 +62,7 @@ app.add_typer(imagize_app, name="imagize", help="Transform images into Glyph art
 # Initialize console with full capability detection
 console = Console()
 
+@eidosian()
 @app.callback()
 def callback():
     """
@@ -70,6 +72,7 @@ def callback():
     """
     pass
 
+@eidosian()
 @app.command()
 def version():
     """Display the current version of Glyph Forge with environment details."""
@@ -96,6 +99,7 @@ def version():
     console.print(table)
     console.print(Panel("", border_style="bright_yellow", width=60))
 
+@eidosian()
 @app.command()
 def interactive():
     """Launch the interactive Glyph Forge experience."""
@@ -110,6 +114,7 @@ def interactive():
         console.print("Install with: [bold green]pip install textual[/bold green]")
         console.print("\nFallback to command line mode. Use [bold cyan]--help[/bold cyan] for available commands.")
 
+@eidosian()
 @app.command()
 def list_commands():
     """Display all available Glyph Forge commands with descriptions."""
@@ -133,6 +138,7 @@ def list_commands():
     
     console.print(table)
 
+@eidosian()
 def main():
     """
     Primary entry point for Glyph Forge CLI
@@ -164,6 +170,7 @@ def main():
             console.print(traceback.format_exc())
         return 1
 
+@eidosian()
 def display_banner():
     """
     Display the Glyph Forge banner with perfect styling
@@ -203,6 +210,7 @@ def display_banner():
     console.print("  [cyan]glyph-forge interactive[/cyan] - Launch TUI interface")
     console.print("\nType [cyan]glyph-forge --help[/cyan] for more information\n")
 
+@eidosian()
 def check_for_external_dependencies() -> Dict[str, bool]:
     """
     Check if optional dependencies are installed with zero IO overhead
@@ -219,6 +227,7 @@ def check_for_external_dependencies() -> Dict[str, bool]:
     
     return dependencies
 
+@eidosian()
 def get_settings() -> Union[Dict[str, Any], ConfigManager]:
     """
     Compatibility wrapper for settings retrieval with zero friction.

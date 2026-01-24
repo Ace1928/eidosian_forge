@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Validates the integrity of the context/index.json and context/catalog.json files.
@@ -102,6 +103,7 @@ class ContextCatalog(BaseModel):
 
 # --- Validation Logic ---
 
+@eidosian()
 def validate_paths_exist(entries: List[Any], base_path: Path) -> List[str]:
     errors = []
     for entry in tqdm(entries, desc="Verifying Paths"):
@@ -118,6 +120,7 @@ def validate_paths_exist(entries: List[Any], base_path: Path) -> List[str]:
             
     return errors
 
+@eidosian()
 def flatten_catalog_entries(entries: List[CatalogEntry]) -> List[CatalogEntry]:
     flat = []
     for entry in entries:
@@ -126,6 +129,7 @@ def flatten_catalog_entries(entries: List[CatalogEntry]) -> List[CatalogEntry]:
             flat.extend(flatten_catalog_entries(entry.children))
     return flat
 
+@eidosian()
 def run_validation():
     logger.info("🔍 Starting Deep Context Validation...")
     report_lines = [f"# Context Validation Report - {datetime.now().isoformat()}", ""]

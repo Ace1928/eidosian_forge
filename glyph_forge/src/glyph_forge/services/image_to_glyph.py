@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 from PIL import Image
 
 from ..utils.alphabet_manager import AlphabetManager
+from eidosian_core import eidosian
 
 # Type definitions for clarity and precision
 PixelArray: TypeAlias = NDArray[np.uint8]  # Type for grayscale/RGB pixel arrays
@@ -100,6 +101,7 @@ class ImageGlyphConverter:
         # Initialize logger
         self.logger = logging.getLogger(__name__)
 
+    @eidosian()
     def convert(
         self,
         image_path: Union[str, Image.Image],
@@ -300,6 +302,7 @@ class ImageGlyphConverter:
             self.logger.error(f"Failed to save output: {e}")
             raise IOError(f"Failed to save output: {str(e)}")
 
+    @eidosian()
     def set_charset(self, charset: str, invert: bool = False) -> None:
         """
         Change the character set used for conversion.
@@ -318,6 +321,7 @@ class ImageGlyphConverter:
 
         self.density_map = AlphabetManager.create_density_map(self.charset)
 
+    @eidosian()
     def set_image_params(
         self,
         width: Optional[int] = None,
@@ -351,6 +355,7 @@ class ImageGlyphConverter:
         if dithering is not None:
             self.dithering = dithering
 
+    @eidosian()
     def get_available_charsets(self) -> List[str]:
         """
         Get list of available character sets.
@@ -360,6 +365,7 @@ class ImageGlyphConverter:
         """
         return self._available_charsets.copy()
 
+    @eidosian()
     def convert_color(
         self,
         image_path: Union[str, Image.Image],
@@ -484,6 +490,7 @@ class ImageGlyphConverter:
         return "".join(Glyph_art)
 
 
+@eidosian()
 def image_to_glyph(
     image_path: Union[str, Image.Image],
     output_path: Optional[str] = None,

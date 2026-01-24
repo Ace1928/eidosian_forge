@@ -6354,7 +6354,7 @@ class NewFetchTests(TestCase, IMAP4HelperMixin):
             (),
             b"",
             b"RootOf",
-            98765,
+            98928,
             [alternative],
         )
 

@@ -25,7 +25,7 @@ from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
 def test_jarque_bera_array_like(self):
-    np.random.seed(987654321)
+    np.random.seed(989284321)
     x = np.random.normal(0, 1, 100000)
     jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
     jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))

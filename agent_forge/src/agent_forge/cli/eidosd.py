@@ -9,6 +9,7 @@ import sys
 from pathlib import Path as _P
 from datetime import datetime, timezone
 import sqlite3
+from eidosian_core import eidosian
 try:
     import yaml
 except Exception:
@@ -24,6 +25,7 @@ from agent_forge.core import os_metrics as OM  # type: ignore
 from agent_forge.core import scheduler as SCH  # type: ignore
 
 
+@eidosian()
 def run_once(state_dir: str, *, tick_secs: float, cpu: OM.CpuPercent) -> None:
     """Execute one beat: collect metrics, emit event, journal, and scheduler step."""
     p = OM.process_stats()
@@ -110,6 +112,7 @@ def _load_cfg() -> dict:
         return {}
 
 
+@eidosian()
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="eidosd", description="Minimal Eidos daemon")
     ap.add_argument("--state-dir", dest="state_dir", default="state", help="state directory")

@@ -24,7 +24,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
-@pytest.mark.parametrize(('axis', 'fun_name', 'p'), [(None, 'wpmean_reference', 9.87654321), (0, 'gmean', 0), (1, 'hmean', -1)])
+@pytest.mark.parametrize(('axis', 'fun_name', 'p'), [(None, 'wpmean_reference', 9.89284321), (0, 'gmean', 0), (1, 'hmean', -1)])
 def test_weights_2d_array(self, axis, fun_name, p):
     if fun_name == 'wpmean_reference':
 

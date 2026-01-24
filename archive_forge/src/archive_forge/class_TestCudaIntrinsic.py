@@ -633,7 +633,7 @@ class TestCudaIntrinsic(CUDATestCase):
             with self.subTest(val=val, ndigits=ndigits):
                 compiled[1, 1](ary, val, ndigits)
                 self.assertPreciseEqual(ary[0], round(val, ndigits), prec='exact')
-        val = 0.12345678987654321 * 1e-14
+        val = 0.12345678989284321 * 1e-14
         ndigits = 23
         with self.subTest(val=val, ndigits=ndigits):
             compiled[1, 1](ary, val, ndigits)

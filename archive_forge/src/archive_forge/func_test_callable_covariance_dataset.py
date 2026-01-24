@@ -4,7 +4,7 @@ import pytest
 from matplotlib import mlab
 def test_callable_covariance_dataset(self):
     """Test the callable's cov factor for a multi-dimensional array."""
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 50
     multidim_data = [np.random.randn(n_basesample) for i in range(5)]
 

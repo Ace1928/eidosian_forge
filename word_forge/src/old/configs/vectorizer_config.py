@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Vectorization configuration system for Word Forge.
 
@@ -234,6 +235,7 @@ class VectorizerConfig:
     # Public Methods
     # ==========================================
 
+    @eidosian()
     def get_template(self, template_type: Union[str, QueryType]) -> InstructionTemplate:
         """
         Get strongly typed instruction template for a query type.
@@ -260,6 +262,7 @@ class VectorizerConfig:
             document_prefix=template_dict["document_prefix"],
         )
 
+    @eidosian()
     def get_sql_template(self, template_name: SQLQueryType) -> str:
         """
         Get SQL template by name with validation.
@@ -280,6 +283,7 @@ class VectorizerConfig:
             )
         return self.sql_templates[template_name]
 
+    @eidosian()
     def clone(self: T, **kwargs: Any) -> T:
         """
         Create a new configuration with specified overrides.
@@ -313,6 +317,7 @@ class VectorizerConfig:
         # Create new instance
         return cast(T, self.__class__(**current_values))
 
+    @eidosian()
     def with_model(
         self, model_name: str, dimension: Optional[int] = None
     ) -> "VectorizerConfig":
@@ -332,6 +337,7 @@ class VectorizerConfig:
         """
         return self.clone(model_name=model_name, dimension=dimension)
 
+    @eidosian()
     def with_storage_type(self, storage_type: StorageType) -> "VectorizerConfig":
         """
         Create a new configuration with a different storage type.
@@ -348,6 +354,7 @@ class VectorizerConfig:
         """
         return self.clone(storage_type=storage_type)
 
+    @eidosian()
     def optimize_for_performance(self, is_speed_critical: bool) -> "VectorizerConfig":
         """
         Create a new configuration optimized for either speed or accuracy.
@@ -369,6 +376,7 @@ class VectorizerConfig:
 
         return self.clone(**settings)
 
+    @eidosian()
     def get_performance_settings(self) -> Dict[str, Any]:
         """
         Get performance-related settings as a dictionary.
@@ -390,6 +398,7 @@ class VectorizerConfig:
             "dim_separation": self.dim_separation if self.enable_multi_dim else None,
         }
 
+    @eidosian()
     def validate(self) -> None:
         """
         Validate the entire configuration for consistency and correctness.

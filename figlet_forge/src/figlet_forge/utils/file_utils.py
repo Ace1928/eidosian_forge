@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Utility functions for file operations within Figlet Forge.
 
@@ -24,6 +25,7 @@ FONT_DIRECTORIES = [
 ]
 
 
+@eidosian()
 def get_default_font_dir() -> str:
     """
     Get the default directory for Figlet fonts.
@@ -61,6 +63,7 @@ def get_default_font_dir() -> str:
     return os.path.join(os.getcwd(), "fonts")
 
 
+@eidosian()
 def list_font_files(directory: Optional[str] = None) -> List[str]:
     """
     List all font files in the specified directory.
@@ -85,6 +88,7 @@ def list_font_files(directory: Optional[str] = None) -> List[str]:
     return sorted(font_files)
 
 
+@eidosian()
 def get_font_path(
     font_name: str, search_path: Optional[List[str]] = None
 ) -> Optional[str]:
@@ -128,6 +132,7 @@ def get_font_path(
     return None
 
 
+@eidosian()
 def resolve_resource_path(resource_path: Union[str, Path]) -> str:
     """
     Resolve a resource path, handling both filesystem and package resources.

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Compatibility layer for pyfiglet.
 
@@ -93,19 +94,23 @@ class Figlet(FigletForge):
         # Default to auto for unknown values
         return "auto"
 
+    @eidosian()
     def getDirection(self) -> str:
         """Get the current direction with underscore format for compatibility."""
         # Convert hyphenated format to underscore format for compatibility
         return self.direction.replace("-", "_")
 
+    @eidosian()
     def getJustify(self) -> str:
         """Get the current justification."""
         return self.justify
 
+    @eidosian()
     def getFonts(self) -> List[str]:
         """Get list of available fonts (compatibility method)."""
         return self.fonts
 
+    @eidosian()
     def setFont(self, font: str) -> None:
         """
         Set the current font.
@@ -116,6 +121,7 @@ class Figlet(FigletForge):
         self.font = font
         self._font = self.get_figlet_font()
 
+    @eidosian()
     def getRenderWidth(self, text: str) -> int:
         """
         Get the render width for the given text.
@@ -129,6 +135,7 @@ class Figlet(FigletForge):
         return self.get_render_width(text)
 
 
+@eidosian()
 def figlet_format(
     text: str, font: str = "standard", justify: str = "auto", width: int = 80, **kwargs
 ) -> str:
@@ -154,6 +161,7 @@ def figlet_format(
         return fig.renderText(text)
 
 
+@eidosian()
 def renderText(
     text: str, font: str = "standard", justify: str = "auto", width: int = 80, **kwargs
 ) -> str:

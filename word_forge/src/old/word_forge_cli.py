@@ -21,6 +21,8 @@ from word_forge.worker.worker_thread import (
     print_table,
 )
 
+from eidosian_core import eidosian
+
 # This module provides a command-line interface (CLI) for the WordForge application,
 
 # Type aliases for better readability
@@ -29,6 +31,7 @@ EventDict = Dict[str, Any]
 
 
 # Safe type conversion helpers
+@eidosian()
 def safe_int(value: Any, default: int = 0) -> int:
     """Safely convert a value to int with proper type handling."""
     if value is None:
@@ -41,6 +44,7 @@ def safe_int(value: Any, default: int = 0) -> int:
         return default
 
 
+@eidosian()
 def safe_float(value: Any, default: float = 0.0) -> float:
     """Safely convert a value to float with proper type handling."""
     if value is None:
@@ -161,6 +165,7 @@ class WordForgeCLI:
         self.logger.info(f"Initialized with database: {db_path}")
         self.logger.info(f"Data directory: {data_dir}")
 
+    @eidosian()
     def start_worker(self) -> None:
         """Start the worker thread if not already running."""
         if self.worker_started:
@@ -258,6 +263,7 @@ class WordForgeCLI:
             f"({proc_rate:.2f}/min), {queue_size} in queue, {error_count} errors{Style.RESET_ALL}"
         )
 
+    @eidosian()
     def stop_worker(self) -> None:
         """Stop the worker thread if running and wait for it to finish."""
         if not self.worker_started or self.worker is None:
@@ -294,6 +300,7 @@ class WordForgeCLI:
             )
             self.logger.info(f"Error count: {safe_int(stats.get('error_count', 0))}")
 
+    @eidosian()
     def run_demo(self, minutes: float = 1.0) -> None:
         """
         Run a demonstration of WordForge for a specified duration.
@@ -434,6 +441,7 @@ class WordForgeCLI:
                 )
             )
 
+    @eidosian()
     def list_queue(self) -> None:
         """Display the current queue size and a sample of queued items."""
         queue_size = self.queue_manager.size
@@ -451,6 +459,7 @@ class WordForgeCLI:
                     f"Failed to get queue sample: {getattr(sample_result, 'error', 'Unknown error')}"
                 )
 
+    @eidosian()
     def shutdown(self) -> None:
         """Gracefully shut down all components."""
         self.state = CLIState.STOPPING
@@ -478,6 +487,7 @@ class WordForgeCLI:
         for cmd, desc in commands:
             print(f"{Fore.GREEN}{cmd.ljust(15)}{Style.RESET_ALL}{desc}")
 
+    @eidosian()
     def add_word(self, term: str):
         """
         Enqueue a word for processing.
@@ -499,6 +509,7 @@ class WordForgeCLI:
             )
         return enqueued
 
+    @eidosian()
     def batch_add_words(self, file_path: str) -> Tuple[int, int]:
         """
         Add multiple words from a file (one word per line).
@@ -526,6 +537,7 @@ class WordForgeCLI:
             self.logger.error(f"Error reading batch file: {str(e)}")
             return 0, 0
 
+    @eidosian()
     def search_word(self, term: str) -> Optional[WordEntryDict]:
         """
         Retrieve and display a word entry from the database.
@@ -563,6 +575,7 @@ class WordForgeCLI:
             self.logger.error(f"Error searching for word: {str(e)}")
             return None
 
+    @eidosian()
     def display_statistics(self) -> None:
         """Display detailed statistics about the worker and database."""
         if not self.worker_started or self.worker is None:
@@ -597,6 +610,7 @@ class WordForgeCLI:
         headers = ["Metric", "Value"]
         rows: List[List[str]] = []
 
+        @eidosian()
         def format_stat(key: str, default: str, formatter: Optional[str] = None) -> str:
             """Format a statistic with proper type handling"""
             value = stats.get(key, default)
@@ -684,6 +698,7 @@ class WordForgeCLI:
                             f"  {event_time} - State changed: {old_state} → {new_state}"
                         )
 
+    @eidosian()
     def interactive_shell(self) -> None:
         """
         Launch an interactive REPL-like shell for WordForge.
@@ -751,6 +766,7 @@ class WordForgeCLI:
                 print(f"Unknown command: {cmd}")
 
 
+@eidosian()
 def main() -> None:
     """
     The main entry point for the WordForge CLI. Provides subcommands

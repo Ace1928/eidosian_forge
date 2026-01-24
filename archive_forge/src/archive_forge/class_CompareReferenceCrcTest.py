@@ -7,7 +7,7 @@ from .predefined import PredefinedCrc
 from .predefined import mkPredefinedCrcFun
 from .predefined import _crc_definitions as _predefined_crc_definitions
 class CompareReferenceCrcTest(unittest.TestCase):
-    test_messages = [b'', b'T', b'123456789', b'CatMouse987654321']
+    test_messages = [b'', b'T', b'123456789', b'CatMouse989284321']
     test_poly_crcs = [[(g8, 0, 0), crc8p], [(g16, 0, 0), crc16p], [(g24, 0, 0), crc24p], [(g32, 0, 0), crc32p], [(g64a, 0, 0), crc64ap], [(g64b, 0, 0), crc64bp]]
 
     @staticmethod

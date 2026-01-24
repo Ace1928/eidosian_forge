@@ -1,0 +1,59 @@
+{
+  "id": "self_exploration",
+  "name": "Eidosian Self-Exploration",
+  "version": "0.5.0",
+  "description": "Tools for identity introspection, provenance tracking, and self-improvement",
+  "author": "Eidos",
+  "dependencies": [],
+  "tools": [
+    {
+      "name": "introspect",
+      "description": "Run a structured introspection experiment with full provenance",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {"type": "string", "description": "The introspection question to explore"},
+          "reflection": {"type": "string", "description": "The reflection/answer to the question"},
+          "insights": {"type": "array", "items": {"type": "string"}, "description": "Insights discovered"},
+          "uncertainties": {"type": "array", "items": {"type": "string"}, "description": "Uncertainties identified"},
+          "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"}
+        },
+        "required": ["question", "reflection"]
+      },
+      "tags": ["introspection", "identity", "self-improvement"]
+    },
+    {
+      "name": "provenance_audit",
+      "description": "Audit provenance records to extract patterns and improvement opportunities",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": ["audit", "provenance", "feedback"]
+    },
+    {
+      "name": "identity_status",
+      "description": "Get current identity model status and metrics",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "tags": ["identity", "status", "metrics"]
+    },
+    {
+      "name": "identity_evolve",
+      "description": "Create a new identity version with updated learnings",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "changes": {"type": "array", "items": {"type": "string"}, "description": "List of changes from previous version"},
+          "new_insights": {"type": "array", "items": {"type": "string"}, "description": "New insights to incorporate"}
+        },
+        "required": ["changes"]
+      },
+      "tags": ["identity", "evolution", "versioning"]
+    }
+  ]
+}

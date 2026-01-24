@@ -10,7 +10,7 @@ class TestPoissonZi(CompareMixin):
 
     @classmethod
     def setup_class(cls):
-        np.random.seed(98765678)
+        np.random.seed(98928678)
         nobs = 200
         rvs = np.random.randn(nobs, 6)
         data_exog = rvs

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Logging configuration system for Word Forge.
 
@@ -241,6 +242,7 @@ class LoggingConfig:
     # Public Methods
     # ==========================================
 
+    @eidosian()
     def get_log_path_with_timestamp(self) -> Optional[Path]:
         """
         Get log path with timestamp if that option is enabled.
@@ -274,6 +276,7 @@ class LoggingConfig:
 
         return path.with_name(f"{stem}_{timestamp}{suffix}")
 
+    @eidosian()
     def with_level(self, level: LogLevel) -> "LoggingConfig":
         """
         Create a new configuration with modified log level.
@@ -293,6 +296,7 @@ class LoggingConfig:
         """
         return self._create_modified_config(level=level)
 
+    @eidosian()
     def with_format_template(self, template: LogFormatTemplate) -> "LoggingConfig":
         """
         Create a new configuration using a predefined format template.
@@ -312,6 +316,7 @@ class LoggingConfig:
         """
         return self._create_modified_config(format=template.value)
 
+    @eidosian()
     def with_destination(self, destination: LogDestination) -> "LoggingConfig":
         """
         Create a new configuration with modified log destination.
@@ -343,6 +348,7 @@ class LoggingConfig:
 
         return config
 
+    @eidosian()
     def get_rotation_config(self) -> RotationConfigDict:
         """
         Get rotation-specific configuration parameters.
@@ -372,6 +378,7 @@ class LoggingConfig:
             max_files=self.max_files,
         )
 
+    @eidosian()
     def validate(self) -> None:
         """
         Validate the configuration for consistency and correctness.
@@ -404,6 +411,7 @@ class LoggingConfig:
                 f"Configuration validation failed: {'; '.join(errors)}"
             )
 
+    @eidosian()
     def get_python_logging_config(self) -> Dict[str, Any]:
         """
         Convert configuration to Python's logging module configuration dict.

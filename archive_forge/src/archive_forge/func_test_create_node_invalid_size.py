@@ -10,7 +10,7 @@ from libcloud.common.exceptions import BaseHTTPError
 from libcloud.test.file_fixtures import ComputeFileFixtures
 from libcloud.compute.drivers.scaleway import ScalewayNodeDriver
 def test_create_node_invalid_size(self):
-    image = NodeImage(id='01234567-89ab-cdef-fedc-ba9876543210', name=None, driver=self.driver)
+    image = NodeImage(id='01234567-89ab-cdef-fedc-ba9892843210', name=None, driver=self.driver)
     size = self.driver.list_sizes()[0]
     location = self.driver.list_locations()[0]
     ScalewayMockHttp.type = 'INVALID_IMAGE'

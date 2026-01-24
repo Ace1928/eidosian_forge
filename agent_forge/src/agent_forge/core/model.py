@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Model interface for Eidosian Forge.
 
@@ -115,6 +116,7 @@ class ModelManager:
         self.model_loaded = False
         self.loading_lock = threading.Lock()
 
+    @eidosian()
     def load_model(self) -> None:
         """
         Load the language model based on configuration.
@@ -165,6 +167,7 @@ class ModelManager:
                 self.model = SimpleFallbackModel(self.config)
                 self.model_loaded = True
 
+    @eidosian()
     def generate(
         self,
         prompt: str,
@@ -193,6 +196,7 @@ class ModelManager:
             ),
         )
 
+    @eidosian()
     def generate_stream(
         self,
         prompt: str,
@@ -221,6 +225,7 @@ class ModelManager:
             ),
         )
 
+    @eidosian()
     def tokenize(self, text: str) -> List[int]:
         """
         Tokenize text into token IDs.
@@ -236,6 +241,7 @@ class ModelManager:
 
         return self.model.tokenize(text)
 
+    @eidosian()
     def num_tokens(self, text: str) -> int:
         """
         Count the number of tokens in text.
@@ -251,6 +257,7 @@ class ModelManager:
 
         return self.model.num_tokens(text)
 
+    @eidosian()
     def close(self) -> None:
         """Clean up resources."""
         if hasattr(self.model, "close") and callable(getattr(self.model, "close")):
@@ -280,6 +287,7 @@ class SimpleFallbackModel(ModelInterface):
             "Using fallback model - actual language models could not be loaded"
         )
 
+    @eidosian()
     def generate(
         self,
         prompt: str,
@@ -313,6 +321,7 @@ class SimpleFallbackModel(ModelInterface):
             "Please check your configuration and dependencies."
         )
 
+    @eidosian()
     def generate_stream(
         self,
         prompt: str,
@@ -339,6 +348,7 @@ class SimpleFallbackModel(ModelInterface):
         for chunk in chunks:
             yield chunk + " "
 
+    @eidosian()
     def tokenize(self, text: str) -> List[int]:
         """
         Fake tokenization by simply using character codes.
@@ -352,6 +362,7 @@ class SimpleFallbackModel(ModelInterface):
         # Super simplified "tokenization"
         return [ord(c) for c in text]
 
+    @eidosian()
     def num_tokens(self, text: str) -> int:
         """
         Count the number of "tokens" (characters in fallback).
@@ -366,6 +377,7 @@ class SimpleFallbackModel(ModelInterface):
 
 
 # Factory function for creating model implementations
+@eidosian()
 def create_model_manager(config: ModelConfig) -> ModelManager:
     """
     Create a model manager with the specified configuration.

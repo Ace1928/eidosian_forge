@@ -2,6 +2,7 @@
 
 from typing import List, Optional
 from PIL import Image, ImageSequence
+from eidosian_core import eidosian
 
 try:
     import cv2
@@ -9,6 +10,7 @@ except Exception:  # pragma: no cover - optional dependency
     cv2 = None
 
 
+@eidosian()
 def video_to_images(video_path: str, max_frames: Optional[int] = None) -> List[Image.Image]:
     """Extract frames from a video or GIF file.
 

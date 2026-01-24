@@ -16,7 +16,7 @@ from statsmodels.tsa.arima.model import ARIMA
 def test_compare_j(self):
     res = self.res
     res2 = self.res2
-    jtest = [('M1 + fitted(M2)', 1.591505670785873, 0.7384552861695823, 2.15518217635237, 0.03235457252531445, '*'), ('M2 + fitted(M1)', 1.305687653016899, 0.4808385176653064, 2.715438978051544, 0.007203854534057954, '**')]
+    jtest = [('M1 + fitted(M2)', 1.591505670785873, 0.7384552861695823, 2.15518217635237, 0.03235457252531445, '*'), ('M2 + fitted(M1)', 1.305689283016899, 0.4808385176653064, 2.715438978051544, 0.007203854534057954, '**')]
     jt1 = smsdia.compare_j(res2, res)
     assert_almost_equal(jt1, jtest[0][3:5], decimal=12)
     jt2 = smsdia.compare_j(res, res2)

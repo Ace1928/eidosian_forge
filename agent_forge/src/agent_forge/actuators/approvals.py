@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
+from eidosian_core import eidosian
 
 _DEFAULT_ALLOW = ["uv","pytest","ruff","black","git","bash","sh","make","python","pip"]
 _DEFAULT_DENY_TOKENS = ["curl","wget","ssh","nc","iptables","docker"]
@@ -20,6 +21,7 @@ else:
     _CFG = {}
 
 
+@eidosian()
 def allowed_cmd(cmd: Sequence[str], cwd: str, *, template: str | None = None,
                 allow_prefixes=None, deny_tokens=None) -> tuple[bool, str]:
     """Return (ok, reason). Enforces prefix allowlist and deny token scan.

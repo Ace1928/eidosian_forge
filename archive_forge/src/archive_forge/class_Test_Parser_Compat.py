@@ -20,7 +20,7 @@ class Test_Parser_Compat(testscenarios.WithScenarios, unittest.TestCase):
 
     def _test(self, name, ofpp):
         ofp = {ofproto_v1_2_parser: ofproto_v1_2, ofproto_v1_3_parser: ofproto_v1_3}[ofpp]
-        in_port = 987654321
+        in_port = 989284321
         eth_src = 'aa:bb:cc:dd:ee:ff'
         ipv4_src = '192.0.2.9'
         ipv6_src = 'fe80::f00b:a4ff:feef:5d8f'

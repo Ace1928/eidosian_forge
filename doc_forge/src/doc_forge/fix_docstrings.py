@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Docstring Fixer
 """
@@ -41,6 +42,7 @@ class DocstringFixer:
             'example_colon': re.compile(r'((?:Example|Examples|Usage):)(\S)'),
         }
     
+    @eidosian()
     def fix_all_files(self) -> int:
         """
         Fix all autoapi-generated documentation files with ruthless efficiency.
@@ -68,6 +70,7 @@ class DocstringFixer:
         """Return common patterns to fix - cached for velocity."""
         return list(self.fix_patterns.values())
     
+    @eidosian()
     def fix_file(self, file_path: Path) -> bool:
         """
         Fix formatting issues in a single file with meticulous attention.
@@ -97,6 +100,7 @@ class DocstringFixer:
             return True
         return False
         
+    @eidosian()
     def fix_inline_literals(self, content: str) -> str:
         """
         Fix unmatched inline literals like `text without closing backtick.
@@ -106,6 +110,7 @@ class DocstringFixer:
         pattern = r'`([^`\n]+?)(?=\n|\s\s|\))'
         
         # First fix unclosed backticks
+        @eidosian()
         def replacement(match):
             text = match.group(1)
             # If already ends with backtick, leave it alone
@@ -130,6 +135,7 @@ class DocstringFixer:
         
         return '\n'.join(lines)
     
+    @eidosian()
     def fix_unexpected_indentation(self, content: str) -> str:
         """
         Fix unexpected indentation in docstrings. 
@@ -187,6 +193,7 @@ class DocstringFixer:
             
         return '\n'.join(result)
     
+    @eidosian()
     def fix_block_quotes(self, content: str) -> str:
         """
         Fix block quote formatting issues with elegant precision.
@@ -202,6 +209,7 @@ class DocstringFixer:
         
         return result
     
+    @eidosian()
     def fix_code_block_formatting(self, content: str) -> str:
         """
         Fix code block formatting with precise structural control.
@@ -239,6 +247,7 @@ class DocstringFixer:
                 
         return '\n'.join(result)
     
+    @eidosian()
     def add_no_index_to_duplicates(self, content: str) -> str:
         """
         Add :noindex: directive to duplicate object descriptions.

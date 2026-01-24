@@ -6,12 +6,14 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from eidosian_core import eidosian
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INDEX_PATH = PROJECT_ROOT / "context" / "index.json"
 CONTEXT_SCRIPT = PROJECT_ROOT / "scripts" / "context_index.py"
 
 
+@eidosian()
 def load_index(path: Path):
     try:
         with path.open() as fh:
@@ -22,6 +24,7 @@ def load_index(path: Path):
         )
 
 
+@eidosian()
 def refresh_index(index_path: Path):
     print("Refreshing context index...")
     result = subprocess.run(
@@ -31,6 +34,7 @@ def refresh_index(index_path: Path):
         raise SystemExit("Failed to refresh the context index.")
 
 
+@eidosian()
 def print_summary(data):
     meta = data.get("metadata", {})
     storage = data.get("storage", {})
@@ -61,6 +65,7 @@ def print_summary(data):
     print()
 
 
+@eidosian()
 def print_directory_list(directories):
     print("Directories: (enter number to view details)")
     for idx, entry in enumerate(directories):
@@ -73,6 +78,7 @@ def print_directory_list(directories):
     print()
 
 
+@eidosian()
 def print_storage(storage):
     fs = storage.get("filesystem", {})
     lines = [
@@ -87,6 +93,7 @@ def print_storage(storage):
     print()
 
 
+@eidosian()
 def print_commands(commands):
     print("Known commands:")
     for cmd in commands:
@@ -95,6 +102,7 @@ def print_commands(commands):
     print()
 
 
+@eidosian()
 def show_entry_detail(entry):
     print()
     print(f"{entry.get('relative_path')} ({entry.get('type')})")
@@ -127,6 +135,7 @@ def show_entry_detail(entry):
     print()
 
 
+@eidosian()
 def interactive_loop(data, index_path: Path):
     directories = data.get("directories", [])
     commands = data.get("commands", [])
@@ -170,6 +179,7 @@ def interactive_loop(data, index_path: Path):
         print("Unknown command. " + help_text)
 
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(
         description="Command-line UI for the home context index."

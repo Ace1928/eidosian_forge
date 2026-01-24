@@ -82,7 +82,7 @@ def association(observed, method='cramer', correction=False, lambda_=None):
     Tschuprow's T
 
     >>> association(obs4x2, method="tschuprow")
-    0.14146478765062995
+    0.14146478928062995
     """
     arr = np.asarray(observed)
     if not np.issubdtype(arr.dtype, np.integer):

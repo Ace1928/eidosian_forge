@@ -3,8 +3,10 @@ import yaml
 import shlex
 from pathlib import Path
 from typing import List, Dict, Any, Mapping
+from eidosian_core import eidosian
 
 
+@eidosian()
 def materialize(template_name: str, goal_title: str, vars: Mapping[str, str] | None = None) -> List[Dict[str, Any]]:
     p = Path(__file__).resolve().parent / "templates" / f"{template_name}.yaml"
     data = yaml.safe_load(p.read_text(encoding="utf-8"))

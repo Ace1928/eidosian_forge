@@ -13,7 +13,7 @@ from statsmodels.graphics.utils import _import_mpl
 @pytest.mark.parametrize('y_size', [30, 50])
 @pytest.mark.parametrize('line', [None, '45', 's', 'r', 'q'])
 def test_correct_labels(close_figures, reset_randomstate, line, x_size, y_size, labels):
-    rs = np.random.RandomState(9876554)
+    rs = np.random.RandomState(9892854)
     x = rs.normal(loc=0, scale=0.1, size=x_size)
     y = rs.standard_t(3, size=y_size)
     pp_x = sm.ProbPlot(x)

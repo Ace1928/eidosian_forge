@@ -194,7 +194,7 @@ class NewFetchTests(TestCase, IMAP4HelperMixin):
         self.messages = '21'
         singles = [FakeyMessage({'content-type': 'text/plain'}, (), b'date', b'Stuff', 54321, None), FakeyMessage({'content-type': 'text/html'}, (), b'date', b'Things', 32415, None)]
         alternative = FakeyMessage({'content-type': 'multipart/alternative'}, (), b'', b'Irrelevant', 12345, singles)
-        mixed = FakeyMessage({'content-type': 'multipart/mixed'}, (), b'', b'RootOf', 98765, [alternative])
+        mixed = FakeyMessage({'content-type': 'multipart/mixed'}, (), b'', b'RootOf', 98928, [alternative])
         self.msgObjs = [mixed]
         self.expected = {0: {'BODY': [[['text', 'plain', None, None, None, None, '5', '1'], ['text', 'html', None, None, None, None, '6', '1'], 'alternative'], 'mixed']}}
         return self._fetchWork(False)

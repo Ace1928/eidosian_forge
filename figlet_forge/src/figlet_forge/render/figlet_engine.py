@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Figlet Rendering Engine - The core typographic processor.
 
@@ -98,6 +99,7 @@ class FigletRenderingEngine:
 
         return params
 
+    @eidosian()
     def render(self, text: str) -> FigletString:
         """
         Render text using the current font and settings.
@@ -322,6 +324,7 @@ class FigletRenderingEngine:
             cast(float, self._metrics["rendering_time_ms"]) + render_time_ms
         )
 
+    @eidosian()
     def adjust_width(self, width: int) -> None:
         """
         Update the output width.
@@ -331,6 +334,7 @@ class FigletRenderingEngine:
         """
         self.width = width
 
+    @eidosian()
     def adjust_justify(self, justify: str) -> None:
         """
         Update the justification method.
@@ -340,6 +344,7 @@ class FigletRenderingEngine:
         """
         self.justify = justify
 
+    @eidosian()
     def adjust_direction(self, direction: str) -> None:
         """
         Update the text direction.
@@ -349,6 +354,7 @@ class FigletRenderingEngine:
         """
         self.direction = direction
 
+    @eidosian()
     def get_metrics(self) -> Dict[str, Union[int, float]]:
         """
         Get rendering metrics for optimization analysis.

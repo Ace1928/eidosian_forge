@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Type Forge - Schema registry and validation.
 Standardizes communication between Eidosian components.
@@ -21,6 +22,7 @@ class TypeCore:
         self._schemas: Dict[str, Dict[str, Any]] = {}
         self._models: Dict[str, Type[BaseModel]] = {}
 
+    @eidosian()
     def register_schema(self, name: str, schema: Dict[str, Any]) -> bool:
         """Register a schema definition. Returns True if updated."""
         if self._schemas.get(name) == schema:
@@ -33,6 +35,7 @@ class TypeCore:
             self._models.pop(name, None)
         return True
 
+    @eidosian()
     def delete_schema(self, name: str) -> bool:
         """Delete a registered schema definition."""
         if name not in self._schemas:
@@ -41,14 +44,17 @@ class TypeCore:
         self._models.pop(name, None)
         return True
 
+    @eidosian()
     def get_schema(self, name: str) -> Optional[Dict[str, Any]]:
         """Get a registered schema definition."""
         return self._schemas.get(name)
 
+    @eidosian()
     def snapshot(self) -> Dict[str, Dict[str, Any]]:
         """Return a snapshot of registered schemas."""
         return dict(self._schemas)
 
+    @eidosian()
     def restore(self, snapshot: Dict[str, Dict[str, Any]]) -> None:
         """Restore registered schemas from a snapshot."""
         self._schemas = dict(snapshot)
@@ -59,6 +65,7 @@ class TypeCore:
             except Exception:
                 continue
 
+    @eidosian()
     def validate(self, name: str, data: Any) -> bool:
         """Validate data against a registered schema."""
         if name in self._models:
@@ -74,6 +81,7 @@ class TypeCore:
         schema = self._schemas[name]
         return self._validate_recursive(schema, data)
 
+    @eidosian()
     def check_schema(self, schema: Dict[str, Any], data: Any) -> bool:
         """Validate data against an ad-hoc schema."""
         return self._validate_recursive(schema, data)

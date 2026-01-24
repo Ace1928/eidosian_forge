@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from eidosian_core import eidosian
 
 DEFAULT_EXTS = [
     ".md",
@@ -47,6 +48,7 @@ DEFAULT_EXCLUDE_GLOBS = [
 ]
 
 
+@eidosian()
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Incrementally index local text files with GraphRAG.",
@@ -135,6 +137,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+@eidosian()
 def normalize_exts(exts: list[str]) -> list[str]:
     if not exts:
         return DEFAULT_EXTS
@@ -149,18 +152,21 @@ def normalize_exts(exts: list[str]) -> list[str]:
     return normalized
 
 
+@eidosian()
 def slugify_path(path: Path) -> str:
     slug = str(path.resolve())
     slug = slug.replace(os.sep, "_").replace(":", "")
     return slug.strip("_")
 
 
+@eidosian()
 def load_state(state_path: Path) -> dict:
     if state_path.exists():
         return json.loads(state_path.read_text(encoding="utf-8"))
     return {"processed": {}, "indexed": False}
 
 
+@eidosian()
 def save_state(state_path: Path, state: dict) -> None:
     state_path.write_text(
         json.dumps(state, indent=2, sort_keys=True),
@@ -168,15 +174,18 @@ def save_state(state_path: Path, state: dict) -> None:
     )
 
 
+@eidosian()
 def should_skip_dir(dirname: str, exclude_dirs: set[str]) -> bool:
     return dirname in exclude_dirs
 
 
+@eidosian()
 def is_excluded(path: Path, exclude_globs: list[str]) -> bool:
     as_posix = path.as_posix()
     return any(fnmatch.fnmatch(as_posix, pattern) for pattern in exclude_globs)
 
 
+@eidosian()
 def iter_files(
     scan_root: Path,
     exts: list[str],
@@ -206,6 +215,7 @@ def iter_files(
     return collected
 
 
+@eidosian()
 def has_existing_output(root: Path) -> bool:
     output_dir = root / "output"
     if not output_dir.exists():
@@ -214,6 +224,7 @@ def has_existing_output(root: Path) -> bool:
     return required.exists()
 
 
+@eidosian()
 def clear_input_dir(input_dir: Path) -> None:
     input_dir.mkdir(parents=True, exist_ok=True)
     for child in input_dir.iterdir():
@@ -223,6 +234,7 @@ def clear_input_dir(input_dir: Path) -> None:
             child.unlink()
 
 
+@eidosian()
 def stage_files(
     input_dir: Path,
     scan_root: Path,
@@ -249,6 +261,7 @@ def stage_files(
                     continue
 
 
+@eidosian()
 def needs_index(path: Path, state: dict) -> bool:
     entry = state["processed"].get(str(path))
     try:
@@ -262,11 +275,13 @@ def needs_index(path: Path, state: dict) -> bool:
     )
 
 
+@eidosian()
 def run_graphrag(cmd: str, args: list[str]) -> None:
     cmd_parts = shlex.split(cmd) + args
     subprocess.run(cmd_parts, check=True)
 
 
+@eidosian()
 def main() -> int:
     args = parse_args()
     root = args.root.resolve()

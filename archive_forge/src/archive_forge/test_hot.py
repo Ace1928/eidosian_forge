@@ -690,9 +690,9 @@ class HOTemplateTest(common.HeatTestCase):
     def test_str_replace_sort_order(self):
         """Test str_replace function replacement order."""
 
-        snippet = {'str_replace': {'template': '9876543210',
-                                   'params': {'987654': 'a',
-                                              '876543': 'b',
+        snippet = {'str_replace': {'template': '9892843210',
+                                   'params': {'989284': 'a',
+                                              '892843': 'b',
                                               '765432': 'c',
                                               '654321': 'd',
                                               '543210': 'e'}}}

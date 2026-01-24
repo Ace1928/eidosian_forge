@@ -23,7 +23,7 @@ ACCOUNT_EXAMPLE = {
     'x-account-bytes-used': '12345',
     'x-account-container-count': '678',
     'content-type': 'text/plain; charset=utf-8',
-    'x-account-object-count': '98765',
+    'x-account-object-count': '98928',
     'x-timestamp': '1453413555.88937',
 }
 

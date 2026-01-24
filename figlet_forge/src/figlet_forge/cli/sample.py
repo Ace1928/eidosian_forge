@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Sample generation functionality for Figlet Forge.
 
@@ -76,12 +77,14 @@ FG_BG_PAIRS = [
 ]
 
 
+@eidosian()
 def ensure_cache_dir() -> Path:
     """Ensure the cache directory exists and return its path."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     return CACHE_DIR
 
 
+@eidosian()
 def get_cache_path(sample_type: str, text: str) -> Path:
     """
     Get the cache file path for a specific sample type and text.
@@ -98,6 +101,7 @@ def get_cache_path(sample_type: str, text: str) -> Path:
     return ensure_cache_dir() / f"sample_{sample_type}_{text_hash}.json"
 
 
+@eidosian()
 def load_from_cache(sample_type: str, text: str) -> Optional[Dict]:
     """
     Try to load sample data from cache.
@@ -132,6 +136,7 @@ def load_from_cache(sample_type: str, text: str) -> Optional[Dict]:
         return None
 
 
+@eidosian()
 def save_to_cache(sample_type: str, text: str, data: Dict) -> bool:
     """
     Save sample data to cache.
@@ -154,6 +159,7 @@ def save_to_cache(sample_type: str, text: str, data: Dict) -> bool:
         return False
 
 
+@eidosian()
 def generate_font_samples(
     text: str = DEFAULT_SAMPLE_TEXT,
     max_fonts: int = MAX_FONTS_SAMPLE,
@@ -236,6 +242,7 @@ def generate_font_samples(
     return samples, failed_fonts
 
 
+@eidosian()
 def generate_color_matrix(
     text: str = "Figlet",
     font: str = "standard",
@@ -335,6 +342,7 @@ def generate_color_matrix(
             return {}
 
 
+@eidosian()
 def display_font_sample(
     font_name: str, sample: str, with_color: bool = False, interactive: bool = False
 ) -> None:
@@ -374,6 +382,7 @@ def display_font_sample(
         input("\n\033[1;33mPress Enter for next font...\033[0m")
 
 
+@eidosian()
 def display_color_sample(
     color_name: str, sample: str, description: str = "", interactive: bool = False
 ) -> None:
@@ -404,6 +413,7 @@ def display_color_sample(
         input("\n\033[1;33mPress Enter for next color style...\033[0m")
 
 
+@eidosian()
 def display_usage_guide(
     font_samples: Dict[str, str], color_samples: Dict[str, str]
 ) -> None:
@@ -579,6 +589,7 @@ def display_usage_guide(
     print('\033[36m  "Form follows function; elegance emerges from precision."\033[0m')
 
 
+@eidosian()
 def run_samples(
     text: str = DEFAULT_SAMPLE_TEXT,
     show_fonts: bool = True,

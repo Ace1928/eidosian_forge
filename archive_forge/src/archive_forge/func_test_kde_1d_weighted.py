@@ -4,7 +4,7 @@ from numpy.testing import (assert_almost_equal, assert_, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 def test_kde_1d_weighted():
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     xn = np.random.randn(n_basesample)
     wn = np.random.rand(n_basesample)

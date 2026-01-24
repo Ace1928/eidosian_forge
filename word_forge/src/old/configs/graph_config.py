@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Graph visualization configuration system for Word Forge.
 
@@ -343,6 +344,7 @@ class GraphConfig:
     # Public Methods
     # ==========================================
 
+    @eidosian()
     def get_relationship_color(self, relationship_type: str) -> str:
         """
         Get color for a specific relationship type.
@@ -379,6 +381,7 @@ class GraphConfig:
         # Fall back to default color
         return self.relationship_colors["default"]
 
+    @eidosian()
     def with_layout(self, layout: GraphLayoutAlgorithm) -> "GraphConfig":
         """
         Create a new config with a different layout algorithm.
@@ -391,6 +394,7 @@ class GraphConfig:
         """
         return self._create_modified_config(default_layout=layout)
 
+    @eidosian()
     def optimize_for_interactivity(self) -> "GraphConfig":
         """
         Create a new config optimized for interactive visualization.
@@ -408,6 +412,7 @@ class GraphConfig:
             limit_edge_count=400,  # Lower edge count for responsiveness
         )
 
+    @eidosian()
     def optimize_for_publication(self) -> "GraphConfig":
         """
         Create a new config optimized for high-quality export/publication.
@@ -428,6 +433,7 @@ class GraphConfig:
             animation_duration_ms=0,  # No animation for static export
         )
 
+    @eidosian()
     def with_emotional_relationships(self) -> "GraphConfig":
         """
         Create a new config that includes emotional relationship dimensions.
@@ -443,6 +449,7 @@ class GraphConfig:
             enable_cross_dimension_edges=True,
         )
 
+    @eidosian()
     def with_affective_relationships(self) -> "GraphConfig":
         """
         Create a new config that includes affective relationship dimensions.
@@ -458,6 +465,7 @@ class GraphConfig:
             enable_cross_dimension_edges=True,
         )
 
+    @eidosian()
     def with_all_relationship_dimensions(self) -> "GraphConfig":
         """
         Create a new config that includes all relationship dimensions.
@@ -482,6 +490,7 @@ class GraphConfig:
             dimension_z_separation=100.0,  # Increase separation for better visibility
         )
 
+    @eidosian()
     def get_export_filepath(self, graph_name: str) -> Path:
         """
         Generate full export filepath with proper extension.
@@ -504,6 +513,7 @@ class GraphConfig:
         filename = f"{graph_name}.{self.default_export_format}"
         return self.get_export_path / filename
 
+    @eidosian()
     def get_visualization_dimensions(self) -> Dict[str, int]:
         """
         Get width and height for visualization.
@@ -516,6 +526,7 @@ class GraphConfig:
             "height": self.vis_height,
         }
 
+    @eidosian()
     def get_display_settings(self) -> Dict[str, Any]:
         """
         Get display-related settings as a dictionary.
@@ -552,6 +563,7 @@ class GraphConfig:
 
         return settings
 
+    @eidosian()
     def get_dimension_settings(self) -> Dict[str, Any]:
         """
         Get settings related to multidimensional relationships.
@@ -566,6 +578,7 @@ class GraphConfig:
             "enable_cross_dimension_edges": self.enable_cross_dimension_edges,
         }
 
+    @eidosian()
     def validate(self) -> None:
         """
         Validate the entire configuration for consistency and correctness.

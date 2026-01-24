@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Unified Model Configuration for Eidosian Forge.
 
@@ -128,6 +129,7 @@ class ModelConfig:
             self.embedding = EmbeddingConfig()
             self.fast_embedding = FastEmbeddingConfig()
     
+    @eidosian()
     def embed_text(self, text: str, model: Optional[str] = None, use_cache: bool = True) -> List[float]:
         """
         Generate embedding for a single text string.
@@ -159,6 +161,7 @@ class ModelConfig:
         
         return embedding
     
+    @eidosian()
     def embed_batch(self, texts: List[str], model: Optional[str] = None) -> List[List[float]]:
         """
         Generate embeddings for multiple texts.
@@ -172,6 +175,7 @@ class ModelConfig:
         """
         return [self.embed_text(t, model=model) for t in texts]
     
+    @eidosian()
     def generate(
         self, 
         prompt: str, 
@@ -219,6 +223,7 @@ class ModelConfig:
             resp.raise_for_status()
             return resp.json()["response"]
     
+    @eidosian()
     def chat(
         self,
         messages: List[Dict[str, str]],
@@ -251,6 +256,7 @@ class ModelConfig:
             resp.raise_for_status()
             return resp.json()["message"]["content"]
     
+    @eidosian()
     def is_ollama_running(self) -> bool:
         """Check if Ollama server is running."""
         try:
@@ -260,6 +266,7 @@ class ModelConfig:
         except Exception:
             return False
     
+    @eidosian()
     def list_models(self) -> List[str]:
         """List available models in Ollama."""
         try:
@@ -271,6 +278,7 @@ class ModelConfig:
             pass
         return []
     
+    @eidosian()
     def get_config_dict(self) -> Dict[str, Any]:
         """Get configuration as dictionary."""
         return {
@@ -300,16 +308,19 @@ class ModelConfig:
 model_config = ModelConfig()
 
 
+@eidosian()
 def get_embedding(text: str, model: Optional[str] = None) -> List[float]:
     """Convenience function for embedding text."""
     return model_config.embed_text(text, model=model)
 
 
+@eidosian()
 def generate(prompt: str, **kwargs) -> str:
     """Convenience function for text generation."""
     return model_config.generate(prompt, **kwargs)
 
 
+@eidosian()
 def chat(messages: List[Dict[str, str]], **kwargs) -> str:
     """Convenience function for chat completion."""
     return model_config.chat(messages, **kwargs)

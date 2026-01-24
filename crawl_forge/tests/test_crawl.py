@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from eidosian_forge.crawl_forge import CrawlForge
+from crawl_forge import CrawlForge
 
 class TestCrawlForge(unittest.TestCase):
     def setUp(self):

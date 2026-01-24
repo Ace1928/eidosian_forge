@@ -16,7 +16,7 @@ def test_subnet_attribute_exception(self):
     stack = utils.parse_stack(t)
     self.find_mock.return_value = 'net1234'
     self.create_mock.return_value = {'port': {'status': 'BUILD', 'id': 'fc68ea2c-b60b-4b4f-bd82-94ec81110766'}}
-    self.port_show_mock.return_value = {'port': {'status': 'DOWN', 'name': utils.PhysName(stack.name, 'port'), 'allowed_address_pairs': [], 'admin_state_up': True, 'network_id': 'net1234', 'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec87650532', 'mac_address': 'fa:16:3e:75:67:60', 'tenant_id': '58a61fc3992944ce971404a2ece6ff98', 'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'], 'fixed_ips': [{'subnet_id': 'd0e971a6-a6b4-4f4c-8c88-b75e9c120b7e', 'ip_address': '10.0.0.2'}]}}
+    self.port_show_mock.return_value = {'port': {'status': 'DOWN', 'name': utils.PhysName(stack.name, 'port'), 'allowed_address_pairs': [], 'admin_state_up': True, 'network_id': 'net1234', 'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec89280532', 'mac_address': 'fa:16:3e:75:67:60', 'tenant_id': '58a61fc3992944ce971404a2ece6ff98', 'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'], 'fixed_ips': [{'subnet_id': 'd0e971a6-a6b4-4f4c-8c88-b75e9c120b7e', 'ip_address': '10.0.0.2'}]}}
     self.subnet_show_mock.side_effect = qe.NeutronClientException('ConnectionFailed: Connection to neutron failed: Maximum attempts reached')
     port = stack['port']
     scheduler.TaskRunner(port.create)()

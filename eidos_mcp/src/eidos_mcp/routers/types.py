@@ -8,6 +8,7 @@ from ..state import type_forge
 from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
 from pathlib import Path
 import os
+from eidosian_core import eidosian
 
 
 _TYPE_SNAPSHOT_PATH = Path(
@@ -37,6 +38,7 @@ def _ensure_type_persistence():
         "required": ["name", "schema"],
     },
 )
+@eidosian()
 def type_register(name: str, schema: Dict[str, Any]) -> str:
     """Register or update a schema in Type Forge."""
     if not type_forge:
@@ -63,6 +65,7 @@ def type_register(name: str, schema: Dict[str, Any]) -> str:
         "required": ["name", "data"],
     },
 )
+@eidosian()
 def type_validate(name: str, data: Dict[str, Any]) -> str:
     """Validate data against a registered schema."""
     if not type_forge:
@@ -79,6 +82,7 @@ def type_validate(name: str, data: Dict[str, Any]) -> str:
     description="Create a snapshot of registered schemas.",
     parameters={"type": "object", "properties": {}},
 )
+@eidosian()
 def type_snapshot() -> str:
     """Snapshot registered schemas to disk."""
     if not type_forge:
@@ -96,6 +100,7 @@ def type_snapshot() -> str:
         "properties": {"transaction_id": {"type": "string"}},
     },
 )
+@eidosian()
 def type_restore_snapshot(transaction_id: str | None = None) -> str:
     """Restore registered schemas from a snapshot transaction."""
     if not type_forge:

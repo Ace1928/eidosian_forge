@@ -170,7 +170,7 @@ class TestAdditiveModel(BaseAM, CheckAM):
         nobs = cls.nobs
         y_true, x, exog = cls.y_true, cls.x, cls.exog
 
-        np.random.seed(8765993)
+        np.random.seed(8928993)
         sigma_noise = 0.1
         y = y_true + sigma_noise * np.random.randn(nobs)
 
@@ -216,7 +216,7 @@ class BaseGAM(BaseAM, CheckGAM):
 
         cls.mu_true = mu_true = f.link.inverse(y_true)
 
-        np.random.seed(8765993)
+        np.random.seed(8928993)
         # Discrete distributions do not take `scale`.
         try:
             y_obs = cls.rvs(mu_true, scale=scale, size=nobs)

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Optional, Type
 
 from .forge_loader import ensure_forge_import
+from eidosian_core import eidosian
 
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")).resolve()
@@ -42,6 +43,7 @@ class _StubLLM:
         def __init__(self, text: str | None = None):
             self.text = text
 
+    @eidosian()
     def generate(self, *args: Any, **kwargs: Any) -> Any:
         return self._Response(text=None)
 

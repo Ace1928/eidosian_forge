@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """Simple scheduler loop utilities for eidosd."""
 
@@ -9,7 +10,7 @@ import time
 import json
 from dataclasses import dataclass
 from typing import Callable, Optional
-from core.state import (
+from agent_forge.core.state import (
     add_plan,
     add_step,
     list_steps,
@@ -17,10 +18,10 @@ from core.state import (
     list_plans,
     list_runs,
 )
-from core.state import add_goal, list_goals
-from actuators.shell_exec import run_step
-from planners.registry import choose
-from planners.htn import materialize
+from agent_forge.core.state import add_goal, list_goals
+from agent_forge.actuators.shell_exec import run_step
+from agent_forge.planners.registry import choose
+from agent_forge.planners.htn import materialize
 from . import events as BUS
 
 STATE_DIR = "state"
@@ -40,13 +41,16 @@ class StopToken:
     def __init__(self) -> None:
         self._stopped = False
 
+    @eidosian()
     def stop(self) -> None:
         self._stopped = True
 
+    @eidosian()
     def stopped(self) -> bool:
         return self._stopped
 
 
+@eidosian()
 def run_loop(cfg: BeatCfg, beat_fn: Callable[[], None], *, stop: StopToken) -> None:
     """Run ``beat_fn`` in a loop with jitter and exponential backoff."""
 
@@ -71,9 +75,11 @@ def run_loop(cfg: BeatCfg, beat_fn: Callable[[], None], *, stop: StopToken) -> N
             continue
 
 
+@eidosian()
 def install_sigint(stop: StopToken) -> None:
     """Install SIGINT/SIGTERM handlers that set ``stop``."""
 
+    @eidosian()
     def handler(signum, frame):  # pragma: no cover - simple forwarding
         stop.stop()
 
@@ -81,10 +87,12 @@ def install_sigint(stop: StopToken) -> None:
     signal.signal(signal.SIGTERM, handler)
 
 
+@eidosian()
 def sense(ctx):  # existing hook: leave as-is if already present
     BUS.append(STATE_DIR, "tick.sense")
 
 
+@eidosian()
 def plan(ctx, goal):
     kind, meta = choose(goal)
     p = add_plan(STATE_DIR, goal.id, kind, meta)
@@ -107,12 +115,14 @@ def plan(ctx, goal):
     BUS.append(STATE_DIR, "plan.created", {"goal_id": goal.id, "plan_id": p.id})
 
 
+@eidosian()
 def gate(ctx, step_row):
     # approvals handled inside shell_exec.run_step; we still log intent
     BUS.append(STATE_DIR, "gate.checked", {"step_id": step_row.id})
     return True
 
 
+@eidosian()
 def act(ctx, step_row):
     cmd = json.loads(step_row.cmd)
     import sqlite3, pathlib
@@ -130,6 +140,7 @@ def act(ctx, step_row):
     return res
 
 
+@eidosian()
 def verify(ctx, step_row, res):
     import sqlite3, pathlib
     db = pathlib.Path(STATE_DIR) / "e3.sqlite"

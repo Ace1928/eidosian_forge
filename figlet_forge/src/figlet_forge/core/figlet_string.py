@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Figlet string class for ASCII art text manipulation.
 
@@ -144,6 +145,7 @@ class FigletString(str):
         height = len(lines)
         return (width, height)
 
+    @eidosian()
     def get_size(self) -> Tuple[int, int]:
         """
         Get the size of the FigletString as (width, height).
@@ -153,6 +155,7 @@ class FigletString(str):
         """
         return self.dimensions
 
+    @eidosian()
     def splitlines(self) -> List[str]:
         """
         Split the FigletString into lines, preserving the str type.
@@ -173,6 +176,7 @@ class FigletString(str):
         lines = super().splitlines()
         return [FigletString(line) for line in lines]
 
+    @eidosian()
     def reverse(self: T) -> T:
         """
         Reverse the FigletString horizontally (mirror effect).
@@ -196,6 +200,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(reversed_lines)))
 
+    @eidosian()
     def flip(self: T) -> T:
         """
         Flip the FigletString vertically (upside down).
@@ -219,6 +224,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(flipped_lines)))
 
+    @eidosian()
     def center(self: T, width: Optional[int] = None, fillchar: str = " ") -> T:
         """
         Center the FigletString within a field of specified width.
@@ -244,6 +250,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(centered_lines)))
 
+    @eidosian()
     def ljust(self: T, width: Optional[int] = None, fillchar: str = " ") -> T:
         """
         Left-justify the FigletString within a field of specified width.
@@ -269,6 +276,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(justified_lines)))
 
+    @eidosian()
     def rjust(self: T, width: Optional[int] = None, fillchar: str = " ") -> T:
         """
         Right-justify the FigletString within a field of specified width.
@@ -294,6 +302,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(justified_lines)))
 
+    @eidosian()
     def border(self: T, style: str = "single", padding: int = 1) -> T:
         """
         Add a border around the FigletString.
@@ -366,6 +375,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(result)))
 
+    @eidosian()
     def shadow(self: T) -> T:
         """
         Add a shadow effect to the FigletString.
@@ -377,6 +387,7 @@ class FigletString(str):
         """
         return self.border(style="shadow")
 
+    @eidosian()
     def overlay(
         self: T, other: Union[str, "FigletString"], x: int = 0, y: int = 0
     ) -> T:
@@ -437,6 +448,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(result)))
 
+    @eidosian()
     def strip_surrounding_newlines(self: T) -> T:
         """
         Remove leading and trailing newlines.
@@ -446,6 +458,7 @@ class FigletString(str):
         """
         return cast(T, FigletString(self.strip("\n")))
 
+    @eidosian()
     def scale(self: T, horizontal: float = 1.0, vertical: float = 1.0) -> T:
         """
         Scale the FigletString horizontally and/or vertically.
@@ -488,6 +501,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(result)))
 
+    @eidosian()
     def crop(
         self: T,
         left: int = 0,
@@ -536,6 +550,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(result)))
 
+    @eidosian()
     def rotate_90_clockwise(self: T) -> T:
         """
         Rotate the FigletString 90 degrees clockwise.
@@ -567,6 +582,7 @@ class FigletString(str):
 
         return cast(T, FigletString("\n".join(rotated)))
 
+    @eidosian()
     def rotate_90_counterclockwise(self: T) -> T:
         """
         Rotate the FigletString 90 degrees counterclockwise.

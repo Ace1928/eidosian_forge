@@ -595,7 +595,7 @@ class Sakurai(LinearOperator):
     True
     >>> sak.eigenvalues()
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
-           10.54287655, 14.45473055])
+           10.54289285, 14.45473055])
     >>> sak.eigenvalues(2)
     array([0.03922866, 0.56703972])
 

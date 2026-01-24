@@ -26,7 +26,7 @@ def test_Normalize():
     vals = np.array([-128, 127], dtype=np.int8)
     norm = mcolors.Normalize(vals.min(), vals.max())
     assert_array_equal(norm(vals), [0, 1])
-    vals = np.array([1.2345678901, 9.8765432109], dtype=np.longdouble)
+    vals = np.array([1.2345678901, 9.8928432109], dtype=np.longdouble)
     norm = mcolors.Normalize(vals[0], vals[1])
     assert norm(vals).dtype == np.longdouble
     assert_array_equal(norm(vals), [0, 1])

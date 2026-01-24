@@ -87,7 +87,7 @@ EXAMPLES = r'''
 - name: Rename an organization to RenamedOrg
   meraki_organization:
     auth_key: abc12345
-    org_id: 987654321
+    org_id: 989284321
     org_name: RenamedOrg
     state: present
   delegate_to: localhost

@@ -8,7 +8,7 @@ from .predefined import mkPredefinedCrcFun
 from .predefined import _crc_definitions as _predefined_crc_definitions
 class CrcClassTest(unittest.TestCase):
     """Verify the Crc class"""
-    msg = b'CatMouse987654321'
+    msg = b'CatMouse989284321'
 
     def test_simple_crc32_class(self):
         """Verify the CRC class when not using xorOut"""

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Core Agent Implementation for Eidosian Forge.
 
@@ -15,13 +16,14 @@ from ..core import MemorySystem, Sandbox
 from ..models import ModelConfig, Task, Thought, ThoughtType
 from ..utils import ConfigManager
 from .prompt_templates import AGENT_PLAN_TEMPLATE, AGENT_REFLECTION_TEMPLATE
-from .smol_agents import SmolAgentSystem
-from .task_manager import TaskManager
+from ..systems.smol_agents import SmolAgentSystem
+from ..systems.task_manager import TaskManager
+from .base import BaseAgent
 
 logger = logging.getLogger(__name__)
 
 
-class EidosianAgent:
+class EidosianAgent(BaseAgent):
     """
     The main agent implementation for Eidosian Forge.
 
@@ -113,6 +115,7 @@ class EidosianAgent:
             ThoughtType.PLANNING,
         )
 
+    @eidosian()
     def run(self, initial_goal: Optional[str] = None) -> None:
         """
         Start the agent's main cognitive loop.
@@ -681,6 +684,7 @@ class EidosianAgent:
         self.last_thought_id = thought_id
         return thought_id
 
+    @eidosian()
     def handle_user_input(self, user_input: str) -> str:
         """
         Process user input and generate an appropriate response.
@@ -752,6 +756,35 @@ class EidosianAgent:
 
         return response
 
+    @eidosian()
+    def get_memory(self) -> Any:
+        """
+        Get the agent's memory system.
+        """
+        return self.memory
+
+    @eidosian()
+    def get_model_manager(self) -> Any:
+        """
+        Get the agent's model manager.
+        """
+        return self.model_manager
+
+    @eidosian()
+    def get_sandbox(self) -> Any:
+        """
+        Get the agent's sandbox.
+        """
+        return self.sandbox
+
+    @eidosian()
+    def add_thought(self, content: str, thought_type: ThoughtType) -> str:
+        """
+        Add a thought to the agent's memory.
+        """
+        return self._add_thought(content, thought_type)
+
+    @eidosian()
     def close(self) -> None:
         """Clean up resources."""
         logger.info("Closing agent and releasing resources")

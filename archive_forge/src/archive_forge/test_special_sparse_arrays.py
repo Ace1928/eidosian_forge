@@ -199,7 +199,7 @@ class TestSakurai:
         np.array_equal(ab, sak.tobanded())
         e = np.array(
                 [0.03922866, 0.56703972, 2.41789479, 5.97822974,
-                 10.54287655, 14.45473055]
+                 10.54289285, 14.45473055]
             )
         np.array_equal(e, sak.eigenvalues())
         np.array_equal(e[:2], sak.eigenvalues(2))

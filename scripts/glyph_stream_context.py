@@ -7,6 +7,7 @@ import platform
 import sys
 from datetime import datetime
 from typing import Any, Dict
+from eidosian_core import eidosian
 
 
 class SystemContext:
@@ -148,6 +149,7 @@ class SystemContext:
             "has_network_access": self.attributes.get("network_connected", False),
         }
 
+    @eidosian()
     def refresh(self, check_network: bool = False) -> None:
         self.check_network = check_network
         self.attributes = self._gather_system_attributes()
@@ -254,6 +256,7 @@ class SystemContext:
 
         return max(0, min(score, 3))
 
+    @eidosian()
     def get_optimized_parameters(self) -> Dict[str, Any]:
         return {
             "scale_factor": self.optimization_paths.get("ideal_scale_factor", 2),
@@ -267,6 +270,7 @@ class SystemContext:
             "max_height": self.constraints.get("max_art_height", 24),
         }
 
+    @eidosian()
     def get_environment_summary(self) -> Dict[str, Any]:
         return {
             "platform": self.attributes.get("platform", "Unknown"),
