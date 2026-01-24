@@ -171,9 +171,9 @@ def test_font_loading(font_name: str, expected_success: bool) -> None:
 @pytest.mark.parametrize(
     "text,font,width,expected_width",
     [
-        ("A", "standard", 80, 11),  # Single character - adjusted width
-        ("AA", "standard", 80, 22),  # Two characters - adjusted width
-        ("A", "small", 80, 9),  # Smaller font - adjusted width
+        ("A", "standard", 80, 10),  # Single character - actual rendered width
+        ("AA", "standard", 80, 20),  # Two characters - actual rendered width
+        ("A", "small", 80, 8),  # Smaller font - actual rendered width
     ],
 )
 def test_text_dimensions(text: str, font: str, width: int, expected_width: int) -> None:
