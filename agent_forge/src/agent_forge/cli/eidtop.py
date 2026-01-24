@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+"""Tiny curses TUI showing recent daemon beats and metrics."""
+
+from __future__ import annotations
+import argparse
+import curses
+import sqlite3
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import sys
+
+
+from agent_forge.core import events as E  # type: ignore
+
+METRIC_NAMES = [
+    "process.rss_bytes",
+    "process.cpu_user_s",
+    "process.cpu_sys_s",
+    "process.cpu_pct",
+    "process.num_threads",
+    "system.load1",
+    "system.load5",
+    "system.load15",
+    "system.mem_total_kb",
+    "system.mem_free_kb",
+    "system.mem_available_kb",
+    "system.cpu_pct_total",
+    "system.swap_free_kb",
+]
+
+
+def gather_model(state_dir: str) -> Dict[str, object]:
+    events = [e for e in E.iter_events(state_dir, limit=200) if e.get("type") == "daemon.beat"][-20:]
+    metrics: Dict[str, List[Tuple[str, float]]] = {k: [] for k in METRIC_NAMES}
+    db_path = Path(state_dir) / "e3.sqlite"
+    if db_path.exists():
+        conn = sqlite3.connect(db_path)
+        try:
+            for name in METRIC_NAMES:
+                rows = conn.execute(
+                    "SELECT ts, value FROM metrics WHERE key=? ORDER BY ts DESC LIMIT 20", (name,)
+                ).fetchall()
+                metrics[name] = list(reversed(rows))
+        finally:
+            conn.close()
+    return {"events": events, "metrics": metrics}
+
+
+def _human_bytes(n: float | int | None) -> str:
+    if n is None:
+        return "?"
+    n = float(n)
+    for unit in ["B", "KB", "MB", "GB"]:
+        if n < 1024:
+            return f"{n:.1f}{unit}"
+        n /= 1024
+    return f"{n:.1f}TB"
+
+
+def render(model: Dict[str, object], *, width: int = 80) -> List[str]:
+    """Render model into lines; pure for testing."""
+    if model.get("show_help"):
+        return [
+            "keys:",
+            " q quit",
+            " r refresh",
+            " p pause",
+            " m cycle metric",
+            " ? help",
+        ]
+    lines: List[str] = []
+    events: List[Dict[str, object]] = model.get("events", [])  # type: ignore
+    last = events[-1] if events else {}
+    data = last.get("data", {}) if isinstance(last, dict) else {}
+    ts = last.get("ts", "-")
+    cpu = data.get("cpu_pct")
+    rss = _human_bytes(data.get("rss_bytes"))
+    load1 = data.get("load1")
+    tick = data.get("tick_secs")
+    status = f"last {ts} | cpu {cpu} | rss {rss} | load1 {load1} | tick {tick}"
+    if model.get("paused"):
+        status += " [PAUSED]"
+    lines.append(status[:width])
+
+    left: List[str] = []
+    for e in events[-20:]:
+        d = e.get("data", {})
+        ts = str(e.get("ts", ""))[-8:]
+        left.append(
+            f"{ts} cpu {d.get('cpu_pct')} rss {_human_bytes(d.get('rss_bytes'))}"
+        )
+
+    focus = model.get("focus", METRIC_NAMES[0])
+    metrics: Dict[str, List[Tuple[str, float]]] = model.get("metrics", {})  # type: ignore
+    vals = [v for _, v in metrics.get(focus, [])]
+    right: List[str] = []
+    if vals:
+        spark = "".join(_spark(vals))
+        mn, mx = min(vals), max(vals)
+        avg = sum(vals) / len(vals)
+        right = [focus, spark, f"min {mn:.2f} avg {avg:.2f} max {mx:.2f}"]
+
+    column = width // 2
+    for i in range(max(len(left), len(right))):
+        l = left[i] if i < len(left) else ""
+        r = right[i] if i < len(right) else ""
+        lines.append(f"{l[:column-1]:<{column}}{r[:width-column]}")
+
+    lines.append("[q] quit [r] refresh [p] pause [m] metric [?] help")
+    return lines
+
+
+_SPARKS = "▁▂▃▄▅▆▇"
+
+
+def _spark(vals: List[float]) -> List[str]:
+    if not vals:
+        return []
+    mn, mx = min(vals), max(vals)
+    span = mx - mn or 1.0
+    out = []
+    for v in vals:
+        idx = int((v - mn) / span * (len(_SPARKS) - 1))
+        out.append(_SPARKS[idx])
+    return out
+
+
+def main(argv: List[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="eidtop", description="Tiny TUI for Eidos")
+    ap.add_argument("--state-dir", default="state")
+    args = ap.parse_args(argv)
+
+    def _loop(stdscr):
+        curses.curs_set(0)
+        paused = False
+        focus_idx = 0
+        show_help = False
+        model: Dict[str, object] = {}
+        while True:
+            if not paused or not model:
+                model = gather_model(args.state_dir)
+            model["paused"] = paused
+            model["focus"] = METRIC_NAMES[focus_idx]
+            model["show_help"] = show_help
+            lines = render(model, width=curses.COLS)
+            stdscr.erase()
+            for i, line in enumerate(lines):
+                try:
+                    stdscr.addstr(i, 0, line[: curses.COLS - 1])
+                except curses.error:
+                    pass
+            stdscr.refresh()
+            stdscr.timeout(1000 if not paused else -1)
+            ch = stdscr.getch()
+            if ch in (ord("q"), ord("Q")):
+                break
+            if ch in (ord("r"), ord("R")):
+                continue
+            if ch in (ord("p"), ord("P")):
+                paused = not paused
+            elif ch in (ord("m"), ord("M")):
+                focus_idx = (focus_idx + 1) % len(METRIC_NAMES)
+            elif ch in (ord("?"),):
+                show_help = not show_help
+
+    curses.wrapper(_loop)
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

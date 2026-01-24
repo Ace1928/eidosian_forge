@@ -331,6 +331,10 @@ class FigletFont:
         """
         Load a standard format FIGlet font.
 
+        Standard FIGlet fonts define characters in ASCII order starting from
+        character 32 (space). Each character takes exactly `height` lines.
+        Lines end with endmarks: single @ for most lines, @@ for last line.
+
         Args:
             lines: Font file content as list of lines
             current_line: Starting line number for parsing
@@ -339,45 +343,41 @@ class FigletFont:
             True if parsing succeeded, False otherwise
         """
         try:
-            # Parse each character block
-            while current_line < len(lines):
-                line_count = 0
+            # Standard ASCII characters start at 32 (space) through 126 (~)
+            # Required characters: 32-126 (95 characters total)
+            char_code = 32  # Start with space character
+
+            while current_line < len(lines) and char_code <= 126:
                 char_lines: List[str] = []
 
-                # Get the character definition lines
-                while line_count < self.height and current_line + line_count < len(
-                    lines
-                ):
-                    line = lines[current_line + line_count]
-                    # Handle lines that might be too short (missing endmark)
-                    if line:
-                        char_lines.append(line[:-1])  # Remove endmark
+                # Get the character definition lines (exactly `height` lines per char)
+                for i in range(self.height):
+                    if current_line + i >= len(lines):
+                        break
+                    line = lines[current_line + i]
+
+                    # Remove endmarks (@ or @@) from end of line
+                    # Standard figlet: @ at end of each line, @@ at end of character
+                    if line.endswith("@@"):
+                        clean_line = line[:-2]
+                    elif line.endswith("@"):
+                        clean_line = line[:-1]
                     else:
-                        char_lines.append("")
-                    line_count += 1
+                        clean_line = line.rstrip("\r\n")
 
-                if not char_lines:
-                    current_line += max(1, line_count)  # Skip to next potential block
-                    continue
+                    char_lines.append(clean_line)
 
-                # Determine which character this is
-                if (
-                    current_line + self.height <= len(lines)
-                    and lines[current_line + self.height - 1]
-                ):
-                    # Get the last character of the last line in this block
-                    last_line = lines[current_line + self.height - 1]
-                    if last_line:
-                        curr_char = last_line[-1]
-                    else:
-                        curr_char = " "  # Default to space for empty lines
-                else:
-                    curr_char = " "  # Default to space if out of bounds
+                # Skip if we couldn't read enough lines
+                if len(char_lines) != self.height:
+                    break
 
-                # Store the character, removing trailing spaces for width calculation
+                # Convert char code to character
+                curr_char = chr(char_code)
+
+                # Calculate width (max line length, ignoring hard_blank for display)
                 width = (
                     max(
-                        len(line.rstrip("\r\n" + self.hard_blank))
+                        len(line.rstrip().replace(self.hard_blank, " "))
                         for line in char_lines
                     )
                     if char_lines
@@ -387,13 +387,77 @@ class FigletFont:
                 self.chars[curr_char] = char_lines
                 self.width[curr_char] = width
 
+                # Move to next character
                 current_line += self.height
+                char_code += 1
 
-            return bool(self.chars)  # Success if we have at least some characters
+            # Extended characters (code-tagged) come after ASCII 126
+            # Parse any additional code-tagged characters
+            self._load_extended_characters(lines, current_line)
+
+            return len(self.chars) >= 95  # At least ASCII printable chars
 
         except Exception as e:
             logger.debug(f"Error in standard format parsing: {e}")
             return False
+
+    def _load_extended_characters(self, lines: List[str], start_line: int) -> None:
+        """
+        Load extended (code-tagged) characters after the standard ASCII set.
+
+        Code-tagged characters have format:
+        0x00C4  LATIN CAPITAL LETTER A WITH DIAERESIS
+        (followed by height lines of character data)
+
+        Args:
+            lines: Font file content as list of lines
+            start_line: Starting line for extended characters
+        """
+        current_line = start_line
+
+        while current_line < len(lines):
+            line = lines[current_line].strip()
+
+            # Check for code tag (e.g., "0x00C4" or "196" followed by comment)
+            code_match = re.match(r"^(0x[0-9A-Fa-f]+|\d+)\s", line)
+            if not code_match:
+                current_line += 1
+                continue
+
+            try:
+                code_str = code_match.group(1)
+                if code_str.startswith("0x"):
+                    char_code = int(code_str, 16)
+                else:
+                    char_code = int(code_str)
+
+                # Read character data
+                char_lines: List[str] = []
+                for i in range(1, self.height + 1):
+                    if current_line + i >= len(lines):
+                        break
+                    char_line = lines[current_line + i]
+
+                    # Remove endmarks
+                    if char_line.endswith("@@"):
+                        clean_line = char_line[:-2]
+                    elif char_line.endswith("@"):
+                        clean_line = char_line[:-1]
+                    else:
+                        clean_line = char_line.rstrip("\r\n")
+
+                    char_lines.append(clean_line)
+
+                if len(char_lines) == self.height:
+                    curr_char = chr(char_code)
+                    width = max((len(cl) for cl in char_lines), default=0)
+                    self.chars[curr_char] = char_lines
+                    self.width[curr_char] = width
+
+                current_line += self.height + 1  # +1 for the code tag line
+
+            except (ValueError, IndexError):
+                current_line += 1
 
     def _load_german_format(self, lines: List[str], current_line: int) -> bool:
         """
