@@ -20,6 +20,10 @@ env:
   PYTHONUNBUFFERED: 1
   FORCE_COLOR: 1
 
+# Default permissions for all jobs
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -28,6 +32,8 @@ jobs:
   lint-python:
     name: 🐍 Lint Python
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
 
@@ -177,6 +183,8 @@ jobs:
   lint-typescript:
     name: 📘 Lint TypeScript/JavaScript
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
 
@@ -280,6 +288,8 @@ jobs:
     name: 📊 Overall Summary
     needs: [lint-python, lint-typescript]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading status from other jobs
     if: always()
     steps:
       - name: 📊 Final Summary
