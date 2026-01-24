@@ -7,9 +7,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
+from eidosian_core import eidosian
 
 class JsonFormatter(logging.Formatter):
     """Formats log records as a JSON object."""
+    @eidosian()
     def format(self, record):
         log_entry = {
             "timestamp": self.formatTime(record, self.datefmt),
@@ -79,6 +81,7 @@ class DiagnosticsForge:
             self.logger.addHandler(fh)
             self.logger.addHandler(ch)
 
+    @eidosian()
     def log_event(self, level: str, message: str, **kwargs):
         """Log a structured event with optional context data."""
         extra = kwargs
@@ -92,10 +95,12 @@ class DiagnosticsForge:
             msg = f"{message} | DATA: {json.dumps(extra)}" if extra else message
             self.logger.log(getattr(logging, level.upper()), msg)
 
+    @eidosian()
     def start_timer(self, name: str) -> Dict[str, Any]:
         """Start a performance timer."""
         return {"name": name, "start": time.perf_counter()}
 
+    @eidosian()
     def stop_timer(self, timer: Dict[str, Any]) -> float:
         """Stop a performance timer and record the duration."""
         duration = time.perf_counter() - timer["start"]
@@ -112,6 +117,7 @@ class DiagnosticsForge:
         self.log_event("DEBUG", f"Metric recorded: {name}", duration=duration)
         return duration
 
+    @eidosian()
     def get_metrics_summary(self, name: str) -> Dict[str, Any]:
         """Calculate aggregate statistics for a given metric."""
         if name not in self.metrics or not self.metrics[name]:
@@ -126,6 +132,7 @@ class DiagnosticsForge:
             "total": sum(durations)
         }
 
+    @eidosian()
     def save_metrics(self, path: Optional[Union[str, Path]] = None):
         """Export all recorded metrics to a JSON file."""
         if not self.metrics:
@@ -141,6 +148,7 @@ class DiagnosticsForge:
             # Fallback print if file write fails (e.g. during shutdown panic)
             print(f"Failed to save metrics to {path}: {e}")
             
+    @eidosian()
     def clear_metrics(self):
         """Reset internal metrics storage."""
         self.metrics = {}

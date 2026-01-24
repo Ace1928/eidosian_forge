@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Version migration guide generation with semantic understanding.
 """
@@ -28,6 +29,7 @@ class MigrationGuideGenerator:
     def __init__(self) -> None:
         self._known_migrations: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
+    @eidosian()
     def register_migration_info(self, component: str, from_version: str, to_version: str,
                               breaking_changes: List[str],
                               new_features: List[str],
@@ -46,6 +48,7 @@ class MigrationGuideGenerator:
             "deprecations": deprecations
         }
 
+    @eidosian()
     def generate_migration_guide(self, component: str, from_version: str,
                                to_version: str) -> MigrationGuide:
         """Generate a migration guide between versions"""

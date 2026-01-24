@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Version update operations with file system integration.
 """
@@ -20,6 +21,7 @@ class CompleteVersionUpdateResult(TypedDict):
     previous_version: str
     current_version: str
 
+@eidosian()
 def update_version(new_version: str,
                    current_version: str,
                    repo_path: Optional[Path] = None,
@@ -77,6 +79,7 @@ def update_version(new_version: str,
         ".py", ".md", ".rst", ".txt", ".toml", ".yaml", ".yml", ".cfg"
     }
 
+    @eidosian()
     def update_file(path: Path) -> bool:
         """Update version references in a file, return True if changed"""
         nonlocal files_examined

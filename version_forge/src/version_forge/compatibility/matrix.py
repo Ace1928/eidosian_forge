@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Compatibility matrix for tracking and enforcing cross-component version relationships.
 
@@ -62,6 +63,7 @@ class CompatibilityMatrix:
         self._compatibility_map: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
         self._versions: Dict[str, List[str]] = {}
 
+    @eidosian()
     def register_component(self, name: str, component: IVersioned) -> None:
         """Register a component's version information with graceful fallbacks."""
         version_str = str(component.version)
@@ -82,6 +84,7 @@ class CompatibilityMatrix:
         # Log registration
         logger.debug(f"Registered component {name} v{version_str} (min: v{min_version_str})")
 
+    @eidosian()
     def register_compatibility(self, component1: str, version1: str,
                               component2: str, version2: str) -> None:
         """Register bidirectional compatibility between specific component versions."""
@@ -109,6 +112,7 @@ class CompatibilityMatrix:
 
         logger.debug(f"Registered compatibility: {component1} v{version1} ↔ {component2} v{version2}")
 
+    @eidosian()
     def verify_compatibility(self, component1: str, version1: str,
                            component2: str, version2: str) -> bool:
         """
@@ -135,6 +139,7 @@ class CompatibilityMatrix:
         # If no direct information, assume incompatible - fail closed
         return False
 
+    @eidosian()
     def get_compatible_versions(self, component: str, version: str) -> Dict[str, List[str]]:
         """Get all components/versions compatible with the specified component version."""
         result: Dict[str, List[str]] = {}
@@ -154,6 +159,7 @@ class CompatibilityMatrix:
 
         return result
 
+    @eidosian()
     def generate_compatibility_report(self) -> Dict[str, Dict[str, Dict[str, List[str]]]]:
         """
         Generate a complete compatibility report for documentation.
@@ -281,6 +287,7 @@ class CompatibilityMatrix:
         ascii_viz = '\n'.join([header, separator] + rows)
         return ascii_viz
 
+    @eidosian()
     def to_json(self) -> str:
         """
         Export compatibility matrix as JSON for perfect serialization.

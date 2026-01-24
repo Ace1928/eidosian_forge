@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Diagnostics Forge CLI - System diagnostics and health checks.
 """
@@ -9,6 +10,7 @@ import json
 from pathlib import Path
 from typing import Optional, List
 
+@eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
