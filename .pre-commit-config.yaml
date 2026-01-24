@@ -1,0 +1,144 @@
+# 🎨 Eidosian Forge Pre-commit Configuration v1.0.0
+# Ensures code quality before commits
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Python: Code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        name: 🎨 Format Python with Black
+        args: ["--line-length=120"]
+        language_version: python3.12
+
+  # Python: Import sorting with isort
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: 📑 Sort Python imports
+        args: ["--profile=black", "--line-length=120"]
+
+  # Python: Linting and auto-fixing with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.14
+    hooks:
+      - id: ruff
+        name: 🔍 Lint Python with Ruff
+        args: ["--fix", "--config=ruff.toml"]
+      - id: ruff-format
+        name: 🎨 Format Python with Ruff
+        args: ["--config=ruff.toml"]
+
+  # TypeScript/JavaScript: Formatting with Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: 🎨 Format TypeScript/JavaScript
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown]
+        exclude: |
+          (?x)^(
+            .*\.min\.js|
+            .*\.min\.css|
+            node_modules/|
+            dist/|
+            build/|
+            \.cache/
+          )$
+
+  # TypeScript: Linting with ESLint
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.0.0-beta.2
+    hooks:
+      - id: eslint
+        name: 🔍 Lint TypeScript/JavaScript
+        files: \.(js|jsx|ts|tsx)$
+        types: [file]
+        args: ["--fix", "--max-warnings=0"]
+        additional_dependencies:
+          - eslint@9.20.1
+          - "@typescript-eslint/parser@8.21.0"
+          - "@typescript-eslint/eslint-plugin@8.21.0"
+          - "eslint-config-prettier@10.0.1"
+
+  # General: Remove trailing whitespace
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: ✂️ Trim trailing whitespace
+        exclude: |
+          (?x)^(
+            .*\.md|
+            .*\.txt|
+            .*\.snap
+          )$
+      - id: end-of-file-fixer
+        name: 📄 Fix end of files
+        exclude: |
+          (?x)^(
+            .*\.snap|
+            .*\.min\.js
+          )$
+      - id: check-yaml
+        name: ✅ Check YAML syntax
+        exclude: |
+          (?x)^(
+            .*\.github/workflows/.*\.yml
+          )$
+      - id: check-json
+        name: ✅ Check JSON syntax
+      - id: check-toml
+        name: ✅ Check TOML syntax
+      - id: check-added-large-files
+        name: 🚫 Check for large files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+        name: 🔀 Check for merge conflicts
+      - id: detect-private-key
+        name: 🔒 Detect private keys
+      - id: mixed-line-ending
+        name: 📝 Fix line endings
+        args: ['--fix=lf']
+
+  # Python: Security checks with bandit
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        name: 🔒 Security check with Bandit
+        args: ["-ll", "-r", "."]
+        exclude: |
+          (?x)^(
+            tests/|
+            test_.*\.py|
+            .*_test\.py
+          )$
+
+  # Markdown: Linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        name: 📝 Lint Markdown
+        args: ["--fix"]
+        exclude: |
+          (?x)^(
+            \.github/|
+            node_modules/|
+            CHANGELOG\.md|
+            REVIEW_MASTER_PLAN\.md
+          )$
+
+# Pre-commit configuration
+default_language_version:
+  python: python3.12
+  node: "20.0.0"
+
+# Performance settings
+default_stages: [commit]
+fail_fast: false
+minimum_pre_commit_version: "2.20.0"

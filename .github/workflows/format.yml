@@ -1,0 +1,174 @@
+# 🎨 Eidosian Auto-Format Workflow v1.0.0
+# Automatically formats code and commits changes
+
+name: Auto Format Code
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: "Commit and push formatting changes"
+        required: false
+        default: true
+        type: boolean
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main, master, develop]
+    paths:
+      - "**.py"
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
+      - "**.jsx"
+      - "**.json"
+      - "**.yaml"
+      - "**.yml"
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  format-python:
+    name: 🐍 Format Python Code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 📦 Install formatters
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort ruff
+
+      - name: 🎨 Format with Black
+        run: |
+          echo "::group::Running Black formatter"
+          black . --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || true
+          echo "::endgroup::"
+
+      - name: 📑 Sort imports with isort
+        run: |
+          echo "::group::Running isort"
+          isort . --profile=black --line-length=120 --skip-gitignore || true
+          echo "::endgroup::"
+
+      - name: 🔧 Auto-fix with Ruff
+        run: |
+          echo "::group::Running Ruff auto-fix"
+          ruff check . --fix --config=ruff.toml || true
+          echo "::endgroup::"
+
+      - name: 📊 Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "::notice::Formatting changes detected"
+            git --no-pager diff --stat
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "::notice::No formatting changes needed"
+          fi
+
+      - name: 💾 Commit changes
+        if: steps.check_changes.outputs.changes == 'true' && (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_changes == 'true' || github.event_name != 'workflow_dispatch')
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "🎨 Auto-format Python code [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+  format-typescript:
+    name: 📘 Format TypeScript/JavaScript Code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: game_forge/src/autoseed/package-lock.json
+
+      - name: 📥 Install Prettier globally
+        run: npm install -g prettier@3.4.2
+
+      - name: 🎨 Format with Prettier
+        run: |
+          echo "::group::Running Prettier formatter"
+          # Format game_forge/src/autoseed
+          if [ -d "game_forge/src/autoseed" ]; then
+            cd game_forge/src/autoseed
+            prettier . --write --ignore-path .prettierignore || true
+            cd ../../..
+          fi
+          
+          # Format other TypeScript/JavaScript files with default config
+          prettier "**/*.{ts,tsx,js,jsx,json}" --write \
+            --ignore-path .gitignore \
+            --ignore-unknown \
+            --log-level warn || true
+          echo "::endgroup::"
+
+      - name: 📊 Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "::notice::Formatting changes detected"
+            git --no-pager diff --stat
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "::notice::No formatting changes needed"
+          fi
+
+      - name: 💾 Commit changes
+        if: steps.check_changes.outputs.changes == 'true' && (github.event_name == 'workflow_dispatch' && github.event.inputs.commit_changes == 'true' || github.event_name != 'workflow_dispatch')
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "🎨 Auto-format TypeScript/JavaScript code [skip ci]" || echo "No changes to commit"
+          git push || echo "Nothing to push"
+
+  format-summary:
+    name: 📊 Format Summary
+    needs: [format-python, format-typescript]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Summary
+        run: |
+          echo "### 🎨 Formatting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Formatting | ${{ needs.format-python.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript/JS Formatting | ${{ needs.format-typescript.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.format-python.result }}" == "failure" ] || [ "${{ needs.format-typescript.result }}" == "failure" ]; then
+            echo "::error::One or more formatting jobs failed"
+            exit 1
+          else
+            echo "::notice::All formatting jobs completed successfully"
+          fi

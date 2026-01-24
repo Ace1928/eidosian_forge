@@ -1,0 +1,418 @@
+# 🚀 Eidosian Forge CI/CD Workflows
+
+## Overview
+
+This directory contains comprehensive GitHub Actions workflows for the Eidosian Forge repository. The workflows are designed to be robust, flexible, reusable, and provide detailed feedback for debugging and improvement.
+
+## 📋 Workflow Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     EIDOSIAN CI/CD PIPELINE                  │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+        ┌─────────────────────┴─────────────────────┐
+        │                                           │
+        ▼                                           ▼
+┌───────────────┐                          ┌──────────────┐
+│  FORMAT (Auto)│                          │     LINT     │
+│  • Black      │                          │  • Ruff      │
+│  • isort      │                          │  • Flake8    │
+│  • Prettier   │                          │  • ESLint    │
+│  • Ruff Fix   │                          │  • MyPy      │
+└───────┬───────┘                          └──────┬───────┘
+        │                                         │
+        └──────────────────┬──────────────────────┘
+                           ▼
+                    ┌─────────────┐
+                    │    TEST     │
+                    │  • Python   │
+                    │  • TypeScript│
+                    │  • Coverage │
+                    └──────┬──────┘
+                           ▼
+                    ┌─────────────┐
+                    │    BUILD    │
+                    │  • Package  │
+                    │  • Validate │
+                    └──────┬──────┘
+                           ▼
+                    ┌─────────────┐
+                    │ INTEGRATION │
+                    │  • Deploy   │
+                    │  • Verify   │
+                    └─────────────┘
+```
+
+## 📁 Workflow Files
+
+### Primary Workflows
+
+#### 1. **ci.yml** - Main CI Pipeline (v4.0.0)
+*Comprehensive continuous integration pipeline*
+
+**Triggers:**
+- Push to `main`, `master`, `develop` branches
+- Pull requests to protected branches
+- Manual workflow dispatch
+
+**Jobs:**
+1. **Validate** - Determines what needs to run (Python/TypeScript detection)
+2. **Format Check** - Ensures code is properly formatted
+3. **Lint** - Comprehensive code quality checks
+4. **Test** - Runs test suites for Python (3.10, 3.11, 3.12) and TypeScript
+5. **Docs** - Builds documentation
+6. **Build** - Creates distributable packages
+7. **Integration** - Tests installed packages
+8. **Pipeline** - Reports overall status
+
+**Key Features:**
+- Multi-version Python testing (3.10, 3.11, 3.12)
+- Cross-platform testing (Ubuntu + Windows)
+- Automatic language detection (runs only what changed)
+- Detailed job summaries with tables and metrics
+- Codecov integration for coverage tracking
+
+---
+
+#### 2. **format.yml** - Auto-Format Code (v1.0.0)
+*Automatically formats code and commits changes*
+
+**Triggers:**
+- Workflow dispatch (manual trigger)
+- Pull requests
+- Push to protected branches (for code files only)
+
+**Jobs:**
+1. **format-python** - Formats Python with Black, isort, and Ruff
+2. **format-typescript** - Formats TypeScript/JavaScript with Prettier
+3. **format-summary** - Reports formatting results
+
+**Key Features:**
+- Commits formatting changes automatically (can be disabled)
+- Skips CI on format commits (`[skip ci]`)
+- Works on both Python and TypeScript/JavaScript
+- Provides diff output for review
+
+**Usage:**
+```bash
+# Trigger manually from GitHub Actions UI
+# OR
+# Let it run automatically on PRs/pushes
+```
+
+---
+
+#### 3. **lint.yml** - Comprehensive Linting (v1.0.0)
+*Detailed code quality checks with granular feedback*
+
+**Triggers:**
+- Push to protected branches (for code files)
+- Pull requests
+- Manual workflow dispatch
+
+**Jobs:**
+1. **lint-python** - Python linting with multiple tools
+   - Black (formatting check)
+   - isort (import sorting)
+   - Ruff (fast linting)
+   - Flake8 (style guide)
+   - Pylint (deep analysis with score)
+   - Mypy (type checking)
+
+2. **lint-typescript** - TypeScript/JavaScript linting
+   - Prettier (formatting)
+   - ESLint (code quality)
+   - TypeScript compiler (type checking)
+
+3. **lint-summary** - Overall status with quick-fix commands
+
+**Key Features:**
+- Continue-on-error for each tool (all checks run)
+- Detailed error counts and summaries
+- Quick-fix commands in summary
+- Pylint scoring
+- GitHub annotations for inline errors
+
+---
+
+### Reusable Workflows
+
+#### 4. **reusable-python-test.yml** - Reusable Python Testing
+*Standardized Python testing workflow*
+
+**Inputs:**
+- `python-version` (default: "3.12")
+- `test-path` (default: "tests/")
+- `coverage-threshold` (default: 0)
+- `install-command` (custom install)
+- `pytest-args` (additional args)
+
+**Outputs:**
+- `coverage` - Coverage percentage
+- `test-result` - Test outcome
+
+**Example Usage:**
+```yaml
+jobs:
+  test-module:
+    uses: ./.github/workflows/reusable-python-test.yml
+    with:
+      python-version: "3.11"
+      test-path: "my_module/tests"
+      coverage-threshold: 80
+      pytest-args: "-v --maxfail=1"
+```
+
+---
+
+#### 5. **reusable-node-test.yml** - Reusable Node.js Testing
+*Standardized TypeScript/JavaScript testing workflow*
+
+**Inputs:**
+- `node-version` (default: "20")
+- `working-directory` (required)
+- `test-command` (default: "npm test")
+- `coverage-threshold` (default: 0)
+- `run-lint` (default: true)
+- `run-typecheck` (default: true)
+
+**Outputs:**
+- `coverage` - Coverage percentage
+- `test-result` - Test outcome
+
+**Example Usage:**
+```yaml
+jobs:
+  test-frontend:
+    uses: ./.github/workflows/reusable-node-test.yml
+    with:
+      node-version: "20"
+      working-directory: "./game_forge/src/autoseed"
+      coverage-threshold: 70
+```
+
+---
+
+## 🔧 Local Development Setup
+
+### Pre-commit Hooks
+
+Install pre-commit hooks to automatically format and lint code before commits:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+```
+
+The `.pre-commit-config.yaml` includes:
+- Black (Python formatting)
+- isort (import sorting)
+- Ruff (linting + auto-fix)
+- Prettier (TypeScript/JavaScript formatting)
+- ESLint (JavaScript linting)
+- Security checks (Bandit)
+- File validation (trailing whitespace, large files, etc.)
+
+---
+
+## 🎯 Quick Commands
+
+### Python
+
+```bash
+# Format code
+black . --line-length=120
+isort . --profile=black --line-length=120
+ruff check . --fix
+
+# Lint code
+ruff check .
+flake8 . --max-line-length=120
+pylint --recursive=y .
+mypy .
+
+# Run tests
+pytest --cov=. --cov-report=term-missing -v
+```
+
+### TypeScript/JavaScript
+
+```bash
+# Format code
+prettier . --write
+
+# Lint code
+npm run lint  # or cd to specific project
+
+# Type check
+npm run typecheck
+
+# Run tests
+npm test
+npm run test:coverage
+```
+
+---
+
+## 📊 Status Badges
+
+Add these to your README to show workflow status:
+
+```markdown
+[![CI](https://github.com/Ace1928/eidosian_forge/workflows/Eidosian%20Universal%20CI/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/ci.yml)
+[![Lint](https://github.com/Ace1928/eidosian_forge/workflows/Lint%20Code/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/lint.yml)
+[![codecov](https://codecov.io/gh/Ace1928/eidosian_forge/branch/main/graph/badge.svg)](https://codecov.io/gh/Ace1928/eidosian_forge)
+```
+
+---
+
+## 🔄 Workflow Customization
+
+### Environment Variables
+
+Common environment variables used across workflows:
+
+```yaml
+env:
+  PYTHONUNBUFFERED: 1  # Real-time Python output
+  FORCE_COLOR: 1       # Colored terminal output
+  POETRY_VIRTUALENVS_CREATE: false  # Use system Python
+  POETRY_VERSION: "1.8.3"  # Poetry version
+```
+
+### Workflow Dispatch Parameters
+
+All workflows support manual triggering with optional parameters. Access via:
+**Actions → [Workflow Name] → Run workflow**
+
+---
+
+## 🐛 Debugging Failed Workflows
+
+### 1. Check Job Summary
+- Click on the failed workflow run
+- Review the "Summary" tab for high-level errors
+- Check job-specific summaries for details
+
+### 2. View Logs
+- Click on the failed job
+- Expand log groups to see detailed output
+- Look for `::error::` and `::warning::` annotations
+
+### 3. Local Reproduction
+```bash
+# Run the same commands locally
+# Example for lint failures:
+black . --check --diff --line-length=120
+ruff check .
+
+# Example for test failures:
+pytest -v
+```
+
+### 4. Use Workflow Dispatch
+- Trigger workflows manually with debug flags
+- Test specific scenarios without committing
+
+---
+
+## 📈 Coverage Reports
+
+### Python Coverage
+- Uploaded to Codecov automatically
+- HTML reports available as artifacts
+- View in workflow run: **Artifacts → coverage-html-py{version}**
+
+### TypeScript Coverage
+- Generated by Vitest with v8 provider
+- Available as artifacts: **Artifacts → typescript-coverage**
+- Summary displayed in job output
+
+---
+
+## 🔐 Security
+
+### Secret Scanning
+- Pre-commit hook detects private keys
+- Bandit security scanner for Python
+- Automated dependency updates (Dependabot - configure separately)
+
+### Required Secrets
+- `CODECOV_TOKEN` - For coverage upload (optional, set in repo secrets)
+- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+
+---
+
+## 🚀 Performance Optimizations
+
+1. **Caching**
+   - pip dependencies cached by action
+   - npm dependencies cached by action
+   - Poetry virtualenvs cached
+
+2. **Parallelization**
+   - Multiple Python versions test in parallel
+   - Independent jobs run concurrently
+   - Matrix strategy for OS testing
+
+3. **Concurrency Control**
+   - Cancels duplicate runs on same branch
+   - Prevents workflow queue buildup
+
+4. **Conditional Execution**
+   - Detects changed file types
+   - Skips unnecessary jobs
+   - `paths-ignore` for documentation
+
+---
+
+## 📚 Additional Resources
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Black Code Formatter](https://black.readthedocs.io/)
+- [Ruff Linter](https://docs.astral.sh/ruff/)
+- [Prettier](https://prettier.io/)
+- [Pytest](https://docs.pytest.org/)
+- [Vitest](https://vitest.dev/)
+
+---
+
+## 🤝 Contributing
+
+When modifying workflows:
+
+1. Test changes in a fork first
+2. Use workflow dispatch for testing
+3. Document new inputs/outputs
+4. Update this README
+5. Version workflows (increment version in header comment)
+
+---
+
+## 📝 Changelog
+
+### v4.0.0 (2026-01-24)
+- ✨ Added comprehensive formatting workflow
+- ✨ Added detailed linting workflow
+- ✨ Added reusable testing workflows
+- ✨ Added TypeScript/JavaScript support
+- ✨ Enhanced CI pipeline with better summaries
+- ✨ Added pre-commit configuration
+- 📚 Created comprehensive documentation
+
+### v3.15.0 (Previous)
+- 🎯 Basic Python CI/CD
+- 🧪 Multi-version Python testing
+- 📦 Package building and validation
+
+---
+
+**Maintained by:** Eidosian Forge Team  
+**Last Updated:** 2026-01-24
