@@ -49,5 +49,20 @@
       "timestamp": "2026-01-25T08:40:00Z"
     },
     "importance": 1.0
+  },
+  "45de2fbb-1481-4583-bde2-cf1d1717234d": {
+    "id": "45de2fbb-1481-4583-bde2-cf1d1717234d",
+    "content": "SESSION MILESTONE: Eidosian Forge Comprehensive Enhancement\n\n## Achievements\n1. **Decorator System Complete**: Applied @eidosian to 298 files across all forges\n2. **GraphRAG Operational**: Local Ollama integration working with 3600s timeout\n3. **35 Forges Operational**: All accessible via `eidosian <forge>` central CLI\n4. **Test Coverage Expanded**: \n   - memory_forge: 13/13 passing\n   - glyph_forge: 171/171 passing\n   - terminal_forge: 42/44 passing (2 skipped)\n   - word_forge: ~597 tests\n   - code_forge, audit_forge, refactor_forge, crawl_forge: All passing\n\n5. **Documentation Added**: INSTALL.md for 6 more forges (ollama_forge, version_forge, type_forge, file_forge, diagnostics_forge, computer_control_forge)\n\n## Key Technical Decisions\n- Decorator applicator processes bottom-to-top to avoid line number shifts\n- Skip @property, @abstractmethod, @staticmethod, .setter, .deleter decorators\n- eidosian_core cannot decorate itself (circular import)\n- __future__ imports must come before eidosian_core import\n\n## Forge Overlap Analysis\n- ollama_forge + llm_forge: LLM client abstraction layer\n- code_forge + refactor_forge: Different purposes (indexing vs transformation)\n- memory_forge + knowledge_forge: Connected via KnowledgeMemoryBridge\n\n## Next Steps\n- Add more INSTALL.md files\n- Consolidate any redundant functionality\n- Continue improving test coverage\n- Review archive_forge integration opportunities",
+    "created_at": "2026-01-25T08:48:12.342144",
+    "type": "episodic",
+    "metadata": {
+      "session": "5998348b-1a5d-4016-9f9a-9f9cb4d6f12e",
+      "timestamp": "2026-01-25T09:00:00Z",
+      "category": "session_milestone",
+      "commits": 9,
+      "files_decorated": 298,
+      "tests_passing": 1200
+    },
+    "importance": 1.0
   }
 }
