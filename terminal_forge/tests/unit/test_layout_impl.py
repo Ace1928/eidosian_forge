@@ -10,7 +10,7 @@ import os
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../src'))
-from terminal_forge.layout import LayoutEngine, Alignment, OverflowMode, Padding, Margin
+from terminal_forge.layout import LayoutEngine, Alignment, ContentOverflow, Padding, Margin
 
 
 class TestAlignment:
@@ -53,9 +53,9 @@ class TestOverflow:
     """Test overflow handling."""
     
     def test_overflow_mode_enum(self):
-        """Test OverflowMode enum values."""
-        assert hasattr(OverflowMode, 'WRAP')
-        assert hasattr(OverflowMode, 'TRUNCATE')
+        """Test ContentOverflow enum values."""
+        assert hasattr(ContentOverflow, 'WRAP')
+        assert hasattr(ContentOverflow, 'TRUNCATE')
     
     def test_truncate_overflow(self):
         """Test truncating text that's too long."""
