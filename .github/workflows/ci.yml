@@ -30,6 +30,10 @@ env:
   POETRY_VIRTUALENVS_CREATE: false
   POETRY_VERSION: "1.8.3"
 
+# Default permissions for all jobs
+permissions:
+  contents: read
+
 # Prevent duplicate workflow runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -39,6 +43,8 @@ jobs:
   validate:
     name: ⚙️ Validate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
       has_python: ${{ steps.check.outputs.has_python }}
@@ -74,6 +80,8 @@ jobs:
     needs: validate
     if: needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading and checking format
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +138,8 @@ jobs:
     needs: [validate, format-check]
     if: needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
         with:
@@ -207,6 +217,8 @@ jobs:
     needs: [validate, lint]
     if: always() && needs.validate.outputs.should_run == 'true'
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read  # Only reading repository contents
     strategy:
       fail-fast: false
       matrix:
@@ -263,6 +275,8 @@ jobs:
     needs: [validate, lint]
     if: always() && needs.validate.outputs.should_run == 'true' && needs.validate.outputs.has_typescript == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
 
@@ -303,6 +317,8 @@ jobs:
     needs: [validate, lint]
     if: always() && needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
 
@@ -361,6 +377,8 @@ jobs:
     needs: [validate, test]
     if: always() && needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
         with:
@@ -410,6 +428,8 @@ jobs:
     needs: [validate, build]
     if: github.event_name == 'push' && needs.validate.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
     steps:
       - uses: actions/checkout@v4
 
@@ -451,6 +471,8 @@ jobs:
     name: 🚀 Pipeline
     needs: [lint, test, test-typescript, docs, build, integration]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading status from other jobs
     if: always()
     steps:
       - name: 📊 Pipeline Status

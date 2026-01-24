@@ -29,12 +29,16 @@ env:
   PYTHONUNBUFFERED: 1
   FORCE_COLOR: 1
 
+# Default permissions for all jobs
+permissions:
+  contents: read
+
 jobs:
   format-python:
     name: 🐍 Format Python Code
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write  # Needed to commit and push changes
     steps:
       - uses: actions/checkout@v4
         with:
@@ -95,7 +99,7 @@ jobs:
     name: 📘 Format TypeScript/JavaScript Code
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write  # Needed to commit and push changes
     steps:
       - uses: actions/checkout@v4
         with:
@@ -154,6 +158,8 @@ jobs:
     name: 📊 Format Summary
     needs: [format-python, format-typescript]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading status from other jobs
     if: always()
     steps:
       - name: 📊 Summary
