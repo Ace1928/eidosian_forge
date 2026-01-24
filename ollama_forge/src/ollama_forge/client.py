@@ -1,9 +1,14 @@
 """
 Ollama Forge - Python Client.
+
+[EIDOS] Configured for local LLM with extended timeouts.
 """
 import httpx
 from typing import Dict, Any, Generator, List, Optional
 from pydantic import BaseModel
+
+# [EIDOS] Default timeout for LLM operations - 1 hour for slow local models
+DEFAULT_LLM_TIMEOUT = 3600.0
 
 class OllamaResponse(BaseModel):
     model: str
@@ -16,7 +21,7 @@ class OllamaClient:
     def __init__(
         self,
         base_url: str = "http://localhost:11434",
-        timeout: Optional[float] = None,
+        timeout: Optional[float] = DEFAULT_LLM_TIMEOUT,
     ):
         self.base_url = base_url
         self.timeout = timeout
