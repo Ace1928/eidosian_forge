@@ -1,0 +1,10 @@
+steps:
+  - name: lint-fix
+    cmd: ["ruff","--fix","."]
+    budget_s: 60
+  - name: lint-check
+    cmd: ["ruff","."]
+    budget_s: 60
+  - name: test-lint
+    cmd: ["pytest","-q","-k","lint"]
+    budget_s: 120

@@ -1,0 +1,7 @@
+steps:
+  - name: format
+    cmd: ["ruff","--fix","."]
+    budget_s: 30
+  - name: test
+    cmd: ["pytest","${pytest_args}"]
+    budget_s: 300

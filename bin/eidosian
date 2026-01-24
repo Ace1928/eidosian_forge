@@ -1,0 +1,683 @@
+#!/usr/bin/env python3
+"""
+Eidosian Forge CLI - Central command hub for all forges.
+
+This is the main entry point for the Eidosian Forge system.
+It provides unified access to all forge CLIs and system-wide commands.
+
+Usage:
+    eidosian status              # Show overall system status
+    eidosian memory <cmd>        # Route to memory-forge
+    eidosian knowledge <cmd>     # Route to knowledge-forge
+    eidosian code <cmd>          # Route to code-forge
+    eidosian llm <cmd>           # Route to llm-forge
+    eidosian forges              # List all available forges
+    eidosian install             # Install all forge CLI entry points
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+# Forge directory
+FORGE_ROOT = Path(__file__).parent.parent
+LIB_PATH = FORGE_ROOT / "lib"
+
+# Add lib to path
+sys.path.insert(0, str(LIB_PATH))
+
+from cli import Colors, ForgeDetector, CommandResult
+
+
+# Forge registry - maps subcommand to (module, cli_class)
+FORGE_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "memory": {
+        "module": "memory_forge.cli",
+        "class": "MemoryForgeCLI",
+        "description": "Tiered memory system",
+        "path": FORGE_ROOT / "memory_forge" / "src",
+    },
+    "knowledge": {
+        "module": "knowledge_forge.cli",
+        "class": "KnowledgeForgeCLI",
+        "description": "Knowledge graph management",
+        "path": FORGE_ROOT / "knowledge_forge" / "src",
+    },
+    "code": {
+        "module": "code_forge.cli",
+        "class": "CodeForgeCLI",
+        "description": "Code analysis and indexing",
+        "path": FORGE_ROOT / "code_forge" / "src",
+    },
+    "llm": {
+        "module": "llm_forge.cli",
+        "class": "LLMForgeCLI",
+        "description": "Unified LLM interface",
+        "path": FORGE_ROOT / "llm_forge" / "src",
+    },
+    "word": {
+        "module": "word_forge.cli",
+        "class": "WordForgeCLI",
+        "description": "Living lexicon system",
+        "path": FORGE_ROOT / "word_forge" / "src",
+    },
+    "crawl": {
+        "module": "crawl_forge.cli",
+        "class": "CrawlForgeCLI",
+        "description": "Web crawling and extraction",
+        "path": FORGE_ROOT / "crawl_forge" / "src",
+    },
+    "glyph": {
+        "module": "glyph_forge.cli",
+        "class": None,  # Uses Typer app directly
+        "entry": "main",  # Function to call
+        "description": "Image to ASCII/ANSI converter",
+        "path": FORGE_ROOT / "glyph_forge" / "src",
+        "typer": True,  # Flag for Typer-based CLI
+    },
+    "audit": {
+        "module": "audit_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Code audit and coverage tracking",
+        "path": FORGE_ROOT / "audit_forge" / "src",
+        "typer": True,
+    },
+    "refactor": {
+        "module": "refactor_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Code refactoring and modularization",
+        "path": FORGE_ROOT / "refactor_forge" / "src",
+        "argparse": True,  # Flag for argparse-based CLI
+    },
+    "metadata": {
+        "module": "metadata_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Eidosian metadata management",
+        "path": FORGE_ROOT / "metadata_forge" / "src",
+        "argparse": True,
+    },
+    "terminal": {
+        "module": "terminal_forge.cli",
+        "class": "TerminalForgeCLI",
+        "description": "Terminal styling and display",
+        "path": FORGE_ROOT / "terminal_forge" / "src",
+    },
+    # Agent Forge - 3 CLI tools
+    "agent": {
+        "module": "agent_forge.cli.eidctl",
+        "class": None,
+        "entry": "main",
+        "description": "Agent state/journal management (eidctl)",
+        "path": FORGE_ROOT / "agent_forge" / "src",
+        "argparse": True,
+    },
+    "agent-daemon": {
+        "module": "agent_forge.cli.eidosd",
+        "class": None,
+        "entry": "main",
+        "description": "Agent daemon scheduler (eidosd)",
+        "path": FORGE_ROOT / "agent_forge" / "src",
+        "argparse": True,
+    },
+    "agent-top": {
+        "module": "agent_forge.cli.eidtop",
+        "class": None,
+        "entry": "main",
+        "description": "Agent metrics TUI (eidtop)",
+        "path": FORGE_ROOT / "agent_forge" / "src",
+        "argparse": True,
+    },
+    # Doc Forge
+    "doc": {
+        "module": "doc_forge.doc_forge",
+        "class": None,
+        "entry": "main",
+        "description": "Documentation management",
+        "path": FORGE_ROOT / "doc_forge" / "src",
+        "argparse": True,
+    },
+    # Figlet Forge
+    "figlet": {
+        "module": "figlet_forge.cli.main",
+        "class": None,
+        "entry": "main",
+        "description": "ASCII art text generation",
+        "path": FORGE_ROOT / "figlet_forge" / "src",
+        "argparse": True,
+    },
+    # Game Forge - Falling Sand
+    "game": {
+        "module": "falling_sand.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Falling sand game/simulation toolkit",
+        "path": FORGE_ROOT / "game_forge" / "src" / "falling_sand" / "src",
+        "argparse": True,
+    },
+    # Repo Forge
+    "repo": {
+        "module": "repo_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Repository structure generator",
+        "path": FORGE_ROOT / "repo_forge" / "src",
+        "argparse": True,
+    },
+    # Computer Control Forge
+    "control": {
+        "module": "computer_control_forge.cli.main",
+        "class": None,
+        "entry": "main",
+        "description": "🎮 Mouse/keyboard/screen control",
+        "path": FORGE_ROOT / "computer_control_forge" / "src",
+        "argparse": True,
+    },
+    # Version Forge
+    "version": {
+        "module": "version_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Semantic versioning management",
+        "path": FORGE_ROOT / "version_forge" / "src",
+        "argparse": True,
+    },
+    # Type Forge
+    "type": {
+        "module": "type_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🔧 Schema registry and validation",
+        "path": FORGE_ROOT / "type_forge" / "src",
+        "argparse": True,
+    },
+    # File Forge
+    "file": {
+        "module": "file_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "📁 File operations and management",
+        "path": FORGE_ROOT / "file_forge" / "src",
+        "argparse": True,
+    },
+    # Diagnostics Forge
+    "diagnostics": {
+        "module": "diagnostics_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🔬 System diagnostics and health",
+        "path": FORGE_ROOT / "diagnostics_forge" / "src",
+        "argparse": True,
+    },
+    # Narrative Forge
+    "narrative": {
+        "module": "narrative_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "📖 Narrative generation engine",
+        "path": FORGE_ROOT / "narrative_forge" / "src",
+        "argparse": True,
+    },
+    # Ollama Forge
+    "ollama": {
+        "module": "ollama_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🦙 Local LLM via Ollama",
+        "path": FORGE_ROOT / "ollama_forge" / "src",
+        "argparse": True,
+    },
+    # GIS Forge
+    "gis": {
+        "module": "gis_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🌍 Geographic utilities",
+        "path": FORGE_ROOT / "gis_forge" / "src",
+        "argparse": True,
+    },
+    # Article Forge
+    "article": {
+        "module": "article_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "📰 Article processing",
+        "path": FORGE_ROOT / "article_forge" / "src",
+        "argparse": True,
+    },
+    # Viz Forge
+    "viz": {
+        "module": "viz_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "📊 Visualization tools",
+        "path": FORGE_ROOT / "viz_forge" / "src",
+        "argparse": True,
+    },
+    # Test Forge
+    "test": {
+        "module": "test_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🧪 Test utilities",
+        "path": FORGE_ROOT / "test_forge" / "src",
+        "argparse": True,
+    },
+    # MKey Forge
+    "mkey": {
+        "module": "mkey_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🔑 Key management",
+        "path": FORGE_ROOT / "mkey_forge" / "src",
+        "argparse": True,
+    },
+    # SMS Forge
+    "sms": {
+        "module": "sms_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "📱 SMS utilities",
+        "path": FORGE_ROOT / "sms_forge" / "src",
+        "argparse": True,
+    },
+    # Prompt Forge
+    "prompt": {
+        "module": "prompt_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "💬 Prompt engineering",
+        "path": FORGE_ROOT / "prompt_forge" / "src",
+        "argparse": True,
+    },
+    # Lyrics Forge
+    "lyrics": {
+        "module": "lyrics_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🎵 Lyrics processing",
+        "path": FORGE_ROOT / "lyrics_forge" / "src",
+        "argparse": True,
+    },
+    # Erais Forge
+    "erais": {
+        "module": "erais_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🤖 ERAIS utilities",
+        "path": FORGE_ROOT / "erais_forge" / "src",
+        "argparse": True,
+    },
+    # Web Interface Forge
+    "web": {
+        "module": "web_interface_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "🌐 Web UI and API",
+        "path": FORGE_ROOT / "web_interface_forge" / "src",
+        "argparse": True,
+    },
+}
+
+
+class EidosianCLI:
+    """Central CLI for the Eidosian Forge system."""
+    
+    VERSION = "1.0.0"
+    
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(
+            prog="eidosian",
+            description="Eidosian Forge - Central command hub for all forges",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=self._get_epilog(),
+        )
+        self._setup_args()
+    
+    def _get_epilog(self) -> str:
+        """Generate help epilog with forge list."""
+        lines = [
+            "",
+            "Available Forges:",
+        ]
+        for name, info in FORGE_REGISTRY.items():
+            lines.append(f"  {name:12} {info['description']}")
+        lines.extend([
+            "",
+            "Examples:",
+            "  eidosian status                # Show system status",
+            "  eidosian memory status         # Memory forge status",
+            "  eidosian knowledge search X    # Search knowledge graph",
+            "  eidosian code analyze file.py  # Analyze Python file",
+        ])
+        return "\n".join(lines)
+    
+    def _setup_args(self):
+        """Set up argument parser."""
+        self.parser.add_argument(
+            "-v", "--version",
+            action="version",
+            version=f"%(prog)s {self.VERSION}",
+        )
+        self.parser.add_argument(
+            "--json",
+            action="store_true",
+            help="Output in JSON format",
+        )
+        self.parser.add_argument(
+            "--no-color",
+            action="store_true",
+            help="Disable colored output",
+        )
+        
+        subparsers = self.parser.add_subparsers(
+            dest="command",
+            title="commands",
+            metavar="<command>",
+        )
+        
+        # Status command
+        status_parser = subparsers.add_parser(
+            "status",
+            help="Show overall system status",
+        )
+        status_parser.set_defaults(func=self._cmd_status)
+        
+        # Forges command
+        forges_parser = subparsers.add_parser(
+            "forges",
+            help="List all available forges",
+        )
+        forges_parser.set_defaults(func=self._cmd_forges)
+        
+        # Install command
+        install_parser = subparsers.add_parser(
+            "install",
+            help="Install forge CLI entry points",
+        )
+        install_parser.add_argument(
+            "--completions",
+            action="store_true",
+            help="Also install bash completions",
+        )
+        install_parser.set_defaults(func=self._cmd_install)
+        
+        # Add forge subcommands
+        for name, info in FORGE_REGISTRY.items():
+            forge_parser = subparsers.add_parser(
+                name,
+                help=info["description"],
+                add_help=False,  # Let forge handle help
+            )
+            forge_parser.add_argument(
+                "forge_args",
+                nargs="*",  # Use * instead of REMAINDER for better --help handling
+                help=argparse.SUPPRESS,
+            )
+            forge_parser.set_defaults(func=lambda args, n=name: self._route_to_forge(n, args))
+    
+    def _cmd_status(self, args) -> int:
+        """Show overall system status."""
+        if args.no_color:
+            Colors.disable()
+        
+        status = {
+            "version": self.VERSION,
+            "forges": {},
+            "mcp_tools": 0,
+            "memories": 0,
+            "knowledge_nodes": 0,
+            "code_elements": 0,
+        }
+        
+        # Check each forge
+        for name, info in FORGE_REGISTRY.items():
+            try:
+                sys.path.insert(0, str(info["path"]))
+                mod = __import__(info["module"], fromlist=["*"])
+                
+                # Check CLI type and set status
+                if info.get("typer") or info.get("argparse"):
+                    # For Typer/argparse CLIs, just check if import works
+                    status["forges"][name] = {
+                        "available": True,
+                        "status": "operational",
+                        "data": {"type": "external_cli"},
+                    }
+                elif info.get("class"):
+                    # StandardCLI-based
+                    cli_class = getattr(mod, info["class"])
+                    cli = cli_class()
+                    
+                    # Get status
+                    result = cli.cmd_status(argparse.Namespace(json=False, no_color=True, quiet=True))
+                    status["forges"][name] = {
+                        "available": True,
+                        "status": "operational" if result.success else "error",
+                        "data": result.data,
+                    }
+                    
+                    # Extract key metrics
+                    if name == "memory" and result.data:
+                        status["memories"] = result.data.get("total", 0)
+                    elif name == "knowledge" and result.data:
+                        status["knowledge_nodes"] = result.data.get("nodes", 0)
+                    elif name == "code" and result.data:
+                        status["code_elements"] = result.data.get("elements_indexed", 0)
+            except Exception as e:
+                status["forges"][name] = {
+                    "available": False,
+                    "error": str(e),
+                }
+        
+        # Check MCP tools
+        try:
+            sys.path.insert(0, str(FORGE_ROOT / "eidos_mcp" / "src"))
+            from eidos_mcp import EidosMCPServer
+            server = EidosMCPServer()
+            status["mcp_tools"] = len(server._mcp.list_tools())
+        except Exception:
+            pass
+        
+        # Output
+        if args.json:
+            print(json.dumps(status, indent=2, default=str))
+        else:
+            print(f"{Colors.BOLD}╭──────────────────────────────────────╮{Colors.RESET}")
+            print(f"{Colors.BOLD}│      EIDOSIAN FORGE v{self.VERSION}        │{Colors.RESET}")
+            print(f"{Colors.BOLD}╰──────────────────────────────────────╯{Colors.RESET}")
+            print()
+            
+            print(f"{Colors.CYAN}System Metrics:{Colors.RESET}")
+            print(f"  MCP Tools:       {status['mcp_tools']}")
+            print(f"  Memories:        {status['memories']}")
+            print(f"  Knowledge Nodes: {status['knowledge_nodes']}")
+            print(f"  Code Elements:   {status['code_elements']}")
+            print()
+            
+            print(f"{Colors.CYAN}Forge Status:{Colors.RESET}")
+            for name, forge_status in status["forges"].items():
+                if forge_status["available"]:
+                    icon = f"{Colors.GREEN}✓{Colors.RESET}"
+                    state = forge_status["status"]
+                else:
+                    icon = f"{Colors.RED}✗{Colors.RESET}"
+                    state = "unavailable"
+                print(f"  {icon} {name:12} {state}")
+        
+        return 0
+    
+    def _cmd_forges(self, args) -> int:
+        """List all available forges."""
+        if args.no_color:
+            Colors.disable()
+        
+        forges = []
+        for name, info in FORGE_REGISTRY.items():
+            available = ForgeDetector.is_available(info["module"].split(".")[0])
+            forges.append({
+                "name": name,
+                "module": info["module"],
+                "description": info["description"],
+                "available": available,
+            })
+        
+        if args.json:
+            print(json.dumps({"forges": forges}, indent=2))
+        else:
+            print(f"{Colors.BOLD}Available Forges:{Colors.RESET}")
+            print()
+            for f in forges:
+                icon = f"{Colors.GREEN}✓{Colors.RESET}" if f["available"] else f"{Colors.RED}✗{Colors.RESET}"
+                print(f"  {icon} {f['name']:12} - {f['description']}")
+            print()
+            print(f"Use: eidosian <forge> --help for forge-specific commands")
+        
+        return 0
+    
+    def _cmd_install(self, args) -> int:
+        """Install forge CLI entry points."""
+        if args.no_color:
+            Colors.disable()
+        
+        print(f"{Colors.BOLD}Installing Eidosian Forge CLIs...{Colors.RESET}")
+        print()
+        
+        # Install each forge as editable
+        for name, info in FORGE_REGISTRY.items():
+            forge_path = info["path"].parent
+            pyproject = forge_path / "pyproject.toml"
+            
+            if pyproject.exists():
+                print(f"  Installing {name}_forge...")
+                try:
+                    result = subprocess.run(
+                        [sys.executable, "-m", "pip", "install", "-e", str(forge_path), "-q"],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if result.returncode == 0:
+                        print(f"    {Colors.GREEN}✓{Colors.RESET} Installed")
+                    else:
+                        print(f"    {Colors.RED}✗{Colors.RESET} Failed: {result.stderr[:100]}")
+                except Exception as e:
+                    print(f"    {Colors.RED}✗{Colors.RESET} Error: {e}")
+            else:
+                print(f"  {Colors.YELLOW}⚠{Colors.RESET} {name}_forge: No pyproject.toml")
+        
+        # Install completions if requested
+        if args.completions:
+            print()
+            print(f"{Colors.BOLD}Installing bash completions...{Colors.RESET}")
+            
+            completions_dir = Path.home() / ".local" / "share" / "bash-completion" / "completions"
+            completions_dir.mkdir(parents=True, exist_ok=True)
+            
+            for name, info in FORGE_REGISTRY.items():
+                forge_completion = info["path"].parent / "completions" / f"{name.replace('_', '-')}-forge.bash"
+                if forge_completion.exists():
+                    dest = completions_dir / f"{name.replace('_', '-')}-forge"
+                    try:
+                        dest.write_text(forge_completion.read_text())
+                        print(f"  {Colors.GREEN}✓{Colors.RESET} {name}-forge completion")
+                    except Exception as e:
+                        print(f"  {Colors.RED}✗{Colors.RESET} {name}-forge: {e}")
+        
+        print()
+        print(f"{Colors.GREEN}Installation complete!{Colors.RESET}")
+        print()
+        print("Add to ~/.bashrc for completions:")
+        print(f"  source {FORGE_ROOT}/bin/eidosian-completion.bash")
+        
+        return 0
+    
+    def _route_to_forge(self, forge_name: str, args) -> int:
+        """Route command to specific forge CLI."""
+        info = FORGE_REGISTRY[forge_name]
+        
+        # Add forge path to sys.path
+        sys.path.insert(0, str(info["path"]))
+        sys.path.insert(0, str(LIB_PATH))
+        
+        try:
+            # Import the forge CLI module
+            mod = __import__(info["module"], fromlist=["*"])
+            
+            # Reconstruct argv for forge
+            forge_argv = [f"{forge_name}-forge"] + (args.forge_args or [])
+            sys.argv = forge_argv
+            
+            # Check CLI type
+            if info.get("typer"):
+                # Typer CLI - call the entry function directly
+                entry_func = info.get("entry", "main")
+                entry = getattr(mod, entry_func)
+                return entry() or 0
+            elif info.get("argparse"):
+                # argparse CLI - call main with args
+                entry_func = info.get("entry", "main")
+                entry = getattr(mod, entry_func)
+                return entry(forge_argv[1:]) or 0
+            elif info.get("class"):
+                # StandardCLI-based CLI
+                cli_class = getattr(mod, info["class"])
+                cli = cli_class()
+                return cli.run()
+            else:
+                # Generic main() function
+                entry_func = info.get("entry", "main")
+                entry = getattr(mod, entry_func)
+                return entry() or 0
+        except ImportError as e:
+            print(f"{Colors.RED}Error:{Colors.RESET} Cannot load {forge_name}_forge: {e}")
+            return 1
+        except SystemExit as e:
+            # CLIs use sys.exit - capture and return code
+            return e.code if isinstance(e.code, int) else 0
+        except Exception as e:
+            print(f"{Colors.RED}Error:{Colors.RESET} {e}")
+            return 1
+    
+    def run(self) -> int:
+        """Run the CLI."""
+        # Special handling for forge --help
+        # If first arg is a forge name and second is --help or -h, route to forge
+        if len(sys.argv) >= 3 and sys.argv[1] in FORGE_REGISTRY:
+            if sys.argv[2] in ("--help", "-h"):
+                # Create args namespace manually and route to forge
+                class FakeArgs:
+                    pass
+                args = FakeArgs()
+                args.forge_args = sys.argv[2:]
+                args.no_color = False
+                return self._route_to_forge(sys.argv[1], args)
+        
+        args = self.parser.parse_args()
+        
+        if args.no_color:
+            Colors.disable()
+        
+        if not args.command:
+            self.parser.print_help()
+            return 0
+        
+        if hasattr(args, "func"):
+            return args.func(args)
+        
+        return 0
+
+
+def main():
+    """Entry point for eidosian CLI."""
+    cli = EidosianCLI()
+    sys.exit(cli.run())
+
+
+if __name__ == "__main__":
+    main()

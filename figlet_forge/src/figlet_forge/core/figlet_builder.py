@@ -97,12 +97,25 @@ class FigletBuilder:
         }
 
         # Font metadata for better width management
+        font_name = getattr(font, "font_name", "unknown")
         self._font_meta: Dict[str, Union[str, bool, int]] = {
-            "name": getattr(font, "font_name", "unknown"),
-            "is_wide": self._is_wide_font(),
+            "name": font_name,
+            "is_wide": self._is_wide_font_name(font_name),
             "char_checks": 0,
             "width_adjustments": 0,
         }
+
+    def _is_wide_font_name(self, font_name: str) -> bool:
+        """
+        Determine if a font name indicates a wide font.
+
+        Args:
+            font_name: Name of the font to check
+
+        Returns:
+            True if this is a font known to be wide, False otherwise
+        """
+        return font_name.lower() in ("big", "banner", "block", "doom", "epic", "larry3d")
 
     def _is_wide_font(self) -> bool:
         """
@@ -255,6 +268,11 @@ class FigletBuilder:
 
         # Get the final string
         result = self.product.as_figlet_string()
+
+        # Replace hard blanks with spaces for display
+        hard_blank = self.font.hard_blank if hasattr(self.font, 'hard_blank') else '$'
+        if hard_blank and hard_blank != ' ':
+            result = FigletString(str(result).replace(hard_blank, ' '))
 
         # Apply justification if needed
         if self.justify == "center":
