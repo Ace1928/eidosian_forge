@@ -4,23 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crawl_forge"
-version = "0.1.0"
-description = "Eidosian Forge Component: crawl_forge"
+version = "1.0.0"
+description = "Eidosian Crawl Forge - Ethical web crawling with Tika integration"
 readme = "README.md"
 authors = [
-  { name = "Eidosian Nexus", email = "eidos@neuroforge.io" },
+    { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
+    { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "requests>=2.31.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy"]
+tika = ["tika>=2.6.0"]
+
+[project.scripts]
+crawl-forge = "crawl_forge.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

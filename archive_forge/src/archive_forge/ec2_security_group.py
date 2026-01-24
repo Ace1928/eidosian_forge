@@ -329,11 +329,11 @@ EXAMPLES = r"""
         to_port: 443
         # this should only be needed for EC2 Classic security group rules
         # because in a VPC an ELB will use a user-account security group
-        group_id: amazon-elb/sg-87654321/amazon-elb-sg
+        group_id: amazon-elb/sg-89284321/amazon-elb-sg
       - proto: tcp
         from_port: 3306
         to_port: 3306
-        group_id: 123456789012/sg-87654321/exact-name-of-sg
+        group_id: 123456789012/sg-89284321/exact-name-of-sg
       - proto: udp
         from_port: 10050
         to_port: 10050
@@ -697,7 +697,7 @@ def _target_from_rule_with_group_id(rule, groups):
 
     # this is a foreign Security Group. Since you can't fetch it you must create an instance of it
     # Matches on groups like amazon-elb/sg-5a9c116a/amazon-elb-sg, amazon-elb/amazon-elb-sg,
-    # and peer-VPC groups like 0987654321/sg-1234567890/example
+    # and peer-VPC groups like 0989284321/sg-1234567890/example
     owner_id, group_id, group_name = foreign_rule.groups()
     group_instance = dict(UserId=owner_id, GroupId=group_id, GroupName=group_name)
     groups[group_id] = group_instance

@@ -12,6 +12,7 @@ Strict config loader for Eidos E3.
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 import argparse, dataclasses as dc, json, os, re, sys
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
@@ -100,6 +101,7 @@ _ENV_VAR = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 def _expand_env(obj: Any) -> Any:
     if isinstance(obj, str):
+        @eidosian()
         def repl(m): return os.environ.get(m.group(1), m.group(0))
         return _ENV_VAR.sub(repl, obj)
     if isinstance(obj, list):  return [_expand_env(x) for x in obj]
@@ -199,6 +201,7 @@ def _build_skills(d: Mapping[str, Any]) -> SkillsCfg:
 
 # ---------- public API ----------
 
+@eidosian()
 def load_all(cfg_dir: Union[str, Path]) -> Config:
     base = Path(cfg_dir)
     if not base.is_dir():
@@ -231,7 +234,9 @@ def _sanity(cfg: Config) -> None:
         if r[i].min_competence < r[i-1].min_competence:
             raise ValueError("autonomy_ladder not sorted by increasing min_competence")
 
+@eidosian()
 def to_dict(cfg: Config) -> Dict[str, Any]:
+    @eidosian()
     def enc(o):
         if dc.is_dataclass(o):
             return {k: enc(v) for k, v in dc.asdict(o).items()}

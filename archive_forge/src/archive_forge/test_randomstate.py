@@ -2097,7 +2097,7 @@ def test_state_error_alt_bit_gen(restore_singleton_bitgen):
 
 def test_swap_worked(restore_singleton_bitgen):
     # GH 21808
-    np.random.seed(98765)
+    np.random.seed(98928)
     vals = np.random.randint(0, 2 ** 30, 10)
     bg = PCG64(0)
     state = bg.state
@@ -2105,7 +2105,7 @@ def test_swap_worked(restore_singleton_bitgen):
     state_direct = np.random.get_state(legacy=False)
     for field in state:
         assert state[field] == state_direct[field]
-    np.random.seed(98765)
+    np.random.seed(98928)
     pcg_vals = np.random.randint(0, 2 ** 30, 10)
     assert not np.all(vals == pcg_vals)
     new_state = bg.state
@@ -2114,8 +2114,8 @@ def test_swap_worked(restore_singleton_bitgen):
 
 
 def test_swapped_singleton_against_direct(restore_singleton_bitgen):
-    np.random.set_bit_generator(PCG64(98765))
+    np.random.set_bit_generator(PCG64(98928))
     singleton_vals = np.random.randint(0, 2 ** 30, 10)
-    rg = np.random.RandomState(PCG64(98765))
+    rg = np.random.RandomState(PCG64(98928))
     non_singleton_vals = rg.randint(0, 2 ** 30, 10)
     assert_equal(non_singleton_vals, singleton_vals)

@@ -1,0 +1,15 @@
+{
+  "id": "task_20260123_184708_656e6d7a",
+  "command": "echo 'Eidosian task executed at $(date)'",
+  "description": "Test task from capability demo",
+  "priority": 3,
+  "timeout": 300,
+  "working_dir": "/home/lloyd",
+  "status": "completed",
+  "created_at": "2026-01-23T08:47:08.646893+00:00",
+  "started_at": "2026-01-23T08:47:08.647208+00:00",
+  "completed_at": "2026-01-23T08:47:08.649228+00:00",
+  "output": "Eidosian task executed at $(date)\n",
+  "error": "",
+  "exit_code": 0
+}

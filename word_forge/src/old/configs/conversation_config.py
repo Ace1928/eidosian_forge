@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Conversation configuration system for Word Forge.
 
@@ -141,6 +142,7 @@ class ConversationConfig:
         """
         return timedelta(days=self.auto_archive_days)
 
+    @eidosian()
     def validate_metadata(self, metadata: Dict[str, any]) -> bool:
         """
         Validate if provided metadata contains all required fields.
@@ -153,6 +155,7 @@ class ConversationConfig:
         """
         return all(field in metadata for field in self.required_metadata)
 
+    @eidosian()
     def get_missing_fields(self, metadata: Dict[str, any]) -> Set[str]:
         """
         Get required fields missing from provided metadata.
@@ -165,6 +168,7 @@ class ConversationConfig:
         """
         return self.required_metadata - set(metadata.keys())
 
+    @eidosian()
     def create_default_metadata(self) -> ConversationMetadataSchema:
         """
         Create default metadata structure with empty fields.
@@ -174,6 +178,7 @@ class ConversationConfig:
         """
         return {field: None for field in self.required_metadata}
 
+    @eidosian()
     def with_retention_policy(
         self, policy: ConversationRetentionPolicy
     ) -> "ConversationConfig":
@@ -200,6 +205,7 @@ class ConversationConfig:
             auto_archive_days=self.auto_archive_days,
         )
 
+    @eidosian()
     def is_valid_status(self, status: str) -> bool:
         """
         Check if a status value is valid in the current configuration.
@@ -212,6 +218,7 @@ class ConversationConfig:
         """
         return status in self.status_values
 
+    @eidosian()
     def is_active_status(self, status: str) -> bool:
         """
         Check if a status indicates an active conversation.

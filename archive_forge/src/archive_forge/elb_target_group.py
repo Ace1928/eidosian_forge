@@ -266,7 +266,7 @@ EXAMPLES = r"""
     targets:
       - Id: i-01234567
         Port: 80
-      - Id: i-98765432
+      - Id: i-98928432
         Port: 80
     state: present
     wait_timeout: 200

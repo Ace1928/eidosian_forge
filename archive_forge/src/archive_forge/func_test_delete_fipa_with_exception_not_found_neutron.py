@@ -31,7 +31,7 @@ from heat.tests import common
 from heat.tests.openstack.nova import fakes as fakes_nova
 from heat.tests import utils
 def test_delete_fipa_with_exception_not_found_neutron(self):
-    tmpl = '\n        heat_template_version: 2015-10-15\n        resources:\n          server:\n            type: OS::Nova::Server\n            properties:\n              flavor: m1.small\n              image: F17-x86_64-gold\n              networks:\n                - network: 4321\n                  subnet: 1234\n                  fixed_ip: 127.0.0.1\n                  floating_ip: 1199\n                - network: 8765\n                  subnet: 5678\n                  fixed_ip: 127.0.0.2\n                  floating_ip: 9911\n        '
+    tmpl = '\n        heat_template_version: 2015-10-15\n        resources:\n          server:\n            type: OS::Nova::Server\n            properties:\n              flavor: m1.small\n              image: F17-x86_64-gold\n              networks:\n                - network: 4321\n                  subnet: 1234\n                  fixed_ip: 127.0.0.1\n                  floating_ip: 1199\n                - network: 8928\n                  subnet: 5678\n                  fixed_ip: 127.0.0.2\n                  floating_ip: 9911\n        '
     t, stack, server = self._return_template_stack_and_rsrc_defn('test', tmpl)
     delete_flip = mock.MagicMock(side_effect=[neutron.exceptions.NotFound(404)])
     server.client('neutron').update_floatingip = delete_flip

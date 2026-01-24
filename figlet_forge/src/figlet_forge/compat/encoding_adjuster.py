@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Cross-platform encoding utilities for Figlet Forge.
 
@@ -12,6 +13,7 @@ import sys
 from typing import Dict, List, Optional, Union
 
 
+@eidosian()
 def supports_utf8() -> bool:
     """
     Check if the current environment supports UTF-8 encoding.
@@ -41,6 +43,7 @@ def supports_utf8() -> bool:
         return False
 
 
+@eidosian()
 def decode_bytes(byte_data: bytes, encoding: Optional[str] = None) -> str:
     """
     Decode bytes to string using the specified or detected encoding.
@@ -71,6 +74,7 @@ def decode_bytes(byte_data: bytes, encoding: Optional[str] = None) -> str:
             return byte_data.decode("latin-1", errors="replace")
 
 
+@eidosian()
 def encode_text(text: str, encoding: Optional[str] = None) -> bytes:
     """
     Encode text to bytes using the specified or default encoding.
@@ -101,6 +105,7 @@ def encode_text(text: str, encoding: Optional[str] = None) -> bytes:
             return text.encode("utf-8", errors="replace")
 
 
+@eidosian()
 def detect_encoding() -> str:
     """
     Attempt to detect the appropriate encoding for the current environment.
@@ -127,6 +132,7 @@ def detect_encoding() -> str:
     return encoding or "utf-8"
 
 
+@eidosian()
 def normalize_newlines(text: Union[str, bytes]) -> Union[str, bytes]:
     """
     Normalize different newline styles to the platform's default.
@@ -240,6 +246,7 @@ class EncodingAdjuster:
 
         return False
 
+    @eidosian()
     def adjust_for_output(self, text: str) -> str:
         """
         Adjust text for terminal output based on encoding capabilities.
@@ -265,6 +272,7 @@ class EncodingAdjuster:
             # Fallback to ASCII with replacement
             return text.encode("ascii", errors="replace").decode("ascii")
 
+    @eidosian()
     def encode_for_file(self, text: str, encoding: Optional[str] = None) -> bytes:
         """
         Encode text for file output.
@@ -284,6 +292,7 @@ class EncodingAdjuster:
             # Fallback to UTF-8
             return text.encode("utf-8", errors="replace")
 
+    @eidosian()
     def get_encoding_info(self) -> Dict[str, any]:
         """
         Get detected encoding information.
@@ -293,6 +302,7 @@ class EncodingAdjuster:
         """
         return self._encoding_info
 
+    @eidosian()
     def normalize_newlines(self, text: str) -> str:
         """
         Normalize newlines for the current platform.
@@ -315,6 +325,7 @@ class EncodingAdjuster:
 
         return normalized
 
+    @eidosian()
     def strip_non_ascii(self, text: str) -> str:
         """
         Strip non-ASCII characters from text.
@@ -327,6 +338,7 @@ class EncodingAdjuster:
         """
         return "".join(c for c in text if ord(c) < 128)
 
+    @eidosian()
     def decode_bytes(
         self, data: Union[bytes, str], encodings: Optional[List[str]] = None
     ) -> str:
@@ -374,6 +386,7 @@ class EncodingAdjuster:
 _encoding_adjuster = None
 
 
+@eidosian()
 def get_encoding_adjuster() -> EncodingAdjuster:
     """Get the singleton EncodingAdjuster instance."""
     global _encoding_adjuster
@@ -383,6 +396,7 @@ def get_encoding_adjuster() -> EncodingAdjuster:
 
 
 # Module-level convenience functions
+@eidosian()
 def get_system_encoding() -> str:
     """
     Get the current system encoding.
@@ -396,6 +410,7 @@ def get_system_encoding() -> str:
     return encoding.encoding
 
 
+@eidosian()
 def supports_utf8() -> bool:
     """
     Check if the system supports UTF-8 encoding.
@@ -409,6 +424,7 @@ def supports_utf8() -> bool:
     return encoding.supports_utf8
 
 
+@eidosian()
 def decode_bytes(data: bytes) -> str:
     """
     Decode bytes to string using system encoding.
@@ -425,6 +441,7 @@ def decode_bytes(data: bytes) -> str:
     return encoding.decode(data)
 
 
+@eidosian()
 def encode_text(text: str) -> bytes:
     """
     Encode string to bytes using system encoding.

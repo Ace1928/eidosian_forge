@@ -48,7 +48,7 @@ EXAMPLES = r"""
     filters:
       vpc-id:
         - vpc-12345678
-        - vpc-87654321
+        - vpc-89284321
       vpc-endpoint-state:
         - available
         - pending

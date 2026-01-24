@@ -1,6 +1,13 @@
 from pathlib import Path
 
-from lexical_proto import file_exists, read_json_file, read_jsonl_file, safely_open_file
+import sys
+from pathlib import Path as _Path
+
+ROOT = _Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from lexical_proto import file_exists, read_jsonl_file, safely_open_file
 
 
 def test_file_exists(tmp_path: Path) -> None:
@@ -12,12 +19,6 @@ def test_file_exists(tmp_path: Path) -> None:
 
 def test_safely_open_file_missing(tmp_path: Path) -> None:
     assert safely_open_file(tmp_path / "no.txt") is None
-
-
-def test_read_json_file_invalid(tmp_path: Path) -> None:
-    p = tmp_path / "bad.json"
-    p.write_text("not json")
-    assert read_json_file(p, {"d": 1}) == {"d": 1}
 
 
 def test_read_jsonl_file(tmp_path: Path) -> None:

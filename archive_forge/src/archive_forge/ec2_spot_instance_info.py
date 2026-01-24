@@ -49,7 +49,7 @@ EXAMPLES = r"""
     spot_instance_request_ids:
       - sir-12345678
       - sir-13579246
-      - sir-87654321
+      - sir-89284321
     filters:
       launch.instance-type: t3.medium
 

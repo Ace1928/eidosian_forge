@@ -19,6 +19,7 @@ Architecture:
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -101,6 +102,7 @@ class ParserConfig:
         """
         return Path(self.data_dir)
 
+    @eidosian()
     def get_full_resource_path(self, resource_name: str) -> Path:
         """
         Get absolute path for a resource.
@@ -127,6 +129,7 @@ class ParserConfig:
             )
         return self.data_dir_path / self.resource_paths[resource_name]
 
+    @eidosian()
     def resource_exists(self, resource_name: str) -> bool:
         """
         Check if a resource exists on the filesystem.
@@ -142,6 +145,7 @@ class ParserConfig:
         """
         return self.get_full_resource_path(resource_name).exists()
 
+    @eidosian()
     def get_all_resource_paths(self) -> Dict[str, Path]:
         """
         Get absolute paths for all configured resources.
@@ -154,6 +158,7 @@ class ParserConfig:
             for name, path in self.resource_paths.items()
         }
 
+    @eidosian()
     def with_custom_model(self, model_name: str) -> ParserConfig:
         """
         Create a new configuration with a custom language model.

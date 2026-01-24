@@ -2,8 +2,10 @@
 
 from typing import List
 from PIL import Image
+from eidosian_core import eidosian
 
 
+@eidosian()
 def display_stream_to_video(frames: List[Image.Image], output_path: str, fps: int = 10) -> None:
     """Save frames as an animated GIF.
 

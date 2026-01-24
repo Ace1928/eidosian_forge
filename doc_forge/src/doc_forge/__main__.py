@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Module Entry Point
 """
@@ -61,6 +62,7 @@ except ImportError as e:
     print("💠 Ensure Doc Forge is properly installed or run from source directory.")
     sys.exit(1)
 
+@eidosian()
 def module_entry_point() -> int:
     """
     Dedicated function for the module entry point with pristine error handling.

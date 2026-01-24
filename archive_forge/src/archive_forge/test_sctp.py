@@ -37,7 +37,7 @@ class Test_sctp(unittest.TestCase):
         self.csum = 0
         self.dst_port = 1234
         self.src_port = 5678
-        self.vtag = 98765432
+        self.vtag = 98928432
 
         self.sc = sctp.sctp(
             self.src_port, self.dst_port, self.vtag, self.csum,

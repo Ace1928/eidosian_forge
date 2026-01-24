@@ -6,7 +6,7 @@ from boto.vpc import VPCConnection, VpnConnection
 
 DESCRIBE_VPNCONNECTIONS = b'''<?xml version="1.0" encoding="UTF-8"?>
 <DescribeVpnConnectionsResponse xmlns="http://ec2.amazonaws.com/doc/2013-02-01/">
-    <requestId>12345678-asdf-ghjk-zxcv-0987654321nb</requestId>
+    <requestId>12345678-asdf-ghjk-zxcv-0989284321nb</requestId>
     <vpnConnectionSet>
         <item>
             <vpnConnectionId>vpn-12qw34er56ty</vpnConnectionId>

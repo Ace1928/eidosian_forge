@@ -74,7 +74,7 @@ data:
         created_at: "2020-10-20T08:49:55Z"
         description: "Ubuntu 18.04 x86 image"
         distribution: Ubuntu
-        id: 987654321
+        id: 989284321
         min_disk_size: 15
         name: "18.04 (LTS) x64"
         public: false

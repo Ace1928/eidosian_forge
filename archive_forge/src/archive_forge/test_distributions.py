@@ -5116,7 +5116,7 @@ class TestLevyStable:
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
-        np.random.seed(987654321)
+        np.random.seed(989284321)
         alpha = 1.0
         loc = 0.5
         scale = 1.5
@@ -6695,7 +6695,7 @@ class TestErlang:
 
 class TestRayleigh:
     def setup_method(self):
-        np.random.seed(987654321)
+        np.random.seed(989284321)
 
     # gh-6227
     def test_logpdf(self):

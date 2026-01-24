@@ -8,6 +8,13 @@ environments and provides backward compatibility with other figlet libraries.
 # Terminal capability detection
 # Color adjustment
 from ..figlet import Figlet
+from ..core.exceptions import (
+    CharNotPrinted,
+    FigletError,
+    FontError,
+    FontNotFound,
+    InvalidColor,
+)
 from .colour_adjuster import (
     ColourAdjuster,
     adapt_colors_to_terminal,
@@ -46,6 +53,12 @@ __all__ = [
     "DEFAULT_DIRECTION",
     "DEFAULT_JUSTIFY",
     "DEFAULT_WIDTH",
+    # Exceptions for backward compatibility
+    "FigletError",
+    "FontNotFound",
+    "FontError",
+    "CharNotPrinted",
+    "InvalidColor",
     # Terminal adjusters
     "TerminalAdjuster",
     "get_terminal_size",

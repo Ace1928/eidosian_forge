@@ -3,7 +3,7 @@ from reportlab.graphics.barcode.common import Barcode
 from reportlab.lib.utils import asNative
 def _crc11(value):
     """
-    >>> usps = [USPS_4State('01234567094987654321',x).binary for x in ('','01234','012345678','01234567891')]
+    >>> usps = [USPS_4State('01234567094989284321',x).binary for x in ('','01234','012345678','01234567891')]
     >>> print(' '.join(nhex(x) for x in usps))
     0x1122103b5c2004b1 0xd138a87bab5cf3804b1 0x202bdc097711204d21804b1 0x16907b2a24abc16a2e5c004b1
     >>> print(' '.join(nhex(_crc11(x)) for x in usps))

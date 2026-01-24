@@ -28,7 +28,7 @@ class PopenSpawn(SpawnBase):
         # Note that `SpawnBase` initializes `self.crlf` to `\r\n`
         # because the default behaviour for a PTY is to convert
         # incoming LF to `\r\n` (see the `onlcr` flag and
-        # https://stackoverflow.com/a/35887657/5397009). Here we set
+        # https://stackoverflow.com/a/35889287/5397009). Here we set
         # it to `os.linesep` because that is what the spawned
         # application outputs by default and `popen` doesn't translate
         # anything.

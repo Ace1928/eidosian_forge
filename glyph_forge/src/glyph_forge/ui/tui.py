@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 # filepath: /home/lloyd/repos/glyph_forge/src/glyph_forge/ui/tui.py
 """
 ⚡ Glyph Forge TUI ⚡
@@ -19,6 +20,7 @@ class GlyphForgeApp(App):
     SUB_TITLE = "Eidosian Glyph Art Transformation"
     CSS_PATH = "glyph_forge.css"
     
+    @eidosian()
     def compose(self):
         """Compose the user interface with surgical precision."""
         yield Header()
@@ -37,6 +39,7 @@ class GlyphForgeApp(App):
         )
         yield Footer()
     
+    @eidosian()
     def on_button_pressed(self, event):
         """Handle button press events with zero-latency response."""
         button_id = event.button.id
@@ -51,6 +54,7 @@ class GlyphForgeApp(App):
 class BannerGeneratorScreen(Screen):
     """Banner generation screen with atomic efficiency."""
     
+    @eidosian()
     def compose(self):
         """Compose the banner generator interface."""
         yield Header()
@@ -69,6 +73,7 @@ class BannerGeneratorScreen(Screen):
         )
         yield Footer()
     
+    @eidosian()
     def on_button_pressed(self, event):
         """Process button events with quantum precision."""
         button_id = event.button.id
@@ -86,6 +91,7 @@ class BannerGeneratorScreen(Screen):
 class ImageConverterScreen(Screen):
     """Image conversion screen with zero-compromise functionality."""
     
+    @eidosian()
     def compose(self):
         """Compose the image converter interface."""
         yield Header()
@@ -104,6 +110,7 @@ class ImageConverterScreen(Screen):
         )
         yield Footer()
     
+    @eidosian()
     def on_button_pressed(self, event):
         """Process button events with surgical precision."""
         button_id = event.button.id
@@ -123,6 +130,7 @@ class ImageConverterScreen(Screen):
 class SettingsScreen(Screen):
     """Settings configuration screen with atomic parameters."""
     
+    @eidosian()
     def compose(self):
         """Compose the settings interface."""
         yield Header()
@@ -137,6 +145,7 @@ class SettingsScreen(Screen):
         )
         yield Footer()
     
+    @eidosian()
     def on_button_pressed(self, event):
         """Process settings events with zero overhead."""
         button_id = event.button.id

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Showcase functionality for Figlet Forge.
 
@@ -60,6 +61,7 @@ class ColorShowcase:
             "smslant": "Small slanted font for compact, dynamic text",
         }
 
+    @eidosian()
     def print_header(self, text: str) -> None:
         """
         Print a formatted header.
@@ -76,6 +78,7 @@ class ColorShowcase:
             print(f" {text}")
             print(f"{'═' * 80}\n")
 
+    @eidosian()
     def print_subheader(self, text: str) -> None:
         """
         Print a formatted subheader.
@@ -92,6 +95,7 @@ class ColorShowcase:
             print(f" {text}")
             print(f"{'═' * 50}\n")
 
+    @eidosian()
     def print_success(self, text: str) -> None:
         """
         Print a success message.
@@ -104,6 +108,7 @@ class ColorShowcase:
         else:
             print(f"✓ {text}")
 
+    @eidosian()
     def print_info(self, text: str) -> None:
         """
         Print an informational message.
@@ -116,6 +121,7 @@ class ColorShowcase:
         else:
             print(text)
 
+    @eidosian()
     def generate_font_showcase(
         self,
         fonts: Optional[List[str]] = None,
@@ -200,6 +206,7 @@ class ColorShowcase:
             except Exception as e:
                 print(f"Error loading font '{font_name}': {e}")
 
+    @eidosian()
     def generate_color_showcase(self, font_name: str, sample_text: str) -> None:
         """
         Generate a showcase of color effects for a specific font.
@@ -289,6 +296,7 @@ class ColorShowcase:
         except Exception as e:
             print(f"Error in color showcase for '{font_name}': {e}")
 
+    @eidosian()
     def generate_usage_guide(self) -> None:
         """Generate a comprehensive usage guide with examples."""
         self.print_header("⚛️ FIGLET FORGE USAGE GUIDE - THE EIDOSIAN WAY ⚡")
@@ -440,6 +448,7 @@ class ColorShowcase:
         print('  "Form follows function; elegance emerges from precision."')
 
 
+@eidosian()
 def generate_showcase(
     sample_text: str = "hello",
     fonts: Optional[List[str]] = None,

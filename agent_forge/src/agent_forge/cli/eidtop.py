@@ -12,6 +12,7 @@ import sys
 
 
 from agent_forge.core import events as E  # type: ignore
+from eidosian_core import eidosian
 
 METRIC_NAMES = [
     "process.rss_bytes",
@@ -30,6 +31,7 @@ METRIC_NAMES = [
 ]
 
 
+@eidosian()
 def gather_model(state_dir: str) -> Dict[str, object]:
     events = [e for e in E.iter_events(state_dir, limit=200) if e.get("type") == "daemon.beat"][-20:]
     metrics: Dict[str, List[Tuple[str, float]]] = {k: [] for k in METRIC_NAMES}
@@ -58,6 +60,7 @@ def _human_bytes(n: float | int | None) -> str:
     return f"{n:.1f}TB"
 
 
+@eidosian()
 def render(model: Dict[str, object], *, width: int = 80) -> List[str]:
     """Render model into lines; pure for testing."""
     if model.get("show_help"):
@@ -126,6 +129,7 @@ def _spark(vals: List[float]) -> List[str]:
     return out
 
 
+@eidosian()
 def main(argv: List[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="eidtop", description="Tiny TUI for Eidos")
     ap.add_argument("--state-dir", default="state")

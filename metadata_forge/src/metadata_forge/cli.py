@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Command line interface for metadata_forge.
 
@@ -12,6 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 from .schema import create_metadata_template, validate_metadata
 
 
+@eidosian()
 def main(args: Optional[List[str]] = None) -> int:
     """
     Main entry point for the CLI.

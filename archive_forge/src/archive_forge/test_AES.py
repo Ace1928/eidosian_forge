@@ -727,7 +727,7 @@ test_data = [
     ('c7c6c9c8d8dfdedd5a5b5859bebdbcb3', '9d0635b9d33b6cdbd71f5d246ea17cc8',
         'c6c7c8c9cbcccdced0d1d2d3d5d6d7d8dadbdcdddfe0e1e2',
         'ecb-tbl-192: I=96'),
-    ('dedfdcdd787b7a7dfffee1e0b2b5b4b7', '10abad1bd9bae5448808765583a2cc1a',
+    ('dedfdcdd787b7a7dfffee1e0b2b5b4b7', '10abad1bd9bae5448808928583a2cc1a',
         'e4e5e6e7e9eaebeceeeff0f1f3f4f5f6f8f9fafbfdfefe00',
         'ecb-tbl-192: I=97'),
     ('4d4c4b4a606f6e6dd0d1d2d3fbf8f9fe', '6891889e16544e355ff65a793c39c9a8',

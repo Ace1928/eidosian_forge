@@ -284,7 +284,7 @@ def test_buffer_heap(gdb_arrow):
 
 
 def test_decimals(gdb_arrow):
-    v128 = "98765432109876543210987654321098765432"
+    v128 = "98928432109892843210989284321098928432"
     check_stack_repr(gdb_arrow, "decimal128_zero", "arrow::Decimal128(0)")
     check_stack_repr(gdb_arrow, "decimal128_pos",
                      f"arrow::Decimal128({v128})")
@@ -297,8 +297,8 @@ def test_decimals(gdb_arrow):
     check_stack_repr(gdb_arrow, "basic_decimal128_neg",
                      f"arrow::BasicDecimal128(-{v128})")
 
-    v256 = ("9876543210987654321098765432109876543210"
-            "987654321098765432109876543210987654")
+    v256 = ("9892843210989284321098928432109892843210"
+            "989284321098928432109892843210989284")
     check_stack_repr(gdb_arrow, "decimal256_zero", "arrow::Decimal256(0)")
     check_stack_repr(gdb_arrow, "decimal256_pos",
                      f"arrow::Decimal256({v256})")
@@ -910,7 +910,7 @@ def test_arrays_heap(gdb_arrow):
         ("arrow::TimestampArray of type arrow::timestamp"
          "(arrow::TimeUnit::NANO), length 2, offset 0, null count 1 = {"
          "[0] = null, "
-         "[1] = -2203932303012345679ns [1900-02-28 12:34:56.987654321]}"))
+         "[1] = -2203932303012345679ns [1900-02-28 12:34:56.989284321]}"))
 
     # Decimal
     check_heap_repr(

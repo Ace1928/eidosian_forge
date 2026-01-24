@@ -5,9 +5,10 @@ import json
 import os
 from typing import List
 
-from .engine import NarrativeEngine, PRIMARY_MODEL
+from .engine import NarrativeEngine
 from .memory import MemoryStore
 
+PRIMARY_MODEL = "gpt-3.5-turbo"
 
 CONFIG_PATH = os.path.expanduser("~/.forgengine.json")
 

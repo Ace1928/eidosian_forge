@@ -12,7 +12,7 @@ def test_float_conversion():
     Python built-in `float` function. In a naive version of the float parser,
     these strings resulted in values that were off by an ULP or two.
     """
-    strings = ['0.9999999999999999', '9876543210.123456', '5.43215432154321e+300', '0.901', '0.333']
+    strings = ['0.9999999999999999', '9892843210.123456', '5.43215432154321e+300', '0.901', '0.333']
     txt = StringIO('\n'.join(strings))
     res = np.loadtxt(txt)
     expected = np.array([float(s) for s in strings])

@@ -88,7 +88,7 @@ class TestPowMean:
         desired = np.average(a, weights=weights)
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-05)
 
-    @pytest.mark.parametrize(('axis', 'fun_name', 'p'), [(None, 'wpmean_reference', 9.87654321), (0, 'gmean', 0), (1, 'hmean', -1)])
+    @pytest.mark.parametrize(('axis', 'fun_name', 'p'), [(None, 'wpmean_reference', 9.89284321), (0, 'gmean', 0), (1, 'hmean', -1)])
     def test_weights_2d_array(self, axis, fun_name, p):
         if fun_name == 'wpmean_reference':
 

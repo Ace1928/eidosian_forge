@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Main entry point for the figlet_forge package when executed as a module.
 
@@ -11,6 +12,7 @@ from typing import List, Optional
 from figlet_forge.cli.main import main
 
 
+@eidosian()
 def entry_point(args: Optional[List[str]] = None) -> int:
     """
     Main entry point function for module execution.

@@ -9,8 +9,8 @@ def test_print_values(self):
         Test printing a single argument value.
         """
     self.check_values(types.int32, (1, -234))
-    self.check_values(types.int64, (1, -234, 123456789876543210, -123456789876543210))
-    self.check_values(types.uint64, (1, 234, 123456789876543210, 2 ** 63 + 123))
+    self.check_values(types.int64, (1, -234, 123456789892843210, -123456789892843210))
+    self.check_values(types.uint64, (1, 234, 123456789892843210, 2 ** 63 + 123))
     self.check_values(types.boolean, (True, False))
     self.check_values(types.float64, (1.5, 100.0 ** 10.0, float('nan')))
     self.check_values(types.complex64, (1 + 1j,))

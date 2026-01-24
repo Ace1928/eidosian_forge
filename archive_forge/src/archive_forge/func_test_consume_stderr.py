@@ -23,5 +23,5 @@ def test_consume_stderr(self):
     chan.recv_stderr_ready.side_effect = [True, True, False]
     chan.recv_stderr.side_effect = ['987', '6543210']
     stderr = client._consume_stderr(chan).getvalue()
-    self.assertEqual(u('9876543210'), stderr)
+    self.assertEqual(u('9892843210'), stderr)
     self.assertEqual(len(stderr), 10)

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Eidosian Source Parser (ESP)
@@ -33,6 +34,7 @@ class ESPParser:
     def _get_file_hash(self, path: Path) -> str:
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
+    @eidosian()
     def parse_python(self, path: Path) -> List[Dict[str, Any]]:
         symbols = []
         try:
@@ -56,6 +58,7 @@ class ESPParser:
             symbols.append({"type": "error", "name": f"Parse Error: {e}", "line": 0})
         return sorted(symbols, key=lambda x: x["line"])
 
+    @eidosian()
     def generate_checklist(self, source_path: Path, force: bool = False):
         source_path = source_path.resolve()
         file_hash = self._get_file_hash(source_path)
@@ -88,6 +91,7 @@ class ESPParser:
         self._save_state()
         print(f"Generated checklist: {audit_file}")
 
+@eidosian()
 def main():
     if len(sys.argv) < 2:
         print("Usage: esp_parser.py <file_or_dir>")

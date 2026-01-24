@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 update_deps.py - Update pyproject.toml dependencies to match installed versions.
@@ -21,6 +22,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+@eidosian()
 def parse_args():
     parser = argparse.ArgumentParser(description="Update dependencies from venv")
     parser.add_argument("--root", required=True, type=Path, help="Root directory of the forge")
@@ -29,6 +31,7 @@ def parse_args():
     parser.add_argument("--dry-run", action="store_true", help="Don't write changes")
     return parser.parse_args()
 
+@eidosian()
 def get_installed_packages():
     """Returns a dict of installed packages {name: version} using pip list."""
     try:
@@ -42,6 +45,7 @@ def get_installed_packages():
         print(f"Error getting installed packages: {e}")
         sys.exit(1)
 
+@eidosian()
 def update_file(file_path: Path, installed: dict, strategy: str, dry_run: bool):
     content = file_path.read_text(encoding="utf-8")
     original_content = content
@@ -50,6 +54,7 @@ def update_file(file_path: Path, installed: dict, strategy: str, dry_run: bool):
     # capturing key (group 1), quote (group 2), value (group 3), end quote (group 4)
     pattern = re.compile(r'^(\s*([a-zA-Z0-9_-]+)\s*=\s*)([""])(.*?)([""])', re.MULTILINE)
 
+    @eidosian()
     def replacement(match):
         prefix = match.group(1)
         pkg_name = match.group(2).lower()
@@ -89,6 +94,7 @@ def update_file(file_path: Path, installed: dict, strategy: str, dry_run: bool):
             file_path.write_text(new_content, encoding="utf-8")
             print(f"Updated {file_path}")
     
+@eidosian()
 def main():
     args = parse_args()
     installed = get_installed_packages()

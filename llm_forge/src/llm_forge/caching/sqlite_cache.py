@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Response Caching.
 """
@@ -24,6 +25,7 @@ class SQLiteCache:
                 )
             """)
 
+    @eidosian()
     def get(self, key: str) -> Optional[LLMResponse]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("SELECT response, model, tokens FROM responses WHERE key = ?", (key,))
@@ -37,6 +39,7 @@ class SQLiteCache:
                 )
         return None
 
+    @eidosian()
     def set(self, key: str, response: LLMResponse):
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(

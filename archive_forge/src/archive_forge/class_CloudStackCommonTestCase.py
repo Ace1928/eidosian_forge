@@ -816,14 +816,14 @@ class CloudStackCommonTestCase(TestCaseMixin):
         self.assertEqual(len(snapshots), 3)
         snap = snapshots[0]
         self.assertEqual(snap.id, 188402)
-        self.assertEqual(snap.extra['name'], 'i-123-87654-VM_ROOT-12344_20140917105548')
+        self.assertEqual(snap.extra['name'], 'i-123-89284-VM_ROOT-12344_20140917105548')
         self.assertEqual(snap.extra['volume_id'], 89341)
 
     def test_create_volume_snapshot(self):
         volume = self.driver.list_volumes()[0]
         snapshot = self.driver.create_volume_snapshot(volume)
         self.assertEqual(snapshot.id, 190547)
-        self.assertEqual(snapshot.extra['name'], 'i-123-87654-VM_ROOT-23456_20140917105548')
+        self.assertEqual(snapshot.extra['name'], 'i-123-89284-VM_ROOT-23456_20140917105548')
         self.assertEqual(snapshot.extra['volume_id'], 'fe1ada16-57a0-40ae-b577-01a153690fb4')
 
     def test_destroy_volume_snapshot(self):

@@ -13,6 +13,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+from eidosian_core import eidosian
 
 # Setup paths and imports
 BASE_DIR = Path(__file__).resolve().parent.parent.parent # /home/lloyd
@@ -47,6 +48,7 @@ RUNNER_SCRIPT = Path(__file__).resolve().parent / "codex_run.py"
 POLL_INTERVAL = float(gis.get("codex.poll_interval", 1.0))
 
 
+@eidosian()
 @contextmanager
 def queue_lock():
     """Guard queue file access with an OS-level lock."""
@@ -63,6 +65,7 @@ def queue_lock():
         lock_file.close()
 
 
+@eidosian()
 def load_queue() -> list[dict]:
     """Return the current task queue, treating corrupt data as empty."""
     if not QUEUE_FILE.exists():
@@ -74,11 +77,13 @@ def load_queue() -> list[dict]:
         return []
 
 
+@eidosian()
 def save_queue(queue: list[dict]) -> None:
     """Persist the task queue in JSON format for visibility and recovery."""
     QUEUE_FILE.write_text(json.dumps(queue, indent=2) + "\n")
 
 
+@eidosian()
 def queue_entry(query: str) -> dict:
     """Create a timestamped queue entry for the given query string."""
     return {
@@ -88,6 +93,7 @@ def queue_entry(query: str) -> dict:
     }
 
 
+@eidosian()
 def wait_for_turn(entry_id: str) -> None:
     """Block until this entry becomes the head of the queue."""
     while True:
@@ -97,6 +103,7 @@ def wait_for_turn(entry_id: str) -> None:
                 return
         time.sleep(POLL_INTERVAL)
 
+@eidosian()
 def cleanup_entry(entry_id: str) -> None:
     """Remove the completed entry from the queue so the next task can proceed."""
     with queue_lock():
@@ -104,6 +111,7 @@ def cleanup_entry(entry_id: str) -> None:
         queue = [item for item in queue if item["id"] != entry_id]
         save_queue(queue)
 
+@eidosian()
 def ensure_runner() -> None:
     """Make sure the configured Python interpreter and runner script exist."""
     if not PYTHON_BIN.exists():
@@ -115,6 +123,7 @@ def ensure_runner() -> None:
         diag.log_event("ERROR", error_msg)
         raise FileNotFoundError(error_msg)
 
+@eidosian()
 def launch_task(entry: dict) -> None:
     """Invoke the codex runner via the dedicated virtual environment."""
     ensure_runner()
@@ -132,6 +141,7 @@ def launch_task(entry: dict) -> None:
     finally:
         cleanup_entry(entry["id"])
 
+@eidosian()
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Queue and run codex agent queries one at a time."

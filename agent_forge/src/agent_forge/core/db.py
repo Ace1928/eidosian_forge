@@ -8,6 +8,7 @@ Tables:
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 import sqlite3
 from pathlib import Path
 from typing import Any, Mapping
@@ -16,6 +17,7 @@ from datetime import datetime, timezone
 __all__ = ["init_db", "insert_metric", "insert_journal", "prune_metrics"]
 
 
+@eidosian()
 def init_db(base: str | Path = "state") -> Path:
     """Ensure ``e3.sqlite`` exists with required tables and return its path."""
     b = Path(base)
@@ -41,6 +43,7 @@ def init_db(base: str | Path = "state") -> Path:
     return db_path
 
 
+@eidosian()
 def insert_metric(base: str | Path, key: str, value: float, ts: str | None = None) -> None:
     ts = ts or _now_iso()
     db = init_db(base)
@@ -52,6 +55,7 @@ def insert_metric(base: str | Path, key: str, value: float, ts: str | None = Non
         conn.close()
 
 
+@eidosian()
 def insert_journal(base: str | Path, etype: str, text: str, ts: str | None = None) -> None:
     ts = ts or _now_iso()
     db = init_db(base)
@@ -66,6 +70,7 @@ def insert_journal(base: str | Path, etype: str, text: str, ts: str | None = Non
         conn.close()
 
 
+@eidosian()
 def prune_metrics(base: str | Path, *, per_key_max: int = 10000) -> int:
     """Keep only the newest ``per_key_max`` rows per key; return rows deleted."""
     db = init_db(base)

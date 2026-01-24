@@ -27,7 +27,7 @@ from scipy._lib._util import AxisError
 class TestJarqueBera:
 
     def test_jarque_bera_stats(self):
-        np.random.seed(987654321)
+        np.random.seed(989284321)
         x = np.random.normal(0, 1, 100000)
         y = np.random.chisquare(10000, 100000)
         z = np.random.rayleigh(1, 100000)
@@ -45,7 +45,7 @@ class TestJarqueBera:
         assert_(stats.jarque_bera(y).pvalue > stats.jarque_bera(z).pvalue)
 
     def test_jarque_bera_array_like(self):
-        np.random.seed(987654321)
+        np.random.seed(989284321)
         x = np.random.normal(0, 1, 100000)
         jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
         jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))

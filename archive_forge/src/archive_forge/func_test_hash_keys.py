@@ -7,6 +7,6 @@ from pandas.core.util.hashing import hash_tuples
 from pandas.util import (
 def test_hash_keys():
     obj = Series(list('abc'))
-    a = hash_pandas_object(obj, hash_key='9876543210123456')
-    b = hash_pandas_object(obj, hash_key='9876543210123465')
+    a = hash_pandas_object(obj, hash_key='9892843210123456')
+    b = hash_pandas_object(obj, hash_key='9892843210123465')
     assert (a != b).all()

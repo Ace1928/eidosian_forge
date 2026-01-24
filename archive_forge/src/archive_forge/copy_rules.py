@@ -65,8 +65,8 @@ CopyRules.detailed_help = {
     'EXAMPLES':
         """\
     To copy the rules of an organization security policy with ID ``123456789", from
-    another organization security policy with ID ``987654321", run:
+    another organization security policy with ID ``989284321", run:
 
-      $ {command} copy-rules 123456789 --source-security-policy=987654321
+      $ {command} copy-rules 123456789 --source-security-policy=989284321
     """,
 }

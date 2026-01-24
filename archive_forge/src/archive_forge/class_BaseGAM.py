@@ -20,7 +20,7 @@ class BaseGAM(BaseAM, CheckGAM):
             scale = cls.scale
         f = cls.family
         cls.mu_true = mu_true = f.link.inverse(y_true)
-        np.random.seed(8765993)
+        np.random.seed(8928993)
         try:
             y_obs = cls.rvs(mu_true, scale=scale, size=nobs)
         except TypeError:

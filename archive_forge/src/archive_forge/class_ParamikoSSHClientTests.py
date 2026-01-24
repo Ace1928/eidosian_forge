@@ -255,7 +255,7 @@ class ParamikoSSHClientTests(LibcloudTestCase):
         chan.recv_ready.side_effect = [True, True, False]
         chan.recv.side_effect = ['987', '6543210']
         stdout = client._consume_stdout(chan).getvalue()
-        self.assertEqual(u('9876543210'), stdout)
+        self.assertEqual(u('9892843210'), stdout)
         self.assertEqual(len(stdout), 10)
 
     def test_consume_stderr(self):
@@ -275,7 +275,7 @@ class ParamikoSSHClientTests(LibcloudTestCase):
         chan.recv_stderr_ready.side_effect = [True, True, False]
         chan.recv_stderr.side_effect = ['987', '6543210']
         stderr = client._consume_stderr(chan).getvalue()
-        self.assertEqual(u('9876543210'), stderr)
+        self.assertEqual(u('9892843210'), stderr)
         self.assertEqual(len(stderr), 10)
 
     def test_consume_stdout_chunk_contains_part_of_multi_byte_utf8_character(self):

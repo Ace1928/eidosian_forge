@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Source Discovery System
 """
@@ -112,6 +113,7 @@ class DocumentationDiscovery:
         self.doc_extensions = [".md", ".rst", ".txt"]
         self._file_content_cache: Dict[str, str] = {}
 
+    @eidosian()
     def discover_all(self) -> Dict[str, List[DocumentMetadata]]:
         self._clear_discovery_state()
         self._discover_user_docs()
@@ -268,6 +270,7 @@ class DocumentationDiscovery:
                         pass
         logger.debug("📊 Document relations resolved with Eidosian precision")
 
+    @eidosian()
     def generate_toc_structure(self) -> Dict[str, TocSection]:
         toc: Dict[str, TocSection] = {
             "getting_started": {"title": "Getting Started", "items": []},
@@ -402,6 +405,7 @@ class DocumentationDiscovery:
             logger.debug(f"Couldn't extract title from {orphan}: {e}")
         return best_section, title
 
+    @eidosian()
     def find_all_sources(self) -> Dict[str, List[Path]]:
         all_sources: Dict[str, List[Path]] = {
             "user": [],
@@ -440,6 +444,7 @@ class DocumentationDiscovery:
         all_sources["orphaned"] = self.orphaned_documents
         return all_sources
 
+    @eidosian()
     def resolve_references(self) -> Dict[str, Set[str]]:
         reference_map: Dict[str, Set[str]] = {}
         for _, docs_list in self.documents.items():  # Changed 'category' to '_' as it's unused
@@ -448,6 +453,7 @@ class DocumentationDiscovery:
                     reference_map[str(doc.path)] = doc.references
         return reference_map
 
+@eidosian()
 def discover_documentation(docs_dir: Optional[Path] = None) -> Dict[str, List[DocumentMetadata]]:
     if docs_dir is None:
         docs_dir = get_docs_dir()
@@ -457,6 +463,7 @@ def discover_documentation(docs_dir: Optional[Path] = None) -> Dict[str, List[Do
     logger.info(f"✅ Documentation discovery complete. Found {sum(len(docs) for docs in documents.values())} documents")
     return documents
 
+@eidosian()
 def discover_code_structures(src_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
     if src_dir is None:
         repo_root = get_repo_root()

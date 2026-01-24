@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Ollama Forge CLI - Ollama model management and inference.
 """
@@ -6,6 +7,7 @@ import sys
 import json
 from typing import Optional, List
 
+@eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(

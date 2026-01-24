@@ -1,4 +1,5 @@
 """Utility helpers for Glyph Forge."""
+from eidosian_core import eidosian
 from .glyph_utils import (
     sanitize_text,
     resolve_style,
@@ -29,6 +30,7 @@ from typing import Any, Callable, Dict
 logger = logging.getLogger("glyph_forge")
 
 
+@eidosian()
 def setup_logger(level: str = "INFO") -> logging.Logger:
     """Initialize and return a package logger."""
     logging.basicConfig(
@@ -39,13 +41,16 @@ def setup_logger(level: str = "INFO") -> logging.Logger:
     return logger
 
 
+@eidosian()
 def configure(*_args: Any, **_kwargs: Any) -> None:
     """Placeholder configuration hook."""
     return None
 
 
+@eidosian()
 def measure_performance(func: Callable[..., Any]) -> Callable[..., Any]:
     """Simple performance measurement decorator."""
+    @eidosian()
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         start = time.perf_counter()
         result = func(*args, **kwargs)
@@ -56,6 +61,7 @@ def measure_performance(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
+@eidosian()
 def detect_capabilities() -> Dict[str, Any]:
     """Return minimal capability information."""
     return {}

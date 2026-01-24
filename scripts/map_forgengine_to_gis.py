@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Maps .forgengine.json (legacy config) to the central GisCore registry.
@@ -28,6 +29,7 @@ except ImportError as e:
     logger.error(f"Failed to import GisCore: {e}")
     sys.exit(1)
 
+@eidosian()
 def main():
     if not FORGENGINE_JSON.exists():
         logger.warning(f"{FORGENGINE_JSON} not found. Skipping.")

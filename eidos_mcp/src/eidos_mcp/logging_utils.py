@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
+from eidosian_core import eidosian
 
 
 LOG_DIR = Path("~/.eidosian/mcp_logs").expanduser()
@@ -23,6 +24,7 @@ def _rotate_if_needed() -> None:
         LOG_FILE.rename(rotated)
 
 
+@eidosian()
 def log_event(event: Dict[str, Any]) -> None:
     try:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -36,6 +38,7 @@ def log_event(event: Dict[str, Any]) -> None:
         pass
 
 
+@eidosian()
 def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str | None = None, start_time: float | None = None) -> None:
     duration = None
     if start_time:
@@ -55,6 +58,7 @@ def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str 
     log_event(event)
 
 
+@eidosian()
 def log_resource_read(uri: str, result: Any, error: str | None = None, start_time: float | None = None) -> None:
     duration = None
     if start_time:
@@ -73,6 +77,7 @@ def log_resource_read(uri: str, result: Any, error: str | None = None, start_tim
     log_event(event)
 
 
+@eidosian()
 def log_startup(transport: str) -> None:
     log_event(
         {
@@ -83,6 +88,7 @@ def log_startup(transport: str) -> None:
     )
 
 
+@eidosian()
 def log_error(context: str, error: str) -> None:
     log_event(
         {

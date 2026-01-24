@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Color effects for Figlet Forge.
 
@@ -14,6 +15,7 @@ from ..version import COLOR_CODES, RESET_COLORS
 from .figlet_color import color_to_ansi, parse_color
 
 
+@eidosian()
 def highlight_pattern(
     text: str,
     pattern: str,
@@ -141,6 +143,7 @@ def highlight_pattern(
     return result
 
 
+@eidosian()
 def gradient_colorize(text: str, start_color: str, end_color: str) -> str:
     """
     Apply gradient coloring from start_color to end_color.
@@ -206,6 +209,7 @@ def gradient_colorize(text: str, start_color: str, end_color: str) -> str:
     return "\n".join(result)
 
 
+@eidosian()
 def rainbow_colorize(text: str) -> str:
     """
     Apply rainbow color effect to text.
@@ -261,6 +265,7 @@ def rainbow_colorize(text: str) -> str:
     return "\n".join(result)
 
 
+@eidosian()
 def pulse_colorize(text: str, color: str, intensity_levels: int = 5) -> str:
     """
     Apply pulsing effect using varying intensity of a color.
@@ -324,6 +329,7 @@ def pulse_colorize(text: str, color: str, intensity_levels: int = 5) -> str:
     return "\n".join(result)
 
 
+@eidosian()
 def random_colorize(text: str) -> str:
     """
     Apply random colors to each line of ASCII art text.
@@ -413,6 +419,7 @@ def _parse_color_to_rgb(color_spec: str) -> Optional[Tuple[int, int, int]]:
     return None
 
 
+@eidosian()
 def color_style_apply(text: str, style_name: str) -> str:
     """
     Apply predefined color styles to text.

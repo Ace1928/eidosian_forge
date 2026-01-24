@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Duplicate Object Harmonizer
 """
@@ -43,6 +44,7 @@ class DuplicateObjectHarmonizer:
                      f" with {len(self.seen_objects)} seen objects")
         
         
+    @eidosian()
     def fix_duplicate_objects(self) -> int:
         """
         Find and fix all duplicate object descriptions with mathematical precision.

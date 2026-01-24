@@ -81,5 +81,5 @@ Calculates degree of association between two nominal variables.
     Tschuprow's T
 
     >>> association(obs4x2, method="tschuprow")
-    0.14146478765062995
+    0.14146478928062995
     

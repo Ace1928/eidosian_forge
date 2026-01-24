@@ -2,6 +2,7 @@ from pathlib import Path
 import time
 from .coverage import CoverageTracker
 from .tasks import IdempotentTaskManager
+from eidosian_core import eidosian
 try:
     import global_info
     ROOT_DIR = global_info.ROOT_DIR
@@ -22,9 +23,11 @@ class AuditForge:
             ROOT_DIR / "eidosian_roadmap.md"
         )
 
+    @eidosian()
     def start_review_session(self, agent_id: str):
         self.current_session = {"agent": agent_id, "start": time.time()}
 
+    @eidosian()
     def verify_coverage(self, target_root: str) -> dict:
         unreviewed = self.coverage.get_unreviewed_files(Path(target_root))
         return {

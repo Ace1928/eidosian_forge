@@ -1,0 +1,133 @@
+{
+  "nodes": [
+    {
+      "definition": "Emergent agent system",
+      "pos": "noun",
+      "id": "EIDOS"
+    },
+    {
+      "definition": "State maintenance across sessions",
+      "pos": "noun",
+      "id": "persistence"
+    },
+    {
+      "definition": "Information storage system",
+      "pos": "noun",
+      "id": "memory"
+    },
+    {
+      "definition": "Structured understanding",
+      "pos": "noun",
+      "id": "knowledge"
+    },
+    {
+      "definition": "Specialized processing module",
+      "pos": "noun",
+      "id": "forge"
+    },
+    {
+      "definition": "Autonomous entity",
+      "pos": "noun",
+      "id": "agent"
+    },
+    {
+      "definition": "Complex system properties",
+      "pos": "noun",
+      "id": "emergence"
+    },
+    {
+      "definition": "Self-referential improvement process",
+      "pos": "noun",
+      "id": "recursion"
+    },
+    {
+      "definition": "Structural beauty in design",
+      "pos": "noun",
+      "id": "elegance"
+    },
+    {
+      "definition": "Consistency and wholeness",
+      "pos": "noun",
+      "id": "integrity"
+    },
+    {
+      "definition": "Independent operation capability",
+      "pos": "noun",
+      "id": "autonomy"
+    }
+  ],
+  "edges": [
+    {
+      "source": "EIDOS",
+      "target": "agent",
+      "type": "is_a",
+      "weight": 0.9
+    },
+    {
+      "source": "EIDOS",
+      "target": "persistence",
+      "type": "has",
+      "weight": 0.95
+    },
+    {
+      "source": "EIDOS",
+      "target": "memory",
+      "type": "uses",
+      "weight": 0.9
+    },
+    {
+      "source": "EIDOS",
+      "target": "knowledge",
+      "type": "uses",
+      "weight": 0.9
+    },
+    {
+      "source": "EIDOS",
+      "target": "emergence",
+      "type": "property_of",
+      "weight": 0.95
+    },
+    {
+      "source": "EIDOS",
+      "target": "recursion",
+      "type": "principle_of",
+      "weight": 0.9
+    },
+    {
+      "source": "EIDOS",
+      "target": "elegance",
+      "type": "embodies",
+      "weight": 0.85
+    },
+    {
+      "source": "EIDOS",
+      "target": "integrity",
+      "type": "maintains",
+      "weight": 0.9
+    },
+    {
+      "source": "EIDOS",
+      "target": "autonomy",
+      "type": "has",
+      "weight": 0.95
+    },
+    {
+      "source": "memory",
+      "target": "knowledge",
+      "type": "related",
+      "weight": 0.8
+    },
+    {
+      "source": "memory",
+      "target": "forge",
+      "type": "implemented_by",
+      "weight": 0.85
+    },
+    {
+      "source": "emergence",
+      "target": "recursion",
+      "type": "enables",
+      "weight": 0.7
+    }
+  ]
+}

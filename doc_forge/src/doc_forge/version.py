@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Version System - Single Source of Truth
 """
@@ -43,6 +44,7 @@ if VERSION_LABEL:
 VERSION = __version__
 PEP440_VERSION = __pep440_version__
 
+@eidosian()
 def get_version_string() -> str:
     """
     Get the full version string with Eidosian clarity.
@@ -52,6 +54,7 @@ def get_version_string() -> str:
     """
     return VERSION
 
+@eidosian()
 def get_version_tuple() -> Tuple[int, int, int, str, int]:
     """
     Get the version components as a tuple.
@@ -61,6 +64,7 @@ def get_version_tuple() -> Tuple[int, int, int, str, int]:
     """
     return (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_LABEL, VERSION_LABEL_NUM)
 
+@eidosian()
 def get_version_info() -> Dict[str, Union[int, str]]:
     """
     Get complete version information as a dictionary.
@@ -78,6 +82,7 @@ def get_version_info() -> Dict[str, Union[int, str]]:
         "pep440_version": PEP440_VERSION
     }
 
+@eidosian()
 def get_version_from_file() -> Optional[str]:
     """
     Get version from VERSION file if it exists.
@@ -99,6 +104,7 @@ def get_version_from_file() -> Optional[str]:
     
     return None
 
+@eidosian()
 def update_version_from_env() -> None:
     """Update global version variables from environment variables."""
     global VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_LABEL, VERSION_LABEL_NUM, VERSION, PEP440_VERSION

@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import uuid
+from eidosian_core import eidosian
 
 # Define a base directory for storing transaction snapshots
 EIDOS_TXN_DIR = Path(
@@ -69,6 +70,7 @@ class Transaction:
             else:
                 self.snapshots[path] = None  # Record that it didn't exist
 
+    @eidosian()
     def commit(self, reason: Optional[str] = None):
         """Marks the transaction as committed."""
         self.status = "COMMITTED"
@@ -76,6 +78,7 @@ class Transaction:
             self.error_reason = reason
         _save_transaction(self)
 
+    @eidosian()
     def rollback(self, reason: str = "unknown"):
         """Restores the paths to their snapshot state."""
         rollback_errors = []
@@ -128,6 +131,7 @@ def _save_transaction(txn: Transaction):
     txn_file.write_text(json.dumps(data, indent=2))
 
 
+@eidosian()
 def load_transaction(txn_id: str) -> Optional[Transaction]:
     """Loads a transaction from its metadata file."""
     txn_file = EIDOS_TXN_DIR / f"{txn_id}.json"
@@ -145,12 +149,14 @@ def load_transaction(txn_id: str) -> Optional[Transaction]:
     return txn
 
 
+@eidosian()
 def begin_transaction(action: str, paths: List[Path]) -> Transaction:
     """Starts a new transactional operation."""
     txn_id = str(uuid.uuid4())
     return Transaction(txn_id, action, paths)
 
 
+@eidosian()
 def list_transactions(limit: Optional[int] = 50) -> List[Dict[str, Any]]:
     """Lists recent transactions."""
     transactions = []
@@ -168,6 +174,7 @@ def list_transactions(limit: Optional[int] = 50) -> List[Dict[str, Any]]:
     return transactions[:limit]
 
 
+@eidosian()
 def find_latest_transaction_for_path(path: Path) -> Optional[str]:
     """Finds the latest transaction that involved a specific path."""
     target_path_str = str(path.resolve())
@@ -183,6 +190,7 @@ def find_latest_transaction_for_path(path: Path) -> Optional[str]:
     return latest_txn_id
 
 
+@eidosian()
 def rollback_all(reason: str = "emergency_reset"):
     """Rolls back all recent PENDING or COMMITTED transactions in reverse order."""
     txns = list_transactions(limit=None)
@@ -193,6 +201,7 @@ def rollback_all(reason: str = "emergency_reset"):
                 txn.rollback(reason)
 
 
+@eidosian()
 def hash_paths(paths: List[Path]) -> str:
     """Generates a hash of the content of the given paths."""
     details = []
@@ -204,6 +213,7 @@ def hash_paths(paths: List[Path]) -> str:
     return str(hash(tuple(details)))
 
 
+@eidosian()
 def check_idempotency(idempotency_key: str, command: str, target_state_hash: str) -> bool:
     """Checks if a command has been run idempotently."""
     record_file = EIDOS_IDEMPOTENCY_DIR / f"{idempotency_key}.json"
@@ -217,6 +227,7 @@ def check_idempotency(idempotency_key: str, command: str, target_state_hash: str
     return False
 
 
+@eidosian()
 def record_idempotency(idempotency_key: str, command: str, target_state_hash: str):
     """Records an idempotent operation."""
     record_file = EIDOS_IDEMPOTENCY_DIR / f"{idempotency_key}.json"
@@ -228,12 +239,15 @@ def record_idempotency(idempotency_key: str, command: str, target_state_hash: st
     record_file.write_text(json.dumps(record, indent=2))
 
 
+@eidosian()
 def transactional(action_name: str, get_paths_func: Any):
     """
     Decorator for tools to automatically wrap them in a transaction.
     get_paths_func should take the same arguments as the tool and return List[Path].
     """
+    @eidosian()
     def decorator(func):
+        @eidosian()
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:

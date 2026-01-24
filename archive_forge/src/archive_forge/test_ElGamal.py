@@ -199,7 +199,7 @@ class ElGamalTest(unittest.TestCase):
         self.assertEqual(plaintext, plaintextP)
 
         # Test signature/verification
-        signature = elgObj._sign(plaintext, 987654321)
+        signature = elgObj._sign(plaintext, 989284321)
         elgObj._verify(plaintext, signature)
 
     def _exercise_public_primitive(self, elgObj):

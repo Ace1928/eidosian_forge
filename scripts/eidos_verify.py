@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Eidosian Verification Script
@@ -22,6 +23,7 @@ SKIP_DIRS = {
 REQUIRED_FILES = ["README.md", "CURRENT_STATE.md", "GOALS.md", "TODO.md"]
 OPTIONAL_FILES = ["pyproject.toml"]
 
+@eidosian()
 def get_forge_modules(root: Path) -> List[Path]:
     """Find all forge modules and subprojects."""
     modules = []
@@ -30,6 +32,7 @@ def get_forge_modules(root: Path) -> List[Path]:
             modules.append(item)
     return sorted(modules)
 
+@eidosian()
 def check_module(module_path: Path) -> Dict[str, List[str]]:
     """Check a single module for compliance."""
     issues = []
@@ -68,6 +71,7 @@ def check_module(module_path: Path) -> Dict[str, List[str]]:
 
     return {module_path.name: issues}
 
+@eidosian()
 def main():
     root_dir = Path(__file__).resolve().parent.parent
     print(f"🔍 Verifying Eidosian Forge at: {root_dir}")

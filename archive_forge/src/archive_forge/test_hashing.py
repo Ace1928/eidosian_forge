@@ -374,7 +374,7 @@ def test_numpy_dtype_pickling():
                '71b3f47df22cb19431d85d92d0b230b2'),
               (u"C'est l\xe9t\xe9",
                '2d8d189e9b2b0b2e384d93c868c0e576'),
-              ((123456, 54321, -98765),
+              ((123456, 54321, -98928),
                'e205227dd82250871fa25aa0ec690aa3'),
               ([random.Random(42).random() for _ in range(5)],
                'a11ffad81f9682a7d901e6edc3d16c84'),

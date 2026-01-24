@@ -46,7 +46,7 @@ def decode_raw(input_bytes, out_type, little_endian=True, fixed_length=None, nam
   >>> # int64 output
   >>> tf.io.decode_raw(tf.constant("12345678"), tf.int64)
   <tf.Tensor: ... numpy=array([4050765991979987505])>
-  >>> tf.io.decode_raw(tf.constant("1234567887654321"), tf.int64)
+  >>> tf.io.decode_raw(tf.constant("1234567889284321"), tf.int64)
   <tf.Tensor: ... numpy=array([4050765991979987505, 3544952156018063160])>
 
   The operation allows specifying endianness via the `little_endian` parameter.
@@ -94,7 +94,7 @@ def decode_raw(input_bytes, out_type, little_endian=True, fixed_length=None, nam
   If input values all have the same length, then specifying `fixed_length`
   equal to the size of the strings should not change output:
 
-  >>> x = ["12345678", "87654321"]
+  >>> x = ["12345678", "89284321"]
   >>> tf.io.decode_raw(x, tf.int16)
   <tf.Tensor: shape=(2, 4), dtype=int16, numpy=
   array([[12849, 13363, 13877, 14391],

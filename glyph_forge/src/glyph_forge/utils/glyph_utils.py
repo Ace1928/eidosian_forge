@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Utilities ⚡
 
@@ -15,6 +16,7 @@ import os
 logger = logging.getLogger(__name__)
 
 
+@eidosian()
 def sanitize_text(text: str) -> str:
     """
     Sanitize input text for safe Glyph art conversion.
@@ -44,6 +46,7 @@ def sanitize_text(text: str) -> str:
     return text
 
 
+@eidosian()
 def resolve_style(style_name: str) -> Dict[str, Any]:
     """
     Resolve a style name to its configuration dictionary.
@@ -111,6 +114,7 @@ def resolve_style(style_name: str) -> Dict[str, Any]:
     return custom_styles.get(style_name, default_style)
 
 
+@eidosian()
 def trim_margins(text: str) -> str:
     """
     Remove excessive whitespace from the margins of Glyph art.
@@ -148,6 +152,7 @@ def trim_margins(text: str) -> str:
     return '\n'.join(lines)
 
 
+@eidosian()
 def center_Glyph_art(art: str, width: int) -> str:
     """
     Center Glyph art within a specified width.
@@ -174,6 +179,7 @@ def center_Glyph_art(art: str, width: int) -> str:
     return '\n'.join(centered_lines)
 
 
+@eidosian()
 def measure_Glyph_art(art: str) -> Tuple[int, int]:
     """
     Measure the dimensions of Glyph art.
@@ -190,6 +196,7 @@ def measure_Glyph_art(art: str) -> Tuple[int, int]:
     return (width, height)
 
 
+@eidosian()
 def detect_box_borders(art: str) -> Optional[str]:
     """
     Detect if Glyph art has box borders and identify style.
@@ -218,6 +225,7 @@ def detect_box_borders(art: str) -> Optional[str]:
     return None
 
 
+@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """
     Get current terminal dimensions with better fallbacks.
@@ -233,6 +241,7 @@ def get_terminal_size() -> Tuple[int, int]:
         return (80, 24)
 
 
+@eidosian()
 def detect_text_color_support() -> int:
     """
     Detect terminal color support level.
@@ -266,6 +275,7 @@ def detect_text_color_support() -> int:
     return 0
 
 
+@eidosian()
 def apply_ansi_style(text: str, style: Union[str, List[str]]) -> str:
     """
     Apply ANSI style codes to text.
@@ -312,6 +322,7 @@ def apply_ansi_style(text: str, style: Union[str, List[str]]) -> str:
     return f"{style_codes}{text}{styles['reset']}"
 
 
+@eidosian()
 def wrap_text(text: str, width: int) -> str:
     """
     Wrap text to specified width while preserving word boundaries.

@@ -23,6 +23,7 @@ Public API (stdlib only):
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 import dataclasses as dc
 import json
 import os
@@ -77,6 +78,7 @@ def _ensure_dirs(base: Path) -> None:
 
 # ---------- migrations ----------
 
+@eidosian()
 def migrate(base: str | Path = "state") -> int:
     """Ensure directory structure and bump/create version marker if absent."""
     b = Path(base)
@@ -98,6 +100,7 @@ def migrate(base: str | Path = "state") -> int:
 
 # ---------- journal ----------
 
+@eidosian()
 def append_journal(
     base: str | Path,
     text: str,
@@ -122,6 +125,7 @@ def append_journal(
     return evt
 
 
+@eidosian()
 def iter_journal(
     base: str | Path,
     *,
@@ -160,6 +164,7 @@ def iter_journal(
         out = out[-limit:]
     return out
 
+@eidosian()
 def rotate_journal(
     base: str | Path,
     *,
@@ -183,17 +188,20 @@ def rotate_journal(
     return rot
 
 
+@eidosian()
 def prune_journal(base: str | Path, *, max_bytes: int = 5 * 1024 * 1024) -> Path | None:
     """Rotate journal if it exceeds ``max_bytes``; return rotated path or ``None``."""
     return rotate_journal(base, max_bytes=max_bytes)
 
 
+@eidosian()
 def load_snapshot(path: str | Path) -> Dict[str, Any]:
     """Read a snapshot JSON file into a dict."""
     p = Path(path)
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+@eidosian()
 def diff_snapshots(a: Mapping[str, Any], b: Mapping[str, Any]) -> Dict[str, Any]:
     """Return a minimal diff focusing on totals; positive numbers mean increases."""
     at = dict(a.get("totals", {}))
@@ -243,6 +251,7 @@ def _new_id() -> str:
     return uuid.uuid4().hex
 
 
+@eidosian()
 def add_goal(base: str | Path, title: str, drive: str, *, id: str | None = None, created_at: str | None = None) -> Goal:
     g = Goal(id or _new_id(), title, drive, created_at or _now_iso())
     db = _db(base)
@@ -258,6 +267,7 @@ def add_goal(base: str | Path, title: str, drive: str, *, id: str | None = None,
         conn.close()
 
 
+@eidosian()
 def list_goals(base: str | Path) -> List[Goal]:
     db = _db(base)
     conn = sqlite3.connect(db)
@@ -268,6 +278,7 @@ def list_goals(base: str | Path) -> List[Goal]:
         conn.close()
 
 
+@eidosian()
 def add_plan(
     base: str | Path,
     goal_id: str,
@@ -291,6 +302,7 @@ def add_plan(
         conn.close()
 
 
+@eidosian()
 def list_plans(base: str | Path, goal_id: str | None = None) -> List[Plan]:
     db = _db(base)
     conn = sqlite3.connect(db)
@@ -309,6 +321,7 @@ def list_plans(base: str | Path, goal_id: str | None = None) -> List[Plan]:
         conn.close()
 
 
+@eidosian()
 def add_step(
     base: str | Path,
     plan_id: str,
@@ -335,6 +348,7 @@ def add_step(
         conn.close()
 
 
+@eidosian()
 def list_steps(base: str | Path, plan_id: str | None = None) -> List[Step]:
     db = _db(base)
     conn = sqlite3.connect(db)
@@ -353,6 +367,7 @@ def list_steps(base: str | Path, plan_id: str | None = None) -> List[Step]:
         conn.close()
 
 
+@eidosian()
 def list_steps_for_goal(base: str | Path, goal_id: str) -> List[Step]:
     db = _db(base)
     conn = sqlite3.connect(db)
@@ -370,6 +385,7 @@ def list_steps_for_goal(base: str | Path, goal_id: str) -> List[Step]:
         conn.close()
 
 
+@eidosian()
 def add_run(
     base: str | Path,
     step_id: str,
@@ -395,6 +411,7 @@ def add_run(
         conn.close()
 
 
+@eidosian()
 def list_runs(base: str | Path, step_id: str | None = None) -> List[Run]:
     db = _db(base)
     conn = sqlite3.connect(db)
@@ -414,6 +431,7 @@ def list_runs(base: str | Path, step_id: str | None = None) -> List[Run]:
 
 # ---------- snapshot ----------
 
+@eidosian()
 def snapshot(base: str | Path = "state", *, last: int = 5) -> Dict[str, Any]:
     """Compute a light snapshot: counts by entity family, last ``N`` journal entries, file counts."""
     b = Path(base)
@@ -463,6 +481,7 @@ def snapshot(base: str | Path = "state", *, last: int = 5) -> Dict[str, Any]:
     }
 
 
+@eidosian()
 def save_snapshot(
     base: str | Path = "state",
     snap: Dict[str, Any] | None = None,

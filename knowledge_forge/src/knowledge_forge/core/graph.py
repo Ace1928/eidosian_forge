@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set, Union
 from collections import deque
+from eidosian_core import eidosian
 
 class KnowledgeNode:
     """A node in the knowledge graph with tags and bidirectional links."""
@@ -13,9 +14,11 @@ class KnowledgeNode:
         self.tags: Set[str] = set(self.metadata.get("tags", []))
         self.links: Set[str] = set() 
 
+    @eidosian()
     def add_link(self, node_id: str):
         self.links.add(node_id)
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
@@ -37,6 +40,7 @@ class KnowledgeForge:
         if self.persistence_path and self.persistence_path.exists():
             self.load()
 
+    @eidosian()
     def add_knowledge(self, content: Any, concepts: Optional[List[str]] = None, tags: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None) -> KnowledgeNode:
         """Add a node, map concepts/tags, and persist."""
         node = KnowledgeNode(content, metadata)
@@ -54,6 +58,7 @@ class KnowledgeForge:
             self.save()
         return node
 
+    @eidosian()
     def link_nodes(self, node_id_a: str, node_id_b: str):
         """Bidirectional link creation."""
         if node_id_a in self.nodes and node_id_b in self.nodes:
@@ -62,6 +67,7 @@ class KnowledgeForge:
             if self.persistence_path:
                 self.save()
 
+    @eidosian()
     def delete_node(self, node_id: str) -> bool:
         """Delete a node and remove all references."""
         if node_id not in self.nodes:
@@ -81,21 +87,25 @@ class KnowledgeForge:
             self.save()
         return True
 
+    @eidosian()
     def get_by_tag(self, tag: str) -> List[KnowledgeNode]:
         """Find nodes by tag."""
         return [n for n in self.nodes.values() if tag in n.tags]
 
+    @eidosian()
     def get_by_concept(self, concept: str) -> List[KnowledgeNode]:
         """Retrieve all nodes associated with a concept."""
         node_ids = self.concept_map.get(concept, [])
         return [self.nodes[nid] for nid in node_ids]
 
+    @eidosian()
     def get_related_nodes(self, node_id: str) -> List[KnowledgeNode]:
         """Get all nodes directly linked to the given node."""
         if node_id not in self.nodes:
             return []
         return [self.nodes[link_id] for link_id in self.nodes[node_id].links]
 
+    @eidosian()
     def find_path(self, start_id: str, end_id: str) -> List[str]:
         """BFS to find the shortest path between two nodes."""
         if start_id not in self.nodes or end_id not in self.nodes:
@@ -119,6 +129,7 @@ class KnowledgeForge:
                     queue.append(new_path)
         return []
 
+    @eidosian()
     def save(self):
         """Persist graph to disk."""
         data = {
@@ -128,6 +139,7 @@ class KnowledgeForge:
         with open(self.persistence_path, 'w') as f:
             json.dump(data, f, indent=2)
 
+    @eidosian()
     def load(self):
         """Load graph from disk."""
         try:
@@ -143,9 +155,24 @@ class KnowledgeForge:
         except Exception:
             pass
             
+    @eidosian()
     def search(self, query: str) -> List[KnowledgeNode]:
         results = []
         for node in self.nodes.values():
             if query.lower() in str(node.content).lower():
                 results.append(node)
         return results
+    
+    @eidosian()
+    def list_nodes(self, limit: int = 100) -> List[KnowledgeNode]:
+        """List all nodes (up to limit)."""
+        return list(self.nodes.values())[:limit]
+    
+    @eidosian()
+    def stats(self) -> Dict[str, Any]:
+        """Return knowledge graph statistics."""
+        return {
+            "node_count": len(self.nodes),
+            "concept_count": len(self.concept_map),
+            "concepts": list(self.concept_map.keys()),
+        }

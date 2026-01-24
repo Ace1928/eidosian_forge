@@ -1,47 +1,70 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires      = [ "setuptools>=42", "wheel" ]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "word_forge"
-version = "0.1.0"
-description = "Eidosian Word Forge - Lexical Data Processing and Enrichment."
+version = "1.0.0"
+description = "Living lexicon builder with semantic graphs and affective understanding"
 readme = "README.md"
-requires-python = ">=3.12"
-license = "MIT"
 authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["lexicon", "nlp", "vocabulary", "semantics"]
+license = { file = "LICENSE" }
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+requires-python = ">=3.12"
 dependencies = [
     "nltk>=3.6.0",
-    "torch>=2.1.0",
-    "transformers>=4.39.0",
-    "networkx>=3.0",
-    "numpy>=1.26.0",
-    "sentence-transformers>=2.2.2",
-    "chromadb>=0.4.0",
+    "networkx>=2.8.0",
+    "numpy>=1.23.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
+    "black",
+    "pytest",
+    "pytest-cov",
+]
+visualization = [
+    "pyvis>=0.3.2",
+    "plotly>=5.24.0",
+]
+vector = [
+    "sentence-transformers>=2.2.2",
+    "chromadb>=0.4.24",
+]
+full = [
+    "torch>=1.9.0",
+    "transformers>=4.15.0",
+    "rdflib>=6.0.0",
+    "pyvis>=0.3.2",
+    "plotly>=5.24.0",
+    "sentence-transformers>=2.2.2",
+    "chromadb>=0.4.24",
 ]
 
-[project.scripts]
-word-forge = "word_forge.forge:main"
+[tool.setuptools.packages.find]
+where   = [ "src" ]
+include = [ "word_forge*" ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/word_forge"]
+[tool.setuptools.package-data]
+"word_forge" = [ "py.typed", "*.json", "*.jsonl", "*.ttl" ]
+
+[project.scripts]
+word-forge = "word_forge.cli:main"
+
+[tool.black]
+line-length    = 88
+target-version = [ "py312" ]
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
-testpaths = ["tests"]
+testpaths    = [ "tests" ]
+python_files = "test_*.py"

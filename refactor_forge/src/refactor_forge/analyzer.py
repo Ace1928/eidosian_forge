@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Code Analyzer - Structural Intelligence Engine 📊
 
@@ -76,6 +77,7 @@ class CodeAnalyzer:
         self.dependencies = nx.DiGraph()
         self.symbol_table = {}
     
+    @eidosian()
     def analyze(self) -> Dict[str, Any]:
         """Perform full structural analysis of the source code.
         
@@ -310,6 +312,7 @@ class CodeAnalyzer:
 # │  🔌 Public Interface - Analysis Entry Points         │
 # ╰──────────────────────────────────────────────────────╯
 
+@eidosian()
 def analyze_code(source_path: Union[str, Path]) -> Dict[str, Any]:
     """Analyze a Python source file for structural insights.
     
@@ -330,6 +333,7 @@ def analyze_code(source_path: Union[str, Path]) -> Dict[str, Any]:
     return results
 
 
+@eidosian()
 def print_analysis_report(results: Dict[str, Any]) -> None:
     """Print a human-readable report from analysis results.
     

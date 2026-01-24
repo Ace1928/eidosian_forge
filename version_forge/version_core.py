@@ -494,10 +494,9 @@ class SimpleVersion:
     # Derived comparison operators through mathematical composition
     def __gt__(self, other: Any) -> bool:
         lt_result = self.__lt__(other)
-        return \
-            NotImplemented
-            if lt_result is NotImplemented
-            else not (lt_result or self.__eq__(other))
+        if lt_result is NotImplemented:
+            return NotImplemented
+        return not (lt_result or self.__eq__(other))
 
     def __ge__(self, other: Any) -> bool:
         lt_result = self.__lt__(other)

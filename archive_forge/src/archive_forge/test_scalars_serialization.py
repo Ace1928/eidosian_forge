@@ -10,8 +10,8 @@ def test_serializes_output_int():
     assert Int.serialize(1.1) == 1
     assert Int.serialize(-1.1) == -1
     assert Int.serialize(1e5) == 100000
-    assert Int.serialize(9876504321) is Undefined
-    assert Int.serialize(-9876504321) is Undefined
+    assert Int.serialize(9892804321) is Undefined
+    assert Int.serialize(-9892804321) is Undefined
     assert Int.serialize(1e100) is Undefined
     assert Int.serialize(-1e100) is Undefined
     assert Int.serialize("-1.1") == -1

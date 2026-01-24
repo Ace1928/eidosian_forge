@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Figlet Forge Font Resources
 
@@ -46,6 +47,7 @@ if not FONT_DIRECTORY.exists():
         )
 
 
+@eidosian()
 def get_font_path(font_name: str) -> Path:
     """
     Get the path to a specific font file.
@@ -100,6 +102,7 @@ def get_font_path(font_name: str) -> Path:
     return FONT_DIRECTORY / f"{font_name}.flf"
 
 
+@eidosian()
 def list_fonts() -> List[str]:
     """
     List all available fonts in the package.

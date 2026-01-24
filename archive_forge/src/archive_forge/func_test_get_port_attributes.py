@@ -20,7 +20,7 @@ def test_get_port_attributes(self):
     self.create_mock.return_value = {'port': {'status': 'BUILD', 'id': 'fc68ea2c-b60b-4b4f-bd82-94ec81110766'}}
     self.subnet_show_mock.return_value = {'subnet': subnet_dict}
     self.network_show_mock.return_value = {'network': network_dict}
-    self.port_show_mock.return_value = {'port': {'status': 'DOWN', 'name': utils.PhysName(stack.name, 'port'), 'allowed_address_pairs': [], 'admin_state_up': True, 'network_id': 'net1234', 'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec87650532', 'mac_address': 'fa:16:3e:75:67:60', 'tenant_id': '58a61fc3992944ce971404a2ece6ff98', 'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'], 'fixed_ips': [{'subnet_id': 'd0e971a6-a6b4-4f4c-8c88-b75e9c120b7e', 'ip_address': '10.0.0.2'}]}}
+    self.port_show_mock.return_value = {'port': {'status': 'DOWN', 'name': utils.PhysName(stack.name, 'port'), 'allowed_address_pairs': [], 'admin_state_up': True, 'network_id': 'net1234', 'device_id': 'dc68eg2c-b60g-4b3f-bd82-67ec89280532', 'mac_address': 'fa:16:3e:75:67:60', 'tenant_id': '58a61fc3992944ce971404a2ece6ff98', 'security_groups': ['5b15d80c-6b70-4a1c-89c9-253538c5ade6'], 'fixed_ips': [{'subnet_id': 'd0e971a6-a6b4-4f4c-8c88-b75e9c120b7e', 'ip_address': '10.0.0.2'}]}}
     port = stack['port']
     scheduler.TaskRunner(port.create)()
     self.create_mock.assert_called_once_with({'port': {'network_id': u'net1234', 'name': utils.PhysName(stack.name, 'port'), 'admin_state_up': True, 'device_owner': u'network:dhcp', 'binding:vnic_type': 'normal', 'device_id': ''}})
@@ -30,7 +30,7 @@ def test_get_port_attributes(self):
     self.assertEqual('net1234', port.FnGetAtt('network_id'))
     self.assertEqual('fa:16:3e:75:67:60', port.FnGetAtt('mac_address'))
     self.assertEqual(utils.PhysName(stack.name, 'port'), port.FnGetAtt('name'))
-    self.assertEqual('dc68eg2c-b60g-4b3f-bd82-67ec87650532', port.FnGetAtt('device_id'))
+    self.assertEqual('dc68eg2c-b60g-4b3f-bd82-67ec89280532', port.FnGetAtt('device_id'))
     self.assertEqual('58a61fc3992944ce971404a2ece6ff98', port.FnGetAtt('tenant_id'))
     self.assertEqual(['5b15d80c-6b70-4a1c-89c9-253538c5ade6'], port.FnGetAtt('security_groups'))
     self.assertEqual([{'subnet_id': 'd0e971a6-a6b4-4f4c-8c88-b75e9c120b7e', 'ip_address': '10.0.0.2'}], port.FnGetAtt('fixed_ips'))

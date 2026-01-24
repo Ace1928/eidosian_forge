@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Configuration management for Eidosian Forge.
 
@@ -118,6 +119,7 @@ class ConfigManager:
 
         # Additional validation can be added here
 
+    @eidosian()
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get configuration value by key.
@@ -139,6 +141,7 @@ class ConfigManager:
         except (KeyError, TypeError):
             return default
 
+    @eidosian()
     def get_model_config(self) -> ModelConfig:
         """
         Get model configuration.
@@ -157,6 +160,7 @@ class ConfigManager:
             parameters=model_config.get("parameters", {}),
         )
 
+    @eidosian()
     def save(self) -> None:
         """Save current configuration to file."""
         with open(self.config_path, "w") as f:
@@ -169,6 +173,7 @@ class ConfigManager:
 
         logger.info(f"Configuration saved to {self.config_path}")
 
+    @eidosian()
     def update(self, key: str, value: Any) -> None:
         """
         Update configuration value.

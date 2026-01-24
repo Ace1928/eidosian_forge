@@ -64,7 +64,7 @@ class TestPoissonMLE(CompareMixin):
     def setup_class(cls):
 
         # generate artificial data
-        np.random.seed(98765678)
+        np.random.seed(98928678)
         nobs = 200
         rvs = np.random.randn(nobs,6)
         data_exog = rvs
@@ -108,7 +108,7 @@ class TestPoissonOffset(CompareMixin):
     @classmethod
     def setup_class(cls):
         # generate artificial data
-        np.random.seed(98765678)
+        np.random.seed(98928678)
         nobs = 200
         rvs = np.random.randn(nobs,6)
         data_exog = rvs
@@ -160,7 +160,7 @@ class TestPoissonZi(CompareMixin):
     def setup_class(cls):
 
         # generate artificial data
-        np.random.seed(98765678)
+        np.random.seed(98928678)
         nobs = 200
         rvs = np.random.randn(nobs,6)
         data_exog = rvs

@@ -25,4 +25,7 @@ from . import memory  # noqa: E402,F401
 from . import nexus  # noqa: E402,F401
 from . import refactor  # noqa: E402,F401
 from . import system  # noqa: E402,F401
+from . import tika  # noqa: E402,F401
+from . import tiered_memory  # noqa: E402,F401
 from . import types  # noqa: E402,F401
+from . import word_forge  # noqa: E402,F401

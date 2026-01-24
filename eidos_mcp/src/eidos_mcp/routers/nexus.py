@@ -7,6 +7,7 @@ from typing import Optional
 
 from ..core import tool
 from ..state import agent
+from eidosian_core import eidosian
 
 
 @tool(
@@ -14,17 +15,40 @@ from ..state import agent
     description="Delegate a complex objective to the Agent Forge. Returns a plan or execution summary.",
     parameters={
         "type": "object",
-        "properties": {"objective": {"type": "string"}},
+        "properties": {
+            "objective": {"type": "string"},
+            "execute": {"type": "boolean", "description": "If true, execute the plan immediately."}
+        },
         "required": ["objective"],
     },
 )
-def agent_run_task(objective: str) -> str:
+@eidosian()
+def agent_run_task(objective: str, execute: bool = False) -> str:
     """Delegate a complex objective to the Agent Forge."""
     if not agent:
         return json.dumps({"error": "Agent Forge not available (import failed)"})
     
     goal = agent.create_goal(objective, plan=True)
     
+    execution_results = []
+    if execute:
+        for t in goal.tasks:
+            success = agent.execute_task(t)
+            execution_results.append({
+                "task": t.description,
+                "tool": t.tool,
+                "status": t.status,
+                "result": str(t.result)[:200] + "..." if t.result and len(str(t.result)) > 200 else t.result
+            })
+            if not success and t.priority > 0: # Stop on critical failure
+                 break
+                 
+        return json.dumps({
+            "objective": objective,
+            "status": "executed",
+            "results": execution_results
+        }, indent=2)
+
     # We return the plan for inspection. 
     # In a full autonomous loop, we might execute it, but for MCP we prefer planning first.
     tasks = []
@@ -55,6 +79,7 @@ def agent_run_task(objective: str) -> str:
         "required": ["benefit"],
     },
 )
+@eidosian()
 def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
     """
     Restart the MCP service to pick up latest code changes.
@@ -73,7 +98,7 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
         # Run tests in the forge directory
         try:
             # We use the venv python to run pytest
-            venv_python = "/home/lloyd/eidosian_venv/bin/python3"
+            venv_python = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
             result = subprocess.run(
                 [venv_python, "-m", "pytest", "eidos_mcp"],
                 cwd=forge_dir,

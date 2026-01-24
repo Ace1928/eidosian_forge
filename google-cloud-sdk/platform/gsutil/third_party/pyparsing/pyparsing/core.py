@@ -5331,7 +5331,7 @@ class Opt(ParseElementEnhance):
             12101-0001
 
             # invalid ZIP
-            98765-
+            98928-
             ''')
 
     prints::
@@ -5345,7 +5345,7 @@ class Opt(ParseElementEnhance):
         ['12101-0001']
 
         # invalid ZIP
-        98765-
+        98928-
              ^
         FAIL: Expected end of text (at char 5), (line:1, col:6)
     """

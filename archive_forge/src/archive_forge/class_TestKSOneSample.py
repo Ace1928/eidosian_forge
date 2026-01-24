@@ -51,7 +51,7 @@ class TestKSOneSample:
         self._testOne(x, 'less', 0.109348552425692, 0.732768892470675, mode='exact')
 
     def test_known_examples(self):
-        x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
+        x = stats.norm.rvs(loc=0.2, size=100, random_state=989284321)
         self._testOne(x, 'two-sided', 0.12464329735846891, 0.08944488871182077, mode='asymp')
         self._testOne(x, 'less', 0.12464329735846891, 0.04098916407764175)
         self._testOne(x, 'greater', 0.007211523321631099, 0.9853115859039623)

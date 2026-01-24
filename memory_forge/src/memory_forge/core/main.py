@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Central Memory Controller.
 """
@@ -36,6 +37,7 @@ class MemoryForge:
         else:
             raise ValueError(f"Unknown backend type: {self.config.episodic.type}")
 
+    @eidosian()
     def remember(self, content: str, embedding: Optional[List[float]] = None, metadata: dict = None) -> str:
         """Store a new memory. Auto-generates embedding if provider available."""
         if embedding is None:
@@ -58,6 +60,7 @@ class MemoryForge:
         self.episodic.add(item)
         return item.id
 
+    @eidosian()
     def recall(self, query: Union[str, List[float]], limit: int = 5, filter_metadata: dict = None) -> List[MemoryItem]:
         """Retrieve memories by semantic query (text) or vector."""
         if isinstance(query, str):
@@ -74,6 +77,7 @@ class MemoryForge:
 
         return self.episodic.search(query_vec, limit=limit, filters=filter_metadata)
 
+    @eidosian()
     def stats(self) -> dict:
         return {
             "episodic_count": self.episodic.count()

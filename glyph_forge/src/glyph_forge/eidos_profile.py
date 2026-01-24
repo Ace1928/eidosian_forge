@@ -7,6 +7,7 @@ Eidosian principles of precision and exhaustive clarity.
 """
 
 from __future__ import annotations
+from eidosian_core import eidosian
 
 import logging
 from pathlib import Path
@@ -50,6 +51,7 @@ class EidosProfile(TypedDict, total=False):
     humor_style: str
 
 
+@eidosian()
 def load_profile(path: Path | None = None) -> EidosProfile:
     """Load Eidos profile from YAML with surgical precision."""
     profile_path = path or PROFILE_PATH
@@ -59,6 +61,7 @@ def load_profile(path: Path | None = None) -> EidosProfile:
     return data
 
 
+@eidosian()
 def save_profile(profile: EidosProfile, path: Path | None = None) -> None:
     """Persist profile data back to YAML."""
     profile_path = path or PROFILE_PATH
@@ -67,6 +70,7 @@ def save_profile(profile: EidosProfile, path: Path | None = None) -> None:
     logger.debug("Saved profile to %s", profile_path)
 
 
+@eidosian()
 def update_profile(updates: Dict[str, Any], path: Path | None = None) -> EidosProfile:
     """Merge updates into the profile and save the result."""
     profile = load_profile(path)

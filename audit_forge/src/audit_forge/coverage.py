@@ -2,6 +2,7 @@ import json
 import time
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from eidosian_core import eidosian
 
 
 class CoverageTracker:
@@ -15,6 +16,7 @@ class CoverageTracker:
         self.data: Dict[str, Any] = {"coverage": {}, "last_full_audit": None}
         self.load()
 
+    @eidosian()
     def load(self):
         if self.persistence_path.exists():
             try:
@@ -22,10 +24,12 @@ class CoverageTracker:
             except json.JSONDecodeError:
                 pass
 
+    @eidosian()
     def save(self):
         self.persistence_path.parent.mkdir(parents=True, exist_ok=True)
         self.persistence_path.write_text(json.dumps(self.data, indent=2))
 
+    @eidosian()
     def mark_reviewed(self, path: str, agent_id: str, scope: str = "shallow"):
         """
         Mark a path as reviewed.
@@ -39,9 +43,11 @@ class CoverageTracker:
         }
         self.save()
 
+    @eidosian()
     def get_coverage_status(self, path: str) -> Optional[Dict[str, Any]]:
         return self.data["coverage"].get(path)
 
+    @eidosian()
     def get_unreviewed_files(
         self, root_path: Path, ignore_patterns: List[str] = None
     ) -> List[str]:

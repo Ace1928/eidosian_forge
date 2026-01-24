@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Path Management
 """
@@ -21,6 +22,7 @@ logger = logging.getLogger("doc_forge.paths")
 _REPO_ROOT: Optional[Path] = None
 _DOCS_DIR: Optional[Path] = None
 
+@eidosian()
 def get_repo_root() -> Path:
     """
     Get the repository root directory with unwavering precision.
@@ -78,6 +80,7 @@ def get_repo_root() -> Path:
     logger.warning(f"⚠️ Could not determine repo root, using current directory: {_REPO_ROOT}")
     return _REPO_ROOT
 
+@eidosian()
 def get_docs_dir() -> Path:
     """
     Get the documentation directory with perfect precision.
@@ -117,6 +120,7 @@ def get_docs_dir() -> Path:
     logger.warning(f"⚠️ Created missing documentation directory: {_DOCS_DIR}")
     return _DOCS_DIR
 
+@eidosian()
 def resolve_path(path: Union[str, Path], relative_to: Optional[Path] = None) -> Path:
     """
     Resolve a path with Eidosian precision.
@@ -141,6 +145,7 @@ def resolve_path(path: Union[str, Path], relative_to: Optional[Path] = None) -> 
     # Otherwise, make relative to repo root
     return (get_repo_root() / path_obj).resolve()
 
+@eidosian()
 def ensure_dir(path: Union[str, Path]) -> Path:
     """
     Ensure a directory exists with perfect precision.
@@ -155,6 +160,7 @@ def ensure_dir(path: Union[str, Path]) -> Path:
     path_obj.mkdir(parents=True, exist_ok=True)
     return path_obj
 
+@eidosian()
 def ensure_scripts_dir() -> Path:
     """
     Ensure the scripts directory exists with perfect precision.

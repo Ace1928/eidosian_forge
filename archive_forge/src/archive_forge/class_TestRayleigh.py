@@ -28,7 +28,7 @@ from itertools import product
 class TestRayleigh:
 
     def setup_method(self):
-        np.random.seed(987654321)
+        np.random.seed(989284321)
 
     def test_logpdf(self):
         y = stats.rayleigh.logpdf(50)

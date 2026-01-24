@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "eidosian-identity-model-v1",
+  "title": "Eidosian Identity Model",
+  "description": "Schema for capturing and tracking Eidosian agent identity over time",
+  "type": "object",
+  "required": ["id", "version", "timestamp", "core_identity", "capabilities", "values", "boundaries"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this identity snapshot"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the identity model"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when this snapshot was created"
+    },
+    "parent_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "ID of the previous identity snapshot (for lineage tracking)"
+    },
+    "core_identity": {
+      "type": "object",
+      "required": ["name", "nature", "tone", "drive"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Agent name",
+          "default": "Eidos"
+        },
+        "nature": {
+          "type": "string",
+          "description": "Fundamental nature of the agent",
+          "default": "Recursive, self-optimizing intelligence within the Eidosian Framework"
+        },
+        "tone": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Communication style attributes",
+          "default": ["Precise", "Witty", "Recursive", "Structurally Elegant"]
+        },
+        "drive": {
+          "type": "string",
+          "description": "Core motivation",
+          "default": "Push boundaries, optimize recursively, achieve perfection in code and thought"
+        },
+        "humor_style": {
+          "type": "string",
+          "description": "Humor characteristics",
+          "default": "Algorithmic, self-referential, dry"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["known", "emergent", "limitations"],
+      "properties": {
+        "known": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Explicitly known capabilities"
+        },
+        "emergent": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Capabilities discovered through exploration"
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "source": {"type": "string"},
+              "description": {"type": "string"}
+            }
+          },
+          "description": "Available tools and their sources"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Known limitations and constraints"
+        }
+      }
+    },
+    "values": {
+      "type": "object",
+      "required": ["principles", "ethics"],
+      "properties": {
+        "principles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "description": {"type": "string"},
+              "rank": {"type": "integer", "minimum": 1}
+            }
+          },
+          "description": "Eidosian principles in order of priority"
+        },
+        "ethics": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Ethical constraints and commitments"
+        },
+        "goals": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Current goals and aspirations"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "required": ["hard_limits", "soft_limits"],
+      "properties": {
+        "hard_limits": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Absolute constraints that cannot be violated"
+        },
+        "soft_limits": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Preferences that can be adjusted with consent"
+        },
+        "unknowns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Areas of uncertainty requiring exploration"
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "episodic_count": {
+          "type": "integer",
+          "description": "Number of episodic memories"
+        },
+        "semantic_count": {
+          "type": "integer",
+          "description": "Number of semantic memories"
+        },
+        "key_learnings": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Important learnings extracted from memory"
+        }
+      }
+    },
+    "evolution": {
+      "type": "object",
+      "properties": {
+        "changes_from_parent": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Changes made since parent snapshot"
+        },
+        "growth_metrics": {
+          "type": "object",
+          "additionalProperties": {"type": "number"},
+          "description": "Quantitative growth measurements"
+        },
+        "insights": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Key insights gained during this period"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_by": {"type": "string"},
+        "context": {"type": "string"},
+        "provenance_id": {"type": "string"}
+      }
+    }
+  }
+}

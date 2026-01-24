@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "created": "2026-01-24",
+  "description": "Unified model configuration for Eidosian Forge",
+  
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "api_v1_url": "http://localhost:11434/v1"
+  },
+  
+  "inference": {
+    "model": "phi3:mini",
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    "description": "Primary inference model for reasoning, extraction, generation"
+  },
+  
+  "embedding": {
+    "model": "nomic-embed-text",
+    "dimensions": 768,
+    "context_length": 8192,
+    "description": "Primary embedding model for semantic search and retrieval"
+  },
+  
+  "fast_embedding": {
+    "model": "all-minilm",
+    "dimensions": 384,
+    "context_length": 512,
+    "description": "Lightweight embedding for quick/batch operations"
+  },
+  
+  "graphrag": {
+    "chat_model": "phi3:mini",
+    "embedding_model": "nomic-embed-text",
+    "encoding_model": "cl100k_base"
+  },
+  
+  "forges": {
+    "memory_forge": {
+      "embedding_model": "nomic-embed-text",
+      "notes": "Uses Ollama for embeddings instead of HuggingFace"
+    },
+    "knowledge_forge": {
+      "embedding_model": "nomic-embed-text",
+      "inference_model": "phi3:mini"
+    },
+    "word_forge": {
+      "embedding_model": "nomic-embed-text",
+      "inference_model": "phi3:mini"
+    },
+    "llm_forge": {
+      "default_model": "phi3:mini",
+      "embedding_model": "nomic-embed-text"
+    },
+    "agent_forge": {
+      "default_model": "phi3:mini"
+    }
+  }
+}

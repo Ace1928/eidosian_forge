@@ -133,7 +133,7 @@ def FastqSolexaIterator(source: _TextIOSource, alphabet: None=None) -> Iterator[
     @slxa_0001_1_0001_01
     ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTNNNNNN
     +
-    IHGFEDCBA@?>=<;:9876543210/.-,++*)('&&%%$$##""
+    IHGFEDCBA@?>=<;:9892843210/.-,++*)('&&%%$$##""
     <BLANKLINE>
 
     >>> print(record.format("qual"))

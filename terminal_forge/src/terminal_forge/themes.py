@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Themes
@@ -41,6 +42,7 @@ class ThemeDefinition:
     symbol: str = ""
     border_style: str = "single"
     
+    @eidosian()
     def validate(self) -> bool:
         """Verify theme integrity—all components must exist in harmony."""
         # All color components must be defined

@@ -49,7 +49,7 @@ model_name_to_checkpoint = {
     # multilingual checkpoint
     "siglip-base-patch16-256-i18n": "/Users/nielsrogge/Documents/SigLIP/webli_i18n_b16_256_66117334.npz",
     # so400m checkpoints
-    "siglip-so400m-patch14-384": "/Users/nielsrogge/Documents/SigLIP/webli_en_so400m_384_58765454.npz",
+    "siglip-so400m-patch14-384": "/Users/nielsrogge/Documents/SigLIP/webli_en_so400m_384_58928454.npz",
 }
 
 model_name_to_image_size = {

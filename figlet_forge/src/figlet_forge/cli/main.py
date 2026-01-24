@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python
 """
 Command line interface for Figlet Forge.
@@ -21,6 +22,7 @@ from .showcase import ColorShowcase, display_color_showcase, generate_showcase
 DEFAULT_WIDTH = 80
 
 
+@eidosian()
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """
     Parse command line arguments.
@@ -154,6 +156,7 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     return parsed_args
 
 
+@eidosian()
 def read_input() -> str:
     """Read input text from stdin if available, with proper error handling."""
     if sys.stdin.isatty():
@@ -169,6 +172,7 @@ def read_input() -> str:
         return ""
 
 
+@eidosian()
 def list_colors() -> None:
     """Display a list of available colors."""
     categories = ColorShowcase.get_color_categories()
@@ -197,6 +201,7 @@ def list_colors() -> None:
     print("  gradient_name   - e.g., red_to_blue, yellow_to_green")
 
 
+@eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
     """
     Main entry point for the Figlet Forge CLI.

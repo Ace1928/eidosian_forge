@@ -6,6 +6,7 @@ import time
 import sys
 from pathlib import Path
 from typing import Dict, Optional
+from eidosian_core import eidosian
 
 # Attempt to import LLMForge from the project root
 try:
@@ -62,6 +63,7 @@ class Summarizer:
                 self.logger.warning("Failed to read summarizer cache: %s", exc)
         self.records = []
 
+    @eidosian()
     def save_cache(self):
         if not self.cache_path:
             return
@@ -84,6 +86,7 @@ class Summarizer:
         )
         return f"{instructions}\n\nFile path: {path}\n\n{snippet}\n\nSummary:"
 
+    @eidosian()
     def summarize(self, snippet: str, path: Path) -> Dict:
         if len(snippet) < self.min_chars:
             snippet = snippet.ljust(self.min_chars, " ")

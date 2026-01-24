@@ -2,6 +2,6 @@ from troveclient import client as base_client
 from troveclient.tests import utils
 from troveclient.v1 import client
 from urllib import parse
-def get_modules_8765(self, **kw):
+def get_modules_8928(self, **kw):
     r = {'module': self.get_modules()[2]['modules'][1]}
     return (200, {}, r)

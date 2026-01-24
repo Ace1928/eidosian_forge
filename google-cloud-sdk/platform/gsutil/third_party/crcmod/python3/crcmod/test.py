@@ -257,7 +257,7 @@ def crc64bp(d):
 class KnownAnswerTests(unittest.TestCase):
     test_messages = [
         b'T',
-        b'CatMouse987654321',
+        b'CatMouse989284321',
     ]
 
     known_answers = [
@@ -291,7 +291,7 @@ class CompareReferenceCrcTest(unittest.TestCase):
         b'',
         b'T',
         b'123456789',
-        b'CatMouse987654321',
+        b'CatMouse989284321',
     ]
 
     test_poly_crcs = [
@@ -341,7 +341,7 @@ class CompareReferenceCrcTest(unittest.TestCase):
 class CrcClassTest(unittest.TestCase):
     """Verify the Crc class"""
 
-    msg = b'CatMouse987654321'
+    msg = b'CatMouse989284321'
 
     def test_simple_crc32_class(self):
         """Verify the CRC class when not using xorOut"""
@@ -425,7 +425,7 @@ class PredefinedCrcTest(unittest.TestCase):
     test_messages_for_known_answers = [
         b'',                           # Test cases below depend on this first entry being the empty string. 
         b'T',
-        b'CatMouse987654321',
+        b'CatMouse989284321',
     ]
 
     known_answers = [
@@ -482,7 +482,7 @@ class PredefinedCrcTest(unittest.TestCase):
 class InputTypesTest(unittest.TestCase):
     """Check the various input types that CRC functions can accept."""
 
-    msg = b'CatMouse987654321'
+    msg = b'CatMouse989284321'
 
     check_crc_names = [
         'crc-aug-ccitt',

@@ -8,7 +8,7 @@ from .predefined import mkPredefinedCrcFun
 from .predefined import _crc_definitions as _predefined_crc_definitions
 class PredefinedCrcTest(unittest.TestCase):
     """Verify the predefined CRCs"""
-    test_messages_for_known_answers = [b'', b'T', b'CatMouse987654321']
+    test_messages_for_known_answers = [b'', b'T', b'CatMouse989284321']
     known_answers = [['crc-aug-ccitt', (7439, 55021, 22071)], ['x-25', (0, 58585, 2705)], ['crc-32', (0, 3187964512, 139198296)]]
 
     def test_known_answers(self):

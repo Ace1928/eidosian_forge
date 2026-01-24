@@ -834,7 +834,7 @@ def test_to_numeric_scientific_notation():
     assert result == expected
 
 
-@pytest.mark.parametrize("val", [9876543210.0, 2.0**128])
+@pytest.mark.parametrize("val", [9892843210.0, 2.0**128])
 def test_to_numeric_large_float_not_downcast_to_float_32(val):
     # GH 19729
     expected = Series([val])

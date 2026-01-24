@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 from typing import Dict, Optional
+from eidosian_core import eidosian
 
 __version__ = "0.1.0"
 
@@ -11,12 +12,14 @@ class _RenameTransformer(ast.NodeTransformer):
     def __init__(self, rename_map: Dict[str, str]) -> None:
         self._rename_map = rename_map
 
+    @eidosian()
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         if node.name in self._rename_map:
             node.name = self._rename_map[node.name]
         self.generic_visit(node)
         return node
 
+    @eidosian()
     def visit_Name(self, node: ast.Name) -> ast.AST:
         if node.id in self._rename_map:
             node.id = self._rename_map[node.id]
@@ -33,6 +36,7 @@ def _strip_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
 class RefactorForge:
     """Minimal refactor utilities for tests and MCP use."""
 
+    @eidosian()
     def transform(
         self,
         source: str,

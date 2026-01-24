@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 ⚡ GLYPH FORGE - EIDOSIAN IMAGIZER ⚡
@@ -112,6 +113,7 @@ class OutputFormat(Enum):
 
 # ─── CORE UTILITIES ────────────────────────────────────────────────────────────────
 
+@eidosian()
 def setup_logging(debug: bool = False) -> None:
     """
     Configure optimal logging with zero-waste precision.
@@ -154,6 +156,7 @@ def setup_logging(debug: bool = False) -> None:
     logging.debug("Logging initialized with level: %s", "DEBUG" if debug else "INFO")
 
 
+@eidosian()
 def print_header() -> None:
     """
     Print stylish Glyph Forge header with adaptive color support.
@@ -175,6 +178,7 @@ def print_header() -> None:
         print("=" * term_width + "\n")
 
 
+@eidosian()
 def measure_performance(func: Callable) -> Callable:
     """
     Decorator for surgical performance measurement with minimal overhead.
@@ -190,6 +194,7 @@ def measure_performance(func: Callable) -> Callable:
     Returns:
         Wrapped function that reports its execution time
     """
+    @eidosian()
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Record start time with maximum precision
@@ -230,6 +235,7 @@ def measure_performance(func: Callable) -> Callable:
     return wrapper
 
 
+@eidosian()
 def list_items(items: List[str], title: str, columns: int = 4) -> None:
     """
     Display items in multi-column format with optimal terminal utilization.
@@ -277,6 +283,7 @@ def list_items(items: List[str], title: str, columns: int = 4) -> None:
     print("\n")
 
 
+@eidosian()
 def signal_handler(sig: int, frame) -> None:
     """
     Handle interrupt signals gracefully.
@@ -296,6 +303,7 @@ def signal_handler(sig: int, frame) -> None:
 
 # ─── CORE CONVERSION FUNCTION ───────────────────────────────────────────────────────
 
+@eidosian()
 @measure_performance
 def convert_image(
     image_path: str, 
@@ -384,6 +392,7 @@ def convert_image(
         )
 
 
+@eidosian()
 def preview_charset(charset: str, sample_image: Optional[str] = None) -> None:
     """
     Generate and display a character set preview.
@@ -447,6 +456,7 @@ def preview_charset(charset: str, sample_image: Optional[str] = None) -> None:
 
 # ─── ARGUMENT PARSING ─────────────────────────────────────────────────────────────
 
+@eidosian()
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command line arguments with quantum precision.
@@ -616,6 +626,7 @@ Examples:
     return args
 
 
+@eidosian()
 def show_version() -> None:
     """
     Display version information with maximum precision.
@@ -651,6 +662,7 @@ def show_version() -> None:
 
 # ─── MAIN ENTRY POINT ────────────────────────────────────────────────────────────
 
+@eidosian()
 def main() -> int:
     """
     Main entry point with hyper-optimized execution flow.
@@ -767,6 +779,7 @@ app = typer.Typer(
     add_completion=True,
 )
 
+@eidosian()
 @app.command()
 def convert(
     image: str = typer.Argument(..., help="Path to image file"),
@@ -808,12 +821,14 @@ def convert(
         print(f"Error: {str(e)}")
         sys.exit(1)
 
+@eidosian()
 @app.command()
 def list_charsets():
     """Show all available character sets."""
     available_charsets = AlphabetManager.list_available_alphabets()
     list_items(available_charsets, "Available Character Sets")
 
+@eidosian()
 @app.command()
 def preview(
     charset: str = typer.Argument(..., help="Character set to preview"),

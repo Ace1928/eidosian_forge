@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Cross-Reference Fixer
 """
@@ -25,6 +26,7 @@ logging.basicConfig(level=logging.INFO,
                    format="%(asctime)s [%(levelname)8s] %(message)s")
 logger = logging.getLogger("eidosian_docs.cross_ref_fixer")
 
+@eidosian()
 def fix_ambiguous_references(repo_root: Path) -> None:
     """
     Fix ambiguous references in documentation by adding namespace qualifiers.
@@ -60,6 +62,7 @@ def fix_ambiguous_references(repo_root: Path) -> None:
     for rst_file in ambiguous_files:
         fix_file_references(rst_file)
         
+@eidosian()
 def fix_file_references(file_path: Path) -> None:
     """
     Fix ambiguous references in a specific file with surgical precision.
@@ -121,6 +124,7 @@ def fix_file_references(file_path: Path) -> None:
             f.write(updated_content)
         logger.info(f"✅ Fixed references in {file_path.name}")
 
+@eidosian()
 def fix_python_imports(repo_root: Path) -> None:
     """
     Fix Python imports to prevent ambiguous references.
@@ -155,6 +159,7 @@ def fix_python_imports(repo_root: Path) -> None:
                     logger.info(f"✅ Added noqa to imports in {py_file.name}")
 
 # Add a new function to create a proper intersphinx configuration
+@eidosian()
 def create_intersphinx_mapping(repo_root: Path) -> None:
     """
     Create or update the intersphinx_mapping in conf.py to help with cross-references.

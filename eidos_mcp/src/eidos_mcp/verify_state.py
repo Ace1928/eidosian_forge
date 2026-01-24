@@ -1,5 +1,7 @@
 from .state import gis, audit, llm, agent, refactor, type_forge
+from eidosian_core import eidosian
 
+@eidosian()
 def main():
     print(f"GIS: {gis}")
     print(f"Audit: {audit}")

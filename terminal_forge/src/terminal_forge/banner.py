@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Terminal Forge Banner System
@@ -177,6 +178,7 @@ class BorderStyle:
 # ┃ 🔧 Utility Functions - Small but Mighty Helpers  ┃
 # ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """Get terminal size or sensible defaults if not available."""
     try:
@@ -184,15 +186,18 @@ def get_terminal_size() -> Tuple[int, int]:
     except (AttributeError, OSError):
         return (80, 24)  # Sensible fallback
 
+@eidosian()
 def strip_ansi(text: str) -> str:
     """Strip ANSI escape sequences from text."""
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
+@eidosian()
 def text_length(text: str) -> int:
     """Get actual display length of text by stripping ANSI sequences."""
     return len(strip_ansi(text))
 
+@eidosian()
 def center_text(text: str, width: int) -> str:
     """Center text considering actual display width."""
     text_width = text_length(text)
@@ -201,6 +206,7 @@ def center_text(text: str, width: int) -> str:
     padding = (width - text_width) // 2
     return " " * padding + text
 
+@eidosian()
 def truncate_text(text: str, max_length: int, suffix: str = "...") -> str:
     """Truncate text to max_length, considering ANSI sequences."""
     if text_length(text) <= max_length:
@@ -254,26 +260,31 @@ class Banner:
         self.content_color = None
         self.alignment = Alignment.LEFT
     
+    @eidosian()
     def set_border(self, style_name: str) -> 'Banner':
         """Set border style by name."""
         self.border_style = BorderStyle.get_style(style_name)
         return self
     
+    @eidosian()
     def set_border_color(self, color: str) -> 'Banner':
         """Set border color."""
         self.border_color = color
         return self
     
+    @eidosian()
     def set_title_color(self, color: str) -> 'Banner':
         """Set title color."""
         self.title_color = color
         return self
     
+    @eidosian()
     def set_content_color(self, color: str) -> 'Banner':
         """Set content color."""
         self.content_color = color
         return self
     
+    @eidosian()
     def set_alignment(self, alignment: Union[Alignment, str]) -> 'Banner':
         """Set text alignment."""
         if isinstance(alignment, str):
@@ -281,21 +292,25 @@ class Banner:
         self.alignment = alignment
         return self
     
+    @eidosian()
     def set_padding(self, padding: int) -> 'Banner':
         """Set padding inside the banner."""
         self.padding = max(0, padding)
         return self
     
+    @eidosian()
     def add_line(self, line: str) -> 'Banner':
         """Add a line of content to the banner."""
         self.content_lines.append(line)
         return self
     
+    @eidosian()
     def add_lines(self, lines: List[str]) -> 'Banner':
         """Add multiple lines of content to the banner."""
         self.content_lines.extend(lines)
         return self
     
+    @eidosian()
     def add_separator(self, char: str = "─") -> 'Banner':
         """Add a separator line to the banner."""
         self.content_lines.append(char * (self.width - 2 * self.padding))
@@ -348,6 +363,7 @@ class Banner:
         
         return f"{v_border}{padding_str}{colored_text}{' ' * (bordered_width - text_length(aligned_text) - 2 * self.padding)}{padding_str}{v_border}"
     
+    @eidosian()
     def render(self) -> str:
         """Render the banner to a string."""
         result = []
@@ -405,6 +421,7 @@ class Banner:
         
         return "\n".join(result)
     
+    @eidosian()
     def display(self) -> None:
         """Display the banner to stdout."""
         print(self.render())
@@ -574,6 +591,7 @@ class BannerFactory:
 # ┃ 🔍 Diagnostic & Self-Testing - Continuous Check  ┃
 # ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+@eidosian()
 def self_test() -> None:
     """Run self-tests for the banner system."""
     print("🔍 Running Eidosian Banner self-tests...")
@@ -610,6 +628,7 @@ def self_test() -> None:
 # ┃ 🚀 Quick Examples - See It In Action            ┃
 # ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+@eidosian()
 def example_usage() -> None:
     """Demonstrate example usage of the banner system."""
     # Basic usage

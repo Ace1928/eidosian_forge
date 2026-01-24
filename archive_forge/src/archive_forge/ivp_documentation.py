@@ -289,7 +289,7 @@ Solve an initial value problem for a system of ODEs.
     >>> def exponential_decay(t, y): return -0.5 * y
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])
     >>> print(sol.t)
-    [ 0.          0.11487653  1.26364188  3.06061781  4.81611105  6.57445806
+    [ 0.          0.11489283  1.26364188  3.06061781  4.81611105  6.57445806
       8.33328988 10.        ]
     >>> print(sol.y)
     [[2.         1.88836035 1.06327177 0.43319312 0.18017253 0.07483045

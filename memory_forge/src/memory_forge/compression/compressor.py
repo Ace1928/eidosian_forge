@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Semantic Memory Compression.
 """
@@ -11,6 +12,7 @@ class MemoryCompressor:
     def __init__(self, summarizer: Summarizer):
         self.summarizer = summarizer
 
+    @eidosian()
     def compress_batch(self, items: List[MemoryItem]) -> MemoryItem:
         """Combine multiple memories into a single summary."""
         if not items:

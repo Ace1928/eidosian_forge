@@ -2,12 +2,9 @@
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                    EIDOSIAN BENCHMARKING SYSTEM                                ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
-
 Precise benchmarking with statistical analysis and memory tracking.
 """
-
 from __future__ import annotations
-
 import gc
 import time
 import statistics
@@ -18,18 +15,13 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, TypeVar
 from contextlib import contextmanager
 import sys
-
 # Optional memory profiling
 try:
     import tracemalloc
     HAS_TRACEMALLOC = True
 except ImportError:
     HAS_TRACEMALLOC = False
-
-
 T = TypeVar("T")
-
-
 @dataclass
 class BenchmarkResult:
     """
@@ -55,7 +47,6 @@ class BenchmarkResult:
     # Result
     result: Any = None
     error: Optional[str] = None
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -77,11 +68,9 @@ class BenchmarkResult:
             } if self.memory_peak is not None else None,
             "error": self.error,
         }
-    
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
-    
     def to_string(self) -> str:
         """Human-readable summary."""
         lines = [
@@ -118,14 +107,11 @@ class BenchmarkResult:
                 return f"{n:>10.2f} {unit}"
             n /= 1024.0
         return f"{n:>10.2f} TB"
-    
     def save(self, path: Path) -> None:
         """Save result to file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.to_json())
-
-
 class Benchmark:
     """
     High-precision benchmarking with memory tracking.
@@ -152,7 +138,6 @@ class Benchmark:
         self.gc_collect = gc_collect
         self.output_file = Path(output_file) if output_file else None
         self.threshold_ms = threshold_ms
-    
     def run(
         self,
         func: Callable[..., T],
@@ -228,7 +213,6 @@ class Benchmark:
             result.save(self.output_file)
         
         return result
-    
     def compare(
         self,
         funcs: Dict[str, Callable],
@@ -240,7 +224,6 @@ class Benchmark:
         for name, func in funcs.items():
             results[name] = self.run(func, *args, name=name, **kwargs)
         return results
-
 
 @contextmanager
 def benchmark_context(

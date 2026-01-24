@@ -30,4 +30,4 @@ def AddServiceAccountNameArg(parser, action='to act on'):
   Raises:
     ArgumentError if one of the arguments is already defined in the parser.
   """
-    parser.add_argument('service_account', metavar='SERVICE_ACCOUNT', type=GetIamAccountFormatValidator(), completer=completers.IamServiceAccountCompleter, help='The service account {}. The account should be formatted either as a numeric service account ID or as an email, like this: 123456789876543212345 or my-iam-account@somedomain.com.'.format(action))
+    parser.add_argument('service_account', metavar='SERVICE_ACCOUNT', type=GetIamAccountFormatValidator(), completer=completers.IamServiceAccountCompleter, help='The service account {}. The account should be formatted either as a numeric service account ID or as an email, like this: 123456789892843212345 or my-iam-account@somedomain.com.'.format(action))

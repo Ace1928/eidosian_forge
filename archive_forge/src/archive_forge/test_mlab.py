@@ -843,7 +843,7 @@ class TestGaussianKDE:
 
     def test_kde_bandwidth_method(self):
 
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         xn = np.random.randn(n_basesample)
 
@@ -906,7 +906,7 @@ class TestGaussianKDECustom:
 
     def test_scalar_covariance_dataset(self):
         """Test a scalar's cov factor."""
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         multidim_data = [np.random.randn(n_basesample) for i in range(5)]
 
@@ -915,7 +915,7 @@ class TestGaussianKDECustom:
 
     def test_callable_covariance_dataset(self):
         """Test the callable's cov factor for a multi-dimensional array."""
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         multidim_data = [np.random.randn(n_basesample) for i in range(5)]
 
@@ -926,7 +926,7 @@ class TestGaussianKDECustom:
 
     def test_callable_singledim_dataset(self):
         """Test the callable's cov factor for a single-dimensional array."""
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         multidim_data = np.random.randn(n_basesample)
 
@@ -936,7 +936,7 @@ class TestGaussianKDECustom:
 
     def test_wrong_bw_method(self):
         """Test the error message that should be called when bw is invalid."""
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         data = np.random.randn(n_basesample)
         with pytest.raises(ValueError):
@@ -964,7 +964,7 @@ class TestGaussianKDEEvaluate:
         Invert the dimensions; i.e., for a dataset of dimension 1 [3, 2, 4],
         the points should have a dimension of 3 [[3], [2], [4]].
         """
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         multidim_data = np.random.randn(n_basesample)
         kde = mlab.GaussianKDE(multidim_data)

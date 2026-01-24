@@ -2,10 +2,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Dict, Any, Literal
+from eidosian_core import eidosian
 
 __all__ = ["run_dir", "write_blob", "write_run_artifacts", "read_run_artifacts"]
 
 
+@eidosian()
 def run_dir(base: str | Path, run_id: str) -> Path:
     """Return directory path for a run under ``base`` and ensure it exists."""
     p = Path(base) / "runs" / str(run_id)
@@ -22,6 +24,7 @@ def _safe_write(path: Path, data: bytes) -> None:
     tmp.replace(path)  # atomic on POSIX
 
 
+@eidosian()
 def write_blob(base: str | Path, run_id: str, name: Literal["stdout", "stderr"], data: bytes) -> Path:
     """Persist a single blob under the run directory and return its path."""
     path = run_dir(base, run_id) / f"{name}.txt"
@@ -29,6 +32,7 @@ def write_blob(base: str | Path, run_id: str, name: Literal["stdout", "stderr"],
     return path
 
 
+@eidosian()
 def write_run_artifacts(base: str | Path, run_id: str,
                         stdout_bytes: bytes, stderr_bytes: bytes,
                         meta: Dict[str, Any]) -> Path:
@@ -46,6 +50,7 @@ def write_run_artifacts(base: str | Path, run_id: str,
     return base_dir
 
 
+@eidosian()
 def read_run_artifacts(base: str | Path, run_id: str) -> Dict[str, Any]:
     """Load artifacts; missing files are treated as empty/defaults."""
     base_dir = run_dir(base, run_id)

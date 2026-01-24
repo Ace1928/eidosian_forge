@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llm_forge"
-version = "0.1.0"
-description = "Eidosian LLM Forge - Model Abstraction, Comparison, and Fine-tuning Interfaces."
+version = "1.0.0"
+description = "Eidosian LLM Forge - Unified LLM interface with caching and comparison."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,31 +13,30 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["llm", "ai", "comparison", "fine-tuning", "openai", "huggingface"]
+keywords = ["llm", "ai", "ollama", "openai", "embeddings", "eidos"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "openai>=1.0.0",
-    "transformers>=4.39.0",
-    "torch>=2.1.0",
-    "rich>=13.0.0",
-    "typer>=0.9.0",
+    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "black>=24.0.0",
-    "flake8>=7.0.0",
     "mypy>=1.8.0",
+]
+openai = [
+    "openai>=1.0.0",
 ]
 
 [project.scripts]
-llm-forge = "llm_forge.cli.main:main"
+llm-forge = "llm_forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llm_forge"]

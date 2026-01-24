@@ -2,6 +2,7 @@ import typer
 from rich.console import Console
 from pathlib import Path
 from audit_forge.audit_core import AuditForge
+from eidosian_core import eidosian
 
 app = typer.Typer()
 console = Console()
@@ -9,6 +10,7 @@ console = Console()
 # Default to current directory if not specified
 DEFAULT_ROOT = Path.cwd()
 
+@eidosian()
 @app.command()
 def coverage(root: Path = DEFAULT_ROOT):
     """Check audit coverage."""
@@ -22,6 +24,7 @@ def coverage(root: Path = DEFAULT_ROOT):
         for f in stats['unreviewed_sample']:
             console.print(f" - {f}")
 
+@eidosian()
 @app.command()
 def mark(path: str, agent: str = "user"):
     """Mark a file as reviewed."""
@@ -30,6 +33,7 @@ def mark(path: str, agent: str = "user"):
     audit.coverage.mark_reviewed(path, agent_id=agent)
     console.print(f"[green]Marked {path} as reviewed by {agent}[/green]")
 
+@eidosian()
 @app.command()
 def todo(task: str, section: str = "Immediate"):
     """Add a todo item."""
@@ -40,5 +44,6 @@ def todo(task: str, section: str = "Immediate"):
     else:
         console.print(f"[yellow]Task already exists[/yellow]")
 
+@eidosian()
 def main():
     app()

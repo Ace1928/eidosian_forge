@@ -6,6 +6,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from eidosian_core import eidosian
 
 DEFAULT_QUERY = (
     "go through this file, which may or may not be a repository, check for any existing "
@@ -16,6 +17,7 @@ DEFAULT_QUERY = (
 )
 
 
+@eidosian()
 def main() -> None:
     script_path = Path(__file__).with_name("launch_codex_agent.sh")
     if not script_path.exists():

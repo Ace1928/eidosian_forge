@@ -65,8 +65,8 @@ CloneRules.detailed_help = {
     'EXAMPLES':
         """\
     To clone the rules of an organization firewall policy with ID ``123456789",
-    from another organization firewall policy with ID ``987654321", run:
+    from another organization firewall policy with ID ``989284321", run:
 
-      $ {command} 123456789 --source-firewall-policy=987654321
+      $ {command} 123456789 --source-firewall-policy=989284321
     """,
 }

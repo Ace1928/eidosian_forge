@@ -4,8 +4,10 @@ from contextlib import contextmanager
 from typing import Optional, Iterator
 
 from .capture_virtual_display import start_virtual_display, stop_virtual_display
+from eidosian_core import eidosian
 
 
+@eidosian()
 @contextmanager
 def virtual_display(width: int = 1024, height: int = 768) -> Iterator[Optional[object]]:
     """Provide a virtual display for the duration of the context."""

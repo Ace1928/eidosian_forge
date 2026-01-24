@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code_forge"
-version = "0.1.0"
-description = "Eidosian Code Forge - Static Analysis, Refactoring, and Code Generation."
+version = "1.0.0"
+description = "Eidosian Code Forge - AST analysis, code indexing, and library management."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -13,34 +13,35 @@ authors = [
     { name = "Lloyd Handyside", email = "ace1928@gmail.com" },
     { name = "Eidos", email = "syntheticeidos@gmail.com" },
 ]
-keywords = ["code-analysis", "refactoring", "ast", "static-analysis"]
+keywords = ["code-analysis", "ast", "indexing", "static-analysis", "eidos"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
 ]
-dependencies = [
-    "libcst>=1.1.0",      # Concrete Syntax Tree for refactoring
-    "rope>=1.11.0",       # Refactoring library
-    "black>=24.0.0",      # Formatting
-    "ruff>=0.1.0",        # Linting
-    "tree-sitter>=0.20.0",# Polyglot parsing
-    "transformers>=4.39.0", # Legacy dependency from forgeengine
-    "torch>=2.1.0",         # Legacy dependency from forgeengine
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "mypy>=1.8.0",
 ]
+refactor = [
+    "libcst>=1.1.0",
+    "rope>=1.11.0",
+]
+lint = [
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+]
 
 [project.scripts]
-codeforge = "code_forge.cli:main"
+code-forge = "code_forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["forgeengine", "code_core.py"] # Including legacy files for now
+packages = ["src/code_forge"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

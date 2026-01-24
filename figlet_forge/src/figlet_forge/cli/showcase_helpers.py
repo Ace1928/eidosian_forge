@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Helper functions for showcase functionality.
 
@@ -22,6 +23,7 @@ ANSI_BLUE = "\033[34m"
 ANSI_MAGENTA = "\033[35m"
 
 
+@eidosian()
 def clean_output_for_display(text: str) -> str:
     """
     Clean showcase output by removing endmark characters for proper display.
@@ -46,6 +48,7 @@ def clean_output_for_display(text: str) -> str:
     return cleaned
 
 
+@eidosian()
 def strip_color_marks(text: str) -> str:
     """
     Remove color placeholder marks from output.
@@ -63,6 +66,7 @@ def strip_color_marks(text: str) -> str:
     return re.sub(r"^m\s+", "", text, flags=re.MULTILINE)
 
 
+@eidosian()
 def is_test_environment() -> bool:
     """
     Detect if we're running in a test environment.
@@ -82,6 +86,7 @@ def is_test_environment() -> bool:
     return "pytest" in sys.modules or "unittest" in sys.modules
 
 
+@eidosian()
 def get_showcase_width() -> int:
     """
     Determine the appropriate width for the showcase.
@@ -108,6 +113,7 @@ def get_showcase_width() -> int:
     return 80
 
 
+@eidosian()
 def colorize_for_test(text: str, color_name: str) -> str:
     """
     Provide consistent test-friendly color output for showcase tests.
@@ -140,6 +146,7 @@ def colorize_for_test(text: str, color_name: str) -> str:
     return text
 
 
+@eidosian()
 def format_header(text: str, width: Optional[int] = None) -> str:
     """
     Format a header with proper ASCII decoration.
@@ -166,6 +173,7 @@ def format_header(text: str, width: Optional[int] = None) -> str:
     return f"{ANSI_BOLD}{separator}{ANSI_RESET}\n{color_header.center(width)}\n{ANSI_BOLD}{separator}{ANSI_RESET}"
 
 
+@eidosian()
 def format_subheader(text: str, width: Optional[int] = None) -> str:
     """
     Format a subheader with proper ASCII decoration.
@@ -189,6 +197,7 @@ def format_subheader(text: str, width: Optional[int] = None) -> str:
     return f"\n{ANSI_BOLD}{ANSI_GREEN}{text}:{ANSI_RESET}\n{ANSI_GREEN}{'-' * (len(text) + 1)}{ANSI_RESET}"
 
 
+@eidosian()
 def format_code_example(command: str, description: Optional[str] = None) -> str:
     """
     Format a code example with description.
@@ -212,6 +221,7 @@ def format_code_example(command: str, description: Optional[str] = None) -> str:
     return f"  {ANSI_YELLOW}{command}{ANSI_RESET}"
 
 
+@eidosian()
 def format_list_item(text: str, indent: int = 2) -> str:
     """
     Format a list item with proper indentation.
@@ -233,6 +243,7 @@ def format_list_item(text: str, indent: int = 2) -> str:
     return f"{spaces}{ANSI_CYAN}•{ANSI_RESET} {text}"
 
 
+@eidosian()
 def format_section(title: str, items: List[str], width: Optional[int] = None) -> str:
     """
     Format a section with title and items.
@@ -256,6 +267,7 @@ def format_section(title: str, items: List[str], width: Optional[int] = None) ->
     return "\n".join(result)
 
 
+@eidosian()
 def apply_safe_color(func: Callable) -> Callable:
     """
     Decorator to safely apply color functions to text.
@@ -270,6 +282,7 @@ def apply_safe_color(func: Callable) -> Callable:
         Safe color function
     """
 
+    @eidosian()
     def safe_color_func(text: str) -> str:
         try:
             return func(text)
@@ -283,6 +296,7 @@ def apply_safe_color(func: Callable) -> Callable:
     return safe_color_func
 
 
+@eidosian()
 def clean_rendered_text(rendered_text: str) -> str:
     """
     Clean rendered text for display in the showcase.

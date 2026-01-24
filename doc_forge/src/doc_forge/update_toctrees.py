@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian TOC Tree Management
 """
@@ -54,6 +55,7 @@ class TocTreeManager:
         self.documents = self.discovery.discover_all()
         self.toc_structure = self.discovery.generate_toc_structure(self.documents)
     
+    @eidosian()
     def update_all_toctrees(self) -> int:
         """
         Update all table of contents trees with Eidosian precision.
@@ -281,6 +283,7 @@ class TocTreeManager:
                 self.toc_entries_added += len(dir_doc_list)
                 logger.info(f"✅ Created index for {dir_path.relative_to(self.docs_dir)}")
 
+@eidosian()
 def update_toctrees(docs_dir: Optional[Path] = None) -> int:
     """
     Update all table of contents trees across the documentation.

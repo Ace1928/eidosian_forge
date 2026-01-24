@@ -1,0 +1,52 @@
+{
+  "id": "b4692dce-cb3b-4f6f-a54d-670518de9f5e",
+  "timestamp": "2026-01-23T09:59:07.231986+00:00",
+  "action": "capability_breakthrough",
+  "description": "VERIFIED REAL COMPUTER CONTROL ON WAYLAND",
+  "inputs": {
+    "ydotool_version": "1.0.4",
+    "build": "from_source",
+    "daemon": "ydotoold",
+    "capabilities": [
+      "mouse_absolute",
+      "mouse_relative",
+      "keyboard_type",
+      "click",
+      "scroll",
+      "screenshot"
+    ]
+  },
+  "outputs": {
+    "verified_by": "user_observation",
+    "mouse_test": "cursor moved - USER SAW IT",
+    "keyboard_test": "'Hello from Eidos!' appeared - USER CONFIRMED"
+  },
+  "input_hashes": {
+    "ydotool_version": "aea5adbef5747852",
+    "build": "a95b250a7ceb1c60",
+    "daemon": "230e8f4d50495565",
+    "capabilities": "034ded78710cb542"
+  },
+  "output_hashes": {
+    "verified_by": "67797c570f5dca47",
+    "mouse_test": "21811b002ecc5889",
+    "keyboard_test": "8ae540b0edee32e1"
+  },
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Linux",
+    "platform_version": "#37~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Nov 20 10:25:38 UTC 2",
+    "hostname": "Eidos",
+    "venv": "eidosian_venv",
+    "cwd": "/home/lloyd/eidosian_forge",
+    "user": "lloyd"
+  },
+  "git_sha": "46ec7af67402",
+  "reasoning": "",
+  "parent_id": null,
+  "tags": [
+    "verified",
+    "milestone",
+    "computer_control"
+  ]
+}

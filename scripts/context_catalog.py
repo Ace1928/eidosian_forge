@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from .context_summarizer import Summarizer, SummarizationError
 from .context_utils import CONTEXT_DIR
+from eidosian_core import eidosian
 
 HOME = Path.home().resolve()
 
@@ -219,6 +220,7 @@ class CatalogBuilder:
             # Final save
             self.summarizer.save_cache()
 
+    @eidosian()
     def build(self) -> Dict:
         max_files = self.catalog_cfg.get("max_files_per_dir", 80)
         entries = []
@@ -252,6 +254,7 @@ class CatalogBuilder:
         return payload
 
 
+@eidosian()
 def generate_catalog(config: Dict, logger: logging.Logger, output_path: Path, use_codex: bool = False):
     output_path.parent.mkdir(parents=True, exist_ok=True)
     builder = CatalogBuilder(config, logger, use_codex=use_codex)

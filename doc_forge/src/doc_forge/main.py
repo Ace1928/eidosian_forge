@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Main Entry Point
 """
@@ -14,6 +15,7 @@ import sys
 from .run import main as run_main
 from .version import get_version_string
 
+@eidosian()
 def main() -> int:
     """
     Main entry point for Doc Forge.

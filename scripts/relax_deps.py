@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 relax_deps.py - Relax dependency constraints in pyproject.toml
@@ -21,6 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
+@eidosian()
 def parse_args():
     parser = argparse.ArgumentParser(description="Relax dependency constraints in pyproject.toml")
     parser.add_argument("--file", required=True, type=Path, help="Path to pyproject.toml")
@@ -30,6 +32,7 @@ def parse_args():
     parser.add_argument("--backup", action="store_true", default=True, help="Create a backup file")
     return parser.parse_args()
 
+@eidosian()
 def relax_dependency(content: str, package: str, strategy: str) -> str:
     """
     Finds the dependency line and updates its constraint.
@@ -42,6 +45,7 @@ def relax_dependency(content: str, package: str, strategy: str) -> str:
     # Group 4: quote
     pattern_simple = re.compile(rf'^(\s*{re.escape(package)}\s*=\s*)(["\'])(.*?)(["\'])', re.MULTILINE)
     
+    @eidosian()
     def replacement_simple(match):
         prefix = match.group(1)
         quote = match.group(2)
@@ -81,6 +85,7 @@ def relax_dependency(content: str, package: str, strategy: str) -> str:
     
     return new_content
 
+@eidosian()
 def main():
     args = parse_args()
     

@@ -976,7 +976,7 @@ def secondzeta(ctx, s, a = 0.015, **kwargs):
 
         >>> mp.dps = 10
         >>> secondzeta(0.5 + 40j, error=True, verbose=True)
-        main term = (-30190318549.138656312556 - 13964804384.624622876523j)
+        main term = (-30190318549.138656312556 - 13964804384.624622892823j)
             computed using 19 zeros of zeta
         prime term = (132717176.89212754625045 + 188980555.17563978290601j)
             computed using 9 values of the von Mangoldt function
@@ -1118,7 +1118,7 @@ def lerchphi(ctx, z, s, a):
         >>> polylog(4, 3) / 3
         (1.249503297023366545192592 - 0.2314252413375664776474462j)
         >>> lerchphi(3, 4, 1 - 0.5**10)
-        (1.253978063946663945672674 - 0.2316736622836535468765376j)
+        (1.253978063946663945672674 - 0.2316736622836535468928376j)
 
     **References**
 

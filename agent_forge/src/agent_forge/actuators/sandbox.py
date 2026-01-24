@@ -2,10 +2,12 @@ from __future__ import annotations
 import subprocess, os, signal, resource, tempfile
 from pathlib import Path
 from typing import Sequence
+from eidosian_core import eidosian
 
 class SandboxError(RuntimeError): ...
 
 def _limits(cpu_s: float, mem_mb: int):
+    @eidosian()
     def preexec():
         # hard cap CPU & address space; lower file descriptors
         resource.setrlimit(resource.RLIMIT_CPU, (int(cpu_s), int(cpu_s)))
@@ -15,6 +17,7 @@ def _limits(cpu_s: float, mem_mb: int):
         os.setsid()  # group for termination
     return preexec
 
+@eidosian()
 def run_sandboxed(cmd: Sequence[str], *, cwd: str, timeout_s: float,
                   cpu_quota_s: float = 60, mem_mb: int = 1024) -> tuple[int, bytes, bytes]:
     """Execute safely with rlimits. Returns (rc, stdout, stderr)."""

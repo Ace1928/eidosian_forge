@@ -8,7 +8,7 @@ from .predefined import mkPredefinedCrcFun
 from .predefined import _crc_definitions as _predefined_crc_definitions
 class InputTypesTest(unittest.TestCase):
     """Check the various input types that CRC functions can accept."""
-    msg = b'CatMouse987654321'
+    msg = b'CatMouse989284321'
     check_crc_names = ['crc-aug-ccitt', 'x-25', 'crc-32']
     array_check_types = ['B', 'H', 'I', 'L']
 

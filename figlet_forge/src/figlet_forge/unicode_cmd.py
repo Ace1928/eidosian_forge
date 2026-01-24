@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Unicode System Command Interface for Figlet Forge.
 
@@ -45,6 +46,7 @@ class UnicodeCommand:
                 "Unicode command not found. Please ensure it is installed and in PATH."
             )
 
+    @eidosian()
     def lookup(
         self,
         query: str,
@@ -155,6 +157,7 @@ class UnicodeCommand:
                 return f"Unicode command error: {e.stderr}"
             return f"Unicode command failed with code {e.returncode}"
 
+    @eidosian()
     def list_encodings(self) -> List[str]:
         """
         List all known character encodings.
@@ -177,6 +180,7 @@ class UnicodeCommand:
                 raise RuntimeError(f"Unicode command error: {e.stderr}")
             raise RuntimeError(f"Unicode command failed with code {e.returncode}")
 
+    @eidosian()
     def display_ascii_table(self, brexit: bool = False) -> str:
         """
         Display ASCII table.
@@ -208,6 +212,7 @@ class UnicodeCommand:
                 return f"Unicode command error: {e.stderr}"
             return f"Unicode command failed with code {e.returncode}"
 
+    @eidosian()
     def download_unicode_data(self) -> bool:
         """
         Download UnicodeData.txt.
@@ -228,6 +233,7 @@ class UnicodeCommand:
             return False
 
 
+@eidosian()
 def get_unicode_info(
     char: str, mode: UnicodeInputMode = UnicodeInputMode.STRING, verbose: bool = False
 ) -> str:
@@ -255,6 +261,7 @@ def get_unicode_info(
 
 
 # Test if unicode command is available on the system
+@eidosian()
 def is_available() -> bool:
     """
     Check if the system unicode command is available.
@@ -278,6 +285,7 @@ import unicodedata
 from typing import List, Optional, Union
 
 
+@eidosian()
 def is_unicode_supported() -> bool:
     """
     Check if the current environment supports Unicode output.
@@ -294,6 +302,7 @@ def is_unicode_supported() -> bool:
         return True
 
 
+@eidosian()
 def normalize_unicode(text: str) -> str:
     """
     Normalize Unicode text for consistent rendering.
@@ -311,6 +320,7 @@ def normalize_unicode(text: str) -> str:
         return text
 
 
+@eidosian()
 def get_char_width(char: str) -> int:
     """
     Get the display width of a Unicode character.
@@ -346,6 +356,7 @@ def get_char_width(char: str) -> int:
     return 1
 
 
+@eidosian()
 def measure_string_width(text: str) -> int:
     """
     Measure the display width of a string with Unicode awareness.
@@ -365,6 +376,7 @@ def measure_string_width(text: str) -> int:
     return width
 
 
+@eidosian()
 def truncate_to_width(text: str, width: int) -> str:
     """
     Truncate string to specified display width with Unicode awareness.
@@ -392,6 +404,7 @@ def truncate_to_width(text: str, width: int) -> str:
     return "".join(result)
 
 
+@eidosian()
 def is_full_width_char(char: str) -> bool:
     """
     Check if a character is full-width (takes 2 columns in terminal).
@@ -412,6 +425,7 @@ def is_full_width_char(char: str) -> bool:
         return False
 
 
+@eidosian()
 def get_unicode_block(char: str) -> str:
     """
     Determine which Unicode block a character belongs to.

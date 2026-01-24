@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # ⚡ Eidosian Glyph Transformation System ⚡
 """
@@ -222,18 +223,25 @@ except ImportError as e:
     class ColorMapper: ...
     class DepthAnalyzer: ...
     class EdgeDetector: ...
+    @eidosian()
     def setup_logger(*args: Any, **kwargs: Any) -> logging.Logger: return logger
     def configure(*args: Any, **kwargs: Any) -> None: ...
+    @eidosian()
     def measure_performance(func: Callable[..., R]) -> Callable[..., R]: return func
+    @eidosian()
     def detect_capabilities() -> Dict[str, Any]: return {}
+    @eidosian()
     def image_to_glyph(*args: Any, **kwargs: Any) -> str: return ""
+    @eidosian()
     def text_to_banner(*args: Any, **kwargs: Any) -> str: return ""
+    @eidosian()
     def video_to_glyph_frames(*args: Any, **kwargs: Any) -> List[str]: return []
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🔧 Core functions - Essential operational capabilities
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+@eidosian()
 @lru_cache(maxsize=1)
 def get_config(profile: str = None) -> Dict[str, Any]:
     """Get configuration with adaptive precision. ⚙️
@@ -297,6 +305,7 @@ def get_config(profile: str = None) -> Dict[str, Any]:
     
     return config
 
+@eidosian()
 def get_project_info() -> ProjectInfo:
     """Get project information with Eidosian clarity. 📝
     
@@ -310,6 +319,7 @@ def get_project_info() -> ProjectInfo:
     """
     return PROJECT
 
+@eidosian()
 def get_system_capabilities() -> SystemCapabilities:
     """Detect system capabilities for optimal operation. 💻
     
@@ -431,6 +441,7 @@ except Exception as e:
 if sys.platform != "win32":
     try:
         import signal
+        @eidosian()
         def exit_handler(sig: int, frame: Any) -> None:
             """Handle termination signals with grace and precision."""
             logger.debug(f"Signal {sig} received, exiting with structural integrity")

@@ -153,8 +153,8 @@ class Fraction(numbers.Rational):
         Fraction(22, 7)
         >>> Fraction('3.141592653589793').limit_denominator(100)
         Fraction(311, 99)
-        >>> Fraction(4321, 8765).limit_denominator(10000)
-        Fraction(4321, 8765)
+        >>> Fraction(4321, 8928).limit_denominator(10000)
+        Fraction(4321, 8928)
 
         """
         if max_denominator < 1:

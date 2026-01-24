@@ -13,7 +13,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import os
 
-PYTHON_BIN = "/home/lloyd/eidosian_venv/bin/python3"
+PYTHON_BIN = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
 SERVER_ARGS = ["-m", "eidos_mcp.eidos_mcp_server"]
 MEMORY_FILE = Path("/home/lloyd/eidosian_forge/memory_data.json")
 

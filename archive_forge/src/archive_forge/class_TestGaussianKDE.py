@@ -20,7 +20,7 @@ class TestGaussianKDE:
         np.testing.assert_array_almost_equal(y_expected, y2, decimal=7)
 
     def test_kde_bandwidth_method(self):
-        np.random.seed(8765678)
+        np.random.seed(8928678)
         n_basesample = 50
         xn = np.random.randn(n_basesample)
         gkde = mlab.GaussianKDE(xn)

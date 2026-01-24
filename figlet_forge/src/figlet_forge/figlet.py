@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Core FIGlet rendering functionality for Figlet Forge.
 
@@ -204,6 +205,7 @@ class Figlet:
             logger.error(f"Error loading font: {e}")
             raise
 
+    @eidosian()
     def get_justify(self) -> str:
         """
         Get the effective justification value.
@@ -217,6 +219,7 @@ class Figlet:
             return "left"
         return self.justify
 
+    @eidosian()
     def render_text(self, text: str) -> FigletString:
         """
         Render text using the current font and settings.
@@ -269,6 +272,7 @@ class Figlet:
             # Pass through FigletErrors
             raise
 
+    @eidosian()
     def get_render_width(self, text: str) -> int:
         """
         Get the rendering width of text.
@@ -284,6 +288,7 @@ class Figlet:
             return 0
         return max(len(line) for line in result.splitlines())
 
+    @eidosian()
     def set_font(self, font: Union[str, FigletFont] = DEFAULT_FONT) -> None:
         """
         Change the font used for rendering.
@@ -309,6 +314,7 @@ class Figlet:
         # Reset engine to use new font
         self._engine = None
 
+    @eidosian()
     def get_fonts(self) -> List[str]:
         """
         Get a list of available font names.
@@ -318,6 +324,7 @@ class Figlet:
         """
         return FigletFont.get_fonts()
 
+    @eidosian()
     def get_figlet_font(self) -> FigletFont:
         """
         Get the current FigletFont instance.
@@ -339,6 +346,7 @@ class Figlet:
 
         return self.Font
 
+    @eidosian()
     def get_direction(self) -> str:
         """
         Get the current text direction.
@@ -350,6 +358,7 @@ class Figlet:
             return "left-to-right"
         return self.direction
 
+    @eidosian()
     def set_direction(self, direction: str) -> None:
         """
         Set the text direction.
@@ -362,6 +371,7 @@ class Figlet:
             if self._engine:
                 self._engine.adjust_direction(self.get_direction())
 
+    @eidosian()
     def set_justify(self, justify: str) -> None:
         """
         Set the text justification.
@@ -374,6 +384,7 @@ class Figlet:
             if self._engine:
                 self._engine.adjust_justify(self.get_justify())
 
+    @eidosian()
     def set_width(self, width: int) -> None:
         """
         Set the output width.
@@ -429,40 +440,49 @@ class Figlet:
         return self.Font
 
     # Methods for backward compatibility with older tests - with proper noqa annotations
+    @eidosian()
     def getJustify(self) -> str:  # noqa: N802
         """Backward compatibility method for get_justify."""
         return self.get_justify()
 
+    @eidosian()
     def renderText(self, text: str) -> FigletString:  # noqa: N802
         """Backward compatibility method for render_text."""
         return self.render_text(text)
 
+    @eidosian()
     def getRenderWidth(self, text: str) -> int:  # noqa: N802
         """Backward compatibility method for get_render_width."""
         return self.get_render_width(text)
 
+    @eidosian()
     def setFont(
         self, font: Union[str, FigletFont] = DEFAULT_FONT
     ) -> None:  # noqa: N802
         """Backward compatibility method for set_font."""
         return self.set_font(font)
 
+    @eidosian()
     def getFonts(self) -> List[str]:  # noqa: N802
         """Backward compatibility method for get_fonts."""
         return self.get_fonts()
 
+    @eidosian()
     def getDirection(self) -> str:  # noqa: N802
         """Backward compatibility method for get_direction."""
         return self.get_direction()
 
+    @eidosian()
     def setDirection(self, direction: str) -> None:  # noqa: N802
         """Backward compatibility method for set_direction."""
         self.set_direction(direction)
 
+    @eidosian()
     def setJustify(self, justify: str) -> None:  # noqa: N802
         """Backward compatibility method for set_justify."""
         self.set_justify(justify)
 
+    @eidosian()
     def setWidth(self, width: int) -> None:  # noqa: N802
         """Backward compatibility method for set_width."""
         self.set_width(width)
@@ -474,6 +494,7 @@ class Figlet:
         return self.get_fonts()
 
 
+@eidosian()
 def print_figlet(
     text: str,
     font: str = DEFAULT_FONT,

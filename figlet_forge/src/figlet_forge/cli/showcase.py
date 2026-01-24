@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Showcase module for Figlet Forge.
 
@@ -17,6 +18,7 @@ from ..version import PROGRAM_NAME, VERSION
 logger = logging.getLogger(__name__)
 
 
+@eidosian()
 def show_font_showcase(
     sample_text: str = "hello",
     fonts: Optional[List[str]] = None,
@@ -131,6 +133,7 @@ def show_font_showcase(
     print()
 
 
+@eidosian()
 def show_color_showcase(
     sample_text: str = "hello",
     font: str = "small",
@@ -276,6 +279,7 @@ def _show_gradients(rendered: str, gradient_pairs: List[str]) -> None:
         print()
 
 
+@eidosian()
 def show_usage_guide() -> None:
     """Display an Eidosian-style usage guide with examples and tips."""
     divider = "=" * 132
@@ -440,3 +444,52 @@ def show_usage_guide() -> None:
     print()
     print(f"⚛️ {PROGRAM_NAME} v{VERSION} ⚡ - Eidosian Typography Engine")
     print('  "Form follows function; elegance emerges from precision."')
+
+
+# Aliases for backward compatibility
+class ColorShowcase:
+    """Color showcase class for compatibility."""
+    
+    def __init__(self, font: str = "small", width: int = 80):
+        self.font = font
+        self.width = width
+    
+    @eidosian()
+    def display(self, sample_text: str = "hello") -> None:
+        """Display color showcase."""
+        show_color_showcase(sample_text, self.font, self.width)
+    
+    @eidosian()
+    def generate(self, sample_text: str = "hello") -> str:
+        """Generate showcase text (returns empty for now)."""
+        return ""
+
+
+@eidosian()
+def display_color_showcase(
+    sample_text: str = "hello",
+    font: str = "small",
+    width: int = 80,
+) -> None:
+    """Alias for show_color_showcase."""
+    show_color_showcase(sample_text, font, width)
+
+
+@eidosian()
+def generate_showcase(
+    sample_text: str = "hello",
+    font: str = "small",
+    width: int = 80,
+) -> str:
+    """Generate showcase output as string."""
+    import io
+    import sys
+    
+    old_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+    try:
+        show_font_showcase(sample_text, font, width)
+    finally:
+        sys.stdout = old_stdout
+    
+    return buffer.getvalue()

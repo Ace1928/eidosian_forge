@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Code Analyzer - AST-based source analysis.
 """
@@ -8,6 +9,7 @@ from typing import Dict, Any, List
 class CodeAnalyzer:
     """Analyzes Python source code using the AST module."""
     
+    @eidosian()
     def analyze_file(self, file_path: Path) -> Dict[str, Any]:
         """Parse a file and return its structure."""
         try:

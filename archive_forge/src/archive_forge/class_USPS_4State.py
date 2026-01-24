@@ -17,7 +17,7 @@ class USPS_4State(Barcode):
         bottoms = dict(F=(-0.067, -0.115), D=(-0.067, -0.115), T=(-0.021, -0.04), A=(-0.021, -0.04))
         dimensions = dict(width=(0.015, 0.025), pitch=(0.0416, 0.05), hcz=(0.125, 0.125), vcz=(0.04, 0.04))
 
-    def __init__(self, value='01234567094987654321', routing='', **kwd):
+    def __init__(self, value='01234567094989284321', routing='', **kwd):
         self._init()
         value = str(value) if isinstance(value, int) else asNative(value)
         if not routing:
@@ -74,13 +74,13 @@ class USPS_4State(Barcode):
 
     def binary(self):
         """convert the 4 state string values to binary
-        >>> print(nhex(USPS_4State('01234567094987654321','').binary))
+        >>> print(nhex(USPS_4State('01234567094989284321','').binary))
         0x1122103b5c2004b1
-        >>> print(nhex(USPS_4State('01234567094987654321','01234').binary))
+        >>> print(nhex(USPS_4State('01234567094989284321','01234').binary))
         0xd138a87bab5cf3804b1
-        >>> print(nhex(USPS_4State('01234567094987654321','012345678').binary))
+        >>> print(nhex(USPS_4State('01234567094989284321','012345678').binary))
         0x202bdc097711204d21804b1
-        >>> print(nhex(USPS_4State('01234567094987654321','01234567891').binary))
+        >>> print(nhex(USPS_4State('01234567094989284321','01234567891').binary))
         0x16907b2a24abc16a2e5c004b1
         """
         value = self._bvalue
@@ -128,7 +128,7 @@ class USPS_4State(Barcode):
 
     def codewords(self):
         """convert binary value into codewords
-        >>> print(USPS_4State('01234567094987654321','01234567891').codewords)
+        >>> print(USPS_4State('01234567094989284321','01234567891').codewords)
         (673, 787, 607, 1022, 861, 19, 816, 1294, 35, 602)
         """
         if not self._codewords:
@@ -163,7 +163,7 @@ class USPS_4State(Barcode):
 
     def characters(self):
         """ convert own codewords to characters
-        >>> print(' '.join(hex(c)[2:] for c in USPS_4State('01234567094987654321','01234567891').characters))
+        >>> print(' '.join(hex(c)[2:] for c in USPS_4State('01234567094989284321','01234567891').characters))
         dcb 85c 8e4 b06 6dd 1740 17c6 1200 123f 1b2b
         """
         if not self._characters:
@@ -188,7 +188,7 @@ class USPS_4State(Barcode):
 
     def barcodes(self):
         """Get 4 state bar codes for current routing and tracking
-        >>> print(USPS_4State('01234567094987654321','01234567891').barcodes)
+        >>> print(USPS_4State('01234567094989284321','01234567891').barcodes)
         AADTFFDFTDADTAADAATFDTDDAAADDTDTTDAFADADDDTFFFDDTTTADFAAADFTDAADA
         """
         if not self._barcodes:

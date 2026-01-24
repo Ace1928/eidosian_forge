@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 ChromaDB Backend for Vector Storage.
 """
@@ -11,6 +12,7 @@ class ChromaBackend(StorageBackend):
         self.client = chromadb.PersistentClient(path=persist_path)
         self.collection = self.client.get_or_create_collection(name=collection_name)
 
+    @eidosian()
     def add(self, item: MemoryItem) -> bool:
         if not item.embedding:
             raise ValueError("ChromaBackend requires embeddings for items.")
@@ -29,6 +31,7 @@ class ChromaBackend(StorageBackend):
         )
         return True
 
+    @eidosian()
     def get(self, item_id: str) -> Optional[MemoryItem]:
         res = self.collection.get(ids=[item_id], include=["metadatas", "documents", "embeddings"])
         if not res["ids"]:
@@ -41,6 +44,7 @@ class ChromaBackend(StorageBackend):
             res["embeddings"][0] if res["embeddings"] is not None else None
         )
 
+    @eidosian()
     def search(self, query_embedding: List[float], limit: int = 10, filters: Optional[Dict] = None) -> List[MemoryItem]:
         res = self.collection.query(
             query_embeddings=[query_embedding],
@@ -60,13 +64,16 @@ class ChromaBackend(StorageBackend):
                 items.append(item)
         return items
 
+    @eidosian()
     def delete(self, item_id: str) -> bool:
         self.collection.delete(ids=[item_id])
         return True
 
+    @eidosian()
     def count(self) -> int:
         return self.collection.count()
 
+    @eidosian()
     def clear(self) -> None:
         # Chroma doesn't have a clear, so delete all
         all_ids = self.collection.get()["ids"]

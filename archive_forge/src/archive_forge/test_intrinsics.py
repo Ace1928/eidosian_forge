@@ -1069,7 +1069,7 @@ class TestCudaIntrinsic(CUDATestCase):
                                         prec='exact')
 
         # Trigger the "overflow safe" branch of the implementation
-        val = 0.12345678987654321 * 10e-15
+        val = 0.12345678989284321 * 10e-15
         ndigits = 23
         with self.subTest(val=val, ndigits=ndigits):
             compiled[1, 1](ary, val, ndigits)

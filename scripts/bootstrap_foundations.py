@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Orchestration script to initialize Eidosian Foundation forges.
 """
@@ -23,6 +24,7 @@ from file_forge import FileForge
 from doc_forge import DocForge
 from agent_forge import AgentForge
 
+@eidosian()
 def bootstrap():
     print("🚀 Initializing Eidosian Foundation...")
     HOME_DIR = Path("/home/lloyd")

@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation Validator
 """
@@ -55,6 +56,7 @@ class DocumentationValidator:
         self.discovered_docs = None
         self.code_structures = None
         
+    @eidosian()
     def validate_all(self) -> Dict[str, List[str]]:
         """
         Validate all aspects of documentation with Eidosian thoroughness.
@@ -329,6 +331,7 @@ class DocumentationValidator:
         if quality_checks > 0:
             logger.debug(f"Quality validation: Checked {quality_checks} documents, found {quality_issues} issues")
 
+@eidosian()
 def validate_docs(repo_path: Optional[Path] = None) -> Dict[str, List[str]]:
     """
     Validate documentation for completeness, consistency, and correctness.

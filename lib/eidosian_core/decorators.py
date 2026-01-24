@@ -13,7 +13,6 @@ Usage:
         return x + y
     
     # Simple usage with defaults from config
-    @eidosian()
     def my_function(x, y):
         return x + y
     
@@ -38,11 +37,7 @@ from .logging import EidosianLogger, get_logger
 from .profiling import Profiler, ProfileReport
 from .benchmarking import Benchmark, BenchmarkResult
 from .tracing import Tracer, TraceSpan
-
-
 F = TypeVar("F", bound=Callable[..., Any])
-
-
 @dataclass
 class DecoratorResult:
     """Result from decorated function execution."""
@@ -52,8 +47,6 @@ class DecoratorResult:
     benchmark_result: Optional[BenchmarkResult] = None
     trace_spans: Optional[list] = None
     error: Optional[Exception] = None
-
-
 class EidosianDecorator:
     """
     The universal Eidosian decorator class.
@@ -155,7 +148,6 @@ class EidosianDecorator:
                 capture_result=self.trace_result,
                 capture_locals=self.trace_locals,
             )
-        
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
             # Get source info for tracing
@@ -254,7 +246,6 @@ class EidosianDecorator:
         
         return wrapper  # type: ignore
 
-
 def eidosian(
     func: Optional[F] = None,
     *,
@@ -299,10 +290,7 @@ def eidosian(
     
     # Called with parentheses: @eidosian(...)
     return decorator
-
-
 # Individual convenience decorators
-
 def log_call(
     func: Optional[F] = None,
     *,
@@ -331,7 +319,6 @@ def log_call(
         log_level=level,
     )
 
-
 def profile_call(
     func: Optional[F] = None,
     *,
@@ -359,7 +346,6 @@ def profile_call(
         profile_sort_by=sort_by,
         profile_save=save,
     )
-
 
 def benchmark_call(
     func: Optional[F] = None,
@@ -391,7 +377,6 @@ def benchmark_call(
         benchmark_threshold_ms=threshold_ms,
     )
 
-
 def trace_call(
     func: Optional[F] = None,
     *,
@@ -419,13 +404,11 @@ def trace_call(
         trace_result=capture_result,
         trace_locals=capture_locals,
     )
-
-
 # Check if function is already decorated
+
 def is_eidosian_decorated(func: Callable) -> bool:
     """Check if a function is already decorated with @eidosian."""
     return getattr(func, "__eidosian_decorated__", False)
-
 
 def get_eidosian_config(func: Callable) -> Optional[dict]:
     """Get the Eidosian configuration for a decorated function."""

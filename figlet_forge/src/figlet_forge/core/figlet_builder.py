@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Figlet Builder module for Figlet Forge.
 
@@ -28,6 +29,7 @@ class FigletProduct:
         self.lines: List[str] = []
         self.meta: Dict[str, Any] = {}
 
+    @eidosian()
     def add_line(self, index: int, line: str) -> None:
         """
         Add a line to the product.
@@ -40,6 +42,7 @@ class FigletProduct:
             self.lines.append("")
         self.lines[index] += line
 
+    @eidosian()
     def as_figlet_string(self) -> FigletString:
         """
         Convert the product to a FigletString.
@@ -127,6 +130,7 @@ class FigletBuilder:
         font_name = str(self._font_meta["name"]).lower()
         return font_name in ("big", "banner", "block", "doom", "epic", "larry3d")
 
+    @eidosian()
     def is_not_finished(self) -> bool:
         """
         Check if there are more characters to process.
@@ -136,12 +140,14 @@ class FigletBuilder:
         """
         return self.current_char_index < len(self.text)
 
+    @eidosian()
     def go_to_next_char(self) -> None:
         """Move to the next character in the input text."""
         self.current_char_index += 1
         # Update processing metrics
         self._meta["processed"] = self.current_char_index
 
+    @eidosian()
     def add_char_to_product(self) -> None:
         """
         Add the current character to the product.
@@ -255,6 +261,7 @@ class FigletBuilder:
             # Default to False if we can't determine
             return False
 
+    @eidosian()
     def return_product(self) -> FigletString:
         """
         Return the final rendered product.
@@ -291,18 +298,22 @@ class FigletBuilder:
         return result
 
     # Methods for backward compatibility with older tests
+    @eidosian()
     def isNotFinished(self) -> bool:  # noqa: N802
         """Backward compatibility method for is_not_finished."""
         return self.is_not_finished()
 
+    @eidosian()
     def goToNextChar(self) -> None:  # noqa: N802
         """Backward compatibility method for go_to_next_char."""
         return self.go_to_next_char()
 
+    @eidosian()
     def addCharToProduct(self) -> None:  # noqa: N802
         """Backward compatibility method for add_char_to_product."""
         return self.add_char_to_product()
 
+    @eidosian()
     def returnProduct(self) -> FigletString:  # noqa: N802
         """Backward compatibility method for return_product."""
         return self.return_product()

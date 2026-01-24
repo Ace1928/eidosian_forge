@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Core schema components for the Eidosian metadata system.
 
@@ -90,6 +91,7 @@ class SchemaDefinition:
     schema_modifiability: Dict[str, Any] = field(default_factory=dict)
     schema_traceability: Dict[str, Any] = field(default_factory=dict)
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert schema definition to dictionary format."""
         return {
@@ -113,10 +115,12 @@ class SchemaDefinition:
             "schema_traceability": self.schema_traceability
         }
 
+    @eidosian()
     def to_json(self, indent: int = 2) -> str:
         """Convert schema definition to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
 
+@eidosian()
 def create_metadata_template() -> EntityMetadata:
     """Create an empty metadata template with all required fields."""
     return cast(EntityMetadata, {
@@ -164,6 +168,7 @@ def create_metadata_template() -> EntityMetadata:
         }
     })
 
+@eidosian()
 def validate_metadata(metadata: EntityMetadata) -> Dict[str, List[str]]:
     """
     Validate metadata against schema requirements.

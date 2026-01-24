@@ -10,10 +10,28 @@ import pytest
 from word_forge.utils.nltk_utils import ensure_nltk_data
 
 # Check if vector dependencies are available
-_VECTOR_AVAILABLE = (
-    importlib.util.find_spec("chromadb") is not None
-    and importlib.util.find_spec("sentence_transformers") is not None
-)
+def _package_available(name: str) -> bool:
+    try:
+        metadata.version(name)
+    except metadata.PackageNotFoundError:
+        return False
+    return True
+
+
+def _vector_available() -> bool:
+    if (
+        importlib.util.find_spec("chromadb") is None
+        or importlib.util.find_spec("sentence_transformers") is None
+    ):
+        return False
+    try:
+        import word_forge.vectorizer.vector_store as vector_store
+    except Exception:
+        return False
+    return vector_store.SentenceTransformer is not None
+
+
+_VECTOR_AVAILABLE = _vector_available()
 
 TEST_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 LLM_MODEL = "sshleifer/tiny-gpt2"

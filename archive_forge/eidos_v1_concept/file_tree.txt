@@ -1,0 +1,470 @@
+[1m📁 Generating EIDOSIAN File Tree for: [4m.[0m
+[2mStarted at: Sat 08 Mar 2025 21:46:57 AEST[0m
+
+ [34m📂 [1m.cache/[0m [2m(drwxrwxrwx)[0m
+└── [34m📂 [1mtemp/[0m [2m(drwxrwxrwx)[0m
+ [97m📄 .gitignore[0m [2m(-rw-rw-r--, 86 bytes)[0m
+ [34m📂 [1m.vscode/[0m [2m(drwxrwxr-x)[0m
+└── [97m📄 settings.json[0m [2m(-rw-rw-r--, 103 bytes)[0m
+ [97m📄 EIDOS-LICENSE.md[0m [2m(-rw-rw-r--, 14131 bytes)[0m
+ [97m📄 Eidos.code-workspace[0m [2m(-rw-rw-r--, 161 bytes)[0m
+ [97m📄 ModelFile[0m [2m(-rw-rw-r--, 1874 bytes)[0m
+ [34m📂 [1madaptation/[0m [2m(drwxrwxrwx)[0m
+ [34m📂 [1marchive/[0m [2m(drwxrwxrwx)[0m
+ [34m📂 [1mbackup/[0m [2m(drwxrwxrwx)[0m
+ [34m📂 [1mcognitive/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 cognitive_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 5853 bytes)[0m
+├── [97m📄 cognitive_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 2849 bytes)[0m
+├── [97m📄 cognitive_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 454 bytes)[0m
+├── [97m📄 metacognition_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 1124 bytes)[0m
+├── [97m📄 metacognition_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 627 bytes)[0m
+└── [97m📄 metacognition_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 272 bytes)[0m
+ [34m📂 [1mconsciousness/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 consciousness_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 1196 bytes)[0m
+├── [97m📄 consciousness_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 453 bytes)[0m
+├── [97m📄 consciousness_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 306 bytes)[0m
+├── [97m📄 consciousness_matrix_1.ndjson[0m [2m(-rw-rw-rw-, 4199 bytes)[0m
+├── [97m📄 emergent_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 1529 bytes)[0m
+├── [97m📄 emergent_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 720 bytes)[0m
+├── [97m📄 emergent_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 396 bytes)[0m
+└── [97m📄 global_consciousness_1.ndjson[0m [2m(-rw-rw-rw-, 1946 bytes)[0m
+ [97m📄 correct outputs.json[0m [2m(-rw-rw-rw-, 120412 bytes)[0m
+ [34m📂 [1mcycles/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 cycles_log_1.ndjson[0m [2m(-rw-rw-rw-, 42409 bytes)[0m
+├── [97m📄 input_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 3981 bytes)[0m
+├── [97m📄 input_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 1824 bytes)[0m
+└── [97m📄 input_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 750 bytes)[0m
+ [97m📄 eidosian_io_schema.json[0m [2m(-rw-rw-rw-, 42356 bytes)[0m
+ [97m📄 eidosian_io_schema_draft.json[0m [2m(-rw-rw-rw-, 20748 bytes)[0m
+ [97m📄 eidosian_schema_validator.py[0m [2m(-rw-rw-r--, 5329 bytes)[0m
+ [97m📄 eidos_cycle.txt[0m [2m(-rw-rw-rw-, 70368 bytes)[0m
+ [34m📂 [1meidos_file_manager/[0m [2m(drwxrwxr-x)[0m
+├── [97m📄 .env[0m [2m(-rw-rw-r--, 24 bytes)[0m
+├── [34m📂 [1mcache/[0m [2m(drwxrwxr-x)[0m
+│   └── [34m📂 [1mextract_graph/[0m [2m(drwxrwxr-x)[0m
+├── [97m📄 embedding_proxy.py[0m [2m(-rw-rw-r--, 2192 bytes)[0m
+├── [97m📄 fs_graph.py[0m [2m(-rw-rw-r--, 22250 bytes)[0m
+├── [34m📂 [1minput/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 ASSESSOR_SYSTEM_PROMPT_CONTENT_python.txt[0m [2m(-rw-rw-r--, 3398 bytes)[0m
+│   ├── [97m📄 AudioEditor2023408055_py_python.txt[0m [2m(-rw-rw-r--, 73499 bytes)[0m
+│   ├── [97m📄 Bytecode_and_cache_files_and_unknown.txt[0m [2m(-rw-rw-r--, 2249 bytes)[0m
+│   ├── [97m📄 CacheDirTag-Generated_unknown.txt[0m [2m(-rw-rw-r--, 421 bytes)[0m
+│   ├── [97m📄 ChatGPT_Enhanced_Exporter_2_0_javascript.txt[0m [2m(-rw-rw-r--, 20190 bytes)[0m
+│   ├── [97m📄 CleanUpModule_markdown.txt[0m [2m(-rw-rw-r--, 6844 bytes)[0m
+│   ├── [97m📄 CodeAgent__ToolCallingAgent__T_python.txt[0m [2m(-rw-rw-r--, 3060 bytes)[0m
+│   ├── [97m📄 Compiled_results_text.txt[0m [2m(-rw-rw-r--, 245 bytes)[0m
+│   ├── [97m📄 DIR_sh_unknown.txt[0m [2m(-rw-rw-r--, 1247 bytes)[0m
+│   ├── [97m📄 DataClassForCausalLM_-_2023_08_python.txt[0m [2m(-rw-rw-r--, 62576 bytes)[0m
+│   ├── [97m📄 Disk_CPU_DMX_Tables__Disk___En_unknown.txt[0m [2m(-rw-rw-r--, 15577 bytes)[0m
+│   ├── [97m📄 EidosAscendantLocalLLMDemonstr_python.txt[0m [2m(-rw-rw-r--, 5218 bytes)[0m
+│   ├── [97m📄 EidosEquationAnalysisEngine_QL_python.txt[0m [2m(-rw-rw-r--, 16486 bytes)[0m
+│   ├── [97m📄 EidosFormatter_json_python.txt[0m [2m(-rw-rw-r--, 1264 bytes)[0m
+│   ├── [97m📄 EidosModularDesign-Qwen2Models_python.txt[0m [2m(-rw-rw-r--, 34283 bytes)[0m
+│   ├── [97m📄 Eidosian_CodeQualityEnforcer_1_text.txt[0m [2m(-rw-rw-r--, 4216 bytes)[0m
+│   ├── [97m📄 Eidosian_Qwen2Interface_py_python.txt[0m [2m(-rw-rw-r--, 33955 bytes)[0m
+│   ├── [97m📄 EmailToolVersion1_0LicenseMITD_python.txt[0m [2m(-rw-rw-r--, 7699 bytes)[0m
+│   ├── [97m📄 GuHP-M7BD9-E5QPK_unknown.txt[0m [2m(-rw-rw-r--, 240 bytes)[0m
+│   ├── [97m📄 HF_TOKEN_DROPBOX_ACCESS_TOKEN_unknown.txt[0m [2m(-rw-rw-r--, 1665 bytes)[0m
+│   ├── [97m📄 HF_TOKEN_drobokeyDocker_248391_unknown.txt[0m [2m(-rw-rw-r--, 1788 bytes)[0m
+│   ├── [97m📄 HuggingFaceHubAPIError_-text-g_json.txt[0m [2m(-rw-rw-r--, 854 bytes)[0m
+│   ├── [97m📄 HyperPerformanceAnalytics_text.txt[0m [2m(-rw-rw-r--, 2297 bytes)[0m
+│   ├── [97m📄 InteractiveShapeDrawing_py_python.txt[0m [2m(-rw-rw-r--, 4250 bytes)[0m
+│   ├── [97m📄 ModalityType_TEXT_2025-02-05-_unknown.txt[0m [2m(-rw-rw-r--, 39515 bytes)[0m
+│   ├── [97m📄 MypyFileAny-Callable-01_json.txt[0m [2m(-rw-rw-r--, 135402 bytes)[0m
+│   ├── [97m📄 MypyFile-threading_json.txt[0m [2m(-rw-rw-r--, 157660 bytes)[0m
+│   ├── [97m📄 MypyFile_Any_Callable_json.txt[0m [2m(-rw-rw-r--, 29305 bytes)[0m
+│   ├── [97m📄 MypyFile_Any_MypyFile_Callable_json.txt[0m [2m(-rw-rw-r--, 59071 bytes)[0m
+│   ├── [97m📄 MypyFile_COLOR_blue_VAR_eidos_json.txt[0m [2m(-rw-rw-r--, 35669 bytes)[0m
+│   ├── [97m📄 MypyFile_Configparser_py_json.txt[0m [2m(-rw-rw-r--, 452696 bytes)[0m
+│   ├── [97m📄 MypyFile_gz_json.txt[0m [2m(-rw-rw-r--, 140985 bytes)[0m
+│   ├── [97m📄 PackageNames-Description_shell.txt[0m [2m(-rw-rw-r--, 3368 bytes)[0m
+│   ├── [97m📄 Player1Games2Losses5_json.txt[0m [2m(-rw-rw-r--, 300 bytes)[0m
+│   ├── [97m📄 SimulationGUI_py_python.txt[0m [2m(-rw-rw-r--, 1167 bytes)[0m
+│   ├── [97m📄 UserInputProcessor_log_markdown.txt[0m [2m(-rw-rw-r--, 5916 bytes)[0m
+│   ├── [97m📄 aggregator_MypyFile_json.txt[0m [2m(-rw-rw-r--, 14048 bytes)[0m
+│   ├── [97m📄 asyncio_log_nest_asyncio_12345_python.txt[0m [2m(-rw-rw-r--, 44633 bytes)[0m
+│   ├── [97m📄 asyncio__logging__time__collec_python.txt[0m [2m(-rw-rw-r--, 32928 bytes)[0m
+│   ├── [97m📄 asyncio__logging__time__deque_python.txt[0m [2m(-rw-rw-r--, 36568 bytes)[0m
+│   ├── [97m📄 calendar_APRIL_json.txt[0m [2m(-rw-rw-r--, 158030 bytes)[0m
+│   ├── [97m📄 chess_game_mypy_json.txt[0m [2m(-rw-rw-r--, 2554 bytes)[0m
+│   ├── [97m📄 chunkwise_processing_monitor_r_text.txt[0m [2m(-rw-rw-r--, 15680 bytes)[0m
+│   ├── [97m📄 collections_abc-1-dcba0a1e-e5d_json.txt[0m [2m(-rw-rw-r--, 2451 bytes)[0m
+│   ├── [97m📄 cpu_dataset_py_python.txt[0m [2m(-rw-rw-r--, 7856 bytes)[0m
+│   ├── [97m📄 custom_tokenizer-1738835749-17_json.txt[0m [2m(-rw-rw-r--, 2262 bytes)[0m
+│   ├── [97m📄 dataset-lasModified-90000-data_json.txt[0m [2m(-rw-rw-r--, 328 bytes)[0m
+│   ├── [97m📄 deepseek-ai_DeepSeek-R1-review_unknown.txt[0m [2m(-rw-rw-r--, 1401 bytes)[0m
+│   ├── [97m📄 dynamic_message_system_python.txt[0m [2m(-rw-rw-r--, 10546 bytes)[0m
+│   ├── [97m📄 eidos_prompts_py_python.txt[0m [2m(-rw-rw-r--, 17947 bytes)[0m
+│   ├── [97m📄 eidos_qwenlm_real_disk_unoff_3_text.txt[0m [2m(-rw-rw-r--, 100678 bytes)[0m
+│   ├── [97m📄 email_generator_completion_res_python.txt[0m [2m(-rw-rw-r--, 36398 bytes)[0m
+│   ├── [97m📄 enum-conform_py_json.txt[0m [2m(-rw-rw-r--, 316694 bytes)[0m
+│   ├── [97m📄 file-9678a5a86e7f6bafa0fa9d543_unknown.txt[0m [2m(-rw-rw-r--, 272 bytes)[0m
+│   ├── [97m📄 file_changes_2ed5d46743c26aec0_json.txt[0m [2m(-rw-rw-r--, 2453 bytes)[0m
+│   ├── [97m📄 file_editor_settings_unknown.txt[0m [2m(-rw-rw-r--, 894 bytes)[0m
+│   ├── [97m📄 getpass-1_json_json.txt[0m [2m(-rw-rw-r--, 2255 bytes)[0m
+│   ├── [97m📄 hashlib-frozen-abstractset-typ_json.txt[0m [2m(-rw-rw-r--, 20205 bytes)[0m
+│   ├── [97m📄 info_-_Ollama_endpoint_usage_unknown.txt[0m [2m(-rw-rw-r--, 29805 bytes)[0m
+│   ├── [97m📄 int8neffgen_text.txt[0m [2m(-rw-rw-r--, 11060 bytes)[0m
+│   ├── [97m📄 json________filename____con_python.txt[0m [2m(-rw-rw-r--, 34642 bytes)[0m
+│   ├── [97m📄 lib2to3_peggen2__c_-_from_lib2_python.txt[0m [2m(-rw-rw-r--, 175395 bytes)[0m
+│   ├── [97m📄 local_chat_main_20250217_16484_unknown.txt[0m [2m(-rw-rw-r--, 729 bytes)[0m
+│   ├── [97m📄 local_chat__timestamp___functi_unknown.txt[0m [2m(-rw-rw-r--, 4330 bytes)[0m
+│   ├── [97m📄 logging_module_py_python.txt[0m [2m(-rw-rw-r--, 30491 bytes)[0m
+│   ├── [97m📄 medium_signin_Langchain_zip_json.txt[0m [2m(-rw-rw-r--, 307177 bytes)[0m
+│   ├── [97m📄 message_loop__8_characters_python.txt[0m [2m(-rw-rw-r--, 34953 bytes)[0m
+│   ├── [97m📄 moderator_comment_function_wit_python.txt[0m [2m(-rw-rw-r--, 8343 bytes)[0m
+│   ├── [97m📄 multi_segmented_multi_limb_dem_python.txt[0m [2m(-rw-rw-r--, 25092 bytes)[0m
+│   ├── [97m📄 mypy_auto_generated_01_unknown.txt[0m [2m(-rw-rw-r--, 263 bytes)[0m
+│   ├── [97m📄 nlp_llm_augmentation_model_py_python.txt[0m [2m(-rw-rw-r--, 39213 bytes)[0m
+│   ├── [97m📄 ollama_api.txt[0m [2m(-rw-rw-r--, 46331 bytes)[0m
+│   ├── [97m📄 openwebui_email_tool_MypyFile_json.txt[0m [2m(-rw-rw-r--, 32308 bytes)[0m
+│   ├── [97m📄 panel_main_panel_colours_font_json.txt[0m [2m(-rw-rw-r--, 2413 bytes)[0m
+│   ├── [97m📄 particles_random_png_python.txt[0m [2m(-rw-rw-r--, 2375 bytes)[0m
+│   ├── [97m📄 pdf_reader_py_pdf_to_image_doc_python.txt[0m [2m(-rw-rw-r--, 48657 bytes)[0m
+│   ├── [97m📄 process_monitor_py_python.txt[0m [2m(-rw-rw-r--, 66963 bytes)[0m
+│   ├── [97m📄 pycache_____py_cod____-ubyte_unknown.txt[0m [2m(-rw-rw-r--, 2163 bytes)[0m
+│   ├── [97m📄 pygame_alien_game_py_python.txt[0m [2m(-rw-rw-r--, 21032 bytes)[0m
+│   ├── [97m📄 python_code_example_python.txt[0m [2m(-rw-rw-r--, 35624 bytes)[0m
+│   ├── [97m📄 python_text_content____impo_python.txt[0m [2m(-rw-rw-r--, 62510 bytes)[0m
+│   ├── [97m📄 qwen2_base_503969349_py_python.txt[0m [2m(-rw-rw-r--, 46775 bytes)[0m
+│   ├── [97m📄 qwen2_base_py_python.txt[0m [2m(-rw-rw-r--, 24993 bytes)[0m
+│   ├── [97m📄 resource_usage_data_class_py_python.txt[0m [2m(-rw-rw-r--, 2296 bytes)[0m
+│   ├── [97m📄 saved_models_Qwen_Qwen2_5-0_5B_python.txt[0m [2m(-rw-rw-r--, 1199 bytes)[0m
+│   ├── [97m📄 single_cell_arm_visualizer_py_python.txt[0m [2m(-rw-rw-r--, 21951 bytes)[0m
+│   ├── [97m📄 smolagents-codeagent-1_0_0-Duc_python.txt[0m [2m(-rw-rw-r--, 2182 bytes)[0m
+│   ├── [97m📄 smolagents_tools_python.txt[0m [2m(-rw-rw-r--, 18152 bytes)[0m
+│   ├── [97m📄 smolagent_webtest_code_system_json.txt[0m [2m(-rw-rw-r--, 13332 bytes)[0m
+│   ├── [97m📄 sre_constants_ANY_json.txt[0m [2m(-rw-rw-r--, 43391 bytes)[0m
+│   ├── [97m📄 system_usage_2023-10-15_py_python.txt[0m [2m(-rw-rw-r--, 67065 bytes)[0m
+│   ├── [97m📄 tempfile_mypython_json.txt[0m [2m(-rw-rw-r--, 633732 bytes)[0m
+│   ├── [97m📄 test_code_agent_code_qwen_run_markdown.txt[0m [2m(-rw-rw-r--, 14112 bytes)[0m
+│   ├── [97m📄 test_renderer_test_py_python.txt[0m [2m(-rw-rw-r--, 1516 bytes)[0m
+│   ├── [97m📄 tika_searxng_scraper_mypy_file_json.txt[0m [2m(-rw-rw-r--, 16982 bytes)[0m
+│   ├── [97m📄 trace_function_python.txt[0m [2m(-rw-rw-r--, 1073 bytes)[0m
+│   ├── [97m📄 type__extensions-20230919-1d91_json.txt[0m [2m(-rw-rw-r--, 2453 bytes)[0m
+│   ├── [97m📄 visit_webpage_url__url_python.txt[0m [2m(-rw-rw-r--, 1270 bytes)[0m
+│   ├── [97m📄 wikipedia_search__search_term_python.txt[0m [2m(-rw-rw-r--, 28622 bytes)[0m
+│   └── [97m📄 win_statusbar_py_python.txt[0m [2m(-rw-rw-r--, 97463 bytes)[0m
+├── [34m📂 [1mlogs/[0m [2m(drwxrwxr-x)[0m
+├── [34m📂 [1moutput/[0m [2m(drwxrwxr-x)[0m
+├── [34m📂 [1mprompts/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 basic_search_system_prompt.txt[0m [2m(-rw-rw-r--, 2238 bytes)[0m
+│   ├── [97m📄 community_report_graph.txt[0m [2m(-rw-rw-r--, 8706 bytes)[0m
+│   ├── [97m📄 community_report_text.txt[0m [2m(-rw-rw-r--, 7743 bytes)[0m
+│   ├── [97m📄 drift_reduce_prompt.txt[0m [2m(-rw-rw-r--, 2798 bytes)[0m
+│   ├── [97m📄 drift_search_system_prompt.txt[0m [2m(-rw-rw-r--, 3281 bytes)[0m
+│   ├── [97m📄 extract_claims.txt[0m [2m(-rw-rw-r--, 5066 bytes)[0m
+│   ├── [97m📄 extract_graph.txt[0m [2m(-rw-rw-r--, 8339 bytes)[0m
+│   ├── [97m📄 global_search_knowledge_system_prompt.txt[0m [2m(-rw-rw-r--, 249 bytes)[0m
+│   ├── [97m📄 global_search_map_system_prompt.txt[0m [2m(-rw-rw-r--, 3869 bytes)[0m
+│   ├── [97m📄 global_search_reduce_system_prompt.txt[0m [2m(-rw-rw-r--, 3607 bytes)[0m
+│   ├── [97m📄 local_search_system_prompt.txt[0m [2m(-rw-rw-r--, 2551 bytes)[0m
+│   ├── [97m📄 question_gen_system_prompt.txt[0m [2m(-rw-rw-r--, 786 bytes)[0m
+│   └── [97m📄 summarize_descriptions.txt[0m [2m(-rw-rw-r--, 674 bytes)[0m
+├── [97m📄 settings.yaml[0m [2m(-rw-rw-r--, 5634 bytes)[0m
+├── [97m📄 text_extractor.log[0m [2m(-rw-rw-r--, 9532 bytes)[0m
+├── [97m📄 txt_copy.py[0m [2m(-rw-rw-r--, 36729 bytes)[0m
+└── [34m📂 [1m__pycache__/[0m [2m(drwxrwxr-x)[0m
+│   └── [97m📄 embedding_proxy.cpython-312.pyc[0m [2m(-rw-rw-r--, 3596 bytes)[0m
+ [97m📄 eidos_sort.log[0m [2m(-rw-rw-rw-, 52885415 bytes)[0m
+ [97m📄 eidos_validator.log[0m [2m(-rw-rw-rw-, 3575 bytes)[0m
+ [97m📄 eidos_validator.py[0m [2m(-rw-rw-r--, 46637 bytes)[0m
+ [34m📂 [1meidos_validator/[0m [2m(drwxrwxr-x)[0m
+├── [97m📄 cache.py[0m [2m(-rw-rw-r--, 9343 bytes)[0m
+├── [97m📄 config.py[0m [2m(-rw-rw-r--, 3007 bytes)[0m
+├── [97m📄 core.py[0m [2m(-rw-rw-r--, 8880 bytes)[0m
+├── [97m📄 logging_config.py[0m [2m(-rw-rw-r--, 1474 bytes)[0m
+├── [97m📄 network.py[0m [2m(-rw-rw-r--, 7589 bytes)[0m
+├── [97m📄 system.py[0m [2m(-rw-rw-r--, 17368 bytes)[0m
+├── [97m📄 utils.py[0m [2m(-rw-rw-r--, 3406 bytes)[0m
+├── [97m📄 validator.py[0m [2m(-rw-rw-r--, 5049 bytes)[0m
+└── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 909 bytes)[0m
+ [34m📂 [1memotional/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 emotional_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 5673 bytes)[0m
+├── [97m📄 emotional_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 2237 bytes)[0m
+└── [97m📄 emotional_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 928 bytes)[0m
+ [34m📂 [1mevolution/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 evolution_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 2198 bytes)[0m
+├── [97m📄 evolution_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 1053 bytes)[0m
+└── [97m📄 evolution_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 590 bytes)[0m
+ [97m📄 file_tree.txt[0m [2m(-rw-rw-r--, 16654 bytes)[0m
+ [34m📂 [1mintrospection/[0m [2m(drwxrwxrwx)[0m
+└── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+ [34m📂 [1mlearning/[0m [2m(drwxrwxrwx)[0m
+└── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+ [34m📂 [1mmemory/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 emotional_memory_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 1465 bytes)[0m
+├── [97m📄 emotional_memory_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 354 bytes)[0m
+└── [97m📄 emotional_memory_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 300 bytes)[0m
+ [34m📂 [1mmetadata/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 context_log_1.ndjson[0m [2m(-rw-rw-rw-, 105866 bytes)[0m
+├── [97m📄 environmental_factors_1.ndjson[0m [2m(-rw-rw-rw-, 95159 bytes)[0m
+├── [97m📄 metadata_log_1.ndjson[0m [2m(-rw-rw-rw-, 144865 bytes)[0m
+├── [97m📄 retention_policy_1.ndjson[0m [2m(-rw-rw-rw-, 5918 bytes)[0m
+├── [97m📄 storage_config_1.ndjson[0m [2m(-rw-rw-rw-, 16766 bytes)[0m
+├── [97m📄 version_history_1.ndjson[0m [2m(-rw-rw-rw-, 4203 bytes)[0m
+└── [97m📄 version_log_1.ndjson[0m [2m(-rw-rw-rw-, 352 bytes)[0m
+ [97m📄 ollama_api.txt[0m [2m(-rw-rw-r--, 46680 bytes)[0m
+ [34m📂 [1mollama_api/[0m [2m(drwxrwxr-x)[0m
+├── [97m📄 .gitignore[0m [2m(-rw-rw-r--, 501 bytes)[0m
+├── [34m📂 [1m.git/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 COMMIT_EDITMSG[0m [2m(-rw-rw-r--, 157 bytes)[0m
+│   ├── [97m📄 FETCH_HEAD[0m [2m(-rw-rw-r--, 0 bytes)[0m
+│   ├── [97m📄 HEAD[0m [2m(-rw-rw-r--, 23 bytes)[0m
+│   ├── [34m📂 [1mbranches/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 config[0m [2m(-rw-rw-r--, 92 bytes)[0m
+│   ├── [97m📄 description[0m [2m(-rw-rw-r--, 73 bytes)[0m
+│   ├── [34m📂 [1mhooks/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [32m🚀 applypatch-msg.sample[0m [2m(-rwxrwxr-x, 478 bytes)[0m
+│   │   ├── [32m🚀 commit-msg.sample[0m [2m(-rwxrwxr-x, 896 bytes)[0m
+│   │   ├── [32m🚀 fsmonitor-watchman.sample[0m [2m(-rwxrwxr-x, 4726 bytes)[0m
+│   │   ├── [32m🚀 post-update.sample[0m [2m(-rwxrwxr-x, 189 bytes)[0m
+│   │   ├── [32m🚀 prepare-commit-msg.sample[0m [2m(-rwxrwxr-x, 1492 bytes)[0m
+│   │   ├── [32m🚀 pre-applypatch.sample[0m [2m(-rwxrwxr-x, 424 bytes)[0m
+│   │   ├── [32m🚀 pre-commit.sample[0m [2m(-rwxrwxr-x, 1643 bytes)[0m
+│   │   ├── [32m🚀 pre-merge-commit.sample[0m [2m(-rwxrwxr-x, 416 bytes)[0m
+│   │   ├── [32m🚀 pre-push.sample[0m [2m(-rwxrwxr-x, 1374 bytes)[0m
+│   │   ├── [32m🚀 pre-rebase.sample[0m [2m(-rwxrwxr-x, 4898 bytes)[0m
+│   │   ├── [32m🚀 pre-receive.sample[0m [2m(-rwxrwxr-x, 544 bytes)[0m
+│   │   ├── [32m🚀 push-to-checkout.sample[0m [2m(-rwxrwxr-x, 2783 bytes)[0m
+│   │   ├── [32m🚀 sendemail-validate.sample[0m [2m(-rwxrwxr-x, 2308 bytes)[0m
+│   │   └── [32m🚀 update.sample[0m [2m(-rwxrwxr-x, 3650 bytes)[0m
+│   ├── [97m📄 index[0m [2m(-rw-rw-r--, 3274 bytes)[0m
+│   ├── [34m📂 [1minfo/[0m [2m(drwxrwxr-x)[0m
+│   │   └── [97m📄 exclude[0m [2m(-rw-rw-r--, 240 bytes)[0m
+│   ├── [34m📂 [1mlogs/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [97m📄 HEAD[0m [2m(-rw-rw-r--, 182 bytes)[0m
+│   │   └── [34m📂 [1mrefs/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [34m📂 [1mheads/[0m [2m(drwxrwxr-x)[0m
+│   │   │   │   └── [97m📄 master[0m [2m(-rw-rw-r--, 182 bytes)[0m
+│   ├── [34m📂 [1mobjects/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [34m📂 [1m0b/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 987ea82bb2ba9d9e13a892f398eb876cb3862a[0m [2m(-r--r--r--, 476 bytes)[0m
+│   │   ├── [34m📂 [1m1f/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 4090e8623b3a09526947e04722e6a02b82a871[0m [2m(-r--r--r--, 592 bytes)[0m
+│   │   ├── [34m📂 [1m2b/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 4945cf3543a2f18d5aa24238b7d08eedcf3a51[0m [2m(-r--r--r--, 338 bytes)[0m
+│   │   ├── [34m📂 [1m3a/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 d3731eb618b801af0c41f96e15a9e391182f8c[0m [2m(-r--r--r--, 72 bytes)[0m
+│   │   ├── [34m📂 [1m3c/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 7ce216339b0559f9c0222eec8da31c0c775fc1[0m [2m(-r--r--r--, 1369 bytes)[0m
+│   │   ├── [34m📂 [1m5b/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 20c695af2035545316d02f5ea4fad2458cc257[0m [2m(-r--r--r--, 1662 bytes)[0m
+│   │   ├── [34m📂 [1m5c/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 11a1f72d71292ea05c1f4f6e4666632545e3f5[0m [2m(-r--r--r--, 243 bytes)[0m
+│   │   ├── [34m📂 [1m5e/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 40ad469abb28d1a0b486aab35fbe9954d39e87[0m [2m(-r--r--r--, 2208 bytes)[0m
+│   │   ├── [34m📂 [1m05/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 8d0628041f214fb297b7aa04630a79ea0e9b2a[0m [2m(-r--r--r--, 56 bytes)[0m
+│   │   ├── [34m📂 [1m6c/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 4172e1aaa6301239e2a01035e1a401a90e49f2[0m [2m(-r--r--r--, 1009 bytes)[0m
+│   │   ├── [34m📂 [1m7a/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 f22b76dd38f45e57baa82e661bf3e519bac7d4[0m [2m(-r--r--r--, 2274 bytes)[0m
+│   │   ├── [34m📂 [1m07/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 f79327621ef997d6062c934b654a5a6cb1679a[0m [2m(-r--r--r--, 4151 bytes)[0m
+│   │   ├── [34m📂 [1m8a/[0m [2m(drwxrwxr-x)[0m
+│   │   │   ├── [97m📄 e08fe9187052ce3c31382d421a67137a8fffda[0m [2m(-r--r--r--, 150 bytes)[0m
+│   │   │   └── [97m📄 ea20ba1b12492996a5cba4dac19a085fe54a9c[0m [2m(-r--r--r--, 2180 bytes)[0m
+│   │   ├── [34m📂 [1m8c/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 9a2f49f396b06e202f5c96ed5623fe9139f639[0m [2m(-r--r--r--, 2353 bytes)[0m
+│   │   ├── [34m📂 [1m8f/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 7160d697830359dcf64b79da041488d0035841[0m [2m(-r--r--r--, 95 bytes)[0m
+│   │   ├── [34m📂 [1m9e/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 d2d97bed488ce4d4e011d7d6101b4ec9a2e2c7[0m [2m(-r--r--r--, 226 bytes)[0m
+│   │   ├── [34m📂 [1m11/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 94e41c7fd302330f0f0a30dd5b3ebdaab8e0c8[0m [2m(-r--r--r--, 2013 bytes)[0m
+│   │   ├── [34m📂 [1m25/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 827a130789825702c978338666a01b967c8d74[0m [2m(-r--r--r--, 3617 bytes)[0m
+│   │   ├── [34m📂 [1m33/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 e58a8a3a0b28c612cbb33431440ae6e398f8c2[0m [2m(-r--r--r--, 1484 bytes)[0m
+│   │   ├── [34m📂 [1m34/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 f1b0b9fb2ee2eab61d270a42421ac59801731d[0m [2m(-r--r--r--, 1140 bytes)[0m
+│   │   ├── [34m📂 [1m40/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 24df5f7d255f1ba8b793c9e82ecde4353fcb86[0m [2m(-r--r--r--, 532 bytes)[0m
+│   │   ├── [34m📂 [1m44/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 b5f1c5163130c11854112c5ba2722b0d577043[0m [2m(-r--r--r--, 1880 bytes)[0m
+│   │   ├── [34m📂 [1m50/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 933db57c9ae4950f62c9ac3bc44af0227bff75[0m [2m(-r--r--r--, 281 bytes)[0m
+│   │   ├── [34m📂 [1m57/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 edd93a967f3bc3c59880e9b3ebda447724b838[0m [2m(-r--r--r--, 229 bytes)[0m
+│   │   ├── [34m📂 [1m58/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 d6caafd05087425c62b813274a52b10d42bc44[0m [2m(-r--r--r--, 128 bytes)[0m
+│   │   ├── [34m📂 [1m72/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 9e9de9c63e2f27258744808c02e90a7f911c7b[0m [2m(-r--r--r--, 4052 bytes)[0m
+│   │   ├── [34m📂 [1m78/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 2962f267da0774f0bc673d15bae7241919d826[0m [2m(-r--r--r--, 2303 bytes)[0m
+│   │   ├── [34m📂 [1m90/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 8321714bca8eefc9c7d8e4771648175981f0c1[0m [2m(-r--r--r--, 169 bytes)[0m
+│   │   ├── [34m📂 [1m95/[0m [2m(drwxrwxr-x)[0m
+│   │   │   ├── [97m📄 08a4b31703dd5249f6bf462e6bc8b9187f26f7[0m [2m(-r--r--r--, 265 bytes)[0m
+│   │   │   └── [97m📄 49954dee8dc6e500886acdafcc246eaa79638b[0m [2m(-r--r--r--, 576 bytes)[0m
+│   │   ├── [34m📂 [1ma0/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 422d110b70493f0fc288eb8fde9daea082af3a[0m [2m(-r--r--r--, 2954 bytes)[0m
+│   │   ├── [34m📂 [1ma6/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 f3231532a4fd3f90a054d42028640904425a71[0m [2m(-r--r--r--, 1262 bytes)[0m
+│   │   ├── [34m📂 [1mab/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 c0db5d0541bb39061439f55f345b915bc70c07[0m [2m(-r--r--r--, 571 bytes)[0m
+│   │   ├── [34m📂 [1mbb/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 cc4400a2971a0007a2ff6ca3986b779679dab9[0m [2m(-r--r--r--, 525 bytes)[0m
+│   │   ├── [34m📂 [1mc7/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 22a7a6ab724126104722301dc7c31022636bde[0m [2m(-r--r--r--, 657 bytes)[0m
+│   │   ├── [34m📂 [1md5/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 cacdeaabcd78c8212acbd2ccc730fb46de6f69[0m [2m(-r--r--r--, 774 bytes)[0m
+│   │   ├── [34m📂 [1md7/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 df6cb617b0c63dcc11d5dc730ce8603433e313[0m [2m(-r--r--r--, 153 bytes)[0m
+│   │   ├── [34m📂 [1md8/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 7a3b8dd4fed3dd69990096bee28f402c14505b[0m [2m(-r--r--r--, 327 bytes)[0m
+│   │   ├── [34m📂 [1me9/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 3a43db2d16596c1d083318d5ca58226ca38a3d[0m [2m(-r--r--r--, 344 bytes)[0m
+│   │   ├── [34m📂 [1mf0/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 90028a6037826aa774219c91b94105aff41993[0m [2m(-r--r--r--, 839 bytes)[0m
+│   │   ├── [34m📂 [1mf8/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 64828d24a1a155de49a3d928f0442ca7afb010[0m [2m(-r--r--r--, 3193 bytes)[0m
+│   │   ├── [34m📂 [1mfa/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 f6be39d588e96cebde10b024037dda16f4cb23[0m [2m(-r--r--r--, 377 bytes)[0m
+│   │   ├── [34m📂 [1mfe/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 dd3d1a22cc24cb73e4e0b3e8f263989447dcbc[0m [2m(-r--r--r--, 2541 bytes)[0m
+│   │   ├── [34m📂 [1minfo/[0m [2m(drwxrwxr-x)[0m
+│   │   └── [34m📂 [1mpack/[0m [2m(drwxrwxr-x)[0m
+│   └── [34m📂 [1mrefs/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [34m📂 [1mheads/[0m [2m(drwxrwxr-x)[0m
+│   │   │   └── [97m📄 master[0m [2m(-rw-rw-r--, 41 bytes)[0m
+│   │   └── [34m📂 [1mtags/[0m [2m(drwxrwxr-x)[0m
+├── [34m📂 [1m.vscode/[0m [2m(drwxrwxr-x)[0m
+│   └── [97m📄 settings.json[0m [2m(-rw-rw-r--, 42 bytes)[0m
+├── [97m📄 LICENSE[0m [2m(-rw-rw-r--, 1072 bytes)[0m
+├── [97m📄 MANIFEST.in[0m [2m(-rw-rw-r--, 485 bytes)[0m
+├── [97m📄 README.md[0m [2m(-rw-rw-r--, 10934 bytes)[0m
+├── [32m🚀 activate_venv.sh[0m [2m(-rwxrwxr-x, 1285 bytes)[0m
+├── [97m📄 cli.py[0m [2m(-rw-rw-r--, 15972 bytes)[0m
+├── [97m📄 client.py[0m [2m(-rw-rw-r--, 10033 bytes)[0m
+├── [32m🚀 development.sh[0m [2m(-rwxrwxr-x, 2199 bytes)[0m
+├── [34m📂 [1mdocs/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 api_reference.md[0m [2m(-rw-rw-r--, 7347 bytes)[0m
+│   ├── [97m📄 chat.md[0m [2m(-rw-rw-r--, 3379 bytes)[0m
+│   ├── [97m📄 conventions.md[0m [2m(-rw-rw-r--, 602 bytes)[0m
+│   ├── [97m📄 embed.md[0m [2m(-rw-rw-r--, 2347 bytes)[0m
+│   ├── [97m📄 examples.md[0m [2m(-rw-rw-r--, 6353 bytes)[0m
+│   ├── [97m📄 generate.md[0m [2m(-rw-rw-r--, 2897 bytes)[0m
+│   ├── [97m📄 index.md[0m [2m(-rw-rw-r--, 553 bytes)[0m
+│   └── [97m📄 version.md[0m [2m(-rw-rw-r--, 432 bytes)[0m
+├── [97m📄 eidosian_principles.md[0m [2m(-rw-rw-r--, 26411 bytes)[0m
+├── [34m📂 [1mexamples/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 basic_usage.py[0m [2m(-rw-rw-r--, 1207 bytes)[0m
+│   ├── [97m📄 chat_example.py[0m [2m(-rw-rw-r--, 8805 bytes)[0m
+│   ├── [97m📄 embedding_example.py[0m [2m(-rw-rw-r--, 7250 bytes)[0m
+│   ├── [97m📄 generate_example.py[0m [2m(-rw-rw-r--, 7674 bytes)[0m
+│   ├── [97m📄 version_example.py[0m [2m(-rw-rw-r--, 2543 bytes)[0m
+│   ├── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 58 bytes)[0m
+│   └── [34m📂 [1m__pycache__/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [97m📄 chat_example.cpython-312.pyc[0m [2m(-rw-rw-r--, 14406 bytes)[0m
+│   │   ├── [97m📄 embedding_example.cpython-312.pyc[0m [2m(-rw-rw-r--, 8773 bytes)[0m
+│   │   ├── [97m📄 version_example.cpython-312.pyc[0m [2m(-rw-rw-r--, 3530 bytes)[0m
+│   │   └── [97m📄 __init__.cpython-312.pyc[0m [2m(-rw-rw-r--, 242 bytes)[0m
+├── [97m📄 exceptions.py[0m [2m(-rw-rw-r--, 1110 bytes)[0m
+├── [32m🚀 init_repo.sh[0m [2m(-rwxrwxr-x, 3387 bytes)[0m
+├── [34m📂 [1mollama_api.egg-info/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 PKG-INFO[0m [2m(-rw-r--r--, 1376 bytes)[0m
+│   ├── [97m📄 SOURCES.txt[0m [2m(-rw-rw-r--, 0 bytes)[0m
+│   ├── [97m📄 dependency_links.txt[0m [2m(-rw-rw-r--, 1 bytes)[0m
+│   ├── [97m📄 requires.txt[0m [2m(-rw-rw-r--, 189 bytes)[0m
+│   └── [97m📄 top_level.txt[0m [2m(-rw-rw-r--, 11 bytes)[0m
+├── [97m📄 publish.py[0m [2m(-rw-rw-r--, 1404 bytes)[0m
+├── [32m🚀 publish_to_pypi.sh[0m [2m(-rwxrwxr-x, 8285 bytes)[0m
+├── [97m📄 pyproject.toml[0m [2m(-rw-rw-r--, 1666 bytes)[0m
+├── [97m📄 setup.cfg[0m [2m(-rw-rw-r--, 193 bytes)[0m
+├── [97m📄 setup.py[0m [2m(-rw-rw-r--, 181 bytes)[0m
+├── [34m📂 [1mtests/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 conftest.py[0m [2m(-rw-rw-r--, 1160 bytes)[0m
+│   ├── [97m📄 test_chat.py[0m [2m(-rw-rw-r--, 6071 bytes)[0m
+│   ├── [97m📄 test_client.py[0m [2m(-rw-rw-r--, 9597 bytes)[0m
+│   ├── [97m📄 test_embedding.py[0m [2m(-rw-rw-r--, 5922 bytes)[0m
+│   ├── [97m📄 test_nexus.py[0m [2m(-rw-rw-r--, 4168 bytes)[0m
+│   ├── [97m📄 test_utils.py[0m [2m(-rw-rw-r--, 4583 bytes)[0m
+│   ├── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 47 bytes)[0m
+│   └── [34m📂 [1m__pycache__/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [97m📄 conftest.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 1893 bytes)[0m
+│   │   ├── [97m📄 test_chat.cpython-312.pyc[0m [2m(-rw-rw-r--, 7220 bytes)[0m
+│   │   ├── [97m📄 test_chat.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 7322 bytes)[0m
+│   │   ├── [97m📄 test_client.cpython-312.pyc[0m [2m(-rw-rw-r--, 11264 bytes)[0m
+│   │   ├── [97m📄 test_client.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 11366 bytes)[0m
+│   │   ├── [97m📄 test_embedding.cpython-312.pyc[0m [2m(-rw-rw-r--, 6449 bytes)[0m
+│   │   ├── [97m📄 test_embedding.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 6551 bytes)[0m
+│   │   ├── [97m📄 test_nexus.cpython-312.pyc[0m [2m(-rw-rw-r--, 5688 bytes)[0m
+│   │   ├── [97m📄 test_nexus.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 5790 bytes)[0m
+│   │   ├── [97m📄 test_utils.cpython-312.pyc[0m [2m(-rw-rw-r--, 4648 bytes)[0m
+│   │   ├── [97m📄 test_utils.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 4750 bytes)[0m
+│   │   ├── [97m📄 test_version.cpython-312-pytest-8.3.5.pyc[0m [2m(-rw-rw-r--, 2439 bytes)[0m
+│   │   └── [97m📄 __init__.cpython-312.pyc[0m [2m(-rw-rw-r--, 221 bytes)[0m
+├── [34m📂 [1mtools/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 install_ollama.py[0m [2m(-rw-rw-r--, 11480 bytes)[0m
+│   └── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 207 bytes)[0m
+├── [32m🚀 update_parent_gitignore.sh[0m [2m(-rwxrwxr-x, 2964 bytes)[0m
+├── [34m📂 [1mutils/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 common.py[0m [2m(-rw-rw-r--, 13133 bytes)[0m
+│   ├── [97m📄 model_constants.py[0m [2m(-rw-rw-r--, 2004 bytes)[0m
+│   ├── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 1473 bytes)[0m
+│   └── [34m📂 [1m__pycache__/[0m [2m(drwxrwxr-x)[0m
+│   │   ├── [97m📄 common.cpython-312.pyc[0m [2m(-rw-rw-r--, 17149 bytes)[0m
+│   │   ├── [97m📄 model_constants.cpython-312.pyc[0m [2m(-rw-rw-r--, 1869 bytes)[0m
+│   │   └── [97m📄 __init__.cpython-312.pyc[0m [2m(-rw-rw-r--, 1229 bytes)[0m
+├── [34m📂 [1mwheelhouse/[0m [2m(drwxrwxr-x)[0m
+│   ├── [97m📄 .gitkeep[0m [2m(-rw-rw-r--, 53 bytes)[0m
+│   ├── [97m📄 aiohappyeyeballs-2.5.0-py3-none-any.whl[0m [2m(-rw-rw-r--, 15128 bytes)[0m
+│   ├── [97m📄 aiohttp-3.11.13-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 1692233 bytes)[0m
+│   ├── [97m📄 aiosignal-1.3.2-py2.py3-none-any.whl[0m [2m(-rw-rw-r--, 7597 bytes)[0m
+│   ├── [97m📄 attrs-25.1.0-py3-none-any.whl[0m [2m(-rw-rw-r--, 63152 bytes)[0m
+│   ├── [97m📄 certifi-2025.1.31-py3-none-any.whl[0m [2m(-rw-rw-r--, 166393 bytes)[0m
+│   ├── [97m📄 charset_normalizer-3.4.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 145268 bytes)[0m
+│   ├── [97m📄 colorama-0.4.6-py2.py3-none-any.whl[0m [2m(-rw-rw-r--, 25335 bytes)[0m
+│   ├── [97m📄 frozenlist-1.5.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 283591 bytes)[0m
+│   ├── [97m📄 idna-3.10-py3-none-any.whl[0m [2m(-rw-rw-r--, 70442 bytes)[0m
+│   ├── [97m📄 multidict-6.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 131049 bytes)[0m
+│   ├── [97m📄 numpy-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 16116679 bytes)[0m
+│   ├── [97m📄 ollama_api-0.1.0-py3-none-any.whl[0m [2m(-rw-rw-r--, 33558 bytes)[0m
+│   ├── [97m📄 propcache-0.3.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 243912 bytes)[0m
+│   ├── [97m📄 requests-2.32.3-py3-none-any.whl[0m [2m(-rw-rw-r--, 64928 bytes)[0m
+│   ├── [97m📄 urllib3-2.3.0-py3-none-any.whl[0m [2m(-rw-rw-r--, 128369 bytes)[0m
+│   ├── [97m📄 yarl-1.18.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl[0m [2m(-rw-rw-r--, 336914 bytes)[0m
+│   └── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 73 bytes)[0m
+└── [97m📄 __init__.py[0m [2m(-rw-rw-r--, 1013 bytes)[0m
+ [97m📄 output.json[0m [2m(-rw-rw-rw-, 21199 bytes)[0m
+ [34m📂 [1mqualia/[0m [2m(drwxrwxrwx)[0m
+└── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+ [34m📂 [1mrelationship/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 final_output_log_1.ndjson[0m [2m(-rw-rw-rw-, 12066 bytes)[0m
+├── [97m📄 user_context_1.ndjson[0m [2m(-rw-rw-rw-, 4679 bytes)[0m
+└── [97m📄 user_input_log_1.ndjson[0m [2m(-rw-rw-rw-, 12301 bytes)[0m
+ [34m📂 [1mself_model/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 belief_system_1.ndjson[0m [2m(-rw-rw-rw-, 11647 bytes)[0m
+├── [97m📄 identity_snapshot_1.ndjson[0m [2m(-rw-rw-rw-, 27063 bytes)[0m
+└── [97m📄 persistent_identity_1.ndjson[0m [2m(-rw-rw-rw-, 2434 bytes)[0m
+ [97m📄 semantic_fs.log[0m [2m(-rw-rw-r--, 952 bytes)[0m
+ [34m📂 [1msynthesis/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+├── [97m📄 insights_cycle_001_1.ndjson[0m [2m(-rw-rw-rw-, 2685 bytes)[0m
+├── [97m📄 insights_cycle_002_1.ndjson[0m [2m(-rw-rw-rw-, 897 bytes)[0m
+├── [97m📄 insights_cycle_003_1.ndjson[0m [2m(-rw-rw-rw-, 706 bytes)[0m
+├── [97m📄 synthesis_log_1.ndjson[0m [2m(-rw-rw-rw-, 8946 bytes)[0m
+└── [97m📄 themes_and_insights_1.ndjson[0m [2m(-rw-rw-rw-, 2906 bytes)[0m
+ [34m📂 [1mtemp/[0m [2m(drwxrwxrwx)[0m
+└── [97m📄 .gitkeep[0m [2m(-rw-rw-rw-, 0 bytes)[0m
+ [97m📄 universal_components.py[0m [2m(-rw-rw-r--, 0 bytes)[0m
+ [34m📂 [1m__pycache__/[0m [2m(drwxrwxrwx)[0m
+├── [97m📄 eidos_sort.insertion_sort-306.py312.nbi[0m [2m(-rw-rw-rw-, 1310 bytes)[0m
+├── [97m📄 eidos_sort.insertion_sort-306.py312.1.nbc[0m [2m(-rw-rw-rw-, 25466 bytes)[0m
+├── [97m📄 eidos_sort.insertion_sort-319.py312.nbi[0m [2m(-rw-rw-rw-, 1310 bytes)[0m
+└── [97m📄 eidos_sort.insertion_sort-319.py312.1.nbc[0m [2m(-rw-rw-rw-, 25466 bytes)[0m
+
+[1m[32m✅ File tree generated successfully![0m
+[2mDirectory Count: 97 | File Count: 365[0m
+[2mExecution Time: 28 seconds[0m
+[2mOutput saved to: file_tree.txt[0m

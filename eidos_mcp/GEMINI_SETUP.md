@@ -9,8 +9,8 @@ Your `~/.gemini/settings.json` supports these connections:
 | Server ID | Transport | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | **eidosian_nexus** | Stdio | None | **Default/Local**. Starts automatically. Best for speed. |
-| **eidosian_nexus_sse** | SSE (HTTP) | None | Connects to `http://localhost:8765/sse`. Requires running service. |
-| **eidosian_nexus_google** | SSE (HTTP) | **Google ADC** | Connects to `http://localhost:8765/sse` sending Google Identity tokens. |
+| **eidosian_nexus_sse** | SSE (HTTP) | None | Connects to `http://localhost:8928/sse`. Requires running service. |
+| **eidosian_nexus_google** | SSE (HTTP) | **Google ADC** | Connects to `http://localhost:8928/sse` sending Google Identity tokens. |
 
 ## 2. Running the SSE Service
 

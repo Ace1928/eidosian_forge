@@ -12,6 +12,7 @@ Key transformers:
 - EdgeDetector: Detect edges for structural emphasis
 """
 from __future__ import annotations
+from eidosian_core import eidosian
 
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -70,6 +71,7 @@ class ImageTransformer:
             mapping[i] = charset[idx]
         return mapping
 
+    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -200,6 +202,7 @@ class ColorMapper:
             mapping[i] = charset[idx]
         return mapping
 
+    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -329,6 +332,7 @@ class DepthAnalyzer:
             mapping[i] = charset[idx]
         return mapping
 
+    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -469,6 +473,7 @@ class EdgeDetector:
             mapping[i] = charset[idx]
         return mapping
 
+    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],

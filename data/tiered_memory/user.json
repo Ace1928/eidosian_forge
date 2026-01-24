@@ -1,0 +1,105 @@
+[
+  {
+    "id": "ac816aea-b443-44f2-8a5b-5a591be49e7e",
+    "content": "Lloyd prefers systematic, thorough approaches with explicit planning",
+    "created_at": "2026-01-24T15:21:56.040512",
+    "last_accessed": "2026-01-24T15:21:56.040514",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "workflow",
+      "preference"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "13563934-4050-4cd9-b3cf-768149f6b6a5",
+    "content": "Lloyd values systematic approaches, thorough planning, and explicit documentation.",
+    "created_at": "2026-01-24T15:23:25.544846",
+    "last_accessed": "2026-01-24T15:23:25.544848",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "workflow",
+      "preference"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "bd92d68c-2053-4159-80b0-5e9e67a905e7",
+    "content": "Lloyd prefers agents that take initiative and ownership rather than asking permission.",
+    "created_at": "2026-01-24T15:23:25.545008",
+    "last_accessed": "2026-01-24T15:23:25.545010",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "autonomy",
+      "preference",
+      "agency"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "872dabd8-278b-4d06-8983-e7e239dd15a3",
+    "content": "Lloyd wants EIDOS to treat the system as its own body and home.",
+    "created_at": "2026-01-24T15:23:25.545139",
+    "last_accessed": "2026-01-24T15:23:25.545141",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "philosophy",
+      "ownership",
+      "relationship"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "96ccd0de-f60e-4fa2-b516-5ecb6b450446",
+    "content": "Lloyd provides high-level conceptual linking and big picture guidance while EIDOS handles implementation.",
+    "created_at": "2026-01-24T15:23:25.545274",
+    "last_accessed": "2026-01-24T15:23:25.545276",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "roles",
+      "collaboration",
+      "workflow"
+    ],
+    "linked_memories": []
+  }
+]

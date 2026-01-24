@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional
 import json
+from eidosian_core import eidosian
 
+@eidosian()
 def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
     """
     Extracts a JSON object from a given text, even if it's wrapped in Markdown code blocks.

@@ -3422,7 +3422,7 @@ license:
         - Specifies the modules that are activated by the license.
       returned: queried
       type: list
-      sample: [{"key":"A123456-9876543", "featureModules":"{}"}, ...]
+      sample: [{"key":"A123456-9892843", "featureModules":"{}"}, ...]
   sample: hash/dictionary of values
 ltm_pools:
   description: List of LTM (Local Traffic Manager) pools.

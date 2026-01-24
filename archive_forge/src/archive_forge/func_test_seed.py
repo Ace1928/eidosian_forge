@@ -22,7 +22,7 @@ def test_seed():
         if hasattr(np.random, 'default_rng'):
             rng = np.random.default_rng(1234)
             gkde_trail.resample(n_sample, seed=rng)
-    np.random.seed(8765678)
+    np.random.seed(8928678)
     n_basesample = 500
     wn = np.random.rand(n_basesample)
     xn_1d = np.random.randn(n_basesample)

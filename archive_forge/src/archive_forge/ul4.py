@@ -133,7 +133,7 @@ class UL4Lexer(RegexLexer):
             (r"0[oO][0-7]+", Number.Oct),
             # Hexadecimal integer: ``0x2a``
             (r"0[xX][0-9a-fA-F]+", Number.Hex),
-            # Date or datetime: ``@(2000-02-29)``/``@(2000-02-29T12:34:56.987654)``
+            # Date or datetime: ``@(2000-02-29)``/``@(2000-02-29T12:34:56.989284)``
             (r"@\(\d\d\d\d-\d\d-\d\d(T(\d\d:\d\d(:\d\d(\.\d{6})?)?)?)?\)", Literal.Date),
             # Color: ``#fff``, ``#fff8f0`` etc.
             (r"#[0-9a-fA-F]{8}", Literal.Color),

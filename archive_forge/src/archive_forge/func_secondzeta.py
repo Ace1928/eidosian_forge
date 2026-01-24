@@ -64,7 +64,7 @@ def secondzeta(ctx, s, a=0.015, **kwargs):
 
         >>> mp.dps = 10
         >>> secondzeta(0.5 + 40j, error=True, verbose=True)
-        main term = (-30190318549.138656312556 - 13964804384.624622876523j)
+        main term = (-30190318549.138656312556 - 13964804384.624622892823j)
             computed using 19 zeros of zeta
         prime term = (132717176.89212754625045 + 188980555.17563978290601j)
             computed using 9 values of the von Mangoldt function

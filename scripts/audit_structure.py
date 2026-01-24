@@ -2,18 +2,21 @@ import os
 import sys
 import importlib.util
 from pathlib import Path
+from eidosian_core import eidosian
 
 ROOT_DIR = Path("eidosian_forge").resolve()
 EXCLUDE_DIRS = {
     "data", "docs", "requirements", "scripts", "audit_data", "__pycache__", ".git", ".vscode", "projects", "node_modules"
 }
 
+@eidosian()
 def get_forges():
     return [
         d for d in os.listdir(ROOT_DIR)
         if (ROOT_DIR / d).is_dir() and d not in EXCLUDE_DIRS and not d.startswith(".")
     ]
 
+@eidosian()
 def check_forge(forge_name):
     forge_path = ROOT_DIR / forge_name
     src_path = forge_path / "src"
@@ -70,6 +73,7 @@ def check_forge(forge_name):
 
     return issues
 
+@eidosian()
 def audit_projects():
     projects_dir = ROOT_DIR / "projects" / "src"
     if not projects_dir.exists():
@@ -102,6 +106,7 @@ def audit_projects():
                 results[f"project/{proj}"] = issues
     return results
 
+@eidosian()
 def main():
     print(f"Auditing forges in {ROOT_DIR}...")
     forges = get_forges()
