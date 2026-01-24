@@ -1,0 +1,308 @@
+# 🔧 Eidosian CI/CD Configuration
+# Central configuration for all workflows
+# Modify this file to customize workflow behavior across the repository
+
+# ═══════════════════════════════════════════════════════════════════
+# 🐍 PYTHON CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+python:
+  # Versions to test in CI
+  test_versions:
+    - "3.10"
+    - "3.11"
+    - "3.12"
+  
+  # Default Python version for linting/formatting
+  default_version: "3.12"
+  
+  # Formatting
+  formatting:
+    black:
+      line_length: 120
+      target_version: py312
+      exclude: "/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/"
+    
+    isort:
+      profile: black
+      line_length: 120
+      skip_gitignore: true
+  
+  # Linting
+  linting:
+    ruff:
+      config: "ruff.toml"
+      fix: true
+    
+    flake8:
+      max_line_length: 120
+      exclude: ".git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__"
+    
+    pylint:
+      max_line_length: 120
+      score_threshold: 7.0
+      analyze_modules: 10  # Limit to first N modules for speed
+    
+    mypy:
+      ignore_missing_imports: true
+      show_error_codes: true
+      exclude: "(\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)"
+  
+  # Testing
+  testing:
+    pytest:
+      default_args: "-v"
+      coverage: true
+      coverage_threshold: 0  # Set to enforce minimum coverage %
+      parallel: true  # Use pytest-xdist
+    
+    dependencies:
+      - pytest
+      - pytest-cov
+      - pytest-xdist
+      - hypothesis
+
+# ═══════════════════════════════════════════════════════════════════
+# 📘 TYPESCRIPT/JAVASCRIPT CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+typescript:
+  # Node.js versions to test
+  test_versions:
+    - "20"
+  
+  # Default Node.js version
+  default_version: "20"
+  
+  # Projects to test (relative paths from repo root)
+  projects:
+    - path: "game_forge/src/autoseed"
+      name: "autoseed"
+      test_command: "npm run test:coverage"
+      has_lint: true
+      has_typecheck: true
+  
+  # Formatting
+  formatting:
+    prettier:
+      version: "3.4.2"
+      file_patterns: "**/*.{ts,tsx,js,jsx,json,yaml,yml,md}"
+      ignore_path: ".gitignore"
+  
+  # Linting
+  linting:
+    eslint:
+      version: "9.20.1"
+      max_warnings: 0
+
+# ═══════════════════════════════════════════════════════════════════
+# 🚀 CI/CD PIPELINE CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+ci:
+  # Triggers
+  branches:
+    protected:
+      - main
+      - master
+      - develop
+  
+  # Paths to ignore (won't trigger CI)
+  ignore_paths:
+    - "**/*.md"
+    - "docs/**"
+    - ".github/ISSUE_TEMPLATE/**"
+  
+  # Concurrency
+  concurrency:
+    cancel_in_progress: true
+  
+  # Cross-platform testing
+  test_platforms:
+    - ubuntu-latest
+    # Uncomment to test on additional platforms
+    # - windows-latest
+    # - macos-latest
+  
+  # Job dependencies
+  fail_fast: false
+  
+  # Codecov
+  codecov:
+    enabled: true
+    fail_on_error: false
+
+# ═══════════════════════════════════════════════════════════════════
+# 🎨 FORMATTING WORKFLOW CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+format:
+  # Auto-commit formatting changes
+  auto_commit: true
+  
+  # Commit message template
+  commit_message:
+    python: "🎨 Auto-format Python code [skip ci]"
+    typescript: "🎨 Auto-format TypeScript/JavaScript code [skip ci]"
+  
+  # When to run
+  triggers:
+    on_push: true
+    on_pr: true
+    manual: true
+
+# ═══════════════════════════════════════════════════════════════════
+# 🔍 LINTING WORKFLOW CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+lint:
+  # Continue on error (run all linters even if one fails)
+  continue_on_error: true
+  
+  # Critical linters (must pass for workflow to succeed)
+  critical:
+    python:
+      - black
+      - ruff
+    typescript:
+      - prettier
+      - eslint
+  
+  # Optional linters (warnings only)
+  optional:
+    python:
+      - pylint
+      - mypy
+    typescript: []
+
+# ═══════════════════════════════════════════════════════════════════
+# 📦 BUILD & DEPLOYMENT CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+build:
+  # Package build method
+  method: "pyproject"  # or "setup.py"
+  
+  # Validation
+  validate_with_twine: true
+  
+  # Artifact retention
+  artifact_retention_days: 7
+
+integration:
+  # Only run on push (not PRs)
+  run_on_pr: false
+  
+  # Test package import
+  test_import: true
+
+# ═══════════════════════════════════════════════════════════════════
+# 📚 DOCUMENTATION CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+docs:
+  # Documentation build system
+  build_system: "sphinx"  # or "mkdocs"
+  
+  # Build directory
+  source_dir: "docs"
+  build_dir: "docs/_build/html"
+  
+  # Artifact retention
+  artifact_retention_days: 7
+
+# ═══════════════════════════════════════════════════════════════════
+# 🔐 SECURITY CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+security:
+  # Pre-commit security checks
+  bandit:
+    enabled: true
+    severity_level: "medium"  # low, medium, high
+  
+  # Secret detection
+  detect_secrets: true
+  
+  # Dependency scanning
+  # Note: Configure Dependabot separately in .github/dependabot.yml
+  dependabot: false
+
+# ═══════════════════════════════════════════════════════════════════
+# ⚡ PERFORMANCE OPTIMIZATION
+# ═══════════════════════════════════════════════════════════════════
+
+performance:
+  # Caching
+  cache:
+    pip: true
+    npm: true
+    poetry: true
+  
+  # Parallel execution
+  parallel_jobs: true
+  
+  # Smart detection (only run relevant jobs based on file changes)
+  smart_detection: true
+
+# ═══════════════════════════════════════════════════════════════════
+# 📊 REPORTING CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════
+
+reporting:
+  # GitHub Step Summaries
+  job_summaries: true
+  
+  # Coverage reports
+  coverage_reports: true
+  
+  # Artifact uploads
+  upload_artifacts: true
+  
+  # Notifications
+  # Note: Configure separately in repository settings
+  notifications:
+    slack: false
+    email: false
+
+# ═══════════════════════════════════════════════════════════════════
+# 🔄 REUSABLE WORKFLOW DEFAULTS
+# ═══════════════════════════════════════════════════════════════════
+
+reusable:
+  python_test:
+    default_python: "3.12"
+    default_test_path: "tests/"
+    default_coverage_threshold: 0
+  
+  node_test:
+    default_node: "20"
+    default_coverage_threshold: 0
+    run_lint: true
+    run_typecheck: true
+
+# ═══════════════════════════════════════════════════════════════════
+# 🎯 ENVIRONMENT VARIABLES
+# ═══════════════════════════════════════════════════════════════════
+
+env:
+  global:
+    PYTHONUNBUFFERED: "1"
+    FORCE_COLOR: "1"
+    POETRY_VIRTUALENVS_CREATE: "false"
+    POETRY_VERSION: "1.8.3"
+
+# ═══════════════════════════════════════════════════════════════════
+# 📝 NOTES
+# ═══════════════════════════════════════════════════════════════════
+
+# This configuration file provides a single source of truth for CI/CD
+# settings. While not all values are automatically consumed by workflows
+# (GitHub Actions doesn't support external config files natively), this
+# serves as documentation and a reference for manual updates.
+#
+# To apply changes:
+# 1. Update this file
+# 2. Update corresponding workflow YAML files
+# 3. Test changes in a fork or feature branch
+# 4. Document changes in .github/workflows/README.md
