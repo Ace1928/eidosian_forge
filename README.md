@@ -5,6 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](README.md)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![CI](https://github.com/Ace1928/eidosian_forge/workflows/Eidosian%20Universal%20CI/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/ci.yml)
+[![Lint](https://github.com/Ace1928/eidosian_forge/workflows/Lint%20Code/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/lint.yml)
+[![Format](https://github.com/Ace1928/eidosian_forge/workflows/Auto%20Format%20Code/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/format.yml)
 
 ## 📋 Overview
 
@@ -206,7 +209,66 @@ pytest
 
 # Run core tests
 pytest -m unit
+
+# Run with coverage
+pytest --cov=. --cov-report=html
 ```
+
+## 🔄 Development & CI/CD
+
+### Automated Workflows
+
+The repository includes comprehensive CI/CD workflows for maintaining code quality:
+
+- **🚀 CI Pipeline** - Runs on every push and PR
+  - Multi-version Python testing (3.10, 3.11, 3.12)
+  - TypeScript/JavaScript testing
+  - Cross-platform testing (Ubuntu + Windows)
+  - Documentation building
+  - Package validation
+
+- **🎨 Auto-Format** - Formats code automatically
+  - Python: Black, isort, Ruff
+  - TypeScript/JavaScript: Prettier
+  - Auto-commits changes (can be disabled)
+
+- **🔍 Lint** - Comprehensive code quality checks
+  - Python: Ruff, Flake8, Pylint, Mypy
+  - TypeScript: ESLint, TypeScript compiler
+  - Detailed error reporting
+
+### Local Development
+
+Install pre-commit hooks for automatic formatting and linting:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+
+# Run on all files
+pre-commit run --all-files
+```
+
+Run all checks locally before pushing:
+
+```bash
+# Run all checks
+./scripts/run-checks.sh
+
+# Auto-fix formatting issues
+./scripts/run-checks.sh --fix
+
+# Run only Python checks
+./scripts/run-checks.sh --python-only
+
+# Run only TypeScript checks
+./scripts/run-checks.sh --ts-only
+```
+
+See [.github/workflows/README.md](.github/workflows/README.md) for detailed workflow documentation.
 
 ## 🤝 Contributing
 
@@ -216,6 +278,8 @@ We follow the **Eidosian Standards**.
 2.  **Documentation**: Google-style docstrings, Sphinx-ready.
 3.  **Typing**: Strict `mypy` compliance.
 4.  **Structure**: All new forges must follow the `src/<package_name>` directory layout.
+5.  **Testing**: Use pytest with coverage; maintain high test coverage.
+6.  **Pre-commit**: Install and use pre-commit hooks for automatic formatting.
 
 ## 📄 License
 
