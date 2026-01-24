@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Version configuration handling with robust defaults and synchronization.
 """
@@ -43,6 +44,7 @@ class VersionConfig:
         if match := re.match(r'^(\d+)\.(\d+)\.(\d+)', self.__version__):
             self.major, self.minor, self.patch = map(int, match.groups())
 
+    @eidosian()
     def update(self, **kwargs: Any) -> None:
         """Update with bidirectional component synchronization"""
         # Apply valid updates to attributes
@@ -56,6 +58,7 @@ class VersionConfig:
         elif any(k in kwargs for k in ("major", "minor", "patch")):
             self.__version__ = f"{self.major}.{self.minor}.{self.patch}"
 
+    @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation"""
         return {

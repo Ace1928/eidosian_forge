@@ -159,6 +159,10 @@ class DecoratorApplicator:
         source = file_path.read_text()
         tree = ast.parse(source)
         
+        # Skip patterns that shouldn't be decorated
+        SKIP_DECORATORS = {"property", "abstractmethod", "abstractproperty", 
+                          "staticmethod", "classmethod", "cached_property"}
+        
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 # Skip private functions unless explicitly included
@@ -168,6 +172,15 @@ class DecoratorApplicator:
                 # Check existing decorators
                 decorators = [self._get_decorator_name(d) for d in node.decorator_list]
                 is_decorated = any("eidosian" in d.lower() for d in decorators)
+                
+                # Skip functions with certain decorators that don't work with @eidosian
+                if any(d in SKIP_DECORATORS for d in decorators):
+                    continue
+                
+                # Skip Protocol stubs (ellipsis body)
+                if len(node.body) == 1 and isinstance(node.body[0], ast.Expr):
+                    if isinstance(node.body[0].value, ast.Constant) and node.body[0].value.value is ...:
+                        continue
                 
                 # Determine if method
                 is_method = self._is_method(node, tree)
@@ -324,58 +337,83 @@ class DecoratorApplicator:
                 print(f"   Would decorate: {func.file_path}:{func.line_number} {func.name}()")
             return self.state
         
-        # Process each function
-        files_modified: Set[Path] = set()
-        
+        # Group by file and process each file
+        from collections import defaultdict
+        by_file = defaultdict(list)
         for func in to_decorate:
-            # Check failure threshold
-            if self.state.consecutive_failures >= self.fail_threshold:
-                print(f"\n⛔ Stopping: {self.fail_threshold} consecutive failures")
-                break
+            by_file[func.file_path].append(func)
+        
+        for file_path, funcs in by_file.items():
+            # Sort by line number DESCENDING so we insert from bottom to top
+            # This prevents line number shifts from affecting subsequent insertions
+            funcs.sort(key=lambda f: f.line_number, reverse=True)
             
-            print(f"📝 {func.file_path.name}:{func.line_number} {func.name}()...", end=" ")
+            # Backup the file once
+            self.backup_file(file_path)
             
-            # Backup file if not already backed up
-            if func.file_path not in files_modified:
-                self.backup_file(func.file_path)
-                files_modified.add(func.file_path)
+            # Read file content once
+            lines = file_path.read_text().splitlines(keepends=True)
+            import_added = False
             
-            try:
-                # Apply decorator
-                self.apply_decorator(func)
+            for func in funcs:
+                # Check failure threshold
+                if self.state.consecutive_failures >= self.fail_threshold:
+                    print(f"\n⛔ Stopping: {self.fail_threshold} consecutive failures")
+                    file_path.write_text("".join(lines))  # Save partial progress
+                    return self.state
                 
-                # Verify
-                if self.verify():
+                print(f"📝 {func.file_path.name}:{func.line_number} {func.name}()...", end=" ")
+                
+                try:
+                    # Find the function line (accounting for decorators)
+                    func_start = func.line_number - 1
+                    
+                    # Find where to insert (before first decorator or def line)
+                    insert_line = func_start
+                    while insert_line > 0:
+                        prev_line = lines[insert_line - 1].strip()
+                        if prev_line.startswith("@"):
+                            insert_line -= 1
+                        else:
+                            break
+                    
+                    # Get indentation
+                    def_line = lines[func_start]
+                    indent = len(def_line) - len(def_line.lstrip())
+                    
+                    # Insert decorator
+                    decorator_line = " " * indent + self.EIDOSIAN_DECORATOR + "\n"
+                    lines.insert(insert_line, decorator_line)
+                    
                     print("✓")
                     self.state.succeeded += 1
                     self.state.consecutive_failures = 0
                     self.state.results.append(ApplicationResult(func, True))
-                else:
-                    # Verification failed - revert
-                    self.restore_file(func.file_path)
-                    print("✗ (reverted)")
+                    
+                except Exception as e:
+                    print(f"✗ ({e})")
                     self.state.failed += 1
                     self.state.consecutive_failures += 1
                     self.state.results.append(ApplicationResult(
-                        func, False, "Verification failed", reverted=True
+                        func, False, str(e), reverted=False
                     ))
-                    
-            except Exception as e:
-                # Error - revert
-                self.restore_file(func.file_path)
-                print(f"✗ {e}")
-                self.state.failed += 1
-                self.state.consecutive_failures += 1
-                self.state.results.append(ApplicationResult(
-                    func, False, str(e), reverted=True
-                ))
             
-            self.state.processed += 1
+            # Add import at the top if needed
+            lines = self._ensure_import(lines)
+            
+            # Write file once after all functions processed
+            file_path.write_text("".join(lines))
+            
+            # Verify the file
+            if self.verify_command:
+                if not self.verify():
+                    print(f"  ⚠ Verification failed for {file_path}")
+                    self.restore_file(file_path)
         
-        # Summary
+        # Print summary
         print()
         print("═══════════════════════════════════════════════════════════════")
-        print(f"  Processed: {self.state.processed}")
+        print(f"  Processed: {self.state.succeeded + self.state.failed}")
         print(f"  Succeeded: {self.state.succeeded}")
         print(f"  Failed:    {self.state.failed}")
         print(f"  Skipped:   {self.state.skipped}")

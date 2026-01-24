@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Core version parsing and manipulation functionality.
 Provides robust semantic version handling with flexible parsing strategies.
@@ -90,6 +91,7 @@ class SimpleVersion:
         return hash((self.major, self.minor, self.patch, self.prerelease))
 
 
+@eidosian()
 def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionProtocol:
     """Parse version string with optimal strategy selection"""
     # Normalize input for consistent results
@@ -127,6 +129,7 @@ def parse_version(version_str: str, fallback_to_simple: bool = True) -> VersionP
 DEFAULT_VERSION = "0.1.0"
 
 
+@eidosian()
 def format_version(version: Any) -> str:
     """Convert any version to canonical form with v-prefix"""
     try:

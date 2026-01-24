@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Version comparison operations with semantic accuracy.
 """
@@ -9,6 +10,7 @@ from ..protocols.interfaces import VersionDelta, VersionProtocol
 
 logger = logging.getLogger("forge.version")
 
+@eidosian()
 def calculate_delta(v1: str, v2: str) -> VersionDelta:
     """Calculate precise semantic distance between versions"""
     try:
@@ -45,6 +47,7 @@ def calculate_delta(v1: str, v2: str) -> VersionDelta:
 calculate_version_delta = calculate_delta
 
 
+@eidosian()
 def is_compatible(version: str, minimum: Optional[str] = None,
                   config_min_version: Optional[str] = None) -> bool:
     """Check version compatibility - false until proven compatible"""

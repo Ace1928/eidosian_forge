@@ -9,6 +9,7 @@ from ..core.version import SimpleVersion, format_version
 from ..operations.migration import MigrationGuideGenerator
 from ..operations.update import CompleteVersionUpdateResult, update_version
 from ..protocols.interfaces import VersionDelta
+from eidosian_core import eidosian
 
 """
 Command implementations for version_forge CLI with robust error handling and elegant output.
@@ -28,6 +29,7 @@ CommandResult = Tuple[bool, str]
 
 logger = logging.getLogger("forge.version")
 
+@eidosian()
 def get_version_command(args: argparse.Namespace) -> int:
     """
     Display current version information with fractal completeness.
@@ -59,6 +61,7 @@ def get_version_command(args: argparse.Namespace) -> int:
 
     return 0
 
+@eidosian()
 def check_version_command(args: argparse.Namespace) -> int:
     """
     Check version compatibility with structural elegance.
@@ -106,6 +109,7 @@ def check_version_command(args: argparse.Namespace) -> int:
 
     return 0 if is_valid else 1
 
+@eidosian()
 @time_execution
 def update_version_command(args: argparse.Namespace) -> int:
     """
@@ -169,6 +173,7 @@ def update_version_command(args: argparse.Namespace) -> int:
         logger.exception("Version update failed")
         return 1
 
+@eidosian()
 def compare_versions_command(args: argparse.Namespace) -> int:
     """
     Compare two versions with visual precision and semantic understanding.
@@ -367,6 +372,7 @@ def _scan_directory_for_components(validator: DependencyValidator, scan_dir: Pat
 
     return True, f"Found {components_found} potential components and {dependencies_found} dependencies"
 
+@eidosian()
 def validate_command(args: argparse.Namespace) -> int:
     """
     Validate dependency relationships across components with recursive precision.
@@ -434,6 +440,7 @@ def validate_command(args: argparse.Namespace) -> int:
 
         return 1
 
+@eidosian()
 @time_execution
 def migration_guide_command(args: argparse.Namespace) -> int:
     """
@@ -464,6 +471,7 @@ def migration_guide_command(args: argparse.Namespace) -> int:
         print(f"  Effort: {guide['estimated_effort'].upper()}")
 
         # Display detailed sections with elegant framing
+        @eidosian()
         def print_section(title: str, items: List[str]) -> None:
             """Print a section of the migration guide with consistent formatting."""
             if not items:

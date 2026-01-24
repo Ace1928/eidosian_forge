@@ -1,3 +1,4 @@
+from eidosian_core import eidosian
 """
 Dependency validation for version compatibility across components.
 
@@ -26,11 +27,13 @@ class DependencyValidator:
         self._components = components or {}
         self._dependencies: Dict[str, Set[str]] = {}
 
+    @eidosian()
     def register_component(self, name: str, component: IVersioned) -> None:
         """Register a component for validation"""
         self._components[name] = component
         logger.debug(f"Registered component {name} v{component.version}")
 
+    @eidosian()
     def register_dependency(self, dependent: str, dependency: str) -> None:
         """Register a dependency relationship between components"""
         if dependent not in self._dependencies:
@@ -38,6 +41,7 @@ class DependencyValidator:
         self._dependencies[dependent].add(dependency)
         logger.debug(f"Registered dependency: {dependent} → {dependency}")
 
+    @eidosian()
     def validate_dependency_graph(self) -> Tuple[bool, List[str]]:
         """
         Validate the entire dependency graph, returning success and error messages.
@@ -76,6 +80,7 @@ class DependencyValidator:
 
         return len(errors) == 0, errors
 
+    @eidosian()
     def get_upgrade_plan(self, target_versions: Dict[str, str]) -> Dict[str, str]:
         """
         Get an ordered upgrade plan to reach target versions.
@@ -107,6 +112,7 @@ class DependencyValidator:
         temp_visited: Set[str] = set()
         order: List[str] = []
 
+        @eidosian()
         def visit(node: str) -> None:
             """Recursive topological sort visitor with cycle detection"""
             if node in temp_visited:
@@ -137,6 +143,7 @@ class DependencyValidator:
 
         return plan
 
+    @eidosian()
     def find_compatible_version(self, component: str, dependency: str) -> Optional[str]:
         """
         Find a compatible version of a dependency for the given component.
