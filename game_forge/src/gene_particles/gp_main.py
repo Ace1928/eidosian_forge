@@ -59,6 +59,7 @@ Controls
 import os
 import sys
 from typing import NoReturn
+from eidosian_core import eidosian
 
 # Add proper path handling to avoid import issues when running from different locations
 script_dir: str = os.path.dirname(os.path.abspath(__file__))
@@ -70,6 +71,7 @@ from game_forge.src.gene_particles.gp_automata import CellularAutomata
 from game_forge.src.gene_particles.gp_config import SimulationConfig
 
 
+@eidosian()
 def main() -> NoReturn:
     """Initialize and run the Gene Particles simulation.
 

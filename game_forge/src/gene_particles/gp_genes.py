@@ -2,6 +2,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, cast
 
 import numpy as np
+from eidosian_core import eidosian
 
 # Use TYPE_CHECKING for circular imports
 if TYPE_CHECKING:
@@ -24,6 +25,7 @@ class PredationStrategy(Enum):
     TERRITORIAL = auto()  # Attack entities in proximity to territory
 
 
+@eidosian()
 def apply_movement_gene(
     particle: "CellularTypeData", gene_data: GeneData, env: "SimulationConfig"
 ) -> None:
@@ -78,6 +80,7 @@ def apply_movement_gene(
     particle.energy = np.maximum(0.0, particle.energy - energy_cost)
 
 
+@eidosian()
 def apply_interaction_gene(
     particle: "CellularTypeData",
     others: List["CellularTypeData"],
@@ -174,6 +177,7 @@ def apply_interaction_gene(
         particle.energy = np.maximum(0.0, particle.energy - energy_cost)
 
 
+@eidosian()
 def apply_energy_gene(
     particle: "CellularTypeData", gene_data: GeneData, env: "SimulationConfig"
 ) -> None:
@@ -229,6 +233,7 @@ def apply_energy_gene(
     particle.alive = particle.energy > 0.0
 
 
+@eidosian()
 def apply_growth_gene(
     particle: "CellularTypeData", gene_data: GeneData, env: "SimulationConfig"
 ) -> None:
@@ -285,6 +290,7 @@ def apply_growth_gene(
         particle.mass = base_mass * size_factor
 
 
+@eidosian()
 def apply_reproduction_gene(
     particle: "CellularTypeData",
     others: List["CellularTypeData"],
@@ -366,6 +372,7 @@ def apply_reproduction_gene(
         )
 
 
+@eidosian()
 def apply_predation_gene(
     particle: "CellularTypeData",
     others: List["CellularTypeData"],

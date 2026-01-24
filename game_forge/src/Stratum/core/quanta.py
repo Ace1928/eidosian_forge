@@ -30,6 +30,7 @@ from .ledger import Ledger, KINETIC_ENERGY_MAX, MOMENTUM_SQ_MAX, RHO_EPSILON, RH
 from .fabric import Fabric, Mixture
 from .registry import SpeciesRegistry
 from . import types as ttypes
+from eidosian_core import eidosian
 
 # Numerical stability constants
 #: Maximum energy delta to prevent downstream overflow in energy conversions
@@ -75,6 +76,7 @@ class SignalQueue:
     def __init__(self):
         self.by_tick: Dict[int, List[Signal]] = {}
 
+    @eidosian()
     def push(self, sig: Signal, current_tick: int, v_max: float) -> None:
         """Insert a signal into the queue computing its arrival time."""
         # compute travel time: distance / speed; in this simplified version
@@ -84,6 +86,7 @@ class SignalQueue:
         sig.arrive_tick = current_tick + 1
         self.by_tick.setdefault(sig.arrive_tick, []).append(sig)
 
+    @eidosian()
     def pop_arrivals(self, tick: int) -> List[Signal]:
         arrivals = self.by_tick.pop(tick, [])
         return arrivals
@@ -353,6 +356,7 @@ class Quanta:
             tick=tick
         )
 
+    @eidosian()
     def step(self, tick: int, micro_budget: int) -> None:
         """Execute one simulation tick.
         
@@ -612,6 +616,7 @@ class Quanta:
                 decay_possible=bool(decay[idx]),
             )
 
+    @eidosian()
     def compute_effective_rho_max(self) -> np.ndarray:
         """Compute the mixture weighted effective rho_max per cell.
 
@@ -638,6 +643,7 @@ class Quanta:
                 rho_max_eff[i, j] = accum / total
         return rho_max_eff
 
+    @eidosian()
     def resolve_cell(self, i: int, j: int, M: int, derived: DerivedFields, tick: int) -> None:
         """Perform ``M`` local microticks at cell (i,j).
 
@@ -1027,6 +1033,7 @@ class Quanta:
                 E_rad[i, j] -= absorb
                 E_heat[i, j] += absorb
 
+    @eidosian()
     def transfer_mass(self, src_i: int, src_j: int, dst_i: int, dst_j: int, mass: float, v_x: float, v_y: float) -> None:
         """Move a quantity of mass from ``src`` to ``dst`` with associated momentum and energy.
 

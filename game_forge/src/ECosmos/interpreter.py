@@ -11,6 +11,7 @@ from typing import List, Dict, Tuple, Any, Optional, Set
 
 from data_structures import RuleSpecies, Instruction, OperationType, Direction, Position
 import config
+from eidosian_core import eidosian
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ world_width = None
 world_height = None
 
 
+@eidosian()
 def set_world_reference(grid, width, height):
     """Set global reference to the world grid for the interpreter."""
     global world_grid, world_width, world_height
@@ -30,6 +32,7 @@ def set_world_reference(grid, width, height):
     world_height = height
 
 
+@eidosian()
 def get_neighbor_position(position: Position, direction: Direction) -> Position:
     """
     Get neighboring position in the given direction with wraparound.
@@ -51,6 +54,7 @@ def get_neighbor_position(position: Position, direction: Direction) -> Position:
     return Position(new_x, new_y)
 
 
+@eidosian()
 def is_valid_position(x: int, y: int) -> bool:
     """Check if position is within world boundaries."""
     if x is None or y is None:
@@ -58,6 +62,7 @@ def is_valid_position(x: int, y: int) -> bool:
     return 0 <= x < world_width and 0 <= y < world_height
 
 
+@eidosian()
 def safe_int_cast(value):
     """Safely convert a value to integer."""
     try:
@@ -68,6 +73,7 @@ def safe_int_cast(value):
         return 0
 
 
+@eidosian()
 def safe_modulo(a, b):
     """Safely perform modulo operation."""
     try:
@@ -79,6 +85,7 @@ def safe_modulo(a, b):
         return 0
 
 
+@eidosian()
 def safe_index(lst, idx):
     """Safely access a list element by index."""
     try:
@@ -97,6 +104,7 @@ def safe_index(lst, idx):
         return None
 
 
+@eidosian()
 def safe_execute_instruction(instruction_type, func, *args, **kwargs):
     """
     Safely execute an instruction with error handling.
@@ -116,6 +124,7 @@ def safe_execute_instruction(instruction_type, func, *args, **kwargs):
         return None
 
 
+@eidosian()
 def handle_move_operation(species, *args):
     # Example implementation with safe handling
     direction = safe_int_cast(args[0]) if args else 0
@@ -139,6 +148,7 @@ def handle_move_operation(species, *args):
     return True
 
 
+@eidosian()
 def handle_consume_operation(species, *args):
     # Example implementation with safe handling
     target = args[0] if args else None
@@ -152,6 +162,7 @@ def handle_consume_operation(species, *args):
     return True
 
 
+@eidosian()
 def handle_calculate_operation(species, *args):
     # Example implementation with safe handling
     if len(args) < 3:
@@ -172,6 +183,7 @@ def handle_calculate_operation(species, *args):
     return True
 
 
+@eidosian()
 def execute_instruction(
     species: RuleSpecies, instruction: Instruction
 ) -> Tuple[bool, Optional[Dict[str, Any]]]:
@@ -621,6 +633,7 @@ def execute_instruction(
     return success, result_data
 
 
+@eidosian()
 def run_rule(species: RuleSpecies, rule_index: int) -> Tuple[bool, Optional[int]]:
     """
     Run a specific rule for a species.
@@ -669,6 +682,7 @@ def run_rule(species: RuleSpecies, rule_index: int) -> Tuple[bool, Optional[int]
     return True, None
 
 
+@eidosian()
 def run_species(species: RuleSpecies) -> bool:
     """
     Run the rules of a species for one simulation tick.

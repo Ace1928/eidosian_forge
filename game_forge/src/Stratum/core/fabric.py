@@ -19,6 +19,7 @@ import numpy as np
 
 from .config import EngineConfig
 from .types import Cell
+from eidosian_core import eidosian
 
 
 class _ArraySliceView:
@@ -38,12 +39,14 @@ class _ArraySliceView:
     def __contains__(self, item) -> bool:
         return item in self._arr[:self._count]
 
+    @eidosian()
     def index(self, value) -> int:
         for idx in range(self._count):
             if self._arr[idx] == value:
                 return idx
         raise ValueError(f"{value} is not in view")
 
+    @eidosian()
     def tolist(self) -> list:
         return list(self._arr[:self._count])
 
@@ -65,11 +68,13 @@ class Mixture:
             self._masses_list = list(masses)
             self._total_mass = float(sum(self._masses_list))
 
+    @eidosian()
     def total_mass(self) -> float:
         if self._array_mode:
             return self._total_mass
         return float(sum(self._masses_list))
 
+    @eidosian()
     def iter_entries(self):
         if self._array_mode:
             for idx in range(self._count):
@@ -122,6 +127,7 @@ class Mixture:
             self._masses_list = list(value)
             self._total_mass = float(sum(self._masses_list))
 
+    @eidosian()
     def normalise(self, target_total: float) -> None:
         """Scale the masses so that they sum to ``target_total``.
 
@@ -140,6 +146,7 @@ class Mixture:
             for idx in range(len(self.masses)):
                 self.masses[idx] *= s
 
+    @eidosian()
     def get_weighted_property(self, prop_table: dict[str, float], prop_name: str) -> float:
         """Compute a weighted average of a property for all species present.
 
@@ -157,6 +164,7 @@ class Mixture:
             accum += mass * value
         return accum / total
 
+    @eidosian()
     def add_species_mass(self, species_id: str, mass: float, max_k: int) -> None:
         """Add a species mass to the mixture, respecting the top K limit.
 
@@ -210,6 +218,7 @@ class Mixture:
                 self.species_ids[min_idx] = species_id
                 self.masses[min_idx] = mass
 
+    @eidosian()
     def index_of(self, species_id: str) -> int:
         if self._array_mode:
             for idx in range(self._count):
@@ -221,6 +230,7 @@ class Mixture:
         except ValueError:
             return -1
 
+    @eidosian()
     def cleanup(self, eps: float, max_k: int) -> None:
         """Remove negligible masses and trim list to at most ``max_k`` entries.
         """
@@ -299,6 +309,7 @@ class Fabric:
         self.mix_cache_dirty_list: list[tuple[int, int]] = []
         self.neighbor_cache = self._build_neighbor_cache()
 
+    @eidosian()
     def mark_mixture_dirty(self, i: int, j: int) -> None:
         """Record that a cell's mixture changed (cleanup + cache update)."""
         if not self.dirty_mixtures_mask[i, j]:
@@ -308,6 +319,7 @@ class Fabric:
             self.mix_cache_dirty_mask[i, j] = True
             self.mix_cache_dirty_list.append((i, j))
 
+    @eidosian()
     def consume_dirty_mixtures(self) -> list[tuple[int, int]]:
         """Return dirty mixture cells and clear the tracking mask."""
         dirty = self.dirty_mixtures_list
@@ -316,6 +328,7 @@ class Fabric:
         self.dirty_mixtures_list = []
         return dirty
 
+    @eidosian()
     def consume_mix_cache_dirty(self) -> list[tuple[int, int]]:
         """Return cache-dirty cells and clear the tracking mask."""
         dirty = self.mix_cache_dirty_list
@@ -372,12 +385,15 @@ class Fabric:
             "jm1": (jm1_i, jm1_j, jm1_valid),
         }
 
+    @eidosian()
     def reset_influence(self) -> None:
         self.influence.fill(0.0)
 
+    @eidosian()
     def reset_event_horizon(self) -> None:
         self.EH_mask.fill(0.0)
 
+    @eidosian()
     def boundary_coord(self, i: int, j: int) -> tuple[int, int]:
         """Return a valid coordinate according to the boundary mode.
 
@@ -394,6 +410,7 @@ class Fabric:
         else:
             return i, j
 
+    @eidosian()
     def gradient_scalar(self, field: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Compute finite difference gradient of a scalar field.
 
@@ -429,6 +446,7 @@ class Fabric:
             grad_y[:, -1] = -field[:, -1]
         return grad_x, grad_y
 
+    @eidosian()
     def divergence_vector(self, vx: np.ndarray, vy: np.ndarray) -> np.ndarray:
         """Compute divergence of a vector field given separate components.
 
@@ -458,6 +476,7 @@ class Fabric:
             div[:, -1] += -vy[:, -1]
         return div
 
+    @eidosian()
     def neighbors_4(self, i: int, j: int) -> list[tuple[int, int, bool]]:
         """Return the 4-connected neighbors of cell (i, j) respecting boundary mode.
         
@@ -506,6 +525,7 @@ class Fabric:
         
         return result
 
+    @eidosian()
     def get_neighbor_index(self, i: int, j: int, di: int, dj: int) -> tuple[int, int, bool]:
         """Get the neighbor index with boundary handling.
         

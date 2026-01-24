@@ -5,6 +5,7 @@ import logging
 from typing import Dict, List, Any, Tuple, Optional
 
 from init import EMOJI_MAP, COLOR_MAP, PANEL_HEIGHT
+from eidosian_core import eidosian
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -49,6 +50,7 @@ class TextLine:
             raise TypeError("segments must contain TextSegment")
         self.segments: List[TextSegment] = segments if segments else []
 
+    @eidosian()
     def add_segment(self, segment: TextSegment) -> None:
         if not isinstance(segment, TextSegment):
             raise TypeError(f"segment must be a TextSegment, not {type(segment)}")
@@ -83,6 +85,7 @@ class TextProcessor:
         self.space_width: int = self.font.size(" ")[0]
         logging.info("TextProcessor initialized.")
 
+    @eidosian()
     def process_text(
         self, raw_text: str, personalities: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -124,6 +127,7 @@ class TextProcessor:
         if not self.emoji_pattern:
             return text
 
+        @eidosian()
         def replace_emoji(match: re.Match) -> str:
             keyword = match.group(0).lower()
             if emoji := EMOJI_MAP.get(keyword):
@@ -148,6 +152,7 @@ class TextProcessor:
         trait_priority = {trait: index for index, trait in enumerate(traits)}
         tokens = self._tokenize_text(text)
 
+        @eidosian()
         def get_segment_color(token: str) -> Tuple[int, int, int]:
             best_match_trait = None
             highest_priority = -1
@@ -293,6 +298,7 @@ class TextProcessor:
         self.scroll_offset = max(0, text_height - PANEL_HEIGHT)
         logging.debug(f"Auto scroll adjusted. Scroll offset: {self.scroll_offset}")
 
+    @eidosian()
     def render_lines(self, surface: pygame.Surface, start_y: int) -> None:
         y_offset = start_y - self.scroll_offset
         try:
@@ -359,6 +365,7 @@ if __name__ == "__main__":
 
     text_processor = TextProcessor(max_width, font)
 
+    @eidosian()
     def apply_nuanced_coloring(text, personalities):
         """Applies nuanced coloring based on personalities and context."""
         if not personalities:
@@ -392,6 +399,7 @@ if __name__ == "__main__":
             colored_segments.append((word, color))
         return colored_segments
 
+    @eidosian()
     def run_test_case(test_name, raw_text, personalities=None, expected_output=None):
         screen.fill((255, 255, 255))
         print(f"\n--- {test_name} ---")

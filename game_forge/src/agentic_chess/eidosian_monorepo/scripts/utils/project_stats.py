@@ -12,7 +12,9 @@ from pathlib import Path
 from datetime import datetime
 import json
 from collections import defaultdict
+from eidosian_core import eidosian
 
+@eidosian()
 def count_lines_by_extension(file_path):
     """Count lines in a file."""
     try:
@@ -21,6 +23,7 @@ def count_lines_by_extension(file_path):
     except Exception:
         return 0
 
+@eidosian()
 def get_file_stats(repo_path):
     """Get statistics about files in the repository."""
     # Escaped literal dictionary inside lambda
@@ -57,6 +60,7 @@ def get_file_stats(repo_path):
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
+@eidosian()
 def main():
     """Main entry point."""
     if len(sys.argv) > 1:

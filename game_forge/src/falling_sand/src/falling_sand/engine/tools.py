@@ -7,6 +7,7 @@ from typing import Iterable, Tuple
 
 from falling_sand.engine.materials import Material
 from falling_sand.engine.world import World
+from eidosian_core import eidosian
 
 
 VoxelCoord = Tuple[int, int, int]
@@ -33,6 +34,7 @@ def _iter_sphere(center: VoxelCoord, radius: int) -> Iterable[VoxelCoord]:
                     yield (cx + dx, cy + dy, cz + dz)
 
 
+@eidosian()
 def place_sphere(world: World, center: VoxelCoord, material: Material, radius: int) -> int:
     """Place material in a spherical radius."""
 
@@ -45,6 +47,7 @@ def place_sphere(world: World, center: VoxelCoord, material: Material, radius: i
     return count
 
 
+@eidosian()
 def erase_sphere(world: World, center: VoxelCoord, radius: int) -> int:
     """Erase materials in a spherical radius."""
 

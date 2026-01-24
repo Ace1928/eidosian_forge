@@ -12,6 +12,7 @@ import random
 import uuid
 import copy
 import config
+from eidosian_core import eidosian
 
 
 class Position:
@@ -21,19 +22,23 @@ class Position:
         self.x = x
         self.y = y  # Fixed initialization
 
+    @eidosian()
     def distance_to(self, other: "Position") -> int:
         """Calculate Manhattan distance to another position."""
         return abs(self.x - other.x) + abs(self.y - other.y)
 
+    @eidosian()
     def adjacent_to(self, other: "Position") -> bool:
         """Check if this position is adjacent to another position."""
         return self.distance_to(other) == 1
 
+    @eidosian()
     def move(self, direction: "Direction") -> "Position":
         """Return a new position after moving in the specified direction."""
         offset_x, offset_y = direction.to_offset()
         return Position(self.x + offset_x, self.y + offset_y)
 
+    @eidosian()
     def in_bounds(self, width: int, height: int) -> bool:
         """Check if this position is within the given boundaries."""
         return 0 <= self.x < width and 0 <= self.y < height
@@ -63,6 +68,7 @@ class Direction(Enum):
         """Return a random direction."""
         return random.choice(list(cls))
 
+    @eidosian()
     def to_offset(self) -> Tuple[int, int]:
         """Convert direction to x,y coordinate offset."""
         if self == Direction.NORTH:
@@ -74,6 +80,7 @@ class Direction(Enum):
         elif self == Direction.WEST:
             return (-1, 0)
 
+    @eidosian()
     def opposite(self) -> "Direction":
         """Return the opposite direction."""
         if self == Direction.NORTH:
@@ -85,6 +92,7 @@ class Direction(Enum):
         elif self == Direction.WEST:
             return Direction.EAST
 
+    @eidosian()
     def turn_left(self) -> "Direction":
         """Return the direction after turning left."""
         if self == Direction.NORTH:
@@ -96,6 +104,7 @@ class Direction(Enum):
         elif self == Direction.WEST:
             return Direction.SOUTH
 
+    @eidosian()
     def turn_right(self) -> "Direction":
         """Return the direction after turning right."""
         if self == Direction.NORTH:
@@ -125,6 +134,7 @@ class OperationType(Enum):
     DEFEND = auto()  # Defend against attacks
     MUTATE = auto()  # Self-modify rules
 
+    @eidosian()
     def get_cost(self) -> float:
         """Get the energy cost of this operation type."""
         # Convert enum name to string and look up in config
@@ -139,10 +149,12 @@ class Instruction:
         self.op_type = op_type
         self.params = params if params is not None else {}
 
+    @eidosian()
     def clone(self) -> "Instruction":
         """Create a deep copy of this instruction."""
         return Instruction(self.op_type, params=self.params.copy())
 
+    @eidosian()
     def get_energy_cost(self) -> float:
         """Calculate the energy cost of executing this instruction."""
         base_cost = self.op_type.get_cost()
@@ -217,6 +229,7 @@ class RuleSpecies:
         # Convert to 0-1 range for matplotlib
         return (r / 255.0, g / 255.0, b / 255.0)
 
+    @eidosian()
     def add_rule(self, rule: List[Instruction]) -> bool:
         """Add a new rule to this species if below the maximum rule count."""
         if len(self.rules) < config.MAX_RULES_PER_SPECIES:
@@ -225,6 +238,7 @@ class RuleSpecies:
             return True
         return False
 
+    @eidosian()
     def remove_rule(self, index: int) -> bool:
         """Remove a rule at the specified index."""
         if 0 <= index < len(self.rules):
@@ -233,6 +247,7 @@ class RuleSpecies:
             return True
         return False
 
+    @eidosian()
     def consume_energy(self, amount: float) -> bool:
         """
         Consume the specified amount of energy.
@@ -241,6 +256,7 @@ class RuleSpecies:
         self.energy -= amount
         return self.energy > 0
 
+    @eidosian()
     def add_energy(self, amount: float) -> float:
         """
         Add energy to the species, respecting the maximum limit.
@@ -250,25 +266,30 @@ class RuleSpecies:
         self.energy = min(self.energy + amount, config.MAX_ENERGY)
         return self.energy - before
 
+    @eidosian()
     def is_alive(self) -> bool:
         """Check if the species is still alive (has positive energy)."""
         return self.energy > 0
 
+    @eidosian()
     def can_reproduce(self) -> bool:
         """Check if species has enough energy to reproduce."""
         return self.energy >= config.REPRODUCTION_THRESHOLD
 
+    @eidosian()
     def reset_usage_stats(self) -> None:
         """Reset rule usage statistics for a new cycle."""
         self.rule_usage_counts = [0] * len(self.rules)
         self.last_executed_rule = -1
 
+    @eidosian()
     def record_rule_execution(self, rule_index: int) -> None:
         """Record that a rule was executed."""
         if 0 <= rule_index < len(self.rule_usage_counts):
             self.rule_usage_counts[rule_index] += 1
             self.last_executed_rule = rule_index
 
+    @eidosian()
     def get_least_used_rules(self) -> List[int]:
         """Get indices of the least frequently used rules."""
         if not self.rule_usage_counts:
@@ -279,6 +300,7 @@ class RuleSpecies:
             i for i, usage in enumerate(self.rule_usage_counts) if usage == min_usage
         ]
 
+    @eidosian()
     def get_most_used_rules(self) -> List[int]:
         """Get indices of the most frequently used rules."""
         if not self.rule_usage_counts:
@@ -289,6 +311,7 @@ class RuleSpecies:
             i for i, usage in enumerate(self.rule_usage_counts) if usage == max_usage
         ]
 
+    @eidosian()
     def copy_rule(self, source_index: int) -> bool:
         """Copy an existing rule if below the maximum rule count."""
         if source_index < 0 or source_index >= len(self.rules):
@@ -302,10 +325,12 @@ class RuleSpecies:
             return True
         return False
 
+    @eidosian()
     def get_energy_percentage(self) -> float:
         """Get energy as a percentage of maximum energy."""
         return min(1.0, self.energy / config.MAX_ENERGY) * 100
 
+    @eidosian()
     def mutate_color(self, mutation_strength: float = 0.1) -> None:
         """Slightly modify the species color."""
         r, g, b = self.color
@@ -314,10 +339,12 @@ class RuleSpecies:
         b = max(0, min(1, b + (random.random() - 0.5) * mutation_strength))
         self.color = (r, g, b)
 
+    @eidosian()
     def age_tick(self) -> None:
         """Increment the age counter of this species."""
         self.age += 1
 
+    @eidosian()
     def get_fitness_score(self) -> float:
         """Calculate a fitness score based on various metrics."""
         return (
@@ -328,6 +355,7 @@ class RuleSpecies:
             + self.defense_success_count * 0.5
         )
 
+    @eidosian()
     def clone(self, new_id: int) -> "RuleSpecies":
         """Create a clone of this species with a new ID."""
         # Deep copy all rules
@@ -360,10 +388,12 @@ class Cell:
         self.terrain_type: str = "normal"  # Could be: normal, water, mountain, etc.
         self.environmental_factors: Dict[str, float] = {}  # Store environmental values
 
+    @eidosian()
     def is_occupied(self) -> bool:
         """Check if cell is currently occupied."""
         return self.occupant is not None
 
+    @eidosian()
     def add_occupant(self, species: RuleSpecies) -> bool:
         """Add a species to this cell if it's empty."""
         if not self.is_occupied():
@@ -371,16 +401,19 @@ class Cell:
             return True
         return False
 
+    @eidosian()
     def remove_occupant(self) -> Optional[RuleSpecies]:
         """Remove and return the current occupant."""
         occupant = self.occupant
         self.occupant = None
         return occupant
 
+    @eidosian()
     def add_resources(self, amount: float) -> None:
         """Add resources to this cell."""
         self.resources += amount
 
+    @eidosian()
     def consume_resources(self, amount: float) -> float:
         """
         Consume resources from this cell.
@@ -390,6 +423,7 @@ class Cell:
         self.resources -= consumed
         return consumed
 
+    @eidosian()
     def update(self, current_tick: int, resource_regen_rate: float) -> None:
         """
         Update cell state based on time.
@@ -402,14 +436,17 @@ class Cell:
             self.resources += resource_regen_rate * ticks_elapsed
             self.last_modified_tick = current_tick
 
+    @eidosian()
     def set_environmental_factor(self, factor_name: str, value: float) -> None:
         """Set an environmental factor value for this cell."""
         self.environmental_factors[factor_name] = value
 
+    @eidosian()
     def get_environmental_factor(self, factor_name: str) -> float:
         """Get the value of an environmental factor, defaulting to 0."""
         return self.environmental_factors.get(factor_name, 0.0)
 
+    @eidosian()
     def set_terrain_type(self, terrain_type: str) -> None:
         """Set the terrain type of this cell."""
         self.terrain_type = terrain_type

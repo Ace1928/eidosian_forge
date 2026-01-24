@@ -8,8 +8,10 @@ import subprocess
 from typing import List, Optional, Dict, Any, Union
 from pathlib import Path
 import logging
+from eidosian_core import eidosian
 
 
+@eidosian()
 def run_command(
     cmd: List[str], 
     cwd: Optional[Union[str, Path]] = None,
@@ -54,6 +56,7 @@ def run_command(
         }
 
 
+@eidosian()
 def make_executable(file_path: Union[str, Path]) -> bool:
     """
     Make a file executable.
@@ -75,6 +78,7 @@ def make_executable(file_path: Union[str, Path]) -> bool:
         return False
 
 
+@eidosian()
 def detect_environment() -> Dict[str, Any]:
     """
     Detect information about the execution environment.

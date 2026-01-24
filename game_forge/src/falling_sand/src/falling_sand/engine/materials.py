@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
+from eidosian_core import eidosian
 
 
 class Material(IntEnum):
@@ -30,6 +31,7 @@ class MaterialPalette:
     liquid_alpha: float = 0.6
     gas_alpha: float = 0.35
 
+    @eidosian()
     def color_for(self, material: Material) -> tuple[float, float, float]:
         """Return RGB color for a material."""
 
@@ -45,6 +47,7 @@ class MaterialPalette:
             return self.gas
         raise ValueError(f"Unknown material: {material}")
 
+    @eidosian()
     def rgba_for(self, material: Material) -> tuple[float, float, float, float]:
         """Return RGBA color for a material."""
 

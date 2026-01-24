@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import websockets
+from eidosian_core import eidosian
 
 DEFAULT_WS = "ws://127.0.0.1:8928"
 RECONNECT_DELAY_S = 1.0
@@ -45,10 +46,12 @@ class Entry:
     hash: str = ""
 
 
+@eidosian()
 def ts_str(t: float) -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(t))
 
 
+@eidosian()
 def save_markdown(entries: List[Entry], path: str) -> None:
     lines = []
     lines.append("# Eidos Transcript\n\n")
@@ -90,6 +93,7 @@ class ClientState:
             sys.stdout.flush()
             self.stream_open = False
 
+    @eidosian()
     def record_message(self, role: str, text: str, h: str = ""):
         if h and h in self.seen_hashes:
             return
@@ -97,18 +101,22 @@ class ClientState:
             self.seen_hashes.add(h)
         self.entries.append(Entry(ts=time.time(), role=role, text=text, hash=h))
 
+    @eidosian()
     def print_user(self, text: str):
         self._close_stream()
         print(f"\nyou> {text}\n", flush=True)
 
+    @eidosian()
     def print_status(self, text: str):
         self._close_stream()
         print(f"[status] {text}", flush=True)
 
+    @eidosian()
     def print_error(self, text: str):
         self._close_stream()
         print(f"[error] {text}", flush=True)
 
+    @eidosian()
     def handle_messages(self, msgs: list[dict]):
         """
         messages[] are "completed" snapshots from DOM scan.
@@ -132,6 +140,7 @@ class ClientState:
                 if not self.stream_open:
                     print(f"\neidos> {text}\n", flush=True)
 
+    @eidosian()
     def handle_assistant_stream(self, data: dict):
         mode = data.get("mode", "delta")
         delta = data.get("delta", "")
@@ -151,6 +160,7 @@ class ClientState:
         self.stream_last_full = full or self.stream_last_full
         sys.stdout.flush()
 
+    @eidosian()
     def handle_assistant_stable(self, data: dict):
         full = (data.get("full") or "").strip()
         if not full:
@@ -179,6 +189,7 @@ HELP_TEXT = """Commands:
 """
 
 
+@eidosian()
 async def run_client(ws_url: str):
     state = ClientState()
     delay = RECONNECT_DELAY_S
@@ -189,6 +200,7 @@ async def run_client(ws_url: str):
                 state.print_status(f"Connected to {ws_url}")
                 delay = RECONNECT_DELAY_S
 
+                @eidosian()
                 async def reader():
                     async for raw in ws:
                         try:
@@ -213,6 +225,7 @@ async def run_client(ws_url: str):
                         else:
                             state.print_error(f"Unknown event type: {t!r}")
 
+                @eidosian()
                 async def writer():
                     loop = asyncio.get_running_loop()
                     while True:
@@ -273,12 +286,14 @@ async def run_client(ws_url: str):
             delay = min(MAX_RECONNECT_DELAY_S, delay * 1.5)
 
 
+@eidosian()
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Eidos sidecar client (terminal UI).")
     p.add_argument("--ws", default=DEFAULT_WS, help=f"WebSocket URL (default {DEFAULT_WS})")
     return p
 
 
+@eidosian()
 def main():
     args = build_argparser().parse_args()
     print("Eidos sidecar client. Type /help for commands.\n", flush=True)

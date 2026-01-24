@@ -18,8 +18,10 @@ from falling_sand.engine.streaming import ChunkStreamer, StreamConfig
 from falling_sand.engine.terrain import TerrainConfig, TerrainGenerator
 from falling_sand.engine.world import World
 from falling_sand.indexer import index_project
+from eidosian_core import eidosian
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI arguments for the benchmark suite."""
 
@@ -46,6 +48,7 @@ def _summarize_samples(name: str, samples: list[float]) -> dict[str, object]:
     }
 
 
+@eidosian()
 def benchmark_indexer(source_root: Path, tests_root: Path, runs: int) -> list[float]:
     """Benchmark the indexer and return run durations in seconds."""
 
@@ -60,6 +63,7 @@ def benchmark_indexer(source_root: Path, tests_root: Path, runs: int) -> list[fl
     return samples
 
 
+@eidosian()
 def benchmark_simulation(runs: int, size: int = 16) -> list[float]:
     """Benchmark a simple 3D simulation step on one chunk."""
 
@@ -81,6 +85,7 @@ def benchmark_simulation(runs: int, size: int = 16) -> list[float]:
     return samples
 
 
+@eidosian()
 def benchmark_streaming(runs: int, radius: int = 1) -> list[float]:
     """Benchmark chunk streaming updates."""
 
@@ -100,6 +105,7 @@ def benchmark_streaming(runs: int, radius: int = 1) -> list[float]:
     return samples
 
 
+@eidosian()
 def benchmark_terrain_generation(runs: int, size: int = 10) -> list[float]:
     """Benchmark terrain chunk generation."""
 
@@ -119,6 +125,7 @@ def benchmark_terrain_generation(runs: int, size: int = 10) -> list[float]:
     return samples
 
 
+@eidosian()
 def write_benchmark_report(benchmarks: list[dict[str, object]], output: Path) -> None:
     """Write benchmark stats to a JSON report."""
 
@@ -127,6 +134,7 @@ def write_benchmark_report(benchmarks: list[dict[str, object]], output: Path) ->
     output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the benchmark suite CLI."""
 

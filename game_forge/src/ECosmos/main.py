@@ -16,6 +16,7 @@ import argparse
 from data_structures import Cell, RuleSpecies, Position
 from interpreter import run_species
 from evolution import (
+from eidosian_core import eidosian
     distribute_initial_species,
     mutate_species,
     reproduce_species,
@@ -41,6 +42,7 @@ current_stats = {}
 state_manager = None
 
 
+@eidosian()
 def signal_handler(sig, frame):
     """Handle interrupt signals by setting a flag for graceful shutdown."""
     global interrupt_received
@@ -53,6 +55,7 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
+@eidosian()
 def create_world(width: int, height: int) -> List[List[Cell]]:
     """
     Initialize a 2D world grid of cells.
@@ -67,6 +70,7 @@ def create_world(width: int, height: int) -> List[List[Cell]]:
     return [[Cell() for _ in range(width)] for _ in range(height)]
 
 
+@eidosian()
 def collect_statistics(world: List[List[Cell]], tick: int) -> Dict[str, any]:
     """
     Collect global statistics about the simulation.
@@ -119,6 +123,7 @@ def collect_statistics(world: List[List[Cell]], tick: int) -> Dict[str, any]:
     }
 
 
+@eidosian()
 def process_reproduction(world: List[List[Cell]], next_species_id: int) -> int:
     """
     Process reproduction for all species in the world.
@@ -161,6 +166,7 @@ def process_reproduction(world: List[List[Cell]], next_species_id: int) -> int:
     return next_species_id
 
 
+@eidosian()
 def simulate_world(max_ticks: Optional[int] = None) -> None:
     """
     Run the main simulation loop.
@@ -315,6 +321,7 @@ def simulate_world(max_ticks: Optional[int] = None) -> None:
             plt.show()
 
 
+@eidosian()
 def main():
     """
     Main entry point with command-line argument parsing.

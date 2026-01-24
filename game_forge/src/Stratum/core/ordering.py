@@ -27,8 +27,10 @@ from enum import Enum
 import numpy as np
 
 from .config import DeterminismMode
+from eidosian_core import eidosian
 
 
+@eidosian()
 def lexicographic_cell_key(cell: Tuple[int, int]) -> Tuple[int, int]:
     """Key function for lexicographic cell ordering.
     
@@ -38,6 +40,7 @@ def lexicographic_cell_key(cell: Tuple[int, int]) -> Tuple[int, int]:
     return (cell[0], cell[1])
 
 
+@eidosian()
 def score_based_cell_key(
     cell: Tuple[int, int],
     scores: np.ndarray
@@ -51,6 +54,7 @@ def score_based_cell_key(
     return (-scores[i, j], i, j)
 
 
+@eidosian()
 def get_cell_order(
     cells: List[Tuple[int, int]],
     mode: DeterminismMode,
@@ -101,6 +105,7 @@ class Patch:
         """Unique patch identifier."""
         return (self.patch_i, self.patch_j)
     
+    @eidosian()
     def cells(self) -> Iterator[Tuple[int, int]]:
         """Iterate over cells in lexicographic order."""
         for i in range(self.start_i, self.end_i):
@@ -112,6 +117,7 @@ class Patch:
         return self.patch_id < other.patch_id
 
 
+@eidosian()
 def create_patches(
     grid_w: int,
     grid_h: int,
@@ -151,6 +157,7 @@ def create_patches(
     return sorted(patches)
 
 
+@eidosian()
 def get_patch_order(
     patches: List[Patch],
     mode: DeterminismMode,
@@ -173,6 +180,7 @@ def get_patch_order(
         # Can use activity-based ordering with stable tiebreaker
         if activity_scores is not None:
             # Sort by descending activity, then by patch_id
+            @eidosian()
             def key(p):
                 score = np.sum(activity_scores[p.start_i:p.end_i, p.start_j:p.end_j])
                 return (-score, p.patch_i, p.patch_j)
@@ -181,6 +189,7 @@ def get_patch_order(
     else:
         # REALTIME_ADAPTIVE: activity-based
         if activity_scores is not None:
+            @eidosian()
             def key(p):
                 return -np.sum(activity_scores[p.start_i:p.end_i, p.start_j:p.end_j])
             return sorted(patches, key=key)
@@ -207,6 +216,7 @@ class RNGStreamPartitioner:
         """
         self.base_seed = base_seed
     
+    @eidosian()
     def get_stream_seed(
         self,
         tick: int,
@@ -236,6 +246,7 @@ class RNGStreamPartitioner:
         
         return int.from_bytes(h.digest(), byteorder='big', signed=False)
     
+    @eidosian()
     def get_rng(
         self,
         tick: int,
@@ -317,6 +328,7 @@ class EventOrdering:
 
 # Module-level utilities for common operations
 
+@eidosian()
 def iterate_grid_lexicographic(
     grid_w: int,
     grid_h: int
@@ -335,6 +347,7 @@ def iterate_grid_lexicographic(
             yield (i, j)
 
 
+@eidosian()
 def select_top_k_cells_deterministic(
     scores: np.ndarray,
     k: int,

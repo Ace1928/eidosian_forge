@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 from typing import TYPE_CHECKING
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:  # pragma: no cover - imported for type hints only
     from .eu_world import Universe
@@ -16,6 +17,7 @@ class EidosAI:
         self.universe = universe
         self._ticks = 0
 
+    @eidosian()
     def update(self) -> None:
         """Potentially adjust rules based on universe state."""
         self._ticks += 1

@@ -20,6 +20,7 @@ from typing import List, Protocol, Tuple
 import numpy as np
 
 from game_forge.src.gene_particles.gp_config import (
+from eidosian_core import eidosian
     EVOLUTION_ADJUSTMENT_RANGE,
     GIVE_TAKE_PROBABILITY,
     GRAVITY_STRENGTH_RANGE,
@@ -43,6 +44,7 @@ class InteractionEvolver(Protocol):
     based on the current simulation frame count, creating temporal dynamics.
     """
 
+    @eidosian()
     def evolve_parameters(self, frame_count: int) -> None:
         """Evolve interaction parameters over time.
 
@@ -246,6 +248,7 @@ class InteractionRules:
 
         return synergy_matrix
 
+    @eidosian()
     def evolve_parameters(self, frame_count: int) -> None:
         """Evolve interaction parameters periodically to create dynamic relationships.
 

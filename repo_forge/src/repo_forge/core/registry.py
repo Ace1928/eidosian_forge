@@ -5,6 +5,7 @@ Integrates with GisCore for centralized configuration.
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from gis_forge import GisCore
+from eidosian_core import eidosian
 
 class RepoRegistry:
     """
@@ -23,18 +24,22 @@ class RepoRegistry:
             "benchmarks", "examples", "ci", ".github", "config", "shared"
         ])
 
+    @eidosian()
     def register_template(self, name: str, content: str):
         """Register a content template in GIS."""
         self.gis.set(f"repo.templates.{name}", content)
 
+    @eidosian()
     def get_template(self, name: str) -> Optional[str]:
         """Retrieve a template from GIS."""
         return self.gis.get(f"repo.templates.{name}")
 
+    @eidosian()
     def register_structure(self, language: str, structure: Dict[str, Any]):
         """Register a language-specific directory structure."""
         self.gis.set(f"repo.structures.{language}", structure)
 
+    @eidosian()
     def get_structure(self, language: str) -> Dict[str, Any]:
         """Get the structure for a language, falling back to defaults."""
         return self.gis.get(f"repo.structures.{language}", {})

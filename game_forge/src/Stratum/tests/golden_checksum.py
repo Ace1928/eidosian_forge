@@ -34,6 +34,7 @@ import sys
 import tempfile
 
 import numpy as np
+from eidosian_core import eidosian
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -46,6 +47,7 @@ from core.registry import SpeciesRegistry
 from domains.materials.fundamentals import MaterialsFundamentals
 
 
+@eidosian()
 def get_git_sha() -> str:
     """Get current git SHA if available."""
     try:
@@ -62,6 +64,7 @@ def get_git_sha() -> str:
     return "unknown"
 
 
+@eidosian()
 def hash_array(arr: np.ndarray) -> str:
     """Compute SHA256 hash of a numpy array."""
     h = hashlib.sha256()
@@ -69,6 +72,7 @@ def hash_array(arr: np.ndarray) -> str:
     return h.hexdigest()
 
 
+@eidosian()
 def hash_config(cfg: EngineConfig) -> str:
     """Compute SHA256 hash of configuration."""
     h = hashlib.sha256()
@@ -80,6 +84,7 @@ def hash_config(cfg: EngineConfig) -> str:
     return h.hexdigest()
 
 
+@eidosian()
 def hash_registry(registry: SpeciesRegistry) -> str:
     """Compute SHA256 hash of species registry."""
     h = hashlib.sha256()
@@ -91,6 +96,7 @@ def hash_registry(registry: SpeciesRegistry) -> str:
     return h.hexdigest()
 
 
+@eidosian()
 def hash_mixtures(fabric: Fabric) -> str:
     """Compute SHA256 hash of mixture data."""
     h = hashlib.sha256()
@@ -103,6 +109,7 @@ def hash_mixtures(fabric: Fabric) -> str:
     return h.hexdigest()
 
 
+@eidosian()
 def run_golden_checksum(seed: int, num_ticks: int, verbose: bool = False) -> dict:
     """Run simulation and compute golden checksums.
     
@@ -209,6 +216,7 @@ def run_golden_checksum(seed: int, num_ticks: int, verbose: bool = False) -> dic
         return result
 
 
+@eidosian()
 def main():
     parser = argparse.ArgumentParser(description="Generate golden checksums for Stratum")
     parser.add_argument('--seed', type=int, default=42, help='Base seed')

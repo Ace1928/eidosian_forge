@@ -10,6 +10,7 @@ import numpy as np
 from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.config import VoxelConfig
 from falling_sand.engine.materials import Material, MaterialPalette
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:
     from panda3d.core import (  # type: ignore[import-untyped]
@@ -51,6 +52,7 @@ class RenderConfig:
             raise ValueError("max_points must be positive")
 
 
+@eidosian()
 def chunk_points(chunk: Chunk, voxel_size: float) -> Tuple[np.ndarray, np.ndarray]:
     """Return positions and material ids for non-air voxels in a chunk."""
 
@@ -63,6 +65,7 @@ def chunk_points(chunk: Chunk, voxel_size: float) -> Tuple[np.ndarray, np.ndarra
     return positions, materials
 
 
+@eidosian()
 def build_point_cloud(
     chunks: Iterable[Chunk],
     config: VoxelConfig,
@@ -131,12 +134,14 @@ class Panda3DRenderer:
         if hasattr(self.base.render, "set_point_size"):
             self.base.render.set_point_size(point_size)
 
+    @eidosian()
     def render_chunks(self, chunks: Iterable[Chunk]) -> None:
         """Render chunks as a point cloud."""
 
         node = build_point_cloud(chunks, self.config, self.palette, self.render_config)
         self._node_path = self.base.render.attach_new_node(node)
 
+    @eidosian()
     def update_chunks(self, chunks: Iterable[Chunk]) -> None:
         """Replace the current point cloud with new chunk data."""
 
@@ -145,6 +150,7 @@ class Panda3DRenderer:
             self._node_path = None
         self.render_chunks(chunks)
 
+    @eidosian()
     def run(self) -> None:
         """Start the Panda3D application loop."""
 

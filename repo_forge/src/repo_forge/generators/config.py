@@ -15,6 +15,7 @@ import json
 from ..core.files import write_file
 from ..core.templates import render_template
 from ..constants.content import (
+from eidosian_core import eidosian
     README_TEMPLATE,
     GITIGNORE_CONTENT,
     EDITORCONFIG_CONTENT,
@@ -79,6 +80,7 @@ def _load_global_info() -> Dict[str, Any]:
     }
 
 
+@eidosian()
 def create_eidosian_json(base_path: Path, repo_name: str) -> bool:
     """
     Create .eidosian.json metadata file for a repository.
@@ -166,6 +168,7 @@ def create_eidosian_json(base_path: Path, repo_name: str) -> bool:
     )
 
 
+@eidosian()
 def create_configuration_files(
     base_path: Path,
     repo_name: str,

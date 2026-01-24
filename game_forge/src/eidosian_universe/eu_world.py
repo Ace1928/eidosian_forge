@@ -11,6 +11,7 @@ import pygame
 from .eu_agent import Agent, Component
 from .eu_config import UniverseConfig
 from .eu_rules import (
+from eidosian_core import eidosian
     GravityRule,
     MetabolismRule,
     ResourceRule,
@@ -86,6 +87,7 @@ class Universe:
                 )
             )
 
+    @eidosian()
     def update(self) -> None:
         """Advance simulation state."""
         # slowly vary environment temperature
@@ -120,11 +122,13 @@ class Universe:
                 )
             )
 
+    @eidosian()
     def log_event(self, message: str) -> None:
         """Record an event in the universe log and print it."""
         self.log.append(message)
         print(message)
 
+    @eidosian()
     def render(self, surface: pygame.Surface) -> None:
         """Draw all agents to the surface."""
         surface.fill(self.config.background_color)

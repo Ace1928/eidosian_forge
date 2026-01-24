@@ -11,6 +11,7 @@ import numpy as np
 
 from game_forge.src.gene_particles.gp_config import SimulationConfig
 from game_forge.src.gene_particles.gp_types import (
+from eidosian_core import eidosian
     BoolArray,
     CellularTypeData,
     ColorRGB,
@@ -58,6 +59,7 @@ class CellularTypeManager:
         self.mass_based_type_indices: List[int] = mass_based_type_indices
         self.colors: List[ColorRGB] = colors
 
+    @eidosian()
     def add_cellular_type_data(self, data: CellularTypeData) -> None:
         """
         Add a cellular type to the manager.
@@ -67,6 +69,7 @@ class CellularTypeManager:
         """
         self.cellular_types.append(data)
 
+    @eidosian()
     def get_cellular_type_by_id(self, i: int) -> CellularTypeData:
         """
         Retrieve a cellular type by its index.
@@ -79,6 +82,7 @@ class CellularTypeManager:
         """
         return self.cellular_types[i]
 
+    @eidosian()
     def remove_dead_in_all_types(self) -> None:
         """
         Remove dead cellular components from all managed types.
@@ -89,6 +93,7 @@ class CellularTypeManager:
         for ct in self.cellular_types:
             ct.remove_dead(self.config)
 
+    @eidosian()
     def reproduce(self) -> None:
         """
         Handle reproduction across all cellular types.

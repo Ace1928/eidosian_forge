@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from data_structures import Cell, RuleSpecies, Position
 import config
+from eidosian_core import eidosian
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class StateManager:
             self.state_dir = "."
             logger.info(f"Falling back to current directory for state files")
 
+    @eidosian()
     def get_state_path(self, filename: Optional[str] = None) -> str:
         """
         Get the full path for a state file.
@@ -62,6 +64,7 @@ class StateManager:
             filename = DEFAULT_STATE_FILE
         return os.path.join(self.state_dir, filename)
 
+    @eidosian()
     def save_state(
         self,
         world: List[List[Cell]],
@@ -114,6 +117,7 @@ class StateManager:
                 logger.critical("Failed to save backup state")
                 return ""
 
+    @eidosian()
     def load_state(self, filename: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Load simulation state from a file.
@@ -142,6 +146,7 @@ class StateManager:
             logger.error(f"Failed to load state: {e}")
             return None
 
+    @eidosian()
     def state_exists(self, filename: Optional[str] = None) -> bool:
         """
         Check if a state file exists.
@@ -155,6 +160,7 @@ class StateManager:
         state_path = self.get_state_path(filename)
         return os.path.exists(state_path)
 
+    @eidosian()
     def list_available_states(self) -> List[Tuple[str, float]]:
         """
         List all available state files with their timestamps.

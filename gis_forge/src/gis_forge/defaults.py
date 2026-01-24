@@ -42,6 +42,7 @@ from typing import Dict, Any, Optional, TypeVar, List, Union
 System information about the underlying platform and environment.
 Knowledge begins with precise awareness of computational context. 🧠
 """
+from eidosian_core import eidosian
 SYSTEM_INFO: Dict[str, str] = {
     "platform": platform.system(),
     "platform_release": platform.release(),
@@ -763,6 +764,7 @@ PROJECT_TEMPLATES: Dict[str, TemplateStructure] = {
 
 
 # Extension logic for templating engines
+@eidosian()
 def get_template_structure(template_name: str) -> List[str]:
     """
     Retrieve the file structure for a specified template.
@@ -1190,6 +1192,7 @@ T = TypeVar("T")  # Type parameter—polymorphism's silent contract
 # └────────────────────────────────────────────────────────┘
 
 
+@eidosian()
 def print_info(section: Optional[str] = None, format_json: bool = True) -> None:
     """
     Extract and display configuration sections with surgical precision.
@@ -1280,6 +1283,7 @@ def print_info(section: Optional[str] = None, format_json: bool = True) -> None:
 # └────────────────────────────────────────────────────────┘
 
 
+@eidosian()
 def get_version() -> str:
     """
     Retrieve the current semantic version string.
@@ -1308,6 +1312,7 @@ def get_version() -> str:
     return version
 
 
+@eidosian()
 def get_dependency_group(group_name: str) -> List[str]:
     """
     Extract a specific dependency group by name.
@@ -1340,6 +1345,7 @@ def get_dependency_group(group_name: str) -> List[str]:
 # └────────────────────────────────────────────────────────┘
 
 
+@eidosian()
 def get_environment_config(env: str) -> Dict[str, Union[str, bool]]:
     """
     Retrieve configuration for a specific execution environment.
@@ -1367,6 +1373,7 @@ def get_environment_config(env: str) -> Dict[str, Union[str, bool]]:
     return ENV_CONFIGS[env]  # Configuration slice for requested reality
 
 
+@eidosian()
 def resolve_paths(*path_parts: str) -> Path:
     """
     Construct an absolute path relative to the project root.

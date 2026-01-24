@@ -9,6 +9,7 @@ import numpy as np
 
 from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.materials import Material
+from eidosian_core import eidosian
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,7 @@ class TerrainConfig:
             raise ValueError("grid_cache must be positive")
 
 
+@eidosian()
 def hash2d(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
     """Hash integer grid coordinates into a repeatable [0, 1) float noise."""
 
@@ -77,6 +79,7 @@ def _fade(t: np.ndarray) -> np.ndarray:
     return t * t * (3.0 - 2.0 * t)
 
 
+@eidosian()
 def value_noise_2d(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
     """Value noise in 2D using bilinear interpolation."""
 
@@ -101,6 +104,7 @@ def value_noise_2d(x: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
     return x_interp0 * (1.0 - v) + x_interp1 * v
 
 
+@eidosian()
 def fractal_noise_2d(x: np.ndarray, y: np.ndarray, config: TerrainConfig) -> np.ndarray:
     """Compute fractal value noise over multiple octaves."""
 
@@ -119,6 +123,7 @@ def fractal_noise_2d(x: np.ndarray, y: np.ndarray, config: TerrainConfig) -> np.
     return total / max_amplitude
 
 
+@eidosian()
 def heightmap_for_chunk(coord: tuple[int, int, int], size: int, config: TerrainConfig) -> np.ndarray:
     """Generate a heightmap for a chunk coordinate."""
 
@@ -141,6 +146,7 @@ def heightmap_for_chunk(coord: tuple[int, int, int], size: int, config: TerrainC
     return height.astype(np.int32)
 
 
+@eidosian()
 def generate_chunk(coord: tuple[int, int, int], size: int, config: TerrainConfig) -> Chunk:
     """Generate a chunk using procedural terrain rules."""
 
@@ -196,6 +202,7 @@ class TerrainGenerator:
         init=False,
     )
 
+    @eidosian()
     def chunk(self, coord: tuple[int, int, int], size: int) -> Chunk:
         """Return a generated chunk for the given coordinate."""
 

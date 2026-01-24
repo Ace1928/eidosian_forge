@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from typing import Dict, Tuple
 
 import numpy as np
+from eidosian_core import eidosian
 
 try:
     # When imported as part of the stratum package
@@ -166,6 +167,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Effective property computation
 
+    @eidosian()
     def effective_property(self, mix: Mixture, registry: SpeciesRegistry, prop_name: str) -> float:
         """Return the mixture weighted average of a given high energy property.
 
@@ -187,6 +189,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Global operators: diffusion and smoothing
 
+    @eidosian()
     def apply_global_ops(
         self,
         fabric: Fabric,
@@ -294,6 +297,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Barrier and energy models for high energy events
 
+    @eidosian()
     def E_avail_local(self, rho: float, heat: float, kin: float) -> float:
         """Compute available energy for crossing a barrier.
 
@@ -304,6 +308,7 @@ class MaterialsFundamentals:
         """
         return 0.5 * heat + 0.5 * kin
 
+    @eidosian()
     def E_act_fusion(self, he_props: Dict[str, float], Z: float, T: float, rho: float) -> float:
         """Activation energy for fusion.
 
@@ -324,6 +329,7 @@ class MaterialsFundamentals:
         t_factor = np.exp(-T)
         return base * t_factor
 
+    @eidosian()
     def fusion_yield_fraction(self, he_props: Dict[str, float], Z: float, T: float) -> float:
         """Return the fraction of the dominant species' mass that undergoes fusion.
 
@@ -338,6 +344,7 @@ class MaterialsFundamentals:
         y *= (1.0 - lam)
         return clamp(y, 0.0, 0.8)
 
+    @eidosian()
     def radiation_fraction(self, parent_he: Dict[str, float], child_he: Dict[str, float], T: float) -> float:
         """Return fraction of released fusion energy radiated away.
 
@@ -349,6 +356,7 @@ class MaterialsFundamentals:
         opacity_eff = 0.5 * (op_p + op_c)
         return clamp((1.0 - opacity_eff) * (T / (T + 1.0)), 0.0, 0.9)
 
+    @eidosian()
     def E_act_decay(self, he_props: Dict[str, float], Z: float, T: float) -> float:
         """Activation energy for decay.
 
@@ -365,6 +373,7 @@ class MaterialsFundamentals:
         # Temperature increases decay probability (tunnelling)
         return base * np.exp(-T)
 
+    @eidosian()
     def decay_fraction(self, he_props: Dict[str, float], Z: float, T: float) -> float:
         """Fraction of mass lost in a decay event.
 
@@ -379,6 +388,7 @@ class MaterialsFundamentals:
         f *= (1.0 + z_factor)
         return clamp(f, 0.0, 0.6)
 
+    @eidosian()
     def decay_mass_split(self, parent_he: Dict[str, float], daughters: Tuple[Species], tick: int, cell: Tuple[int, int], attempt: int, entropy: Ledger) -> Tuple[float, ...]:
         """Return a tuple of fractions (summing to 1) representing how mass is
         distributed among daughter species in a decay.
@@ -406,6 +416,7 @@ class MaterialsFundamentals:
         # Normalise
         return tuple((w / total) for w in weights)
 
+    @eidosian()
     def compute_decay_energy(self, parent_he: Dict[str, float], daughters_he: Tuple[Dict[str, float], ...], Z: float) -> float:
         """Compute energy released or consumed in a decay event.
 
@@ -427,6 +438,7 @@ class MaterialsFundamentals:
         m = 1.0 - 2.0 * clamp((Z - self.cfg.Z_star_flip) / max(self.cfg.Z_abs_max - self.cfg.Z_star_flip, 1e-6), 0.0, 1.0)
         return energy * m
 
+    @eidosian()
     def E_act_degenerate(self, Z: float, T: float, mix: Mixture) -> float:
         """Activation energy for the degenerate transition.
 
@@ -439,6 +451,7 @@ class MaterialsFundamentals:
         # Temperature effect
         return max(0.05, base * np.exp(-T))
 
+    @eidosian()
     def degenerate_fraction(self, Z: float, T: float) -> float:
         """Fraction of mass converted to degenerate matter in a transition.
 
@@ -446,6 +459,7 @@ class MaterialsFundamentals:
         """
         return clamp(0.3 + 0.5 * clamp((Z - self.cfg.Z_deg_min) / max(self.cfg.Z_abs_max - self.cfg.Z_deg_min, 1e-6), 0.0, 1.0), 0.0, 0.8)
 
+    @eidosian()
     def E_act_bh(self, Z: float, T: float) -> float:
         """Activation energy for black hole formation.
 
@@ -456,6 +470,7 @@ class MaterialsFundamentals:
         base = 1.2 - z_factor
         return max(0.1, base * np.exp(-0.5 * T))
 
+    @eidosian()
     def support_failure_metric(self, fabric: Fabric, i: int, j: int) -> float:
         """Return a crude support failure metric.
 
@@ -465,6 +480,7 @@ class MaterialsFundamentals:
         indicate likely collapse.
         """
         # Use Fabric's boundary-aware neighbor indexing for all gradient calculations
+        @eidosian()
         def grad(field, x, y):
             xm, ym, valid_m = fabric.get_neighbor_index(x, y, -1, 0)
             xp, yp, valid_p = fabric.get_neighbor_index(x, y, 1, 0)
@@ -514,6 +530,7 @@ class MaterialsFundamentals:
             return float('inf')
         return gradI / gradP
 
+    @eidosian()
     def potential_like_energy(self, fabric: Fabric, i: int, j: int) -> float:
         """Return a pseudo potential energy for BH formation.
 
@@ -536,6 +553,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Event handling: degenerate, fusion, BH
 
+    @eidosian()
     def handle_high_energy_events(
         self,
         fabric: Fabric,
@@ -588,6 +606,7 @@ class MaterialsFundamentals:
         if rho <= 1e-8:
             return
         mix = None
+        @eidosian()
         def get_mix() -> Mixture | None:
             nonlocal mix
             if mix is None:
@@ -830,6 +849,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Utility functions for mass conversion and energy
 
+    @eidosian()
     def convert_mass_fraction(self, fabric: Fabric, i: int, j: int, from_sid: str, to_sid: str, fraction: float) -> None:
         """Convert a fraction of mass of species ``from_sid`` to species ``to_sid`` in cell (i,j).
 
@@ -884,6 +904,7 @@ class MaterialsFundamentals:
         mix.add_species_mass(to_sid, amount, self.cfg.mixture_top_k)
         fabric.mark_mixture_dirty(i, j)
 
+    @eidosian()
     def generate_fusion_child_he(self, parent_he: Dict[str, float], Z: float, tick: int, cell: Tuple[int, int], attempt: int, ledger: Ledger) -> Dict[str, float]:
         """Generate new high energy properties for a child species.
 
@@ -911,6 +932,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Decay daughter generation
 
+    @eidosian()
     def generate_decay_daughters(self, parent_he: Dict[str, float], Z: float, tick: int, cell: Tuple[int, int], attempt: int, ledger: Ledger) -> Tuple[Dict[str, float], Dict[str, float]]:
         """Generate two child HE property dictionaries for a decay event.
 
@@ -973,6 +995,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Degenerate transition energy model
 
+    @eidosian()
     def energy_delta_degenerate(self, parent_he: Dict[str, float], Z: float, fraction: float, rho: float) -> float:
         """Compute energy released when a fraction of mass transitions to degenerate matter.
 
@@ -1014,6 +1037,7 @@ class MaterialsFundamentals:
         per_mass_energy = (delta_chi + delta_beta) * 0.5 * (1.0 + z_factor)
         return per_mass_energy * fraction * rho
 
+    @eidosian()
     def energy_delta_degenerate_values(self, chi_p: float, beta_p: float, Z: float, fraction: float, rho: float) -> float:
         """Compute degenerate transition energy using explicit parent values."""
         deg_he = self.deg_species.he_props
@@ -1025,6 +1049,7 @@ class MaterialsFundamentals:
         per_mass_energy = (delta_chi + delta_beta) * 0.5 * (1.0 + z_factor)
         return per_mass_energy * fraction * rho
 
+    @eidosian()
     def compute_fusion_energy(self, parent_he: Dict[str, float], child_he: Dict[str, float], Z: float, Z_star_flip: float) -> float:
         """Return energy released (positive) or consumed (negative) for a fusion event.
 
@@ -1058,6 +1083,7 @@ class MaterialsFundamentals:
             Energy per unit mass released (>0) or absorbed (<0).
         """
         # Derive effective mass index A for parent and child from rho_max and beta.
+        @eidosian()
         def derive_A(he: Dict[str, float]) -> float:
             # The packing limit and binding depth together hint at how
             # "heavy" a species is. Scale into a moderate range to avoid
@@ -1071,6 +1097,7 @@ class MaterialsFundamentals:
         # Binding energy curve parameters (heuristic).  b0 sets linear
         # growth, b1 and b2 provide decreasing returns for larger A.
         b0, b1, b2 = 1.0, 1.5, 0.5
+        @eidosian()
         def binding_curve(A: float) -> float:
             return b0 * A - b1 * (A ** (2.0 / 3.0)) - b2 * (A ** (5.0 / 3.0))
 
@@ -1086,6 +1113,7 @@ class MaterialsFundamentals:
         return delta_B * m
 
 
+    @eidosian()
     def compute_stability_high(self, he_props: Dict[str, float], Z: float, T: float) -> float:
         """Compute a stability score for high energy regime.
 
@@ -1104,6 +1132,7 @@ class MaterialsFundamentals:
     # ------------------------------------------------------------------
     # Black hole absorption helper
 
+    @eidosian()
     def absorb_into_black_hole(self, fabric: Fabric, i: int, j: int, cfg: EngineConfig) -> None:
         """Absorb the contents of a cell into its black hole mass.
 

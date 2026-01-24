@@ -14,6 +14,7 @@ from typing import ClassVar, Dict, Final, List, Mapping, Tuple, cast
 import numpy as np
 
 from game_forge.src.gene_particles.gp_types import (
+from eidosian_core import eidosian
     ColorRGB,
     FloatArray,
     Range,
@@ -218,6 +219,7 @@ class GeneticParamConfig:
         if value[0] >= value[1]:
             raise ValueError(f"{name} must have min < max, got {value}")
 
+    @eidosian()
     def clamp_gene_values(
         self,
         speed_factor: FloatArray,
@@ -294,6 +296,7 @@ class GeneticParamConfig:
             ),
         )
 
+    @eidosian()
     def get_range_for_trait(self, trait_name: str) -> Range:
         """
         Retrieve the valid range for a specific trait.
@@ -311,6 +314,7 @@ class GeneticParamConfig:
             raise KeyError(f"Unknown trait: {trait_name}")
         return self.trait_definitions[trait_name].range
 
+    @eidosian()
     def to_dict(self) -> Dict[str, object]:
         """
         Convert configuration to a serializable dictionary.
@@ -661,6 +665,7 @@ class SimulationConfig:
         if not (0.0 <= self.structural_complexity_weight <= 1.0):
             raise ValueError("Structural complexity weight must be between 0.0 and 1.0")
 
+    @eidosian()
     def to_dict(self) -> Dict[str, object]:
         """
         Convert entire configuration to a flat dictionary representation.

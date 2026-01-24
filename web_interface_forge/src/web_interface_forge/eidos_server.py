@@ -53,6 +53,7 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
+from eidosian_core import eidosian
 
 CHAT_URL = "https://chat.openai.com/"
 
@@ -70,14 +71,17 @@ WS_PING_TIMEOUT = 20
 WS_MAX_SIZE = 16 * 1024 * 1024
 
 
+@eidosian()
 def now() -> float:
     return time.time()
 
 
+@eidosian()
 def sha256_text(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8", errors="replace")).hexdigest()
 
 
+@eidosian()
 def lcp_len(a: str, b: str) -> int:
     """
     Longest common prefix length. Used for delta streaming.
@@ -90,6 +94,7 @@ def lcp_len(a: str, b: str) -> int:
     return i
 
 
+@eidosian()
 def safe_json(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
@@ -122,6 +127,7 @@ class ChatDOM:
         "button:has-text('New')",
     )
 
+    @eidosian()
     async def wait_for_chat_ready(self, page: Page, timeout_ms: int = 180_000) -> bool:
         """
         Returns True if a textbox appears within timeout, otherwise False.
@@ -133,6 +139,7 @@ class ChatDOM:
         except Exception:
             return False
 
+    @eidosian()
     async def read_messages(self, page: Page) -> List[DOMMessage]:
         """
         Snapshot messages from DOM in order.
@@ -152,6 +159,7 @@ class ChatDOM:
             out.append(DOMMessage(role=role, text=text))
         return out
 
+    @eidosian()
     async def get_last_assistant_text(self, page: Page) -> str:
         """
         Best-effort: find last assistant message and return its text.
@@ -162,12 +170,14 @@ class ChatDOM:
             return ""
         return (await nodes.nth(cnt - 1).inner_text()).strip()
 
+    @eidosian()
     async def send_text(self, page: Page, text: str) -> None:
         box = page.locator(self.TEXTBOX_SEL)
         await box.wait_for(timeout=60_000)
         await box.fill(text)
         await box.press("Enter")
 
+    @eidosian()
     async def new_chat(self, page: Page) -> bool:
         """
         Try to click "New chat" or otherwise navigate to a clean chat context.
@@ -189,6 +199,7 @@ class ChatDOM:
         except Exception:
             return False
 
+    @eidosian()
     async def reset(self, page: Page) -> None:
         await page.reload(wait_until="domcontentloaded")
 
@@ -466,6 +477,7 @@ class EidosSidecarServer:
                 self.command_owner = self.clients[-1] if self.clients else None
 
     async def _run_ws_server(self) -> None:
+        @eidosian()
         async def handler(ws: WebSocketServerProtocol):
             await self._handle_ws(ws)
 
@@ -480,10 +492,12 @@ class EidosSidecarServer:
             await self._emit_status(f"WebSocket server listening on ws://{self.host}:{self.port}")
             await asyncio.Future()  # run until cancelled
 
+    @eidosian()
     async def run(self) -> None:
         await self._launch_browser()
 
 
+@eidosian()
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Eidos hybrid ChatGPT web sidecar server (headed Playwright + local WebSocket bridge)."
@@ -495,6 +509,7 @@ def build_argparser() -> argparse.ArgumentParser:
     return p
 
 
+@eidosian()
 def setup_logging(log_path: str) -> None:
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     logging.basicConfig(
@@ -507,6 +522,7 @@ def setup_logging(log_path: str) -> None:
     )
 
 
+@eidosian()
 def main() -> None:
     args = build_argparser().parse_args()
     setup_logging(args.log)

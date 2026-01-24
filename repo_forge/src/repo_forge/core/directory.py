@@ -12,6 +12,7 @@ import concurrent.futures
 from functools import partial
 
 from ..constants.paths import (
+from eidosian_core import eidosian
     CORE_DIRECTORIES,
     LANGUAGE_DIRECTORIES,
     SCRIPT_DIRECTORIES,
@@ -26,11 +27,13 @@ from ..constants.paths import (
 )
 
 
+@eidosian()
 def create_directory(path: Path) -> None:
     """Create a directory and its parents if they don't exist."""
     path.mkdir(parents=True, exist_ok=True)
 
 
+@eidosian()
 def create_directories_in_parallel(base_path: Path, directories: List[str]) -> None:
     """Create multiple directories in parallel for optimal performance."""
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -39,6 +42,7 @@ def create_directories_in_parallel(base_path: Path, directories: List[str]) -> N
         list(executor.map(create_dir, paths))
 
 
+@eidosian()
 def create_directory_structure(base_path: Path, languages: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Create the complete directory structure for an Eidosian monorepo.

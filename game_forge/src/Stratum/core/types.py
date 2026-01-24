@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List
+from eidosian_core import eidosian
 
 @dataclass
 class Vec2:
@@ -44,9 +45,11 @@ class Vec2:
             return Vec2(0.0, 0.0)
         return Vec2(self.x / scalar, self.y / scalar)
 
+    @eidosian()
     def length(self) -> float:
         return (self.x ** 2 + self.y ** 2) ** 0.5
 
+    @eidosian()
     def normalized(self) -> Vec2:
         l = self.length()
         if l == 0:
@@ -65,6 +68,7 @@ class Cell:
     i: int
     j: int
 
+    @eidosian()
     def neighbors4(self, max_i: int, max_j: int) -> List[Cell]:
         """Return the four orthogonal neighbors within bounds.
 
@@ -85,11 +89,13 @@ class Cell:
         return result
 
 
+@eidosian()
 def dot(a: Vec2, b: Vec2) -> float:
     """Return the dot product of two vectors."""
     return a.x * b.x + a.y * b.y
 
 
+@eidosian()
 def clamp(val: float, min_val: float, max_val: float) -> float:
     """Clamp a value to a specified range."""
     return max(min(val, max_val), min_val)

@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Sequence
 
 from falling_sand.indexer import index_project
+from eidosian_core import eidosian
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI arguments for profiling."""
 
@@ -20,6 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def profile_index(
     source_root: Path,
     tests_root: Path,
@@ -34,6 +37,7 @@ def profile_index(
     return output
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the profiling CLI."""
 

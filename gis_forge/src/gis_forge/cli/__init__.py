@@ -5,7 +5,9 @@ import argparse
 import sys
 import json
 from typing import Optional, List
+from eidosian_core import eidosian
 
+@eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(

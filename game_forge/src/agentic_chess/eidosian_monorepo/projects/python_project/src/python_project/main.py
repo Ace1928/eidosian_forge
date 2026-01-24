@@ -2,8 +2,10 @@
 Main entry point for the Python project.
 """
 from typing import Dict, Any
+from eidosian_core import eidosian
 
 
+@eidosian()
 def run() -> Dict[str, Any]:
     """
     Run the main functionality of the project.

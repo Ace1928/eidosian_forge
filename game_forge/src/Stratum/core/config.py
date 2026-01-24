@@ -20,6 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
+from eidosian_core import eidosian
 
 
 class DeterminismMode(Enum):
@@ -163,6 +164,7 @@ class EngineConfig:
     # Derived parameters reserved for future use
     extras: dict = field(default_factory=dict)
 
+    @eidosian()
     def to_dict(self) -> dict:
         """Return a dict representation of the configuration.
 
@@ -177,6 +179,7 @@ class EngineConfig:
                 result[k] = v
         return result
 
+    @eidosian()
     def compute_stability_dt(self, max_diffusivity: float = 0.1, max_velocity: float = 1.0) -> float:
         """Compute the maximum stable timestep based on CFL-like constraints.
         
@@ -200,6 +203,7 @@ class EngineConfig:
         # Take minimum with safety factor
         return self.cfl_safety_factor * min(dt_diffusion, dt_advection)
 
+    @eidosian()
     def is_deterministic(self) -> bool:
         """Check if the configuration enforces strict determinism."""
         return self.determinism_mode == DeterminismMode.STRICT_DETERMINISTIC

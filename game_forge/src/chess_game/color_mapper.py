@@ -13,6 +13,7 @@ import time
 from flashtext import KeywordProcessor  # type: ignore
 import colorspacious  # type: ignore
 import shutil
+from eidosian_core import eidosian
 
 # Configure logging - consider moving this to a central configuration if needed for broader application
 logging.basicConfig(
@@ -514,6 +515,7 @@ class ColorMapper:
 
     @staticmethod
     def validate_text_input(func):
+        @eidosian()
         @wraps(func)
         def wrapper(instance, text: str, *args, **kwargs):
             if not isinstance(text, str) or not text.strip():
@@ -897,6 +899,7 @@ class ColorMapper:
             int(final_rgb[2]),
         )  # Explicit 3-tuple
 
+    @eidosian()
     def batch_update_color_map(self, traits: List[str]) -> None:
         """Process multiple traits in batch with single save operation"""
         with ThreadPoolExecutor() as executor:
@@ -911,6 +914,7 @@ class ColorMapper:
     def _get_trait_color(self, trait: str) -> Tuple[int, int, int]:
         return tuple(self.trait_color_map[trait]["color"])  # type: ignore
 
+    @eidosian()
     def add_personality_entry(
         self,
         name: str,
@@ -928,6 +932,7 @@ class ColorMapper:
         }
         self._save_color_map()
 
+    @eidosian()
     def get_emotion_color(
         self, emotion: str, intensity: str = "base"
     ) -> Tuple[int, int, int]:
@@ -939,6 +944,7 @@ class ColorMapper:
             )
         )
 
+    @eidosian()
     def find_related_concepts(self, trait: str) -> Dict[str, List]:
         """Find connections across the knowledge graph"""
         return {
@@ -955,6 +961,7 @@ class ColorMapper:
         }
 
 
+@eidosian()
 def main():
     try:
         from PIL import ImageFont
@@ -988,11 +995,13 @@ def main():
             except json.JSONDecodeError:
                 processed_urls = set()  # Handle empty or corrupted JSON
 
+    @eidosian()
     def save_processed_url(url):
         processed_urls.add(url)
         with open(PROCESSED_LOG, "w") as f:
             json.dump(list(processed_urls), f, indent=2)
 
+    @eidosian()
     def search_searxng(query, num_results=5):  # Reduced num_results for demonstration
         from urllib.parse import urljoin
 
@@ -1015,6 +1024,7 @@ def main():
             print(f"Search error: {e}")
             return {"results": []}  # Return empty results to avoid further errors
 
+    @eidosian()
     def extract_content_with_tika(url):
         try:
             response = requests.get(

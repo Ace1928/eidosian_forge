@@ -10,8 +10,10 @@ from typing import Sequence
 from falling_sand import schema
 from falling_sand.db import DbConfig, connect_db, ingest_document, migrate_db
 from falling_sand.models import index_document_from_dict
+from eidosian_core import eidosian
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create CLI arguments for ingestion."""
 
@@ -22,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def ingest_index(index_path: Path, db_path: Path, batch_size: int = 1000) -> int:
     """Ingest index document from disk into SQLite and return the run ID."""
 
@@ -43,6 +46,7 @@ def ingest_index(index_path: Path, db_path: Path, batch_size: int = 1000) -> int
     return run_id
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the ingestion CLI."""
 

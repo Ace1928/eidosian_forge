@@ -9,6 +9,7 @@ import numpy as np
 
 from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.materials import Material, MOVES_DOWN, MOVES_UP
+from eidosian_core import eidosian
 
 
 ChunkCoord = Tuple[int, int, int]
@@ -87,6 +88,7 @@ def _move_lateral(
     mat_ids = [int(mat) for mat in materials]
     moved = 0
 
+    @eidosian()
     def shift_once(direction: int) -> int:
         if direction not in (-1, 1):
             raise ValueError("direction must be -1 or 1")
@@ -130,6 +132,7 @@ def _move_down_diagonal(
     result = data.copy()
     moved = 0
 
+    @eidosian()
     def attempt(axis: int, direction: int) -> int:
         src_slice = [slice(None)] * 3
         dst_slice = [slice(None)] * 3
@@ -178,6 +181,7 @@ def _move_down_diagonal(
     return result, moved
 
 
+@eidosian()
 def step_chunk_vertical(chunk: Chunk, rng: np.random.Generator, config: SimulationConfig) -> tuple[np.ndarray, int]:
     """Apply vertical movement for granular/liquid/gas within a chunk."""
 
@@ -187,6 +191,7 @@ def step_chunk_vertical(chunk: Chunk, rng: np.random.Generator, config: Simulati
     return data, moved_down + moved_up + moved_diag
 
 
+@eidosian()
 def step_chunk_lateral(
     chunk: Chunk,
     rng: np.random.Generator,
@@ -209,6 +214,7 @@ def step_chunk_lateral(
     return data, moved_liq_x + moved_liq_y + moved_gas_x + moved_gas_y
 
 
+@eidosian()
 def apply_boundary_transfers(
     chunks: Dict[ChunkCoord, Chunk],
     coord: ChunkCoord,
@@ -305,6 +311,7 @@ def apply_boundary_transfers(
     return moved
 
 
+@eidosian()
 def step_world(
     chunks: Dict[ChunkCoord, Chunk],
     config: SimulationConfig | None = None,

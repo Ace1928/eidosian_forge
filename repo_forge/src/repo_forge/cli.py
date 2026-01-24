@@ -11,6 +11,7 @@ import logging
 import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any
+from eidosian_core import eidosian
 
 # Fix for running directly vs as part of package
 try:
@@ -33,6 +34,7 @@ except ImportError:
     from repo_forge.core.diagnostics import diagnostics, verify_json_serializable, safe_int
 
 
+@eidosian()
 def setup_logging(verbose: bool = False) -> None:
     """
     Configure logging with appropriate verbosity level.
@@ -61,6 +63,7 @@ def setup_logging(verbose: bool = False) -> None:
         }
         
         class ColorFormatter(logging.Formatter):
+            @eidosian()
             def format(self, record):
                 levelname = record.levelname
                 if levelname in colors:
@@ -85,6 +88,7 @@ def setup_logging(verbose: bool = False) -> None:
     root_logger.addHandler(handler)
 
 
+@eidosian()
 def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -146,6 +150,7 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
+@eidosian()
 def process_generator_result(result: Dict[str, Any], operation_name: str) -> bool:
     """
     Process and validate result from generator functions with extensive diagnostics.
@@ -219,6 +224,7 @@ def process_generator_result(result: Dict[str, Any], operation_name: str) -> boo
         
     return True
 
+@eidosian()
 def main(args: Optional[List[str]] = None) -> int:
     """
     Main entry point for the CLI.

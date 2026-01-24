@@ -20,6 +20,7 @@ from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
 import numpy as np
+from eidosian_core import eidosian
 
 # Numerical stability constants for conservation calculations
 # These limits are chosen to be well within float64 range (~1e308) while
@@ -101,6 +102,7 @@ class TickConservationStats:
     numerical_mass_loss: float = 0.0
     conservation_error: float = 0.0
 
+    @eidosian()
     def compute_conservation_error(self) -> float:
         """Compute the mass conservation error.
         
@@ -154,6 +156,7 @@ class ConservationLedger:
         self.total_numerical_loss: float = 0.0
         self._current_tick_stats: Optional[TickConservationStats] = None
 
+    @eidosian()
     def begin_tick(self, tick: int, fabric: 'Fabric') -> None:
         """Record initial state at the beginning of a tick.
         
@@ -173,6 +176,7 @@ class ConservationLedger:
         self._current_tick_stats = stats
         self.tick_stats[tick] = stats
 
+    @eidosian()
     def end_tick(self, tick: int, fabric: 'Fabric') -> TickConservationStats:
         """Record final state at the end of a tick.
         
@@ -203,6 +207,7 @@ class ConservationLedger:
         self._current_tick_stats = None
         return stats
 
+    @eidosian()
     def record_boundary_flux(
         self,
         tick: int,
@@ -251,6 +256,7 @@ class ConservationLedger:
             self._current_tick_stats.boundary_mass_flux += sign * mass_delta
             self._current_tick_stats.boundary_energy_flux += sign * energy_delta
 
+    @eidosian()
     def record_bh_absorption(
         self,
         tick: int,
@@ -281,6 +287,7 @@ class ConservationLedger:
         if self._current_tick_stats is not None:
             self._current_tick_stats.bh_mass_absorbed += mass
 
+    @eidosian()
     def record_numerical_loss(
         self,
         tick: int,
@@ -311,6 +318,7 @@ class ConservationLedger:
         if self._current_tick_stats is not None:
             self._current_tick_stats.numerical_mass_loss += mass_lost
 
+    @eidosian()
     def record_source_injection(
         self,
         tick: int,
@@ -337,6 +345,7 @@ class ConservationLedger:
         )
         self.flux_records.append(record)
 
+    @eidosian()
     def get_tick_stats(self, tick: int) -> Optional[TickConservationStats]:
         """Get conservation statistics for a specific tick.
         
@@ -348,6 +357,7 @@ class ConservationLedger:
         """
         return self.tick_stats.get(tick)
 
+    @eidosian()
     def get_conservation_summary(self) -> Dict[str, float]:
         """Get summary of conservation accounting.
         
@@ -369,6 +379,7 @@ class ConservationLedger:
             ),
         }
 
+    @eidosian()
     def check_conservation(self, tolerance: Optional[float] = None) -> Tuple[bool, str]:
         """Check if conservation is maintained within tolerance.
         
@@ -421,6 +432,7 @@ class ConservationLedger:
         
         return float(np.sum(ke))
 
+    @eidosian()
     def clear(self) -> None:
         """Clear all recorded data."""
         self.tick_stats.clear()

@@ -11,6 +11,7 @@ import numpy as np
 from falling_sand.engine.chunk import Chunk
 from falling_sand.engine.config import VoxelConfig
 from falling_sand.engine.materials import Material, MaterialPalette
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:
     from direct.showbase.ShowBase import ShowBase  # type: ignore[import-untyped]
@@ -42,6 +43,7 @@ class InstanceConfig:
             raise ValueError("max_view_distance_m must be non-negative")
 
 
+@eidosian()
 def iter_chunk_instances(chunk: Chunk, voxel_size: float) -> Iterable[tuple[float, float, float, int]]:
     """Yield instance positions and materials for non-air voxels in a chunk."""
 
@@ -56,6 +58,7 @@ def iter_chunk_instances(chunk: Chunk, voxel_size: float) -> Iterable[tuple[floa
         yield (x, y, z, int(chunk.data[ix, iy, iz]))
 
 
+@eidosian()
 def iter_instances(chunks: Iterable[Chunk], voxel_size: float) -> Iterable[tuple[float, float, float, int]]:
     """Yield instance positions and materials for non-air voxels."""
 
@@ -63,6 +66,7 @@ def iter_instances(chunks: Iterable[Chunk], voxel_size: float) -> Iterable[tuple
         yield from iter_chunk_instances(chunk, voxel_size)
 
 
+@eidosian()
 def chunk_center(coord: Tuple[int, int, int], size: int, voxel_size: float) -> Tuple[float, float, float]:
     """Return world-space center for a chunk."""
 
@@ -75,6 +79,7 @@ def chunk_center(coord: Tuple[int, int, int], size: int, voxel_size: float) -> T
     )
 
 
+@eidosian()
 def chunk_bounding_radius(size: int, voxel_size: float) -> float:
     """Return bounding sphere radius for a chunk."""
 
@@ -82,6 +87,7 @@ def chunk_bounding_radius(size: int, voxel_size: float) -> float:
     return float((half * half * 3.0) ** 0.5)
 
 
+@eidosian()
 def normalize(vec: Tuple[float, float, float]) -> Tuple[float, float, float]:
     """Normalize a 3D vector."""
 
@@ -91,6 +97,7 @@ def normalize(vec: Tuple[float, float, float]) -> Tuple[float, float, float]:
     return (vec[0] / mag, vec[1] / mag, vec[2] / mag)
 
 
+@eidosian()
 def cross(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> Tuple[float, float, float]:
     """Cross product of two vectors."""
 
@@ -101,12 +108,14 @@ def cross(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> Tuple
     )
 
 
+@eidosian()
 def dot(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> float:
     """Dot product of two vectors."""
 
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 
+@eidosian()
 def within_distance(
     center: Tuple[float, float, float],
     camera_pos: Tuple[float, float, float],
@@ -122,6 +131,7 @@ def within_distance(
     return dx * dx + dy * dy + dz * dz <= max_distance * max_distance
 
 
+@eidosian()
 def frustum_visible(
     center: Tuple[float, float, float],
     radius: float,
@@ -177,6 +187,7 @@ class InstancedVoxelRenderer:
         self._model.clear_model_nodes()
         self.base.render.set_shader_auto()
 
+    @eidosian()
     def clear(self) -> None:
         for node in self._instances:
             node.remove_node()
@@ -185,6 +196,7 @@ class InstancedVoxelRenderer:
             node.remove_node()
         self._chunk_nodes = {}
 
+    @eidosian()
     def render_chunks(self, chunks: Iterable[Chunk]) -> None:
         """Render chunks using instanced cube nodes."""
 
@@ -247,6 +259,7 @@ class InstancedVoxelRenderer:
             else:
                 count += self._count_instances(node)
 
+    @eidosian()
     def run(self) -> None:
         """Start the Panda3D application loop."""
 

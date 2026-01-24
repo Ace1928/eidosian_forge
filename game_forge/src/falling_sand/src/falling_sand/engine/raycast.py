@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Tuple
+from eidosian_core import eidosian
 
 
 Vector3 = Tuple[float, float, float]
@@ -33,6 +34,7 @@ class Plane:
             raise ValueError("normal must be non-zero")
 
 
+@eidosian()
 def ray_plane_intersect(ray: Ray, plane: Plane) -> Vector3 | None:
     """Return intersection point or None if parallel/behind."""
 
@@ -52,6 +54,7 @@ def ray_plane_intersect(ray: Ray, plane: Plane) -> Vector3 | None:
     return (ox + dx * t, oy + dy * t, oz + dz * t)
 
 
+@eidosian()
 def point_to_voxel(point: Vector3, voxel_size: float) -> Tuple[int, int, int]:
     """Convert a world-space point to voxel coordinates."""
 

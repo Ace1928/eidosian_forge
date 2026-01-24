@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union, Callable, Type
 
 import yaml
 from pydantic import BaseModel, ValidationError
+from eidosian_core import eidosian
 
 class GisCore:
     """
@@ -29,6 +30,7 @@ class GisCore:
         if self.persistence_path and self.persistence_path.exists():
             self.load(self.persistence_path)
             
+    @eidosian()
     def set(self, key: str, value: Any, notify: bool = True, persist: bool = True) -> None:
         """
         Set a value in the registry. 
@@ -50,6 +52,7 @@ class GisCore:
         if persist and self.persistence_path:
             self.save(self.persistence_path)
 
+    @eidosian()
     def get(self, key: str, default: Any = None, use_env: bool = True) -> Any:
         """
         Get a value from the registry using dot-notation.
@@ -76,6 +79,7 @@ class GisCore:
                     return default
             return target
 
+    @eidosian()
     def delete(self, key: str, persist: bool = True) -> bool:
         """Remove a key from the registry."""
         with self._lock:
@@ -94,6 +98,7 @@ class GisCore:
                 return True
         return False
 
+    @eidosian()
     def validate_config(self, schema: Type[BaseModel], key_prefix: str = "") -> BaseModel:
         """
         Validate a section of the config against a Pydantic model.
@@ -107,6 +112,7 @@ class GisCore:
             logging.error(f"Config validation failed for '{key_prefix}': {e}")
             raise
 
+    @eidosian()
     def load(self, path: Union[str, Path], prefix: str = "") -> None:
         """Load configuration from a file (JSON, YAML, TOML)."""
         path = Path(path)
@@ -131,6 +137,7 @@ class GisCore:
                 logging.error(f"Failed to decode GIS persistence file {path}: {e}")
                 raise
 
+    @eidosian()
     def save(self, path: Union[str, Path]) -> None:
         """Save the current registry to a file (JSON, YAML). TOML writing not supported natively."""
         path = Path(path)
@@ -150,6 +157,7 @@ class GisCore:
                     # Ideally raise error or handle gracefully
                     json.dump(self._registry, f, indent=2)
 
+    @eidosian()
     def update(self, config: Dict[str, Any], prefix: str = "", persist: bool = True) -> None:
         """
         Bulk update the registry from a dictionary.
@@ -164,6 +172,7 @@ class GisCore:
         if persist and self.persistence_path:
             self.save(self.persistence_path)
 
+    @eidosian()
     def subscribe(self, key_prefix: str, callback: Callable[[str, Any], None]) -> None:
         """
         Subscribe to changes on keys starting with key_prefix.
@@ -187,6 +196,7 @@ class GisCore:
             except Exception as e:
                 logging.error(f"Error in GIS subscriber for {key}: {e}")
 
+    @eidosian()
     def flatten(self) -> Dict[str, Any]:
         """Return a flattened version of the registry (dot-notation keys)."""
         result = {}

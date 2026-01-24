@@ -20,6 +20,7 @@ from falling_sand.engine.terrain import TerrainConfig, TerrainGenerator
 from falling_sand.engine.tools import erase_sphere, place_sphere
 from falling_sand.engine.ui import UiOverlay
 from falling_sand.engine.world import World
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:
     from panda3d.core import Point3, WindowProperties  # type: ignore[import-untyped]
@@ -107,6 +108,7 @@ class DemoConfig:
             raise ValueError("yaw_step_deg must be positive")
 
 
+@eidosian()
 def spawn_materials(
     world: World,
     rng: np.random.Generator,
@@ -137,6 +139,7 @@ def spawn_materials(
     return count
 
 
+@eidosian()
 def ground_provider(coord: Tuple[int, int, int], size: int) -> Chunk:
     """Create a chunk with a solid ground at z=0."""
 
@@ -147,6 +150,7 @@ def ground_provider(coord: Tuple[int, int, int], size: int) -> Chunk:
     return chunk
 
 
+@eidosian()
 def orbit_offset(yaw_deg: float, pitch_deg: float, distance_m: float) -> Tuple[float, float, float]:
     """Compute an orbital camera offset for yaw/pitch in degrees."""
 
@@ -160,18 +164,21 @@ def orbit_offset(yaw_deg: float, pitch_deg: float, distance_m: float) -> Tuple[f
     )
 
 
+@eidosian()
 def camera_position(target: Tuple[float, float, float], offset: Tuple[float, float, float]) -> Tuple[float, float, float]:
     """Compute camera position from target and offset."""
 
     return (target[0] + offset[0], target[1] + offset[1], target[2] + offset[2])
 
 
+@eidosian()
 def player_height(world: World, x: int, y: int, min_height: int) -> int:
     """Compute a surface-bounded player height."""
 
     return max(world.surface_height(x, y, default=0) + 1, min_height)
 
 
+@eidosian()
 def clamp_position(x: int, y: int, terrain: TerrainConfig) -> Tuple[int, int]:
     """Clamp an XY position to terrain bounds."""
 
@@ -416,6 +423,7 @@ class DemoApp:
         self.renderer.base.camera.set_pos(*offset)
         self.renderer.base.camera.look_at(self._player_np)
 
+    @eidosian()
     def run(self) -> None:
         self.renderer.run()
 
@@ -453,6 +461,7 @@ class DemoApp:
         self.renderer.base.win.request_properties(props)
 
 
+@eidosian()
 def run_demo() -> None:
     """Run the interactive demo."""
 

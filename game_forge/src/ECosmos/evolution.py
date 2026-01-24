@@ -11,6 +11,7 @@ from typing import List, Dict, Tuple, Optional, Set
 import copy
 
 from data_structures import (
+from eidosian_core import eidosian
     RuleSpecies,
     Instruction,
     Cell,
@@ -24,6 +25,7 @@ import config
 logger = logging.getLogger(__name__)
 
 
+@eidosian()
 def create_random_instruction() -> Instruction:
     """
     Generate a random instruction with valid operation type and parameters.
@@ -104,6 +106,7 @@ def create_random_instruction() -> Instruction:
     return Instruction(op_type, params)
 
 
+@eidosian()
 def create_random_rule() -> List[Instruction]:
     """
     Generate a random rule with 1-5 instructions.
@@ -115,6 +118,7 @@ def create_random_rule() -> List[Instruction]:
     return [create_random_instruction() for _ in range(instruction_count)]
 
 
+@eidosian()
 def create_random_species(species_id: int) -> RuleSpecies:
     """
     Create a new species with random properties.
@@ -140,6 +144,7 @@ def create_random_species(species_id: int) -> RuleSpecies:
     return species
 
 
+@eidosian()
 def mutate_color(species: RuleSpecies) -> None:
     """
     Slightly mutate the color of a species.
@@ -163,6 +168,7 @@ def mutate_color(species: RuleSpecies) -> None:
         )
 
 
+@eidosian()
 def mutate_instruction(instruction: Instruction) -> None:
     """
     Apply mutations to an instruction.
@@ -201,6 +207,7 @@ def mutate_instruction(instruction: Instruction) -> None:
                 instruction.params[key] = key[0] + str(random.randint(0, 9))
 
 
+@eidosian()
 def mutate_species(species: RuleSpecies) -> None:
     """
     Apply mutations to a species based on mutation rate.
@@ -255,6 +262,7 @@ def mutate_species(species: RuleSpecies) -> None:
             species.rule_usage_counts.pop(remove_idx)
 
 
+@eidosian()
 def reproduce_species(species: RuleSpecies, new_id: int) -> Optional[RuleSpecies]:
     """
     Create a new species from the parent species, with mutations.
@@ -281,6 +289,7 @@ def reproduce_species(species: RuleSpecies, new_id: int) -> Optional[RuleSpecies
     return child
 
 
+@eidosian()
 def handle_species_interactions(world: List[List[Cell]], x: int, y: int) -> None:
     """
     Process interactions between a species and its environment/neighbors.
@@ -321,6 +330,7 @@ def handle_species_interactions(world: List[List[Cell]], x: int, y: int) -> None
             species.position = Position(nx, ny)
 
 
+@eidosian()
 def inject_environmental_energy(world: List[List[Cell]], tick: int) -> None:
     """
     Inject energy into the environment to prevent extinction.
@@ -347,6 +357,7 @@ def inject_environmental_energy(world: List[List[Cell]], tick: int) -> None:
                         )
 
 
+@eidosian()
 def distribute_initial_species(
     world: List[List[Cell]], next_id: int = 0, max_new: int = None
 ) -> int:

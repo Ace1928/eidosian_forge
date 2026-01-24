@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict
+from eidosian_core import eidosian
 
 
 @dataclass
@@ -31,6 +32,7 @@ class Metronome:
         # maintain a simple record of stats per tick
         self.stats: MetronomeStats = MetronomeStats(tick=0)
 
+    @eidosian()
     def allocate(self, tick: int) -> Dict[str, int]:
         """Allocate compute budgets for this tick.
 
@@ -46,6 +48,7 @@ class Metronome:
             "quanta_micro_ops": self.cfg.grid_w * self.cfg.grid_h * self.cfg.microtick_cap_per_region
         }
 
+    @eidosian()
     def record_stats(self, tick: int) -> None:
         """Placeholder to record per tick stats.
 

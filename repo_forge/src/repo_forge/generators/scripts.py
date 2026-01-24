@@ -15,6 +15,7 @@ from datetime import datetime
 from ..core.files import write_file
 from ..core.templates import render_template, render_comment_block
 from ..core.utils import make_executable
+from eidosian_core import eidosian
 
 
 def _load_global_info() -> Dict[str, Any]:
@@ -54,6 +55,7 @@ def _load_global_info() -> Dict[str, Any]:
     }
 
 
+@eidosian()
 def create_script_files(
     base_path: Path,
     languages: Optional[List[str]] = None,

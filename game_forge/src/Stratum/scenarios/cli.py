@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 from typing import Optional
+from eidosian_core import eidosian
 
 SCENARIOS = {
     "collapse": "Stellar collapse (fixed ticks + snapshots)",
@@ -179,6 +180,7 @@ def _run_screensaver(args: argparse.Namespace, interactive: bool) -> None:
     )
 
 
+@eidosian()
 def main(argv: Optional[list[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Stratum unified scenario launcher")
     parser.add_argument("--list", action="store_true", help="List available scenarios")

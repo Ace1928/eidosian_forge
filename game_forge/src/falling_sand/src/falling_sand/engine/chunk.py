@@ -8,6 +8,7 @@ from typing import Tuple
 import numpy as np
 
 from falling_sand.engine.materials import Material
+from eidosian_core import eidosian
 
 
 ChunkCoord = Tuple[int, int, int]
@@ -42,22 +43,26 @@ class Chunk:
         data = np.full((size, size, size), Material.AIR, dtype=np.uint8)
         return cls(coord=coord, data=data)
 
+    @eidosian()
     def get(self, x: int, y: int, z: int) -> Material:
         """Get material at local voxel coordinates."""
 
         return Material(int(self.data[x, y, z]))
 
+    @eidosian()
     def set(self, x: int, y: int, z: int, material: Material) -> None:
         """Set material at local voxel coordinates."""
 
         self.data[x, y, z] = int(material)
         self.dirty = True
 
+    @eidosian()
     def is_empty(self) -> bool:
         """Return True if all voxels are AIR."""
 
         return bool(np.all(self.data == int(Material.AIR)))
 
+    @eidosian()
     def copy(self) -> "Chunk":
         """Return a copy of the chunk."""
 

@@ -6,6 +6,7 @@ import os  # For file system operations, like checking if a file exists and repl
 import json  # For encoding and decoding player profile data to and from JSON format.
 import logging  # For structured logging of events, errors, and debugging information.
 from typing import (
+from eidosian_core import eidosian
     Dict,
     Any,
 )  # For type hinting, improving code readability and maintainability.
@@ -48,6 +49,7 @@ class UserManager:
             f"UserManager initialized with profiles file: {self.profiles_file_path}"
         )
 
+    @eidosian()
     def load_profiles(self) -> Dict[str, Dict[str, Any]]:
         """
         Load player profiles from a JSON file, with enhanced validation and default structure.
@@ -130,6 +132,7 @@ class UserManager:
             )
             return {}  # Return empty profiles in case of any unhandled exception.
 
+    @eidosian()
     def save_profiles(self, profiles: Dict[str, Dict[str, Any]]) -> None:
         """
         Save player profiles to a JSON file using an atomic write pattern to prevent data corruption.

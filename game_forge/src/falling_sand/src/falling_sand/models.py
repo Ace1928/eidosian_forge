@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
+from eidosian_core import eidosian
 
 Origin = Literal["source", "test"]
 Kind = Literal["function", "class", "method"]
@@ -92,6 +93,7 @@ class IndexEntry:
         if self.lineno <= 0:
             raise ValueError("lineno must be positive")
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the entry for JSON output."""
 
@@ -123,6 +125,7 @@ class TestCaseResult:
         _require_non_empty("name", self.name)
         _require_non_negative("duration_seconds", self.duration_seconds)
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the test case result for JSON output."""
 
@@ -158,6 +161,7 @@ class TestSummary:
         if self.total != self.passed + self.failed + self.skipped + self.errors:
             raise ValueError("test summary counts do not add up")
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the test summary for JSON output."""
 
@@ -192,6 +196,7 @@ class ProfileFunctionStat:
         if self.lineno < 0:
             raise ValueError("lineno must be non-negative")
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the function stats for JSON output."""
 
@@ -217,6 +222,7 @@ class ProfileSummary:
         _require_non_negative("total_calls", self.total_calls)
         _require_non_negative("total_time", self.total_time)
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the profile summary for JSON output."""
 
@@ -248,6 +254,7 @@ class BenchmarkCase:
         _require_non_negative("min_seconds", self.min_seconds)
         _require_non_negative("max_seconds", self.max_seconds)
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the benchmark case for JSON output."""
 
@@ -272,6 +279,7 @@ class BenchmarkSummary:
         if not self.cases:
             raise ValueError("cases must be non-empty")
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the benchmark summary for JSON output."""
 
@@ -303,6 +311,7 @@ class IndexDocument:
         if not self.stats:
             raise ValueError("stats must be non-empty")
 
+    @eidosian()
     def to_dict(self) -> dict[str, object]:
         """Serialize the document for JSON output."""
 
@@ -319,6 +328,7 @@ class IndexDocument:
         }
 
 
+@eidosian()
 def index_entry_from_dict(payload: dict[str, object]) -> IndexEntry:
     """Deserialize an index entry from JSON payload."""
 
@@ -336,6 +346,7 @@ def index_entry_from_dict(payload: dict[str, object]) -> IndexEntry:
     )
 
 
+@eidosian()
 def test_case_from_dict(payload: dict[str, object]) -> TestCaseResult:
     """Deserialize a test case result from JSON payload."""
 
@@ -350,6 +361,7 @@ def test_case_from_dict(payload: dict[str, object]) -> TestCaseResult:
     )
 
 
+@eidosian()
 def test_summary_from_dict(payload: dict[str, object]) -> TestSummary:
     """Deserialize a test summary from JSON payload."""
 
@@ -367,6 +379,7 @@ def test_summary_from_dict(payload: dict[str, object]) -> TestSummary:
     )
 
 
+@eidosian()
 def profile_function_from_dict(payload: dict[str, object]) -> ProfileFunctionStat:
     """Deserialize a profile function stat from JSON payload."""
 
@@ -381,6 +394,7 @@ def profile_function_from_dict(payload: dict[str, object]) -> ProfileFunctionSta
     )
 
 
+@eidosian()
 def profile_summary_from_dict(payload: dict[str, object]) -> ProfileSummary:
     """Deserialize a profile summary from JSON payload."""
 
@@ -394,6 +408,7 @@ def profile_summary_from_dict(payload: dict[str, object]) -> ProfileSummary:
     )
 
 
+@eidosian()
 def benchmark_summary_from_dict(payload: dict[str, object]) -> BenchmarkSummary:
     """Deserialize a benchmark summary from JSON payload."""
 
@@ -428,6 +443,7 @@ def benchmark_summary_from_dict(payload: dict[str, object]) -> BenchmarkSummary:
     return BenchmarkSummary(cases=cases)
 
 
+@eidosian()
 def index_document_from_dict(payload: dict[str, object]) -> IndexDocument:
     """Deserialize an index document from JSON payload."""
 

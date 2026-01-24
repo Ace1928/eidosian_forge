@@ -13,11 +13,13 @@ from typing import Iterator, Sequence
 from falling_sand.models import BenchmarkSummary, IndexDocument, IndexEntry, Origin
 from falling_sand.reports import read_benchmark_report, read_junit_reports, read_profile_stats
 from falling_sand.schema import CURRENT_SCHEMA_VERSION
+from eidosian_core import eidosian
 
 
 DEFAULT_EXCLUDE_DIRS = (".git", "__pycache__", ".venv", "venv", "artifacts")
 
 
+@eidosian()
 def normalize_exclude_dirs(exclude_dirs: Sequence[str] | None) -> tuple[str, ...]:
     """Normalize exclude directories into a unique tuple."""
 
@@ -35,6 +37,7 @@ def normalize_exclude_dirs(exclude_dirs: Sequence[str] | None) -> tuple[str, ...
     return tuple(normalized)
 
 
+@eidosian()
 def validate_root(root: Path, allow_missing: bool) -> None:
     """Validate that a root exists and is a directory."""
 
@@ -46,12 +49,14 @@ def validate_root(root: Path, allow_missing: bool) -> None:
         raise ValueError(f"Root is not a directory: {root}")
 
 
+@eidosian()
 def should_exclude(path: Path, exclude_set: set[str]) -> bool:
     """Return True if a path should be excluded."""
 
     return any(part in exclude_set for part in path.parts)
 
 
+@eidosian()
 def iter_python_files(root: Path, exclude_dirs: Sequence[str]) -> Iterator[Path]:
     """Yield Python files under root, excluding specified directories."""
 
@@ -80,6 +85,7 @@ def iter_python_files(root: Path, exclude_dirs: Sequence[str]) -> Iterator[Path]
             raise ValueError(f"Unable to read directory {current}: {exc}") from exc
 
 
+@eidosian()
 def parse_python_file(path: Path) -> ast.Module:
     """Parse a Python source file into an AST."""
 
@@ -94,6 +100,7 @@ def parse_python_file(path: Path) -> ast.Module:
         raise ValueError(f"Syntax error in {path}: {exc}") from exc
 
 
+@eidosian()
 def format_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
     """Build a readable signature string from a function node."""
 
@@ -103,6 +110,7 @@ def format_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None
         return None
 
 
+@eidosian()
 def module_name_from_path(path: Path, package_root: Path) -> str:
     """Derive a module name from a file path within a package root."""
 
@@ -115,6 +123,7 @@ def module_name_from_path(path: Path, package_root: Path) -> str:
     return ".".join(parts)
 
 
+@eidosian()
 def extract_definitions(
     tree: ast.Module,
     module: str,
@@ -171,6 +180,7 @@ def extract_definitions(
     return entries
 
 
+@eidosian()
 def index_root(root: Path, origin: Origin, exclude_dirs: Sequence[str]) -> list[IndexEntry]:
     """Index all Python files rooted at the provided directory."""
 
@@ -184,6 +194,7 @@ def index_root(root: Path, origin: Origin, exclude_dirs: Sequence[str]) -> list[
     return entries
 
 
+@eidosian()
 def index_project(
     source_root: Path,
     tests_root: Path,
@@ -240,6 +251,7 @@ def index_project(
     )
 
 
+@eidosian()
 def build_parser() -> argparse.ArgumentParser:
     """Create the CLI argument parser."""
 
@@ -256,6 +268,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+@eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the indexer CLI."""
 

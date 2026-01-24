@@ -20,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from enum import Enum, auto
 from collections import deque
 import time
+from eidosian_core import eidosian
 
 
 class EventType(Enum):
@@ -116,6 +117,7 @@ class EventBus:
         self._type_counts: Dict[EventType, int] = {t: 0 for t in EventType}
         self._enabled: bool = True
 
+    @eidosian()
     def emit(
         self,
         event_type: EventType,
@@ -157,6 +159,7 @@ class EventBus:
         
         return event
 
+    @eidosian()
     def subscribe(
         self,
         event_type: Optional[EventType],
@@ -175,6 +178,7 @@ class EventBus:
                 self._handlers[event_type] = []
             self._handlers[event_type].append(handler)
 
+    @eidosian()
     def unsubscribe(
         self,
         event_type: Optional[EventType],
@@ -199,6 +203,7 @@ class EventBus:
                 return True
         return False
 
+    @eidosian()
     def get_events(
         self,
         event_type: Optional[EventType] = None,
@@ -235,6 +240,7 @@ class EventBus:
         
         return result
 
+    @eidosian()
     def get_events_for_tick(self, tick: int) -> List[SimulationEvent]:
         """Get all events for a specific tick.
         
@@ -246,6 +252,7 @@ class EventBus:
         """
         return [e for e in self._events if e.tick == tick]
 
+    @eidosian()
     def get_event_counts(self) -> Dict[EventType, int]:
         """Get counts of events by type.
         
@@ -254,15 +261,18 @@ class EventBus:
         """
         return dict(self._type_counts)
 
+    @eidosian()
     def clear(self) -> None:
         """Clear all stored events."""
         self._events.clear()
         self._type_counts = {t: 0 for t in EventType}
 
+    @eidosian()
     def enable(self) -> None:
         """Enable event emission."""
         self._enabled = True
 
+    @eidosian()
     def disable(self) -> None:
         """Disable event emission (events are dropped)."""
         self._enabled = False
@@ -301,6 +311,7 @@ class EventBus:
 
 # Event helper functions for common events
 
+@eidosian()
 def emit_species_created(
     bus: EventBus,
     tick: int,
@@ -328,6 +339,7 @@ def emit_species_created(
     )
 
 
+@eidosian()
 def emit_black_hole_formed(
     bus: EventBus,
     tick: int,
@@ -356,6 +368,7 @@ def emit_black_hole_formed(
     )
 
 
+@eidosian()
 def emit_fusion_occurred(
     bus: EventBus,
     tick: int,
@@ -389,6 +402,7 @@ def emit_fusion_occurred(
     )
 
 
+@eidosian()
 def emit_regime_transition(
     bus: EventBus,
     tick: int,
@@ -419,6 +433,7 @@ def emit_regime_transition(
     )
 
 
+@eidosian()
 def emit_tick_completed(
     bus: EventBus,
     tick: int,
