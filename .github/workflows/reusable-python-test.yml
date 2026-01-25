@@ -1,0 +1,161 @@
+# 🔄 Reusable Python Testing Workflow v1.0.0
+# Can be called from other workflows for consistent Python testing
+
+name: Reusable Python Test
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "Python version to test with"
+        required: false
+        type: string
+        default: "3.12"
+      test-path:
+        description: "Path to tests (default: tests/)"
+        required: false
+        type: string
+        default: "tests/"
+      coverage-threshold:
+        description: "Minimum coverage percentage (0-100)"
+        required: false
+        type: number
+        default: 0
+      install-command:
+        description: "Custom install command (optional)"
+        required: false
+        type: string
+        default: ""
+      pytest-args:
+        description: "Additional pytest arguments"
+        required: false
+        type: string
+        default: "-v"
+    outputs:
+      coverage:
+        description: "Coverage percentage"
+        value: ${{ jobs.test.outputs.coverage }}
+      test-result:
+        description: "Test result (success/failure)"
+        value: ${{ jobs.test.outputs.result }}
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+jobs:
+  test:
+    name: 🧪 Test Python ${{ inputs.python-version }}
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.coverage.outputs.percentage }}
+      result: ${{ steps.test.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          
+          # Use custom install command if provided
+          if [ -n "${{ inputs.install-command }}" ]; then
+            ${{ inputs.install-command }}
+          else
+            # Try poetry first
+            if [ -f "pyproject.toml" ] && [ -f "poetry.lock" ]; then
+              pip install poetry==1.8.3
+              poetry config virtualenvs.create false
+              poetry install --with dev,test --no-interaction
+            # Then try pip with extras
+            elif [ -f "pyproject.toml" ]; then
+              pip install -e ".[dev,test]" || pip install -e .
+              pip install pytest pytest-cov pytest-xdist hypothesis
+            # Fallback to requirements.txt
+            elif [ -f "requirements.txt" ]; then
+              pip install -r requirements.txt
+              pip install pytest pytest-cov pytest-xdist hypothesis
+            else
+              echo "::error::No dependency file found"
+              exit 1
+            fi
+          fi
+
+      - name: 🔍 Run tests
+        id: test
+        run: |
+          echo "::group::Running pytest"
+          if [ -d "${{ inputs.test-path }}" ]; then
+            pytest ${{ inputs.test-path }} \
+              --cov=. \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --cov-report=html \
+              ${{ inputs.pytest-args }} 2>&1 | tee pytest-output.txt
+            EXIT_CODE=${PIPESTATUS[0]}
+          else
+            echo "::warning::Test path '${{ inputs.test-path }}' not found, running all tests"
+            pytest --cov=. \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --cov-report=html \
+              ${{ inputs.pytest-args }} 2>&1 | tee pytest-output.txt
+            EXIT_CODE=${PIPESTATUS[0]}
+          fi
+          echo "::endgroup::"
+          
+          # Extract test summary
+          PASSED=$(grep -oP '\d+(?= passed)' pytest-output.txt || echo "0")
+          FAILED=$(grep -oP '\d+(?= failed)' pytest-output.txt || echo "0")
+          SKIPPED=$(grep -oP '\d+(?= skipped)' pytest-output.txt || echo "0")
+          
+          echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Passed: $PASSED" >> $GITHUB_STEP_SUMMARY
+          echo "- ❌ Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏭️ Skipped: $SKIPPED" >> $GITHUB_STEP_SUMMARY
+          
+          exit $EXIT_CODE
+
+      - name: 📊 Check coverage
+        id: coverage
+        if: always()
+        run: |
+          if [ -f "coverage.xml" ]; then
+            # Extract coverage percentage
+            COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); print(root.attrib.get('line-rate', '0'))" 2>/dev/null || echo "0")
+            COVERAGE_PCT=$(python -c "print(f'{float('$COVERAGE') * 100:.2f}')" 2>/dev/null || echo "0")
+            echo "percentage=$COVERAGE_PCT" >> $GITHUB_OUTPUT
+            
+            echo "### 📊 Coverage: $COVERAGE_PCT%" >> $GITHUB_STEP_SUMMARY
+            
+            # Check against threshold
+            if (( $(echo "$COVERAGE_PCT < ${{ inputs.coverage-threshold }}" | bc -l) )); then
+              echo "::error::Coverage $COVERAGE_PCT% is below threshold ${{ inputs.coverage-threshold }}%"
+              exit 1
+            else
+              echo "::notice::Coverage $COVERAGE_PCT% meets threshold ${{ inputs.coverage-threshold }}%"
+            fi
+          else
+            echo "::warning::No coverage.xml found"
+            echo "percentage=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📤 Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: 📁 Upload coverage HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-py${{ inputs.python-version }}
+          path: htmlcov/
+          retention-days: 7
