@@ -157,7 +157,7 @@ class TestAPIWorkflows:
         result = api.image_to_Glyph(
             test_assets['rgb'],
             width=30,
-            color_mode="ansi",
+            color_mode="truecolor",
         )
 
         # Verify ANSI codes are present
@@ -258,7 +258,7 @@ class TestConverterWorkflows:
 
         result = converter.convert_color(
             test_assets['rgb'],
-            color_mode=ColorMode.ANSI,
+            color_mode=ColorMode.TRUECOLOR,
         )
 
         assert "\033[" in result
@@ -280,6 +280,7 @@ class TestConverterWorkflows:
         converter = ImageGlyphConverter(
             width=40,
             dithering=True,
+            dither_algorithm="atkinson",
             auto_scale=False,
         )
 

@@ -105,8 +105,19 @@ class TestImageGlyphConverter:
             invert=True,
             brightness=1.2,
             contrast=0.8,
+            gamma=1.2,
             auto_scale=False,
             dithering=True,
+            dither_algorithm="atkinson",
+            aspect_ratio=0.6,
+            resample="bicubic",
+            autocontrast=True,
+            equalize=True,
+            invert_image=True,
+            edge_enhance=True,
+            sharpen=True,
+            blur_radius=0.5,
+            posterize_bits=4,
             threads=4,
         )
 
@@ -116,6 +127,16 @@ class TestImageGlyphConverter:
         assert converter.contrast == 0.8
         assert converter.auto_scale is False
         assert converter.dithering is True
+        assert converter.dither_algorithm.value == "atkinson"
+        assert converter.aspect_ratio == 0.6
+        assert converter.resample == "bicubic"
+        assert converter.autocontrast is True
+        assert converter.equalize is True
+        assert converter.invert_image is True
+        assert converter.edge_enhance is True
+        assert converter.sharpen is True
+        assert converter.blur_radius == 0.5
+        assert converter.posterize_bits == 4
         assert converter.threads == 4
         assert converter.charset == "%$#@"  # Inverted
 
@@ -219,6 +240,24 @@ class TestImageGlyphConverter:
         assert len(lines) == 10  # Output height matches specification
         assert len(lines[0]) >= 18  # Allow minor variation in width
 
+    def test_image_processing_filters(self, test_images: dict) -> None:
+        """🧪 Verify filter pipeline executes with new options."""
+        converter = ImageGlyphConverter(
+            width=20,
+            height=10,
+            auto_scale=False,
+            autocontrast=True,
+            equalize=True,
+            invert_image=True,
+            edge_enhance=True,
+            sharpen=True,
+            blur_radius=0.5,
+            posterize_bits=4,
+        )
+
+        result = converter._process_image(test_images['gradient']['img'])
+        assert isinstance(result, str)
+
     @mock.patch('glyph_forge.services.image_to_glyph.ThreadPoolExecutor')
     def test_parallel_conversion(self, mock_executor: mock.MagicMock) -> None:
         """⚡ Verify multi-threaded processing for large images."""
@@ -282,14 +321,40 @@ class TestImageGlyphConverter:
 
         # Update all parameters at once
         converter.set_image_params(
-            width=50, height=25, brightness=1.8, contrast=0.7, dithering=True
+            width=50,
+            height=25,
+            brightness=1.8,
+            contrast=0.7,
+            gamma=1.3,
+            dithering=True,
+            dither_algorithm="atkinson",
+            aspect_ratio=0.6,
+            resample="bicubic",
+            autocontrast=True,
+            equalize=True,
+            invert_image=True,
+            edge_enhance=True,
+            sharpen=True,
+            blur_radius=0.75,
+            posterize_bits=3,
         )
 
         assert converter.width == 50
         assert converter.height == 25
         assert converter.brightness == 1.8
         assert converter.contrast == 0.7
+        assert converter.gamma == 1.3
         assert converter.dithering is True
+        assert converter.dither_algorithm.value == "atkinson"
+        assert converter.aspect_ratio == 0.6
+        assert converter.resample == "bicubic"
+        assert converter.autocontrast is True
+        assert converter.equalize is True
+        assert converter.invert_image is True
+        assert converter.edge_enhance is True
+        assert converter.sharpen is True
+        assert converter.blur_radius == 0.75
+        assert converter.posterize_bits == 3
 
         # Test partial updates
         converter.set_image_params(width=60)
@@ -307,12 +372,66 @@ class TestImageGlyphConverter:
         converter.density_map = {i: "#" for i in range(256)}
 
         result = converter.convert_color(
-            test_images['rgb']['img'], color_mode=ColorMode.ANSI
+            test_images['rgb']['img'], color_mode=ColorMode.TRUECOLOR
         )
 
         # ANSI color codes must be present
         assert "\033[38;2;" in result
         assert "\033[0m" in result  # Reset code
+
+    def test_color_conversion_ansi16(self, test_images: dict) -> None:
+        """🌈 Verify ANSI16 color code generation."""
+        converter = ImageGlyphConverter(width=5, height=5, auto_scale=False)
+
+        converter.charset = "#"
+        converter.density_map = {i: "#" for i in range(256)}
+
+        result = converter.convert_color(
+            test_images['rgb']['img'], color_mode=ColorMode.ANSI16
+        )
+
+        assert "\033[" in result
+        assert "\033[0m" in result
+
+    def test_color_conversion_ansi256(self, test_images: dict) -> None:
+        """🌈 Verify ANSI256 color code generation."""
+        converter = ImageGlyphConverter(width=5, height=5, auto_scale=False)
+
+        converter.charset = "#"
+        converter.density_map = {i: "#" for i in range(256)}
+
+        result = converter.convert_color(
+            test_images['rgb']['img'], color_mode=ColorMode.ANSI256
+        )
+
+        assert "\033[38;5;" in result
+        assert "\033[0m" in result
+
+    def test_color_conversion_truecolor_alias(self, test_images: dict) -> None:
+        """🌈 Verify truecolor alias matches ANSI path."""
+        converter = ImageGlyphConverter(width=5, height=5, auto_scale=False)
+
+        converter.charset = "#"
+        converter.density_map = {i: "#" for i in range(256)}
+
+        result = converter.convert_color(
+            test_images['rgb']['img'], color_mode="ansi"
+        )
+
+        assert "\033[38;2;" in result
+
+    def test_dither_algorithm_atkinson(self, test_images: dict) -> None:
+        """🎛️ Verify Atkinson dithering path."""
+        converter = ImageGlyphConverter(
+            width=10,
+            height=10,
+            auto_scale=False,
+            dithering=True,
+            dither_algorithm="atkinson",
+        )
+
+        result = converter.convert(test_images['gradient']['img'])
+        assert isinstance(result, str)
 
     def test_color_conversion_html(self, test_images: dict) -> None:
         """🖥️ Verify HTML color formatting."""

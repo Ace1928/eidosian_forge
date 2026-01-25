@@ -27,6 +27,17 @@ For video processing:
 pip install opencv-python
 ```
 
+For YouTube streaming:
+```bash
+pip install yt-dlp
+```
+
+For browser/virtual display streaming:
+```bash
+sudo apt-get install xvfb
+pip install mss
+```
+
 ## Verify Installation
 
 ```bash
@@ -59,6 +70,13 @@ glyph-forge imagize convert image.png --width 100
 
 # With specific character set
 glyph-forge imagize convert image.png --charset detailed
+
+# Truecolor ANSI output
+glyph-forge imagize convert image.png --color truecolor
+
+# High-fidelity conversion
+glyph-forge imagize convert image.png --color ansi256 --dither --dither-algorithm atkinson \
+  --gamma 1.1 --autocontrast --equalize --edge-enhance --sharpen --resample lanczos
 
 # Save to file
 glyph-forge imagize convert image.png --output art.txt
@@ -97,7 +115,7 @@ source /path/to/eidosian_forge/glyph_forge/completions/glyph-forge.bash
 from glyph_forge import image_to_glyph, text_to_banner
 
 # Convert image
-result = image_to_glyph("image.png", width=100)
+result = image_to_glyph("image.png", width=100, color_mode="truecolor", dither_algorithm="atkinson")
 print(result)
 
 # Create banner
