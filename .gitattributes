@@ -7,3 +7,4 @@
 *.tar filter=lfs diff=lfs merge=lfs -text
 *.gz filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
+.graphrag_index/*.json filter=lfs diff=lfs merge=lfs -text
