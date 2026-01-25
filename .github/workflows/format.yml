@@ -37,6 +37,7 @@ jobs:
   format-python:
     name: 🐍 Format Python Code
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Prevent runaway jobs
     permissions:
       contents: write  # Needed to commit and push changes
     steps:
@@ -56,20 +57,32 @@ jobs:
           pip install black isort ruff
 
       - name: 🎨 Format with Black
+        timeout-minutes: 8
         run: |
           echo "::group::Running Black formatter"
-          black . --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || true
+          # Exclude large directories and use faster mode for monorepo
+          black . --fast --line-length=120 \
+            --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build|google-cloud-sdk|archive_forge)/' \
+            || true
           echo "::endgroup::"
 
       - name: 📑 Sort imports with isort
+        timeout-minutes: 5
         run: |
           echo "::group::Running isort"
-          isort . --profile=black --line-length=120 --skip-gitignore || true
+          # Skip large directories
+          isort . --profile=black --line-length=120 \
+            --skip-gitignore \
+            --skip google-cloud-sdk \
+            --skip archive_forge \
+            || true
           echo "::endgroup::"
 
       - name: 🔧 Auto-fix with Ruff
+        timeout-minutes: 5
         run: |
           echo "::group::Running Ruff auto-fix"
+          # Ruff is fast but still add timeout
           ruff check . --fix --config=ruff.toml || true
           echo "::endgroup::"
 
