@@ -1,154 +1,1211 @@
-from eidosian_core import eidosian
-# filepath: /home/lloyd/repos/glyph_forge/src/glyph_forge/ui/tui.py
 """
 ⚡ Glyph Forge TUI ⚡
 
 Hyper-efficient terminal user interface for Glyph art transformation.
+Fully Eidosian: zero compromise, maximum precision, complete functionality.
 """
-from textual.app import App
-from textual.widgets import Header, Footer, Static, Button, Input
-from textual.containers import Container, Horizontal, Vertical, Grid
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+from textual import on, work
+from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.containers import (
+    Container,
+    Grid,
+    Horizontal,
+    ScrollableContainer,
+    Vertical,
+    VerticalScroll,
+)
+from textual.reactive import reactive, var
 from textual.screen import Screen
-from textual.reactive import reactive
+from textual.widget import Widget
+from textual.widgets import (
+    Button,
+    Checkbox,
+    DataTable,
+    Footer,
+    Header,
+    Input,
+    Label,
+    OptionList,
+    Pretty,
+    Select,
+    Static,
+    Switch,
+    TabbedContent,
+    TabPane,
+    TextArea,
+)
+from textual.worker import Worker, WorkerState
 
-from ..api.glyph_api import get_api
+from eidosian_core import eidosian
 
-class GlyphForgeApp(App):
-    """Glyph Forge TUI application with zero-compromise user experience."""
-    
+from ..api.glyph_api import get_api, GlyphForgeAPI
+from ..config.settings import get_config, ConfigManager
+from ..utils.alphabet_manager import AlphabetManager
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🎨 Constants and Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GLYPH_FORGE_BANNER = r"""
+   ██████╗ ██╗  ██╗   ██╗██████╗ ██╗  ██╗    ███████╗ ██████╗ ██████╗  ██████╗ ███████╗
+  ██╔════╝ ██║  ╚██╗ ██╔╝██╔══██╗██║  ██║    ██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
+  ██║  ███╗██║   ╚████╔╝ ██████╔╝███████║    █████╗  ██║   ██║██████╔╝██║  ███╗█████╗
+  ██║   ██║██║    ╚██╔╝  ██╔═══╝ ██╔══██║    ██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
+  ╚██████╔╝███████╗██║   ██║     ██║  ██║    ██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
+   ╚═════╝ ╚══════╝╚═╝   ╚═╝     ╚═╝  ╚═╝    ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+"""
+
+COLOR_MODES = [
+    ("none", "None (Grayscale)"),
+    ("ansi16", "ANSI 16 Colors"),
+    ("ansi256", "ANSI 256 Colors"),
+    ("truecolor", "Truecolor (24-bit)"),
+    ("html", "HTML Output"),
+]
+
+DITHER_ALGORITHMS = [
+    ("none", "None"),
+    ("floyd-steinberg", "Floyd-Steinberg"),
+    ("atkinson", "Atkinson"),
+]
+
+RESAMPLE_FILTERS = [
+    ("nearest", "Nearest"),
+    ("bilinear", "Bilinear"),
+    ("bicubic", "Bicubic"),
+    ("lanczos", "Lanczos (Best)"),
+]
+
+BANNER_STYLES = [
+    ("minimal", "Minimal"),
+    ("boxed", "Boxed"),
+    ("shadowed", "Shadowed"),
+    ("double", "Double Border"),
+    ("metallic", "Metallic"),
+    ("circuit", "Circuit"),
+    ("eidosian", "Eidosian ⚡"),
+]
+
+BANNER_EFFECTS = [
+    ("shadow", "Shadow"),
+    ("glow", "Glow"),
+    ("emboss", "Emboss"),
+    ("digital", "Digital"),
+    ("fade", "Fade"),
+]
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🧩 Custom Widgets
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class LabeledInput(Horizontal):
+    """Input field with label for consistent form layout."""
+
+    DEFAULT_CSS = """
+    LabeledInput {
+        height: auto;
+        margin: 1 0;
+    }
+    LabeledInput > Label {
+        width: 20;
+        padding: 1 1;
+    }
+    LabeledInput > Input {
+        width: 1fr;
+    }
+    """
+
+    def __init__(
+        self,
+        label: str,
+        input_id: str,
+        placeholder: str = "",
+        value: str = "",
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._label_text = label
+        self._input_id = input_id
+        self._placeholder = placeholder
+        self._value = value
+
+    def compose(self) -> ComposeResult:
+        yield Label(self._label_text)
+        yield Input(
+            value=self._value,
+            placeholder=self._placeholder,
+            id=self._input_id,
+        )
+
+
+class LabeledSelect(Horizontal):
+    """Select dropdown with label for consistent form layout."""
+
+    DEFAULT_CSS = """
+    LabeledSelect {
+        height: auto;
+        margin: 1 0;
+    }
+    LabeledSelect > Label {
+        width: 20;
+        padding: 1 1;
+    }
+    LabeledSelect > Select {
+        width: 1fr;
+    }
+    """
+
+    def __init__(
+        self,
+        label: str,
+        options: List[Tuple[str, str]],
+        select_id: str,
+        value: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._label_text = label
+        self._options = options
+        self._select_id = select_id
+        self._value = value
+
+    def compose(self) -> ComposeResult:
+        yield Label(self._label_text)
+        yield Select(
+            [(name, val) for val, name in self._options],
+            id=self._select_id,
+            value=self._value or self._options[0][0] if self._options else None,
+        )
+
+
+class LabeledSwitch(Horizontal):
+    """Switch toggle with label for consistent form layout."""
+
+    DEFAULT_CSS = """
+    LabeledSwitch {
+        height: auto;
+        margin: 1 0;
+    }
+    LabeledSwitch > Label {
+        width: 20;
+        padding: 1 1;
+    }
+    LabeledSwitch > Switch {
+        width: auto;
+    }
+    """
+
+    def __init__(
+        self,
+        label: str,
+        switch_id: str,
+        value: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._label_text = label
+        self._switch_id = switch_id
+        self._value = value
+
+    def compose(self) -> ComposeResult:
+        yield Label(self._label_text)
+        yield Switch(value=self._value, id=self._switch_id)
+
+
+class OutputPanel(VerticalScroll):
+    """Scrollable panel for displaying glyph art output."""
+
+    DEFAULT_CSS = """
+    OutputPanel {
+        border: solid $primary;
+        height: 1fr;
+        padding: 1;
+        background: $surface;
+    }
+    OutputPanel > Static {
+        width: auto;
+    }
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._content = ""
+
+    def compose(self) -> ComposeResult:
+        yield Static("", id="output_content")
+
+    def set_content(self, content: str) -> None:
+        """Set the output content."""
+        self._content = content
+        try:
+            self.query_one("#output_content", Static).update(content)
+        except Exception:
+            pass
+
+    def clear(self) -> None:
+        """Clear the output."""
+        self.set_content("")
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📝 Banner Generator Tab
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class BannerTab(Container):
+    """Banner generation tab with full parameter control."""
+
+    DEFAULT_CSS = """
+    BannerTab {
+        layout: grid;
+        grid-size: 2;
+        grid-columns: 1fr 2fr;
+        padding: 1;
+    }
+    BannerTab > .controls {
+        padding: 1;
+        border: solid $primary;
+        height: 100%;
+    }
+    BannerTab > .output {
+        padding: 1;
+        height: 100%;
+    }
+    """
+
+    def __init__(self, api: GlyphForgeAPI, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.api = api
+        self._fonts: List[str] = []
+
+    def compose(self) -> ComposeResult:
+        # Load available fonts
+        try:
+            self._fonts = self.api.get_available_fonts()
+        except Exception:
+            self._fonts = ["standard", "slant", "big", "banner"]
+
+        # Prioritize common fonts at the top
+        priority_fonts = ["slant", "standard", "banner", "big", "doom", "small", "block"]
+        available_priority = [f for f in priority_fonts if f in self._fonts]
+        other_fonts = [f for f in self._fonts if f not in priority_fonts][:43]  # Keep total ~50
+        ordered_fonts = available_priority + other_fonts
+        font_options = [(f, f) for f in ordered_fonts]
+        
+        default_font = available_priority[0] if available_priority else ordered_fonts[0]
+
+        with Vertical(classes="controls"):
+            yield Static("⚡ Banner Generator", classes="section_title")
+            yield LabeledInput(
+                "Text:",
+                "banner_text",
+                placeholder="Enter text to transform...",
+            )
+            yield LabeledSelect(
+                "Font:",
+                font_options,
+                "banner_font",
+                value=default_font,
+            )
+            yield LabeledSelect(
+                "Style:",
+                BANNER_STYLES,
+                "banner_style",
+                value="minimal",
+            )
+            yield LabeledInput(
+                "Width:",
+                "banner_width",
+                placeholder="80",
+                value="80",
+            )
+            yield LabeledSwitch("Color Output:", "banner_color", value=False)
+
+            with Horizontal(classes="button_row"):
+                yield Button("⚡ Generate Banner", id="btn_banner_generate", variant="primary")
+                yield Button("📋 Preview Fonts", id="btn_banner_preview")
+                yield Button("🗑️ Clear", id="btn_banner_clear", variant="warning")
+
+        with Vertical(classes="output"):
+            yield Static("Output Preview", classes="section_title")
+            yield OutputPanel(id="banner_output")
+
+    @on(Button.Pressed, "#btn_banner_generate")
+    def generate_banner(self) -> None:
+        """Generate the banner with current settings."""
+        text = self.query_one("#banner_text", Input).value
+        if not text:
+            self._show_output("⚠️ Please enter text to transform")
+            return
+
+        try:
+            font_select = self.query_one("#banner_font", Select)
+            style_select = self.query_one("#banner_style", Select)
+            width_input = self.query_one("#banner_width", Input)
+            color_switch = self.query_one("#banner_color", Switch)
+
+            font = str(font_select.value) if font_select.value else "slant"
+            style = str(style_select.value) if style_select.value else "minimal"
+            width = int(width_input.value) if width_input.value else 80
+            color = color_switch.value
+
+            banner = self.api.generate_banner(
+                text=text,
+                font=font,
+                style=style,
+                width=width,
+                color=color,
+            )
+            self._show_output(banner)
+        except Exception as e:
+            self._show_output(f"❌ Error: {str(e)}")
+
+    @on(Button.Pressed, "#btn_banner_preview")
+    def preview_fonts(self) -> None:
+        """Preview available fonts."""
+        text = self.query_one("#banner_text", Input).value or "Glyph"
+        try:
+            preview = self.api._banner_generator.preview_fonts(text, limit=5)
+            self._show_output(preview)
+        except Exception as e:
+            self._show_output(f"❌ Error: {str(e)}")
+
+    @on(Button.Pressed, "#btn_banner_clear")
+    def clear_output(self) -> None:
+        """Clear the output panel."""
+        self._show_output("")
+
+    def _show_output(self, content: str) -> None:
+        """Update the output panel."""
+        try:
+            self.query_one("#banner_output", OutputPanel).set_content(content)
+        except Exception:
+            pass
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🖼️ Image Converter Tab
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class ImageTab(Container):
+    """Image conversion tab with comprehensive parameter control."""
+
+    DEFAULT_CSS = """
+    ImageTab {
+        layout: grid;
+        grid-size: 2;
+        grid-columns: 1fr 2fr;
+        padding: 1;
+    }
+    ImageTab > .controls {
+        padding: 1;
+        border: solid $primary;
+        height: 100%;
+        overflow-y: auto;
+    }
+    ImageTab > .output {
+        padding: 1;
+        height: 100%;
+    }
+    """
+
+    def __init__(self, api: GlyphForgeAPI, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.api = api
+        self._charsets: List[str] = []
+
+    def compose(self) -> ComposeResult:
+        # Load available charsets
+        try:
+            self._charsets = AlphabetManager.list_available_alphabets()
+        except Exception:
+            self._charsets = ["general", "detailed", "minimal", "blocks"]
+
+        charset_options = [(c, c) for c in self._charsets]
+
+        with VerticalScroll(classes="controls"):
+            yield Static("🖼️ Image to Glyph Converter", classes="section_title")
+
+            # File input
+            yield LabeledInput(
+                "Image Path:",
+                "image_path",
+                placeholder="/path/to/image.png",
+            )
+
+            # Dimensions
+            yield Static("━━ Dimensions ━━", classes="subsection")
+            yield LabeledInput("Width:", "image_width", placeholder="100", value="100")
+            yield LabeledInput("Height:", "image_height", placeholder="auto")
+            yield LabeledInput(
+                "Aspect Ratio:", "image_aspect", placeholder="0.55", value="0.55"
+            )
+
+            # Character set and color
+            yield Static("━━ Output Mode ━━", classes="subsection")
+            yield LabeledSelect("Charset:", charset_options, "image_charset", value="general")
+            yield LabeledSelect("Color Mode:", COLOR_MODES, "image_color", value="none")
+
+            # Dithering
+            yield Static("━━ Dithering ━━", classes="subsection")
+            yield LabeledSwitch("Enable Dither:", "image_dither", value=False)
+            yield LabeledSelect(
+                "Algorithm:", DITHER_ALGORITHMS, "image_dither_alg", value="floyd-steinberg"
+            )
+
+            # Quality controls
+            yield Static("━━ Quality Controls ━━", classes="subsection")
+            yield LabeledInput("Brightness:", "image_brightness", placeholder="1.0", value="1.0")
+            yield LabeledInput("Contrast:", "image_contrast", placeholder="1.0", value="1.0")
+            yield LabeledInput("Gamma:", "image_gamma", placeholder="1.0", value="1.0")
+            yield LabeledSelect("Resample:", RESAMPLE_FILTERS, "image_resample", value="lanczos")
+
+            # Filters
+            yield Static("━━ Filters ━━", classes="subsection")
+            yield LabeledSwitch("Auto Contrast:", "image_autocontrast", value=False)
+            yield LabeledSwitch("Equalize:", "image_equalize", value=False)
+            yield LabeledSwitch("Invert Image:", "image_invert", value=False)
+            yield LabeledSwitch("Edge Enhance:", "image_edge", value=False)
+            yield LabeledSwitch("Sharpen:", "image_sharpen", value=False)
+            yield LabeledInput("Blur Radius:", "image_blur", placeholder="0.0", value="0.0")
+            yield LabeledInput("Posterize Bits:", "image_posterize", placeholder="none")
+
+            with Horizontal(classes="button_row"):
+                yield Button("🎨 Convert Image", id="btn_image_convert", variant="primary")
+                yield Button("📋 List Charsets", id="btn_image_charsets")
+                yield Button("🗑️ Clear", id="btn_image_clear", variant="warning")
+
+        with Vertical(classes="output"):
+            yield Static("Output Preview", classes="section_title")
+            yield OutputPanel(id="image_output")
+
+    @on(Button.Pressed, "#btn_image_convert")
+    def convert_image(self) -> None:
+        """Convert image with current settings."""
+        image_path = self.query_one("#image_path", Input).value
+        if not image_path:
+            self._show_output("⚠️ Please enter an image path")
+            return
+
+        if not os.path.exists(image_path):
+            self._show_output(f"❌ File not found: {image_path}")
+            return
+
+        try:
+            # Gather all parameters
+            width = self._get_int("#image_width", 100)
+            height = self._get_int("#image_height", None)
+            aspect_ratio = self._get_float("#image_aspect", 0.55)
+            charset = self._get_select("#image_charset", "general")
+            color_mode = self._get_select("#image_color", "none")
+            dithering = self.query_one("#image_dither", Switch).value
+            dither_alg = self._get_select("#image_dither_alg", "floyd-steinberg") if dithering else None
+            brightness = self._get_float("#image_brightness", 1.0)
+            contrast = self._get_float("#image_contrast", 1.0)
+            gamma = self._get_float("#image_gamma", 1.0)
+            resample = self._get_select("#image_resample", "lanczos")
+            autocontrast = self.query_one("#image_autocontrast", Switch).value
+            equalize = self.query_one("#image_equalize", Switch).value
+            invert_image = self.query_one("#image_invert", Switch).value
+            edge_enhance = self.query_one("#image_edge", Switch).value
+            sharpen = self.query_one("#image_sharpen", Switch).value
+            blur_radius = self._get_float("#image_blur", 0.0)
+            posterize_bits = self._get_int("#image_posterize", None)
+
+            result = self.api.image_to_Glyph(
+                image_path=image_path,
+                width=width,
+                height=height,
+                charset=charset,
+                color_mode=color_mode,
+                dithering=dithering,
+                dither_algorithm=dither_alg,
+                brightness=brightness,
+                contrast=contrast,
+                gamma=gamma,
+                aspect_ratio=aspect_ratio,
+                resample=resample,
+                autocontrast=autocontrast,
+                equalize=equalize,
+                invert_image=invert_image,
+                edge_enhance=edge_enhance,
+                sharpen=sharpen,
+                blur_radius=blur_radius,
+                posterize_bits=posterize_bits,
+            )
+            self._show_output(result)
+        except Exception as e:
+            self._show_output(f"❌ Error: {str(e)}")
+
+    @on(Button.Pressed, "#btn_image_charsets")
+    def list_charsets(self) -> None:
+        """List available character sets."""
+        charsets = AlphabetManager.list_available_alphabets()
+        output = "Available Character Sets:\n" + "━" * 30 + "\n"
+        for cs in charsets:
+            try:
+                chars = AlphabetManager.get_alphabet(cs)
+                preview = chars[:20] + "..." if len(chars) > 20 else chars
+                output += f"  {cs}: {preview}\n"
+            except Exception:
+                output += f"  {cs}\n"
+        self._show_output(output)
+
+    @on(Button.Pressed, "#btn_image_clear")
+    def clear_output(self) -> None:
+        """Clear the output panel."""
+        self._show_output("")
+
+    def _get_int(self, selector: str, default: Optional[int]) -> Optional[int]:
+        """Get integer value from input."""
+        try:
+            value = self.query_one(selector, Input).value
+            return int(value) if value else default
+        except (ValueError, Exception):
+            return default
+
+    def _get_float(self, selector: str, default: float) -> float:
+        """Get float value from input."""
+        try:
+            value = self.query_one(selector, Input).value
+            return float(value) if value else default
+        except (ValueError, Exception):
+            return default
+
+    def _get_select(self, selector: str, default: str) -> str:
+        """Get select value."""
+        try:
+            value = self.query_one(selector, Select).value
+            return str(value) if value else default
+        except Exception:
+            return default
+
+    def _show_output(self, content: str) -> None:
+        """Update the output panel."""
+        try:
+            self.query_one("#image_output", OutputPanel).set_content(content)
+        except Exception:
+            pass
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📺 Streaming Tab
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class StreamingTab(Container):
+    """Streaming controls for video/webcam/YouTube/browser."""
+
+    DEFAULT_CSS = """
+    StreamingTab {
+        layout: grid;
+        grid-size: 2;
+        grid-columns: 1fr 1fr;
+        padding: 1;
+    }
+    StreamingTab > .panel {
+        padding: 1;
+        border: solid $primary;
+        margin: 0 1;
+    }
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+    def compose(self) -> ComposeResult:
+        # Source selection panel
+        with Vertical(classes="panel"):
+            yield Static("📺 Stream Source", classes="section_title")
+
+            yield LabeledSelect(
+                "Source Type:",
+                [
+                    ("video", "Video File"),
+                    ("youtube", "YouTube URL"),
+                    ("webcam", "Webcam"),
+                    ("browser", "Browser/URL"),
+                ],
+                "stream_source_type",
+                value="video",
+            )
+
+            yield LabeledInput(
+                "Source/URL:",
+                "stream_source",
+                placeholder="Path, URL, or device ID...",
+            )
+
+            yield LabeledInput("FPS:", "stream_fps", placeholder="15", value="15")
+            yield LabeledInput("Scale:", "stream_scale", placeholder="2", value="2")
+            yield LabeledInput("Block Width:", "stream_bw", placeholder="8", value="8")
+            yield LabeledInput("Block Height:", "stream_bh", placeholder="8", value="8")
+
+        # Options panel
+        with Vertical(classes="panel"):
+            yield Static("⚙️ Stream Options", classes="section_title")
+
+            yield LabeledSelect(
+                "Gradient Set:",
+                [
+                    ("standard", "Standard"),
+                    ("enhanced", "Enhanced"),
+                    ("braille", "Braille"),
+                    ("ascii", "ASCII"),
+                ],
+                "stream_gradient",
+                value="standard",
+            )
+
+            yield LabeledSelect(
+                "Algorithm:",
+                [
+                    ("sobel", "Sobel"),
+                    ("prewitt", "Prewitt"),
+                    ("scharr", "Scharr"),
+                    ("laplacian", "Laplacian"),
+                    ("canny", "Canny"),
+                ],
+                "stream_algorithm",
+                value="sobel",
+            )
+
+            yield LabeledSwitch("Color:", "stream_color", value=True)
+            yield LabeledSwitch("Enhanced Edges:", "stream_edges", value=True)
+            yield LabeledSwitch("Adaptive Quality:", "stream_adaptive", value=True)
+            yield LabeledSwitch("Border:", "stream_border", value=True)
+            yield LabeledSwitch("Dithering:", "stream_dither", value=False)
+
+            with Horizontal(classes="button_row"):
+                yield Button("🚀 Launch Stream", id="btn_stream_start", variant="primary")
+                yield Button("⏹️ Stop", id="btn_stream_stop", variant="error")
+
+            yield Static("", id="stream_status")
+
+    @on(Button.Pressed, "#btn_stream_start")
+    def start_stream(self) -> None:
+        """Launch the streaming process."""
+        try:
+            source_type = self._get_select("#stream_source_type", "video")
+            source = self.query_one("#stream_source", Input).value
+
+            if not source and source_type != "webcam":
+                self._update_status("⚠️ Please enter a source")
+                return
+
+            # Build command arguments
+            args = self._build_stream_args(source_type, source)
+
+            # Find glyph_stream.py
+            stream_script = self._find_stream_script()
+            if not stream_script:
+                self._update_status("❌ glyph_stream.py not found")
+                return
+
+            # Launch in new terminal
+            cmd = [sys.executable, str(stream_script)] + args
+            self._update_status(f"🚀 Launching: {' '.join(cmd[:5])}...")
+
+            # Start subprocess
+            subprocess.Popen(
+                cmd,
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            self._update_status("✅ Stream launched in new process")
+
+        except Exception as e:
+            self._update_status(f"❌ Error: {str(e)}")
+
+    @on(Button.Pressed, "#btn_stream_stop")
+    def stop_stream(self) -> None:
+        """Stop streaming (info message)."""
+        self._update_status("ℹ️ Close the stream terminal window to stop")
+
+    def _build_stream_args(self, source_type: str, source: str) -> List[str]:
+        """Build command line arguments for glyph_stream."""
+        args: List[str] = []
+
+        fps = self._get_input("#stream_fps", "15")
+        scale = self._get_input("#stream_scale", "2")
+        bw = self._get_input("#stream_bw", "8")
+        bh = self._get_input("#stream_bh", "8")
+        gradient = self._get_select("#stream_gradient", "standard")
+        algorithm = self._get_select("#stream_algorithm", "sobel")
+        color = self.query_one("#stream_color", Switch).value
+        edges = self.query_one("#stream_edges", Switch).value
+        adaptive = self.query_one("#stream_adaptive", Switch).value
+        border = self.query_one("#stream_border", Switch).value
+        dither = self.query_one("#stream_dither", Switch).value
+
+        if source_type == "webcam":
+            args.append("--webcam")
+            if source:
+                args.extend(["--webcam-id", source])
+        elif source_type == "browser":
+            args.append("--virtual-display")
+            args.extend(["--launch-app", f"chromium --kiosk --app={source}"])
+        else:
+            args.append(source)
+
+        args.extend(["--fps", fps])
+        args.extend(["--scale", scale])
+        args.extend(["--block-width", bw])
+        args.extend(["--block-height", bh])
+        args.extend(["--gradient-set", gradient])
+        args.extend(["--algorithm", algorithm])
+
+        if not color:
+            args.append("--no-color")
+        if not edges:
+            args.append("--no-enhanced-edges")
+        if not adaptive:
+            args.append("--no-adaptive")
+        if not border:
+            args.append("--no-border")
+        if dither:
+            args.append("--dithering")
+
+        return args
+
+    def _find_stream_script(self) -> Optional[Path]:
+        """Locate glyph_stream.py."""
+        # The script is in the glyph_forge package root (same level as src/)
+        # Path: ui/tui.py -> ui -> glyph_forge -> src -> glyph_forge (package root)
+        tui_path = Path(__file__).resolve()
+        package_root = tui_path.parent.parent.parent.parent
+        candidate = package_root / "glyph_stream.py"
+        if candidate.exists():
+            return candidate
+        
+        # Fallback: search up the directory tree
+        for parent in [tui_path, *tui_path.parents]:
+            candidate = parent / "glyph_stream.py"
+            if candidate.exists():
+                return candidate
+        
+        # Last resort: current working directory
+        cwd_candidate = Path.cwd() / "glyph_stream.py"
+        if cwd_candidate.exists():
+            return cwd_candidate
+            
+        return None
+
+    def _get_input(self, selector: str, default: str) -> str:
+        """Get input value."""
+        try:
+            value = self.query_one(selector, Input).value
+            return value if value else default
+        except Exception:
+            return default
+
+    def _get_select(self, selector: str, default: str) -> str:
+        """Get select value."""
+        try:
+            value = self.query_one(selector, Select).value
+            return str(value) if value else default
+        except Exception:
+            return default
+
+    def _update_status(self, message: str) -> None:
+        """Update status display."""
+        try:
+            self.query_one("#stream_status", Static).update(message)
+        except Exception:
+            pass
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ⚙️ Settings Tab
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class SettingsTab(Container):
+    """Settings configuration tab."""
+
+    DEFAULT_CSS = """
+    SettingsTab {
+        layout: grid;
+        grid-size: 2;
+        grid-columns: 1fr 1fr;
+        padding: 1;
+    }
+    SettingsTab > .panel {
+        padding: 1;
+        border: solid $primary;
+        margin: 0 1;
+    }
+    """
+
+    def __init__(self, config: ConfigManager, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.config = config
+
+    def compose(self) -> ComposeResult:
+        # Banner defaults
+        with Vertical(classes="panel"):
+            yield Static("📝 Banner Defaults", classes="section_title")
+            yield LabeledInput(
+                "Default Font:",
+                "cfg_banner_font",
+                value=str(self.config.get("banner", "default_font", "slant")),
+            )
+            yield LabeledInput(
+                "Default Width:",
+                "cfg_banner_width",
+                value=str(self.config.get("banner", "default_width", 80)),
+            )
+            yield LabeledInput(
+                "Default Style:",
+                "cfg_banner_style",
+                value=str(self.config.get("banner", "default_style", "minimal")),
+            )
+            yield LabeledSwitch(
+                "Cache Enabled:",
+                "cfg_banner_cache",
+                value=bool(self.config.get("banner", "cache_enabled", True)),
+            )
+
+        # Image defaults
+        with Vertical(classes="panel"):
+            yield Static("🖼️ Image Defaults", classes="section_title")
+            yield LabeledInput(
+                "Default Charset:",
+                "cfg_image_charset",
+                value=str(self.config.get("image", "default_charset", "general")),
+            )
+            yield LabeledInput(
+                "Default Width:",
+                "cfg_image_width",
+                value=str(self.config.get("image", "default_width", 100)),
+            )
+            yield LabeledInput(
+                "Max Width:",
+                "cfg_image_max_width",
+                value=str(self.config.get("image", "max_width", 500)),
+            )
+            yield LabeledInput(
+                "Default Gamma:",
+                "cfg_image_gamma",
+                value=str(self.config.get("image", "gamma", 1.0)),
+            )
+            yield LabeledInput(
+                "Aspect Ratio:",
+                "cfg_image_aspect",
+                value=str(self.config.get("image", "aspect_ratio", 0.55)),
+            )
+            yield LabeledSwitch(
+                "Dithering:",
+                "cfg_image_dither",
+                value=bool(self.config.get("image", "dithering", False)),
+            )
+
+        # Performance settings
+        with Vertical(classes="panel"):
+            yield Static("⚡ Performance", classes="section_title")
+            yield LabeledInput(
+                "Optimization:",
+                "cfg_perf_opt",
+                value=str(self.config.get("performance", "optimization_level", 3)),
+            )
+            yield LabeledSwitch(
+                "Cache Enabled:",
+                "cfg_perf_cache",
+                value=bool(self.config.get("performance", "cache_enabled", True)),
+            )
+            yield LabeledSwitch(
+                "Lazy Loading:",
+                "cfg_perf_lazy",
+                value=bool(self.config.get("performance", "lazy_loading", True)),
+            )
+            yield LabeledSwitch(
+                "Debug Mode:",
+                "cfg_perf_debug",
+                value=bool(self.config.get("performance", "debug_mode", False)),
+            )
+
+        # IO settings
+        with Vertical(classes="panel"):
+            yield Static("💾 Output Settings", classes="section_title")
+            yield LabeledSelect(
+                "Output Format:",
+                [("text", "Text"), ("html", "HTML"), ("svg", "SVG")],
+                "cfg_io_format",
+                value=str(self.config.get("io", "output_format", "text")),
+            )
+            yield LabeledSwitch(
+                "Color Output:",
+                "cfg_io_color",
+                value=bool(self.config.get("io", "color_output", True)),
+            )
+            yield LabeledSwitch(
+                "Auto Terminal:",
+                "cfg_io_terminal",
+                value=bool(self.config.get("io", "auto_detect_terminal", True)),
+            )
+
+            with Horizontal(classes="button_row"):
+                yield Button("Save Settings", id="btn_settings_save", variant="primary")
+                yield Button("Reset Defaults", id="btn_settings_reset", variant="warning")
+
+            yield Static("", id="settings_status")
+
+    @on(Button.Pressed, "#btn_settings_save")
+    def save_settings(self) -> None:
+        """Save current settings."""
+        try:
+            # Banner settings
+            self.config.set("banner", "default_font", self._get_input("#cfg_banner_font"))
+            self.config.set("banner", "default_width", int(self._get_input("#cfg_banner_width", "80")))
+            self.config.set("banner", "default_style", self._get_input("#cfg_banner_style"))
+            self.config.set("banner", "cache_enabled", self._get_switch("#cfg_banner_cache"))
+
+            # Image settings
+            self.config.set("image", "default_charset", self._get_input("#cfg_image_charset"))
+            self.config.set("image", "default_width", int(self._get_input("#cfg_image_width", "100")))
+            self.config.set("image", "max_width", int(self._get_input("#cfg_image_max_width", "500")))
+            self.config.set("image", "gamma", float(self._get_input("#cfg_image_gamma", "1.0")))
+            self.config.set("image", "aspect_ratio", float(self._get_input("#cfg_image_aspect", "0.55")))
+            self.config.set("image", "dithering", self._get_switch("#cfg_image_dither"))
+
+            # Performance settings
+            self.config.set("performance", "optimization_level", int(self._get_input("#cfg_perf_opt", "3")))
+            self.config.set("performance", "cache_enabled", self._get_switch("#cfg_perf_cache"))
+            self.config.set("performance", "lazy_loading", self._get_switch("#cfg_perf_lazy"))
+            self.config.set("performance", "debug_mode", self._get_switch("#cfg_perf_debug"))
+
+            # IO settings
+            self.config.set("io", "color_output", self._get_switch("#cfg_io_color"))
+            self.config.set("io", "auto_detect_terminal", self._get_switch("#cfg_io_terminal"))
+
+            self._update_status("✅ Settings saved successfully")
+        except Exception as e:
+            self._update_status(f"❌ Error saving: {str(e)}")
+
+    @on(Button.Pressed, "#btn_settings_reset")
+    def reset_settings(self) -> None:
+        """Reset to default settings."""
+        self._update_status("ℹ️ Restart application to apply defaults")
+
+    def _get_input(self, selector: str, default: str = "") -> str:
+        """Get input value."""
+        try:
+            return self.query_one(selector, Input).value or default
+        except Exception:
+            return default
+
+    def _get_switch(self, selector: str) -> bool:
+        """Get switch value."""
+        try:
+            return self.query_one(selector, Switch).value
+        except Exception:
+            return False
+
+    def _update_status(self, message: str) -> None:
+        """Update status display."""
+        try:
+            self.query_one("#settings_status", Static).update(message)
+        except Exception:
+            pass
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ℹ️ About Tab
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class AboutTab(Container):
+    """About/Help tab with documentation and info."""
+
+    DEFAULT_CSS = """
+    AboutTab {
+        padding: 2;
+    }
+    AboutTab > .banner {
+        text-align: center;
+        color: $primary;
+    }
+    AboutTab > .info {
+        margin: 2 0;
+        padding: 1;
+        border: solid $primary;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Static(GLYPH_FORGE_BANNER, classes="banner")
+        yield Static(
+            "⚡ Eidosian Glyph Art Transformation Engine ⚡",
+            classes="tagline",
+        )
+
+        with Vertical(classes="info"):
+            yield Static("📖 Quick Reference", classes="section_title")
+            yield Static(
+                """
+[bold]Banner Generator[/bold]
+  Transform text into stylized ASCII/Unicode art banners.
+  Choose from 100+ fonts and multiple styling presets.
+
+[bold]Image Converter[/bold]
+  Convert images to high-fidelity glyph art.
+  Supports grayscale, ANSI colors, and HTML output.
+  Advanced options: dithering, gamma, edge enhancement.
+
+[bold]Streaming[/bold]
+  Real-time glyph rendering for video, webcam, and YouTube.
+  Launch browser sessions rendered as live glyph art.
+
+[bold]Keyboard Shortcuts[/bold]
+  q / Ctrl+C  - Quit application
+  Tab         - Navigate between fields
+  Enter       - Activate buttons
+  Escape      - Close dialogs
+""",
+                markup=True,
+            )
+
+        with Vertical(classes="info"):
+            yield Static("🔧 Dependencies", classes="section_title")
+            yield Static(self._get_dependency_status())
+
+    def _get_dependency_status(self) -> str:
+        """Check and report dependency status."""
+        deps = []
+
+        # Core dependencies
+        deps.append("✅ Pillow (Image processing)")
+        deps.append("✅ NumPy (Array operations)")
+        deps.append("✅ Rich (Terminal formatting)")
+        deps.append("✅ Textual (TUI framework)")
+
+        # Optional dependencies
+        try:
+            import cv2
+            deps.append("✅ OpenCV (Video processing)")
+        except ImportError:
+            deps.append("⚠️ OpenCV (pip install opencv-python)")
+
+        try:
+            import yt_dlp
+            deps.append("✅ yt-dlp (YouTube streaming)")
+        except ImportError:
+            deps.append("⚠️ yt-dlp (pip install yt-dlp)")
+
+        try:
+            import mss
+            deps.append("✅ mss (Screen capture)")
+        except ImportError:
+            deps.append("⚠️ mss (pip install mss)")
+
+        return "\n".join(deps)
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🚀 Main Application
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class GlyphForgeApp(App[None]):
+    """
+    ⚡ Glyph Forge TUI ⚡
+
+    Fully Eidosian terminal user interface for glyph art transformation.
+    Zero compromise, maximum precision, complete functionality.
+    """
+
     TITLE = "⚡ Glyph Forge ⚡"
     SUB_TITLE = "Eidosian Glyph Art Transformation"
     CSS_PATH = "glyph_forge.css"
-    
-    @eidosian()
-    def compose(self):
-        """Compose the user interface with surgical precision."""
-        yield Header()
-        yield Container(
-            Vertical(
-                Static("Welcome to Glyph Forge", id="welcome"),
-                Horizontal(
-                    Button("Banner Generator", id="btn_banner"),
-                    Button("Image Converter", id="btn_image"),
-                    Button("Settings", id="btn_settings"),
-                ),
-                Static("", id="output_area"),
-                id="main_container"
-            ),
-            id="app_container"
-        )
-        yield Footer()
-    
-    @eidosian()
-    def on_button_pressed(self, event):
-        """Handle button press events with zero-latency response."""
-        button_id = event.button.id
-        
-        if button_id == "btn_banner":
-            self.push_screen(BannerGeneratorScreen())
-        elif button_id == "btn_image":
-            self.push_screen(ImageConverterScreen())
-        elif button_id == "btn_settings":
-            self.push_screen(SettingsScreen())
 
-class BannerGeneratorScreen(Screen):
-    """Banner generation screen with atomic efficiency."""
-    
-    @eidosian()
-    def compose(self):
-        """Compose the banner generator interface."""
+    BINDINGS = [
+        Binding("q", "quit", "Quit", show=True),
+        Binding("ctrl+c", "quit", "Quit", show=False),
+        Binding("f1", "show_help", "Help", show=True),
+        Binding("ctrl+s", "save", "Save", show=True),
+    ]
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.api: Optional[GlyphForgeAPI] = None
+        self.config: Optional[ConfigManager] = None
+
+    def compose(self) -> ComposeResult:
+        """Compose the main application interface."""
         yield Header()
-        yield Container(
-            Vertical(
-                Static("Banner Generator", classes="screen_title"),
-                Input(placeholder="Enter text", id="banner_text"),
-                Horizontal(
-                    Button("Generate", id="btn_generate"),
-                    Button("Back", id="btn_back"),
-                ),
-                Static("", id="banner_output"),
-                id="banner_container"
-            ),
-            id="screen_container"
-        )
+
+        with TabbedContent(initial="banner"):
+            with TabPane("📝 Banner", id="banner"):
+                yield BannerTab(self._get_api())
+            with TabPane("🖼️ Image", id="image"):
+                yield ImageTab(self._get_api())
+            with TabPane("📺 Streaming", id="streaming"):
+                yield StreamingTab()
+            with TabPane("⚙️ Settings", id="settings"):
+                yield SettingsTab(self._get_config())
+            with TabPane("ℹ️ About", id="about"):
+                yield AboutTab()
+
         yield Footer()
-    
-    @eidosian()
-    def on_button_pressed(self, event):
-        """Process button events with quantum precision."""
-        button_id = event.button.id
-        
-        if button_id == "btn_generate":
-            text = self.query_one("#banner_text").value
-            if text:
-                api = get_api()
-                banner = api.generate_banner(text)
-                self.query_one("#banner_output").update(banner)
-        elif button_id == "btn_back":
-            self.app.pop_screen()
+
+    def on_mount(self) -> None:
+        """Initialize on mount."""
+        self.title = "⚡ Glyph Forge ⚡"
+        self.sub_title = "Eidosian Glyph Art Transformation"
+
+    def _get_api(self) -> GlyphForgeAPI:
+        """Get or create API instance."""
+        if self.api is None:
+            self.api = get_api()
+        return self.api
+
+    def _get_config(self) -> ConfigManager:
+        """Get or create config instance."""
+        if self.config is None:
+            self.config = get_config()
+        return self.config
+
+    def action_quit(self) -> None:
+        """Quit the application."""
+        self.exit()
+
+    def action_show_help(self) -> None:
+        """Show help (switch to About tab)."""
+        try:
+            tabs = self.query_one(TabbedContent)
+            tabs.active = "about"
+        except Exception:
+            pass
+
+    def action_save(self) -> None:
+        """Trigger save in settings tab."""
+        try:
+            settings_tab = self.query_one(SettingsTab)
+            settings_tab.save_settings()
+        except Exception:
+            pass
 
 
-class ImageConverterScreen(Screen):
-    """Image conversion screen with zero-compromise functionality."""
-    
-    @eidosian()
-    def compose(self):
-        """Compose the image converter interface."""
-        yield Header()
-        yield Container(
-            Vertical(
-                Static("Image to Glyph Converter", classes="screen_title"),
-                Input(placeholder="Path to image", id="image_file"),
-                Horizontal(
-                    Button("Convert", id="btn_convert"),
-                    Button("Back", id="btn_back"),
-                ),
-                Static("", id="image_output"),
-                id="image_container"
-            ),
-            id="screen_container"
-        )
-        yield Footer()
-    
-    @eidosian()
-    def on_button_pressed(self, event):
-        """Process button events with surgical precision."""
-        button_id = event.button.id
-        
-        if button_id == "btn_convert":
-            file_path = self.query_one("#image_file").value
-            if file_path:
-                api = get_api()
-                try:
-                    result = api.image_to_Glyph(file_path, width=80)
-                    self.query_one("#image_output").update(result)
-                except Exception as e:
-                    self.query_one("#image_output").update(f"Error: {str(e)}")
-        elif button_id == "btn_back":
-            self.app.pop_screen()
+def run_tui() -> None:
+    """Entry point for running the TUI."""
+    app = GlyphForgeApp()
+    app.run()
 
-class SettingsScreen(Screen):
-    """Settings configuration screen with atomic parameters."""
-    
-    @eidosian()
-    def compose(self):
-        """Compose the settings interface."""
-        yield Header()
-        yield Container(
-            Vertical(
-                Static("Settings", classes="screen_title"),
-                # Settings options would be implemented here
-                Button("Back", id="btn_back"),
-                id="settings_container"
-            ),
-            id="screen_container"
-        )
-        yield Footer()
-    
-    @eidosian()
-    def on_button_pressed(self, event):
-        """Process settings events with zero overhead."""
-        button_id = event.button.id
-        
-        if button_id == "btn_back":
-            self.app.pop_screen()
+
+if __name__ == "__main__":
+    run_tui()

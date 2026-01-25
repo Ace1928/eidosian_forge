@@ -1456,8 +1456,8 @@ class UnicodeRenderEngine:
             "edges": {
                 "horizontal": {"bold": "━", "standard": "─", "light": "╌", "ascii": "-"},
                 "vertical": {"bold": "┃", "standard": "│", "light": "╎", "ascii": "|"},
-                "diagonal_ne": {"bold": "╱", "standard": "╱", "ascii": "/"},
-                "diagonal_nw": {"bold": "╲", "standard": "╲", "ascii": "\\"},
+                "diagonal_ne": {"bold": "╱", "standard": "╱", "light": "╱", "ascii": "/"},
+                "diagonal_nw": {"bold": "╲", "standard": "╲", "light": "╲", "ascii": "\\"},
             },
             
             # Full character sets for different rendering contexts
@@ -3157,7 +3157,9 @@ class StreamEngine:
         
         # Dynamic resolution selection based on system capabilities
         actual_resolution = resolution or cls._determine_optimal_resolution()
-        format_spec = f'best[height<={actual_resolution}][ext=mp4]'
+        # Use https protocol formats for OpenCV compatibility (m3u8/HLS doesn't work)
+        # Prefer mp4 with avc1 codec for best compatibility
+        format_spec = f'best[height<={actual_resolution}][protocol=https][ext=mp4]/best[height<={actual_resolution}][protocol=https]/best[protocol=https]'
         
         ydl_opts = {
             'format': format_spec,
@@ -3196,8 +3198,8 @@ class StreamEngine:
                     
                     return extraction_result.url
                     
-                # Format degradation for retry with perfect fallbacks
-                ydl_opts['format'] = 'best[height<=360]' if retry == 0 else 'worst'
+                # Format degradation for retry with perfect fallbacks - use https protocol only
+                ydl_opts['format'] = 'best[height<=360][protocol=https]/best[protocol=https]' if retry == 0 else 'worst[protocol=https]/worst'
                 
             except Exception as e:
                 # Clear status line with universal compatibility
@@ -3213,7 +3215,7 @@ class StreamEngine:
                     time.sleep(1 * (2**retry))
                     if error_category in ('network', 'timeout'):
                         ydl_opts['socket_timeout'] = 20
-                        ydl_opts['format'] = 'best[height<=360]' if retry == 0 else 'worst'
+                        ydl_opts['format'] = 'best[height<=360][protocol=https]/best[protocol=https]' if retry == 0 else 'worst[protocol=https]/worst'
                 else:
                     if not HAS_RICH:
                         print(f"❌ Extraction failed: {error_category}", flush=True)

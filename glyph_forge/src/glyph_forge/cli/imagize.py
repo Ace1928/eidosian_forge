@@ -314,9 +314,20 @@ def convert_image(
     invert: bool = False,
     color_mode: str = "none",
     dithering: bool = False,
+    dither_algorithm: Optional[str] = None,
     brightness: Optional[float] = None,
     contrast: Optional[float] = None,
-    optimize_contrast: bool = False
+    gamma: Optional[float] = None,
+    aspect_ratio: Optional[float] = None,
+    resample: Optional[str] = None,
+    autocontrast: bool = False,
+    equalize: bool = False,
+    invert_image: bool = False,
+    edge_enhance: bool = False,
+    sharpen: bool = False,
+    blur_radius: Optional[float] = None,
+    posterize_bits: Optional[int] = None,
+    optimize_contrast: bool = False,
 ) -> str:
     """
     Convert image to Glyph with atomic precision and intelligent defaults.
@@ -331,10 +342,21 @@ def convert_image(
         height: Height in characters
         charset: Character set for conversion
         invert: Whether to invert brightness
-        color_mode: Color output mode (none/ansi/html)
+        color_mode: Color output mode (none/ansi/ansi16/ansi256/truecolor/html)
         dithering: Whether to apply dithering
+        dither_algorithm: Dithering algorithm (none/floyd-steinberg/atkinson)
         brightness: Brightness adjustment factor (0.0-2.0)
         contrast: Contrast adjustment factor (0.0-2.0)
+        gamma: Gamma correction factor (0.1-5.0)
+        aspect_ratio: Character aspect ratio correction factor
+        resample: Resampling filter (nearest/bilinear/bicubic/lanczos)
+        autocontrast: Auto-stretch contrast for better detail
+        equalize: Histogram equalization for enhanced dynamic range
+        invert_image: Invert image luminance before conversion
+        edge_enhance: Emphasize edges for structural clarity
+        sharpen: Apply sharpening filter for crisper details
+        blur_radius: Gaussian blur radius for smoothing
+        posterize_bits: Reduce color depth (1-8) for stylized output
         optimize_contrast: Whether to auto-optimize contrast
         
     Returns:
@@ -360,11 +382,22 @@ def convert_image(
         width=width or 100,
         height=height,
         invert=invert,
-        dithering=dithering
+        dithering=dithering,
+        dither_algorithm=dither_algorithm,
+        gamma=gamma if gamma is not None else 1.0,
+        aspect_ratio=aspect_ratio if aspect_ratio is not None else 0.55,
+        resample=resample if resample is not None else "lanczos",
+        autocontrast=autocontrast,
+        equalize=equalize,
+        invert_image=invert_image,
+        edge_enhance=edge_enhance,
+        sharpen=sharpen,
+        blur_radius=blur_radius if blur_radius is not None else 0.0,
+        posterize_bits=posterize_bits,
     )
     
     # Set optional image parameters
-    if brightness is not None or contrast is not None or optimize_contrast:
+    if brightness is not None or contrast is not None or gamma is not None or optimize_contrast:
         image_params = {}
         
         if brightness is not None:
@@ -372,14 +405,46 @@ def convert_image(
             
         if contrast is not None:
             image_params['contrast'] = contrast
+
+        if gamma is not None:
+            image_params['gamma'] = gamma
             
         if optimize_contrast:
-            image_params['auto_optimize'] = True
+            image_params['autocontrast'] = True
             
         converter.set_image_params(**image_params)
+
+    if (
+        dither_algorithm is not None
+        or aspect_ratio is not None
+        or resample is not None
+        or autocontrast
+        or equalize
+        or invert_image
+        or edge_enhance
+        or sharpen
+        or blur_radius is not None
+        or posterize_bits is not None
+    ):
+        converter.set_image_params(
+            dither_algorithm=dither_algorithm,
+            aspect_ratio=aspect_ratio,
+            resample=resample,
+            autocontrast=autocontrast,
+            equalize=equalize,
+            invert_image=invert_image,
+            edge_enhance=edge_enhance,
+            sharpen=sharpen,
+            blur_radius=blur_radius,
+            posterize_bits=posterize_bits,
+        )
     
     # Convert image based on color mode
-    if color_mode in ("ansi", "html"):
+    if color_mode == "rgb":
+        color_mode = "truecolor"
+    if color_mode == "web":
+        color_mode = "html"
+    if color_mode in ("ansi", "ansi16", "ansi256", "truecolor", "html"):
         return converter.convert_color(
             image_path=image_path,
             output_path=output_path,
@@ -529,7 +594,7 @@ Examples:
     style_group.add_argument(
         '-c', '--color',
         type=str,
-        choices=['none', 'ansi', 'html'],
+        choices=['none', 'ansi', 'ansi16', 'ansi256', 'truecolor', 'html'],
         default='none',
         help='Color output mode (default: none)'
     )
@@ -537,6 +602,13 @@ Examples:
         '-d', '--dither',
         action='store_true',
         help='Apply dithering for improved visual precision'
+    )
+    style_group.add_argument(
+        '--dither-algorithm',
+        type=str,
+        choices=['none', 'floyd-steinberg', 'atkinson'],
+        default=None,
+        help='Select dithering algorithm'
     )
 
     # Image adjustment options
@@ -554,6 +626,59 @@ Examples:
         default=None,
         metavar='FACTOR',
         help='Contrast adjustment (0.5-2.0, default: 1.0)'
+    )
+    adjust_group.add_argument(
+        '--gamma',
+        type=float,
+        default=None,
+        metavar='FACTOR',
+        help='Gamma correction (0.1-5.0, default: 1.0)'
+    )
+    adjust_group.add_argument(
+        '--autocontrast',
+        action='store_true',
+        help='Auto-stretch contrast for improved detail'
+    )
+    adjust_group.add_argument(
+        '--equalize',
+        action='store_true',
+        help='Histogram equalization for enhanced dynamic range'
+    )
+    adjust_group.add_argument(
+        '--invert-image',
+        action='store_true',
+        help='Invert image luminance before conversion'
+    )
+    adjust_group.add_argument(
+        '--edge-enhance',
+        action='store_true',
+        help='Emphasize edges for structural clarity'
+    )
+    adjust_group.add_argument(
+        '--sharpen',
+        action='store_true',
+        help='Apply sharpening filter for crisper details'
+    )
+    adjust_group.add_argument(
+        '--blur-radius',
+        type=float,
+        default=None,
+        metavar='RADIUS',
+        help='Gaussian blur radius for smoothing'
+    )
+    adjust_group.add_argument(
+        '--posterize-bits',
+        type=int,
+        default=None,
+        metavar='BITS',
+        help='Posterize bit depth (1-8)'
+    )
+    adjust_group.add_argument(
+        '--resample',
+        type=str,
+        choices=['nearest', 'bilinear', 'bicubic', 'lanczos'],
+        default=None,
+        help='Resampling filter (default: lanczos)'
     )
     adjust_group.add_argument(
         '--optimize',
@@ -617,6 +742,9 @@ Examples:
     # Sample image only makes sense with preview-charset
     if args.sample and not args.preview_charset:
         validation_errors.append("--sample can only be used with --preview-charset")
+
+    if args.dither_algorithm and not args.dither:
+        validation_errors.append("--dither-algorithm requires --dither to be enabled")
     
     # Apply validation errors if any
     if validation_errors:
@@ -742,8 +870,19 @@ def main() -> int:
             invert=args.invert,
             color_mode=args.color,
             dithering=args.dither,
+            dither_algorithm=args.dither_algorithm,
             brightness=args.brightness,
             contrast=args.contrast,
+            gamma=args.gamma,
+            aspect_ratio=args.aspect,
+            resample=args.resample,
+            autocontrast=args.autocontrast,
+            equalize=args.equalize,
+            invert_image=args.invert_image,
+            edge_enhance=args.edge_enhance,
+            sharpen=args.sharpen,
+            blur_radius=args.blur_radius,
+            posterize_bits=args.posterize_bits,
             optimize_contrast=args.optimize
         )
         
@@ -787,8 +926,18 @@ def convert(
     height: int = typer.Option(None, "--height", "-h", help="Height in characters"),
     charset: str = typer.Option("general", "--charset", "-s", help="Character set to use"),
     invert: bool = typer.Option(False, "--invert", "-i", help="Invert brightness"),
-    color: str = typer.Option("none", "--color", "-c", help="Color mode (none, ansi, html)"),
+    color: str = typer.Option("none", "--color", "-c", help="Color mode (none, ansi, ansi16, ansi256, truecolor, html)"),
     dither: bool = typer.Option(False, "--dither", "-d", help="Apply dithering"),
+    dither_algorithm: str = typer.Option(None, "--dither-algorithm", help="Dither algorithm (none, floyd-steinberg, atkinson)"),
+    gamma: float = typer.Option(None, "--gamma", help="Gamma correction (0.1-5.0)"),
+    autocontrast: bool = typer.Option(False, "--autocontrast", help="Auto-stretch contrast"),
+    equalize: bool = typer.Option(False, "--equalize", help="Histogram equalization"),
+    invert_image: bool = typer.Option(False, "--invert-image", help="Invert image luminance"),
+    edge_enhance: bool = typer.Option(False, "--edge-enhance", help="Emphasize edges"),
+    sharpen: bool = typer.Option(False, "--sharpen", help="Apply sharpening filter"),
+    blur_radius: float = typer.Option(None, "--blur-radius", help="Gaussian blur radius"),
+    posterize_bits: int = typer.Option(None, "--posterize-bits", help="Posterize bit depth (1-8)"),
+    resample: str = typer.Option(None, "--resample", help="Resample filter (nearest, bilinear, bicubic, lanczos)"),
     output: str = typer.Option(None, "--output", "-o", help="Save to file"),
     optimize: bool = typer.Option(False, "--optimize", help="Auto-optimize contrast"),
 ):
@@ -800,6 +949,8 @@ def convert(
             transient=True,
         ) as progress:
             progress.add_task("convert", total=None)
+            if dither_algorithm and not dither:
+                raise typer.BadParameter("--dither-algorithm requires --dither to be enabled")
             result = convert_image(
                 image_path=image,
                 output_path=output,
@@ -809,6 +960,16 @@ def convert(
                 invert=invert,
                 color_mode=color,
                 dithering=dither,
+                dither_algorithm=dither_algorithm,
+                gamma=gamma,
+                autocontrast=autocontrast,
+                equalize=equalize,
+                invert_image=invert_image,
+                edge_enhance=edge_enhance,
+                sharpen=sharpen,
+                blur_radius=blur_radius,
+                posterize_bits=posterize_bits,
+                resample=resample,
                 optimize_contrast=optimize,
             )
 

@@ -142,7 +142,7 @@ class TestGlyphForgeAPI:
         with mock.patch.object(
             api, '_get_image_converter', return_value=mock_image_converter
         ):
-            result = api.image_to_Glyph("image.jpg", color_mode="ansi")
+            result = api.image_to_Glyph("image.jpg", color_mode="truecolor")
 
             mock_image_converter.convert_color.assert_called_once()
             assert result == "MOCK COLOR Glyph ART"
@@ -155,6 +155,16 @@ class TestGlyphForgeAPI:
         mock_converter.width = 100
         mock_converter.brightness = 1.0
         mock_converter.contrast = 1.0
+        mock_converter.gamma = 1.0
+        mock_converter.aspect_ratio = 0.55
+        mock_converter.resample = "lanczos"
+        mock_converter.autocontrast = False
+        mock_converter.equalize = False
+        mock_converter.invert_image = False
+        mock_converter.edge_enhance = False
+        mock_converter.sharpen = False
+        mock_converter.blur_radius = 0.0
+        mock_converter.posterize_bits = None
         mock_converter.convert.return_value = "MOCK Glyph ART"
 
         with mock.patch.object(
@@ -172,7 +182,22 @@ class TestGlyphForgeAPI:
 
                 # Verify correct ImageGlyphConverter instantiation
                 mock_constructor.assert_called_with(
-                    charset="minimal", width=80, height=40, invert=True, dithering=False
+                    charset="minimal",
+                    width=80,
+                    height=40,
+                    invert=True,
+                    dithering=False,
+                    dither_algorithm=None,
+                    gamma=1.0,
+                    aspect_ratio=0.55,
+                    resample="lanczos",
+                    autocontrast=False,
+                    equalize=False,
+                    invert_image=False,
+                    edge_enhance=False,
+                    sharpen=False,
+                    blur_radius=0.0,
+                    posterize_bits=None,
                 )
 
     # ──── Utility Method Tests ───────────────────────────────────────
