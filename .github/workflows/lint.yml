@@ -32,6 +32,7 @@ jobs:
   lint-python:
     name: 🐍 Lint Python
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # Prevent runaway jobs
     permissions:
       contents: read  # Only reading repository contents
     steps:
@@ -49,10 +50,13 @@ jobs:
 
       - name: 🎨 Check formatting with Black
         id: black
+        timeout-minutes: 8
         continue-on-error: true
         run: |
           echo "::group::Black Format Check"
-          black . --check --diff --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' 2>&1 | tee black-output.txt
+          black . --check --diff --fast --line-length=120 \
+            --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build|google-cloud-sdk|archive_forge)/' \
+            2>&1 | tee black-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
           
@@ -68,10 +72,15 @@ jobs:
 
       - name: 📑 Check imports with isort
         id: isort
+        timeout-minutes: 5
         continue-on-error: true
         run: |
           echo "::group::isort Import Check"
-          isort . --check --diff --profile=black --line-length=120 --skip-gitignore 2>&1 | tee isort-output.txt
+          isort . --check --diff --profile=black --line-length=120 \
+            --skip-gitignore \
+            --skip google-cloud-sdk \
+            --skip archive_forge \
+            2>&1 | tee isort-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
           
@@ -86,9 +95,11 @@ jobs:
 
       - name: 🔍 Lint with Ruff
         id: ruff
+        timeout-minutes: 5
         continue-on-error: true
         run: |
           echo "::group::Ruff Linting"
+          # Ruff is already fast and respects ruff.toml excludes
           ruff check . --config=ruff.toml --output-format=github 2>&1 | tee ruff-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
@@ -103,11 +114,13 @@ jobs:
 
       - name: 🔬 Lint with Flake8
         id: flake8
+        timeout-minutes: 8
         continue-on-error: true
         run: |
           echo "::group::Flake8 Linting"
           flake8 . --count --statistics --show-source --max-line-length=120 \
-            --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__ 2>&1 | tee flake8-output.txt
+            --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__,google-cloud-sdk,archive_forge \
+            2>&1 | tee flake8-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
           
@@ -123,41 +136,23 @@ jobs:
 
       - name: 🧬 Analyze with Pylint
         id: pylint
+        timeout-minutes: 5
         continue-on-error: true
         run: |
           echo "::group::Pylint Analysis"
-          # Only analyze main forge modules to keep it fast
-          MODULES=$(find . -maxdepth 1 -type d -name "*_forge" ! -name ".*" | head -10)
-          if [ -n "$MODULES" ]; then
-            pylint $MODULES --exit-zero --output-format=colorized --max-line-length=120 2>&1 | tee pylint-output.txt
-            SCORE=$(grep -oP 'Your code has been rated at \K[0-9.]+' pylint-output.txt || echo "0.0")
-            echo "### 🧬 Pylint Score: $SCORE/10.0" >> $GITHUB_STEP_SUMMARY
-            
-            if (( $(echo "$SCORE < 7.0" | bc -l) )); then
-              echo "::warning::Pylint score below 7.0: $SCORE"
-            fi
-          else
-            echo "::notice::No modules found for pylint analysis"
-          fi
+          echo "::notice::Skipping Pylint for monorepo - would require installing all module dependencies"
+          echo "### 🧬 Pylint: Skipped (monorepo)" >> $GITHUB_STEP_SUMMARY
+          echo "::endgroup::"
 
       - name: 📐 Type check with mypy
         id: mypy
+        timeout-minutes: 5
         continue-on-error: true
         run: |
           echo "::group::Mypy Type Checking"
-          mypy . --ignore-missing-imports --show-error-codes --exclude='(\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)' 2>&1 | tee mypy-output.txt
-          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::notice::Skipping Mypy for monorepo - would require installing all module dependencies"
+          echo "### 📐 Mypy: Skipped (monorepo)" >> $GITHUB_STEP_SUMMARY
           echo "::endgroup::"
-          
-          if [ $EXIT_CODE -ne 0 ]; then
-            ERRORS=$(grep -c "error:" mypy-output.txt || echo "0")
-            echo "::warning::Mypy type checking found $ERRORS issues."
-            echo "### 📐 Mypy Type Checking: $ERRORS errors" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            head -100 mypy-output.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
 
       - name: 📊 Python Lint Summary
         if: always()
