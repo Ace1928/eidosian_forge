@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "39640f7e-57a1-478e-bd0c-dc8f868e8640",
+    "content": "Session completed: Applied @eidosian decorators to 1100+ functions across 35 forges. Created tests for 8 previously untested forges. Total tests passing: ~870. GraphRAG fully operational.",
+    "created_at": "2026-01-25T10:47:58.234254",
+    "last_accessed": "2026-01-25T10:47:58.234260",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [
+      "milestone",
+      "tests",
+      "session",
+      "decorators"
+    ],
+    "linked_memories": []
+  }
+]

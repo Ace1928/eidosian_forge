@@ -1,8 +1,9 @@
-from eidosian_core import eidosian
 #!/usr/bin/env python3
 """Simple scheduler loop utilities for eidosd."""
 
 from __future__ import annotations
+
+from eidosian_core import eidosian
 
 import random
 import signal

@@ -73,16 +73,29 @@ def colored_format(
 
 
 @eidosian()
-def get_coloring_functions(color_spec: str) -> Optional[Callable[[str], str]]:
+def get_coloring_functions(color_spec: str = None) -> dict | Callable[[str], str] | None:
     """
-    Get the appropriate coloring function based on the specification.
-
+    Get coloring function(s).
+    
+    If no argument: returns dict of all available coloring functions.
+    If color_spec provided: returns the appropriate function for that spec.
+    
     Args:
-        color_spec: Color specification (name, gradient, effect)
-
+        color_spec: Optional color specification (name, gradient, effect)
+    
     Returns:
-        Function that applies the color to a string, or None if invalid
+        If no color_spec: dict mapping names to functions
+        If color_spec: Function that applies the color to a string, or None if invalid
     """
+    # No argument - return dict of all functions
+    if color_spec is None:
+        return {
+            "rainbow": rainbow_colorize,
+            "gradient": gradient_colorize,
+            "random": random_colorize,
+            "pulse": pulse_colorize,
+        }
+    
     # Predefined styles
     if color_spec.lower() in [
         "rainbow",

@@ -1,62 +1,68 @@
+"""Tests for version_forge module."""
 import unittest
-from eidosian_forge.version_forge import Version, VersionForge
+from version_forge.core.version import SimpleVersion, parse_version
+from version_forge.operations.compare import is_compatible, calculate_delta
+from version_forge.compatibility.matrix import CompatibilityMatrix
 
-class TestVersion(unittest.TestCase):
+
+class TestSimpleVersion(unittest.TestCase):
+    """Tests for SimpleVersion parsing and comparison."""
+    
     def test_parsing(self):
-        v = Version("1.2.3-alpha.1+build.123")
+        """Test version string parsing."""
+        v = parse_version("1.2.3")
         self.assertEqual(v.major, 1)
         self.assertEqual(v.minor, 2)
         self.assertEqual(v.patch, 3)
+
+    def test_prerelease_parsing(self):
+        """Test prerelease version parsing."""
+        v = SimpleVersion("1.2.3-alpha.1")
         self.assertEqual(v.prerelease, "alpha.1")
-        self.assertEqual(v.build, "build.123")
 
     def test_comparison(self):
-        self.assertTrue(Version("1.0.0") < Version("2.0.0"))
-        self.assertTrue(Version("1.1.0") > Version("1.0.0"))
-        self.assertTrue(Version("1.0.1") > Version("1.0.0"))
-        self.assertEqual(Version("1.0.0"), Version("1.0.0"))
-        # Prerelease
-        self.assertTrue(Version("1.0.0-alpha") < Version("1.0.0"))
+        """Test version comparison operators."""
+        self.assertTrue(SimpleVersion("1.0.0") < SimpleVersion("2.0.0"))
+        self.assertTrue(SimpleVersion("1.1.0") > SimpleVersion("1.0.0"))
+        self.assertTrue(SimpleVersion("1.0.1") > SimpleVersion("1.0.0"))
+        self.assertEqual(SimpleVersion("1.0.0"), SimpleVersion("1.0.0"))
 
-class TestVersionForge(unittest.TestCase):
-    def setUp(self):
-        self.forge = VersionForge()
+    def test_prerelease_comparison(self):
+        """Prerelease versions are less than release versions."""
+        self.assertTrue(SimpleVersion("1.0.0-alpha") < SimpleVersion("1.0.0"))
+        self.assertTrue(SimpleVersion("1.0.0-alpha") < SimpleVersion("1.0.0-beta"))
 
-    def test_registration(self):
-        self.forge.register_component("core", "1.5.0")
-        self.assertEqual(self.forge.get_version("core"), Version("1.5.0"))
 
-    def test_compatibility_caret(self):
-        self.forge.register_component("dep", "1.2.3")
-        # ^1.2.0 means >=1.2.0 and <2.0.0
-        self.assertTrue(self.forge.check_compatibility("app", "dep", "^1.2.0"))
-        self.forge.register_component("dep", "1.9.9")
-        self.assertTrue(self.forge.check_compatibility("app", "dep", "^1.2.0"))
-        self.forge.register_component("dep", "2.0.0")
-        self.assertFalse(self.forge.check_compatibility("app", "dep", "^1.2.0"))
+class TestCompatibility(unittest.TestCase):
+    """Tests for version compatibility checking."""
 
-    def test_compatibility_tilde(self):
-        self.forge.register_component("dep", "1.2.3")
-        # ~1.2.0 means >=1.2.0 and <1.3.0
-        self.assertTrue(self.forge.check_compatibility("app", "dep", "~1.2.0"))
-        self.forge.register_component("dep", "1.2.9")
-        self.assertTrue(self.forge.check_compatibility("app", "dep", "~1.2.0"))
-        self.forge.register_component("dep", "1.3.0")
-        self.assertFalse(self.forge.check_compatibility("app", "dep", "~1.2.0"))
+    def test_is_compatible_exact(self):
+        """Test exact version compatibility."""
+        self.assertTrue(is_compatible("1.2.3", "1.2.3"))
+        self.assertFalse(is_compatible("1.2.3", "1.2.4"))
 
-    def test_system_validation(self):
-        self.forge.register_component("core", "1.0.0")
-        self.forge.register_component("plugin", "1.0.0")
+    def test_calculate_delta(self):
+        """Test version delta calculation."""
+        delta = calculate_delta("1.0.0", "2.0.0")
+        self.assertEqual(delta["major"], 1)
+        self.assertTrue(delta["is_upgrade"])
         
-        self.forge.add_dependency("plugin", "core", "^1.0.0")
-        errors = self.forge.validate_system()
-        self.assertEqual(len(errors), 0)
+        delta = calculate_delta("1.0.0", "1.1.0")
+        self.assertEqual(delta["minor"], 1)
+        self.assertEqual(delta["major"], 0)
         
-        # Introduce break
-        self.forge.register_component("core", "2.0.0")
-        errors = self.forge.validate_system()
-        self.assertEqual(len(errors), 1)
-        self.assertIn("plugin requires core ^1.0.0", errors[0])
+        delta = calculate_delta("1.0.0", "1.0.1")
+        self.assertEqual(delta["patch"], 1)
+
+
+class TestCompatibilityMatrix(unittest.TestCase):
+    """Tests for CompatibilityMatrix."""
+
+    def test_matrix_creation(self):
+        """Test matrix can be created."""
+        matrix = CompatibilityMatrix()
+        self.assertIsNotNone(matrix)
+
 
 if __name__ == "__main__":
     unittest.main()

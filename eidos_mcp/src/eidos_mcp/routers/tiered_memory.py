@@ -74,10 +74,6 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
                 "items": {"type": "string"},
                 "description": "Tags for categorizing this self-memory (e.g., 'identity', 'lesson', 'capability')"
             },
-            "importance": {
-                "type": "number",
-                "description": "Importance score (0.0-1.0), default 0.7"
-            },
         },
         "required": ["content"],
     },
@@ -86,7 +82,6 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
 def eidos_remember_self(
     content: str,
     tags: Optional[List[str]] = None,
-    importance: float = 0.7,
 ) -> str:
     """Store EIDOS self-memory."""
     mem = _get_tiered_memory()
@@ -94,7 +89,7 @@ def eidos_remember_self(
         return "Error: Tiered memory system not available"
     
     tag_set = set(tags) if tags else set()
-    mid = mem.remember_self(content, tags=tag_set, importance=importance)
+    mid = mem.remember_self(content, tags=tag_set)
     return f"Self-memory stored: {mid}"
 
 

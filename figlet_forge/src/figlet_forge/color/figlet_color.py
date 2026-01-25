@@ -145,6 +145,25 @@ def parse_color(color_spec: str) -> Tuple[str, str]:
     if color_spec.upper().startswith("GRADIENT:"):
         # This will be handled by the effects module
         return color_spec.upper(), ""
+    
+    # Support X_TO_Y gradient format (e.g., RED_TO_BLUE)
+    upper_spec = color_spec.upper()
+    if "_TO_" in upper_spec:
+        # This is a gradient specification, return as marker for effects module
+        return f"GRADIENT:{upper_spec}", ""
+    
+    # Support X_ON_Y background format (e.g., BLACK_ON_WHITE)
+    if "_ON_" in upper_spec:
+        parts = upper_spec.split("_ON_", 1)
+        if len(parts) == 2:
+            fg_part, bg_part = parts
+            try:
+                fg_code = _process_color_part(fg_part, is_background=False)
+                bg_code = _process_color_part(bg_part, is_background=True)
+                return fg_code, bg_code
+            except InvalidColor:
+                # If parsing fails, return as a marker
+                return f"BG:{upper_spec}", ""
 
     # Split into foreground and background
     parts = color_spec.split(":", 1)
@@ -201,31 +220,45 @@ def _process_color_part(color_part: str, is_background: bool = False) -> str:
     if not color_part:
         return ""
 
-    # Base code for foreground or background
-    base = "4" if is_background else "3"
-    bright_base = "10" if is_background else "9"
-
-    # Named color
+    # Named color lookup
     upper_color = color_part.upper()
     if upper_color in COLOR_CODES:
-        code = COLOR_CODES[upper_color]
-        # If the code starts with 9, it's a bright color
-        if code.startswith("9") and is_background:
-            # Convert bright foreground to bright background
-            code = "10" + code[1:]
-        return f"\033[{code}m"
+        if not is_background:
+            # Foreground: return the color code directly
+            return COLOR_CODES[upper_color]
+        else:
+            # Background: convert foreground code to background code
+            # COLOR_CODES values are like "\033[31m" - extract the number and add 10
+            fg_code = COLOR_CODES[upper_color]  # e.g., "\033[31m"
+            # Extract the numeric part between [ and m
+            code_num = fg_code.split('[')[1].rstrip('m')  # e.g., "31" or "91"
+            # Convert FG to BG: 30-37 -> 40-47, 90-97 -> 100-107
+            if code_num.startswith('9'):  # Bright color (90-97)
+                bg_num = '10' + code_num[1:]  # 90 -> 100, 91 -> 101, etc.
+            else:  # Regular color (30-37)
+                bg_num = '4' + code_num[1:]  # 30 -> 40, 31 -> 41, etc.
+            return f"\033[{bg_num}m"
+    
+    # Check for LIGHT_ prefix
+    if upper_color.startswith("LIGHT_"):
+        base_color = upper_color[6:]  # Remove "LIGHT_" prefix
+        light_key = f"LIGHT_{base_color}"
+        if light_key in COLOR_CODES:
+            return _process_color_part(light_key, is_background)
 
     # Check if it's a bright color variant
-    if upper_color.startswith("BRIGHT_") and upper_color[7:] in COLOR_CODES:
+    if upper_color.startswith("BRIGHT_"):
         base_color = upper_color[7:]
         if base_color in COLOR_CODES:
-            # Get the non-bright code and convert it to bright
-            code = COLOR_CODES[base_color]
-            if code.startswith("3"):  # Regular foreground
-                code = "9" + code[1:]  # Convert to bright
-            elif code.startswith("4"):  # Regular background
-                code = "10" + code[1:]  # Convert to bright
-            return f"\033[{code}m"
+            # Get the base code and convert to bright
+            fg_code = COLOR_CODES[base_color]
+            code_num = fg_code.split('[')[1].rstrip('m')
+            if is_background:
+                bright_bg_num = '10' + code_num[1:]
+                return f"\033[{bright_bg_num}m"
+            else:
+                bright_fg_num = '9' + code_num[1:]
+                return f"\033[{bright_fg_num}m"
 
     # Check for RGB format (255;255;255)
     rgb_match = re.match(r"^(\d{1,3});(\d{1,3});(\d{1,3})$", color_part)

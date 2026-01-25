@@ -7,7 +7,7 @@ including font showcase, color showcase, and various showcase options.
 
 import unittest
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -278,21 +278,31 @@ def test_font_showcase_options(font_list, expected_count):
 )
 def test_showcase_color_adaptation(color_support, use_color, expected_header_style):
     """Test showcase adapts to terminal color capabilities."""
-    showcase = ColorShowcase(use_color=use_color)
+    # Create a mock stdout with configurable isatty
+    mock_stdout = MagicMock()
+    mock_stdout.isatty.return_value = color_support
+    mock_stdout.write = MagicMock()
+    
+    # Capture printed output
+    captured_output = []
+    def capture_write(text):
+        captured_output.append(text)
+    mock_stdout.write.side_effect = capture_write
+    
+    # Patch sys.stdout BEFORE creating ColorShowcase so isatty check at init works
+    with patch("sys.stdout", mock_stdout):
+        showcase = ColorShowcase(use_color=use_color)
+        
+        # Redirect print to our capture (print uses sys.stdout.write)
+        with patch("builtins.print", side_effect=lambda *args, **kwargs: captured_output.append(" ".join(str(a) for a in args) + "\n")):
+            showcase.print_header("Test Header")
 
-    # Mock sys.stdout.isatty to control color support
-    with patch("sys.stdout.isatty", return_value=color_support), patch(
-        "sys.stdout", new=StringIO()
-    ) as fake_out:
-
-        showcase.print_header("Test Header")
-
-        output = fake_out.getvalue()
-        if expected_header_style:
-            assert expected_header_style in output
-        else:
-            assert "\033[" not in output
-        assert "Test Header" in output
+    output = "".join(captured_output)
+    if expected_header_style:
+        assert expected_header_style in output, f"Expected '{expected_header_style}' in output but got: {output}"
+    else:
+        assert "\033[" not in output, f"Expected no ANSI codes in output but got: {output}"
+    assert "Test Header" in output
 
 
 class TestShowcase:

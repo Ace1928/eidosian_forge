@@ -1,27 +1,90 @@
 # Current State: eidos_mcp
 
-**Date**: 2026-01-22
-**Status**: Critical / Production
+**Date**: 2026-01-25
+**Status**: Production / Critical Infrastructure
+**Version**: 1.0.0
 
 ## 📊 Metrics
-- **Role**: Middleware / Aggregator.
-- **Complexity**: High (Depends on everything).
+
+| Metric | Value |
+|--------|-------|
+| **Routers** | 16 |
+| **Tools Exposed** | 90+ |
+| **Forges Integrated** | 10+ |
+| **Transports** | Stdio, SSE, StreamableHTTP |
 
 ## 🏗️ Architecture
-- `src/eidos_mcp/eidos_mcp_server.py`: Server bootstrap; registers resources and loads routers.
-- `src/eidos_mcp/routers/`: Modular tool routers (system, memory, knowledge, gis, audit, diagnostics, types, nexus, **auth**).
-- Uses `fastmcp` for decorator-based tool/resource definition.
-- **Transports**: Supports Stdio, SSE, and StreamableHTTP.
 
-## 🧠 Learnings & Observations
-- StreamableHTTP requires running with `EIDOS_MCP_TRANSPORT=streamable-http` and a valid `FASTMCP_STREAMABLE_HTTP_PATH` (default `/streamable-http`).
-- Stdio transport must avoid stdout noise; non-stdio logging now stays off stdout to keep JSON-RPC clean.
-- Default ports are now in the 8928+ range to avoid common collisions (8000/8080/8928).
+Eidos MCP is the **Model Context Protocol server** - the central hub that exposes all forge capabilities as MCP tools for AI agents.
 
-## 🛠️ Configuration
-- Gemini CLI configured in `~/.gemini/settings.json`:
-    - `eidosian_nexus`: Stdio (Default).
-- `eidosian_nexus_sse`: SSE (`http://127.0.0.1:8928/sse`).
-    - `eidosian_nexus_google`: SSE with `google_credentials` (Ready for ADC).
-- Systemd service: `eidos-mcp.service` (User level, Port 8928).
-- Auth Tokens: `~/.gemini/mcp-oauth-tokens.json` (Initialized).
+### Core Design
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      EIDOS MCP                               │
+├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              FastMCP Server (core.py)                  │  │
+│  │  @tool() decorator → JSON-RPC 2.0 → MCP Protocol      │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                            │                                 │
+│  ┌─────────────────────────┴─────────────────────────────┐  │
+│  │                      ROUTERS                           │  │
+│  ├─────────┬─────────┬─────────┬─────────┬─────────────┤  │
+│  │ memory  │knowledge│ system  │  audit  │  tika       │  │
+│  ├─────────┼─────────┼─────────┼─────────┼─────────────┤  │
+│  │  gis    │  types  │  nexus  │  auth   │ diagnostics │  │
+│  ├─────────┼─────────┼─────────┼─────────┼─────────────┤  │
+│  │refactor │tiered_  │word_    │ plugins │  code       │  │
+│  │         │memory   │forge    │         │             │  │
+│  └─────────┴─────────┴─────────┴─────────┴─────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🔧 Key Routers
+
+| Router | Tools | Purpose |
+|--------|-------|---------|
+| **tiered_memory** | 19 | EIDOS identity, lessons, recall |
+| **knowledge** | 14 | KB facts, RAG query, context |
+| **system** | 12 | File ops, shell, transactions |
+| **memory** | 8 | Memory CRUD, stats |
+| **tika** | 8 | Document extraction |
+| **gis** | 5 | Global state persistence |
+| **audit** | 5 | TODO tracking, review |
+| **diagnostics** | 4 | Health, metrics |
+| **word_forge** | 6 | Term management, paths |
+
+## 🔌 Transports
+
+| Transport | Config | Use Case |
+|-----------|--------|----------|
+| **Stdio** | Default | Gemini CLI, local |
+| **SSE** | Port 8928 | Remote clients |
+| **StreamableHTTP** | /streamable-http | Web integration |
+
+## 🔌 Forge Integrations
+
+- gis_forge, audit_forge, type_forge
+- llm_forge, agent_forge, refactor_forge
+- memory_forge, diagnostics_forge, file_forge
+- knowledge_forge, word_forge
+
+## 🛡️ Configuration
+
+```bash
+# Environment variables
+EIDOS_FORGE_DIR=/home/lloyd/eidosian_forge
+EIDOS_MCP_TRANSPORT=stdio|sse|streamable-http
+FASTMCP_HOST=127.0.0.1
+FASTMCP_PORT=8928
+```
+
+## 🐛 Known Issues
+
+- Stdio requires clean stdout (no logging noise)
+- Some forges need explicit setup
+
+---
+
+**Last Verified**: 2026-01-25

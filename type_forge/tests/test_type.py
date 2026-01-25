@@ -1,5 +1,5 @@
 import unittest
-from eidosian_forge.type_forge import TypeCore, ValidationError
+from type_forge import TypeCore, ValidationError
 
 class TestTypeCore(unittest.TestCase):
     def setUp(self):

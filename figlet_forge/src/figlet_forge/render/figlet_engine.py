@@ -379,6 +379,7 @@ class RenderEngine:
         class_name: str = "figlet-forge",
         line_class: str = "figlet-line",
         style: Optional[Dict[str, str]] = None,
+        simple: bool = True,
     ) -> str:
         """
         Convert figlet output to HTML.
@@ -388,6 +389,7 @@ class RenderEngine:
             class_name: CSS class name for the container
             line_class: CSS class name for each line
             style: Optional dictionary of CSS styles
+            simple: If True, use simple <pre> tag format
 
         Returns:
             HTML representation of the figlet text
@@ -395,6 +397,11 @@ class RenderEngine:
         if not text:
             return ""
 
+        # Simple format: just a <pre> tag with monospace font
+        if simple:
+            return f"<pre style='font-family: monospace;'>{html.escape(text)}</pre>"
+        
+        # Complex format with div/class structure
         # Default styling if none provided
         if style is None:
             style = {
@@ -521,8 +528,9 @@ class RenderEngine:
         # Construct SVG responsive attributes
         responsive_attrs = 'preserveAspectRatio="xMidYMid meet"' if responsive else ""
 
-        # Start SVG with appropriate attributes
-        svg = (
+        # Start SVG with XML declaration and appropriate attributes
+        svg = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        svg += (
             f'<svg xmlns="http://www.w3.org/2000/svg" '
             f'width="{calculated_width}" height="{calculated_height}" '
             f'viewBox="{calculated_viewbox}" '

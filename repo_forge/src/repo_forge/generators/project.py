@@ -10,11 +10,11 @@ import logging
 
 from ..core.files import write_file
 from ..constants.content import (
-from eidosian_core import eidosian
     PROJECT_READMES,
     PROJECT_CONFIG_FILES,
     PROJECT_MAIN_FILES
 )
+from eidosian_core import eidosian
 
 
 @eidosian()

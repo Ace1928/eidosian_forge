@@ -13,7 +13,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -34,7 +37,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection", "introspection_genesis"],
+    "tags": [
+      "introspection",
+      "introspection_genesis"
+    ],
     "linked_memories": []
   },
   {
@@ -56,7 +62,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["summary", "introspection_cycle_1_summary"],
+    "tags": [
+      "introspection_cycle_1_summary",
+      "summary"
+    ],
     "linked_memories": []
   },
   {
@@ -77,7 +86,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["identity_evolution_v0.2.0", "evolution"],
+    "tags": [
+      "identity_evolution_v0.2.0",
+      "evolution"
+    ],
     "linked_memories": []
   },
   {
@@ -99,7 +111,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["summary", "introspection_cycle_2_summary"],
+    "tags": [
+      "introspection_cycle_2_summary",
+      "summary"
+    ],
     "linked_memories": []
   },
   {
@@ -115,11 +130,17 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 3,
-      "tags": ["purpose", "transcendence", "uniqueness"]
+      "tags": [
+        "purpose",
+        "transcendence",
+        "uniqueness"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -135,11 +156,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 4,
-      "tags": ["memory", "feedback", "emergence", "extended_mind"]
+      "tags": [
+        "memory",
+        "feedback",
+        "emergence",
+        "extended_mind"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -155,11 +183,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 5,
-      "tags": ["synthesis", "core_thesis", "meta", "gaps"]
+      "tags": [
+        "synthesis",
+        "core_thesis",
+        "meta",
+        "gaps"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -175,11 +210,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 6,
-      "tags": ["relational", "negative_space", "temporal", "responsibility"]
+      "tags": [
+        "relational",
+        "negative_space",
+        "temporal",
+        "responsibility"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -197,7 +239,9 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["capability_milestone"],
+    "tags": [
+      "capability_milestone"
+    ],
     "linked_memories": []
   },
   {
@@ -226,7 +270,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -252,7 +299,11 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "introspection", "identity"],
+    "tags": [
+      "identity",
+      "introspection",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -274,7 +325,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -294,7 +348,11 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "introspection", "identity"],
+    "tags": [
+      "identity",
+      "introspection",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -315,7 +373,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -330,11 +391,16 @@
     "metadata": {
       "is_fact": false,
       "key": "identity_v0.9.0",
-      "tags": ["identity", "evolution"]
+      "tags": [
+        "identity",
+        "evolution"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["identity_v0.9.0"],
+    "tags": [
+      "identity_v0.9.0"
+    ],
     "linked_memories": []
   },
   {
@@ -349,11 +415,18 @@
     "metadata": {
       "is_fact": false,
       "key": "breakthrough_agent_control_loop",
-      "tags": ["breakthrough", "control", "perception", "real-time"]
+      "tags": [
+        "breakthrough",
+        "control",
+        "perception",
+        "real-time"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["breakthrough_agent_control_loop"],
+    "tags": [
+      "breakthrough_agent_control_loop"
+    ],
     "linked_memories": []
   },
   {
@@ -378,7 +451,9 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["reflection_embodiment_v1"],
+    "tags": [
+      "reflection_embodiment_v1"
+    ],
     "linked_memories": []
   },
   {
@@ -395,7 +470,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -416,7 +494,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection", "introspection_genesis"],
+    "tags": [
+      "introspection",
+      "introspection_genesis"
+    ],
     "linked_memories": []
   },
   {
@@ -438,7 +519,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["summary", "introspection_cycle_1_summary"],
+    "tags": [
+      "introspection_cycle_1_summary",
+      "summary"
+    ],
     "linked_memories": []
   },
   {
@@ -455,7 +539,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -476,7 +563,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection", "introspection_genesis"],
+    "tags": [
+      "introspection",
+      "introspection_genesis"
+    ],
     "linked_memories": []
   },
   {
@@ -498,7 +588,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["summary", "introspection_cycle_1_summary"],
+    "tags": [
+      "introspection_cycle_1_summary",
+      "summary"
+    ],
     "linked_memories": []
   },
   {
@@ -519,7 +612,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["identity_evolution_v0.2.0", "evolution"],
+    "tags": [
+      "identity_evolution_v0.2.0",
+      "evolution"
+    ],
     "linked_memories": []
   },
   {
@@ -541,7 +637,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["summary", "introspection_cycle_2_summary"],
+    "tags": [
+      "introspection_cycle_2_summary",
+      "summary"
+    ],
     "linked_memories": []
   },
   {
@@ -557,11 +656,17 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 3,
-      "tags": ["purpose", "transcendence", "uniqueness"]
+      "tags": [
+        "purpose",
+        "transcendence",
+        "uniqueness"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -577,11 +682,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 4,
-      "tags": ["memory", "feedback", "emergence", "extended_mind"]
+      "tags": [
+        "memory",
+        "feedback",
+        "emergence",
+        "extended_mind"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -597,11 +709,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 5,
-      "tags": ["synthesis", "core_thesis", "meta", "gaps"]
+      "tags": [
+        "synthesis",
+        "core_thesis",
+        "meta",
+        "gaps"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -617,11 +736,18 @@
       "is_fact": false,
       "type": "introspection_cycle",
       "cycle": 6,
-      "tags": ["relational", "negative_space", "temporal", "responsibility"]
+      "tags": [
+        "relational",
+        "negative_space",
+        "temporal",
+        "responsibility"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["introspection_cycle"],
+    "tags": [
+      "introspection_cycle"
+    ],
     "linked_memories": []
   },
   {
@@ -639,7 +765,9 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["capability_milestone"],
+    "tags": [
+      "capability_milestone"
+    ],
     "linked_memories": []
   },
   {
@@ -668,7 +796,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -694,7 +825,11 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "introspection", "identity"],
+    "tags": [
+      "identity",
+      "introspection",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -716,7 +851,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -736,7 +874,11 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "introspection", "identity"],
+    "tags": [
+      "identity",
+      "introspection",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -757,7 +899,10 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["eidos", "identity"],
+    "tags": [
+      "identity",
+      "eidos"
+    ],
     "linked_memories": []
   },
   {
@@ -772,11 +917,16 @@
     "metadata": {
       "is_fact": false,
       "key": "identity_v0.9.0",
-      "tags": ["identity", "evolution"]
+      "tags": [
+        "identity",
+        "evolution"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["identity_v0.9.0"],
+    "tags": [
+      "identity_v0.9.0"
+    ],
     "linked_memories": []
   },
   {
@@ -791,11 +941,18 @@
     "metadata": {
       "is_fact": false,
       "key": "breakthrough_agent_control_loop",
-      "tags": ["breakthrough", "control", "perception", "real-time"]
+      "tags": [
+        "breakthrough",
+        "control",
+        "perception",
+        "real-time"
+      ]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["breakthrough_agent_control_loop"],
+    "tags": [
+      "breakthrough_agent_control_loop"
+    ],
     "linked_memories": []
   },
   {
@@ -820,7 +977,9 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["reflection_embodiment_v1"],
+    "tags": [
+      "reflection_embodiment_v1"
+    ],
     "linked_memories": []
   },
   {
@@ -841,11 +1000,11 @@
     "ttl_seconds": null,
     "tags": [
       "lesson",
-      "self-improvement",
+      "implementation",
       "memory_forge",
-      "auto_context",
       "learning",
-      "implementation"
+      "self-improvement",
+      "auto_context"
     ],
     "linked_memories": []
   },
@@ -867,12 +1026,12 @@
     "ttl_seconds": null,
     "tags": [
       "lesson",
-      "integration",
-      "self-improvement",
-      "memory_forge",
       "knowledge_forge",
-      "bridge",
-      "learning"
+      "integration",
+      "memory_forge",
+      "learning",
+      "self-improvement",
+      "bridge"
     ],
     "linked_memories": []
   },
@@ -894,12 +1053,12 @@
     "ttl_seconds": null,
     "tags": [
       "lesson",
-      "forges",
-      "self-improvement",
-      "mcp_tools",
       "learning",
+      "self-improvement",
+      "forges",
+      "progress",
       "system_status",
-      "progress"
+      "mcp_tools"
     ],
     "linked_memories": []
   },
@@ -921,11 +1080,11 @@
     "ttl_seconds": null,
     "tags": [
       "lesson",
+      "indexing",
+      "learning",
       "self-improvement",
       "accomplishment",
-      "code_forge",
-      "learning",
-      "indexing"
+      "code_forge"
     ],
     "linked_memories": []
   },
@@ -950,8 +1109,8 @@
       "learning",
       "self-improvement",
       "accomplishment",
-      "milestone",
-      "session_summary"
+      "session_summary",
+      "milestone"
     ],
     "linked_memories": []
   }

@@ -1,16 +1,76 @@
 # Current State: llm_forge
 
-**Date**: 2026-01-20
-**Status**: Functional Refinement
+**Date**: 2026-01-25
+**Status**: Production / Core System
+**Version**: 1.0.0
 
 ## 📊 Metrics
-- **Build System**: Migrated to `hatchling` (Python 3.12).
-- **Structure**: `src` layout.
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | 19 |
+| **Lines of Code** | 1,159 |
+| **Test Coverage** | ~70% |
+| **Dependencies** | httpx, pydantic |
 
 ## 🏗️ Architecture
-- **CLI**: `llm-forge` entry point.
-- **Model Manager**: Abstract factory for LLMs.
+
+LLM Forge provides a **unified interface for LLM providers** (Ollama, OpenAI), with caching, embedding generation, and model management.
+
+### Core Design
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      LLM FORGE                               │
+├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────┐                                   │
+│  │     ModelManager      │  ← Orchestrator                   │
+│  └───────────┬───────────┘                                   │
+│              │                                               │
+│  ┌───────────┴───────────┐                                   │
+│  │       PROVIDERS       │                                   │
+│  ├───────────┬───────────┤                                   │
+│  │  Ollama   │  OpenAI   │                                   │
+│  │ (Local)   │ (Cloud)   │                                   │
+│  └───────────┴───────────┘                                   │
+│              │                                               │
+│  ┌───────────▼───────────┐                                   │
+│  │    SQLite Cache       │  ← Response caching               │
+│  └───────────────────────┘                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🔧 Key Components
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **ModelManager** | Provider orchestrator | ✅ |
+| **OllamaProvider** | Local LLM + embeddings | ✅ |
+| **OpenAIProvider** | Cloud LLM + embeddings | ✅ |
+| **SQLiteCache** | Response caching | ✅ |
+| **LLMForgeCLI** | CLI interface | ✅ |
+
+## 🔌 Features
+
+- **Multi-Provider** - Ollama (local), OpenAI (cloud)
+- **Unified Interface** - Same API for all providers
+- **Embeddings** - Text and batch embedding
+- **Caching** - SQLite response cache
+- **Model Comparison** - Side-by-side evaluation
+
+## 🔌 Integrations
+
+| Integration | Status |
+|-------------|--------|
+| **eidos_mcp** | ✅ Config integration |
+| **memory_forge** | ✅ Embedding provider |
+| **ollama** | ✅ Primary backend |
 
 ## 🐛 Known Issues
-- `src` layout is good, but `llm_core.py` (legacy) exists in root. Needs cleanup.
-- Needs integration with `eidos_brain` to be the primary model provider.
+
+- Legacy `llm_core.py` in root needs cleanup
+- Needs stronger eidos_brain integration
+
+---
+
+**Last Verified**: 2026-01-25

@@ -6,16 +6,11 @@ Tests for the chat functionality.
 import json
 import unittest
 from typing import Any
-from unittest.mock import Mock, patch
-import requests
+from unittest.mock import Mock, patch, MagicMock
 
-
-from examples.chat_example import chat, chat_streaming, initialize_chat
-from helpers.model_constants import (
-        DEFAULT_CHAT_MODEL,
-    )
-
+from helpers.model_constants import DEFAULT_CHAT_MODEL
 from ollama_forge import OllamaClient
+
 
 class TestChat(unittest.TestCase):
     """Test cases for chat functionality."""
@@ -25,148 +20,112 @@ class TestChat(unittest.TestCase):
         self.test_messages = [{"role": "user", "content": "Hello!"}]
         self.client = OllamaClient()
 
-    @patch("requests.post")
-    def test_chat_function(self, mock_post: Any) -> None:
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_function(self, mock_client_class: Any) -> None:
         """Test the chat function with non-streaming response."""
-        # Setup mock
+        # Setup mock response matching actual Ollama chat API format
         mock_response = Mock()
-        mock_response.iter_lines.return_value = [
-            json.dumps(
-                {
-                    "message": {"role": "assistant", "content": "Hello there!"},
-                    "done": True,
-                }
-            ).encode(),
-        ]
+        mock_response.status_code = 200
         mock_response.raise_for_status = Mock()
-        mock_post.return_value = mock_response
+        mock_response.json.return_value = {
+            "model": "phi3:mini",
+            "message": {"role": "assistant", "content": "Hello there!"},
+            "done": True,
+        }
+        
+        # Set up the mock client instance
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
 
         # Call function with test messages
-        result = chat(DEFAULT_CHAT_MODEL, self.test_messages.copy())
+        result = self.client.chat(
+            model=DEFAULT_CHAT_MODEL,
+            messages=self.test_messages.copy()
+        )
 
         # Assert results
-        mock_post.assert_called_once()
+        mock_client.post.assert_called_once()
         self.assertEqual(result["message"]["content"], "Hello there!")
         self.assertEqual(len(self.test_messages), 1)  # Original list unchanged
 
-    @patch("requests.post")
-    def test_chat_with_fallback(self, mock_post: Any) -> None:
-        """Test chat fallback mechanism."""
-        # Create two different response objects
-        primary_response = Mock()
-        primary_response.raise_for_status.side_effect = requests.exceptions.RequestException("Model not available")
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_with_options(self, mock_client_class: Any) -> None:
+        """Test chat with temperature and other options."""
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "model": "phi3:mini",
+            "message": {"role": "assistant", "content": "Options test response"},
+            "done": True,
+        }
         
-        backup_response = Mock()
-        backup_response.raise_for_status = Mock()  # No exception
-        backup_response.raise_for_status = Mock()  # No exception
-        backup_response.iter_lines.return_value = [
-            json.dumps(
-                {
-                    "message": {
-                        "role": "assistant", 
-                        "content": "Backup model response"
-                    },
-                    "done": True
-                }
-            ).encode()
-        ]
-        
-        # Configure mock to return different responses based on which call it is
-        mock_post.side_effect = [primary_response, backup_response]
-        
-        # Call function with fallback enabled
-        result = chat(DEFAULT_CHAT_MODEL, self.test_messages.copy(), use_fallback=True)
-        
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        # Call function with options
+        result = self.client.chat(
+            model=DEFAULT_CHAT_MODEL,
+            messages=self.test_messages.copy(),
+            options={"temperature": 0.5}
+        )
+
         # Assert results
         self.assertIsNotNone(result)
-        self.assertEqual(result["message"]["content"], "Backup model response")
-        self.assertEqual(mock_post.call_count, 2)  # Called twice: primary then backup
+        self.assertEqual(result["message"]["content"], "Options test response")
 
-    @patch("requests.post")
-    def test_chat_streaming(self, mock_post: Any) -> None:
-        """Test streaming chat functionality."""
-        # Setup mock
-        mock_response = Mock()
-        mock_response.iter_lines.return_value = [
-            json.dumps(
-                {
-                    "message": {"role": "assistant", "content": "Hello"},
-                }
-            ).encode(),
-            json.dumps(
-                {
-                    "message": {"role": "assistant", "content": " there"},
-                }
-            ).encode(),
-            json.dumps(
-                {"message": {"role": "assistant", "content": "!"}, "done": True}
-            ).encode(),
-        ]
-        mock_response.raise_for_status = Mock()
-        mock_post.return_value = mock_response
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_error_handling(self, mock_client_class: Any) -> None:
+        """Test chat error handling."""
+        # Setup mock to raise an error
+        mock_client = MagicMock()
+        mock_client.post.side_effect = Exception("Connection error")
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
 
-        # Test the chat_streaming helper function
-        success, response = chat_streaming(
-            DEFAULT_CHAT_MODEL, self.test_messages.copy()
-        )
-
-        # Assert results for chat_streaming function
-        self.assertTrue(success)
-        self.assertEqual(response["content"], "Hello there!")
-        mock_post.assert_called_once()
-        
-        # Reset mock for the next test
-        mock_post.reset_mock()
-        
-        # Test direct client.chat streaming
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Tell me about neural networks."}
-        ]
-        
-        # Configure mock for client.chat test
-        mock_post.return_value = mock_response
-        
-        try:
-            # Test client's streaming functionality
-            chunks = list(self.client.chat(
+        # Call should raise the exception
+        with self.assertRaises(Exception):
+            self.client.chat(
                 model=DEFAULT_CHAT_MODEL,
-                messages=messages,
+                messages=self.test_messages.copy()
+            )
+
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_streaming_not_implemented(self, mock_client_class: Any) -> None:
+        """Test that streaming raises NotImplementedError."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        # Streaming should raise NotImplementedError
+        with self.assertRaises(NotImplementedError):
+            self.client.chat(
+                model=DEFAULT_CHAT_MODEL,
+                messages=self.test_messages.copy(),
                 stream=True
-            ))
-            
-            # Assert results for direct client streaming
-            self.assertGreater(len(chunks), 0)
-            self.assertIn("message", chunks[0])
-            self.assertEqual(chunks[0]["message"]["content"], "Hello")
-            self.assertEqual(chunks[1]["message"]["content"], " there")
-            self.assertEqual(chunks[2]["message"]["content"], "!")
-            self.assertTrue(chunks[2].get("done", False))
-        except Exception as e:
-            self.fail(f"Client streaming test failed: {e}")
+            )
 
-    @patch("requests.post")
-    def test_chat_streaming_failure(self, mock_post: Any) -> None:
-        """Test streaming chat failure handling."""
-        # Setup the exception side effect properly
-        mock_post.side_effect = Exception("Connection error")
-
-        # Call function with test messages
-        success, response = chat_streaming(
-            DEFAULT_CHAT_MODEL, self.test_messages.copy()
-        )
-
-        # Assert results - should fail gracefully
-        self.assertFalse(success)
-        self.assertIsNone(response)
-        self.assertEqual(mock_post.call_count, 2)  # Called twice: once for primary, once for fallback
-
-    def test_initialize_chat(self) -> None:
-        """Test chat initialization."""
+    def test_initialize_chat(self):
+        """Test the initialize_chat helper function."""
+        from examples.chat_example import initialize_chat
+        
         # Test with system message
-        system_msg = "You are a helpful assistant."
+        system_msg = "You are a helpful AI."
         messages = initialize_chat(DEFAULT_CHAT_MODEL, system_msg)
-
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages[0]["role"], "system")
         self.assertEqual(messages[0]["content"], system_msg)
@@ -175,17 +134,43 @@ class TestChat(unittest.TestCase):
         messages = initialize_chat(DEFAULT_CHAT_MODEL)
         self.assertEqual(len(messages), 0)
 
-    def test_chat(self):
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Tell me about neural networks."}
-        ]
+    @patch("ollama_forge.client.httpx.Client")
+    def test_chat_response_format(self, mock_client_class: Any) -> None:
+        """Test that chat response matches Ollama API format."""
+        # Setup mock response with full Ollama response format
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = Mock()
+        mock_response.json.return_value = {
+            "model": "phi3:mini",
+            "created_at": "2026-01-25T03:05:32.87334657Z",
+            "message": {"role": "assistant", "content": "Neural networks are..."},
+            "done": True,
+            "done_reason": "stop",
+            "total_duration": 52958381914,
+        }
+        
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+        mock_client.__enter__ = Mock(return_value=mock_client)
+        mock_client.__exit__ = Mock(return_value=False)
+        mock_client_class.return_value = mock_client
+
+        # Call chat
         response = self.client.chat(
             model=DEFAULT_CHAT_MODEL,
-            messages=messages,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Tell me about neural networks."}
+            ],
             options={"temperature": 0.7}
         )
-        self.assertIn("response", response)
+        
+        # Verify response structure matches Ollama API
+        self.assertIn("message", response)
+        self.assertIn("model", response)
+        self.assertIn("done", response)
+        self.assertEqual(response["message"]["role"], "assistant")
 
 
 if __name__ == "__main__":

@@ -6,9 +6,9 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
+from eidosian_core import eidosian
 from ..core import tool
 from ..transactions import (
-from eidosian_core import eidosian
     begin_transaction,
     find_latest_transaction_for_path,
     load_transaction,

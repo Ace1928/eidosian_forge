@@ -12,7 +12,6 @@ import concurrent.futures
 from functools import partial
 
 from ..constants.paths import (
-from eidosian_core import eidosian
     CORE_DIRECTORIES,
     LANGUAGE_DIRECTORIES,
     SCRIPT_DIRECTORIES,
@@ -25,6 +24,7 @@ from eidosian_core import eidosian
     CONFIG_DIRECTORIES,
     TOOL_DIRECTORIES
 )
+from eidosian_core import eidosian
 
 
 @eidosian()

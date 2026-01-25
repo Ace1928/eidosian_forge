@@ -7,11 +7,12 @@ def test_memory_tools(mock_memory):
     mock_memory.remember.return_value = "mem-123"
     mock_memory.recall.return_value = []
     
-        res = memory.memory_add("Test memory")
-        assert "mem-123" in res
+    res = memory.memory_add("Test memory")
+    assert "mem-123" in res
     
-        res = knowledge.memory_search("Test")
-        assert "Semantic MCP test" in res  # Allow other memories to coexist
+    res = knowledge.memory_search("Test")
+    assert "Semantic MCP test" in res  # Allow other memories to coexist
+
 @patch("eidos_mcp.routers.knowledge.kb")
 def test_kb_tools(mock_kb):
     mock_node = MagicMock()

@@ -8,12 +8,15 @@ from diagnostics_forge import DiagnosticsForge
 
 class TestDiagnosticsForge(unittest.TestCase):
     def setUp(self):
-        self.test_log_dir = Path("test_logs")
+        self.temp_dir = tempfile.mkdtemp()
+        self.test_log_dir = Path(self.temp_dir) / "test_logs"
         self.diag = DiagnosticsForge(log_dir=str(self.test_log_dir), service_name="test_service")
 
     def tearDown(self):
         if self.test_log_dir.exists():
             shutil.rmtree(self.test_log_dir)
+        if Path(self.temp_dir).exists():
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_log_creation(self):
         self.diag.log_event("INFO", "Test message")

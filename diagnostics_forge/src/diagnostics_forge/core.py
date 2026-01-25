@@ -53,33 +53,34 @@ class DiagnosticsForge:
         self.logger = logging.getLogger(self.service_name)
         self.logger.setLevel(logging.DEBUG)
         
-        # Avoid duplicate handlers if logger already initialized
-        if not self.logger.handlers:
-            # Rotating File Handler
-            fh = RotatingFileHandler(
-                self.log_file, 
-                maxBytes=self.max_bytes, 
-                backupCount=self.backup_count
+        # Clear existing handlers to avoid stale file paths from cached loggers
+        self.logger.handlers.clear()
+        
+        # Rotating File Handler
+        fh = RotatingFileHandler(
+            self.log_file, 
+            maxBytes=self.max_bytes, 
+            backupCount=self.backup_count
+        )
+        fh.setLevel(logging.DEBUG)
+        
+        # Console handler
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        
+        if self.json_format:
+            formatter = JsonFormatter()
+        else:
+            # Standard Eidosian Format
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
-            fh.setLevel(logging.DEBUG)
-            
-            # Console handler
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.DEBUG)
-            
-            if self.json_format:
-                formatter = JsonFormatter()
-            else:
-                # Standard Eidosian Format
-                formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                )
-            
-            fh.setFormatter(formatter)
-            ch.setFormatter(formatter)
-            
-            self.logger.addHandler(fh)
-            self.logger.addHandler(ch)
+        
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
 
     @eidosian()
     def log_event(self, level: str, message: str, **kwargs):

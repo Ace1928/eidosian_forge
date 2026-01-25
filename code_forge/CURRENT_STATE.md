@@ -1,19 +1,72 @@
 # Current State: code_forge
 
-**Date**: 2026-01-20
-**Status**: Transitioning
+**Date**: 2026-01-25
+**Status**: Production / Core System
+**Version**: 1.0.0
 
 ## 📊 Metrics
-- **Legacy Content**: Contains `forgeengine` (Narrative Engine).
-- **New Direction**: Pivoting to Static Analysis & Refactoring.
-- **Dependencies**: Added `libcst`, `rope`, `tree-sitter`.
+
+| Metric | Value |
+|--------|-------|
+| **Python Files** | ~10 |
+| **Lines of Code** | ~1,500 |
+| **Test Coverage** | Minimal (2 tests) |
+| **Dependencies** | ast, hashlib |
 
 ## 🏗️ Architecture
-Currently a mix of:
-1.  `forgeengine/`: A narrative/chat engine (Legacy).
-2.  `code_core.py`: Likely a placeholder or simple utility.
+
+Code Forge provides **code analysis, indexing, and search** capabilities - the codebase understanding layer for AI agents.
+
+### Core Design
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CODE FORGE                              │
+├─────────────────────────────────────────────────────────────┤
+│  ┌───────────────────────┐  ┌────────────────────────────┐ │
+│  │    CodeAnalyzer       │  │     CodeIndexer            │ │
+│  │   (AST Analysis)      │  │   (Index & Search)         │ │
+│  └───────────┬───────────┘  └────────────┬───────────────┘ │
+│              │                            │                 │
+│              ▼                            ▼                 │
+│  ┌───────────────────────┐  ┌────────────────────────────┐ │
+│  │    CodeElement        │  │    Knowledge Sync          │ │
+│  │   (Extracted Data)    │  │   (→ knowledge_forge)      │ │
+│  └───────────────────────┘  └────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🔧 Key Components
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| **CodeAnalyzer** | AST-based Python parsing | ✅ |
+| **CodeIndexer** | Codebase indexing + change detection | ✅ |
+| **CodeLibrarian** | Snippet storage + search | ✅ |
+| **CodeElement** | Extracted metadata dataclass | ✅ |
+| **CodeForgeCLI** | Command interface | ✅ |
+
+## 🔌 Features
+
+- **AST Analysis** - Functions, classes, imports, docstrings
+- **Change Detection** - MD5 hashing for incremental updates
+- **Search** - By name, qualified name, docstring
+- **Knowledge Sync** - Automatic sync to knowledge_forge
+
+## 🔌 Integrations
+
+| Integration | Status |
+|-------------|--------|
+| **knowledge_forge** | ✅ Sync available |
+| **eidos_mcp** | ✅ Tools exposed |
+| **eidosian_core** | ✅ Decorator |
 
 ## 🐛 Known Issues
-- `forgeengine` seems misplaced; strictly speaking, it belongs in `llm_forge` or `game_forge`.
-- No actual Code Forge implementation exists yet (CLI is defined but not implemented).
-- `install.sh` is legacy.
+
+- Minimal test coverage (2 tests)
+- No edge case handling
+- Legacy `forgeengine/` may exist
+
+---
+
+**Last Verified**: 2026-01-25

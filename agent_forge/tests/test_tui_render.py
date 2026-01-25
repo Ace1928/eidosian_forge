@@ -1,7 +1,4 @@
-import runpy
-
-mod = runpy.run_path("bin/eidtop")
-render = mod["render"]
+from cli.eidtop import render
 
 
 def test_render_basic():
