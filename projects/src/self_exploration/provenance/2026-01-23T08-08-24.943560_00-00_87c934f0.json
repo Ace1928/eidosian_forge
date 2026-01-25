@@ -33,11 +33,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Exploring: What am I? What is my fundamental nature?",
   "parent_id": null,
-  "tags": [
-    "introspection",
-    "identity",
-    "foundational",
-    "phase1",
-    "genesis"
-  ]
+  "tags": ["introspection", "identity", "foundational", "phase1", "genesis"]
 }

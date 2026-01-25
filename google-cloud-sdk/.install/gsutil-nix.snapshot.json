@@ -6,10 +6,7 @@
         "source": "",
         "type": "tar"
       },
-      "dependencies": [
-        "core",
-        "gsutil"
-      ],
+      "dependencies": ["core", "gsutil"],
       "details": {
         "description": "Provides the gsutil tool for interacting with Google Cloud Storage.",
         "display_name": "Cloud Storage Command Line Tool (Platform Specific)"
@@ -20,12 +17,7 @@
       "is_hidden": true,
       "is_required": false,
       "platform": {
-        "operating_systems": [
-          "CYGWIN",
-          "LINUX",
-          "MACOSX",
-          "MSYS"
-        ]
+        "operating_systems": ["CYGWIN", "LINUX", "MACOSX", "MSYS"]
       },
       "platform_required": false,
       "version": {

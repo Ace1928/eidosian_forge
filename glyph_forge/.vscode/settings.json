@@ -82,11 +82,7 @@
   "scm.diffDecorationsGutterPattern": {
     "added": true
   },
-  "git.branchProtection": [
-    "main",
-    "master",
-    "develop"
-  ],
+  "git.branchProtection": ["main", "master", "develop"],
   "git.branchProtectionPrompt": "alwaysPrompt",
   "editor.fastScrollSensitivity": 5,
   "editor.smoothScrolling": false,
@@ -97,11 +93,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100,
-      120
-    ],
+    "editor.rulers": [80, 100, 120],
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit",
       "source.organizeImports": "explicit"
@@ -111,11 +103,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100,
-      120
-    ],
+    "editor.rulers": [80, 100, 120],
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": "explicit",
       "source.organizeImports": "explicit"
@@ -135,21 +123,13 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100,
-      120
-    ]
+    "editor.rulers": [80, 100, 120]
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100,
-      120
-    ]
+    "editor.rulers": [80, 100, 120]
   },
   "emmet.triggerExpansionOnTab": true,
   "eslint.validate": [
@@ -203,15 +183,11 @@
   },
   "json.schemas": [
     {
-      "fileMatch": [
-        "package.json"
-      ],
+      "fileMatch": ["package.json"],
       "url": "https://json.schemastore.org/package.json"
     },
     {
-      "fileMatch": [
-        "tsconfig.json"
-      ],
+      "fileMatch": ["tsconfig.json"],
       "url": "https://json.schemastore.org/tsconfig.json"
     }
   ],
@@ -219,9 +195,7 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
-    "editor.rulers": [
-      100
-    ],
+    "editor.rulers": [100],
     "editor.semanticHighlighting.enabled": true
   },
   "[toml]": {
@@ -255,10 +229,7 @@
     "editor.wordBasedSuggestions": "off",
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.tabSize": 4,
-    "editor.rulers": [
-      88,
-      120
-    ],
+    "editor.rulers": [88, 120],
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }
@@ -272,19 +243,13 @@
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100
-    ]
+    "editor.rulers": [80, 100]
   },
   "[cpp]": {
     "editor.defaultFormatter": "ms-vscode.cpptools",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
-    "editor.rulers": [
-      80,
-      100
-    ]
+    "editor.rulers": [80, 100]
   },
   "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 100, NamespaceIndentation: All }",
   "C_Cpp.default.cStandard": "c11",
@@ -295,17 +260,13 @@
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
     "editor.insertSpaces": false,
-    "editor.rulers": [
-      100
-    ],
+    "editor.rulers": [100],
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }
   },
   "go.lintTool": "golangci-lint",
-  "go.lintFlags": [
-    "--fast"
-  ],
+  "go.lintFlags": ["--fast"],
   "go.lintOnSave": "package",
   "go.vetOnSave": "package",
   "go.testOnSave": false,
@@ -315,27 +276,18 @@
     "editor.defaultFormatter": "redhat.java",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
-    "editor.rulers": [
-      100,
-      120
-    ],
+    "editor.rulers": [100, 120],
     "editor.semanticHighlighting.enabled": true
   },
   "[kotlin]": {
     "editor.defaultFormatter": "fwcd.kotlin",
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
-    "editor.rulers": [
-      100,
-      120
-    ]
+    "editor.rulers": [100, 120]
   },
   "[shellscript]": {
     "files.eol": "auto",
-    "editor.rulers": [
-      80,
-      100
-    ],
+    "editor.rulers": [80, 100],
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
     "editor.semanticHighlighting.enabled": true

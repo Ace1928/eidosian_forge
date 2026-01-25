@@ -4,13 +4,19 @@
       "term": "happiness",
       "definition": "a state of well-being characterized by emotions ranging from contentment to intense joy",
       "pos": "noun",
-      "examples": ["Her happiness was contagious.", "Finding happiness in simple things."]
+      "examples": [
+        "Her happiness was contagious.",
+        "Finding happiness in simple things."
+      ]
     },
     {
       "term": "sadness",
       "definition": "an emotional state characterized by feelings of disadvantage, loss, and helplessness",
       "pos": "noun",
-      "examples": ["A wave of sadness washed over him.", "Sadness can be a natural response to loss."]
+      "examples": [
+        "A wave of sadness washed over him.",
+        "Sadness can be a natural response to loss."
+      ]
     },
     {
       "term": "joy",
@@ -32,10 +38,10 @@
     }
   ],
   "relationships": [
-    {"source": "happiness", "target": "joy", "type": "synonym"},
-    {"source": "happiness", "target": "sadness", "type": "antonym"},
-    {"source": "sadness", "target": "sorrow", "type": "synonym"},
-    {"source": "joy", "target": "happiness", "type": "synonym"},
-    {"source": "love", "target": "happiness", "type": "evokes"}
+    { "source": "happiness", "target": "joy", "type": "synonym" },
+    { "source": "happiness", "target": "sadness", "type": "antonym" },
+    { "source": "sadness", "target": "sorrow", "type": "synonym" },
+    { "source": "joy", "target": "happiness", "type": "synonym" },
+    { "source": "love", "target": "happiness", "type": "evokes" }
   ]
 }

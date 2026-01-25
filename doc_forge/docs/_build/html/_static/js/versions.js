@@ -9,8 +9,12 @@ if (themeFlyoutDisplay === "attached") {
     }
 
     // Insert the current language to the options on the selector
-    let languages = config.projects.translations.concat(config.projects.current);
-    languages = languages.sort((a, b) => a.language.name.localeCompare(b.language.name));
+    let languages = config.projects.translations.concat(
+      config.projects.current,
+    );
+    languages = languages.sort((a, b) =>
+      a.language.name.localeCompare(b.language.name),
+    );
 
     const languagesHTML = `
       <dl>
@@ -136,7 +140,7 @@ if (themeFlyoutDisplay === "attached") {
         const event = new CustomEvent("readthedocs-search-show");
         document.dispatchEvent(event);
       });
-  })
+  });
 }
 
 if (themeLanguageSelector || themeVersionSelector) {
@@ -154,7 +158,10 @@ if (themeLanguageSelector || themeVersionSelector) {
     );
     if (themeVersionSelector) {
       let versions = config.versions.active;
-      if (config.versions.current.hidden || config.versions.current.type === "external") {
+      if (
+        config.versions.current.hidden ||
+        config.versions.current.type === "external"
+      ) {
         versions.unshift(config.versions.current);
       }
       const versionSelect = `
@@ -174,7 +181,10 @@ if (themeLanguageSelector || themeVersionSelector) {
   `;
 
       versionSwitch.innerHTML = versionSelect;
-      versionSwitch.firstElementChild.addEventListener("change", onSelectorSwitch);
+      versionSwitch.firstElementChild.addEventListener(
+        "change",
+        onSelectorSwitch,
+      );
     }
 
     const languageSwitch = document.querySelector(
@@ -208,9 +218,11 @@ if (themeLanguageSelector || themeVersionSelector) {
     `;
 
         languageSwitch.innerHTML = languageSelect;
-        languageSwitch.firstElementChild.addEventListener("change", onSelectorSwitch);
-      }
-      else {
+        languageSwitch.firstElementChild.addEventListener(
+          "change",
+          onSelectorSwitch,
+        );
+      } else {
         languageSwitch.remove();
       }
     }

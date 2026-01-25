@@ -4,18 +4,27 @@
       "id": 1,
       "title": "Sample Discussion",
       "messages": [
-        {"role": "user", "content": "What is happiness?"},
-        {"role": "assistant", "content": "Happiness is a state of well-being and contentment."},
-        {"role": "user", "content": "How does it relate to joy?"},
-        {"role": "assistant", "content": "Joy and happiness are related emotions, with joy often being more intense and momentary."}
+        { "role": "user", "content": "What is happiness?" },
+        {
+          "role": "assistant",
+          "content": "Happiness is a state of well-being and contentment."
+        },
+        { "role": "user", "content": "How does it relate to joy?" },
+        {
+          "role": "assistant",
+          "content": "Joy and happiness are related emotions, with joy often being more intense and momentary."
+        }
       ]
     },
     {
       "id": 2,
       "title": "Emotional Analysis",
       "messages": [
-        {"role": "user", "content": "Tell me about sadness."},
-        {"role": "assistant", "content": "Sadness is an emotional state that everyone experiences."}
+        { "role": "user", "content": "Tell me about sadness." },
+        {
+          "role": "assistant",
+          "content": "Sadness is an emotional state that everyone experiences."
+        }
       ]
     }
   ]

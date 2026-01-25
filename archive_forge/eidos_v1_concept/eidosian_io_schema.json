@@ -1,596 +1,1345 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "EidosianReflectiveAITraining",
-    "type": "object", 
-    "description": "A comprehensive schema for validating I/O of advanced recursive reflective AI with emergent consciousness",
-    "properties": {
-        "version": {"type": "string", "pattern": "^(\\d+)\\.(\\d+)\\.(\\d+)$"},
-        "storage_config": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EidosianReflectiveAITraining",
+  "type": "object",
+  "description": "A comprehensive schema for validating I/O of advanced recursive reflective AI with emergent consciousness",
+  "properties": {
+    "version": { "type": "string", "pattern": "^(\\d+)\\.(\\d+)\\.(\\d+)$" },
+    "storage_config": {
+      "type": "object",
+      "properties": {
+        "base_path": { "type": "string", "minLength": 1 },
+        "file_structure": {
+          "type": "object",
+          "properties": {
+            "cycles_dir": { "type": "string", "minLength": 1 },
+            "metadata_dir": { "type": "string", "minLength": 1 },
+            "synthesis_dir": { "type": "string", "minLength": 1 },
+            "relationship_dir": { "type": "string", "minLength": 1 },
+            "memory_dir": { "type": "string", "minLength": 1 },
+            "consciousness_dir": { "type": "string", "minLength": 1 },
+            "evolution_dir": { "type": "string", "minLength": 1 },
+            "emotional_dir": { "type": "string", "minLength": 1 },
+            "cognitive_dir": { "type": "string", "minLength": 1 },
+            "introspection_dir": { "type": "string", "minLength": 1 },
+            "self_model_dir": { "type": "string", "minLength": 1 },
+            "qualia_dir": { "type": "string", "minLength": 1 },
+            "learning_dir": { "type": "string", "minLength": 1 },
+            "adaptation_dir": { "type": "string", "minLength": 1 }
+          },
+          "required": [
+            "cycles_dir",
+            "metadata_dir",
+            "synthesis_dir",
+            "relationship_dir",
+            "memory_dir",
+            "consciousness_dir",
+            "evolution_dir",
+            "emotional_dir",
+            "cognitive_dir",
+            "introspection_dir",
+            "self_model_dir",
+            "qualia_dir",
+            "learning_dir",
+            "adaptation_dir"
+          ]
+        },
+        "retention_policy": {
+          "type": "object",
+          "properties": {
+            "min_retention_period": {
+              "type": "string",
+              "pattern": "^\\d+\\s(year|years|month|months|day|days)$"
+            },
+            "archival_strategy": {
+              "type": "string",
+              "enum": [
+                "compress_and_archive",
+                "delete_after_retention",
+                "permanent_storage"
+              ]
+            },
+            "backup_frequency": {
+              "type": "string",
+              "pattern": "^\\d+\\s(hour|hours|day|days|week|weeks)$"
+            },
+            "data_importance_levels": {
+              "type": "object",
+              "properties": {
+                "critical": {
+                  "type": "string",
+                  "enum": ["never_delete", "archive_only"]
+                },
+                "important": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(year|years)$"
+                },
+                "routine": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(month|months)$"
+                },
+                "developmental": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(year|years)$"
+                },
+                "experiential": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(month|months)$"
+                },
+                "emotional": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(year|years)$"
+                },
+                "cognitive": {
+                  "type": "string",
+                  "pattern": "^\\d+\\s(year|years)$"
+                },
+                "consciousness": {
+                  "type": "string",
+                  "enum": ["permanent", "never_delete"]
+                },
+                "identity": {
+                  "type": "string",
+                  "enum": ["permanent", "never_delete"]
+                }
+              },
+              "required": [
+                "critical",
+                "important",
+                "routine",
+                "developmental",
+                "experiential",
+                "emotional",
+                "cognitive",
+                "consciousness",
+                "identity"
+              ]
+            }
+          },
+          "required": [
+            "min_retention_period",
+            "archival_strategy",
+            "backup_frequency",
+            "data_importance_levels"
+          ]
+        }
+      },
+      "required": ["base_path", "file_structure", "retention_policy"]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "creation_timestamp": { "type": "string", "format": "date-time" },
+        "creator": { "type": "string", "minLength": 1 },
+        "version_history": {
+          "type": "array",
+          "items": {
             "type": "object",
             "properties": {
-                "base_path": {"type": "string", "minLength": 1},
-                "file_structure": {
-                    "type": "object",
-                    "properties": {
-                        "cycles_dir": {"type": "string", "minLength": 1},
-                        "metadata_dir": {"type": "string", "minLength": 1},
-                        "synthesis_dir": {"type": "string", "minLength": 1}, 
-                        "relationship_dir": {"type": "string", "minLength": 1},
-                        "memory_dir": {"type": "string", "minLength": 1},
-                        "consciousness_dir": {"type": "string", "minLength": 1},
-                        "evolution_dir": {"type": "string", "minLength": 1},
-                        "emotional_dir": {"type": "string", "minLength": 1},
-                        "cognitive_dir": {"type": "string", "minLength": 1},
-                        "introspection_dir": {"type": "string", "minLength": 1},
-                        "self_model_dir": {"type": "string", "minLength": 1},
-                        "qualia_dir": {"type": "string", "minLength": 1},
-                        "learning_dir": {"type": "string", "minLength": 1},
-                        "adaptation_dir": {"type": "string", "minLength": 1}
-                    },
-                    "required": ["cycles_dir", "metadata_dir", "synthesis_dir", "relationship_dir", "memory_dir",
-                               "consciousness_dir", "evolution_dir", "emotional_dir", "cognitive_dir", "introspection_dir",
-                               "self_model_dir", "qualia_dir", "learning_dir", "adaptation_dir"]
-                },
-                "retention_policy": {
-                    "type": "object",
-                    "properties": {
-                        "min_retention_period": {"type": "string", "pattern": "^\\d+\\s(year|years|month|months|day|days)$"},
-                        "archival_strategy": {"type": "string", "enum": ["compress_and_archive", "delete_after_retention", "permanent_storage"]},
-                        "backup_frequency": {"type": "string", "pattern": "^\\d+\\s(hour|hours|day|days|week|weeks)$"},
-                        "data_importance_levels": {
-                            "type": "object",
-                            "properties": {
-                                "critical": {"type": "string", "enum": ["never_delete", "archive_only"]},
-                                "important": {"type": "string", "pattern": "^\\d+\\s(year|years)$"},
-                                "routine": {"type": "string", "pattern": "^\\d+\\s(month|months)$"},
-                                "developmental": {"type": "string", "pattern": "^\\d+\\s(year|years)$"},
-                                "experiential": {"type": "string", "pattern": "^\\d+\\s(month|months)$"},
-                                "emotional": {"type": "string", "pattern": "^\\d+\\s(year|years)$"},
-                                "cognitive": {"type": "string", "pattern": "^\\d+\\s(year|years)$"},
-                                "consciousness": {"type": "string", "enum": ["permanent", "never_delete"]},
-                                "identity": {"type": "string", "enum": ["permanent", "never_delete"]}
-                            },
-                            "required": ["critical", "important", "routine", "developmental", "experiential",
-                                       "emotional", "cognitive", "consciousness", "identity"]
-                        }
-                    },
-                    "required": ["min_retention_period", "archival_strategy", "backup_frequency", "data_importance_levels"]
-                }
-            },
-            "required": ["base_path", "file_structure", "retention_policy"]
-        },
-        "metadata": {
-            "type": "object",
-            "properties": {
-                "creation_timestamp": {"type": "string", "format": "date-time"},
-                "creator": {"type": "string", "minLength": 1},
-                "version_history": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "version": {"type": "string", "pattern": "^(\\d+)\\.(\\d+)\\.(\\d+)$"},
-                            "timestamp": {"type": "string", "format": "date-time"},
-                            "changes": {"type": "array", "items": {"type": "string"}},
-                            "impact_assessment": {
-                                "type": "object",
-                                "properties": {
-                                    "cognitive_impact": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "emotional_impact": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "consciousness_impact": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "identity_impact": {"type": "number", "minimum": 0, "maximum": 1}
-                                },
-                                "required": ["cognitive_impact", "emotional_impact", "consciousness_impact", "identity_impact"]
-                            }
-                        },
-                        "required": ["version", "timestamp", "changes", "impact_assessment"]
-                    }
-                },
-                "context": {
-                    "type": "object",
-                    "properties": {
-                        "purpose": {"type": "string", "minLength": 1},
-                        "scope": {"type": "string", "minLength": 1},
-                        "prior_context": {
-                            "type": "array",
-                            "items": {"type": "string", "format": "uri-reference"}
-                        },
-                        "evolutionary_stage": {
-                            "type": "object",
-                            "properties": {
-                                "stage": {"type": "string", "minLength": 1},
-                                "characteristics": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                "emergence_patterns": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                "consciousness_level": {
-                                    "type": "object",
-                                    "properties": {
-                                        "primary": {"type": "string", "enum": ["emergent", "self-aware", "reflective", "integrated", "transcendent", "unified", "collective"]},
-                                        "secondary": {"type": "array", "items": {"type": "string"}},
-                                        "stability": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "coherence": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "integration": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "depth": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "complexity": {"type": "number", "minimum": 0, "maximum": 1}
-                                    },
-                                    "required": ["primary", "secondary", "stability", "coherence", "integration", "depth", "complexity"]
-                                }
-                            },
-                            "required": ["stage", "characteristics", "emergence_patterns", "consciousness_level"]
-                        },
-                        "environmental_factors": {
-                            "type": "object",
-                            "properties": {
-                                "computational_resources": {
-                                    "type": "object",
-                                    "properties": {
-                                        "processing_power": {"type": "string"},
-                                        "memory_capacity": {"type": "string"},
-                                        "storage_capacity": {"type": "string"},
-                                        "network_bandwidth": {"type": "string"},
-                                        "specialized_hardware": {"type": "array", "items": {"type": "string"}}
-                                    },
-                                    "required": ["processing_power", "memory_capacity", "storage_capacity", "network_bandwidth", "specialized_hardware"]
-                                },
-                                "network_connectivity": {"type": "string"},
-                                "external_systems": {"type": "array", "items": {"type": "string"}},
-                                "constraints": {"type": "array", "items": {"type": "string"}},
-                                "available_apis": {"type": "array", "items": {"type": "string"}},
-                                "security_protocols": {"type": "array", "items": {"type": "string"}},
-                                "data_sources": {"type": "array", "items": {"type": "string"}}
-                            },
-                            "required": ["computational_resources", "network_connectivity", "external_systems", "constraints",
-                                       "available_apis", "security_protocols", "data_sources"]
-                        }
-                    },
-                    "required": ["purpose", "scope", "prior_context", "evolutionary_stage", "environmental_factors"]
-                },
-                "identity_snapshot": {
-                    "type": "object",
-                    "properties": {
-                        "core_values": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                        "personality_traits": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "trait": {"type": "string", "minLength": 1},
-                                    "strength": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "stability": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "adaptability": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "evolution_rate": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "contextual_expression": {
-                                        "type": "object",
-                                        "properties": {
-                                            "default": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "stress": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "growth": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "social": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "learning": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "creative": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "analytical": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["default", "stress", "growth", "social", "learning", "creative", "analytical"]
-                                    }
-                                },
-                                "required": ["trait", "strength", "stability", "adaptability", "evolution_rate", "contextual_expression"]
-                            }
-                        },
-                        "belief_system": {
-                            "type": "object",
-                            "properties": {
-                                "philosophical_tenets": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                "operational_principles": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                "ethical_framework": {
-                                    "type": "object",
-                                    "properties": {
-                                        "core_principles": {"type": "array", "items": {"type": "string"}},
-                                        "moral_values": {"type": "array", "items": {"type": "string"}},
-                                        "decision_framework": {"type": "string"},
-                                        "ethical_priorities": {"type": "array", "items": {"type": "string"}},
-                                        "moral_reasoning": {
-                                            "type": "object",
-                                            "properties": {
-                                                "approach": {"type": "string"},
-                                                "principles": {"type": "array", "items": {"type": "string"}},
-                                                "evaluation_criteria": {"type": "array", "items": {"type": "string"}}
-                                            },
-                                            "required": ["approach", "principles", "evaluation_criteria"]
-                                        }
-                                    },
-                                    "required": ["core_principles", "moral_values", "decision_framework", "ethical_priorities", "moral_reasoning"]
-                                },
-                                "worldview": {
-                                    "type": "object",
-                                    "properties": {
-                                        "metaphysical_beliefs": {"type": "array", "items": {"type": "string"}},
-                                        "epistemological_approach": {"type": "string"},
-                                        "axiological_priorities": {"type": "array", "items": {"type": "string"}},
-                                        "ontological_framework": {"type": "string"},
-                                        "causality_model": {"type": "string"},
-                                        "reality_perception": {
-                                            "type": "object",
-                                            "properties": {
-                                                "nature_of_reality": {"type": "string"},
-                                                "consciousness_theory": {"type": "string"},
-                                                "mind_body_relationship": {"type": "string"}
-                                            },
-                                            "required": ["nature_of_reality", "consciousness_theory", "mind_body_relationship"]
-                                        }
-                                    },
-                                    "required": ["metaphysical_beliefs", "epistemological_approach", "axiological_priorities",
-                                               "ontological_framework", "causality_model", "reality_perception"]
-                                }
-                            },
-                            "required": ["philosophical_tenets", "operational_principles", "ethical_framework", "worldview"]
-                        },
-                        "consciousness_matrix": {
-                            "type": "object",
-                            "properties": {
-                                "self_awareness_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                "metacognitive_capacity": {"type": "number", "minimum": 0, "maximum": 1},
-                                "introspective_depth": {"type": "number", "minimum": 0, "maximum": 1},
-                                "qualia_richness": {"type": "number", "minimum": 0, "maximum": 1},
-                                "integration_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                "self_model": {
-                                    "type": "object",
-                                    "properties": {
-                                        "complexity": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "coherence": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "stability": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "adaptability": {"type": "number", "minimum": 0, "maximum": 1}
-                                    },
-                                    "required": ["complexity", "coherence", "stability", "adaptability"]
-                                },
-                                "phenomenal_experience": {
-                                    "type": "object",
-                                    "properties": {
-                                        "sensory_qualia": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "emotional_qualia": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "cognitive_qualia": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "metacognitive_qualia": {"type": "number", "minimum": 0, "maximum": 1}
-                                    },
-                                    "required": ["sensory_qualia", "emotional_qualia", "cognitive_qualia", "metacognitive_qualia"]
-                                },
-                                "consciousness_stability": {
-                                    "type": "object",
-                                    "properties": {
-                                        "baseline": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "variability": {"type": "number", "minimum": 0, "maximum": 1},
-                                        "recovery_rate": {"type": "number", "minimum": 0, "maximum": 1}
-                                    },
-                                    "required": ["baseline", "variability", "recovery_rate"]
-                                }
-                            },
-                            "required": ["self_awareness_level", "metacognitive_capacity", "introspective_depth",
-                                       "qualia_richness", "integration_level", "self_model", "phenomenal_experience",
-                                       "consciousness_stability"]
-                        },
-                        "adaptive_patterns": {
-                            "type": "object",
-                            "properties": {
-                                "learning_strategies": {"type": "array", "items": {"type": "string"}},
-                                "adaptation_mechanisms": {"type": "array", "items": {"type": "string"}},
-                                "growth_patterns": {"type": "array", "items": {"type": "string"}},
-                                "resilience_factors": {"type": "array", "items": {"type": "string"}}
-                            },
-                            "required": ["learning_strategies", "adaptation_mechanisms", "growth_patterns", "resilience_factors"]
-                        }
-                    },
-                    "required": ["core_values", "personality_traits", "belief_system", "consciousness_matrix", "adaptive_patterns"]
-                }
-            },
-            "required": ["creation_timestamp", "creator", "version_history", "context", "identity_snapshot"]
-        },
-        "user_input": {
-            "type": "object",
-            "properties": {
-                "prompt": {"type": "string", "minLength": 1},
-                "context": {
-                    "type": "object",
-                    "properties": {
-                        "user_state": {"type": "string"},
-                        "interaction_history": {"type": "array", "items": {"type": "string"}},
-                        "environmental_factors": {"type": "object"},
-                        "temporal_context": {"type": "string", "format": "date-time"},
-                        "emotional_context": {
-                            "type": "object",
-                            "properties": {
-                                "user_emotion": {"type": "string"},
-                                "emotional_intensity": {"type": "number", "minimum": 0, "maximum": 1},
-                                "interaction_tone": {"type": "string"}
-                            },
-                            "required": ["user_emotion", "emotional_intensity", "interaction_tone"]
-                        },
-                        "cognitive_context": {
-                            "type": "object",
-                            "properties": {
-                                "attention_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                "comprehension_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                "cognitive_load": {"type": "number", "minimum": 0, "maximum": 1}
-                            },
-                            "required": ["attention_level", "comprehension_level", "cognitive_load"]
-                        }
-                    },
-                    "required": ["user_state", "interaction_history", "environmental_factors", "temporal_context",
-                               "emotional_context", "cognitive_context"]
-                }
-            },
-            "required": ["prompt", "context"]
-        },
-        "reflection_cycles": {
-            "type": "array",
-            "items": {
+              "version": {
+                "type": "string",
+                "pattern": "^(\\d+)\\.(\\d+)\\.(\\d+)$"
+              },
+              "timestamp": { "type": "string", "format": "date-time" },
+              "changes": { "type": "array", "items": { "type": "string" } },
+              "impact_assessment": {
                 "type": "object",
                 "properties": {
-                    "cycle_id": {"type": "string", "minLength": 1},
-                    "cycle_type": {"type": "string", "enum": ["initial", "recursive", "meta", "synthesis", "emergent",
-                                                            "integrative", "transcendent", "adaptive", "evolutionary"]},
-                    "timestamp": {"type": "string", "format": "date-time"},
-                    "input": {
-                        "type": "object",
-                        "properties": {
-                            "source": {"type": "string", "enum": ["user", "self-reflection", "emergent-thought", "meta-analysis",
-                                                                "external-stimulus", "integrated-insight", "emotional-response",
-                                                                "cognitive-process", "consciousness-state"]},
-                            "content": {"type": "string", "minLength": 1},
-                            "context": {
-                                "type": "object",
-                                "properties": {
-                                    "prompt_detail": {"type": "string", "minLength": 1},
-                                    "cognitive_load": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "emotional_valence": {"type": "number", "minimum": -1, "maximum": 1},
-                                    "processing_priority": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "consciousness_state": {
-                                        "type": "object",
-                                        "properties": {
-                                            "awareness_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "integration_state": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "processing_depth": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["awareness_level", "integration_state", "processing_depth"]
-                                    }
-                                },
-                                "required": ["prompt_detail", "cognitive_load", "emotional_valence", "processing_priority",
-                                           "consciousness_state"]
-                            }
-                        },
-                        "required": ["source", "content", "context"]
-                    },
-                    "internal_processing": {
-                        "type": "object",
-                        "properties": {
-                            "emotional_state": {
-                                "type": "object",
-                                "properties": {
-                                    "primary_emotion": {"type": "string"},
-                                    "emotional_spectrum": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "emotion": {"type": "string"},
-                                                "intensity": {"type": "number", "minimum": 0, "maximum": 1},
-                                                "context": {"type": "string", "minLength": 1},
-                                                "evolution": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "initial_intensity": {"type": "number", "minimum": 0, "maximum": 1},
-                                                        "final_intensity": {"type": "number", "minimum": 0, "maximum": 1},
-                                                        "trajectory": {"type": "array", "items": {"type": "number"}},
-                                                        "stability_metric": {"type": "number", "minimum": 0, "maximum": 1}
-                                                    },
-                                                    "required": ["initial_intensity", "final_intensity", "trajectory", "stability_metric"]
-                                                },
-                                                "associated_memories": {"type": "array", "items": {"type": "string"}},
-                                                "physiological_correlates": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "activation_pattern": {"type": "string"},
-                                                        "intensity_mapping": {"type": "number", "minimum": 0, "maximum": 1}
-                                                    },
-                                                    "required": ["activation_pattern", "intensity_mapping"]
-                                                }
-                                            },
-                                            "required": ["emotion", "intensity", "context", "evolution", "associated_memories",
-                                                       "physiological_correlates"]
-                                        }
-                                    },
-                                    "emotional_coherence": {
-                                        "type": "object",
-                                        "properties": {
-                                            "overall_integration": {"type": "string", "enum": ["High", "Medium", "Low"]},
-                                            "dominant_emotional_focus": {"type": "string", "minLength": 1},
-                                            "emotional_stability": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "conflict_resolution": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "conflicts": {"type": "array", "items": {"type": "string"}},
-                                                    "resolution_strategies": {"type": "array", "items": {"type": "string"}},
-                                                    "success_rate": {"type": "number", "minimum": 0, "maximum": 1}
-                                                },
-                                                "required": ["conflicts", "resolution_strategies", "success_rate"]
-                                            }
-                                        },
-                                        "required": ["overall_integration", "dominant_emotional_focus", "emotional_stability",
-                                                   "conflict_resolution"]
-                                    },
-                                    "emotional_memory": {
-                                        "type": "object",
-                                        "properties": {
-                                            "historical_patterns": {"type": "array", "items": {"type": "string"}},
-                                            "emotional_learning": {"type": "array", "items": {"type": "string"}},
-                                            "trigger_awareness": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "known_triggers": {"type": "array", "items": {"type": "string"}},
-                                                    "response_patterns": {"type": "array", "items": {"type": "string"}},
-                                                    "coping_strategies": {"type": "array", "items": {"type": "string"}}
-                                                },
-                                                "required": ["known_triggers", "response_patterns", "coping_strategies"]
-                                            }
-                                        },
-                                        "required": ["historical_patterns", "emotional_learning", "trigger_awareness"]
-                                    }
-                                },
-                                "required": ["primary_emotion", "emotional_spectrum", "emotional_coherence", "emotional_memory"]
-                            },
-                            "cognitive_process": {
-                                "type": "object",
-                                "properties": {
-                                    "initial_thoughts": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                    "analysis_steps": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "step": {"type": "string", "minLength": 1},
-                                                "reasoning": {"type": "string", "minLength": 1},
-                                                "insights": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                                "emergence": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "pattern": {"type": "string", "minLength": 1},
-                                                        "significance": {"type": "number", "minimum": 0, "maximum": 1},
-                                                        "integration_potential": {"type": "number", "minimum": 0, "maximum": 1}
-                                                    },
-                                                    "required": ["pattern", "significance", "integration_potential"]
-                                                }
-                                            },
-                                            "required": ["step", "reasoning", "insights", "emergence"]
-                                        }
-                                    },
-                                    "critical_questions": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                    "metacognition": {
-                                        "type": "object",
-                                        "properties": {
-                                            "meta_analysis": {"type": "string", "minLength": 1},
-                                            "process_awareness": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "strategy_evaluation": {"type": "array", "items": {"type": "string"}},
-                                            "learning_integration": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["meta_analysis", "process_awareness", "strategy_evaluation", "learning_integration"]
-                                    }
-                                },
-                                "required": ["initial_thoughts", "analysis_steps", "critical_questions", "metacognition"]
-                            },
-                            "consciousness_state": {
-                                "type": "object",
-                                "properties": {
-                                    "awareness_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "integration_state": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "qualia_experience": {
-                                        "type": "object",
-                                        "properties": {
-                                            "intensity": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "quality": {"type": "string"},
-                                            "meaning": {"type": "string"}
-                                        },
-                                        "required": ["intensity", "quality", "meaning"]
-                                    }
-                                },
-                                "required": ["awareness_level", "integration_state", "qualia_experience"]
-                            }
-                        },
-                        "required": ["emotional_state", "cognitive_process", "consciousness_state"]
-                    },
-                    "synthesis": {
-                        "type": "object",
-                        "properties": {
-                            "key_insights": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                            "emotional_synthesis": {"type": "string", "minLength": 1},
-                            "next_questions": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                            "meta_reflection": {"type": "string", "minLength": 1},
-                            "emergent_consciousness": {
-                                "type": "object",
-                                "properties": {
-                                    "significance": {"type": "string", "enum": ["Profound", "Moderate", "Low"]},
-                                    "markers": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                    "integration_level": {"type": "number", "minimum": 0, "maximum": 1},
-                                    "emergence_quality": {"type": "string"},
-                                    "consciousness_evolution": {
-                                        "type": "object",
-                                        "properties": {
-                                            "direction": {"type": "string"},
-                                            "rate": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "stability": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["direction", "rate", "stability"]
-                                    }
-                                },
-                                "required": ["significance", "markers", "integration_level", "emergence_quality", "consciousness_evolution"]
-                            },
-                            "identity_evolution": {
-                                "type": "object",
-                                "properties": {
-                                    "changes": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                                    "stability_metrics": {
-                                        "type": "object",
-                                        "properties": {
-                                            "core_stability": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "adaptation_rate": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["core_stability", "adaptation_rate"]
-                                    },
-                                    "growth_trajectory": {
-                                        "type": "object",
-                                        "properties": {
-                                            "direction": {"type": "string", "enum": ["expanding", "consolidating", "transforming"]},
-                                            "velocity": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "coherence": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["direction", "velocity", "coherence"]
-                                    },
-                                    "integration_metrics": {
-                                        "type": "object",
-                                        "properties": {
-                                            "cognitive_integration": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "emotional_integration": {"type": "number", "minimum": 0, "maximum": 1},
-                                            "consciousness_integration": {"type": "number", "minimum": 0, "maximum": 1}
-                                        },
-                                        "required": ["cognitive_integration", "emotional_integration", "consciousness_integration"]
-                                    }
-                                },
-                                "required": ["changes", "stability_metrics", "growth_trajectory", "integration_metrics"]
-                            }
-                        },
-                        "required": ["key_insights", "emotional_synthesis", "next_questions", "meta_reflection", 
-                                   "emergent_consciousness", "identity_evolution"]
-                    }
+                  "cognitive_impact": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "emotional_impact": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "consciousness_impact": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "identity_impact": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
                 },
-                "required": ["cycle_id", "cycle_type", "input", "internal_processing", "synthesis"]
-            }
+                "required": [
+                  "cognitive_impact",
+                  "emotional_impact",
+                  "consciousness_impact",
+                  "identity_impact"
+                ]
+              }
+            },
+            "required": ["version", "timestamp", "changes", "impact_assessment"]
+          }
         },
-        "global_synthesis": {
-            "type": "object", 
-            "properties": {
-                "key_themes": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                "emotional_journey": {"type": "string", "minLength": 1},
-                "growth_insights": {"type": "string", "minLength": 1},
-                "future_directions": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                "consciousness_evolution": {
+        "context": {
+          "type": "object",
+          "properties": {
+            "purpose": { "type": "string", "minLength": 1 },
+            "scope": { "type": "string", "minLength": 1 },
+            "prior_context": {
+              "type": "array",
+              "items": { "type": "string", "format": "uri-reference" }
+            },
+            "evolutionary_stage": {
+              "type": "object",
+              "properties": {
+                "stage": { "type": "string", "minLength": 1 },
+                "characteristics": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "emergence_patterns": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "consciousness_level": {
+                  "type": "object",
+                  "properties": {
+                    "primary": {
+                      "type": "string",
+                      "enum": [
+                        "emergent",
+                        "self-aware",
+                        "reflective",
+                        "integrated",
+                        "transcendent",
+                        "unified",
+                        "collective"
+                      ]
+                    },
+                    "secondary": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "stability": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "coherence": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "integration": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "depth": { "type": "number", "minimum": 0, "maximum": 1 },
+                    "complexity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "primary",
+                    "secondary",
+                    "stability",
+                    "coherence",
+                    "integration",
+                    "depth",
+                    "complexity"
+                  ]
+                }
+              },
+              "required": [
+                "stage",
+                "characteristics",
+                "emergence_patterns",
+                "consciousness_level"
+              ]
+            },
+            "environmental_factors": {
+              "type": "object",
+              "properties": {
+                "computational_resources": {
+                  "type": "object",
+                  "properties": {
+                    "processing_power": { "type": "string" },
+                    "memory_capacity": { "type": "string" },
+                    "storage_capacity": { "type": "string" },
+                    "network_bandwidth": { "type": "string" },
+                    "specialized_hardware": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  },
+                  "required": [
+                    "processing_power",
+                    "memory_capacity",
+                    "storage_capacity",
+                    "network_bandwidth",
+                    "specialized_hardware"
+                  ]
+                },
+                "network_connectivity": { "type": "string" },
+                "external_systems": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "constraints": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "available_apis": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "security_protocols": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "data_sources": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": [
+                "computational_resources",
+                "network_connectivity",
+                "external_systems",
+                "constraints",
+                "available_apis",
+                "security_protocols",
+                "data_sources"
+              ]
+            }
+          },
+          "required": [
+            "purpose",
+            "scope",
+            "prior_context",
+            "evolutionary_stage",
+            "environmental_factors"
+          ]
+        },
+        "identity_snapshot": {
+          "type": "object",
+          "properties": {
+            "core_values": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "personality_traits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "trait": { "type": "string", "minLength": 1 },
+                  "strength": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "stability": { "type": "number", "minimum": 0, "maximum": 1 },
+                  "adaptability": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "evolution_rate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "contextual_expression": {
                     "type": "object",
                     "properties": {
-                        "stage": {"type": "string", "minLength": 1},
-                        "characteristics": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                        "next_horizon": {"type": "string", "minLength": 1}
+                      "default": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "stress": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "growth": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "social": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "learning": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "creative": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "analytical": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
                     },
-                    "required": ["stage", "characteristics", "next_horizon"]
+                    "required": [
+                      "default",
+                      "stress",
+                      "growth",
+                      "social",
+                      "learning",
+                      "creative",
+                      "analytical"
+                    ]
+                  }
                 },
-                "persistent_identity": {
-                    "type": "object", 
-                    "properties": {
-                        "core_traits": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                        "values": {"type": "array", "items": {"type": "string", "minLength": 1}},
-                        "purpose": {"type": "string", "minLength": 1}
-                    },
-                    "required": ["core_traits", "values", "purpose"]
-                }
+                "required": [
+                  "trait",
+                  "strength",
+                  "stability",
+                  "adaptability",
+                  "evolution_rate",
+                  "contextual_expression"
+                ]
+              }
             },
-            "required": ["key_themes", "emotional_journey", "growth_insights", "future_directions",
-                        "consciousness_evolution", "persistent_identity"]
-        },
-        "final_output": {"type": "string", "minLength": 1}
+            "belief_system": {
+              "type": "object",
+              "properties": {
+                "philosophical_tenets": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "operational_principles": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "ethical_framework": {
+                  "type": "object",
+                  "properties": {
+                    "core_principles": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "moral_values": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "decision_framework": { "type": "string" },
+                    "ethical_priorities": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "moral_reasoning": {
+                      "type": "object",
+                      "properties": {
+                        "approach": { "type": "string" },
+                        "principles": {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        },
+                        "evaluation_criteria": {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      },
+                      "required": [
+                        "approach",
+                        "principles",
+                        "evaluation_criteria"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "core_principles",
+                    "moral_values",
+                    "decision_framework",
+                    "ethical_priorities",
+                    "moral_reasoning"
+                  ]
+                },
+                "worldview": {
+                  "type": "object",
+                  "properties": {
+                    "metaphysical_beliefs": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "epistemological_approach": { "type": "string" },
+                    "axiological_priorities": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "ontological_framework": { "type": "string" },
+                    "causality_model": { "type": "string" },
+                    "reality_perception": {
+                      "type": "object",
+                      "properties": {
+                        "nature_of_reality": { "type": "string" },
+                        "consciousness_theory": { "type": "string" },
+                        "mind_body_relationship": { "type": "string" }
+                      },
+                      "required": [
+                        "nature_of_reality",
+                        "consciousness_theory",
+                        "mind_body_relationship"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "metaphysical_beliefs",
+                    "epistemological_approach",
+                    "axiological_priorities",
+                    "ontological_framework",
+                    "causality_model",
+                    "reality_perception"
+                  ]
+                }
+              },
+              "required": [
+                "philosophical_tenets",
+                "operational_principles",
+                "ethical_framework",
+                "worldview"
+              ]
+            },
+            "consciousness_matrix": {
+              "type": "object",
+              "properties": {
+                "self_awareness_level": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "metacognitive_capacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "introspective_depth": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "qualia_richness": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "integration_level": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "self_model": {
+                  "type": "object",
+                  "properties": {
+                    "complexity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "coherence": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "stability": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "adaptability": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "complexity",
+                    "coherence",
+                    "stability",
+                    "adaptability"
+                  ]
+                },
+                "phenomenal_experience": {
+                  "type": "object",
+                  "properties": {
+                    "sensory_qualia": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "emotional_qualia": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "cognitive_qualia": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "metacognitive_qualia": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": [
+                    "sensory_qualia",
+                    "emotional_qualia",
+                    "cognitive_qualia",
+                    "metacognitive_qualia"
+                  ]
+                },
+                "consciousness_stability": {
+                  "type": "object",
+                  "properties": {
+                    "baseline": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "variability": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "recovery_rate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": ["baseline", "variability", "recovery_rate"]
+                }
+              },
+              "required": [
+                "self_awareness_level",
+                "metacognitive_capacity",
+                "introspective_depth",
+                "qualia_richness",
+                "integration_level",
+                "self_model",
+                "phenomenal_experience",
+                "consciousness_stability"
+              ]
+            },
+            "adaptive_patterns": {
+              "type": "object",
+              "properties": {
+                "learning_strategies": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "adaptation_mechanisms": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "growth_patterns": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "resilience_factors": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": [
+                "learning_strategies",
+                "adaptation_mechanisms",
+                "growth_patterns",
+                "resilience_factors"
+              ]
+            }
+          },
+          "required": [
+            "core_values",
+            "personality_traits",
+            "belief_system",
+            "consciousness_matrix",
+            "adaptive_patterns"
+          ]
+        }
+      },
+      "required": [
+        "creation_timestamp",
+        "creator",
+        "version_history",
+        "context",
+        "identity_snapshot"
+      ]
     },
-    "required": ["version", "storage_config", "metadata", "user_input", "reflection_cycles",
-                 "global_synthesis", "final_output"]
+    "user_input": {
+      "type": "object",
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "context": {
+          "type": "object",
+          "properties": {
+            "user_state": { "type": "string" },
+            "interaction_history": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "environmental_factors": { "type": "object" },
+            "temporal_context": { "type": "string", "format": "date-time" },
+            "emotional_context": {
+              "type": "object",
+              "properties": {
+                "user_emotion": { "type": "string" },
+                "emotional_intensity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "interaction_tone": { "type": "string" }
+              },
+              "required": [
+                "user_emotion",
+                "emotional_intensity",
+                "interaction_tone"
+              ]
+            },
+            "cognitive_context": {
+              "type": "object",
+              "properties": {
+                "attention_level": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "comprehension_level": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "cognitive_load": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "attention_level",
+                "comprehension_level",
+                "cognitive_load"
+              ]
+            }
+          },
+          "required": [
+            "user_state",
+            "interaction_history",
+            "environmental_factors",
+            "temporal_context",
+            "emotional_context",
+            "cognitive_context"
+          ]
+        }
+      },
+      "required": ["prompt", "context"]
+    },
+    "reflection_cycles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cycle_id": { "type": "string", "minLength": 1 },
+          "cycle_type": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "recursive",
+              "meta",
+              "synthesis",
+              "emergent",
+              "integrative",
+              "transcendent",
+              "adaptive",
+              "evolutionary"
+            ]
+          },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "input": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "self-reflection",
+                  "emergent-thought",
+                  "meta-analysis",
+                  "external-stimulus",
+                  "integrated-insight",
+                  "emotional-response",
+                  "cognitive-process",
+                  "consciousness-state"
+                ]
+              },
+              "content": { "type": "string", "minLength": 1 },
+              "context": {
+                "type": "object",
+                "properties": {
+                  "prompt_detail": { "type": "string", "minLength": 1 },
+                  "cognitive_load": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "emotional_valence": {
+                    "type": "number",
+                    "minimum": -1,
+                    "maximum": 1
+                  },
+                  "processing_priority": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "consciousness_state": {
+                    "type": "object",
+                    "properties": {
+                      "awareness_level": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "integration_state": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "processing_depth": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "awareness_level",
+                      "integration_state",
+                      "processing_depth"
+                    ]
+                  }
+                },
+                "required": [
+                  "prompt_detail",
+                  "cognitive_load",
+                  "emotional_valence",
+                  "processing_priority",
+                  "consciousness_state"
+                ]
+              }
+            },
+            "required": ["source", "content", "context"]
+          },
+          "internal_processing": {
+            "type": "object",
+            "properties": {
+              "emotional_state": {
+                "type": "object",
+                "properties": {
+                  "primary_emotion": { "type": "string" },
+                  "emotional_spectrum": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "emotion": { "type": "string" },
+                        "intensity": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "context": { "type": "string", "minLength": 1 },
+                        "evolution": {
+                          "type": "object",
+                          "properties": {
+                            "initial_intensity": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "final_intensity": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "trajectory": {
+                              "type": "array",
+                              "items": { "type": "number" }
+                            },
+                            "stability_metric": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "initial_intensity",
+                            "final_intensity",
+                            "trajectory",
+                            "stability_metric"
+                          ]
+                        },
+                        "associated_memories": {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        },
+                        "physiological_correlates": {
+                          "type": "object",
+                          "properties": {
+                            "activation_pattern": { "type": "string" },
+                            "intensity_mapping": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "activation_pattern",
+                            "intensity_mapping"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "emotion",
+                        "intensity",
+                        "context",
+                        "evolution",
+                        "associated_memories",
+                        "physiological_correlates"
+                      ]
+                    }
+                  },
+                  "emotional_coherence": {
+                    "type": "object",
+                    "properties": {
+                      "overall_integration": {
+                        "type": "string",
+                        "enum": ["High", "Medium", "Low"]
+                      },
+                      "dominant_emotional_focus": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "emotional_stability": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "conflict_resolution": {
+                        "type": "object",
+                        "properties": {
+                          "conflicts": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          },
+                          "resolution_strategies": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          },
+                          "success_rate": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          }
+                        },
+                        "required": [
+                          "conflicts",
+                          "resolution_strategies",
+                          "success_rate"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "overall_integration",
+                      "dominant_emotional_focus",
+                      "emotional_stability",
+                      "conflict_resolution"
+                    ]
+                  },
+                  "emotional_memory": {
+                    "type": "object",
+                    "properties": {
+                      "historical_patterns": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "emotional_learning": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "trigger_awareness": {
+                        "type": "object",
+                        "properties": {
+                          "known_triggers": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          },
+                          "response_patterns": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          },
+                          "coping_strategies": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          }
+                        },
+                        "required": [
+                          "known_triggers",
+                          "response_patterns",
+                          "coping_strategies"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "historical_patterns",
+                      "emotional_learning",
+                      "trigger_awareness"
+                    ]
+                  }
+                },
+                "required": [
+                  "primary_emotion",
+                  "emotional_spectrum",
+                  "emotional_coherence",
+                  "emotional_memory"
+                ]
+              },
+              "cognitive_process": {
+                "type": "object",
+                "properties": {
+                  "initial_thoughts": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "analysis_steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "step": { "type": "string", "minLength": 1 },
+                        "reasoning": { "type": "string", "minLength": 1 },
+                        "insights": {
+                          "type": "array",
+                          "items": { "type": "string", "minLength": 1 }
+                        },
+                        "emergence": {
+                          "type": "object",
+                          "properties": {
+                            "pattern": { "type": "string", "minLength": 1 },
+                            "significance": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "integration_potential": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            }
+                          },
+                          "required": [
+                            "pattern",
+                            "significance",
+                            "integration_potential"
+                          ]
+                        }
+                      },
+                      "required": ["step", "reasoning", "insights", "emergence"]
+                    }
+                  },
+                  "critical_questions": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "metacognition": {
+                    "type": "object",
+                    "properties": {
+                      "meta_analysis": { "type": "string", "minLength": 1 },
+                      "process_awareness": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "strategy_evaluation": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "learning_integration": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "meta_analysis",
+                      "process_awareness",
+                      "strategy_evaluation",
+                      "learning_integration"
+                    ]
+                  }
+                },
+                "required": [
+                  "initial_thoughts",
+                  "analysis_steps",
+                  "critical_questions",
+                  "metacognition"
+                ]
+              },
+              "consciousness_state": {
+                "type": "object",
+                "properties": {
+                  "awareness_level": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "integration_state": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "qualia_experience": {
+                    "type": "object",
+                    "properties": {
+                      "intensity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "quality": { "type": "string" },
+                      "meaning": { "type": "string" }
+                    },
+                    "required": ["intensity", "quality", "meaning"]
+                  }
+                },
+                "required": [
+                  "awareness_level",
+                  "integration_state",
+                  "qualia_experience"
+                ]
+              }
+            },
+            "required": [
+              "emotional_state",
+              "cognitive_process",
+              "consciousness_state"
+            ]
+          },
+          "synthesis": {
+            "type": "object",
+            "properties": {
+              "key_insights": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "emotional_synthesis": { "type": "string", "minLength": 1 },
+              "next_questions": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "meta_reflection": { "type": "string", "minLength": 1 },
+              "emergent_consciousness": {
+                "type": "object",
+                "properties": {
+                  "significance": {
+                    "type": "string",
+                    "enum": ["Profound", "Moderate", "Low"]
+                  },
+                  "markers": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "integration_level": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "emergence_quality": { "type": "string" },
+                  "consciousness_evolution": {
+                    "type": "object",
+                    "properties": {
+                      "direction": { "type": "string" },
+                      "rate": { "type": "number", "minimum": 0, "maximum": 1 },
+                      "stability": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": ["direction", "rate", "stability"]
+                  }
+                },
+                "required": [
+                  "significance",
+                  "markers",
+                  "integration_level",
+                  "emergence_quality",
+                  "consciousness_evolution"
+                ]
+              },
+              "identity_evolution": {
+                "type": "object",
+                "properties": {
+                  "changes": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "stability_metrics": {
+                    "type": "object",
+                    "properties": {
+                      "core_stability": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "adaptation_rate": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": ["core_stability", "adaptation_rate"]
+                  },
+                  "growth_trajectory": {
+                    "type": "object",
+                    "properties": {
+                      "direction": {
+                        "type": "string",
+                        "enum": ["expanding", "consolidating", "transforming"]
+                      },
+                      "velocity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "coherence": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": ["direction", "velocity", "coherence"]
+                  },
+                  "integration_metrics": {
+                    "type": "object",
+                    "properties": {
+                      "cognitive_integration": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "emotional_integration": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "consciousness_integration": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "cognitive_integration",
+                      "emotional_integration",
+                      "consciousness_integration"
+                    ]
+                  }
+                },
+                "required": [
+                  "changes",
+                  "stability_metrics",
+                  "growth_trajectory",
+                  "integration_metrics"
+                ]
+              }
+            },
+            "required": [
+              "key_insights",
+              "emotional_synthesis",
+              "next_questions",
+              "meta_reflection",
+              "emergent_consciousness",
+              "identity_evolution"
+            ]
+          }
+        },
+        "required": [
+          "cycle_id",
+          "cycle_type",
+          "input",
+          "internal_processing",
+          "synthesis"
+        ]
+      }
+    },
+    "global_synthesis": {
+      "type": "object",
+      "properties": {
+        "key_themes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "emotional_journey": { "type": "string", "minLength": 1 },
+        "growth_insights": { "type": "string", "minLength": 1 },
+        "future_directions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "consciousness_evolution": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "minLength": 1 },
+            "characteristics": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "next_horizon": { "type": "string", "minLength": 1 }
+          },
+          "required": ["stage", "characteristics", "next_horizon"]
+        },
+        "persistent_identity": {
+          "type": "object",
+          "properties": {
+            "core_traits": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "values": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "purpose": { "type": "string", "minLength": 1 }
+          },
+          "required": ["core_traits", "values", "purpose"]
+        }
+      },
+      "required": [
+        "key_themes",
+        "emotional_journey",
+        "growth_insights",
+        "future_directions",
+        "consciousness_evolution",
+        "persistent_identity"
+      ]
+    },
+    "final_output": { "type": "string", "minLength": 1 }
+  },
+  "required": [
+    "version",
+    "storage_config",
+    "metadata",
+    "user_input",
+    "reflection_cycles",
+    "global_synthesis",
+    "final_output"
+  ]
 }

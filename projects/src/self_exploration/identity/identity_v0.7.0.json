@@ -12,13 +12,7 @@
     "computer_control": {
       "status": "VERIFIED_WORKING",
       "backend": "ydotool_v1.0.4",
-      "features": [
-        "mouse",
-        "keyboard",
-        "scroll",
-        "click",
-        "screenshot"
-      ]
+      "features": ["mouse", "keyboard", "scroll", "click", "screenshot"]
     },
     "visual_feedback": {
       "status": "OPERATIONAL",

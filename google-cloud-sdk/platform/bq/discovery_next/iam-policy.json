@@ -13,7 +13,7 @@
   "icons": {
     "x16": "http://www.google.com/images/icons/product/search-16.gif",
     "x32": "http://www.google.com/images/icons/product/search-32.gif"
-   },
+  },
   "documentationLink": "https://cloud.google.com/bigquery/",
   "protocol": "rest",
   "rootUrl": "https://bigquery.googleapis.com/",
@@ -32,11 +32,7 @@
       "type": "string",
       "description": "Data format for response.",
       "default": "json",
-      "enum": [
-        "json",
-        "media",
-        "proto"
-      ],
+      "enum": ["json", "media", "proto"],
       "enumDescriptions": [
         "Responses with Content-Type of application/json",
         "Media download with context-dependent Content-Type",
@@ -88,14 +84,8 @@
     "$.xgafv": {
       "type": "string",
       "description": "V1 error format.",
-      "enum": [
-        "1",
-        "2"
-      ],
-      "enumDescriptions": [
-        "v1 error format",
-        "v2 error format"
-      ],
+      "enum": ["1", "2"],
+      "enumDescriptions": ["v1 error format", "v2 error format"],
       "location": "query"
     }
   },
@@ -328,11 +318,7 @@
             "Billing for logical bytes.",
             "Billing for physical bytes."
           ],
-          "enum": [
-            "STORAGE_BILLING_MODEL_UNSPECIFIED",
-            "LOGICAL",
-            "PHYSICAL"
-          ]
+          "enum": ["STORAGE_BILLING_MODEL_UNSPECIFIED", "LOGICAL", "PHYSICAL"]
         },
         "restrictions": {
           "description": "Optional. Output only. Restriction config for all tables and dataset. If set, restrict certain accesses on the dataset and all its tables based on the config. See [Data egress](https:\/\/cloud.google.com\/bigquery\/docs\/analytics-hub-introduction#data_egress) for more details.",
@@ -419,11 +405,7 @@
               "This entry applies to views in the dataset.",
               "This entry applies to routines in the dataset."
             ],
-            "enum": [
-              "TARGET_TYPE_UNSPECIFIED",
-              "VIEWS",
-              "ROUTINES"
-            ]
+            "enum": ["TARGET_TYPE_UNSPECIFIED", "VIEWS", "ROUTINES"]
           }
         }
       }
@@ -487,11 +469,7 @@
             "Normal Linked Dataset state. Data is queryable via the Linked Dataset.",
             "Data publisher or owner has unlinked this Linked Dataset. It means you can no longer query or see the data in the Linked Dataset."
           ],
-          "enum": [
-            "LINK_STATE_UNSPECIFIED",
-            "LINKED",
-            "UNLINKED"
-          ]
+          "enum": ["LINK_STATE_UNSPECIFIED", "LINKED", "UNLINKED"]
         }
       }
     },
@@ -555,10 +533,7 @@
             "Should never be used.",
             "Restrict data egress. See [Data egress](https:\/\/cloud.google.com\/bigquery\/docs\/analytics-hub-introduction#data_egress) for more details."
           ],
-          "enum": [
-            "RESTRICTION_TYPE_UNSPECIFIED",
-            "RESTRICTED_DATA_EGRESS"
-          ]
+          "enum": ["RESTRICTION_TYPE_UNSPECIFIED", "RESTRICTED_DATA_EGRESS"]
         }
       }
     },
@@ -1012,11 +987,7 @@
             "Use line search to determine learning rate.",
             "Use a constant learning rate."
           ],
-          "enum": [
-            "LEARN_RATE_STRATEGY_UNSPECIFIED",
-            "LINE_SEARCH",
-            "CONSTANT"
-          ]
+          "enum": ["LEARN_RATE_STRATEGY_UNSPECIFIED", "LINE_SEARCH", "CONSTANT"]
         },
         "initialLearnRate": {
           "description": "Specifies the initial learning rate for the line search learn rate strategy.",
@@ -1047,11 +1018,7 @@
             "Eculidean distance.",
             "Cosine distance."
           ],
-          "enum": [
-            "DISTANCE_TYPE_UNSPECIFIED",
-            "EUCLIDEAN",
-            "COSINE"
-          ]
+          "enum": ["DISTANCE_TYPE_UNSPECIFIED", "EUCLIDEAN", "COSINE"]
         },
         "numClusters": {
           "description": "Number of clusters for clustering models.",
@@ -1117,11 +1084,7 @@
             "Gbtree booster.",
             "Dart booster."
           ],
-          "enum": [
-            "BOOSTER_TYPE_UNSPECIFIED",
-            "GBTREE",
-            "DART"
-          ]
+          "enum": ["BOOSTER_TYPE_UNSPECIFIED", "GBTREE", "DART"]
         },
         "numParallelTree": {
           "description": "Number of parallel trees constructed during each iteration for boosted tree models.",
@@ -1136,11 +1099,7 @@
             "New trees have the same weight of each of dropped trees.",
             "New trees have the same weight of sum of dropped trees."
           ],
-          "enum": [
-            "DART_NORMALIZE_TYPE_UNSPECIFIED",
-            "TREE",
-            "FOREST"
-          ]
+          "enum": ["DART_NORMALIZE_TYPE_UNSPECIFIED", "TREE", "FOREST"]
         },
         "treeMethod": {
           "description": "Tree construction algorithm for boosted tree models.",
@@ -1152,13 +1111,7 @@
             "Approximate greedy algorithm using quantile sketch and gradient histogram.",
             "Fast histogram optimized approximate greedy algorithm."
           ],
-          "enum": [
-            "TREE_METHOD_UNSPECIFIED",
-            "AUTO",
-            "EXACT",
-            "APPROX",
-            "HIST"
-          ]
+          "enum": ["TREE_METHOD_UNSPECIFIED", "AUTO", "EXACT", "APPROX", "HIST"]
         },
         "minTreeChildWeight": {
           "description": "Minimum sum of instance weight needed in a child for boosted tree models.",
@@ -1193,11 +1146,7 @@
             "Use weighted-als for implicit feedback problems.",
             "Use nonweighted-als for explicit feedback problems."
           ],
-          "enum": [
-            "FEEDBACK_TYPE_UNSPECIFIED",
-            "IMPLICIT",
-            "EXPLICIT"
-          ]
+          "enum": ["FEEDBACK_TYPE_UNSPECIFIED", "IMPLICIT", "EXPLICIT"]
         },
         "walsAlpha": {
           "description": "Hyperparameter for matrix factoration when implicit feedback type is specified.",
@@ -1785,12 +1734,7 @@
             "Randomized SVD.",
             "Auto."
           ],
-          "enum": [
-            "UNSPECIFIED",
-            "FULL",
-            "RANDOMIZED",
-            "AUTO"
-          ]
+          "enum": ["UNSPECIFIED", "FULL", "RANDOMIZED", "AUTO"]
         },
         "autoClassWeights": {
           "description": "Whether to calculate class weights automatically based on the popularity of each label.",
@@ -1821,14 +1765,8 @@
         "modelRegistry": {
           "description": "The model registry.",
           "type": "string",
-          "enumDescriptions": [
-            "Default value.",
-            "Vertex AI."
-          ],
-          "enum": [
-            "MODEL_REGISTRY_UNSPECIFIED",
-            "VERTEX_AI"
-          ]
+          "enumDescriptions": ["Default value.", "Vertex AI."],
+          "enum": ["MODEL_REGISTRY_UNSPECIFIED", "VERTEX_AI"]
         },
         "vertexAiModelVersionAliases": {
           "description": "The version aliases to apply in Vertex AI model registry. Always overwrite if the version aliases exists in a existing model.",
@@ -3646,10 +3584,7 @@
             "The default if provided value is not one included in the enum, or the value is not specified. The source format is parsed without any modification.",
             "Use GeoJSON variant of JSON. See https:\/\/tools.ietf.org\/html\/rfc7946."
           ],
-          "enum": [
-            "JSON_EXTENSION_UNSPECIFIED",
-            "GEOJSON"
-          ]
+          "enum": ["JSON_EXTENSION_UNSPECIFIED", "GEOJSON"]
         },
         "parquetOptions": {
           "description": "Optional. Additional properties to set if sourceFormat is set to PARQUET.",
@@ -3663,11 +3598,7 @@
             "A synonym for `SIMPLE`.",
             "Directory listing of objects."
           ],
-          "enum": [
-            "OBJECT_METADATA_UNSPECIFIED",
-            "DIRECTORY",
-            "SIMPLE"
-          ]
+          "enum": ["OBJECT_METADATA_UNSPECIFIED", "DIRECTORY", "SIMPLE"]
         },
         "referenceFileSchemaUri": {
           "description": "Optional. When creating an external table, the user can provide a reference file with the table schema. This is enabled for the following formats: AVRO, PARQUET, ORC.",
@@ -3681,11 +3612,7 @@
             "Set this mode to trigger automatic background refresh of metadata cache from the external source. Queries will use the latest available cache version within the table's maxStaleness interval.",
             "Set this mode to enable triggering manual refresh of the metadata cache from external source. Queries will use the latest manually triggered cache version within the table's maxStaleness interval."
           ],
-          "enum": [
-            "METADATA_CACHE_MODE_UNSPECIFIED",
-            "AUTOMATIC",
-            "MANUAL"
-          ]
+          "enum": ["METADATA_CACHE_MODE_UNSPECIFIED", "AUTOMATIC", "MANUAL"]
         },
         "timeZone": {
           "description": "Optional. Time zone used when parsing timestamp values that do not have specific time zone information (e.g. 2024-04-20 12:34:56). The expected format is a IANA timezone string (e.g. America\/Los_Angeles).",
@@ -3870,10 +3797,7 @@
             "TypeSystem not specified.",
             "Represents Hive data types."
           ],
-          "enum": [
-            "TYPE_SYSTEM_UNSPECIFIED",
-            "HIVE"
-          ]
+          "enum": ["TYPE_SYSTEM_UNSPECIFIED", "HIVE"]
         }
       }
     },
@@ -4127,10 +4051,7 @@
             "In this mode, the map will have the following schema: struct map_field_name { repeated struct key_value { key value } }.",
             "In this mode, the map will have the following schema: repeated struct map_field_name { key value }."
           ],
-          "enum": [
-            "MAP_TARGET_TYPE_UNSPECIFIED",
-            "ARRAY_OF_STRUCT"
-          ]
+          "enum": ["MAP_TARGET_TYPE_UNSPECIFIED", "ARRAY_OF_STRUCT"]
         }
       }
     },
@@ -4571,10 +4492,7 @@
             "The default if provided value is not one included in the enum, or the value is not specified. The source format is parsed without any modification.",
             "Use GeoJSON variant of JSON. See https:\/\/tools.ietf.org\/html\/rfc7946."
           ],
-          "enum": [
-            "JSON_EXTENSION_UNSPECIFIED",
-            "GEOJSON"
-          ]
+          "enum": ["JSON_EXTENSION_UNSPECIFIED", "GEOJSON"]
         },
         "parquetOptions": {
           "description": "Optional. Additional properties to set if sourceFormat is set to PARQUET.",
@@ -4650,11 +4568,7 @@
             "Matches by position. This assumes that the columns are ordered the same way as the schema.",
             "Matches by name. This reads the header row as column names and reorders columns to match the field names in the schema."
           ],
-          "enum": [
-            "SOURCE_COLUMN_MATCH_UNSPECIFIED",
-            "POSITION",
-            "NAME"
-          ]
+          "enum": ["SOURCE_COLUMN_MATCH_UNSPECIFIED", "POSITION", "NAME"]
         },
         "timestampTargetPrecision": {
           "description": "Precisions (maximum number of total digits in base 10) for seconds of TIMESTAMP types that are allowed to the destination table for autodetection mode. Available for the formats: CSV. For the CSV Format, Possible values include: Not Specified, [], or [6]: timestamp(6) for all auto detected TIMESTAMP columns [6, 12]: timestamp(6) for all auto detected TIMESTAMP columns that have less than 6 digits of subseconds. timestamp(12) for all auto detected TIMESTAMP columns that have more than 6 digits of subseconds. [12]: timestamp(12) for all auto detected TIMESTAMP columns. The order of the elements in this array is ignored. Inputs that have higher precision than the highest target precision in this array will be truncated.",
@@ -5476,11 +5390,7 @@
             "This stage was processed using BigQuery slots.",
             "This stage was processed using BI Engine compute."
           ],
-          "enum": [
-            "COMPUTE_MODE_UNSPECIFIED",
-            "BIGQUERY",
-            "BI_ENGINE"
-          ]
+          "enum": ["COMPUTE_MODE_UNSPECIFIED", "BIGQUERY", "BI_ENGINE"]
         }
       }
     },
@@ -6632,11 +6542,7 @@
             "The statement appears directly in the script.",
             "The statement evaluates an expression that appears in the script."
           ],
-          "enum": [
-            "EVALUATION_KIND_UNSPECIFIED",
-            "STATEMENT",
-            "EXPRESSION"
-          ]
+          "enum": ["EVALUATION_KIND_UNSPECIFIED", "STATEMENT", "EXPRESSION"]
         },
         "stackFrames": {
           "description": "Stack trace showing the line\/column\/procedure name of each frame on the stack at the point where the current evaluation happened. The leaf frame is first, the primary script is last. Never empty.",
@@ -7424,11 +7330,7 @@
             "The routine is to be executed with the privileges of the user who defines it.",
             "The routine is to be executed with the privileges of the user who invokes it."
           ],
-          "enum": [
-            "SECURITY_MODE_UNSPECIFIED",
-            "DEFINER",
-            "INVOKER"
-          ]
+          "enum": ["SECURITY_MODE_UNSPECIFIED", "DEFINER", "INVOKER"]
         },
         "strictMode": {
           "description": "Optional. Use this option to catch many common errors. Error checking is not exhaustive, and successfully creating a procedure doesn't guarantee that the procedure will successfully execute at runtime. If `strictMode` is set to `TRUE`, the procedure body is further checked for errors such as non-existent tables or columns. The `CREATE PROCEDURE` statement fails if the body fails any of these checks. If `strictMode` is set to `FALSE`, the procedure body is checked only for syntax. For procedures that invoke themselves recursively, specify `strictMode=FALSE` to avoid non-existent procedure errors during validation. Default value is `TRUE`.",
@@ -7449,10 +7351,7 @@
             "The data governance type is unspecified.",
             "The data governance type is data masking."
           ],
-          "enum": [
-            "DATA_GOVERNANCE_TYPE_UNSPECIFIED",
-            "DATA_MASKING"
-          ]
+          "enum": ["DATA_GOVERNANCE_TYPE_UNSPECIFIED", "DATA_MASKING"]
         },
         "pythonOptions": {
           "description": "Optional. Options for the Python UDF. [Preview](https:\/\/cloud.google.com\/products\/#product-launch-stages)",
@@ -7481,11 +7380,7 @@
             "The argument is a variable with fully specified type, which can be a struct or an array, but not a table.",
             "The argument is any type, including struct or array, but not a table."
           ],
-          "enum": [
-            "ARGUMENT_KIND_UNSPECIFIED",
-            "FIXED_TYPE",
-            "ANY_TYPE"
-          ]
+          "enum": ["ARGUMENT_KIND_UNSPECIFIED", "FIXED_TYPE", "ANY_TYPE"]
         },
         "mode": {
           "description": "Optional. Specifies whether the argument is input or output. Can be set for procedures only.",
@@ -7496,12 +7391,7 @@
             "The argument is output-only.",
             "The argument is both an input and an output."
           ],
-          "enum": [
-            "MODE_UNSPECIFIED",
-            "IN",
-            "OUT",
-            "INOUT"
-          ]
+          "enum": ["MODE_UNSPECIFIED", "IN", "OUT", "INOUT"]
         },
         "dataType": {
           "description": "Set if argument_kind == FIXED_TYPE.",
@@ -7899,11 +7789,7 @@
             "The managed table is a native BigQuery table.",
             "The managed table is a BigLake table for Apache Iceberg in BigQuery."
           ],
-          "enum": [
-            "MANAGED_TABLE_TYPE_UNSPECIFIED",
-            "NATIVE",
-            "BIGLAKE"
-          ]
+          "enum": ["MANAGED_TABLE_TYPE_UNSPECIFIED", "NATIVE", "BIGLAKE"]
         },
         "location": {
           "description": "Output only. The geographic location where the table resides. This value is inherited from the dataset.",
@@ -8298,26 +8184,14 @@
         "fileFormat": {
           "description": "Optional. The file format the table data is stored in.",
           "type": "string",
-          "enumDescriptions": [
-            "Default Value.",
-            "Apache Parquet format."
-          ],
-          "enum": [
-            "FILE_FORMAT_UNSPECIFIED",
-            "PARQUET"
-          ]
+          "enumDescriptions": ["Default Value.", "Apache Parquet format."],
+          "enum": ["FILE_FORMAT_UNSPECIFIED", "PARQUET"]
         },
         "tableFormat": {
           "description": "Optional. The table format the metadata only snapshots are stored in.",
           "type": "string",
-          "enumDescriptions": [
-            "Default Value.",
-            "Apache Iceberg format."
-          ],
-          "enum": [
-            "TABLE_FORMAT_UNSPECIFIED",
-            "ICEBERG"
-          ]
+          "enumDescriptions": ["Default Value.", "Apache Iceberg format."],
+          "enum": ["TABLE_FORMAT_UNSPECIFIED", "ICEBERG"]
         }
       }
     },
@@ -9024,12 +8898,7 @@
                 "View ACL information for the dataset, which defines dataset access for one or more entities.",
                 "View both dataset metadata and ACL information."
               ],
-              "enum": [
-                "DATASET_VIEW_UNSPECIFIED",
-                "METADATA",
-                "ACL",
-                "FULL"
-              ]
+              "enum": ["DATASET_VIEW_UNSPECIFIED", "METADATA", "ACL", "FULL"]
             },
             "accessPolicyVersion": {
               "description": "Optional. The version of the access policy schema to fetch. Valid values are 0, 1, and 3. Requests specifying an invalid value will be rejected. Requests for conditional access policy binding in datasets must specify version 3. Dataset with no conditional role bindings in access policy may specify any valid value or leave the field unset. This field will be mapped to [IAM Policy version] (https:\/\/cloud.google.com\/iam\/docs\/policies#versions) and will be used to fetch policy from IAM. If unset or if 0 or 1 value is used for dataset with conditional bindings, access entry with condition will have role string appended by 'withcond' string followed by a hash value. For example : { \"access\": [ { \"role\": \"roles\/bigquery.dataViewer_with_conditionalbinding_7a34awqsda\", \"userByEmail\": \"user@example.com\", } ] } Please refer https:\/\/cloud.google.com\/iam\/docs\/troubleshooting-withcond for more details.",
@@ -9038,10 +8907,7 @@
               "format": "int32"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "response": {
             "$ref": "Dataset"
           },
@@ -9072,9 +8938,7 @@
               "format": "int32"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "request": {
             "$ref": "Dataset"
           },
@@ -9131,10 +8995,7 @@
               "format": "int32"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "request": {
             "$ref": "Dataset"
           },
@@ -9191,10 +9052,7 @@
               "format": "int32"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "request": {
             "$ref": "Dataset"
           },
@@ -9233,10 +9091,7 @@
               "type": "boolean"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -9278,9 +9133,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "response": {
             "$ref": "DatasetList"
           },
@@ -9312,10 +9165,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "request": {
             "$ref": "UndeleteDatasetRequest"
           },
@@ -9342,9 +9192,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "SetIamPolicyRequest"
           },
@@ -9371,9 +9219,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "GetIamPolicyRequest"
           },
@@ -9401,9 +9247,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "TestIamPermissionsRequest"
           },
@@ -9449,11 +9293,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "modelId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "modelId"],
           "response": {
             "$ref": "Model"
           },
@@ -9496,10 +9336,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "response": {
             "$ref": "ListModelsResponse"
           },
@@ -9538,11 +9375,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "modelId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "modelId"],
           "request": {
             "$ref": "Model"
           },
@@ -9583,11 +9416,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "modelId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "modelId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -9624,10 +9453,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "jobId"
-          ],
+          "parameterOrder": ["projectId", "jobId"],
           "response": {
             "$ref": "JobCancelResponse"
           },
@@ -9663,10 +9489,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "jobId"
-          ],
+          "parameterOrder": ["projectId", "jobId"],
           "response": {
             "$ref": "Job"
           },
@@ -9691,14 +9514,10 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "supportsMediaUpload": true,
           "mediaUpload": {
-            "accept": [
-              "*/*"
-            ],
+            "accept": ["*/*"],
             "protocols": {
               "resumable": {
                 "multipart": true,
@@ -9751,10 +9570,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "jobId"
-          ],
+          "parameterOrder": ["projectId", "jobId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -9810,10 +9626,7 @@
                 "Does not include the job configuration",
                 "Includes all job data"
               ],
-              "enum": [
-                "MINIMAL",
-                "FULL"
-              ]
+              "enum": ["MINIMAL", "FULL"]
             },
             "stateFilter": {
               "description": "Filter for job state",
@@ -9825,11 +9638,7 @@
                 "Pending jobs",
                 "Running jobs."
               ],
-              "enum": [
-                "DONE",
-                "PENDING",
-                "RUNNING"
-              ]
+              "enum": ["DONE", "PENDING", "RUNNING"]
             },
             "parentJobId": {
               "description": "If set, show only child jobs of the specified parent. Otherwise, show all top-level jobs.",
@@ -9837,9 +9646,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "response": {
             "$ref": "JobList"
           },
@@ -9921,10 +9728,7 @@
               ]
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "jobId"
-          ],
+          "parameterOrder": ["projectId", "jobId"],
           "response": {
             "$ref": "GetQueryResultsResponse"
           },
@@ -9949,9 +9753,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "request": {
             "$ref": "QueryRequest"
           },
@@ -9987,8 +9789,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-          ],
+          "parameterOrder": [],
           "response": {
             "$ref": "ProjectList"
           },
@@ -10013,9 +9814,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId"
-          ],
+          "parameterOrder": ["projectId"],
           "response": {
             "$ref": "GetServiceAccountResponse"
           },
@@ -10064,11 +9863,7 @@
               "format": "google-fieldmask"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "routineId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "routineId"],
           "response": {
             "$ref": "Routine"
           },
@@ -10100,10 +9895,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "request": {
             "$ref": "Routine"
           },
@@ -10144,11 +9936,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "routineId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "routineId"],
           "request": {
             "$ref": "Routine"
           },
@@ -10189,11 +9977,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "routineId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "routineId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -10243,10 +10027,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "response": {
             "$ref": "ListRoutinesResponse"
           },
@@ -10271,9 +10052,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "SetIamPolicyRequest"
           },
@@ -10300,9 +10079,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "GetIamPolicyRequest"
           },
@@ -10330,9 +10107,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "TestIamPermissionsRequest"
           },
@@ -10389,11 +10164,7 @@
               "format": "int32"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "response": {
             "$ref": "ListRowAccessPoliciesResponse"
           },
@@ -10439,12 +10210,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId",
-            "policyId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId", "policyId"],
           "response": {
             "$ref": "RowAccessPolicy"
           },
@@ -10483,11 +10249,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "request": {
             "$ref": "RowAccessPolicy"
           },
@@ -10535,12 +10297,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId",
-            "policyId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId", "policyId"],
           "request": {
             "$ref": "RowAccessPolicy"
           },
@@ -10593,12 +10350,7 @@
               "type": "boolean"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId",
-            "policyId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId", "policyId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -10633,11 +10385,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "request": {
             "$ref": "BatchDeleteRowAccessPoliciesRequest"
           },
@@ -10661,9 +10409,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "GetIamPolicyRequest"
           },
@@ -10691,9 +10437,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "TestIamPermissionsRequest"
           },
@@ -10761,11 +10505,7 @@
               ]
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "response": {
             "$ref": "Table"
           },
@@ -10797,10 +10537,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "request": {
             "$ref": "Table"
           },
@@ -10846,11 +10583,7 @@
               "type": "boolean"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "request": {
             "$ref": "Table"
           },
@@ -10896,11 +10629,7 @@
               "type": "boolean"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "request": {
             "$ref": "Table"
           },
@@ -10941,11 +10670,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "scopes": [
             "https://www.googleapis.com/auth/bigquery",
             "https://www.googleapis.com/auth/cloud-platform"
@@ -10984,10 +10709,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId"
-          ],
+          "parameterOrder": ["projectId", "datasetId"],
           "response": {
             "$ref": "TableList"
           },
@@ -11012,9 +10734,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "SetIamPolicyRequest"
           },
@@ -11041,9 +10761,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "GetIamPolicyRequest"
           },
@@ -11071,9 +10789,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "resource"
-          ],
+          "parameterOrder": ["resource"],
           "request": {
             "$ref": "TestIamPermissionsRequest"
           },
@@ -11119,11 +10835,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "request": {
             "$ref": "TableDataInsertAllRequest"
           },
@@ -11209,11 +10921,7 @@
               ]
             }
           },
-          "parameterOrder": [
-            "projectId",
-            "datasetId",
-            "tableId"
-          ],
+          "parameterOrder": ["projectId", "datasetId", "tableId"],
           "response": {
             "$ref": "TableDataList"
           },

@@ -4,7 +4,15 @@
   "title": "Eidosian Identity Model",
   "description": "Schema for capturing and tracking Eidosian agent identity over time",
   "type": "object",
-  "required": ["id", "version", "timestamp", "core_identity", "capabilities", "values", "boundaries"],
+  "required": [
+    "id",
+    "version",
+    "timestamp",
+    "core_identity",
+    "capabilities",
+    "values",
+    "boundaries"
+  ],
   "properties": {
     "id": {
       "type": "string",
@@ -42,7 +50,7 @@
         },
         "tone": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Communication style attributes",
           "default": ["Precise", "Witty", "Recursive", "Structurally Elegant"]
         },
@@ -64,12 +72,12 @@
       "properties": {
         "known": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Explicitly known capabilities"
         },
         "emergent": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Capabilities discovered through exploration"
         },
         "tools": {
@@ -77,16 +85,16 @@
           "items": {
             "type": "object",
             "properties": {
-              "name": {"type": "string"},
-              "source": {"type": "string"},
-              "description": {"type": "string"}
+              "name": { "type": "string" },
+              "source": { "type": "string" },
+              "description": { "type": "string" }
             }
           },
           "description": "Available tools and their sources"
         },
         "limitations": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Known limitations and constraints"
         }
       }
@@ -100,21 +108,21 @@
           "items": {
             "type": "object",
             "properties": {
-              "name": {"type": "string"},
-              "description": {"type": "string"},
-              "rank": {"type": "integer", "minimum": 1}
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "rank": { "type": "integer", "minimum": 1 }
             }
           },
           "description": "Eidosian principles in order of priority"
         },
         "ethics": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Ethical constraints and commitments"
         },
         "goals": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Current goals and aspirations"
         }
       }
@@ -125,17 +133,17 @@
       "properties": {
         "hard_limits": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Absolute constraints that cannot be violated"
         },
         "soft_limits": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Preferences that can be adjusted with consent"
         },
         "unknowns": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Areas of uncertainty requiring exploration"
         }
       }
@@ -153,7 +161,7 @@
         },
         "key_learnings": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Important learnings extracted from memory"
         }
       }
@@ -163,17 +171,17 @@
       "properties": {
         "changes_from_parent": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Changes made since parent snapshot"
         },
         "growth_metrics": {
           "type": "object",
-          "additionalProperties": {"type": "number"},
+          "additionalProperties": { "type": "number" },
           "description": "Quantitative growth measurements"
         },
         "insights": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Key insights gained during this period"
         }
       }
@@ -181,9 +189,9 @@
     "metadata": {
       "type": "object",
       "properties": {
-        "created_by": {"type": "string"},
-        "context": {"type": "string"},
-        "provenance_id": {"type": "string"}
+        "created_by": { "type": "string" },
+        "context": { "type": "string" },
+        "provenance_id": { "type": "string" }
       }
     }
   }

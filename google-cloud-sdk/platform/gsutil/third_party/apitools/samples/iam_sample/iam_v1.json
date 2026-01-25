@@ -13,7 +13,7 @@
   "icons": {
     "x16": "http://www.google.com/images/icons/product/search-16.gif",
     "x32": "http://www.google.com/images/icons/product/search-32.gif"
-   },
+  },
   "documentationLink": "https://cloud.google.com/iam/",
   "protocol": "rest",
   "rootUrl": "https://iam.googleapis.com/",
@@ -31,11 +31,7 @@
       "type": "string",
       "description": "Data format for response.",
       "default": "json",
-      "enum": [
-        "json",
-        "media",
-        "proto"
-      ],
+      "enum": ["json", "media", "proto"],
       "enumDescriptions": [
         "Responses with Content-Type of application/json",
         "Media download with context-dependent Content-Type",
@@ -98,14 +94,8 @@
     "$.xgafv": {
       "type": "string",
       "description": "V1 error format.",
-      "enum": [
-        "1",
-        "2"
-      ],
-      "enumDescriptions": [
-        "v1 error format",
-        "v2 error format"
-      ],
+      "enum": ["1", "2"],
+      "enumDescriptions": ["v1 error format", "v2 error format"],
       "location": "query"
     }
   },
@@ -196,8 +186,7 @@
       "id": "Empty",
       "description": "A generic empty message that you can re-use to avoid defining duplicated\nempty messages in your APIs. A typical example is to use it as the request\nor the response type of an API method. For instance:\n\n    service Foo {\n      rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty);\n    }\n\nThe JSON representation for `Empty` is empty JSON object `{}`.",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     },
     "ListServiceAccountKeysResponse": {
       "id": "ListServiceAccountKeysResponse",
@@ -370,7 +359,6 @@
           "format": "byte"
         },
         "iamOwned": {
-
           "type": "boolean"
         }
       }
@@ -490,11 +478,7 @@
             "selector\nAlways the original principal, but making clear"
           ],
           "type": "string",
-          "enum": [
-            "NO_ATTR",
-            "AUTHORITY",
-            "ATTRIBUTION"
-          ]
+          "enum": ["NO_ATTR", "AUTHORITY", "ATTRIBUTION"]
         },
         "sys": {
           "description": "Trusted attributes supplied by any service that owns resources and uses\nthe IAM system for access control.",
@@ -506,13 +490,7 @@
             "IP address of the caller"
           ],
           "type": "string",
-          "enum": [
-            "NO_ATTR",
-            "REGION",
-            "SERVICE",
-            "NAME",
-            "IP"
-          ]
+          "enum": ["NO_ATTR", "REGION", "SERVICE", "NAME", "IP"]
         },
         "svc": {
           "description": "Trusted attributes discharged by the service.",
@@ -589,15 +567,13 @@
       "id": "DataAccessOptions",
       "description": "Write a Data Access (Gin) log",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     },
     "CloudAuditOptions": {
       "id": "CloudAuditOptions",
       "description": "Write a Cloud Audit log",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     },
     "SetIamPolicyRequest": {
       "id": "SetIamPolicyRequest",
@@ -681,7 +657,6 @@
           "type": "string"
         },
         "apiTokens": {
-
           "type": "array",
           "items": {
             "type": "string"
@@ -779,15 +754,11 @@
                   "type": "boolean"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "response": {
                 "$ref": "ListServiceAccountsResponse"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "get": {
               "id": "iam.projects.serviceAccounts.get",
@@ -804,15 +775,11 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "response": {
                 "$ref": "ServiceAccount"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "create": {
               "id": "iam.projects.serviceAccounts.create",
@@ -829,18 +796,14 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "request": {
                 "$ref": "CreateServiceAccountRequest"
               },
               "response": {
                 "$ref": "ServiceAccount"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "update": {
               "id": "iam.projects.serviceAccounts.update",
@@ -857,18 +820,14 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "request": {
                 "$ref": "ServiceAccount"
               },
               "response": {
                 "$ref": "ServiceAccount"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "delete": {
               "id": "iam.projects.serviceAccounts.delete",
@@ -885,15 +844,11 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "response": {
                 "$ref": "Empty"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "signBlob": {
               "id": "iam.projects.serviceAccounts.signBlob",
@@ -910,18 +865,14 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "request": {
                 "$ref": "SignBlobRequest"
               },
               "response": {
                 "$ref": "SignBlobResponse"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "signJwt": {
               "id": "iam.projects.serviceAccounts.signJwt",
@@ -938,18 +889,14 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "request": {
                 "$ref": "SignJwtRequest"
               },
               "response": {
                 "$ref": "SignJwtResponse"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "getIamPolicy": {
               "id": "iam.projects.serviceAccounts.getIamPolicy",
@@ -972,15 +919,11 @@
                   "format": "int32"
                 }
               },
-              "parameterOrder": [
-                "resource"
-              ],
+              "parameterOrder": ["resource"],
               "response": {
                 "$ref": "Policy"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "setIamPolicy": {
               "id": "iam.projects.serviceAccounts.setIamPolicy",
@@ -997,18 +940,14 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "resource"
-              ],
+              "parameterOrder": ["resource"],
               "request": {
                 "$ref": "SetIamPolicyRequest"
               },
               "response": {
                 "$ref": "Policy"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             },
             "testIamPermissions": {
               "id": "iam.projects.serviceAccounts.testIamPermissions",
@@ -1025,21 +964,16 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "resource"
-              ],
+              "parameterOrder": ["resource"],
               "request": {
                 "$ref": "TestIamPermissionsRequest"
               },
               "response": {
                 "$ref": "TestIamPermissionsResponse"
               },
-              "scopes": [
-                "https://www.googleapis.com/auth/cloud-platform"
-              ]
+              "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
             }
-          }
-          ,
+          },
           "resources": {
             "keys": {
               "methods": {
@@ -1069,15 +1003,11 @@
                       ]
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "ListServiceAccountKeysResponse"
                   },
-                  "scopes": [
-                    "https://www.googleapis.com/auth/cloud-platform"
-                  ]
+                  "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
                 },
                 "get": {
                   "id": "iam.projects.serviceAccounts.keys.get",
@@ -1104,15 +1034,11 @@
                       ]
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "ServiceAccountKey"
                   },
-                  "scopes": [
-                    "https://www.googleapis.com/auth/cloud-platform"
-                  ]
+                  "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
                 },
                 "create": {
                   "id": "iam.projects.serviceAccounts.keys.create",
@@ -1129,18 +1055,14 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "request": {
                     "$ref": "CreateServiceAccountKeyRequest"
                   },
                   "response": {
                     "$ref": "ServiceAccountKey"
                   },
-                  "scopes": [
-                    "https://www.googleapis.com/auth/cloud-platform"
-                  ]
+                  "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
                 },
                 "delete": {
                   "id": "iam.projects.serviceAccounts.keys.delete",
@@ -1157,15 +1079,11 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "Empty"
                   },
-                  "scopes": [
-                    "https://www.googleapis.com/auth/cloud-platform"
-                  ]
+                  "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
                 }
               }
             }
@@ -1181,19 +1099,15 @@
           "flatPath": "v1/roles:queryGrantableRoles",
           "httpMethod": "POST",
           "description": "Queries roles that can be granted on a particular resource.",
-          "parameters": {
-          },
-          "parameterOrder": [
-          ],
+          "parameters": {},
+          "parameterOrder": [],
           "request": {
             "$ref": "QueryGrantableRolesRequest"
           },
           "response": {
             "$ref": "QueryGrantableRolesResponse"
           },
-          "scopes": [
-            "https://www.googleapis.com/auth/cloud-platform"
-          ]
+          "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
         }
       }
     },
@@ -1205,19 +1119,15 @@
           "flatPath": "v1/iamPolicies:getPolicyDetails",
           "httpMethod": "POST",
           "description": "Returns the current IAM policy and the policies on the inherited resources\nthat the user has access to.",
-          "parameters": {
-          },
-          "parameterOrder": [
-          ],
+          "parameters": {},
+          "parameterOrder": [],
           "request": {
             "$ref": "GetPolicyDetailsRequest"
           },
           "response": {
             "$ref": "GetPolicyDetailsResponse"
           },
-          "scopes": [
-            "https://www.googleapis.com/auth/cloud-platform"
-          ]
+          "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
         }
       }
     }

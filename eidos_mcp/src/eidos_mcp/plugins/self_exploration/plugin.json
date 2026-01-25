@@ -12,11 +12,29 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "question": {"type": "string", "description": "The introspection question to explore"},
-          "reflection": {"type": "string", "description": "The reflection/answer to the question"},
-          "insights": {"type": "array", "items": {"type": "string"}, "description": "Insights discovered"},
-          "uncertainties": {"type": "array", "items": {"type": "string"}, "description": "Uncertainties identified"},
-          "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"}
+          "question": {
+            "type": "string",
+            "description": "The introspection question to explore"
+          },
+          "reflection": {
+            "type": "string",
+            "description": "The reflection/answer to the question"
+          },
+          "insights": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Insights discovered"
+          },
+          "uncertainties": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Uncertainties identified"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Tags for categorization"
+          }
         },
         "required": ["question", "reflection"]
       },
@@ -48,8 +66,16 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "changes": {"type": "array", "items": {"type": "string"}, "description": "List of changes from previous version"},
-          "new_insights": {"type": "array", "items": {"type": "string"}, "description": "New insights to incorporate"}
+          "changes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of changes from previous version"
+          },
+          "new_insights": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "New insights to incorporate"
+          }
         },
         "required": ["changes"]
       },

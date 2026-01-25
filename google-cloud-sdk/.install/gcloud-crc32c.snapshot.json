@@ -20,16 +20,8 @@
       "is_hidden": false,
       "is_required": false,
       "platform": {
-        "architectures": [
-          "arm",
-          "x86",
-          "x86_64"
-        ],
-        "operating_systems": [
-          "LINUX",
-          "MACOSX",
-          "WINDOWS"
-        ]
+        "architectures": ["arm", "x86", "x86_64"],
+        "operating_systems": ["LINUX", "MACOSX", "WINDOWS"]
       },
       "platform_required": false,
       "version": {

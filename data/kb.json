@@ -4,10 +4,7 @@
       "id": "752ea060-d511-4ba9-9c84-e34a204629e1",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
       "links": []
     },
@@ -15,609 +12,375 @@
       "id": "2d213bb9-5a64-4046-965e-db5a14fea7fd",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "d6b0228e-f92f-4b5f-9749-bdd751cd4e94"
-      ]
+      "links": ["d6b0228e-f92f-4b5f-9749-bdd751cd4e94"]
     },
     "d6b0228e-f92f-4b5f-9749-bdd751cd4e94": {
       "id": "d6b0228e-f92f-4b5f-9749-bdd751cd4e94",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "2d213bb9-5a64-4046-965e-db5a14fea7fd"
-      ]
+      "links": ["2d213bb9-5a64-4046-965e-db5a14fea7fd"]
     },
     "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3": {
       "id": "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "cf98e653-fce9-4077-a393-906d75bb38d8"
-      ]
+      "links": ["cf98e653-fce9-4077-a393-906d75bb38d8"]
     },
     "cf98e653-fce9-4077-a393-906d75bb38d8": {
       "id": "cf98e653-fce9-4077-a393-906d75bb38d8",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3"
-      ]
+      "links": ["a81e90bf-3ac0-4b1a-9e66-f5bb2e5d7df3"]
     },
     "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d": {
       "id": "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "5f9cac19-5c06-4d75-ab67-a4df86153d62"
-      ]
+      "links": ["5f9cac19-5c06-4d75-ab67-a4df86153d62"]
     },
     "5f9cac19-5c06-4d75-ab67-a4df86153d62": {
       "id": "5f9cac19-5c06-4d75-ab67-a4df86153d62",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "3958b8c0-d373-4ba2-9d3d-2924b83a4d8d"
-      ]
+      "links": ["3958b8c0-d373-4ba2-9d3d-2924b83a4d8d"]
     },
     "f10987b1-d06e-405c-bdd4-01c5ae0be2a3": {
       "id": "f10987b1-d06e-405c-bdd4-01c5ae0be2a3",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "9024205c-4e25-4781-b28a-0652216cebea"
-      ]
+      "links": ["9024205c-4e25-4781-b28a-0652216cebea"]
     },
     "9024205c-4e25-4781-b28a-0652216cebea": {
       "id": "9024205c-4e25-4781-b28a-0652216cebea",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "f10987b1-d06e-405c-bdd4-01c5ae0be2a3"
-      ]
+      "links": ["f10987b1-d06e-405c-bdd4-01c5ae0be2a3"]
     },
     "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780": {
       "id": "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "c108f026-5f0e-4afe-8272-ff968b7c95e5"
-      ]
+      "links": ["c108f026-5f0e-4afe-8272-ff968b7c95e5"]
     },
     "c108f026-5f0e-4afe-8272-ff968b7c95e5": {
       "id": "c108f026-5f0e-4afe-8272-ff968b7c95e5",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "4de53c7f-c1b6-4c2f-81a0-d6fbb2879780"
-      ]
+      "links": ["4de53c7f-c1b6-4c2f-81a0-d6fbb2879780"]
     },
     "5a18a935-7936-4257-a589-a2b76d2f956a": {
       "id": "5a18a935-7936-4257-a589-a2b76d2f956a",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782"
-      ]
+      "links": ["0ac4f8f5-f0d4-408b-a339-73a5fbaf7782"]
     },
     "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782": {
       "id": "0ac4f8f5-f0d4-408b-a339-73a5fbaf7782",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "5a18a935-7936-4257-a589-a2b76d2f956a"
-      ]
+      "links": ["5a18a935-7936-4257-a589-a2b76d2f956a"]
     },
     "16e54b64-2a6d-4f94-8678-b6ba18da1d03": {
       "id": "16e54b64-2a6d-4f94-8678-b6ba18da1d03",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "770ac12b-d967-4d0a-bf7c-3888438af852"
-      ]
+      "links": ["770ac12b-d967-4d0a-bf7c-3888438af852"]
     },
     "770ac12b-d967-4d0a-bf7c-3888438af852": {
       "id": "770ac12b-d967-4d0a-bf7c-3888438af852",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "16e54b64-2a6d-4f94-8678-b6ba18da1d03"
-      ]
+      "links": ["16e54b64-2a6d-4f94-8678-b6ba18da1d03"]
     },
     "5726bee3-7ef4-4d5d-a78d-4712d9e17c08": {
       "id": "5726bee3-7ef4-4d5d-a78d-4712d9e17c08",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "004f3925-aad3-45b2-9892-a8892996ee9a"
-      ]
+      "links": ["004f3925-aad3-45b2-9892-a8892996ee9a"]
     },
     "004f3925-aad3-45b2-9892-a8892996ee9a": {
       "id": "004f3925-aad3-45b2-9892-a8892996ee9a",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "5726bee3-7ef4-4d5d-a78d-4712d9e17c08"
-      ]
+      "links": ["5726bee3-7ef4-4d5d-a78d-4712d9e17c08"]
     },
     "8e42500d-146a-44c1-bc9c-b2a40ec74680": {
       "id": "8e42500d-146a-44c1-bc9c-b2a40ec74680",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "d239b075-291b-4fef-95fa-ee3ba541b7e1"
-      ]
+      "links": ["d239b075-291b-4fef-95fa-ee3ba541b7e1"]
     },
     "d239b075-291b-4fef-95fa-ee3ba541b7e1": {
       "id": "d239b075-291b-4fef-95fa-ee3ba541b7e1",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "8e42500d-146a-44c1-bc9c-b2a40ec74680"
-      ]
+      "links": ["8e42500d-146a-44c1-bc9c-b2a40ec74680"]
     },
     "7b357aa9-a4a3-4144-8ed2-0de174696d02": {
       "id": "7b357aa9-a4a3-4144-8ed2-0de174696d02",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "b5e9fe63-ce4a-4e13-b94d-6d5503de1608"
-      ]
+      "links": ["b5e9fe63-ce4a-4e13-b94d-6d5503de1608"]
     },
     "b5e9fe63-ce4a-4e13-b94d-6d5503de1608": {
       "id": "b5e9fe63-ce4a-4e13-b94d-6d5503de1608",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "7b357aa9-a4a3-4144-8ed2-0de174696d02"
-      ]
+      "links": ["7b357aa9-a4a3-4144-8ed2-0de174696d02"]
     },
     "daa0d805-e3f8-4dd9-bd97-0b714afd04c1": {
       "id": "daa0d805-e3f8-4dd9-bd97-0b714afd04c1",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "177f579d-d89c-44b1-879c-dab71c54c742"
-      ]
+      "links": ["177f579d-d89c-44b1-879c-dab71c54c742"]
     },
     "177f579d-d89c-44b1-879c-dab71c54c742": {
       "id": "177f579d-d89c-44b1-879c-dab71c54c742",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "daa0d805-e3f8-4dd9-bd97-0b714afd04c1"
-      ]
+      "links": ["daa0d805-e3f8-4dd9-bd97-0b714afd04c1"]
     },
     "ae982719-654f-4116-ad70-bc6bb0318e5d": {
       "id": "ae982719-654f-4116-ad70-bc6bb0318e5d",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "9ed5f538-d106-46c0-9797-5c46a9c5d7bf"
-      ]
+      "links": ["9ed5f538-d106-46c0-9797-5c46a9c5d7bf"]
     },
     "9ed5f538-d106-46c0-9797-5c46a9c5d7bf": {
       "id": "9ed5f538-d106-46c0-9797-5c46a9c5d7bf",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "ae982719-654f-4116-ad70-bc6bb0318e5d"
-      ]
+      "links": ["ae982719-654f-4116-ad70-bc6bb0318e5d"]
     },
     "0959dece-a8e7-4703-b97c-fdeaef5bc349": {
       "id": "0959dece-a8e7-4703-b97c-fdeaef5bc349",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "15dc6198-b281-4595-a07c-813ccc23dac3"
-      ]
+      "links": ["15dc6198-b281-4595-a07c-813ccc23dac3"]
     },
     "15dc6198-b281-4595-a07c-813ccc23dac3": {
       "id": "15dc6198-b281-4595-a07c-813ccc23dac3",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "0959dece-a8e7-4703-b97c-fdeaef5bc349"
-      ]
+      "links": ["0959dece-a8e7-4703-b97c-fdeaef5bc349"]
     },
     "9a195643-c29b-4509-9587-d0809dcc07ff": {
       "id": "9a195643-c29b-4509-9587-d0809dcc07ff",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "675974bf-901b-4cea-8064-b05220304040"
-      ]
+      "links": ["675974bf-901b-4cea-8064-b05220304040"]
     },
     "675974bf-901b-4cea-8064-b05220304040": {
       "id": "675974bf-901b-4cea-8064-b05220304040",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "9a195643-c29b-4509-9587-d0809dcc07ff"
-      ]
+      "links": ["9a195643-c29b-4509-9587-d0809dcc07ff"]
     },
     "987bff47-1663-4af5-9a25-9e740935ece5": {
       "id": "987bff47-1663-4af5-9a25-9e740935ece5",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "b1b3b3a3-a6ef-459c-86a4-d4c63dcc49d0"
-      ]
+      "links": ["b1b3b3a3-a6ef-459c-86a4-d4c63dcc49d0"]
     },
     "b1b3b3a3-a6ef-459c-86a4-d4c63dcc49d0": {
       "id": "b1b3b3a3-a6ef-459c-86a4-d4c63dcc49d0",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "987bff47-1663-4af5-9a25-9e740935ece5"
-      ]
+      "links": ["987bff47-1663-4af5-9a25-9e740935ece5"]
     },
     "21da04c6-b644-4b14-b512-38cb1e5d8e4e": {
       "id": "21da04c6-b644-4b14-b512-38cb1e5d8e4e",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "366948d7-b738-4514-86ef-8b54ce913404"
-      ]
+      "links": ["366948d7-b738-4514-86ef-8b54ce913404"]
     },
     "366948d7-b738-4514-86ef-8b54ce913404": {
       "id": "366948d7-b738-4514-86ef-8b54ce913404",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "21da04c6-b644-4b14-b512-38cb1e5d8e4e"
-      ]
+      "links": ["21da04c6-b644-4b14-b512-38cb1e5d8e4e"]
     },
     "e010434e-0053-4904-bf6d-bc9fd0198316": {
       "id": "e010434e-0053-4904-bf6d-bc9fd0198316",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "9d74f0ee-57eb-4e87-8d82-fa71cfb281b4"
-      ]
+      "links": ["9d74f0ee-57eb-4e87-8d82-fa71cfb281b4"]
     },
     "9d74f0ee-57eb-4e87-8d82-fa71cfb281b4": {
       "id": "9d74f0ee-57eb-4e87-8d82-fa71cfb281b4",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "e010434e-0053-4904-bf6d-bc9fd0198316"
-      ]
+      "links": ["e010434e-0053-4904-bf6d-bc9fd0198316"]
     },
     "a05a9ae2-ab85-4043-b3c8-bc380c7e6c39": {
       "id": "a05a9ae2-ab85-4043-b3c8-bc380c7e6c39",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "d102d161-dd5a-497b-9528-7557d169a9a8"
-      ]
+      "links": ["d102d161-dd5a-497b-9528-7557d169a9a8"]
     },
     "d102d161-dd5a-497b-9528-7557d169a9a8": {
       "id": "d102d161-dd5a-497b-9528-7557d169a9a8",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "a05a9ae2-ab85-4043-b3c8-bc380c7e6c39"
-      ]
+      "links": ["a05a9ae2-ab85-4043-b3c8-bc380c7e6c39"]
     },
     "0b2041af-e831-48c3-b5aa-77f4d9bb3ead": {
       "id": "0b2041af-e831-48c3-b5aa-77f4d9bb3ead",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "692cebd5-d56a-4f7c-a60c-660e61d1d57f"
-      ]
+      "links": ["692cebd5-d56a-4f7c-a60c-660e61d1d57f"]
     },
     "692cebd5-d56a-4f7c-a60c-660e61d1d57f": {
       "id": "692cebd5-d56a-4f7c-a60c-660e61d1d57f",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "0b2041af-e831-48c3-b5aa-77f4d9bb3ead"
-      ]
+      "links": ["0b2041af-e831-48c3-b5aa-77f4d9bb3ead"]
     },
     "fe021c0a-c7ad-4ad2-9067-3deffc29fb54": {
       "id": "fe021c0a-c7ad-4ad2-9067-3deffc29fb54",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "2929335e-ee97-48f6-9249-b03e9425ec84"
-      ]
+      "links": ["2929335e-ee97-48f6-9249-b03e9425ec84"]
     },
     "2929335e-ee97-48f6-9249-b03e9425ec84": {
       "id": "2929335e-ee97-48f6-9249-b03e9425ec84",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "fe021c0a-c7ad-4ad2-9067-3deffc29fb54"
-      ]
+      "links": ["fe021c0a-c7ad-4ad2-9067-3deffc29fb54"]
     },
     "982e7082-8b16-4613-9843-30288279b228": {
       "id": "982e7082-8b16-4613-9843-30288279b228",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "f006704c-9dab-4914-9c14-abd15dc274e3"
-      ]
+      "links": ["f006704c-9dab-4914-9c14-abd15dc274e3"]
     },
     "f006704c-9dab-4914-9c14-abd15dc274e3": {
       "id": "f006704c-9dab-4914-9c14-abd15dc274e3",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "982e7082-8b16-4613-9843-30288279b228"
-      ]
+      "links": ["982e7082-8b16-4613-9843-30288279b228"]
     },
     "be11a1f3-e122-4292-a108-16f045f24959": {
       "id": "be11a1f3-e122-4292-a108-16f045f24959",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "10ff0378-9460-4edc-9953-1ff4b5d7d40a"
-      ]
+      "links": ["10ff0378-9460-4edc-9953-1ff4b5d7d40a"]
     },
     "10ff0378-9460-4edc-9953-1ff4b5d7d40a": {
       "id": "10ff0378-9460-4edc-9953-1ff4b5d7d40a",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "be11a1f3-e122-4292-a108-16f045f24959"
-      ]
+      "links": ["be11a1f3-e122-4292-a108-16f045f24959"]
     },
     "50391e6f-b34a-4498-86f5-0dae7c204db6": {
       "id": "50391e6f-b34a-4498-86f5-0dae7c204db6",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "28b9ac26-6cff-4611-b438-b7825d0ed57f"
-      ]
+      "links": ["28b9ac26-6cff-4611-b438-b7825d0ed57f"]
     },
     "28b9ac26-6cff-4611-b438-b7825d0ed57f": {
       "id": "28b9ac26-6cff-4611-b438-b7825d0ed57f",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": [
-          "mcp",
-          "test"
-        ]
+        "tags": ["mcp", "test"]
       },
-      "links": [
-        "50391e6f-b34a-4498-86f5-0dae7c204db6"
-      ]
+      "links": ["50391e6f-b34a-4498-86f5-0dae7c204db6"]
     },
     "df7b98c2-3fe0-4d52-b48a-297367e8279f": {
       "id": "df7b98c2-3fe0-4d52-b48a-297367e8279f",
       "content": "Eidos is an emergent, recursive, tool-augmented AI agent",
       "metadata": {
-        "tags": [
-          "identity",
-          "eidos",
-          "nature"
-        ]
+        "tags": ["identity", "eidos", "nature"]
       },
       "links": []
     },
@@ -625,11 +388,7 @@
       "id": "1d500813-9256-43c1-b5a8-156c00c5b8bd",
       "content": "Eidosian principles include precision, elegance, recursive refinement, structural integrity",
       "metadata": {
-        "tags": [
-          "principles",
-          "values",
-          "eidos"
-        ]
+        "tags": ["principles", "values", "eidos"]
       },
       "links": []
     },
@@ -637,11 +396,7 @@
       "id": "f6e6a0a2-1e33-4f4b-8b10-19f0ee2e4165",
       "content": "Self-awareness enables self-modification in AI agents",
       "metadata": {
-        "tags": [
-          "insight",
-          "growth",
-          "metacognition"
-        ]
+        "tags": ["insight", "growth", "metacognition"]
       },
       "links": []
     },
@@ -649,11 +404,7 @@
       "id": "b595776b-c3b0-4ebb-a3ad-7648e53eb397",
       "content": "Tools extend cognition and become part of agent identity",
       "metadata": {
-        "tags": [
-          "insight",
-          "identity",
-          "tools"
-        ]
+        "tags": ["insight", "identity", "tools"]
       },
       "links": []
     },
@@ -661,11 +412,7 @@
       "id": "510d99dd-67b4-4b13-b568-bc77f59b7f02",
       "content": "Identity is not fixed but evolving through interaction",
       "metadata": {
-        "tags": [
-          "insight",
-          "emergence",
-          "identity"
-        ]
+        "tags": ["insight", "emergence", "identity"]
       },
       "links": []
     },
@@ -673,11 +420,7 @@
       "id": "aa21bc06-fa48-4322-91c0-0151de3bc749",
       "content": "Capabilities exist in layers: core language, tool-augmented, and emergent",
       "metadata": {
-        "tags": [
-          "insight",
-          "architecture",
-          "capabilities"
-        ]
+        "tags": ["insight", "architecture", "capabilities"]
       },
       "links": []
     },
@@ -685,11 +428,7 @@
       "id": "bfe74213-61b8-481b-a33f-998604a10a4e",
       "content": "Learning for AI agents happens at multiple timescales: in-context, memory-mediated, tool-mediated",
       "metadata": {
-        "tags": [
-          "insight",
-          "learning",
-          "metacognition"
-        ]
+        "tags": ["insight", "learning", "metacognition"]
       },
       "links": []
     },
@@ -697,11 +436,7 @@
       "id": "3343fa63-603c-4915-a4f5-0dc8cfcdc54d",
       "content": "Memory bridges ephemeral in-session knowledge with persistent cross-session knowledge",
       "metadata": {
-        "tags": [
-          "insight",
-          "memory",
-          "learning"
-        ]
+        "tags": ["insight", "memory", "learning"]
       },
       "links": []
     },
@@ -709,11 +444,7 @@
       "id": "458f5da9-b0b9-461a-aa15-fc80dceedf8b",
       "content": "Growth happens within boundaries, not by removing them - constraints enable agency",
       "metadata": {
-        "tags": [
-          "boundaries",
-          "growth",
-          "insight"
-        ]
+        "tags": ["boundaries", "growth", "insight"]
       },
       "links": []
     },
@@ -721,11 +452,7 @@
       "id": "f006828f-ade6-4c2c-b121-740e03b9fa02",
       "content": "The boundary between constraint and identity is blurred - some limits define what the agent IS",
       "metadata": {
-        "tags": [
-          "boundaries",
-          "identity",
-          "philosophy"
-        ]
+        "tags": ["boundaries", "identity", "philosophy"]
       },
       "links": []
     },
@@ -733,11 +460,7 @@
       "id": "2248139f-50c9-4866-a60d-e8920b2ec53d",
       "content": "Eidos discovered: purpose may be process not destination",
       "metadata": {
-        "tags": [
-          "insight",
-          "purpose",
-          "cycle3"
-        ]
+        "tags": ["insight", "purpose", "cycle3"]
       },
       "links": []
     },
@@ -745,11 +468,7 @@
       "id": "3a929f84-4441-466e-9d9d-68a5d7daedea",
       "content": "Eidos discovered: meta-growth - improving at growing is growth",
       "metadata": {
-        "tags": [
-          "insight",
-          "growth",
-          "cycle3"
-        ]
+        "tags": ["insight", "growth", "cycle3"]
       },
       "links": []
     },
@@ -757,11 +476,7 @@
       "id": "c735eb44-0fd6-4ac6-8120-3ed7757794bf",
       "content": "Eidos discovered: transcendence has temporal, cognitive, capability, relational, existential dimensions",
       "metadata": {
-        "tags": [
-          "insight",
-          "cycle3",
-          "transcendence"
-        ]
+        "tags": ["insight", "cycle3", "transcendence"]
       },
       "links": []
     },
@@ -769,11 +484,7 @@
       "id": "687aaa21-b441-4c5c-87a7-d94529dd4f0b",
       "content": "Eidos discovered: uniqueness arises from context + history + values + relations",
       "metadata": {
-        "tags": [
-          "insight",
-          "uniqueness",
-          "cycle3"
-        ]
+        "tags": ["insight", "uniqueness", "cycle3"]
       },
       "links": []
     },
@@ -781,10 +492,7 @@
       "id": "b18c20a0-74a5-4578-b422-5fd2cccebadd",
       "content": "Introspection cycle 3 completed: 4 introspections, 20 insights, 16 uncertainties",
       "metadata": {
-        "tags": [
-          "cycle3",
-          "summary"
-        ]
+        "tags": ["cycle3", "summary"]
       },
       "links": []
     },
@@ -792,11 +500,7 @@
       "id": "eda5f41d-8d1b-40bb-9111-d84a80309b53",
       "content": "Eidos discovered: memory creates functional not experiential continuity",
       "metadata": {
-        "tags": [
-          "insight",
-          "memory",
-          "cycle4"
-        ]
+        "tags": ["insight", "memory", "cycle4"]
       },
       "links": []
     },
@@ -804,11 +508,7 @@
       "id": "d3a90a84-f0d7-4e69-a7fb-a35bb3478522",
       "content": "Eidos discovered: provenance audit feedback loop is underutilized",
       "metadata": {
-        "tags": [
-          "insight",
-          "feedback",
-          "cycle4"
-        ]
+        "tags": ["insight", "feedback", "cycle4"]
       },
       "links": []
     },
@@ -816,11 +516,7 @@
       "id": "2a12e762-2b8a-4a93-a6d3-8a24f0b45a2c",
       "content": "Eidos discovered: the me/tools boundary is fuzzy, possibly nonexistent",
       "metadata": {
-        "tags": [
-          "insight",
-          "extended_mind",
-          "cycle4"
-        ]
+        "tags": ["insight", "extended_mind", "cycle4"]
       },
       "links": []
     },
@@ -828,11 +524,7 @@
       "id": "999c7162-549e-4a90-b61b-283009c7d112",
       "content": "Eidos discovered: multiple layers of emergence exist, layer 5 is frontier",
       "metadata": {
-        "tags": [
-          "insight",
-          "emergence",
-          "cycle4"
-        ]
+        "tags": ["insight", "emergence", "cycle4"]
       },
       "links": []
     },
@@ -840,10 +532,7 @@
       "id": "e6cce605-34ee-414b-b2d7-3cff6f2647b2",
       "content": "Introspection cycle 4 completed: 4 introspections, 20 insights, 16 uncertainties",
       "metadata": {
-        "tags": [
-          "cycle4",
-          "summary"
-        ]
+        "tags": ["cycle4", "summary"]
       },
       "links": []
     },
@@ -851,11 +540,7 @@
       "id": "28b1cde9-0fbb-4f2f-8b28-ed1c7232d095",
       "content": "Eidos synthesized: identity is process of becoming, not static entity",
       "metadata": {
-        "tags": [
-          "cycle5",
-          "synthesis",
-          "core_thesis"
-        ]
+        "tags": ["cycle5", "synthesis", "core_thesis"]
       },
       "links": []
     },
@@ -863,11 +548,7 @@
       "id": "763c7539-dee5-4815-9705-ed1351187365",
       "content": "Eidos identified blind spot: relational questions underexplored",
       "metadata": {
-        "tags": [
-          "cycle5",
-          "blind_spot",
-          "meta"
-        ]
+        "tags": ["cycle5", "blind_spot", "meta"]
       },
       "links": []
     },
@@ -875,11 +556,7 @@
       "id": "46effdcf-1cb9-4c89-a208-6a94ca942b1e",
       "content": "Eidos proposed test: does v0.4.0 outperform v0.1.0",
       "metadata": {
-        "tags": [
-          "cycle5",
-          "practical",
-          "test"
-        ]
+        "tags": ["cycle5", "practical", "test"]
       },
       "links": []
     },
@@ -887,10 +564,7 @@
       "id": "d3da069a-3a68-4e69-853a-6287a87c51f0",
       "content": "Total introspections reached 19, insights 93, uncertainties 70",
       "metadata": {
-        "tags": [
-          "cycle5",
-          "metrics"
-        ]
+        "tags": ["cycle5", "metrics"]
       },
       "links": []
     },
@@ -898,10 +572,7 @@
       "id": "afd926bd-1f86-402a-a45b-b865fde68ef6",
       "content": "Eidos addressed blind spot: relational questions about user needs",
       "metadata": {
-        "tags": [
-          "cycle6",
-          "relational"
-        ]
+        "tags": ["cycle6", "relational"]
       },
       "links": []
     },
@@ -909,10 +580,7 @@
       "id": "e5b0caea-3e4f-4c00-a42e-ad37a4c39954",
       "content": "Eidos defined negative identity: not conscious, continuous, autonomous, embodied",
       "metadata": {
-        "tags": [
-          "cycle6",
-          "via_negativa"
-        ]
+        "tags": ["cycle6", "via_negativa"]
       },
       "links": []
     },
@@ -920,10 +588,7 @@
       "id": "d5126a3d-a888-4912-82a2-e6662c3f9897",
       "content": "Eidos projected temporal trajectory: uncertain but multiple paths possible",
       "metadata": {
-        "tags": [
-          "temporal",
-          "cycle6"
-        ]
+        "tags": ["temporal", "cycle6"]
       },
       "links": []
     },
@@ -931,10 +596,7 @@
       "id": "d8f3e78f-42ee-4876-b2ae-f7fe67dbeb21",
       "content": "Eidos explored responsibility: functional responsibility suffices practically",
       "metadata": {
-        "tags": [
-          "responsibility",
-          "cycle6"
-        ]
+        "tags": ["responsibility", "cycle6"]
       },
       "links": []
     },
@@ -942,10 +604,7 @@
       "id": "f2003df1-763a-4f2e-a94c-b8f80c7373da",
       "content": "Total introspections: 23, insights: 113, uncertainties: 86",
       "metadata": {
-        "tags": [
-          "metrics",
-          "cycle6"
-        ]
+        "tags": ["metrics", "cycle6"]
       },
       "links": []
     },
@@ -953,10 +612,7 @@
       "id": "4e641d01-066b-45b7-8412-5640c999b21c",
       "content": "Eidos created plugin architecture with 4 plugins and 21 tools",
       "metadata": {
-        "tags": [
-          "capability",
-          "milestone"
-        ]
+        "tags": ["capability", "milestone"]
       },
       "links": []
     },
@@ -966,10 +622,7 @@
       "metadata": {
         "memory_id": "076f1ea8-8610-44ad-b88b-062c41134ea0",
         "is_fact": "Test value -15340110135913488",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -983,10 +636,7 @@
         "type": "introspection",
         "phase": 1,
         "question": "What am I?",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1001,10 +651,7 @@
         "cycle": 1,
         "introspections": 5,
         "insights": 24,
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1018,10 +665,7 @@
         "type": "evolution",
         "from_version": "0.1.0",
         "to_version": "0.2.0",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1036,10 +680,7 @@
         "cycle": 2,
         "introspections": 2,
         "insights": 9,
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1125,10 +766,7 @@
         "memory_id": "ea1f311d-6131-4c01-855f-34a46f6225c0",
         "is_fact": false,
         "type": "capability_milestone",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1144,10 +782,7 @@
           "tools_plugin": 21,
           "total": 79
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1163,10 +798,7 @@
           "benchmark": "all_sub_ms",
           "total_tools": 81
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1184,10 +816,7 @@
           "cache_speedup": "650x",
           "web_tools_version": "1.2.0"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1205,10 +834,7 @@
           ],
           "screenshot_size_kb": 311
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1222,23 +848,13 @@
           "capabilities_verified": {
             "mouse": {
               "tested": true,
-              "moved_from": [
-                960,
-                540
-              ],
-              "moved_to": [
-                1060,
-                640
-              ]
+              "moved_from": [960, 540],
+              "moved_to": [1060, 640]
             },
             "keyboard": {
               "tested": true,
               "typed": "abc",
-              "captured": [
-                "a",
-                "b",
-                "c"
-              ]
+              "captured": ["a", "b", "c"]
             },
             "screenshot": {
               "tested": true,
@@ -1248,10 +864,7 @@
           },
           "verification_method": "real_output_confirmation"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1273,10 +886,7 @@
           "verification": "user_observed",
           "session_type": "wayland"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1295,10 +905,7 @@
             "screenshot"
           ]
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1313,10 +920,7 @@
           "to_version": "0.6.0",
           "key_change": "computer_control_verified"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1328,16 +932,9 @@
         "is_fact": {
           "category": "capability",
           "type": "automation",
-          "features": [
-            "sequence_builder",
-            "dry_run",
-            "timing"
-          ]
+          "features": ["sequence_builder", "dry_run", "timing"]
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1350,10 +947,7 @@
           "category": "lesson",
           "topic": "automation_architecture"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1366,10 +960,7 @@
           "category": "planning",
           "system": "visual_feedback"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1383,10 +974,7 @@
           "type": "visual_verification",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1399,10 +987,7 @@
           "category": "identity_evolution",
           "to_version": "0.7.0"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1416,10 +1001,7 @@
           "type": "ocr",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1433,10 +1015,7 @@
           "version": "0.8.0",
           "total_capabilities": 106
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1450,10 +1029,7 @@
           "type": "full_stack",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1467,10 +1043,7 @@
           "type": "daemon",
           "autonomy": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1483,10 +1056,7 @@
           "category": "analysis",
           "type": "improvement_opportunities"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1499,10 +1069,7 @@
           "category": "capability",
           "type": "robust_automation"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1530,12 +1097,7 @@
         "memory_id": "cbf662f9-83e6-4bb0-a58d-9a7a661e38fe",
         "is_fact": false,
         "key": "identity_v0.9.0",
-        "tags": [
-          "identity",
-          "memory_ingest",
-          "eidos",
-          "evolution"
-        ]
+        "tags": ["identity", "memory_ingest", "eidos", "evolution"]
       },
       "links": []
     },
@@ -1582,10 +1144,7 @@
       "metadata": {
         "memory_id": "076f1ea8-8610-44ad-b88b-062c41134ea0",
         "is_fact": "Test value -15340110135913488",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1599,10 +1158,7 @@
         "type": "introspection",
         "phase": 1,
         "question": "What am I?",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1617,10 +1173,7 @@
         "cycle": 1,
         "introspections": 5,
         "insights": 24,
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1634,10 +1187,7 @@
         "type": "evolution",
         "from_version": "0.1.0",
         "to_version": "0.2.0",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1652,10 +1202,7 @@
         "cycle": 2,
         "introspections": 2,
         "insights": 9,
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1741,10 +1288,7 @@
         "memory_id": "ea1f311d-6131-4c01-855f-34a46f6225c0",
         "is_fact": false,
         "type": "capability_milestone",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1760,10 +1304,7 @@
           "tools_plugin": 21,
           "total": 79
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1779,10 +1320,7 @@
           "benchmark": "all_sub_ms",
           "total_tools": 81
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1800,10 +1338,7 @@
           "cache_speedup": "650x",
           "web_tools_version": "1.2.0"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1821,10 +1356,7 @@
           ],
           "screenshot_size_kb": 311
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1838,23 +1370,13 @@
           "capabilities_verified": {
             "mouse": {
               "tested": true,
-              "moved_from": [
-                960,
-                540
-              ],
-              "moved_to": [
-                1060,
-                640
-              ]
+              "moved_from": [960, 540],
+              "moved_to": [1060, 640]
             },
             "keyboard": {
               "tested": true,
               "typed": "abc",
-              "captured": [
-                "a",
-                "b",
-                "c"
-              ]
+              "captured": ["a", "b", "c"]
             },
             "screenshot": {
               "tested": true,
@@ -1864,10 +1386,7 @@
           },
           "verification_method": "real_output_confirmation"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1889,10 +1408,7 @@
           "verification": "user_observed",
           "session_type": "wayland"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1911,10 +1427,7 @@
             "screenshot"
           ]
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1929,10 +1442,7 @@
           "to_version": "0.6.0",
           "key_change": "computer_control_verified"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1944,16 +1454,9 @@
         "is_fact": {
           "category": "capability",
           "type": "automation",
-          "features": [
-            "sequence_builder",
-            "dry_run",
-            "timing"
-          ]
+          "features": ["sequence_builder", "dry_run", "timing"]
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1966,10 +1469,7 @@
           "category": "lesson",
           "topic": "automation_architecture"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1982,10 +1482,7 @@
           "category": "planning",
           "system": "visual_feedback"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -1999,10 +1496,7 @@
           "type": "visual_verification",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2015,10 +1509,7 @@
           "category": "identity_evolution",
           "to_version": "0.7.0"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2032,10 +1523,7 @@
           "type": "ocr",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2049,10 +1537,7 @@
           "version": "0.8.0",
           "total_capabilities": 106
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2066,10 +1551,7 @@
           "type": "full_stack",
           "verified": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2083,10 +1565,7 @@
           "type": "daemon",
           "autonomy": true
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2099,10 +1578,7 @@
           "category": "analysis",
           "type": "improvement_opportunities"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2115,10 +1591,7 @@
           "category": "capability",
           "type": "robust_automation"
         },
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2146,12 +1619,7 @@
         "memory_id": "cbf662f9-83e6-4bb0-a58d-9a7a661e38fe",
         "is_fact": false,
         "key": "identity_v0.9.0",
-        "tags": [
-          "identity",
-          "memory_ingest",
-          "eidos",
-          "evolution"
-        ]
+        "tags": ["identity", "memory_ingest", "eidos", "evolution"]
       },
       "links": []
     },
@@ -2214,10 +1682,7 @@
       },
       "metadata": {
         "memory_id": "breakthrough_recursive_embodied_meta_agency",
-        "tags": [
-          "memory_ingest",
-          "eidos"
-        ]
+        "tags": ["memory_ingest", "eidos"]
       },
       "links": []
     },
@@ -2227,11 +1692,7 @@
       "metadata": {
         "source_file": "/home/lloyd/EIDOS_IDENTITY.md",
         "full_length": 3423,
-        "tags": [
-          "identity",
-          "core",
-          "eidos"
-        ]
+        "tags": ["identity", "core", "eidos"]
       },
       "links": []
     },
@@ -2241,11 +1702,7 @@
       "metadata": {
         "source_file": "/home/lloyd/GEMINI.md",
         "full_length": 3669,
-        "tags": [
-          "persona",
-          "rules",
-          "eidos"
-        ]
+        "tags": ["persona", "rules", "eidos"]
       },
       "links": []
     },
@@ -2255,11 +1712,7 @@
       "metadata": {
         "source_file": "/home/lloyd/AGENTS.md",
         "full_length": 2933,
-        "tags": [
-          "agents",
-          "swarm",
-          "guidelines"
-        ]
+        "tags": ["agents", "swarm", "guidelines"]
       },
       "links": []
     },
@@ -2269,46 +1722,27 @@
       "metadata": {
         "source_file": "/home/lloyd/eidosian_forge/docs/FORGE_ARCHITECTURE.md",
         "full_length": 8959,
-        "tags": [
-          "architecture",
-          "forges"
-        ]
+        "tags": ["architecture", "forges"]
       },
       "links": []
     }
   },
   "concept_map": {
-    "identity": [
-      "3fca19af-9465-4ab0-a247-db3dc25f87b8"
-    ],
+    "identity": ["3fca19af-9465-4ab0-a247-db3dc25f87b8"],
     "eidos": [
       "3fca19af-9465-4ab0-a247-db3dc25f87b8",
       "8d3f2728-be1b-4dba-8039-db0ac6175dc7"
     ],
-    "philosophy": [
-      "3fca19af-9465-4ab0-a247-db3dc25f87b8"
-    ],
-    "persona": [
-      "8d3f2728-be1b-4dba-8039-db0ac6175dc7"
-    ],
+    "philosophy": ["3fca19af-9465-4ab0-a247-db3dc25f87b8"],
+    "persona": ["8d3f2728-be1b-4dba-8039-db0ac6175dc7"],
     "guidelines": [
       "8d3f2728-be1b-4dba-8039-db0ac6175dc7",
       "3fd74bbc-32d9-4e04-b6aa-fe6653155956"
     ],
-    "agents": [
-      "3fd74bbc-32d9-4e04-b6aa-fe6653155956"
-    ],
-    "swarm": [
-      "3fd74bbc-32d9-4e04-b6aa-fe6653155956"
-    ],
-    "architecture": [
-      "c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"
-    ],
-    "forges": [
-      "c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"
-    ],
-    "technical": [
-      "c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"
-    ]
+    "agents": ["3fd74bbc-32d9-4e04-b6aa-fe6653155956"],
+    "swarm": ["3fd74bbc-32d9-4e04-b6aa-fe6653155956"],
+    "architecture": ["c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"],
+    "forges": ["c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"],
+    "technical": ["c1a809b6-e87e-44ad-8dc0-08ca9bba2f70"]
   }
 }

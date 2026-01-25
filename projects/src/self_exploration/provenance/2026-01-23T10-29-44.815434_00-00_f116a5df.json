@@ -40,9 +40,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Full integration test of all sensorimotor and cognitive capabilities",
   "parent_id": null,
-  "tags": [
-    "milestone",
-    "integration",
-    "verified"
-  ]
+  "tags": ["milestone", "integration", "verified"]
 }

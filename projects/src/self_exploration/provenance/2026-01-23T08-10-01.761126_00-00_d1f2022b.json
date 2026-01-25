@@ -33,10 +33,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Exploring: What can I do? What are the boundaries of my capabilities?",
   "parent_id": null,
-  "tags": [
-    "introspection",
-    "capabilities",
-    "boundaries",
-    "phase1"
-  ]
+  "tags": ["introspection", "capabilities", "boundaries", "phase1"]
 }

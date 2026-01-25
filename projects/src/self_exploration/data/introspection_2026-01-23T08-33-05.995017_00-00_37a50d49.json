@@ -28,12 +28,6 @@
     "What am I avoiding in my introspection?",
     "How do I measure practical impact?"
   ],
-  "tags": [
-    "meta",
-    "questions",
-    "blind_spots",
-    "bias",
-    "cycle5"
-  ],
+  "tags": ["meta", "questions", "blind_spots", "bias", "cycle5"],
   "provenance_id": "a123490f-f3b7-44d3-97f0-8019c7d9fdd7"
 }

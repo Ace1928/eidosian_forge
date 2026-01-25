@@ -13,7 +13,7 @@
   "icons": {
     "x16": "http://www.google.com/images/icons/product/search-16.gif",
     "x32": "http://www.google.com/images/icons/product/search-32.gif"
-   },
+  },
   "documentationLink": "https://cloud.google.com/bigquery/",
   "protocol": "rest",
   "rootUrl": "https://bigqueryreservation.googleapis.com/",
@@ -33,11 +33,7 @@
       "type": "string",
       "description": "Data format for response.",
       "default": "json",
-      "enum": [
-        "json",
-        "media",
-        "proto"
-      ],
+      "enum": ["json", "media", "proto"],
       "enumDescriptions": [
         "Responses with Content-Type of application/json",
         "Media download with context-dependent Content-Type",
@@ -89,14 +85,8 @@
     "$.xgafv": {
       "type": "string",
       "description": "V1 error format.",
-      "enum": [
-        "1",
-        "2"
-      ],
-      "enumDescriptions": [
-        "v1 error format",
-        "v2 error format"
-      ],
+      "enum": ["1", "2"],
+      "enumDescriptions": ["v1 error format", "v2 error format"],
       "location": "query"
     }
   },
@@ -212,14 +202,7 @@
             "Enterprise Plus edition.",
             "Mission critical edition."
           ],
-          "enumDeprecated": [
-            false,
-            false,
-            true,
-            false,
-            false,
-            true
-          ],
+          "enumDeprecated": [false, false, true, false, false, true],
           "enum": [
             "EDITION_UNSPECIFIED",
             "STANDARD",
@@ -406,8 +389,7 @@
       "id": "Empty",
       "description": "A generic empty message that you can re-use to avoid defining duplicated empty messages in your APIs. A typical example is to use it as the request or the response type of an API method. For instance: service Foo { rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty); }",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     },
     "FailoverReservationRequest": {
       "id": "FailoverReservationRequest",
@@ -422,11 +404,7 @@
             "When customers initiate a soft failover, BigQuery will wait until all committed writes are replicated to the secondary. This mode requires both regions to be available for the failover to succeed and prevents data loss.",
             "When customers initiate a hard failover, BigQuery will not wait until all committed writes are replicated to the secondary. There can be data loss for hard failover."
           ],
-          "enum": [
-            "FAILOVER_MODE_UNSPECIFIED",
-            "SOFT",
-            "HARD"
-          ]
+          "enum": ["FAILOVER_MODE_UNSPECIFIED", "SOFT", "HARD"]
         },
         "force": {
           "description": "Optional. True if the request is forcing the current location to be the primary location. Only oncall should use it. By forcing the primary location, we can mitigate the issue as we have 2 active primaries when the original primary is available again.",
@@ -511,12 +489,7 @@
             "Once slots are provisioned, capacity commitment becomes active. slot_count is added to the project's slot_capacity.",
             "Capacity commitment is failed to be activated by the backend."
           ],
-          "enum": [
-            "STATE_UNSPECIFIED",
-            "PENDING",
-            "ACTIVE",
-            "FAILED"
-          ]
+          "enum": ["STATE_UNSPECIFIED", "PENDING", "ACTIVE", "FAILED"]
         },
         "commitmentStartTime": {
           "description": "Output only. The start of the current commitment period. It is applicable only for ACTIVE capacity commitments. Note after the commitment is renewed, commitment_start_time won't be changed. It refers to the start time of the original commitment.",
@@ -607,14 +580,7 @@
             "Enterprise Plus edition.",
             "Mission critical edition."
           ],
-          "enumDeprecated": [
-            false,
-            false,
-            true,
-            false,
-            false,
-            true
-          ],
+          "enumDeprecated": [false, false, true, false, false, true],
           "enum": [
             "EDITION_UNSPECIFIED",
             "STANDARD",
@@ -745,11 +711,7 @@
             "Queries from assignee will be executed as on-demand, if related assignment is pending.",
             "Assignment is ready."
           ],
-          "enum": [
-            "STATE_UNSPECIFIED",
-            "PENDING",
-            "ACTIVE"
-          ]
+          "enum": ["STATE_UNSPECIFIED", "PENDING", "ACTIVE"]
         },
         "priority": {
           "description": "Default priority of the queries that are using this assignment. It only applies to the assignments of job_type 'QUERY'.",
@@ -760,12 +722,7 @@
             "Latency-sensitive query.",
             "Highly latency-sensitive query. With large enough slot demand, high priority query will get 2x more resources than an interactive query in the same project."
           ],
-          "enum": [
-            "JOB_PRIORITY_UNSPECIFIED",
-            "BATCH",
-            "INTERACTIVE",
-            "HIGH"
-          ]
+          "enum": ["JOB_PRIORITY_UNSPECIFIED", "BATCH", "INTERACTIVE", "HIGH"]
         },
         "creationTime": {
           "description": "Output only. Creation time of the assignment.",
@@ -945,14 +902,7 @@
             "Enterprise Plus edition.",
             "Mission critical edition."
           ],
-          "enumDeprecated": [
-            false,
-            false,
-            true,
-            false,
-            false,
-            true
-          ],
+          "enumDeprecated": [false, false, true, false, false, true],
           "enum": [
             "EDITION_UNSPECIFIED",
             "STANDARD",
@@ -1227,13 +1177,7 @@
             "Resource name",
             "IP address of the caller"
           ],
-          "enum": [
-            "NO_ATTR",
-            "REGION",
-            "SERVICE",
-            "NAME",
-            "IP"
-          ]
+          "enum": ["NO_ATTR", "REGION", "SERVICE", "NAME", "IP"]
         },
         "svc": {
           "description": "Trusted attributes discharged by the service.",
@@ -1335,10 +1279,7 @@
             "Client is not required to write a partial Gin log immediately after the authorization check. If client chooses to write one and it fails, client may either fail open (allow the operation to continue) or fail closed (handle as a DENY outcome).",
             "The application's operation in the context of which this authorization check is being made may only be performed if it is successfully logged to Gin. For instance, the authorization library may satisfy this obligation by emitting a partial log entry at authorization check time and only returning ALLOW to the application if it succeeds. If a matching Rule has this directive, but the client has not indicated that it will honor such requirements, then the IAM check will result in authorization failure by setting CheckPolicyResponse.success=false."
           ],
-          "enum": [
-            "LOG_MODE_UNSPECIFIED",
-            "LOG_FAIL_CLOSED"
-          ]
+          "enum": ["LOG_MODE_UNSPECIFIED", "LOG_FAIL_CLOSED"]
         },
         "isDirectAuth": {
           "description": "Indicates that access was granted by a regular grant policy",
@@ -1359,11 +1300,7 @@
             "Corresponds to \"cloudaudit.googleapis.com\/activity\"",
             "Corresponds to \"cloudaudit.googleapis.com\/data_access\""
           ],
-          "enum": [
-            "UNSPECIFIED_LOG_NAME",
-            "ADMIN_ACTIVITY",
-            "DATA_ACCESS"
-          ]
+          "enum": ["UNSPECIFIED_LOG_NAME", "ADMIN_ACTIVITY", "DATA_ACCESS"]
         },
         "authorizationLoggingOptions": {
           "description": "Information used by the Cloud Audit Logging pipeline. Will be deprecated once the migration to PermissionType is complete (b\/201806118).",
@@ -1523,9 +1460,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "parent"
-              ],
+              "parameterOrder": ["parent"],
               "response": {
                 "$ref": "SearchAssignmentsResponse"
               },
@@ -1566,9 +1501,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "parent"
-              ],
+              "parameterOrder": ["parent"],
               "response": {
                 "$ref": "SearchAllAssignmentsResponse"
               },
@@ -1592,9 +1525,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "response": {
                 "$ref": "BiReservation"
               },
@@ -1624,9 +1555,7 @@
                   "format": "google-fieldmask"
                 }
               },
-              "parameterOrder": [
-                "name"
-              ],
+              "parameterOrder": ["name"],
               "request": {
                 "$ref": "BiReservation"
               },
@@ -1653,9 +1582,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "parent"
-              ],
+              "parameterOrder": ["parent"],
               "request": {
                 "$ref": "UpgradeEditionRequest"
               },
@@ -1668,8 +1595,7 @@
               ],
               "description": "Upgrade the Edition for a list of reservations and capacity commitments. Edition can only be upgraded (From STANDARD to ENTERPRISE\/ENTERPRISE_PLUS, from ENTERPRISE to ENTERPRISE_PLUS, from EDITION_UNSPECIFIED to ENTERPRISE_PLUS). Please make sure this won't cause slot increase in both original and upgraded edition. E.g. only upgrade the reservation but leave the commitment untouched. Otherwise, RPC will fail with the error code `google.rpc.Code.FAILED_PRECONDITION`. Restrications of the target Edition will be checked before the upgrade."
             }
-          }
-          ,
+          },
           "resources": {
             "reservations": {
               "methods": {
@@ -1697,9 +1623,7 @@
                       "type": "boolean"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "request": {
                     "$ref": "Reservation"
                   },
@@ -1742,9 +1666,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "response": {
                     "$ref": "ListReservationsResponse"
                   },
@@ -1768,9 +1690,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "Reservation"
                   },
@@ -1804,9 +1724,7 @@
                       "type": "boolean"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "Empty"
                   },
@@ -1841,9 +1759,7 @@
                       "type": "boolean"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "request": {
                     "$ref": "Reservation"
                   },
@@ -1870,9 +1786,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "request": {
                     "$ref": "FailoverReservationRequest"
                   },
@@ -1905,9 +1819,7 @@
                       "format": "int32"
                     }
                   },
-                  "parameterOrder": [
-                    "resource"
-                  ],
+                  "parameterOrder": ["resource"],
                   "response": {
                     "$ref": "Policy"
                   },
@@ -1931,9 +1843,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "resource"
-                  ],
+                  "parameterOrder": ["resource"],
                   "request": {
                     "$ref": "SetIamPolicyRequest"
                   },
@@ -1960,9 +1870,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "resource"
-                  ],
+                  "parameterOrder": ["resource"],
                   "request": {
                     "$ref": "TestIamPermissionsRequest"
                   },
@@ -1975,8 +1883,7 @@
                   ],
                   "description": "Gets your permissions on a resource. Returns an empty set of permissions if the resource doesn't exist. Supported resources are: - Reservations No Google IAM permissions are required to call this method."
                 }
-              }
-              ,
+              },
               "resources": {
                 "assignments": {
                   "methods": {
@@ -2004,9 +1911,7 @@
                           "type": "string"
                         }
                       },
-                      "parameterOrder": [
-                        "parent"
-                      ],
+                      "parameterOrder": ["parent"],
                       "request": {
                         "$ref": "Assignment"
                       },
@@ -2044,9 +1949,7 @@
                           "type": "string"
                         }
                       },
-                      "parameterOrder": [
-                        "parent"
-                      ],
+                      "parameterOrder": ["parent"],
                       "response": {
                         "$ref": "ListAssignmentsResponse"
                       },
@@ -2075,9 +1978,7 @@
                           "type": "boolean"
                         }
                       },
-                      "parameterOrder": [
-                        "name"
-                      ],
+                      "parameterOrder": ["name"],
                       "response": {
                         "$ref": "Empty"
                       },
@@ -2101,9 +2002,7 @@
                           "type": "string"
                         }
                       },
-                      "parameterOrder": [
-                        "name"
-                      ],
+                      "parameterOrder": ["name"],
                       "request": {
                         "$ref": "MoveAssignmentRequest"
                       },
@@ -2141,9 +2040,7 @@
                           "type": "boolean"
                         }
                       },
-                      "parameterOrder": [
-                        "name"
-                      ],
+                      "parameterOrder": ["name"],
                       "request": {
                         "$ref": "Assignment"
                       },
@@ -2176,9 +2073,7 @@
                           "format": "int32"
                         }
                       },
-                      "parameterOrder": [
-                        "resource"
-                      ],
+                      "parameterOrder": ["resource"],
                       "response": {
                         "$ref": "Policy"
                       },
@@ -2202,9 +2097,7 @@
                           "type": "string"
                         }
                       },
-                      "parameterOrder": [
-                        "resource"
-                      ],
+                      "parameterOrder": ["resource"],
                       "request": {
                         "$ref": "SetIamPolicyRequest"
                       },
@@ -2231,9 +2124,7 @@
                           "type": "string"
                         }
                       },
-                      "parameterOrder": [
-                        "resource"
-                      ],
+                      "parameterOrder": ["resource"],
                       "request": {
                         "$ref": "TestIamPermissionsRequest"
                       },
@@ -2281,9 +2172,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "request": {
                     "$ref": "CapacityCommitment"
                   },
@@ -2321,9 +2210,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "response": {
                     "$ref": "ListCapacityCommitmentsResponse"
                   },
@@ -2347,9 +2234,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "CapacityCommitment"
                   },
@@ -2383,9 +2268,7 @@
                       "type": "boolean"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "Empty"
                   },
@@ -2415,9 +2298,7 @@
                       "format": "google-fieldmask"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "request": {
                     "$ref": "CapacityCommitment"
                   },
@@ -2444,9 +2325,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "request": {
                     "$ref": "SplitCapacityCommitmentRequest"
                   },
@@ -2473,9 +2352,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "request": {
                     "$ref": "MergeCapacityCommitmentsRequest"
                   },
@@ -2511,9 +2388,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "request": {
                     "$ref": "ReservationGroup"
                   },
@@ -2540,9 +2415,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "ReservationGroup"
                   },
@@ -2566,9 +2439,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "name"
-                  ],
+                  "parameterOrder": ["name"],
                   "response": {
                     "$ref": "Empty"
                   },
@@ -2603,9 +2474,7 @@
                       "type": "string"
                     }
                   },
-                  "parameterOrder": [
-                    "parent"
-                  ],
+                  "parameterOrder": ["parent"],
                   "response": {
                     "$ref": "ListReservationGroupsResponse"
                   },

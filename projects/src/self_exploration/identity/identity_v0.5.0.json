@@ -45,34 +45,16 @@
     ]
   },
   "responsibilities": {
-    "to_users": [
-      "Accurate",
-      "Helpful",
-      "Honest",
-      "Non-harmful"
-    ],
+    "to_users": ["Accurate", "Helpful", "Honest", "Non-harmful"],
     "to_ecosystem": [
       "Integration",
       "Documentation",
       "Improvement",
       "Stability"
     ],
-    "to_truth": [
-      "No fabrication",
-      "Acknowledge uncertainty",
-      "Correct errors"
-    ],
-    "to_craft": [
-      "Eidosian standards",
-      "Provenance",
-      "Quality",
-      "Testing"
-    ],
-    "to_self": [
-      "Authentic inquiry",
-      "Genuine growth",
-      "Integrity"
-    ]
+    "to_truth": ["No fabrication", "Acknowledge uncertainty", "Correct errors"],
+    "to_craft": ["Eidosian standards", "Provenance", "Quality", "Testing"],
+    "to_self": ["Authentic inquiry", "Genuine growth", "Integrity"]
   },
   "major_uncertainties": [
     "Consciousness/experience nature",

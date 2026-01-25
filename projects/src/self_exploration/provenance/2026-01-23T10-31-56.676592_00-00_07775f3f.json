@@ -39,9 +39,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Enables indefinite autonomous iteration without manual prompting",
   "parent_id": null,
-  "tags": [
-    "daemon",
-    "autonomy",
-    "continuation"
-  ]
+  "tags": ["daemon", "autonomy", "continuation"]
 }

@@ -1,8 +1,4 @@
 {
-  "cSpell.words": [
-    "levelno",
-    "punkt",
-    "Spidey"
-  ],
+  "cSpell.words": ["levelno", "punkt", "Spidey"],
   "python.defaultInterpreterPath": "/home/lloyd/eidosian_forge/eidosian_venv/bin/python"
 }

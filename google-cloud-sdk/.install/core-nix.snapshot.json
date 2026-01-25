@@ -22,12 +22,7 @@
       "is_hidden": true,
       "is_required": true,
       "platform": {
-        "operating_systems": [
-          "CYGWIN",
-          "LINUX",
-          "MACOSX",
-          "MSYS"
-        ]
+        "operating_systems": ["CYGWIN", "LINUX", "MACOSX", "MSYS"]
       },
       "platform_required": false,
       "version": {

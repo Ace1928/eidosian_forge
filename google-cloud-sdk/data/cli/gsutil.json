@@ -98,11 +98,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "acl",
-            "ch"
-          ],
+          "path": ["gsutil", "acl", "ch"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -119,11 +115,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "acl",
-            "get"
-          ],
+          "path": ["gsutil", "acl", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -180,11 +172,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "acl",
-            "set"
-          ],
+          "path": ["gsutil", "acl", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -295,10 +283,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "acl"
-      ],
+      "path": ["gsutil", "acl"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -321,11 +306,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "autoclass",
-            "get"
-          ],
+          "path": ["gsutil", "autoclass", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -339,11 +320,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "autoclass",
-            "set"
-          ],
+          "path": ["gsutil", "autoclass", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -355,10 +332,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "autoclass"
-      ],
+      "path": ["gsutil", "autoclass"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -377,11 +351,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "bucketpolicyonly",
-            "get"
-          ],
+          "path": ["gsutil", "bucketpolicyonly", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -396,11 +366,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "bucketpolicyonly",
-            "set"
-          ],
+          "path": ["gsutil", "bucketpolicyonly", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -413,10 +379,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "bucketpolicyonly"
-      ],
+      "path": ["gsutil", "bucketpolicyonly"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -462,10 +425,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "cat"
-      ],
+      "path": ["gsutil", "cat"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -479,10 +439,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "compose"
-      ],
+      "path": ["gsutil", "compose"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -553,10 +510,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "config"
-      ],
+      "path": ["gsutil", "config"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -574,11 +528,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "cors",
-            "get"
-          ],
+          "path": ["gsutil", "cors", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -592,11 +542,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "cors",
-            "set"
-          ],
+          "path": ["gsutil", "cors", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -608,10 +554,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "cors"
-      ],
+      "path": ["gsutil", "cors"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -894,10 +837,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "cp"
-      ],
+      "path": ["gsutil", "cp"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -995,11 +935,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "defacl",
-            "ch"
-          ],
+          "path": ["gsutil", "defacl", "ch"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1014,11 +950,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "defacl",
-            "get"
-          ],
+          "path": ["gsutil", "defacl", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1032,11 +964,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "defacl",
-            "set"
-          ],
+          "path": ["gsutil", "defacl", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1119,10 +1047,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "defacl"
-      ],
+      "path": ["gsutil", "defacl"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -1143,11 +1068,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "defstorageclass",
-            "get"
-          ],
+          "path": ["gsutil", "defstorageclass", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1161,11 +1082,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "defstorageclass",
-            "set"
-          ],
+          "path": ["gsutil", "defstorageclass", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1177,10 +1094,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "defstorageclass"
-      ],
+      "path": ["gsutil", "defstorageclass"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -1295,10 +1209,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "du"
-      ],
+      "path": ["gsutil", "du"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -1356,10 +1267,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "hash"
-      ],
+      "path": ["gsutil", "hash"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -1376,11 +1284,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "acls"
-          ],
+          "path": ["gsutil", "help", "acls"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1399,11 +1303,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "crc32c"
-          ],
+          "path": ["gsutil", "help", "crc32c"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1419,11 +1319,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "creds"
-          ],
+          "path": ["gsutil", "help", "creds"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1438,11 +1334,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "dev"
-          ],
+          "path": ["gsutil", "help", "dev"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1456,11 +1348,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "encoding"
-          ],
+          "path": ["gsutil", "help", "encoding"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1478,11 +1366,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "metadata"
-          ],
+          "path": ["gsutil", "help", "metadata"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1498,11 +1382,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "naming"
-          ],
+          "path": ["gsutil", "help", "naming"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1630,11 +1510,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "options"
-          ],
+          "path": ["gsutil", "help", "options"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1648,11 +1524,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "prod"
-          ],
+          "path": ["gsutil", "help", "prod"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1668,11 +1540,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "security"
-          ],
+          "path": ["gsutil", "help", "security"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1696,11 +1564,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "shim"
-          ],
+          "path": ["gsutil", "help", "shim"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1718,11 +1582,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "support"
-          ],
+          "path": ["gsutil", "help", "support"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1737,11 +1597,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "help",
-            "versions"
-          ],
+          "path": ["gsutil", "help", "versions"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1753,10 +1609,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "help"
-      ],
+      "path": ["gsutil", "help"],
       "positionals": [],
       "release": "GA",
       "sections": {}
@@ -1786,11 +1639,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "hmac",
-            "create"
-          ],
+          "path": ["gsutil", "hmac", "create"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1819,11 +1668,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "hmac",
-            "delete"
-          ],
+          "path": ["gsutil", "hmac", "delete"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1852,11 +1697,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "hmac",
-            "get"
-          ],
+          "path": ["gsutil", "hmac", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1927,11 +1768,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "hmac",
-            "list"
-          ],
+          "path": ["gsutil", "hmac", "list"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -1988,11 +1825,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "hmac",
-            "update"
-          ],
+          "path": ["gsutil", "hmac", "update"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2089,10 +1922,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "hmac"
-      ],
+      "path": ["gsutil", "hmac"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2157,11 +1987,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "iam",
-            "ch"
-          ],
+          "path": ["gsutil", "iam", "ch"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2176,11 +2002,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "iam",
-            "get"
-          ],
+          "path": ["gsutil", "iam", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2251,11 +2073,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "iam",
-            "set"
-          ],
+          "path": ["gsutil", "iam", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2338,10 +2156,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "iam"
-      ],
+      "path": ["gsutil", "iam"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2391,11 +2206,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "kms",
-            "authorize"
-          ],
+          "path": ["gsutil", "kms", "authorize"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2453,11 +2264,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "kms",
-            "encryption"
-          ],
+          "path": ["gsutil", "kms", "encryption"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2487,11 +2294,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "kms",
-            "serviceaccount"
-          ],
+          "path": ["gsutil", "kms", "serviceaccount"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2561,10 +2364,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "kms"
-      ],
+      "path": ["gsutil", "kms"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2614,11 +2414,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "label",
-            "ch"
-          ],
+          "path": ["gsutil", "label", "ch"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2633,11 +2429,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "label",
-            "get"
-          ],
+          "path": ["gsutil", "label", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2651,11 +2443,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "label",
-            "set"
-          ],
+          "path": ["gsutil", "label", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2696,10 +2484,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "label"
-      ],
+      "path": ["gsutil", "label"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2720,11 +2505,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "lifecycle",
-            "get"
-          ],
+          "path": ["gsutil", "lifecycle", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2738,11 +2519,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "lifecycle",
-            "set"
-          ],
+          "path": ["gsutil", "lifecycle", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2754,10 +2531,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "lifecycle"
-      ],
+      "path": ["gsutil", "lifecycle"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2777,11 +2551,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "logging",
-            "get"
-          ],
+          "path": ["gsutil", "logging", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2795,11 +2565,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "logging",
-            "set"
-          ],
+          "path": ["gsutil", "logging", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -2842,10 +2608,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "logging"
-      ],
+      "path": ["gsutil", "logging"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -2990,10 +2753,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "ls"
-      ],
+      "path": ["gsutil", "ls"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3165,10 +2925,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "mb"
-      ],
+      "path": ["gsutil", "mb"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3184,10 +2941,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "mv"
-      ],
+      "path": ["gsutil", "mv"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3291,11 +3045,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "notification",
-            "create"
-          ],
+          "path": ["gsutil", "notification", "create"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3311,11 +3061,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "notification",
-            "delete"
-          ],
+          "path": ["gsutil", "notification", "delete"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3330,11 +3076,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "notification",
-            "list"
-          ],
+          "path": ["gsutil", "notification", "list"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3432,10 +3174,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "notification"
-      ],
+      "path": ["gsutil", "notification"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3462,11 +3201,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "pap",
-            "get"
-          ],
+          "path": ["gsutil", "pap", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3481,11 +3216,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "pap",
-            "set"
-          ],
+          "path": ["gsutil", "pap", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3498,10 +3229,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "pap"
-      ],
+      "path": ["gsutil", "pap"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3687,10 +3415,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "perfdiag"
-      ],
+      "path": ["gsutil", "perfdiag"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3722,10 +3447,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "rb"
-      ],
+      "path": ["gsutil", "rb"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3742,11 +3464,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "requesterpays",
-            "get"
-          ],
+          "path": ["gsutil", "requesterpays", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3760,11 +3478,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "requesterpays",
-            "set"
-          ],
+          "path": ["gsutil", "requesterpays", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -3776,10 +3490,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "requesterpays"
-      ],
+      "path": ["gsutil", "requesterpays"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3795,10 +3506,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "retention"
-      ],
+      "path": ["gsutil", "retention"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3906,10 +3614,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "rewrite"
-      ],
+      "path": ["gsutil", "rewrite"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -3980,10 +3685,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "rm"
-      ],
+      "path": ["gsutil", "rm"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4000,11 +3702,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "rpo",
-            "get"
-          ],
+          "path": ["gsutil", "rpo", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4019,11 +3717,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "rpo",
-            "set"
-          ],
+          "path": ["gsutil", "rpo", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4036,10 +3730,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "rpo"
-      ],
+      "path": ["gsutil", "rpo"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4281,10 +3972,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "rsync"
-      ],
+      "path": ["gsutil", "rsync"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4319,10 +4007,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "setmeta"
-      ],
+      "path": ["gsutil", "setmeta"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4435,10 +4120,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "signurl"
-      ],
+      "path": ["gsutil", "signurl"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4453,10 +4135,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "stat"
-      ],
+      "path": ["gsutil", "stat"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4569,10 +4248,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "test"
-      ],
+      "path": ["gsutil", "test"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4589,11 +4265,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "ubla",
-            "get"
-          ],
+          "path": ["gsutil", "ubla", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4608,11 +4280,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "ubla",
-            "set"
-          ],
+          "path": ["gsutil", "ubla", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4625,10 +4293,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "ubla"
-      ],
+      "path": ["gsutil", "ubla"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4660,10 +4325,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "version"
-      ],
+      "path": ["gsutil", "version"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4680,11 +4342,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "versioning",
-            "get"
-          ],
+          "path": ["gsutil", "versioning", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4698,11 +4356,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "versioning",
-            "set"
-          ],
+          "path": ["gsutil", "versioning", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4714,10 +4368,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "versioning"
-      ],
+      "path": ["gsutil", "versioning"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4736,11 +4387,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "web",
-            "get"
-          ],
+          "path": ["gsutil", "web", "get"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4783,11 +4430,7 @@
           "groups": {},
           "is_group": false,
           "is_hidden": false,
-          "path": [
-            "gsutil",
-            "web",
-            "set"
-          ],
+          "path": ["gsutil", "web", "set"],
           "positionals": [],
           "release": "GA",
           "sections": {
@@ -4828,10 +4471,7 @@
       "groups": {},
       "is_group": true,
       "is_hidden": false,
-      "path": [
-        "gsutil",
-        "web"
-      ],
+      "path": ["gsutil", "web"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -4958,9 +4598,7 @@
   "groups": {},
   "is_group": true,
   "is_hidden": false,
-  "path": [
-    "gsutil"
-  ],
+  "path": ["gsutil"],
   "positionals": [],
   "release": "GA",
   "sections": {}

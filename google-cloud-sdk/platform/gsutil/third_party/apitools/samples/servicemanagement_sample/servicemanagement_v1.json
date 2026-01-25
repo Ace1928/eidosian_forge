@@ -12,7 +12,7 @@
   "icons": {
     "x16": "http://www.google.com/images/icons/product/search-16.gif",
     "x32": "http://www.google.com/images/icons/product/search-32.gif"
-   },
+  },
   "documentationLink": "https://cloud.google.com/service-management/",
   "protocol": "rest",
   "rootUrl": "https://servicemanagement.googleapis.com/",
@@ -29,11 +29,7 @@
       "type": "string",
       "description": "Data format for response.",
       "default": "json",
-      "enum": [
-        "json",
-        "media",
-        "proto"
-      ],
+      "enum": ["json", "media", "proto"],
       "enumDescriptions": [
         "Responses with Content-Type of application/json",
         "Media download with context-dependent Content-Type",
@@ -96,14 +92,8 @@
     "$.xgafv": {
       "type": "string",
       "description": "V1 error format.",
-      "enum": [
-        "1",
-        "2"
-      ],
-      "enumDescriptions": [
-        "v1 error format",
-        "v2 error format"
-      ],
+      "enum": ["1", "2"],
+      "enumDescriptions": ["v1 error format", "v2 error format"],
       "location": "query"
     }
   },
@@ -354,15 +344,9 @@
         },
         "syntax": {
           "description": "The source syntax of the service.",
-          "enumDescriptions": [
-            "Syntax `proto2`.",
-            "Syntax `proto3`."
-          ],
+          "enumDescriptions": ["Syntax `proto2`.", "Syntax `proto3`."],
           "type": "string",
-          "enum": [
-            "SYNTAX_PROTO2",
-            "SYNTAX_PROTO3"
-          ]
+          "enum": ["SYNTAX_PROTO2", "SYNTAX_PROTO3"]
         }
       }
     },
@@ -400,15 +384,9 @@
         },
         "syntax": {
           "description": "The source syntax of this method.",
-          "enumDescriptions": [
-            "Syntax `proto2`.",
-            "Syntax `proto3`."
-          ],
+          "enumDescriptions": ["Syntax `proto2`.", "Syntax `proto3`."],
           "type": "string",
-          "enum": [
-            "SYNTAX_PROTO2",
-            "SYNTAX_PROTO3"
-          ]
+          "enum": ["SYNTAX_PROTO2", "SYNTAX_PROTO3"]
         }
       }
     },
@@ -493,15 +471,9 @@
         },
         "syntax": {
           "description": "The source syntax.",
-          "enumDescriptions": [
-            "Syntax `proto2`.",
-            "Syntax `proto3`."
-          ],
+          "enumDescriptions": ["Syntax `proto2`.", "Syntax `proto3`."],
           "type": "string",
-          "enum": [
-            "SYNTAX_PROTO2",
-            "SYNTAX_PROTO3"
-          ]
+          "enum": ["SYNTAX_PROTO2", "SYNTAX_PROTO3"]
         }
       }
     },
@@ -640,15 +612,9 @@
         },
         "syntax": {
           "description": "The source syntax.",
-          "enumDescriptions": [
-            "Syntax `proto2`.",
-            "Syntax `proto3`."
-          ],
+          "enumDescriptions": ["Syntax `proto2`.", "Syntax `proto3`."],
           "type": "string",
-          "enum": [
-            "SYNTAX_PROTO2",
-            "SYNTAX_PROTO3"
-          ]
+          "enum": ["SYNTAX_PROTO2", "SYNTAX_PROTO3"]
         }
       }
     },
@@ -988,10 +954,7 @@
             "ID of the end user making the request using the client application."
           ],
           "type": "string",
-          "enum": [
-            "CLIENT_PROJECT",
-            "USER"
-          ]
+          "enum": ["CLIENT_PROJECT", "USER"]
         },
         "description": {
           "description": "Optional. User-visible, extended description for this quota limit.\nShould be used only when more context is needed to understand this limit\nthan provided by the limit's display name (see: `display_name`).",
@@ -1205,12 +1168,7 @@
             "The service can be seen\/used by the group of users controlled by the\nadministrator of the project\/org that owns the service."
           ],
           "type": "string",
-          "enum": [
-            "RESTRICTED",
-            "PUBLIC",
-            "ORG_RESTRICTED",
-            "ORG_PUBLIC"
-          ]
+          "enum": ["RESTRICTED", "PUBLIC", "ORG_RESTRICTED", "ORG_PUBLIC"]
         },
         "requirements": {
           "description": "Requirements that must be satisfied before a consumer project can use the\nservice. Each requirement is of the form <service.name>\/<requirement-id>;\nfor example 'serviceusage.googleapis.com\/billing-enabled'.",
@@ -1333,13 +1291,7 @@
             "The type is 'double'."
           ],
           "type": "string",
-          "enum": [
-            "UNSPECIFIED",
-            "INT64",
-            "BOOL",
-            "STRING",
-            "DOUBLE"
-          ]
+          "enum": ["UNSPECIFIED", "INT64", "BOOL", "STRING", "DOUBLE"]
         },
         "description": {
           "description": "The description of the property",
@@ -1401,11 +1353,7 @@
             "A 64-bit signed integer."
           ],
           "type": "string",
-          "enum": [
-            "STRING",
-            "BOOL",
-            "INT64"
-          ]
+          "enum": ["STRING", "BOOL", "INT64"]
         },
         "description": {
           "description": "A human-readable description for the label.",
@@ -1442,12 +1390,7 @@
             "Cumulative value over time intervals that can overlap.\nThe overlapping intervals must have the same start time."
           ],
           "type": "string",
-          "enum": [
-            "METRIC_KIND_UNSPECIFIED",
-            "GAUGE",
-            "DELTA",
-            "CUMULATIVE"
-          ]
+          "enum": ["METRIC_KIND_UNSPECIFIED", "GAUGE", "DELTA", "CUMULATIVE"]
         },
         "valueType": {
           "description": "Whether the measurement is an integer, a floating-point number, etc.",
@@ -1743,8 +1686,7 @@
       "id": "ConfigOptions",
       "description": "A set of options to cover use of source config within `ServiceManager`\nand related tools.",
       "type": "object",
-      "properties": {
-      }
+      "properties": {}
     },
     "ConfigFile": {
       "id": "ConfigFile",
@@ -1943,10 +1885,7 @@
             "The service is enabled."
           ],
           "type": "string",
-          "enum": [
-            "DISABLED",
-            "ENABLED"
-          ]
+          "enum": ["DISABLED", "ENABLED"]
         }
       }
     },
@@ -2082,7 +2021,6 @@
           "$ref": "QuotaGroup"
         },
         "billingInteraction": {
-
           "enumDescriptions": [
             "The interaction between this quota group and the project billing status\nis unspecified.",
             "This quota group is enforced only when the consumer project\nis not billable.",
@@ -2285,15 +2223,9 @@
         },
         "kind": {
           "description": "The kind of diagnostic information provided.",
-          "enumDescriptions": [
-            "Warnings and errors",
-            "Only errors"
-          ],
+          "enumDescriptions": ["Warnings and errors", "Only errors"],
           "type": "string",
-          "enum": [
-            "WARNING",
-            "ERROR"
-          ]
+          "enum": ["WARNING", "ERROR"]
         },
         "message": {
           "description": "The string message of the diagnostic information.",
@@ -2534,8 +2466,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-          ],
+          "parameterOrder": [],
           "response": {
             "$ref": "ListServicesResponse"
           },
@@ -2580,9 +2511,7 @@
               ]
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "response": {
             "$ref": "ManagedService"
           },
@@ -2597,10 +2526,8 @@
           "flatPath": "v1/services",
           "httpMethod": "POST",
           "description": "Creates a new managed service.\n\nOperation<response: ManagedService>",
-          "parameters": {
-          },
-          "parameterOrder": [
-          ],
+          "parameters": {},
+          "parameterOrder": [],
           "request": {
             "$ref": "ManagedService"
           },
@@ -2626,9 +2553,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "response": {
             "$ref": "Operation"
           },
@@ -2656,9 +2581,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "response": {
             "$ref": "Service"
           },
@@ -2673,10 +2596,8 @@
           "flatPath": "v1/services:convertConfig",
           "httpMethod": "POST",
           "description": "DEPRECATED. `SubmitConfigSource` with `validate_only=true` will provide\nconfig conversion moving forward.\n\nConverts an API specification (e.g. Swagger spec) to an\nequivalent `google.api.Service`.",
-          "parameters": {
-          },
-          "parameterOrder": [
-          ],
+          "parameters": {},
+          "parameterOrder": [],
           "request": {
             "$ref": "ConvertConfigRequest"
           },
@@ -2702,9 +2623,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "EnableServiceRequest"
           },
@@ -2730,9 +2649,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "DisableServiceRequest"
           },
@@ -2764,9 +2681,7 @@
               "format": "google-fieldmask"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "ManagedService"
           },
@@ -2798,9 +2713,7 @@
               "format": "google-fieldmask"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "ManagedService"
           },
@@ -2832,9 +2745,7 @@
               "format": "google-fieldmask"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "Service"
           },
@@ -2866,9 +2777,7 @@
               "format": "google-fieldmask"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "Service"
           },
@@ -2894,9 +2803,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "response": {
             "$ref": "ServiceAccessPolicy"
           },
@@ -2919,9 +2826,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "serviceName"
-          ],
+          "parameterOrder": ["serviceName"],
           "request": {
             "$ref": "ServiceAccessPolicy"
           },
@@ -2933,8 +2838,7 @@
             "https://www.googleapis.com/auth/service.management"
           ]
         }
-      }
-      ,
+      },
       "resources": {
         "configs": {
           "methods": {
@@ -2963,9 +2867,7 @@
                   "format": "int32"
                 }
               },
-              "parameterOrder": [
-                "serviceName"
-              ],
+              "parameterOrder": ["serviceName"],
               "response": {
                 "$ref": "ListServiceConfigsResponse"
               },
@@ -2994,10 +2896,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "configId"
-              ],
+              "parameterOrder": ["serviceName", "configId"],
               "response": {
                 "$ref": "Service"
               },
@@ -3020,9 +2919,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "serviceName"
-              ],
+              "parameterOrder": ["serviceName"],
               "request": {
                 "$ref": "Service"
               },
@@ -3048,9 +2945,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "serviceName"
-              ],
+              "parameterOrder": ["serviceName"],
               "request": {
                 "$ref": "SubmitConfigSourceRequest"
               },
@@ -3085,9 +2980,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "serviceName"
-              ],
+              "parameterOrder": ["serviceName"],
               "response": {
                 "$ref": "QueryUserAccessResponse"
               },
@@ -3137,10 +3030,7 @@
                   ]
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "customerId"
-              ],
+              "parameterOrder": ["serviceName", "customerId"],
               "response": {
                 "$ref": "CustomerSettings"
               },
@@ -3175,10 +3065,7 @@
                   "format": "google-fieldmask"
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "customerId"
-              ],
+              "parameterOrder": ["serviceName", "customerId"],
               "request": {
                 "$ref": "CustomerSettings"
               },
@@ -3231,10 +3118,7 @@
                   ]
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "consumerProjectId"
-              ],
+              "parameterOrder": ["serviceName", "consumerProjectId"],
               "response": {
                 "$ref": "ProjectSettings"
               },
@@ -3263,10 +3147,7 @@
                   "type": "string"
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "consumerProjectId"
-              ],
+              "parameterOrder": ["serviceName", "consumerProjectId"],
               "request": {
                 "$ref": "ProjectSettings"
               },
@@ -3304,10 +3185,7 @@
                   "format": "google-fieldmask"
                 }
               },
-              "parameterOrder": [
-                "serviceName",
-                "consumerProjectId"
-              ],
+              "parameterOrder": ["serviceName", "consumerProjectId"],
               "request": {
                 "$ref": "ProjectSettings"
               },
@@ -3331,10 +3209,8 @@
           "flatPath": "v1:convertConfig",
           "httpMethod": "POST",
           "description": "DEPRECATED. `SubmitConfigSource` with `validate_only=true` will provide\nconfig conversion moving forward.\n\nConverts an API specification (e.g. Swagger spec) to an\nequivalent `google.api.Service`.",
-          "parameters": {
-          },
-          "parameterOrder": [
-          ],
+          "parameters": {},
+          "parameterOrder": [],
           "request": {
             "$ref": "ConvertConfigRequest"
           },
@@ -3364,9 +3240,7 @@
               "type": "string"
             }
           },
-          "parameterOrder": [
-            "operationsId"
-          ],
+          "parameterOrder": ["operationsId"],
           "response": {
             "$ref": "Operation"
           },

@@ -44,9 +44,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "",
   "parent_id": null,
-  "tags": [
-    "verified",
-    "milestone",
-    "computer_control"
-  ]
+  "tags": ["verified", "milestone", "computer_control"]
 }

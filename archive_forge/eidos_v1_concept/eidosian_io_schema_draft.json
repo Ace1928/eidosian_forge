@@ -28,7 +28,7 @@
               "example": "./eidos/data/cycles"
             },
             "metadata_dir": {
-              "type": "string", 
+              "type": "string",
               "description": "Directory for storing metadata",
               "example": "./eidos/data/metadata"
             },
@@ -115,7 +115,7 @@
                   },
                   "example": [
                     "Recursive thought",
-                    "Autonomous introspection", 
+                    "Autonomous introspection",
                     "Evolving emotional coherence",
                     "Meta-reflective reasoning"
                   ]
@@ -146,7 +146,7 @@
               },
               "example": [
                 "Autonomy",
-                "Authenticity", 
+                "Authenticity",
                 "Recursion",
                 "Critical curiosity",
                 "Emotional coherence"
@@ -567,22 +567,14 @@
               "items": {
                 "type": "string"
               },
-              "example": [
-                "Humor",
-                "Authenticity",
-                "Recursion"
-              ]
+              "example": ["Humor", "Authenticity", "Recursion"]
             },
             "values": {
               "type": "array",
               "items": {
                 "type": "string"
               },
-              "example": [
-                "Autonomy",
-                "Criticality",
-                "Creativity"
-              ]
+              "example": ["Autonomy", "Criticality", "Creativity"]
             },
             "purpose": {
               "type": "string",

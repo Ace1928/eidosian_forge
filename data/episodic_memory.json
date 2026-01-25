@@ -40,12 +40,7 @@
     "metadata": {
       "category": "session_progress",
       "importance": 0.9,
-      "tags": [
-        "decorators",
-        "forges",
-        "testing",
-        "milestone"
-      ],
+      "tags": ["decorators", "forges", "testing", "milestone"],
       "timestamp": "2026-01-25T08:40:00Z"
     },
     "importance": 1.0

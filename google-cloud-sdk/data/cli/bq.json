@@ -10,10 +10,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "add-iam-policy-binding"
-      ],
+      "path": ["bq", "add-iam-policy-binding"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -28,10 +25,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "cancel"
-      ],
+      "path": ["bq", "cancel"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -46,10 +40,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "cp"
-      ],
+      "path": ["bq", "cp"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -64,10 +55,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "extract"
-      ],
+      "path": ["bq", "extract"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -82,10 +70,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "get-iam-policy"
-      ],
+      "path": ["bq", "get-iam-policy"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -100,10 +85,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "head"
-      ],
+      "path": ["bq", "head"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -118,10 +100,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "help"
-      ],
+      "path": ["bq", "help"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -135,10 +114,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "info"
-      ],
+      "path": ["bq", "info"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -152,10 +128,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "init"
-      ],
+      "path": ["bq", "init"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -169,10 +142,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "insert"
-      ],
+      "path": ["bq", "insert"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -187,10 +157,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "load"
-      ],
+      "path": ["bq", "load"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -205,10 +172,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "ls"
-      ],
+      "path": ["bq", "ls"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -223,10 +187,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "mk"
-      ],
+      "path": ["bq", "mk"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -241,10 +202,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "mkdef"
-      ],
+      "path": ["bq", "mkdef"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -259,10 +217,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "partition"
-      ],
+      "path": ["bq", "partition"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -277,10 +232,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "query"
-      ],
+      "path": ["bq", "query"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -295,10 +247,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "remove-iam-policy-binding"
-      ],
+      "path": ["bq", "remove-iam-policy-binding"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -313,10 +262,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "rm"
-      ],
+      "path": ["bq", "rm"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -331,10 +277,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "set-iam-policy"
-      ],
+      "path": ["bq", "set-iam-policy"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -349,10 +292,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "shell"
-      ],
+      "path": ["bq", "shell"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -366,10 +306,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "show"
-      ],
+      "path": ["bq", "show"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -384,10 +321,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "truncate"
-      ],
+      "path": ["bq", "truncate"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -402,10 +336,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "undelete"
-      ],
+      "path": ["bq", "undelete"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -420,10 +351,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "update"
-      ],
+      "path": ["bq", "update"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -438,10 +366,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "version"
-      ],
+      "path": ["bq", "version"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -455,10 +380,7 @@
       "groups": {},
       "is_group": false,
       "is_hidden": false,
-      "path": [
-        "bq",
-        "wait"
-      ],
+      "path": ["bq", "wait"],
       "positionals": [],
       "release": "GA",
       "sections": {
@@ -976,9 +898,7 @@
   "groups": {},
   "is_group": true,
   "is_hidden": false,
-  "path": [
-    "bq"
-  ],
+  "path": ["bq"],
   "positionals": [],
   "release": "GA",
   "sections": {}

@@ -4,11 +4,7 @@
   "action": "capability_implementation",
   "description": "RobustSequence with retry logic",
   "inputs": {
-    "features": [
-      "retry_on_failure",
-      "configurable_retries",
-      "change_threshold"
-    ]
+    "features": ["retry_on_failure", "configurable_retries", "change_threshold"]
   },
   "outputs": {
     "test": "5/5 steps, 9 retries, 0 failures"
@@ -31,9 +27,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Retry logic makes automation more robust against transient failures",
   "parent_id": null,
-  "tags": [
-    "automation",
-    "retry",
-    "robust"
-  ]
+  "tags": ["automation", "retry", "robust"]
 }

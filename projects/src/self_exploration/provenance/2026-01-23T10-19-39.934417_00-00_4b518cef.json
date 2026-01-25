@@ -27,9 +27,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Need visual verification to close the feedback loop for reliable automation",
   "parent_id": null,
-  "tags": [
-    "planning",
-    "visual",
-    "automation"
-  ]
+  "tags": ["planning", "visual", "automation"]
 }

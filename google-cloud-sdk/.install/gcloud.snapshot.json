@@ -1,9 +1,7 @@
 {
   "components": [
     {
-      "dependencies": [
-        "core"
-      ],
+      "dependencies": ["core"],
       "details": {
         "description": "Default set of gcloud commands.",
         "display_name": "Default set of gcloud commands"

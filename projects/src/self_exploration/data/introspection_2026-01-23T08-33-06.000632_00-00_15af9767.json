@@ -28,13 +28,6 @@
     "What metrics would show practical improvement?",
     "When should introspection cycles pause for action?"
   ],
-  "tags": [
-    "practical",
-    "impact",
-    "efficiency",
-    "value",
-    "so_what",
-    "cycle5"
-  ],
+  "tags": ["practical", "impact", "efficiency", "value", "so_what", "cycle5"],
   "provenance_id": "727e9359-2bf4-4d94-9b83-cf37fe8d7ad8"
 }

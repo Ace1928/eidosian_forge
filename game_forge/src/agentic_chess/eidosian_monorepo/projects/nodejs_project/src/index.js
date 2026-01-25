@@ -3,7 +3,7 @@
  * @module index
  */
 
-'use strict';
+"use strict";
 
 /**
  * Run the main functionality of the project.
@@ -11,14 +11,14 @@
  */
 function run() {
   return {
-    status: 'success',
-    message: 'Hello from Node.js project!'
+    status: "success",
+    message: "Hello from Node.js project!",
   };
 }
 
 // Export the run function
 module.exports = {
-  run
+  run,
 };
 
 // Run if called directly
