@@ -15,7 +15,6 @@ import json
 from ..core.files import write_file
 from ..core.templates import render_template
 from ..constants.content import (
-from eidosian_core import eidosian
     README_TEMPLATE,
     GITIGNORE_CONTENT,
     EDITORCONFIG_CONTENT,
@@ -27,6 +26,7 @@ from eidosian_core import eidosian
     SECURITY_TEMPLATE,
     CHANGELOG_TEMPLATE
 )
+from eidosian_core import eidosian
 
 
 def _load_global_info() -> Dict[str, Any]:

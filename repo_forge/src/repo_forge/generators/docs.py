@@ -11,12 +11,12 @@ import logging
 from ..core.directory import create_directory
 from ..core.files import write_file
 from ..constants.paths import (
-from eidosian_core import eidosian
     DOCUMENTATION_STRUCTURE,
     MANUAL_DOC_STRUCTURE,
     AUTO_DOC_STRUCTURE,
     ASSETS_STRUCTURE
 )
+from eidosian_core import eidosian
 
 
 @eidosian()

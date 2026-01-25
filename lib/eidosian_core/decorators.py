@@ -128,10 +128,12 @@ class EidosianDecorator:
     
     def __call__(self, func: F) -> F:
         """Decorate a function."""
-        func_name = self.name or func.__name__
+        # Handle mocked functions gracefully
+        func_name = self.name or getattr(func, '__name__', '<unknown>')
         
         # Get or create logger
-        logger = self.logger or get_logger(func.__module__)
+        func_module = getattr(func, '__module__', __name__)
+        logger = self.logger or get_logger(func_module)
         
         # Setup profiler if needed
         if self.profile:

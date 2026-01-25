@@ -68,18 +68,13 @@ class TestCLIOptions(unittest.TestCase):
     def test_color_flag_without_value(self):
         """Test that --color works as a flag without requiring value."""
         # When using --color without a value, it should default to rainbow
-        with patch("figlet_forge.cli.main.colored_format") as mock_color, patch(
-            "figlet_forge.cli.main.get_coloring_functions"
-        ) as mock_get_coloring:
-
-            # Set up mock for get_coloring_functions to return a mock rainbow function
-            mock_rainbow = unittest.mock.MagicMock(return_value="Rainbow text")
-            mock_get_coloring.return_value = {"rainbow": mock_rainbow}
-
+        mock_rainbow = unittest.mock.MagicMock(return_value="Rainbow text")
+        
+        with patch("figlet_forge.cli.main.get_coloring_functions", return_value=mock_rainbow):
             # Use --color as a flag (should default to rainbow)
             main(["--color", "Hello"])
 
-            # The rainbow colorizer should have been called
+            # The rainbow colorizer should have been called (applied to the rendered text)
             mock_rainbow.assert_called_once()
 
     def test_sample_text_without_value(self):

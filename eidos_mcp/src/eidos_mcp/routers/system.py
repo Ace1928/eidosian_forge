@@ -7,9 +7,9 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+from eidosian_core import eidosian
 from ..forge_loader import ensure_forge_import
 from ..transactions import (
-from eidosian_core import eidosian
     begin_transaction,
     check_idempotency,
     find_latest_transaction_for_path,

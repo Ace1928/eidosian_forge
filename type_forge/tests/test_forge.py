@@ -1,49 +1,72 @@
+"""Tests for TypeCore schema registration and validation."""
 import unittest
-
-from type_forge.forge.type_forge import TypeForge
-from type_forge.validators.basic import BasicValidator
+from type_forge import TypeCore, ValidationError
 
 
-class TestTypeForge(unittest.TestCase):
+class TestTypeForgeSchemas(unittest.TestCase):
+    """Test TypeCore schema management and dynamic validation."""
 
     def setUp(self):
-        self.type_forge = TypeForge()
-        self.validator = BasicValidator()
+        self.core = TypeCore()
 
-    def test_dynamic_type_creation(self):
-        # Test dynamic type creation with a basic validator
-        self.type_forge.add_validator(self.validator)
-        dynamic_type = self.type_forge.create_type(
-            "CustomType", {"field1": str, "field2": int}
-        )
-        self.assertIsNotNone(dynamic_type)
-        self.assertTrue(hasattr(dynamic_type, "field1"))
-        self.assertTrue(hasattr(dynamic_type, "field2"))
+    def test_register_schema(self):
+        """Test schema registration."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "age": {"type": "number"}
+            },
+            "required": ["name"]
+        }
+        result = self.core.register_schema("person", schema)
+        self.assertTrue(result)
+        
+        # Re-registering same schema returns False
+        result = self.core.register_schema("person", schema)
+        self.assertFalse(result)
 
-    def test_validation_success(self):
-        # Test successful validation of a valid instance
-        dynamic_type = self.type_forge.create_type(
-            "ValidType", {"name": str, "age": int}
-        )
-        valid_instance = dynamic_type(name="Alice", age=30)
-        validation_result = self.validator.validate(valid_instance)
-        self.assertTrue(validation_result)
+    def test_delete_schema(self):
+        """Test schema deletion."""
+        schema = {"type": "string"}
+        self.core.register_schema("temp", schema)
+        
+        result = self.core.delete_schema("temp")
+        self.assertTrue(result)
+        
+        # Deleting non-existent schema returns False
+        result = self.core.delete_schema("nonexistent")
+        self.assertFalse(result)
 
-    def test_validation_failure(self):
-        # Test validation failure for an invalid instance
-        dynamic_type = self.type_forge.create_type(
-            "InvalidType", {"name": str, "age": int}
-        )
-        invalid_instance = dynamic_type(name="Bob", age="not_a_number")  # Invalid age
-        validation_result = self.validator.validate(invalid_instance)
-        self.assertFalse(validation_result)
+    def test_get_schema(self):
+        """Test schema retrieval."""
+        schema = {"type": "number", "minimum": 0}
+        self.core.register_schema("positive", schema)
+        
+        retrieved = self.core.get_schema("positive")
+        self.assertEqual(retrieved, schema)
+        
+        # Non-existent schema returns None
+        self.assertIsNone(self.core.get_schema("missing"))
 
-    def test_type_forge_integration(self):
-        # Test integration of TypeForge with validators
-        self.type_forge.add_validator(self.validator)
-        dynamic_type = self.type_forge.create_type("IntegratedType", {"field1": str})
-        instance = dynamic_type(field1="Test")
-        self.assertIsInstance(instance, dynamic_type)
+    def test_object_validation(self):
+        """Test object validation with required fields."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "age": {"type": "number"}
+            },
+            "required": ["name"]
+        }
+        self.core.register_schema("person", schema)
+        
+        # Valid data
+        self.assertTrue(self.core.validate("person", {"name": "Alice", "age": 30}))
+        
+        # Missing required field
+        with self.assertRaises(ValidationError):
+            self.core.validate("person", {"age": 30})
 
 
 if __name__ == "__main__":

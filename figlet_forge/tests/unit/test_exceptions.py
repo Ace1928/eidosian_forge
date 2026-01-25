@@ -571,16 +571,10 @@ def patch_sys_frame(test_name: str) -> mock.MagicMock:
     class MockFrame:
         f_code = type("obj", (object,), {"co_name": test_name})()
 
-    class MockFrameGetter:
-        def __call__(self, depth: int = 0) -> "MockFrameGetter":
-            return self
-
-        def f_back(self) -> MockFrame:
-            return MockFrame()  # Fixed: Return an instance of MockFrame, not the class
-
-    # Fix: Cast the return value to MagicMock to match the return type
+    # sys._getframe(depth) should return a frame object directly
+    # The mock should return MockFrame for all depth values
     return cast(
-        mock.MagicMock, mock.patch("sys._getframe", return_value=MockFrameGetter())
+        mock.MagicMock, mock.patch("sys._getframe", return_value=MockFrame())
     )
 
 

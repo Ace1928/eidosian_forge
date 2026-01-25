@@ -11,7 +11,7 @@ import sys
 import textwrap
 from typing import List, Optional
 
-from ..color import get_coloring_functions
+from ..color import colored_format, get_coloring_functions
 from ..core.exceptions import FigletError, FontNotFound
 from ..core.utils import get_terminal_size
 from ..figlet import Figlet
@@ -55,7 +55,9 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     )
 
     font_options = parser.add_argument_group("Font Options")
-    font_options.add_argument("--font", "-f", help="Font to use (default: standard)")
+    font_options.add_argument(
+        "--font", "-f", default="standard", help="Font to use (default: standard)"
+    )
     font_options.add_argument(
         "--list-fonts", "-l", action="store_true", help="List available fonts"
     )
@@ -126,12 +128,16 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         "--showcase",
         "--sample",
         dest="showcase",
-        action="store_true",
-        help="Show fonts and styles showcase",
+        nargs="?",
+        const=True,  # When flag is used without value
+        default=False,  # When flag is not present
+        help="Show fonts and styles showcase (optionally provide sample text)",
     )
     showcase_options.add_argument(
         "--sample-text",
-        default="hello",
+        nargs="?",
+        const="Hello Eidos",  # Default when flag used without value
+        default="hello",  # Default when flag not used at all
         help="Text to use in showcase",
     )
     showcase_options.add_argument(
@@ -232,7 +238,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
 
         # List colors if requested
-        if args.color_list:
+        if args.color_list or (args.color and args.color.lower() == "list"):
             list_colors()
             return 0
 
@@ -242,146 +248,116 @@ def main(argv: Optional[List[str]] = None) -> int:
             term_width, _ = get_terminal_size()
             width = term_width if term_width else DEFAULT_WIDTH
 
-        # Show color showcase
-        if args.sample_color and args.sample_color.upper() == "ALL":
+        # Show color showcase if --sample-color=ALL is used (even without --showcase flag)
+        if args.sample_color and args.sample_color.upper() == "ALL" and not args.showcase:
             display_color_showcase(
                 sample_text=args.sample_text, font=args.font or "small"
             )
             return 0
 
-        # Show regular showcase if requested
+        # Show regular showcase if requested (handles all showcase cases including color showcase)
         if args.showcase:
-            showcase = generate_showcase(
-                sample_text=args.sample_text,
-                fonts=args.sample_fonts,
-                color=args.sample_color,
-                width=width,
-            )
-            print(showcase)
+            try:
+                # If showcase was given a value (e.g., --showcase=Text), use it as sample_text
+                sample_text = args.showcase if isinstance(args.showcase, str) else args.sample_text
+                
+                # Parse fonts from comma-separated string if provided
+                fonts = args.sample_fonts
+                if fonts and fonts != "ALL" and isinstance(fonts, str) and "," in fonts:
+                    fonts = [f.strip() for f in fonts.split(",")]
+                
+                showcase = generate_showcase(
+                    sample_text=sample_text,
+                    fonts=fonts,
+                    color=args.sample_color,
+                )
+                print(showcase)
 
-            # Show usage guide
-            print("\n" + "=" * width)
-            print(" ⚛️ FIGLET FORGE USAGE GUIDE - THE EIDOSIAN WAY ⚡".center(width))
-            print("=" * width + "\n")
+                # Show usage guide
+                print("\n" + "=" * width)
+                print(" ⚛️ FIGLET FORGE USAGE GUIDE - THE EIDOSIAN WAY ⚡".center(width))
+                print("=" * width + "\n")
 
-            # Usage guide content
-            guide = [
-                "📊 SHOWCASE SUMMARY:",
-                "  • Displayed fonts and color styles",
-                "  • Use the commands below to apply these styles to your own text",
-                "",
-                "📋 CORE USAGE PATTERNS:",
-                "  figlet_forge 'Your Text Here'              # Simple rendering",
-                "  cat file.txt | figlet_forge                # Pipe text from stdin",
-                "  figlet_forge 'Line 1\\nLine 2'              # Multi-line text",
-                "",
-                "🔤 FONT METAMORPHOSIS:",
-                "  Command format: figlet_forge --font=<font_name> 'Your Text'",
-                "",
-                "  Available fonts you've just seen:",
-                "",
-                "    Display Fonts:",
-                "      figlet_forge --font=banner 'Your Text'  # Wide, horizontally stretched text for announcem...",
-                "      figlet_forge --font=big 'Your Text'  # Bold, attention-grabbing display for headlines",
-                "      figlet_forge --font=block 'Your Text'  # Solid, impactful lettering for emphasis",
-                "      figlet_forge --font=shadow 'Your Text'  # Dimensional text with drop shadows for depth",
-                "      figlet_forge --font=standard 'Your Text'  # The classic figlet font, perfect for general use",
-                "",
-                "    Stylized Fonts:",
-                "      figlet_forge --font=bubble 'Your Text'  # Rounded, friendly letters for approachable mess...",
-                "      figlet_forge --font=ivrit 'Your Text'  # Right-to-left oriented font for Hebrew-style text",
-                "      figlet_forge --font=lean 'Your Text'  # Condensed characters for fitting more text hori...",
-                "",
-                "    Technical Fonts:",
-                "      figlet_forge --font=digital 'Your Text'  # Technical, LCD-like display for a technological...",
-                "",
-                "    Compact Fonts:",
-                "      figlet_forge --font=mini 'Your Text'  # Ultra-compact font for constrained spaces",
-                "      figlet_forge --font=small 'Your Text'  # Compact representation when space is limited",
-                "      figlet_forge --font=smslant 'Your Text'  # Small slanted font for compact, dynamic text",
-                "",
-                "    Script Fonts:",
-                "      figlet_forge --font=script 'Your Text'  # Elegant, cursive-like appearance for a sophisti...",
-                "      figlet_forge --font=slant 'Your Text'  # Adds a dynamic, forward-leaning style to text",
-                "      figlet_forge --font=smscript 'Your Text'  # Small script font for elegant, compact text",
-                "",
-                "📐 SPATIAL ARCHITECTURE:",
-                "  --width=120                  # Set output width",
-                "  --justify=center             # Center-align text (left, right, center)",
-                "  --direction=right-to-left    # Change text direction",
-                "",
-                "🔄 RECURSIVE TRANSFORMATIONS:",
-                "  --reverse                    # Mirror text horizontally",
-                "  --flip                       # Flip text vertically (upside-down)",
-                "  --border=single              # Add border (single, double, rounded, bold, ascii)",
-                "  --shade                      # Add shadow effect",
-                "",
-                "🎨 COLOR EFFECTS:",
-                "  --color=RED                  # Basic color",
-                "  --color=RED:BLACK            # Foreground:Background color",
-                "  --color=rainbow              # Rainbow effect",
-                "  --color=red_to_blue          # Gradient effect",
-                "  --color=green_on_black       # Preset color style",
-                "  --color-list                 # Show available colors",
-                "",
-                "✨ SYNTHESIS PATTERNS:",
-                "  # Rainbow colored slant font with border",
-                "  figlet_forge --font=slant --color=rainbow --border=single 'Synthesis'",
-                "",
-                "  # Center-justified big green text on black background",
-                "  figlet_forge --font=big --color=green_on_black --justify=center 'Elegant'",
-                "",
-                "  # Flipped and reversed text with shadow effect",
-                "  figlet_forge --font=standard --reverse --flip --shade 'Recursion'",
-                "",
-                "📋 COMMAND LINE OPTIONS:",
-                "  --showcase                   # Show fonts and styles showcase",
-                "  --sample                     # Equivalent to --showcase",
-                '  --sample-text="Hello World"  # Set sample text for showcase',
-                "  --sample-color=RED           # Set color for samples",
-                "  --sample-fonts=slant,mini    # Specify which fonts to sample",
-                "  --unicode, -u                # Enable Unicode character support",
-                "  --version, -v                # Display version information",
-                "  --help                       # Show help message",
-                "",
-                "=" * width,
-                " 🚀 WHAT'S NEXT?".center(width),
-                "=" * width,
-                "",
-                "1. Try creating your own ASCII art:",
-                "   figlet_forge --font=slant --color=rainbow 'Your Custom Text'",
-                "",
-                "2. Explore more options:",
-                "   figlet_forge --help",
-                "",
-                "3. Save your creations:",
-                "   figlet_forge --font=big --color=blue_on_black 'Hello' --output=banner.txt",
-                "",
-                "4. Combine with other tools:",
-                "   figlet_forge 'Welcome' | lolcat",
-                "   echo 'Hello' | figlet_forge --font=mini --border=rounded",
-                "",
-                "5. Create a login banner:",
-                "   figlet_forge --font=big --color=green_on_black --border=double 'SYSTEM LOGIN' > /etc/motd",
-                "",
-                f"⚛️ Figlet Forge v{__version__} ⚡ - Eidosian Typography Engine",
-                '  "Form follows function; elegance emerges from precision."',
-            ]
+                # Usage guide content
+                guide = [
+                    "📊 SHOWCASE SUMMARY:",
+                    "  • Displayed fonts and color styles",
+                    "  • Use the commands below to apply these styles to your own text",
+                    "",
+                    "📋 CORE USAGE PATTERNS:",
+                    "  figlet_forge 'Your Text Here'              # Simple rendering",
+                    "  cat file.txt | figlet_forge                # Pipe text from stdin",
+                    "  figlet_forge 'Line 1\\nLine 2'              # Multi-line text",
+                    "",
+                    "🔤 FONT METAMORPHOSIS:",
+                    "  Command format: figlet_forge --font=<font_name> 'Your Text'",
+                    "",
+                    "📐 SPATIAL ARCHITECTURE:",
+                    "  --width=120                  # Set output width",
+                    "  --justify=center             # Center-align text (left, right, center)",
+                    "  --direction=right-to-left    # Change text direction",
+                    "",
+                    "🔄 RECURSIVE TRANSFORMATIONS:",
+                    "  --reverse                    # Mirror text horizontally",
+                    "  --flip                       # Flip text vertically (upside-down)",
+                    "  --border=single              # Add border (single, double, rounded, bold, ascii)",
+                    "  --shade                      # Add shadow effect",
+                    "",
+                    "🎨 COLOR EFFECTS:",
+                    "  --color=RED                  # Basic color",
+                    "  --color=RED:BLACK            # Foreground:Background color",
+                    "  --color=rainbow              # Rainbow effect",
+                    "  --color=red_to_blue          # Gradient effect",
+                    "  --color-list                 # Show available colors",
+                    "",
+                    f"⚛️ Figlet Forge v{__version__} ⚡ - Eidosian Typography Engine",
+                ]
 
-            for line in guide:
-                print(line)
+                for line in guide:
+                    print(line)
 
-            return 0
+                return 0
+            except Exception as e:
+                print(f"Error generating showcase: {e}", file=sys.stderr)
+                return 1
 
         # Get input text for regular rendering mode
+        # Handle case where --color might have consumed what should be text
+        # (e.g., `--color Hello` where Hello looks like a color value but isn't)
         text = " ".join(args.text) if args.text else read_input()
+        
+        # Check if color value looks like text (not a valid color specification)
+        # Valid colors: NAME, NAME:NAME, rgb;g;b, rainbow, gradient specs
+        if not text and args.color and args.color not in (None, "RAINBOW"):
+            # Check if color is actually meant to be text
+            color_upper = args.color.upper()
+            known_colors = {
+                "RED", "GREEN", "BLUE", "YELLOW", "CYAN", "MAGENTA", "WHITE", "BLACK",
+                "LIGHT_RED", "LIGHT_GREEN", "LIGHT_BLUE", "LIGHT_YELLOW", 
+                "LIGHT_CYAN", "LIGHT_MAGENTA", "LIGHT_WHITE", "LIGHT_BLACK",
+                "RAINBOW", "RANDOM", "ALL"
+            }
+            is_rgb = ";" in args.color and all(p.isdigit() for p in args.color.split(";"))
+            is_fg_bg = ":" in args.color
+            is_gradient = "_TO_" in color_upper or "_ON_" in color_upper
+            is_known = color_upper in known_colors
+            
+            if not (is_known or is_rgb or is_fg_bg or is_gradient):
+                # Color value looks like text, treat it as such
+                text = args.color
+                args.color = "RAINBOW"  # Default color when using --color as flag
+        
         if not text:
-            print("No input provided. Use 'figlet_forge --help' for usage information.")
-            return 0
+            print("No input provided. Use 'figlet_forge --help' for usage information.", file=sys.stderr)
+            return 1  # Error: no input
 
         # Create Figlet instance
         figlet = Figlet(
-            font=args.font, width=width, justify=args.justify, direction=args.direction
+            font=args.font,
+            width=width,
+            justify=args.justify,
+            direction=args.direction,
+            unicode_aware=args.unicode if hasattr(args, 'unicode') else False,
         )
 
         # Render text
@@ -394,14 +370,29 @@ def main(argv: Optional[List[str]] = None) -> int:
             result = result.flip()
         if args.shade:
             result = result.shadow()
-        elif args.border:
+        if args.border:
             result = result.border(style=args.border)
 
         # Apply color if specified
         if args.color:
-            color_func = get_coloring_functions(args.color)
-            if color_func:
-                result = color_func(result)
+            color_name = args.color.lower()
+            coloring_funcs = get_coloring_functions()
+            
+            # Handle special color effects
+            if color_name == "rainbow":
+                color_func = coloring_funcs.get("rainbow")
+                if color_func:
+                    result = color_func(result)
+            elif "_to_" in color_name:
+                # Gradient: X_to_Y format
+                parts = color_name.split("_to_")
+                if len(parts) == 2:
+                    gradient_func = coloring_funcs.get("gradient")
+                    if gradient_func:
+                        result = gradient_func(result, parts[0], parts[1])
+            else:
+                # Simple solid color
+                result = colored_format(result, color_name)
 
         # Handle output formatting
         if args.html:
@@ -417,23 +408,26 @@ def main(argv: Optional[List[str]] = None) -> int:
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(str(result))
+                f.write("\n")  # Ensure trailing newline
         else:
             print(result)
 
         return 0
 
     except FontNotFound as e:
-        print(f"Font not found: {e}", file=sys.stderr)
+        # Get just the font name from the exception
+        font_name = str(e).split(" - ")[0] if " - " in str(e) else str(e)
+        print(f"Error: Font not found - {font_name}", file=sys.stderr)
         return 1
     except FigletError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print("\nOperation canceled by user.", file=sys.stderr)
+        print("\nOperation cancelled by user.", file=sys.stderr)
         return 130
     except Exception as e:
-        print(f"Unexpected error: {e}", file=sys.stderr)
-        return 1
+        print(f"Error: {e}", file=sys.stderr)
+        return 2  # General exception return code
 
 
 if __name__ == "__main__":

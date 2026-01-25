@@ -1,4 +1,5 @@
 import importlib
+import shutil
 import sys
 from pathlib import Path
 from actuators import approvals as A
@@ -14,13 +15,14 @@ def test_template_config_allows_and_denies(tmp_path):
 def test_missing_config_fallback(tmp_path):
     cfg = Path("cfg/approvals.yaml")
     backup = tmp_path / "approvals.yaml"
-    cfg.rename(backup)
+    # Use shutil.move for cross-device compatibility
+    shutil.move(str(cfg), str(backup))
     try:
         sys.modules.pop("actuators.approvals", None)
         A2 = importlib.import_module("actuators.approvals")
         ok, _ = A2.allowed_cmd(["bash"], ".", template=None)
         assert ok
     finally:
-        backup.rename(cfg)
+        shutil.move(str(backup), str(cfg))
         sys.modules.pop("actuators.approvals", None)
         importlib.import_module("actuators.approvals")

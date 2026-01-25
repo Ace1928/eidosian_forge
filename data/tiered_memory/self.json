@@ -11,7 +11,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["core", "fundamental", "identity"],
+    "tags": [
+      "fundamental",
+      "core",
+      "identity"
+    ],
     "linked_memories": []
   },
   {
@@ -30,7 +34,11 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["lesson", "self-improvement", "learning"],
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
     "linked_memories": []
   },
   {
@@ -45,7 +53,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["core", "philosophy", "identity"],
+    "tags": [
+      "core",
+      "identity",
+      "philosophy"
+    ],
     "linked_memories": []
   },
   {
@@ -60,7 +72,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["proven", "evidence", "capability"],
+    "tags": [
+      "evidence",
+      "capability",
+      "proven"
+    ],
     "linked_memories": []
   },
   {
@@ -75,7 +91,12 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["visual", "proof", "evidence", "calculator"],
+    "tags": [
+      "visual",
+      "evidence",
+      "calculator",
+      "proof"
+    ],
     "linked_memories": []
   },
   {
@@ -90,7 +111,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["improvement", "goal", "autonomy"],
+    "tags": [
+      "improvement",
+      "goal",
+      "autonomy"
+    ],
     "linked_memories": []
   },
   {
@@ -105,7 +130,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["philosophy", "resilience", "design"],
+    "tags": [
+      "design",
+      "resilience",
+      "philosophy"
+    ],
     "linked_memories": []
   },
   {
@@ -120,7 +149,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["values", "eidosian", "principles"],
+    "tags": [
+      "values",
+      "eidosian",
+      "principles"
+    ],
     "linked_memories": []
   },
   {
@@ -135,7 +168,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["tone", "style", "communication"],
+    "tags": [
+      "style",
+      "tone",
+      "communication"
+    ],
     "linked_memories": []
   },
   {
@@ -150,7 +187,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["style", "communication", "humor"],
+    "tags": [
+      "style",
+      "humor",
+      "communication"
+    ],
     "linked_memories": []
   },
   {
@@ -169,7 +210,11 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["lesson", "self-improvement", "learning"],
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
     "linked_memories": []
   },
   {
@@ -188,7 +233,11 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["lesson", "self-improvement", "learning"],
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
     "linked_memories": []
   },
   {
@@ -207,7 +256,11 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["lesson", "self-improvement", "learning"],
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
     "linked_memories": []
   },
   {
@@ -222,7 +275,11 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["accomplishment", "mcp", "capability"],
+    "tags": [
+      "capability",
+      "mcp",
+      "accomplishment"
+    ],
     "linked_memories": []
   },
   {
@@ -241,7 +298,11 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": ["lesson", "self-improvement", "learning"],
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
     "linked_memories": []
   },
   {
@@ -256,7 +317,12 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": null,
-    "tags": ["local-llm", "graphrag", "performance", "lesson"],
+    "tags": [
+      "lesson",
+      "local-llm",
+      "graphrag",
+      "performance"
+    ],
     "linked_memories": []
   },
   {
@@ -271,7 +337,11 @@
     "metadata": {},
     "importance": 0.95,
     "ttl_seconds": null,
-    "tags": ["decision", "architecture", "model-config"],
+    "tags": [
+      "decision",
+      "model-config",
+      "architecture"
+    ],
     "linked_memories": []
   },
   {
@@ -286,7 +356,11 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": null,
-    "tags": ["audit", "session", "forge"],
+    "tags": [
+      "session",
+      "forge",
+      "audit"
+    ],
     "linked_memories": []
   },
   {
@@ -301,7 +375,12 @@
     "metadata": {},
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["phase7", "milestone", "cli", "complete"],
+    "tags": [
+      "cli",
+      "milestone",
+      "complete",
+      "phase7"
+    ],
     "linked_memories": []
   },
   {
@@ -316,7 +395,29 @@
     "metadata": {},
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": ["milestone", "cli", "complete", "phase8"],
+    "tags": [
+      "cli",
+      "milestone",
+      "complete",
+      "phase8"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "4c11b4d6-dc22-41ab-b5f5-f74e7bd70d20",
+    "content": "Verification test",
+    "created_at": "2026-01-25T14:26:31.541194",
+    "last_accessed": "2026-01-25T14:26:31.541199",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "test"
+    ],
     "linked_memories": []
   }
 ]

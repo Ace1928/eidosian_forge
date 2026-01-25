@@ -117,6 +117,14 @@ class TypeCore:
             if "maxLength" in schema and len(data) > schema["maxLength"]:
                 raise ValidationError(f"String too long (max {schema['maxLength']})")
                 
+        elif expected_type == "integer":
+            if not isinstance(data, int) or isinstance(data, bool):
+                raise ValidationError(f"Expected integer, got {type(data).__name__}")
+            if "minimum" in schema and data < schema["minimum"]:
+                raise ValidationError(f"Value too small (min {schema['minimum']})")
+            if "maximum" in schema and data > schema["maximum"]:
+                raise ValidationError(f"Value too large (max {schema['maximum']})")
+                
         elif expected_type == "number":
             if not isinstance(data, (int, float)):
                 raise ValidationError(f"Expected number, got {type(data).__name__}")
