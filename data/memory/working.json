@@ -11,12 +11,7 @@
     "metadata": {},
     "importance": 0.5,
     "ttl_seconds": 86400,
-    "tags": [
-      "milestone",
-      "tests",
-      "session",
-      "decorators"
-    ],
+    "tags": ["milestone", "tests", "session", "decorators"],
     "linked_memories": []
   }
 ]
