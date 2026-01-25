@@ -1,0 +1,187 @@
+{
+  "audit_date": "2026-01-25",
+  "repository": "glyph_forge",
+  "total_files": 78,
+  "total_lines": 33729,
+  "summary": {
+    "critical_issues": 12,
+    "high_issues": 18,
+    "medium_issues": 24,
+    "low_issues": 15
+  },
+  "modules": {
+    "root": {
+      "status": "needs_attention",
+      "issues": [
+        {"file": "pyproject.toml", "issue": "Missing dependencies: pyfiglet, colorama, PyYAML", "severity": "high"},
+        {"file": "setup.py", "issue": "Dependency mismatch with pyproject.toml", "severity": "high"},
+        {"file": "requirements.txt", "issue": "Duplicate of setup.py deps", "severity": "medium"}
+      ]
+    },
+    "core": {
+      "status": "critical",
+      "files": ["banner_generator.py (671 lines)", "style_manager.py (363 lines)"],
+      "issues": [
+        {"file": "__init__.py", "issue": "MISSING - module not importable as package", "severity": "critical"},
+        {"file": "banner_generator.py:20", "issue": "Unused import: re", "severity": "low"},
+        {"file": "banner_generator.py:160,603", "issue": "Bare except Exception - too broad", "severity": "high"},
+        {"file": "banner_generator.py:451-467", "issue": "Shadow effect logic error - mutates input incorrectly", "severity": "high"},
+        {"file": "banner_generator.py:384-399", "issue": "Duplicated padding logic with style_manager.py", "severity": "medium"},
+        {"file": "style_manager.py:112,148,307", "issue": "Non-Pythonic variable name: Glyph_art (PascalCase)", "severity": "medium"},
+        {"file": "style_manager.py:314", "issue": "IndexError on empty lines not handled", "severity": "medium"}
+      ]
+    },
+    "cli": {
+      "status": "needs_refactor",
+      "files": ["__init__.py (552 lines)", "stream.py", "image.py"],
+      "issues": [
+        {"file": "__init__.py", "issue": "~200 lines of duplicated code across commands", "severity": "high"},
+        {"file": "__init__.py", "issue": "Broken imports for some optional features", "severity": "medium"}
+      ]
+    },
+    "streaming": {
+      "status": "critical_redundancy",
+      "files": ["engine.py", "ultra.py", "premium.py", "ultimate.py", "hifi.py", "turbo.py", "core/*"],
+      "issues": [
+        {"file": "multiple", "issue": "5+ redundant streaming engines doing same thing", "severity": "critical"},
+        {"file": "ultimate.py", "issue": "2196 lines - monolithic, should be refactored", "severity": "high"},
+        {"file": "core/", "issue": "Newer modular architecture but incomplete", "severity": "medium"},
+        {"file": "config classes", "issue": "5 different config classes for streaming", "severity": "high"}
+      ]
+    },
+    "services": {
+      "status": "needs_cleanup",
+      "files": ["image_to_glyph.py (859 lines)", "image_to_Glyph.py (4 lines)", "streaming.py (302 lines)", "+7 more"],
+      "issues": [
+        {"file": "image_to_Glyph.py", "issue": "Case-sensitive duplicate - DELETE THIS FILE", "severity": "critical"},
+        {"file": "image_to_glyph.py:18", "issue": "Unused TypeVar T", "severity": "low"},
+        {"file": "image_to_glyph.py:859", "issue": "Monolithic - should split into ImageLoader, ColorConverter, DitherEngine", "severity": "high"},
+        {"file": "streaming.py:106-291", "issue": "Duplicated parameter-building pattern across 5 functions", "severity": "medium"}
+      ]
+    },
+    "utils": {
+      "status": "needs_cleanup",
+      "files": ["__init__.py (75 lines)", "glyph_utils.py (369 lines)", "alphabet_manager.py (275 lines)"],
+      "issues": [
+        {"file": "__init__.py:1-28", "issue": "Import order wrong - imports after from-imports", "severity": "high"},
+        {"file": "__init__.py:15,69", "issue": "Duplicate __all__ definitions", "severity": "medium"},
+        {"file": "glyph_utils.py:326-368", "issue": "wrap_text() not exported but public function", "severity": "medium"},
+        {"file": "glyph_utils.py:156,183", "issue": "Function names use non-Pythonic Glyph_art", "severity": "medium"},
+        {"file": "glyph_utils.py:170", "issue": "Dead variable max_line_length assigned but never used", "severity": "low"},
+        {"file": "alphabet_manager.py:219", "issue": "set[str] needs Set[str] for Python <3.9 compat", "severity": "medium"}
+      ]
+    },
+    "api": {
+      "status": "needs_fixes",
+      "files": ["glyph_api.py (403 lines)", "__init__.py (11 lines)"],
+      "issues": [
+        {"file": "glyph_api.py:89", "issue": "Assertion for runtime check - should be RuntimeError", "severity": "high"},
+        {"file": "glyph_api.py:238-244", "issue": "Logic error: brightness=0.0 is falsy, breaks 'or' pattern", "severity": "critical"},
+        {"file": "glyph_api.py:195", "issue": "No input validation for image paths", "severity": "medium"}
+      ]
+    },
+    "config": {
+      "status": "needs_init",
+      "files": ["settings.py (353 lines)"],
+      "issues": [
+        {"file": "__init__.py", "issue": "MISSING - cannot import from module", "severity": "critical"},
+        {"file": "settings.py:286-287", "issue": "Bare except clause - too broad", "severity": "high"},
+        {"file": "settings.py:235", "issue": "No type validation on config values", "severity": "medium"}
+      ]
+    },
+    "ui": {
+      "status": "needs_init",
+      "files": ["tui.py (1100+ lines)"],
+      "issues": [
+        {"file": "__init__.py", "issue": "MISSING - cannot import from module", "severity": "critical"},
+        {"file": "tui.py:1020-1024", "issue": "~8 bare except clauses silently swallowing errors", "severity": "high"}
+      ]
+    },
+    "renderers": {
+      "status": "incomplete",
+      "files": ["__init__.py (47 lines)"],
+      "issues": [
+        {"file": "__init__.py:35", "issue": "Width calculation crashes on empty matrix", "severity": "high"},
+        {"file": "__init__.py:42", "issue": "SVG HTML escaping incomplete", "severity": "medium"},
+        {"file": "__init__.py:11,17,32", "issue": "options parameter accepted but ignored", "severity": "low"}
+      ]
+    },
+    "transformers": {
+      "status": "critical_duplication",
+      "files": ["__init__.py (601 lines)"],
+      "issues": [
+        {"file": "__init__.py", "issue": "_load_image() duplicated 4 times (48 lines)", "severity": "high"},
+        {"file": "__init__.py", "issue": "_create_density_map() duplicated 4 times (32 lines)", "severity": "high"},
+        {"file": "__init__.py", "issue": "Dimension calculation duplicated 4 times (24 lines)", "severity": "high"},
+        {"file": "__init__.py:577-584", "issue": "Sobel implementation slow - needs scipy", "severity": "medium"},
+        {"file": "__init__.py:136,271,402,545", "issue": "No error handling for Image.open()", "severity": "medium"}
+      ]
+    },
+    "scripts": {
+      "status": "has_dead_code",
+      "files": ["demo.py (247 lines)", "run_tests.py (426 lines)", "update_glossary.py (19 lines)", "verify_install.py (97 lines)"],
+      "issues": [
+        {"file": "glyph_stream.py (root)", "issue": "265KB DEAD CODE - not imported anywhere", "severity": "critical"}
+      ]
+    },
+    "examples": {
+      "status": "severely_incomplete",
+      "files": ["api_examples.py (149 lines)"],
+      "issues": [
+        {"file": "api_examples.py", "issue": "Only covers ~10% of API features", "severity": "high"},
+        {"file": "missing", "issue": "No streaming examples despite being flagship feature", "severity": "high"},
+        {"file": "missing", "issue": "No color mode examples (ANSI16/256/Truecolor)", "severity": "medium"},
+        {"file": "missing", "issue": "No dithering/filter examples", "severity": "medium"}
+      ]
+    },
+    "tests": {
+      "status": "good_coverage",
+      "stats": {"total_tests": 231, "coverage": "~88%"},
+      "issues": [
+        {"file": "streaming/core/*", "issue": "No tests for modular streaming core", "severity": "high"},
+        {"file": "streaming/ultimate.py", "issue": "No tests for ultimate engine", "severity": "high"},
+        {"file": "streaming/audio.py", "issue": "No tests for audio module", "severity": "medium"}
+      ]
+    },
+    "documentation": {
+      "status": "has_duplicates",
+      "issues": [
+        {"file": "CURRENT_STATE.md + CURRENT_STATUS.md", "issue": "Duplicate files - consolidate", "severity": "medium"},
+        {"file": "PLAN.md", "issue": "Outdated - doesn't reflect current state", "severity": "low"}
+      ]
+    }
+  },
+  "priority_actions": {
+    "critical": [
+      "Delete image_to_Glyph.py (case-sensitive duplicate)",
+      "Create core/__init__.py with proper exports",
+      "Create config/__init__.py with proper exports", 
+      "Create ui/__init__.py with proper exports",
+      "Fix api/glyph_api.py:238-244 logic error (brightness=0.0 breaks 'or')",
+      "Archive/delete glyph_stream.py (265KB dead code)"
+    ],
+    "high": [
+      "Consolidate 5+ streaming engines to 2-3",
+      "Fix bare except clauses across codebase (~15 instances)",
+      "Extract duplicated transformer methods to base class (-104 lines)",
+      "Fix utils/__init__.py import order",
+      "Add tests for streaming/core/* and ultimate.py",
+      "Fix banner_generator.py shadow effect logic"
+    ],
+    "medium": [
+      "Sync dependencies across pyproject.toml, setup.py, requirements.txt",
+      "Rename Glyph_art to glyph_art across codebase",
+      "Export missing functions from utils (wrap_text, AlphabetManager)",
+      "Create streaming_examples.py for examples/",
+      "Delete duplicate CURRENT_STATE.md or CURRENT_STATUS.md",
+      "Add input validation to API paths"
+    ]
+  },
+  "refactoring_estimate": {
+    "critical_fixes": "2-3 hours",
+    "high_priority": "4-6 hours", 
+    "full_cleanup": "12-16 hours",
+    "lines_to_remove": "~500+ (dead code, duplicates)",
+    "lines_to_add": "~200 (missing __init__.py, tests, examples)"
+  }
+}
