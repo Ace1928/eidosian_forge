@@ -91,6 +91,10 @@ logs/
 *.sql
 *.dump
 
+# Files with Windows-incompatible names
+:memory:
+*:*
+
 # ┌─────────────────────────────────────────┐
 # │ EIDOS SPECIFIC IGNORES                  │
 # └─────────────────────────────────────────┘
