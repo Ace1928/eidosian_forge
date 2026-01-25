@@ -27,8 +27,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Establishing provenance tracking infrastructure for self-exploration",
   "parent_id": null,
-  "tags": [
-    "infrastructure",
-    "phase1"
-  ]
+  "tags": ["infrastructure", "phase1"]
 }

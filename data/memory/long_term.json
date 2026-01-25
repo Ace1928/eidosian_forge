@@ -19,10 +19,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "identity",
-      "task"
-    ],
+    "tags": ["identity", "task"],
     "linked_memories": []
   },
   {
@@ -45,9 +42,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "task"
-    ],
+    "tags": ["task"],
     "linked_memories": []
   },
   {
@@ -87,11 +82,7 @@
     "metadata": {
       "is_fact": {
         "category": "breakthrough",
-        "capabilities": [
-          "mouse_move",
-          "keyboard_ready",
-          "screenshot_wayland"
-        ],
+        "capabilities": ["mouse_move", "keyboard_ready", "screenshot_wayland"],
         "screenshot_size_kb": 311
       }
     },
@@ -115,23 +106,13 @@
         "capabilities_verified": {
           "mouse": {
             "tested": true,
-            "moved_from": [
-              960,
-              540
-            ],
-            "moved_to": [
-              1060,
-              640
-            ]
+            "moved_from": [960, 540],
+            "moved_to": [1060, 640]
           },
           "keyboard": {
             "tested": true,
             "typed": "abc",
-            "captured": [
-              "a",
-              "b",
-              "c"
-            ]
+            "captured": ["a", "b", "c"]
           },
           "screenshot": {
             "tested": true,
@@ -160,19 +141,12 @@
       "is_fact": {
         "category": "capability",
         "type": "automation",
-        "features": [
-          "sequence_builder",
-          "dry_run",
-          "timing"
-        ]
+        "features": ["sequence_builder", "dry_run", "timing"]
       }
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -192,9 +166,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "lesson"
-    ],
+    "tags": ["lesson"],
     "linked_memories": []
   },
   {
@@ -214,9 +186,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "architecture"
-    ],
+    "tags": ["architecture"],
     "linked_memories": []
   },
   {
@@ -237,10 +207,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -261,9 +228,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code"
-    ],
+    "tags": ["code"],
     "linked_memories": []
   },
   {
@@ -284,9 +249,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "architecture"
-    ],
+    "tags": ["architecture"],
     "linked_memories": []
   },
   {
@@ -307,9 +270,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "task"
-    ],
+    "tags": ["task"],
     "linked_memories": []
   },
   {
@@ -329,10 +290,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "introspection",
-      "task"
-    ],
+    "tags": ["introspection", "task"],
     "linked_memories": []
   },
   {
@@ -352,10 +310,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -370,17 +325,11 @@
     "metadata": {
       "is_fact": false,
       "key": "milestone_live_feedback_v0.9.0",
-      "tags": [
-        "milestone",
-        "live_feedback",
-        "v0.9.0"
-      ]
+      "tags": ["milestone", "live_feedback", "v0.9.0"]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "milestone_live_feedback_v0.9.0"
-    ],
+    "tags": ["milestone_live_feedback_v0.9.0"],
     "linked_memories": []
   },
   {
@@ -403,10 +352,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "identity",
-      "task"
-    ],
+    "tags": ["identity", "task"],
     "linked_memories": []
   },
   {
@@ -429,9 +375,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "task"
-    ],
+    "tags": ["task"],
     "linked_memories": []
   },
   {
@@ -471,11 +415,7 @@
     "metadata": {
       "is_fact": {
         "category": "breakthrough",
-        "capabilities": [
-          "mouse_move",
-          "keyboard_ready",
-          "screenshot_wayland"
-        ],
+        "capabilities": ["mouse_move", "keyboard_ready", "screenshot_wayland"],
         "screenshot_size_kb": 311
       }
     },
@@ -499,23 +439,13 @@
         "capabilities_verified": {
           "mouse": {
             "tested": true,
-            "moved_from": [
-              960,
-              540
-            ],
-            "moved_to": [
-              1060,
-              640
-            ]
+            "moved_from": [960, 540],
+            "moved_to": [1060, 640]
           },
           "keyboard": {
             "tested": true,
             "typed": "abc",
-            "captured": [
-              "a",
-              "b",
-              "c"
-            ]
+            "captured": ["a", "b", "c"]
           },
           "screenshot": {
             "tested": true,
@@ -544,19 +474,12 @@
       "is_fact": {
         "category": "capability",
         "type": "automation",
-        "features": [
-          "sequence_builder",
-          "dry_run",
-          "timing"
-        ]
+        "features": ["sequence_builder", "dry_run", "timing"]
       }
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -576,9 +499,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "lesson"
-    ],
+    "tags": ["lesson"],
     "linked_memories": []
   },
   {
@@ -598,9 +519,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "architecture"
-    ],
+    "tags": ["architecture"],
     "linked_memories": []
   },
   {
@@ -621,10 +540,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -645,9 +561,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code"
-    ],
+    "tags": ["code"],
     "linked_memories": []
   },
   {
@@ -668,9 +582,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "architecture"
-    ],
+    "tags": ["architecture"],
     "linked_memories": []
   },
   {
@@ -691,9 +603,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "task"
-    ],
+    "tags": ["task"],
     "linked_memories": []
   },
   {
@@ -713,10 +623,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "introspection",
-      "task"
-    ],
+    "tags": ["introspection", "task"],
     "linked_memories": []
   },
   {
@@ -736,10 +643,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "code",
-      "task"
-    ],
+    "tags": ["code", "task"],
     "linked_memories": []
   },
   {
@@ -754,17 +658,11 @@
     "metadata": {
       "is_fact": false,
       "key": "milestone_live_feedback_v0.9.0",
-      "tags": [
-        "milestone",
-        "live_feedback",
-        "v0.9.0"
-      ]
+      "tags": ["milestone", "live_feedback", "v0.9.0"]
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "milestone_live_feedback_v0.9.0"
-    ],
+    "tags": ["milestone_live_feedback_v0.9.0"],
     "linked_memories": []
   },
   {
@@ -781,9 +679,7 @@
     },
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "memory"
-    ],
+    "tags": ["memory"],
     "linked_memories": []
   }
 ]

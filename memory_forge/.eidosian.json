@@ -47,15 +47,7 @@
     "created": "2025-03-13T03:09:37Z",
     "lastModified": "2025-03-13T03:09:37Z",
     "description": "A universal memory_forge_repo adhering to all Eidosian principles",
-    "languagesSupported": [
-      "python",
-      "javascript",
-      "typescript",
-      "go",
-      "rust",
-      "java",
-      "c++"
-    ],
+    "languagesSupported": ["python", "javascript", "typescript", "go", "rust", "java", "c++"],
     "version_history": [
       {
         "version": "1.0.0",

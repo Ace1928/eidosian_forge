@@ -14,10 +14,7 @@
     "webRequest",
     "storage"
   ],
-  "host_permissions": [
-    "https://*.gvt1.com/",
-    "https://dl.google.com/"
-  ],
+  "host_permissions": ["https://*.gvt1.com/", "https://dl.google.com/"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
@@ -33,10 +30,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "bindings_main.js",
-        "bindings_main.wasm"
-      ],
+      "resources": ["bindings_main.js", "bindings_main.wasm"],
       "matches": ["<all_urls>"]
     }
   ]

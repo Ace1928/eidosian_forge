@@ -40,7 +40,7 @@ class StreamingWorkletProcessor extends AudioWorkletProcessor {
 
     if (this.buffers_.length == 0) {
       this.active_ = false;
-      this.port.postMessage({id: this.id_, type: 'empty'});
+      this.port.postMessage({ id: this.id_, type: "empty" });
       return true;
     }
 
@@ -61,12 +61,12 @@ class StreamingWorkletProcessor extends AudioWorkletProcessor {
    */
   onEvent(event) {
     switch (event.data.command) {
-      case 'addBuffer':
+      case "addBuffer":
         this.id_ = event.data.id;
         this.active_ = true;
         this.buffers_.push(event.data.buffer);
         break;
-      case 'clearBuffers':
+      case "clearBuffers":
         this.id_ = 0;
         this.active_ = false;
         this.buffers_.length = 0;
@@ -75,4 +75,4 @@ class StreamingWorkletProcessor extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor('streaming-worklet-processor', StreamingWorkletProcessor);
+registerProcessor("streaming-worklet-processor", StreamingWorkletProcessor);

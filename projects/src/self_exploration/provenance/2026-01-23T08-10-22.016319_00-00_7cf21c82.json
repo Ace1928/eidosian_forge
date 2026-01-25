@@ -33,11 +33,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Exploring: What do I value? What principles actually guide my actions?",
   "parent_id": null,
-  "tags": [
-    "introspection",
-    "values",
-    "ethics",
-    "identity",
-    "phase1"
-  ]
+  "tags": ["introspection", "values", "ethics", "identity", "phase1"]
 }

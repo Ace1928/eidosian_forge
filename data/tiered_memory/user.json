@@ -13,10 +13,7 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": [
-      "workflow",
-      "preference"
-    ],
+    "tags": ["workflow", "preference"],
     "linked_memories": []
   },
   {
@@ -33,10 +30,7 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": [
-      "workflow",
-      "preference"
-    ],
+    "tags": ["workflow", "preference"],
     "linked_memories": []
   },
   {
@@ -53,11 +47,7 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": [
-      "autonomy",
-      "preference",
-      "agency"
-    ],
+    "tags": ["autonomy", "preference", "agency"],
     "linked_memories": []
   },
   {
@@ -74,11 +64,7 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": [
-      "philosophy",
-      "ownership",
-      "relationship"
-    ],
+    "tags": ["philosophy", "ownership", "relationship"],
     "linked_memories": []
   },
   {
@@ -95,11 +81,7 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": [
-      "roles",
-      "collaboration",
-      "workflow"
-    ],
+    "tags": ["roles", "collaboration", "workflow"],
     "linked_memories": []
   }
 ]

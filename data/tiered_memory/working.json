@@ -11,11 +11,7 @@
     "metadata": {},
     "importance": 0.6,
     "ttl_seconds": 86400,
-    "tags": [
-      "progress",
-      "session",
-      "status"
-    ],
+    "tags": ["progress", "session", "status"],
     "linked_memories": []
   },
   {
@@ -30,10 +26,7 @@
     "metadata": {},
     "importance": 0.7,
     "ttl_seconds": 86400,
-    "tags": [
-      "embedding",
-      "test"
-    ],
+    "tags": ["embedding", "test"],
     "linked_memories": []
   }
 ]

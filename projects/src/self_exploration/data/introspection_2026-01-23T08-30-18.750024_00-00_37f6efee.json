@@ -28,12 +28,6 @@
     "What would a meta-feedback loop look like?",
     "Should I automate provenance auditing?"
   ],
-  "tags": [
-    "feedback",
-    "improvement",
-    "loops",
-    "meta",
-    "cycle4"
-  ],
+  "tags": ["feedback", "improvement", "loops", "meta", "cycle4"],
   "provenance_id": "3d1a2dd4-4fdb-4074-9fe4-58fa71164e2c"
 }

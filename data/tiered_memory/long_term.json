@@ -11,12 +11,7 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": null,
-    "tags": [
-      "accomplishment",
-      "progress",
-      "summary",
-      "session"
-    ],
+    "tags": ["accomplishment", "progress", "summary", "session"],
     "linked_memories": []
   },
   {
@@ -61,12 +56,7 @@
     "metadata": {},
     "importance": 1.0,
     "ttl_seconds": null,
-    "tags": [
-      "figlet_forge",
-      "bug",
-      "rendering",
-      "technical_debt"
-    ],
+    "tags": ["figlet_forge", "bug", "rendering", "technical_debt"],
     "linked_memories": []
   }
 ]

@@ -33,11 +33,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Exploring: How do I learn? What is my meta-learning process?",
   "parent_id": null,
-  "tags": [
-    "introspection",
-    "learning",
-    "metacognition",
-    "memory",
-    "phase1"
-  ]
+  "tags": ["introspection", "learning", "metacognition", "memory", "phase1"]
 }

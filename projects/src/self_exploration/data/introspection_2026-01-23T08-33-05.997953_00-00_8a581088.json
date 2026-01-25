@@ -28,12 +28,6 @@
     "What predictions does this framework make?",
     "Where is this framework weakest?"
   ],
-  "tags": [
-    "synthesis",
-    "integration",
-    "framework",
-    "core_thesis",
-    "cycle5"
-  ],
+  "tags": ["synthesis", "integration", "framework", "core_thesis", "cycle5"],
   "provenance_id": "f110cc69-72ed-469b-8a10-dea8ba501730"
 }

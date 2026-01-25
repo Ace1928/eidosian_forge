@@ -33,9 +33,5 @@
   "git_sha": "46ec7af67402",
   "reasoning": "Exploring: How have my capabilities expanded?",
   "parent_id": null,
-  "tags": [
-    "introspection",
-    "capability_test",
-    "practical"
-  ]
+  "tags": ["introspection", "capability_test", "practical"]
 }
