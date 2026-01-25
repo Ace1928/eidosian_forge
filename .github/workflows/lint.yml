@@ -1,0 +1,308 @@
+# 🔍 Eidosian Linting Workflow v1.0.0
+# Comprehensive code quality checks with detailed reporting
+
+name: Lint Code
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - "**.py"
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
+      - "**.jsx"
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: 1
+  FORCE_COLOR: 1
+
+# Default permissions for all jobs
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-python:
+    name: 🐍 Lint Python
+    runs-on: ubuntu-latest
+    timeout-minutes: 20  # Prevent runaway jobs
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 📦 Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff flake8 pylint mypy black isort
+
+      - name: 🎨 Check formatting with Black
+        id: black
+        timeout-minutes: 8
+        continue-on-error: true
+        run: |
+          echo "::group::Black Format Check"
+          black . --check --diff --fast --line-length=120 \
+            --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build|google-cloud-sdk|archive_forge)/' \
+            2>&1 | tee black-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::Code formatting issues found. Run 'black . --line-length=120' to fix."
+            COUNT=$(grep -c "would reformat" black-output.txt || echo "0")
+            echo "### ⚠️ Black Format Issues: $COUNT files need formatting" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            head -50 black-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 📑 Check imports with isort
+        id: isort
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo "::group::isort Import Check"
+          isort . --check --diff --profile=black --line-length=120 \
+            --skip-gitignore \
+            --skip google-cloud-sdk \
+            --skip archive_forge \
+            2>&1 | tee isort-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::Import sorting issues found. Run 'isort . --profile=black --line-length=120' to fix."
+            echo "### ⚠️ isort Issues Found" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            head -50 isort-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 🔍 Lint with Ruff
+        id: ruff
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo "::group::Ruff Linting"
+          # Ruff is already fast and respects ruff.toml excludes
+          ruff check . --config=ruff.toml --output-format=github 2>&1 | tee ruff-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::Ruff linting issues found. Run 'ruff check . --fix' to auto-fix."
+            ERRORS=$(grep -c "error:" ruff-output.txt || echo "0")
+            WARNINGS=$(grep -c "warning:" ruff-output.txt || echo "0")
+            echo "### 🔍 Ruff Linting: $ERRORS errors, $WARNINGS warnings" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 🔬 Lint with Flake8
+        id: flake8
+        timeout-minutes: 8
+        continue-on-error: true
+        run: |
+          echo "::group::Flake8 Linting"
+          flake8 . --count --statistics --show-source --max-line-length=120 \
+            --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__,google-cloud-sdk,archive_forge \
+            2>&1 | tee flake8-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::Flake8 issues found."
+            ERRORS=$(tail -20 flake8-output.txt | grep -oP '^\d+' | head -1 || echo "0")
+            echo "### 🔬 Flake8 Linting: $ERRORS issues found" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -100 flake8-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 🧬 Analyze with Pylint
+        id: pylint
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo "::group::Pylint Analysis"
+          echo "::notice::Skipping Pylint for monorepo - would require installing all module dependencies"
+          echo "### 🧬 Pylint: Skipped (monorepo)" >> $GITHUB_STEP_SUMMARY
+          echo "::endgroup::"
+
+      - name: 📐 Type check with mypy
+        id: mypy
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          echo "::group::Mypy Type Checking"
+          echo "::notice::Skipping Mypy for monorepo - would require installing all module dependencies"
+          echo "### 📐 Mypy: Skipped (monorepo)" >> $GITHUB_STEP_SUMMARY
+          echo "::endgroup::"
+
+      - name: 📊 Python Lint Summary
+        if: always()
+        run: |
+          echo "## 🐍 Python Linting Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Black | ${{ steps.black.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| isort | ${{ steps.isort.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ruff | ${{ steps.ruff.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Flake8 | ${{ steps.flake8.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pylint | ${{ steps.pylint.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mypy | ${{ steps.mypy.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          
+          # Fail if critical checks failed
+          if [ "${{ steps.black.outcome }}" == "failure" ] || [ "${{ steps.ruff.outcome }}" == "failure" ]; then
+            echo "::error::Critical linting checks failed"
+            exit 1
+          fi
+
+  lint-typescript:
+    name: 📘 Lint TypeScript/JavaScript
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading repository contents
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 📥 Install global linters
+        run: |
+          npm install -g eslint@9.20.1 prettier@3.4.2 typescript@5.7.2
+
+      - name: 🎨 Check formatting with Prettier
+        id: prettier
+        continue-on-error: true
+        run: |
+          echo "::group::Prettier Format Check"
+          prettier "**/*.{ts,tsx,js,jsx,json}" --check \
+            --ignore-path .gitignore \
+            --ignore-unknown \
+            --log-level warn 2>&1 | tee prettier-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::warning::Prettier formatting issues found. Run 'prettier . --write' to fix."
+            echo "### ⚠️ Prettier Format Issues" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat prettier-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: 🔍 Lint autoseed project
+        id: eslint_autoseed
+        continue-on-error: true
+        run: |
+          if [ -d "game_forge/src/autoseed" ]; then
+            echo "::group::ESLint autoseed"
+            cd game_forge/src/autoseed
+            npm install --no-save
+            npm run lint 2>&1 | tee ../../../eslint-autoseed-output.txt
+            EXIT_CODE=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            cd ../../..
+            
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "::warning::ESLint issues found in autoseed"
+              echo "### 🔍 ESLint Issues (autoseed)" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              cat eslint-autoseed-output.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          else
+            echo "::notice::autoseed directory not found, skipping"
+          fi
+
+      - name: 📐 Type check TypeScript
+        id: tsc
+        continue-on-error: true
+        run: |
+          if [ -d "game_forge/src/autoseed" ]; then
+            echo "::group::TypeScript Type Check"
+            cd game_forge/src/autoseed
+            npm run typecheck 2>&1 | tee ../../../tsc-output.txt
+            EXIT_CODE=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            cd ../../..
+            
+            if [ $EXIT_CODE -ne 0 ]; then
+              echo "::warning::TypeScript type checking issues found"
+              echo "### 📐 TypeScript Type Errors" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              cat tsc-output.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          else
+            echo "::notice::autoseed directory not found, skipping"
+          fi
+
+      - name: 📊 TypeScript Lint Summary
+        if: always()
+        run: |
+          echo "## 📘 TypeScript/JavaScript Linting Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Prettier | ${{ steps.prettier.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ESLint (autoseed) | ${{ steps.eslint_autoseed.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript | ${{ steps.tsc.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          
+          # Fail if critical checks failed
+          if [ "${{ steps.prettier.outcome }}" == "failure" ] || [ "${{ steps.eslint_autoseed.outcome }}" == "failure" ]; then
+            echo "::error::Critical TypeScript linting checks failed"
+            exit 1
+          fi
+
+  lint-summary:
+    name: 📊 Overall Summary
+    needs: [lint-python, lint-typescript]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only reading status from other jobs
+    if: always()
+    steps:
+      - name: 📊 Final Summary
+        run: |
+          echo "## 🔍 Overall Linting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Language | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Python | ${{ needs.lint-python.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript/JS | ${{ needs.lint-typescript.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.lint-python.result }}" == "failure" ] || [ "${{ needs.lint-typescript.result }}" == "failure" ]; then
+            echo "::error::Linting failed. Please fix the issues and run formatters."
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Quick Fixes" >> $GITHUB_STEP_SUMMARY
+            echo "- Python: \`black . --line-length=120 && isort . --profile=black && ruff check . --fix\`" >> $GITHUB_STEP_SUMMARY
+            echo "- TypeScript: \`prettier . --write\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "::notice::All linting checks passed!"
+          fi

@@ -1,0 +1,156 @@
+# 🔄 Reusable Node.js Testing Workflow v1.0.0
+# Can be called from other workflows for consistent Node.js/TypeScript testing
+
+name: Reusable Node Test
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to test with"
+        required: false
+        type: string
+        default: "20"
+      working-directory:
+        description: "Working directory containing package.json"
+        required: true
+        type: string
+      test-command:
+        description: "Test command to run (e.g., 'npm test')"
+        required: false
+        type: string
+        default: "npm test"
+      coverage-threshold:
+        description: "Minimum coverage percentage (0-100)"
+        required: false
+        type: number
+        default: 0
+      run-lint:
+        description: "Run linting before tests"
+        required: false
+        type: boolean
+        default: true
+      run-typecheck:
+        description: "Run type checking before tests"
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      coverage:
+        description: "Coverage percentage"
+        value: ${{ jobs.test.outputs.coverage }}
+      test-result:
+        description: "Test result (success/failure)"
+        value: ${{ jobs.test.outputs.result }}
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  test:
+    name: 🧪 Test Node.js ${{ inputs.node-version }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    outputs:
+      coverage: ${{ steps.coverage.outputs.percentage }}
+      result: ${{ steps.test.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: 📥 Install dependencies
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: 🔍 Lint code
+        if: inputs.run-lint
+        continue-on-error: true
+        run: |
+          if grep -q '"lint"' package.json; then
+            echo "::group::Running lint"
+            npm run lint
+            echo "::endgroup::"
+          else
+            echo "::notice::No lint script found in package.json, skipping"
+          fi
+
+      - name: 📐 Type check
+        if: inputs.run-typecheck
+        continue-on-error: true
+        run: |
+          if grep -q '"typecheck"' package.json; then
+            echo "::group::Running type check"
+            npm run typecheck
+            echo "::endgroup::"
+          else
+            echo "::notice::No typecheck script found in package.json, skipping"
+          fi
+
+      - name: 🔍 Run tests
+        id: test
+        run: |
+          echo "::group::Running tests"
+          ${{ inputs.test-command }} 2>&1 | tee test-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "::endgroup::"
+          
+          # Try to extract test summary from output
+          if grep -q "Test Files" test-output.txt; then
+            echo "### 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+            grep -A 5 "Test Files" test-output.txt >> $GITHUB_STEP_SUMMARY || true
+          fi
+          
+          exit $EXIT_CODE
+
+      - name: 📊 Check coverage
+        id: coverage
+        if: always()
+        run: |
+          # Look for coverage summary in common locations
+          COVERAGE_FILE=""
+          if [ -f "coverage/coverage-summary.json" ]; then
+            COVERAGE_FILE="coverage/coverage-summary.json"
+          elif [ -f "coverage/lcov-report/index.html" ]; then
+            # Try to extract from HTML
+            COVERAGE=$(grep -oP 'fraction">\d+/\d+' coverage/lcov-report/index.html | head -1 | grep -oP '\d+/\d+' || echo "0/1")
+            COVERAGE_PCT=$(python3 -c "nums='$COVERAGE'.split('/'); print(f'{(int(nums[0])/int(nums[1])*100):.2f}' if len(nums)==2 else '0')" 2>/dev/null || echo "0")
+          fi
+          
+          if [ -n "$COVERAGE_FILE" ]; then
+            # Extract coverage from JSON
+            COVERAGE_PCT=$(python3 -c "import json; data=json.load(open('$COVERAGE_FILE')); total=data.get('total',{}); lines=total.get('lines',{}); print(f\"{lines.get('pct',0):.2f}\")" 2>/dev/null || echo "0")
+          elif [ -z "$COVERAGE_PCT" ]; then
+            COVERAGE_PCT="0"
+          fi
+          
+          echo "percentage=$COVERAGE_PCT" >> $GITHUB_OUTPUT
+          echo "### 📊 Coverage: $COVERAGE_PCT%" >> $GITHUB_STEP_SUMMARY
+          
+          # Check against threshold
+          if (( $(echo "$COVERAGE_PCT < ${{ inputs.coverage-threshold }}" | bc -l) )); then
+            echo "::warning::Coverage $COVERAGE_PCT% is below threshold ${{ inputs.coverage-threshold }}%"
+          else
+            echo "::notice::Coverage $COVERAGE_PCT% meets threshold ${{ inputs.coverage-threshold }}%"
+          fi
+
+      - name: 📁 Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-node-${{ inputs.node-version }}
+          path: |
+            ${{ inputs.working-directory }}/coverage/
+            ${{ inputs.working-directory }}/htmlcov/
+          retention-days: 7
