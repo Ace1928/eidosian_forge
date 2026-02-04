@@ -1,0 +1,34 @@
+{
+    "defaults": {
+        "font": {
+            "name": "fira_code",
+            "size": "14",
+            "regular_resource": {
+                "package": "pygame_gui.data",
+                "resource": "FiraCode-Regular.ttf"
+            }
+        },
+        "colours": {
+            "normal_bg": "#1e1e24",
+            "dark_bg": "#15151a",
+            "disabled_bg": "#25252b",
+            "selected_bg": "#2a2a30",
+            "hovered_bg": "#303038",
+            "normal_text": "#e0e0e0",
+            "selected_text": "#ffffff",
+            "disabled_text": "#606060",
+            "filled_bar": "#00bcd4",
+            "filled_bar_disabled": "#404040",
+            "unfilled_bar": "#303030",
+            "normal_border": "#404040",
+            "selected_border": "#00bcd4",
+            "focused_border": "#00e5ff"
+        }
+    },
+    "window": {
+        "colours": {
+            "title_bar_bg": "#101014",
+            "title_bar_text": "#00bcd4"
+        }
+    }
+}

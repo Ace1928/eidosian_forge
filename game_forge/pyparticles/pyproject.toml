@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eidosian_pyparticles"
+version = "2.0.0"
+description = "High-performance Particle Life simulation using Numba and Pygame"
+authors = [
+  { name="Eidosian Forge", email="lloyd@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "pygame>=2.5.0",
+    "numba>=0.57.0",
+    "scipy>=1.10.0",
+]
+
+[project.scripts]
+pyparticles = "pyparticles.main:main"
