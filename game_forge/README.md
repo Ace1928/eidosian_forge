@@ -14,12 +14,18 @@
 
 ## 🕹️ Modules
 - **`agentic_chess`**: Chess environment for agent battles.
-- **`gene_particles`**: Artificial life simulation.
+- **`gene_particles`**: Artificial life simulation (2D/3D with depth-projected rendering).
 - **`eidosian_universe`**: 3D/2D procedural world.
 
 ## 🚀 Usage
 
 ```bash
 # Run Gene Particles simulation
-python -m gene_particles.main
+python -m game_forge.src.gene_particles
+
+# Benchmark a headless step loop
+python game_forge/tools/gene_particles_benchmark.py --steps 50 --gene-interpreter --reproduction-mode hybrid
+
+# Profile a headless step loop
+python game_forge/tools/gene_particles_profile.py --steps 20 --gene-interpreter --reproduction-mode hybrid
 ```

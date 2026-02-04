@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 ⚡ GLYPH FORGE - EIDOSIAN BANNERIZER ⚡
@@ -16,6 +15,7 @@ import sys
 import argparse
 import time
 import logging
+import platform
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Union
 import signal
@@ -61,9 +61,6 @@ class Style:
     def supports_color() -> bool:
         """Determine if the current terminal supports color output."""
         return detect_text_color_support() > 0
-
-
-@eidosian()
 def setup_logging(debug: bool = False) -> None:
     """Configure optimal logging with zero waste."""
     level = logging.DEBUG if debug else logging.INFO
@@ -93,9 +90,6 @@ def setup_logging(debug: bool = False) -> None:
     logging.getLogger('glyph_forge').setLevel(level)
     
     logging.debug("Logging initialized with level: %s", "DEBUG" if debug else "INFO")
-
-
-@eidosian()
 def print_header() -> None:
     """Print stylish Glyph Forge header with adaptive color support."""
     term_width, _ = get_terminal_size()
@@ -110,9 +104,6 @@ def print_header() -> None:
         banner = "=== GLYPH FORGE BANNERIZER ==="
         print(f"\n{banner.center(term_width)}")
         print("=" * term_width + "\n")
-
-
-@eidosian()
 def measure_performance(func):
     """
     Decorator for surgical performance measurement with minimal overhead.
@@ -120,7 +111,6 @@ def measure_performance(func):
     Times function execution with microsecond precision and logs the duration
     at different granularities based on execution time.
     """
-    @eidosian()
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Record start time with maximum precision
@@ -159,9 +149,6 @@ def measure_performance(func):
         
         return result
     return wrapper
-
-
-@eidosian()
 def preview_style(api, text: str, style: str) -> None:
     """
     Generate and display a pixel-perfect style preview.
@@ -196,9 +183,6 @@ def preview_style(api, text: str, style: str) -> None:
             print(err_msg)
     
     print(separator + "\n")
-
-
-@eidosian()
 def list_items(items: List[str], title: str, columns: int = 4) -> None:
     """
     Display items in multi-column format with optimal terminal utilization.
@@ -241,9 +225,6 @@ def list_items(items: List[str], title: str, columns: int = 4) -> None:
             print(f"  {item:{max_len}}", end="")
     
     print("\n")
-
-
-@eidosian()
 @measure_performance
 def generate_banner(api, args) -> None:
     """
@@ -271,6 +252,40 @@ def generate_banner(api, args) -> None:
         color=color_mode
     )
     
+    # Share export if requested
+    if getattr(args, "share", None):
+        from .share_utils import build_share_path, write_share, try_open_path, copy_to_clipboard
+        from ..streaming.naming import build_metadata, write_metadata
+        fmt = args.share.lower()
+        share_path = build_share_path("banner", fmt, args.output)
+        write_share(banner, fmt, share_path)
+        lines = banner.splitlines()
+        banner_width = max((len(line) for line in lines), default=0)
+        banner_height = len(lines)
+        meta = build_metadata(
+            source=args.text or "banner",
+            output_path=share_path,
+            title=None,
+            info=None,
+            extra={
+                "format": fmt,
+                "share": True,
+                "style": args.style,
+                "font": args.font,
+                "banner_width": banner_width,
+                "banner_height": banner_height,
+            },
+        )
+        write_metadata(meta, share_path)
+        print(f"Share export saved to: {share_path}")
+        if getattr(args, "open_output", False):
+            if not try_open_path(share_path):
+                print("No opener available for this system.")
+        if getattr(args, "copy", False):
+            if not copy_to_clipboard(banner):
+                print("Clipboard copy not available on this system.")
+        return
+
     # Output based on destination
     if args.output:
         # Ensure directory exists
@@ -280,6 +295,27 @@ def generate_banner(api, args) -> None:
         # Save to file
         success = api.save_to_file(banner, str(output_path))
         if success:
+            try:
+                from ..streaming.naming import build_metadata, write_metadata
+                lines = banner.splitlines()
+                banner_width = max((len(line) for line in lines), default=0)
+                banner_height = len(lines)
+                meta = build_metadata(
+                    source=args.text or "banner",
+                    output_path=output_path,
+                    title=None,
+                    info=None,
+                    extra={
+                        "format": output_path.suffix.lstrip(".") or "txt",
+                        "style": args.style,
+                        "font": args.font,
+                        "banner_width": banner_width,
+                        "banner_height": banner_height,
+                    },
+                )
+                write_metadata(meta, output_path)
+            except Exception:
+                pass
             if Style.supports_color():
                 path_msg = Style.apply(args.output, Style.BOLD)
                 print(f"Banner saved to: {path_msg}")
@@ -295,9 +331,10 @@ def generate_banner(api, args) -> None:
     else:
         # Print to console with proper line ending handling
         print(banner.rstrip('\n'))
-
-
-@eidosian()
+        if getattr(args, "copy", False):
+            from .share_utils import copy_to_clipboard
+            if not copy_to_clipboard(banner):
+                print("Clipboard copy not available on this system.")
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command line arguments with quantum precision.
@@ -367,6 +404,22 @@ Examples:
         metavar='FILE',
         help='Save output to specified file'
     )
+    output_group.add_argument(
+        '--share',
+        choices=['txt', 'html', 'svg', 'png', 'gif'],
+        help='Export shareable output (txt/html/svg/png/gif)'
+    )
+    output_group.add_argument(
+        '--open',
+        dest='open_output',
+        action='store_true',
+        help='Open the exported output'
+    )
+    output_group.add_argument(
+        '--copy',
+        action='store_true',
+        help='Copy banner to clipboard'
+    )
 
     # Information options
     info_group = parser.add_argument_group('Information')
@@ -418,16 +471,10 @@ Examples:
             parser.error(error)
     
     return args
-
-
-@eidosian()
 def signal_handler(sig, frame):
     """Handle interrupt signals gracefully."""
     print("\nOperation cancelled by user")
     sys.exit(130)  # 128 + SIGINT value (2)
-
-
-@eidosian()
 def show_version():
     """Display version information with precision."""
     try:
@@ -453,9 +500,6 @@ def show_version():
     
     print("\nPart of the Eidosian Forge toolkit")
     print("⚡ https://github.com/your-username/glyph_forge ⚡\n")
-
-
-@eidosian()
 def create_banner(text: str, font: str = "slant", style: str = "minimal") -> str:
     """
     Create a banner with the given text, font and style.
@@ -470,9 +514,6 @@ def create_banner(text: str, font: str = "slant", style: str = "minimal") -> str
     """
     api = get_api()
     return api.generate_banner(text=text, font=font, style=style)
-
-
-@eidosian()
 def main() -> int:
     """
     Main entry point with hyper-optimized execution flow.
@@ -540,9 +581,6 @@ def main() -> int:
 
 
 app = typer.Typer(help="Generate Glyph banners")
-
-
-@eidosian()
 @app.command()
 def cli(
     text: str = typer.Argument(None, help="Text to transform"),
@@ -551,13 +589,48 @@ def cli(
     width: int = typer.Option(None, "--width", "-w", help="Banner width"),
     color: bool = typer.Option(False, "--color", "-c", help="Enable ANSI color"),
     output: str = typer.Option(None, "--output", "-o", help="Save to file"),
+    share: str = typer.Option(None, "--share", help="Export shareable output (txt/html/svg/png/gif)"),
+    open_output: bool = typer.Option(False, "--open", help="Open the exported output"),
+    copy: bool = typer.Option(False, "--copy", help="Copy banner to clipboard"),
     list_fonts: bool = typer.Option(False, "--list-fonts", help="Show fonts"),
     list_styles: bool = typer.Option(False, "--list-styles", help="Show styles"),
     preview: bool = typer.Option(False, "--preview", help="Preview style"),
     debug: bool = typer.Option(False, "--debug", help="Debug output"),
     version: bool = typer.Option(False, "--version", help="Show version"),
+    preset: str = typer.Option(None, "--preset", help="Preset style (cinematic/noir/neon/retro/ultra/filmgrain/vaporwave)"),
 ) -> None:
     """Typer wrapper for the bannerize command."""
+    if preset and hasattr(preset, "lower"):
+        preset = preset.lower()
+        if preset == "cinematic":
+            font = font or "slant"
+            style = style or "boxed"
+            color = True
+        elif preset == "noir":
+            font = font or "standard"
+            style = style or "minimal"
+            color = False
+        elif preset == "neon":
+            font = font or "big"
+            style = style or "shadowed"
+            color = True
+        elif preset == "retro":
+            font = font or "banner3"
+            style = style or "boxed"
+            color = True
+        elif preset == "ultra":
+            font = font or "big"
+            style = style or "double"
+            color = True
+        elif preset == "filmgrain":
+            font = font or "shadow"
+            style = style or "minimal"
+            color = False
+        elif preset == "vaporwave":
+            font = font or "bubble"
+            style = style or "shadowed"
+            color = True
+
     args = argparse.Namespace(
         text=text,
         font=font,
@@ -565,6 +638,9 @@ def cli(
         width=width,
         color=color,
         output=output,
+        share=share,
+        open_output=open_output,
+        copy=copy,
         list_fonts=list_fonts,
         list_styles=list_styles,
         preview=preview,

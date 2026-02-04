@@ -412,22 +412,24 @@ def apply_synergy(
     return newA, newB
 
 
-if __name__ == "__main__":
-    """Module demonstration when run directly."""
-    print("🧬 Gene Particles Utility Module")
+def demo() -> None:
+    """Run a small demonstration when invoked directly."""
+    print("Gene Particles Utility Module")
     print("This module provides utility functions for the Gene Particles simulation.")
     print("It is not intended to be run directly, but to be imported by other modules.")
 
-    # Simple demonstration of color generation
     print("\nDemonstrating vibrant color generation:")
     demo_colors = generate_vibrant_colors(5)
     for i, color in enumerate(demo_colors):
-        print(f"  Color {i+1}: RGB{color}")
+        print(f"  Color {i + 1}: RGB{color}")
 
-    # Demonstrate vector operations
     print("\nDemonstrating random position generation:")
     positions = random_xy(100, 100, 3)
     for i, pos in enumerate(positions):
-        print(f"  Position {i+1}: ({pos[0]:.2f}, {pos[1]:.2f})")
+        print(f"  Position {i + 1}: ({pos[0]:.2f}, {pos[1]:.2f})")
 
     print("\nTo use this module, import it into your Gene Particles simulation.")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    demo()

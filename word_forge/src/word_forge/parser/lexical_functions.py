@@ -41,6 +41,7 @@ from word_forge.configs.config_essentials import (
     WordnetEntry,
 )
 from word_forge.parser.language_model import ModelState
+from word_forge.parser.structured_validator import validated_query
 
 
 # ============================================================================
@@ -489,6 +490,63 @@ def generate_example_usage(
     return f"Could not extract valid example for '{word}'."
 
 
+@eidosian()
+def generate_comprehensive_enrichment(
+    word: str,
+    definition: str,
+    pos: str,
+    model_state: ModelState,
+) -> Dict[str, Any]:
+    """
+    Generate comprehensive lexical and semantic enrichment using the LLM.
+    
+    Extracts holonyms, meronyms, hypernyms, hyponyms, and emotional dimensions.
+    Utilizes validated_query for schema enforcement and retries.
+    
+    Args:
+        word: Target word
+        definition: Known definition
+        pos: Part of speech
+        model_state: Language model state
+        
+    Returns:
+        Dictionary containing enriched data fields.
+    """
+    prompt = (
+        f"Analyze the word '{word}' ({pos}: {definition}).\n"
+        "Provide a JSON object with the following schema:\n"
+        "{\n"
+        "  \"word\": \"string\",\n"
+        "  \"definition\": \"string\",\n"
+        "  \"synonyms\": [\"list of strings\"],\n"
+        "  \"antonyms\": [\"list of strings\"],\n"
+        "  \"hypernyms\": [\"list of strings\"],\n"
+        "  \"hyponyms\": [\"list of strings\"],\n"
+        "  \"holonyms\": [\"list of strings\"],\n"
+        "  \"meronyms\": [\"list of strings\"],\n"
+        "  \"emotional_valence\": float (-1.0 to 1.0),\n"
+        "  \"emotional_arousal\": float (0.0 to 1.0),\n"
+        "  \"connotation\": \"positive|negative|neutral\",\n"
+        "  \"usage_examples\": [\"list of strings\"]\n"
+        "}\n"
+        "Return ONLY valid JSON."
+    )
+    
+    result = validated_query(
+        model_state=model_state,
+        prompt=prompt,
+        context_word=word,
+        max_retries=2
+    )
+    
+    if result.is_success:
+        return result.unwrap()
+    else:
+        # Fallback to empty if even validated_query fails
+        return {}
+
+
+
 # ============================================================================
 #                          DATASET CREATION
 # ============================================================================
@@ -517,8 +575,7 @@ def create_lexical_dataset(
     Returns:
         Dictionary containing comprehensive lexical data from all sources
     """
-    if model_state is None:
-        model_state = ModelState()
+    llm_enabled = model_state is not None
 
     wordnet_data = get_wordnet_data(word)
 
@@ -534,7 +591,7 @@ def create_lexical_dataset(
     }
 
     # Generate an example sentence if WordNet data exists
-    if wordnet_data:
+    if wordnet_data and llm_enabled:
         first_entry = wordnet_data[0]
         example = generate_example_usage(
             word,
@@ -546,9 +603,7 @@ def create_lexical_dataset(
         )
         dataset["example_sentence"] = example
     else:
-        dataset["example_sentence"] = (
-            "No example available due to missing WordNet data."
-        )
+        dataset["example_sentence"] = ""
 
     return dataset
 

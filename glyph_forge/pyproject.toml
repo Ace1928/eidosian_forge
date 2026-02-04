@@ -22,14 +22,59 @@ classifiers = [
 ]
 dependencies = [
     "pillow>=9.0.0",
-    "numpy>=1.26.0",
+    "numpy>=1.26.0,<2.0",
     "rich>=13.0.0",
     "typer>=0.9.0",
+    "pyfiglet>=0.8.0",
+    "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "pytest-benchmark>=5.2.0",
+    "pytest-cov>=6.0.0",
+    "pytest-html>=4.2.0",
+    "pytest-mock>=3.15.0",
+    "pytest-profiling>=1.8.0",
+]
+streaming = [
+    "opencv-python>=4.8.0,<4.13",
+    "yt-dlp>=2024.12.0",
+    "mss>=9.0.0",
+]
+browser = [
+    "playwright>=1.40.0",
+]
+tui = [
+    "textual>=0.50.0",
+]
+audio = [
+    "pygame>=2.5.0",
+    "simpleaudio>=1.0.4",
+]
+assets = [
+    "requests>=2.31.0",
+]
+clipboard = [
+    "pyperclip>=1.9.0",
+]
+all = [
+    "pytest>=8.0.0",
+    "pytest-benchmark>=5.2.0",
+    "pytest-cov>=6.0.0",
+    "pytest-html>=4.2.0",
+    "pytest-mock>=3.15.0",
+    "pytest-profiling>=1.8.0",
+    "opencv-python>=4.8.0,<4.13",
+    "yt-dlp>=2024.12.0",
+    "mss>=9.0.0",
+    "playwright>=1.40.0",
+    "textual>=0.50.0",
+    "pygame>=2.5.0",
+    "simpleaudio>=1.0.4",
+    "requests>=2.31.0",
+    "pyperclip>=1.9.0",
 ]
 
 [project.scripts]
@@ -42,3 +87,6 @@ packages = ["src/glyph_forge"]
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+markers = [
+    "integration: mark a test as an integration test.",
+]

@@ -404,8 +404,55 @@ CREATE TABLE IF NOT EXISTS graph_metadata (
 )
 """
 
+SQL_CREATE_LEXEMES_TABLE = """
+CREATE TABLE IF NOT EXISTS lexemes (
+    id INTEGER PRIMARY KEY,
+    lemma TEXT NOT NULL,
+    lang TEXT NOT NULL,
+    part_of_speech TEXT,
+    gloss TEXT,
+    base_term TEXT,
+    source TEXT,
+    last_refreshed REAL NOT NULL,
+    UNIQUE(lemma, lang)
+)
+"""
+
+SQL_CREATE_TRANSLATIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS translations (
+    id INTEGER PRIMARY KEY,
+    lexeme_id INTEGER NOT NULL,
+    target_lang TEXT NOT NULL,
+    target_term TEXT NOT NULL,
+    relation TEXT NOT NULL,
+    source TEXT,
+    last_refreshed REAL NOT NULL,
+    FOREIGN KEY(lexeme_id) REFERENCES lexemes(id),
+    UNIQUE(lexeme_id, target_lang, target_term, relation)
+)
+"""
+
+SQL_CREATE_LANGUAGE_MAP_TABLE = """
+CREATE TABLE IF NOT EXISTS language_map (
+    lang TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+)
+"""
+
+SQL_CREATE_LEXEME_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_lexemes_lang ON lexemes(lang)
+"""
+
+SQL_CREATE_TRANSLATION_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_translations_lang ON translations(target_lang)
+"""
+
 SQL_CHECK_WORDS_TABLE = (
     "SELECT name FROM sqlite_master WHERE type='table' AND name='words'"
+)
+
+SQL_CHECK_LEXEMES_TABLE = (
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='lexemes'"
 )
 
 # SQL query constants for data operations
@@ -418,6 +465,35 @@ DO UPDATE SET
     part_of_speech=excluded.part_of_speech,
     usage_examples=excluded.usage_examples,
     last_refreshed=excluded.last_refreshed
+"""
+
+SQL_INSERT_OR_UPDATE_LEXEME = """
+INSERT INTO lexemes (lemma, lang, part_of_speech, gloss, base_term, source, last_refreshed)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(lemma, lang)
+DO UPDATE SET
+    part_of_speech=excluded.part_of_speech,
+    gloss=excluded.gloss,
+    base_term=excluded.base_term,
+    source=excluded.source,
+    last_refreshed=excluded.last_refreshed
+"""
+
+SQL_INSERT_TRANSLATION = """
+INSERT INTO translations (lexeme_id, target_lang, target_term, relation, source, last_refreshed)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(lexeme_id, target_lang, target_term, relation)
+DO UPDATE SET
+    source=excluded.source,
+    last_refreshed=excluded.last_refreshed
+"""
+
+SQL_GET_LEXEME_ID = """
+SELECT id FROM lexemes WHERE lemma = ? AND lang = ?
+"""
+
+SQL_UPDATE_LEXEME_BASE = """
+UPDATE lexemes SET base_term = ?, last_refreshed = ? WHERE lemma = ? AND lang = ?
 """
 
 SQL_INSERT_RELATIONSHIP = """
@@ -527,7 +603,8 @@ class DBManager:
         """Create a new database connection with proper configuration."""
         try:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-            connection = sqlite3.connect(str(self.db_path))
+            # Set isolation_level=None to disable implicit transactions
+            connection = sqlite3.connect(str(self.db_path), isolation_level=None)
             connection.row_factory = sqlite3.Row
 
             # Configure connection for optimal performance and safety
@@ -559,11 +636,16 @@ class DBManager:
                 conn.execute(SQL_CREATE_RELATIONSHIPS_TABLE)
                 conn.execute(SQL_CREATE_EMOTIONAL_RELATIONSHIPS_TABLE)
                 conn.execute(SQL_CREATE_GRAPH_METADATA_TABLE)
+                conn.execute(SQL_CREATE_LEXEMES_TABLE)
+                conn.execute(SQL_CREATE_TRANSLATIONS_TABLE)
+                conn.execute(SQL_CREATE_LANGUAGE_MAP_TABLE)
 
                 # Create indexes for performance
                 conn.execute(SQL_CREATE_WORD_ID_INDEX)
                 conn.execute(SQL_CREATE_UNIQUE_RELATIONSHIP_INDEX)
                 conn.execute(SQL_CREATE_UNIQUE_EMOTIONAL_RELATIONSHIP_INDEX)
+                conn.execute(SQL_CREATE_LEXEME_INDEX)
+                conn.execute(SQL_CREATE_TRANSLATION_INDEX)
 
                 # Configure database settings
                 conn.execute(SQL_PRAGMA_FOREIGN_KEYS)
@@ -575,7 +657,7 @@ class DBManager:
     @eidosian()
     def ensure_tables_exist(self) -> None:
         """Ensure that all required tables exist in the database."""
-        if not self.table_exists("words"):
+        if not self.table_exists("words") or not self.table_exists("lexemes"):
             self.create_tables()
 
     @eidosian()
@@ -801,6 +883,103 @@ class DBManager:
                 )
         except (sqlite3.Error, TransactionError) as e:
             raise DatabaseError(f"Failed to insert or update word '{term}'", e)
+
+    @eidosian()
+    def insert_or_update_lexeme(
+        self,
+        lemma: str,
+        lang: str,
+        part_of_speech: str = "",
+        gloss: str = "",
+        source: str = "",
+        base_term: str = "",
+    ) -> int:
+        """
+        Insert or update a multilingual lexeme record.
+        """
+        if not lemma or not lang:
+            raise ValueError("Lemma and language are required")
+
+        self.ensure_tables_exist()
+        current_time = time.time()
+
+        try:
+            with self.transaction() as conn:
+                conn.execute(
+                    SQL_INSERT_OR_UPDATE_LEXEME,
+                    (
+                        lemma,
+                        lang,
+                        part_of_speech,
+                        gloss,
+                        base_term,
+                        source,
+                        current_time,
+                    ),
+                )
+                row = conn.execute(SQL_GET_LEXEME_ID, (lemma, lang)).fetchone()
+                if row is None:
+                    raise DatabaseError("Failed to fetch lexeme ID after upsert")
+                return cast(int, row[0])
+        except (sqlite3.Error, TransactionError) as e:
+            raise DatabaseError(f"Failed to insert or update lexeme '{lemma}'", e)
+
+    @eidosian()
+    def get_lexeme_id(self, lemma: str, lang: str) -> int:
+        """
+        Get the lexeme ID for a given lemma/language pair.
+        """
+        result = self.execute_scalar(SQL_GET_LEXEME_ID, (lemma, lang))
+        if result is None:
+            raise TermNotFoundError(f"{lemma} ({lang})")
+        return cast(int, result)
+
+    @eidosian()
+    def add_translation(
+        self,
+        lexeme_id: int,
+        target_lang: str,
+        target_term: str,
+        relation: str = "translation",
+        source: str = "",
+    ) -> None:
+        """Insert or update a translation record for a lexeme."""
+        if not target_lang or not target_term:
+            raise ValueError("Target language and term are required")
+        self.ensure_tables_exist()
+        current_time = time.time()
+
+        try:
+            with self.transaction() as conn:
+                conn.execute(
+                    SQL_INSERT_TRANSLATION,
+                    (
+                        lexeme_id,
+                        target_lang,
+                        target_term,
+                        relation,
+                        source,
+                        current_time,
+                    ),
+                )
+        except (sqlite3.Error, TransactionError) as e:
+            raise DatabaseError("Failed to add translation", e)
+
+    @eidosian()
+    def update_lexeme_base(self, lemma: str, lang: str, base_term: str) -> None:
+        """Update base-term alignment for a lexeme."""
+        if not base_term:
+            return
+        self.ensure_tables_exist()
+        current_time = time.time()
+        try:
+            with self.transaction() as conn:
+                conn.execute(
+                    SQL_UPDATE_LEXEME_BASE,
+                    (base_term, current_time, lemma, lang),
+                )
+        except (sqlite3.Error, TransactionError) as e:
+            raise DatabaseError("Failed to update lexeme base term", e)
 
     @eidosian()
     def get_word_id(self, term: str) -> int:

@@ -2,7 +2,7 @@
 
 > A comprehensive overview of the current state of the Glyph Forge project.
 
-**Last Updated**: January 2026  
+**Last Updated**: January 31, 2026  
 **Version**: 0.1.0 (Beta)
 
 ---
@@ -13,7 +13,7 @@ The project is in beta stage with core functionality complete and stable. It is 
 
 ### Recent Major Upgrades (January 2026)
 
-**Ultimate Streaming Engine (NEW!)**
+**Unified Streaming Engine (Current)**
 - **720p Default Resolution**: Optimal balance for terminals
 - **Gradient Rendering Default**: Best visual quality mode
 - **TrueColor Default**: 16 million colors for detail
@@ -31,14 +31,14 @@ The project is in beta stage with core functionality complete and stable. It is 
 - **Stream Recording**: Save rendered output to video file
 - **Premium CLI**: Single command for maximum quality streaming
 
-**Ultra High-Fidelity Rendering (NEW!)**
+**High-Fidelity Rendering (Current)**
 - **Braille Sub-Pixel Renderer**: 2x4 dots per character = 8 effective pixels per char
 - **HybridRenderer**: Combines Braille detail with colored blocks for smooth areas
 - **ExtendedGradient**: 256-level Unicode gradient with multiple presets
 - **PerceptualColor**: CIE LAB color space for accurate color matching
 - **Performance**: 150+ FPS at 480p (plain), 68 FPS at 720p (plain)
 
-**Ultra Performance Streaming (NEW!)**
+**Performance Streaming (Current)**
 - **FramePool**: Pre-allocated buffers for zero-allocation streaming
 - **DeltaEncoder**: Only update changed characters between frames
 - **VectorizedANSI**: Batch ANSI escape code generation
@@ -78,17 +78,10 @@ The project is in beta stage with core functionality complete and stable. It is 
 
 | Component | Status | Tests | Coverage | Notes |
 |-----------|--------|-------|----------|-------|
-| `streaming/types.py` | ✅ Complete | 6 | 95% | Core types (QualityLevel, StreamMetrics, etc.) |
-| `streaming/extractors.py` | ✅ Complete | 5 | 90% | YouTube/video source extraction |
-| `streaming/processors.py` | ✅ Complete | 4 | 90% | Vectorized frame processing |
-| `streaming/renderers.py` | ✅ Complete | 6 | 90% | Character rendering, frame buffer |
-| `streaming/audio.py` | ✅ Complete | 2 | 85% | Audio playback synchronization |
-| `streaming/engine.py` | ✅ Complete | 6 | 85% | Main StreamEngine orchestrator |
-| `streaming/hifi.py` | ✅ Complete | 45 | 95% | Ultra high-fidelity rendering |
-| `streaming/ultra.py` | ✅ Complete | 21 | 90% | Ultra performance engine |
-| `streaming/premium.py` | ✅ Complete | 33 | 90% | Premium streaming with recording |
-| `streaming/ultimate.py` | ✅ **New** | - | 90% | Ultimate streaming with audio sync |
-| `streaming/turbo.py` | ✅ **New** | - | 85% | Numba JIT-compiled rendering |
+| `streaming/extractors.py` | ✅ Complete | 5 | 38% | YouTube/video source extraction |
+| `streaming/engine.py` | ✅ Complete | 6 | 38% | StreamEngine orchestrator |
+| `streaming/core/*` | ✅ Complete | 29 | 41–94% | Unified streaming core (capture/buffer/renderer) |
+| `streaming/__init__.py` | ✅ Complete | 0 | 100% | Module exports |
 
 ### CLI
 
@@ -97,7 +90,7 @@ The project is in beta stage with core functionality complete and stable. It is 
 | `bannerize` | ✅ Complete | 0 | 70% | Full functionality |
 | `imagize` | ✅ Complete | 0 | 70% | Full functionality + new color/effect options |
 | `interactive` | ✅ Updated | 18 | 85% | Full TUI with all options |
-| `stream` | ✅ Updated | 0 | 80% | Modern streaming engine + --legacy flag |
+| `stream` | ✅ Updated | 0 | 80% | Modern streaming engine (legacy flag removed 2026-02-01) |
 
 ### UI
 
@@ -113,11 +106,11 @@ The project is in beta stage with core functionality complete and stable. It is 
 ### Summary
 
 ```
-Total Tests: 325
-Passed: 325
+Total Tests: 304
+Passed: 304
 Failed: 0
-Skipped: 0
-Coverage: ~90%
+Skipped: 3
+Coverage: 68%
 ```
 
 ### Test Categories
@@ -220,7 +213,7 @@ Coverage: ~90%
 - [x] Color output
 - [x] **Interactive TUI mode**
 - [x] **Stream command with new engine**
-- [x] **--legacy flag for compatibility**
+- [x] **--legacy flag for compatibility** (removed 2026-02-01)
 - [x] **list-commands command**
 - [ ] Batch processing
 

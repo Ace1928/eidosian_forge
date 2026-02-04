@@ -1,0 +1,26 @@
+from pathlib import Path
+
+from code_forge.analyzer.python_analyzer import CodeAnalyzer
+
+
+def test_analyzer_detects_lambdas_and_comprehensions(tmp_path: Path) -> None:
+    f = tmp_path / "comp.py"
+    f.write_text(
+        "def foo(items):\n"
+        "    squares = [x*x for x in items if x % 2 == 0]\n"
+        "    mapping = {x: x+1 for x in items}\n"
+        "    evens = (x for x in items if x % 2 == 0)\n"
+        "    f = lambda y: y + 1\n"
+        "    return squares, mapping, list(evens), f\n"
+    )
+
+    analyzer = CodeAnalyzer()
+    res = analyzer.analyze_file(f)
+    nodes = res["nodes"]
+
+    types = {n["unit_type"] for n in nodes}
+    assert "list_comp" in types
+    assert "dict_comp" in types
+    assert "gen_exp" in types
+    assert "lambda" in types
+    # BoolOp only appears when explicit boolean operators are used.

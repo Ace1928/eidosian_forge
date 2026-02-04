@@ -8,11 +8,13 @@ from typing import Iterable, Dict, Any, Optional
 import importlib
 import sys
 
+from .logging_utils import setup_logging, log_startup, log_error, log_debug
+setup_logging()
+
 from starlette.responses import JSONResponse
 from starlette.requests import Request
 
 from .core import mcp, resource, list_tool_metadata
-from .logging_utils import log_startup, log_error
 from .state import gis, llm, refactor, agent, ROOT_DIR, FORGE_DIR
 from . import routers as _routers  # noqa: F401
 from .plugins import init_plugins, list_plugins, list_tools, get_loader
@@ -52,21 +54,21 @@ def _ensure_router_tools() -> None:
             else:
                 importlib.import_module(module_name)
         except ImportError as e:
-            print(f"Warning: Failed to load router {module_name}: {e}", file=sys.stderr)
+            log_debug(f"Warning: Failed to load router {module_name}: {e}")
             log_error(f"load_router:{module_name}", str(e))
         except Exception as e:
-            print(f"Error: Unexpected error loading router {module_name}: {e}", file=sys.stderr)
+            log_debug(f"Error: Unexpected error loading router {module_name}: {e}")
             log_error(f"load_router:{module_name}", str(e))
 
 
 def _sync_agent_tools() -> None:
     """Register all MCP tools into AgentForge so the agent can use them."""
     if not agent:
-        print("Warning: AgentForge instance is None, cannot sync tools.", file=sys.stderr)
+        log_debug("Warning: AgentForge instance is None, cannot sync tools.")
         return
     
     tools = list_tool_metadata()
-    print(f"DEBUG: Found {len(tools)} tools in registry.", file=sys.stderr)
+    log_debug(f"Found {len(tools)} tools in registry.")
     
     count = 0
     for t in tools:
@@ -74,10 +76,10 @@ def _sync_agent_tools() -> None:
             agent.register_tool(t["name"], t["func"], t["description"])
             count += 1
         else:
-            print(f"DEBUG: Tool {t['name']} has no func!", file=sys.stderr)
+            log_debug(f"Tool {t['name']} has no func!")
     
     if count > 0:
-        print(f"Synced {count} tools to AgentForge.", file=sys.stderr)
+        log_debug(f"Synced {count} tools to AgentForge.")
 
 
 def _load_plugins() -> None:
@@ -86,9 +88,9 @@ def _load_plugins() -> None:
         loaded = init_plugins(mcp)
         plugin_count = len(loaded)
         tool_count = len(list_tools())
-        print(f"Loaded {plugin_count} plugins with {tool_count} tools", file=sys.stderr)
+        log_debug(f"Loaded {plugin_count} plugins with {tool_count} tools")
     except Exception as e:
-        print(f"Warning: Plugin loading failed: {e}", file=sys.stderr)
+        log_debug(f"Warning: Plugin loading failed: {e}")
         log_error("load_plugins", str(e))
 
 
@@ -211,19 +213,19 @@ async def auth_verify(request: Request):
 
 @eidosian()
 def main() -> None:
-    """Run the Eidosian MCP server (stdio by default)."""
-    transport = os.environ.get("EIDOS_MCP_TRANSPORT", "stdio")
-    mount_path = os.environ.get(
-        "EIDOS_MCP_MOUNT_PATH",
-        "/streamable-http" if transport == "streamable-http" else None,
-    )
-    if transport != "stdio":
-        print(f"Starting Eidosian MCP Server (Transport: {transport})...", file=sys.stderr)
+    """Run the Eidosian MCP server (streamable-http)."""
+    transport = os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http")
+    mount_path = os.environ.get("EIDOS_MCP_MOUNT_PATH", "/mcp")
+    log_debug(f"Starting Eidosian MCP Server (Transport: {transport}, Mount: {mount_path})...")
     log_startup(transport)
     try:
         mcp.run(transport=transport, mount_path=mount_path)
     except Exception as e:
         msg = f"Critical Error: MCP Server failed to start: {e}"
-        print(msg, file=sys.stderr)
+        log_debug(msg)
         log_error("startup", msg)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

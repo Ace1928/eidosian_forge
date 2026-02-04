@@ -1,0 +1,16 @@
+{
+  "run_id": "45fedd9da3354615",
+  "root_path": "/home/lloyd/eidosian_forge/archive_forge",
+  "mode": "analysis",
+  "files_processed": 0,
+  "units_created": 0,
+  "errors": 0,
+  "files_total": 722230,
+  "loc_total": 42560470,
+  "bytes_total": 1764632278,
+  "files_skipped": 0,
+  "interrupted": false,
+  "elapsed_seconds": 0.0,
+  "eta_seconds": null,
+  "files": []
+}

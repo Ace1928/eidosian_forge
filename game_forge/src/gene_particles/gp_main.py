@@ -58,7 +58,7 @@ Controls
 
 import os
 import sys
-from typing import NoReturn
+from typing import Optional
 from eidosian_core import eidosian
 
 # Add proper path handling to avoid import issues when running from different locations
@@ -72,7 +72,7 @@ from game_forge.src.gene_particles.gp_config import SimulationConfig
 
 
 @eidosian()
-def main() -> NoReturn:
+def main(run_loop: bool = True) -> Optional[int]:
     """Initialize and run the Gene Particles simulation.
 
     Creates a simulation with default configuration and executes the main
@@ -85,8 +85,8 @@ def main() -> NoReturn:
 
     Returns
     -------
-    NoReturn
-         Function terminates via system exit
+    Optional[int]
+         Exit code when run_loop is True, otherwise None
 
     Raises
     ------
@@ -101,13 +101,26 @@ def main() -> NoReturn:
     # Initialize the cellular automata system with configuration
     cellular_automata: CellularAutomata = CellularAutomata(config)
 
-    # Execute main simulation loop until termination
-    cellular_automata.main_loop()
+    if run_loop:
+        # Execute main simulation loop until termination
+        cellular_automata.main_loop()
+        return 0
+    return None
 
-    # Unreachable but satisfies return type requirements
-    sys.exit(0)
+
+def _entrypoint() -> int:
+    """CLI entrypoint to support test-mode execution without launching the loop."""
+    if os.environ.get("GENE_PARTICLES_TEST_MODE") == "1":
+        main(run_loop=False)
+        return 0
+    return int(main(run_loop=True) or 0)
 
 
-if __name__ == "__main__":
+def run() -> int:
+    """Public entrypoint wrapper for testing and CLI execution."""
+    return _entrypoint()
+
+
+if __name__ == "__main__":  # pragma: no cover
     # Entry point when executed directly
-    main()
+    sys.exit(run())

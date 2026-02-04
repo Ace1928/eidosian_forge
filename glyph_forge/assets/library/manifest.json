@@ -1,0 +1,234 @@
+{
+  "version": "1.0",
+  "sources": [
+    {
+      "type": "nasa_search",
+      "query": "apollo moon",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "earth from space",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "mars rover",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "nebula",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "aurora",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "jupiter",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "saturn",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "sun",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "hubble",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "james webb",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "international space station",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "spacewalk",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "launch",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "rocket",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "galaxy",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "supernova",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "nasa_search",
+      "query": "black hole",
+      "media_types": ["image", "video"],
+      "count": 100,
+      "license": "NASA (public domain / see guidelines)",
+      "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Pi_unrolled_cc0.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Pi_unrolled_cc0.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Pi_unrolled_cc0.gif",
+      "license": "CC0 1.0",
+      "attribution": "Drummyfish"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Advanced_raycasting_demo_3.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Advanced_raycasting_demo_3.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Advanced_raycasting_demo_3.gif",
+      "license": "CC0 1.0",
+      "attribution": "Drummyfish"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Web_search.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Web_search.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Web_search.gif",
+      "license": "CC0 1.0",
+      "attribution": "Opyash"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Index.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Index.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Index.gif",
+      "license": "Public Domain",
+      "attribution": "Patrice Semeria"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Animexample2.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Animexample2.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Animexample2.gif",
+      "license": "Public Domain",
+      "attribution": "Branko (en.wikipedia)"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Heat_Index.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Heat_Index.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Heat_Index.gif",
+      "license": "Public Domain (NOAA)"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Spidergraph_Refractive_Index.GIF",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Spidergraph_Refractive_Index.GIF",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Spidergraph_Refractive_Index.GIF",
+      "license": "Public Domain"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Portland_house_price_index.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Portland_house_price_index.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Portland_house_price_index.gif",
+      "license": "Public Domain (US Government)"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:Current_US_drought_index.gif",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Current_US_drought_index.gif",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Current_US_drought_index.gif",
+      "license": "Public Domain (NOAA)"
+    },
+    {
+      "type": "wikimedia_file",
+      "title": "File:USGS_Educational_Videos_and_Animations_(15516308487).jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:FilePath/USGS_Educational_Videos_and_Animations_(15516308487).jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:USGS_Educational_Videos_and_Animations_(15516308487).jpg",
+      "license": "CC0 1.0",
+      "attribution": "U.S. Geological Survey (Flickr)"
+    }
+  ],
+  "youtube_examples": [
+    {
+      "title": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "license_note": "Copyrighted. Reference only."
+    },
+    {
+      "title": "Gorillaz - Feel Good Inc. (Official Video)",
+      "url": "https://www.youtube.com/watch?v=HyHNuVaZJ-k",
+      "license_note": "Copyrighted. Reference only."
+    },
+    {
+      "title": "Of Monsters and Men - Little Talks (Official Video)",
+      "url": "https://www.youtube.com/watch?v=ghb6eDopW8I",
+      "license_note": "Copyrighted. Reference only."
+    }
+  ]
+}

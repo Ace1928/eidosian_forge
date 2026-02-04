@@ -17,6 +17,8 @@ from __future__ import annotations
 from eidosian_core import eidosian
 
 import sys
+import os
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -25,11 +27,20 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "lib"
 
 from cli import StandardCLI, CommandResult, ForgeDetector
 
-from code_forge import CodeAnalyzer, CodeIndexer, CodeLibrarian, index_forge_codebase
+from code_forge import (
+    CodeAnalyzer,
+    CodeIndexer,
+    CodeLibrarian,
+    CodeLibraryDB,
+    IngestionRunner,
+    index_forge_codebase,
+)
 
 # Default paths
 DEFAULT_INDEX_PATH = Path("/home/lloyd/eidosian_forge/data/code_index.json")
 DEFAULT_LIBRARY_PATH = Path("/home/lloyd/eidosian_forge/data/code_library.json")
+DEFAULT_DB_PATH = Path("/home/lloyd/eidosian_forge/data/code_forge/library.sqlite")
+DEFAULT_RUNS_DIR = Path("/home/lloyd/eidosian_forge/data/code_forge/ingestion_runs")
 
 
 class CodeForgeCLI(StandardCLI):
@@ -44,6 +55,8 @@ class CodeForgeCLI(StandardCLI):
         self._analyzer: Optional[CodeAnalyzer] = None
         self._indexer: Optional[CodeIndexer] = None
         self._librarian: Optional[CodeLibrarian] = None
+        self._library_db: Optional[CodeLibraryDB] = None
+        self._runner: Optional[IngestionRunner] = None
     
     @property
     def analyzer(self) -> CodeAnalyzer:
@@ -65,6 +78,18 @@ class CodeForgeCLI(StandardCLI):
         if self._librarian is None:
             self._librarian = CodeLibrarian(DEFAULT_LIBRARY_PATH)
         return self._librarian
+
+    @property
+    def library_db(self) -> CodeLibraryDB:
+        if self._library_db is None:
+            self._library_db = CodeLibraryDB(DEFAULT_DB_PATH)
+        return self._library_db
+
+    @property
+    def runner(self) -> IngestionRunner:
+        if self._runner is None:
+            self._runner = IngestionRunner(db=self.library_db, runs_dir=DEFAULT_RUNS_DIR)
+        return self._runner
     
     @eidosian()
     def register_commands(self, subparsers) -> None:
@@ -136,6 +161,78 @@ class CodeForgeCLI(StandardCLI):
             help="Path to file",
         )
         ingest_parser.set_defaults(func=self._cmd_ingest)
+
+        ingest_dir_parser = subparsers.add_parser(
+            "ingest-dir",
+            help="Ingest a directory into the code library (non-destructive)",
+        )
+        ingest_dir_parser.add_argument(
+            "path",
+            help="Path to directory",
+        )
+        ingest_dir_parser.add_argument(
+            "--mode",
+            choices=["analysis", "archival"],
+            default="analysis",
+            help="Ingestion mode (default: analysis)",
+        )
+        ingest_dir_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="File extensions to include (default: .py)",
+        )
+        ingest_dir_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Maximum number of files to ingest (default: unlimited)",
+        )
+        ingest_dir_parser.add_argument(
+            "--progress-every",
+            type=int,
+            default=50,
+            help="Write progress manifest every N files (default: 50)",
+        )
+        ingest_dir_parser.set_defaults(func=self._cmd_ingest_dir)
+
+        ingest_bg_parser = subparsers.add_parser(
+            "ingest-bg",
+            help="Start background ingestion process (non-blocking)",
+        )
+        ingest_bg_parser.add_argument("path", help="Path to directory")
+        ingest_bg_parser.add_argument(
+            "--mode",
+            choices=["analysis", "archival"],
+            default="analysis",
+            help="Ingestion mode (default: analysis)",
+        )
+        ingest_bg_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="File extensions to include (default: .py)",
+        )
+        ingest_bg_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Maximum number of files to ingest (default: unlimited)",
+        )
+        ingest_bg_parser.add_argument(
+            "--progress-every",
+            type=int,
+            default=100,
+            help="Write progress manifest every N files (default: 100)",
+        )
+        ingest_bg_parser.set_defaults(func=self._cmd_ingest_bg)
+
+        ingest_status_parser = subparsers.add_parser(
+            "ingest-status",
+            help="Check ingestion progress by run_id",
+        )
+        ingest_status_parser.add_argument("run_id", help="Run ID to inspect")
+        ingest_status_parser.set_defaults(func=self._cmd_ingest_status)
         
         # Library command
         lib_parser = subparsers.add_parser(
@@ -322,6 +419,95 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
+        self._output(result, args)
+
+    def _cmd_ingest_dir(self, args) -> None:
+        """Ingest directory into SQLite-backed library."""
+        try:
+            path = Path(args.path)
+            if not path.is_dir():
+                result = CommandResult(False, "Path must be a directory")
+            else:
+                stats = self.runner.ingest_path(
+                    path,
+                    mode=args.mode,
+                    extensions=args.ext,
+                    max_files=args.max_files,
+                    progress_every=args.progress_every,
+                )
+                manifest = self.runner.runs_dir / f"{stats.run_id}.json"
+                result = CommandResult(
+                    True,
+                    f"Ingested {stats.files_processed} files ({stats.units_created} units)",
+                    {
+                        "run_id": stats.run_id,
+                        "mode": stats.mode,
+                        "files_processed": stats.files_processed,
+                        "units_created": stats.units_created,
+                        "errors": stats.errors,
+                        "manifest": str(manifest),
+                        "db_path": str(DEFAULT_DB_PATH),
+                    },
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Ingest error: {e}")
+        self._output(result, args)
+
+    def _cmd_ingest_bg(self, args) -> None:
+        """Start background ingestion process."""
+        try:
+            path = Path(args.path)
+            if not path.is_dir():
+                result = CommandResult(False, "Path must be a directory")
+            else:
+                import subprocess
+
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "code_forge.ingest.daemon",
+                    "--root",
+                    str(path),
+                    "--mode",
+                    args.mode,
+                    "--progress-every",
+                    str(args.progress_every),
+                    "--detach",
+                ]
+                if args.ext:
+                    cmd.extend(["--ext", *args.ext])
+                if args.max_files is not None:
+                    cmd.extend(["--max-files", str(args.max_files)])
+
+                env = dict(**os.environ)
+                env["PYTHONPATH"] = "/home/lloyd/eidosian_forge/code_forge/src:/home/lloyd/eidosian_forge/lib"
+                subprocess.Popen(cmd, env=env)
+
+                result = CommandResult(
+                    True,
+                    "Background ingestion started",
+                    {
+                        "root": str(path),
+                        "mode": args.mode,
+                        "runs_dir": str(DEFAULT_RUNS_DIR),
+                        "latest_run_file": str(DEFAULT_RUNS_DIR / "latest_run.json"),
+                    },
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Ingest error: {e}")
+        self._output(result, args)
+
+    def _cmd_ingest_status(self, args) -> None:
+        """Query progress from manifest."""
+        try:
+            manifest = DEFAULT_RUNS_DIR / f"{args.run_id}.json"
+            if not manifest.exists():
+                result = CommandResult(False, "Manifest not found")
+            else:
+                data = json.loads(manifest.read_text())
+                result = CommandResult(True, "Status", data)
+        except Exception as e:
+            result = CommandResult(False, f"Status error: {e}")
         self._output(result, args)
     
     def _cmd_stats(self, args) -> None:

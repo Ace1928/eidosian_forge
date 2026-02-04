@@ -1,24 +1,27 @@
-"""High-performance streaming engine.
+"""
+Unified Glyph Streaming Engine.
 
-This module provides the main StreamEngine class that orchestrates
-video capture, frame processing, rendering, buffering, and audio playback
-for high-performance terminal streaming.
+This module consolidates the best features of all previous engines:
+- Ultra-high performance rendering (Vectorized, Delta Compression)
+- Smart Buffering (Adaptive, Pre-buffering)
+- Recording support (HD output)
+- Audio synchronization
+- Modular configuration
 
-Classes:
-    StreamEngine: Main streaming orchestrator
-    StreamConfig: Configuration for streaming
 """
 from __future__ import annotations
 
+import json
 import os
+import shutil
+import subprocess
 import sys
 import time
 import threading
 import signal
-from concurrent.futures import ThreadPoolExecutor, Future
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Optional, Union, List, Tuple, Callable
 
 import numpy as np
 
@@ -28,694 +31,616 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
-from .types import (
-    QualityLevel,
-    VideoInfo,
-    StreamMetrics,
-    RenderParameters,
-    RenderThresholds,
-)
-from .extractors import (
-    VideoSourceExtractor,
-    YouTubeExtractor,
-    ExtractionResult,
-    StreamExtractionError,
-    DependencyError,
-)
-from .processors import FrameProcessor
-from .renderers import CharacterRenderer, FrameRenderer, FrameBuffer
-from .audio import AudioPlayer, AudioSync
-
+from .core.renderer import GlyphRenderer, RenderConfig
+from .core.buffer import AdaptiveBuffer
+from .core.recorder import GlyphRecorder, RecorderConfig
+from .core.sync import AudioSync, AudioDownloader
+from .extractors import YouTubeExtractor, VideoSourceExtractor
+from .naming import build_output_path, build_metadata, write_metadata
 
 # ═══════════════════════════════════════════════════════════════
-# Stream Configuration
+# Configuration
 # ═══════════════════════════════════════════════════════════════
 
 @dataclass
-class StreamConfig:
-    """Configuration for stream processing.
+class UnifiedStreamConfig:
+    """Comprehensive streaming configuration."""
     
-    All settings for controlling stream behavior, quality,
-    and display options.
-    """
-    # Quality settings
-    scale_factor: int = 1
-    block_width: int = 2
-    block_height: int = 4
-    quality_level: QualityLevel = QualityLevel.STANDARD
+    # Source
+    source: Union[str, int]
     
-    # Processing settings
-    edge_threshold: int = 50
-    algorithm: str = "sobel"
-    gradient: str = "standard"
+    # Resolution & Quality
+    resolution: str = "720p"  # auto, 1080p, 720p, 480p
+    target_fps: int = 30
+    render_mode: str = "gradient"  # gradient, braille, hybrid
+    color_mode: str = "ansi256"    # truecolor, ansi256, none
     
-    # Display settings
-    color_enabled: bool = True
-    show_edges: bool = True
-    show_border: bool = True
-    show_stats: bool = True
+    # Performance
+    use_delta_compression: bool = True
+    use_vectorized_render: bool = True
+    frame_backend: str = "auto"  # auto, cv2, ffmpeg
+
+    # Render tuning
+    render_dithering: bool = True
+    render_gamma: float = 1.15
+    render_contrast: float = 0.98
+    render_brightness: float = 0.02
+    render_auto_contrast: bool = True
     
-    # Playback settings
-    target_fps: Optional[float] = None  # None = match source
+    # Buffering
+    buffer_seconds: float = 30.0
+    prebuffer_seconds: float = 5.0
+    
+    # Audio
     audio_enabled: bool = True
-    adaptive_quality: bool = False  # Disabled by default
+    audio_sync: bool = True
+    mux_audio: bool = True
+
+    # Playlist handling (YouTube)
+    playlist_max_items: Optional[int] = None
+    playlist_start: Optional[int] = None
+    playlist_end: Optional[int] = None
+
+    # YouTube/yt-dlp options
+    yt_cookies: Optional[str] = None
+    yt_cookies_from_browser: Optional[str] = None
+    yt_user_agent: Optional[str] = None
+    yt_proxy: Optional[str] = None
+    yt_skip_authcheck: bool = False
+    yt_player_client: Optional[str] = None
     
-    # Buffering settings
-    buffer_size: int = 60  # Frames
-    prebuffer_frames: int = 30  # Frames to buffer before playback
-    prebuffer_timeout: float = 10.0  # Max wait for prebuffer
+    # Recording
+    record_enabled: bool = False
+    record_path: Optional[str] = None
+    output_dir: Optional[str] = None
+    overwrite_output: bool = False
+    write_metadata: bool = True
+    render_then_play: bool = False
+    play_after_render: bool = True
     
-    # Performance settings
-    max_workers: int = 4
-    frame_skip_threshold: float = 0.1  # Skip frames if behind by this much
+    # Display
+    show_metrics: bool = True
+    show_border: bool = False
+
+    # Limits
+    max_duration_seconds: Optional[float] = None
     
-    # Terminal settings
-    terminal_width: Optional[int] = None  # None = auto-detect
-    terminal_height: Optional[int] = None  # None = auto-detect
-    
-    def __post_init__(self):
-        """Validate and normalize configuration."""
-        self.scale_factor = max(1, min(4, self.scale_factor))
-        self.block_width = max(1, min(8, self.block_width))
-        self.block_height = max(1, min(16, self.block_height))
-        self.edge_threshold = max(0, min(255, self.edge_threshold))
-        self.buffer_size = max(10, min(300, self.buffer_size))
-        self.prebuffer_frames = max(0, min(self.buffer_size, self.prebuffer_frames))
+    # Terminal override (None = auto)
+    terminal_width: Optional[int] = None
+    terminal_height: Optional[int] = None
+
+    def get_pixel_resolution(self) -> Tuple[int, int]:
+        """Get target pixel resolution."""
+        resolutions = {
+            "1080p": (1920, 1080),
+            "720p": (1280, 720),
+            "480p": (854, 480),
+            "360p": (640, 360),
+        }
+        if self.resolution in resolutions:
+            return resolutions[self.resolution]
+        return resolutions["720p"]
 
 
 # ═══════════════════════════════════════════════════════════════
-# Stream Engine
+# Delta Encoder (Optimized)
 # ═══════════════════════════════════════════════════════════════
 
-class StreamEngine:
-    """High-performance streaming engine.
+class DeltaEncoder:
+    """Optimizes terminal output by only printing changed lines."""
     
-    Orchestrates the complete pipeline:
-    - Video capture (files, webcams, YouTube, network streams)
-    - Frame processing (edge detection, color extraction)
-    - Character rendering (glyph mapping, ANSI colors)
-    - Buffered playback (frame timing, sync)
-    - Audio playback (synchronized with video)
-    
-    Features:
-    - Pre-buffering for smooth playback
-    - Optional adaptive quality adjustment
-    - Audio synchronization
-    - Thread-safe operation
-    - Graceful shutdown
-    
-    Attributes:
-        config: Stream configuration
-        metrics: Performance metrics
-        is_running: Whether streaming is active
-    """
-    
-    def __init__(self, config: Optional[StreamConfig] = None):
-        """Initialize stream engine.
+    def __init__(self):
+        self._prev_lines: List[str] = []
         
-        Args:
-            config: Stream configuration (None for defaults)
+    def encode(self, lines: List[str]) -> List[str]:
+        """Return full frame with optimization where possible.
+        
+        Note: Terminal delta updates are tricky without ncurses.
+        For now, we simply return the full frame, but this hook
+        allows for future cursor-movement based optimizations.
         """
-        self.config = config or StreamConfig()
-        self.metrics = StreamMetrics()
+        # In a raw ANSI stream, clearing screen and reprinting is often 
+        # cleaner than jumping around, unless we use tput/cup.
+        # We'll stick to full frame rewrite with Home cursor for now 
+        # to avoid artifacting, but we can detect static frames.
+        
+        if self._prev_lines == lines:
+            return []  # No update needed
+            
+        self._prev_lines = list(lines)
+        return lines
+
+
+# ═══════════════════════════════════════════════════════════════
+# Unified Engine
+# ═══════════════════════════════════════════════════════════════
+
+class UnifiedStreamEngine:
+    """The converged streaming engine."""
+    
+    def __init__(self, config: UnifiedStreamConfig):
+        self.config = config
+        
+        # Components
+        render_cfg = RenderConfig(
+            mode=config.render_mode,
+            color=config.color_mode,
+            dithering=config.render_dithering,
+            gamma=config.render_gamma,
+            contrast=config.render_contrast,
+            brightness=config.render_brightness,
+            auto_contrast=config.render_auto_contrast,
+        )
+        self.renderer = GlyphRenderer(render_cfg)
+        
+        self.buffer = AdaptiveBuffer(
+            target_fps=float(config.target_fps),
+            min_buffer_seconds=config.prebuffer_seconds,
+            target_buffer_seconds=config.buffer_seconds
+        )
+        
+        self.recorder: Optional[GlyphRecorder] = None
+        self.audio: Optional[AudioSync] = None
+        self.delta_encoder = DeltaEncoder() if config.use_delta_compression else None
+        self.audio_path: Optional[Path] = None
+        self.audio_source_for_mux: Optional[str] = None
+        self.total_frames: Optional[int] = None
+        self.last_recording_path: Optional[Path] = None
+        self.last_record_text: Optional[str] = None
+        self.last_metadata_path: Optional[Path] = None
+        self.extraction_info = None
+        self._ffmpeg_process: Optional[subprocess.Popen] = None
         
         # State
         self._running = False
-        self._paused = False
-        self._lock = threading.RLock()
         self._stop_event = threading.Event()
         
-        # Components (initialized on run)
-        self._capture: Optional[cv2.VideoCapture] = None
-        self._processor: Optional[FrameProcessor] = None
-        self._char_renderer: Optional[CharacterRenderer] = None
-        self._frame_renderer: Optional[FrameRenderer] = None
-        self._frame_buffer: Optional[FrameBuffer] = None
-        self._audio_player: Optional[AudioPlayer] = None
-        self._audio_sync: Optional[AudioSync] = None
-        
-        # Thread pool for parallel processing
-        self._executor: Optional[ThreadPoolExecutor] = None
-        
-        # Render parameters (for adaptive quality)
-        self._render_params: Optional[RenderParameters] = None
-        self._quality_thresholds: Optional[RenderThresholds] = None
-        
-        # Source info
-        self._source_info: Optional[ExtractionResult] = None
-        self._source_fps: float = 30.0
-        
-        # Callbacks
-        self._on_frame: Optional[Callable[[List[str]], None]] = None
-        self._on_error: Optional[Callable[[Exception], None]] = None
-    
-    @property
-    def is_running(self) -> bool:
-        """Check if streaming is active."""
-        return self._running
-    
-    @property
-    def is_paused(self) -> bool:
-        """Check if streaming is paused."""
-        return self._paused
-    
-    def run(
-        self,
-        source: Union[str, int, Path],
-        on_frame: Optional[Callable[[List[str]], None]] = None,
-        on_error: Optional[Callable[[Exception], None]] = None,
-    ) -> None:
-        """Start streaming from source.
-        
-        This is the main entry point. Blocks until streaming ends.
-        
-        Args:
-            source: Video source (URL, file path, webcam index)
-            on_frame: Callback for each rendered frame
-            on_error: Callback for errors
-        """
-        if not HAS_OPENCV:
-            raise DependencyError(
-                "opencv-python",
-                "pip install opencv-python",
-                "video streaming",
-            )
-        
-        self._on_frame = on_frame
-        self._on_error = on_error
-        
+    def run(self) -> Optional[Path]:
+        """Main execution entry point."""
+        if not HAS_OPENCV and self.config.frame_backend != "ffmpeg":
+            print("Error: OpenCV (cv2) is required.")
+            return None
+
         try:
-            self._setup(source)
+            self._setup_pipeline()
             self._stream_loop()
         except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            if self._on_error:
-                self._on_error(e)
-            else:
-                raise
+            print("\nStopping...")
         finally:
             self._cleanup()
-    
-    def run_async(
-        self,
-        source: Union[str, int, Path],
-        on_frame: Optional[Callable[[List[str]], None]] = None,
-        on_error: Optional[Callable[[Exception], None]] = None,
-    ) -> threading.Thread:
-        """Start streaming in a background thread.
-        
-        Args:
-            source: Video source
-            on_frame: Callback for each rendered frame
-            on_error: Callback for errors
-            
-        Returns:
-            The background thread
-        """
-        thread = threading.Thread(
-            target=self.run,
-            args=(source, on_frame, on_error),
-            daemon=True,
-        )
-        thread.start()
-        return thread
-    
-    def stop(self) -> None:
-        """Stop streaming."""
-        self._stop_event.set()
-        self._running = False
-    
-    def pause(self) -> None:
-        """Pause streaming."""
-        with self._lock:
-            self._paused = True
-            if self._audio_player:
-                self._audio_player.pause()
-    
-    def resume(self) -> None:
-        """Resume streaming."""
-        with self._lock:
-            self._paused = False
-            if self._audio_player:
-                self._audio_player.resume()
-    
-    def toggle_pause(self) -> bool:
-        """Toggle pause state.
-        
-        Returns:
-            New pause state
-        """
-        with self._lock:
-            if self._paused:
-                self.resume()
-            else:
-                self.pause()
-            return self._paused
-    
-    def _setup(self, source: Union[str, int, Path]) -> None:
-        """Set up streaming components.
-        
-        Args:
-            source: Video source
-        """
-        # Get terminal dimensions
-        term_width = self.config.terminal_width
-        term_height = self.config.terminal_height
-        
-        if term_width is None or term_height is None:
+            if self.recorder and self.config.play_after_render:
+                self._play_recording()
+        return self.last_recording_path
+
+    def _setup_pipeline(self):
+        """Initialize all pipeline components."""
+        # 1. Source Extraction
+        print("Initializing source...")
+        resolution_hint: Optional[int] = None
+        if isinstance(self.config.resolution, str) and self.config.resolution.endswith("p"):
             try:
-                size = os.get_terminal_size()
-                term_width = term_width or size.columns
-                term_height = term_height or size.lines
-            except Exception:
-                term_width = term_width or 120
-                term_height = term_height or 40
-        
-        # Extract source info
-        print(f"🔍 Extracting source info...", end="", flush=True)
-        self._source_info = VideoSourceExtractor.extract(
-            source,
+                resolution_hint = int(self.config.resolution.rstrip("p"))
+            except ValueError:
+                resolution_hint = None
+        extractor = VideoSourceExtractor()
+        info = extractor.extract(
+            self.config.source,
+            resolution=resolution_hint,
             include_audio=self.config.audio_enabled,
+            playlist_max_items=self.config.playlist_max_items,
+            playlist_start=self.config.playlist_start,
+            playlist_end=self.config.playlist_end,
+            yt_cookies=self.config.yt_cookies,
+            yt_cookies_from_browser=self.config.yt_cookies_from_browser,
+            yt_user_agent=self.config.yt_user_agent,
+            yt_proxy=self.config.yt_proxy,
+            yt_skip_authcheck=self.config.yt_skip_authcheck,
+            yt_player_client=self.config.yt_player_client,
         )
-        print(f"\r✓ Source: {self._source_info.title}                    ")
+        self.extraction_info = info
         
-        # Determine target FPS
-        if self.config.target_fps:
-            self._source_fps = self.config.target_fps
-        elif self._source_info.fps:
-            self._source_fps = self._source_info.fps
-        else:
-            self._source_fps = 30.0
+        self.source_fps = info.fps or 30.0
+        self.source_path = info.video_url
+        if info.format == "webcam" and isinstance(info.video_url, str) and info.video_url.isdigit():
+            self.source_path = int(info.video_url)
+        elif isinstance(self.config.source, int):
+            self.source_path = self.config.source
+        if not self.source_path:
+            raise RuntimeError("No video source URL available.")
+        if info.duration and self.config.target_fps:
+            self.total_frames = int(info.duration * self.config.target_fps)
         
-        # Open video capture
-        video_source = self._source_info.video_url
-        if isinstance(source, int):
-            video_source = source
-        
-        self._capture = cv2.VideoCapture(video_source)
-        if not self._capture.isOpened():
-            raise StreamExtractionError(
-                f"Cannot open video source: {source}",
-                category="capture_error",
-            )
-        
-        # Initialize components
-        self._processor = FrameProcessor(
-            scale_factor=self.config.scale_factor,
-            block_width=self.config.block_width,
-            block_height=self.config.block_height,
-            edge_threshold=self.config.edge_threshold,
-            algorithm=self.config.algorithm,
-            color_enabled=self.config.color_enabled,
-            max_workers=self.config.max_workers,
-        )
-        
-        self._char_renderer = CharacterRenderer(
-            gradient=self.config.gradient,
-            use_unicode=True,
-            use_color=self.config.color_enabled,
-            edge_mode="enhanced" if self.config.show_edges else "none",
-            edge_threshold=self.config.edge_threshold // 3,
-        )
-        
-        self._frame_renderer = FrameRenderer(
-            terminal_width=term_width,
-            terminal_height=term_height,
-            use_unicode=True,
-            show_border=self.config.show_border,
-            show_stats=self.config.show_stats,
-        )
-        
-        self._frame_buffer = FrameBuffer(
-            capacity=self.config.buffer_size,
-            target_fps=self._source_fps,
-        )
-        
-        # Render parameters for adaptive quality
-        self._render_params = RenderParameters(
-            scale=self.config.scale_factor,
-            width=self.config.block_width,
-            height=self.config.block_height,
-            threshold=self.config.edge_threshold,
-            optimal_width=term_width - 4,
-            optimal_height=term_height - 6,
-            quality_level=self.config.quality_level,
-        )
-        
-        if self.config.adaptive_quality:
-            self._quality_thresholds = RenderThresholds.from_target_fps(
-                self._source_fps
-            )
-        
-        # Set up audio if available
-        if (self.config.audio_enabled and 
-            self._source_info.has_audio and
-            not self._source_info.is_live):
+        # 2. Audio Setup
+        if (
+            self.config.audio_enabled
+            and self.config.record_enabled
+            and self.config.mux_audio
+            and not info.is_live
+        ):
+            self.audio_source_for_mux = self._select_audio_source_for_mux(info)
+
+        if self.config.audio_enabled and info.audio_url and not self.config.render_then_play:
+            self.audio = AudioSync()
+            # If it's a URL, we might stream or download.
+            # AudioSync supports local files and URLs via ffplay backend
+            if info.audio_url.startswith(('http://', 'https://')):
+                self.audio.start_stream(info.audio_url)
+            else:
+                self.audio.start(info.audio_url)
+        elif self.config.audio_enabled and info.audio_url and self.config.render_then_play:
+            audio_source = self.audio_source_for_mux or info.audio_url
+            self.audio_path = self._prepare_audio_for_mux(audio_source)
             
-            self._audio_player = AudioPlayer()
-            if self._audio_player.is_available:
-                if self._audio_player.load(self._source_info.audio_url):
-                    self._audio_sync = AudioSync(
-                        audio_player=self._audio_player,
-                        target_fps=self._source_fps,
-                    )
-        
-        # Initialize executor
-        self._executor = ThreadPoolExecutor(
-            max_workers=self.config.max_workers + 2,  # +2 for capture and display
-            thread_name_prefix="stream",
+        # 3. Recorder Setup
+        if self.config.record_enabled:
+            out_dir = Path(self.config.output_dir) if self.config.output_dir else None
+            path = build_output_path(
+                source=str(self.config.source),
+                title=info.title,
+                output_dir=out_dir,
+                ext="mp4",
+                output=self.config.record_path,
+                overwrite=self.config.overwrite_output,
+            )
+            rec_cfg = RecorderConfig(
+                output_path=path,
+                fps=self.config.target_fps,
+                font_size=14
+            )
+            self.recorder = GlyphRecorder(rec_cfg)
+            self.last_recording_path = path
+            
+        # 4. Buffering
+        # We start a background thread to feed the buffer
+        self._start_buffering_thread()
+
+    def _ffmpeg_available(self) -> bool:
+        return shutil.which("ffmpeg") is not None
+
+    def _ffprobe_stream_info(self, source: str | int) -> tuple[Optional[int], Optional[int], Optional[float]]:
+        if isinstance(source, int):
+            return None, None, None
+        if shutil.which("ffprobe") is None:
+            return None, None, None
+        cmd = [
+            "ffprobe",
+            "-v", "error",
+            "-select_streams", "v:0",
+            "-show_entries", "stream=width,height,avg_frame_rate",
+            "-of", "json",
+            str(source),
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            return None, None, None
+        try:
+            payload = json.loads(result.stdout)
+            streams = payload.get("streams") or []
+            if not streams:
+                return None, None, None
+            stream = streams[0]
+            width = int(stream.get("width")) if stream.get("width") else None
+            height = int(stream.get("height")) if stream.get("height") else None
+            fps = None
+            rate = stream.get("avg_frame_rate")
+            if rate and isinstance(rate, str) and "/" in rate:
+                num, den = rate.split("/", 1)
+                if float(den) != 0:
+                    fps = float(num) / float(den)
+            return width, height, fps
+        except Exception:
+            return None, None, None
+
+    def _select_frame_backend(self) -> str:
+        backend = (self.config.frame_backend or "auto").lower()
+        if backend not in {"auto", "cv2", "ffmpeg"}:
+            raise RuntimeError(f"Unsupported frame backend: {backend}")
+        is_webcam = isinstance(self.config.source, int) or (
+            getattr(self.extraction_info, "format", "") == "webcam"
         )
+        if backend == "auto":
+            if self._ffmpeg_available() and not is_webcam:
+                return "ffmpeg"
+            return "cv2"
+        if backend == "ffmpeg":
+            if is_webcam:
+                return "cv2"
+            if not self._ffmpeg_available():
+                raise RuntimeError("ffmpeg not available for frame backend")
+        return backend
+
+    def _start_buffering_thread(self):
+        """Start the producer thread."""
+        def frame_producer():
+            backend = self._select_frame_backend()
+            if backend == "ffmpeg":
+                width = getattr(self.extraction_info, "width", None)
+                height = getattr(self.extraction_info, "height", None)
+                if width is None or height is None:
+                    probe_w, probe_h, probe_fps = self._ffprobe_stream_info(self.source_path)
+                    width = width or probe_w
+                    height = height or probe_h
+                    if probe_fps and not getattr(self.extraction_info, "fps", None):
+                        self.source_fps = probe_fps
+                if not width or not height:
+                    raise RuntimeError("Unable to determine stream dimensions for ffmpeg backend.")
+                for success, frame in self._ffmpeg_frames(self.source_path, width, height):
+                    yield success, frame
+                yield False, None
+                return
+
+            cap = cv2.VideoCapture(self.source_path)
+            if self.total_frames is None:
+                total = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                if total and total > 0:
+                    self.total_frames = int(total)
+            start_time = time.time()
+            while not self._stop_event.is_set():
+                if self.config.max_duration_seconds:
+                    if time.time() - start_time >= self.config.max_duration_seconds:
+                        break
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                yield True, frame
+            cap.release()
+            yield False, None
+
+        def render_wrapper(frame, w, h):
+            # This is called by the buffer thread
+            return self.renderer.render(frame, width=w, height=h)
+
+        # Calculate dimensions
+        w, h = self._get_terminal_dims()
         
-        self._running = True
-        self._stop_event.clear()
-        self.metrics = StreamMetrics()
-    
-    def _stream_loop(self) -> None:
-        """Main streaming loop with buffering."""
-        # Calculate target dimensions
-        term_width = self._frame_renderer.terminal_width - 4
-        term_height = self._frame_renderer.terminal_height - 6
-        
-        # Pre-buffer frames
-        if self.config.prebuffer_frames > 0:
-            self._prebuffer(term_width, term_height)
-        
-        # Start audio playback
-        if self._audio_player and self._audio_sync:
-            self._audio_player.play()
-            self._audio_sync.start()
-        
-        # Display loop
-        frame_duration = 1.0 / self._source_fps
-        start_time = time.time()
-        frame_count = 0
-        
-        # Clear screen
-        self._clear_screen()
-        
-        # Start capture thread
-        capture_thread = threading.Thread(
-            target=self._capture_loop,
-            args=(term_width, term_height),
-            daemon=True,
+        # Determine recording resolution (often higher than terminal)
+        rec_w, rec_h = (w, h)
+        if self.recorder:
+             # Basic logic: 2x terminal resolution for recording? 
+             # Or match config resolution.
+             rw, rh = self.config.get_pixel_resolution()
+             # Approximate char dimensions: 8x16 pixels
+             rec_w = rw // 8
+             rec_h = rh // 16
+
+        self.buffer.start_buffering(
+            frame_generator=frame_producer().__next__, 
+            render_func=render_wrapper,
+            display_size=(w, h),
+            record_size=(rec_w, rec_h) if self.recorder else None,
+            total_frames=0 # Unknown for stream
         )
-        capture_thread.start()
+
+    def _ffmpeg_frames(
+        self,
+        source: str | int,
+        width: int,
+        height: int,
+    ):
+        if isinstance(source, int):
+            raise RuntimeError("ffmpeg backend does not support webcam sources.")
+        frame_size = width * height * 3
+        cmd = ["ffmpeg", "-loglevel", "error"]
+        if getattr(self.extraction_info, "is_live", False):
+            cmd.append("-re")
+        cmd.extend(["-i", str(source)])
+        if self.config.target_fps:
+            cmd.extend(["-vf", f"fps={self.config.target_fps}"])
+        cmd.extend(["-f", "rawvideo", "-pix_fmt", "bgr24", "-"])
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=max(1024 * 1024, frame_size * 2),
+        )
+        self._ffmpeg_process = proc
+        try:
+            while not self._stop_event.is_set():
+                if not proc.stdout:
+                    break
+                raw = proc.stdout.read(frame_size)
+                if not raw or len(raw) < frame_size:
+                    break
+                frame = np.frombuffer(raw, dtype=np.uint8).reshape((height, width, 3))
+                yield True, frame
+        finally:
+            self._terminate_ffmpeg(proc)
+
+    def _get_terminal_dims(self) -> Tuple[int, int]:
+        """Get effective terminal dimensions in characters."""
+        if self.config.terminal_width and self.config.terminal_height:
+            return self.config.terminal_width, self.config.terminal_height
         
         try:
-            while self._running and not self._stop_event.is_set():
-                # Handle pause
-                if self._paused:
-                    time.sleep(0.1)
-                    continue
-                
-                # Get frame from buffer
-                frame_data = self._frame_buffer.get(block=True, timeout=1.0)
-                
-                if frame_data is None:
-                    # Buffer empty, check if capture is done
-                    if not capture_thread.is_alive():
-                        break
-                    continue
-                
-                frame_lines, timestamp = frame_data
-                
-                # Display frame
-                if self._on_frame:
-                    self._on_frame(frame_lines)
-                else:
-                    self._display_frame(frame_lines)
-                
-                # Update metrics
-                self.metrics.record_frame()
-                self.metrics.update_fps()
-                frame_count += 1
-                
-                # Frame timing
-                if self._audio_sync:
-                    self._audio_sync.frame_rendered()
-                    sleep_time = self._audio_sync.get_sleep_time()
-                else:
-                    expected_time = start_time + frame_count * frame_duration
-                    sleep_time = expected_time - time.time()
-                
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
-                    
-        except KeyboardInterrupt:
-            pass
-        finally:
-            self._stop_event.set()
-            capture_thread.join(timeout=2)
-    
-    def _capture_loop(self, target_width: int, target_height: int) -> None:
-        """Background capture and processing loop."""
-        frame_count = 0
+            cols, lines = os.get_terminal_size()
+            return cols, lines - 2 # Reserve space for status
+        except:
+            return 120, 40
+
+    def _stream_loop(self):
+        """Consumer loop."""
+        self._running = True
         
-        while not self._stop_event.is_set():
-            ret, frame = self._capture.read()
+        # Wait for prebuffer
+        print("Pre-buffering...")
+        while not self.buffer.ready_for_playback and not self._stop_event.is_set():
+            time.sleep(0.1)
             
-            if not ret:
-                break
-            
-            timestamp = frame_count / self._source_fps
-            
-            # Process frame
-            start = time.time()
-            processed = self._processor.process_frame(
-                frame,
-                target_width,
-                target_height,
+        print("Starting playback!")
+        if not self.config.render_then_play:
+            sys.stdout.write("\033[2J") # Clear screen
+        
+        last_frame_time = time.time()
+        frame_interval = 1.0 / self.config.target_fps
+        stream_start = time.time()
+
+        progress = None
+        task_id = None
+        if self.total_frames:
+            from rich.progress import Progress, BarColumn, TimeRemainingColumn, TimeElapsedColumn
+            progress = Progress(
+                "[progress.description]{task.description}",
+                BarColumn(),
+                "[progress.percentage]{task.percentage:>3.0f}%",
+                TimeElapsedColumn(),
+                TimeRemainingColumn(),
             )
-            
-            # Render to characters
-            art_lines = self._char_renderer.render(
-                processed,
-                show_edges=self.config.show_edges,
-            )
-            
-            # Add frame wrapper
-            frame_lines = self._frame_renderer.render_frame(
-                art_lines,
-                title=self._source_info.title if self._source_info else "",
-                metrics=self.metrics,
-                params=self._render_params,
-            )
-            
-            render_time = time.time() - start
-            self.metrics.record_render(render_time)
-            
-            # Adaptive quality adjustment
-            if self.config.adaptive_quality and self._quality_thresholds:
-                self._adjust_quality(render_time * 1000)
-            
-            # Add to buffer (non-blocking)
-            if not self._frame_buffer.put(frame_lines, timestamp, block=False):
-                self.metrics.record_dropped()
-            
-            frame_count += 1
-    
-    def _prebuffer(self, target_width: int, target_height: int) -> None:
-        """Pre-buffer frames before playback starts."""
-        print(f"📦 Buffering {self.config.prebuffer_frames} frames...", end="", flush=True)
+            progress.start()
+            task_id = progress.add_task("Rendering", total=self.total_frames)
         
-        frame_count = 0
-        start_time = time.time()
+        while self._running and not self._stop_event.is_set():
+            now = time.time()
+            if self.config.max_duration_seconds:
+                if now - stream_start >= self.config.max_duration_seconds:
+                    break
+            
+            # 1. Sync check
+            if self.audio:
+                # Logic to skip frames if behind audio
+                pass
+            
+            # 2. Get Frame
+            frame_obj = self.buffer.get_next_frame(timeout=0.5)
+            if not frame_obj:
+                if not self.buffer.has_frames: 
+                    break # End of stream
+                continue
+                
+            # 3. Display
+            if not self.config.render_then_play:
+                self._display_frame(frame_obj.display_data)
+            
+            # 4. Record
+            if self.recorder:
+                record_payload = frame_obj.record_data or frame_obj.display_data
+                if record_payload:
+                    self.recorder.write_frame(record_payload)
+                    self.last_record_text = record_payload
+                if progress and task_id is not None:
+                    progress.update(task_id, advance=1)
+                
+            # 5. Timing
+            elapsed = time.time() - now
+            sleep_time = max(0, frame_interval - elapsed)
+            time.sleep(sleep_time)
         
-        while frame_count < self.config.prebuffer_frames:
-            if time.time() - start_time > self.config.prebuffer_timeout:
-                print(f"\r⚠️  Buffer timeout after {frame_count} frames        ")
-                break
-            
-            ret, frame = self._capture.read()
-            if not ret:
-                break
-            
-            timestamp = frame_count / self._source_fps
-            
-            # Process frame
-            processed = self._processor.process_frame(
-                frame,
-                target_width,
-                target_height,
-            )
-            
-            # Render to characters
-            art_lines = self._char_renderer.render(
-                processed,
-                show_edges=self.config.show_edges,
-            )
-            
-            # Add frame wrapper
-            frame_lines = self._frame_renderer.render_frame(
-                art_lines,
-                title=self._source_info.title if self._source_info else "",
-                metrics=self.metrics,
-                params=self._render_params,
-            )
-            
-            self._frame_buffer.put(frame_lines, timestamp, block=True)
-            frame_count += 1
-            
-            # Progress indicator
-            progress = frame_count * 100 // self.config.prebuffer_frames
-            print(f"\r📦 Buffering... {progress}%  ", end="", flush=True)
-        
-        print(f"\r✓ Buffered {frame_count} frames                    ")
-    
-    def _adjust_quality(self, render_time_ms: float) -> None:
-        """Adjust quality based on render performance.
-        
-        Args:
-            render_time_ms: Last render time in milliseconds
-        """
-        if not self._quality_thresholds or not self._render_params:
-            return
-        
-        if render_time_ms > self._quality_thresholds.reduce_ms:
-            if self._render_params.decrease_quality():
-                self._processor.update_quality(self._render_params.quality_level)
-        elif render_time_ms < self._quality_thresholds.improve_ms:
-            if self._render_params.increase_quality():
-                self._processor.update_quality(self._render_params.quality_level)
-    
-    def _display_frame(self, frame_lines: List[str]) -> None:
-        """Display frame to terminal.
-        
-        Args:
-            frame_lines: Rendered frame lines
-        """
-        # Move cursor to home position
-        sys.stdout.write("\033[H")
-        
-        # Write frame
-        sys.stdout.write("\n".join(frame_lines))
-        sys.stdout.write("\n")
+        if progress:
+            progress.stop()
+
+    def _display_frame(self, data: str):
+        """Output frame to terminal."""
+        sys.stdout.write("\033[H") # Move home
+        sys.stdout.write(data)
         sys.stdout.flush()
-    
-    def _clear_screen(self) -> None:
-        """Clear terminal screen."""
-        if os.name == 'posix':
-            os.system('clear')
-        else:
-            os.system('cls')
-    
-    def _cleanup(self) -> None:
-        """Clean up resources."""
-        self._running = False
+
+    def _cleanup(self):
         self._stop_event.set()
-        
-        if self._capture:
-            self._capture.release()
-            self._capture = None
-        
-        if self._audio_player:
-            self._audio_player.stop()
-            self._audio_player.cleanup()
-            self._audio_player = None
-        
-        if self._processor:
-            self._processor.shutdown()
-            self._processor = None
-        
-        if self._executor:
-            self._executor.shutdown(wait=False)
-            self._executor = None
-        
-        if self._frame_buffer:
-            self._frame_buffer.clear()
-            self._frame_buffer = None
+        self.buffer.stop()
+        if self.recorder:
+            self.recorder.close()
+        if self.audio:
+            self.audio.stop()
+        if self._ffmpeg_process:
+            self._terminate_ffmpeg(self._ffmpeg_process)
+        if not self.config.render_then_play:
+            sys.stdout.write("\033[0m\033[2J")
+            print("Stream ended.")
+
+        if (
+            self.recorder
+            and self.config.record_enabled
+            and self.config.audio_enabled
+            and self.config.mux_audio
+            and self.audio_source_for_mux
+        ):
+            if not self.audio_path:
+                self.audio_path = self._prepare_audio_for_mux(self.audio_source_for_mux)
+            if self.audio_path:
+                muxed = self.recorder.mux_audio(str(self.audio_path))
+                if muxed:
+                    self.last_recording_path = muxed
+
+        if (
+            self.config.write_metadata
+            and self.last_recording_path
+            and self.last_recording_path.exists()
+        ):
+            metadata = build_metadata(
+                source=str(self.config.source),
+                output_path=self.last_recording_path,
+                title=getattr(self.extraction_info, "title", None),
+                info=self.extraction_info,
+            )
+            self.last_metadata_path = write_metadata(metadata, self.last_recording_path)
+
+    def _terminate_ffmpeg(self, proc: subprocess.Popen) -> None:
+        if proc.poll() is None:
+            try:
+                proc.terminate()
+                proc.wait(timeout=2)
+            except Exception:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+
+    def _prepare_audio_for_mux(self, source: str) -> Optional[Path]:
+        """Prepare local audio file for muxing."""
+        if source.startswith(("http://", "https://")):
+            return AudioDownloader.download_youtube_audio(source)
+        src_path = Path(source)
+        if src_path.exists():
+            if not shutil.which("ffmpeg"):
+                print("ffmpeg not available for audio extraction.")
+                return None
+            temp_audio = Path("/tmp") / "glyph_forge_audio.m4a"
+            import subprocess
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", str(src_path),
+                "-vn",
+                "-acodec", "aac",
+                "-loglevel", "error",
+                str(temp_audio)
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0 and temp_audio.exists():
+                return temp_audio
+        return None
+
+    def _select_audio_source_for_mux(self, info) -> Optional[str]:
+        if info and info.audio_url:
+            audio_url = str(info.audio_url)
+            if not audio_url.startswith(("http://", "https://")) and Path(audio_url).exists():
+                return audio_url
+        source = self.config.source
+        if isinstance(source, str) and YouTubeExtractor.is_youtube_url(source):
+            return source
+        if info and info.audio_url:
+            return str(info.audio_url)
+        return None
+
+    def _play_recording(self) -> None:
+        """Play rendered recording with ffplay."""
+        if not self.recorder:
+            return
+        output = self.recorder.config.output_path
+        if not output.exists():
+            print("Recording not found for playback.")
+            return
+        if not shutil.which("ffplay"):
+            print("ffplay not available for playback.")
+            return
+        import subprocess
+        cmd = ["ffplay", "-autoexit", "-loglevel", "quiet", str(output)]
+        try:
+            subprocess.run(cmd, check=False)
+        except Exception as e:
+            print(f"Playback failed: {e}")
 
 
-# ═══════════════════════════════════════════════════════════════
-# Convenience Functions
-# ═══════════════════════════════════════════════════════════════
-
-def stream(
-    source: Union[str, int, Path],
-    fps: Optional[float] = None,
-    color: bool = True,
-    audio: bool = True,
-    quality: str = "standard",
-    gradient: str = "standard",
-    show_stats: bool = True,
-    adaptive: bool = False,
-    prebuffer: int = 30,
-) -> None:
-    """Stream video to terminal with glyph art rendering.
-    
-    Convenience function for quick streaming setup.
-    
-    Args:
-        source: Video source (URL, file, webcam index)
-        fps: Target FPS (None = match source)
-        color: Enable ANSI colors
-        audio: Enable audio playback
-        quality: Quality preset (minimal, low, standard, high, maximum)
-        gradient: Character gradient preset
-        show_stats: Show performance statistics
-        adaptive: Enable adaptive quality adjustment
-        prebuffer: Frames to buffer before playback
-    """
-    quality_map = {
-        "minimal": QualityLevel.MINIMAL,
-        "low": QualityLevel.LOW,
-        "standard": QualityLevel.STANDARD,
-        "high": QualityLevel.HIGH,
-        "maximum": QualityLevel.MAXIMUM,
-    }
-    
-    config = StreamConfig(
-        target_fps=fps,
-        color_enabled=color,
-        audio_enabled=audio,
-        quality_level=quality_map.get(quality, QualityLevel.STANDARD),
-        gradient=gradient,
-        show_stats=show_stats,
-        adaptive_quality=adaptive,
-        prebuffer_frames=prebuffer,
-    )
-    
-    engine = StreamEngine(config)
-    engine.run(source)
-
-
-def stream_youtube(
-    url: str,
-    resolution: Optional[int] = None,
-    **kwargs: Any,
-) -> None:
-    """Stream YouTube video to terminal.
-    
-    Args:
-        url: YouTube URL
-        resolution: Preferred resolution (360, 480, 720, 1080)
-        **kwargs: Additional arguments passed to stream()
-    """
-    # Extract with preferred resolution
-    extractor = YouTubeExtractor()
-    result = extractor.extract(url, resolution=resolution, include_audio=True)
-    
-    if not result.has_video:
-        raise StreamExtractionError("Failed to extract YouTube video")
-    
-    # Use extracted FPS if available
-    if result.fps and 'fps' not in kwargs:
-        kwargs['fps'] = result.fps
-    
-    stream(result.video_url, **kwargs)
-
-
-def stream_webcam(
-    device: int = 0,
-    **kwargs: Any,
-) -> None:
-    """Stream webcam to terminal.
-    
-    Args:
-        device: Webcam device index
-        **kwargs: Additional arguments passed to stream()
-    """
-    kwargs.setdefault('audio', False)  # Webcam typically has no audio
-    kwargs.setdefault('prebuffer', 5)  # Minimal buffering for live
-    stream(device, **kwargs)
+def stream(source: str | int, **kwargs) -> Optional[Path]:
+    """Convenience wrapper for UnifiedStreamEngine."""
+    config = UnifiedStreamConfig(source=source, **kwargs)
+    engine = UnifiedStreamEngine(config)
+    return engine.run()

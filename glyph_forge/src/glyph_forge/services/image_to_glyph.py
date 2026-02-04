@@ -1,6 +1,8 @@
 import logging
+import html
 import os
 import shutil
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from typing import Any, Iterable, List, Optional, Tuple, TypeAlias, TypeVar, Union, cast
@@ -10,8 +12,6 @@ from numpy.typing import NDArray
 from PIL import Image, ImageFilter, ImageOps
 
 from ..utils.alphabet_manager import AlphabetManager
-from eidosian_core import eidosian
-
 # Type definitions for clarity and precision
 PixelArray: TypeAlias = NDArray[np.uint8]  # Type for grayscale/RGB pixel arrays
 Shape = Tuple[int, ...]  # Array dimensions
@@ -144,16 +144,30 @@ class ImageGlyphConverter:
 
         # Generate character density mapping
         self.density_map = AlphabetManager.create_density_map(self.charset)
+        self._density_lut = self._build_density_lut()
+        self._density_lut_html = self._build_density_lut_html()
+        self._ansi_reset = "\033[0m"
+        self._ansi256_prefixes = [f"\033[38;5;{i}m" for i in range(256)]
+        self._ansi16_prefixes = [""] * 128
+        for code in list(range(30, 38)) + list(range(90, 98)):
+            self._ansi16_prefixes[code] = f"\033[{code}m"
 
         # Initialize logger
         self.logger = logging.getLogger(__name__)
 
-    @eidosian()
+    def _build_density_lut(self) -> NDArray[Any]:
+        """Build a lookup table for fast grayscale-to-char mapping."""
+        return np.array([self.density_map[i] for i in range(256)], dtype=object)
+
+    def _build_density_lut_html(self) -> NDArray[Any]:
+        """Build a lookup table for fast HTML-escaped char mapping."""
+        return np.array([html.escape(self.density_map[i]) for i in range(256)], dtype=object)
     def convert(
         self,
         image_path: Union[str, Image.Image],
         output_path: Optional[str] = None,
         style: Optional[str] = None,
+        write_metadata: bool = True,
     ) -> str:
         """
         Convert an image to Glyph art with advanced processing.
@@ -169,14 +183,29 @@ class ImageGlyphConverter:
         try:
             # Load image (handle both file paths and PIL Image objects)
             img = self._load_image(image_path)
+            src_w, src_h = img.size
+            src_mode = img.mode
 
             # Process the image
             Glyph_art = self._process_image(img, style)
 
-            # Save to file if requested
-            if output_path:
-                self._save_to_file(Glyph_art, output_path)
-                self.logger.info(f"Glyph art saved to: {output_path}")
+            resolved_output = self._resolve_output_path(output_path, image_path, ext="txt")
+            if resolved_output:
+                self._save_to_file(Glyph_art, resolved_output)
+                if write_metadata:
+                    self._write_metadata(
+                        resolved_output,
+                        image_path,
+                        extra={
+                            "format": "txt",
+                            "style": style,
+                            "color_mode": "none",
+                            "source_width": src_w,
+                            "source_height": src_h,
+                            "source_mode": src_mode,
+                        },
+                    )
+                self.logger.info(f"Glyph art saved to: {resolved_output}")
 
             return Glyph_art
 
@@ -369,14 +398,10 @@ class ImageGlyphConverter:
         Returns:
             Glyph art string
         """
-        Glyph_art: GlyphArt = []
-        for row in cast(Iterable[NDArray[np.uint8]], pixels):
-            Glyph_row = "".join(
-                self.density_map[int(pixel_value)] for pixel_value in row
-            )
-            Glyph_art.append(Glyph_row)
-
-        return "\n".join(Glyph_art)
+        if pixels.size == 0:
+            return ""
+        chars = self._density_lut[pixels]
+        return "\n".join("".join(row.tolist()) for row in chars)
 
     def _parallel_conversion(self, pixels: PixelArray) -> str:
         """
@@ -412,8 +437,6 @@ class ImageGlyphConverter:
         except Exception as e:
             self.logger.error(f"Failed to save output: {e}")
             raise IOError(f"Failed to save output: {str(e)}")
-
-    @eidosian()
     def set_charset(self, charset: str, invert: bool = False) -> None:
         """
         Change the character set used for conversion.
@@ -431,8 +454,8 @@ class ImageGlyphConverter:
             self.charset = self.charset[::-1]
 
         self.density_map = AlphabetManager.create_density_map(self.charset)
-
-    @eidosian()
+        self._density_lut = self._build_density_lut()
+        self._density_lut_html = self._build_density_lut_html()
     def set_image_params(
         self,
         width: Optional[int] = None,
@@ -524,8 +547,6 @@ class ImageGlyphConverter:
 
         if posterize_bits is not None:
             self.posterize_bits = self._normalize_posterize_bits(posterize_bits)
-
-    @eidosian()
     def get_available_charsets(self) -> List[str]:
         """
         Get list of available character sets.
@@ -546,13 +567,12 @@ class ImageGlyphConverter:
     def get_supported_resample_filters(self) -> List[str]:
         """Get list of supported resampling filters."""
         return ["nearest", "bilinear", "bicubic", "lanczos"]
-
-    @eidosian()
     def convert_color(
         self,
         image_path: Union[str, Image.Image],
         output_path: Optional[str] = None,
         color_mode: Union[str, ColorMode] = "ansi",
+        write_metadata: bool = True,
     ) -> str:
         """
         Convert image to color Glyph art using ANSI or HTML color codes.
@@ -576,6 +596,8 @@ class ImageGlyphConverter:
                 img = image_path
             else:
                 return "Error: image_path must be a string path or PIL Image object"
+            src_w, src_h = img.size
+            src_mode = img.mode
 
             # Calculate dimensions
             orig_width, orig_height = img.size
@@ -647,11 +669,27 @@ class ImageGlyphConverter:
                 Glyph_art = self._generate_html_color(pixels_rgb, pixels_gray)
             else:
                 # Fallback to standard grayscale conversion
-                return self.convert(gray_img, output_path)
+                return self.convert(image_path, output_path, write_metadata=write_metadata)
 
-            # Save to file if requested
-            if output_path:
-                self._save_to_file(Glyph_art, output_path)
+            resolved_output = self._resolve_output_path(
+                output_path,
+                image_path,
+                ext="html" if mode == "html" else "txt",
+            )
+            if resolved_output:
+                self._save_to_file(Glyph_art, resolved_output)
+                if write_metadata:
+                    self._write_metadata(
+                        resolved_output,
+                        image_path,
+                        extra={
+                            "format": "html" if mode == "html" else "txt",
+                            "color_mode": mode,
+                            "source_width": src_w,
+                            "source_height": src_h,
+                            "source_mode": src_mode,
+                        },
+                    )
 
             return Glyph_art
 
@@ -659,18 +697,94 @@ class ImageGlyphConverter:
             self.logger.error(f"Color conversion error: {e}", exc_info=True)
             return f"Error converting color image: {str(e)}"
 
+    def _resolve_source_reference(self, image_path: Union[str, Image.Image]) -> str:
+        if isinstance(image_path, str):
+            return image_path
+        filename = getattr(image_path, "filename", None)
+        if filename:
+            return str(filename)
+        return "glyph_image"
+
+    def _resolve_output_path(
+        self,
+        output_path: Optional[str],
+        image_path: Union[str, Image.Image],
+        ext: str,
+    ) -> Optional[str]:
+        if not output_path:
+            return None
+        out_path = Path(output_path)
+        if out_path.suffix or (out_path.exists() and out_path.is_file()):
+            return str(out_path)
+        source_ref = self._resolve_source_reference(image_path)
+        try:
+            from glyph_forge.streaming.naming import build_output_path
+        except Exception:
+            return str(out_path / f"glyph_forge.{ext}")
+        resolved = build_output_path(
+            source=source_ref,
+            title=None,
+            output_dir=out_path,
+            ext=ext,
+            output=None,
+            overwrite=False,
+        )
+        return str(resolved)
+
+    def _write_metadata(
+        self,
+        output_path: str,
+        image_path: Union[str, Image.Image],
+        extra: Optional[dict] = None,
+    ) -> None:
+        try:
+            from glyph_forge.streaming.naming import build_metadata, write_metadata
+        except Exception:
+            return
+        source_ref = self._resolve_source_reference(image_path)
+        meta = build_metadata(
+            source=source_ref,
+            output_path=Path(output_path),
+            title=None,
+            info=None,
+            extra=extra or {},
+        )
+        write_metadata(meta, Path(output_path))
+
     def _generate_ansi_truecolor(
         self, pixels_rgb: PixelArray, pixels_gray: PixelArray
     ) -> str:
         """Generate Glyph art with truecolor ANSI codes."""
         Glyph_art: GlyphArt = []
-        for y in range(len(pixels_gray)):
-            row: GlyphRow = []
-            for x in range(len(pixels_gray[y])):
-                char = self.density_map[int(pixels_gray[y][x])]
-                r, g, b = pixels_rgb[y][x]
-                row.append(f"\033[38;2;{r};{g};{b}m{char}\033[0m")
-            Glyph_art.append("".join(row))
+        chars = self._density_lut[pixels_gray.astype(np.uint8)]
+        height = pixels_gray.shape[0]
+        prefix_cache: dict[tuple[int, int, int], str] = {}
+        for y in range(height):
+            row_chars = chars[y]
+            row_rgb = pixels_rgb[y]
+            row_parts: List[str] = []
+            current_color: Optional[tuple[int, int, int]] = None
+            buffer: List[str] = []
+            for (r, g, b), ch in zip(row_rgb, row_chars):
+                color = (int(r), int(g), int(b))
+                if current_color is None:
+                    current_color = color
+                if color != current_color:
+                    prefix = prefix_cache.get(current_color)
+                    if prefix is None:
+                        prefix = f"\033[38;2;{current_color[0]};{current_color[1]};{current_color[2]}m"
+                        prefix_cache[current_color] = prefix
+                    row_parts.append(prefix + "".join(buffer) + self._ansi_reset)
+                    buffer = []
+                    current_color = color
+                buffer.append(ch)
+            if buffer and current_color is not None:
+                prefix = prefix_cache.get(current_color)
+                if prefix is None:
+                    prefix = f"\033[38;2;{current_color[0]};{current_color[1]};{current_color[2]}m"
+                    prefix_cache[current_color] = prefix
+                row_parts.append(prefix + "".join(buffer) + self._ansi_reset)
+            Glyph_art.append("".join(row_parts))
         return "\n".join(Glyph_art)
 
     def _generate_ansi16_color(
@@ -678,14 +792,43 @@ class ImageGlyphConverter:
     ) -> str:
         """Generate Glyph art with 16-color ANSI codes."""
         Glyph_art: GlyphArt = []
-        for y in range(len(pixels_gray)):
-            row: GlyphRow = []
-            for x in range(len(pixels_gray[y])):
-                char = self.density_map[int(pixels_gray[y][x])]
-                r, g, b = pixels_rgb[y][x]
-                code = self._rgb_to_ansi16(r, g, b)
-                row.append(f"\033[{code}m{char}\033[0m")
-            Glyph_art.append("".join(row))
+        chars = self._density_lut[pixels_gray.astype(np.uint8)]
+        r = pixels_rgb[..., 0].astype(np.int16)
+        g = pixels_rgb[..., 1].astype(np.int16)
+        b = pixels_rgb[..., 2].astype(np.int16)
+        brightness = (r + g + b) / 3.0
+        bright_mask = brightness > 127
+        index = (
+            (r >= 128).astype(np.int16)
+            + (g >= 128).astype(np.int16) * 2
+            + (b >= 128).astype(np.int16) * 4
+        )
+        base = np.where(bright_mask, 90, 30).astype(np.int16)
+        codes = base + index
+
+        height = pixels_gray.shape[0]
+        for y in range(height):
+            row_chars = chars[y]
+            row_codes = codes[y]
+            row_parts: List[str] = []
+            current_code: Optional[int] = None
+            buffer: List[str] = []
+            for code, ch in zip(row_codes, row_chars):
+                code_int = int(code)
+                if current_code is None:
+                    current_code = code_int
+                if code_int != current_code:
+                    row_parts.append(
+                        f"{self._ansi16_prefixes[current_code]}{''.join(buffer)}{self._ansi_reset}"
+                    )
+                    buffer = []
+                    current_code = code_int
+                buffer.append(ch)
+            if buffer and current_code is not None:
+                row_parts.append(
+                    f"{self._ansi16_prefixes[current_code]}{''.join(buffer)}{self._ansi_reset}"
+                )
+            Glyph_art.append("".join(row_parts))
         return "\n".join(Glyph_art)
 
     def _generate_ansi256_color(
@@ -693,14 +836,53 @@ class ImageGlyphConverter:
     ) -> str:
         """Generate Glyph art with 256-color ANSI codes."""
         Glyph_art: GlyphArt = []
-        for y in range(len(pixels_gray)):
-            row: GlyphRow = []
-            for x in range(len(pixels_gray[y])):
-                char = self.density_map[int(pixels_gray[y][x])]
-                r, g, b = pixels_rgb[y][x]
-                code = self._rgb_to_ansi256(r, g, b)
-                row.append(f"\033[38;5;{code}m{char}\033[0m")
-            Glyph_art.append("".join(row))
+        chars = self._density_lut[pixels_gray.astype(np.uint8)]
+        r = pixels_rgb[..., 0].astype(np.int16)
+        g = pixels_rgb[..., 1].astype(np.int16)
+        b = pixels_rgb[..., 2].astype(np.int16)
+
+        gray_mask = (r == g) & (g == b)
+        codes = np.empty_like(r, dtype=np.int16)
+
+        gray = r
+        gray_codes = np.empty_like(gray, dtype=np.int16)
+        gray_codes[gray < 8] = 16
+        gray_codes[gray > 248] = 231
+        mid_mask = (gray >= 8) & (gray <= 248)
+        if np.any(mid_mask):
+            scaled = np.rint(((gray[mid_mask] - 8) / 247.0) * 24).astype(np.int16)
+            gray_codes[mid_mask] = scaled + 232
+        codes[gray_mask] = gray_codes[gray_mask]
+
+        r_val = np.rint(r / 255.0 * 5).astype(np.int16)
+        g_val = np.rint(g / 255.0 * 5).astype(np.int16)
+        b_val = np.rint(b / 255.0 * 5).astype(np.int16)
+        cube_codes = 16 + 36 * r_val + 6 * g_val + b_val
+        codes[~gray_mask] = cube_codes[~gray_mask]
+
+        height = pixels_gray.shape[0]
+        for y in range(height):
+            row_chars = chars[y]
+            row_codes = codes[y]
+            row_parts: List[str] = []
+            current_code: Optional[int] = None
+            buffer: List[str] = []
+            for code, ch in zip(row_codes, row_chars):
+                code_int = int(code)
+                if current_code is None:
+                    current_code = code_int
+                if code_int != current_code:
+                    row_parts.append(
+                        f"{self._ansi256_prefixes[current_code]}{''.join(buffer)}{self._ansi_reset}"
+                    )
+                    buffer = []
+                    current_code = code_int
+                buffer.append(ch)
+            if buffer and current_code is not None:
+                row_parts.append(
+                    f"{self._ansi256_prefixes[current_code]}{''.join(buffer)}{self._ansi_reset}"
+                )
+            Glyph_art.append("".join(row_parts))
         return "\n".join(Glyph_art)
 
     def _generate_html_color(
@@ -708,22 +890,34 @@ class ImageGlyphConverter:
     ) -> str:
         """Generate Glyph art with HTML color tags."""
         Glyph_art: GlyphArt = ["<pre style='line-height:1; letter-spacing:0'>"]
-        for y in range(len(pixels_gray)):
+        chars = self._density_lut_html[pixels_gray.astype(np.uint8)]
+        height = pixels_gray.shape[0]
+        for y in range(height):
+            row_chars = chars[y]
+            row_rgb = pixels_rgb[y]
             row_parts: List[str] = []
-            for x in range(len(pixels_gray[y])):
-                # Get character based on brightness
-                char = self.density_map[int(pixels_gray[y][x])]
-                # Get RGB color
-                r, g, b = pixels_rgb[y][x]
-                # Create HTML span with color
-                color_hex = f"#{r:02x}{g:02x}{b:02x}"
-                row_parts.append(f"<span style='color:{color_hex}'>{char}</span>")
-
-            # Join row and add line break
+            current_color: Optional[tuple[int, int, int]] = None
+            buffer: List[str] = []
+            for (r, g, b), ch in zip(row_rgb, row_chars):
+                color = (int(r), int(g), int(b))
+                if current_color is None:
+                    current_color = color
+                if color != current_color:
+                    color_hex = f"#{current_color[0]:02x}{current_color[1]:02x}{current_color[2]:02x}"
+                    row_parts.append(
+                        f"<span style='color:{color_hex}'>" + "".join(buffer) + "</span>"
+                    )
+                    buffer = []
+                    current_color = color
+                buffer.append(ch)
+            if buffer and current_color is not None:
+                color_hex = f"#{current_color[0]:02x}{current_color[1]:02x}{current_color[2]:02x}"
+                row_parts.append(
+                    f"<span style='color:{color_hex}'>" + "".join(buffer) + "</span>"
+                )
             Glyph_art.append("".join(row_parts))
             Glyph_art.append("<br>")
 
-        # Close container
         Glyph_art.append("</pre>")
 
         return "".join(Glyph_art)
@@ -788,9 +982,6 @@ class ImageGlyphConverter:
         if resample == "bicubic":
             return Image.Resampling.BICUBIC
         return Image.Resampling.LANCZOS
-
-
-@eidosian()
 def image_to_glyph(
     image_path: Union[str, Image.Image],
     output_path: Optional[str] = None,

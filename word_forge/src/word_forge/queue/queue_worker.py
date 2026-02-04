@@ -390,6 +390,24 @@ class WordProcessor(QueueProcessor[str]):
             )
 
         except Exception as e:
+            try:
+                from word_forge.database import TermNotFoundError
+            except Exception:
+                TermNotFoundError = None  # type: ignore
+
+            if TermNotFoundError is not None and isinstance(e, TermNotFoundError):
+                self.logger.warning(
+                    "Term not found during processing. Re-queuing term '%s'.",
+                    term,
+                )
+                with contextlib.suppress(Exception):
+                    self.parser_refiner.queue_manager.enqueue(term)
+                return ProcessingResult.error(
+                    term,
+                    ProcessingStatus.GENERAL_ERROR,
+                    f"Term '{term}' not found; re-queued for processing.",
+                )
+
             self.logger.warning(f"Failed to process '{term}': {str(e)}")
             return ProcessingResult.error(
                 term, ProcessingStatus.GENERAL_ERROR, f"Error processing term: {str(e)}"

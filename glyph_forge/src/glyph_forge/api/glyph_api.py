@@ -7,8 +7,6 @@ from ..core.banner_generator import BannerGenerator
 from ..core.style_manager import get_available_styles
 from ..services.image_to_glyph import ImageGlyphConverter
 from ..utils.alphabet_manager import AlphabetManager
-from eidosian_core import eidosian
-
 logger = logging.getLogger(__name__)
 
 
@@ -88,8 +86,6 @@ class GlyphForgeAPI:
 
         assert self._image_converter is not None
         return self._image_converter
-
-    @eidosian()
     def generate_banner(
         self,
         text: str,
@@ -136,8 +132,6 @@ class GlyphForgeAPI:
                 color=color,
             ),
         )
-
-    @eidosian()
     def image_to_Glyph(
         self,
         image_path: str,
@@ -238,9 +232,9 @@ class GlyphForgeAPI:
         # Set optional brightness, contrast, and gamma
         if brightness is not None or contrast is not None or gamma is not None:
             converter.set_image_params(
-                brightness=brightness or converter.brightness,
-                contrast=contrast or converter.contrast,
-                gamma=gamma or converter.gamma,
+                brightness=brightness if brightness is not None else converter.brightness,
+                contrast=contrast if contrast is not None else converter.contrast,
+                gamma=gamma if gamma is not None else converter.gamma,
             )
 
         if (
@@ -282,8 +276,6 @@ class GlyphForgeAPI:
             )
         else:
             return converter.convert(image_path=image_path, output_path=output_path)
-
-    @eidosian()
     def get_available_fonts(self) -> List[str]:
         """
         Get a list of available font names.
@@ -292,8 +284,6 @@ class GlyphForgeAPI:
             List of available font names
         """
         return cast(List[str], self._banner_generator.available_fonts())
-
-    @eidosian()
     def get_available_styles(self) -> Dict[str, Dict[str, Any]]:
         """
         Get a dictionary of available style presets.
@@ -302,8 +292,6 @@ class GlyphForgeAPI:
             Dictionary mapping style names to their configurations
         """
         return cast(Dict[str, Dict[str, Any]], get_available_styles())
-
-    @eidosian()
     def get_available_alphabets(self) -> List[str]:
         """
         Get a list of available character sets/alphabets.
@@ -312,8 +300,6 @@ class GlyphForgeAPI:
             List of available alphabet names
         """
         return cast(List[str], AlphabetManager.list_available_alphabets())
-
-    @eidosian()
     def save_to_file(self, Glyph_art: str, file_path: str) -> bool:
         """
         Save Glyph art to a file with proper directory creation.
@@ -338,8 +324,6 @@ class GlyphForgeAPI:
         except (IOError, OSError) as e:
             logger.error(f"Failed to save file: {str(e)}")
             return False
-
-    @eidosian()
     def preview_font(self, font: str, text: str = "Glyph Forge") -> str:
         """
         Generate a preview of a specific font.
@@ -353,8 +337,6 @@ class GlyphForgeAPI:
         """
         generator = BannerGenerator(font=font, width=self._banner_generator.width)
         return cast(str, generator.generate(text))
-
-    @eidosian()
     def preview_style(self, style: str, text: str = "Glyph Forge") -> str:
         """
         Generate a preview of a specific style.
@@ -367,8 +349,6 @@ class GlyphForgeAPI:
             Glyph art using specified style
         """
         return cast(str, self._banner_generator.generate(text, style=style))
-
-    @eidosian()
     def convert_text_to_art(self, text: str, font: str = "standard") -> str:
         """
         Convert plain text to Glyph art without additional styling.
@@ -386,9 +366,6 @@ class GlyphForgeAPI:
 
 # Singleton API instance
 _api_instance = None
-
-
-@eidosian()
 def get_api() -> GlyphForgeAPI:
     """
     Get the GlyphForgeAPI singleton instance with zero redundant initialization.

@@ -1,23 +1,20 @@
 """Minimal rendering utilities for Glyph Forge."""
 from __future__ import annotations
 from typing import List, Dict, Any
-from eidosian_core import eidosian
-
+import html
 GlyphMatrix = List[List[str]]
 
 class TextRenderer:
     """Render glyph matrix as plain text."""
-    @eidosian()
     def render(self, matrix: GlyphMatrix, options: Dict[str, Any] | None = None) -> str:
         return "\n".join("".join(row) for row in matrix)
 
 class HTMLRenderer:
     """Render glyph matrix inside simple HTML <pre> block."""
-    @eidosian()
     def render(self, matrix: GlyphMatrix, options: Dict[str, Any] | None = None) -> str:
         lines = ["<pre style='line-height:1; letter-spacing:0'>"]
         for row in matrix:
-            lines.append("".join(row))
+            lines.append(html.escape("".join(row)))
             lines.append("<br>")
         lines.append("</pre>")
         return "".join(lines)
@@ -28,7 +25,6 @@ class ANSIRenderer(TextRenderer):
 
 class SVGRenderer:
     """Render glyph matrix to a very basic SVG document."""
-    @eidosian()
     def render(self, matrix: GlyphMatrix, options: Dict[str, Any] | None = None) -> str:
         char_width = (options or {}).get("char_width", 10)
         char_height = (options or {}).get("char_height", 14)

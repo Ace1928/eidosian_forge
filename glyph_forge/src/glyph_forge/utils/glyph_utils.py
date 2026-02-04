@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Utilities ⚡
 
@@ -14,9 +13,6 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
-
-
-@eidosian()
 def sanitize_text(text: str) -> str:
     """
     Sanitize input text for safe Glyph art conversion.
@@ -44,9 +40,6 @@ def sanitize_text(text: str) -> str:
     
     logger.debug(f"Sanitized text: {len(text)} chars")
     return text
-
-
-@eidosian()
 def resolve_style(style_name: str) -> Dict[str, Any]:
     """
     Resolve a style name to its configuration dictionary.
@@ -112,9 +105,6 @@ def resolve_style(style_name: str) -> Dict[str, Any]:
     }
     
     return custom_styles.get(style_name, default_style)
-
-
-@eidosian()
 def trim_margins(text: str) -> str:
     """
     Remove excessive whitespace from the margins of Glyph art.
@@ -150,9 +140,6 @@ def trim_margins(text: str) -> str:
         lines = [line[min_padding:] if line.strip() else line for line in lines]
         
     return '\n'.join(lines)
-
-
-@eidosian()
 def center_Glyph_art(art: str, width: int) -> str:
     """
     Center Glyph art within a specified width.
@@ -177,9 +164,6 @@ def center_Glyph_art(art: str, width: int) -> str:
             centered_lines.append(line)
             
     return '\n'.join(centered_lines)
-
-
-@eidosian()
 def measure_Glyph_art(art: str) -> Tuple[int, int]:
     """
     Measure the dimensions of Glyph art.
@@ -194,9 +178,6 @@ def measure_Glyph_art(art: str) -> Tuple[int, int]:
     height = len(lines)
     width = max(len(line) for line in lines) if lines else 0
     return (width, height)
-
-
-@eidosian()
 def detect_box_borders(art: str) -> Optional[str]:
     """
     Detect if Glyph art has box borders and identify style.
@@ -223,9 +204,6 @@ def detect_box_borders(art: str) -> Optional[str]:
         return "Glyph"
         
     return None
-
-
-@eidosian()
 def get_terminal_size() -> Tuple[int, int]:
     """
     Get current terminal dimensions with better fallbacks.
@@ -239,9 +217,6 @@ def get_terminal_size() -> Tuple[int, int]:
     except (AttributeError, OSError):
         # Fallback for environments without terminal
         return (80, 24)
-
-
-@eidosian()
 def detect_text_color_support() -> int:
     """
     Detect terminal color support level.
@@ -273,9 +248,6 @@ def detect_text_color_support() -> int:
         return 1
         
     return 0
-
-
-@eidosian()
 def apply_ansi_style(text: str, style: Union[str, List[str]]) -> str:
     """
     Apply ANSI style codes to text.
@@ -320,9 +292,6 @@ def apply_ansi_style(text: str, style: Union[str, List[str]]) -> str:
         style_codes = "".join(styles.get(s, "") for s in style)
     
     return f"{style_codes}{text}{styles['reset']}"
-
-
-@eidosian()
 def wrap_text(text: str, width: int) -> str:
     """
     Wrap text to specified width while preserving word boundaries.
@@ -358,9 +327,11 @@ def wrap_text(text: str, width: int) -> str:
                 if len(word) <= width:
                     current_line = word
                 else:
-                    # Word is longer than width, hard wrap
-                    result.append(word[:width])
-                    current_line = word[width:]
+                    # Word is longer than width, hard wrap fully
+                    while len(word) > width:
+                        result.append(word[:width])
+                        word = word[width:]
+                    current_line = word
         
         if current_line:
             result.append(current_line)

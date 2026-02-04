@@ -11,4 +11,4 @@
 Image processing pipeline mapped to character sets.
 
 ## 🐛 Known Issues
-- `glyph_stream.py` in root is likely a legacy script.
+- `glyph_stream.py` in root was a legacy script (removed 2026-02-01).

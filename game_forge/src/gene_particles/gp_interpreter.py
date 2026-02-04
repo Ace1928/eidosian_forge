@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from game_forge.src.gene_particles.gp_config import SimulationConfig
     from game_forge.src.gene_particles.gp_types import CellularTypeData
 
+from game_forge.src.gene_particles.gp_config import ReproductionMode
 from game_forge.src.gene_particles.gp_genes import (
     apply_energy_gene,
     apply_growth_gene,
@@ -63,11 +64,20 @@ class GeneticInterpreter:
             # Format: [passive_gain, feeding_efficiency, predation_efficiency]
             ["start_energy", 0.1, 0.5, 0.3],
             # Format: [sexual_threshold, asexual_threshold, reproduction_cost, cooldown_time]
-            ["start_reproduction", 150.0, 100.0, 50.0, 30.0],
+            [
+                "start_reproduction",
+                150.0,
+                100.0,
+                50.0,
+                30.0,
+                1.0,
+                0.65,
+                1.0,
+            ],
             # Format: [growth_rate, adult_size, maturity_age]
             ["start_growth", 0.1, 2.0, 100.0],
-            # Format: [attack_power, energy_gain]
-            ["start_predation", 10.0, 5.0],
+            # Format: [attack_power, energy_conversion, predation_strategy, detection_range]
+            ["start_predation", 1.0, 0.5, 0.0, 100.0],
         ]
         self.gene_sequence: GeneSequence = (
             gene_sequence if gene_sequence is not None else self.default_sequence
@@ -78,6 +88,14 @@ class GeneticInterpreter:
         self.apply_interaction_gene = apply_interaction_gene
         self.apply_movement_gene = apply_movement_gene
         self.apply_reproduction_gene = apply_reproduction_gene
+        self._dispatch = {
+            "start_movement": self.apply_movement_gene,
+            "start_interaction": self.apply_interaction_gene,
+            "start_energy": self.apply_energy_gene,
+            "start_growth": self.apply_growth_gene,
+            "start_predation": self.apply_predation_gene,
+            "start_reproduction": self.apply_reproduction_gene,
+        }
 
     @eidosian()
     def decode(
@@ -137,16 +155,16 @@ class GeneticInterpreter:
             gene_data: Decoded numeric parameters for the gene
             env: Environmental configuration parameters
         """
-        # Map string-based gene types to handler functions
-        if gene_type == "start_movement":
-            self.apply_movement_gene(particle, gene_data, env)
-        elif gene_type == "start_interaction":
-            self.apply_interaction_gene(particle, others, gene_data, env)
-        elif gene_type == "start_energy":
-            self.apply_energy_gene(particle, gene_data, env)
-        elif gene_type == "start_reproduction":
-            self.apply_reproduction_gene(particle, others, gene_data, env)
-        elif gene_type == "start_growth":
-            self.apply_growth_gene(particle, gene_data, env)
-        elif gene_type == "start_predation":
-            self.apply_predation_gene(particle, others, gene_data, env)
+        handler = self._dispatch.get(gene_type)
+        if handler is None:
+            return
+
+        if gene_type == "start_reproduction":
+            if env.reproduction_mode in (ReproductionMode.GENES, ReproductionMode.HYBRID):
+                self.apply_reproduction_gene(particle, others, gene_data, env)
+            return
+
+        if gene_type in {"start_interaction", "start_predation"}:
+            handler(particle, others, gene_data, env)
+        else:
+            handler(particle, gene_data, env)

@@ -10,12 +10,31 @@ pip install -e .
 pip install -e ".[full]"
 ```
 
+## Recommended Environment
+
+Use the shared Eidosian virtual environment when running in this repo:
+
+```bash
+/home/lloyd/eidosian_forge/eidosian_venv/bin/python -m pip install -e .
+```
+
 ## Prerequisites
 
 Word Forge uses NLTK for WordNet access. Download required data:
 ```bash
 python -c "import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')"
 ```
+
+## Local Ollama Models (Optional)
+
+To run fully local:
+
+```bash
+ollama pull qwen2.5:1.5b-Instruct
+ollama pull nomic-embed-text
+```
+
+Then pass model names with the `ollama:` prefix in CLI or daemon config.
 
 ## Verify Installation
 

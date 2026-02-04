@@ -2,12 +2,7 @@
 
 from typing import Optional, List
 from ..core.banner_generator import BannerGenerator
-from eidosian_core import eidosian
-
 _generator = BannerGenerator()
-
-
-@eidosian()
 def text_to_banner(
     text: str,
     style: str = "minimal",

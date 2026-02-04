@@ -1,14 +1,10 @@
 """Video to glyph conversion service."""
 
-from typing import List, Optional
+from typing import Iterable, List, Optional
 from PIL import Image
 
 from .image_to_glyph import ImageGlyphConverter
 from .video_to_images import video_to_images
-from eidosian_core import eidosian
-
-
-@eidosian()
 def video_to_glyph_frames(
     video_path: str,
     width: int = 80,
@@ -28,7 +24,7 @@ def video_to_glyph_frames(
         List of glyph-art frames as strings.
     """
     converter = ImageGlyphConverter(width=width)
-    images = video_to_images(video_path, max_frames=max_frames)
+    images: Iterable[Image.Image] = video_to_images(video_path, max_frames=max_frames)
 
     frames: List[str] = []
     for img in images:

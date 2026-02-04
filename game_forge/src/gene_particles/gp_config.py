@@ -9,18 +9,27 @@ from __future__ import annotations  # Enable self-referential type hints
 
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import ClassVar, Dict, Final, List, Mapping, Tuple, cast
+from typing import Callable, ClassVar, Dict, Final, List, Mapping, Optional, Tuple, cast
 
 import numpy as np
+from eidosian_core import eidosian
 
 from game_forge.src.gene_particles.gp_types import (
-from eidosian_core import eidosian
     ColorRGB,
     FloatArray,
+    GeneSequence,
     Range,
     TraitDefinition,
     TraitType,
 )
+
+
+class ReproductionMode(Enum):
+    """Supported reproduction pipelines for the simulation."""
+
+    MANAGER = "manager"
+    GENES = "genes"
+    HYBRID = "hybrid"
 
 # Constants
 ###############################################################
@@ -424,10 +433,30 @@ class SimulationConfig:
         energy_efficiency_range: Min/max energy efficiency values (min: float, max: float)
         max_energy: Maximum energy capacity per particle (float > 0)
 
+        # Spatial parameters
+        spatial_dimensions: Simulation dimensionality (2 or 3)
+        world_depth: Depth of simulation volume for 3D (float > 0 or None for auto)
+        projection_mode: 3D projection mode (orthographic/perspective)
+        projection_distance: Camera distance for perspective projection (float > 0)
+        depth_fade_strength: Depth-based brightness attenuation (0.0-1.0)
+        depth_min_scale: Minimum projection scale clamp (float > 0)
+        depth_max_scale: Maximum projection scale clamp (float >= min)
+
         # Lifecycle parameters
         max_frames: Maximum simulation frames (0 = infinite)
         evolution_interval: Frames between evolutionary updates (int > 0)
         synergy_range: Maximum distance for synergy interactions (float > 0)
+
+        # Environment hooks and cycles
+        day_night_cycle: Enable day/night modulation (bool)
+        day_length: Duration of a full day cycle (float > 0)
+        time: Current simulated time (float)
+        time_step: Time delta per frame (float > 0)
+        temperature: Current environmental temperature (float)
+        temperature_drift: Deterministic temperature drift per frame (float)
+        temperature_noise: Random temperature noise amplitude (float >= 0)
+        temperature_bounds: Allowed temperature range (min < max)
+        environment_hooks: Callbacks invoked each frame to update environment
 
         # Selection parameters
         culling_fitness_weights: Weighting factors for particle fitness (Dict[str, float])
@@ -436,6 +465,34 @@ class SimulationConfig:
         reproduction_energy_threshold: Minimum energy for reproduction (float > 0)
         reproduction_mutation_rate: Mutation probability during reproduction (0.0-1.0)
         reproduction_offspring_energy_fraction: Energy fraction given to offspring (0.0-1.0)
+
+        # Reproduction pipeline and sexual reproduction parameters
+        reproduction_mode: Active reproduction pipeline (manager/genes/hybrid)
+        asexual_reproduction_enabled: Enable asexual reproduction (bool)
+        sexual_reproduction_enabled: Enable sexual reproduction (bool)
+        sexual_reproduction_probability: Likelihood of sexual reproduction (0.0-1.0)
+        sexual_offspring_energy_fraction: Energy fraction passed to sexual offspring (0.0-1.0)
+        max_offspring_per_pair: Maximum offspring per mating pair (int > 0)
+        mate_selection_radius: Search radius for mates (float > 0)
+        mate_selection_max_neighbors: Candidate mates to evaluate (int > 0)
+        mate_selection_strategy: Mate selection strategy (random/energy/compatibility/hybrid)
+        compatibility_threshold: Max genetic distance for pairing (float > 0)
+        compatibility_weight: Weight for compatibility score (float >= 0)
+        energy_weight: Weight for energy score (float >= 0)
+        crossover_mode_weights: Weights for crossover modes
+        crossover_blend_alpha: Blend crossover expansion factor (float >= 0)
+        crossover_jitter: Post-crossover noise amplitude (float >= 0)
+        recombination_rate: Uniform crossover swap probability (0.0-1.0)
+        linkage_groups: Trait linkage groups for crossover
+        allow_cross_type_mating: Allow cross-species mating within a type (bool)
+        allow_hybridization: Allow hybrid offspring (bool)
+        hybridization_cost: Extra energy cost for hybridization (float >= 0)
+        mutation_rate_sexual_multiplier: Mutation multiplier for sexual reproduction (float > 0)
+
+        # Genetic interpreter controls
+        use_gene_interpreter: Enable gene interpreter updates (bool)
+        gene_interpreter_interval: Frames between gene interpreter updates (int > 0)
+        gene_sequence: Optional explicit gene sequence for interpreter
 
         # Flocking behavior parameters
         alignment_strength: Strength of flocking alignment behavior (float)
@@ -489,16 +546,69 @@ class SimulationConfig:
         self.energy_efficiency_range: Range = (-0.4, 2.0)
         self.max_energy: float = 500.0
 
+        # Spatial parameters (3D-ready with 2D compatibility)
+        self.spatial_dimensions: int = 3
+        self.world_depth: Optional[float] = None
+        self.projection_mode: str = "perspective"
+        self.projection_distance: float = 800.0
+        self.depth_fade_strength: float = 0.35
+        self.depth_min_scale: float = 0.4
+        self.depth_max_scale: float = 1.2
+
         # Lifecycle parameters
         self.max_frames: int = 0  # 0 = infinite
         self.max_age: float = np.inf
         self.evolution_interval: int = 100
         self.synergy_range: float = 100.0
 
+        # Environmental hooks and cycles
+        self.day_night_cycle: bool = False
+        self.day_length: float = 24.0
+        self.time: float = 0.0
+        self.time_step: float = 1.0
+        self.temperature: float = 0.5
+        self.temperature_drift: float = 0.0
+        self.temperature_noise: float = 0.0
+        self.temperature_bounds: Range = (0.0, 1.0)
+        self.environment_hooks: List[Callable[["SimulationConfig", int], None]] = []
+
         # Reproduction parameters
         self.reproduction_energy_threshold: float = 100.0
         self.reproduction_mutation_rate: float = 0.5
         self.reproduction_offspring_energy_fraction: float = 0.75
+
+        # Reproduction pipeline and sexual reproduction controls
+        self.reproduction_mode: ReproductionMode = ReproductionMode.MANAGER
+        self.asexual_reproduction_enabled: bool = True
+        self.sexual_reproduction_enabled: bool = True
+        self.sexual_reproduction_probability: float = 0.65
+        self.sexual_offspring_energy_fraction: float = 0.45
+        self.max_offspring_per_pair: int = 1
+        self.mate_selection_radius: float = 75.0
+        self.mate_selection_max_neighbors: int = 12
+        self.mate_selection_strategy: str = "hybrid"
+        self.compatibility_threshold: float = 0.8
+        self.compatibility_weight: float = 0.6
+        self.energy_weight: float = 0.4
+        self.crossover_mode_weights: Dict[str, float] = {
+            "uniform": 0.4,
+            "arithmetic": 0.25,
+            "blend": 0.25,
+            "segment": 0.1,
+        }
+        self.crossover_blend_alpha: float = 0.2
+        self.crossover_jitter: float = 0.02
+        self.recombination_rate: float = 0.5
+        self.linkage_groups: List[List[str]] = []
+        self.allow_cross_type_mating: bool = False
+        self.allow_hybridization: bool = False
+        self.hybridization_cost: float = 0.1
+        self.mutation_rate_sexual_multiplier: float = 1.2
+
+        # Genetic interpreter controls
+        self.use_gene_interpreter: bool = False
+        self.gene_interpreter_interval: int = 1
+        self.gene_sequence: Optional[GeneSequence] = None
 
         # Flocking behavior parameters
         self.alignment_strength: float = 0.25
@@ -532,6 +642,10 @@ class SimulationConfig:
         # Initialize genetic parameters
         self.genetics: GeneticParamConfig = GeneticParamConfig()
 
+        # Default linkage groups track all traits together unless customized
+        if not self.linkage_groups:
+            self.linkage_groups = [self.genetics.gene_traits + ["energy_efficiency"]]
+
         # Validate configuration
         self._validate()
 
@@ -548,11 +662,14 @@ class SimulationConfig:
         self._validate_population_parameters()
         self._validate_physical_parameters()
         self._validate_energy_parameters()
+        self._validate_spatial_parameters()
         self._validate_lifecycle_parameters()
+        self._validate_environment_parameters()
         self._validate_reproduction_parameters()
         self._validate_flocking_parameters()
         self._validate_visualization_parameters()
         self._validate_emergence_parameters()
+        self._validate_gene_interpreter_parameters()
 
     def _validate_population_parameters(self) -> None:
         """Validate population-related parameters."""
@@ -608,6 +725,29 @@ class SimulationConfig:
         if self.max_energy <= 0:
             raise ValueError("Maximum energy must be positive")
 
+    def _validate_spatial_parameters(self) -> None:
+        """Validate spatial dimensionality and projection parameters."""
+        if self.spatial_dimensions not in (2, 3):
+            raise ValueError("Spatial dimensions must be 2 or 3")
+
+        if self.world_depth is not None and self.world_depth <= 0:
+            raise ValueError("World depth must be positive when specified")
+
+        if self.projection_mode not in {"orthographic", "perspective"}:
+            raise ValueError("Projection mode must be orthographic or perspective")
+
+        if self.projection_distance <= 0:
+            raise ValueError("Projection distance must be positive")
+
+        if not (0.0 <= self.depth_fade_strength <= 1.0):
+            raise ValueError("Depth fade strength must be between 0.0 and 1.0")
+
+        if self.depth_min_scale <= 0:
+            raise ValueError("Depth minimum scale must be positive")
+
+        if self.depth_max_scale < self.depth_min_scale:
+            raise ValueError("Depth maximum scale must be >= depth minimum scale")
+
     def _validate_lifecycle_parameters(self) -> None:
         """Validate lifecycle and evolution parameters."""
         if self.max_frames < 0:
@@ -618,6 +758,27 @@ class SimulationConfig:
 
         if self.evolution_interval <= 0:
             raise ValueError("Evolution interval must be positive")
+
+    def _validate_environment_parameters(self) -> None:
+        """Validate environment hook and cycle parameters."""
+        if self.day_length <= 0:
+            raise ValueError("Day length must be positive")
+
+        if self.time_step <= 0:
+            raise ValueError("Time step must be positive")
+
+        if self.temperature_bounds[0] >= self.temperature_bounds[1]:
+            raise ValueError("Temperature bounds must have min < max")
+
+        if not (
+            self.temperature_bounds[0]
+            <= self.temperature
+            <= self.temperature_bounds[1]
+        ):
+            raise ValueError("Temperature must fall within temperature bounds")
+
+        if self.temperature_noise < 0:
+            raise ValueError("Temperature noise must be non-negative")
 
     def _validate_reproduction_parameters(self) -> None:
         """Validate reproduction and mutation parameters."""
@@ -631,6 +792,75 @@ class SimulationConfig:
             raise ValueError(
                 "Reproduction offspring energy fraction must be between 0.0 and 1.0"
             )
+
+        if not isinstance(self.reproduction_mode, ReproductionMode):
+            raise ValueError("Reproduction mode must be a ReproductionMode enum")
+
+        if not (0.0 <= self.sexual_reproduction_probability <= 1.0):
+            raise ValueError(
+                "Sexual reproduction probability must be between 0.0 and 1.0"
+            )
+
+        if not (0.0 <= self.sexual_offspring_energy_fraction <= 1.0):
+            raise ValueError(
+                "Sexual offspring energy fraction must be between 0.0 and 1.0"
+            )
+
+        if self.max_offspring_per_pair <= 0:
+            raise ValueError("Max offspring per pair must be positive")
+
+        if self.mate_selection_radius <= 0:
+            raise ValueError("Mate selection radius must be positive")
+
+        if self.mate_selection_max_neighbors <= 0:
+            raise ValueError("Mate selection max neighbors must be positive")
+
+        if self.compatibility_threshold <= 0:
+            raise ValueError("Compatibility threshold must be positive")
+
+        if self.compatibility_weight < 0.0 or self.energy_weight < 0.0:
+            raise ValueError("Compatibility and energy weights must be non-negative")
+
+        if not self.crossover_mode_weights:
+            raise ValueError("Crossover mode weights must not be empty")
+
+        if self.crossover_blend_alpha < 0.0:
+            raise ValueError("Crossover blend alpha must be non-negative")
+
+        if not (0.0 <= self.recombination_rate <= 1.0):
+            raise ValueError("Recombination rate must be between 0.0 and 1.0")
+
+        if self.hybridization_cost < 0.0:
+            raise ValueError("Hybridization cost must be non-negative")
+
+        if self.mutation_rate_sexual_multiplier <= 0.0:
+            raise ValueError("Mutation rate sexual multiplier must be positive")
+
+        valid_strategies = {"random", "energy", "compatibility", "hybrid"}
+        if self.mate_selection_strategy not in valid_strategies:
+            raise ValueError(
+                f"Mate selection strategy must be one of {sorted(valid_strategies)}"
+            )
+
+        valid_crossover_modes = {"uniform", "arithmetic", "blend", "segment"}
+        for mode in self.crossover_mode_weights:
+            if mode not in valid_crossover_modes:
+                raise ValueError(
+                    f"Unsupported crossover mode '{mode}' in crossover_mode_weights"
+                )
+
+        if not self.linkage_groups:
+            raise ValueError("Linkage groups must not be empty")
+
+        allowed_traits = set(self.genetics.gene_traits + ["energy_efficiency"])
+        for group in self.linkage_groups:
+            if not group:
+                raise ValueError("Linkage group entries must not be empty")
+            for trait in group:
+                if trait not in allowed_traits:
+                    raise ValueError(
+                        f"Unknown trait '{trait}' in linkage groups"
+                    )
 
     def _validate_flocking_parameters(self) -> None:
         """Validate flocking and group behavior parameters."""
@@ -665,6 +895,36 @@ class SimulationConfig:
         if not (0.0 <= self.structural_complexity_weight <= 1.0):
             raise ValueError("Structural complexity weight must be between 0.0 and 1.0")
 
+    def _validate_gene_interpreter_parameters(self) -> None:
+        """Validate genetic interpreter controls."""
+        if self.gene_interpreter_interval <= 0:
+            raise ValueError("Gene interpreter interval must be positive")
+
+    @eidosian()
+    def advance_environment(self, frame_count: int) -> None:
+        """Advance environment state and execute registered hooks."""
+        if self.day_night_cycle:
+            self.time += self.time_step
+
+        if self.temperature_drift != 0.0:
+            self.temperature += self.temperature_drift
+
+        if self.temperature_noise > 0.0:
+            self.temperature += float(np.random.normal(0.0, self.temperature_noise))
+
+        if self.temperature_bounds:
+            self.temperature = float(
+                np.clip(
+                    self.temperature,
+                    self.temperature_bounds[0],
+                    self.temperature_bounds[1],
+                )
+            )
+
+        if self.environment_hooks:
+            for hook in self.environment_hooks:
+                hook(self, frame_count)
+
     @eidosian()
     def to_dict(self) -> Dict[str, object]:
         """
@@ -677,8 +937,15 @@ class SimulationConfig:
             Dictionary containing all configuration parameters with
             nested genetics configuration as nested dictionary
         """
-        # Start with all attributes except genetics
-        config_dict = {k: v for k, v in self.__dict__.items() if k != "genetics"}
+        # Start with all attributes except genetics and runtime-only hooks
+        config_dict: Dict[str, object] = {}
+        for key, value in self.__dict__.items():
+            if key in {"genetics", "environment_hooks"}:
+                continue
+            if isinstance(value, Enum):
+                config_dict[key] = value.value
+            else:
+                config_dict[key] = value
 
         # Add genetics as a nested dictionary
         config_dict["genetics"] = self.genetics.to_dict()
@@ -716,7 +983,15 @@ class SimulationConfig:
         # Set all other attributes
         for key, value in config_copy.items():
             if hasattr(instance, key):
-                setattr(instance, key, value)
+                if key == "reproduction_mode":
+                    if isinstance(value, ReproductionMode):
+                        setattr(instance, key, value)
+                    elif isinstance(value, str):
+                        setattr(instance, key, ReproductionMode(value))
+                    else:
+                        raise ValueError("Invalid reproduction mode value")
+                else:
+                    setattr(instance, key, value)
 
         # Validate after setting all values
         instance._validate()

@@ -12,8 +12,6 @@ Key transformers:
 - EdgeDetector: Detect edges for structural emphasis
 """
 from __future__ import annotations
-from eidosian_core import eidosian
-
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -26,6 +24,18 @@ logger = logging.getLogger(__name__)
 # Type definitions
 GlyphMatrix = List[List[str]]
 PixelArray = NDArray[np.uint8]
+
+
+def _build_density_lut(density_map: Dict[int, str]) -> NDArray[Any]:
+    """Build a lookup table for fast brightness-to-char mapping."""
+    return np.array([density_map[i] for i in range(256)], dtype=object)
+
+
+def _pixels_to_matrix(pixels: PixelArray, density_lut: NDArray[Any]) -> GlyphMatrix:
+    """Vectorize pixel-to-character mapping into a GlyphMatrix."""
+    if pixels.size == 0:
+        return []
+    return density_lut[pixels].tolist()
 
 
 class ImageTransformer:
@@ -58,6 +68,7 @@ class ImageTransformer:
         """
         self.charset = charset[::-1] if invert else charset
         self.density_map = self._create_density_map(self.charset)
+        self._density_lut = _build_density_lut(self.density_map)
         logger.debug(
             f"ImageTransformer initialized with {len(charset)} characters"
         )
@@ -70,8 +81,6 @@ class ImageTransformer:
             idx = min(int(i * length / 256), length - 1)
             mapping[i] = charset[idx]
         return mapping
-
-    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -121,10 +130,7 @@ class ImageTransformer:
         pixels = np.array(img)
 
         # Map pixels to characters
-        matrix: GlyphMatrix = []
-        for row in pixels:
-            char_row = [self.density_map[int(pixel)] for pixel in row]
-            matrix.append(char_row)
+        matrix = _pixels_to_matrix(pixels, self._density_lut)
 
         logger.debug(f"Transformed image to {width}x{height} matrix")
         return matrix
@@ -191,6 +197,7 @@ class ColorMapper:
         self.charset = charset
         self.color_weights = color_weights
         self.density_map = self._create_density_map(charset)
+        self._density_lut = _build_density_lut(self.density_map)
         logger.debug("ColorMapper initialized")
 
     def _create_density_map(self, charset: str) -> Dict[int, str]:
@@ -201,8 +208,6 @@ class ColorMapper:
             idx = min(int(i * length / 256), length - 1)
             mapping[i] = charset[idx]
         return mapping
-
-    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -257,10 +262,7 @@ class ColorMapper:
             luminance = self._apply_saturation_weighting(pixels, luminance)
 
         # Map to characters
-        matrix: GlyphMatrix = []
-        for row in luminance:
-            char_row = [self.density_map[int(pixel)] for pixel in row]
-            matrix.append(char_row)
+        matrix = _pixels_to_matrix(luminance, self._density_lut)
 
         return matrix
 
@@ -321,6 +323,7 @@ class DepthAnalyzer:
         """
         self.charset = charset
         self.density_map = self._create_density_map(charset)
+        self._density_lut = _build_density_lut(self.density_map)
         logger.debug("DepthAnalyzer initialized")
 
     def _create_density_map(self, charset: str) -> Dict[int, str]:
@@ -331,8 +334,6 @@ class DepthAnalyzer:
             idx = min(int(i * length / 256), length - 1)
             mapping[i] = charset[idx]
         return mapping
-
-    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -388,10 +389,7 @@ class DepthAnalyzer:
         ).astype(np.uint8)
 
         # Map to characters
-        matrix: GlyphMatrix = []
-        for row in combined:
-            char_row = [self.density_map[int(pixel)] for pixel in row]
-            matrix.append(char_row)
+        matrix = _pixels_to_matrix(combined, self._density_lut)
 
         return matrix
 
@@ -462,6 +460,7 @@ class EdgeDetector:
         self.charset = charset
         self.edge_charset = edge_charset
         self.density_map = self._create_density_map(charset)
+        self._density_lut = _build_density_lut(self.density_map)
         logger.debug("EdgeDetector initialized")
 
     def _create_density_map(self, charset: str) -> Dict[int, str]:
@@ -472,8 +471,6 @@ class EdgeDetector:
             idx = min(int(i * length / 256), length - 1)
             mapping[i] = charset[idx]
         return mapping
-
-    @eidosian()
     def transform(
         self,
         source: Union[str, Image.Image, PixelArray],
@@ -531,10 +528,7 @@ class EdgeDetector:
         combined = np.clip(combined, 0, 255).astype(np.uint8)
 
         # Map to characters
-        matrix: GlyphMatrix = []
-        for row in combined:
-            char_row = [self.density_map[int(pixel)] for pixel in row]
-            matrix.append(char_row)
+        matrix = _pixels_to_matrix(combined, self._density_lut)
 
         return matrix
 

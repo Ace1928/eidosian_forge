@@ -13,7 +13,10 @@ from pathlib import Path
 from typing import Optional, Tuple, List
 import re
 import numpy as np
-import cv2
+try:  # Optional dependency (streaming extra)
+    import cv2
+except Exception:  # pragma: no cover
+    cv2 = None
 
 
 @dataclass
@@ -127,6 +130,8 @@ class GlyphRecorder:
     
     def _init_writer(self, width: int, height: int):
         """Initialize video writer with frame size."""
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for video recording.")
         # Calculate pixel dimensions
         pixel_w = width * self.config.char_width
         pixel_h = height * self.config.char_height
@@ -230,7 +235,18 @@ class GlyphRecorder:
                 pos += 1
         
         # Convert to numpy BGR
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for video recording.")
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+
+    def render_to_image(self, glyph_string: str) -> np.ndarray:
+        """Render a glyph string to a BGR image array."""
+        if not isinstance(glyph_string, str):
+            glyph_string = str(glyph_string)
+        lines = glyph_string.split('\n')
+        height = len(lines)
+        width = max(len(self._strip_ansi(line)) for line in lines) if lines else 80
+        return self._render_to_image(glyph_string, width, height)
     
     def _parse_color(
         self,

@@ -12,7 +12,25 @@ if TYPE_CHECKING:
     )
     from game_forge.src.gene_particles.gp_types import CellularTypeData
 
-from game_forge.src.gene_particles.gp_types import BoolArray, FloatArray, GeneData
+from game_forge.src.gene_particles.gp_types import BoolArray, FloatArray, GeneData, IntArray
+
+
+# Import scipy's KDTree with fallback for environments without scipy
+try:
+    from scipy.spatial import KDTree  # type: ignore[import]
+except ImportError:
+    class KDTree:
+        """Fallback KDTree with query_ball_point stub for headless tests."""
+
+        def __init__(self, data: FloatArray, leafsize: int = 10) -> None:
+            _ = data, leafsize
+
+        @eidosian()
+        def query_ball_point(
+            self, x: FloatArray, r: float, p: float = 2.0, eps: float = 0.0
+        ) -> List[List[int]]:
+            _ = x, r, p, eps
+            return [[] for _ in range(len(x))]
 from game_forge.src.gene_particles.gp_utility import mutate_trait
 
 
@@ -60,6 +78,8 @@ def apply_movement_gene(
     # Generate stochastic component for movement variation
     stochastic_x = randomness * np.random.uniform(-1, 1, size=particle.vx.size)
     stochastic_y = randomness * np.random.uniform(-1, 1, size=particle.vy.size)
+    if env.spatial_dimensions == 3:
+        stochastic_z = randomness * np.random.uniform(-1, 1, size=particle.vz.size)
 
     # Update velocity vectors through vectorized operations
     particle.vx = (
@@ -69,9 +89,22 @@ def apply_movement_gene(
     particle.vy = (
         particle.vy * friction_factor * speed_modifier + stochastic_y + direction_bias
     )
+    if env.spatial_dimensions == 3:
+        particle.vz = (
+            particle.vz * friction_factor * speed_modifier + stochastic_z + direction_bias
+        )
 
     # Calculate energy expenditure proportional to movement magnitude
-    velocity_magnitude = np.sqrt(np.power(particle.vx, 2) + np.power(particle.vy, 2))
+    if env.spatial_dimensions == 3:
+        velocity_magnitude = np.sqrt(
+            np.power(particle.vx, 2)
+            + np.power(particle.vy, 2)
+            + np.power(particle.vz, 2)
+        )
+    else:
+        velocity_magnitude = np.sqrt(
+            np.power(particle.vx, 2) + np.power(particle.vy, 2)
+        )
     energy_cost = (
         velocity_magnitude * 0.01 * speed_modifier
     )  # Higher speed = higher cost
@@ -141,7 +174,13 @@ def apply_interaction_gene(
             other.x - particle.x[:, np.newaxis]
         )  # Broadcasting for all combinations
         dy: FloatArray = other.y - particle.y[:, np.newaxis]
-        distances: FloatArray = np.sqrt(np.power(dx, 2) + np.power(dy, 2))
+        if env.spatial_dimensions == 3:
+            dz: FloatArray = other.z - particle.z[:, np.newaxis]
+            distances: FloatArray = np.sqrt(
+                np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2)
+            )
+        else:
+            distances = np.sqrt(np.power(dx, 2) + np.power(dy, 2))
 
         # Create interaction mask for distance-based filtering
         interact_mask: BoolArray = (distances > 0.0) & (distances < interaction_radius)
@@ -153,6 +192,8 @@ def apply_interaction_gene(
         with np.errstate(divide="ignore", invalid="ignore"):
             dx_norm: FloatArray = np.where(distances > 0, dx / distances, 0)
             dy_norm: FloatArray = np.where(distances > 0, dy / distances, 0)
+            if env.spatial_dimensions == 3:
+                dz_norm: FloatArray = np.where(distances > 0, dz / distances, 0)
         # Calculate interaction force with distance-based falloff
         force_magnitudes: FloatArray = attraction_strength * (
             1.0 - distances / interaction_radius
@@ -165,10 +206,16 @@ def apply_interaction_gene(
         dy_force: FloatArray = (dy_norm * force_magnitudes * interact_mask).astype(
             np.float64
         )
+        if env.spatial_dimensions == 3:
+            dz_force: FloatArray = (
+                dz_norm * force_magnitudes * interact_mask
+            ).astype(np.float64)
 
         # Apply forces to update velocity vectors with explicit types
         particle.vx += np.sum(dx_force, axis=1)
         particle.vy += np.sum(dy_force, axis=1)
+        if env.spatial_dimensions == 3:
+            particle.vz += np.sum(dz_force, axis=1)
 
         # Apply energy cost proportional to interaction count
         # More interactions = higher communication/coordination cost
@@ -311,6 +358,9 @@ def apply_reproduction_gene(
             [1]: asexual_threshold - Energy required for asexual reproduction (default: 100.0)
             [2]: reproduction_cost - Energy expended per reproduction (default: 50.0)
             [3]: cooldown_time - Minimum age between reproduction events (default: 30.0)
+            [4]: mate_radius_multiplier - Scales mate selection radius (default: 1.0)
+            [5]: sexual_bias - Probability multiplier for sexual reproduction (default: 0.65)
+            [6]: mutation_boost - Multiplier for mutation rate during sexual reproduction (default: 1.0)
         env: Environmental configuration containing genetics parameters
 
     Returns:
@@ -319,57 +369,143 @@ def apply_reproduction_gene(
     # Extract reproduction parameters with appropriate bounds
     params = _extract_gene_parameters(
         gene_data,
-        defaults=[150.0, 100.0, 50.0, 30.0],
-        bounds=[(100.0, 200.0), (50.0, 150.0), (25.0, 100.0), (10.0, 100.0)],
+        defaults=[150.0, 100.0, 50.0, 30.0, 1.0, 0.65, 1.0],
+        bounds=[
+            (80.0, 300.0),
+            (50.0, 200.0),
+            (10.0, 150.0),
+            (5.0, 200.0),
+            (0.25, 3.0),
+            (0.0, 1.0),
+            (0.5, 2.0),
+        ],
     )
 
-    sexual_threshold, asexual_threshold, reproduction_cost, cooldown_time = params
+    (
+        sexual_threshold,
+        asexual_threshold,
+        reproduction_cost,
+        cooldown_time,
+        mate_radius_multiplier,
+        sexual_bias,
+        mutation_boost,
+    ) = params
 
-    # Sexual reproduction not implemented in this function but threshold preserved
-    # for potential future extension to sexual reproduction mechanics
-    _ = sexual_threshold
+    if not env.sexual_reproduction_enabled and not env.asexual_reproduction_enabled:
+        return
 
-    # Check reproduction conditions (energy > threshold, mature age, alive)
-    can_reproduce = (
-        (particle.energy > asexual_threshold)
-        & (particle.age > cooldown_time)
-        & particle.alive
+    base_count = particle.x.size
+    eligible_base = particle.alive[:base_count] & (
+        particle.age[:base_count] > cooldown_time
     )
+    if not np.any(eligible_base):
+        return
 
-    if not np.any(can_reproduce):
-        return  # No particles ready to reproduce
+    # Define trait ranges for mutation and inheritance
+    trait_ranges = _get_trait_mutation_parameters(env.genetics, env)
+    used_mask = np.zeros(particle.x.size, dtype=bool)
 
-    # Get indices of particles that can reproduce
-    reproduce_indices = np.where(can_reproduce)[0]
-
-    # Define trait parameters for mutation and inheritance
-    trait_params = _get_trait_mutation_parameters(env.genetics)
-
-    for idx in reproduce_indices:
-        # Deduct energy cost from parent
-        particle.energy[idx] -= reproduction_cost
-
-        # Get mutation probability and range from environment
-        mutation_rate = env.genetics.gene_mutation_rate
-        mutation_range = env.genetics.gene_mutation_range
-
-        # Generate offspring traits through mutation
-        offspring_traits = _generate_offspring_traits(
-            particle, idx, mutation_rate, mutation_range, trait_params
+    # Sexual reproduction pathway
+    if env.sexual_reproduction_enabled:
+        sexual_candidates = eligible_base & (
+            particle.energy[:base_count] > sexual_threshold
         )
+        if np.any(sexual_candidates):
+            mate_radius = env.mate_selection_radius * mate_radius_multiplier
+            parent_a_idx, parent_b_idx = _select_mating_pairs(
+                particle,
+                sexual_candidates,
+                env,
+                trait_ranges,
+                mate_radius,
+            )
 
-        # Calculate genetic distance for speciation
-        genetic_distance = _calculate_genetic_distance(particle, idx, offspring_traits)
+            if parent_a_idx.size > 0:
+                available_slots = max(0, env.max_particles_per_type - particle.x.size)
+                if available_slots <= 0:
+                    return
 
-        # Determine species ID based on genetic distance threshold
-        species_id_val = _determine_species_id(
-            particle, idx, genetic_distance, env.speciation_threshold
+                if parent_a_idx.size > available_slots:
+                    chosen = np.random.choice(
+                        parent_a_idx.size, size=available_slots, replace=False
+                    )
+                    parent_a_idx = parent_a_idx[chosen]
+                    parent_b_idx = parent_b_idx[chosen]
+
+                sexual_probability = float(
+                    np.clip(
+                        env.sexual_reproduction_probability * sexual_bias, 0.0, 1.0
+                    )
+                )
+                select_mask = np.random.random(parent_a_idx.size) < sexual_probability
+                parent_a_idx = parent_a_idx[select_mask]
+                parent_b_idx = parent_b_idx[select_mask]
+
+                if parent_a_idx.size > 0:
+                    used_mask[parent_a_idx] = True
+                    used_mask[parent_b_idx] = True
+
+                    offspring_traits, offspring_energy, species_ids = (
+                        _produce_sexual_offspring(
+                            particle,
+                            parent_a_idx,
+                            parent_b_idx,
+                            env,
+                            trait_ranges,
+                            reproduction_cost,
+                            mutation_boost,
+                            others,
+                        )
+                    )
+
+                    if offspring_energy.size > 0:
+                        _append_offspring_bulk(
+                            particle,
+                            parent_a_idx,
+                            offspring_traits,
+                            species_ids,
+                            offspring_energy,
+                            mate_indices=parent_b_idx,
+                        )
+
+    # Asexual reproduction pathway
+    if env.asexual_reproduction_enabled:
+        asexual_candidates = eligible_base & (
+            particle.energy[:base_count] > asexual_threshold
         )
+        if np.any(asexual_candidates):
+            asexual_candidates &= ~used_mask
+            if not np.any(asexual_candidates):
+                return  # pragma: no cover
 
-        # Add offspring to particle population
-        _add_offspring_to_population(
-            particle, idx, offspring_traits, species_id_val, reproduction_cost
-        )
+            parent_indices = np.where(asexual_candidates)[0]
+            available_slots = max(0, env.max_particles_per_type - particle.x.size)
+            if available_slots <= 0:
+                return
+
+            if parent_indices.size > available_slots:
+                parent_indices = np.random.choice(
+                    parent_indices, size=available_slots, replace=False
+                )
+
+            offspring_traits, offspring_energy, species_ids = (
+                _produce_asexual_offspring(
+                    particle,
+                    parent_indices,
+                    env,
+                    trait_ranges,
+                    reproduction_cost,
+                )
+            )
+
+            if offspring_energy.size > 0:
+                _append_offspring_bulk(
+                    particle,
+                    parent_indices,
+                    offspring_traits,
+                    species_ids,
+                    offspring_energy,
+                )
 
 
 @eidosian()
@@ -427,10 +563,17 @@ def apply_predation_gene(
                 continue
 
             # Calculate distances to all potential prey
-            distances = np.sqrt(
-                np.power(particle.x[pred_idx] - other.x, 2)
-                + np.power(particle.y[pred_idx] - other.y, 2)
-            )
+            if env.spatial_dimensions == 3:
+                distances = np.sqrt(
+                    np.power(particle.x[pred_idx] - other.x, 2)
+                    + np.power(particle.y[pred_idx] - other.y, 2)
+                    + np.power(particle.z[pred_idx] - other.z, 2)
+                )
+            else:
+                distances = np.sqrt(
+                    np.power(particle.x[pred_idx] - other.x, 2)
+                    + np.power(particle.y[pred_idx] - other.y, 2)
+                )
 
             # Identify valid prey within detection range
             valid_prey = (distances < detection_range) & other.alive
@@ -477,6 +620,665 @@ def apply_predation_gene(
                 # Break the inner loop - one successful attack per predator per cycle
                 break
 
+
+# Sexual reproduction helper functions
+
+
+def _select_mating_pairs(
+    particle: "CellularTypeData",
+    candidate_mask: BoolArray,
+    env: "SimulationConfig",
+    trait_ranges: Dict[str, Tuple[float, float]],
+    mate_radius: float,
+) -> Tuple[IntArray, IntArray]:
+    """Select mating pairs within a cellular type based on strategy and compatibility."""
+    candidate_indices = np.where(candidate_mask)[0]
+    if candidate_indices.size < 2:
+        return (
+            np.array([], dtype=np.int_),
+            np.array([], dtype=np.int_),
+        )
+
+    if env.spatial_dimensions == 3:
+        positions = np.column_stack((particle.x, particle.y, particle.z))
+    else:
+        positions = np.column_stack((particle.x, particle.y))
+    tree: KDTree = KDTree(positions)
+    neighbors_list = tree.query_ball_point(positions[candidate_indices], mate_radius)
+
+    used = np.zeros(particle.x.size, dtype=bool)
+    parent_a: List[int] = []
+    parent_b: List[int] = []
+
+    for local_idx, neighbors in enumerate(neighbors_list):
+        parent_idx = int(candidate_indices[local_idx])
+        if used[parent_idx]:
+            continue
+
+        filtered = [
+            int(idx)
+            for idx in neighbors
+            if idx != parent_idx and candidate_mask[idx] and not used[idx]
+        ]
+
+        if not filtered:
+            continue
+
+        if env.mate_selection_max_neighbors > 0 and len(filtered) > env.mate_selection_max_neighbors:
+            filtered = list(
+                np.random.choice(
+                    filtered, size=env.mate_selection_max_neighbors, replace=False
+                )
+            )
+
+        candidate_arr = np.array(filtered, dtype=np.int_)
+        distances = _calculate_pairwise_distance(
+            particle, parent_idx, particle, candidate_arr, trait_ranges, env
+        )
+
+        if not env.allow_cross_type_mating:
+            same_species = (
+                particle.species_id[candidate_arr]
+                == particle.species_id[parent_idx]
+            )
+            if not np.any(same_species):
+                continue
+            candidate_arr = candidate_arr[same_species]
+            distances = distances[same_species]
+
+        compatible_mask = distances <= env.compatibility_threshold
+        if not np.any(compatible_mask):
+            continue
+
+        candidate_arr = candidate_arr[compatible_mask]
+        distances = distances[compatible_mask]
+
+        mate_idx = _choose_mate_index(
+            particle, candidate_arr, distances, env
+        )
+        if mate_idx is None:
+            continue
+
+        parent_a.append(parent_idx)
+        parent_b.append(mate_idx)
+        used[parent_idx] = True
+        used[mate_idx] = True
+
+    return (
+        np.asarray(parent_a, dtype=np.int_),
+        np.asarray(parent_b, dtype=np.int_),
+    )
+
+
+def _choose_mate_index(
+    particle: "CellularTypeData",
+    candidate_indices: IntArray,
+    distances: FloatArray,
+    env: "SimulationConfig",
+) -> Optional[int]:
+    """Select a mate index according to the configured strategy."""
+    if candidate_indices.size == 0:
+        return None
+
+    strategy = env.mate_selection_strategy
+    if strategy == "random":
+        return int(np.random.choice(candidate_indices))
+
+    energies = particle.energy[candidate_indices]
+    if strategy == "energy":
+        if np.all(energies <= 0.0):
+            return None
+        return int(candidate_indices[int(np.argmax(energies))])
+
+    if strategy == "compatibility":
+        return int(candidate_indices[int(np.argmin(distances))])
+
+    # Hybrid strategy: combine compatibility and energy
+    energy_min = float(np.min(energies))
+    energy_max = float(np.max(energies))
+    if energy_max > energy_min:
+        energy_norm = (energies - energy_min) / (energy_max - energy_min)
+    else:
+        energy_norm = np.zeros_like(energies, dtype=np.float64)
+
+    compatibility = np.exp(-distances)
+    score = (env.compatibility_weight * compatibility) + (
+        env.energy_weight * energy_norm
+    )
+    return int(candidate_indices[int(np.argmax(score))])
+
+
+def _calculate_pairwise_distance(
+    parent_particle: "CellularTypeData",
+    parent_idx: int,
+    mate_particle: "CellularTypeData",
+    mate_indices: IntArray,
+    trait_ranges: Dict[str, Tuple[float, float]],
+    env: "SimulationConfig",
+) -> FloatArray:
+    """Compute normalized genetic distance between a parent and candidate mates."""
+    squared = np.zeros(mate_indices.size, dtype=np.float64)
+    for trait in env.genetics.gene_traits:
+        parent_val = getattr(parent_particle, trait)[parent_idx]
+        mate_vals = getattr(mate_particle, trait)[mate_indices]
+        span = trait_ranges[trait][1] - trait_ranges[trait][0]
+        if span <= 0.0:
+            span = 1.0
+        squared += ((mate_vals - parent_val) / span) ** 2
+    return np.sqrt(squared)
+
+
+def _build_linkage_indices(
+    trait_names: List[str], linkage_groups: List[List[str]]
+) -> List[List[int]]:
+    """Map linkage group names to trait indices with fallbacks."""
+    trait_to_idx = {name: idx for idx, name in enumerate(trait_names)}
+    groups: List[List[int]] = []
+    for group in linkage_groups:
+        indices = [trait_to_idx[name] for name in group if name in trait_to_idx]
+        if indices:
+            groups.append(indices)
+
+    covered = {idx for group in groups for idx in group}
+    for idx in range(len(trait_names)):
+        if idx not in covered:
+            groups.append([idx])
+
+    return groups
+
+
+def _choose_crossover_modes(
+    weights: Dict[str, float], count: int
+) -> List[str]:
+    """Choose crossover modes for each pair based on weighted distribution."""
+    modes = list(weights.keys())
+    weights_arr = np.array([weights[mode] for mode in modes], dtype=np.float64)
+    total = float(np.sum(weights_arr))
+    if total <= 0.0:
+        weights_arr = np.full_like(weights_arr, 1.0)
+    probs = weights_arr / float(np.sum(weights_arr))
+    return list(np.random.choice(modes, size=count, p=probs))
+
+
+def _crossover_traits(
+    parent_a: FloatArray,
+    parent_b: FloatArray,
+    env: "SimulationConfig",
+    trait_names: List[str],
+) -> FloatArray:
+    """Combine parent traits into offspring traits using weighted crossover modes."""
+    n_traits, count = parent_a.shape
+    offspring = np.empty_like(parent_a)
+    modes = _choose_crossover_modes(env.crossover_mode_weights, count)
+    linkage_indices = _build_linkage_indices(trait_names, env.linkage_groups)
+
+    for mode in set(modes):
+        indices = np.array([i for i, m in enumerate(modes) if m == mode], dtype=np.int_)
+
+        if mode == "uniform":
+            offspring[:, indices] = parent_b[:, indices]
+            group_mask = (
+                np.random.random((len(linkage_indices), indices.size))
+                < env.recombination_rate
+            )
+            for g_idx, trait_idx in enumerate(linkage_indices):
+                select = group_mask[g_idx]
+                if not np.any(select):
+                    continue
+                offspring[np.ix_(trait_idx, indices[select])] = parent_a[
+                    np.ix_(trait_idx, indices[select])
+                ]
+
+        elif mode == "arithmetic":
+            weights = np.random.uniform(0.0, 1.0, size=(1, indices.size))
+            offspring[:, indices] = (
+                weights * parent_a[:, indices]
+                + (1.0 - weights) * parent_b[:, indices]
+            )
+
+        elif mode == "blend":
+            alpha = env.crossover_blend_alpha
+            min_vals = np.minimum(parent_a[:, indices], parent_b[:, indices])
+            max_vals = np.maximum(parent_a[:, indices], parent_b[:, indices])
+            span = max_vals - min_vals
+            lower = min_vals - alpha * span
+            upper = max_vals + alpha * span
+            offspring[:, indices] = np.random.uniform(lower, upper)
+
+        else:  # segment
+            offspring[:, indices] = parent_b[:, indices]
+            for col_offset, pair_idx in enumerate(indices):
+                if len(linkage_indices) == 1:
+                    pivot = 1
+                else:
+                    pivot = int(np.random.randint(1, len(linkage_indices)))
+                for group_idx, trait_idx in enumerate(linkage_indices):
+                    if group_idx < pivot:
+                        offspring[np.ix_(trait_idx, [pair_idx])] = parent_a[
+                            np.ix_(trait_idx, [pair_idx])
+                        ]
+
+    if env.crossover_jitter > 0.0:
+        offspring += np.random.normal(
+            0.0, env.crossover_jitter, size=offspring.shape
+        ).astype(np.float64)
+
+    return offspring
+
+
+def _collect_trait_matrix(
+    particle: "CellularTypeData",
+    indices: IntArray,
+    trait_names: List[str],
+) -> FloatArray:
+    """Collect trait values as a stacked matrix for crossover."""
+    return np.vstack([getattr(particle, trait)[indices] for trait in trait_names]).astype(
+        np.float64
+    )
+
+
+def _produce_sexual_offspring(
+    particle: "CellularTypeData",
+    parent_a_idx: IntArray,
+    parent_b_idx: IntArray,
+    env: "SimulationConfig",
+    trait_ranges: Dict[str, Tuple[float, float]],
+    reproduction_cost: float,
+    mutation_boost: float,
+    others: List["CellularTypeData"],
+) -> Tuple[Dict[str, FloatArray], FloatArray, IntArray]:
+    """Generate sexual offspring traits and energy with crossover and mutation."""
+    parent_a_energy = np.maximum(
+        0.0, particle.energy[parent_a_idx] - reproduction_cost
+    )
+    parent_b_energy = np.maximum(
+        0.0, particle.energy[parent_b_idx] - reproduction_cost
+    )
+
+    if env.allow_hybridization and env.hybridization_cost > 0.0:
+        hybrid_mask = (
+            particle.species_id[parent_a_idx] != particle.species_id[parent_b_idx]
+        )
+        if np.any(hybrid_mask):
+            parent_a_energy[hybrid_mask] = np.maximum(
+                0.0, parent_a_energy[hybrid_mask] - env.hybridization_cost
+            )
+            parent_b_energy[hybrid_mask] = np.maximum(
+                0.0, parent_b_energy[hybrid_mask] - env.hybridization_cost
+            )
+
+    donation_a = parent_a_energy * env.sexual_offspring_energy_fraction
+    donation_b = parent_b_energy * env.sexual_offspring_energy_fraction
+    offspring_energy = donation_a + donation_b
+
+    particle.energy[parent_a_idx] = parent_a_energy - donation_a
+    particle.energy[parent_b_idx] = parent_b_energy - donation_b
+
+    trait_names = list(trait_ranges.keys())
+    parent_a_traits = _collect_trait_matrix(particle, parent_a_idx, trait_names)
+    parent_b_traits = _collect_trait_matrix(particle, parent_b_idx, trait_names)
+
+    offspring_matrix = _crossover_traits(
+        parent_a_traits, parent_b_traits, env, trait_names
+    )
+
+    mutation_rate = env.genetics.gene_mutation_rate * env.reproduction_mutation_rate
+    mutation_rate *= env.mutation_rate_sexual_multiplier * mutation_boost
+    mutation_rate = float(np.clip(mutation_rate, 0.0, 1.0))
+
+    for idx, trait in enumerate(trait_names):
+        mask = np.random.random(offspring_matrix.shape[1]) < mutation_rate
+        if trait == "energy_efficiency":
+            mut_range = env.genetics.energy_efficiency_mutation_range
+        else:
+            mut_range = env.genetics.gene_mutation_range
+        offspring_matrix[idx] = mutate_trait(
+            offspring_matrix[idx], mask, mut_range[0], mut_range[1]
+        )
+        offspring_matrix[idx] = np.clip(
+            offspring_matrix[idx],
+            trait_ranges[trait][0],
+            trait_ranges[trait][1],
+        )
+
+    offspring_traits: Dict[str, FloatArray] = {
+        trait: offspring_matrix[i] for i, trait in enumerate(trait_names)
+    }
+
+    (
+        offspring_traits["speed_factor"],
+        offspring_traits["interaction_strength"],
+        offspring_traits["perception_range"],
+        offspring_traits["reproduction_rate"],
+        offspring_traits["synergy_affinity"],
+        offspring_traits["colony_factor"],
+        offspring_traits["drift_sensitivity"],
+    ) = env.genetics.clamp_gene_values(
+        offspring_traits["speed_factor"],
+        offspring_traits["interaction_strength"],
+        offspring_traits["perception_range"],
+        offspring_traits["reproduction_rate"],
+        offspring_traits["synergy_affinity"],
+        offspring_traits["colony_factor"],
+        offspring_traits["drift_sensitivity"],
+    )
+
+    offspring_traits["energy_efficiency"] = np.clip(
+        offspring_traits["energy_efficiency"],
+        env.energy_efficiency_range[0],
+        env.energy_efficiency_range[1],
+    )
+
+    species_ids = _assign_species_ids_for_pairs(
+        particle,
+        parent_a_idx,
+        parent_b_idx,
+        offspring_traits,
+        trait_ranges,
+        env,
+        others,
+    )
+
+    return offspring_traits, offspring_energy, species_ids
+
+
+def _produce_asexual_offspring(
+    particle: "CellularTypeData",
+    parent_indices: IntArray,
+    env: "SimulationConfig",
+    trait_ranges: Dict[str, Tuple[float, float]],
+    reproduction_cost: float,
+) -> Tuple[Dict[str, FloatArray], FloatArray, IntArray]:
+    """Generate asexual offspring traits, energy, and species IDs."""
+    parent_energy = np.maximum(
+        0.0, particle.energy[parent_indices] - reproduction_cost
+    )
+    offspring_energy = parent_energy * env.reproduction_offspring_energy_fraction
+    particle.energy[parent_indices] = parent_energy - offspring_energy
+
+    offspring_traits = _generate_offspring_traits_vectorized(
+        particle,
+        parent_indices,
+        env.genetics.gene_mutation_rate * env.reproduction_mutation_rate,
+        env.genetics.gene_mutation_range,
+        env.genetics.energy_efficiency_mutation_range,
+        trait_ranges,
+    )
+
+    (
+        offspring_traits["speed_factor"],
+        offspring_traits["interaction_strength"],
+        offspring_traits["perception_range"],
+        offspring_traits["reproduction_rate"],
+        offspring_traits["synergy_affinity"],
+        offspring_traits["colony_factor"],
+        offspring_traits["drift_sensitivity"],
+    ) = env.genetics.clamp_gene_values(
+        offspring_traits["speed_factor"],
+        offspring_traits["interaction_strength"],
+        offspring_traits["perception_range"],
+        offspring_traits["reproduction_rate"],
+        offspring_traits["synergy_affinity"],
+        offspring_traits["colony_factor"],
+        offspring_traits["drift_sensitivity"],
+    )
+
+    offspring_traits["energy_efficiency"] = np.clip(
+        offspring_traits["energy_efficiency"],
+        env.energy_efficiency_range[0],
+        env.energy_efficiency_range[1],
+    )
+
+    species_ids = _assign_species_ids_for_asexual(
+        particle, parent_indices, offspring_traits, trait_ranges, env
+    )
+
+    return offspring_traits, offspring_energy, species_ids
+
+
+def _generate_offspring_traits_vectorized(
+    particle: "CellularTypeData",
+    parent_indices: IntArray,
+    mutation_rate: float,
+    mutation_range: Tuple[float, float],
+    efficiency_range: Tuple[float, float],
+    trait_ranges: Dict[str, Tuple[float, float]],
+) -> Dict[str, FloatArray]:
+    """Generate offspring traits with vectorized mutation."""
+    offspring_traits: Dict[str, FloatArray] = {}
+    mutation_rate = float(np.clip(mutation_rate, 0.0, 1.0))
+
+    for trait in trait_ranges:
+        parent_vals = getattr(particle, trait)[parent_indices]
+        mask = np.random.random(parent_indices.size) < mutation_rate
+        if trait == "energy_efficiency":
+            mut_range = efficiency_range
+        else:
+            mut_range = mutation_range
+        offspring_traits[trait] = mutate_trait(
+            parent_vals, mask, mut_range[0], mut_range[1]
+        )
+        offspring_traits[trait] = np.clip(
+            offspring_traits[trait],
+            trait_ranges[trait][0],
+            trait_ranges[trait][1],
+        )
+
+    return offspring_traits
+
+
+def _assign_species_ids_for_pairs(
+    particle: "CellularTypeData",
+    parent_a_idx: IntArray,
+    parent_b_idx: IntArray,
+    offspring_traits: Dict[str, FloatArray],
+    trait_ranges: Dict[str, Tuple[float, float]],
+    env: "SimulationConfig",
+    others: List["CellularTypeData"],
+) -> IntArray:
+    """Assign species IDs for sexual offspring with speciation checks."""
+    parent_a_species = particle.species_id[parent_a_idx]
+    parent_b_species = particle.species_id[parent_b_idx]
+    same_species = parent_a_species == parent_b_species
+
+    genetic_distance = _calculate_pairwise_genetic_distance(
+        particle,
+        parent_a_idx,
+        parent_b_idx,
+        offspring_traits,
+        trait_ranges,
+        env,
+    )
+
+    speciation_mask = genetic_distance > env.speciation_threshold
+    if env.allow_hybridization:
+        speciation_mask = speciation_mask | (~same_species)
+
+    species_ids = parent_a_species.copy()
+    if np.any(speciation_mask):
+        next_species_id = _max_species_id(particle, others)
+        for offset in np.where(speciation_mask)[0]:
+            next_species_id += 1
+            species_ids[offset] = next_species_id
+
+    return species_ids
+
+
+def _assign_species_ids_for_asexual(
+    particle: "CellularTypeData",
+    parent_indices: IntArray,
+    offspring_traits: Dict[str, FloatArray],
+    trait_ranges: Dict[str, Tuple[float, float]],
+    env: "SimulationConfig",
+) -> IntArray:
+    """Assign species IDs for asexual offspring with speciation checks."""
+    genetic_distance = _calculate_genetic_distance_vectorized(
+        particle, parent_indices, offspring_traits, trait_ranges, env
+    )
+    species_ids = particle.species_id[parent_indices].copy()
+    speciation_mask = genetic_distance > env.speciation_threshold
+
+    if np.any(speciation_mask):
+        next_species_id = int(np.max(particle.species_id)) if particle.species_id.size else 0
+        for offset in np.where(speciation_mask)[0]:
+            next_species_id += 1
+            species_ids[offset] = next_species_id
+
+    return species_ids
+
+
+def _calculate_pairwise_genetic_distance(
+    particle: "CellularTypeData",
+    parent_a_idx: IntArray,
+    parent_b_idx: IntArray,
+    offspring_traits: Dict[str, FloatArray],
+    trait_ranges: Dict[str, Tuple[float, float]],
+    env: "SimulationConfig",
+) -> FloatArray:
+    """Compute genetic distance from offspring to mean of parents."""
+    squared = np.zeros(parent_a_idx.size, dtype=np.float64)
+    for trait in env.genetics.gene_traits:
+        parent_mean = (
+            getattr(particle, trait)[parent_a_idx]
+            + getattr(particle, trait)[parent_b_idx]
+        ) * 0.5
+        offspring_vals = offspring_traits[trait]
+        span = trait_ranges[trait][1] - trait_ranges[trait][0]
+        if span <= 0.0:
+            span = 1.0
+        squared += ((offspring_vals - parent_mean) / span) ** 2
+    return np.sqrt(squared)
+
+
+def _calculate_genetic_distance_vectorized(
+    particle: "CellularTypeData",
+    parent_indices: IntArray,
+    offspring_traits: Dict[str, FloatArray],
+    trait_ranges: Dict[str, Tuple[float, float]],
+    env: "SimulationConfig",
+) -> FloatArray:
+    """Calculate genetic distance for asexual reproduction in vectorized form."""
+    squared = np.zeros(parent_indices.size, dtype=np.float64)
+    for trait in env.genetics.gene_traits:
+        parent_vals = getattr(particle, trait)[parent_indices]
+        offspring_vals = offspring_traits[trait]
+        span = trait_ranges[trait][1] - trait_ranges[trait][0]
+        if span <= 0.0:
+            span = 1.0
+        squared += ((offspring_vals - parent_vals) / span) ** 2
+    return np.sqrt(squared)
+
+
+def _max_species_id(
+    particle: "CellularTypeData", others: List["CellularTypeData"]
+) -> int:
+    """Compute the max species ID across all known populations."""
+    max_id = int(np.max(particle.species_id)) if particle.species_id.size else particle.type_id
+    for other in others:
+        if other.species_id.size:
+            max_id = max(max_id, int(np.max(other.species_id)))
+    return max_id
+
+
+def _append_offspring_bulk(
+    particle: "CellularTypeData",
+    parent_indices: IntArray,
+    offspring_traits: Dict[str, FloatArray],
+    species_ids: IntArray,
+    offspring_energy: FloatArray,
+    mate_indices: Optional[IntArray] = None,
+) -> None:
+    """Append offspring to the population using vectorized bulk operations."""
+    if parent_indices.size == 0:
+        return
+
+    if mate_indices is None:
+        base_x = particle.x[parent_indices]
+        base_y = particle.y[parent_indices]
+        base_vx = particle.vx[parent_indices]
+        base_vy = particle.vy[parent_indices]
+        if particle.spatial_dimensions == 3:
+            base_z = particle.z[parent_indices]
+            base_vz = particle.vz[parent_indices]
+        else:
+            base_z = np.zeros(parent_indices.size, dtype=np.float64)
+            base_vz = np.zeros(parent_indices.size, dtype=np.float64)
+        predation_vals = particle.predation_efficiency[parent_indices]
+        mass_vals = (
+            particle.mass[parent_indices].copy()
+            if particle.mass_based and particle.mass is not None
+            else None
+        )
+    else:
+        base_x = (particle.x[parent_indices] + particle.x[mate_indices]) * 0.5
+        base_y = (particle.y[parent_indices] + particle.y[mate_indices]) * 0.5
+        base_vx = (particle.vx[parent_indices] + particle.vx[mate_indices]) * 0.5
+        base_vy = (particle.vy[parent_indices] + particle.vy[mate_indices]) * 0.5
+        if particle.spatial_dimensions == 3:
+            base_z = (particle.z[parent_indices] + particle.z[mate_indices]) * 0.5
+            base_vz = (particle.vz[parent_indices] + particle.vz[mate_indices]) * 0.5
+        else:
+            base_z = np.zeros(parent_indices.size, dtype=np.float64)
+            base_vz = np.zeros(parent_indices.size, dtype=np.float64)
+        predation_vals = (
+            particle.predation_efficiency[parent_indices]
+            + particle.predation_efficiency[mate_indices]
+        ) * 0.5
+        if particle.mass_based and particle.mass is not None:
+            mass_vals = (
+                particle.mass[parent_indices] + particle.mass[mate_indices]
+            ) * 0.5
+        else:
+            mass_vals = None
+
+    jitter_x = np.random.uniform(-5.0, 5.0, size=parent_indices.size)
+    jitter_y = np.random.uniform(-5.0, 5.0, size=parent_indices.size)
+    offspring_x = base_x + jitter_x
+    offspring_y = base_y + jitter_y
+    if particle.spatial_dimensions == 3:
+        jitter_z = np.random.uniform(-5.0, 5.0, size=parent_indices.size)
+        offspring_z = base_z + jitter_z
+    else:
+        offspring_z = np.zeros(parent_indices.size, dtype=np.float64)
+
+    safe_efficiency = np.where(
+        offspring_traits["energy_efficiency"] == 0.0,
+        0.01,
+        offspring_traits["energy_efficiency"],
+    )
+    velocity_scale = (1.0 / safe_efficiency) * offspring_traits["speed_factor"]
+    offspring_vx = base_vx + np.random.uniform(-0.5, 0.5, size=parent_indices.size) * velocity_scale
+    offspring_vy = base_vy + np.random.uniform(-0.5, 0.5, size=parent_indices.size) * velocity_scale
+    if particle.spatial_dimensions == 3:
+        offspring_vz = base_vz + np.random.uniform(-0.5, 0.5, size=parent_indices.size) * velocity_scale
+    else:
+        offspring_vz = np.zeros(parent_indices.size, dtype=np.float64)
+
+    cooldown_vals = np.zeros(parent_indices.size, dtype=np.float64)
+    parent_ids = np.asarray(parent_indices, dtype=np.int_)
+
+    particle.add_components_bulk(
+        x=offspring_x,
+        y=offspring_y,
+        vx=offspring_vx,
+        vy=offspring_vy,
+        energy=offspring_energy,
+        mass=mass_vals,
+        energy_efficiency=offspring_traits["energy_efficiency"],
+        speed_factor=offspring_traits["speed_factor"],
+        interaction_strength=offspring_traits["interaction_strength"],
+        perception_range=offspring_traits["perception_range"],
+        reproduction_rate=offspring_traits["reproduction_rate"],
+        synergy_affinity=offspring_traits["synergy_affinity"],
+        colony_factor=offspring_traits["colony_factor"],
+        drift_sensitivity=offspring_traits["drift_sensitivity"],
+        species_id=species_ids,
+        parent_id=parent_ids,
+        predation_efficiency=predation_vals,
+        cooldown=cooldown_vals,
+        z=offspring_z,
+        vz=offspring_vz,
+    )
 
 # Helper functions for gene application
 
@@ -541,25 +1343,23 @@ def _calculate_environmental_modifier(
     return modifier
 
 
-def _get_trait_mutation_parameters(genetics: "GeneticParamConfig") -> Dict[str, float]:
-    """Define mutation parameters for all traits.
+def _get_trait_mutation_parameters(
+    genetics: "GeneticParamConfig", env: "SimulationConfig"
+) -> Dict[str, Tuple[float, float]]:
+    """Define mutation bounds for all traits.
 
     Args:
         genetics: Genetics configuration containing mutation settings
+        env: Simulation configuration for non-genetic trait ranges
 
     Returns:
-        Dictionary of trait names to their maximum allowed values
+        Dictionary of trait names to their (min, max) ranges
     """
-    return {
-        "energy_efficiency": 1.0,
-        "speed_factor": 2.0,
-        "interaction_strength": 2.0,
-        "perception_range": 300.0,
-        "reproduction_rate": 1.0,
-        "synergy_affinity": 1.0,
-        "colony_factor": 1.0,
-        "drift_sensitivity": 1.0,
+    ranges: Dict[str, Tuple[float, float]] = {
+        name: definition.range for name, definition in genetics.trait_definitions.items()
     }
+    ranges["energy_efficiency"] = env.energy_efficiency_range
+    return ranges
 
 
 def _generate_offspring_traits(
@@ -567,7 +1367,7 @@ def _generate_offspring_traits(
     idx: int,
     mutation_rate: float,
     mutation_range: Tuple[float, float],
-    trait_params: Dict[str, float],
+    trait_ranges: Dict[str, Tuple[float, float]],
 ) -> Dict[str, FloatArray]:
     """Generate offspring traits through mutation of parent traits.
 
@@ -584,7 +1384,7 @@ def _generate_offspring_traits(
     offspring_traits: Dict[str, FloatArray] = {}
 
     # For each trait, apply mutation based on parent's value
-    for trait_name, max_value in trait_params.items():
+    for trait_name, trait_range in trait_ranges.items():
         # Get parent trait value
         parent_value = getattr(particle, trait_name)[idx]
 
@@ -594,14 +1394,20 @@ def _generate_offspring_traits(
 
         # Apply mutation
         offspring_traits[trait_name] = mutate_trait(
-            parent_array, mutate_flag, mutation_range[0], max_value
+            parent_array, mutate_flag, mutation_range[0], mutation_range[1]
+        )
+        offspring_traits[trait_name] = np.clip(
+            offspring_traits[trait_name], trait_range[0], trait_range[1]
         )
 
     return offspring_traits
 
 
 def _calculate_genetic_distance(
-    particle: "CellularTypeData", idx: int, offspring_traits: Dict[str, FloatArray]
+    particle: "CellularTypeData",
+    idx: int,
+    offspring_traits: Dict[str, FloatArray],
+    trait_ranges: Dict[str, Tuple[float, float]],
 ) -> float:
     """Calculate genetic distance between parent and offspring.
 
@@ -629,15 +1435,14 @@ def _calculate_genetic_distance(
         parent_val = getattr(particle, trait)[idx]
         offspring_val = float(offspring_traits[trait][0])
 
-        # Get the max value for this trait for normalization
-        max_val = 1.0
-        if trait == "perception_range":
-            max_val = 300.0
-        elif trait in ["speed_factor", "interaction_strength"]:
-            max_val = 2.0
+        # Normalize by trait range span
+        range_min, range_max = trait_ranges.get(trait, (0.0, 1.0))
+        span = range_max - range_min
+        if span <= 0.0:
+            span = 1.0
 
         # Calculate normalized squared difference
-        normalized_diff = ((offspring_val - parent_val) / max_val) ** 2
+        normalized_diff = ((offspring_val - parent_val) / span) ** 2
         squared_diffs.append(normalized_diff)
 
     # Calculate Euclidean distance across normalized trait space
@@ -687,7 +1492,7 @@ def _add_offspring_to_population(
     idx: int,
     offspring_traits: Dict[str, FloatArray],
     species_id_val: int,
-    reproduction_cost: float,
+    offspring_energy: float,
 ) -> None:
     """Add new offspring to the particle population.
 
@@ -696,7 +1501,7 @@ def _add_offspring_to_population(
         idx: Index of the parent particle
         offspring_traits: Dictionary of offspring trait values
         species_id_val: Determined species ID
-        reproduction_cost: Energy cost of reproduction
+        offspring_energy: Energy allocated to the offspring
 
     Returns:
         None: Modifies particle population in-place
@@ -704,13 +1509,21 @@ def _add_offspring_to_population(
     # Calculate initial position with small random offset
     pos_x = float(particle.x[idx] + np.random.uniform(-5, 5))
     pos_y = float(particle.y[idx] + np.random.uniform(-5, 5))
+    if particle.spatial_dimensions == 3:
+        pos_z = float(particle.z[idx] + np.random.uniform(-5, 5))
+    else:
+        pos_z = 0.0
 
     # Calculate initial velocity with small random variation
     vel_x = float(particle.vx[idx] * np.random.uniform(0.9, 1.1))
     vel_y = float(particle.vy[idx] * np.random.uniform(0.9, 1.1))
+    if particle.spatial_dimensions == 3:
+        vel_z = float(particle.vz[idx] * np.random.uniform(0.9, 1.1))
+    else:
+        vel_z = 0.0
 
-    # Calculate initial energy (half of parent's energy)
-    initial_energy = float(particle.energy[idx] * 0.5)
+    # Use computed offspring energy
+    initial_energy = float(offspring_energy)
 
     # Get mass value if applicable
     mass_val = None
@@ -735,8 +1548,10 @@ def _add_offspring_to_population(
         colony_factor_val=float(offspring_traits["colony_factor"][0]),
         drift_sensitivity_val=float(offspring_traits["drift_sensitivity"][0]),
         species_id_val=species_id_val,
-        parent_id_val=int(particle.type_id),
+        parent_id_val=int(idx),
         max_age=float(particle.max_age),
+        z=pos_z,
+        vz=vel_z,
     )
 
 

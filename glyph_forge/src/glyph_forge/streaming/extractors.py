@@ -16,6 +16,8 @@ import re
 import time
 import tempfile
 import subprocess
+import shutil
+from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
@@ -32,6 +34,27 @@ try:
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
+
+
+def _parse_cookies_from_browser_spec(spec: Optional[str]) -> Optional[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
+    if not spec:
+        return None
+    keyring: Optional[str] = None
+    browser_part = spec
+    if "+" in spec:
+        browser_part, keyring = spec.split("+", 1)
+    parts = browser_part.split(":", 2)
+    browser = parts[0]
+    profile = parts[1] if len(parts) > 1 and parts[1] else None
+    container = parts[2] if len(parts) > 2 and parts[2] else None
+    return (browser, profile, keyring, container)
+
+
+def _parse_player_client_spec(spec: Optional[str]) -> Optional[list[str]]:
+    if not spec:
+        return None
+    clients = [item.strip() for item in spec.split(",") if item.strip()]
+    return clients or None
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -157,6 +180,12 @@ class YouTubeExtractor:
         url: str,
         resolution: Optional[int] = None,
         include_audio: bool = True,
+        yt_cookies: Optional[str] = None,
+        yt_cookies_from_browser: Optional[str] = None,
+        yt_user_agent: Optional[str] = None,
+        yt_proxy: Optional[str] = None,
+        yt_skip_authcheck: bool = False,
+        yt_player_client: Optional[str] = None,
     ) -> ExtractionResult:
         """Extract video and audio streams from YouTube URL.
         
@@ -205,13 +234,25 @@ class YouTubeExtractor:
         result = ExtractionResult()
         
         # Extract video stream
-        video_opts = {
+        cookies_from_browser = _parse_cookies_from_browser_spec(yt_cookies_from_browser)
+        player_clients = _parse_player_client_spec(yt_player_client)
+        video_opts: Dict[str, Any] = {
             'format': video_format,
             'quiet': True,
             'skip_download': True,
             'no_warnings': True,
             'socket_timeout': 15,
         }
+        if yt_cookies:
+            video_opts["cookiefile"] = yt_cookies
+        if cookies_from_browser:
+            video_opts["cookiesfrombrowser"] = cookies_from_browser
+        if player_clients:
+            video_opts["extractor_args"] = {"youtube": {"player_client": player_clients}}
+        if yt_user_agent:
+            video_opts["user_agent"] = yt_user_agent
+        if yt_proxy:
+            video_opts["proxy"] = yt_proxy
         
         for retry in range(3):
             try:
@@ -246,13 +287,23 @@ class YouTubeExtractor:
         
         # Extract audio stream separately if requested
         if include_audio and not result.is_live:
-            audio_opts = {
+            audio_opts: Dict[str, Any] = {
                 'format': audio_format,
                 'quiet': True,
                 'skip_download': True,
                 'no_warnings': True,
                 'socket_timeout': 15,
             }
+            if yt_cookies:
+                audio_opts["cookiefile"] = yt_cookies
+            if cookies_from_browser:
+                audio_opts["cookiesfrombrowser"] = cookies_from_browser
+            if player_clients:
+                audio_opts["extractor_args"] = {"youtube": {"player_client": player_clients}}
+            if yt_user_agent:
+                audio_opts["user_agent"] = yt_user_agent
+            if yt_proxy:
+                audio_opts["proxy"] = yt_proxy
             
             try:
                 with yt_dlp.YoutubeDL(audio_opts) as ydl:
@@ -338,6 +389,15 @@ class VideoSourceExtractor:
         source: Union[str, int, Path],
         resolution: Optional[int] = None,
         include_audio: bool = True,
+        playlist_max_items: Optional[int] = None,
+        playlist_start: Optional[int] = None,
+        playlist_end: Optional[int] = None,
+        yt_cookies: Optional[str] = None,
+        yt_cookies_from_browser: Optional[str] = None,
+        yt_user_agent: Optional[str] = None,
+        yt_proxy: Optional[str] = None,
+        yt_skip_authcheck: bool = False,
+        yt_player_client: Optional[str] = None,
     ) -> ExtractionResult:
         """Extract video/audio from any supported source.
         
@@ -357,10 +417,31 @@ class VideoSourceExtractor:
         
         # Handle YouTube
         if YouTubeExtractor.is_youtube_url(source_str):
+            if "list=" in source_str:
+                return cls._extract_youtube_playlist(
+                    source_str,
+                    resolution,
+                    include_audio,
+                    playlist_max_items=playlist_max_items,
+                    playlist_start=playlist_start,
+                    playlist_end=playlist_end,
+                    yt_cookies=yt_cookies,
+                    yt_cookies_from_browser=yt_cookies_from_browser,
+                    yt_user_agent=yt_user_agent,
+                    yt_proxy=yt_proxy,
+                    yt_skip_authcheck=yt_skip_authcheck,
+                    yt_player_client=yt_player_client,
+                )
             return YouTubeExtractor.extract(
                 source_str,
                 resolution=resolution,
                 include_audio=include_audio,
+                yt_cookies=yt_cookies,
+                yt_cookies_from_browser=yt_cookies_from_browser,
+                yt_user_agent=yt_user_agent,
+                yt_proxy=yt_proxy,
+                yt_skip_authcheck=yt_skip_authcheck,
+                yt_player_client=yt_player_client,
             )
         
         # Handle local file
@@ -454,6 +535,243 @@ class VideoSourceExtractor:
             return result
         finally:
             cap.release()
+
+    @classmethod
+    def _extract_youtube_playlist(
+        cls,
+        url: str,
+        resolution: Optional[int],
+        include_audio: bool,
+        playlist_max_items: Optional[int] = None,
+        playlist_start: Optional[int] = None,
+        playlist_end: Optional[int] = None,
+        yt_cookies: Optional[str] = None,
+        yt_cookies_from_browser: Optional[str] = None,
+        yt_user_agent: Optional[str] = None,
+        yt_proxy: Optional[str] = None,
+        yt_skip_authcheck: bool = False,
+        yt_player_client: Optional[str] = None,
+    ) -> ExtractionResult:
+        """Download and stitch a YouTube playlist into a single file."""
+        if not HAS_YT_DLP:
+            raise DependencyError(
+                "yt-dlp",
+                "pip install yt-dlp",
+                "YouTube playlist streaming",
+            )
+        if not shutil.which("ffmpeg"):
+            raise DependencyError(
+                "ffmpeg",
+                "Install ffmpeg (required for playlist stitching)",
+                "YouTube playlist streaming",
+            )
+        playlist_title = None
+        try:
+            cookies_from_browser = _parse_cookies_from_browser_spec(yt_cookies_from_browser)
+            player_clients = _parse_player_client_spec(yt_player_client)
+            info_opts: Dict[str, Any] = {
+                "quiet": True,
+                "skip_download": True,
+                "extract_flat": True,
+            }
+            if yt_cookies:
+                info_opts["cookiefile"] = yt_cookies
+            if cookies_from_browser:
+                info_opts["cookiesfrombrowser"] = cookies_from_browser
+            extractor_args: Dict[str, Any] = {}
+            if player_clients:
+                extractor_args["youtube"] = {"player_client": player_clients}
+            if yt_user_agent:
+                info_opts["user_agent"] = yt_user_agent
+            if yt_proxy:
+                info_opts["proxy"] = yt_proxy
+            if yt_skip_authcheck:
+                extractor_args.setdefault("youtubetab", {})["skip"] = ["authcheck"]
+            if extractor_args:
+                info_opts["extractor_args"] = extractor_args
+            with yt_dlp.YoutubeDL(info_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    playlist_title = info.get("title")
+        except Exception:
+            playlist_title = None
+
+        playlist_id = None
+        try:
+            parsed = urlparse(url)
+            playlist_id = parse_qs(parsed.query).get("list", [None])[0]
+        except Exception:
+            playlist_id = None
+        if not playlist_id:
+            playlist_id = "playlist"
+        playlist_id = re.sub(r"[^a-zA-Z0-9_-]+", "", playlist_id) or "playlist"
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        temp_dir = Path(tempfile.gettempdir()) / f"glyph_forge_playlist_{playlist_id}_{stamp}"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        output_pattern = str(temp_dir / "%(playlist_index)03d_%(id)s.%(ext)s")
+
+        cmd = [
+            "yt-dlp",
+            "-f", "bestvideo*+bestaudio/best",
+            "--merge-output-format", "mp4",
+            "--no-part",
+            "-o", output_pattern,
+            "--yes-playlist",
+            "--no-playlist-reverse",
+            url,
+        ]
+        if yt_cookies:
+            cmd.extend(["--cookies", yt_cookies])
+        if yt_cookies_from_browser:
+            cmd.extend(["--cookies-from-browser", yt_cookies_from_browser])
+        if yt_user_agent:
+            cmd.extend(["--user-agent", yt_user_agent])
+        if yt_proxy:
+            cmd.extend(["--proxy", yt_proxy])
+        extractor_args: list[str] = []
+        if yt_skip_authcheck:
+            extractor_args.append("youtubetab:skip=authcheck")
+        if yt_player_client:
+            extractor_args.append(f"youtube:player_client={yt_player_client}")
+        for arg in extractor_args:
+            cmd.extend(["--extractor-args", arg])
+        items = None
+        if playlist_start or playlist_end:
+            start = playlist_start or 1
+            end = playlist_end or ""
+            items = f"{start}-{end}"
+        elif playlist_max_items:
+            items = f"1-{playlist_max_items}"
+        if items:
+            cmd.extend(["--playlist-items", items])
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0 and "HTTP Error 413" in (result.stderr or ""):
+            if "youtubetab:skip=authcheck" not in extractor_args:
+                cmd.extend(["--extractor-args", "youtubetab:skip=authcheck"])
+            result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise StreamExtractionError(
+                f"Playlist download failed: {result.stderr.strip()}",
+                category="download",
+            )
+
+        files = sorted(temp_dir.glob("*.mp4"))
+        if not files:
+            raise StreamExtractionError("Playlist download failed", category="download")
+
+        def _run_ffmpeg(cmd: list[str], category: str) -> None:
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                raise StreamExtractionError(proc.stderr.strip() or "ffmpeg failed", category=category)
+
+        audio_files: list[Path] = []
+        for video in files:
+            audio_path = video.with_suffix(".m4a")
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", str(video),
+                "-vn",
+                "-c:a", "copy",
+                "-loglevel", "error",
+                str(audio_path),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", str(video),
+                    "-vn",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-loglevel", "error",
+                    str(audio_path),
+                ]
+                _run_ffmpeg(cmd, "audio_extract")
+            if not audio_path.exists():
+                raise StreamExtractionError("Audio extraction failed", category="audio_extract")
+            audio_files.append(audio_path)
+
+        video_concat = temp_dir / "video_concat.txt"
+        with video_concat.open("w", encoding="utf-8") as f:
+            for file in files:
+                f.write(f"file '{file.as_posix()}'\n")
+
+        stitched_video = temp_dir / "playlist_video.mp4"
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", str(video_concat),
+            "-map", "0:v:0",
+            "-c", "copy",
+            "-loglevel", "error",
+            str(stitched_video),
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", str(video_concat),
+                "-map", "0:v:0",
+                "-c:v", "libx264",
+                "-preset", "slow",
+                "-crf", "18",
+                "-pix_fmt", "yuv420p",
+                "-loglevel", "error",
+                str(stitched_video),
+            ]
+            _run_ffmpeg(cmd, "video_concat")
+
+        audio_concat = temp_dir / "playlist_audio.m4a"
+        audio_concat_list = temp_dir / "audio_concat.txt"
+        with audio_concat_list.open("w", encoding="utf-8") as f:
+            for audio in audio_files:
+                f.write(f"file '{audio.as_posix()}'\n")
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", str(audio_concat_list),
+            "-c", "copy",
+            "-loglevel", "error",
+            str(audio_concat),
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", str(audio_concat_list),
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-loglevel", "error",
+                str(audio_concat),
+            ]
+            _run_ffmpeg(cmd, "audio_concat")
+
+        stitched = temp_dir / "playlist_merged.mp4"
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", str(stitched_video),
+            "-i", str(audio_concat),
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-shortest",
+            "-loglevel", "error",
+            str(stitched),
+        ]
+        _run_ffmpeg(cmd, "mux")
+
+        result = cls._extract_local_file(str(stitched), include_audio)
+        if playlist_title:
+            result.title = playlist_title
+        if include_audio and audio_concat.exists():
+            result.audio_url = str(audio_concat)
+            result.format = "playlist"
+        return result
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -8,7 +8,6 @@ and emergent behavior algorithms with rigorous type safety.
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import (
-from eidosian_core import eidosian
     TYPE_CHECKING,
     Any,
     Dict,
@@ -25,6 +24,7 @@ from eidosian_core import eidosian
 
 import numpy as np
 from numpy.typing import NDArray
+from eidosian_core import eidosian
 
 # Import scipy's cKDTree with explicit type handling
 try:
@@ -61,6 +61,7 @@ if TYPE_CHECKING:
 
 # Domain-specific vector and data types with precise semantics
 Vector2D = Tuple[float, float]  # (x, y) coordinate pair in Cartesian space
+Vector3D = Tuple[float, float, float]  # (x, y, z) coordinate tuple in Cartesian space
 ColorRGB = Tuple[int, int, int]  # (r, g, b) color values constrained to 0-255
 Range = Tuple[float, float]  # (min, max) value constraints for trait boundaries
 
@@ -198,6 +199,7 @@ class CellularTypeProtocol(Protocol):
     alive: NDArray[np.bool_]  # Boolean mask of living components
     x: NDArray[np.float64]  # X-coordinates
     y: NDArray[np.float64]  # Y-coordinates
+    z: NDArray[np.float64]  # Z-coordinates (depth)
     energy: NDArray[np.float64]  # Energy levels
     speed_factor: NDArray[np.float64]  # Speed trait values
     color: ColorRGB  # RGB color tuple for this cellular type
@@ -229,6 +231,39 @@ def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray"
     # Generate uniform random coordinates and explicitly cast to ensure type safety
     coords: "FloatArray" = np.random.uniform(
         0, [window_width, window_height], (n, 2)
+    ).astype(np.float64)
+
+    return coords
+
+
+@eidosian()
+def random_xyz(
+    window_width: int, window_height: int, window_depth: int, n: int = 1
+) -> "FloatArray":
+    """Generate random 3D position coordinates within window boundaries.
+
+    Creates vectorized random positions for efficient particle initialization
+    within the specified simulation volume dimensions.
+
+    Args:
+        window_width: Width of simulation window in pixels
+        window_height: Height of simulation window in pixels
+        window_depth: Depth of simulation volume in pixels
+        n: Number of coordinate triplets to generate
+
+    Returns:
+        FloatArray: Array of shape (n, 3) containing random (x, y, z) coordinates
+
+    Raises:
+        AssertionError: If window dimensions are non-positive or n < 1
+    """
+    assert window_width > 0, "Window width must be positive"
+    assert window_height > 0, "Window height must be positive"
+    assert window_depth > 0, "Window depth must be positive"
+    assert n > 0, "Number of points must be positive"
+
+    coords: "FloatArray" = np.random.uniform(
+        0, [window_width, window_height, window_depth], (n, 3)
     ).astype(np.float64)
 
     return coords
@@ -294,8 +329,10 @@ class CellularTypeData:
         mass_based: Whether this type uses mass in physical calculations
         x: X-coordinate positions of all components
         y: Y-coordinate positions of all components
+        z: Z-coordinate positions of all components (depth, 3D only)
         vx: X-velocity components of all particles
         vy: Y-velocity components of all particles
+        vz: Z-velocity components of all particles (depth, 3D only)
         energy: Energy levels of all components
         mass: Mass values for mass-based types (None for massless types)
         alive: Boolean mask indicating which components are alive
@@ -304,6 +341,8 @@ class CellularTypeData:
         predation_efficiency: Efficiency at extracting energy from prey
         cooldown: Recovery time after predatory actions
         base_mass: Reference mass for growth calculations
+        spatial_dimensions: Dimensionality of simulation (2 or 3)
+        window_depth: Depth of simulation volume for 3D mode
         plus various genetic trait arrays and metadata attributes
     """
 
@@ -342,6 +381,8 @@ class CellularTypeData:
         max_energy_efficiency: float = 2.5,
         initial_predation_efficiency: float = 0.3,
         initial_cooldown: float = 0.0,
+        window_depth: Optional[int] = None,
+        spatial_dimensions: int = 2,
     ) -> None:
         """Initialize a CellularTypeData instance with given parameters.
 
@@ -382,11 +423,24 @@ class CellularTypeData:
             max_energy_efficiency: Maximum allowed energy efficiency
             initial_predation_efficiency: Starting predation efficiency
             initial_cooldown: Initial cooldown value for actions
+            window_depth: Depth of the simulation volume for 3D mode
+            spatial_dimensions: Dimensionality of the simulation (2 or 3)
         """
         # Store metadata
         self.type_id: int = type_id
         self.color: ColorRGB = color
         self.mass_based: bool = mass is not None
+        self.spatial_dimensions: int = int(spatial_dimensions)
+        if self.spatial_dimensions not in (2, 3):
+            raise ValueError("spatial_dimensions must be 2 or 3")
+
+        # Normalize window depth for 3D mode (defaults to max planar dimension)
+        if self.spatial_dimensions == 3:
+            if window_depth is None:
+                window_depth = int(max(window_width, window_height))
+            if window_depth <= 0:
+                raise ValueError("window_depth must be positive for 3D mode")
+        self.window_depth: Optional[int] = window_depth
 
         # Default gene traits if none provided
         if gene_traits is None:
@@ -420,10 +474,20 @@ class CellularTypeData:
         self.min_energy_efficiency: float = min_energy_efficiency
         self.max_energy_efficiency: float = max_energy_efficiency
 
-        # Initialize cellular component positions randomly within the window
-        coords: FloatArray = random_xy(window_width, window_height, n_particles)
-        self.x: FloatArray = coords[:, 0]
-        self.y: FloatArray = coords[:, 1]
+        # Initialize cellular component positions randomly within the window/volume
+        if self.spatial_dimensions == 3:
+            coords3: FloatArray = random_xyz(
+                window_width, window_height, window_depth or 1, n_particles
+            )
+            self.x = coords3[:, 0]
+            self.y = coords3[:, 1]
+            self.z = coords3[:, 2]
+        else:
+            coords2: FloatArray = random_xy(window_width, window_height, n_particles)
+            self.x = coords2[:, 0]
+            self.y = coords2[:, 1]
+            # Keep z for API consistency in 2D mode
+            self.z = np.zeros(n_particles, dtype=np.float64)
 
         # Initialize energy efficiency trait
         if energy_efficiency is None:
@@ -457,6 +521,14 @@ class CellularTypeData:
             self.min_velocity,
             self.max_velocity,
         ).astype(np.float64)
+        if self.spatial_dimensions == 3:
+            self.vz: FloatArray = np.clip(
+                np.random.uniform(-0.5, 0.5, n_particles) * velocity_scaling,
+                self.min_velocity,
+                self.max_velocity,
+            ).astype(np.float64)
+        else:
+            self.vz = np.zeros(n_particles, dtype=np.float64)
 
         # Initialize energy levels for all cellular components
         self.energy: FloatArray = np.clip(
@@ -611,6 +683,16 @@ class CellularTypeData:
         # Apply filtering to all arrays
         self._filter_arrays(alive_mask)
 
+    @eidosian()
+    def filter_by_mask(self, mask: BoolArray) -> None:
+        """Filter component arrays using a provided mask.
+
+        Args:
+            mask: Boolean array indicating which components to keep
+        """
+        self._synchronize_arrays()
+        self._filter_arrays(mask)
+
     def _synchronize_arrays(self) -> None:
         """Ensure all component arrays have matching dimensions.
 
@@ -619,8 +701,10 @@ class CellularTypeData:
         array_attributes: List[str] = [
             "x",
             "y",
+            "z",
             "vx",
             "vy",
+            "vz",
             "energy",
             "alive",
             "age",
@@ -697,9 +781,18 @@ class CellularTypeData:
             return  # No alive components to receive energy
 
         # Build positions array for KD-Tree
-        alive_positions: FloatArray = np.column_stack(
-            (self.x[alive_indices], self.y[alive_indices])
-        )
+        if self.spatial_dimensions == 3:
+            alive_positions = np.column_stack(
+                (
+                    self.x[alive_indices],
+                    self.y[alive_indices],
+                    self.z[alive_indices],
+                )
+            )
+        else:
+            alive_positions = np.column_stack(
+                (self.x[alive_indices], self.y[alive_indices])
+            )
 
         # Create KD-Tree with our properly typed wrapper
         tree: KDTree = KDTree(alive_positions)
@@ -708,9 +801,18 @@ class CellularTypeData:
         batch_size: int = min(1000, dead_age_indices.size)
         for i in range(0, dead_age_indices.size, batch_size):
             batch_indices: IntArray = dead_age_indices[i : i + batch_size]
-            dead_positions: FloatArray = np.column_stack(
-                (self.x[batch_indices], self.y[batch_indices])
-            )
+            if self.spatial_dimensions == 3:
+                dead_positions = np.column_stack(
+                    (
+                        self.x[batch_indices],
+                        self.y[batch_indices],
+                        self.z[batch_indices],
+                    )
+                )
+            else:
+                dead_positions = np.column_stack(
+                    (self.x[batch_indices], self.y[batch_indices])
+                )
             dead_energies: FloatArray = self.energy[batch_indices]
 
             # Find nearest neighbors for all dead components in batch
@@ -752,18 +854,20 @@ class CellularTypeData:
                     # Set energy of dead component to zero
                     self.energy[batch_indices[j]] = 0.0
 
-    def _filter_arrays(self, alive_mask: BoolArray) -> None:
+    def _filter_arrays(self, mask: BoolArray) -> None:
         """
         Filter all component arrays to keep only alive components.
 
         Args:
-            alive_mask: Boolean array indicating which components are alive
+            mask: Boolean array indicating which components are alive
         """
         arrays_to_filter: List[str] = [
             "x",
             "y",
+            "z",
             "vx",
             "vy",
+            "vz",
             "energy",
             "alive",
             "age",
@@ -791,15 +895,15 @@ class CellularTypeData:
                 try:
                     current = getattr(self, attr)
                     if current is not None and hasattr(current, "shape"):
-                        filtered = current[alive_mask]
+                        filtered = current[mask]
                         setattr(self, attr, filtered)
                 except IndexError:
                     # Handle size mismatch by trimming
                     current = getattr(self, attr)
                     if current is not None and hasattr(current, "shape"):
-                        if len(current) > len(alive_mask):
-                            trimmed = current[: len(alive_mask)]
-                            filtered = trimmed[alive_mask]
+                        if len(current) > len(mask):
+                            trimmed = current[: len(mask)]
+                            filtered = trimmed[mask]
                             setattr(self, attr, filtered)
 
         # Handle mass and base_mass arrays separately if they exist
@@ -808,18 +912,18 @@ class CellularTypeData:
                 mass_array = getattr(self, mass_attr, None)
                 if mass_array is not None:
                     try:
-                        filtered_mass = mass_array[alive_mask]
+                        filtered_mass = mass_array[mask]
                         setattr(self, mass_attr, filtered_mass)
                     except IndexError:
-                        if len(mass_array) > len(alive_mask):
-                            trimmed = mass_array[: len(alive_mask)]
-                            filtered = trimmed[alive_mask]
+                        if len(mass_array) > len(mask):
+                            trimmed = mass_array[: len(mask)]
+                            filtered = trimmed[mask]
                             setattr(self, mass_attr, filtered)
 
         # Filter mutation history list
         if len(self.mutation_history) > 0:
             # Get indices as numpy array, then convert to a properly typed Python list
-            indices_array: IntArray = np.where(alive_mask)[0]
+            indices_array: IntArray = np.where(mask)[0]
             alive_indices: List[int] = [
                 int(idx) for idx in indices_array
             ]  # Ensure consistent List[int] type
@@ -837,14 +941,14 @@ class CellularTypeData:
             hasattr(self, "synergy_connections")
             and self.synergy_connections.shape[0] > 0
         ):
-            alive_count: int = int(np.sum(alive_mask))  # Ensure this is an int
+            alive_count: int = int(np.sum(mask))  # Ensure this is an int
             new_connections: BoolArray = np.zeros(
                 (alive_count, alive_count), dtype=bool
             )
 
             if alive_count > 0:
                 # Extract the submatrix for living components
-                alive_indices_array: IntArray = np.where(alive_mask)[0]
+                alive_indices_array: IntArray = np.where(mask)[0]
                 alive_indices = [
                     int(idx) for idx in alive_indices_array
                 ]  # Convert to List[int]
@@ -882,6 +986,8 @@ class CellularTypeData:
         max_age: float,
         predation_efficiency_val: float = 0.3,
         cooldown_val: float = 0.0,
+        z: float = 0.0,
+        vz: float = 0.0,
     ) -> None:
         """Add a new cellular component to this cellular type.
 
@@ -908,12 +1014,16 @@ class CellularTypeData:
             max_age: Maximum age for the new component
             predation_efficiency_val: Predation efficiency trait of the new component
             cooldown_val: Initial cooldown value for the new component
+            z: Z-coordinate of the new component (depth)
+            vz: Z-component of the new component's velocity
         """
         # Append new component's attributes using NumPy's concatenate for efficiency
         self.x = np.concatenate((self.x, np.array([x], dtype=np.float64)))
         self.y = np.concatenate((self.y, np.array([y], dtype=np.float64)))
+        self.z = np.concatenate((self.z, np.array([z], dtype=np.float64)))
         self.vx = np.concatenate((self.vx, np.array([vx], dtype=np.float64)))
         self.vy = np.concatenate((self.vy, np.array([vy], dtype=np.float64)))
+        self.vz = np.concatenate((self.vz, np.array([vz], dtype=np.float64)))
         self.energy = np.concatenate(
             (self.energy, np.array([energy], dtype=np.float64))
         )
@@ -1018,3 +1128,151 @@ class CellularTypeData:
         self.generation = np.concatenate(
             (self.generation, np.array([parent_gen + 1], dtype=np.int_))
         )
+
+    @eidosian()
+    def add_components_bulk(
+        self,
+        x: FloatArray,
+        y: FloatArray,
+        vx: FloatArray,
+        vy: FloatArray,
+        energy: FloatArray,
+        mass: Optional[FloatArray],
+        energy_efficiency: FloatArray,
+        speed_factor: FloatArray,
+        interaction_strength: FloatArray,
+        perception_range: FloatArray,
+        reproduction_rate: FloatArray,
+        synergy_affinity: FloatArray,
+        colony_factor: FloatArray,
+        drift_sensitivity: FloatArray,
+        species_id: IntArray,
+        parent_id: IntArray,
+        predation_efficiency: Optional[FloatArray] = None,
+        cooldown: Optional[FloatArray] = None,
+        z: Optional[FloatArray] = None,
+        vz: Optional[FloatArray] = None,
+    ) -> None:
+        """Add multiple new components in a single vectorized operation."""
+        x_arr = np.asarray(x, dtype=np.float64).reshape(-1)
+        y_arr = np.asarray(y, dtype=np.float64).reshape(-1)
+        vx_arr = np.asarray(vx, dtype=np.float64).reshape(-1)
+        vy_arr = np.asarray(vy, dtype=np.float64).reshape(-1)
+        if z is None:
+            z_arr = np.zeros_like(x_arr, dtype=np.float64)
+        else:
+            z_arr = np.asarray(z, dtype=np.float64).reshape(-1)
+        if vz is None:
+            vz_arr = np.zeros_like(x_arr, dtype=np.float64)
+        else:
+            vz_arr = np.asarray(vz, dtype=np.float64).reshape(-1)
+        energy_arr = np.asarray(energy, dtype=np.float64).reshape(-1)
+        energy_eff_arr = np.asarray(energy_efficiency, dtype=np.float64).reshape(-1)
+        speed_arr = np.asarray(speed_factor, dtype=np.float64).reshape(-1)
+        interaction_arr = np.asarray(interaction_strength, dtype=np.float64).reshape(-1)
+        perception_arr = np.asarray(perception_range, dtype=np.float64).reshape(-1)
+        reproduction_arr = np.asarray(reproduction_rate, dtype=np.float64).reshape(-1)
+        synergy_arr = np.asarray(synergy_affinity, dtype=np.float64).reshape(-1)
+        colony_arr = np.asarray(colony_factor, dtype=np.float64).reshape(-1)
+        drift_arr = np.asarray(drift_sensitivity, dtype=np.float64).reshape(-1)
+        species_arr = np.asarray(species_id, dtype=np.int_).reshape(-1)
+        parent_arr = np.asarray(parent_id, dtype=np.int_).reshape(-1)
+
+        count = int(x_arr.size)
+        if count == 0:
+            return
+
+        expected = [
+            y_arr,
+            vx_arr,
+            vy_arr,
+            z_arr,
+            vz_arr,
+            energy_arr,
+            energy_eff_arr,
+            speed_arr,
+            interaction_arr,
+            perception_arr,
+            reproduction_arr,
+            synergy_arr,
+            colony_arr,
+            drift_arr,
+            species_arr,
+            parent_arr,
+        ]
+        if any(arr.size != count for arr in expected):
+            raise ValueError("All component arrays must have identical lengths")
+
+        # Append core arrays
+        self.x = np.concatenate((self.x, x_arr))
+        self.y = np.concatenate((self.y, y_arr))
+        self.z = np.concatenate((self.z, z_arr))
+        self.vx = np.concatenate((self.vx, vx_arr))
+        self.vy = np.concatenate((self.vy, vy_arr))
+        self.vz = np.concatenate((self.vz, vz_arr))
+        self.energy = np.concatenate((self.energy, energy_arr))
+        self.alive = np.concatenate((self.alive, np.ones(count, dtype=bool)))
+        self.age = np.concatenate((self.age, np.zeros(count, dtype=np.float64)))
+        self.energy_efficiency = np.concatenate((self.energy_efficiency, energy_eff_arr))
+        self.speed_factor = np.concatenate((self.speed_factor, speed_arr))
+        self.interaction_strength = np.concatenate(
+            (self.interaction_strength, interaction_arr)
+        )
+        self.perception_range = np.concatenate((self.perception_range, perception_arr))
+        self.reproduction_rate = np.concatenate((self.reproduction_rate, reproduction_arr))
+        self.synergy_affinity = np.concatenate((self.synergy_affinity, synergy_arr))
+        self.colony_factor = np.concatenate((self.colony_factor, colony_arr))
+        self.drift_sensitivity = np.concatenate((self.drift_sensitivity, drift_arr))
+        self.species_id = np.concatenate((self.species_id, species_arr))
+        self.parent_id = np.concatenate((self.parent_id, parent_arr))
+
+        # Predation traits
+        if predation_efficiency is None:
+            predation_efficiency = np.full(count, 0.3, dtype=np.float64)
+        if cooldown is None:
+            cooldown = np.zeros(count, dtype=np.float64)
+        self.predation_efficiency = np.concatenate(
+            (self.predation_efficiency, np.asarray(predation_efficiency, dtype=np.float64))
+        )
+        self.cooldown = np.concatenate(
+            (self.cooldown, np.asarray(cooldown, dtype=np.float64))
+        )
+
+        # Mass handling
+        if self.mass_based:
+            if mass is None:
+                mass_arr = np.full(count, 0.1, dtype=np.float64)
+            else:
+                mass_arr = np.asarray(mass, dtype=np.float64).reshape(-1)
+                if mass_arr.size != count:
+                    raise ValueError("Mass array length must match component count")
+                mass_arr = np.where(mass_arr > 0.0, mass_arr, 0.1)
+            if self.mass is None:
+                self.mass = mass_arr
+            else:
+                self.mass = np.concatenate((self.mass, mass_arr))
+            if hasattr(self, "base_mass") and self.base_mass is not None:
+                self.base_mass = np.concatenate((self.base_mass, mass_arr))
+        else:
+            self.mass = None
+
+        # Mutation history and synergy connections
+        self.mutation_history.extend([[] for _ in range(count)])
+        old_size = self.synergy_connections.shape[0]
+        new_size = old_size + count
+        new_connections: BoolArray = np.zeros((new_size, new_size), dtype=bool)
+        if old_size > 0:
+            new_connections[:old_size, :old_size] = self.synergy_connections
+        self.synergy_connections = new_connections
+
+        # Colony and fitness metadata
+        self.colony_role = np.concatenate((self.colony_role, np.zeros(count, dtype=np.int_)))
+        self.colony_id = np.concatenate((self.colony_id, np.full(count, -1, dtype=np.int_)))
+        self.fitness_score = np.concatenate((self.fitness_score, np.zeros(count, dtype=np.float64)))
+
+        # Generation tracking
+        parent_gen = np.zeros(count, dtype=np.int_)
+        valid_parents = (parent_arr >= 0) & (parent_arr < self.generation.size)
+        if np.any(valid_parents):
+            parent_gen[valid_parents] = self.generation[parent_arr[valid_parents]]
+        self.generation = np.concatenate((self.generation, parent_gen + 1))

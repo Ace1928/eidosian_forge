@@ -8,13 +8,8 @@ This package provides the core streaming infrastructure:
 - renderer.py: High-fidelity glyph rendering engine
 - recorder.py: Terminal-to-video recording
 - sync.py: Audio playback and synchronization
-- engine.py: Main orchestrator
 
-Usage:
-    from glyph_forge.streaming.core import GlyphStreamEngine, StreamConfig
-    
-    engine = GlyphStreamEngine()
-    engine.stream('https://youtube.com/watch?v=...')
+Unified streaming engine lives in :mod:`glyph_forge.streaming.engine`.
 """
 
 from .config import StreamConfig, RenderMode, ColorMode, BufferStrategy
@@ -23,7 +18,6 @@ from .capture import VideoCapture, VideoInfo, CaptureSource
 from .renderer import GlyphRenderer, RenderConfig, LookupTables
 from .recorder import GlyphRecorder, RecorderConfig
 from .sync import AudioSync, AudioConfig, AudioDownloader
-from .engine import GlyphStreamEngine, StreamStats, stream
 
 __all__ = [
     # Config
@@ -50,8 +44,4 @@ __all__ = [
     'AudioSync',
     'AudioConfig',
     'AudioDownloader',
-    # Engine
-    'GlyphStreamEngine',
-    'StreamStats',
-    'stream',
 ]

@@ -21,6 +21,7 @@ include project_scope.md  # Domain definition - functional boundaries
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # glyph without examples is like a function without a return value - technically complete but practically useless
 recursive-include examples *.py *.txt *.md *.jpg *.png  # Usage demonstrations
+recursive-include assets *.png *.gif                    # Demo assets
 recursive-include src/glyph_forge/config *.json *.yaml *.yml *.toml  # Control parameters
 recursive-include src/glyph_forge/resources *.txt *.json *.dat  # Asset library
 
@@ -58,7 +59,6 @@ recursive-include scripts *.py *.sh  # Automation tools - workflow accelerators
 # Configuration files: where intent meets implementation through structured parameters
 recursive-include config *.json *.yml *.toml  # External configuration
 include .pre-commit-config.yaml              # Pre-commit hooks - quality gateway
-include setup.cfg                            # Backward support - legacy settings
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📊 Benchmarks - Performance analysis

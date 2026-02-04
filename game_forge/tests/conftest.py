@@ -1,0 +1,30 @@
+import os
+import sys
+import warnings
+from pathlib import Path
+
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API",
+    category=UserWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module=r"pygame\.pkgdata",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=DeprecationWarning,
+    module=r"pkg_resources",
+)
+warnings.filterwarnings(
+    "ignore",
+    message="Deprecated call to `pkg_resources.declare_namespace",
+    category=DeprecationWarning,
+)
+
+repo_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(repo_root))

@@ -16,7 +16,10 @@ from typing import Optional, Tuple, Generator, Callable
 import subprocess
 import tempfile
 import re
-import cv2
+try:  # Optional dependency (streaming extra)
+    import cv2
+except Exception:  # pragma: no cover
+    cv2 = None
 import numpy as np
 
 
@@ -215,6 +218,8 @@ class VideoCapture:
     def _open_youtube(self):
         """Open YouTube video using yt-dlp."""
         print(f"🎬 Extracting YouTube URL...")
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for YouTube streaming.")
         
         try:
             # Get video URL - prefer h264 codec (most compatible with OpenCV)
@@ -267,6 +272,8 @@ class VideoCapture:
     
     def _open_webcam(self):
         """Open webcam capture."""
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for webcam capture.")
         # Parse webcam index from "webcam:N" format
         match = re.match(r'webcam:?(\d*)', self.source.lower())
         idx = int(match.group(1)) if match and match.group(1) else 0
@@ -284,6 +291,8 @@ class VideoCapture:
     def _open_url(self):
         """Open direct URL."""
         print(f"🌐 Opening URL stream...")
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for URL streaming.")
         self._video_url = self.source
         self._cap = cv2.VideoCapture(self.source)
         
@@ -297,6 +306,8 @@ class VideoCapture:
             raise FileNotFoundError(f"Video file not found: {self.source}")
         
         print(f"📁 Opening: {path.name}")
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required for file playback.")
         self._cap = cv2.VideoCapture(str(path))
         
         if not self._cap.isOpened():
@@ -411,6 +422,8 @@ class VideoCapture:
             )
             return
         
+        if cv2 is None:
+            raise RuntimeError("OpenCV (cv2) is required to gather video info.")
         if not self._cap:
             raise RuntimeError("Capture not opened")
         

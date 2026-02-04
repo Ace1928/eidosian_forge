@@ -51,10 +51,11 @@ class ModelState:
 
     def __init__(
         self,
-        model_name: str = "qwen/qwen2.5-0.5b-instruct",
+        model_name: str = "qwen/qwen2.5-1.5b-instruct",
         device: Optional[Any] = None,
     ) -> None:
         self.model_name = model_name
+        self._ollama_model: Optional[str] = None
         if torch is not None and hasattr(torch, "device"):
             self.device = device or torch.device(
                 "cuda" if torch.cuda.is_available() else "cpu"
@@ -104,6 +105,13 @@ class ModelState:
             return False
 
         try:
+            if self.model_name.startswith("ollama:"):
+                self._ollama_model = self.model_name.split("ollama:", 1)[1].strip()
+                if not self._ollama_model:
+                    raise ValueError("Ollama model name is empty")
+                self._initialized = True
+                return True
+
             if torch is None or AutoTokenizer is None or AutoModelForCausalLM is None:
                 raise ImportError("transformers or torch not available")
 
@@ -183,6 +191,13 @@ class ModelState:
         if not self.initialize():
             return None
 
+        if self.model_name.startswith("ollama:"):
+            return self._generate_text_ollama(
+                prompt=prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+            )
+
         if torch is None:
             print("Text generation skipped: torch not available")
             return None
@@ -192,6 +207,56 @@ class ModelState:
             print("Error: Tokenizer or model is None after initialization attempt.")
             return None
 
+    def _generate_text_ollama(
+        self,
+        prompt: str,
+        max_new_tokens: Optional[int],
+        temperature: float,
+    ) -> Optional[str]:
+        """Generate text via local Ollama server."""
+        if not self._ollama_model:
+            print("Ollama model not configured.")
+            return None
+
+        try:
+            import requests  # type: ignore
+
+            if max_new_tokens is None:
+                max_new_tokens = 64
+            if max_new_tokens > 128:
+                max_new_tokens = 128
+
+            payload: Dict[str, Any] = {
+                "model": self._ollama_model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                },
+            }
+            if max_new_tokens is not None:
+                payload["options"]["num_predict"] = max_new_tokens
+
+            resp = requests.post(
+                "http://localhost:11434/api/generate",
+                json=payload,
+                timeout=900,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            response = data.get("response")
+            if not isinstance(response, str):
+                return None
+            return response.strip()
+        except Exception as e:
+            self._inference_failures += 1
+            if self._inference_failures >= self._max_failures:
+                self._failure_threshold_reached = True
+                print(
+                    f"Failure threshold ({self._max_failures}) reached. Disabling model."
+                )
+            print(f"Ollama generation failed: {str(e)}")
+            return None
         try:
             # Create input tensors
             input_tokens: Dict[str, torch.Tensor] = self.tokenizer(

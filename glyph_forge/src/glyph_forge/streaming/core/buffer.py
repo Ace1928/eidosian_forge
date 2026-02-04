@@ -216,7 +216,10 @@ class AdaptiveBuffer:
                     continue
                 
                 # Get next frame
-                success, frame = frame_generator()
+                try:
+                    success, frame = frame_generator()
+                except StopIteration:
+                    break
                 if not success or frame is None:
                     break
                 

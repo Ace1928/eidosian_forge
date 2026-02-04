@@ -53,8 +53,9 @@ def mock_banner_generator():
 @pytest.fixture
 def mock_image_converter():
     """Mock the ImageGlyphConverter for isolated testing."""
-    with mock.patch(
-        'glyph_forge.services.image_to_Glyph.ImageGlyphConverter'
+    from glyph_forge.services import image_to_glyph
+    with mock.patch.object(
+        image_to_glyph, 'ImageGlyphConverter'
     ) as mock_converter:
         # Configure mock
         mock_instance = mock_converter.return_value
@@ -64,7 +65,6 @@ def mock_image_converter():
         mock_instance.width = 100
 
         yield mock_instance
-
 
 class TestGlyphForgeAPI:
     """Comprehensive test suite for the Glyph Forge API."""

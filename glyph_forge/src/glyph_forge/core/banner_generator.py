@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 """
 ⚡ Glyph Forge Banner Generator ⚡
 
@@ -186,8 +185,6 @@ class BannerGenerator:
             return True
         except (UnicodeEncodeError, UnicodeDecodeError):
             return False
-
-    @eidosian()
     def generate(self, 
                 text: str, 
                 style: str = "minimal",
@@ -222,7 +219,9 @@ class BannerGenerator:
         clean_text = sanitize_text(text)
         
         # Performance optimization via caching
-        cache_key = self._generate_cache_key(clean_text, style, padding, border, alignment, effects)
+        cache_key = self._generate_cache_key(
+            clean_text, style, padding, border, alignment, effects, color
+        )
         if self.cache_enabled and cache_key in self.cache:
             self._cache_hits += 1
             logger.debug(f"Cache hit for '{text[:20]}...'")
@@ -411,7 +410,7 @@ class BannerGenerator:
         
         # If using Unicode and terminal doesn't support it, fall back to Glyph
         if not self._unicode_supported and any(ord(c) > 127 for c in self.BORDER_SETS[border_style]):
-            tl, tr, br, bl, v, h = "++-+||"  # Glyph fallback
+            tl, tr, br, bl, v, h = "++++|-"  # ASCII fallback
         
         bordered_lines = []
         # Top border
@@ -569,8 +568,6 @@ class BannerGenerator:
         # Apply different colors to different parts
         colored_text = f"{colors['bold']}{colors['cyan']}{text}{colors['reset']}"
         return colored_text
-        
-    @eidosian()
     def available_fonts(self) -> List[str]:
         """
         Return a list of all available FIGlet fonts.
@@ -579,8 +576,6 @@ class BannerGenerator:
             Alphabetically sorted list of font names
         """
         return sorted(self.figlet.getFonts())
-    
-    @eidosian()
     def preview_fonts(self, text: str = "Glyph Forge", limit: int = 5) -> str:
         """
         Generate previews of multiple fonts using sample text.
@@ -604,8 +599,6 @@ class BannerGenerator:
                 previews.append(f"Font: {font} (Error: {str(e)})\n")
                 
         return "\n".join(previews)
-    
-    @eidosian()
     def render_template(self, template: str, variables: Dict[str, str]) -> str:
         """
         Render a banner template with variable substitution.
@@ -623,8 +616,6 @@ class BannerGenerator:
             if placeholder in result:
                 result = result.replace(placeholder, value)
         return self.generate(result)
-    
-    @eidosian()
     def get_metrics(self) -> Dict[str, int]:
         """
         Return performance metrics from the banner generator.
@@ -642,8 +633,6 @@ class BannerGenerator:
             "cache_hit_rate": cache_hit_rate,
             "unique_banners": len(self.cache) if self.cache else 0
         }
-    
-    @eidosian()
     def reset_metrics(self) -> None:
         """Reset all performance metrics to zero."""
         self._render_count = 0

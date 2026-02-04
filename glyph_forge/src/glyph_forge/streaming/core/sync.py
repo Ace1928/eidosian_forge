@@ -227,7 +227,7 @@ class AudioDownloader:
                 url
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            result = subprocess.run(cmd, capture_output=True, text=True)
             
             if result.returncode == 0 and output_path.exists():
                 return output_path

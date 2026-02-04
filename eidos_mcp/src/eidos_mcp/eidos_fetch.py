@@ -1,48 +1,56 @@
+"""Fetch MCP resources via HTTP (Streamable HTTP transport)."""
 from __future__ import annotations
 
 import argparse
 import asyncio
-import os
-import sys
 from typing import Optional
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+import httpx
 from eidosian_core import eidosian
 
 
+MCP_URL = "http://localhost:8928/mcp"
+
+
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Fetch an MCP resource via stdio.")
+    parser = argparse.ArgumentParser(description="Fetch an MCP resource via HTTP.")
     parser.add_argument("uri", help="Resource URI (e.g. eidos://persona)")
     parser.add_argument(
-        "--python",
-        default=os.environ.get("EIDOS_PYTHON_BIN", "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"),
-        help="Python executable to launch the MCP server.",
+        "--url",
+        default=MCP_URL,
+        help="MCP server URL.",
     )
     return parser
 
 
-async def _fetch(uri: str, python_bin: str) -> str:
-    server_args = ["-m", "eidos_mcp.eidos_mcp_server"]
-    env = dict(os.environ)
-    pythonpath = env.get("PYTHONPATH", "")
-    forge_dir = os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")
-    mcp_src = os.path.join(forge_dir, "eidos_mcp", "src")
-    
-    paths_to_add = [mcp_src, forge_dir]
-    for p in paths_to_add:
-        if p not in pythonpath:
-             pythonpath = f"{p}:{pythonpath}" if pythonpath else p
-    
-    env["PYTHONPATH"] = pythonpath
-
-    params = StdioServerParameters(command=python_bin, args=server_args, env=env)
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            result = await session.read_resource(uri)
-            if result.contents:
-                return result.contents[0].text
+async def _fetch(uri: str, url: str) -> str:
+    """Fetch a resource from the MCP server via Streamable HTTP."""
+    async with httpx.AsyncClient() as client:
+        # Initialize session
+        init_resp = await client.post(
+            url,
+            json={"jsonrpc": "2.0", "method": "initialize", "id": 1, "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "eidos_fetch", "version": "1.0.0"}
+            }},
+            headers={"Content-Type": "application/json"},
+        )
+        init_resp.raise_for_status()
+        
+        # Read resource
+        read_resp = await client.post(
+            url,
+            json={"jsonrpc": "2.0", "method": "resources/read", "id": 2, "params": {"uri": uri}},
+            headers={"Content-Type": "application/json"},
+        )
+        read_resp.raise_for_status()
+        data = read_resp.json()
+        
+        if "result" in data and "contents" in data["result"]:
+            contents = data["result"]["contents"]
+            if contents and "text" in contents[0]:
+                return contents[0]["text"]
     return ""
 
 
@@ -50,7 +58,7 @@ async def _fetch(uri: str, python_bin: str) -> str:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    content = asyncio.run(_fetch(args.uri, args.python))
+    content = asyncio.run(_fetch(args.uri, args.url))
     if content:
         print(content)
     return 0

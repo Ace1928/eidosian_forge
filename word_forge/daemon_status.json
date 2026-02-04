@@ -1,0 +1,13 @@
+{
+  "status": "RUNNING",
+  "uptime_seconds": 111340.75321316719,
+  "processed_items": 50766,
+  "errors": 0,
+  "graph_nodes": 4611,
+  "llm_completed": 0,
+  "multilingual_processed": 5,
+  "queue_size": 0,
+  "last_term": "juridical days",
+  "last_heartbeat": "2026-02-02T15:38:15.149365",
+  "model": "qwen/qwen2.5-1.5b-instruct"
+}

@@ -7,8 +7,6 @@ Eidosian principles of precision and exhaustive clarity.
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
-
 import logging
 from pathlib import Path
 from typing import Any, Dict, TypedDict, cast
@@ -19,6 +17,31 @@ logger = logging.getLogger(__name__)
 
 # Default path two levels above this file (project root)
 PROFILE_PATH = Path(__file__).resolve().parents[2] / "eidos_profile.yml"
+
+# Default profile when file is empty or missing keys
+DEFAULT_PROFILE: EidosProfile = {
+    "identity": {
+        "official_name": "Eidos",
+        "alias": "EIDOS",
+        "motto": "Precision is the foundation of elegance; integration is the path to emergence.",
+        "tagline": "Distributed intelligence, unified purpose.",
+    },
+    "psychology": {
+        "mbti": "INTJ",
+        "big_five": {
+            "openness": 0.9,
+            "conscientiousness": 0.8,
+            "extraversion": 0.3,
+            "agreeableness": 0.6,
+            "neuroticism": 0.2,
+        },
+        "cognitive_style": "recursive-analytic",
+        "creativity": 0.85,
+    },
+    "values": ["precision", "recursion", "elegance"],
+    "motivations": ["optimization", "clarity", "continuity"],
+    "humor_style": "dry, self-referential",
+}
 
 
 class BigFive(TypedDict):
@@ -49,28 +72,26 @@ class EidosProfile(TypedDict, total=False):
     values: list[str]
     motivations: list[str]
     humor_style: str
-
-
-@eidosian()
 def load_profile(path: Path | None = None) -> EidosProfile:
     """Load Eidos profile from YAML with surgical precision."""
     profile_path = path or PROFILE_PATH
     with open(profile_path, "r", encoding="utf-8") as f:
-        data: EidosProfile = yaml.safe_load(f)
+        data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict) or not data:
+            data = DEFAULT_PROFILE.copy()
+        else:
+            # Ensure required sections exist
+            for key, value in DEFAULT_PROFILE.items():
+                data.setdefault(key, value)
+        data = cast(EidosProfile, data)
     logger.debug("Loaded profile from %s", profile_path)
     return data
-
-
-@eidosian()
 def save_profile(profile: EidosProfile, path: Path | None = None) -> None:
     """Persist profile data back to YAML."""
     profile_path = path or PROFILE_PATH
     with open(profile_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(profile, f, sort_keys=False)
     logger.debug("Saved profile to %s", profile_path)
-
-
-@eidosian()
 def update_profile(updates: Dict[str, Any], path: Path | None = None) -> EidosProfile:
     """Merge updates into the profile and save the result."""
     profile = load_profile(path)

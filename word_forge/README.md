@@ -153,6 +153,70 @@ word_forge --verbose start apple
 
 Note: The first run may download NLTK corpora and sentence-transformer models.
 
+### Local Ollama Models (Recommended)
+
+Word Forge supports local Ollama models for both LLM generation and embeddings.
+Use the `ollama:` prefix to route requests through the local Ollama server.
+
+Examples:
+
+```bash
+# LLM generation via Ollama
+word_forge start apple --llm-model ollama:qwen2.5:1.5b-Instruct
+
+# Embeddings via Ollama
+word_forge vector index --embedder ollama:nomic-embed-text
+```
+
+### Robust Daemon (Background Service)
+
+There is a production-style daemon in `scripts/robust_daemon.py` that runs
+continuously with a heartbeat file and queue-based enrichment. The pipeline is
+split into non-blocking queues for lexical ingestion, LLM fill, graph updates,
+and vector indexing so the graph keeps growing while the LLM fills gaps. It also
+deduplicates discovered terms and merges multiple definitions/examples into
+single entries.
+
+```bash
+nohup /path/to/python scripts/robust_daemon.py > /path/to/word_forge_daemon.log 2>&1 &
+```
+
+Runtime status is written to:
+
+```
+daemon_status.json
+```
+
+The daemon will update the status with queue size, processed count, and last term.
+
+### Multilingual Expansion (English Base)
+
+Word Forge can ingest multilingual lexical sources and align them to an English
+base term. This creates a "living lexicon" and rosetta layer.
+
+Supported ingestion helpers:
+- Wiktextract JSONL dumps
+- Kaikki.org JSONL dumps
+
+Example usage:
+
+```python
+from word_forge.multilingual import ingest_wiktextract_jsonl
+
+ingest_wiktextract_jsonl(
+    "data/wiktextract.jsonl",
+    base_lang="en",
+    limit=1000
+)
+```
+
+Daemon integration:
+
+```bash
+# Drop JSONL dumps into a folder and set env var before starting daemon
+export WORD_FORGE_MULTILINGUAL_DIR=/path/to/jsonl_dumps
+```
+
 ### Demo Scripts
 
 ```bash

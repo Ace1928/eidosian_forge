@@ -12,7 +12,7 @@ from eidosian_core import eidosian
 
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
 _FASTMCP_PORT = int(os.environ.get("FASTMCP_PORT", "8928"))
-_FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/streamable-http")
+_FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp")
 mcp = FastMCP(
     "Eidosian Nexus",
     host=_FASTMCP_HOST,

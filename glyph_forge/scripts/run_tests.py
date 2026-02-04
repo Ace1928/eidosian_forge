@@ -28,6 +28,7 @@ import shutil
 from typing import List, Dict, Any, Optional, Tuple
 import xml.etree.ElementTree as ET
 import json
+import re
 
 
 # Terminal styling for maximum clarity
@@ -94,6 +95,10 @@ def parse_arguments() -> argparse.Namespace:
                       help='Generate JUnit XML report')
     parser.add_argument('--html', action='store_true',
                       help='Generate HTML report')
+    parser.add_argument('--profile', action='store_true',
+                      help='Enable per-test profiling (pytest-profiling)')
+    parser.add_argument('--benchmark', action='store_true',
+                      help='Enable benchmarks (pytest-benchmark)')
     
     return parser.parse_args()
 
@@ -177,6 +182,17 @@ def build_pytest_command(args: argparse.Namespace) -> List[str]:
         os.makedirs("reports", exist_ok=True)
         cmd.append("--html=reports/report.html")
     
+    # Add profiling
+    if args.profile:
+        cmd.append("--profile")
+        cmd.append("--profile-svg")
+        cmd.append("--profile-summary")
+    
+    # Add benchmarks
+    if args.benchmark:
+        cmd.append("--benchmark-only")
+        cmd.append("--benchmark-save=latest")
+
     # Add test focus pattern
     if args.focus:
         cmd.append(f"-k {args.focus}")
@@ -269,7 +285,6 @@ def parse_test_results(stdout: str, stderr: str, junit_path: Optional[str] = Non
         # Look for the summary line: "4 passed, 1 skipped, 2 failed"
         if " passed" in line and ("failed" in line or "skipped" in line or "error" in line):
             # Extract numbers using regex
-            import re
             passed_match = re.search(r'(\d+) passed', line)
             failed_match = re.search(r'(\d+) failed', line)
             skipped_match = re.search(r'(\d+) skipped', line)

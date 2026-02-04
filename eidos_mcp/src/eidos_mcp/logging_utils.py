@@ -1,4 +1,6 @@
 import json
+import logging
+import sys
 import time
 import traceback
 from datetime import datetime, timezone
@@ -9,7 +11,38 @@ from eidosian_core import eidosian
 
 LOG_DIR = Path("~/.eidosian/mcp_logs").expanduser()
 LOG_FILE = LOG_DIR / "messages.jsonl"
+STDERR_LOG = LOG_DIR / "server.log"
 MAX_BYTES = 10 * 1024 * 1024
+
+
+def _ensure_log_dir() -> None:
+    """Ensure log directory exists."""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def setup_logging() -> None:
+    """Configure logging for the MCP server."""
+    _ensure_log_dir()
+    
+    # Configure logging to file
+    logging.basicConfig(
+        filename=str(STDERR_LOG),
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        force=True,
+    )
+    
+    # Suppress noisy library loggers
+    for logger_name in ["httpx", "httpcore", "uvicorn", "anyio", "mcp"]:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+
+
+def log_debug(msg: str) -> None:
+    """Log debug message to file and stderr."""
+    _ensure_log_dir()
+    with open(STDERR_LOG, "a", encoding="utf-8") as f:
+        f.write(f"[{_utc_now()}] DEBUG: {msg}\n")
+    print(msg, file=sys.stderr)
 
 
 def _utc_now() -> str:

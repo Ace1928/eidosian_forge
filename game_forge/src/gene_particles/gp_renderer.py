@@ -19,9 +19,9 @@ from typing import Dict
 
 import numpy as np
 import pygame
+from eidosian_core import eidosian
 
 from game_forge.src.gene_particles.gp_config import (
-from eidosian_core import eidosian
     FPS_COLOR,
     PARTICLES_COLOR,
     SPECIES_COLOR,
@@ -73,6 +73,12 @@ class Renderer:
         self.width: int
         self.height: int
         self.width, self.height = self.surface.get_size()
+        self.world_depth: float = float(
+            config.world_depth
+            if config.world_depth is not None
+            else max(self.width, self.height)
+        )
+        self.projection_distance: float = float(config.projection_distance)
 
         # Create alpha-enabled surface for particle rendering with transparency
         self.particle_surface: pygame.Surface = pygame.Surface(
@@ -96,6 +102,8 @@ class Renderer:
         color: ColorRGB,
         energy: float,
         speed_factor: float,
+        brightness_scale: float = 1.0,
+        size_scale: float = 1.0,
     ) -> None:
         """Draw a single cellular component with energy-modulated visual properties.
 
@@ -115,30 +123,32 @@ class Renderer:
 
         # Calculate energy and speed modulated color values
         # Higher energy/speed creates brighter particles, lower creates dimmer ones
+        brightness_scale = max(0.0, min(1.5, brightness_scale))
         r: int = min(
             255,
             int(
-                color[0] * intensity_factor * speed_factor
+                color[0] * intensity_factor * speed_factor * brightness_scale
                 + (1 - intensity_factor) * 100
             ),
         )
         g: int = min(
             255,
             int(
-                color[1] * intensity_factor * speed_factor
+                color[1] * intensity_factor * speed_factor * brightness_scale
                 + (1 - intensity_factor) * 100
             ),
         )
         b: int = min(
             255,
             int(
-                color[2] * intensity_factor * speed_factor
+                color[2] * intensity_factor * speed_factor * brightness_scale
                 + (1 - intensity_factor) * 100
             ),
         )
 
         # Energy affects particle size for additional visual differentiation
         size_factor: float = 0.8 + (intensity_factor * 0.4)
+        size_factor *= max(0.1, size_scale)
         particle_size: int = int(self.config.particle_size * size_factor)
 
         # Pack calculated RGB values into a color tuple
@@ -164,19 +174,54 @@ class Renderer:
         # Get typed references to component property arrays
         x_array: FloatArray = ct.x
         y_array: FloatArray = ct.y
+        z_array: FloatArray = ct.z
         energy_array: FloatArray = ct.energy
         speed_factor_array: FloatArray = ct.speed_factor
 
+        # Pre-compute projection in 3D to avoid repeated work in the loop
+        if self.config.spatial_dimensions == 3:
+            z_vals = z_array[alive_indices]
+            if self.config.projection_mode == "orthographic":
+                scale = np.ones_like(z_vals, dtype=np.float64)
+                depth_vals = np.clip(z_vals, 0.0, self.world_depth)
+            else:
+                depth_vals = np.clip(z_vals, 0.0, self.world_depth)
+                scale = self.projection_distance / (self.projection_distance + depth_vals)
+            scale = np.clip(
+                scale, self.config.depth_min_scale, self.config.depth_max_scale
+            )
+            cx = self.width * 0.5
+            cy = self.height * 0.5
+            x_proj = cx + (x_array[alive_indices] - cx) * scale
+            y_proj = cy + (y_array[alive_indices] - cy) * scale
+            depth_factor = 1.0 - (
+                (depth_vals / max(self.world_depth, 1.0)) * self.config.depth_fade_strength
+            )
+            depth_factor = np.clip(depth_factor, 0.05, 1.0)
+        else:
+            x_proj = x_array[alive_indices]
+            y_proj = y_array[alive_indices]
+            depth_factor = np.ones_like(x_proj, dtype=np.float64)
+            scale = np.ones_like(x_proj, dtype=np.float64)
+
         # Draw each living component with its specific properties
-        for idx in alive_indices:
+        for local_idx, idx in enumerate(alive_indices):
             # Extract scalar values from arrays for the component
-            x_pos: float = float(x_array[idx])
-            y_pos: float = float(y_array[idx])
+            x_pos: float = float(x_proj[local_idx])
+            y_pos: float = float(y_proj[local_idx])
             energy_val: float = float(energy_array[idx])
             speed_factor_val: float = float(speed_factor_array[idx])
 
             # Render the component with its extracted properties
-            self.draw_component(x_pos, y_pos, ct.color, energy_val, speed_factor_val)
+            self.draw_component(
+                x_pos,
+                y_pos,
+                ct.color,
+                energy_val,
+                speed_factor_val,
+                brightness_scale=float(depth_factor[local_idx]),
+                size_scale=float(scale[local_idx]),
+            )
 
     def _render_statistics(self, stats: Dict[str, float]) -> None:
         """Render simulation statistics with visually distinct styling.

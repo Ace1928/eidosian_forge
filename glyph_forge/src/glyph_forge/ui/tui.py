@@ -44,9 +44,6 @@ from textual.widgets import (
     TextArea,
 )
 from textual.worker import Worker, WorkerState
-
-from eidosian_core import eidosian
-
 from ..api.glyph_api import get_api, GlyphForgeAPI
 from ..config.settings import get_config, ConfigManager
 from ..utils.alphabet_manager import AlphabetManager
@@ -637,7 +634,7 @@ class StreamingTab(Container):
                     ("video", "Video File"),
                     ("youtube", "YouTube URL"),
                     ("webcam", "Webcam"),
-                    ("browser", "Browser/URL"),
+                    ("screen", "Screen Capture"),
                 ],
                 "stream_source_type",
                 value="video",
@@ -649,45 +646,44 @@ class StreamingTab(Container):
                 placeholder="Path, URL, or device ID...",
             )
 
-            yield LabeledInput("FPS:", "stream_fps", placeholder="15", value="15")
-            yield LabeledInput("Scale:", "stream_scale", placeholder="2", value="2")
-            yield LabeledInput("Block Width:", "stream_bw", placeholder="8", value="8")
-            yield LabeledInput("Block Height:", "stream_bh", placeholder="8", value="8")
+            yield LabeledSelect(
+                "Resolution:",
+                [("1080p", "1080p (HD)"), ("720p", "720p (Standard)"), ("480p", "480p (Fast)"), ("auto", "Auto")],
+                "stream_resolution",
+                value="720p",
+            )
+            
+            yield LabeledInput("FPS:", "stream_fps", placeholder="30", value="30")
 
         # Options panel
         with Vertical(classes="panel"):
             yield Static("⚙️ Stream Options", classes="section_title")
 
             yield LabeledSelect(
-                "Gradient Set:",
+                "Render Mode:",
                 [
-                    ("standard", "Standard"),
-                    ("enhanced", "Enhanced"),
-                    ("braille", "Braille"),
-                    ("ascii", "ASCII"),
+                    ("gradient", "Gradient (Best Quality)"),
+                    ("braille", "Braille (High Detail)"),
+                    ("hybrid", "Hybrid"),
                 ],
-                "stream_gradient",
-                value="standard",
+                "stream_mode",
+                value="gradient",
             )
 
             yield LabeledSelect(
-                "Algorithm:",
+                "Color Mode:",
                 [
-                    ("sobel", "Sobel"),
-                    ("prewitt", "Prewitt"),
-                    ("scharr", "Scharr"),
-                    ("laplacian", "Laplacian"),
-                    ("canny", "Canny"),
+                    ("ansi256", "ANSI 256 (Fast)"),
+                    ("truecolor", "TrueColor (HQ)"),
+                    ("none", "No Color"),
                 ],
-                "stream_algorithm",
-                value="sobel",
+                "stream_color",
+                value="ansi256",
             )
 
-            yield LabeledSwitch("Color:", "stream_color", value=True)
-            yield LabeledSwitch("Enhanced Edges:", "stream_edges", value=True)
-            yield LabeledSwitch("Adaptive Quality:", "stream_adaptive", value=True)
-            yield LabeledSwitch("Border:", "stream_border", value=True)
-            yield LabeledSwitch("Dithering:", "stream_dither", value=False)
+            yield LabeledSwitch("Audio:", "stream_audio", value=True)
+            yield LabeledSwitch("Record:", "stream_record", value=False)
+            yield LabeledSwitch("Stats:", "stream_stats", value=True)
 
             with Horizontal(classes="button_row"):
                 yield Button("🚀 Launch Stream", id="btn_stream_start", variant="primary")
@@ -702,22 +698,38 @@ class StreamingTab(Container):
             source_type = self._get_select("#stream_source_type", "video")
             source = self.query_one("#stream_source", Input).value
 
-            if not source and source_type != "webcam":
+            if not source and source_type != "webcam" and source_type != "screen":
                 self._update_status("⚠️ Please enter a source")
                 return
 
             # Build command arguments
-            args = self._build_stream_args(source_type, source)
+            cmd = ["glyph-forge", "stream"]
+            
+            if source_type == "webcam":
+                cmd.append("--webcam")
+                if source:
+                    cmd.append(source)
+            elif source_type == "screen":
+                cmd.append("--screen")
+            else:
+                cmd.append(source)
 
-            # Find glyph_stream.py
-            stream_script = self._find_stream_script()
-            if not stream_script:
-                self._update_status("❌ glyph_stream.py not found")
-                return
+            # Options
+            cmd.extend(["--resolution", self._get_select("#stream_resolution", "720p")])
+            cmd.extend(["--fps", self._get_input("#stream_fps", "30")])
+            cmd.extend(["--mode", self._get_select("#stream_mode", "gradient")])
+            cmd.extend(["--color", self._get_select("#stream_color", "ansi256")])
+            
+            if not self.query_one("#stream_audio", Switch).value:
+                cmd.append("--no-audio")
+            
+            if self.query_one("#stream_record", Switch).value:
+                cmd.extend(["--record", "auto"])
+            
+            if not self.query_one("#stream_stats", Switch).value:
+                cmd.append("--no-stats")
 
-            # Launch in new terminal
-            cmd = [sys.executable, str(stream_script)] + args
-            self._update_status(f"🚀 Launching: {' '.join(cmd[:5])}...")
+            self._update_status(f"🚀 Launching: {' '.join(cmd)}...")
 
             # Start subprocess
             subprocess.Popen(
@@ -736,75 +748,6 @@ class StreamingTab(Container):
     def stop_stream(self) -> None:
         """Stop streaming (info message)."""
         self._update_status("ℹ️ Close the stream terminal window to stop")
-
-    def _build_stream_args(self, source_type: str, source: str) -> List[str]:
-        """Build command line arguments for glyph_stream."""
-        args: List[str] = []
-
-        fps = self._get_input("#stream_fps", "15")
-        scale = self._get_input("#stream_scale", "2")
-        bw = self._get_input("#stream_bw", "8")
-        bh = self._get_input("#stream_bh", "8")
-        gradient = self._get_select("#stream_gradient", "standard")
-        algorithm = self._get_select("#stream_algorithm", "sobel")
-        color = self.query_one("#stream_color", Switch).value
-        edges = self.query_one("#stream_edges", Switch).value
-        adaptive = self.query_one("#stream_adaptive", Switch).value
-        border = self.query_one("#stream_border", Switch).value
-        dither = self.query_one("#stream_dither", Switch).value
-
-        if source_type == "webcam":
-            args.append("--webcam")
-            if source:
-                args.extend(["--webcam-id", source])
-        elif source_type == "browser":
-            args.append("--virtual-display")
-            args.extend(["--launch-app", f"chromium --kiosk --app={source}"])
-        else:
-            args.append(source)
-
-        args.extend(["--fps", fps])
-        args.extend(["--scale", scale])
-        args.extend(["--block-width", bw])
-        args.extend(["--block-height", bh])
-        args.extend(["--gradient-set", gradient])
-        args.extend(["--algorithm", algorithm])
-
-        if not color:
-            args.append("--no-color")
-        if not edges:
-            args.append("--no-enhanced-edges")
-        if not adaptive:
-            args.append("--no-adaptive")
-        if not border:
-            args.append("--no-border")
-        if dither:
-            args.append("--dithering")
-
-        return args
-
-    def _find_stream_script(self) -> Optional[Path]:
-        """Locate glyph_stream.py."""
-        # The script is in the glyph_forge package root (same level as src/)
-        # Path: ui/tui.py -> ui -> glyph_forge -> src -> glyph_forge (package root)
-        tui_path = Path(__file__).resolve()
-        package_root = tui_path.parent.parent.parent.parent
-        candidate = package_root / "glyph_stream.py"
-        if candidate.exists():
-            return candidate
-        
-        # Fallback: search up the directory tree
-        for parent in [tui_path, *tui_path.parents]:
-            candidate = parent / "glyph_stream.py"
-            if candidate.exists():
-                return candidate
-        
-        # Last resort: current working directory
-        cwd_candidate = Path.cwd() / "glyph_stream.py"
-        if cwd_candidate.exists():
-            return cwd_candidate
-            
-        return None
 
     def _get_input(self, selector: str, default: str) -> str:
         """Get input value."""

@@ -1,8 +1,6 @@
 from typing import Dict, List, Optional, Union, Any, Mapping
 from enum import Enum
 import re
-from eidosian_core import eidosian
-
 class AlphabetCategory(Enum):
     """Categorization of different alphabet types"""
     DENSITY = "density"      # For grayscale density mapping
@@ -90,8 +88,6 @@ LANGUAGES = {
     
 
 ALPHABET_CATEGORIES: Dict[Union[str, AlphabetCategory], List[str]] = {}
-
-@eidosian()
 def populate_alphabet_categories(*category_sources: Mapping[Union[str, AlphabetCategory], Any]) -> None:
     """
     Procedurally build ALPHABET_CATEGORIES from any number of sources.

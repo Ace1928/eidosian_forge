@@ -727,20 +727,16 @@ class VectorStore:
         # Set up logging
         self.logger = logging.getLogger(__name__)
 
-        # Ensure core embedding dependency exists
-        if SentenceTransformer is None:
-            install_hint = 'pip install "word_forge[vector]"'
-            raise InitializationError(
-                "VectorStore requires sentence-transformers for embedding support. "
-                f"Install it via {install_hint} to enable semantic search."
-            ) from _VECTOR_IMPORT_ERROR
-
         # Store configuration, using defaults from config object
         self.index_path = Path(index_path or config.vectorizer.index_path)
         self.storage_type = storage_type or config.vectorizer.storage_type
         self.db_manager = db_manager
         self.emotion_manager = emotion_manager
         self.model_name = model_name or config.vectorizer.model_name
+        self._use_ollama = self.model_name.startswith("ollama:")
+        self._ollama_model = (
+            self.model_name.split("ollama:", 1)[1].strip() if self._use_ollama else ""
+        )
 
         self.demo_mode = bool(demo_mode)
         if self.storage_type == StorageType.MEMORY and not self.demo_mode:
@@ -759,14 +755,26 @@ class VectorStore:
             os.makedirs(self.index_path, exist_ok=True)
 
         # Load the embedding model first
-        try:
-            # Ensure model is loaded only once if not already present
-            if not hasattr(self, "model"):
-                self.model = SentenceTransformer(self.model_name)  # type: ignore
-        except Exception as e:
-            raise ModelLoadError(
-                f"Failed to load embedding model '{self.model_name}': {str(e)}"
-            ) from e
+        if self._use_ollama:
+            if not self._ollama_model:
+                raise ModelLoadError("Ollama embedding model name is empty.")
+            self.model = None
+        else:
+            # Ensure core embedding dependency exists
+            if SentenceTransformer is None:
+                install_hint = 'pip install "word_forge[vector]"'
+                raise InitializationError(
+                    "VectorStore requires sentence-transformers for embedding support. "
+                    f"Install it via {install_hint} to enable semantic search."
+                ) from _VECTOR_IMPORT_ERROR
+            try:
+                # Ensure model is loaded only once if not already present
+                if not hasattr(self, "model"):
+                    self.model = SentenceTransformer(self.model_name)  # type: ignore
+            except Exception as e:
+                raise ModelLoadError(
+                    f"Failed to load embedding model '{self.model_name}': {str(e)}"
+                ) from e
 
         # Determine the vector dimension
         try:
@@ -779,20 +787,28 @@ class VectorStore:
             ):
                 self.dimension = config.vectorizer.dimension
             else:
-                # Infer dimension from the loaded model
-                model_dimension = self.model.get_sentence_embedding_dimension()  # type: ignore
-                if (
-                    model_dimension is None
-                    or not isinstance(model_dimension, int)
-                    or model_dimension <= 0
-                ):
-                    raise ModelLoadError(
-                        f"Could not infer valid dimension from model '{self.model_name}'"
+                if self._use_ollama:
+                    self.dimension = self._infer_ollama_dimension()
+                    self.logger.info(
+                        "Inferred dimension %s from Ollama model '%s'",
+                        self.dimension,
+                        self._ollama_model,
                     )
-                self.dimension = model_dimension
-                self.logger.info(
-                    f"Inferred dimension {self.dimension} from model '{self.model_name}'"
-                )
+                else:
+                    # Infer dimension from the loaded model
+                    model_dimension = self.model.get_sentence_embedding_dimension()  # type: ignore
+                    if (
+                        model_dimension is None
+                        or not isinstance(model_dimension, int)
+                        or model_dimension <= 0
+                    ):
+                        raise ModelLoadError(
+                            f"Could not infer valid dimension from model '{self.model_name}'"
+                        )
+                    self.dimension = model_dimension
+                    self.logger.info(
+                        f"Inferred dimension {self.dimension} from model '{self.model_name}'"
+                    )
 
         except Exception as e:
             raise ModelLoadError(
@@ -1062,16 +1078,21 @@ class VectorStore:
             formatted_text = self.format_with_instruction(text, template_key, is_query)
 
             # Generate embedding
-            # Cast is appropriate here as SentenceTransformer.encode can return different types
-            vector = cast(
-                NDArray[np.float32],
-                self.model.encode(  # type: ignore
-                    formatted_text,
-                    normalize_embeddings=normalize,
-                    convert_to_numpy=True,
-                    show_progress_bar=False,
-                ),
-            )
+            if self._use_ollama:
+                vector = self._embed_text_ollama(formatted_text)
+                if normalize:
+                    vector = self._normalize_vector_dimension(vector, context="Ollama embedding")
+            else:
+                # Cast is appropriate here as SentenceTransformer.encode can return different types
+                vector = cast(
+                    NDArray[np.float32],
+                    self.model.encode(  # type: ignore
+                        formatted_text,
+                        normalize_embeddings=normalize,
+                        convert_to_numpy=True,
+                        show_progress_bar=False,
+                    ),
+                )
 
             # Ensure correct type
             vector = vector.astype(np.float32)
@@ -1090,6 +1111,36 @@ class VectorStore:
 
         except Exception as e:
             raise ContentProcessingError(f"Failed to embed text: {str(e)}") from e
+
+    def _embed_text_ollama(self, text: str) -> NDArray[np.float32]:
+        """Generate embeddings via local Ollama server."""
+        try:
+            import requests  # type: ignore
+
+            payload = {"model": self._ollama_model, "prompt": text}
+            resp = requests.post(
+                "http://localhost:11434/api/embeddings",
+                json=payload,
+                timeout=120,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            embedding = data.get("embedding")
+            if not isinstance(embedding, list):
+                raise ContentProcessingError("Ollama returned invalid embedding payload.")
+            vector = np.asarray(embedding, dtype=np.float32)
+            return vector
+        except Exception as e:
+            raise ContentProcessingError(f"Ollama embedding failed: {str(e)}") from e
+
+    def _infer_ollama_dimension(self) -> int:
+        """Probe Ollama embedding dimension with a tiny request."""
+        probe = self._embed_text_ollama("dimension probe")
+        if probe.ndim != 1 or probe.shape[0] <= 0:
+            raise ModelLoadError(
+                f"Could not infer valid dimension from Ollama model '{self._ollama_model}'"
+            )
+        return int(probe.shape[0])
 
     def _get_content_info(
         self, content_id: int, content_type: ContentType

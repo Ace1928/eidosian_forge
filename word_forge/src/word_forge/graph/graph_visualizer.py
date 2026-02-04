@@ -439,6 +439,12 @@ class GraphVisualizer:
             pos_y = float(pos[1] * 100) if pos is not None and len(pos) >= 2 else 0.0
 
             title_parts = [f"Term: {term}", f"ID: {node_id}"]
+            if "definition_count" in attrs:
+                title_parts.append(f"Definitions: {attrs['definition_count']}")
+            if "example_count" in attrs:
+                title_parts.append(f"Examples: {attrs['example_count']}")
+            if "lang_count" in attrs:
+                title_parts.append(f"Languages: {attrs['lang_count']}")
             if "valence" in attrs and attrs["valence"] is not None:
                 title_parts.append(f"Valence: {attrs['valence']:.2f}")
             if "arousal" in attrs and attrs["arousal"] is not None:
@@ -495,7 +501,17 @@ class GraphVisualizer:
 
         # Apply general Pyvis options using set_options
         options_dict = {
-            "physics": {"enabled": False},  # Disable physics for precomputed layout
+            "physics": {
+                "enabled": True,
+                "barnesHut": {
+                    "gravitationalConstant": -8000,
+                    "centralGravity": 0.2,
+                    "springLength": 110,
+                    "springConstant": 0.04,
+                    "damping": 0.5,
+                },
+                "minVelocity": 0.75,
+            },
             "layout": {
                 "hierarchical": {
                     "enabled": self._config.default_layout
@@ -506,10 +522,12 @@ class GraphVisualizer:
             "nodes": {
                 "font": {"color": "white"},
                 "shape": "dot",  # Default shape
+                "shadow": True,
+                "borderWidth": 1,
                 # Add other global node options
             },
             "edges": {
-                "smooth": {"enabled": True, "type": "continuous"},
+                "smooth": {"enabled": True, "type": "dynamic"},
                 "font": {"color": "white", "size": 10, "align": "top"},
                 # Add other global edge options
             },
@@ -517,6 +535,7 @@ class GraphVisualizer:
                 "tooltipDelay": 200,
                 "navigationButtons": True,
                 "keyboard": True,
+                "hover": True,
             },
         }
         # Convert dict to JSON string for set_options
@@ -586,7 +605,7 @@ class GraphVisualizer:
         node_z: List[float] = []
         node_text: List[str] = []
         node_sizes: List[float] = []
-        node_colors: List[ColorHex] = []
+        node_colors: List[Any] = []
         valid_node_ids = []
 
         for node_id, attrs in graph.nodes(data=True):
@@ -600,6 +619,12 @@ class GraphVisualizer:
 
                 term = attrs.get("term", f"ID:{node_id}")
                 hover_parts = [f"Term: {term}", f"ID: {node_id}"]
+                if "definition_count" in attrs:
+                    hover_parts.append(f"Definitions: {attrs['definition_count']}")
+                if "example_count" in attrs:
+                    hover_parts.append(f"Examples: {attrs['example_count']}")
+                if "lang_count" in attrs:
+                    hover_parts.append(f"Languages: {attrs['lang_count']}")
                 if "valence" in attrs and attrs["valence"] is not None:
                     hover_parts.append(f"Valence: {attrs['valence']:.2f}")
                 if "arousal" in attrs and attrs["arousal"] is not None:
@@ -607,7 +632,7 @@ class GraphVisualizer:
                 node_text.append("<br>".join(hover_parts))
 
                 node_sizes.append(self._calculate_node_size(node_id, graph))
-                node_colors.append(self._get_node_color(attrs))
+                node_colors.append(attrs.get("lang_count", 0))
             else:
                 self.logger.warning(
                     f"Skipping node {node_id} due to missing or invalid 3D position (pos: {type(pos)})."
@@ -637,8 +662,9 @@ class GraphVisualizer:
             hoverinfo="text" if self._config.enable_tooltips else "none",
             text=node_text if self._config.enable_tooltips else None,
             marker=dict(
-                showscale=False,
+                showscale=True,
                 color=node_colors,
+                colorscale="Viridis",
                 size=node_sizes,
                 sizeref=sizeref_value,  # Use calculated sizeref
                 sizemin=self._config.min_node_size / 1.5,
@@ -774,6 +800,24 @@ class GraphVisualizer:
             return self._config.affective_relationship_colors.get(
                 "valence_neutral", "#cccccc"
             )
+
+        lang_count = node_attributes.get("lang_count")
+        if isinstance(lang_count, int) and lang_count > 0:
+            if lang_count >= 10:
+                return "#00c2a8"
+            if lang_count >= 5:
+                return "#00a8ff"
+            if lang_count >= 2:
+                return "#5bd0ff"
+
+        degree = node_attributes.get("degree")
+        if isinstance(degree, (int, float)):
+            if degree >= 10:
+                return "#ffcc66"
+            if degree >= 5:
+                return "#ff9966"
+            if degree >= 2:
+                return "#ffcc99"
 
         return "#6666ff"  # Default blueish color
 

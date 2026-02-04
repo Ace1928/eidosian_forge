@@ -11,14 +11,15 @@ from typing import DefaultDict, Dict, List, Optional, Protocol, Tuple, Union
 import numpy as np
 import pygame
 from numpy.typing import NDArray
+from eidosian_core import eidosian
 
 # Local imports with explicit paths
-from game_forge.src.gene_particles.gp_config import SimulationConfig
+from game_forge.src.gene_particles.gp_config import ReproductionMode, SimulationConfig
+from game_forge.src.gene_particles.gp_interpreter import GeneticInterpreter
 from game_forge.src.gene_particles.gp_manager import CellularTypeManager
 from game_forge.src.gene_particles.gp_renderer import Renderer
 from game_forge.src.gene_particles.gp_rules import InteractionRules
 from game_forge.src.gene_particles.gp_types import (
-from eidosian_core import eidosian
     BoolArray,
     CellularTypeData,
     FloatArray,
@@ -90,31 +91,45 @@ class CellularAutomata:
         screen_bounds: NumPy array of screen boundary coordinates
     """
 
-    def __init__(self, config: SimulationConfig) -> None:
+    def __init__(
+        self,
+        config: SimulationConfig,
+        fullscreen: bool = True,
+        screen_size: Optional[Tuple[int, int]] = None,
+    ) -> None:
         """
         Initialize the simulation environment with specified configuration.
 
-        Sets up display, managers, and initial particle population. Creates
+        Sets up display, managers, and initial particle population.
+
+        Args:
             config: Configuration parameters controlling all simulation aspects
+            fullscreen: Use fullscreen display mode when True
+            screen_size: Window size for non-fullscreen mode
         """
         # Core system initialization
         self.config: SimulationConfig = config
         pygame.init()
 
         # Display setup with optimal performance flags
-        display_info: PygameDisplayInfo = pygame.display.Info()
-        screen_width: int = int(display_info.current_w)
-        screen_height: int = int(display_info.current_h)
-        self.screen: pygame.Surface = pygame.display.set_mode(
-            (screen_width, screen_height),
-            pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF,
-        )
+        if fullscreen:
+            display_info: PygameDisplayInfo = pygame.display.Info()
+            screen_width = int(display_info.current_w)
+            screen_height = int(display_info.current_h)
+            flags = pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF
+        else:
+            if screen_size is None:
+                screen_size = (800, 600)
+            screen_width, screen_height = screen_size
+            flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+        self.screen = pygame.display.set_mode((screen_width, screen_height), flags)
         pygame.display.set_caption("Emergent Cellular Automata Simulation")
 
         # Simulation control variables
         self.clock: pygame.time.Clock = pygame.time.Clock()
         self.frame_count: int = 0
         self.run_flag: bool = True
+        self.spatial_dimensions: int = self.config.spatial_dimensions
 
         # Calculate screen boundaries with buffer
         self.edge_buffer: float = 0.05 * float(max(screen_width, screen_height))
@@ -127,6 +142,17 @@ class CellularAutomata:
             ],
             dtype=np.float64,
         )
+        if self.spatial_dimensions == 3:
+            if self.config.world_depth is None:
+                self.config.world_depth = float(max(screen_width, screen_height))
+            depth_max = float(self.config.world_depth)
+            depth_min = self.edge_buffer
+            depth_max = max(depth_max - self.edge_buffer, depth_min)
+            self.depth_bounds: Optional[FloatArray] = np.array(
+                [depth_min, depth_max], dtype=np.float64
+            )
+        else:
+            self.depth_bounds = None
 
         # Generate vibrant, visually distinct colors for particle types
         self.colors: List[Tuple[int, int, int]] = generate_vibrant_colors(
@@ -161,6 +187,10 @@ class CellularAutomata:
                 max_age=self.config.max_age,
                 mass=mass_values[i] if i < n_mass_types else None,
                 base_velocity_scale=self.config.base_velocity_scale,
+                window_depth=int(self.config.world_depth)
+                if self.config.world_depth is not None
+                else None,
+                spatial_dimensions=self.spatial_dimensions,
             )
             self.type_manager.add_cellular_type_data(ct)
 
@@ -169,6 +199,15 @@ class CellularAutomata:
             self.config, mass_based_type_indices
         )
         self.renderer: Renderer = Renderer(self.screen, self.config)
+
+        # Genetic interpreter for gene-driven behaviors and reproduction
+        self.genetic_interpreter: GeneticInterpreter = GeneticInterpreter(
+            self.config.gene_sequence
+        )
+        self.interpreter_enabled: bool = (
+            self.config.use_gene_interpreter
+            or self.config.reproduction_mode != ReproductionMode.MANAGER
+        )
 
         # Initialize species tracking with default value handling
         self.species_count: DefaultDict[int, int] = defaultdict(int)
@@ -209,8 +248,6 @@ class CellularAutomata:
         while self.run_flag:
             # Update frame counter and check termination conditions
             self.frame_count += 1
-            if self.config.max_frames > 0 and self.frame_count > self.config.max_frames:
-                self.run_flag = False
 
             # Handle Pygame events (window close, key presses)
             for event in pygame.event.get():
@@ -219,6 +256,11 @@ class CellularAutomata:
                 ):
                     self.run_flag = False
                     break
+            if not self.run_flag:
+                break
+
+            # Advance environment state and run hooks
+            self.config.advance_environment(self.frame_count)
 
             # Evolve interaction parameters periodically
             self.rules_manager.evolve_parameters(self.frame_count)
@@ -229,21 +271,29 @@ class CellularAutomata:
             # Apply all inter-type interactions and updates
             self.apply_all_interactions()
 
+            # Apply genetic interpreter at configured cadence
+            if (
+                self.interpreter_enabled
+                and self.frame_count % self.config.gene_interpreter_interval == 0
+            ):
+                self.apply_gene_interpreter()
+
             # Apply clustering within each cellular type
             for ct in self.type_manager.cellular_types:
                 self.apply_clustering(ct)
 
             # Handle reproduction and death across all types
-            self.type_manager.reproduce()
+            if self.config.reproduction_mode in (
+                ReproductionMode.MANAGER,
+                ReproductionMode.HYBRID,
+            ):
+                self.type_manager.reproduce()
             self.type_manager.remove_dead_in_all_types()
             self.update_species_count()
 
             # Render all cellular types to the display
             for ct in self.type_manager.cellular_types:
                 self.renderer.draw_cellular_type(ct)
-
-            # Handle boundary reflections for all types
-            self.handle_boundary_reflections()
 
             # Prepare statistics for display
             stats: Dict[str, float] = {
@@ -270,6 +320,10 @@ class CellularAutomata:
                 ):
                     self.cull_oldest_particles()
 
+            # Terminate after the requested frame count
+            if self.config.max_frames > 0 and self.frame_count >= self.config.max_frames:
+                self.run_flag = False
+
         # Clean up Pygame resources on exit
         pygame.quit()
 
@@ -295,6 +349,20 @@ class CellularAutomata:
         between the corresponding cellular type pairs using vectorized operations
         for maximum performance.
         """
+        dvx: List[FloatArray] = [
+            np.zeros_like(ct.vx, dtype=np.float64)
+            for ct in self.type_manager.cellular_types
+        ]
+        dvy: List[FloatArray] = [
+            np.zeros_like(ct.vy, dtype=np.float64)
+            for ct in self.type_manager.cellular_types
+        ]
+        dvz: Optional[List[FloatArray]] = None
+        if self.spatial_dimensions == 3:
+            dvz = [
+                np.zeros_like(ct.vz, dtype=np.float64)
+                for ct in self.type_manager.cellular_types
+            ]
         for i, j, params in self.rules_manager.rules:
             # Convert raw params to properly typed dictionary with validation
             typed_params: Dict[str, Union[float, bool, FloatArray]] = {}
@@ -313,11 +381,38 @@ class CellularAutomata:
                     except (TypeError, AttributeError):
                         pass
                 # Skip values that don't match our expected types
-            self.apply_interaction_between_types(i, j, typed_params)
+            self.apply_interaction_between_types(i, j, typed_params, dvx, dvy, dvz)
+
+        # Integrate velocities/positions once per type per frame
+        for idx, ct in enumerate(self.type_manager.cellular_types):
+            if dvz is not None:
+                self.integrate_type(ct, dvx[idx], dvy[idx], dvz[idx])
+            else:
+                self.integrate_type(ct, dvx[idx], dvy[idx])
+
+    @eidosian()
+    def apply_gene_interpreter(self) -> None:
+        """Apply the genetic interpreter to all cellular types."""
+        if not self.type_manager.cellular_types:
+            return
+
+        for idx, ct in enumerate(self.type_manager.cellular_types):
+            others = [
+                other
+                for other_idx, other in enumerate(self.type_manager.cellular_types)
+                if other_idx != idx
+            ]
+            self.genetic_interpreter.decode(ct, others, self.config)
 
     @eidosian()
     def apply_interaction_between_types(
-        self, i: int, j: int, params: Dict[str, Union[float, bool, FloatArray]]
+        self,
+        i: int,
+        j: int,
+        params: Dict[str, Union[float, bool, FloatArray]],
+        dvx: List[FloatArray],
+        dvy: List[FloatArray],
+        dvz: Optional[List[FloatArray]] = None,
     ) -> None:
         """
         Apply physics, energy transfers, and synergy between two cellular types.
@@ -360,13 +455,25 @@ class CellularAutomata:
         # Calculate pairwise distances using vectorized operations
         dx: FloatArray = ct_i.x[:, np.newaxis] - ct_j.x
         dy: FloatArray = ct_i.y[:, np.newaxis] - ct_j.y
-        dist_sq: FloatArray = dx * dx + dy * dy
+        if self.spatial_dimensions == 3:
+            dz: FloatArray = ct_i.z[:, np.newaxis] - ct_j.z
+            dist_sq: FloatArray = dx * dx + dy * dy + dz * dz
+        else:
+            dist_sq = dx * dx + dy * dy
 
         # Create interaction mask for particles within range
         max_dist_value = params.get("max_dist", 0.0)
-        max_dist = (
-            float(max_dist_value) if not isinstance(max_dist_value, bool) else 100.0
-        )
+        if isinstance(max_dist_value, np.ndarray):
+            if max_dist_value.size == 1:
+                max_dist = float(max_dist_value.item())
+            else:
+                max_dist = float(np.max(max_dist_value))
+        else:
+            max_dist = (
+                float(max_dist_value)
+                if not isinstance(max_dist_value, bool)
+                else 100.0
+            )
         within_range: BoolArray = (dist_sq > 0.0) & (dist_sq <= max_dist**2)
 
         # Get indices of interacting particle pairs
@@ -385,6 +492,7 @@ class CellularAutomata:
         # Initialize force components
         fx: FloatArray = np.zeros_like(dist)
         fy: FloatArray = np.zeros_like(dist)
+        fz: Optional[FloatArray] = np.zeros_like(dist) if self.spatial_dimensions == 3 else None
 
         # Calculate potential-based forces
         use_potential = params.get("use_potential", True)
@@ -398,6 +506,8 @@ class CellularAutomata:
             F_pot: FloatArray = (pot_strength / dist).astype(np.float64)
             fx += F_pot * (dx[indices] / dist)
             fy += F_pot * (dy[indices] / dist)
+            if fz is not None and self.spatial_dimensions == 3:
+                fz += F_pot * (dz[indices] / dist)
 
         # Calculate gravitational forces if applicable
         if params.get("use_gravity", False):
@@ -422,10 +532,14 @@ class CellularAutomata:
                 # Gravity pulls toward, not away from (negative direction)
                 fx -= F_grav * (dx[indices] / dist)
                 fy -= F_grav * (dy[indices] / dist)
+                if fz is not None and self.spatial_dimensions == 3:
+                    fz -= F_grav * (dz[indices] / dist)
 
-        # Apply calculated forces to velocities using atomic add
-        np.add.at(ct_i.vx, indices[0], fx)
-        np.add.at(ct_i.vy, indices[0], fy)
+        # Accumulate forces for later integration
+        np.add.at(dvx[i], indices[0], fx)
+        np.add.at(dvy[i], indices[0], fy)
+        if fz is not None and dvz is not None:
+            np.add.at(dvz[i], indices[0], fz)
 
         # Handle predator-prey energy transfers (give-take)
         if is_giver:
@@ -497,27 +611,60 @@ class CellularAutomata:
                 ct_i.energy[synergy_indices[0]] = new_energyA
                 ct_j.energy[synergy_indices[1]] = new_energyB
 
+        # Integration and state updates are handled once per frame in integrate_type()
+
+    @eidosian()
+    def integrate_type(
+        self,
+        ct: CellularTypeData,
+        dvx: FloatArray,
+        dvy: FloatArray,
+        dvz: Optional[FloatArray] = None,
+    ) -> None:
+        """Integrate velocity/position and update lifecycle once per frame."""
+        if ct.x.size == 0:
+            return
+
+        ct.vx += dvx
+        ct.vy += dvy
+        if self.spatial_dimensions == 3:
+            if dvz is None:
+                dvz = np.zeros_like(ct.vz, dtype=np.float64)
+            ct.vz += dvz
+
         # Apply friction to velocities
         friction_factor: float = 1.0 - self.config.friction
-        ct_i.vx *= friction_factor
-        ct_i.vy *= friction_factor
+        ct.vx *= friction_factor
+        ct.vy *= friction_factor
+        if self.spatial_dimensions == 3:
+            ct.vz *= friction_factor
 
         # Apply thermal noise (random motion)
-        thermal_noise: FloatArray = (
-            np.random.uniform(-0.5, 0.5, n_i) * self.config.global_temperature
+        thermal_noise_x: FloatArray = (
+            np.random.uniform(-0.5, 0.5, ct.x.size) * self.config.global_temperature
         )
-        ct_i.vx += thermal_noise
-        ct_i.vy += thermal_noise
+        thermal_noise_y: FloatArray = (
+            np.random.uniform(-0.5, 0.5, ct.x.size) * self.config.global_temperature
+        )
+        ct.vx += thermal_noise_x
+        ct.vy += thermal_noise_y
+        if self.spatial_dimensions == 3:
+            thermal_noise_z: FloatArray = (
+                np.random.uniform(-0.5, 0.5, ct.x.size) * self.config.global_temperature
+            )
+            ct.vz += thermal_noise_z
 
         # Update positions based on velocities
-        ct_i.x += ct_i.vx
-        ct_i.y += ct_i.vy
+        ct.x += ct.vx
+        ct.y += ct.vy
+        if self.spatial_dimensions == 3:
+            ct.z += ct.vz
 
         # Handle boundary conditions and state updates
-        self.handle_boundary_reflections(ct_i)
-        ct_i.age_components()
-        ct_i.update_states()
-        ct_i.update_alive()
+        self.handle_boundary_reflections(ct)
+        ct.age_components()
+        ct.update_states()
+        ct.update_alive()
 
     @eidosian()
     def handle_boundary_reflections(
@@ -555,6 +702,13 @@ class CellularAutomata:
             # Clamp positions to remain within screen bounds
             np.clip(ct.x, self.screen_bounds[0], self.screen_bounds[1], out=ct.x)
             np.clip(ct.y, self.screen_bounds[2], self.screen_bounds[3], out=ct.y)
+            if self.spatial_dimensions == 3 and self.depth_bounds is not None:
+                near_mask: BoolArray = ct.z < self.depth_bounds[0]
+                far_mask: BoolArray = ct.z > self.depth_bounds[1]
+                ct.vz[near_mask | far_mask] *= -1
+                np.clip(
+                    ct.z, self.depth_bounds[0], self.depth_bounds[1], out=ct.z
+                )
 
     @eidosian()
     def cull_oldest_particles(self) -> None:
@@ -580,28 +734,7 @@ class CellularAutomata:
             keep_mask: BoolArray = np.ones(ct.x.size, dtype=bool)
             keep_mask[oldest_idx] = False
 
-            # Apply the mask to all component arrays
-            ct.x = ct.x[keep_mask]
-            ct.y = ct.y[keep_mask]
-            ct.vx = ct.vx[keep_mask]
-            ct.vy = ct.vy[keep_mask]
-            ct.energy = ct.energy[keep_mask]
-            ct.alive = ct.alive[keep_mask]
-            ct.age = ct.age[keep_mask]
-            ct.energy_efficiency = ct.energy_efficiency[keep_mask]
-            ct.speed_factor = ct.speed_factor[keep_mask]
-            ct.interaction_strength = ct.interaction_strength[keep_mask]
-            ct.perception_range = ct.perception_range[keep_mask]
-            ct.reproduction_rate = ct.reproduction_rate[keep_mask]
-            ct.synergy_affinity = ct.synergy_affinity[keep_mask]
-            ct.colony_factor = ct.colony_factor[keep_mask]
-            ct.drift_sensitivity = ct.drift_sensitivity[keep_mask]
-            ct.species_id = ct.species_id[keep_mask]
-            ct.parent_id = ct.parent_id[keep_mask]
-
-            # Handle mass array for mass-based types
-            if ct.mass_based and ct.mass is not None:
-                ct.mass = ct.mass[keep_mask]
+            ct.filter_by_mask(keep_mask)
 
     @eidosian()
     def add_global_energy(self) -> None:
@@ -640,7 +773,10 @@ class CellularAutomata:
             return
 
         # Build KD-Tree for efficient neighbor searching
-        positions: FloatArray = np.column_stack((ct.x, ct.y))
+        if self.spatial_dimensions == 3:
+            positions = np.column_stack((ct.x, ct.y, ct.z))
+        else:
+            positions = np.column_stack((ct.x, ct.y))
         tree: KDTree = KDTree(positions)
 
         # Query all neighbors within cluster radius
@@ -651,6 +787,7 @@ class CellularAutomata:
         # Pre-allocate velocity change arrays
         dvx: FloatArray = np.zeros(n, dtype=np.float64)
         dvy: FloatArray = np.zeros(n, dtype=np.float64)
+        dvz: Optional[FloatArray] = np.zeros(n, dtype=np.float64) if self.spatial_dimensions == 3 else None
 
         # Process each particle and its neighbors
         for idx, neighbor_indices in enumerate(indices_list):
@@ -663,21 +800,32 @@ class CellularAutomata:
 
             # Extract neighbor positions and velocities
             neighbor_positions: FloatArray = positions[filtered_indices]
-            neighbor_velocities: FloatArray = np.column_stack(
-                (ct.vx[filtered_indices], ct.vy[filtered_indices])
-            )
+            if self.spatial_dimensions == 3:
+                neighbor_velocities = np.column_stack(
+                    (
+                        ct.vx[filtered_indices],
+                        ct.vy[filtered_indices],
+                        ct.vz[filtered_indices],
+                    )
+                )
+            else:
+                neighbor_velocities = np.column_stack(
+                    (ct.vx[filtered_indices], ct.vy[filtered_indices])
+                )
 
             # 1. Alignment - Match velocity with nearby neighbors
             avg_velocity: FloatArray = np.mean(neighbor_velocities, axis=0)
-            alignment: FloatArray = (
-                avg_velocity - np.array([ct.vx[idx], ct.vy[idx]], dtype=np.float64)
-            ) * self.config.alignment_strength
+            if self.spatial_dimensions == 3:
+                current_velocity = np.array(
+                    [ct.vx[idx], ct.vy[idx], ct.vz[idx]], dtype=np.float64
+                )
+            else:
+                current_velocity = np.array([ct.vx[idx], ct.vy[idx]], dtype=np.float64)
+            alignment: FloatArray = (avg_velocity - current_velocity) * self.config.alignment_strength
 
             # 2. Cohesion - Move toward the center of nearby neighbors
             center: FloatArray = np.mean(neighbor_positions, axis=0)
-            cohesion: FloatArray = (
-                center - positions[idx]
-            ) * self.config.cohesion_strength
+            cohesion: FloatArray = (center - positions[idx]) * self.config.cohesion_strength
 
             # 3. Separation - Avoid crowding nearby neighbors
             separation: FloatArray = (
@@ -688,7 +836,11 @@ class CellularAutomata:
             total_force: FloatArray = alignment + cohesion + separation
             dvx[idx] = total_force[0]
             dvy[idx] = total_force[1]
+            if dvz is not None:
+                dvz[idx] = total_force[2]
 
         # Apply accumulated velocity changes to all particles at once
         ct.vx += dvx
         ct.vy += dvy
+        if dvz is not None:
+            ct.vz += dvz

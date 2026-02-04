@@ -8,7 +8,6 @@ Comprehensive tests for:
 - GlyphRenderer
 - GlyphRecorder
 - AudioSync
-- GlyphStreamEngine
 """
 
 import pytest
@@ -19,19 +18,19 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 # Import modules under test
-from src.glyph_forge.streaming.core.config import (
+from glyph_forge.streaming.core.config import (
     StreamConfig, RenderMode, ColorMode, BufferStrategy
 )
-from src.glyph_forge.streaming.core.buffer import (
+from glyph_forge.streaming.core.buffer import (
     AdaptiveBuffer, BufferedFrame, BufferMetrics
 )
-from src.glyph_forge.streaming.core.renderer import (
+from glyph_forge.streaming.core.renderer import (
     GlyphRenderer, RenderConfig, LookupTables, EXTENDED_GRADIENT
 )
-from src.glyph_forge.streaming.core.recorder import (
+from glyph_forge.streaming.core.recorder import (
     GlyphRecorder, RecorderConfig
 )
-from src.glyph_forge.streaming.core.sync import (
+from glyph_forge.streaming.core.sync import (
     AudioSync, AudioConfig, AudioDownloader
 )
 
@@ -94,10 +93,10 @@ class TestStreamConfig:
         assert 'youtube_dQw4w9WgXcQ' in str(path)
         assert path.suffix == '.mp4'
         
-        # Local file (mock existence)
-        with patch('pathlib.Path.exists', return_value=True):
-            path = config.generate_output_path('/path/to/video.mp4')
-            assert 'video' in str(path)
+        # Local file
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as tf:
+            path = config.generate_output_path(tf.name)
+            assert Path(tf.name).stem in str(path)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -272,7 +271,8 @@ class TestGlyphRenderer:
         # Dark pixel
         dark = np.zeros((1, 1, 3), dtype=np.uint8)
         result = renderer.render(dark, width=1, height=1, color='none')
-        assert result.strip() in EXTENDED_GRADIENT[:10]  # Should be dense char
+        dense_chars = set(renderer.tables.get_gradient_chars()[:10])
+        assert result.strip() in dense_chars  # Should be dense char
         
         # Bright pixel
         bright = np.full((1, 1, 3), 255, dtype=np.uint8)
@@ -299,7 +299,7 @@ class TestLookupTables:
         """Test that tables are cached to disk."""
         # Create tables (should save to cache)
         tables1 = LookupTables(tmp_path)
-        cache_file = tmp_path / 'lookup_tables_v2.pkl'
+        cache_file = tmp_path / 'lookup_tables_v4.pkl'
         assert cache_file.exists()
         
         # Create again (should load from cache)
@@ -490,34 +490,37 @@ class TestIntegration:
         # Create buffer
         buffer = AdaptiveBuffer(target_fps=30.0, min_buffer_seconds=0.5)
         
-        # Simulate buffering
-        def frame_gen():
-            for _ in range(10):
-                frame = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-                yield True, frame
-            yield False, None
-        
-        gen = frame_gen()
-        
-        def get_frame():
-            return next(gen, (False, None))
-        
-        def render(frame, w, h):
-            return renderer.render(frame, w, h)
-        
-        buffer.start_buffering(
-            frame_generator=get_frame,
-            render_func=render,
-            display_size=(40, 20),
-            record_size=None,
-            total_frames=10
-        )
-        
-        # Wait for buffering
-        time.sleep(0.5)
-        
-        # Should have buffered frames
-        assert buffer.buffer_size > 0
+        try:
+            # Simulate buffering
+            def frame_gen():
+                for _ in range(10):
+                    frame = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+                    yield True, frame
+                yield False, None
+            
+            gen = frame_gen()
+            
+            def get_frame():
+                return next(gen, (False, None))
+            
+            def render(frame, w, h):
+                return renderer.render(frame, w, h)
+            
+            buffer.start_buffering(
+                frame_generator=get_frame,
+                render_func=render,
+                display_size=(40, 20),
+                record_size=None,
+                total_frames=10
+            )
+            
+            # Wait for buffering
+            time.sleep(0.5)
+            
+            # Should have buffered frames
+            assert buffer.buffer_size > 0
+        finally:
+            buffer.stop()
 
 
 if __name__ == '__main__':

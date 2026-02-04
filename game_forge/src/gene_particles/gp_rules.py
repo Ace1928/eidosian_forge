@@ -18,9 +18,9 @@ import random
 from typing import List, Protocol, Tuple
 
 import numpy as np
+from eidosian_core import eidosian
 
 from game_forge.src.gene_particles.gp_config import (
-from eidosian_core import eidosian
     EVOLUTION_ADJUSTMENT_RANGE,
     GIVE_TAKE_PROBABILITY,
     GRAVITY_STRENGTH_RANGE,

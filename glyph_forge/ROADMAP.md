@@ -19,6 +19,9 @@
 - [ ] Streaming video support
 - [ ] Custom character sets
 - [ ] Dithering algorithms
+- [ ] Demo mode (`glyph-forge demo`)
+- [ ] Share/export pipeline (`--share`)
+- [ ] Dependency doctor (`glyph-forge doctor`)
 
 ---
 
@@ -28,6 +31,7 @@
 - [ ] GPU acceleration
 - [ ] Web streaming
 - [ ] Interactive viewer
+- [ ] Public gallery + remix pipeline
 
 ---
 

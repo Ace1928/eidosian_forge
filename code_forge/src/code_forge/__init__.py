@@ -11,6 +11,8 @@ Code Forge provides tools for:
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
 from code_forge.analyzer.code_indexer import CodeIndexer, CodeElement, index_forge_codebase
 from code_forge.librarian.core import CodeLibrarian
+from code_forge.library.db import CodeLibraryDB, CodeUnit
+from code_forge.ingest.runner import IngestionRunner, IngestionStats
 
 __all__ = [
     "CodeAnalyzer",
@@ -18,4 +20,8 @@ __all__ = [
     "CodeElement",
     "index_forge_codebase",
     "CodeLibrarian",
+    "CodeLibraryDB",
+    "CodeUnit",
+    "IngestionRunner",
+    "IngestionStats",
 ]

@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 ⚡ GLYPH FORGE - EIDOSIAN IMAGIZER ⚡
@@ -112,8 +111,6 @@ class OutputFormat(Enum):
 
 
 # ─── CORE UTILITIES ────────────────────────────────────────────────────────────────
-
-@eidosian()
 def setup_logging(debug: bool = False) -> None:
     """
     Configure optimal logging with zero-waste precision.
@@ -154,9 +151,6 @@ def setup_logging(debug: bool = False) -> None:
     logging.getLogger('PIL').setLevel(logging.WARNING)
     
     logging.debug("Logging initialized with level: %s", "DEBUG" if debug else "INFO")
-
-
-@eidosian()
 def print_header() -> None:
     """
     Print stylish Glyph Forge header with adaptive color support.
@@ -176,9 +170,6 @@ def print_header() -> None:
         banner = "=== GLYPH FORGE IMAGIZER ==="
         print(f"\n{banner.center(term_width)}")
         print("=" * term_width + "\n")
-
-
-@eidosian()
 def measure_performance(func: Callable) -> Callable:
     """
     Decorator for surgical performance measurement with minimal overhead.
@@ -194,7 +185,6 @@ def measure_performance(func: Callable) -> Callable:
     Returns:
         Wrapped function that reports its execution time
     """
-    @eidosian()
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Record start time with maximum precision
@@ -233,9 +223,6 @@ def measure_performance(func: Callable) -> Callable:
         
         return result
     return wrapper
-
-
-@eidosian()
 def list_items(items: List[str], title: str, columns: int = 4) -> None:
     """
     Display items in multi-column format with optimal terminal utilization.
@@ -281,9 +268,6 @@ def list_items(items: List[str], title: str, columns: int = 4) -> None:
             print(f"  {item:{max_len}}", end="")
     
     print("\n")
-
-
-@eidosian()
 def signal_handler(sig: int, frame) -> None:
     """
     Handle interrupt signals gracefully.
@@ -302,14 +286,13 @@ def signal_handler(sig: int, frame) -> None:
 
 
 # ─── CORE CONVERSION FUNCTION ───────────────────────────────────────────────────────
-
-@eidosian()
 @measure_performance
 def convert_image(
     image_path: str, 
     output_path: Optional[str] = None,
     width: Optional[int] = None,
     height: Optional[int] = None,
+    upscale: int = 4,
     charset: Optional[str] = None,
     invert: bool = False,
     color_mode: str = "none",
@@ -375,11 +358,26 @@ def convert_image(
     # Validate image exists
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image file not found: {image_path}")
+
+    # If no explicit size is provided, default to native resolution * upscale factor
+    if width is None and height is None:
+        try:
+            from PIL import Image
+            with Image.open(image_path) as img:
+                src_w, src_h = img.size
+            scale = max(1, int(upscale))
+            width = max(1, src_w * scale)
+            height = max(1, src_h * scale)
+            if aspect_ratio is None:
+                aspect_ratio = 1.0
+        except Exception:
+            # Fall back to previous default if image metadata not available
+            width = 160
     
     # Create converter with specified parameters
     converter = ImageGlyphConverter(
         charset=charset or "general",
-        width=width or 100,
+        width=width or 160,
         height=height,
         invert=invert,
         dithering=dithering,
@@ -455,9 +453,6 @@ def convert_image(
             image_path=image_path,
             output_path=output_path
         )
-
-
-@eidosian()
 def preview_charset(charset: str, sample_image: Optional[str] = None) -> None:
     """
     Generate and display a character set preview.
@@ -520,8 +515,6 @@ def preview_charset(charset: str, sample_image: Optional[str] = None) -> None:
 
 
 # ─── ARGUMENT PARSING ─────────────────────────────────────────────────────────────
-
-@eidosian()
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command line arguments with quantum precision.
@@ -563,7 +556,7 @@ Examples:
         help='Width in characters (default: auto-fit to terminal)'
     )
     dim_group.add_argument(
-        '-h', '--height', 
+        '-H', '--height', 
         type=int,
         default=None,
         metavar='CHARS',
@@ -752,9 +745,6 @@ Examples:
             parser.error(error)
         
     return args
-
-
-@eidosian()
 def show_version() -> None:
     """
     Display version information with maximum precision.
@@ -789,8 +779,6 @@ def show_version() -> None:
 
 
 # ─── MAIN ENTRY POINT ────────────────────────────────────────────────────────────
-
-@eidosian()
 def main() -> int:
     """
     Main entry point with hyper-optimized execution flow.
@@ -850,7 +838,7 @@ def main() -> int:
         if width is None:
             # Auto-fit to terminal with margin
             term_width, _ = get_terminal_size()
-            width = term_width - 4  # Leave small margin
+            width = max(160, term_width - 4)  # Default to high-fidelity width when no upscale is used
             logging.debug(f"Auto-sized width to {width} based on terminal width {term_width}")
         
         # Calculate aspect ratio if specified
@@ -861,16 +849,17 @@ def main() -> int:
             height = args.height
         
         # Convert the image with all specified parameters
-        result = convert_image(
-            image_path=args.image,
-            output_path=args.output,
-            width=width,
-            height=height,
-            charset=args.charset,
-            invert=args.invert,
-            color_mode=args.color,
-            dithering=args.dither,
-            dither_algorithm=args.dither_algorithm,
+            result = convert_image(
+                image_path=args.image,
+                output_path=args.output,
+                width=width,
+                height=height,
+                upscale=args.upscale,
+                charset=args.charset,
+                invert=args.invert,
+                color_mode=args.color,
+                dithering=args.dither,
+                dither_algorithm=args.dither_algorithm,
             brightness=args.brightness,
             contrast=args.contrast,
             gamma=args.gamma,
@@ -917,12 +906,11 @@ app = typer.Typer(
     help="Transform images into Glyph art with zero compromise",
     add_completion=True,
 )
-
-@eidosian()
 @app.command()
 def convert(
     image: str = typer.Argument(..., help="Path to image file"),
-    width: int = typer.Option(None, "--width", "-w", help="Width in characters"),
+    width: int = typer.Option(None, "--width", "-w", help="Width in characters (default: native image width * upscale)"),
+    upscale: int = typer.Option(4, "--upscale", help="Upscale factor when width/height not provided (default 4)"),
     height: int = typer.Option(None, "--height", "-h", help="Height in characters"),
     charset: str = typer.Option("general", "--charset", "-s", help="Character set to use"),
     invert: bool = typer.Option(False, "--invert", "-i", help="Invert brightness"),
@@ -939,7 +927,10 @@ def convert(
     posterize_bits: int = typer.Option(None, "--posterize-bits", help="Posterize bit depth (1-8)"),
     resample: str = typer.Option(None, "--resample", help="Resample filter (nearest, bilinear, bicubic, lanczos)"),
     output: str = typer.Option(None, "--output", "-o", help="Save to file"),
+    share: str = typer.Option(None, "--share", help="Export shareable output (txt/html/svg/png/gif)"),
+    open_output: bool = typer.Option(False, "--open", help="Open the exported output"),
     optimize: bool = typer.Option(False, "--optimize", help="Auto-optimize contrast"),
+    preset: str = typer.Option(None, "--preset", help="Preset style (cinematic/noir/neon/sketch/ultra/filmgrain/vaporwave)"),
 ):
     """Convert an image into spectacular Glyph art."""
     try:
@@ -951,11 +942,54 @@ def convert(
             progress.add_task("convert", total=None)
             if dither_algorithm and not dither:
                 raise typer.BadParameter("--dither-algorithm requires --dither to be enabled")
+            if preset:
+                preset = preset.lower()
+                if preset == "cinematic":
+                    color = "truecolor"
+                    dither = True
+                    dither_algorithm = "atkinson"
+                    edge_enhance = True
+                    sharpen = True
+                elif preset == "noir":
+                    color = "none"
+                    edge_enhance = True
+                    sharpen = False
+                    charset = "blocks"
+                elif preset == "neon":
+                    color = "truecolor"
+                    dither = True
+                    dither_algorithm = "floyd-steinberg"
+                    charset = "detailed"
+                elif preset == "sketch":
+                    color = "none"
+                    edge_enhance = True
+                    charset = "ascii"
+                elif preset == "ultra":
+                    color = "truecolor"
+                    dither = True
+                    dither_algorithm = "atkinson"
+                    edge_enhance = True
+                    sharpen = True
+                    gamma = 1.1
+                elif preset == "filmgrain":
+                    color = "ansi256"
+                    dither = True
+                    dither_algorithm = "floyd-steinberg"
+                    gamma = 0.9
+                    charset = "blocks"
+                elif preset == "vaporwave":
+                    color = "truecolor"
+                    dither = True
+                    dither_algorithm = "atkinson"
+                    gamma = 1.2
+                    charset = "detailed"
+
             result = convert_image(
                 image_path=image,
                 output_path=output,
                 width=width,
                 height=height,
+                upscale=upscale,
                 charset=charset,
                 invert=invert,
                 color_mode=color,
@@ -973,7 +1007,40 @@ def convert(
                 optimize_contrast=optimize,
             )
 
-        if not output:
+        if share:
+            from .share_utils import build_share_path, write_share, try_open_path
+            from ..streaming.naming import build_metadata, write_metadata
+            fmt = share.lower()
+            share_path = build_share_path(image, fmt, output)
+            write_share(result, fmt, share_path)
+            source_meta = {}
+            try:
+                from PIL import Image
+                with Image.open(image) as img:
+                    source_meta = {
+                        "source_width": img.width,
+                        "source_height": img.height,
+                        "source_mode": img.mode,
+                    }
+            except Exception:
+                pass
+            meta = build_metadata(
+                source=image,
+                output_path=share_path,
+                title=None,
+                info=None,
+                extra={
+                    "format": fmt,
+                    "share": True,
+                    **source_meta,
+                },
+            )
+            write_metadata(meta, share_path)
+            print(f"Share export saved to {share_path}")
+            if open_output:
+                if not try_open_path(share_path):
+                    print("No opener available for this system.")
+        elif not output:
             print(result)
         else:
             print(f"Glyph art saved to {output}")
@@ -981,15 +1048,11 @@ def convert(
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
-
-@eidosian()
 @app.command()
 def list_charsets():
     """Show all available character sets."""
     available_charsets = AlphabetManager.list_available_alphabets()
     list_items(available_charsets, "Available Character Sets")
-
-@eidosian()
 @app.command()
 def preview(
     charset: str = typer.Argument(..., help="Character set to preview"),

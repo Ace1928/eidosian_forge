@@ -196,35 +196,12 @@ class StreamConfig:
         Returns:
             Path for output file
         """
-        if self.output_path:
-            return self.output_path
-        
-        # Extract meaningful name from source
-        import re
-        
-        # YouTube video ID
-        yt_match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', source_name)
-        if yt_match:
-            base_name = f"youtube_{yt_match.group(1)}"
-        elif source_name.startswith(('http://', 'https://')):
-            # URL - use domain + path
-            from urllib.parse import urlparse
-            parsed = urlparse(source_name)
-            base_name = f"{parsed.netloc}_{parsed.path.split('/')[-1] or 'stream'}"
-            base_name = re.sub(r'[^\w\-_]', '_', base_name)
-        elif Path(source_name).exists():
-            # Local file
-            base_name = Path(source_name).stem
-        else:
-            # Webcam or unknown
-            base_name = "glyph_capture"
-        
-        # Find unique filename
-        output_dir = Path.cwd()
-        idx = 1
-        while True:
-            suffix = f"_{idx:03d}" if idx > 1 else ""
-            path = output_dir / f"{base_name}{suffix}.mp4"
-            if not path.exists() or self.force_rerender:
-                return path
-            idx += 1
+        from ..naming import build_output_path
+        return build_output_path(
+            source=source_name,
+            title=None,
+            output_dir=None,
+            ext="mp4",
+            output=self.output_path,
+            overwrite=self.force_rerender,
+        )

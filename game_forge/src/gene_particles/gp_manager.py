@@ -8,10 +8,10 @@ with rigorous type safety and vectorized operations.
 from typing import Dict, List, Optional
 
 import numpy as np
+from eidosian_core import eidosian
 
 from game_forge.src.gene_particles.gp_config import SimulationConfig
 from game_forge.src.gene_particles.gp_types import (
-from eidosian_core import eidosian
     BoolArray,
     CellularTypeData,
     ColorRGB,
@@ -118,8 +118,10 @@ class CellularTypeManager:
                 getattr(ct, attr).size == ct.x.size
                 for attr in [
                     "y",
+                    "z",
                     "vx",
                     "vy",
+                    "vz",
                     "energy",
                     "alive",
                     "age",
@@ -151,14 +153,12 @@ class CellularTypeManager:
 
             parent_indices: IntArray = np.where(eligible)[0]
 
-            # Parents expend energy to reproduce
-            ct.energy[eligible] *= 0.5
-            parent_energy: FloatArray = ct.energy[eligible]
-
-            # Calculate offspring energy share
+            # Parents share energy with offspring (conserved)
+            parent_energy: FloatArray = ct.energy[parent_indices].copy()
             offspring_energy: FloatArray = (
                 parent_energy * self.config.reproduction_offspring_energy_fraction
             )
+            ct.energy[parent_indices] = np.maximum(0.0, parent_energy - offspring_energy)
 
             # Create mutation masks for different traits
             gene_mutation_mask: BoolArray = (
@@ -277,58 +277,70 @@ class CellularTypeManager:
             max_species_id: int = (
                 int(np.max(ct.species_id)) if ct.species_id.size > 0 else ct.type_id
             )
-            species_ids: IntArray = np.where(
-                genetic_distance > self.config.speciation_threshold,
-                max_species_id + 1,  # New species
-                ct.species_id[parent_indices],  # Same species
-            ).astype(np.int_)
+            species_ids: IntArray = ct.species_id[parent_indices].copy()
+            speciation_mask: BoolArray = genetic_distance > self.config.speciation_threshold
+            if np.any(speciation_mask):
+                next_species_id = max_species_id + 1
+                for offset in np.where(speciation_mask)[0]:
+                    species_ids[offset] = next_species_id
+                    next_species_id += 1
 
-            # Add all offspring to their cellular type
-            for i in range(num_offspring):
-                try:
-                    # Calculate velocity based on efficiency and speed factor
-                    velocity_scale: float = (
-                        self.config.base_velocity_scale
-                        / offspring_traits["energy_efficiency"][i]
-                        * offspring_traits["speed_factor"][i]
-                    )
+            # Vectorized offspring initialization
+            parent_x = ct.x[parent_indices]
+            parent_y = ct.y[parent_indices]
+            offspring_x = parent_x + np.random.uniform(-5, 5, size=num_offspring)
+            offspring_y = parent_y + np.random.uniform(-5, 5, size=num_offspring)
+            if self.config.spatial_dimensions == 3:
+                parent_z = ct.z[parent_indices]
+                offspring_z = parent_z + np.random.uniform(-5, 5, size=num_offspring)
+            else:
+                offspring_z = np.zeros(num_offspring, dtype=np.float64)
 
-                    # Add with small position offset from parent
-                    ct.add_component(
-                        x=float(ct.x[parent_indices[i]]) + np.random.uniform(-5, 5),
-                        y=float(ct.y[parent_indices[i]]) + np.random.uniform(-5, 5),
-                        vx=np.random.uniform(-0.5, 0.5) * velocity_scale,
-                        vy=np.random.uniform(-0.5, 0.5) * velocity_scale,
-                        energy=float(offspring_energy[i]),
-                        mass_val=(
-                            float(offspring_mass[i])
-                            if offspring_mass is not None
-                            else None
-                        ),
-                        energy_efficiency_val=float(
-                            offspring_traits["energy_efficiency"][i]
-                        ),
-                        speed_factor_val=float(offspring_traits["speed_factor"][i]),
-                        interaction_strength_val=float(
-                            offspring_traits["interaction_strength"][i]
-                        ),
-                        perception_range_val=float(
-                            offspring_traits["perception_range"][i]
-                        ),
-                        reproduction_rate_val=float(
-                            offspring_traits["reproduction_rate"][i]
-                        ),
-                        synergy_affinity_val=float(
-                            offspring_traits["synergy_affinity"][i]
-                        ),
-                        colony_factor_val=float(offspring_traits["colony_factor"][i]),
-                        drift_sensitivity_val=float(
-                            offspring_traits["drift_sensitivity"][i]
-                        ),
-                        species_id_val=int(species_ids[i]),
-                        parent_id_val=int(parent_indices[i]),
-                        max_age=ct.max_age,
-                    )
-                except IndexError:
-                    # Skip if array indices are out of bounds
-                    continue
+            velocity_scale = (
+                self.config.base_velocity_scale
+                / offspring_traits["energy_efficiency"]
+                * offspring_traits["speed_factor"]
+            )
+            offspring_vx = np.random.uniform(-0.5, 0.5, size=num_offspring) * velocity_scale
+            offspring_vy = np.random.uniform(-0.5, 0.5, size=num_offspring) * velocity_scale
+            if self.config.spatial_dimensions == 3:
+                offspring_vz = (
+                    np.random.uniform(-0.5, 0.5, size=num_offspring) * velocity_scale
+                )
+            else:
+                offspring_vz = np.zeros(num_offspring, dtype=np.float64)
+
+            if offspring_mass is not None:
+                mass_vals = offspring_mass
+            else:
+                mass_vals = None
+
+            predation_vals = (
+                ct.predation_efficiency[parent_indices]
+                if hasattr(ct, "predation_efficiency")
+                else None
+            )
+            cooldown_vals = np.zeros(num_offspring, dtype=np.float64)
+
+            ct.add_components_bulk(
+                x=offspring_x,
+                y=offspring_y,
+                vx=offspring_vx,
+                vy=offspring_vy,
+                energy=offspring_energy,
+                mass=mass_vals,
+                energy_efficiency=offspring_traits["energy_efficiency"],
+                speed_factor=offspring_traits["speed_factor"],
+                interaction_strength=offspring_traits["interaction_strength"],
+                perception_range=offspring_traits["perception_range"],
+                reproduction_rate=offspring_traits["reproduction_rate"],
+                synergy_affinity=offspring_traits["synergy_affinity"],
+                colony_factor=offspring_traits["colony_factor"],
+                drift_sensitivity=offspring_traits["drift_sensitivity"],
+                species_id=species_ids,
+                parent_id=parent_indices,
+                predation_efficiency=predation_vals,
+                cooldown=cooldown_vals,
+                z=offspring_z,
+                vz=offspring_vz,
+            )

@@ -107,14 +107,16 @@ class CodeIndexer:
             source_text = file_path.read_text(encoding="utf-8")
             lines = source_text.splitlines()
             
+            module_meta = analysis.get("module", {})
             module_elem = CodeElement(
                 element_type="module",
                 name=module_name,
                 qualified_name=module_name,
                 file_path=str(file_path),
-                line_start=1,
-                line_end=len(lines),
-                docstring=analysis.get("docstring"),
+                line_start=module_meta.get("line_start", 1),
+                line_end=module_meta.get("line_end", len(lines)),
+                docstring=module_meta.get("docstring"),
+                source=module_meta.get("source"),
                 imports=analysis.get("imports", []),
             )
             elements.append(module_elem)
@@ -126,8 +128,8 @@ class CodeIndexer:
                     name=func["name"],
                     qualified_name=f"{module_name}.{func['name']}",
                     file_path=str(file_path),
-                    line_start=1,  # Would need to track this from AST
-                    line_end=1,
+                    line_start=func.get("line_start"),
+                    line_end=func.get("line_end"),
                     docstring=func.get("docstring"),
                     source=func.get("source"),
                     args=func.get("args", []),
@@ -141,8 +143,8 @@ class CodeIndexer:
                     name=cls["name"],
                     qualified_name=f"{module_name}.{cls['name']}",
                     file_path=str(file_path),
-                    line_start=1,
-                    line_end=1,
+                    line_start=cls.get("line_start"),
+                    line_end=cls.get("line_end"),
                     docstring=cls.get("docstring"),
                     source=cls.get("source"),
                     methods=cls.get("methods", []),
@@ -156,8 +158,8 @@ class CodeIndexer:
                         name=method_name,
                         qualified_name=f"{module_name}.{cls['name']}.{method_name}",
                         file_path=str(file_path),
-                        line_start=1,
-                        line_end=1,
+                        line_start=cls.get("line_start"),
+                        line_end=cls.get("line_end"),
                     )
                     elements.append(method_elem)
             

@@ -4,7 +4,7 @@
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Tests: 325 Passing](https://img.shields.io/badge/tests-325%20passing-brightgreen.svg)](tests/)
 
-**Pixels to Symbols. Where images transcend their digital boundaries.**
+**Pixels to Symbols. Cinematic ASCII in one command.**
 
 ## 🖼️ Overview
 
@@ -47,8 +47,8 @@ pip install -e .
 # Display banner
 glyph-forge
 
-# Convert an image
-glyph-forge imagize convert my_image.png --width 80
+# Convert an image (defaults to native resolution * upscale for maximum fidelity)
+glyph-forge imagize convert my_image.png --upscale 4
 
 # Generate a text banner
 glyph-forge bannerize "Hello World" --font slant
@@ -59,6 +59,38 @@ glyph-forge interactive
 # Stream video/webcam
 glyph-forge stream --webcam
 glyph-forge stream https://youtube.com/watch?v=VIDEO_ID
+glyph-forge stream assets/rickroll.mp4 --share gif
+glyph-forge stream assets/rickroll.mp4 --share apng
+glyph-forge stream assets/rickroll.mp4 --share webm
+glyph-forge stream assets/rickroll.mp4 --share html
+glyph-forge stream assets/rickroll.mp4 --share svg
+glyph-forge stream "https://www.youtube.com/watch?v=ZFj2zhfA4aA&list=PL3zHyzZFGya_nhTUW3cCsWBu56MFY0O4f"
+
+# Instant demo
+glyph-forge demo --mode image
+glyph-forge demo --mode banner
+```
+
+### ⚡ Instant Wow (Shareable)
+
+```bash
+# Stream a video to cinematic ANSI
+glyph-forge stream https://youtube.com/watch?v=VIDEO_ID
+
+# Convert an image at high fidelity
+glyph-forge imagize convert image.png --color truecolor --dither --edge-enhance --sharpen
+
+# Generate a bold banner
+glyph-forge bannerize "GLYPH FORGE" --font slant --style boxed --color
+
+# Export shareable HTML/SVG
+glyph-forge imagize convert image.png --share html
+glyph-forge bannerize "GLYPH" --share svg
+glyph-forge imagize convert image.png --share png
+glyph-forge imagize convert image.png --share gif
+
+# Video shares export full multi-frame GIF/APNG/WebM (via ffmpeg)
+glyph-forge stream assets/rickroll.mp4 --share gif
 ```
 
 ## 📸 Image Conversion
@@ -135,50 +167,84 @@ glyph-forge stream https://youtube.com/watch?v=VIDEO_ID
 # Stream webcam
 glyph-forge stream --webcam 0
 
-# High quality with audio
-glyph-forge stream video.mp4 --quality high --audio --prebuffer 60
+# Screen capture
+glyph-forge stream --screen
 
-# Low latency streaming (minimal buffering)
-glyph-forge stream --webcam 0 --prebuffer 5 --quality low
+# Render, mux audio, then play
+glyph-forge stream video.mp4 --render-play
 
-# Use legacy glyph_stream.py
-glyph-forge stream video.mp4 --legacy
+# Export shareable output
+glyph-forge stream video.mp4 --share gif
+
+# Create a portable share link
+glyph-forge stream video.mp4 --share link
+
+# Limit a YouTube playlist to 3 items
+glyph-forge stream "https://www.youtube.com/playlist?list=LIST_ID" --playlist-limit 3
 ```
 
 ### Stream Command Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--fps` | Target FPS (None = match source) | auto |
-| `--scale` | Scale factor (1-4) | 1 |
-| `--quality` | Quality preset (minimal/low/standard/high/maximum) | standard |
-| `--gradient` | Character gradient (standard/enhanced/braille/ascii) | standard |
-| `--algorithm` | Edge detection (sobel/prewitt/scharr/laplacian/canny) | sobel |
-| `--color/--no-color` | Enable ANSI color | true |
+| `--resolution` | Resolution (1080p/720p/480p) | 720p |
+| `--fps` | Target FPS | 30 |
+| `--webcam` | Use webcam device index | none |
+| `--mode` | Render mode (gradient/braille) | gradient |
+| `--color` | Color mode (truecolor/ansi256/none) | ansi256 |
 | `--audio/--no-audio` | Enable audio playback | true |
 | `--stats/--no-stats` | Show performance statistics | true |
-| `--border/--no-border` | Show decorative border | true |
-| `--adaptive` | Enable adaptive quality adjustment | false |
-| `--prebuffer` | Prebuffer seconds before playback | 3.0 |
-| `--buffer` | Total buffer size in seconds | 30.0 |
-| `--record` | Record stream to video file | None |
-| `--legacy` | Use legacy glyph_stream.py | false |
+| `--record` | Record glyph output (auto/path/none) | auto |
+| `--output-dir` | Directory for output files | glyph_forge_output |
+| `--overwrite` | Overwrite existing outputs | false |
+| `--metadata/--no-metadata` | Write metadata sidecar | true |
+| `--screen` | Capture screen (Netflix etc) | false |
+| `--duration` | Max duration in seconds | none |
+| `--render-play` | Render then mux audio and play | false |
+| `--share` | Export shareable output (mp4/png/gif/apng/webm/html/svg/txt/link) | none |
+| `--preset` | Visual presets (cinematic/noir/neon/retro/ultra/filmgrain/vaporwave) | none |
+| `--playlist-limit` | Max playlist items | none |
+| `--playlist-start` | Playlist start index | none |
+| `--playlist-end` | Playlist end index | none |
+| `--yes/--no` | Assume yes/no for prompts | none |
 
-### 🚀 Premium Stream Mode (Default)
+### Share Links
 
-The default `glyph-forge stream` command now uses the premium engine with:
+```bash
+# Encode a file into a glyphforge:// link
+glyph-forge link encode demo.png -o demo.gflink
 
-- **1080p Resolution** (auto-downscales if source is lower)
-- **60 FPS Target** (matches source FPS if lower)
-- **Braille Sub-Pixel Rendering** (2x4 dots = 8 pixels per character)
+# Decode a link back into a file
+glyph-forge link decode demo.gflink --open
+
+# Decode a text payload and render to PNG
+glyph-forge link decode "glyphforge://..." --render
+```
+
+### Audio Muxing
+
+```bash
+# Mux a local audio file into a glyph video
+glyph-forge audio mux glyph.mp4 --audio soundtrack.m4a
+
+# Fetch audio from YouTube and mux it in
+glyph-forge audio mux glyph.mp4 --youtube https://youtube.com/watch?v=VIDEO_ID
+```
+
+### 🚀 Default Stream Mode
+
+The default `glyph-forge stream` command uses:
+
+- **720p Resolution** (can be lowered for speed)
+- **30 FPS Target** (stable playback on most hardware)
+- **Gradient Rendering** (balanced detail vs speed)
 - **ANSI256 Color** (fast color with 216 colors + 24 grayscale)
-- **30 Second Buffer** (~1800 frames at 60fps)
-- **Audio Enabled** (requires pygame/simpleaudio)
-- **Smart Buffering** (caps at stream length for short videos)
+- **30 Second Buffer** (smooth playback)
+- **Audio Enabled** (requires ffplay/ffmpeg or compatible backend)
 - **Optional Recording** (save stream to video file)
 
 ```bash
-# Premium defaults (1080p, 60fps, braille, color, buffered, audio)
+# Default mode (720p, 30fps, gradient, ansi256, buffered, audio)
 glyph-forge stream video.mp4
 
 # With recording
@@ -187,8 +253,8 @@ glyph-forge stream video.mp4 --record output.mp4
 # YouTube with recording
 glyph-forge stream https://youtube.com/watch?v=VIDEO_ID --record youtube.mp4
 
-# Maximum quality (TrueColor - slower but 16M colors)
-glyph-forge stream video.mp4 --color truecolor --mode hybrid
+# Maximum color fidelity (TrueColor - slower but 16M colors)
+glyph-forge stream video.mp4 --color truecolor --mode gradient
 
 # Lower resolution for lower-powered machines
 glyph-forge stream video.mp4 --resolution 480p --fps 30
@@ -386,6 +452,52 @@ pytest tests/test_tui.py -v
 ```
 
 **Current Status**: 197 tests passing
+
+## 🩺 Doctor
+
+```bash
+# Check optional dependencies and tools
+glyph-forge doctor
+```
+
+## 🎬 Render-Then-Play
+
+```bash
+# Render full video, mux audio, then play result
+glyph-forge stream assets/rickroll.mp4 --render-play --resolution 720p --fps 30 --mode braille --color ansi256
+```
+
+## ✨ Presets
+
+```bash
+glyph-forge stream assets/rickroll.mp4 --preset cinematic
+glyph-forge imagize convert image.png --preset neon
+glyph-forge bannerize "GLYPH" --preset retro
+glyph-forge stream assets/rickroll.mp4 --preset ultra
+glyph-forge imagize convert image.png --preset filmgrain
+glyph-forge bannerize "GLYPH" --preset vaporwave
+
+## 🧪 Gallery
+
+```bash
+# Download public domain / CC assets (up to 5GB)
+GLYPH_FORGE_ASSET_MAX_GB=5 python scripts/download_assets.py
+
+# Generate a gallery of glyph renders
+glyph-forge gallery --limit 50 --preset all
+```
+
+## 📚 Asset Sources & Licensing
+
+- Asset sources: `assets/library/SOURCES.md`
+- Attribution log: `assets/library/ATTRIBUTION.md`
+```
+
+## 📣 Branding & Launch
+
+- Branding guide: `BRANDING.md`
+- Launch playbook: `LAUNCH_PLAYBOOK.md`
+- Demo recipes: `DEMO.md`
 
 ## 📦 Dependencies
 

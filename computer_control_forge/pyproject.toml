@@ -1,0 +1,39 @@
+[project]
+name = "computer-control-forge"
+version = "0.1.0"
+description = "Safe, auditable keyboard/mouse control for Eidosian agents"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "EIDOS" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pyautogui>=0.9.54",
+    "pillow>=10.0.0",
+    "mss>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "pytest-cov>=5.0.0"]
+
+[project.scripts]
+computer-control = "computer_control_forge.cli.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = ["-v", "--tb=short"]

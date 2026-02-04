@@ -1,0 +1,12 @@
+{
+  "run_id": "c4f1a0b6734eb4bb",
+  "root_path": "/home/lloyd/eidosian_forge/code_forge",
+  "mode": "analysis",
+  "files_processed": 2,
+  "units_created": 56,
+  "errors": 0,
+  "files": [
+    "/home/lloyd/eidosian_forge/code_forge/tests/test_analyzer_granularity.py",
+    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/analyzer/python_analyzer.py"
+  ]
+}

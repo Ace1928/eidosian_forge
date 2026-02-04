@@ -425,6 +425,7 @@ class QueueManager(Generic[T]):
         with self._lock:
             return self._state
 
+    @state.setter
     def state(self, new_state: QueueState) -> None:
         """
         Set the queue to a new state.

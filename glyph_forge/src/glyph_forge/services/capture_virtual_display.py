@@ -1,15 +1,10 @@
 """Virtual display helpers using pyvirtualdisplay."""
 
 from typing import Optional
-from eidosian_core import eidosian
-
 try:
     from pyvirtualdisplay import Display
 except Exception:  # pragma: no cover - optional dependency
     Display = None
-
-
-@eidosian()
 def start_virtual_display(width: int = 1024, height: int = 768) -> Optional[object]:
     """Start an invisible virtual display.
 
@@ -25,9 +20,6 @@ def start_virtual_display(width: int = 1024, height: int = 768) -> Optional[obje
     display = Display(visible=False, size=(width, height))
     display.start()
     return display
-
-
-@eidosian()
 def stop_virtual_display(display: object) -> None:
     """Stop a previously started virtual display."""
     if hasattr(display, "stop"):

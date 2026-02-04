@@ -15,6 +15,13 @@ import tempfile
 import shutil
 import numpy as np
 from PIL import Image
+from helpers_fakes import (
+    DummyCompletedProcess,
+    DummyPopen,
+    DummyVideoCapture,
+    DummyMSS,
+    DummySyncPlaywright,
+)
 
 
 # ──── Path Configuration ────────────────────────────────────────────────
@@ -103,3 +110,65 @@ def mock_alphabet_manager(monkeypatch):
                                          for i in range(256)})
     
     return AlphabetManager
+
+
+@pytest.fixture(autouse=True)
+def sandbox_env(monkeypatch, tmp_path_factory):
+    """Force all filesystem writes into a temp sandbox."""
+    base = tmp_path_factory.mktemp("glyph_forge_env")
+    monkeypatch.setenv("HOME", str(base))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(base / "config"))
+    monkeypatch.setenv("GLYPH_FORGE_LOG_LEVEL", "ERROR")
+    monkeypatch.setenv("DISPLAY", ":0")
+    return base
+
+
+@pytest.fixture(autouse=True)
+def patch_external_deps(monkeypatch):
+    """Patch external dependencies to keep tests hermetic."""
+    import subprocess
+
+    # Subprocess stubs
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: DummyCompletedProcess(
+            returncode=0,
+            stdout="http://example.com/video\n",
+            stderr="",
+        ),
+    )
+    monkeypatch.setattr(subprocess, "Popen", DummyPopen)
+
+    # cv2 stubs
+    try:
+        import cv2
+        monkeypatch.setattr(cv2, "VideoCapture", DummyVideoCapture)
+        monkeypatch.setattr(cv2, "selectROI", lambda *args, **kwargs: (0, 0, 0, 0))
+        monkeypatch.setattr(cv2, "destroyAllWindows", lambda *args, **kwargs: None)
+    except Exception:
+        pass
+
+    # mss stubs
+    try:
+        import mss
+        monkeypatch.setattr(mss, "mss", DummyMSS)
+    except Exception:
+        pass
+
+    # playwright stubs
+    try:
+        import glyph_forge.streaming.core.browser as browser_mod
+        monkeypatch.setattr(browser_mod, "PLAYWRIGHT_AVAILABLE", True)
+        monkeypatch.setattr(browser_mod, "sync_playwright", DummySyncPlaywright)
+    except Exception:
+        pass
+
+    # Patch capture BrowserCapture import path
+    try:
+        import types, sys as _sys
+        _sys.modules["playwright.sync_api"] = types.SimpleNamespace(
+            sync_playwright=DummySyncPlaywright
+        )
+    except Exception:
+        pass

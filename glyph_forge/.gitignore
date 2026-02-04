@@ -33,3 +33,5 @@ htmlcov/
 *.log
 .cache/
 
+# Asset downloads (regenerate via scripts/download_assets.py)
+assets/library/downloads/
