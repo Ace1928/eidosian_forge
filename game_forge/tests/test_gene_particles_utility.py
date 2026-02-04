@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from game_forge.src.gene_particles import gp_utility
 from game_forge.src.gene_particles.gp_config import SimulationConfig
@@ -27,6 +28,42 @@ def test_random_xy_and_growth():
     energy = np.array([1.0, 2.0])
     grown = gp_utility.apply_growth_gene(energy, 2.0, 0.5, 10.0)
     assert np.all(grown >= 0.5)
+
+
+def test_wrap_helpers_and_tiling():
+    delta = np.array([6.0, -6.0])
+    wrapped = gp_utility.wrap_deltas(delta, 10.0)
+    assert np.allclose(wrapped, np.array([-4.0, 4.0]))
+
+    pos = np.array([-1.0, 11.0])
+    wrapped_pos = gp_utility.wrap_positions(pos, 0.0, 10.0)
+    assert np.all(wrapped_pos >= 0.0)
+    assert np.all(wrapped_pos < 10.0)
+
+    positions = np.array([[1.0, 2.0], [3.0, 4.0]])
+    tiled, index_map = gp_utility.tile_positions_for_wrap(positions, (10.0, 10.0))
+    assert tiled.shape[1] == 2
+    assert index_map.size == tiled.shape[0]
+
+
+def test_wrap_helpers_edge_cases():
+    delta = np.array([1.0, -1.0])
+    same_delta = gp_utility.wrap_deltas(delta, 0.0)
+    assert np.allclose(same_delta, delta)
+
+    values = np.array([5.0, 10.0])
+    same_values = gp_utility.wrap_positions(values, 1.0, 1.0)
+    assert np.allclose(same_values, values)
+
+    empty_positions = np.empty((0, 2), dtype=np.float64)
+    tiled, index_map = gp_utility.tile_positions_for_wrap(
+        empty_positions, (10.0, 10.0)
+    )
+    assert tiled.size == 0
+    assert index_map.size == 0
+
+    with pytest.raises(ValueError):
+        gp_utility.tile_positions_for_wrap(np.zeros((2, 4)), (10.0, 10.0, 10.0, 10.0))
 
 
 def test_generate_colors_and_interactions():

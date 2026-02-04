@@ -31,7 +31,11 @@ except ImportError:
         ) -> List[List[int]]:
             _ = x, r, p, eps
             return [[] for _ in range(len(x))]
-from game_forge.src.gene_particles.gp_utility import mutate_trait
+from game_forge.src.gene_particles.gp_utility import (
+    mutate_trait,
+    tile_positions_for_wrap,
+    wrap_deltas,
+)
 
 
 class PredationStrategy(Enum):
@@ -174,8 +178,19 @@ def apply_interaction_gene(
             other.x - particle.x[:, np.newaxis]
         )  # Broadcasting for all combinations
         dy: FloatArray = other.y - particle.y[:, np.newaxis]
+        if env.boundary_mode == "wrap":
+            world_width = getattr(env, "world_width", None)
+            world_height = getattr(env, "world_height", None)
+            if world_width:
+                dx = wrap_deltas(dx, float(world_width))
+            if world_height:
+                dy = wrap_deltas(dy, float(world_height))
         if env.spatial_dimensions == 3:
             dz: FloatArray = other.z - particle.z[:, np.newaxis]
+            if env.boundary_mode == "wrap":
+                world_depth = getattr(env, "world_depth", None)
+                if world_depth:
+                    dz = wrap_deltas(dz, float(world_depth))
             distances: FloatArray = np.sqrt(
                 np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2)
             )
@@ -563,17 +578,25 @@ def apply_predation_gene(
                 continue
 
             # Calculate distances to all potential prey
+            dx = particle.x[pred_idx] - other.x
+            dy = particle.y[pred_idx] - other.y
+            if env.boundary_mode == "wrap":
+                world_width = getattr(env, "world_width", None)
+                world_height = getattr(env, "world_height", None)
+                if world_width:
+                    dx = wrap_deltas(dx, float(world_width))
+                if world_height:
+                    dy = wrap_deltas(dy, float(world_height))
+
             if env.spatial_dimensions == 3:
-                distances = np.sqrt(
-                    np.power(particle.x[pred_idx] - other.x, 2)
-                    + np.power(particle.y[pred_idx] - other.y, 2)
-                    + np.power(particle.z[pred_idx] - other.z, 2)
-                )
+                dz = particle.z[pred_idx] - other.z
+                if env.boundary_mode == "wrap":
+                    world_depth = getattr(env, "world_depth", None)
+                    if world_depth:
+                        dz = wrap_deltas(dz, float(world_depth))
+                distances = np.sqrt(np.power(dx, 2) + np.power(dy, 2) + np.power(dz, 2))
             else:
-                distances = np.sqrt(
-                    np.power(particle.x[pred_idx] - other.x, 2)
-                    + np.power(particle.y[pred_idx] - other.y, 2)
-                )
+                distances = np.sqrt(np.power(dx, 2) + np.power(dy, 2))
 
             # Identify valid prey within detection range
             valid_prey = (distances < detection_range) & other.alive
@@ -643,8 +666,22 @@ def _select_mating_pairs(
         positions = np.column_stack((particle.x, particle.y, particle.z))
     else:
         positions = np.column_stack((particle.x, particle.y))
-    tree: KDTree = KDTree(positions)
-    neighbors_list = tree.query_ball_point(positions[candidate_indices], mate_radius)
+
+    if env.boundary_mode == "wrap" and env.world_width and env.world_height:
+        if env.spatial_dimensions == 3 and env.world_depth:
+            world_size = (float(env.world_width), float(env.world_height), float(env.world_depth))
+        else:
+            world_size = (float(env.world_width), float(env.world_height))
+        tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
+        tree = KDTree(tiled_positions)
+        raw_neighbors = tree.query_ball_point(positions[candidate_indices], mate_radius)
+        neighbors_list: List[List[int]] = []
+        for local_neighbors in raw_neighbors:
+            mapped = [int(index_map[idx]) for idx in local_neighbors]
+            neighbors_list.append(list(dict.fromkeys(mapped)))
+    else:
+        tree = KDTree(positions)
+        neighbors_list = tree.query_ball_point(positions[candidate_indices], mate_radius)
 
     used = np.zeros(particle.x.size, dtype=bool)
     parent_a: List[int] = []

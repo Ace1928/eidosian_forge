@@ -117,6 +117,7 @@ def test_apply_all_interactions_dtype_exception(monkeypatch):
 def test_handle_boundary_reflections():
     pygame.init()
     config = _make_config()
+    config.boundary_mode = "reflect"
     automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
     ct = automata.type_manager.cellular_types[0]
     ct.x[:] = -10.0
@@ -129,6 +130,7 @@ def test_handle_boundary_reflections():
 def test_handle_boundary_reflections_all_types_and_empty():
     pygame.init()
     config = _make_config(n_cell_types=1, particles_per_type=1)
+    config.boundary_mode = "reflect"
     automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
     ct = automata.type_manager.cellular_types[0]
     ct.x = np.array([], dtype=np.float64)
@@ -156,6 +158,41 @@ def test_main_loop_runs_once():
     config = _make_config(n_cell_types=1, particles_per_type=2)
     config.max_frames = 1
     automata = CellularAutomata(config, fullscreen=False, screen_size=(80, 80))
+    automata.main_loop()
+    assert automata.frame_count == 1
+    pygame.quit()
+
+
+def test_main_loop_paused_renders_once(monkeypatch):
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=1)
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(80, 80))
+    automata.ui.state.paused = True
+    automata.ui.state.single_step = False
+    monkeypatch.setattr(pygame.event, "get", lambda: [])
+
+    class DummyClock:
+        def get_fps(self):
+            return 0.0
+
+        def tick(self, _fps=0):
+            automata.run_flag = False
+            return 0.0
+
+    automata.clock = DummyClock()
+    automata.main_loop()
+    assert automata.frame_count == 1
+    pygame.quit()
+
+
+def test_main_loop_single_step_branch(monkeypatch):
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=1)
+    config.max_frames = 1
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(80, 80))
+    automata.ui.state.paused = True
+    automata.ui.state.single_step = True
+    monkeypatch.setattr(pygame.event, "get", lambda: [])
     automata.main_loop()
     assert automata.frame_count == 1
     pygame.quit()
@@ -266,6 +303,28 @@ def test_apply_interaction_between_types_3d_forces():
     pygame.quit()
 
 
+def test_wrap_interaction_across_edges():
+    pygame.init()
+    config = _make_config(n_cell_types=2, particles_per_type=1, dimensions=2)
+    config.boundary_mode = "wrap"
+    config.predation_range = 10.0
+    config.synergy_range = 10.0
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
+    ct_a = automata.type_manager.cellular_types[0]
+    ct_b = automata.type_manager.cellular_types[1]
+    ct_a.x[:] = 1.0
+    ct_a.y[:] = 25.0
+    ct_b.x[:] = 49.0
+    ct_b.y[:] = 25.0
+
+    dvx = [np.zeros_like(ct_a.vx), np.zeros_like(ct_b.vx)]
+    dvy = [np.zeros_like(ct_a.vy), np.zeros_like(ct_b.vy)]
+    params = {"use_potential": True, "potential_strength": 1.0, "max_dist": 5.0}
+    automata.apply_interaction_between_types(0, 1, params, dvx, dvy)
+    assert np.any(dvx[0] != 0.0)
+    pygame.quit()
+
+
 def test_apply_interaction_disable_gravity():
     pygame.init()
     config = _make_config(n_cell_types=2, particles_per_type=1)
@@ -330,6 +389,7 @@ def test_kdtree_fallback(monkeypatch):
 def test_integrate_type_3d_and_boundaries():
     pygame.init()
     config = _make_config(n_cell_types=1, particles_per_type=2, dimensions=3)
+    config.boundary_mode = "reflect"
     config.global_temperature = 0.0
     config.friction = 0.0
     automata = CellularAutomata(config, fullscreen=False, screen_size=(60, 60))
@@ -338,6 +398,22 @@ def test_integrate_type_3d_and_boundaries():
     ct.vz[:] = 1.0
     automata.integrate_type(ct, np.zeros_like(ct.vx), np.zeros_like(ct.vy))
     assert (ct.vz <= 0).all()
+    pygame.quit()
+
+
+def test_wrap_boundary_mode_positions():
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=1, dimensions=2)
+    config.boundary_mode = "wrap"
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
+    ct = automata.type_manager.cellular_types[0]
+    ct.x[:] = -5.0
+    ct.y[:] = 55.0
+    automata.handle_boundary_reflections(ct)
+    assert (ct.x >= 0.0).all()
+    assert (ct.x < 50.0).all()
+    assert (ct.y >= 0.0).all()
+    assert (ct.y < 50.0).all()
     pygame.quit()
 
 
@@ -353,5 +429,33 @@ def test_apply_clustering_3d_path():
     ct.vx[:] = 0.0
     ct.vy[:] = 0.0
     ct.vz[:] = 0.0
+    automata.apply_clustering(ct)
+    pygame.quit()
+
+
+def test_apply_clustering_wrap_path():
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=2, dimensions=2)
+    config.boundary_mode = "wrap"
+    config.cluster_radius = 5.0
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
+    ct = automata.type_manager.cellular_types[0]
+    ct.x[:] = np.array([1.0, 49.0])
+    ct.y[:] = np.array([25.0, 25.0])
+    ct.vx[:] = 0.0
+    ct.vy[:] = 0.0
+    automata.apply_clustering(ct)
+    pygame.quit()
+
+
+def test_apply_clustering_reflect_path():
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=2, dimensions=2)
+    config.boundary_mode = "reflect"
+    config.cluster_radius = 5.0
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(50, 50))
+    ct = automata.type_manager.cellular_types[0]
+    ct.x[:] = np.array([1.0, 4.0])
+    ct.y[:] = np.array([1.0, 4.0])
     automata.apply_clustering(ct)
     pygame.quit()

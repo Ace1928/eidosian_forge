@@ -22,6 +22,7 @@ Key modules:
 - `gp_types.py`: Data structures and type definitions
 - `gp_rules.py`: Interaction rule generation and evolution
 - `gp_renderer.py`: Visualization and statistics overlay
+- `gp_ui.py`: GUI overlay, controls, and HUD panels
 - `gp_utility.py`: Shared physics and mutation helpers
 
 ## Spatial Model (2D/3D)
@@ -30,10 +31,26 @@ The simulation runs in 2D or 3D with a unified data layout. In 3D, positions and
 Key configuration fields:
 - `spatial_dimensions`: `2` or `3`
 - `world_depth`: depth of the simulation volume (3D only)
+- `boundary_mode`: `wrap` (toroidal) or `reflect`
 - `projection_mode`: `orthographic` or `perspective`
 - `projection_distance`: camera distance for perspective
 - `depth_fade_strength`: depth-based brightness attenuation
 - `depth_min_scale`, `depth_max_scale`: projection scale clamps
+
+## GUI Overlay
+The simulation includes a configurable in-engine GUI overlay with:
+- Status panel (FPS, particles, species, mode)
+- Config panel (projection, clustering, particle size, temperature)
+- Controls panel (key bindings and toggles)
+
+Key bindings:
+- Space/P: pause, N: step while paused
+- H/G/S: toggle help/config/stats panels
+- B: toggle boundary wrap/reflect
+- M: toggle projection mode
+- +/-: particle size
+- [/]: cluster radius
+- ,/. : temperature
 
 ## Environment Hooks
 `SimulationConfig` exposes environment parameters used in gene expression:

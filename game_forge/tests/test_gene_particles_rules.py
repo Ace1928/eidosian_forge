@@ -26,3 +26,18 @@ def test_interaction_rules_creation_and_evolution(monkeypatch):
 
     for _, _, params in rules.rules:
         assert params["max_dist"] >= MIN_INTERACTION_DISTANCE
+
+
+def test_evolve_gravity_factor_branch(monkeypatch):
+    config = SimulationConfig()
+    config.n_cell_types = 1
+    config.mass_based_fraction = 1.0
+
+    monkeypatch.setattr(random, "random", lambda: 0.0)
+    monkeypatch.setattr(random, "uniform", lambda a, b: a)
+
+    rules = InteractionRules(config, [0])
+    gravity_before = [params["gravity_factor"] for _, _, params in rules.rules]
+    rules.evolve_parameters(config.evolution_interval)
+    gravity_after = [params["gravity_factor"] for _, _, params in rules.rules]
+    assert gravity_after != gravity_before

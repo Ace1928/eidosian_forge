@@ -25,6 +25,7 @@ from typing import (
 import numpy as np
 from numpy.typing import NDArray
 from eidosian_core import eidosian
+from game_forge.src.gene_particles.gp_utility import tile_positions_for_wrap, wrap_deltas
 
 # Import scipy's cKDTree with explicit type handling
 try:
@@ -431,6 +432,8 @@ class CellularTypeData:
         self.color: ColorRGB = color
         self.mass_based: bool = mass is not None
         self.spatial_dimensions: int = int(spatial_dimensions)
+        self.window_width: int = int(window_width)
+        self.window_height: int = int(window_height)
         if self.spatial_dimensions not in (2, 3):
             raise ValueError("spatial_dimensions must be 2 or 3")
 
@@ -789,13 +792,22 @@ class CellularTypeData:
                     self.z[alive_indices],
                 )
             )
+            world_size = (float(self.window_width), float(self.window_height), float(self.window_depth or 1))
         else:
             alive_positions = np.column_stack(
                 (self.x[alive_indices], self.y[alive_indices])
             )
+            world_size = (float(self.window_width), float(self.window_height))
 
         # Create KD-Tree with our properly typed wrapper
-        tree: KDTree = KDTree(alive_positions)
+        tree: KDTree
+        if config.boundary_mode == "wrap":
+            tiled_positions, index_map = tile_positions_for_wrap(alive_positions, world_size)
+            index_map = alive_indices[index_map]
+            tree = KDTree(tiled_positions)
+        else:
+            index_map = alive_indices
+            tree = KDTree(alive_positions)
 
         # Process energy transfer in batches for performance
         batch_size: int = min(1000, dead_age_indices.size)
@@ -815,44 +827,68 @@ class CellularTypeData:
                 )
             dead_energies: FloatArray = self.energy[batch_indices]
 
-            # Find nearest neighbors for all dead components in batch
-            distances: FloatArray
-            neighbors: IntArray
-            distances, neighbors = tree.query(
-                dead_positions,
-                k=min(3, alive_indices.size),  # Don't request more neighbors than exist
-                distance_upper_bound=config.predation_range,
-            )
+            if config.boundary_mode == "wrap":
+                neighbor_lists = tree.query_ball_point(dead_positions, config.predation_range)
+            else:
+                distances, neighbors = tree.query(
+                    dead_positions,
+                    k=min(3, alive_indices.size),  # Don't request more neighbors than exist
+                    distance_upper_bound=config.predation_range,
+                )
+                neighbor_lists = [neighbors[j] for j in range(len(batch_indices))]
 
             # Process energy transfer for each dead component
             for j in range(len(batch_indices)):
-                # Extract data for the current dead component
-                dead_idx_distances = distances[j]
-                neighbor_indices = neighbors[j]
                 dead_energy = dead_energies[j]
+                neighbor_indices = neighbor_lists[j]
+                if len(neighbor_indices) == 0:
+                    continue
 
-                # Identify valid neighbors (within range and not INFINITY)
-                valid_mask: BoolArray = (
-                    dead_idx_distances < config.predation_range
-                ) & (dead_idx_distances < np.inf)
+                mapped_neighbors = np.array(
+                    [int(index_map[idx]) for idx in neighbor_indices], dtype=np.int_
+                )
+                mapped_neighbors = np.unique(mapped_neighbors)
 
-                if np.any(valid_mask):
-                    # Get indices of valid neighbors
-                    valid_neighbors: IntArray = neighbor_indices[valid_mask]
+                if mapped_neighbors.size == 0:
+                    continue
 
-                    # Calculate energy share for each valid neighbor
-                    energy_share: float = float(dead_energy / np.sum(valid_mask))
+                # Compute wrapped distances to filter by range
+                if self.spatial_dimensions == 3:
+                    delta = np.column_stack(
+                        (
+                            self.x[mapped_neighbors] - dead_positions[j, 0],
+                            self.y[mapped_neighbors] - dead_positions[j, 1],
+                            self.z[mapped_neighbors] - dead_positions[j, 2],
+                        )
+                    )
+                    if config.boundary_mode == "wrap":
+                        delta[:, 0] = wrap_deltas(delta[:, 0], world_size[0])
+                        delta[:, 1] = wrap_deltas(delta[:, 1], world_size[1])
+                        delta[:, 2] = wrap_deltas(delta[:, 2], world_size[2])
+                else:
+                    delta = np.column_stack(
+                        (
+                            self.x[mapped_neighbors] - dead_positions[j, 0],
+                            self.y[mapped_neighbors] - dead_positions[j, 1],
+                        )
+                    )
+                    if config.boundary_mode == "wrap":
+                        delta[:, 0] = wrap_deltas(delta[:, 0], world_size[0])
+                        delta[:, 1] = wrap_deltas(delta[:, 1], world_size[1])
 
-                    # Distribute energy to valid neighbors
-                    for neighbor_idx in valid_neighbors:
-                        # Avoid indexing beyond array bounds
-                        if neighbor_idx < len(alive_indices):
-                            alive_idx = alive_indices[neighbor_idx]
-                            if alive_idx < len(self.energy):
-                                self.energy[alive_idx] += energy_share
+                dist = np.sqrt(np.sum(delta * delta, axis=1))
+                valid_mask = dist < config.predation_range
+                if not np.any(valid_mask):
+                    continue
 
-                    # Set energy of dead component to zero
-                    self.energy[batch_indices[j]] = 0.0
+                valid_neighbors = mapped_neighbors[valid_mask]
+                energy_share: float = float(dead_energy / np.sum(valid_mask))
+
+                for alive_idx in valid_neighbors:
+                    if alive_idx < len(self.energy):
+                        self.energy[alive_idx] += energy_share
+
+                self.energy[batch_indices[j]] = 0.0
 
     def _filter_arrays(self, mask: BoolArray) -> None:
         """

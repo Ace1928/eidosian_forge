@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from game_forge.src.gene_particles.gp_config import SimulationConfig
+import game_forge.src.gene_particles.gp_types as gp_types
 from game_forge.src.gene_particles.gp_types import (
     CellularTypeData,
     TraitDefinition,
@@ -340,6 +341,105 @@ def test_internal_sync_and_energy_transfer_branches():
     # No alive indices branch
     ct.age = np.array([ct.max_age, ct.max_age])
     ct._process_energy_transfer(np.array([False, False]), cfg)
+
+
+def test_energy_transfer_non_wrap_empty_neighbors(monkeypatch):
+    ct = CellularTypeData(
+        type_id=16,
+        color=(1, 1, 1),
+        n_particles=3,
+        window_width=10,
+        window_height=10,
+        initial_energy=5.0,
+        max_age=1.0,
+        mass=None,
+    )
+    ct.x = np.array([1.0, 2.0, 3.0])
+    ct.y = np.array([1.0, 2.0, 3.0])
+    ct.energy = np.array([5.0, 5.0, 5.0])
+    ct.age = np.array([0.0, 0.0, ct.max_age])
+    ct.alive = np.array([True, True, False])
+    cfg = SimulationConfig()
+    cfg.boundary_mode = "reflect"
+    cfg.predation_range = 1.0
+
+    class DummyTree:
+        def __init__(self, _data, leafsize=10):
+            _ = leafsize
+
+        def query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf, workers=1):
+            _ = (k, eps, p, distance_upper_bound, workers)
+            return np.zeros((len(x), 0)), np.zeros((len(x), 0), dtype=int)
+
+    monkeypatch.setattr(gp_types, "KDTree", DummyTree)
+    ct._process_energy_transfer(ct.alive.copy(), cfg)
+
+
+def test_energy_transfer_non_wrap_empty_mapped_neighbors(monkeypatch):
+    ct = CellularTypeData(
+        type_id=17,
+        color=(2, 2, 2),
+        n_particles=3,
+        window_width=10,
+        window_height=10,
+        initial_energy=5.0,
+        max_age=1.0,
+        mass=None,
+    )
+    ct.x = np.array([1.0, 2.0, 3.0])
+    ct.y = np.array([1.0, 2.0, 3.0])
+    ct.energy = np.array([5.0, 5.0, 5.0])
+    ct.age = np.array([0.0, 0.0, ct.max_age])
+    ct.alive = np.array([True, True, False])
+    cfg = SimulationConfig()
+    cfg.boundary_mode = "reflect"
+    cfg.predation_range = 10.0
+
+    class DummyTree:
+        def __init__(self, _data, leafsize=10):
+            _ = leafsize
+
+        def query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf, workers=1):
+            _ = (k, eps, p, distance_upper_bound, workers)
+            neighbors = np.zeros((len(x), 1), dtype=int)
+            return np.zeros_like(neighbors, dtype=np.float64), neighbors
+
+    monkeypatch.setattr(gp_types, "KDTree", DummyTree)
+    monkeypatch.setattr(gp_types.np, "unique", lambda _arr: np.array([], dtype=np.int_))
+    ct._process_energy_transfer(ct.alive.copy(), cfg)
+
+
+def test_energy_transfer_no_valid_neighbors(monkeypatch):
+    ct = CellularTypeData(
+        type_id=18,
+        color=(3, 3, 3),
+        n_particles=3,
+        window_width=10,
+        window_height=10,
+        initial_energy=5.0,
+        max_age=1.0,
+        mass=None,
+    )
+    ct.x = np.array([0.0, 5.0, 9.0])
+    ct.y = np.array([0.0, 5.0, 9.0])
+    ct.energy = np.array([5.0, 5.0, 5.0])
+    ct.age = np.array([0.0, 0.0, ct.max_age])
+    ct.alive = np.array([True, True, False])
+    cfg = SimulationConfig()
+    cfg.boundary_mode = "reflect"
+    cfg.predation_range = 0.1
+
+    class DummyTree:
+        def __init__(self, _data, leafsize=10):
+            _ = leafsize
+
+        def query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf, workers=1):
+            _ = (k, eps, p, distance_upper_bound, workers)
+            neighbors = np.array([[0, 1] for _ in range(len(x))], dtype=int)
+            return np.zeros_like(neighbors, dtype=np.float64), neighbors
+
+    monkeypatch.setattr(gp_types, "KDTree", DummyTree)
+    ct._process_energy_transfer(ct.alive.copy(), cfg)
 
 
 def test_filter_arrays_index_error_paths():

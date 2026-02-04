@@ -436,6 +436,9 @@ class SimulationConfig:
         # Spatial parameters
         spatial_dimensions: Simulation dimensionality (2 or 3)
         world_depth: Depth of simulation volume for 3D (float > 0 or None for auto)
+        world_width: Width of simulation world (runtime, float > 0 or None)
+        world_height: Height of simulation world (runtime, float > 0 or None)
+        boundary_mode: Boundary behavior (wrap/reflect)
         projection_mode: 3D projection mode (orthographic/perspective)
         projection_distance: Camera distance for perspective projection (float > 0)
         depth_fade_strength: Depth-based brightness attenuation (0.0-1.0)
@@ -549,6 +552,9 @@ class SimulationConfig:
         # Spatial parameters (3D-ready with 2D compatibility)
         self.spatial_dimensions: int = 3
         self.world_depth: Optional[float] = None
+        self.world_width: Optional[float] = None
+        self.world_height: Optional[float] = None
+        self.boundary_mode: str = "wrap"
         self.projection_mode: str = "perspective"
         self.projection_distance: float = 800.0
         self.depth_fade_strength: float = 0.35
@@ -732,6 +738,15 @@ class SimulationConfig:
 
         if self.world_depth is not None and self.world_depth <= 0:
             raise ValueError("World depth must be positive when specified")
+
+        if self.world_width is not None and self.world_width <= 0:
+            raise ValueError("World width must be positive when specified")
+
+        if self.world_height is not None and self.world_height <= 0:
+            raise ValueError("World height must be positive when specified")
+
+        if self.boundary_mode not in {"wrap", "reflect"}:
+            raise ValueError("Boundary mode must be wrap or reflect")
 
         if self.projection_mode not in {"orthographic", "perspective"}:
             raise ValueError("Projection mode must be orthographic or perspective")
@@ -940,7 +955,7 @@ class SimulationConfig:
         # Start with all attributes except genetics and runtime-only hooks
         config_dict: Dict[str, object] = {}
         for key, value in self.__dict__.items():
-            if key in {"genetics", "environment_hooks"}:
+            if key in {"genetics", "environment_hooks", "world_width", "world_height"}:
                 continue
             if isinstance(value, Enum):
                 config_dict[key] = value.value

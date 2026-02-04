@@ -69,6 +69,7 @@ def test_simulation_config_round_trip():
     assert restored.reproduction_mode == ReproductionMode.MANAGER
     assert restored.spatial_dimensions == config.spatial_dimensions
     assert restored.projection_mode == config.projection_mode
+    assert restored.boundary_mode == config.boundary_mode
 
 
 def test_simulation_config_environment_advance():
@@ -177,6 +178,9 @@ def test_simulation_config_all_validation_branches():
         ("max_energy", 0.0),
         ("spatial_dimensions", 1),
         ("world_depth", 0.0),
+        ("world_width", 0.0),
+        ("world_height", 0.0),
+        ("boundary_mode", "bounce"),
         ("projection_mode", "tilt"),
         ("projection_distance", 0.0),
         ("depth_fade_strength", -0.1),

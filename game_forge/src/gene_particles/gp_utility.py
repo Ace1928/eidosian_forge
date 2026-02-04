@@ -16,6 +16,7 @@ vectorized operations for both performance and correctness guarantees.
 """
 
 import math
+from itertools import product
 from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, Union, cast, overload
 
 import numpy as np
@@ -178,6 +179,49 @@ def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray"
     ).astype(np.float64)
 
     return coords
+
+
+@eidosian()
+def wrap_deltas(delta: "FloatArray", size: float) -> "FloatArray":
+    """Wrap delta distances to the minimal image within a periodic boundary."""
+    if size <= 0:
+        return delta
+    return delta - np.round(delta / size) * size
+
+
+@eidosian()
+def wrap_positions(values: "FloatArray", minimum: float, maximum: float) -> "FloatArray":
+    """Wrap positions into [minimum, maximum) for toroidal boundaries."""
+    span = maximum - minimum
+    if span <= 0:
+        return values
+    return ((values - minimum) % span) + minimum
+
+
+@eidosian()
+def tile_positions_for_wrap(
+    positions: "FloatArray", world_size: Tuple[float, ...]
+) -> Tuple["FloatArray", "IntArray"]:
+    """Tile positions across periodic boundaries for KDTree queries."""
+    if positions.size == 0:
+        return positions, np.array([], dtype=np.int_)
+
+    dims = positions.shape[1]
+    if dims not in (2, 3):
+        raise ValueError("Positions must be 2D or 3D for wrapping")
+
+    offsets: List[Tuple[float, ...]] = []
+    for combo in product([-1, 0, 1], repeat=dims):
+        offsets.append(tuple(combo[i] * world_size[i] for i in range(dims)))
+
+    base_indices = np.arange(positions.shape[0], dtype=np.int_)
+    tiled: List["FloatArray"] = []
+    tiled_indices: List["IntArray"] = []
+    for offset in offsets:
+        tiled.append(positions + np.array(offset, dtype=np.float64))
+        tiled_indices.append(base_indices)
+
+    return np.vstack(tiled), np.concatenate(tiled_indices)
 
 
 @eidosian()

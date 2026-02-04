@@ -29,7 +29,11 @@ from game_forge.src.gene_particles.gp_utility import (
     apply_synergy,
     generate_vibrant_colors,
     give_take_interaction,
+    tile_positions_for_wrap,
+    wrap_deltas,
+    wrap_positions,
 )
+from game_forge.src.gene_particles.gp_ui import SimulationUI
 
 
 # Protocol for pygame.display.Info() return type
@@ -142,17 +146,32 @@ class CellularAutomata:
             ],
             dtype=np.float64,
         )
+
+        # World bounds for wrap mode (no buffer)
+        self.world_bounds: FloatArray = np.array(
+            [0.0, float(screen_width), 0.0, float(screen_height)],
+            dtype=np.float64,
+        )
+        self.config.world_width = float(screen_width)
+        self.config.world_height = float(screen_height)
         if self.spatial_dimensions == 3:
             if self.config.world_depth is None:
                 self.config.world_depth = float(max(screen_width, screen_height))
             depth_max = float(self.config.world_depth)
-            depth_min = self.edge_buffer
-            depth_max = max(depth_max - self.edge_buffer, depth_min)
+            depth_min = 0.0
             self.depth_bounds: Optional[FloatArray] = np.array(
                 [depth_min, depth_max], dtype=np.float64
             )
+            self.world_size = np.array(
+                [float(screen_width), float(screen_height), float(depth_max)],
+                dtype=np.float64,
+            )
+            self.config.world_depth = depth_max
         else:
             self.depth_bounds = None
+            self.world_size = np.array(
+                [float(screen_width), float(screen_height)], dtype=np.float64
+            )
 
         # Generate vibrant, visually distinct colors for particle types
         self.colors: List[Tuple[int, int, int]] = generate_vibrant_colors(
@@ -199,6 +218,7 @@ class CellularAutomata:
             self.config, mass_based_type_indices
         )
         self.renderer: Renderer = Renderer(self.screen, self.config)
+        self.ui: SimulationUI = SimulationUI(self.screen, self.config)
 
         # Genetic interpreter for gene-driven behaviors and reproduction
         self.genetic_interpreter: GeneticInterpreter = GeneticInterpreter(
@@ -256,8 +276,26 @@ class CellularAutomata:
                 ):
                     self.run_flag = False
                     break
+                self.ui.handle_event(event, self)
             if not self.run_flag:
                 break
+
+            if self.ui.state.paused and not self.ui.state.single_step:
+                stats: Dict[str, float] = {
+                    "fps": self.clock.get_fps(),
+                    "total_species": float(len(self.species_count)),
+                    "total_particles": float(sum(self.species_count.values())),
+                }
+                self.screen.fill((20, 20, 30))
+                for ct in self.type_manager.cellular_types:
+                    self.renderer.draw_cellular_type(ct)
+                self.renderer.render(stats)
+                self.ui.render(stats)
+                pygame.display.flip()
+                self.clock.tick(60)
+                continue
+            if self.ui.state.single_step:
+                self.ui.state.single_step = False
 
             # Advance environment state and run hooks
             self.config.advance_environment(self.frame_count)
@@ -304,6 +342,7 @@ class CellularAutomata:
 
             # Render UI elements with current statistics
             self.renderer.render(stats)
+            self.ui.render(stats)
             pygame.display.flip()
 
             # Limit frame rate and get time delta
@@ -455,8 +494,13 @@ class CellularAutomata:
         # Calculate pairwise distances using vectorized operations
         dx: FloatArray = ct_i.x[:, np.newaxis] - ct_j.x
         dy: FloatArray = ct_i.y[:, np.newaxis] - ct_j.y
+        if self.config.boundary_mode == "wrap":
+            dx = wrap_deltas(dx, self.world_size[0])
+            dy = wrap_deltas(dy, self.world_size[1])
         if self.spatial_dimensions == 3:
             dz: FloatArray = ct_i.z[:, np.newaxis] - ct_j.z
+            if self.config.boundary_mode == "wrap":
+                dz = wrap_deltas(dz, self.world_size[2])
             dist_sq: FloatArray = dx * dx + dy * dy + dz * dz
         else:
             dist_sq = dx * dx + dy * dy
@@ -689,6 +733,13 @@ class CellularAutomata:
             if ct.x.size == 0:
                 continue
 
+            if self.config.boundary_mode == "wrap":
+                ct.x = wrap_positions(ct.x, self.world_bounds[0], self.world_bounds[1])
+                ct.y = wrap_positions(ct.y, self.world_bounds[2], self.world_bounds[3])
+                if self.spatial_dimensions == 3 and self.depth_bounds is not None:
+                    ct.z = wrap_positions(ct.z, self.depth_bounds[0], self.depth_bounds[1])
+                continue
+
             # Create boolean masks for boundary violations in each direction
             left_mask: BoolArray = ct.x < self.screen_bounds[0]
             right_mask: BoolArray = ct.x > self.screen_bounds[1]
@@ -775,14 +826,23 @@ class CellularAutomata:
         # Build KD-Tree for efficient neighbor searching
         if self.spatial_dimensions == 3:
             positions = np.column_stack((ct.x, ct.y, ct.z))
+            world_size = tuple(self.world_size.tolist())
         else:
             positions = np.column_stack((ct.x, ct.y))
-        tree: KDTree = KDTree(positions)
+            world_size = tuple(self.world_size.tolist())
 
-        # Query all neighbors within cluster radius
-        indices_list: List[List[int]] = tree.query_ball_point(
-            positions, self.config.cluster_radius
-        )
+        if self.config.boundary_mode == "wrap":
+            tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
+            tree = KDTree(tiled_positions)
+            raw_neighbors = tree.query_ball_point(positions, self.config.cluster_radius)
+            indices_list = []
+            for idx, neighbors in enumerate(raw_neighbors):
+                mapped = [int(index_map[n]) for n in neighbors if int(index_map[n]) != idx]
+                unique = list(dict.fromkeys(mapped))
+                indices_list.append(unique)
+        else:
+            tree = KDTree(positions)
+            indices_list = tree.query_ball_point(positions, self.config.cluster_radius)
 
         # Pre-allocate velocity change arrays
         dvx: FloatArray = np.zeros(n, dtype=np.float64)

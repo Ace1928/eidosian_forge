@@ -234,6 +234,135 @@ def test_predation_2d_distance_branch(monkeypatch):
     assert not np.all(prey.alive)
 
 
+def test_interaction_gene_wraps_distances():
+    env = SimulationConfig()
+    env.spatial_dimensions = 2
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+
+    ct = _make_particle()
+    other = _make_particle()
+    ct.x[:] = 1.0
+    ct.y[:] = 25.0
+    other.x[:] = 49.0
+    other.y[:] = 25.0
+    ct.vx[:] = 0.0
+    ct.vy[:] = 0.0
+
+    apply_interaction_gene(ct, [other], [1.0, 5.0], env)
+    assert np.any(ct.vx != 0.0) or np.any(ct.vy != 0.0)
+
+
+def test_predation_gene_wraps_distances(monkeypatch):
+    env = SimulationConfig()
+    env.spatial_dimensions = 2
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+
+    predator = _make_particle()
+    prey = _make_particle()
+    predator.x[:] = 1.0
+    predator.y[:] = 25.0
+    prey.x[:] = 49.0
+    prey.y[:] = 25.0
+    monkeypatch.setattr(np.random, "random", lambda *args, **kwargs: 0.0)
+
+    apply_predation_gene(predator, [prey], [1.0, 0.9, 0.0, 5.0], env)
+    assert not np.all(prey.alive)
+
+
+def test_select_mating_pairs_wrap_path():
+    env = SimulationConfig()
+    env.spatial_dimensions = 2
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+    env.compatibility_threshold = 10.0
+    env.mate_selection_strategy = "compatibility"
+
+    ct = _make_particle()
+    ct.x[:] = np.array([1.0, 49.0, 25.0])
+    ct.y[:] = np.array([25.0, 25.0, 10.0])
+    ct.species_id[:] = np.array([0, 0, 1])
+    candidate_mask = np.array([True, True, False])
+    trait_ranges = _get_trait_mutation_parameters(env.genetics, env)
+
+    parent_a, parent_b = _select_mating_pairs(
+        ct, candidate_mask, env, trait_ranges, mate_radius=5.0
+    )
+    assert parent_a.size == parent_b.size
+
+
+def test_interaction_gene_wraps_depth_3d():
+    env = SimulationConfig()
+    env.spatial_dimensions = 3
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+    env.world_depth = 50.0
+
+    ct = _make_particle_3d()
+    other = _make_particle_3d()
+    ct.x[:] = 25.0
+    ct.y[:] = 25.0
+    ct.z[:] = 1.0
+    other.x[:] = 25.0
+    other.y[:] = 25.0
+    other.z[:] = 49.0
+    ct.vz[:] = 0.0
+
+    apply_interaction_gene(ct, [other], [1.0, 5.0], env)
+    assert np.any(ct.vz != 0.0)
+
+
+def test_predation_gene_wraps_depth_3d(monkeypatch):
+    env = SimulationConfig()
+    env.spatial_dimensions = 3
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+    env.world_depth = 50.0
+
+    predator = _make_particle_3d()
+    prey = _make_particle_3d()
+    predator.x[:] = 25.0
+    predator.y[:] = 25.0
+    predator.z[:] = 1.0
+    prey.x[:] = 25.0
+    prey.y[:] = 25.0
+    prey.z[:] = 49.0
+    monkeypatch.setattr(np.random, "random", lambda *args, **kwargs: 0.0)
+
+    apply_predation_gene(predator, [prey], [1.0, 0.9, 0.0, 5.0], env)
+    assert not np.all(prey.alive)
+
+
+def test_select_mating_pairs_wrap_path_3d():
+    env = SimulationConfig()
+    env.spatial_dimensions = 3
+    env.boundary_mode = "wrap"
+    env.world_width = 50.0
+    env.world_height = 50.0
+    env.world_depth = 50.0
+    env.compatibility_threshold = 10.0
+    env.mate_selection_strategy = "compatibility"
+
+    ct = _make_particle_3d()
+    ct.x[:] = np.array([1.0, 49.0, 25.0])
+    ct.y[:] = np.array([25.0, 25.0, 10.0])
+    ct.z[:] = np.array([1.0, 49.0, 10.0])
+    ct.species_id[:] = np.array([0, 0, 1])
+    candidate_mask = np.array([True, True, False])
+    trait_ranges = _get_trait_mutation_parameters(env.genetics, env)
+
+    parent_a, parent_b = _select_mating_pairs(
+        ct, candidate_mask, env, trait_ranges, mate_radius=5.0
+    )
+    assert parent_a.size == parent_b.size
+
+
 def test_predation_no_active_predators():
     env = SimulationConfig()
     predator = _make_particle()
