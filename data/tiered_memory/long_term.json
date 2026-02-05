@@ -991,5 +991,26 @@
       "status"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "c02908a1-02b0-4427-9847-39b701c03509",
+    "content": "2026-02-05: Added run targets for algorithms_lab_profiler and falling_sand_profile_index; updated launcher list test. Updated algorithms_lab/profiler.py docstring examples. Ran full game_forge test suite: 207 passed, 2 skipped, 42 warnings (numba /dev/shm; pygame font). Updated TEST_STATUS.md timestamp.",
+    "created_at": "2026-02-05T23:13:22.612432",
+    "last_accessed": "2026-02-05T23:13:22.612438",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "algorithms_lab",
+      "falling_sand",
+      "tests",
+      "game_forge",
+      "launcher"
+    ],
+    "linked_memories": []
   }
 ]

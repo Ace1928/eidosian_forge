@@ -2,7 +2,8 @@
 """Profile Algorithms Lab components with cProfile.
 
 Example:
-  python game_forge/tools/algorithms_lab/profile.py --algorithm barnes-hut
+  python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
+  python game_forge/tools/algorithms_lab/profiler.py --algorithm grid --steps 10 --output artifacts/algorithms_lab.prof
 """
 
 from __future__ import annotations

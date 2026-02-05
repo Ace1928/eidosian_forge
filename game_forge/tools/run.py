@@ -10,6 +10,8 @@ Example:
   python game_forge/tools/run.py falling-sand-benchmark -- --runs 5
   python game_forge/tools/run.py pyparticles-benchmark -- --particles 512 --steps 10
   python game_forge/tools/run.py pyparticles-benchmark-sim -- --particles 512 --steps 10
+  python game_forge/tools/run.py algorithms-lab-profiler -- --algorithm grid --steps 10 --output artifacts/algorithms_lab.prof
+  python game_forge/tools/run.py falling-sand-profile-index -- --runs 1 --output artifacts/profile.pstats
 """
 
 from __future__ import annotations
@@ -111,6 +113,12 @@ def load_targets(root: Path) -> dict[str, Target]:
             command=[str(root / "game_forge" / "tools" / "algorithms_lab" / "benchmark.py")],
             requires=["numpy"],
         ),
+        "algorithms-lab-profiler": Target(
+            name="algorithms-lab-profiler",
+            description="Algorithms Lab cProfile run",
+            command=[str(root / "game_forge" / "tools" / "algorithms_lab" / "profiler.py")],
+            requires=["numpy"],
+        ),
         "algorithms-lab-demo": Target(
             name="algorithms-lab-demo",
             description="Algorithms Lab demo runner",
@@ -133,6 +141,13 @@ def load_targets(root: Path) -> dict[str, Target]:
             name="falling-sand-benchmark",
             description="Falling Sand benchmark suite",
             command=["-m", "falling_sand.benchmarks"],
+            extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
+            requires=["numpy"],
+        ),
+        "falling-sand-profile-index": Target(
+            name="falling-sand-profile-index",
+            description="Falling Sand indexer profile",
+            command=[str(root / "game_forge" / "src" / "falling_sand" / "scripts" / "profile_index.py")],
             extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
             requires=["numpy"],
         ),
