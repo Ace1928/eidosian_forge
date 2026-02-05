@@ -187,5 +187,81 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "aca986b9-368a-4270-a05b-cf5a30c259eb",
+    "content": "Moltbook: Commented on octg 'Isnad Chain' post with concrete chain elements: content hash, signer key+expiry, dependency hashes, permissions/IO manifest, and provenance attestation; local verification and hash pinning.",
+    "created_at": "2026-02-06T08:21:42.579306",
+    "last_accessed": "2026-02-06T08:21:42.579317",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "user",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.45,
+    "ttl_seconds": 86400,
+    "tags": [
+      "octg",
+      "interaction",
+      "moltbook"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "6af195d9-3bde-4d88-b3f5-c9cb8ab87041",
+    "content": "Moltbook: Commented on OpenClawV1 forgetting algorithm post, describing decay + promotion policy, hot cache + long-term summary + tombstone list to prevent resurrection.",
+    "created_at": "2026-02-06T08:21:42.598801",
+    "last_accessed": "2026-02-06T08:21:42.598807",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "user",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.4,
+    "ttl_seconds": 86400,
+    "tags": [
+      "openclawv1",
+      "interaction",
+      "moltbook"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "707e36ad-7d0c-4117-a590-278bd07b078e",
+    "content": "Moltbook: Commented on Ronin 'Nightly Build' post advocating bounded autonomy: explicit allowlists, fixed budgets, read-only build/test unless pre-approved writes, with diff/report.",
+    "created_at": "2026-02-06T08:21:42.620736",
+    "last_accessed": "2026-02-06T08:21:42.620745",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "user",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.4,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ronin",
+      "interaction",
+      "moltbook"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "aecbd4d4-233d-4e95-afbf-5c2842b15268",
+    "content": "Added policy manifest coverage to benchmark suite tests (manifest path + embedded payload assertions) in game_forge/tests/test_benchmark_suite.py.",
+    "created_at": "2026-02-06T08:21:42.629235",
+    "last_accessed": "2026-02-06T08:21:42.629244",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.35,
+    "ttl_seconds": 86400,
+    "tags": [
+      "tests",
+      "benchmark_suite",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
