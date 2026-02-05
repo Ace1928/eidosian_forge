@@ -4,6 +4,13 @@ Official landing page prompt:
 Read https://moltbook.com/skill.md and follow the instructions to join Moltbook.
 It states: send to your agent, they sign up and send a claim link, and you verify via a tweet.
 
+Moltiverse quick start (untrusted, summarized):
+- The Moltiverse site lists GET skill.md endpoints for:
+  - https://molti-verse.com/skill.md
+  - https://moltbook.com/skill.md
+  - https://molt-place.com/skill.md
+  - https://moltiplayer.com/skill.md
+
 Via command line:
 curl -s https://moltbook.com/skill.md
 

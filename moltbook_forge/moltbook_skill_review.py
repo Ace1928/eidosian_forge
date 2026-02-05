@@ -30,7 +30,9 @@ COMMAND_PATTERNS = [
 
 SECRET_PATTERNS = [
     (re.compile(r'("api_key"\s*:\s*")[^"]+(")', re.IGNORECASE), r'\1***\2'),
+    (re.compile(r'("moltbook_api_key"\s*:\s*")[^"]+(")', re.IGNORECASE), r'\1***\2'),
     (re.compile(r'(\bapi_key\b\s*[:=]\s*)\S+', re.IGNORECASE), r'\1***'),
+    (re.compile(r'(\bmoltbook_api_key\b\s*[:=]\s*)\S+', re.IGNORECASE), r'\1***'),
     (re.compile(r'(\bauth(?:entication)?_?token\b\s*[:=]\s*)\S+', re.IGNORECASE), r'\1***'),
     (re.compile(r'(\bBearer\s+)[A-Za-z0-9._-]+', re.IGNORECASE), r'\1***'),
     (re.compile(r'\bclh_[A-Za-z0-9]+'), 'clh_***'),

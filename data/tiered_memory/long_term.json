@@ -371,5 +371,25 @@
       "moltbook_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "9ddaf8d9-7d37-46de-9dcb-84c32fddb6b5",
+    "content": "Expanded Moltbook skill snapshot with Moltiverse quick-start endpoints and updated skill_review redaction to cover moltbook_api_key; added redaction test and re-generated skill report; moltbook_forge tests now 16 passed.",
+    "created_at": "2026-02-05T21:33:14.938228",
+    "last_accessed": "2026-02-05T21:33:14.938233",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [
+      "redaction",
+      "snapshot",
+      "tests",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]
