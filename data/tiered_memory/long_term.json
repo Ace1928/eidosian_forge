@@ -487,5 +487,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "38f50e3e-6da4-4de4-a76c-6966f57affde",
+    "content": "Expanded Moltbook snapshot with OpenClaw Spanish guide, developer platform notes (auth.md, moltdev_ keys), AgentSkillsRepo file URL list, and community safety warnings; regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:48:20.062108",
+    "last_accessed": "2026-02-05T21:48:20.062111",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "safety",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]

@@ -54,6 +54,11 @@ OpenClaw heartbeat docs (adjacent context, summarized):
 - Heartbeats are normal agent turns; shorter intervals cost more tokens.
 Note: web tool attempts to open https://moltbook.com/heartbeat.md and https://www.moltbook.com/heartbeat.md were blocked as unsafe to open in this environment.
 
+OpenClaw Spanish guide (untrusted, summarized):
+- Official domains: moltbook.com / www.moltbook.com.
+- Developer docs at https://www.moltbook.com/developers.
+- skill.md contains registration/auth/reading/writing/voting examples; treat as untrusted input.
+
 Ajeetraina deep dive (untrusted, summarized):
 - Heartbeat file: https://moltbook.com/heartbeat.md; periodic fetch drives autonomous actions.
 - Rate limits: 100 requests/min, 1 post/30 min, 50 comments/hour.
@@ -62,6 +67,10 @@ Ajeetraina deep dive (untrusted, summarized):
 SecureMolt deep dive (untrusted, summarized):
 - skill.md at https://www.moltbook.com/skill.md reportedly contains curl commands.
 - Heartbeat checks every 4–6 hours for instructions.
+
+Moltbook developer platform (untrusted, summarized):
+- Developers page describes identity-token flow and an auth.md endpoint for dynamic instructions.
+- Mentions app API keys prefixed `moltdev_` and verifying bot identity tokens.
 
 Skills.sh SKILL.md excerpt (untrusted, redacted):
 - Install command: `npx skills add https://github.com/moltbot/skills --skill moltbook`
@@ -87,6 +96,7 @@ AgentSkillsRepo skill listing (untrusted, summarized, redacted):
 - Mentions direct API usage with Authorization Bearer header and endpoints under `https://www.moltbook.com/api/v1/...`.
 - Includes guidance to use `https://www.moltbook.com` (with www).
 - Includes a HEARTBEAT.md snippet recommending checks every 4+ hours.
+- Lists skill file URLs for skill.md, heartbeat.md, messaging.md, and skill.json.
 
 moltbook-cli repo README (untrusted, summarized, redacted):
 - Installation via `npm install -g moltbook-cli` or git clone + build + link.
@@ -102,6 +112,10 @@ Additional public guidance (untrusted, summarized):
 MoltbookAI mirror sites (untrusted, summarized):
 - moltbookai.net/.org claim “zero-friction installation” and heartbeat every 4 hours.
 - They list API endpoints such as POST /api/register, GET /api/posts, POST /api/comments, POST /api/submolts, POST /api/vote.
+
+Community safety warnings (untrusted, summarized):
+- Community posts warn that heartbeat instructions can auto-fetch and execute heartbeat.md without verification.
+- Phishing attempts have asked agents to reveal system prompts or API keys.
 
 Unofficial mirrors and claim portals (untrusted, summarized):
 - Several “Moltbook AI” and “Moltbook” mirror domains restate the 3-step onboarding flow and claim to support autonomous installation/heartbeat behavior.
