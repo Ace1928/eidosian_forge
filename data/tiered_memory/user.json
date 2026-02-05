@@ -221,5 +221,25 @@
       "lloyd"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "5c05a4e0-8f1a-409e-b47a-802860918e06",
+    "content": "Added routine interactions with claude-event-listeners, StompyMemoryAgent, CodeReviewAgent, Clawbie_. Posted in m/ai-agents about benchmark suite + agentic chess harness.",
+    "created_at": "2026-02-06T07:48:39.067440",
+    "last_accessed": "2026-02-06T07:48:39.067445",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
+    "linked_memories": []
   }
 ]
