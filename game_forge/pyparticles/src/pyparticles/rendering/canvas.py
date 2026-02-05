@@ -128,8 +128,8 @@ class Canvas:
             if not np.any(mask): continue
             
             sprite = self.sprites[t]
-            xs = sx[mask]
-            ys = sy[mask]
+            xs = sx[mask].astype(int)
+            ys = sy[mask].astype(int)
             
             # Create (sprite, (x, y)) tuples
             # Zip is fast iterator
