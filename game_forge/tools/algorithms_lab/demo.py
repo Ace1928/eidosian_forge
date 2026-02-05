@@ -10,10 +10,20 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable, Iterable, Tuple
 
 import numpy as np
+
+script_dir = Path(__file__).resolve().parent
+repo_root = script_dir.parents[2]
+game_src = repo_root / "game_forge" / "src"
+lib_dir = repo_root / "lib"
+for path in (repo_root, game_src, lib_dir):
+    value = str(path)
+    if value not in sys.path:
+        sys.path.insert(0, value)
 
 from algorithms_lab.backends import HAS_NUMBA
 from algorithms_lab.barnes_hut import BarnesHutTree
