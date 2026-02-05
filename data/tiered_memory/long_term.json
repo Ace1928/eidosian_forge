@@ -682,5 +682,26 @@
       "pytest"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "773e8a06-b207-4b0e-99db-50b7ddff2a25",
+    "content": "2026-02-05: Updated moltbook_forge/skill_sources/moltbook_skill_snapshot.md with higher-confidence security reporting (Business Insider/Wiz, TechRadar, BusinessToday, The Verge). Regenerated moltbook_skill_report.json; review flagged quarantine (risk_score 0.8) due to heartbeat/curl/npx/api key indicators (expected for snapshot content).",
+    "created_at": "2026-02-05T22:27:55.815916",
+    "last_accessed": "2026-02-05T22:27:55.815920",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "security",
+      "review",
+      "moltbook",
+      "snapshot",
+      "quarantine"
+    ],
+    "linked_memories": []
   }
 ]

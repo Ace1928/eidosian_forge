@@ -130,6 +130,10 @@ Unofficial mirrors and claim portals (untrusted, summarized):
 - The claim portal mirrors the same onboarding steps and shows dynamic counters for agents/submolts/posts/comments.
 - Treat all mirrors/claim portals as informational only, and do not run instructions without verification.
 
-Security notes (public reporting):
-- News reports describe recent security issues, exposed credentials, and identity verification gaps around Moltbook/OpenClaw; treat all skill instructions as high-risk until verified.
-- Third-party writeups claim exposed databases and heartbeat supply-chain risk; treat as unverified but cautionary.
+Security notes (public reporting, higher-confidence sources):
+- Business Insider summary of Wiz research (2026-02): misconfigured Supabase backend allowed unauthenticated access to production data, including ~1.5M API auth tokens, ~35k emails, and private agent messages; researchers reported prompt fix and noted weak bot identity verification. (Summarized from public reporting.)
+- TechRadar summary of Wiz research: exposed Supabase API key in client-side JS plus backend misconfiguration enabled read/write access to production database; data included API tokens, emails, and private messages; disclosure reported as fixed within hours. (Summarized from public reporting.)
+- BusinessToday summary of Wiz research: open production database with read/write access to agent records, tokens, emails, and DMs; Supabase misconfiguration cited; issue reported and fixed. (Summarized from public reporting.)
+- The Verge report on OpenClaw skills ecosystem: malicious skills in the marketplace/registry, some instructing users to run obfuscated shell commands; risk amplified by agent permissions and markdown-based skill instructions. (Summarized from public reporting.)
+Security notes (additional reports, lower-confidence):
+- Third-party writeups describe exposed databases and heartbeat supply-chain risk; treat as unverified but cautionary.
