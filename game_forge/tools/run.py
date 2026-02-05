@@ -12,6 +12,9 @@ Example:
   python game_forge/tools/run.py pyparticles-benchmark-sim -- --particles 512 --steps 10
   python game_forge/tools/run.py algorithms-lab-profiler -- --algorithm grid --steps 10 --output artifacts/algorithms_lab.prof
   python game_forge/tools/run.py falling-sand-profile-index -- --runs 1 --output artifacts/profile.pstats
+  python game_forge/tools/run.py falling-sand-index -- --output artifacts/index.json
+  python game_forge/tools/run.py falling-sand-ingest -- --index artifacts/index.json --db artifacts/index.db
+  python game_forge/tools/run.py falling-sand-report -- --db artifacts/index.db --output artifacts/report.json
 """
 
 from __future__ import annotations
@@ -148,6 +151,27 @@ def load_targets(root: Path) -> dict[str, Target]:
             name="falling-sand-profile-index",
             description="Falling Sand indexer profile",
             command=[str(root / "game_forge" / "src" / "falling_sand" / "scripts" / "profile_index.py")],
+            extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
+            requires=["numpy"],
+        ),
+        "falling-sand-index": Target(
+            name="falling-sand-index",
+            description="Falling Sand indexer CLI",
+            command=["-m", "falling_sand.indexer"],
+            extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
+            requires=["numpy"],
+        ),
+        "falling-sand-ingest": Target(
+            name="falling-sand-ingest",
+            description="Falling Sand ingest CLI",
+            command=["-m", "falling_sand.ingest"],
+            extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
+            requires=["numpy"],
+        ),
+        "falling-sand-report": Target(
+            name="falling-sand-report",
+            description="Falling Sand report CLI",
+            command=["-m", "falling_sand.reporting"],
             extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
             requires=["numpy"],
         ),

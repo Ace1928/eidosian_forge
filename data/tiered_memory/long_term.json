@@ -1115,5 +1115,26 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "a2d16892-0638-44ee-8d24-3ee1254fbe8a",
+    "content": "2026-02-05: Added falling_sand CLI targets (index/ingest/report) to game_forge/tools/run.py, expanded launcher test, and updated TEST_STATUS.md timestamp after full game_forge run (208 passed, 2 skipped, 42 warnings).",
+    "created_at": "2026-02-05T23:26:12.723152",
+    "last_accessed": "2026-02-05T23:26:12.723158",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.7,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "tests",
+      "game_forge",
+      "status",
+      "launcher"
+    ],
+    "linked_memories": []
   }
 ]
