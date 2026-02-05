@@ -2,6 +2,18 @@
 
 **Date**: 2026-02-05
 
+## Benchmark Suite (quick)
+- Command: `/home/lloyd/eidosian_forge/eidosian_venv/bin/python game_forge/tools/benchmark_suite.py --preset quick --output-dir game_forge/tools/artifacts --tag 20260205_quick`
+- Results:
+  - gene_particles: total_s=5.192, mean_ms=51.920, median_ms=47.437, p95_ms=98.672, steps_per_s=19.260
+  - algorithms_lab (seconds): grid=0.140, neighbor-list=0.001, barnes-hut=0.060, fmm2d=0.792, fmm-ml=1.756, forces=0.030, sph=0.026, pbf=0.055, xpbd=0.056
+  - falling_sand (mean seconds over 3 runs): indexer=0.051, simulation=0.004, streaming=0.670, terrain=0.015
+  - stratum (16x16, 5 ticks): elapsed_seconds=17.849, ticks_per_second=0.280, microticks_per_second=16.192, cells_per_second=71.714, peak_memory_mb=0.358
+  - pyparticles engine: elapsed_seconds=0.019, fps=264.186, particles=256, steps=5, dt=0.01
+  - pyparticles sim: elapsed_seconds=0.016, fps=321.630, particles=256, steps=5, dt=0.01
+- Skipped: agentic-chess (missing python-chess module)
+- Warnings: pygame system font 'Fira Sans' missing; numba could not obtain multiprocessing lock due to /dev/shm permissions.
+
 ## Stratum
 - Command: `/home/lloyd/eidosian_forge/eidosian_venv/bin/python game_forge/src/Stratum/tests/benchmark.py --grid 16 --ticks 10 --output game_forge/src/Stratum/tests/artifacts/benchmark_single_20260205.json`
 - Results (16x16, 10 ticks): elapsed_seconds=29.871, ticks_per_second=0.335, microticks_per_second=15.868, cells_per_second=85.702, peak_memory_mb=0.444

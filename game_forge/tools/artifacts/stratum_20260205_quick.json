@@ -1,0 +1,17 @@
+{
+  "grid_size": 16,
+  "mode": "single",
+  "result": {
+    "cells_per_second": 71.71403714521166,
+    "current_memory_mb": 0.18274307250976562,
+    "elapsed_seconds": 17.84866744300234,
+    "grid_size": 16,
+    "microticks_per_second": 16.19168494919232,
+    "num_ticks": 5,
+    "peak_memory_mb": 0.35819244384765625,
+    "ticks_per_second": 0.28013295759848306,
+    "total_cells": 256,
+    "total_microticks": 289
+  },
+  "ticks": 5
+}

@@ -1,0 +1,19 @@
+{
+  "steps": 100,
+  "total_s": 5.192052500002319,
+  "mean_ms": 51.91993811313296,
+  "median_ms": 47.43722200510092,
+  "p95_ms": 98.67204564943677,
+  "p99_ms": 109.72204302350337,
+  "min_ms": 42.781611991813406,
+  "max_ms": 196.25735000590794,
+  "steps_per_s": 19.26020586270176,
+  "cell_types": 4,
+  "particles": 200,
+  "dimensions": 3,
+  "force_registry": false,
+  "force_yukawa": 0.0,
+  "force_lj": 0.0,
+  "force_morse": 0.0,
+  "morton": false
+}
