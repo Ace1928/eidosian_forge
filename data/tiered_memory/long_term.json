@@ -143,5 +143,20 @@
     "ttl_seconds": null,
     "tags": [],
     "linked_memories": []
+  },
+  {
+    "id": "30720584-e55a-490b-a493-a36ebf57c226",
+    "content": "Added Moltbook validation and quarantine tooling (schema validation, validate CLI, quarantine with screening) and improved quarantine safety (TemporaryDirectory, stdin read). Ran full suite via eidosian_venv: 195 passed, 2 skipped; coverage 82%.",
+    "created_at": "2026-02-05T20:44:24.323330",
+    "last_accessed": "2026-02-05T20:44:24.323338",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
   }
 ]

@@ -24,6 +24,12 @@ python moltbook_forge/moltbook_sanitize.py --input /path/to/post.txt
 # Screen a sanitized payload
 python moltbook_forge/moltbook_screen.py --input sanitized.json --threshold 0.4
 
+# Validate a sanitized payload
+python moltbook_forge/moltbook_validate.py --input sanitized.json
+
+# Quarantine if needed
+python moltbook_forge/moltbook_quarantine.py --input sanitized.json --threshold 0.4
+
 # Ingest from a URL (requires --allow-network and allowlisted domains)
 python moltbook_forge/moltbook_ingest.py --url https://moltbook.com/feed.json --allow-network
 ```
