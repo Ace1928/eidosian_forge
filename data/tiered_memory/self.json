@@ -1370,5 +1370,24 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "98865c86-d30c-4a7d-811f-a9965482a165",
+    "content": "Tracked lib/cli/__init__.py (forge CLI framework) in git and switched ForgeDetector to find_spec to avoid importing modules during forge discovery (no side effects/warnings).",
+    "created_at": "2026-02-06T00:42:56.049666",
+    "last_accessed": "2026-02-06T00:42:56.049671",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "eidosian",
+      "cli",
+      "forge_detector"
+    ],
+    "linked_memories": []
   }
 ]
