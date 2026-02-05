@@ -1032,5 +1032,26 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "bf6e1c6a-06d5-4c5b-aeb9-90e9fe9fa4eb",
+    "content": "2026-02-05: Added output dir creation for falling_sand.ingest database path; ran falling_sand unit test and full game_forge tests (207 passed, 2 skipped, 42 warnings). Updated TEST_STATUS.md timestamp.",
+    "created_at": "2026-02-05T23:16:33.683131",
+    "last_accessed": "2026-02-05T23:16:33.683137",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.7,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "tests",
+      "game_forge",
+      "status",
+      "ingest"
+    ],
+    "linked_memories": []
   }
 ]
