@@ -168,5 +168,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d02f7e8d-6fce-48f7-bf05-294ac3c4f0b1",
+    "content": "Implemented optional policy manifest support in game_forge benchmark suite: new --policy-manifest flag, schema fields, and example policy_manifest.json, plus README usage update.",
+    "created_at": "2026-02-06T08:17:18.473738",
+    "last_accessed": "2026-02-06T08:17:18.473746",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.45,
+    "ttl_seconds": 86400,
+    "tags": [
+      "policy_manifest",
+      "benchmark_suite",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
