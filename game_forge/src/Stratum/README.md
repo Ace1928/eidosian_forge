@@ -17,6 +17,9 @@ Stratum is a production-grade simulation engine designed to model emergent, laye
 # Install from source
 pip install -e .
 
+# Run the unified scenario launcher (from game_forge/src on PYTHONPATH)
+PYTHONPATH=src python -m Stratum --scenario collapse --grid 32 --ticks 100
+
 # Run the stellar collapse demo
 python -m scenarios.stellar_collapse --grid 32 --ticks 100
 

@@ -1,41 +1,31 @@
-# 🎮 Game Forge Installation
+# Game Forge Installation
 
-Game development utilities, state machines, and interactive systems.
+Game Forge is a collection of independent simulations and experiments. There is no
+single unified Python API yet.
 
-## Quick Install
+## Quick Start
 
 ```bash
 pip install -e ./game_forge
-
-# Verify
-python -c "from game_forge import GameEngine; print('✓ Ready')"
+python game_forge/tools/run.py --list
 ```
 
-## CLI Usage
+## Run A Target
 
 ```bash
-# Launch game engine
-game-forge run <game_file>
-
-# Debug mode
-game-forge debug <game_file>
-
-# Help
-game-forge --help
-```
-
-## Python API
-
-```python
-from game_forge import GameEngine, GameState
-
-# Create game engine
-engine = GameEngine()
-engine.run()
+python game_forge/tools/run.py gene-particles
+python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
 ```
 
 ## Dependencies
 
-- `pygame` (optional) - Graphics rendering
-- `eidosian_core` - Universal decorators and logging
+- numpy (core)
+- pygame (visual renderers)
+- numba, scipy (algorithms_lab)
+- cupy, pyopencl (optional GPU backends)
 
+## Notes
+
+- Many modules import `eidosian_core`, which lives in `lib/eidosian_core` at the repo root.
+- The launcher adds `lib` to `PYTHONPATH` automatically.
+- Some simulations are experimental and may require additional system libraries.

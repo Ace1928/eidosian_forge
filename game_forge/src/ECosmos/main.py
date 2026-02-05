@@ -13,10 +13,10 @@ import sys
 from typing import List, Dict, Tuple, Optional, Set
 import argparse
 
+from eidosian_core import eidosian
 from data_structures import Cell, RuleSpecies, Position
 from interpreter import run_species
 from evolution import (
-from eidosian_core import eidosian
     distribute_initial_species,
     mutate_species,
     reproduce_species,

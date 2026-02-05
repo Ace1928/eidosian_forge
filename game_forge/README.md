@@ -14,9 +14,12 @@
 
 ## 🕹️ Modules
 - **`agentic_chess`**: Chess environment for agent battles.
+- **`ECosmos`**: Evolving computational ecosystem simulation.
 - **`gene_particles`**: Artificial life simulation (2D/3D with depth-projected rendering).
 - **`eidosian_universe`**: 3D/2D procedural world.
 - **`algorithms_lab`**: High-performance spatial and particle algorithms (grid, Barnes-Hut, FMM, SPH, PBF).
+- **`Stratum`**: Layered physical simulation engine and scenario runner.
+- **`falling_sand`**: Falling sand simulation and tooling.
 
 ## 🚀 Usage
 
@@ -32,4 +35,19 @@ python game_forge/tools/gene_particles_profile.py --steps 20 --gene-interpreter 
 
 # Algorithms Lab demo
 python game_forge/tools/algorithms_lab/demo.py --algorithm sph --visual
+```
+
+## Launcher
+
+```bash
+python game_forge/tools/run.py --list
+python game_forge/tools/run.py gene-particles
+python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
+python game_forge/tools/run.py eidosian-universe
+python game_forge/tools/run.py stratum --list
+```
+
+```bash
+PYTHONPATH=game_forge/src python -m algorithms_lab --demo -- --algorithm sph --visual
+PYTHONPATH=game_forge/src python -m chess_game --list
 ```

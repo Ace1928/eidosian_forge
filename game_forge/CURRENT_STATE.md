@@ -5,11 +5,11 @@
 
 ## 📊 Metrics
 - **Dependencies**: `pygame`, `numpy`.
-- **Projects**: 3 distinct sub-projects in `src/`.
+- **Projects**: Multiple sub-projects in `src/` (ECosmos, Stratum, gene_particles, etc.).
 
 ## 🏗️ Architecture
 Collection of independent simulation modules.
 
 ## 🐛 Known Issues
-- `README.md` was generic.
-- Needs unification on how to run these simulations ( CLI entry points).
+- Some sub-projects still lack `__main__.py` entrypoints (notably `chess_game` and `algorithms_lab`).
+- `eidosian_core` lives in `lib/eidosian_core`; ensure `lib` is on `PYTHONPATH` for direct runs.

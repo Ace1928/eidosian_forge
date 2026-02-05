@@ -10,8 +10,8 @@ import logging
 from typing import List, Dict, Tuple, Optional, Set
 import copy
 
-from data_structures import (
 from eidosian_core import eidosian
+from data_structures import (
     RuleSpecies,
     Instruction,
     Cell,

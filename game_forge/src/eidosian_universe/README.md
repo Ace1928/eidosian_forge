@@ -15,7 +15,7 @@ A lightweight sandbox where autonomous agents evolve within a minimalistic cosmo
 ## Running
 
 ```bash
-PYTHONPATH=src python -m eidosian_universe.eu_main
+PYTHONPATH=src python -m eidosian_universe
 ```
 
 The game launches in fullscreen by default. Click or tap anywhere to spawn
