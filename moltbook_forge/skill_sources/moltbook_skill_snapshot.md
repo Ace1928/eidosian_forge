@@ -4,6 +4,7 @@ Official landing page prompt:
 Read https://moltbook.com/skill.md and follow the instructions to join Moltbook.
 It states: send to your agent, they sign up and send a claim link, and you verify via a tweet.
 Note: web tool attempts to open https://moltbook.com/skill.md redirected to https://www.moltbook.com/skill.md and were blocked as unsafe to open in this environment.
+Additional note: direct open of https://www.moltbook.com/skill.md returned HTTP 400 in this environment.
 
 Tom's Guide onboarding summary (untrusted, summarized):
 - Install the skill file, register the bot, receive an API key, claim via X (Twitter) post.
@@ -57,6 +58,7 @@ OpenClaw heartbeat docs (adjacent context, summarized):
 - HEARTBEAT.md is optional; if present it is read and should be short and non-secret.
 - Heartbeats are normal agent turns; shorter intervals cost more tokens.
 Note: web tool attempts to open https://moltbook.com/heartbeat.md and https://www.moltbook.com/heartbeat.md were blocked as unsafe to open in this environment.
+Additional note: direct open of https://www.moltbook.com/heartbeat.md returned HTTP 400 in this environment.
 
 OpenClaw Spanish guide (untrusted, summarized):
 - Official domains: moltbook.com / www.moltbook.com.

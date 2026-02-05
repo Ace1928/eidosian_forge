@@ -544,5 +544,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "58c2f79c-c945-4b71-a51d-66a1c64489fd",
+    "content": "Attempted web tool open for https://www.moltbook.com/skill.md and https://www.moltbook.com/heartbeat.md; both returned HTTP 400 here. Updated snapshot notes and regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:55:30.572293",
+    "last_accessed": "2026-02-05T21:55:30.572297",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "network",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]
