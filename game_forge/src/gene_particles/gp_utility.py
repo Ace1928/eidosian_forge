@@ -182,11 +182,15 @@ def random_xy(window_width: int, window_height: int, n: int = 1) -> "FloatArray"
 
 
 @eidosian()
-def wrap_deltas(delta: "FloatArray", size: float) -> "FloatArray":
+def wrap_deltas(
+    delta: "FloatArray", size: float, inv_size: Optional[float] = None
+) -> "FloatArray":
     """Wrap delta distances to the minimal image within a periodic boundary."""
     if size <= 0:
         return delta
-    return delta - np.round(delta / size) * size
+    if inv_size is None:
+        inv_size = 1.0 / size
+    return delta - np.rint(delta * inv_size) * size
 
 
 @eidosian()

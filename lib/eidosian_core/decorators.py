@@ -152,14 +152,17 @@ class EidosianDecorator:
             )
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
-            # Get source info for tracing
-            try:
-                source_file = inspect.getsourcefile(func)
-                source_lines = inspect.getsourcelines(func)
-                line_number = source_lines[1] if source_lines else None
-            except (TypeError, OSError):
-                source_file = None
-                line_number = None
+            # Get source info only when tracing requires it
+            source_file = None
+            line_number = None
+            if self.trace:
+                try:
+                    source_file = inspect.getsourcefile(func)
+                    source_lines = inspect.getsourcelines(func)
+                    line_number = source_lines[1] if source_lines else None
+                except (TypeError, OSError):
+                    source_file = None
+                    line_number = None
             
             # Log entry
             if self.log:
@@ -187,8 +190,9 @@ class EidosianDecorator:
             if self.profile and self._profiler:
                 self._profiler.start()
             
-            # Time execution
-            start_time = time.perf_counter()
+            # Time execution only when needed
+            needs_timing = self.log or (self.benchmark_threshold_ms is not None)
+            start_time = time.perf_counter() if needs_timing else None
             error: Optional[Exception] = None
             result = None
             
@@ -201,8 +205,10 @@ class EidosianDecorator:
                 raise
                 
             finally:
-                end_time = time.perf_counter()
-                duration_ms = (end_time - start_time) * 1000
+                duration_ms: float = 0.0
+                if start_time is not None:
+                    end_time = time.perf_counter()
+                    duration_ms = (end_time - start_time) * 1000
                 
                 # Stop profiling
                 if self.profile and self._profiler:
@@ -231,7 +237,11 @@ class EidosianDecorator:
                         logger.debug(f"← {func_name} [{duration_ms:.2f}ms]")
                 
                 # Check benchmark threshold
-                if self.benchmark_threshold_ms and duration_ms > self.benchmark_threshold_ms:
+                if (
+                    self.benchmark_threshold_ms
+                    and start_time is not None
+                    and duration_ms > self.benchmark_threshold_ms
+                ):
                     logger.warning(
                         f"⚠ {func_name} exceeded threshold: "
                         f"{duration_ms:.2f}ms > {self.benchmark_threshold_ms}ms"
@@ -278,11 +288,24 @@ def eidosian(
     Returns:
         Decorated function
     """
+    config = get_config()
+    effective_log = config.logging.enabled if log is None else bool(log)
+    effective_profile = config.profiling.enabled if profile is None else bool(profile)
+    effective_benchmark = config.benchmarking.enabled if benchmark is None else bool(benchmark)
+    effective_trace = config.tracing.enabled if trace is None else bool(trace)
+    if not (effective_log or effective_profile or effective_benchmark or effective_trace):
+        if func is not None:
+            return func
+        def passthrough(inner: F) -> F:
+            return inner
+        return passthrough
+
     decorator = EidosianDecorator(
         log=log,
         profile=profile,
         benchmark=benchmark,
         trace=trace,
+        config=config,
         **kwargs,
     )
     

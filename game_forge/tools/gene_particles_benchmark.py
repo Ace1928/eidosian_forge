@@ -2,7 +2,7 @@
 """Benchmark Gene Particles core simulation steps.
 
 Example:
-  python game_forge/tools/gene_particles_benchmark.py --steps 50 --cell-types 3 --particles 200
+  python game_forge/tools/gene_particles_benchmark.py --steps 1000 --cell-types 8 --particles 500
   python game_forge/tools/gene_particles_benchmark.py --gene-interpreter --reproduction-mode hybrid
 """
 
@@ -76,9 +76,9 @@ def step_once(automata: CellularAutomata) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Benchmark Gene Particles steps")
-    parser.add_argument("--steps", type=int, default=20, help="Number of steps to run")
-    parser.add_argument("--cell-types", type=int, default=3, help="Number of cell types")
-    parser.add_argument("--particles", type=int, default=200, help="Particles per type")
+    parser.add_argument("--steps", type=int, default=1000, help="Number of steps to run")
+    parser.add_argument("--cell-types", type=int, default=8, help="Number of cell types")
+    parser.add_argument("--particles", type=int, default=500, help="Particles per type")
     parser.add_argument("--mass-fraction", type=float, default=0.5, help="Mass-based fraction")
     parser.add_argument("--width", type=int, default=800, help="Window width")
     parser.add_argument("--height", type=int, default=600, help="Window height")
@@ -96,6 +96,7 @@ def main() -> int:
         help="Depth of the simulation volume (3D only)",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
+    parser.add_argument("--warmup", type=int, default=10, help="Warmup steps")
     parser.add_argument(
         "--gene-interpreter",
         action="store_true",
@@ -130,16 +131,34 @@ def main() -> int:
     pygame.init()
     automata = build_automata(args)
 
-    # Warm-up
-    step_once(automata)
+    for _ in range(max(0, args.warmup)):
+        step_once(automata)
 
+    step_times = []
     start = time.perf_counter()
     for _ in range(args.steps):
+        step_start = time.perf_counter()
         step_once(automata)
+        step_times.append(time.perf_counter() - step_start)
     elapsed = time.perf_counter() - start
 
-    per_step_ms = (elapsed / max(1, args.steps)) * 1000.0
-    print(f"INFO steps={args.steps} total_s={elapsed:.4f} ms_per_step={per_step_ms:.3f}")
+    step_arr = np.array(step_times, dtype=np.float64)
+    per_step_ms = float(np.mean(step_arr) * 1000.0)
+    median_ms = float(np.median(step_arr) * 1000.0)
+    p95_ms = float(np.percentile(step_arr, 95) * 1000.0)
+    p99_ms = float(np.percentile(step_arr, 99) * 1000.0)
+    min_ms = float(np.min(step_arr) * 1000.0)
+    max_ms = float(np.max(step_arr) * 1000.0)
+    steps_per_s = float(args.steps / max(elapsed, 1e-9))
+
+    print(
+        "INFO "
+        f"steps={args.steps} total_s={elapsed:.4f} "
+        f"mean_ms={per_step_ms:.3f} median_ms={median_ms:.3f} "
+        f"p95_ms={p95_ms:.3f} p99_ms={p99_ms:.3f} "
+        f"min_ms={min_ms:.3f} max_ms={max_ms:.3f} "
+        f"steps_per_s={steps_per_s:.2f}"
+    )
 
     pygame.quit()
     return 0

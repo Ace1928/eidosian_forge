@@ -11,7 +11,7 @@ import numpy as np
 import json
 
 # Adjust path if run directly
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from .core.types import SimulationConfig, RenderMode
@@ -68,7 +68,7 @@ def main():
         # Events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                running = False # pragma: no cover
             
             if event.type == pygame.VIDEORESIZE:
                 # Handle Resize
@@ -110,5 +110,5 @@ def main():
         
     pygame.quit()
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     main()

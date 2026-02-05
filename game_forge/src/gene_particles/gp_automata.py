@@ -36,6 +36,11 @@ from game_forge.src.gene_particles.gp_utility import (
 from game_forge.src.gene_particles.gp_ui import SimulationUI
 
 
+# Heuristic controls for interaction neighbor search
+INTERACTION_KDTREE_THRESHOLD = 50000
+INTERACTION_DENSE_FRACTION = 0.35
+
+
 # Protocol for pygame.display.Info() return type
 class PygameDisplayInfo(Protocol):
     """Type protocol for pygame.display.Info() return value."""
@@ -46,7 +51,7 @@ class PygameDisplayInfo(Protocol):
 
 # Import scipy's KDTree with proper type handling
 try:
-    from scipy.spatial import KDTree  # type: ignore[import]
+    from scipy.spatial import cKDTree as KDTree  # type: ignore[import]
 except ImportError:
     # Type stub for when scipy isn't available
     class KDTree:
@@ -177,6 +182,14 @@ class CellularAutomata:
         self.colors: List[Tuple[int, int, int]] = generate_vibrant_colors(
             self.config.n_cell_types
         )
+        self._interaction_cache: Optional[
+            Tuple[
+                List[Optional[FloatArray]],
+                List[Optional[KDTree]],
+                List[Optional[IntArray]],
+                Tuple[float, ...],
+            ]
+        ] = None
 
         # Determine which types use mass-based physics
         n_mass_types: int = int(
@@ -388,6 +401,7 @@ class CellularAutomata:
         between the corresponding cellular type pairs using vectorized operations
         for maximum performance.
         """
+        self._interaction_cache = self._build_interaction_cache()
         dvx: List[FloatArray] = [
             np.zeros_like(ct.vx, dtype=np.float64)
             for ct in self.type_manager.cellular_types
@@ -420,7 +434,15 @@ class CellularAutomata:
                     except (TypeError, AttributeError):
                         pass
                 # Skip values that don't match our expected types
-            self.apply_interaction_between_types(i, j, typed_params, dvx, dvy, dvz)
+            self.apply_interaction_between_types(
+                i,
+                j,
+                typed_params,
+                dvx,
+                dvy,
+                dvz,
+                self._interaction_cache,
+            )
 
         # Integrate velocities/positions once per type per frame
         for idx, ct in enumerate(self.type_manager.cellular_types):
@@ -428,6 +450,62 @@ class CellularAutomata:
                 self.integrate_type(ct, dvx[idx], dvy[idx], dvz[idx])
             else:
                 self.integrate_type(ct, dvx[idx], dvy[idx])
+        self._interaction_cache = None
+
+    def _build_interaction_cache(
+        self,
+    ) -> Tuple[
+        List[Optional[FloatArray]],
+        List[Optional[KDTree]],
+        List[Optional[IntArray]],
+        Tuple[float, ...],
+    ]:
+        positions_cache: List[Optional[FloatArray]] = []
+        tree_cache: List[Optional[KDTree]] = []
+        index_map_cache: List[Optional[IntArray]] = []
+        world_size = tuple(self.world_size.tolist())
+
+        for ct in self.type_manager.cellular_types:
+            if ct.x.size == 0:
+                positions_cache.append(None)
+                tree_cache.append(None)
+                index_map_cache.append(None)
+                continue
+
+            if self.spatial_dimensions == 3:
+                positions = np.column_stack((ct.x, ct.y, ct.z))
+            else:
+                positions = np.column_stack((ct.x, ct.y))
+
+            if self.config.boundary_mode == "wrap":
+                positions = positions.copy()
+                positions[:, 0] = wrap_positions(positions[:, 0], 0.0, world_size[0])
+                positions[:, 1] = wrap_positions(positions[:, 1], 0.0, world_size[1])
+                if self.spatial_dimensions == 3:
+                    positions[:, 2] = wrap_positions(
+                        positions[:, 2], 0.0, world_size[2]
+                    )
+
+            positions_cache.append(positions)
+
+            if self.config.boundary_mode == "wrap":
+                try:
+                    tree = KDTree(positions, boxsize=world_size)
+                    index_map = None
+                except TypeError:
+                    tiled_positions, index_map = tile_positions_for_wrap(
+                        positions, world_size
+                    )
+                    tree = KDTree(tiled_positions)
+                    index_map = index_map.astype(np.int_, copy=False)
+            else:
+                tree = KDTree(positions)
+                index_map = None
+
+            tree_cache.append(tree)
+            index_map_cache.append(index_map)
+
+        return positions_cache, tree_cache, index_map_cache, world_size
 
     @eidosian()
     def apply_gene_interpreter(self) -> None:
@@ -452,6 +530,14 @@ class CellularAutomata:
         dvx: List[FloatArray],
         dvy: List[FloatArray],
         dvz: Optional[List[FloatArray]] = None,
+        interaction_cache: Optional[
+            Tuple[
+                List[Optional[FloatArray]],
+                List[Optional[KDTree]],
+                List[Optional[IntArray]],
+                Tuple[float, ...],
+            ]
+        ] = None,
     ) -> None:
         """
         Apply physics, energy transfers, and synergy between two cellular types.
@@ -476,6 +562,18 @@ class CellularAutomata:
         n_j: int = ct_j.x.size
         if n_i == 0 or n_j == 0:
             return
+        wrap_mode = self.config.boundary_mode == "wrap"
+        world_size = tuple(self.world_size.tolist())
+        inv_world_size: Optional[Tuple[float, ...]] = None
+        if wrap_mode:
+            if self.spatial_dimensions == 3:
+                inv_world_size = (
+                    1.0 / world_size[0],
+                    1.0 / world_size[1],
+                    1.0 / world_size[2],
+                )
+            else:
+                inv_world_size = (1.0 / world_size[0], 1.0 / world_size[1])
 
         # Configure gravity parameters for mass-based types
         use_gravity = params.get("use_gravity", False)
@@ -491,20 +589,6 @@ class CellularAutomata:
             else:
                 params["use_gravity"] = False
 
-        # Calculate pairwise distances using vectorized operations
-        dx: FloatArray = ct_i.x[:, np.newaxis] - ct_j.x
-        dy: FloatArray = ct_i.y[:, np.newaxis] - ct_j.y
-        if self.config.boundary_mode == "wrap":
-            dx = wrap_deltas(dx, self.world_size[0])
-            dy = wrap_deltas(dy, self.world_size[1])
-        if self.spatial_dimensions == 3:
-            dz: FloatArray = ct_i.z[:, np.newaxis] - ct_j.z
-            if self.config.boundary_mode == "wrap":
-                dz = wrap_deltas(dz, self.world_size[2])
-            dist_sq: FloatArray = dx * dx + dy * dy + dz * dz
-        else:
-            dist_sq = dx * dx + dy * dy
-
         # Create interaction mask for particles within range
         max_dist_value = params.get("max_dist", 0.0)
         if isinstance(max_dist_value, np.ndarray):
@@ -518,43 +602,199 @@ class CellularAutomata:
                 if not isinstance(max_dist_value, bool)
                 else 100.0
             )
-        within_range: BoolArray = (dist_sq > 0.0) & (dist_sq <= max_dist**2)
-
-        # Get indices of interacting particle pairs
-        indices_tuple = np.where(within_range)
-        if len(indices_tuple) != 2 or len(indices_tuple[0]) == 0:
+        if max_dist <= 0.0:
             return
 
-        indices: Tuple[IntArray, IntArray] = (
-            indices_tuple[0].astype(np.int_),
-            indices_tuple[1].astype(np.int_),
-        )
+        pair_count = n_i * n_j
+        use_sparse = pair_count >= INTERACTION_KDTREE_THRESHOLD
+        if use_sparse:
+            if self.spatial_dimensions == 3:
+                volume = float(np.prod(self.world_size))
+                sphere = (4.0 / 3.0) * np.pi * (max_dist**3)
+                dense_fraction = min(1.0, sphere / max(volume, 1.0))
+            else:
+                area = float(self.world_size[0] * self.world_size[1])
+                circle = np.pi * (max_dist**2)
+                dense_fraction = min(1.0, circle / max(area, 1.0))
+            if dense_fraction >= INTERACTION_DENSE_FRACTION:
+                use_sparse = False
 
-        # Calculate distances for interacting particles
-        dist: FloatArray = np.sqrt(dist_sq[indices])
+        sparse_ready = False
+        if use_sparse:
+            if interaction_cache is not None:
+                positions_cache, tree_cache, index_map_cache, _ = interaction_cache
+                positions_i = positions_cache[i]
+                positions_j = positions_cache[j]
+                tree_i = tree_cache[i]
+                tree_j = tree_cache[j]
+                index_map_i = index_map_cache[i]
+                index_map_j = index_map_cache[j]
+            else:
+                positions_i = None
+                positions_j = None
+                tree_i = None
+                tree_j = None
+                index_map_i = None
+                index_map_j = None
+                world_size = tuple(self.world_size.tolist())
 
-        # Initialize force components
-        fx: FloatArray = np.zeros_like(dist)
-        fy: FloatArray = np.zeros_like(dist)
-        fz: Optional[FloatArray] = np.zeros_like(dist) if self.spatial_dimensions == 3 else None
+            if positions_i is None or positions_j is None or tree_i is None or tree_j is None:
+                use_sparse = False
+            else:
+                if index_map_i is None and index_map_j is None:
+                    sparse_matrix = tree_i.sparse_distance_matrix(
+                        tree_j, max_dist, output_type="coo_matrix"
+                    )
+                    if sparse_matrix.nnz == 0:
+                        return
+                    indices_i = sparse_matrix.row.astype(np.int_, copy=False)
+                    indices_j = sparse_matrix.col.astype(np.int_, copy=False)
+                    dist = sparse_matrix.data
+                    valid_mask = dist > 0.0
+                    if not np.any(valid_mask):
+                        return
+                    indices_i = indices_i[valid_mask]
+                    indices_j = indices_j[valid_mask]
+                    dist = dist[valid_mask]
+                    dx = ct_i.x[indices_i] - ct_j.x[indices_j]
+                    dy = ct_i.y[indices_i] - ct_j.y[indices_j]
+                    if wrap_mode and inv_world_size is not None:
+                        dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
+                        dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
+                    if self.spatial_dimensions == 3:
+                        dz = ct_i.z[indices_i] - ct_j.z[indices_j]
+                        if wrap_mode and inv_world_size is not None:
+                            dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
+                    indices = (indices_i, indices_j)
+                    sparse_ready = True
+                else:
+                    raw_neighbors = tree_j.query_ball_point(positions_i, max_dist)
+                    if self.config.boundary_mode == "wrap" and index_map_j is not None:
+                        neighbors_list = []
+                        for idx, neighbors in enumerate(raw_neighbors):
+                            if not neighbors:
+                                neighbors_list.append([])
+                                continue
+                            mapped = index_map_j[np.asarray(neighbors, dtype=np.int_)]
+                            if i == j:
+                                mapped = mapped[mapped != idx]
+                            if mapped.size == 0:
+                                neighbors_list.append([])
+                                continue
+                            neighbors_list.append(np.unique(mapped).tolist())
+                    else:
+                        if i == j:
+                            neighbors_list = [
+                                [n for n in neighbors if n != idx]
+                                for idx, neighbors in enumerate(raw_neighbors)
+                            ]
+                        else:
+                            neighbors_list = raw_neighbors
+
+                    counts = np.fromiter((len(n) for n in neighbors_list), dtype=np.int_)
+                    if counts.sum() == 0:
+                        return
+                    indices_i = np.repeat(
+                        np.arange(len(neighbors_list), dtype=np.int_), counts
+                    )
+                    indices_j = np.concatenate(
+                        [np.asarray(n, dtype=np.int_) for n in neighbors_list if n]
+                    )
+
+                    dx = ct_i.x[indices_i] - ct_j.x[indices_j]
+                    dy = ct_i.y[indices_i] - ct_j.y[indices_j]
+                    if wrap_mode and inv_world_size is not None:
+                        dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
+                        dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
+                    if self.spatial_dimensions == 3:
+                        dz = ct_i.z[indices_i] - ct_j.z[indices_j]
+                        if wrap_mode and inv_world_size is not None:
+                            dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
+                        dist_sq = dx * dx + dy * dy + dz * dz
+                    else:
+                        dist_sq = dx * dx + dy * dy
+
+                    within = dist_sq > 0.0
+                    if not np.any(within):
+                        return
+                    indices = (
+                        indices_i[within].astype(np.int_),
+                        indices_j[within].astype(np.int_),
+                    )
+                    dist = np.sqrt(dist_sq[within])
+                    dx = dx[within]
+                    dy = dy[within]
+                    if self.spatial_dimensions == 3:
+                        dz = dz[within]  # type: ignore[assignment]
+                    sparse_ready = True
+        if not sparse_ready:
+            # Calculate pairwise distances using full matrix operations
+            dx: FloatArray = ct_i.x[:, np.newaxis] - ct_j.x
+            dy: FloatArray = ct_i.y[:, np.newaxis] - ct_j.y
+            if wrap_mode and inv_world_size is not None:
+                dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
+                dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
+            if self.spatial_dimensions == 3:
+                dz: FloatArray = ct_i.z[:, np.newaxis] - ct_j.z
+                if wrap_mode and inv_world_size is not None:
+                    dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
+                dist_sq: FloatArray = dx * dx + dy * dy + dz * dz
+            else:
+                dist_sq = dx * dx + dy * dy
+
+            within_range: BoolArray = (dist_sq > 0.0) & (dist_sq <= max_dist**2)
+
+            # Get indices of interacting particle pairs
+            indices_tuple = np.where(within_range)
+            if len(indices_tuple) != 2 or len(indices_tuple[0]) == 0:
+                return
+
+            indices = (
+                indices_tuple[0].astype(np.int_),
+                indices_tuple[1].astype(np.int_),
+            )
+            dist = np.sqrt(dist_sq[indices])
+
+        # Resolve force model selection
+        use_potential = params.get("use_potential", True)
+        use_potential = bool(use_potential) if isinstance(use_potential, bool) else True
+        use_gravity = bool(params.get("use_gravity", False))
+        if not use_potential and not use_gravity and not is_giver and synergy_factor <= 0.0:
+            return
+
+        inv_dist: Optional[FloatArray] = None
+        inv_dist_sq: Optional[FloatArray] = None
+        if use_potential or use_gravity:
+            inv_dist = 1.0 / dist
+            inv_dist_sq = inv_dist * inv_dist
+
+        fx: Optional[FloatArray] = None
+        fy: Optional[FloatArray] = None
+        fz: Optional[FloatArray] = None
 
         # Calculate potential-based forces
-        use_potential = params.get("use_potential", True)
-        if isinstance(use_potential, bool) and use_potential:
+        if use_potential:
             pot_strength_value = params.get("potential_strength", 1.0)
             pot_strength = (
                 float(pot_strength_value)
                 if not isinstance(pot_strength_value, bool)
                 else 1.0
             )
-            F_pot: FloatArray = (pot_strength / dist).astype(np.float64)
-            fx += F_pot * (dx[indices] / dist)
-            fy += F_pot * (dy[indices] / dist)
-            if fz is not None and self.spatial_dimensions == 3:
-                fz += F_pot * (dz[indices] / dist)
+            pot_scale = pot_strength * inv_dist_sq  # type: ignore[operator]
+            if use_sparse:
+                fx = pot_scale * dx
+                fy = pot_scale * dy
+            else:
+                fx = pot_scale * dx[indices]
+                fy = pot_scale * dy[indices]
+            if self.spatial_dimensions == 3:
+                if use_sparse:
+                    fz = pot_scale * dz
+                else:
+                    fz = pot_scale * dz[indices]
 
         # Calculate gravitational forces if applicable
-        if params.get("use_gravity", False):
+        if use_gravity:
             gravity_factor_value = params.get("gravity_factor", 1.0)
             gravity_factor = (
                 float(gravity_factor_value)
@@ -568,29 +808,52 @@ class CellularAutomata:
             # Check that mass arrays are valid NumPy arrays
             if isinstance(m_a, np.ndarray) and isinstance(m_b, np.ndarray):
                 # Calculate gravitational force between particles (G * m1 * m2 / r²)
-                F_grav: FloatArray = (
-                    gravity_factor
-                    * (m_a[indices[0]] * m_b[indices[1]])
-                    / dist_sq[indices]
-                ).astype(np.float64)
+                if use_sparse:
+                    grav_scale = gravity_factor * inv_dist_sq * inv_dist  # type: ignore[operator]
+                else:
+                    grav_scale = gravity_factor / dist_sq[indices]
+                F_grav = (m_a[indices[0]] * m_b[indices[1]] * grav_scale).astype(
+                    np.float64
+                )
                 # Gravity pulls toward, not away from (negative direction)
-                fx -= F_grav * (dx[indices] / dist)
-                fy -= F_grav * (dy[indices] / dist)
-                if fz is not None and self.spatial_dimensions == 3:
-                    fz -= F_grav * (dz[indices] / dist)
+                if use_sparse:
+                    grav_fx = -F_grav * dx * inv_dist  # type: ignore[operator]
+                    grav_fy = -F_grav * dy * inv_dist  # type: ignore[operator]
+                else:
+                    grav_fx = -F_grav * dx[indices] * inv_dist  # type: ignore[operator]
+                    grav_fy = -F_grav * dy[indices] * inv_dist  # type: ignore[operator]
+                if fx is None:
+                    fx = grav_fx
+                else:
+                    fx += grav_fx
+                if fy is None:
+                    fy = grav_fy
+                else:
+                    fy += grav_fy
+                if self.spatial_dimensions == 3:
+                    if use_sparse:
+                        grav_fz = -F_grav * dz * inv_dist  # type: ignore[operator]
+                    else:
+                        grav_fz = -F_grav * dz[indices] * inv_dist  # type: ignore[operator]
+                    if fz is None:
+                        fz = grav_fz
+                    else:
+                        fz += grav_fz
 
         # Accumulate forces for later integration
-        np.add.at(dvx[i], indices[0], fx)
-        np.add.at(dvy[i], indices[0], fy)
-        if fz is not None and dvz is not None:
-            np.add.at(dvz[i], indices[0], fz)
+        if fx is not None and fx.size > 0:
+            dvx[i] += np.bincount(indices[0], weights=fx, minlength=n_i)
+            dvy[i] += np.bincount(indices[0], weights=fy, minlength=n_i)
+            if fz is not None and dvz is not None:
+                dvz[i] += np.bincount(indices[0], weights=fz, minlength=n_i)
 
         # Handle predator-prey energy transfers (give-take)
         if is_giver:
             # Find pairs within predation range
-            give_take_within: BoolArray = (
-                dist_sq[indices] <= self.config.predation_range**2
-            )
+            if use_sparse:
+                give_take_within = dist <= self.config.predation_range
+            else:
+                give_take_within = dist_sq[indices] <= self.config.predation_range**2
             give_take_indices: Tuple[IntArray, IntArray] = (
                 indices[0][give_take_within],
                 indices[1][give_take_within],
@@ -637,7 +900,10 @@ class CellularAutomata:
         # Handle synergy (cooperative energy sharing)
         if synergy_factor > 0.0 and self.config.synergy_range > 0.0:
             # Find pairs within synergy range
-            synergy_within: BoolArray = dist_sq[indices] <= self.config.synergy_range**2
+            if use_sparse:
+                synergy_within = dist <= self.config.synergy_range
+            else:
+                synergy_within = dist_sq[indices] <= self.config.synergy_range**2
             synergy_indices: Tuple[IntArray, IntArray] = (
                 indices[0][synergy_within],
                 indices[1][synergy_within],
@@ -831,34 +1097,123 @@ class CellularAutomata:
             positions = np.column_stack((ct.x, ct.y))
             world_size = tuple(self.world_size.tolist())
 
+        index_map = None
+        tree: Optional[KDTree] = None
+        raw_neighbors = None
         if self.config.boundary_mode == "wrap":
-            tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
-            tree = KDTree(tiled_positions)
-            raw_neighbors = tree.query_ball_point(positions, self.config.cluster_radius)
+            try:
+                positions = positions.copy()
+                positions[:, 0] = wrap_positions(positions[:, 0], 0.0, world_size[0])
+                positions[:, 1] = wrap_positions(positions[:, 1], 0.0, world_size[1])
+                if self.spatial_dimensions == 3:
+                    positions[:, 2] = wrap_positions(positions[:, 2], 0.0, world_size[2])
+                tree = KDTree(positions, boxsize=world_size)
+            except TypeError:
+                tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
+                tree = KDTree(tiled_positions)
+        else:
+            tree = KDTree(positions)
+
+        use_sparse = False
+        if tree is not None and index_map is None and hasattr(tree, "sparse_distance_matrix"):
+            try:
+                sparse = tree.sparse_distance_matrix(
+                    tree, self.config.cluster_radius, output_type="coo_matrix"
+                )
+                use_sparse = True
+            except Exception:
+                use_sparse = False
+
+        if use_sparse:
+            rows = sparse.row.astype(np.int_, copy=False)
+            cols = sparse.col.astype(np.int_, copy=False)
+            valid_mask = (rows != cols) & ct.alive[cols]
+            if not np.any(valid_mask):
+                return
+            rows = rows[valid_mask]
+            cols = cols[valid_mask]
+
+            counts = np.bincount(rows, minlength=n).astype(np.float64)
+            nonzero = counts > 0.0
+            if not np.any(nonzero):
+                return
+
+            if self.spatial_dimensions == 3:
+                vel = np.column_stack((ct.vx, ct.vy, ct.vz))
+                sum_vel = np.column_stack(
+                    (
+                        np.bincount(rows, weights=vel[cols, 0], minlength=n),
+                        np.bincount(rows, weights=vel[cols, 1], minlength=n),
+                        np.bincount(rows, weights=vel[cols, 2], minlength=n),
+                    )
+                )
+                sum_pos = np.column_stack(
+                    (
+                        np.bincount(rows, weights=positions[cols, 0], minlength=n),
+                        np.bincount(rows, weights=positions[cols, 1], minlength=n),
+                        np.bincount(rows, weights=positions[cols, 2], minlength=n),
+                    )
+                )
+            else:
+                vel = np.column_stack((ct.vx, ct.vy))
+                sum_vel = np.column_stack(
+                    (
+                        np.bincount(rows, weights=vel[cols, 0], minlength=n),
+                        np.bincount(rows, weights=vel[cols, 1], minlength=n),
+                    )
+                )
+                sum_pos = np.column_stack(
+                    (
+                        np.bincount(rows, weights=positions[cols, 0], minlength=n),
+                        np.bincount(rows, weights=positions[cols, 1], minlength=n),
+                    )
+                )
+
+            inv_counts = np.zeros_like(counts)
+            inv_counts[nonzero] = 1.0 / counts[nonzero]
+            avg_vel = sum_vel * inv_counts[:, None]
+            center = sum_pos * inv_counts[:, None]
+
+            alignment = (avg_vel - vel) * self.config.alignment_strength
+            cohesion = (center - positions) * self.config.cohesion_strength
+            separation = (positions - center) * self.config.separation_strength
+            total_force = alignment + cohesion + separation
+            total_force[~nonzero] = 0.0
+
+            ct.vx += total_force[:, 0]
+            ct.vy += total_force[:, 1]
+            if self.spatial_dimensions == 3:
+                ct.vz += total_force[:, 2]
+            return
+
+        # Fallback to neighbor lists when sparse matrix is unavailable
+        if tree is None:
+            return
+
+        raw_neighbors = tree.query_ball_point(positions, self.config.cluster_radius)
+        if index_map is None:
+            indices_list = [
+                [i for i in neighbors if i != idx]
+                for idx, neighbors in enumerate(raw_neighbors)
+            ]
+        else:
             indices_list = []
             for idx, neighbors in enumerate(raw_neighbors):
                 mapped = [int(index_map[n]) for n in neighbors if int(index_map[n]) != idx]
                 unique = list(dict.fromkeys(mapped))
                 indices_list.append(unique)
-        else:
-            tree = KDTree(positions)
-            indices_list = tree.query_ball_point(positions, self.config.cluster_radius)
 
-        # Pre-allocate velocity change arrays
         dvx: FloatArray = np.zeros(n, dtype=np.float64)
         dvy: FloatArray = np.zeros(n, dtype=np.float64)
         dvz: Optional[FloatArray] = np.zeros(n, dtype=np.float64) if self.spatial_dimensions == 3 else None
 
-        # Process each particle and its neighbors
         for idx, neighbor_indices in enumerate(indices_list):
-            # Filter out self and dead neighbors
             filtered_indices: List[int] = [
                 i for i in neighbor_indices if i != idx and ct.alive[i]
             ]
             if not filtered_indices:
                 continue
 
-            # Extract neighbor positions and velocities
             neighbor_positions: FloatArray = positions[filtered_indices]
             if self.spatial_dimensions == 3:
                 neighbor_velocities = np.column_stack(
@@ -868,38 +1223,28 @@ class CellularAutomata:
                         ct.vz[filtered_indices],
                     )
                 )
-            else:
-                neighbor_velocities = np.column_stack(
-                    (ct.vx[filtered_indices], ct.vy[filtered_indices])
-                )
-
-            # 1. Alignment - Match velocity with nearby neighbors
-            avg_velocity: FloatArray = np.mean(neighbor_velocities, axis=0)
-            if self.spatial_dimensions == 3:
                 current_velocity = np.array(
                     [ct.vx[idx], ct.vy[idx], ct.vz[idx]], dtype=np.float64
                 )
             else:
+                neighbor_velocities = np.column_stack(
+                    (ct.vx[filtered_indices], ct.vy[filtered_indices])
+                )
                 current_velocity = np.array([ct.vx[idx], ct.vy[idx]], dtype=np.float64)
-            alignment: FloatArray = (avg_velocity - current_velocity) * self.config.alignment_strength
 
-            # 2. Cohesion - Move toward the center of nearby neighbors
+            avg_velocity: FloatArray = np.mean(neighbor_velocities, axis=0)
             center: FloatArray = np.mean(neighbor_positions, axis=0)
+
+            alignment: FloatArray = (avg_velocity - current_velocity) * self.config.alignment_strength
             cohesion: FloatArray = (center - positions[idx]) * self.config.cohesion_strength
+            separation: FloatArray = (positions[idx] - center) * self.config.separation_strength
 
-            # 3. Separation - Avoid crowding nearby neighbors
-            separation: FloatArray = (
-                positions[idx] - np.mean(neighbor_positions, axis=0)
-            ) * self.config.separation_strength
-
-            # Combine all forces and store for later application
             total_force: FloatArray = alignment + cohesion + separation
             dvx[idx] = total_force[0]
             dvy[idx] = total_force[1]
             if dvz is not None:
                 dvz[idx] = total_force[2]
 
-        # Apply accumulated velocity changes to all particles at once
         ct.vx += dvx
         ct.vy += dvy
         if dvz is not None:

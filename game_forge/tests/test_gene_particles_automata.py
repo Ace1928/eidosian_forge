@@ -303,6 +303,31 @@ def test_apply_interaction_between_types_3d_forces():
     pygame.quit()
 
 
+def test_apply_interaction_between_types_sparse_path(monkeypatch):
+    pygame.init()
+    import game_forge.src.gene_particles.gp_automata as gp_automata
+
+    monkeypatch.setattr(gp_automata, "INTERACTION_KDTREE_THRESHOLD", 0)
+    monkeypatch.setattr(gp_automata, "INTERACTION_DENSE_FRACTION", 2.0)
+
+    config = _make_config(n_cell_types=2, particles_per_type=2, dimensions=2)
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(80, 80))
+    ct_a = automata.type_manager.cellular_types[0]
+    ct_b = automata.type_manager.cellular_types[1]
+    ct_a.x[:] = 10.0
+    ct_a.y[:] = 10.0
+    ct_b.x[:] = 11.0
+    ct_b.y[:] = 11.0
+
+    dvx = [np.zeros_like(ct_a.vx), np.zeros_like(ct_b.vx)]
+    dvy = [np.zeros_like(ct_a.vy), np.zeros_like(ct_b.vy)]
+    params = {"use_potential": True, "potential_strength": 1.0, "max_dist": 5.0}
+    cache = automata._build_interaction_cache()
+    automata.apply_interaction_between_types(0, 1, params, dvx, dvy, interaction_cache=cache)
+    assert np.any(dvx[0] != 0.0)
+    pygame.quit()
+
+
 def test_wrap_interaction_across_edges():
     pygame.init()
     config = _make_config(n_cell_types=2, particles_per_type=1, dimensions=2)

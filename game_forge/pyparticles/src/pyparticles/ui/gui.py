@@ -28,7 +28,7 @@ class SimulationGUI:
         rect = pygame.Rect(10, 10, 250, 450)
         self.hud_panel = UIPanel(
             relative_rect=rect,
-            starting_layer_height=1,
+            starting_height=1,
             manager=self.manager
         )
         

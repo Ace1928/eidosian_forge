@@ -12,18 +12,19 @@ def mock_deps():
     with patch("pyparticles.ui.gui.UIPanel"), \
          patch("pyparticles.ui.gui.UILabel"), \
          patch("pyparticles.ui.gui.UIHorizontalSlider"), \
-         patch("pyparticles.ui.gui.UIButton"), \
+         patch("pyparticles.ui.gui.UIButton") as MockButton, \
          patch("pyparticles.ui.gui.UIWindow"):
-        yield
+        yield MockButton
 
 def test_gui_events(mock_deps):
-    # Patch pygame_gui where it is imported in the module under test
-    # gui.py imports 'import pygame_gui' inside handle_event? 
-    # No, it imports it at top level now.
-    # So we patch 'pyparticles.ui.gui.pygame_gui'
+    # Configure MockButton to return distinct mocks each time
+    # We expect creation of: pause_btn, reset_btn, and 36 matrix buttons (6x6) + 1 save btn
+    # Total ~40 buttons.
+    # using side_effect with iterator
+    
+    mock_deps.side_effect = lambda *args, **kwargs: MagicMock()
     
     with patch("pyparticles.ui.gui.pygame_gui") as mock_pg_gui:
-        # Setup constants
         mock_pg_gui.UI_BUTTON_PRESSED = 12345
         
         manager = MagicMock()
@@ -50,18 +51,13 @@ def test_gui_events(mock_deps):
         physics.reset.assert_called()
         
         # Test Matrix Button
-        # Need to simulate matrix button presence
-        # They are created in __init__, so they should exist if mock_deps worked
-        # but we need to ensure the loop ran.
-        # physics.matrix is 6x6.
-        
-        btn = gui.matrix_buttons[(0, 0)] # Get (0,0)
+        # The dictionary keys are (r, c)
+        btn = gui.matrix_buttons[(0, 0)]
         event_matrix = MagicMock()
         event_matrix.type = 12345
         event_matrix.ui_element = btn
         
         gui.handle_event(event_matrix)
-        # Matrix value should change from 0.0 -> -0.5
         assert physics.matrix[0, 0] == -0.5
         
         # Test Save
@@ -70,7 +66,6 @@ def test_gui_events(mock_deps):
         event_save.ui_element = gui.save_btn
         
         with patch("builtins.open", mock_open()) as m:
-            # Also need json.dump patch? Or just let it run (mock_open handles file obj)
             with patch("json.dump") as mock_json:
                  gui.handle_event(event_save)
                  m.assert_called_with("matrix_config.json", "w")
@@ -89,10 +84,13 @@ def test_gui_update(mock_deps):
     physics = MagicMock()
     physics.matrix = np.zeros((6, 6))
     gui = SimulationGUI(manager, cfg, physics)
+    
     gui.friction_slider = MagicMock()
     gui.friction_slider.get_current_value.return_value = 0.9
+    
     gui.dt_slider = MagicMock()
     gui.dt_slider.get_current_value.return_value = 0.05
+    
     gui.update(0.1)
     assert cfg.friction == 0.9
     assert cfg.dt == 0.05

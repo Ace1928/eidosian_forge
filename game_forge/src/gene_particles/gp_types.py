@@ -25,11 +25,15 @@ from typing import (
 import numpy as np
 from numpy.typing import NDArray
 from eidosian_core import eidosian
-from game_forge.src.gene_particles.gp_utility import tile_positions_for_wrap, wrap_deltas
+from game_forge.src.gene_particles.gp_utility import (
+    tile_positions_for_wrap,
+    wrap_deltas,
+    wrap_positions,
+)
 
 # Import scipy's cKDTree with explicit type handling
 try:
-    from scipy.spatial import KDTree  # type: ignore[import]
+    from scipy.spatial import cKDTree as KDTree  # type: ignore[import]
 except ImportError:
     # Fallback for type checking
     class KDTree:
@@ -679,6 +683,8 @@ class CellularTypeData:
 
         # Get current alive status
         alive_mask: BoolArray = self.is_alive_mask()
+        if alive_mask.size > 0 and bool(np.all(alive_mask)):
+            return
 
         # Process energy transfer for components dying of old age
         self._process_energy_transfer(alive_mask, config)
@@ -802,9 +808,20 @@ class CellularTypeData:
         # Create KD-Tree with our properly typed wrapper
         tree: KDTree
         if config.boundary_mode == "wrap":
-            tiled_positions, index_map = tile_positions_for_wrap(alive_positions, world_size)
-            index_map = alive_indices[index_map]
-            tree = KDTree(tiled_positions)
+            index_map = None
+            try:
+                alive_positions = alive_positions.copy()
+                alive_positions[:, 0] = wrap_positions(alive_positions[:, 0], 0.0, world_size[0])
+                alive_positions[:, 1] = wrap_positions(alive_positions[:, 1], 0.0, world_size[1])
+                if self.spatial_dimensions == 3:
+                    alive_positions[:, 2] = wrap_positions(alive_positions[:, 2], 0.0, world_size[2])
+                tree = KDTree(alive_positions, boxsize=world_size)
+            except TypeError:
+                tiled_positions, index_map = tile_positions_for_wrap(
+                    alive_positions, world_size
+                )
+                index_map = alive_indices[index_map]
+                tree = KDTree(tiled_positions)
         else:
             index_map = alive_indices
             tree = KDTree(alive_positions)
@@ -827,8 +844,19 @@ class CellularTypeData:
                 )
             dead_energies: FloatArray = self.energy[batch_indices]
 
-            if config.boundary_mode == "wrap":
-                neighbor_lists = tree.query_ball_point(dead_positions, config.predation_range)
+            if config.boundary_mode == "wrap" and index_map is None:
+                dead_positions = dead_positions.copy()
+                dead_positions[:, 0] = wrap_positions(dead_positions[:, 0], 0.0, world_size[0])
+                dead_positions[:, 1] = wrap_positions(dead_positions[:, 1], 0.0, world_size[1])
+                if self.spatial_dimensions == 3:
+                    dead_positions[:, 2] = wrap_positions(dead_positions[:, 2], 0.0, world_size[2])
+                neighbor_lists = tree.query_ball_point(
+                    dead_positions, config.predation_range
+                )
+            elif config.boundary_mode == "wrap":
+                neighbor_lists = tree.query_ball_point(
+                    dead_positions, config.predation_range
+                )
             else:
                 distances, neighbors = tree.query(
                     dead_positions,
@@ -844,10 +872,13 @@ class CellularTypeData:
                 if len(neighbor_indices) == 0:
                     continue
 
-                mapped_neighbors = np.array(
-                    [int(index_map[idx]) for idx in neighbor_indices], dtype=np.int_
-                )
-                mapped_neighbors = np.unique(mapped_neighbors)
+                if index_map is None:
+                    mapped_neighbors = np.array(neighbor_indices, dtype=np.int_)
+                else:
+                    mapped_neighbors = np.array(
+                        [int(index_map[idx]) for idx in neighbor_indices], dtype=np.int_
+                    )
+                    mapped_neighbors = np.unique(mapped_neighbors)
 
                 if mapped_neighbors.size == 0:
                     continue
@@ -897,6 +928,12 @@ class CellularTypeData:
         Args:
             mask: Boolean array indicating which components are alive
         """
+        mask = mask.astype(bool, copy=False)
+        mask_len = int(mask.shape[0])
+        if mask_len == 0:
+            return
+        if bool(np.all(mask)):
+            return
         arrays_to_filter: List[str] = [
             "x",
             "y",
@@ -927,47 +964,36 @@ class CellularTypeData:
 
         # Filter each array to keep only alive components
         for attr in arrays_to_filter:
-            if hasattr(self, attr):
-                try:
-                    current = getattr(self, attr)
-                    if current is not None and hasattr(current, "shape"):
-                        filtered = current[mask]
-                        setattr(self, attr, filtered)
-                except IndexError:
-                    # Handle size mismatch by trimming
-                    current = getattr(self, attr)
-                    if current is not None and hasattr(current, "shape"):
-                        if len(current) > len(mask):
-                            trimmed = current[: len(mask)]
-                            filtered = trimmed[mask]
-                            setattr(self, attr, filtered)
+            current = getattr(self, attr, None)
+            if current is None or not hasattr(current, "shape"):
+                continue
+            if current.shape[0] != mask_len:
+                if current.shape[0] < mask_len:
+                    continue
+                current = current[:mask_len]
+            setattr(self, attr, current[mask])
 
         # Handle mass and base_mass arrays separately if they exist
         if self.mass_based:
             for mass_attr in ["mass", "base_mass"]:
                 mass_array = getattr(self, mass_attr, None)
                 if mass_array is not None:
-                    try:
-                        filtered_mass = mass_array[mask]
-                        setattr(self, mass_attr, filtered_mass)
-                    except IndexError:
-                        if len(mass_array) > len(mask):
-                            trimmed = mass_array[: len(mask)]
-                            filtered = trimmed[mask]
-                            setattr(self, mass_attr, filtered)
+                    if mass_array.shape[0] != mask_len:
+                        if mass_array.shape[0] < mask_len:
+                            continue
+                        mass_array = mass_array[:mask_len]
+                    setattr(self, mass_attr, mass_array[mask])
 
         # Filter mutation history list
         if len(self.mutation_history) > 0:
             # Get indices as numpy array, then convert to a properly typed Python list
             indices_array: IntArray = np.where(mask)[0]
-            alive_indices: List[int] = [
-                int(idx) for idx in indices_array
-            ]  # Ensure consistent List[int] type
-            if alive_indices:  # Check if list is non-empty
-                new_history: List[List[Tuple[str, float]]] = []
-                for i in alive_indices:
-                    if i < len(self.mutation_history):
-                        new_history.append(self.mutation_history[i])
+            if indices_array.size > 0:
+                new_history = [
+                    self.mutation_history[int(i)]
+                    for i in indices_array
+                    if int(i) < len(self.mutation_history)
+                ]
                 self.mutation_history = new_history
             else:
                 self.mutation_history = []
@@ -977,28 +1003,15 @@ class CellularTypeData:
             hasattr(self, "synergy_connections")
             and self.synergy_connections.shape[0] > 0
         ):
-            alive_count: int = int(np.sum(mask))  # Ensure this is an int
-            new_connections: BoolArray = np.zeros(
-                (alive_count, alive_count), dtype=bool
-            )
-
-            if alive_count > 0:
-                # Extract the submatrix for living components
-                alive_indices_array: IntArray = np.where(mask)[0]
-                alive_indices = [
-                    int(idx) for idx in alive_indices_array
-                ]  # Convert to List[int]
-                for i, a_idx in enumerate(alive_indices):
-                    for j, b_idx in enumerate(alive_indices):
-                        if (
-                            a_idx < self.synergy_connections.shape[0]
-                            and b_idx < self.synergy_connections.shape[1]
-                        ):
-                            new_connections[i, j] = self.synergy_connections[
-                                a_idx, b_idx
-                            ]
-
-            self.synergy_connections = new_connections
+            alive_indices_array: IntArray = np.where(mask)[0]
+            if alive_indices_array.size == 0:
+                self.synergy_connections = np.zeros((0, 0), dtype=bool)
+            else:
+                max_index = self.synergy_connections.shape[0]
+                alive_indices_array = alive_indices_array[alive_indices_array < max_index]
+                self.synergy_connections = self.synergy_connections[
+                    np.ix_(alive_indices_array, alive_indices_array)
+                ]
 
     @eidosian()
     def add_component(

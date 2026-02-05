@@ -32,6 +32,9 @@ def test_engine_update():
     cfg.num_particles = 10
     engine = PhysicsEngine(cfg)
     engine.update(0.01)
+    
+    # Test default dt
+    engine.update()
 
 def test_kernel_get_cell_coords():
     c = get_cell_coords(np.array([-1.0, -1.0]), 0.1, 10)
@@ -93,6 +96,23 @@ def test_kernel_compute_forces_interactions():
     grav = 1.0
     forces3 = compute_forces(pos, colors, n, matrix, grid_counts, grid_cells, cell_size, dt, friction, max_r, min_r, rep_s, grav)
     assert forces3[0, 1] < 0 # Gravity pulls down (-Y)
+
+    # Case 4: Overlap (dist ~ 0)
+    pos4 = np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float32)
+    fill_grid(pos4, n, cell_size, grid_counts, grid_cells)
+    forces4 = compute_forces(pos4, colors, n, matrix, grid_counts, grid_cells, cell_size, dt, friction, max_r, min_r, rep_s, grav)
+    # Should skip force calc (dist < 1e-8) to avoid division by zero
+    assert forces4[0, 0] == 0.0
+    assert forces4[0, 1] < 0 # Gravity still applies
+
+    # Case 5: Too far but in same/neighbor cell (Box check passes, Circle check fails)
+    # Box is cell_size 0.2. max_r 0.1.
+    # Pos [0,0] and [0.15, 0.15].
+    # dx = 0.15 ( > max_r 0.1).
+    pos5 = np.array([[0.0, 0.0], [0.15, 0.15]], dtype=np.float32)
+    fill_grid(pos5, n, cell_size, grid_counts, grid_cells)
+    forces5 = compute_forces(pos5, colors, n, matrix, grid_counts, grid_cells, cell_size, dt, friction, max_r, min_r, rep_s, gravity=0.0)
+    assert forces5[0, 0] == 0.0 # No force
 
 def test_kernel_integration_bounds():
     # Test integration and wall collision

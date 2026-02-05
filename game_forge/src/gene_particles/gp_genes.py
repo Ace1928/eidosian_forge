@@ -17,7 +17,7 @@ from game_forge.src.gene_particles.gp_types import BoolArray, FloatArray, GeneDa
 
 # Import scipy's KDTree with fallback for environments without scipy
 try:
-    from scipy.spatial import KDTree  # type: ignore[import]
+    from scipy.spatial import cKDTree as KDTree  # type: ignore[import]
 except ImportError:
     class KDTree:
         """Fallback KDTree with query_ball_point stub for headless tests."""
@@ -35,6 +35,7 @@ from game_forge.src.gene_particles.gp_utility import (
     mutate_trait,
     tile_positions_for_wrap,
     wrap_deltas,
+    wrap_positions,
 )
 
 
@@ -672,11 +673,31 @@ def _select_mating_pairs(
             world_size = (float(env.world_width), float(env.world_height), float(env.world_depth))
         else:
             world_size = (float(env.world_width), float(env.world_height))
-        tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
-        tree = KDTree(tiled_positions)
-        raw_neighbors = tree.query_ball_point(positions[candidate_indices], mate_radius)
-        neighbors_list: List[List[int]] = []
+        index_map = None
+        try:
+            positions = positions.copy()
+            positions[:, 0] = wrap_positions(positions[:, 0], 0.0, world_size[0])
+            positions[:, 1] = wrap_positions(positions[:, 1], 0.0, world_size[1])
+            if env.spatial_dimensions == 3:
+                positions[:, 2] = wrap_positions(positions[:, 2], 0.0, world_size[2])
+            tree = KDTree(positions, boxsize=world_size)
+            raw_neighbors = tree.query_ball_point(
+                positions[candidate_indices], mate_radius
+            )
+        except TypeError:
+            tiled_positions, index_map = tile_positions_for_wrap(positions, world_size)
+            tree = KDTree(tiled_positions)
+            raw_neighbors = tree.query_ball_point(
+                positions[candidate_indices], mate_radius
+            )
+        neighbors_list = []
         for local_neighbors in raw_neighbors:
+            if not local_neighbors:
+                neighbors_list.append([])
+                continue
+            if index_map is None:
+                neighbors_list.append(list(local_neighbors))
+                continue
             mapped = [int(index_map[idx]) for idx in local_neighbors]
             neighbors_list.append(list(dict.fromkeys(mapped)))
     else:

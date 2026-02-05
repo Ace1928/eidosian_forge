@@ -2,7 +2,7 @@
 """Profile Gene Particles core simulation steps.
 
 Example:
-  python game_forge/tools/gene_particles_profile.py --steps 20 --top 30
+  python game_forge/tools/gene_particles_profile.py --steps 1000 --top 50
   python game_forge/tools/gene_particles_profile.py --gene-interpreter --reproduction-mode hybrid
 """
 
@@ -77,9 +77,9 @@ def step_once(automata: CellularAutomata) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Profile Gene Particles steps")
-    parser.add_argument("--steps", type=int, default=10, help="Number of steps to run")
-    parser.add_argument("--cell-types", type=int, default=3, help="Number of cell types")
-    parser.add_argument("--particles", type=int, default=200, help="Particles per type")
+    parser.add_argument("--steps", type=int, default=1000, help="Number of steps to run")
+    parser.add_argument("--cell-types", type=int, default=8, help="Number of cell types")
+    parser.add_argument("--particles", type=int, default=500, help="Particles per type")
     parser.add_argument("--mass-fraction", type=float, default=0.5, help="Mass-based fraction")
     parser.add_argument("--width", type=int, default=800, help="Window width")
     parser.add_argument("--height", type=int, default=600, help="Window height")
@@ -97,7 +97,7 @@ def main() -> int:
         help="Depth of the simulation volume (3D only)",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--top", type=int, default=25, help="Top functions to show")
+    parser.add_argument("--top", type=int, default=50, help="Top functions to show")
     parser.add_argument("--output", type=str, default="", help="Write stats to file")
     parser.add_argument(
         "--gene-interpreter",
@@ -139,12 +139,12 @@ def main() -> int:
         step_once(automata)
     profiler.disable()
 
-    stats = pstats.Stats(profiler).sort_stats("tottime")
+    stats = pstats.Stats(profiler)
     if args.output:
         stats.dump_stats(args.output)
         print(f"INFO wrote profile to {args.output}")
-    else:
-        stats.print_stats(args.top)
+    stats.sort_stats("tottime").print_stats(args.top)
+    stats.sort_stats("cumulative").print_stats(args.top)
 
     pygame.quit()
     return 0
