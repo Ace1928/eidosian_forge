@@ -55,6 +55,14 @@ def test_ui_handle_event_toggles_and_config():
     ui.handle_event(pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_PERIOD}), object())
     assert config.global_temperature >= temp_before
 
+    registry_before = config.use_force_registry
+    ui.handle_event(pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_f}), object())
+    assert config.use_force_registry is not registry_before
+
+    scale_before = config.force_registry_family_scale.get("yukawa", 0.0)
+    ui.handle_event(pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_y}), object())
+    assert config.force_registry_family_scale.get("yukawa", 0.0) != scale_before
+
     pygame.quit()
 
 

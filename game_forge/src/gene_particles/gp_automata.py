@@ -782,7 +782,6 @@ class CellularAutomata:
         n_types = int(self.config.n_cell_types)
         if self._force_registry is None or self._force_registry.num_types != n_types:
             self._force_registry = ForceRegistry(num_types=n_types, forces=[], _skip_defaults=True)
-
             self._force_registry.add_force(
                 ForceDefinition(
                     name="Potential",
@@ -791,7 +790,7 @@ class CellularAutomata:
                     min_radius=0.0,
                     max_radius=float(max_dist_global),
                     strength=1.0,
-                    params=np.array([0.01], dtype=np.float32),
+                    params=np.array([self.config.force_registry_softening], dtype=np.float32),
                     enabled=True,
                 )
             )
@@ -803,9 +802,54 @@ class CellularAutomata:
                     min_radius=0.0,
                     max_radius=float(max_dist_global),
                     strength=1.0,
-                    params=np.array([0.01], dtype=np.float32),
+                    params=np.array([self.config.force_registry_softening], dtype=np.float32),
                     enabled=True,
                     mass_weighted=True,
+                )
+            )
+            self._force_registry.add_force(
+                ForceDefinition(
+                    name="Yukawa",
+                    force_type=ForceType.YUKAWA,
+                    matrix=np.zeros((n_types, n_types), dtype=np.float32),
+                    min_radius=0.0,
+                    max_radius=float(max_dist_global),
+                    strength=1.0,
+                    params=np.array(
+                        [self.config.force_registry_softening, self.config.force_registry_yukawa_decay],
+                        dtype=np.float32,
+                    ),
+                    enabled=False,
+                )
+            )
+            self._force_registry.add_force(
+                ForceDefinition(
+                    name="Lennard-Jones",
+                    force_type=ForceType.LENNARD_JONES,
+                    matrix=np.zeros((n_types, n_types), dtype=np.float32),
+                    min_radius=0.0,
+                    max_radius=float(max_dist_global),
+                    strength=1.0,
+                    params=np.array(
+                        [self.config.force_registry_softening, self.config.force_registry_lj_sigma],
+                        dtype=np.float32,
+                    ),
+                    enabled=False,
+                )
+            )
+            self._force_registry.add_force(
+                ForceDefinition(
+                    name="Morse",
+                    force_type=ForceType.MORSE,
+                    matrix=np.zeros((n_types, n_types), dtype=np.float32),
+                    min_radius=0.0,
+                    max_radius=float(max_dist_global),
+                    strength=1.0,
+                    params=np.array(
+                        [0.0, self.config.force_registry_morse_r0, self.config.force_registry_morse_width],
+                        dtype=np.float32,
+                    ),
+                    enabled=False,
                 )
             )
 
@@ -829,7 +873,45 @@ class CellularAutomata:
         if force_gravity is not None:
             force_gravity.matrix = gravity_matrix
             force_gravity.max_radius = float(max_dist_global)
+            force_gravity.params = np.array([self.config.force_registry_softening], dtype=np.float32)
             force_gravity.enabled = bool(np.any(use_gravity) and np.any(gravity_matrix))
+
+        family_scale = self.config.force_registry_family_scale
+
+        def _update_family(name: str, scale: float, params: np.ndarray) -> None:
+            force = registry.get_force(name)
+            if force is None:
+                return
+            matrix = potential_matrix * float(scale)
+            force.matrix = matrix.astype(np.float32, copy=False)
+            force.max_radius = float(max_dist_global)
+            force.params = params.astype(np.float32, copy=False)
+            force.enabled = bool(scale != 0.0 and np.any(matrix))
+
+        _update_family(
+            "Yukawa",
+            float(family_scale.get("yukawa", 0.0)),
+            np.array(
+                [self.config.force_registry_softening, self.config.force_registry_yukawa_decay],
+                dtype=np.float32,
+            ),
+        )
+        _update_family(
+            "Lennard-Jones",
+            float(family_scale.get("lennard_jones", 0.0)),
+            np.array(
+                [self.config.force_registry_softening, self.config.force_registry_lj_sigma],
+                dtype=np.float32,
+            ),
+        )
+        _update_family(
+            "Morse",
+            float(family_scale.get("morse", 0.0)),
+            np.array(
+                [0.0, self.config.force_registry_morse_r0, self.config.force_registry_morse_width],
+                dtype=np.float32,
+            ),
+        )
 
         return registry
 

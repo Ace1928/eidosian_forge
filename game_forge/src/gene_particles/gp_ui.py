@@ -92,6 +92,20 @@ class SimulationUI:
             self.config.global_temperature = max(self.config.global_temperature - 0.02, 0.0)
         elif key == pygame.K_PERIOD:
             self.config.global_temperature = min(self.config.global_temperature + 0.02, 2.0)
+        elif key == pygame.K_f:
+            self.config.use_force_registry = not self.config.use_force_registry
+        elif key == pygame.K_y:
+            self._toggle_force_family("yukawa", 0.5)
+        elif key == pygame.K_l:
+            self._toggle_force_family("lennard_jones", 0.5)
+        elif key == pygame.K_o:
+            self._toggle_force_family("morse", 0.5)
+
+    def _toggle_force_family(self, name: str, enabled_value: float) -> None:
+        """Toggle a force family scale between zero and a provided value."""
+        scale = self.config.force_registry_family_scale
+        current = float(scale.get(name, 0.0))
+        scale[name] = 0.0 if current != 0.0 else float(enabled_value)
 
     def draw_panel(
         self, rect: pygame.Rect, title: str, lines: Iterable[str]
@@ -140,9 +154,16 @@ class SimulationUI:
                 f"Cluster radius: {self.config.cluster_radius:.1f}",
                 f"Temperature: {self.config.global_temperature:.2f}",
                 f"Depth fade: {self.config.depth_fade_strength:.2f}",
+                f"Force registry: {'on' if self.config.use_force_registry else 'off'}",
+                (
+                    "Force scales Y/L/M: "
+                    f"{self.config.force_registry_family_scale.get('yukawa', 0.0):.2f}/"
+                    f"{self.config.force_registry_family_scale.get('lennard_jones', 0.0):.2f}/"
+                    f"{self.config.force_registry_family_scale.get('morse', 0.0):.2f}"
+                ),
             ]
             self.draw_panel(
-                pygame.Rect(width - 300, 12, 288, 140),
+                pygame.Rect(width - 320, 12, 308, 168),
                 "Config",
                 config_lines,
             )
@@ -156,12 +177,14 @@ class SimulationUI:
                 "S: toggle stats",
                 "B: boundary wrap/reflect",
                 "M: projection mode",
+                "F: force registry toggle",
+                "Y/L/O: toggle Yukawa/LJ/Morse",
                 "+/-: particle size",
                 "[/]: cluster radius",
                 ",/.: temperature",
             ]
             self.draw_panel(
-                pygame.Rect(width - 300, height - 260, 288, 240),
+                pygame.Rect(width - 320, height - 280, 308, 260),
                 "Controls",
                 help_lines,
             )

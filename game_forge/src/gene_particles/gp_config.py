@@ -623,6 +623,16 @@ class SimulationConfig:
         # Force registry controls (advanced multi-force pipeline)
         self.use_force_registry: bool = True
         self.force_registry_min_particles: int = 512
+        self.force_registry_family_scale: Dict[str, float] = {
+            "yukawa": 0.0,
+            "lennard_jones": 0.0,
+            "morse": 0.0,
+        }
+        self.force_registry_softening: float = 0.01
+        self.force_registry_yukawa_decay: float = 0.12
+        self.force_registry_lj_sigma: float = 0.04
+        self.force_registry_morse_r0: float = 0.1
+        self.force_registry_morse_width: float = 5.0
 
         # Flocking behavior parameters
         self.alignment_strength: float = 0.25
@@ -930,6 +940,25 @@ class SimulationConfig:
             raise ValueError("Force registry toggle must be boolean")
         if self.force_registry_min_particles <= 0:
             raise ValueError("Force registry min particles must be positive")
+        required_keys = {"yukawa", "lennard_jones", "morse"}
+        if not isinstance(self.force_registry_family_scale, dict):
+            raise ValueError("Force registry family scale must be a dictionary")
+        if not required_keys.issubset(self.force_registry_family_scale.keys()):
+            raise ValueError("Force registry family scale missing required keys")
+        for key in required_keys:
+            value = self.force_registry_family_scale.get(key)
+            if not isinstance(value, (int, float)) or not np.isfinite(value):
+                raise ValueError("Force registry family scale values must be finite numbers")
+        if self.force_registry_softening <= 0:
+            raise ValueError("Force registry softening must be positive")
+        if self.force_registry_yukawa_decay <= 0:
+            raise ValueError("Force registry Yukawa decay must be positive")
+        if self.force_registry_lj_sigma <= 0:
+            raise ValueError("Force registry Lennard-Jones sigma must be positive")
+        if self.force_registry_morse_r0 <= 0:
+            raise ValueError("Force registry Morse r0 must be positive")
+        if self.force_registry_morse_width <= 0:
+            raise ValueError("Force registry Morse width must be positive")
 
     @eidosian()
     def advance_environment(self, frame_count: int) -> None:
