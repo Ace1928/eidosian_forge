@@ -26,6 +26,10 @@ algorithms-lab = [
 algorithms-lab-visual = [
   "pygame",
 ]
+algorithms-lab-gpu = [
+  "cupy",
+  "pyopencl",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

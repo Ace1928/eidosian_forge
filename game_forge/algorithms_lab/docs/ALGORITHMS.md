@@ -42,6 +42,10 @@ Algorithms Lab and how they are expected to be used.
 - Extends PBF with compliance for softer, more stable constraints.
 - Useful when strict incompressibility causes stiffness.
 
+## GPU N-body Backends
+- `OpenCLNBody` runs a direct N-body kernel on OpenCL devices.
+- `CuPyNBody` runs tiled N-body operations on CUDA/ROCm GPUs.
+
 ## Performance Notes
 - All algorithms use contiguous float32 arrays.
 - Heavy inner loops use vectorized numpy operations.

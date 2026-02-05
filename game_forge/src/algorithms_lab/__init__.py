@@ -1,6 +1,7 @@
 """Algorithms Lab: reusable, high-performance simulation building blocks."""
 
 from algorithms_lab.backends import HAS_NUMBA, HAS_SCIPY
+from algorithms_lab.gpu import CuPyNBody, OpenCLNBody, HAS_CUPY, HAS_PYOPENCL
 from algorithms_lab.core import Domain, WrapMode
 from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.neighbor_list import NeighborList
@@ -18,6 +19,8 @@ __all__ = [
     "WrapMode",
     "HAS_NUMBA",
     "HAS_SCIPY",
+    "HAS_CUPY",
+    "HAS_PYOPENCL",
     "UniformGrid",
     "NeighborList",
     "NeighborSearch",
@@ -29,4 +32,6 @@ __all__ = [
     "SPHSolver",
     "PBFSolver",
     "XPBFSolver",
+    "CuPyNBody",
+    "OpenCLNBody",
 ]

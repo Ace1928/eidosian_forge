@@ -16,6 +16,8 @@ choices and guidance for extending the system.
   avoid repeated allocation during minimal-image wrapping.
 - **Auto backend selection**: Neighbor queries default to numba when
   available, falling back to numpy otherwise.
+- **GPU offload**: Optional OpenCL/CuPy N-body backends can shift
+  O(N^2) forces onto the GPU for moderate N.
 
 ## Hot Path Notes
 - `UniformGrid.neighbor_pairs` is cell-pair limited. Increasing `cell_size`
@@ -35,5 +37,6 @@ If you want further speedups, consider adding optional accelerators:
 - **SciPy cKDTree**: Use `KDTreeNeighborSearch` for fast radius queries
   in C, especially for irregular particle distributions.
 - **CuPy/Numba CUDA**: Offload dense kernel operations for SPH/PBF.
+- **PyOpenCL**: Offload direct N-body kernels to integrated GPUs.
 
 These dependencies are intentionally optional to keep the core minimal.

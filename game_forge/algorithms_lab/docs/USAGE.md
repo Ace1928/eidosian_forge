@@ -12,6 +12,7 @@ from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.kdtree import KDTreeNeighborSearch
 from algorithms_lab.xpbd import XPBFSolver, XPBFState
 from algorithms_lab.neighbors import NeighborSearch
+from algorithms_lab.gpu import OpenCLNBody, CuPyNBody, HAS_PYOPENCL, HAS_CUPY
 
 pos = np.random.rand(256, 2).astype(np.float32)
 mass = np.ones(256, dtype=np.float32)
@@ -28,6 +29,12 @@ pairs_i, pairs_j = search.neighbor_pairs(pos, radius=0.05)
 # Unified neighbor search (auto-selects kdtree if available)
 neighbors = NeighborSearch(domain, radius=0.05, method="auto", backend="numba")
 pairs_i, pairs_j = neighbors.pairs(pos)
+
+# GPU N-body acceleration (optional)
+if HAS_PYOPENCL:
+    acc = OpenCLNBody(domain).compute_acceleration(pos, mass)
+if HAS_CUPY:
+    acc = CuPyNBody(domain).compute_acceleration(pos, mass)
 
 # Optional: XPBD fluid step
 solver = XPBFSolver(domain, h=0.05, compliance=0.001)

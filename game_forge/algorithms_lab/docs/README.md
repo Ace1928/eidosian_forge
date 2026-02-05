@@ -15,6 +15,7 @@ codebases with minimal dependency overhead.
 - SPH and PBF fluid solvers.
 - XPBD (compliant) fluid solver.
 - Optional numba and SciPy cKDTree acceleration.
+- Optional GPU backends (OpenCL via PyOpenCL, CUDA/ROCm via CuPy).
 
 ## Installation
 Algorithms Lab ships with the main game_forge package. The only required
@@ -61,3 +62,4 @@ python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 
 Additional docs:
 - `game_forge/algorithms_lab/docs/PERFORMANCE.md`: Performance guidance and tuning.
+- `game_forge/algorithms_lab/docs/GPU.md`: GPU backend usage.
