@@ -1053,5 +1053,26 @@
       "ingest"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "f15cc3c5-01e0-4b3b-ab36-526065af6b85",
+    "content": "2026-02-05: Added game_forge/tests/test_falling_sand_profile_index.py to validate profile_index script from repo root; test passed. Ran full game_forge suite: 208 passed, 2 skipped, 42 warnings (numba /dev/shm; pygame font). Updated TEST_STATUS.md timestamp and count.",
+    "created_at": "2026-02-05T23:20:07.384179",
+    "last_accessed": "2026-02-05T23:20:07.384183",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "tests",
+      "game_forge",
+      "status",
+      "profile"
+    ],
+    "linked_memories": []
   }
 ]
