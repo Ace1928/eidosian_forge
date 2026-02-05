@@ -207,6 +207,10 @@ class PhysicsEngine:
         if n == 0:
             return
         
+        # World bounds
+        half = self.cfg.half_world
+        bounds = np.array([-half, half], dtype=np.float32)
+        
         # Initialize force cache on first frame
         if not hasattr(self, 'forces_cache'):
             self.forces_cache = np.zeros_like(self.state.pos)
@@ -220,39 +224,43 @@ class PhysicsEngine:
                 matrices, params, species_params,
                 self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
                 self.grid_counts, self.grid_cells, self.cell_size,
-                self.cfg.gravity
+                self.cfg.gravity, half
             )
 
-        # 1. First half of Velocity Verlet
-        # v(t + 0.5dt) = v(t) + 0.5 * a(t) * dt
-        # r(t + dt) = r(t) + v(t + 0.5dt) * dt
-        integrate_verlet_1(
-            self.state.pos, self.state.vel, 
-            self.state.angle, self.state.ang_vel,
-            self.forces_cache, self.torques_cache, 
-            n, dt, np.array([-1.0, 1.0])
-        )
-        
-        # 2. Compute forces at new positions r(t+dt)
-        self._rebuild_grid()
-        matrices, params = self._pack_rules()
-        species_params = self._pack_species()
-        
-        new_forces, new_torques = compute_forces_multi(
-            self.state.pos, self.state.colors, self.state.angle, n,
-            matrices, params, species_params,
-            self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
-            self.grid_counts, self.grid_cells, self.cell_size,
-            self.cfg.gravity
-        )
-        
-        # 3. Second half of Velocity Verlet
-        # v(t + dt) = v(t + 0.5dt) + 0.5 * a(t + dt) * dt
-        integrate_verlet_2(
-            self.state.vel, self.state.ang_vel,
-            new_forces, new_torques,
-            n, dt, self.cfg.friction, self.cfg.angular_friction
-        )
+        # Run substeps for stability
+        sub_dt = dt / self.cfg.substeps
+        for _ in range(self.cfg.substeps):
+            # 1. First half of Velocity Verlet
+            integrate_verlet_1(
+                self.state.pos, self.state.vel, 
+                self.state.angle, self.state.ang_vel,
+                self.forces_cache, self.torques_cache, 
+                n, sub_dt, bounds
+            )
+            
+            # 2. Compute forces at new positions r(t+dt)
+            self._rebuild_grid()
+            matrices, params = self._pack_rules()
+            species_params = self._pack_species()
+            
+            new_forces, new_torques = compute_forces_multi(
+                self.state.pos, self.state.colors, self.state.angle, n,
+                matrices, params, species_params,
+                self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
+                self.grid_counts, self.grid_cells, self.cell_size,
+                self.cfg.gravity, half
+            )
+            
+            # 3. Second half of Velocity Verlet
+            integrate_verlet_2(
+                self.state.vel, self.state.ang_vel,
+                new_forces, new_torques,
+                n, sub_dt, self.cfg.friction, self.cfg.angular_friction
+            )
+            
+            # Update force cache for next substep
+            self.forces_cache = new_forces
+            self.torques_cache = new_torques
         
         # 4. Apply thermostat AFTER full velocity update (correct NVT ordering)
         if self.cfg.thermostat_enabled:
@@ -262,10 +270,6 @@ class PhysicsEngine:
                 self.cfg.thermostat_coupling, 
                 dt
             )
-        
-        # Update force cache for next step
-        self.forces_cache = new_forces
-        self.torques_cache = new_torques
     
     def _rebuild_grid(self):
         """Rebuild spatial grid with overflow detection."""
