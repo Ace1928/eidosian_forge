@@ -17,7 +17,7 @@
 
 - [ ] Performance optimization
 - [ ] GPU acceleration
-- [ ] Multi-agent games
+- [x] Multi-agent games (agentic_chess)
 - [ ] Visualization improvements
 
 ---

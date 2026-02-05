@@ -1,6 +1,6 @@
 # Test Status: Eidosian Forge System
 
-**Last Updated**: 2026-02-05T14:03:18Z
+**Last Updated**: 2026-02-05T14:11:37Z
 **Test Framework**: pytest 9.0.2
 
 ---
@@ -9,7 +9,7 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Fully Passing | 27 |
+| ✅ Fully Passing | 28 |
 | 🟡 Partial (>50%) | 5 |
 | 🔴 Needs Work | 0 |
 | ⬜ Special Cases | 2 |
@@ -33,6 +33,7 @@
 | narrative_forge | 1 | |
 | viz_forge | 3 | |
 | mkey_forge | 5 | |
+| moltbook_forge | 22 | Safety pipeline |
 | glyph_forge | 171 | Full coverage |
 | crawl_forge | 2 | |
 | lyrics_forge | 4 | |
@@ -83,9 +84,9 @@
 
 ## 📈 Metrics
 
-- **Forges**: 31
-- **Tested**: 31
-- **Fully Passing**: 26 (84%)
+- **Forges**: 35
+- **Tested**: 35
+- **Fully Passing**: 28 (80%)
 - **Tests Run**: 750+
 - **Passing Tests**: 700+
 

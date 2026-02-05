@@ -30,6 +30,9 @@ python moltbook_forge/moltbook_validate.py --input sanitized.json
 # Quarantine if needed
 python moltbook_forge/moltbook_quarantine.py --input sanitized.json --threshold 0.4
 
+# Bootstrap a Moltbook skill snapshot (no execution)
+python moltbook_forge/moltbook_bootstrap.py --input skill.md --output-dir moltbook_forge/skill_sources
+
 # Review a skill file through the safety pipeline
 python moltbook_forge/moltbook_skill_review.py --input skill.md --output skill_report.json
 # Exit codes: 0=allow, 1=invalid, 2=quarantine

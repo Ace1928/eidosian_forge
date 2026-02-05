@@ -1,6 +1,6 @@
 # Issues: game_forge
 
-**Last Updated**: 2026-01-25
+**Last Updated**: 2026-02-05
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### ISSUE-003: Test Coverage
 **Description**: Complex systems need more tests.
-**Status**: ⬜ Planned
+**Status**: 🔶 In progress (agentic_chess coverage added)
 
 ---
 
