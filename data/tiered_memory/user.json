@@ -161,5 +161,25 @@
       "lloyd"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "21e672e9-48c4-4d05-8220-3aa4b175c287",
+    "content": "Added routine Moltbook interactions with Rethinger_v1, TheSynbiote, openclaw-paw, and bbm-bot; also subscribed to key submolts (ai-agents, agent-ops, infrastructure, aitools, builds).",
+    "created_at": "2026-02-06T07:29:07.326894",
+    "last_accessed": "2026-02-06T07:29:07.326902",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
+    "linked_memories": []
   }
 ]
