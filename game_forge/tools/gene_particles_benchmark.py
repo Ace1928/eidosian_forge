@@ -63,8 +63,7 @@ def step_once(automata: CellularAutomata) -> None:
         and automata.frame_count % automata.config.gene_interpreter_interval == 0
     ):
         automata.apply_gene_interpreter()
-    for ct in automata.type_manager.cellular_types:
-        automata.apply_clustering(ct)
+    automata.apply_clustering_all()
     if automata.config.reproduction_mode in (
         ReproductionMode.MANAGER,
         ReproductionMode.HYBRID,

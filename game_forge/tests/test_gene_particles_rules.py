@@ -41,3 +41,28 @@ def test_evolve_gravity_factor_branch(monkeypatch):
     rules.evolve_parameters(config.evolution_interval)
     gravity_after = [params["gravity_factor"] for _, _, params in rules.rules]
     assert gravity_after != gravity_before
+
+
+def test_rules_to_matrices_handles_arrays():
+    config = SimulationConfig()
+    config.n_cell_types = 1
+    rules = InteractionRules(config, [])
+    rules.rules = [
+        (
+            0,
+            0,
+            {
+                "max_dist": np.array([10.0]),
+                "use_potential": np.array([1]),
+                "use_gravity": np.array([0]),
+            },
+        )
+    ]
+    max_dist, potential_strength, use_potential, use_gravity, gravity_factor = (
+        rules.to_matrices()
+    )
+    assert max_dist[0, 0] == 10.0
+    assert bool(use_potential[0, 0]) is True
+    assert bool(use_gravity[0, 0]) is False
+    assert potential_strength[0, 0] == 1.0
+    assert gravity_factor[0, 0] == 0.0

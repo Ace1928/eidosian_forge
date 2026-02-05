@@ -248,6 +248,72 @@ class InteractionRules:
 
         return synergy_matrix
 
+    @staticmethod
+    def _param_to_float(value: object, default: float) -> float:
+        """Normalize rule parameter to a float with safe fallbacks."""
+        if isinstance(value, np.ndarray):
+            if value.size == 0:
+                return default
+            if value.size == 1:
+                return float(value.item())
+            return float(np.max(value))
+        if isinstance(value, bool):
+            return default
+        if isinstance(value, (int, float)):
+            return float(value)
+        return default
+
+    @staticmethod
+    def _param_to_bool(value: object, default: bool) -> bool:
+        """Normalize rule parameter to a boolean with safe fallbacks."""
+        if isinstance(value, np.ndarray):
+            if value.size == 0:
+                return default
+            if value.size == 1:
+                return bool(value.item())
+            return bool(np.any(value))
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        return default
+
+    def to_matrices(
+        self,
+    ) -> Tuple[FloatArray, FloatArray, BoolArray, BoolArray, FloatArray]:
+        """Build dense parameter matrices for global interaction processing.
+
+        Returns:
+            max_dist: (n_types, n_types) radius cutoffs
+            potential_strength: (n_types, n_types) potential coefficients
+            use_potential: (n_types, n_types) potential enable flags
+            use_gravity: (n_types, n_types) gravity enable flags
+            gravity_factor: (n_types, n_types) gravity coefficients
+        """
+        n_types: int = self.config.n_cell_types
+        max_dist = np.zeros((n_types, n_types), dtype=np.float64)
+        potential_strength = np.zeros((n_types, n_types), dtype=np.float64)
+        gravity_factor = np.zeros((n_types, n_types), dtype=np.float64)
+        use_potential = np.zeros((n_types, n_types), dtype=bool)
+        use_gravity = np.zeros((n_types, n_types), dtype=bool)
+
+        for i, j, params in self.rules:
+            use_potential[i, j] = self._param_to_bool(
+                params.get("use_potential", True), True
+            )
+            use_gravity[i, j] = self._param_to_bool(
+                params.get("use_gravity", False), False
+            )
+            potential_strength[i, j] = self._param_to_float(
+                params.get("potential_strength", 1.0), 1.0
+            )
+            gravity_factor[i, j] = self._param_to_float(
+                params.get("gravity_factor", 0.0), 0.0
+            )
+            max_dist[i, j] = self._param_to_float(params.get("max_dist", 0.0), 0.0)
+
+        return max_dist, potential_strength, use_potential, use_gravity, gravity_factor
+
     @eidosian()
     def evolve_parameters(self, frame_count: int) -> None:
         """Evolve interaction parameters periodically to create dynamic relationships.

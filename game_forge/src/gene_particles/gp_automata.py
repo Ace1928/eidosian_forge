@@ -6,6 +6,7 @@ maximum performance with precise static typing throughout.
 """
 
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import DefaultDict, Dict, List, Optional, Protocol, Tuple, Union
 
 import numpy as np
@@ -36,9 +37,37 @@ from game_forge.src.gene_particles.gp_utility import (
 from game_forge.src.gene_particles.gp_ui import SimulationUI
 
 
-# Heuristic controls for interaction neighbor search
+# Heuristic controls for interaction neighbor search (legacy fallback path)
 INTERACTION_KDTREE_THRESHOLD = 50000
 INTERACTION_DENSE_FRACTION = 0.35
+
+
+@dataclass
+class GlobalParticleView:
+    """Global, contiguous view of all particles for batch interaction processing."""
+
+    positions: FloatArray
+    velocities: FloatArray
+    energy: FloatArray
+    mass: FloatArray
+    alive: BoolArray
+    type_ids: IntArray
+    offsets: IntArray
+    counts: IntArray
+    total: int
+
+
+@dataclass
+class GlobalNeighborGraph:
+    """Neighbor graph built over the global particle view."""
+
+    rows: IntArray
+    cols: IntArray
+    dist: FloatArray
+    wrap_mode: bool
+    world_size: Tuple[float, ...]
+    inv_world_size: Optional[Tuple[float, ...]]
+    filtered_by_max_dist: bool = False
 
 
 # Protocol for pygame.display.Info() return type
@@ -190,6 +219,13 @@ class CellularAutomata:
                 Tuple[float, ...],
             ]
         ] = None
+        self._global_capacity: int = 0
+        self._global_positions: Optional[FloatArray] = None
+        self._global_velocities: Optional[FloatArray] = None
+        self._global_energy: Optional[FloatArray] = None
+        self._global_mass: Optional[FloatArray] = None
+        self._global_alive: Optional[BoolArray] = None
+        self._global_type_ids: Optional[IntArray] = None
 
         # Determine which types use mass-based physics
         n_mass_types: int = int(
@@ -329,9 +365,8 @@ class CellularAutomata:
             ):
                 self.apply_gene_interpreter()
 
-            # Apply clustering within each cellular type
-            for ct in self.type_manager.cellular_types:
-                self.apply_clustering(ct)
+            # Apply clustering across all cellular types
+            self.apply_clustering_all()
 
             # Handle reproduction and death across all types
             if self.config.reproduction_mode in (
@@ -393,6 +428,298 @@ class CellularAutomata:
         surface.blit(fps_text, (10, 10))
 
     @eidosian()
+    def _ensure_global_buffers(self, total: int) -> None:
+        """Ensure global particle buffers are allocated with sufficient capacity.
+
+        Allocates contiguous arrays for positions, velocities, energy, mass,
+        alive flags, and type ids. Capacity grows geometrically to minimize
+        reallocations across frames.
+        """
+        if total <= self._global_capacity and self._global_positions is not None:
+            return
+
+        new_capacity = max(total, int(self._global_capacity * 1.5), 1024)
+        dims = 3 if self.spatial_dimensions == 3 else 2
+        self._global_positions = np.empty((new_capacity, dims), dtype=np.float64)
+        self._global_velocities = np.empty((new_capacity, dims), dtype=np.float64)
+        self._global_energy = np.empty(new_capacity, dtype=np.float64)
+        self._global_mass = np.empty(new_capacity, dtype=np.float64)
+        self._global_alive = np.empty(new_capacity, dtype=bool)
+        self._global_type_ids = np.empty(new_capacity, dtype=np.int_)
+        self._global_capacity = new_capacity
+
+    def _build_global_view(self) -> Optional[GlobalParticleView]:
+        """Create a contiguous view of all particles for batch processing.
+
+        Builds a packed, global view of all particle state arrays and records
+        per-type offsets/counts to allow zero-copy slicing back into type-local
+        storage after batched interaction updates.
+        """
+        cellular_types = self.type_manager.cellular_types
+        if not cellular_types:
+            return None
+
+        counts = np.fromiter((ct.x.size for ct in cellular_types), dtype=np.int_)
+        total = int(counts.sum())
+        if total == 0:
+            return None
+
+        offsets = np.empty(len(cellular_types) + 1, dtype=np.int_)
+        offsets[0] = 0
+        np.cumsum(counts, out=offsets[1:])
+
+        self._ensure_global_buffers(total)
+        assert self._global_positions is not None
+        assert self._global_velocities is not None
+        assert self._global_energy is not None
+        assert self._global_mass is not None
+        assert self._global_alive is not None
+        assert self._global_type_ids is not None
+
+        positions = self._global_positions[:total]
+        velocities = self._global_velocities[:total]
+        energy = self._global_energy[:total]
+        mass = self._global_mass[:total]
+        alive = self._global_alive[:total]
+        type_ids = self._global_type_ids[:total]
+
+        type_ids[:] = np.repeat(
+            np.arange(len(cellular_types), dtype=np.int_), counts
+        )
+
+        for type_idx, ct in enumerate(cellular_types):
+            start, end = offsets[type_idx], offsets[type_idx + 1]
+            if start == end:
+                continue
+            positions[start:end, 0] = ct.x
+            positions[start:end, 1] = ct.y
+            velocities[start:end, 0] = ct.vx
+            velocities[start:end, 1] = ct.vy
+            if self.spatial_dimensions == 3:
+                positions[start:end, 2] = ct.z
+                velocities[start:end, 2] = ct.vz
+            energy[start:end] = ct.energy
+            alive[start:end] = ct.alive
+            if ct.mass_based and ct.mass is not None:
+                mass[start:end] = ct.mass
+            else:
+                mass[start:end] = 0.0
+
+        return GlobalParticleView(
+            positions=positions,
+            velocities=velocities,
+            energy=energy,
+            mass=mass,
+            alive=alive,
+            type_ids=type_ids,
+            offsets=offsets,
+            counts=counts,
+            total=total,
+        )
+
+    def _build_global_neighbor_graph(
+        self, view: GlobalParticleView, max_dist: float
+    ) -> Optional[GlobalNeighborGraph]:
+        """Build a global neighbor graph for all particles within max_dist.
+
+        Uses a single KDTree over the packed global positions to compute a
+        sparse radius graph in COO form (rows, cols, dist). This path is used
+        as a fallback when per-type graph construction is unavailable.
+        """
+        if max_dist <= 0.0 or view.total == 0:
+            empty = np.array([], dtype=np.int_)
+            empty_f = np.array([], dtype=np.float64)
+            return GlobalNeighborGraph(
+                rows=empty,
+                cols=empty,
+                dist=empty_f,
+                wrap_mode=False,
+                world_size=tuple(self.world_size.tolist()),
+                inv_world_size=None,
+                filtered_by_max_dist=False,
+            )
+
+        wrap_mode = self.config.boundary_mode == "wrap"
+        world_size = tuple(self.world_size.tolist())
+        inv_world_size: Optional[Tuple[float, ...]] = None
+        if wrap_mode:
+            if self.spatial_dimensions == 3:
+                inv_world_size = (
+                    1.0 / world_size[0],
+                    1.0 / world_size[1],
+                    1.0 / world_size[2],
+                )
+            else:
+                inv_world_size = (1.0 / world_size[0], 1.0 / world_size[1])
+
+        positions = view.positions
+        positions_for_tree = positions
+        if wrap_mode:
+            positions_for_tree = positions.copy()
+            positions_for_tree[:, 0] = wrap_positions(
+                positions_for_tree[:, 0], 0.0, world_size[0]
+            )
+            positions_for_tree[:, 1] = wrap_positions(
+                positions_for_tree[:, 1], 0.0, world_size[1]
+            )
+            if self.spatial_dimensions == 3:
+                positions_for_tree[:, 2] = wrap_positions(
+                    positions_for_tree[:, 2], 0.0, world_size[2]
+                )
+
+        try:
+            if wrap_mode:
+                tree = KDTree(positions_for_tree, boxsize=world_size)
+            else:
+                tree = KDTree(positions_for_tree)
+        except TypeError:
+            return None
+
+        if not hasattr(tree, "sparse_distance_matrix"):
+            return None
+
+        try:
+            sparse = tree.sparse_distance_matrix(tree, max_dist, output_type="coo_matrix")
+        except Exception:
+            return None
+        if sparse.nnz == 0:
+            empty = np.array([], dtype=np.int_)
+            empty_f = np.array([], dtype=np.float64)
+            return GlobalNeighborGraph(
+                rows=empty,
+                cols=empty,
+                dist=empty_f,
+                wrap_mode=wrap_mode,
+                world_size=world_size,
+                inv_world_size=inv_world_size,
+                filtered_by_max_dist=False,
+            )
+
+        rows = sparse.row.astype(np.int_, copy=False)
+        cols = sparse.col.astype(np.int_, copy=False)
+        dist = sparse.data.astype(np.float64, copy=False)
+        valid_mask = (rows != cols) & (dist > 0.0)
+        if not np.any(valid_mask):
+            empty = np.array([], dtype=np.int_)
+            empty_f = np.array([], dtype=np.float64)
+            return GlobalNeighborGraph(
+                rows=empty,
+                cols=empty,
+                dist=empty_f,
+                wrap_mode=wrap_mode,
+                world_size=world_size,
+                inv_world_size=inv_world_size,
+                filtered_by_max_dist=False,
+            )
+
+        return GlobalNeighborGraph(
+            rows=rows[valid_mask],
+            cols=cols[valid_mask],
+            dist=dist[valid_mask],
+            wrap_mode=wrap_mode,
+            world_size=world_size,
+            inv_world_size=inv_world_size,
+            filtered_by_max_dist=False,
+        )
+
+    def _build_global_neighbor_graph_pairwise(
+        self, view: GlobalParticleView, max_dist_matrix: FloatArray
+    ) -> Optional[GlobalNeighborGraph]:
+        """Build a global neighbor graph by unioning per-pair radius searches.
+
+        For each type pair (i, j), runs a radius search using per-type KDTree
+        instances and the pair-specific max_dist from the interaction matrix.
+        The resulting per-pair edges are concatenated into global (rows, cols, dist)
+        arrays that drive batched interaction evaluation.
+        """
+        if view.total == 0:
+            empty = np.array([], dtype=np.int_)
+            empty_f = np.array([], dtype=np.float64)
+            return GlobalNeighborGraph(
+                rows=empty,
+                cols=empty,
+                dist=empty_f,
+                wrap_mode=False,
+                world_size=tuple(self.world_size.tolist()),
+                inv_world_size=None,
+                filtered_by_max_dist=True,
+            )
+
+        wrap_mode = self.config.boundary_mode == "wrap"
+        world_size = tuple(self.world_size.tolist())
+        inv_world_size: Optional[Tuple[float, ...]] = None
+        if wrap_mode:
+            if self.spatial_dimensions == 3:
+                inv_world_size = (
+                    1.0 / world_size[0],
+                    1.0 / world_size[1],
+                    1.0 / world_size[2],
+                )
+            else:
+                inv_world_size = (1.0 / world_size[0], 1.0 / world_size[1])
+
+        positions_cache, tree_cache, index_map_cache, _ = self._build_interaction_cache()
+        if any(index_map_cache):
+            return None
+
+        rows_list: List[IntArray] = []
+        cols_list: List[IntArray] = []
+        dist_list: List[FloatArray] = []
+
+        n_types = len(tree_cache)
+        for i in range(n_types):
+            tree_i = tree_cache[i]
+            if tree_i is None:
+                continue
+            for j in range(n_types):
+                tree_j = tree_cache[j]
+                if tree_j is None:
+                    continue
+                max_dist = float(max_dist_matrix[i, j])
+                if max_dist <= 0.0:
+                    continue
+                try:
+                    sparse = tree_i.sparse_distance_matrix(
+                        tree_j, max_dist, output_type="coo_matrix"
+                    )
+                except Exception:
+                    return None
+                if sparse.nnz == 0:
+                    continue
+                indices_i = sparse.row.astype(np.int_, copy=False)
+                indices_j = sparse.col.astype(np.int_, copy=False)
+                dist = sparse.data.astype(np.float64, copy=False)
+                valid_mask = dist > 0.0
+                if not np.any(valid_mask):
+                    continue
+                rows_list.append(view.offsets[i] + indices_i[valid_mask])
+                cols_list.append(view.offsets[j] + indices_j[valid_mask])
+                dist_list.append(dist[valid_mask])
+
+        if not rows_list:
+            empty = np.array([], dtype=np.int_)
+            empty_f = np.array([], dtype=np.float64)
+            return GlobalNeighborGraph(
+                rows=empty,
+                cols=empty,
+                dist=empty_f,
+                wrap_mode=wrap_mode,
+                world_size=world_size,
+                inv_world_size=inv_world_size,
+                filtered_by_max_dist=True,
+            )
+
+        return GlobalNeighborGraph(
+            rows=np.concatenate(rows_list),
+            cols=np.concatenate(cols_list),
+            dist=np.concatenate(dist_list),
+            wrap_mode=wrap_mode,
+            world_size=world_size,
+            inv_world_size=inv_world_size,
+            filtered_by_max_dist=True,
+        )
+
+    @eidosian()
     def apply_all_interactions(self) -> None:
         """
         Process all type-to-type interactions defined in the rules matrix.
@@ -401,6 +728,69 @@ class CellularAutomata:
         between the corresponding cellular type pairs using vectorized operations
         for maximum performance.
         """
+        global_view = self._build_global_view()
+        if global_view is None:
+            return
+
+        (
+            max_dist_matrix,
+            potential_strength,
+            use_potential,
+            use_gravity,
+            gravity_factor,
+        ) = self.rules_manager.to_matrices()
+        max_dist_global = float(np.max(max_dist_matrix)) if max_dist_matrix.size else 0.0
+        max_dist_global = max(
+            max_dist_global,
+            float(self.config.predation_range),
+            float(self.config.synergy_range),
+        )
+
+        graph = self._build_global_neighbor_graph_pairwise(
+            global_view, max_dist_matrix
+        )
+        if graph is None:
+            graph = self._build_global_neighbor_graph(global_view, max_dist_global)
+        if graph is None:
+            self._apply_all_interactions_legacy()
+            return
+
+        dv = self._apply_global_interactions(
+            global_view,
+            graph,
+            max_dist_matrix,
+            potential_strength,
+            use_potential,
+            use_gravity,
+            gravity_factor,
+        )
+
+        # Scatter energy updates back to per-type arrays before integration
+        for type_idx, ct in enumerate(self.type_manager.cellular_types):
+            start, end = global_view.offsets[type_idx], global_view.offsets[type_idx + 1]
+            if start == end:
+                continue
+            ct.energy[:] = global_view.energy[start:end]
+            if ct.mass_based and ct.mass is not None:
+                ct.mass[:] = global_view.mass[start:end]
+
+        # Integrate velocities/positions once per type per frame
+        for type_idx, ct in enumerate(self.type_manager.cellular_types):
+            start, end = global_view.offsets[type_idx], global_view.offsets[type_idx + 1]
+            if start == end:
+                continue
+            if self.spatial_dimensions == 3:
+                self.integrate_type(
+                    ct,
+                    dv[0][start:end],
+                    dv[1][start:end],
+                    dv[2][start:end],
+                )
+            else:
+                self.integrate_type(ct, dv[0][start:end], dv[1][start:end])
+
+    def _apply_all_interactions_legacy(self) -> None:
+        """Legacy per-type interaction path used as a fallback."""
         self._interaction_cache = self._build_interaction_cache()
         dvx: List[FloatArray] = [
             np.zeros_like(ct.vx, dtype=np.float64)
@@ -427,7 +817,6 @@ class CellularAutomata:
                 elif isinstance(v, np.ndarray):
                     # Check if array contains numeric data in a type-safe way
                     try:
-                        # Direct check on dtype without hasattr
                         is_numeric = np.issubdtype(v.dtype, np.number)  # type: ignore
                         if is_numeric:
                             typed_params[k] = v
@@ -451,6 +840,155 @@ class CellularAutomata:
             else:
                 self.integrate_type(ct, dvx[idx], dvy[idx])
         self._interaction_cache = None
+
+    def _apply_global_interactions(
+        self,
+        view: GlobalParticleView,
+        graph: GlobalNeighborGraph,
+        max_dist_matrix: FloatArray,
+        potential_strength: FloatArray,
+        use_potential: BoolArray,
+        use_gravity: BoolArray,
+        gravity_factor: FloatArray,
+    ) -> Tuple[FloatArray, FloatArray, Optional[FloatArray]]:
+        """Apply batched interactions using the global neighbor graph.
+
+        Computes potential and gravity forces, predation transfers, and synergy
+        exchanges across all edges in the global neighbor graph. Returns per-particle
+        velocity deltas that are scattered back into per-type arrays for integration.
+        """
+        dvx = np.zeros(view.total, dtype=np.float64)
+        dvy = np.zeros(view.total, dtype=np.float64)
+        dvz: Optional[FloatArray] = (
+            np.zeros(view.total, dtype=np.float64) if self.spatial_dimensions == 3 else None
+        )
+
+        if graph.rows.size == 0:
+            return dvx, dvy, dvz
+
+        mass_based_types = np.fromiter(
+            (ct.mass_based and ct.mass is not None for ct in self.type_manager.cellular_types),
+            dtype=bool,
+        )
+
+        rows = graph.rows
+        cols = graph.cols
+        dist = graph.dist
+
+        type_i = view.type_ids[rows]
+        type_j = view.type_ids[cols]
+        if not graph.filtered_by_max_dist:
+            max_dist = max_dist_matrix[type_i, type_j]
+            within_mask = dist <= max_dist
+            if not np.any(within_mask):
+                return dvx, dvy, dvz
+
+            rows = rows[within_mask]
+            cols = cols[within_mask]
+            dist = dist[within_mask]
+            type_i = type_i[within_mask]
+            type_j = type_j[within_mask]
+
+        dx = view.positions[rows, 0] - view.positions[cols, 0]
+        dy = view.positions[rows, 1] - view.positions[cols, 1]
+        if graph.wrap_mode and graph.inv_world_size is not None:
+            dx = wrap_deltas(dx, graph.world_size[0], graph.inv_world_size[0])
+            dy = wrap_deltas(dy, graph.world_size[1], graph.inv_world_size[1])
+        if self.spatial_dimensions == 3:
+            dz = view.positions[rows, 2] - view.positions[cols, 2]
+            if graph.wrap_mode and graph.inv_world_size is not None:
+                dz = wrap_deltas(dz, graph.world_size[2], graph.inv_world_size[2])
+        else:
+            dz = None
+
+        inv_dist = 1.0 / dist
+        inv_dist_sq = inv_dist * inv_dist
+
+        pot_scale = potential_strength[type_i, type_j] * inv_dist_sq
+        pot_scale *= use_potential[type_i, type_j]
+        fx = pot_scale * dx
+        fy = pot_scale * dy
+        if dz is not None:
+            fz = pot_scale * dz
+        else:
+            fz = None
+
+        grav_mask = use_gravity[type_i, type_j]
+        if grav_mask.size:
+            grav_mask = grav_mask & mass_based_types[type_i] & mass_based_types[type_j]
+        if np.any(grav_mask):
+            grav_scale = gravity_factor[type_i, type_j] * inv_dist_sq * inv_dist
+            grav_scale *= grav_mask
+            F_grav = view.mass[rows] * view.mass[cols] * grav_scale
+            fx -= F_grav * dx * inv_dist
+            fy -= F_grav * dy * inv_dist
+            if fz is not None and dz is not None:
+                fz -= F_grav * dz * inv_dist
+
+        dvx += np.bincount(rows, weights=fx, minlength=view.total)
+        dvy += np.bincount(rows, weights=fy, minlength=view.total)
+        if dvz is not None and fz is not None:
+            dvz += np.bincount(rows, weights=fz, minlength=view.total)
+
+        give_take_matrix = self.rules_manager.give_take_matrix
+        synergy_matrix = self.rules_manager.synergy_matrix
+        if (self.config.predation_range > 0.0 or self.config.synergy_range > 0.0) and (
+            np.any(give_take_matrix) or np.any(synergy_matrix > 0.0)
+        ):
+            n_types = len(self.type_manager.cellular_types)
+            pair_ids = type_i * n_types + type_j
+            for src in range(n_types):
+                for dst in range(n_types):
+                    pair_mask = pair_ids == (src * n_types + dst)
+                    if not np.any(pair_mask):
+                        continue
+
+                    if give_take_matrix[src, dst] and self.config.predation_range > 0.0:
+                        pred_mask = pair_mask & (dist <= self.config.predation_range)
+                        if np.any(pred_mask):
+                            giver_idx = rows[pred_mask]
+                            receiver_idx = cols[pred_mask]
+                            receiver_energy = view.energy[receiver_idx]
+                            transfer = receiver_energy * self.config.energy_transfer_factor
+                            view.energy[receiver_idx] = receiver_energy - transfer
+                            view.energy[giver_idx] = view.energy[giver_idx] + transfer
+
+                            if self.config.mass_transfer:
+                                mass_mask = mass_based_types[type_i[pred_mask]] & mass_based_types[
+                                    type_j[pred_mask]
+                                ]
+                                if np.any(mass_mask):
+                                    giver_mass_idx = giver_idx[mass_mask]
+                                    receiver_mass_idx = receiver_idx[mass_mask]
+                                    receiver_mass = view.mass[receiver_mass_idx]
+                                    mass_transfer = (
+                                        receiver_mass * self.config.energy_transfer_factor
+                                    )
+                                    view.mass[receiver_mass_idx] = (
+                                        receiver_mass - mass_transfer
+                                    )
+                                    view.mass[giver_mass_idx] = (
+                                        view.mass[giver_mass_idx] + mass_transfer
+                                    )
+
+                    if self.config.synergy_range > 0.0:
+                        synergy_factor = float(synergy_matrix[src, dst])
+                        if synergy_factor > 0.0:
+                            synergy_mask = pair_mask & (dist <= self.config.synergy_range)
+                            if np.any(synergy_mask):
+                                idx_a = rows[synergy_mask]
+                                idx_b = cols[synergy_mask]
+                                energy_a = view.energy[idx_a]
+                                energy_b = view.energy[idx_b]
+                                avg_energy = (energy_a + energy_b) * 0.5
+                                view.energy[idx_a] = (
+                                    energy_a * (1.0 - synergy_factor)
+                                ) + (avg_energy * synergy_factor)
+                                view.energy[idx_b] = (
+                                    energy_b * (1.0 - synergy_factor)
+                                ) + (avg_energy * synergy_factor)
+
+        return dvx, dvy, dvz
 
     def _build_interaction_cache(
         self,
@@ -1070,6 +1608,102 @@ class CellularAutomata:
 
     @eidosian()
     def apply_clustering(self, ct: CellularTypeData) -> None:
+        """Apply clustering to all types using the global neighbor graph."""
+        _ = ct
+        self.apply_clustering_all()
+
+    def apply_clustering_all(self) -> None:
+        """Apply clustering across all types using a global neighbor graph.
+
+        Builds a radius-limited global neighbor graph, filters to same-type edges,
+        and computes alignment/cohesion/separation in a batched, vectorized path.
+        """
+        if self.config.cluster_radius <= 0.0:
+            return
+
+        view = self._build_global_view()
+        if view is None:
+            return
+
+        graph = self._build_global_neighbor_graph(view, float(self.config.cluster_radius))
+        if graph is None:
+            for ct in self.type_manager.cellular_types:
+                self._apply_clustering_legacy(ct)
+            return
+
+        if graph.rows.size == 0:
+            return
+
+        rows = graph.rows
+        cols = graph.cols
+        same_type = view.type_ids[rows] == view.type_ids[cols]
+        alive_neighbors = view.alive[cols]
+        mask = same_type & alive_neighbors
+        if not np.any(mask):
+            return
+
+        rows = rows[mask]
+        cols = cols[mask]
+        counts = np.bincount(rows, minlength=view.total).astype(np.float64)
+        nonzero = counts > 0.0
+        if not np.any(nonzero):
+            return
+
+        vel = view.velocities
+        pos = view.positions
+        if self.spatial_dimensions == 3:
+            sum_vel = np.column_stack(
+                (
+                    np.bincount(rows, weights=vel[cols, 0], minlength=view.total),
+                    np.bincount(rows, weights=vel[cols, 1], minlength=view.total),
+                    np.bincount(rows, weights=vel[cols, 2], minlength=view.total),
+                )
+            )
+            sum_pos = np.column_stack(
+                (
+                    np.bincount(rows, weights=pos[cols, 0], minlength=view.total),
+                    np.bincount(rows, weights=pos[cols, 1], minlength=view.total),
+                    np.bincount(rows, weights=pos[cols, 2], minlength=view.total),
+                )
+            )
+        else:
+            sum_vel = np.column_stack(
+                (
+                    np.bincount(rows, weights=vel[cols, 0], minlength=view.total),
+                    np.bincount(rows, weights=vel[cols, 1], minlength=view.total),
+                )
+            )
+            sum_pos = np.column_stack(
+                (
+                    np.bincount(rows, weights=pos[cols, 0], minlength=view.total),
+                    np.bincount(rows, weights=pos[cols, 1], minlength=view.total),
+                )
+            )
+
+        inv_counts = np.zeros_like(counts)
+        inv_counts[nonzero] = 1.0 / counts[nonzero]
+        avg_vel = sum_vel * inv_counts[:, None]
+        center = sum_pos * inv_counts[:, None]
+
+        alignment = (avg_vel - vel) * self.config.alignment_strength
+        cohesion = (center - pos) * self.config.cohesion_strength
+        separation = (pos - center) * self.config.separation_strength
+        total_force = alignment + cohesion + separation
+        total_force[~nonzero] = 0.0
+
+        vel += total_force
+
+        # Scatter updated velocities back to per-type arrays
+        for type_idx, ct in enumerate(self.type_manager.cellular_types):
+            start, end = view.offsets[type_idx], view.offsets[type_idx + 1]
+            if start == end:
+                continue
+            ct.vx[:] = vel[start:end, 0]
+            ct.vy[:] = vel[start:end, 1]
+            if self.spatial_dimensions == 3:
+                ct.vz[:] = vel[start:end, 2]
+
+    def _apply_clustering_legacy(self, ct: CellularTypeData) -> None:
         """
         Apply flocking behavior within a cellular type using the Boids algorithm.
 

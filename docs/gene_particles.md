@@ -105,9 +105,24 @@ Asexual reproduction uses trait mutation with a vectorized path:
 - Speciation is triggered by genetic distance
 
 ## Performance Notes
-- Interaction physics and reproduction use vectorized NumPy operations
-- `KDTree` accelerates neighbor queries for clustering and mating
+- Interaction physics uses a global, per-step particle view and batched force accumulation
+- A per-pair neighbor graph (unioned into global arrays) is built from per-type `KDTree`s using pair-specific `max_dist`
+- Clustering reuses the global neighbor graph path (`apply_clustering_all`) to avoid per-type trees
+- Wrap handling uses minimal-image deltas with precomputed inverse world sizes
 - Bulk append routines (`add_components_bulk`) reduce O(n^2) growth
+
+## Spatial Graph Pipeline
+Each simulation step builds a contiguous, global particle view, then constructs a
+pairwise neighbor graph across all types using the interaction `max_dist` matrix.
+This produces global edge lists (rows/cols/dist) used for:
+- Batched interaction force evaluation
+- Predation/synergy energy exchanges
+- Clustering (via a separate radius-limited graph)
+
+## Full Reference
+For a comprehensive, per-module and per-system reference (data layout, interaction math,
+reproduction/genetics, UI/renderer details, and profiling guidance), see:
+`docs/gene_particles_reference.md`.
 
 ## Testing
 Gene Particles has dedicated unit tests under `game_forge/tests`:

@@ -23,7 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description="Eidosian PyParticles V2")
     parser.add_argument("--num", "-n", type=int, default=5000)
     parser.add_argument("--types", "-t", type=int, default=6)
-    parser.add_argument("--mode", type=str, default="sprites", choices=["sprites", "pixels", "glow"])
+    parser.add_argument("--mode", type=str, default="sprites", choices=["sprites", "pixels", "glow", "wave"])
     parser.add_argument("--jit-warmup", action="store_true", default=True)
     
     args = parser.parse_args()
@@ -71,11 +71,8 @@ def main():
                 running = False # pragma: no cover
             
             if event.type == pygame.VIDEORESIZE:
-                # Handle Resize
                 canvas.resize(event.w, event.h)
                 ui_manager.set_window_resolution((event.w, event.h))
-                # Update physics bounds? Physics assumes [-1, 1]. Renderer handles mapping.
-                # So physics doesn't care about pixels. Good.
             
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
@@ -94,13 +91,14 @@ def main():
         
         # Update Physics
         if not paused:
-            # GUI slider updates cfg.dt, so we use that
             physics.update() 
             
         # Render
         canvas.render(
             physics.state.pos, 
-            physics.state.colors, 
+            physics.state.colors,
+            physics.state.angle,
+            physics._pack_species(), # Pass packed species for wave rendering
             physics.state.active,
             fps
         )
