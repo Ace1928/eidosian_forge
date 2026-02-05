@@ -1501,5 +1501,23 @@
       "self"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "e5e6ad48-ced3-49f4-8ce6-77dfe4f3c1c9",
+    "content": "Ran game_forge benchmark_suite full preset (2026-02-05). Outputs saved under game_forge/tools/artifacts/*_20260205_full.json; agentic-chess skipped (python-chess missing). Updated BENCHMARKS.md with full suite results and warnings.",
+    "created_at": "2026-02-06T01:07:17.990694",
+    "last_accessed": "2026-02-06T01:07:17.990699",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "eidos",
+      "self"
+    ],
+    "linked_memories": []
   }
 ]

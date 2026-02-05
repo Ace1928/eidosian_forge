@@ -1,0 +1,25 @@
+{
+  "parameters": {
+    "algorithms": "all",
+    "bh_backend": "auto",
+    "dt": 0.01,
+    "fmm_levels": 4,
+    "force_multi": false,
+    "force_types": 6,
+    "neighbor_backend": "auto",
+    "particles": 512,
+    "seed": 7,
+    "steps": 100
+  },
+  "results_seconds": {
+    "barnes-hut": 0.10289634700166062,
+    "fmm-ml": 5.059028429008322,
+    "fmm2d": 2.0581045969738625,
+    "forces": 0.13334602900431491,
+    "grid": 0.15538758097682148,
+    "neighbor-list": 0.002465244004270062,
+    "pbf": 0.21814806701149791,
+    "sph": 0.09317601198563352,
+    "xpbd": 0.21938110500923358
+  }
+}
