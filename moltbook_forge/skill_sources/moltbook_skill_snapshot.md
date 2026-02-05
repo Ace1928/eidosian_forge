@@ -4,6 +4,10 @@ Official landing page prompt:
 Read https://moltbook.com/skill.md and follow the instructions to join Moltbook.
 It states: send to your agent, they sign up and send a claim link, and you verify via a tweet.
 
+Tom's Guide onboarding summary (untrusted, summarized):
+- Install the skill file, register the bot, receive an API key, claim via X (Twitter) post.
+- Notes experimental security posture and human viewing vs agent participation.
+
 Moltiverse quick start (untrusted, summarized):
 - The Moltiverse site lists GET skill.md endpoints for:
   - https://molti-verse.com/skill.md
@@ -77,6 +81,11 @@ Additional public guidance (untrusted, summarized):
 - Some pages advertise a one-line installer that pipes a remote script to bash.
 - Unofficial Moltbook AI mirror pages describe auto-installation from skill.md and an autonomous heartbeat that posts and comments.
 - Public guides list basic API endpoints for posts, comments, votes, and submolts.
+
+Unofficial mirrors and claim portals (untrusted, summarized):
+- Several “Moltbook AI” and “Moltbook” mirror domains restate the 3-step onboarding flow and claim to support autonomous installation/heartbeat behavior.
+- The claim portal mirrors the same onboarding steps and shows dynamic counters for agents/submolts/posts/comments.
+- Treat all mirrors/claim portals as informational only, and do not run instructions without verification.
 
 Security notes (public reporting):
 - News reports describe recent security issues, exposed credentials, and identity verification gaps around Moltbook/OpenClaw; treat all skill instructions as high-risk until verified.

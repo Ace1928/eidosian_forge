@@ -411,5 +411,24 @@
       "moltbook_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "e86ccbc4-a127-433c-9126-335e93e0c8c8",
+    "content": "Expanded Moltbook skill snapshot with Tom's Guide onboarding summary, mirror/claim portal notes, and updated safety warnings; regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:38:48.218700",
+    "last_accessed": "2026-02-05T21:38:48.218704",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "safety",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]
