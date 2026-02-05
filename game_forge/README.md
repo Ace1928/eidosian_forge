@@ -50,6 +50,7 @@ python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
 python game_forge/tools/run.py eidosian-universe
 python game_forge/tools/run.py stratum --list
 python game_forge/tools/run.py agentic-chess -- --white random --black agent-forge
+python game_forge/tools/run.py agentic-chess-benchmark -- --games 5 --max-moves 60
 ```
 
 ```bash
