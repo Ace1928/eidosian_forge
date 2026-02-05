@@ -5198,5 +5198,31 @@
       0.8941176470588236,
       0.1803921568627451
     ]
+  },
+  "e9c5dc0e-91b8-4c5d-9b04-7e66d699dde5": {
+    "id": "e9c5dc0e-91b8-4c5d-9b04-7e66d699dde5",
+    "content": "Ran full gene_particles test suite again (139 tests) after adding force registry families and UI toggles; all passed. Added Algorithms Lab spatial_utils module (GridConfig, 2D Morton encode/decode, morton ordering, SoA pack/unpack, adaptive cell size, batch ranges, prefetch neighbor data) with docs + tests. Added gene_particles force registry UI controls (F/Y/L/O) and family scale config with validation. Added force registry path test in gene_particles automata. Added pyparticles app presets (classic/emergence), engine damping hooks (slowdown_factor/collision_damping), and adjusted defaults/tests. Commits: 9a36bbe259 (algorithms_lab spatial utils), 2a2a0a6aca (pyparticles emergence presets), 88c07723f5 (app presets + engine damping + test), 156d27fe90 (pyparticles core test update).",
+    "created_at": "2026-02-05T14:52:03.989549",
+    "type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "embedding": [
+      0.6431372549019608,
+      0.12549019607843137,
+      0.6549019607843137,
+      0.12941176470588237,
+      0.403921568627451,
+      0.37254901960784315,
+      0.058823529411764705,
+      0.4980392156862745,
+      0.17647058823529413,
+      0.6745098039215687,
+      0.7764705882352941,
+      0.0196078431372549,
+      0.5647058823529412,
+      0.5764705882352941,
+      0.4823529411764706,
+      0.11372549019607843
+    ]
   }
 }
