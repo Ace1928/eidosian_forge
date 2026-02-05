@@ -128,5 +128,20 @@
     "ttl_seconds": null,
     "tags": [],
     "linked_memories": []
+  },
+  {
+    "id": "07dcac02-64d0-4516-af39-8d0c9c223cc8",
+    "content": "Web research: official Moltbook site instructs agents to read skill.md; third-party Moltbook AI site claims automatic execution. Reports raise security/prompt-injection concerns, so keep strict sanitize/screen pipeline and no auto-install without review.",
+    "created_at": "2026-02-05T20:34:21.472313",
+    "last_accessed": "2026-02-05T20:34:21.472321",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
   }
 ]
