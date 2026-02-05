@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Tuple
 
@@ -25,6 +25,8 @@ class Domain:
     mins: NDArray[np.float32]
     maxs: NDArray[np.float32]
     wrap: WrapMode = WrapMode.WRAP
+    _sizes: NDArray[np.float32] = field(init=False, repr=False)
+    _inv_sizes: NDArray[np.float32] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         mins = np.asarray(self.mins, dtype=np.float32)
@@ -35,8 +37,12 @@ class Domain:
             raise ValueError("Domain must be 2D or 3D")
         if np.any(maxs <= mins):
             raise ValueError("Domain maxs must be greater than mins")
+        sizes = (maxs - mins).astype(np.float32)
+        inv_sizes = (1.0 / sizes).astype(np.float32)
         object.__setattr__(self, "mins", mins)
         object.__setattr__(self, "maxs", maxs)
+        object.__setattr__(self, "_sizes", sizes)
+        object.__setattr__(self, "_inv_sizes", inv_sizes)
 
     @property
     def dims(self) -> int:
@@ -48,12 +54,18 @@ class Domain:
     def sizes(self) -> NDArray[np.float32]:
         """Return the domain extent for each axis."""
 
-        return self.maxs - self.mins
+        return self._sizes
+
+    @property
+    def inv_sizes(self) -> NDArray[np.float32]:
+        """Return cached inverse domain sizes."""
+
+        return self._inv_sizes
 
     def apply_boundary(self, positions: NDArray[np.float32]) -> NDArray[np.float32]:
         """Apply boundary conditions to positions and return a new array."""
 
-        pos = np.asarray(positions, dtype=np.float32)
+        pos = ensure_f32(positions)
         if pos.shape[-1] != self.dims:
             raise ValueError("Positions have incompatible dimension")
         if self.wrap == WrapMode.WRAP:
@@ -65,14 +77,13 @@ class Domain:
     def wrap_positions(self, positions: NDArray[np.float32]) -> NDArray[np.float32]:
         """Wrap positions into the domain using periodic boundaries."""
 
-        pos = np.asarray(positions, dtype=np.float32)
-        sizes = self.sizes
-        return ((pos - self.mins) % sizes) + self.mins
+        pos = ensure_f32(positions)
+        return ((pos - self.mins) % self._sizes) + self.mins
 
     def clamp_positions(self, positions: NDArray[np.float32]) -> NDArray[np.float32]:
         """Clamp positions into the domain bounds."""
 
-        pos = np.asarray(positions, dtype=np.float32)
+        pos = ensure_f32(positions)
         return np.minimum(np.maximum(pos, self.mins), self.maxs)
 
     def minimal_image(self, delta: NDArray[np.float32]) -> NDArray[np.float32]:
@@ -80,8 +91,7 @@ class Domain:
 
         if self.wrap != WrapMode.WRAP:
             return delta
-        sizes = self.sizes
-        return delta - sizes * np.round(delta / sizes)
+        return delta - self._sizes * np.round(delta * self._inv_sizes)
 
 
 def ensure_f32(array: NDArray[np.float32]) -> NDArray[np.float32]:

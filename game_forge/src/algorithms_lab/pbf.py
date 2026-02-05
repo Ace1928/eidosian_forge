@@ -77,9 +77,10 @@ class PBFSolver:
             delta = self.domain.minimal_image(delta)
             r = np.linalg.norm(delta, axis=1)
 
-            density = np.zeros(n, dtype=np.float32)
             w = poly6(r, self.h, self.domain.dims)
-            np.add.at(density, idx_i, mass[idx_j] * w)
+            density = np.bincount(
+                idx_i, weights=mass[idx_j] * w, minlength=n
+            ).astype(np.float32)
             density += mass * poly6(
                 np.zeros(n, dtype=np.float32), self.h, self.domain.dims
             )
@@ -90,9 +91,13 @@ class PBFSolver:
             grad_ij = -mass[idx_j][:, None] * grad / self.rest_density
 
             grad_sum = np.zeros_like(predicted)
-            grad_sq = np.zeros(n, dtype=np.float32)
-            np.add.at(grad_sum, idx_i, grad_ij)
-            np.add.at(grad_sq, idx_i, np.einsum("ij,ij->i", grad_ij, grad_ij))
+            for axis in range(self.domain.dims):
+                grad_sum[:, axis] = np.bincount(
+                    idx_i, weights=grad_ij[:, axis], minlength=n
+                ).astype(np.float32)
+            grad_sq = np.bincount(
+                idx_i, weights=np.einsum("ij,ij->i", grad_ij, grad_ij), minlength=n
+            ).astype(np.float32)
 
             denom = grad_sq + np.einsum("ij,ij->i", grad_sum, grad_sum) + 1e-6
             lambdas = -constraint / denom
@@ -107,7 +112,10 @@ class PBFSolver:
             scale = (lambdas[idx_i] + lambdas[idx_j] + s_corr)[:, None]
             delta_p = scale * grad / self.rest_density
             corr = np.zeros_like(predicted)
-            np.add.at(corr, idx_i, delta_p)
+            for axis in range(self.domain.dims):
+                corr[:, axis] = np.bincount(
+                    idx_i, weights=delta_p[:, axis], minlength=n
+                ).astype(np.float32)
             predicted += corr
             predicted = self.domain.apply_boundary(predicted)
 

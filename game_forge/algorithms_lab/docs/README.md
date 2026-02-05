@@ -47,3 +47,6 @@ python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 - `game_forge/tools/algorithms_lab/`: Demos, benchmarks, and profilers.
 - `game_forge/algorithms_lab/docs/`: Documentation and design notes.
 - `game_forge/algorithms_lab/references/`: Sources and research summaries.
+
+Additional docs:
+- `game_forge/algorithms_lab/docs/PERFORMANCE.md`: Performance guidance and tuning.

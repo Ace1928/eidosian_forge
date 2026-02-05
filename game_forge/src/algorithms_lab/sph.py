@@ -64,9 +64,10 @@ class SPHSolver:
         delta = self.domain.minimal_image(delta)
         r = np.linalg.norm(delta, axis=1)
 
-        density = np.zeros(n, dtype=np.float32)
         w = poly6(r, self.h, self.domain.dims)
-        np.add.at(density, idx_i, mass[idx_j] * w)
+        density = np.bincount(
+            idx_i, weights=mass[idx_j] * w, minlength=n
+        ).astype(np.float32)
         density += mass * poly6(np.zeros(n, dtype=np.float32), self.h, self.domain.dims)
 
         pressure = self.stiffness * (density - self.rest_density)
@@ -89,7 +90,11 @@ class SPHSolver:
         viscosity_force = visc_term * lap[:, None]
 
         force = np.zeros_like(pos)
-        np.add.at(force, idx_i, pressure_force + viscosity_force)
+        combined = pressure_force + viscosity_force
+        for axis in range(self.domain.dims):
+            force[:, axis] = np.bincount(
+                idx_i, weights=combined[:, axis], minlength=n
+            ).astype(np.float32)
 
         if self.gravity is not None:
             gravity_vec = np.zeros(self.domain.dims, dtype=np.float32)
@@ -102,7 +107,10 @@ class SPHSolver:
         if self.xsph > 0:
             xsph_delta = (vel[idx_j] - vel[idx_i]) * (w[:, None])
             xsph_accum = np.zeros_like(pos)
-            np.add.at(xsph_accum, idx_i, xsph_delta)
+            for axis in range(self.domain.dims):
+                xsph_accum[:, axis] = np.bincount(
+                    idx_i, weights=xsph_delta[:, axis], minlength=n
+                ).astype(np.float32)
             vel += self.xsph * xsph_accum
 
         pos = pos + vel * self.dt
