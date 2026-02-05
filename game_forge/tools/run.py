@@ -7,6 +7,7 @@ Example:
   python game_forge/tools/run.py ecosmos -- --ticks 100
   python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
   python game_forge/tools/run.py stratum-benchmark -- --grid 16 --ticks 10
+  python game_forge/tools/run.py agentic-chess -- --white random --black agent-forge
   python game_forge/tools/run.py falling-sand-benchmark -- --runs 5
   python game_forge/tools/run.py pyparticles-benchmark -- --particles 512 --steps 10
   python game_forge/tools/run.py pyparticles-benchmark-sim -- --particles 512 --steps 10
@@ -70,6 +71,13 @@ def load_targets(root: Path) -> dict[str, Target]:
             description="Algorithms Lab demo via module entrypoint",
             command=["-m", "algorithms_lab", "--demo"],
             requires=["numpy", "pygame (visual)"],
+        ),
+        "agentic-chess": Target(
+            name="agentic-chess",
+            description="Agentic chess match runner",
+            command=["-m", "agentic_chess"],
+            extra_pythonpath=[root / "agent_forge" / "src"],
+            requires=["python-chess"],
         ),
         "chess-game-prototype": Target(
             name="chess-game-prototype",

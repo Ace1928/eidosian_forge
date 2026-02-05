@@ -24,6 +24,7 @@ python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
 - numpy (core)
 - pygame (visual renderers)
 - numba, scipy (algorithms_lab)
+- python-chess (agentic_chess)
 - cupy, pyopencl (optional GPU backends)
 
 ## Notes

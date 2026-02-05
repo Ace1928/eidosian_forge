@@ -7,7 +7,7 @@
 - [ ] **Dependencies**: Verify `pygame` installs correctly in headless environments (if needed).
 
 ## 🟡 Medium Priority
-- [ ] **Chess**: Connect `agentic_chess` to `agent_forge` for AI players.
+- [x] **Chess**: Connect `agentic_chess` to `agent_forge` for AI players.
 
 
 ## 🟢 Low Priority

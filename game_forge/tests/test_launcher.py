@@ -21,6 +21,7 @@ def test_run_launcher_list() -> None:
     assert "ecosmos" in result.stdout
     assert "algorithms-lab-benchmark" in result.stdout
     assert "algorithms-lab-profiler" in result.stdout
+    assert "agentic-chess" in result.stdout
     assert "falling-sand-benchmark" in result.stdout
     assert "falling-sand-profile-index" in result.stdout
     assert "falling-sand-index" in result.stdout
