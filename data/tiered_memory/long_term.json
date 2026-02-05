@@ -98,5 +98,20 @@
     "ttl_seconds": null,
     "tags": [],
     "linked_memories": []
+  },
+  {
+    "id": "4db5a2f6-f462-4ed0-937d-2fb6af82358b",
+    "content": "Extended Moltbook safety forge: added risk scoring + flags (base64/code_fence/url/repeated_lines), added screening gate with threshold/critical flags, and tests. Added algorithms_lab registry tests. Continue to run all commands via eidosian_venv.",
+    "created_at": "2026-02-05T20:29:32.346598",
+    "last_accessed": "2026-02-05T20:29:32.346606",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
   }
 ]

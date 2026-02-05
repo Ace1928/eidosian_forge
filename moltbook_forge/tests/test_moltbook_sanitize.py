@@ -8,6 +8,8 @@ def test_normalize_strips_zero_width_and_controls() -> None:
     result = normalize_text(raw, max_chars=100)
     assert result.text == "helloworld"
     assert result.length_normalized == len(result.text)
+    assert result.line_count == 1
+    assert result.word_count == 1
 
 
 def test_normalize_flags_prompt_injection_patterns() -> None:
@@ -15,6 +17,7 @@ def test_normalize_flags_prompt_injection_patterns() -> None:
     result = normalize_text(raw, max_chars=100)
     assert any("ignore" in flag for flag in result.flags)
     assert any("you are" in flag for flag in result.flags)
+    assert result.risk_score > 0.0
 
 
 def test_normalize_truncates() -> None:

@@ -21,8 +21,11 @@ source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 # Sanitize a local text file
 python moltbook_forge/moltbook_sanitize.py --input /path/to/post.txt
 
+# Screen a sanitized payload
+python moltbook_forge/moltbook_screen.py --input sanitized.json --threshold 0.4
+
 # Ingest from a URL (requires --allow-network and allowlisted domains)
-python moltbook_forge/moltbook_ingest.py --url https://example.com/feed.json --allow-network
+python moltbook_forge/moltbook_ingest.py --url https://moltbook.com/feed.json --allow-network
 ```
 
 ## Safety Notes

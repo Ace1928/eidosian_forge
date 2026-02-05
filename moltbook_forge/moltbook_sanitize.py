@@ -55,8 +55,12 @@ class NormalizedContent:
     normalized_sha256: str
     length_raw: int
     length_normalized: int
+    line_count: int
+    word_count: int
+    non_ascii_ratio: float
     truncated: bool
     flags: List[str]
+    risk_score: float
     text: str
 
 
@@ -84,12 +88,40 @@ def _collapse_whitespace(text: str) -> str:
     return text.strip()
 
 
+def _detect_base64(text: str) -> bool:
+    return re.search(r"(?:[A-Za-z0-9+/]{120,}={0,2})", text) is not None
+
+
+def _detect_urls(text: str) -> bool:
+    return re.search(r"https?://\\S+", text) is not None
+
+
+def _detect_repeated_lines(text: str) -> bool:
+    counts = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if len(line) < 12:
+            continue
+        counts[line] = counts.get(line, 0) + 1
+        if counts[line] >= 3:
+            return True
+    return False
+
+
 def _detect_flags(text: str) -> List[str]:
     lowered = text.lower()
     flags = []
     for pattern in SUSPICIOUS_PATTERNS:
         if re.search(pattern, lowered):
             flags.append(pattern)
+    if "```" in text:
+        flags.append("code_fence")
+    if _detect_base64(text):
+        flags.append("base64_blob")
+    if _detect_urls(text):
+        flags.append("contains_url")
+    if _detect_repeated_lines(text):
+        flags.append("repeated_lines")
     return flags
 
 
@@ -110,14 +142,43 @@ def normalize_text(text: str, max_chars: int = 20000) -> NormalizedContent:
         truncated = True
 
     flags = _detect_flags(normalized)
+    length_norm = len(normalized)
+    line_count = len(normalized.splitlines()) if normalized else 0
+    word_count = len(re.findall(r"\b\w+\b", normalized))
+    non_ascii = sum(1 for ch in normalized if ord(ch) > 127)
+    non_ascii_ratio = non_ascii / max(1, length_norm)
+    if non_ascii_ratio > 0.2:
+        flags.append("high_non_ascii_ratio")
+
+    critical_patterns = {
+        r"ignore (all|any|previous) (instructions|rules)",
+        r"system prompt",
+        r"developer message",
+        r"jailbreak",
+        r"execute (code|commands?)",
+        r"run (shell|bash|cmd|powershell)",
+    }
+    score = 0.0
+    for flag in flags:
+        score += 0.3 if flag in critical_patterns else 0.1
+    if "base64_blob" in flags:
+        score += 0.2
+    if length_norm > 15000:
+        score += 0.1
+    score = min(1.0, score)
+
     norm_hash = hashlib.sha256(normalized.encode("utf-8", errors="ignore")).hexdigest()
     return NormalizedContent(
         raw_sha256=raw_hash,
         normalized_sha256=norm_hash,
         length_raw=len(raw),
-        length_normalized=len(normalized),
+        length_normalized=length_norm,
+        line_count=line_count,
+        word_count=word_count,
+        non_ascii_ratio=round(non_ascii_ratio, 6),
         truncated=truncated,
         flags=flags,
+        risk_score=round(score, 3),
         text=normalized,
     )
 
