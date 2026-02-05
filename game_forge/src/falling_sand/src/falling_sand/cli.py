@@ -87,3 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if argv is None:
         return command(sys.argv[2:])
     return command(argv[1:])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

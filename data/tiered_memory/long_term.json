@@ -256,5 +256,24 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d4ccfa63-ca7a-4849-bc1a-1a52f848e3ed",
+    "content": "Added __main__ entrypoints for falling_sand.benchmarks and falling_sand.cli. Verified python -m falling_sand.benchmarks works (runs=2) writing /tmp/falling_sand_benchmark.json.",
+    "created_at": "2026-02-05T21:10:31.893703",
+    "last_accessed": "2026-02-05T21:10:31.893707",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "cli",
+      "benchmarks"
+    ],
+    "linked_memories": []
   }
 ]
