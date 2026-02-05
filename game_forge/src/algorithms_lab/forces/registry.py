@@ -21,6 +21,7 @@ class ForcePack:
     max_radius: np.ndarray
     strength: np.ndarray
     params: np.ndarray
+    mass_weighted: np.ndarray
 
 
 @dataclass
@@ -66,6 +67,7 @@ class ForceRegistry:
                 strength=0.5,
                 params=DEFAULT_FORCE_PARAMS[ForceType.INVERSE_SQUARE].copy(),
                 enabled=False,
+                mass_weighted=True,
             )
         )
 
@@ -179,6 +181,7 @@ class ForceRegistry:
                 max_radius=np.zeros(0, dtype=np.float32),
                 strength=np.zeros(0, dtype=np.float32),
                 params=np.zeros((0, 4), dtype=np.float32),
+                mass_weighted=np.zeros(0, dtype=np.int8),
             )
 
         matrices = np.zeros((n_forces, self.num_types, self.num_types), dtype=np.float32)
@@ -187,6 +190,7 @@ class ForceRegistry:
         max_radius = np.zeros(n_forces, dtype=np.float32)
         strength = np.zeros(n_forces, dtype=np.float32)
         params = np.zeros((n_forces, 4), dtype=np.float32)
+        mass_weighted = np.zeros(n_forces, dtype=np.int8)
 
         for idx, force in enumerate(active):
             matrices[idx] = ensure_f32(force.matrix)
@@ -199,6 +203,7 @@ class ForceRegistry:
                 params[idx] = np.concatenate([force.params, pad])
             else:
                 params[idx] = ensure_f32(force.params[:4])
+            mass_weighted[idx] = 1 if force.mass_weighted else 0
 
         return ForcePack(
             matrices=matrices,
@@ -207,6 +212,7 @@ class ForceRegistry:
             max_radius=max_radius,
             strength=strength,
             params=params,
+            mass_weighted=mass_weighted,
         )
 
     def randomize_all(self, low: float = -1.0, high: float = 1.0) -> None:
@@ -245,6 +251,7 @@ class ForceRegistry:
                     "params": force.params.tolist(),
                     "enabled": bool(force.enabled),
                     "symmetric": bool(force.symmetric),
+                    "mass_weighted": bool(force.mass_weighted),
                 }
                 for force in self.forces
             ],
@@ -270,6 +277,7 @@ class ForceRegistry:
                     params=np.array(force_data.get("params", []), dtype=np.float32),
                     enabled=bool(force_data.get("enabled", True)),
                     symmetric=bool(force_data.get("symmetric", True)),
+                    mass_weighted=bool(force_data.get("mass_weighted", False)),
                 )
             )
         return registry

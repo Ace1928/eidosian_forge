@@ -57,3 +57,5 @@ positions = domain.wrap_positions(positions + velocities * 0.01)
 - For best performance, use the uniform-grid backend and enable numba.
 - Force kernels are symmetric only if you include both edge directions.
 - Use `ForceRegistry.pack()` if you want to reuse packed arrays across frames.
+- Mass-weighted forces multiply the force magnitude by `mass_i * mass_j`
+  (useful for gene_particles-style gravity).

@@ -19,6 +19,42 @@ from .physics.engine import PhysicsEngine
 from .rendering.gl_renderer import GLCanvas
 from .ui.gui import SimulationGUI 
 
+
+def run_benchmark():
+    """Run benchmark suite and exit."""
+    from .profiling import run_standard_benchmarks
+    run_standard_benchmarks(".")
+    return
+
+
+def run_profiling(n_particles: int = 5000, n_steps: int = 100):
+    """Run profiled simulation and print hotspots."""
+    import cProfile
+    import pstats
+    from io import StringIO
+    
+    cfg = SimulationConfig.default()
+    cfg.num_particles = n_particles
+    
+    from .physics.engine import PhysicsEngine
+    engine = PhysicsEngine(cfg)
+    
+    # Profile
+    pr = cProfile.Profile()
+    pr.enable()
+    
+    for _ in range(n_steps):
+        engine.update()
+    
+    pr.disable()
+    
+    # Print results
+    s = StringIO()
+    ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+    ps.print_stats(20)
+    print(s.getvalue())
+
+
 def main():
     parser = argparse.ArgumentParser(description="Eidosian PyParticles V6 (Ultra)")
     parser.add_argument("--num", "-n", type=int, default=None, help="Number of particles")
@@ -26,8 +62,20 @@ def main():
     parser.add_argument("--world-size", "-w", type=float, default=None, help="World size")
     parser.add_argument("--jit-warmup", action="store_true", default=True)
     parser.add_argument("--preset", choices=['small', 'default', 'large', 'huge'], default='default')
+    parser.add_argument("--benchmark", action="store_true", help="Run benchmark suite")
+    parser.add_argument("--profile", action="store_true", help="Run with profiling")
     
     args = parser.parse_args()
+    
+    # Handle special modes
+    if args.benchmark:
+        run_benchmark()
+        return
+    
+    if args.profile:
+        n = args.num if args.num else 5000
+        run_profiling(n_particles=n, n_steps=100)
+        return
     
     # Select preset
     if args.preset == 'small':

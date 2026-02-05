@@ -17,6 +17,12 @@ from eidosian_core import eidosian
 try:
     from algorithms_lab.backends import HAS_NUMBA
     from algorithms_lab.core import Domain, WrapMode
+    from algorithms_lab.forces import (
+        ForceDefinition,
+        ForceRegistry,
+        ForceType,
+        accumulate_from_registry,
+    )
     from algorithms_lab.graph import build_neighbor_graph
 
     HAS_ALGORITHMS_LAB = True
@@ -237,6 +243,7 @@ class CellularAutomata:
         self._global_mass: Optional[FloatArray] = None
         self._global_alive: Optional[BoolArray] = None
         self._global_type_ids: Optional[IntArray] = None
+        self._force_registry: Optional["ForceRegistry"] = None
 
         # Determine which types use mass-based physics
         n_mass_types: int = int(
@@ -760,6 +767,72 @@ class CellularAutomata:
             filtered_by_max_dist=True,
         )
 
+    def _build_force_registry(
+        self,
+        max_dist_global: float,
+        potential_strength: FloatArray,
+        use_potential: BoolArray,
+        gravity_factor: FloatArray,
+        use_gravity: BoolArray,
+        mass_based_types: BoolArray,
+    ) -> Optional["ForceRegistry"]:
+        """Build or update the cached ForceRegistry for batched interactions."""
+        if not HAS_ALGORITHMS_LAB:
+            return None
+        n_types = int(self.config.n_cell_types)
+        if self._force_registry is None or self._force_registry.num_types != n_types:
+            self._force_registry = ForceRegistry(num_types=n_types, forces=[], _skip_defaults=True)
+
+            self._force_registry.add_force(
+                ForceDefinition(
+                    name="Potential",
+                    force_type=ForceType.INVERSE_SQUARE,
+                    matrix=np.zeros((n_types, n_types), dtype=np.float32),
+                    min_radius=0.0,
+                    max_radius=float(max_dist_global),
+                    strength=1.0,
+                    params=np.array([0.01], dtype=np.float32),
+                    enabled=True,
+                )
+            )
+            self._force_registry.add_force(
+                ForceDefinition(
+                    name="Gravity",
+                    force_type=ForceType.INVERSE_CUBE,
+                    matrix=np.zeros((n_types, n_types), dtype=np.float32),
+                    min_radius=0.0,
+                    max_radius=float(max_dist_global),
+                    strength=1.0,
+                    params=np.array([0.01], dtype=np.float32),
+                    enabled=True,
+                    mass_weighted=True,
+                )
+            )
+
+        registry = self._force_registry
+        if registry is None:
+            return None
+
+        potential_matrix = (potential_strength * use_potential).astype(np.float32, copy=False)
+        gravity_matrix = (gravity_factor * use_gravity).astype(np.float32, copy=False)
+        if mass_based_types.size:
+            mass_mask = mass_based_types[:, None] & mass_based_types[None, :]
+            gravity_matrix = gravity_matrix * mass_mask
+
+        force_potential = registry.get_force("Potential")
+        if force_potential is not None:
+            force_potential.matrix = potential_matrix
+            force_potential.max_radius = float(max_dist_global)
+            force_potential.enabled = bool(np.any(use_potential))
+
+        force_gravity = registry.get_force("Gravity")
+        if force_gravity is not None:
+            force_gravity.matrix = gravity_matrix
+            force_gravity.max_radius = float(max_dist_global)
+            force_gravity.enabled = bool(np.any(use_gravity) and np.any(gravity_matrix))
+
+        return registry
+
     @eidosian()
     def apply_all_interactions(self) -> None:
         """
@@ -930,46 +1003,84 @@ class CellularAutomata:
             type_i = type_i[within_mask]
             type_j = type_j[within_mask]
 
-        dx = view.positions[rows, 0] - view.positions[cols, 0]
-        dy = view.positions[rows, 1] - view.positions[cols, 1]
-        if graph.wrap_mode and graph.inv_world_size is not None:
-            dx = wrap_deltas(dx, graph.world_size[0], graph.inv_world_size[0])
-            dy = wrap_deltas(dy, graph.world_size[1], graph.inv_world_size[1])
-        if self.spatial_dimensions == 3:
-            dz = view.positions[rows, 2] - view.positions[cols, 2]
+        use_force_registry = (
+            self.config.use_force_registry
+            and HAS_ALGORITHMS_LAB
+            and HAS_NUMBA
+            and view.total >= self.config.force_registry_min_particles
+        )
+        if use_force_registry:
+            registry = self._build_force_registry(
+                max_dist_global=float(np.max(max_dist_matrix)) if max_dist_matrix.size else 0.0,
+                potential_strength=potential_strength,
+                use_potential=use_potential,
+                gravity_factor=gravity_factor,
+                use_gravity=use_gravity,
+                mass_based_types=mass_based_types,
+            )
+            if registry is not None:
+                domain = Domain(
+                    mins=np.zeros(self.spatial_dimensions, dtype=np.float32),
+                    maxs=np.array(graph.world_size, dtype=np.float32),
+                    wrap=WrapMode.WRAP if graph.wrap_mode else WrapMode.NONE,
+                )
+                acc = accumulate_from_registry(
+                    view.positions,
+                    view.type_ids,
+                    rows,
+                    cols,
+                    registry,
+                    domain,
+                    masses=view.mass,
+                )
+                dvx += acc[:, 0].astype(np.float64, copy=False)
+                dvy += acc[:, 1].astype(np.float64, copy=False)
+                if dvz is not None and self.spatial_dimensions == 3:
+                    dvz += acc[:, 2].astype(np.float64, copy=False)
+            else:
+                use_force_registry = False
+
+        if not use_force_registry:
+            dx = view.positions[rows, 0] - view.positions[cols, 0]
+            dy = view.positions[rows, 1] - view.positions[cols, 1]
             if graph.wrap_mode and graph.inv_world_size is not None:
-                dz = wrap_deltas(dz, graph.world_size[2], graph.inv_world_size[2])
-        else:
-            dz = None
+                dx = wrap_deltas(dx, graph.world_size[0], graph.inv_world_size[0])
+                dy = wrap_deltas(dy, graph.world_size[1], graph.inv_world_size[1])
+            if self.spatial_dimensions == 3:
+                dz = view.positions[rows, 2] - view.positions[cols, 2]
+                if graph.wrap_mode and graph.inv_world_size is not None:
+                    dz = wrap_deltas(dz, graph.world_size[2], graph.inv_world_size[2])
+            else:
+                dz = None
 
-        inv_dist = 1.0 / dist
-        inv_dist_sq = inv_dist * inv_dist
+            inv_dist = 1.0 / dist
+            inv_dist_sq = inv_dist * inv_dist
 
-        pot_scale = potential_strength[type_i, type_j] * inv_dist_sq
-        pot_scale *= use_potential[type_i, type_j]
-        fx = pot_scale * dx
-        fy = pot_scale * dy
-        if dz is not None:
-            fz = pot_scale * dz
-        else:
-            fz = None
+            pot_scale = potential_strength[type_i, type_j] * inv_dist_sq
+            pot_scale *= use_potential[type_i, type_j]
+            fx = pot_scale * dx
+            fy = pot_scale * dy
+            if dz is not None:
+                fz = pot_scale * dz
+            else:
+                fz = None
 
-        grav_mask = use_gravity[type_i, type_j]
-        if grav_mask.size:
-            grav_mask = grav_mask & mass_based_types[type_i] & mass_based_types[type_j]
-        if np.any(grav_mask):
-            grav_scale = gravity_factor[type_i, type_j] * inv_dist_sq * inv_dist
-            grav_scale *= grav_mask
-            F_grav = view.mass[rows] * view.mass[cols] * grav_scale
-            fx -= F_grav * dx * inv_dist
-            fy -= F_grav * dy * inv_dist
-            if fz is not None and dz is not None:
-                fz -= F_grav * dz * inv_dist
+            grav_mask = use_gravity[type_i, type_j]
+            if grav_mask.size:
+                grav_mask = grav_mask & mass_based_types[type_i] & mass_based_types[type_j]
+            if np.any(grav_mask):
+                grav_scale = gravity_factor[type_i, type_j] * inv_dist_sq * inv_dist
+                grav_scale *= grav_mask
+                F_grav = view.mass[rows] * view.mass[cols] * grav_scale
+                fx -= F_grav * dx * inv_dist
+                fy -= F_grav * dy * inv_dist
+                if fz is not None and dz is not None:
+                    fz -= F_grav * dz * inv_dist
 
-        dvx += np.bincount(rows, weights=fx, minlength=view.total)
-        dvy += np.bincount(rows, weights=fy, minlength=view.total)
-        if dvz is not None and fz is not None:
-            dvz += np.bincount(rows, weights=fz, minlength=view.total)
+            dvx += np.bincount(rows, weights=fx, minlength=view.total)
+            dvy += np.bincount(rows, weights=fy, minlength=view.total)
+            if dvz is not None and fz is not None:
+                dvz += np.bincount(rows, weights=fz, minlength=view.total)
 
         give_take_matrix = self.rules_manager.give_take_matrix
         synergy_matrix = self.rules_manager.synergy_matrix

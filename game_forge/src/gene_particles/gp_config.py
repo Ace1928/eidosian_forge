@@ -497,6 +497,10 @@ class SimulationConfig:
         gene_interpreter_interval: Frames between gene interpreter updates (int > 0)
         gene_sequence: Optional explicit gene sequence for interpreter
 
+        # Force registry controls
+        use_force_registry: Enable multi-force registry pipeline (bool)
+        force_registry_min_particles: Minimum particles to enable registry path (int > 0)
+
         # Flocking behavior parameters
         alignment_strength: Strength of flocking alignment behavior (float)
         cohesion_strength: Strength of flocking cohesion behavior (float)
@@ -616,6 +620,10 @@ class SimulationConfig:
         self.gene_interpreter_interval: int = 1
         self.gene_sequence: Optional[GeneSequence] = None
 
+        # Force registry controls (advanced multi-force pipeline)
+        self.use_force_registry: bool = True
+        self.force_registry_min_particles: int = 512
+
         # Flocking behavior parameters
         self.alignment_strength: float = 0.25
         self.cohesion_strength: float = 0.25
@@ -676,6 +684,7 @@ class SimulationConfig:
         self._validate_visualization_parameters()
         self._validate_emergence_parameters()
         self._validate_gene_interpreter_parameters()
+        self._validate_force_registry_parameters()
 
     def _validate_population_parameters(self) -> None:
         """Validate population-related parameters."""
@@ -914,6 +923,13 @@ class SimulationConfig:
         """Validate genetic interpreter controls."""
         if self.gene_interpreter_interval <= 0:
             raise ValueError("Gene interpreter interval must be positive")
+
+    def _validate_force_registry_parameters(self) -> None:
+        """Validate force registry controls."""
+        if not isinstance(self.use_force_registry, bool):
+            raise ValueError("Force registry toggle must be boolean")
+        if self.force_registry_min_particles <= 0:
+            raise ValueError("Force registry min particles must be positive")
 
     @eidosian()
     def advance_environment(self, frame_count: int) -> None:

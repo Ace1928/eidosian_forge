@@ -194,6 +194,8 @@ def test_simulation_config_all_validation_branches():
         ("temperature", -0.1),
         ("temperature_noise", -0.1),
         ("gene_interpreter_interval", 0),
+        ("use_force_registry", "yes"),
+        ("force_registry_min_particles", 0),
         ("reproduction_energy_threshold", 0.0),
         ("reproduction_mutation_rate", -0.1),
         ("reproduction_offspring_energy_fraction", 1.5),

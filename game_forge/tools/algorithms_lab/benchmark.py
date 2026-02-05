@@ -187,6 +187,7 @@ def main() -> int:
                     graph.cols,
                     registry,
                     domain,
+                    masses=masses,
                 )
                 velocities = velocities + acc * args.dt
                 positions = domain.wrap_positions(positions + velocities * args.dt)

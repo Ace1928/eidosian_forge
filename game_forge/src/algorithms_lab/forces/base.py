@@ -49,7 +49,8 @@ class ForceDefinition:
         min_radius: Repulsion core radius (used by the linear/particle-life kernel).
         max_radius: Maximum interaction radius (cutoff).
         strength: Global scalar multiplier for this force.
-        params: Extra kernel parameters (length 4).
+    params: Extra kernel parameters (length 4).
+    mass_weighted: Whether to multiply force magnitude by mass_i * mass_j.
         enabled: Whether this force is active.
         symmetric: Whether matrix[i,j] == matrix[j,i].
     """
@@ -63,6 +64,7 @@ class ForceDefinition:
     params: np.ndarray = field(default_factory=lambda: np.zeros(4, dtype=np.float32))
     enabled: bool = True
     symmetric: bool = True
+    mass_weighted: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.matrix, np.ndarray):
@@ -119,4 +121,5 @@ class ForceDefinition:
             params=self.params.copy(),
             enabled=bool(self.enabled),
             symmetric=bool(self.symmetric),
+            mass_weighted=bool(self.mass_weighted),
         )

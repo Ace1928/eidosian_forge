@@ -212,6 +212,120 @@ if HAS_NUMBA:
                 acc[i, 2] += fz
         return acc
 
+    @njit(cache=True, fastmath=True, parallel=True)
+    def accumulate_forces_mass(
+        positions: np.ndarray,
+        masses: np.ndarray,
+        type_ids: np.ndarray,
+        rows: np.ndarray,
+        cols: np.ndarray,
+        force_types: np.ndarray,
+        min_radius: np.ndarray,
+        max_radius: np.ndarray,
+        strength: np.ndarray,
+        params: np.ndarray,
+        matrices: np.ndarray,
+        mass_weighted: np.ndarray,
+        sizes: np.ndarray,
+        inv_sizes: np.ndarray,
+        wrap: bool,
+    ) -> np.ndarray:
+        n = positions.shape[0]
+        dims = positions.shape[1]
+        acc = np.zeros((n, dims), dtype=np.float32)
+        n_edges = rows.size
+        n_forces = force_types.size
+        if n_edges == 0 or n_forces == 0:
+            return acc
+
+        for e in prange(n_edges):
+            i = rows[e]
+            j = cols[e]
+            if i == j:
+                continue
+            if dims == 2:
+                dx = positions[i, 0] - positions[j, 0]
+                dy = positions[i, 1] - positions[j, 1]
+                if wrap:
+                    dx -= sizes[0] * np.round(dx * inv_sizes[0])
+                    dy -= sizes[1] * np.round(dy * inv_sizes[1])
+                dist2 = dx * dx + dy * dy
+                if dist2 <= 0.0:
+                    continue
+                dist = np.sqrt(dist2)
+                inv_dist = 1.0 / dist
+                fx = 0.0
+                fy = 0.0
+                type_i = type_ids[i]
+                type_j = type_ids[j]
+                mass_i = masses[i]
+                mass_j = masses[j]
+                for f in range(n_forces):
+                    factor = matrices[f, type_i, type_j]
+                    if factor == 0.0:
+                        continue
+                    mag = _force_magnitude(
+                        force_types[f],
+                        dist,
+                        min_radius[f],
+                        max_radius[f],
+                        factor,
+                        strength[f],
+                        params[f],
+                    )
+                    if mag == 0.0:
+                        continue
+                    if mass_weighted[f] != 0:
+                        mag *= mass_i * mass_j
+                    fx += mag * dx * inv_dist
+                    fy += mag * dy * inv_dist
+                acc[i, 0] += fx
+                acc[i, 1] += fy
+            else:
+                dx = positions[i, 0] - positions[j, 0]
+                dy = positions[i, 1] - positions[j, 1]
+                dz = positions[i, 2] - positions[j, 2]
+                if wrap:
+                    dx -= sizes[0] * np.round(dx * inv_sizes[0])
+                    dy -= sizes[1] * np.round(dy * inv_sizes[1])
+                    dz -= sizes[2] * np.round(dz * inv_sizes[2])
+                dist2 = dx * dx + dy * dy + dz * dz
+                if dist2 <= 0.0:
+                    continue
+                dist = np.sqrt(dist2)
+                inv_dist = 1.0 / dist
+                fx = 0.0
+                fy = 0.0
+                fz = 0.0
+                type_i = type_ids[i]
+                type_j = type_ids[j]
+                mass_i = masses[i]
+                mass_j = masses[j]
+                for f in range(n_forces):
+                    factor = matrices[f, type_i, type_j]
+                    if factor == 0.0:
+                        continue
+                    mag = _force_magnitude(
+                        force_types[f],
+                        dist,
+                        min_radius[f],
+                        max_radius[f],
+                        factor,
+                        strength[f],
+                        params[f],
+                    )
+                    if mag == 0.0:
+                        continue
+                    if mass_weighted[f] != 0:
+                        mag *= mass_i * mass_j
+                    fx += mag * dx * inv_dist
+                    fy += mag * dy * inv_dist
+                    fz += mag * dz * inv_dist
+                acc[i, 0] += fx
+                acc[i, 1] += fy
+                acc[i, 2] += fz
+        return acc
+
 else:
 
     def accumulate_forces(*args, **kwargs):  # type: ignore
@@ -225,11 +339,12 @@ def accumulate_from_registry(
     cols: np.ndarray,
     registry: ForceRegistry,
     domain: Domain,
+    masses: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """Compute per-particle accelerations using a ForceRegistry."""
 
     pack = registry.pack()
-    return accumulate_from_pack(positions, type_ids, rows, cols, pack, domain)
+    return accumulate_from_pack(positions, type_ids, rows, cols, pack, domain, masses=masses)
 
 
 def accumulate_from_pack(
@@ -239,6 +354,7 @@ def accumulate_from_pack(
     cols: np.ndarray,
     pack: ForcePack,
     domain: Domain,
+    masses: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """Compute per-particle accelerations from a packed force config."""
 
@@ -250,6 +366,27 @@ def accumulate_from_pack(
         raise ValueError("positions must be of shape (N, 2) or (N, 3)")
     if rows.size != cols.size:
         raise ValueError("rows/cols must have the same length")
+    if pack.mass_weighted.size > 0 and np.any(pack.mass_weighted):
+        if masses is None:
+            raise ValueError("masses must be provided when using mass-weighted forces")
+        mass = ensure_f32(np.asarray(masses, dtype=np.float32))
+        return accumulate_forces_mass(
+            pos,
+            mass,
+            type_ids,
+            rows,
+            cols,
+            pack.force_types,
+            pack.min_radius,
+            pack.max_radius,
+            pack.strength,
+            pack.params,
+            pack.matrices,
+            pack.mass_weighted,
+            domain.sizes,
+            domain.inv_sizes,
+            domain.wrap == WrapMode.WRAP,
+        )
     return accumulate_forces(
         pos,
         type_ids,
