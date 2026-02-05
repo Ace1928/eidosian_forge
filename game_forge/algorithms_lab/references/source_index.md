@@ -12,3 +12,5 @@ informed the Algorithms Lab implementations.
 - `spatial_hashing.md` — Spatial hashing / uniform grid ideas.
 - `morton_order.md` — Z-order (Morton) curve for spatial locality.
 - `gpu_nbody.md` — GPU-oriented N-body acceleration ideas.
+- `advanced_fluids.md` — XPBD and advanced fluid notes.
+- `acceleration.md` — Numba and SciPy acceleration notes.

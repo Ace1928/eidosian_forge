@@ -21,6 +21,7 @@ from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.neighbor_list import NeighborList
 from algorithms_lab.sph import SPHState, SPHSolver
 from algorithms_lab.pbf import PBFState, PBFSolver
+from algorithms_lab.xpbd import XPBFState, XPBFSolver
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--algorithm",
-        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf"],
+        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf", "xpbd"],
         default="barnes-hut",
     )
     parser.add_argument("--particles", type=int, default=2048)
@@ -99,6 +100,15 @@ def main() -> int:
     elif args.algorithm == "pbf":
         solver = PBFSolver(domain, h=0.06, dt=args.dt)
         state = PBFState(positions=positions, velocities=velocities, masses=masses)
+
+        def run() -> None:
+            nonlocal state
+            for _ in range(args.steps):
+                state = solver.step(state)
+
+    elif args.algorithm == "xpbd":
+        solver = XPBFSolver(domain, h=0.06, dt=args.dt, compliance=0.001)
+        state = XPBFState(positions=positions, velocities=velocities, masses=masses)
 
         def run() -> None:
             nonlocal state

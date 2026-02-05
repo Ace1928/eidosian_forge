@@ -156,7 +156,8 @@ class FMM2D:
     def _cell_centers(self) -> NDArray[np.float32]:
         """Return centers for all grid cells."""
 
-        dims = self._grid.grid_shape
-        grid = np.stack(np.unravel_index(np.arange(self._grid.num_cells), dims), axis=-1)
-        centers = (grid.astype(np.float32) + 0.5) * self.cell_size + self.domain.mins
+        grid = self._grid.cell_coords(
+            np.arange(self._grid.num_cells, dtype=np.int32)
+        ).astype(np.float32)
+        centers = (grid + 0.5) * self.cell_size + self.domain.mins
         return centers

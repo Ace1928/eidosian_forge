@@ -13,10 +13,20 @@ codebases with minimal dependency overhead.
 - Barnes-Hut tree for approximate N-body forces.
 - Two-level FMM-style approximation (2D).
 - SPH and PBF fluid solvers.
+- XPBD (compliant) fluid solver.
+- Optional numba and SciPy cKDTree acceleration.
 
 ## Installation
 Algorithms Lab ships with the main game_forge package. The only required
 runtime dependency is numpy. Visual demos optionally require pygame.
+Optional accelerators:
+- `numba` for JIT-accelerated neighbor enumeration.
+- `scipy` for cKDTree-based neighbor search.
+
+If installing via `pyproject.toml`, you can use:
+```
+pip install .[algorithms-lab]
+```
 
 ## Quick Start
 
@@ -39,6 +49,7 @@ print(pairs_i.shape, pairs_j.shape)
 python game_forge/tools/algorithms_lab/demo.py --algorithm sph --visual
 python game_forge/tools/algorithms_lab/demo.py --algorithm barnes-hut --visual
 python game_forge/tools/algorithms_lab/benchmark.py --algorithms all
+python game_forge/tools/algorithms_lab/demo.py --algorithm xpbd --neighbor-backend numba
 python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 ```
 

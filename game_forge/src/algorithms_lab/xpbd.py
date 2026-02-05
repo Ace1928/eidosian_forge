@@ -1,4 +1,4 @@
-"""Position Based Fluids (PBF) solver."""
+"""Extended Position-Based Dynamics (XPBD) solver for fluids."""
 
 from __future__ import annotations
 
@@ -13,16 +13,20 @@ from algorithms_lab.neighbor_list import NeighborList
 
 
 @dataclass
-class PBFState:
-    """Mutable PBF state."""
+class XPBFState:
+    """Mutable XPBD fluid state."""
 
     positions: NDArray[np.float32]
     velocities: NDArray[np.float32]
     masses: NDArray[np.float32]
 
 
-class PBFSolver:
-    """PBF solver with iterative constraint projection."""
+class XPBFSolver:
+    """XPBD-style compliant fluid solver.
+
+    Compliance allows softer constraints compared to strict PBF, reducing
+    numerical stiffness while maintaining stability.
+    """
 
     def __init__(
         self,
@@ -32,6 +36,7 @@ class PBFSolver:
         dt: float = 0.01,
         iterations: int = 4,
         gravity: float | None = None,
+        compliance: float = 0.0,
         s_corr_k: float = 0.001,
         s_corr_n: int = 4,
         s_corr_q: float = 0.3,
@@ -41,19 +46,22 @@ class PBFSolver:
             raise ValueError("h must be positive")
         if iterations < 1:
             raise ValueError("iterations must be positive")
+        if compliance < 0:
+            raise ValueError("compliance must be non-negative")
         self.domain = domain
         self.h = float(h)
         self.rest_density = float(rest_density)
         self.dt = float(dt)
         self.iterations = int(iterations)
         self.gravity = gravity
+        self.compliance = float(compliance)
         self.s_corr_k = float(s_corr_k)
         self.s_corr_n = int(s_corr_n)
         self.s_corr_q = float(s_corr_q)
         self._neighbor_list = NeighborList(domain, cutoff=h, skin=0.0, backend=neighbor_backend)
 
-    def step(self, state: PBFState) -> PBFState:
-        """Advance the PBF simulation by one step."""
+    def step(self, state: XPBFState) -> XPBFState:
+        """Advance the XPBD fluid simulation by one step."""
 
         pos = ensure_f32(state.positions)
         vel = ensure_f32(state.velocities)
@@ -72,6 +80,9 @@ class PBFSolver:
         counts = np.diff(neighbor_data.offsets)
         idx_i = np.repeat(np.arange(n, dtype=np.int32), counts)
         idx_j = neighbor_data.neighbors
+
+        lambdas = np.zeros(n, dtype=np.float32)
+        alpha = self.compliance / (self.dt * self.dt)
 
         for _ in range(self.iterations):
             delta = predicted[idx_j] - predicted[idx_i]
@@ -100,8 +111,8 @@ class PBFSolver:
                 idx_i, weights=np.einsum("ij,ij->i", grad_ij, grad_ij), minlength=n
             ).astype(np.float32)
 
-            denom = grad_sq + np.einsum("ij,ij->i", grad_sum, grad_sum) + 1e-6
-            lambdas = -constraint / denom
+            denom = grad_sq + np.einsum("ij,ij->i", grad_sum, grad_sum) + alpha + 1e-6
+            lambdas = (-constraint - alpha * lambdas) / denom
 
             w_q = poly6(
                 np.array([self.s_corr_q * self.h], dtype=np.float32),
@@ -121,4 +132,4 @@ class PBFSolver:
             predicted = self.domain.apply_boundary(predicted)
 
         vel = (predicted - pos) / self.dt
-        return PBFState(positions=predicted, velocities=vel, masses=mass)
+        return XPBFState(positions=predicted, velocities=vel, masses=mass)

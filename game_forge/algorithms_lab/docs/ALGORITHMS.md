@@ -7,6 +7,7 @@ Algorithms Lab and how they are expected to be used.
 - Maps particles into grid cells for neighbor queries.
 - Stable sorting by cell id and CSR-style cell ranges.
 - Supports wrapping, clamping, or open boundaries.
+- Optional numba backend accelerates pair enumeration.
 
 ## Morton Encoding
 - Encodes 2D/3D coordinates into Z-order for cache locality.
@@ -15,6 +16,11 @@ Algorithms Lab and how they are expected to be used.
 ## Verlet Neighbor Lists
 - Stores neighbor lists in CSR format for fast iteration.
 - Optional skin distance reduces rebuild cost.
+- Supports numba-accelerated neighbor enumeration.
+
+## KDTree Neighbor Search
+- Uses SciPy's cKDTree for fast radius queries in C.
+- Supports periodic boundaries via `boxsize` when wrapping is enabled.
 
 ## Barnes-Hut Tree
 - Approximates distant particle groups as a single mass.
@@ -31,6 +37,10 @@ Algorithms Lab and how they are expected to be used.
 ## PBF
 - Constraint-based solver for incompressible fluids.
 - Iteratively projects particles to satisfy density constraints.
+
+## XPBD (Compliant Constraints)
+- Extends PBF with compliance for softer, more stable constraints.
+- Useful when strict incompressibility causes stiffness.
 
 ## Performance Notes
 - All algorithms use contiguous float32 arrays.

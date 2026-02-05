@@ -14,6 +14,8 @@ choices and guidance for extending the system.
   (cell pair iteration or tree traversal).
 - **Cached domain sizes**: Domain sizes and their inverse are cached to
   avoid repeated allocation during minimal-image wrapping.
+- **Auto backend selection**: Neighbor queries default to numba when
+  available, falling back to numpy otherwise.
 
 ## Hot Path Notes
 - `UniformGrid.neighbor_pairs` is cell-pair limited. Increasing `cell_size`
@@ -29,7 +31,9 @@ choices and guidance for extending the system.
 ## Optional Accelerators
 If you want further speedups, consider adding optional accelerators:
 - **Numba**: JIT compile the loops in `UniformGrid.neighbor_pairs` and
-  `BarnesHutTree._accumulate_force`.
+  neighbor list builders. Enable by passing `backend=\"numba\"`.
+- **SciPy cKDTree**: Use `KDTreeNeighborSearch` for fast radius queries
+  in C, especially for irregular particle distributions.
 - **CuPy/Numba CUDA**: Offload dense kernel operations for SPH/PBF.
 
 These dependencies are intentionally optional to keep the core minimal.

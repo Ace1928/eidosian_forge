@@ -20,17 +20,30 @@ class NeighborListData:
 
 
 class NeighborList:
-    """Maintain a Verlet neighbor list with optional skin distance."""
+    """Maintain a Verlet neighbor list with optional skin distance.
 
-    def __init__(self, domain: Domain, cutoff: float, skin: float = 0.0) -> None:
+    The neighbor enumeration backend can be set to `numpy` or `numba` for
+    accelerated pair generation.
+    """
+
+    def __init__(
+        self,
+        domain: Domain,
+        cutoff: float,
+        skin: float = 0.0,
+        backend: str = "auto",
+    ) -> None:
         if cutoff <= 0:
             raise ValueError("cutoff must be positive")
         if skin < 0:
             raise ValueError("skin must be non-negative")
+        if backend not in ("auto", "numpy", "numba"):
+            raise ValueError("backend must be one of: auto, numpy, numba")
         self.domain = domain
         self.cutoff = float(cutoff)
         self.skin = float(skin)
         self.radius = self.cutoff + self.skin
+        self.backend = backend
         self._grid = UniformGrid(domain, cell_size=self.radius)
         self._last_positions: NDArray[np.float32] | None = None
         self._data: NeighborListData | None = None
@@ -51,7 +64,9 @@ class NeighborList:
         """Build and store the neighbor list for positions."""
 
         pos = ensure_f32(positions)
-        pair_i, pair_j = self._grid.neighbor_pairs(pos, radius=self.radius)
+        pair_i, pair_j = self._grid.neighbor_pairs(
+            pos, radius=self.radius, backend=self.backend
+        )
         if pair_i.size == 0:
             neighbors = np.zeros(0, dtype=np.int32)
             offsets = np.zeros(pos.shape[0] + 1, dtype=np.int32)

@@ -8,7 +8,9 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
+from algorithms_lab.backends import HAS_NUMBA
 from algorithms_lab.core import Domain, WrapMode, ensure_i32
+from algorithms_lab.numba_kernels import neighbor_pairs_numba
 
 
 @dataclass(frozen=True)
@@ -82,9 +84,16 @@ class UniformGrid:
     def cell_coords(self, cell_ids: NDArray[np.int32]) -> NDArray[np.int32]:
         """Convert cell ids to coordinates."""
 
-        return np.stack(np.unravel_index(cell_ids, self.grid_shape), axis=-1).astype(
-            np.int32
-        )
+        cell_ids = np.asarray(cell_ids, dtype=np.int32)
+        if self.domain.dims == 2:
+            x = cell_ids % self.grid_shape[0]
+            y = cell_ids // self.grid_shape[0]
+            return np.stack([x, y], axis=-1).astype(np.int32)
+        stride = self.grid_shape[0] * self.grid_shape[1]
+        x = cell_ids % self.grid_shape[0]
+        y = (cell_ids // self.grid_shape[0]) % self.grid_shape[1]
+        z = cell_ids // stride
+        return np.stack([x, y, z], axis=-1).astype(np.int32)
 
     def neighbor_cell_pairs(self, grid: GridData) -> NDArray[np.int32]:
         """Return pairs of occupied neighbor cells (upper triangle only)."""
@@ -145,15 +154,40 @@ class UniformGrid:
         self,
         positions: NDArray[np.float32],
         radius: float,
+        backend: str = "auto",
     ) -> Tuple[NDArray[np.int32], NDArray[np.int32]]:
-        """Return neighbor pairs within radius using the uniform grid."""
+        """Return neighbor pairs within radius using the uniform grid.
+
+        backend:
+            - ``auto``: use numba if available, else numpy.
+            - ``numpy``: pure numpy implementation.
+            - ``numba``: JIT-accelerated enumeration (requires numba).
+        """
 
         if radius <= 0:
             raise ValueError("radius must be positive")
+        if backend not in ("auto", "numpy", "numba"):
+            raise ValueError("backend must be one of: auto, numpy, numba")
         grid = self.build(positions)
         pairs = self.neighbor_cell_pairs(grid)
         if pairs.size == 0:
             return np.zeros(0, dtype=np.int32), np.zeros(0, dtype=np.int32)
+        use_numba = backend in ("auto", "numba") and HAS_NUMBA
+        if use_numba:
+            return neighbor_pairs_numba(
+                pairs,
+                grid.cell_start,
+                grid.cell_count,
+                grid.sorted_indices,
+                np.asarray(positions, dtype=np.float32),
+                radius,
+                self.domain.sizes,
+                self.domain.inv_sizes,
+                self.domain.wrap == WrapMode.WRAP,
+                self.domain.dims,
+            )
+        if backend == "numba" and not HAS_NUMBA:
+            raise ImportError("numba backend requested but numba is not installed")
         pos = np.asarray(positions, dtype=np.float32)
         radius2 = radius * radius
         pair_i = []

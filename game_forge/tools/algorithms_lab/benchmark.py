@@ -20,6 +20,7 @@ from algorithms_lab.neighbor_list import NeighborList
 from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.sph import SPHState, SPHSolver
 from algorithms_lab.pbf import PBFState, PBFSolver
+from algorithms_lab.xpbd import XPBFState, XPBFSolver
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,6 +37,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--dt", type=float, default=0.01)
+    parser.add_argument(
+        "--neighbor-backend",
+        choices=["auto", "numpy", "numba"],
+        default="auto",
+        help="Neighbor backend for SPH/PBF",
+    )
     return parser.parse_args()
 
 
@@ -63,7 +70,7 @@ def main() -> int:
     selected = (
         [s.strip() for s in args.algorithms.split(",")]
         if args.algorithms != "all"
-        else ["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf"]
+        else ["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf", "xpbd"]
     )
 
     results: Dict[str, float] = {}
@@ -113,7 +120,7 @@ def main() -> int:
         results["fmm2d"] = timer("fmm2d", run_fmm)
 
     if "sph" in selected:
-        solver = SPHSolver(domain, h=0.06, dt=args.dt)
+        solver = SPHSolver(domain, h=0.06, dt=args.dt, neighbor_backend=args.neighbor_backend)
         state = SPHState(positions=base_positions, velocities=base_velocities, masses=masses)
 
         def run_sph() -> None:
@@ -124,7 +131,7 @@ def main() -> int:
         results["sph"] = timer("sph", run_sph)
 
     if "pbf" in selected:
-        solver = PBFSolver(domain, h=0.06, dt=args.dt)
+        solver = PBFSolver(domain, h=0.06, dt=args.dt, neighbor_backend=args.neighbor_backend)
         state = PBFState(positions=base_positions, velocities=base_velocities, masses=masses)
 
         def run_pbf() -> None:
@@ -133,6 +140,23 @@ def main() -> int:
                 state = solver.step(state)
 
         results["pbf"] = timer("pbf", run_pbf)
+
+    if "xpbd" in selected:
+        solver = XPBFSolver(
+            domain,
+            h=0.06,
+            dt=args.dt,
+            compliance=0.001,
+            neighbor_backend=args.neighbor_backend,
+        )
+        state = XPBFState(positions=base_positions, velocities=base_velocities, masses=masses)
+
+        def run_xpbd() -> None:
+            nonlocal state
+            for _ in range(args.steps):
+                state = solver.step(state)
+
+        results["xpbd"] = timer("xpbd", run_xpbd)
 
     print("INFO benchmark complete")
     return 0

@@ -18,6 +18,15 @@ classifiers = [
 requires-python = ">=3.12"
 dependencies = []
 
+[project.optional-dependencies]
+algorithms-lab = [
+  "numba>=0.59",
+  "scipy>=1.11",
+]
+algorithms-lab-visual = [
+  "pygame",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true

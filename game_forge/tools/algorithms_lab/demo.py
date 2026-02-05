@@ -21,6 +21,7 @@ from algorithms_lab.neighbor_list import NeighborList
 from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.sph import SPHState, SPHSolver
 from algorithms_lab.pbf import PBFState, PBFSolver
+from algorithms_lab.xpbd import XPBFState, XPBFSolver
 
 try:
     import pygame
@@ -37,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--algorithm",
-        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf"],
+        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf", "xpbd"],
         default="sph",
         help="Which demo to run",
     )
@@ -48,6 +49,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--width", type=int, default=900)
     parser.add_argument("--height", type=int, default=700)
     parser.add_argument("--dt", type=float, default=0.01)
+    parser.add_argument(
+        "--neighbor-backend",
+        choices=["auto", "numpy", "numba"],
+        default="auto",
+        help="Neighbor backend for SPH/PBF",
+    )
     return parser.parse_args()
 
 
@@ -125,7 +132,9 @@ def main() -> int:
             positions = domain.wrap_positions(positions + velocities * args.dt)
 
     elif args.algorithm == "sph":
-        solver = SPHSolver(domain, h=0.06, dt=args.dt, gravity=0.0)
+        solver = SPHSolver(
+            domain, h=0.06, dt=args.dt, gravity=0.0, neighbor_backend=args.neighbor_backend
+        )
         state = SPHState(positions=positions, velocities=velocities, masses=masses)
 
         def step_fn(_: int) -> None:
@@ -133,8 +142,25 @@ def main() -> int:
             state = solver.step(state)
 
     elif args.algorithm == "pbf":
-        solver = PBFSolver(domain, h=0.06, dt=args.dt, gravity=0.0)
+        solver = PBFSolver(
+            domain, h=0.06, dt=args.dt, gravity=0.0, neighbor_backend=args.neighbor_backend
+        )
         state = PBFState(positions=positions, velocities=velocities, masses=masses)
+
+        def step_fn(_: int) -> None:
+            nonlocal state
+            state = solver.step(state)
+
+    elif args.algorithm == "xpbd":
+        solver = XPBFSolver(
+            domain,
+            h=0.06,
+            dt=args.dt,
+            gravity=0.0,
+            compliance=0.001,
+            neighbor_backend=args.neighbor_backend,
+        )
+        state = XPBFState(positions=positions, velocities=velocities, masses=masses)
 
         def step_fn(_: int) -> None:
             nonlocal state
@@ -162,7 +188,7 @@ def main() -> int:
                 running = False
 
         step_fn(step)
-        if args.algorithm in ("sph", "pbf"):
+        if args.algorithm in ("sph", "pbf", "xpbd"):
             pos = state.positions
         else:
             pos = positions

@@ -34,6 +34,7 @@ class SPHSolver:
         dt: float = 0.01,
         gravity: float | None = None,
         xsph: float = 0.0,
+        neighbor_backend: str = "auto",
     ) -> None:
         if h <= 0:
             raise ValueError("h must be positive")
@@ -45,7 +46,7 @@ class SPHSolver:
         self.dt = float(dt)
         self.gravity = gravity
         self.xsph = float(xsph)
-        self._neighbor_list = NeighborList(domain, cutoff=h, skin=0.0)
+        self._neighbor_list = NeighborList(domain, cutoff=h, skin=0.0, backend=neighbor_backend)
 
     def step(self, state: SPHState) -> SPHState:
         """Advance the SPH simulation by one step."""
