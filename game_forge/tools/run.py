@@ -6,6 +6,8 @@ Example:
   python game_forge/tools/run.py gene-particles
   python game_forge/tools/run.py ecosmos -- --ticks 100
   python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
+  python game_forge/tools/run.py stratum-benchmark -- --grid 16 --ticks 10
+  python game_forge/tools/run.py falling-sand-benchmark -- --runs 5
 """
 
 from __future__ import annotations
@@ -101,6 +103,12 @@ def load_targets(root: Path) -> dict[str, Target]:
             command=[str(root / "game_forge" / "tools" / "gene_particles_profile.py")],
             requires=["numpy", "pygame"],
         ),
+        "algorithms-lab-benchmark": Target(
+            name="algorithms-lab-benchmark",
+            description="Algorithms Lab benchmark suite",
+            command=[str(root / "game_forge" / "tools" / "algorithms_lab" / "benchmark.py")],
+            requires=["numpy"],
+        ),
         "algorithms-lab-demo": Target(
             name="algorithms-lab-demo",
             description="Algorithms Lab demo runner",
@@ -119,6 +127,13 @@ def load_targets(root: Path) -> dict[str, Target]:
             command=["-m", "falling_sand"],
             extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
         ),
+        "falling-sand-benchmark": Target(
+            name="falling-sand-benchmark",
+            description="Falling Sand benchmark suite",
+            command=["-m", "falling_sand.benchmarks"],
+            extra_pythonpath=[root / "game_forge" / "src" / "falling_sand" / "src"],
+            requires=["numpy"],
+        ),
         "stratum": Target(
             name="stratum",
             description="Stratum unified scenario CLI",
@@ -128,6 +143,11 @@ def load_targets(root: Path) -> dict[str, Target]:
             name="stratum-cli",
             description="Stratum scenario CLI",
             command=[str(root / "game_forge" / "src" / "Stratum" / "scenarios" / "cli.py")],
+        ),
+        "stratum-benchmark": Target(
+            name="stratum-benchmark",
+            description="Stratum benchmark suite",
+            command=[str(root / "game_forge" / "src" / "Stratum" / "tests" / "benchmark.py")],
         ),
     }
 

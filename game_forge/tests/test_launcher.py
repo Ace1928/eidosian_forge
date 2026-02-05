@@ -19,3 +19,6 @@ def test_run_launcher_list() -> None:
     assert result.returncode == 0
     assert "gene-particles" in result.stdout
     assert "ecosmos" in result.stdout
+    assert "algorithms-lab-benchmark" in result.stdout
+    assert "falling-sand-benchmark" in result.stdout
+    assert "stratum-benchmark" in result.stdout
