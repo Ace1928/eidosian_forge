@@ -51,6 +51,10 @@ downloads/
 eggs/
 .eggs/
 lib/
+!lib/eidosian_core/
+!lib/eidosian_core/**
+!lib/cli/
+!lib/cli/**
 lib64/
 parts/
 sdist/
