@@ -14,6 +14,16 @@ import pygame
 from numpy.typing import NDArray
 from eidosian_core import eidosian
 
+try:
+    from algorithms_lab.backends import HAS_NUMBA
+    from algorithms_lab.core import Domain, WrapMode
+    from algorithms_lab.graph import build_neighbor_graph
+
+    HAS_ALGORITHMS_LAB = True
+except Exception:
+    HAS_ALGORITHMS_LAB = False
+    HAS_NUMBA = False
+
 # Local imports with explicit paths
 from game_forge.src.gene_particles.gp_config import ReproductionMode, SimulationConfig
 from game_forge.src.gene_particles.gp_interpreter import GeneticInterpreter
@@ -551,6 +561,35 @@ class CellularAutomata:
                 )
             else:
                 inv_world_size = (1.0 / world_size[0], 1.0 / world_size[1])
+
+        if HAS_ALGORITHMS_LAB:
+            try:
+                mins = np.zeros(self.spatial_dimensions, dtype=np.float32)
+                maxs = np.array(world_size, dtype=np.float32)
+                domain = Domain(
+                    mins=mins,
+                    maxs=maxs,
+                    wrap=WrapMode.WRAP if wrap_mode else WrapMode.NONE,
+                )
+                backend = "numba" if HAS_NUMBA else "numpy"
+                graph = build_neighbor_graph(
+                    positions.astype(np.float32, copy=False),
+                    radius=float(max_dist),
+                    domain=domain,
+                    method="grid",
+                    backend=backend,
+                )
+                return GlobalNeighborGraph(
+                    rows=graph.rows.astype(np.int_, copy=False),
+                    cols=graph.cols.astype(np.int_, copy=False),
+                    dist=graph.dist.astype(np.float64, copy=False),
+                    wrap_mode=wrap_mode,
+                    world_size=world_size,
+                    inv_world_size=inv_world_size,
+                    filtered_by_max_dist=False,
+                )
+            except Exception:
+                pass
 
         positions = view.positions
         positions_for_tree = positions

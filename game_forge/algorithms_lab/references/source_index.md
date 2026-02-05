@@ -14,3 +14,4 @@ informed the Algorithms Lab implementations.
 - `gpu_nbody.md` — GPU-oriented N-body acceleration ideas.
 - `advanced_fluids.md` — XPBD and advanced fluid notes.
 - `acceleration.md` — Numba and SciPy acceleration notes.
+- `forces.md` — Force law references (Yukawa, Lennard-Jones, Morse, Boids).

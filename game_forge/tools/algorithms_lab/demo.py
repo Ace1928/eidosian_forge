@@ -15,8 +15,11 @@ from typing import Callable, Iterable, Tuple
 
 import numpy as np
 
+from algorithms_lab.backends import HAS_NUMBA
 from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.core import Domain, WrapMode
+from algorithms_lab.forces import ForceRegistry, accumulate_from_registry
+from algorithms_lab.graph import build_neighbor_graph
 from algorithms_lab.fmm2d import FMM2D
 from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.neighbor_list import NeighborList
@@ -46,6 +49,7 @@ def parse_args() -> argparse.Namespace:
             "barnes-hut",
             "fmm2d",
             "fmm-ml",
+            "forces",
             "sph",
             "pbf",
             "xpbd",
@@ -61,6 +65,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--height", type=int, default=700)
     parser.add_argument("--dt", type=float, default=0.01)
     parser.add_argument("--fmm-levels", type=int, default=4)
+    parser.add_argument("--force-types", type=int, default=6)
+    parser.add_argument("--force-multi", action="store_true", help="Enable multiple force families")
     parser.add_argument(
         "--bh-backend",
         choices=["auto", "numpy", "numba"],
@@ -231,6 +237,38 @@ def main() -> int:
         def step_fn(_: int) -> None:
             nonlocal positions, velocities
             acc = fmm.compute_acceleration(positions, masses)
+            velocities = velocities + acc * args.dt
+            positions = domain.wrap_positions(positions + velocities * args.dt)
+
+    elif args.algorithm == "forces":
+        registry = ForceRegistry(num_types=args.force_types)
+        registry.randomize_all()
+        if args.force_multi:
+            for name in ("Yukawa", "Lennard-Jones", "Morse Bond", "Gravity"):
+                force = registry.get_force(name)
+                if force is not None:
+                    force.enabled = True
+                    force.randomize_matrix()
+        type_ids = np.random.randint(0, args.force_types, size=args.particles, dtype=np.int32)
+        graph_backend = "numba" if HAS_NUMBA and args.neighbor_backend in ("auto", "numba") else "numpy"
+
+        def step_fn(_: int) -> None:
+            nonlocal positions, velocities
+            graph = build_neighbor_graph(
+                positions,
+                radius=registry.get_max_radius(),
+                domain=domain,
+                method="grid",
+                backend=graph_backend,
+            )
+            acc = accumulate_from_registry(
+                positions,
+                type_ids,
+                graph.rows,
+                graph.cols,
+                registry,
+                domain,
+            )
             velocities = velocities + acc * args.dt
             positions = domain.wrap_positions(positions + velocities * args.dt)
 

@@ -14,6 +14,8 @@ from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.sph import SPHSolver
 from algorithms_lab.pbf import PBFSolver
 from algorithms_lab.xpbd import XPBFSolver
+from algorithms_lab.graph import NeighborGraph, build_neighbor_graph
+from algorithms_lab.forces import ForceDefinition, ForcePack, ForceRegistry, ForceType
 
 __all__ = [
     "Domain",
@@ -34,6 +36,12 @@ __all__ = [
     "SPHSolver",
     "PBFSolver",
     "XPBFSolver",
+    "NeighborGraph",
+    "build_neighbor_graph",
+    "ForceDefinition",
+    "ForcePack",
+    "ForceRegistry",
+    "ForceType",
     "CuPyNBody",
     "OpenCLNBody",
 ]

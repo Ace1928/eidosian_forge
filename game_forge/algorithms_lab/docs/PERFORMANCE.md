@@ -16,6 +16,8 @@ choices and guidance for extending the system.
   avoid repeated allocation during minimal-image wrapping.
 - **Auto backend selection**: Neighbor queries default to numba when
   available, falling back to numpy otherwise.
+- **Packed force arrays**: ForceRegistry packs matrices and parameters
+  into contiguous arrays so kernels can run with minimal Python overhead.
 - **GPU offload**: Optional OpenCL/CuPy N-body backends can shift
   O(N^2) forces onto the GPU for moderate N.
 

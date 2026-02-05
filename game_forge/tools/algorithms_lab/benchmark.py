@@ -13,8 +13,11 @@ from typing import Callable, Dict, List
 
 import numpy as np
 
+from algorithms_lab.backends import HAS_NUMBA
 from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.core import Domain, WrapMode
+from algorithms_lab.forces import ForceRegistry, accumulate_from_registry
+from algorithms_lab.graph import build_neighbor_graph
 from algorithms_lab.fmm2d import FMM2D
 from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.neighbor_list import NeighborList
@@ -39,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--dt", type=float, default=0.01)
     parser.add_argument("--fmm-levels", type=int, default=4)
+    parser.add_argument("--force-types", type=int, default=6)
+    parser.add_argument("--force-multi", action="store_true")
     parser.add_argument(
         "--bh-backend",
         choices=["auto", "numpy", "numba"],
@@ -78,7 +83,17 @@ def main() -> int:
     selected = (
         [s.strip() for s in args.algorithms.split(",")]
         if args.algorithms != "all"
-        else ["grid", "neighbor-list", "barnes-hut", "fmm2d", "fmm-ml", "sph", "pbf", "xpbd"]
+        else [
+            "grid",
+            "neighbor-list",
+            "barnes-hut",
+            "fmm2d",
+            "fmm-ml",
+            "forces",
+            "sph",
+            "pbf",
+            "xpbd",
+        ]
     )
 
     results: Dict[str, float] = {}
@@ -141,6 +156,42 @@ def main() -> int:
                 positions = domain.wrap_positions(positions + velocities * args.dt)
 
         results["fmm-ml"] = timer("fmm-ml", run_fmm_ml)
+
+    if "forces" in selected:
+        registry = ForceRegistry(num_types=args.force_types)
+        registry.randomize_all()
+        if args.force_multi:
+            for name in ("Yukawa", "Lennard-Jones", "Morse Bond", "Gravity"):
+                force = registry.get_force(name)
+                if force is not None:
+                    force.enabled = True
+                    force.randomize_matrix()
+        type_ids = np.random.randint(0, args.force_types, size=args.particles, dtype=np.int32)
+        graph_backend = "numba" if HAS_NUMBA and args.neighbor_backend in ("auto", "numba") else "numpy"
+
+        def run_forces() -> None:
+            positions = base_positions.copy()
+            velocities = base_velocities.copy()
+            for _ in range(args.steps):
+                graph = build_neighbor_graph(
+                    positions,
+                    radius=registry.get_max_radius(),
+                    domain=domain,
+                    method="grid",
+                    backend=graph_backend,
+                )
+                acc = accumulate_from_registry(
+                    positions,
+                    type_ids,
+                    graph.rows,
+                    graph.cols,
+                    registry,
+                    domain,
+                )
+                velocities = velocities + acc * args.dt
+                positions = domain.wrap_positions(positions + velocities * args.dt)
+
+        results["forces"] = timer("forces", run_forces)
 
     if "sph" in selected:
         solver = SPHSolver(domain, h=0.06, dt=args.dt, neighbor_backend=args.neighbor_backend)

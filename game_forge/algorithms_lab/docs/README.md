@@ -10,9 +10,11 @@ codebases with minimal dependency overhead.
 - Uniform grid / spatial hash neighbor searches (2D/3D).
 - Morton (Z-order) encoding for cache-friendly sorting.
 - Verlet neighbor lists (CSR format).
+- Global neighbor graph construction utilities.
 - Barnes-Hut tree for approximate N-body forces.
 - Two-level FMM-style approximation (2D).
 - Multi-level FMM-style solver (2D/3D).
+- Force registry + batched multi-force kernels (particle-life style).
 - SPH and PBF fluid solvers.
 - XPBD (compliant) fluid solver.
 - Optional numba and SciPy cKDTree acceleration.
@@ -54,6 +56,7 @@ python game_forge/tools/algorithms_lab/benchmark.py --algorithms all
 python game_forge/tools/algorithms_lab/demo.py --algorithm xpbd --neighbor-backend numba
 python game_forge/tools/algorithms_lab/demo.py --algorithm fmm-ml --fmm-levels 4
 python game_forge/tools/algorithms_lab/demo.py --algorithm barnes-hut --style modern --bh-backend numba
+python game_forge/tools/algorithms_lab/demo.py --algorithm forces --visual
 python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 ```
 
@@ -66,3 +69,4 @@ python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 Additional docs:
 - `game_forge/algorithms_lab/docs/PERFORMANCE.md`: Performance guidance and tuning.
 - `game_forge/algorithms_lab/docs/GPU.md`: GPU backend usage.
+- `game_forge/algorithms_lab/docs/FORCES.md`: Force registry and kernel usage.

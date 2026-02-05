@@ -22,6 +22,11 @@ Algorithms Lab and how they are expected to be used.
 - Uses SciPy's cKDTree for fast radius queries in C.
 - Supports periodic boundaries via `boxsize` when wrapping is enabled.
 
+## Neighbor Graph Construction
+- Builds a directed neighbor graph from positions and a radius.
+- Supports uniform grid or KDTree backends and wrap-aware distances.
+- Produces COO-style arrays for fast batched interaction kernels.
+
 ## Barnes-Hut Tree
 - Approximates distant particle groups as a single mass.
 - Good for reducing O(N^2) to roughly O(N log N) for N-body forces.
@@ -51,6 +56,11 @@ Algorithms Lab and how they are expected to be used.
 ## GPU N-body Backends
 - `OpenCLNBody` runs a direct N-body kernel on OpenCL devices.
 - `CuPyNBody` runs tiled N-body operations on CUDA/ROCm GPUs.
+
+## Force Registry + Kernels
+- Force registry manages multiple force families and per-species matrices.
+- Packed arrays feed Numba kernels for batched force accumulation.
+- Supports particle-life style forces plus Yukawa, Lennard-Jones, Morse, etc.
 
 ## Performance Notes
 - All algorithms use contiguous float32 arrays.

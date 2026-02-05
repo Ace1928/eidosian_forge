@@ -12,6 +12,8 @@ from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.kdtree import KDTreeNeighborSearch
 from algorithms_lab.xpbd import XPBFSolver, XPBFState
 from algorithms_lab.neighbors import NeighborSearch
+from algorithms_lab.graph import build_neighbor_graph
+from algorithms_lab.forces import ForceRegistry, accumulate_from_registry
 from algorithms_lab.gpu import OpenCLNBody, CuPyNBody, HAS_PYOPENCL, HAS_CUPY
 from algorithms_lab.fmm_multilevel import MultiLevelFMM
 
@@ -35,6 +37,12 @@ pairs_i, pairs_j = neighbors.pairs(pos)
 fmm = MultiLevelFMM(domain, levels=4)
 acc = fmm.compute_acceleration(pos, mass)
 
+# Force registry + neighbor graph (particle-life style)
+registry = ForceRegistry(num_types=6)
+graph = build_neighbor_graph(pos, radius=registry.get_max_radius(), domain=domain, method="grid", backend="numba")
+type_ids = np.random.randint(0, 6, size=pos.shape[0], dtype=np.int32)
+acc = accumulate_from_registry(pos, type_ids, graph.rows, graph.cols, registry, domain)
+
 # GPU N-body acceleration (optional)
 if HAS_PYOPENCL:
     acc = OpenCLNBody(domain).compute_acceleration(pos, mass)
@@ -56,6 +64,7 @@ state = solver.step(state)
 ```bash
 # Visual demos
 python game_forge/tools/algorithms_lab/demo.py --algorithm pbf --visual --style modern
+python game_forge/tools/algorithms_lab/demo.py --algorithm forces --visual
 
 # Headless benchmarks
 python game_forge/tools/algorithms_lab/benchmark.py --algorithms all
