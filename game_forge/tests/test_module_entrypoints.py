@@ -42,3 +42,9 @@ def test_stratum_entrypoint_list() -> None:
     result = _run_module("Stratum", "--list")
     assert result.returncode == 0
     assert "collapse" in result.stdout.lower()
+
+
+def test_agentic_chess_entrypoint_list() -> None:
+    result = _run_module("agentic_chess", "--list-agents")
+    assert result.returncode == 0
+    assert "available agents" in result.stdout.lower()
