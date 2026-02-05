@@ -449,5 +449,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "0217ea80-038a-4f15-b1ac-fa9db2ed6b11",
+    "content": "Expanded Moltbook snapshot with open-claw.me guidance, Ajeetraina rate-limit/heartbeat notes, SecureMolt skill.md/heartbeat notes, and MoltbookAI mirror endpoints; regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:44:37.796580",
+    "last_accessed": "2026-02-05T21:44:37.796587",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "safety",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]
