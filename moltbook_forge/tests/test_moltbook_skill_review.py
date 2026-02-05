@@ -58,3 +58,12 @@ def test_skill_review_redacts_moltbook_sk(tmp_path: Path) -> None:
     assert main(["--input", str(path), "--output", str(out), "--include-payload"]) == 2
     report = json.loads(out.read_text(encoding="utf-8"))
     assert "moltbook_sk_abc12345" not in report["payload"]["text"]
+
+
+def test_skill_review_redacts_moltdev(tmp_path: Path) -> None:
+    text = 'moltdev_abc12345'
+    path = _write_text(tmp_path, text)
+    out = tmp_path / "report.json"
+    assert main(["--input", str(path), "--output", str(out), "--include-payload"]) == 2
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert "moltdev_abc12345" not in report["payload"]["text"]

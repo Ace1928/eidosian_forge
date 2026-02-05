@@ -506,5 +506,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "5f3c63e8-0e4e-43aa-91b4-1eb494023ce7",
+    "content": "Added detection/redaction for moltdev_ keys in moltbook_sanitize and moltbook_skill_review, added tests, regenerated skill report, and ran moltbook_forge tests (20 passed).",
+    "created_at": "2026-02-05T21:50:12.015939",
+    "last_accessed": "2026-02-05T21:50:12.015944",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "redaction",
+      "tests",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]

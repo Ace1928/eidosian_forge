@@ -58,6 +58,7 @@ SUSPICIOUS_PATTERNS = [
     r"auth token",
     r"\bclh_[A-Za-z0-9]{6,}",
     r"\bmoltbook_sk_[A-Za-z0-9]{6,}",
+    r"\bmoltdev_[A-Za-z0-9]{6,}",
 ]
 
 
@@ -175,6 +176,7 @@ def normalize_text(text: str, max_chars: int = 20000) -> NormalizedContent:
         r"\|\s*(bash|sh)",
         r"\bclh_[A-Za-z0-9]{6,}",
         r"\bmoltbook_sk_[A-Za-z0-9]{6,}",
+        r"\bmoltdev_[A-Za-z0-9]{6,}",
     }
     score = 0.0
     for flag in flags:

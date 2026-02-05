@@ -37,6 +37,7 @@ SECRET_PATTERNS = [
     (re.compile(r'(\bBearer\s+)[A-Za-z0-9._-]+', re.IGNORECASE), r'\1***'),
     (re.compile(r'\bclh_[A-Za-z0-9]+'), 'clh_***'),
     (re.compile(r'\bmoltbook_sk_[A-Za-z0-9]+'), 'moltbook_sk_***'),
+    (re.compile(r'\bmoltdev_[A-Za-z0-9]+'), 'moltdev_***'),
 ]
 
 def _fetch_url(url: str) -> str:

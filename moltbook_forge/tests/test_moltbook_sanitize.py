@@ -47,3 +47,10 @@ def test_normalize_flags_moltbook_key_prefix() -> None:
     result = normalize_text(raw, max_chars=200)
     assert any("moltbook_sk_" in flag for flag in result.flags)
     assert result.risk_score > 0.0
+
+
+def test_normalize_flags_moltdev_key_prefix() -> None:
+    raw = "moltdev_abc12345"
+    result = normalize_text(raw, max_chars=200)
+    assert any("moltdev_" in flag for flag in result.flags)
+    assert result.risk_score > 0.0
