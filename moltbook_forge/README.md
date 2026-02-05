@@ -18,6 +18,9 @@ explicitly allowed.
 ```bash
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 
+# List CLI commands
+python -m moltbook_forge.cli --list
+
 # Sanitize a local text file
 python moltbook_forge/moltbook_sanitize.py --input /path/to/post.txt
 

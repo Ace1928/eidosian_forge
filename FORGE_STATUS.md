@@ -1,6 +1,6 @@
 # 🔥 EIDOSIAN FORGE STATUS
 
-> **Last Updated**: 2026-01-24
+> **Last Updated**: 2026-02-05
 > **Version**: 1.0.0
 > **Forges**: 35/35 Operational (100%)
 
@@ -53,6 +53,7 @@ source bin/eidosian-completion.bash
 | | game | `eidosian game` | ✅ |
 | | web | `eidosian web` | ✅ |
 | **Special** | erais | `eidosian erais` | ✅ |
+| | moltbook | `eidosian moltbook` | ✅ |
 
 ## 🧪 Test Status
 

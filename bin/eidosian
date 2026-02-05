@@ -305,6 +305,15 @@ FORGE_REGISTRY: Dict[str, Dict[str, Any]] = {
         "path": FORGE_ROOT / "lyrics_forge" / "src",
         "argparse": True,
     },
+    # Moltbook Forge
+    "moltbook": {
+        "module": "moltbook_forge.cli",
+        "class": None,
+        "entry": "main",
+        "description": "Moltbook safety pipeline",
+        "path": FORGE_ROOT / "moltbook_forge",
+        "argparse": True,
+    },
     # Erais Forge
     "erais": {
         "module": "erais_forge.cli",
