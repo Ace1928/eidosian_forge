@@ -222,6 +222,81 @@ class SimulationConfig:
             friction=0.6,
         )
     
+    @classmethod
+    def classic_emergence(cls):
+        """
+        CLASSIC MODE - Matches original Haskell particle-life dynamics.
+        
+        Key differences from default:
+        1. LONG RANGE interactions (50% of world) - creates global structures
+        2. HEAVY damping (Haskell uses 0.5 velocity multiplier per frame)
+        3. Smaller particle count for clarity
+        4. 4 classic species (Red, Green, Blue, Yellow)
+        5. Simple linear force with bell-curve profile
+        
+        This mode prioritizes emergent complexity over raw physics.
+        """
+        return cls(
+            world_size=2.0,  # Normalized world like Haskell [-1, 1]
+            num_particles=500,  # Classic Haskell default
+            num_types=4,  # Red, Green, Blue, Yellow
+            dt=0.016,  # ~60fps timestep
+            substeps=1,
+            
+            # CRITICAL: Long-range interactions (50% of world!)
+            default_max_radius_frac=0.5,  # Attraction radius = half world
+            default_min_radius_frac=0.15,  # Repulsion radius = 30% of max (Haskell: 0.3)
+            
+            # CRITICAL: Heavy damping like Haskell's * 0.5 per frame
+            friction=30.0,  # Very high - halves velocity rapidly
+            angular_friction=10.0,
+            
+            # Disable thermostat - let friction handle it
+            thermostat_enabled=False,
+            max_velocity=2.0,  # Reasonable for [-1,1] world
+            
+            # Disable wave mechanics for classic mode
+            wave_repulsion_strength=0.0,
+            
+            # Smaller display for classic feel
+            width=1080,
+            height=1080,
+        )
+    
+    @classmethod
+    def emergence_advanced(cls):
+        """
+        ADVANCED EMERGENCE - Best of both worlds.
+        
+        Long-range forces like classic + advanced physics features.
+        Tuned for visible emergent structures with wave/spin effects.
+        """
+        return cls(
+            world_size=20.0,  # Moderate world
+            num_particles=2000,  # Visible but not overwhelming
+            num_types=8,  # More species for variety
+            dt=0.008,
+            substeps=2,
+            
+            # Long-range interactions (25% of world)
+            default_max_radius_frac=0.25,
+            default_min_radius_frac=0.05,
+            
+            # Moderate damping
+            friction=5.0,
+            angular_friction=3.0,
+            
+            # Gentle thermostat
+            thermostat_enabled=True,
+            target_temperature=0.3,
+            thermostat_coupling=0.05,
+            max_velocity=3.0,
+            
+            # Enable wave mechanics at moderate strength
+            wave_repulsion_strength=10.0,
+            wave_repulsion_exp=4.0,
+        )
+    
     def validate(self) -> list[str]:
         """Validate configuration and return list of warnings."""
         warnings = []

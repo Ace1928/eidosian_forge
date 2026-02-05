@@ -9,6 +9,7 @@ codebases with minimal dependency overhead.
 ## Highlights
 - Uniform grid / spatial hash neighbor searches (2D/3D).
 - Morton (Z-order) encoding for cache-friendly sorting.
+- Spatial utilities (Morton order, SoA packing, adaptive cell sizing).
 - Verlet neighbor lists (CSR format).
 - Global neighbor graph construction utilities.
 - Barnes-Hut tree for approximate N-body forces.

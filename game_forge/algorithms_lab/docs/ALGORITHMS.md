@@ -13,6 +13,12 @@ Algorithms Lab and how they are expected to be used.
 - Encodes 2D/3D coordinates into Z-order for cache locality.
 - Useful for spatial clustering and building grids/trees faster.
 
+## Spatial Utilities (Morton + SoA)
+- 2D Morton encoding/decoding for grid coordinates.
+- Morton-order sorting for cache-friendly traversal.
+- Structure-of-arrays packing helpers for SIMD-friendly loops.
+- Adaptive cell sizing and batch range helpers for profiling.
+
 ## Verlet Neighbor Lists
 - Stores neighbor lists in CSR format for fast iteration.
 - Optional skin distance reduces rebuild cost.

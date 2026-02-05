@@ -78,16 +78,21 @@ def compute_force_by_type(
     
     force_val = 0.0
     
-    if ftype == 0:  # LINEAR
+    if ftype == 0:  # LINEAR (Particle Life - matches Haskell profile)
+        # Haskell-accurate force profile:
+        # - Repulsion zone: [0, min_r] -> linear from -1 to 0
+        # - Attraction zone: [min_r, max_r] -> bell curve, peak at midpoint
         if dist < min_r:
-            # Strong repulsion inside core
+            # Linear repulsion: (dist/min_r - 1) ranges from -1 to 0
+            # NO extra multiplier - this balances with attraction!
             force_val = (dist / min_r) - 1.0
-            force_val *= 3.0
         else:
-            # Bell curve attraction/repulsion
+            # Bell/triangle curve in attraction zone
+            # Peak at midpoint: (min_r + max_r) / 2
+            # Formula: 1 - |2*dist - max_r - min_r| / (max_r - min_r)
             range_len = max_r - min_r
             if range_len > 0:
-                numer = np.abs(2.0 * dist - range_len - 2.0 * min_r)
+                numer = np.abs(2.0 * dist - max_r - min_r)
                 peak = 1.0 - (numer / range_len)
                 force_val = factor * peak
                 
@@ -377,14 +382,16 @@ def apply_thermostat(vel, n_active, target_temp, coupling, dt):
 # ============================================================================
 
 @njit(parallel=True, fastmath=True, cache=True)
-def integrate_verlet_1(pos, vel, angle, ang_vel, forces, torques, n_active, dt, bounds):
+def integrate_verlet_1(pos, vel, angle, ang_vel, forces, torques, n_active, dt, bounds, 
+                       collision_damping: float = 0.7):
     """
     First half of Velocity Verlet integration.
     
     v(t + 0.5dt) = v(t) + 0.5 * a(t) * dt
     r(t + dt) = r(t) + v(t + 0.5dt) * dt
     
-    Also handles boundary reflection and angular motion.
+    Also handles boundary reflection with damping (Haskell-style).
+    collision_damping: Velocity multiplier on bounce (0.7 = Haskell default)
     """
     lower = bounds[0]
     upper = bounds[1]
@@ -398,20 +405,20 @@ def integrate_verlet_1(pos, vel, angle, ang_vel, forces, torques, n_active, dt, 
         pos[i, 0] += vel[i, 0] * dt
         pos[i, 1] += vel[i, 1] * dt
         
-        # Elastic wall reflection
+        # Wall reflection with damping (Haskell uses 0.7)
         if pos[i, 0] < lower:
             pos[i, 0] = lower
-            vel[i, 0] *= -1.0
+            vel[i, 0] *= -collision_damping
         elif pos[i, 0] > upper:
             pos[i, 0] = upper
-            vel[i, 0] *= -1.0
+            vel[i, 0] *= -collision_damping
         
         if pos[i, 1] < lower:
             pos[i, 1] = lower
-            vel[i, 1] *= -1.0
+            vel[i, 1] *= -collision_damping
         elif pos[i, 1] > upper:
             pos[i, 1] = upper
-            vel[i, 1] *= -1.0
+            vel[i, 1] *= -collision_damping
         
         # Angular dynamics (half-step Verlet)
         ang_vel[i] += 0.5 * torques[i] * dt
@@ -419,13 +426,18 @@ def integrate_verlet_1(pos, vel, angle, ang_vel, forces, torques, n_active, dt, 
 
 
 @njit(parallel=True, fastmath=True, cache=True)
-def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, angular_friction, max_velocity: float = 20.0):
+def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, angular_friction, 
+                       max_velocity: float = 20.0, slowdown_factor: float = 1.0):
     """
     Second half of Velocity Verlet integration.
     
     v(t + dt) = v(t + 0.5dt) + 0.5 * a(t + dt) * dt
     
-    Friction is applied as linear damping after velocity update.
+    Two damping modes (both can be combined):
+    1. Linear friction: v *= (1 - friction * dt) - physics-based decay
+    2. Slowdown factor: v *= slowdown_factor - Haskell-style per-frame multiplier
+    
+    For classic Particle Life emergence, use slowdown_factor=0.5 (Haskell default).
     Velocity magnitude is capped to prevent energy runaway.
     """
     for i in prange(n_active):
@@ -441,6 +453,12 @@ def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, an
                 damp = 0.0
             vel[i, 0] *= damp
             vel[i, 1] *= damp
+        
+        # Haskell-style slowdown: v *= factor (applied per frame)
+        # This is the key to emergent structures!
+        if slowdown_factor < 1.0:
+            vel[i, 0] *= slowdown_factor
+            vel[i, 1] *= slowdown_factor
         
         # Angular friction damping
         if angular_friction > 0.0:

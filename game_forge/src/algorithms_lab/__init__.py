@@ -16,6 +16,18 @@ from algorithms_lab.pbf import PBFSolver
 from algorithms_lab.xpbd import XPBFSolver
 from algorithms_lab.graph import NeighborGraph, build_neighbor_graph
 from algorithms_lab.forces import ForceDefinition, ForcePack, ForceRegistry, ForceType
+from algorithms_lab.spatial_utils import (
+    GridConfig,
+    adaptive_cell_size,
+    compute_batch_ranges,
+    compute_cell_densities,
+    compute_morton_order,
+    morton_decode_2d,
+    morton_encode_2d,
+    pack_positions_soa,
+    prefetch_neighbor_data,
+    unpack_positions_aos,
+)
 
 __all__ = [
     "Domain",
@@ -42,6 +54,16 @@ __all__ = [
     "ForcePack",
     "ForceRegistry",
     "ForceType",
+    "GridConfig",
+    "adaptive_cell_size",
+    "compute_batch_ranges",
+    "compute_cell_densities",
+    "compute_morton_order",
+    "morton_decode_2d",
+    "morton_encode_2d",
+    "pack_positions_soa",
+    "prefetch_neighbor_data",
+    "unpack_positions_aos",
     "CuPyNBody",
     "OpenCLNBody",
 ]

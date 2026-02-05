@@ -16,6 +16,7 @@ from algorithms_lab.graph import build_neighbor_graph
 from algorithms_lab.forces import ForceRegistry, accumulate_from_registry
 from algorithms_lab.gpu import OpenCLNBody, CuPyNBody, HAS_PYOPENCL, HAS_CUPY
 from algorithms_lab.fmm_multilevel import MultiLevelFMM
+from algorithms_lab.spatial_utils import GridConfig, compute_morton_order, pack_positions_soa
 
 pos = np.random.rand(256, 2).astype(np.float32)
 mass = np.ones(256, dtype=np.float32)
@@ -53,6 +54,11 @@ if HAS_CUPY:
 solver = XPBFSolver(domain, h=0.05, compliance=0.001)
 state = XPBFState(positions=pos, velocities=np.zeros_like(pos), masses=mass)
 state = solver.step(state)
+
+# Spatial utility helpers (profiling / data layout experiments)
+grid_cfg = GridConfig.from_world(world_size=1.0, interaction_radius=0.05, n_particles=pos.shape[0])
+order = compute_morton_order(pos, pos.shape[0], grid_cfg.cell_size, grid_cfg.half_world, grid_cfg.grid_width, grid_cfg.grid_height)
+x_arr, y_arr = pack_positions_soa(pos, pos.shape[0])
 ```
 
 ## Using as Copy-Paste Code
