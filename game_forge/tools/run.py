@@ -9,6 +9,7 @@ Example:
   python game_forge/tools/run.py stratum-benchmark -- --grid 16 --ticks 10
   python game_forge/tools/run.py agentic-chess -- --white random --black agent-forge
   python game_forge/tools/run.py agentic-chess-benchmark -- --games 5 --max-moves 60
+  python game_forge/tools/run.py benchmark-suite -- --dry-run
   python game_forge/tools/run.py falling-sand-benchmark -- --runs 5
   python game_forge/tools/run.py pyparticles-benchmark -- --particles 512 --steps 10
   python game_forge/tools/run.py pyparticles-benchmark-sim -- --particles 512 --steps 10
@@ -131,6 +132,11 @@ def load_targets(root: Path) -> dict[str, Target]:
             description="Algorithms Lab benchmark suite",
             command=[str(root / "game_forge" / "tools" / "algorithms_lab" / "benchmark.py")],
             requires=["numpy"],
+        ),
+        "benchmark-suite": Target(
+            name="benchmark-suite",
+            description="Curated game_forge benchmark sweep",
+            command=[str(root / "game_forge" / "tools" / "benchmark_suite.py")],
         ),
         "algorithms-lab-profiler": Target(
             name="algorithms-lab-profiler",
