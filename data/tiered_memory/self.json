@@ -1233,5 +1233,26 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "46bf9199-7b60-4eb1-adc4-85838bf2cb55",
+    "content": "Added moltbook_forge CLI wrapper with subcommands, CLI tests, and integrated into bin/eidosian plus FORGE_STATUS; updated TEST_STATUS to 24 moltbook tests and refreshed timestamp. Ran moltbook_forge tests: 24 passed (2026-02-05).",
+    "created_at": "2026-02-06T00:20:01.228200",
+    "last_accessed": "2026-02-06T00:20:01.228203",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "status",
+      "cli",
+      "moltbook_forge",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]
