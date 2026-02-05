@@ -51,22 +51,22 @@ class SpeciesConfig:
     base_spin_rate: np.ndarray   # (T,) float32 - intrinsic spin tendency
     
     @classmethod
-    def default(cls, n_types: int, world_size: float = 2.0):
+    def default(cls, n_types: int, world_size: float = 100.0):
         """Create default species config scaled to world size."""
-        # Scale radius to world size (visible but not dominant)
-        base_radius = 0.01 * world_size  # 1% of world size
+        # Scale radius to world size - MUCH SMALLER (0.1% of world)
+        base_radius = 0.001 * world_size  # 0.1% of world size = tiny particles
         
         return cls(
             radius=np.full(n_types, base_radius, dtype=np.float32) * 
-                   np.random.uniform(0.5, 1.5, n_types).astype(np.float32),
-            wave_freq=np.random.randint(2, 8, n_types).astype(np.float32),
-            wave_amp=np.full(n_types, base_radius * 0.3, dtype=np.float32) *
-                     np.random.uniform(0.2, 1.5, n_types).astype(np.float32),
-            wave_phase_speed=np.random.uniform(-3.0, 3.0, n_types).astype(np.float32),
+                   np.random.uniform(0.8, 1.2, n_types).astype(np.float32),
+            wave_freq=np.random.randint(3, 6, n_types).astype(np.float32),
+            wave_amp=np.full(n_types, base_radius * 0.2, dtype=np.float32) *
+                     np.random.uniform(0.5, 1.0, n_types).astype(np.float32),
+            wave_phase_speed=np.random.uniform(-2.0, 2.0, n_types).astype(np.float32),
             # Spin dynamics
-            spin_inertia=np.random.uniform(0.5, 2.0, n_types).astype(np.float32),
-            spin_friction=np.random.uniform(0.5, 3.0, n_types).astype(np.float32),
-            base_spin_rate=np.random.uniform(-2.0, 2.0, n_types).astype(np.float32),
+            spin_inertia=np.random.uniform(0.8, 1.5, n_types).astype(np.float32),
+            spin_friction=np.random.uniform(1.0, 3.0, n_types).astype(np.float32),
+            base_spin_rate=np.random.uniform(-1.5, 1.5, n_types).astype(np.float32),
         )
 
 
@@ -123,41 +123,42 @@ class SimulationConfig:
     width: int = 1400
     height: int = 1000
     
-    # World geometry - EXPANDED for emergent dynamics
-    world_size: float = 10.0  # Total domain size (was 2.0)
+    # World geometry - MASSIVELY EXPANDED for emergent dynamics
+    world_size: float = 100.0  # Total domain size (10x larger than before)
     
     # Particles - increased for emergence
     max_particles: int = 100000
-    num_particles: int = 8000
-    num_types: int = 12  # More species = richer dynamics
+    num_particles: int = 10000
+    num_types: int = 16  # More species = richer dynamics
     
     # Time integration
-    dt: float = 0.004  # Scaled for larger world
+    dt: float = 0.005  # Scaled for larger world
     substeps: int = 2  # Multiple substeps for stability
     
-    # Damping - scaled to world
-    friction: float = 0.3  # Linear velocity damping
-    angular_friction: float = 1.5  # Angular damping
+    # Damping - INCREASED for energy stability
+    friction: float = 0.5  # Linear velocity damping (prevents runaway)
+    angular_friction: float = 2.0  # Angular damping
     
     gravity: float = 0.0
     
     # Interaction radii - scaled to world_size
     # These are fractions of world_size for portability
-    default_max_radius_frac: float = 0.03  # 3% of world = 0.3 in 10-unit world
-    default_min_radius_frac: float = 0.004  # 0.4% of world = 0.04 in 10-unit world
+    default_max_radius_frac: float = 0.02  # 2% of world = 2.0 in 100-unit world
+    default_min_radius_frac: float = 0.002  # 0.2% of world = 0.2 in 100-unit world
     
     # Wave mechanics
-    wave_repulsion_strength: float = 30.0 
-    wave_repulsion_exp: float = 8.0
+    wave_repulsion_strength: float = 50.0  # STRONGER repulsion
+    wave_repulsion_exp: float = 6.0  # Softer falloff for wider effect
     
     # Spin dynamics (NEW)
     spin_coupling_strength: float = 1.0  # Global spin interaction multiplier
     spin_torque_scale: float = 0.5  # How much forces create torque
     
-    # Thermostat (Berendsen)
-    target_temperature: float = 0.3  # Lower for more structure
-    thermostat_coupling: float = 0.05  # Gentler coupling
+    # Thermostat (Berendsen) - CRITICAL for energy stability
+    target_temperature: float = 0.5  # Target kinetic energy
+    thermostat_coupling: float = 0.1  # STRONGER coupling to cap energy
     thermostat_enabled: bool = True
+    max_velocity: float = 10.0  # Hard cap on velocity magnitude
     
     # Performance
     threads: int = 8
@@ -192,20 +193,33 @@ class SimulationConfig:
     def small_world(cls):
         """Small world for testing/debugging."""
         return cls(
-            world_size=4.0,
-            num_particles=500,
-            num_types=4,
+            world_size=20.0,
+            num_particles=1000,
+            num_types=6,
+            dt=0.004,
         )
     
     @classmethod
     def large_world(cls):
         """Large world for maximum emergence."""
         return cls(
-            world_size=20.0,
-            num_particles=20000,
-            num_types=16,
-            dt=0.003,
+            world_size=200.0,
+            num_particles=30000,
+            num_types=24,
+            dt=0.004,
             substeps=3,
+        )
+    
+    @classmethod
+    def huge_world(cls):
+        """Massive world for full emergent dynamics."""
+        return cls(
+            world_size=500.0,
+            num_particles=50000,
+            num_types=32,
+            dt=0.003,
+            substeps=4,
+            friction=0.6,
         )
     
     def validate(self) -> list[str]:

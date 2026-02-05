@@ -1,5 +1,5 @@
 """
-Updated Physics Tests for V3 Features.
+Updated Physics Tests for V3/V6 Features.
 """
 import pytest
 import numpy as np
@@ -11,13 +11,17 @@ def test_engine_v3_features():
     cfg = SimulationConfig.default()
     engine = PhysicsEngine(cfg)
     
-    # Check new rules
+    # Check rules: V6 has Linear, Gravity, Core Repulsion
     assert len(engine.rules) == 3
-    assert engine.rules[2].force_type == ForceType.INVERSE_CUBE
+    assert engine.rules[0].force_type == ForceType.LINEAR
+    assert engine.rules[1].force_type == ForceType.INVERSE_SQUARE  # Gravity
+    assert engine.rules[2].force_type == ForceType.REPEL_ONLY  # Core Repulsion
     
-    # Check Species Config
+    # Check Species Config - V6 has extended params
     assert engine.species_config.radius.shape == (cfg.num_types,)
     assert engine.species_config.wave_freq.shape == (cfg.num_types,)
+    assert engine.species_config.spin_inertia.shape == (cfg.num_types,)
+    assert engine.species_config.base_spin_rate.shape == (cfg.num_types,)
     
     # Check Particle State
     assert engine.state.angle.shape == (cfg.max_particles,)
@@ -35,15 +39,18 @@ def test_kernel_wave_repulsion():
     angle = np.zeros(2, dtype=np.float32)
     n = 2
     
-    # Wave Params: Rad 0.05, Freq 1, Amp 0.01
-    species_params = np.zeros((1, 3), dtype=np.float32)
-    species_params[0, 0] = 0.05
-    species_params[0, 1] = 1.0
-    species_params[0, 2] = 0.01
+    # Wave Params: Rad 0.05, Freq 1, Amp 0.01 + spin params (V6: 6 columns)
+    species_params = np.zeros((1, 6), dtype=np.float32)
+    species_params[0, 0] = 0.05  # radius
+    species_params[0, 1] = 1.0   # freq
+    species_params[0, 2] = 0.01  # amp
+    species_params[0, 3] = 1.0   # inertia
+    species_params[0, 4] = 1.0   # spin_friction
+    species_params[0, 5] = 0.0   # base_spin
     
     # Rules (Disable long range for this test)
     matrices = np.zeros((1, 1, 1), dtype=np.float32)
-    params = np.zeros((1, 5), dtype=np.float32)
+    params = np.zeros((1, 8), dtype=np.float32)  # V6: 8-column params
     # Set max_r=0 to disable matrix force
     params[0, 1] = 0.0 
     
@@ -69,7 +76,7 @@ def test_kernel_wave_repulsion():
         matrices, params, species_params,
         wave_str, wave_exp,
         grid_counts, grid_cells, cell_size,
-        0.0
+        0.0, 1.0  # gravity, half_world
     )    
     
     # Force logic: P0 should be pushed left
@@ -87,7 +94,7 @@ def test_kernel_wave_repulsion():
         matrices, params, species_params,
         wave_str, wave_exp,
         grid_counts, grid_cells, cell_size,
-        0.0
+        0.0, 1.0  # gravity, half_world
     )
     
     # Verify Peak-Peak is stronger than Peak-Trough
@@ -102,13 +109,17 @@ def test_torque_generation():
     angle = np.array([0.1, 0.0], dtype=np.float32) # Slight tilt
     n = 2
     
-    species_params = np.zeros((1, 3), dtype=np.float32)
-    species_params[0, 0] = 0.05
-    species_params[0, 1] = 4.0 # High freq for steeper slopes
-    species_params[0, 2] = 0.02
+    # V6: 6-column species params
+    species_params = np.zeros((1, 6), dtype=np.float32)
+    species_params[0, 0] = 0.05  # radius
+    species_params[0, 1] = 4.0   # High freq for steeper slopes
+    species_params[0, 2] = 0.02  # amp
+    species_params[0, 3] = 1.0   # inertia
+    species_params[0, 4] = 1.0   # spin_friction
+    species_params[0, 5] = 0.0   # base_spin
     
     matrices = np.zeros((1, 1, 1), dtype=np.float32)
-    params = np.zeros((1, 5), dtype=np.float32)
+    params = np.zeros((1, 8), dtype=np.float32)  # V6: 8-column params
     params[0, 1] = 0.0 
     
     cell_size = 0.5
@@ -123,7 +134,7 @@ def test_torque_generation():
         matrices, params, species_params,
         100.0, 10.0,
         grid_counts, grid_cells, cell_size,
-        0.0
+        0.0, 1.0  # gravity, half_world
     )
     
     # Torque should be non-zero due to sloped wave interaction

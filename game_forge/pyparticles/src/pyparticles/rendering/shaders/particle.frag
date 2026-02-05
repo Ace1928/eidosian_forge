@@ -87,7 +87,7 @@ float wave_slope(float theta, float freq, float amp, float phase) {
 // RENDER MODES
 // ============================================================================
 
-// Standard particle with wave deformation
+// Standard particle with wave deformation - CALMER colors
 vec4 render_standard(float dist, float theta, float local_theta) {
     // Calculate wave-deformed shape
     float shape_r = wave_radius(local_theta, frag_radius, frag_freq, frag_amp, 0.0);
@@ -108,46 +108,32 @@ vec4 render_standard(float dist, float theta, float local_theta) {
     
     if (alpha < 0.01) discard;
     
-    // Energy factor affects brightness
-    float e = clamp(frag_energy * 0.5 + 0.5, 0.2, 3.0);
+    // Energy factor - CLAMPED for stability
+    float e = clamp(frag_energy * 0.3 + 0.7, 0.5, 1.5);
     
-    // Base color with energy modulation
-    vec3 col = frag_color * e;
+    // Base color - desaturated for calmer look
+    vec3 col = frag_color * 0.8;
     
-    // Core glow (bright center)
+    // Subtle core brightness (not overwhelming glow)
     float core_dist = dist / (total_r + 0.01);
-    float core_glow = exp(-core_dist * GLOW_FALLOFF) * e * glow_intensity;
-    col += vec3(core_glow * 0.5);
+    float core_brightness = (1.0 - core_dist * 0.5) * e * 0.3;
+    col += vec3(core_brightness);
     
-    // Edge highlight
-    float edge_glow = exp(-abs(d) * 15.0 / total_r) * e * 0.5;
-    col += vec3(1.0) * edge_glow;
+    // Subtle edge highlight only
+    float edge_highlight = exp(-abs(d) * 10.0 / total_r) * 0.15;
+    col += vec3(1.0) * edge_highlight;
     
-    // Wave crest highlighting (shows wave structure)
+    // Minimal wave crest visualization
     if (abs(frag_amp) > 0.001) {
         float wave_phase = cos(frag_freq * local_theta);
-        float crest_intensity = max(0.0, wave_phase) * 0.4 * e;
-        col += vec3(0.2, 0.4, 0.8) * crest_intensity * (1.0 - core_dist);
-        
-        // Trough darkening
-        float trough_intensity = max(0.0, -wave_phase) * 0.2;
-        col *= 1.0 - trough_intensity * (1.0 - core_dist);
+        float crest_intensity = max(0.0, wave_phase) * 0.15 * e;
+        col += vec3(0.1, 0.2, 0.3) * crest_intensity * (1.0 - core_dist);
     }
     
-    // Outer glow (extends beyond particle)
-    float outer_glow = exp(-max(0.0, d) * 8.0 / total_r) * e * glow_intensity * 0.3;
-    col += frag_color * outer_glow;
+    // REMOVED: outer glow, HDR tonemapping, heat shift
+    // Keep colors clean and predictable
     
-    // HDR tone mapping
-    col = col / (col + vec3(1.0));
-    
-    // Slight color shift based on energy (hot = shift toward white/yellow)
-    if (frag_energy > 1.5) {
-        float heat = (frag_energy - 1.5) * 0.3;
-        col = mix(col, vec3(1.0, 0.95, 0.8), heat);
-    }
-    
-    return vec4(col, alpha);
+    return vec4(col, alpha * 0.95);
 }
 
 // Wave-only visualization (debug/analysis mode)

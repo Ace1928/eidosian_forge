@@ -177,7 +177,8 @@ class GLCanvas:
             self.palette = pal_int / 255.0
             self.palette_size = num_types
 
-    def render(self, pos, vel, colors, angle, species_params, active_count, fps, world_size: float = 2.0):
+    def render(self, pos, vel, colors, angle, species_params, active_count, fps, 
+               world_size: float = 100.0, particle_scale: float = 1.0, render_mode: int = 0):
         """
         Render particles to the framebuffer.
         
@@ -190,7 +191,13 @@ class GLCanvas:
             active_count: Number of active particles
             fps: Current FPS (for display/debug)
             world_size: Total world size for coordinate normalization
+            particle_scale: Global particle size multiplier (from GUI)
+            render_mode: Shader render mode (0=standard, 1=wave, 2=energy, 3=minimal)
         """
+        # Update render settings from parameters
+        self.particle_scale = particle_scale
+        self.render_mode = render_mode
+        
         # Clear to ambient background
         self.ctx.clear(*self.ambient_color)
         
@@ -215,16 +222,16 @@ class GLCanvas:
         normalized_pos = pos[:active_count] / half_world
         
         # Scale radii to normalized coordinates
-        # Particles should appear proportionally smaller in larger worlds
-        normalized_radius = p_params[:, 0] / half_world
+        # Apply particle_scale from GUI for user control
+        normalized_radius = p_params[:, 0] / half_world * particle_scale
         
         # Pack vertex data: pos(2) + color(3) + radius(1) + freq(1) + amp(1) + angle(1) + energy(1)
         data = np.empty((active_count, 10), dtype=np.float32)
         data[:, 0:2] = normalized_pos
         data[:, 2:5] = p_colors
-        data[:, 5] = normalized_radius * self.cfg.particle_scale  # Scaled radius
+        data[:, 5] = normalized_radius  # Scaled radius
         data[:, 6] = p_params[:, 1]  # freq
-        data[:, 7] = p_params[:, 2] / half_world  # normalized amp
+        data[:, 7] = p_params[:, 2] / half_world * particle_scale  # normalized amp
         data[:, 8] = angle[:active_count]
         data[:, 9] = speeds * 2.0  # Energy scale factor
         

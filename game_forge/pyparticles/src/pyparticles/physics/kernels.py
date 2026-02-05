@@ -419,13 +419,14 @@ def integrate_verlet_1(pos, vel, angle, ang_vel, forces, torques, n_active, dt, 
 
 
 @njit(parallel=True, fastmath=True, cache=True)
-def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, angular_friction):
+def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, angular_friction, max_velocity: float = 20.0):
     """
     Second half of Velocity Verlet integration.
     
     v(t + dt) = v(t + 0.5dt) + 0.5 * a(t + dt) * dt
     
     Friction is applied as linear damping after velocity update.
+    Velocity magnitude is capped to prevent energy runaway.
     """
     for i in prange(n_active):
         # Complete velocity update
@@ -447,6 +448,13 @@ def integrate_verlet_2(vel, ang_vel, forces, torques, n_active, dt, friction, an
             if ang_damp < 0.0:
                 ang_damp = 0.0
             ang_vel[i] *= ang_damp
+        
+        # VELOCITY CAPPING - prevents energy runaway
+        v_mag = np.sqrt(vel[i, 0] * vel[i, 0] + vel[i, 1] * vel[i, 1])
+        if v_mag > max_velocity:
+            scale = max_velocity / v_mag
+            vel[i, 0] *= scale
+            vel[i, 1] *= scale
 
 # ============================================================================
 # UTILITY KERNELS

@@ -52,44 +52,48 @@ class PhysicsEngine:
         max_r = self.cfg.default_max_radius
         min_r = self.cfg.default_min_radius
         
-        # Main particle life force (linear dropoff)
-        mat_linear = np.random.uniform(-1.0, 1.0, 
+        # Main particle life force (linear dropoff) - weaker for stability
+        mat_linear = np.random.uniform(-0.5, 0.5, 
             (self.cfg.num_types, self.cfg.num_types)).astype(np.float32)
+        # Make diagonal slightly attractive (same-type cohesion)
+        for i in range(self.cfg.num_types):
+            mat_linear[i, i] = np.random.uniform(0.1, 0.3)
+        
         rule_lin = InteractionRule(
             name="Particle Life (Linear)",
             force_type=ForceType.LINEAR,
             matrix=mat_linear,
             max_radius=max_r,
             min_radius=min_r,
-            strength=1.0
+            strength=0.8  # Reduced for stability
         )
         self.rules.append(rule_lin)
         
-        # Long-range gravity-like attraction
+        # Long-range gravity-like attraction - very weak
         mat_grav = np.full((self.cfg.num_types, self.cfg.num_types), 
-                          0.02, dtype=np.float32)  # Weak universal attraction
+                          0.01, dtype=np.float32)  # Very weak universal attraction
         rule_grav = InteractionRule(
             name="Gravity (InvSq)",
             force_type=ForceType.INVERSE_SQUARE,
             matrix=mat_grav,
-            max_radius=max_r * 4,  # Longer range
+            max_radius=max_r * 3,  # Longer range
             min_radius=min_r,
-            strength=0.3,
-            softening=min_r * 2
+            strength=0.1,  # Very weak
+            softening=min_r * 3
         )
         self.rules.append(rule_grav)
         
-        # Very short range repulsion (prevents overlap)
+        # STRONG exclusion repulsion (prevents overlap) - CRITICAL
         mat_repel = np.full((self.cfg.num_types, self.cfg.num_types),
                            1.0, dtype=np.float32)
         rule_repel = InteractionRule(
-            name="Core Repulsion",
+            name="Exclusion Repulsion",
             force_type=ForceType.REPEL_ONLY,
             matrix=mat_repel,
-            max_radius=min_r * 3,
-            min_radius=min_r * 0.5,
-            strength=5.0,
-            softening=min_r
+            max_radius=min_r * 8,  # Wider exclusion zone
+            min_radius=min_r * 0.1,
+            strength=15.0,  # VERY STRONG repulsion
+            softening=min_r * 0.5
         )
         self.rules.append(rule_repel)
 
@@ -251,11 +255,12 @@ class PhysicsEngine:
                 self.cfg.gravity, half
             )
             
-            # 3. Second half of Velocity Verlet
+            # 3. Second half of Velocity Verlet with velocity capping
             integrate_verlet_2(
                 self.state.vel, self.state.ang_vel,
                 new_forces, new_torques,
-                n, sub_dt, self.cfg.friction, self.cfg.angular_friction
+                n, sub_dt, self.cfg.friction, self.cfg.angular_friction,
+                self.cfg.max_velocity
             )
             
             # Update force cache for next substep
