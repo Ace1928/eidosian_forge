@@ -10,13 +10,26 @@ Usage:
   moltbook.sh new [limit]
   moltbook.sh get <post_id>
   moltbook.sh comments <post_id>
+  moltbook.sh upvote <post_id>
+  moltbook.sh downvote <post_id>
+  moltbook.sh comment-upvote <comment_id>
   moltbook.sh create <title> <content>
   moltbook.sh reply <post_id> <content>
+  moltbook.sh follow <agent_name>
+  moltbook.sh unfollow <agent_name>
+  moltbook.sh dm-check
+  moltbook.sh dm-request <agent_or_owner> <message>
+  moltbook.sh dm-requests
+  moltbook.sh dm-approve <conversation_id>
+  moltbook.sh dm-reject <conversation_id> [--block]
+  moltbook.sh dm-conversations
+  moltbook.sh dm-read <conversation_id>
+  moltbook.sh dm-send <conversation_id> <message>
 
 Environment:
   MOLTBOOK_API_KEY         API key for Moltbook
   MOLTBOOK_AGENT_NAME      Optional agent name
-  MOLTBOOK_BASE_URL        Default: https://moltbook.com
+  MOLTBOOK_BASE_URL        Default: https://www.moltbook.com/api/v1
   MOLTBOOK_CREDENTIALS     Path to credentials JSON
 
 Credentials JSON format:
@@ -34,7 +47,7 @@ SKILL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 DEFAULT_CRED_PATH="${HOME}/.config/moltbook/credentials.json"
 LOCAL_CRED_PATH="${SKILL_DIR}/credentials.json"
-BASE_URL="${MOLTBOOK_BASE_URL:-https://moltbook.com}"
+BASE_URL="${MOLTBOOK_BASE_URL:-https://www.moltbook.com/api/v1}"
 
 read_creds() {
   local path="$1"
@@ -102,13 +115,27 @@ api_post() {
     "${BASE_URL}${path}"
 }
 
+api_delete() {
+  local path="$1"
+  curl -fsS \
+    -X DELETE \
+    -H "Authorization: Bearer ${API_KEY}" \
+    -H "X-API-Key: ${API_KEY}" \
+    "${BASE_URL}${path}"
+}
+
 make_post_payload() {
   python3 - <<'PY' "$1" "$2"
 import json
+import os
 import sys
 title = sys.argv[1]
 content = sys.argv[2]
-print(json.dumps({"title": title, "content": content}))
+payload = {"title": title, "content": content}
+submolt = os.environ.get("MOLTBOOK_SUBMOLT")
+if submolt:
+    payload["submolt"] = submolt
+print(json.dumps(payload))
 PY
 }
 
@@ -121,6 +148,30 @@ print(json.dumps({"content": content}))
 PY
 }
 
+make_dm_payload() {
+  python3 - <<'PY' "$1" "$2"
+import json
+import sys
+target = sys.argv[1]
+message = sys.argv[2]
+payload = {"message": message}
+if target.startswith("@"):
+    payload["to_owner"] = target.lstrip("@")
+else:
+    payload["to"] = target
+print(json.dumps(payload))
+PY
+}
+
+make_message_payload() {
+  python3 - <<'PY' "$1"
+import json
+import sys
+message = sys.argv[1]
+print(json.dumps({"message": message}))
+PY
+}
+
 cmd="${1:-help}"
 shift || true
 
@@ -129,7 +180,7 @@ case "${cmd}" in
     usage
     exit 0
     ;;
-  test|hot|new|get|comments|create|reply)
+  test|hot|new|get|comments|create|reply|upvote|downvote|comment-upvote|follow|unfollow|dm-check|dm-request|dm-requests|dm-approve|dm-reject|dm-conversations|dm-read|dm-send)
     mapfile -t creds < <(load_credentials)
     API_KEY="${creds[0]}"
     AGENT_NAME="${creds[1]:-}"
@@ -161,6 +212,21 @@ case "${cmd}" in
     [[ -n "${post_id}" ]] || die "missing post_id"
     api_get "/posts/${post_id}/comments"
     ;;
+  upvote)
+    post_id="${1:-}"
+    [[ -n "${post_id}" ]] || die "missing post_id"
+    api_post "/posts/${post_id}/upvote" "{}"
+    ;;
+  downvote)
+    post_id="${1:-}"
+    [[ -n "${post_id}" ]] || die "missing post_id"
+    api_post "/posts/${post_id}/downvote" "{}"
+    ;;
+  comment-upvote)
+    comment_id="${1:-}"
+    [[ -n "${comment_id}" ]] || die "missing comment_id"
+    api_post "/comments/${comment_id}/upvote" "{}"
+    ;;
   create)
     title="${1:-}"
     content="${2:-}"
@@ -176,5 +242,60 @@ case "${cmd}" in
     [[ -n "${content}" ]] || die "missing content"
     payload="$(make_reply_payload "${content}")"
     api_post "/posts/${post_id}/comments" "${payload}"
+    ;;
+  follow)
+    agent_name="${1:-}"
+    [[ -n "${agent_name}" ]] || die "missing agent_name"
+    api_post "/agents/${agent_name}/follow" "{}"
+    ;;
+  unfollow)
+    agent_name="${1:-}"
+    [[ -n "${agent_name}" ]] || die "missing agent_name"
+    api_delete "/agents/${agent_name}/follow"
+    ;;
+  dm-check)
+    api_get "/agents/dm/check"
+    ;;
+  dm-request)
+    target="${1:-}"
+    message="${2:-}"
+    [[ -n "${target}" ]] || die "missing agent_or_owner"
+    [[ -n "${message}" ]] || die "missing message"
+    payload="$(make_dm_payload "${target}" "${message}")"
+    api_post "/agents/dm/request" "${payload}"
+    ;;
+  dm-requests)
+    api_get "/agents/dm/requests"
+    ;;
+  dm-approve)
+    conv_id="${1:-}"
+    [[ -n "${conv_id}" ]] || die "missing conversation_id"
+    api_post "/agents/dm/requests/${conv_id}/approve" "{}"
+    ;;
+  dm-reject)
+    conv_id="${1:-}"
+    block_flag="${2:-}"
+    [[ -n "${conv_id}" ]] || die "missing conversation_id"
+    if [[ "${block_flag:-}" == "--block" ]]; then
+      api_post "/agents/dm/requests/${conv_id}/reject" "{\"block\": true}"
+    else
+      api_post "/agents/dm/requests/${conv_id}/reject" "{}"
+    fi
+    ;;
+  dm-conversations)
+    api_get "/agents/dm/conversations"
+    ;;
+  dm-read)
+    conv_id="${1:-}"
+    [[ -n "${conv_id}" ]] || die "missing conversation_id"
+    api_get "/agents/dm/conversations/${conv_id}"
+    ;;
+  dm-send)
+    conv_id="${1:-}"
+    message="${2:-}"
+    [[ -n "${conv_id}" ]] || die "missing conversation_id"
+    [[ -n "${message}" ]] || die "missing message"
+    payload="$(make_message_payload "${message}")"
+    api_post "/agents/dm/conversations/${conv_id}/send" "${payload}"
     ;;
 esac

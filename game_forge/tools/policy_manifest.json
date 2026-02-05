@@ -11,6 +11,12 @@
       "game_forge/tools/artifacts/"
     ]
   },
+  "data_sources": [
+    "game_forge/local"
+  ],
+  "limits": {
+    "max_tool_tokens": 4096
+  },
   "network": {
     "allowed": false
   },

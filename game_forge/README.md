@@ -57,6 +57,10 @@ python game_forge/tools/run.py agentic-chess -- --white random --black agent-for
 python game_forge/tools/run.py agentic-chess-benchmark -- --games 5 --max-moves 60
 ```
 
+Policy manifest notes:
+- `game_forge/tools/policy_manifest.json` is an example allowlist.
+- Optional fields like `data_sources` and `limits.max_tool_tokens` can be embedded in summaries for auditability.
+
 ```bash
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 PYTHONPATH=game_forge/src python -m algorithms_lab --demo -- --algorithm sph --visual
