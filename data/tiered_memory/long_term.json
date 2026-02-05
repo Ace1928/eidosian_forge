@@ -703,5 +703,25 @@
       "quarantine"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "433e8f5f-1bd5-4edc-9314-bf8b12ee4cef",
+    "content": "2026-02-05: Updated game_forge/CURRENT_STATE.md with current date, removed outdated entrypoint issue, and noted optional GPU backends/skip behavior; confirmed eidosian_core location note retained.",
+    "created_at": "2026-02-05T22:28:51.315372",
+    "last_accessed": "2026-02-05T22:28:51.315378",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.6,
+    "ttl_seconds": null,
+    "tags": [
+      "entrypoints",
+      "docs",
+      "status",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
