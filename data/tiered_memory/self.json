@@ -1070,5 +1070,26 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "9753108b-026c-4ae6-8757-86ca5ec2b403",
+    "content": "Added agentic_chess optional dependency extra in game_forge pyproject and documented install extra. Re-ran game_forge tests: 211 passed, 3 skipped (2026-02-05).",
+    "created_at": "2026-02-05T23:47:15.852092",
+    "last_accessed": "2026-02-05T23:47:15.852097",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "deps",
+      "agentic_chess",
+      "game_forge",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]
