@@ -28,6 +28,13 @@ COMMAND_PATTERNS = [
     r"^\s*(?:curl|wget|pip|python|python3|bash|sh|git|npm|node|cargo|make)\b.+",
 ]
 
+SECRET_PATTERNS = [
+    (re.compile(r'("api_key"\s*:\s*")[^"]+(")', re.IGNORECASE), r'\1***\2'),
+    (re.compile(r'(\bapi_key\b\s*[:=]\s*)\S+', re.IGNORECASE), r'\1***'),
+    (re.compile(r'(\bauth(?:entication)?_?token\b\s*[:=]\s*)\S+', re.IGNORECASE), r'\1***'),
+    (re.compile(r'(\bBearer\s+)[A-Za-z0-9._-]+', re.IGNORECASE), r'\1***'),
+    (re.compile(r'\bclh_[A-Za-z0-9]+'), 'clh_***'),
+]
 
 def _fetch_url(url: str) -> str:
     parsed = urllib.parse.urlparse(url)
@@ -67,6 +74,13 @@ def _extract_commands(text: str) -> List[str]:
     return sorted(set(commands))
 
 
+def _redact_secrets(text: str) -> str:
+    redacted = text
+    for pattern, replacement in SECRET_PATTERNS:
+        redacted = pattern.sub(replacement, redacted)
+    return redacted
+
+
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Review Moltbook skill content safely",
@@ -78,6 +92,8 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser.add_argument("--max-chars", type=int, default=20000, help="Maximum normalized length")
     parser.add_argument("--threshold", type=float, default=0.2, help="Risk score threshold")
     parser.add_argument("--include-payload", action="store_true", help="Include sanitized payload in report")
+    parser.add_argument("--redact-secrets", action="store_true", default=True, help="Redact secrets in output")
+    parser.add_argument("--no-redact-secrets", dest="redact_secrets", action="store_false", help="Disable redaction")
     parser.add_argument("--output", default="", help="Write report JSON to file instead of stdout")
     return parser.parse_args(list(argv))
 
@@ -95,6 +111,7 @@ def main(argv: Iterable[str] | None = None) -> int:
         raw = _read_input(args.input)
 
     normalized = normalize_text(raw, max_chars=args.max_chars)
+    redacted_text = _redact_secrets(normalized.text) if args.redact_secrets else normalized.text
     payload = asdict(normalized)
     validation = validate_normalized_payload(payload)
     decision = screen_payload(payload, args.threshold)
@@ -111,8 +128,11 @@ def main(argv: Iterable[str] | None = None) -> int:
             "urls": _extract_urls(normalized.text),
             "env": _extract_env(normalized.text),
         },
+        "redacted": args.redact_secrets,
+        "redacted_text": redacted_text,
     }
     if args.include_payload:
+        payload["text"] = redacted_text
         report["payload"] = payload
 
     output = json.dumps(report, indent=2, sort_keys=True)

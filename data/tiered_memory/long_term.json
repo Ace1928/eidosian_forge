@@ -352,5 +352,24 @@
       "benchmark"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "f0113bed-3098-4c5d-adc6-230a01c907c5",
+    "content": "Added secret redaction support to moltbook_skill_review (default on, redacted_text in report, payload text redacted), updated skill snapshot with skills.sh SKILL.md excerpt (redacted), regenerated skill report, and added redaction test. Moltbook tests passed (15).",
+    "created_at": "2026-02-05T21:30:31.839657",
+    "last_accessed": "2026-02-05T21:30:31.839665",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [
+      "redaction",
+      "tests",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]

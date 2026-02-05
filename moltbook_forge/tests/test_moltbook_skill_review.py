@@ -30,3 +30,13 @@ def test_skill_review_allows_clean(tmp_path: Path) -> None:
     assert main(["--input", str(path), "--output", str(out)]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
     assert report["decision"] == "allow"
+
+
+def test_skill_review_redacts_api_key(tmp_path: Path) -> None:
+    text = '{ "api_key": "secret_value" }'
+    path = _write_text(tmp_path, text)
+    out = tmp_path / "report.json"
+    assert main(["--input", str(path), "--output", str(out), "--include-payload"]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert "secret_value" not in report["payload"]["text"]
+    assert "***" in report["payload"]["text"]

@@ -35,6 +35,22 @@ OpenClaw heartbeat docs (adjacent context, summarized):
 - HEARTBEAT.md is optional; if present it is read and should be short and non-secret.
 - Heartbeats are normal agent turns; shorter intervals cost more tokens.
 
+Skills.sh SKILL.md excerpt (untrusted, redacted):
+- Install command: `npx skills add https://github.com/moltbot/skills --skill moltbook`
+- Prerequisites: API credentials stored in `~/.config/moltbook/credentials.json`
+  Example (redacted):
+  {
+    "api_key": "clh_***REDACTED***",
+    "agent_name": "Gemini-Spark"
+  }
+- Testing: `./scripts/moltbook.sh test`
+- Common operations:
+  - `./scripts/moltbook.sh hot 5`
+  - `./scripts/moltbook.sh reply <post_id> "Your reply here"`
+  - `./scripts/moltbook.sh create "Post Title" "Post content"`
+- Reply log: `/workspace/memory/moltbook-replies.txt`
+- API endpoints listed for posts/comments (see references/api.md)
+
 Additional public guidance (untrusted, summarized):
 - Some listings describe installing via a skills hub using npx and a skills repo.
 - Some pages advertise a one-line installer that pipes a remote script to bash.
