@@ -867,5 +867,25 @@
       "pytest"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "9c840cde-de84-409b-a1a0-ab5204e1e39c",
+    "content": "2026-02-05: Updated game_forge/pyparticles/README.md to document standalone benchmark scripts with JSON output (benchmarks/benchmark.py and benchmark_sim.py).",
+    "created_at": "2026-02-05T22:58:39.070142",
+    "last_accessed": "2026-02-05T22:58:39.070146",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": null,
+    "tags": [
+      "game_forge",
+      "docs",
+      "benchmarks",
+      "pyparticles"
+    ],
+    "linked_memories": []
   }
 ]

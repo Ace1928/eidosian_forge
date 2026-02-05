@@ -65,6 +65,10 @@ PYTHONPATH=src SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python -m pyparticles
 # Render benchmark (requires OpenGL context; skipped under dummy driver)
 PYTHONPATH=src python -m pyparticles.app --benchmark
 
+# Standalone benchmark scripts (JSON output)
+PYTHONPATH=src python benchmarks/benchmark.py --particles 512 --steps 10 --no-profile --output benchmarks/artifacts/benchmark_engine.json
+PYTHONPATH=src python benchmarks/benchmark_sim.py --particles 512 --steps 10 --no-profile --output benchmarks/artifacts/benchmark_sim.json
+
 # Compare to baseline
 PYTHONPATH=src python - <<'PY'
 from pyparticles.profiling import Benchmarker
