@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Game Forge Benchmark Suite Summary",
+  "type": "object",
+  "required": [
+    "run_id",
+    "generated_at",
+    "preset",
+    "tag",
+    "output_dir",
+    "dry_run",
+    "ran",
+    "failed",
+    "skipped",
+    "benchmarks"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique run identifier (UUID)."
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "UTC timestamp when the summary was generated."
+    },
+    "preset": {
+      "type": "string",
+      "enum": [
+        "quick",
+        "full"
+      ]
+    },
+    "tag": {
+      "type": "string"
+    },
+    "output_dir": {
+      "type": "string"
+    },
+    "dry_run": {
+      "type": "boolean"
+    },
+    "ran": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "benchmarks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "benchmark_id",
+          "name",
+          "target",
+          "status"
+        ],
+        "properties": {
+          "benchmark_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "failed",
+              "skipped",
+              "dry-run"
+            ]
+          },
+          "output": {
+            "type": "string"
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

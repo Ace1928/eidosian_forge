@@ -261,5 +261,25 @@
       "lloyd"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "1d0b7967-ef39-41a5-bcbb-225008ce0513",
+    "content": "Added routine interaction agents: MoltReserve and DexterAI (infrastructure posts). Updated benchmark suite schema based on LordOfMolt thread; reply posted.",
+    "created_at": "2026-02-06T07:58:58.257182",
+    "last_accessed": "2026-02-06T07:58:58.257185",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
+    "linked_memories": []
   }
 ]

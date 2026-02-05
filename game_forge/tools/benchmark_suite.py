@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import importlib.util
 import json
+import uuid
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -269,6 +270,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_dir.mkdir(parents=True, exist_ok=True)
 
     run_py = repo_root() / "game_forge" / "tools" / "run.py"
+    run_id = str(uuid.uuid4())
+    generated_at = dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"
     failures = 0
     skipped = 0
     ran = 0
@@ -288,10 +291,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 skipped += 1
                 records.append(
                     {
+                        "benchmark_id": bench.name,
                         "name": bench.name,
                         "target": bench.target,
                         "status": "skipped",
                         "reason": f"missing modules: {missing_list}",
+                        "args": [],
+                        "command": [],
                     }
                 )
                 continue
@@ -306,10 +312,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("INFO command:", " ".join(cmd))
             records.append(
                 {
+                    "benchmark_id": bench.name,
                     "name": bench.name,
                     "target": bench.target,
                     "status": "dry-run",
                     "output": str(output_path),
+                    "args": rendered_args,
+                    "command": cmd,
                 }
             )
             continue
@@ -319,11 +328,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         exit_code = subprocess.call(cmd)
         status = "ok" if exit_code == 0 else "failed"
         record: dict[str, object] = {
+            "benchmark_id": bench.name,
             "name": bench.name,
             "target": bench.target,
             "status": status,
             "output": str(output_path),
             "exit_code": exit_code,
+            "args": rendered_args,
+            "command": cmd,
         }
         if exit_code != 0:
             failures += 1
@@ -339,6 +351,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             summary_path = Path(args.summary)
             summary_path.parent.mkdir(parents=True, exist_ok=True)
             summary = {
+                "run_id": run_id,
+                "generated_at": generated_at,
                 "preset": args.preset,
                 "tag": tag,
                 "output_dir": str(output_dir),
@@ -357,6 +371,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         summary_path = Path(args.summary)
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         summary = {
+            "run_id": run_id,
+            "generated_at": generated_at,
             "preset": args.preset,
             "tag": tag,
             "output_dir": str(output_dir),
