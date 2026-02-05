@@ -23,6 +23,9 @@ algorithms-lab = [
   "numba>=0.59",
   "scipy>=1.11",
 ]
+agentic-chess = [
+  "python-chess",
+]
 algorithms-lab-visual = [
   "pygame",
 ]

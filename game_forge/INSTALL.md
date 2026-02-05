@@ -11,6 +11,13 @@ pip install -e ./game_forge
 python game_forge/tools/run.py --list
 ```
 
+Optional extras:
+
+```bash
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
+pip install -e ./game_forge[agentic-chess]
+```
+
 ## Run A Target
 
 ```bash
