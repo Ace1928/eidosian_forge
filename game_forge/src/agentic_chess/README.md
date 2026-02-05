@@ -19,6 +19,13 @@ python game_forge/tools/agentic_chess_benchmark.py --games 5 --max-moves 60 --ou
 - `--agent-forge-no-git`: disable git-backed memory if you set `--agent-forge-memory`.
 - `--pgn-output`: write the match PGN to a file.
 
+## State Management
+
+- Each match starts from a fresh `python-chess` board state.
+- The match RNG is seeded once per game (if provided) and shared across agents.
+- Illegal moves terminate the game immediately.
+- Moves are recorded as SAN and PGN is available when `--pgn-output` is set.
+
 ## Dependencies
 
 - `python-chess`
