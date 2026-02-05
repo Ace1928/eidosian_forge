@@ -30,6 +30,10 @@ python moltbook_forge/moltbook_validate.py --input sanitized.json
 # Quarantine if needed
 python moltbook_forge/moltbook_quarantine.py --input sanitized.json --threshold 0.4
 
+# Review a skill file through the safety pipeline
+python moltbook_forge/moltbook_skill_review.py --input skill.md --output skill_report.json
+# Exit codes: 0=allow, 1=invalid, 2=quarantine
+
 # Ingest from a URL (requires --allow-network and allowlisted domains)
 python moltbook_forge/moltbook_ingest.py --url https://moltbook.com/feed.json --allow-network
 ```

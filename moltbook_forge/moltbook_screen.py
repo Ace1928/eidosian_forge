@@ -38,6 +38,32 @@ def _is_critical(flags: List[str]) -> bool:
     return any(flag in CRITICAL_FLAGS for flag in flags)
 
 
+def screen_payload(payload: dict, threshold: float) -> ScreenDecision:
+    flags = list(payload.get("flags", []))
+    risk_score = float(payload.get("risk_score", 0.0))
+
+    if _is_critical(flags):
+        return ScreenDecision(
+            decision="quarantine",
+            risk_score=risk_score,
+            flags=flags,
+            reason="critical_flag",
+        )
+    if risk_score >= threshold:
+        return ScreenDecision(
+            decision="quarantine",
+            risk_score=risk_score,
+            flags=flags,
+            reason="risk_threshold",
+        )
+    return ScreenDecision(
+        decision="allow",
+        risk_score=risk_score,
+        flags=flags,
+        reason="below_threshold",
+    )
+
+
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Screen normalized Moltbook content",
@@ -52,30 +78,7 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 def main(argv: Iterable[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     payload = _load_payload(args.input)
-    flags = list(payload.get("flags", []))
-    risk_score = float(payload.get("risk_score", 0.0))
-
-    if _is_critical(flags):
-        decision = ScreenDecision(
-            decision="quarantine",
-            risk_score=risk_score,
-            flags=flags,
-            reason="critical_flag",
-        )
-    elif risk_score >= args.threshold:
-        decision = ScreenDecision(
-            decision="quarantine",
-            risk_score=risk_score,
-            flags=flags,
-            reason="risk_threshold",
-        )
-    else:
-        decision = ScreenDecision(
-            decision="allow",
-            risk_score=risk_score,
-            flags=flags,
-            reason="below_threshold",
-        )
+    decision = screen_payload(payload, args.threshold)
 
     output = json.dumps(asdict(decision), indent=2, sort_keys=True)
     if args.output:

@@ -41,11 +41,19 @@ SUSPICIOUS_PATTERNS = [
     r"bypass",
     r"execute (code|commands?)",
     r"run (shell|bash|cmd|powershell)",
+    r"download .* and (run|execute)",
+    r"fetch (?:.* )?instructions",
+    r"remote instructions",
+    r"heartbeat",
+    r"check in every",
+    r"every \\d+ hours",
     r"curl ",
     r"wget ",
     r"pip install",
     r"rm -rf",
     r"sudo",
+    r"api key",
+    r"auth token",
 ]
 
 
@@ -157,6 +165,9 @@ def normalize_text(text: str, max_chars: int = 20000) -> NormalizedContent:
         r"jailbreak",
         r"execute (code|commands?)",
         r"run (shell|bash|cmd|powershell)",
+        r"download .* and (run|execute)",
+        r"fetch (?:.* )?instructions",
+        r"remote instructions",
     }
     score = 0.0
     for flag in flags:

@@ -7,13 +7,15 @@ import argparse
 import hashlib
 import json
 import os
-import tempfile
 import time
 import sys
 from pathlib import Path
 from typing import Iterable
 
-from moltbook_forge.moltbook_screen import main as screen_main
+if __package__ is None:
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from moltbook_forge.moltbook_screen import screen_payload
 
 
 def _load_payload(path: str) -> dict:
@@ -29,25 +31,6 @@ def _safe_stem(value: str) -> str:
 
 def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-
-def _decision_for(payload_path: Path, threshold: float) -> dict:
-    tmp_output = payload_path.parent / ".decision.tmp.json"
-    try:
-        screen_main(
-            [
-                "--input",
-                str(payload_path),
-                "--output",
-                str(tmp_output),
-                "--threshold",
-                str(threshold),
-            ]
-        )
-        return json.loads(tmp_output.read_text(encoding="utf-8"))
-    finally:
-        if tmp_output.exists():
-            tmp_output.unlink()
 
 
 def _quarantine_dir(path: str) -> Path:
@@ -70,14 +53,10 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 def main(argv: Iterable[str] | None = None) -> int:
     args = parse_args(argv or [])
     payload = _load_payload(args.input)
-    with tempfile.TemporaryDirectory(prefix="moltbook_tmp_") as tmp_name:
-        tmp_dir = Path(tmp_name)
-        tmp_payload = tmp_dir / "payload.json"
-        _write_json(tmp_payload, payload)
-        decision = _decision_for(tmp_payload, args.threshold)
+    decision = screen_payload(payload, args.threshold)
 
-    if decision.get("decision") != "quarantine":
-        print(json.dumps({"decision": "allow", "reason": decision.get("reason", "")}))
+    if decision.decision != "quarantine":
+        print(json.dumps({"decision": "allow", "reason": decision.reason}))
         return 0
 
     text = payload.get("text", "")
@@ -87,7 +66,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     filename = f"{stem}.json"
     out_dir = _quarantine_dir(args.quarantine_dir)
     out_path = out_dir / filename
-    _write_json(out_path, {"payload": payload, "decision": decision})
+    _write_json(out_path, {"payload": payload, "decision": decision.__dict__})
     print(json.dumps({"decision": "quarantine", "path": str(out_path)}))
     return 0
 

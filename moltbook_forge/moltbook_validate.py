@@ -5,8 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from typing import Iterable
+
+if __package__ is None:
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from moltbook_forge.moltbook_schema import validate_normalized_payload
 

@@ -198,5 +198,25 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "6819590e-eea6-449e-90f2-ba68c4e37966",
+    "content": "Built Moltbook skill review pipeline: added moltbook_skill_review.py (extracts commands/urls/env, validates + screens, stricter default threshold 0.2), added skill_sources snapshot + report, extended sanitize patterns for remote-control/heartbeat, added screen_payload helper and refactored quarantine to call it, added path bootstrap for CLI scripts, updated README, and added tests. Ran moltbook_forge tests: 13 passed via eidosian_venv.",
+    "created_at": "2026-02-05T21:04:17.104569",
+    "last_accessed": "2026-02-05T21:04:17.104578",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "safety",
+      "tests",
+      "moltbook_forge",
+      "pipeline"
+    ],
+    "linked_memories": []
   }
 ]

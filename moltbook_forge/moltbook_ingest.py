@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import os
+
 import argparse
 import json
 import sys
@@ -10,6 +12,9 @@ import urllib.parse
 import urllib.request
 from dataclasses import asdict
 from typing import Iterable
+
+if __package__ is None:
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from moltbook_forge.moltbook_sanitize import normalize_text
 
