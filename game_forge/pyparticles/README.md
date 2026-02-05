@@ -1,21 +1,41 @@
-# Eidosian PyParticles
+# 💎 Eidosian PyParticles V6
 
-A high-performance, strictly typed, and modular Python rewrite of the [Haskell Particle Life](https://github.com/Ace1928/pyparticles) simulation.
+> *"Precision is the foundation of elegance; emergence is the path to understanding."*
 
-## 🌟 Overview
+A **production-grade, ultra-high-performance particle physics simulation** with advanced physics, wave mechanics, quantum-inspired exclusion, and scalable architecture.
 
-This project implements a particle system with emergent behavior based on simple pairwise interaction rules. It features:
-- **NumPy Vectorization**: Optimized O(N²) interactions using efficient array broadcasting.
-- **Eidosian Architecture**: Modular design separating Simulation, Rendering, and Configuration.
-- **Pygame Visualization**: Smooth, real-time rendering.
-- **Configurable Rules**: Easy-to-tune attraction/repulsion matrices.
+## ✨ Features
+
+### Physics Engine
+- **10 Force Types**: Linear, Inverse, Inverse-Square, Inverse-Cube, Yukawa, Lennard-Jones, Morse, Gaussian, Exponential, Repel-Only
+- **Wave Mechanics**: Dynamic wave perimeters with crest/trough/zero-crossing effects
+- **Exclusion Mechanics**: Pauli-like repulsion with fermionic/bosonic behaviors
+- **Spin Dynamics**: Quantum-inspired spin states with stochastic flip mechanics
+- **Velocity Verlet Integration**: Symplectic, energy-conserving integrator
+- **Berendsen Thermostat**: Temperature control for NVT ensemble
+
+### Rendering
+- **ModernGL OpenGL**: Hardware-accelerated GPU rendering
+- **Advanced Shaders**: Wave visualization, energy effects, LOD
+- **Multiple Render Modes**: Standard, Wave, Energy, Minimal
+
+### Performance
+- **Numba JIT**: All physics kernels compiled to machine code
+- **Spatial Hashing**: O(N) neighbor lookup via grid
+- **Morton Encoding**: Cache-optimized memory access patterns
+- **Parallel Execution**: Multi-threaded force computation
+
+### GUI
+- **Real-time Controls**: Particle size, world size, velocity limits
+- **Simulation Presets**: Small world, large world, dense, minimal
+- **Performance Monitoring**: FPS, physics time, render time
+- **Species Editor**: Randomize and configure particle types
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.10+
-- NumPy
-- Pygame
+- OpenGL 3.3+ capable GPU
 
 ### Installation
 
@@ -27,39 +47,133 @@ pip install -r requirements.txt
 ### Running
 
 ```bash
-# Run with default settings (N=500)
-python3 run.py
+# Default (10,000 particles, 16 species)
+./bin/pyparticles_app
 
-# Run with custom particle count
-python3 run.py --num 800
+# Custom configuration
+./bin/pyparticles_app --num 20000 --types 8 --world-size 200.0
 
-# Run headless benchmark
-python3 run.py --no-render
+# With preset
+./bin/pyparticles_app --preset huge_world
+
+# Headless benchmark
+python3 -c "from pyparticles.profiling import run_standard_benchmarks; run_standard_benchmarks()"
 ```
 
-## 🏗 Architecture
+## 🏗️ Architecture
 
-- **`src/pyparticles/simulation.py`**: The core physics engine. Uses NumPy for vectorized force calculations.
-- **`src/pyparticles/renderer.py`**: Visualization layer using Pygame. Handles coordinate mapping and efficient drawing.
-- **`src/pyparticles/config.py`**: Central configuration for physics constants and interaction rules.
-- **`src/pyparticles/main.py`**: Application entry point and loop orchestration.
+```
+pyparticles/
+├── src/pyparticles/
+│   ├── app.py                    # Main application loop
+│   ├── core/
+│   │   └── types.py              # SimulationConfig, ParticleState, SpeciesConfig
+│   ├── physics/
+│   │   ├── engine.py             # PhysicsEngine orchestrator
+│   │   ├── kernels.py            # Numba JIT physics kernels
+│   │   ├── forces/               # Pluggable force types
+│   │   │   ├── base.py           # Force interface
+│   │   │   ├── potentials.py     # All 10 force implementations
+│   │   │   └── registry.py       # Force registry with presets
+│   │   ├── wave/                 # Wave mechanics
+│   │   │   ├── types.py          # WaveConfig, WaveProfile
+│   │   │   ├── kernels.py        # Wave computation kernels
+│   │   │   ├── analyzer.py       # Wave statistics
+│   │   │   └── registry.py       # Wave presets
+│   │   ├── exclusion/            # Quantum-inspired exclusion
+│   │   │   ├── types.py          # SpinState, ParticleBehavior
+│   │   │   ├── kernels.py        # Exclusion/spin kernels
+│   │   │   └── registry.py       # Exclusion presets
+│   │   └── spatial/              # Spatial optimization
+│   │       └── __init__.py       # Morton encoding, adaptive grid
+│   ├── rendering/
+│   │   ├── gl_renderer.py        # ModernGL renderer
+│   │   └── shaders/              # GLSL shaders
+│   ├── ui/
+│   │   └── gui.py                # Advanced GUI controls
+│   └── profiling/
+│       └── __init__.py           # Benchmarking tools
+└── tests/                        # 132+ comprehensive tests
+```
+
+## 🔬 Physics
+
+### Force Types
+
+| Type | Formula | Use Case |
+|------|---------|----------|
+| Linear | `F = k(1 - r/r_max)` | Particle Life |
+| Inverse | `F = k/r` | Magnetic-like |
+| Inverse Square | `F = k/r^2` | Gravity/Coulomb |
+| Inverse Cube | `F = k/r^3` | Dipole-dipole |
+| Yukawa | `F = k*exp(-r/lambda)/r` | Screened Coulomb |
+| Lennard-Jones | `F = k[(sigma/r)^12 - (sigma/r)^6]` | Molecular |
+| Morse | `F = k*exp(-2a(r-r0)) - exp(-a(r-r0))` | Bond-like |
+| Gaussian | `F = k*exp(-r^2/2*sigma^2)` | Soft localized |
+| Exponential | `F = k*exp(-r/lambda)` | Short-range decay |
+| Repel Only | `F = max(0, k/r^2)` | Exclusion zone |
+
+### Wave Mechanics
+
+Each particle has a dynamic wave perimeter:
+- **Crest**: Maximum protrusion → enhanced attraction
+- **Trough**: Maximum indentation → reduced interaction
+- **Zero Crossing**: Neutral surface → normal force
+
+Phase relationships create emergent behaviors:
+- **Constructive interference**: 2× force multiplier
+- **Destructive interference**: 0.5× force multiplier
+- **Standing waves**: Phase-locked oscillations
+
+### Exclusion Mechanics
+
+Quantum-inspired particle behaviors:
+- **Fermionic**: Same-spin particles strongly repel (Pauli-like)
+- **Bosonic**: Particles can occupy same state, slight attraction
+- **Classical**: No exclusion effects
+
+Spin dynamics:
+- Spin states: UP (+1), DOWN (-1), NONE (0)
+- Stochastic spin flips based on kinetic energy
+- Spin-spin correlation for emergent magnetization
 
 ## 📊 Performance
 
-The simulation uses an O(N²) algorithm for particle interactions.
-- **N=500**: ~60+ FPS (Smooth)
-- **N=1000**: ~15 FPS (CPU Bound)
+| Particles | FPS | ms/step |
+|-----------|-----|---------|
+| 1,000 | 1000+ | <1 |
+| 5,000 | 70+ | ~14 |
+| 10,000 | 19+ | ~53 |
 
-For N > 1000, consider implementing a spatial partition grid (Quadtree/Hash) or using GPU acceleration (Numba/CUDA).
+Target: 100k+ particles with GPU compute shaders (planned).
 
 ## 🧪 Testing
 
-Run the test suite:
-
 ```bash
-make test
+# Run all tests (132+)
+PYTHONPATH=src pytest tests/ -v
+
+# Run specific module
+PYTHONPATH=src pytest tests/test_forces.py -v
+
+# With coverage
+PYTHONPATH=src pytest tests/ --cov=pyparticles --cov-report=html
 ```
+
+## 🎮 Controls
+
+| Key | Action |
+|-----|--------|
+| Space | Pause/Resume |
+| R | Reset simulation |
+| Tab | Toggle GUI |
+| +/- | Adjust particle count |
+| Mouse wheel | Zoom |
 
 ## 📜 License
 
-MIT License. Based on the original work by Mitchell Vitez.
+MIT License. Inspired by [Particle Life](https://github.com/hunar4321/particle-life) and the original Haskell implementation.
+
+---
+
+*"The particle is the universe in miniature; the simulation, the universe in understanding."*

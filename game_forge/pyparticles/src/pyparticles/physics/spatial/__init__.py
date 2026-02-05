@@ -150,7 +150,7 @@ def fill_grid_morton(pos: np.ndarray, morton_order: np.ndarray,
             grid_counts[cy, cx] += 1
 
 
-@njit(parallel=True, fastmath=True, cache=True)
+@njit(fastmath=True, cache=True)
 def compute_cell_densities(grid_counts: np.ndarray) -> Tuple[float, float, int]:
     """
     Compute grid density statistics.
@@ -162,7 +162,7 @@ def compute_cell_densities(grid_counts: np.ndarray) -> Tuple[float, float, int]:
     max_count = 0
     empty_count = 0
     
-    for y in prange(h):
+    for y in range(h):
         for x in range(w):
             c = grid_counts[y, x]
             total += c
@@ -172,7 +172,7 @@ def compute_cell_densities(grid_counts: np.ndarray) -> Tuple[float, float, int]:
                 empty_count += 1
     
     n_cells = h * w
-    avg = float(total) / float(n_cells)
+    avg = float(total) / float(n_cells) if n_cells > 0 else 0.0
     
     return avg, float(max_count), empty_count
 

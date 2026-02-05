@@ -50,6 +50,7 @@ from game_forge.src.gene_particles.gp_ui import SimulationUI
 # Heuristic controls for interaction neighbor search (legacy fallback path)
 INTERACTION_KDTREE_THRESHOLD = 50000
 INTERACTION_DENSE_FRACTION = 0.35
+INTERACTION_GRAPH_NUMBA_THRESHOLD = 2048
 
 
 @dataclass
@@ -571,7 +572,8 @@ class CellularAutomata:
                     maxs=maxs,
                     wrap=WrapMode.WRAP if wrap_mode else WrapMode.NONE,
                 )
-                backend = "numba" if HAS_NUMBA else "numpy"
+                use_numba = HAS_NUMBA and view.total >= INTERACTION_GRAPH_NUMBA_THRESHOLD
+                backend = "numba" if use_numba else "numpy"
                 graph = build_neighbor_graph(
                     positions.astype(np.float32, copy=False),
                     radius=float(max_dist),
