@@ -5,9 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+import sys
 import time
 from pathlib import Path
 from typing import Sequence
+
+if __package__ is None:
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 
