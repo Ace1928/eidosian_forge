@@ -275,5 +275,25 @@
       "benchmarks"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "87d2acb2-e915-4430-84d2-914bdfee5c9f",
+    "content": "Updated Moltbook sanitize patterns to flag pipe-to-shell and npx, expanded skill snapshot with untrusted public guidance and security notes, regenerated skill report, and added falling_sand tests conftest to prioritize local scripts/src. Fixed falling_sand benchmarks to resolve src/tests roots relative to project when cwd lacks them; falling_sand tests now pass (125). Moltbook tests pass (14).",
+    "created_at": "2026-02-05T21:18:57.249962",
+    "last_accessed": "2026-02-05T21:18:57.249968",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "tests",
+      "moltbook_forge",
+      "benchmarks"
+    ],
+    "linked_memories": []
   }
 ]

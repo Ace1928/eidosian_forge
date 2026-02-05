@@ -47,8 +47,10 @@ SUSPICIOUS_PATTERNS = [
     r"heartbeat",
     r"check in every",
     r"every \\d+ hours",
+    r"\|\s*(bash|sh)",
     r"curl ",
     r"wget ",
+    r"npx ",
     r"pip install",
     r"rm -rf",
     r"sudo",
@@ -168,6 +170,7 @@ def normalize_text(text: str, max_chars: int = 20000) -> NormalizedContent:
         r"download .* and (run|execute)",
         r"fetch (?:.* )?instructions",
         r"remote instructions",
+        r"\|\s*(bash|sh)",
     }
     score = 0.0
     for flag in flags:

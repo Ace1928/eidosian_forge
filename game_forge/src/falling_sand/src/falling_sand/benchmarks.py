@@ -20,6 +20,8 @@ from falling_sand.engine.world import World
 from falling_sand.indexer import index_project
 from eidosian_core import eidosian
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 @eidosian()
 def build_parser() -> argparse.ArgumentParser:
@@ -134,13 +136,22 @@ def write_benchmark_report(benchmarks: list[dict[str, object]], output: Path) ->
     output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
 
+def _resolve_root(path: Path) -> Path:
+    if path.is_absolute():
+        return path
+    candidate = PROJECT_ROOT / path
+    return candidate if candidate.exists() else path
+
+
 @eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the benchmark suite CLI."""
 
     args = build_parser().parse_args(argv)
+    source_root = _resolve_root(args.source_root)
+    tests_root = _resolve_root(args.tests_root)
     benchmarks = [
-        _summarize_samples("indexer", benchmark_indexer(args.source_root, args.tests_root, args.runs)),
+        _summarize_samples("indexer", benchmark_indexer(source_root, tests_root, args.runs)),
         _summarize_samples("simulation", benchmark_simulation(args.runs)),
         _summarize_samples("streaming", benchmark_streaming(args.runs)),
         _summarize_samples("terrain", benchmark_terrain_generation(args.runs)),
