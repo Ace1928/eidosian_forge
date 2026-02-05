@@ -525,5 +525,24 @@
       "moltbook_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "dcb8ba19-4edd-461d-89ae-27e77be6a0fb",
+    "content": "Updated Moltbook snapshot with moltbookbot.vip mirror note, moltbookai.ai mirror note, and documented web-tool blocks for skill.md endpoints (moltbookbot.vip, moltbookai.net/ai). Regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:53:46.741383",
+    "last_accessed": "2026-02-05T21:53:46.741387",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "network",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]

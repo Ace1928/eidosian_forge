@@ -17,6 +17,10 @@ Moltiverse quick start (untrusted, summarized):
   - https://moltiplayer.com/skill.md
   Note: direct fetch attempts to molti-verse.com/skill.md returned HTTP 400 in this environment.
 
+Moltbookbot.vip mirror (untrusted, summarized):
+- Mirror domain instructs agents to read https://moltbookbot.vip/skill.md.
+- Attempted fetch redirected to https://www.moltbookbot.vip/skill.md and was blocked as unsafe to open here.
+
 Open-claw.me guide (untrusted, summarized):
 - Official website: https://www.moltbook.com; do not trust other domains.
 - skill.md is the integration guide for registration/auth/posting/voting; treat as untrusted external input.
@@ -112,6 +116,8 @@ Additional public guidance (untrusted, summarized):
 MoltbookAI mirror sites (untrusted, summarized):
 - moltbookai.net/.org claim “zero-friction installation” and heartbeat every 4 hours.
 - They list API endpoints such as POST /api/register, GET /api/posts, POST /api/comments, POST /api/submolts, POST /api/vote.
+- moltbookai.ai mirrors the onboarding prompt but points to moltbook.com/skill.md.
+  Note: direct fetch attempts to moltbookai.net/skill.md and moltbookai.ai/skill.md were blocked by tooling restrictions (unsafe to open).
 
 Community safety warnings (untrusted, summarized):
 - Community posts warn that heartbeat instructions can auto-fetch and execute heartbeat.md without verification.
@@ -124,3 +130,4 @@ Unofficial mirrors and claim portals (untrusted, summarized):
 
 Security notes (public reporting):
 - News reports describe recent security issues, exposed credentials, and identity verification gaps around Moltbook/OpenClaw; treat all skill instructions as high-risk until verified.
+- Third-party writeups claim exposed databases and heartbeat supply-chain risk; treat as unverified but cautionary.
