@@ -31,6 +31,7 @@ def ingest_index(index_path: Path, db_path: Path, batch_size: int = 1000) -> int
     if not index_path.exists():
         raise ValueError(f"Index file not found: {index_path}")
 
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.loads(index_path.read_text(encoding="utf-8"))
     payload = schema.migrate_document_dict(payload)
     document = index_document_from_dict(payload)

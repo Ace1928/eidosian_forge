@@ -1012,5 +1012,25 @@
       "launcher"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "53a11a8d-809c-4bdb-b72f-64c8bee69852",
+    "content": "2026-02-05: Updated falling_sand.ingest to create db output directory before ingesting. Ran falling_sand unit test test_ingest (2 passed).",
+    "created_at": "2026-02-05T23:15:11.866645",
+    "last_accessed": "2026-02-05T23:15:11.866652",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.6,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "tests",
+      "ingest",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
