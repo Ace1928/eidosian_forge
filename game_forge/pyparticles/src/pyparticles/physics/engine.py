@@ -1,10 +1,13 @@
 """
 Physics Engine Manager.
-Updated for Velocity Verlet Integration.
+Updated for Velocity Verlet Integration with configurable world size.
 """
 import numpy as np
 from typing import List
-from ..core.types import ParticleState, SimulationConfig, InteractionRule, ForceType, SpeciesConfig
+from ..core.types import (
+    ParticleState, SimulationConfig, InteractionRule, ForceType, 
+    SpeciesConfig, SpinInteractionMatrix
+)
 from .kernels import (
     fill_grid, compute_forces_multi, apply_thermostat, 
     integrate_verlet_1, integrate_verlet_2
@@ -22,18 +25,21 @@ class PhysicsEngine:
         self.rules: List[InteractionRule] = []
         self._init_default_rules()
         
-        # Species Config
-        self.species_config = SpeciesConfig.default(config.num_types)
+        # Species Config - scaled to world size
+        self.species_config = SpeciesConfig.default(config.num_types, config.world_size)
+        
+        # Spin interaction matrix
+        self.spin_matrix = SpinInteractionMatrix.default(config.num_types)
         
         # Initialize Random Particles
         self._init_particles()
         
-        # Grid Memory
+        # Grid Memory - scaled to world size
         self.max_interaction_radius = self._get_max_radius()
-        self.cell_size = max(self.max_interaction_radius, 0.2)
+        self.cell_size = max(self.max_interaction_radius, 0.1 * config.world_size)
         
-        self.grid_w = int(2.0 / self.cell_size) + 2
-        self.grid_h = int(2.0 / self.cell_size) + 2
+        self.grid_w = int(config.world_size / self.cell_size) + 2
+        self.grid_h = int(config.world_size / self.cell_size) + 2
         
         avg_density = config.num_particles / (self.grid_w * self.grid_h)
         self.max_per_cell = int(avg_density * 20) + 100 
@@ -42,79 +48,98 @@ class PhysicsEngine:
         self.grid_cells = np.zeros((self.grid_h, self.grid_w, self.max_per_cell), dtype=np.int32)
         
     def _init_default_rules(self):
-        mat_linear = np.random.uniform(-1.0, 1.0, (self.cfg.num_types, self.cfg.num_types)).astype(np.float32)
+        """Initialize default interaction rules scaled to world size."""
+        max_r = self.cfg.default_max_radius
+        min_r = self.cfg.default_min_radius
+        
+        # Main particle life force (linear dropoff)
+        mat_linear = np.random.uniform(-1.0, 1.0, 
+            (self.cfg.num_types, self.cfg.num_types)).astype(np.float32)
         rule_lin = InteractionRule(
             name="Particle Life (Linear)",
             force_type=ForceType.LINEAR,
             matrix=mat_linear,
-            max_radius=self.cfg.default_max_radius,
-            min_radius=self.cfg.default_min_radius,
+            max_radius=max_r,
+            min_radius=min_r,
             strength=1.0
         )
         self.rules.append(rule_lin)
         
-        mat_grav = np.zeros((self.cfg.num_types, self.cfg.num_types), dtype=np.float32)
+        # Long-range gravity-like attraction
+        mat_grav = np.full((self.cfg.num_types, self.cfg.num_types), 
+                          0.02, dtype=np.float32)  # Weak universal attraction
         rule_grav = InteractionRule(
             name="Gravity (InvSq)",
             force_type=ForceType.INVERSE_SQUARE,
             matrix=mat_grav,
-            max_radius=0.5, 
-            min_radius=0.01,
-            strength=0.5,
-            softening=0.05
+            max_radius=max_r * 4,  # Longer range
+            min_radius=min_r,
+            strength=0.3,
+            softening=min_r * 2
         )
         self.rules.append(rule_grav)
         
-        mat_strong = np.zeros((self.cfg.num_types, self.cfg.num_types), dtype=np.float32)
-        rule_strong = InteractionRule(
-            name="Strong Force (InvCube)",
-            force_type=ForceType.INVERSE_CUBE,
-            matrix=mat_strong,
-            max_radius=0.2, 
-            min_radius=0.01,
-            strength=2.0,
-            softening=0.02
+        # Very short range repulsion (prevents overlap)
+        mat_repel = np.full((self.cfg.num_types, self.cfg.num_types),
+                           1.0, dtype=np.float32)
+        rule_repel = InteractionRule(
+            name="Core Repulsion",
+            force_type=ForceType.REPEL_ONLY,
+            matrix=mat_repel,
+            max_radius=min_r * 3,
+            min_radius=min_r * 0.5,
+            strength=5.0,
+            softening=min_r
         )
-        self.rules.append(rule_strong)
+        self.rules.append(rule_repel)
 
     def _get_max_radius(self):
-        if not self.rules: return 0.1
+        if not self.rules: 
+            return self.cfg.default_max_radius
         return max(r.max_radius for r in self.rules)
 
     def _init_particles(self):
+        """Initialize particles with species-driven properties."""
         n = self.state.active
-        self.state.pos[:n] = np.random.uniform(-1.0, 1.0, (n, 2))
+        half = self.cfg.half_world
+        
+        # Random positions in world
+        self.state.pos[:n] = np.random.uniform(-half, half, (n, 2)).astype(np.float32)
         self.state.vel[:n] = 0.0
         self.state.colors[:n] = np.random.randint(0, self.cfg.num_types, n)
-        self.state.angle[:n] = np.random.uniform(0, 2*np.pi, n)
+        self.state.angle[:n] = np.random.uniform(0, 2*np.pi, n).astype(np.float32)
         
+        # Initialize angular velocity from species base_spin_rate
         for i in range(n):
             t = self.state.colors[i]
-            self.state.ang_vel[i] = self.species_config.wave_phase_speed[t]
+            self.state.ang_vel[i] = self.species_config.base_spin_rate[t]
 
     def reset(self):
         self._init_particles()
+        self._invalidate_cache()
 
     def set_active_count(self, count: int):
         if count > self.cfg.max_particles: count = self.cfg.max_particles
         old_count = self.state.active
         self.state.active = count
+        half = self.cfg.half_world
+        
         if count > old_count:
             diff = count - old_count
-            self.state.pos[old_count:count] = np.random.uniform(-1.0, 1.0, (diff, 2))
+            self.state.pos[old_count:count] = np.random.uniform(-half, half, (diff, 2)).astype(np.float32)
             self.state.vel[old_count:count] = 0.0
             self.state.colors[old_count:count] = np.random.randint(0, self.cfg.num_types, diff)
-            self.state.angle[old_count:count] = np.random.uniform(0, 2*np.pi, diff)
+            self.state.angle[old_count:count] = np.random.uniform(0, 2*np.pi, diff).astype(np.float32)
             for i in range(old_count, count):
                 t = self.state.colors[i]
-                self.state.ang_vel[i] = self.species_config.wave_phase_speed[t]
-        # Invalidate force cache when particle count changes
+                self.state.ang_vel[i] = self.species_config.base_spin_rate[t]
         self._invalidate_cache()
 
     def set_species_count(self, n_types: int):
         if n_types == self.cfg.num_types: return
         self.cfg.num_types = n_types
-        self.species_config = SpeciesConfig.default(n_types)
+        self.species_config = SpeciesConfig.default(n_types, self.cfg.world_size)
+        self.spin_matrix = SpinInteractionMatrix.default(n_types)
         self.rules = []
         self._init_default_rules()
         self._invalidate_cache()
@@ -159,11 +184,15 @@ class PhysicsEngine:
         return matrices, params
 
     def _pack_species(self):
+        """Pack species config for kernel (6 columns now for spin dynamics)."""
         n = self.cfg.num_types
-        arr = np.zeros((n, 3), dtype=np.float32)
+        arr = np.zeros((n, 6), dtype=np.float32)
         arr[:, 0] = self.species_config.radius
         arr[:, 1] = self.species_config.wave_freq
         arr[:, 2] = self.species_config.wave_amp
+        arr[:, 3] = self.species_config.spin_inertia
+        arr[:, 4] = self.species_config.spin_friction
+        arr[:, 5] = self.species_config.base_spin_rate
         return arr
 
     def update(self, dt: float = None):
