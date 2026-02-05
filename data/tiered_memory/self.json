@@ -1112,5 +1112,25 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ad851383-8110-4f67-b969-2dfa8324a021",
+    "content": "Marked pygame headless dependency verification as complete in game_forge/TODO after repeated test passes; game_forge tests remain 211 passed, 4 skipped (2026-02-05).",
+    "created_at": "2026-02-05T23:54:03.832415",
+    "last_accessed": "2026-02-05T23:54:03.832420",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "deps",
+      "todo",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
