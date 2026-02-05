@@ -28,4 +28,8 @@ warnings.filterwarnings(
 )
 
 repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(repo_root))
+game_src = repo_root / "game_forge" / "src"
+lib_dir = repo_root / "lib"
+for path in (repo_root, game_src, lib_dir):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))

@@ -17,6 +17,9 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(os.path.dirname(script_dir))
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
+lib_dir = os.path.join(repo_root, "lib")
+if lib_dir not in sys.path:
+    sys.path.insert(0, lib_dir)
 
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 warnings.filterwarnings(

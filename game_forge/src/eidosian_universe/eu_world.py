@@ -10,8 +10,8 @@ import pygame
 
 from .eu_agent import Agent, Component
 from .eu_config import UniverseConfig
-from .eu_rules import (
 from eidosian_core import eidosian
+from .eu_rules import (
     GravityRule,
     MetabolismRule,
     ResourceRule,

@@ -102,7 +102,8 @@ class SimulationUI:
         elif key == pygame.K_o:
             self._toggle_force_family("morse", 0.5)
         elif key in (pygame.K_1, pygame.K_2, pygame.K_3):
-            delta = 0.1 if (event.mod & pygame.KMOD_SHIFT) else -0.1
+            mod = getattr(event, "mod", 0)
+            delta = 0.1 if (mod & pygame.KMOD_SHIFT) else -0.1
             if key == pygame.K_1:
                 self._adjust_force_family("yukawa", delta)
             elif key == pygame.K_2:
