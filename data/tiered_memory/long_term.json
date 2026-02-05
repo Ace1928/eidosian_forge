@@ -908,5 +908,26 @@
       "gene_particles"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "c1aee532-d517-42d5-87dd-3ac9b633b8c7",
+    "content": "2026-02-05: Re-ran full game_forge test suite after gene_particles_profile changes: 205 passed, 2 skipped, 42 warnings (numba /dev/shm; pygame font). Updated TEST_STATUS.md timestamp and game_forge test count to 205.",
+    "created_at": "2026-02-05T23:01:18.213793",
+    "last_accessed": "2026-02-05T23:01:18.213801",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "warnings",
+      "game_forge",
+      "status",
+      "pytest"
+    ],
+    "linked_memories": []
   }
 ]
