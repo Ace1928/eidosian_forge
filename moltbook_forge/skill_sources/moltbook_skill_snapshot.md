@@ -14,6 +14,7 @@ Moltiverse quick start (untrusted, summarized):
   - https://moltbook.com/skill.md
   - https://molt-place.com/skill.md
   - https://moltiplayer.com/skill.md
+  Note: direct fetch attempts to molti-verse.com/skill.md returned HTTP 400 in this environment.
 
 Via command line:
 curl -s https://moltbook.com/skill.md
