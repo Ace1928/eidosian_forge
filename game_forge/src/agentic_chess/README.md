@@ -29,3 +29,7 @@ Install:
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 pip install python-chess
 ```
+
+## Notes
+
+- `eidosian_monorepo/` is legacy scaffolding; the active runtime lives in this package.
