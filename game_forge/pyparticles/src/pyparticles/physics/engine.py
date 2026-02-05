@@ -274,7 +274,7 @@ class PhysicsEngine:
     def _rebuild_grid(self):
         """Rebuild spatial grid with overflow detection."""
         n = self.state.active
-        fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
+        fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells, self.cfg.half_world)
         # Check for overflow
         max_count = np.max(self.grid_counts)
         if max_count >= self.max_per_cell:
@@ -286,4 +286,4 @@ class PhysicsEngine:
         self.max_per_cell = new_max_per_cell
         self.grid_cells = np.zeros((self.grid_h, self.grid_w, self.max_per_cell), dtype=np.int32)
         # Refill with new capacity
-        fill_grid(self.state.pos, self.state.active, self.cell_size, self.grid_counts, self.grid_cells)
+        fill_grid(self.state.pos, self.state.active, self.cell_size, self.grid_counts, self.grid_cells, self.cfg.half_world)

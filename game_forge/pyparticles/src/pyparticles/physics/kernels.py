@@ -14,21 +14,21 @@ from numba import njit, prange
 # ============================================================================
 
 @njit(fastmath=True, cache=True)
-def fill_grid(pos, n_active, cell_size, grid_counts, grid_cells):
+def fill_grid(pos, n_active, cell_size, grid_counts, grid_cells, half_world: float = 1.0):
     """
     Build spatial hash grid for O(N) neighbor queries.
     
     Each particle is assigned to a cell based on its position.
-    Grid coordinates are in [0, grid_size) corresponding to world [-1, 1].
+    Grid coordinates map world [-half_world, half_world] to [0, grid_size).
     """
     grid_counts.fill(0)
     h, w = grid_counts.shape
     max_p = grid_cells.shape[2]
     
     for i in range(n_active):
-        # Map world [-1,1] to grid [0, w) and [0, h)
-        cx = int((pos[i, 0] + 1.0) / cell_size)
-        cy = int((pos[i, 1] + 1.0) / cell_size)
+        # Map world [-half_world, half_world] to grid [0, w) and [0, h)
+        cx = int((pos[i, 0] + half_world) / cell_size)
+        cy = int((pos[i, 1] + half_world) / cell_size)
         
         # Clamp to grid bounds
         if cx < 0: cx = 0
@@ -156,12 +156,13 @@ def compute_forces_multi(
     pos, colors, angle, n_active,
     # Rules: matrices (N_rules, T, T), params (N_rules, 8)
     rule_matrices, rule_params,
-    # Species: (T, 3) -> [rad, freq, amp]
+    # Species: (T, 6) -> [rad, freq, amp, inertia, spin_friction, base_spin]
     species_params, 
     wave_strength, wave_exp,
     # Grid
     grid_counts, grid_cells, cell_size,
-    gravity
+    gravity,
+    half_world: float = 1.0
 ):
     """
     Compute all forces and torques for active particles.
@@ -175,13 +176,14 @@ def compute_forces_multi(
         n_active: Number of active particles
         rule_matrices: (R, T, T) interaction matrices
         rule_params: (R, 8) [min_r, max_r, strength, softening, ftype, p1, p2, p3]
-        species_params: (T, 3) [radius, wave_freq, wave_amp]
+        species_params: (T, 6) [radius, wave_freq, wave_amp, inertia, spin_friction, base_spin]
         wave_strength: Wave repulsion strength
         wave_exp: Wave repulsion exponent
         grid_counts: (H, W) cell particle counts
         grid_cells: (H, W, M) cell particle indices
         cell_size: Grid cell size
         gravity: Downward gravity (positive = down)
+        half_world: Half the world size for grid coordinate mapping
         
     Returns:
         forces: (N, 2) force vectors
@@ -201,14 +203,15 @@ def compute_forces_multi(
         p_rad = species_params[p_type, 0]
         p_freq = species_params[p_type, 1]
         p_amp = species_params[p_type, 2]
+        p_inertia = species_params[p_type, 3] if species_params.shape[1] > 3 else 1.0
         
         fx = 0.0
         fy = 0.0
         tau = 0.0
         
-        # Get grid cell for this particle
-        cx = int((p_pos[0] + 1.0) / cell_size)
-        cy = int((p_pos[1] + 1.0) / cell_size)
+        # Get grid cell for this particle (scaled to half_world)
+        cx = int((p_pos[0] + half_world) / cell_size)
+        cy = int((p_pos[1] + half_world) / cell_size)
         
         # Check 3x3 neighborhood
         for dy in range(-1, 2):
