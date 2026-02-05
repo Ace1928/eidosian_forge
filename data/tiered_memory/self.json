@@ -1091,5 +1091,26 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ff354816-f9ca-4451-ba40-a4c0e8a7d79a",
+    "content": "Added agentic_chess benchmark runner with JSON output, launcher target, README mention, and CLI test (skips if python-chess missing). game_forge tests: 211 passed, 4 skipped (2026-02-05).",
+    "created_at": "2026-02-05T23:51:58.992282",
+    "last_accessed": "2026-02-05T23:51:58.992288",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "agentic_chess",
+      "game_forge",
+      "benchmark",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]
