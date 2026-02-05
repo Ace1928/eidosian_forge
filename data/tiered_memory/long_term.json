@@ -333,5 +333,24 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "857fbc99-7aca-4ee7-be11-3d59176af305",
+    "content": "Added JSON output support to Stratum benchmark script (format_* helpers, write_payload, --output, main(argv)), and added unit tests for payload formatting/writing. New tests passed (3).",
+    "created_at": "2026-02-05T21:27:10.109130",
+    "last_accessed": "2026-02-05T21:27:10.109134",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "stratum",
+      "benchmark"
+    ],
+    "linked_memories": []
   }
 ]

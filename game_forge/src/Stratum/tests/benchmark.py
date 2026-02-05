@@ -12,11 +12,12 @@ Usage:
 """
 
 import argparse
+import json
 import time
 import sys
 import os
 import tempfile
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Sequence, Any
 
 import numpy as np
 from eidosian_core import eidosian
@@ -205,13 +206,49 @@ def profile_simulation(grid_size: int = 64, num_ticks: int = 20):
         print(s.getvalue())
 
 
+def format_single_payload(result: Dict[str, float], ticks: int) -> Dict[str, Any]:
+    return {
+        "mode": "single",
+        "grid_size": int(result.get("grid_size", 0)),
+        "ticks": ticks,
+        "result": result,
+    }
+
+
+def format_scaling_payload(results: List[Dict[str, float]], ticks: int) -> Dict[str, Any]:
+    return {
+        "mode": "scaling",
+        "ticks": ticks,
+        "results": results,
+    }
+
+
+def format_profile_payload(grid_size: int, ticks: int) -> Dict[str, Any]:
+    return {
+        "mode": "profile",
+        "grid_size": grid_size,
+        "ticks": ticks,
+        "note": "profile output is printed to stdout",
+    }
+
+
+def write_payload(path: str, payload: Dict[str, Any]) -> None:
+    dir_name = os.path.dirname(path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+
+
 @eidosian()
-def main():
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Stratum performance benchmarks")
     parser.add_argument('--grid', type=int, default=0, help='Single grid size to benchmark (0 for scaling test)')
     parser.add_argument('--ticks', type=int, default=50, help='Number of ticks')
     parser.add_argument('--profile', action='store_true', help='Run profiler instead of benchmark')
-    args = parser.parse_args()
+    parser.add_argument('--output', default="", help='Write JSON benchmark output')
+    args = parser.parse_args(argv)
     
     print("=" * 60)
     print("Stratum Performance Benchmark")
@@ -221,6 +258,8 @@ def main():
     if args.profile:
         print("Profiling simulation...")
         profile_simulation(grid_size=args.grid or 64, num_ticks=args.ticks)
+        if args.output:
+            write_payload(args.output, format_profile_payload(args.grid or 64, args.ticks))
     elif args.grid > 0:
         # Single benchmark
         result = benchmark_simulation(args.grid, args.ticks)
@@ -230,6 +269,8 @@ def main():
         print(f"  Microticks/second: {result['microticks_per_second']:.0f}")
         print(f"  Cells processed/second: {result['cells_per_second']:.0f}")
         print(f"  Peak memory: {result['peak_memory_mb']:.1f} MB")
+        if args.output:
+            write_payload(args.output, format_single_payload(result, args.ticks))
     else:
         # Scaling benchmark
         print("Running scaling benchmark...")
@@ -246,7 +287,10 @@ def main():
         for r in results:
             print(f"{r['grid_size']:>10} {r['ticks_per_second']:>12.2f} "
                   f"{r['microticks_per_second']:>12.0f} {r['peak_memory_mb']:>12.1f}")
+        if args.output:
+            write_payload(args.output, format_scaling_payload(results, args.ticks))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
