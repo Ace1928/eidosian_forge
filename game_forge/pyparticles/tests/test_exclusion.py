@@ -1,5 +1,5 @@
 """
-Tests for Exclusion Mechanics Module (Phase 4).
+Tests for Exclusion Mechanics Module (Phase 4) - V6.2 Wave Integration.
 """
 
 import pytest
@@ -8,7 +8,7 @@ from pyparticles.physics.exclusion.types import (
     SpinState, ParticleBehavior, SpinConfig, ExclusionConfig, SpinStatistics
 )
 from pyparticles.physics.exclusion.kernels import (
-    compute_exclusion_force, compute_spin_interaction, 
+    compute_exclusion_force_wave, wave_radius_at_angle, compute_spin_coupling_torque,
     compute_spin_statistics, initialize_spins
 )
 from pyparticles.physics.exclusion.registry import ExclusionRegistry, ExclusionPreset
@@ -87,11 +87,14 @@ class TestExclusionConfig:
 
 
 class TestExclusionForce:
-    """Tests for exclusion force kernel."""
+    """Tests for exclusion force kernel with wave perimeter integration."""
     
     def test_no_force_outside_range(self):
-        force = compute_exclusion_force(
+        """Particles too far apart should have no exclusion force."""
+        force, torque = compute_exclusion_force_wave(
             dist=2.0, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,  # Circular (no wave)
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=1,
             behavior=ParticleBehavior.FERMIONIC,
             exclusion_strength=20.0,
@@ -99,21 +102,25 @@ class TestExclusionForce:
         )
         assert force == 0.0
     
-    def test_classical_no_force(self):
-        """Classical particles have no exclusion force."""
-        force = compute_exclusion_force(
-            dist=0.1, r_i=0.1, r_j=0.1,
+    def test_classical_mild_repulsion(self):
+        """Classical particles have soft-sphere repulsion when overlapping."""
+        force, torque = compute_exclusion_force_wave(
+            dist=0.1, r_i=0.1, r_j=0.1,  # Overlapping
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=1,
             behavior=ParticleBehavior.CLASSICAL,
             exclusion_strength=20.0,
             exclusion_radius_factor=2.0
         )
-        assert force == 0.0
+        assert force > 0  # Repulsion when overlapping
     
     def test_fermionic_same_spin_strong(self):
         """Same spin fermions should have strong repulsion."""
-        force = compute_exclusion_force(
+        force, torque = compute_exclusion_force_wave(
             dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=1,  # Same spin
             behavior=ParticleBehavior.FERMIONIC,
             exclusion_strength=20.0,
@@ -123,15 +130,19 @@ class TestExclusionForce:
     
     def test_fermionic_opposite_spin_weaker(self):
         """Opposite spin fermions should have weaker repulsion (pairing)."""
-        force_same = compute_exclusion_force(
+        force_same, _ = compute_exclusion_force_wave(
             dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=1,  # Same
             behavior=ParticleBehavior.FERMIONIC,
             exclusion_strength=20.0,
             exclusion_radius_factor=2.0
         )
-        force_opp = compute_exclusion_force(
+        force_opp, _ = compute_exclusion_force_wave(
             dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=-1,  # Opposite
             behavior=ParticleBehavior.FERMIONIC,
             exclusion_strength=20.0,
@@ -139,66 +150,160 @@ class TestExclusionForce:
         )
         assert force_same > force_opp
     
-    def test_bosonic_attraction(self):
-        """Bosons should slightly attract at close range."""
-        force = compute_exclusion_force(
+    def test_bosonic_behavior(self):
+        """Bosons should have mild repulsion when overlapping."""
+        force, _ = compute_exclusion_force_wave(
             dist=0.1, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=0, spin_j=0,
             behavior=ParticleBehavior.BOSONIC,
             exclusion_strength=20.0,
             exclusion_radius_factor=2.0
         )
-        assert force < 0  # Attraction
-
-
-class TestSpinInteraction:
-    """Tests for spin-spin interaction."""
+        # Overlapping bosons still repel (prevent singularity)
+        assert force > 0
     
-    def test_no_interaction_spinless(self):
-        """Spinless particles should have no spin interaction."""
-        mod = compute_spin_interaction(
-            spin_i=0, spin_j=1,
-            dist=0.5,
-            coupling_i=1.0, coupling_j=1.0,
-            interaction_range=1.0
+    def test_bosonic_close_attraction(self):
+        """Bosons should slightly attract when close but not overlapping."""
+        force, _ = compute_exclusion_force_wave(
+            dist=0.22, r_i=0.1, r_j=0.1,  # Just past r_sum=0.2
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
+            spin_i=0, spin_j=0,
+            behavior=ParticleBehavior.BOSONIC,
+            exclusion_strength=20.0,
+            exclusion_radius_factor=2.0
         )
-        assert mod == 0.0
+        # Close bosons attract (condensation)
+        assert force < 0
     
-    def test_aligned_positive(self):
-        """Aligned spins should give positive modifier."""
-        mod = compute_spin_interaction(
+    def test_wave_radius_at_angle(self):
+        """Wave perimeter calculation should be correct."""
+        # At theta=0, cos(0)=1, so radius = base + amp
+        r = wave_radius_at_angle(0.1, 1.0, 0.02, 0.0)
+        assert np.isclose(r, 0.12, atol=1e-6)
+        
+        # At theta=pi, cos(pi)=-1, so radius = base - amp
+        r = wave_radius_at_angle(0.1, 1.0, 0.02, np.pi)
+        assert np.isclose(r, 0.08, atol=1e-6)
+        
+        # At theta=pi/2, cos(pi/2)=0, so radius = base
+        r = wave_radius_at_angle(0.1, 1.0, 0.02, np.pi/2)
+        assert np.isclose(r, 0.1, atol=1e-6)
+    
+    def test_wave_modulates_exclusion(self):
+        """Wave deformation should affect exclusion force."""
+        # Circular particle (no wave)
+        # Surface sum = 0.2, so dist=0.15 means overlap of 0.05
+        force_circular, _ = compute_exclusion_force_wave(
+            dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.0, amp_j=0.0,
+            theta_i=0.0, theta_j=0.0,
             spin_i=1, spin_j=1,
-            dist=0.5,
-            coupling_i=1.0, coupling_j=1.0,
-            interaction_range=1.0
+            behavior=ParticleBehavior.FERMIONIC,
+            exclusion_strength=20.0,
+            exclusion_radius_factor=2.0
         )
-        assert mod > 0
+        
+        # Wave particles BOTH at TROUGH (theta=pi → cos=-1 → r=0.1-0.03=0.07)
+        # Surface sum = 0.14, so dist=0.15 means gap > 0 (barely separated)
+        force_wave_trough, _ = compute_exclusion_force_wave(
+            dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.03, amp_j=0.03,
+            theta_i=np.pi, theta_j=np.pi,  # Both see each other at trough
+            spin_i=1, spin_j=1,
+            behavior=ParticleBehavior.FERMIONIC,
+            exclusion_strength=20.0,
+            exclusion_radius_factor=2.0
+        )
+        
+        # Wave at trough: smaller effective radius = less penetration = weaker force
+        assert force_wave_trough < force_circular
+        
+        # Wave particles BOTH at CREST (theta=0 → cos=1 → r=0.1+0.05=0.15)
+        # Surface sum = 0.30, so dist=0.15 means overlap of 0.15
+        force_wave_crest, _ = compute_exclusion_force_wave(
+            dist=0.15, r_i=0.1, r_j=0.1,
+            freq_i=1.0, freq_j=1.0, amp_i=0.05, amp_j=0.05,
+            theta_i=0.0, theta_j=0.0,  # Both see each other at crest
+            spin_i=1, spin_j=1,
+            behavior=ParticleBehavior.FERMIONIC,
+            exclusion_strength=20.0,
+            exclusion_radius_factor=2.0
+        )
+        
+        # Wave at crest: larger effective radius = more penetration = stronger force
+        assert force_wave_crest > force_circular
+
+
+class TestSpinCouplingTorque:
+    """Tests for spin-spin coupling torque (angular velocity alignment)."""
     
-    def test_antialigned_negative(self):
-        """Anti-aligned spins should give negative modifier."""
-        mod = compute_spin_interaction(
-            spin_i=1, spin_j=-1,
+    def test_no_torque_spinless(self):
+        """Spinless particles should have no coupling torque."""
+        torque = compute_spin_coupling_torque(
+            spin_i=0, spin_j=1,
+            ang_vel_i=1.0, ang_vel_j=2.0,
             dist=0.5,
-            coupling_i=1.0, coupling_j=1.0,
+            coupling_strength=1.0,
             interaction_range=1.0
         )
-        assert mod < 0
+        assert torque == 0.0
+    
+    def test_same_spin_align_rotation(self):
+        """Same spin particles should align angular velocities (ferromagnetic)."""
+        # Particle j rotating faster
+        torque = compute_spin_coupling_torque(
+            spin_i=1, spin_j=1,
+            ang_vel_i=1.0, ang_vel_j=3.0,  # j is faster
+            dist=0.5,
+            coupling_strength=1.0,
+            interaction_range=1.0
+        )
+        # Torque should be positive (speed up i to match j)
+        assert torque > 0
+    
+    def test_opposite_spin_counter_rotate(self):
+        """Opposite spin particles should counter-rotate (antiferromagnetic)."""
+        torque = compute_spin_coupling_torque(
+            spin_i=1, spin_j=-1,
+            ang_vel_i=1.0, ang_vel_j=1.0,  # Both spinning same way
+            dist=0.5,
+            coupling_strength=1.0,
+            interaction_range=1.0
+        )
+        # Should get torque to counter-rotate
+        assert torque != 0
     
     def test_distance_falloff(self):
-        """Interaction should decrease with distance."""
-        mod_near = compute_spin_interaction(
+        """Coupling should decrease with distance."""
+        torque_near = compute_spin_coupling_torque(
             spin_i=1, spin_j=1,
+            ang_vel_i=1.0, ang_vel_j=3.0,
             dist=0.2,
-            coupling_i=1.0, coupling_j=1.0,
+            coupling_strength=1.0,
             interaction_range=1.0
         )
-        mod_far = compute_spin_interaction(
+        torque_far = compute_spin_coupling_torque(
             spin_i=1, spin_j=1,
+            ang_vel_i=1.0, ang_vel_j=3.0,
             dist=0.8,
-            coupling_i=1.0, coupling_j=1.0,
+            coupling_strength=1.0,
             interaction_range=1.0
         )
-        assert mod_near > mod_far
+        assert abs(torque_near) > abs(torque_far)
+    
+    def test_no_torque_outside_range(self):
+        """No coupling beyond interaction range."""
+        torque = compute_spin_coupling_torque(
+            spin_i=1, spin_j=1,
+            ang_vel_i=1.0, ang_vel_j=5.0,
+            dist=1.5,
+            coupling_strength=1.0,
+            interaction_range=1.0
+        )
+        assert torque == 0.0
 
 
 class TestSpinStatistics:

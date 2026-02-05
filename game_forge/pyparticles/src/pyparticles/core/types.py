@@ -244,7 +244,7 @@ class SimulationConfig:
             world_size=2.0,  # Normalized world like Haskell [-1, 1]
             num_particles=500,  # Classic Haskell default
             num_types=4,  # Red, Green, Blue, Yellow
-            dt=0.016,  # ~60fps timestep
+            dt=0.005,  # Stable timestep (physics step is fixed)
             substeps=1,
             
             # CRITICAL: Long-range interactions (50% of world!)

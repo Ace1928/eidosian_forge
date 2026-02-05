@@ -42,7 +42,7 @@ from .kernels import (
     integrate_verlet_1, integrate_verlet_2
 )
 from .exclusion.kernels import (
-    apply_exclusion_forces, apply_spin_flip, 
+    apply_exclusion_forces_wave, apply_spin_flip, apply_spin_coupling,
     compute_spin_statistics, initialize_spins
 )
 from .exclusion.types import ParticleBehavior
@@ -86,14 +86,20 @@ class PhysicsEngine:
         self.spin = np.zeros(config.max_particles, dtype=np.int8)
         
         # Exclusion mechanics settings
+        # Lower default strength - was causing chaos when enabled
         self.exclusion_enabled = True
-        self.exclusion_strength = 8.0
-        self.exclusion_radius_factor = 3.0
+        self.exclusion_strength = 2.0  # Reduced from 8.0 - much gentler
+        self.exclusion_radius_factor = 2.0  # Reduced from 3.0
         
         # Spin flip settings
         self.spin_flip_enabled = True
         self.spin_flip_threshold = 5.0
         self.spin_flip_probability = 0.1
+        
+        # Spin coupling settings (for angular velocity alignment)
+        self.spin_enabled = True
+        self.spin_coupling_strength = 0.5
+        self.spin_interaction_range = config.world_size * 0.05  # 5% of world
         
         # Frame counter for spin flip RNG
         self._frame = 0
@@ -112,6 +118,11 @@ class PhysicsEngine:
         self.behavior_matrix = np.ones(
             (config.num_types, config.num_types), dtype=np.int32
         ) * ParticleBehavior.FERMIONIC.value
+        
+        # Spin coupling matrix (strength between type pairs for angular dynamics)
+        self.spin_coupling_matrix = np.ones(
+            (config.num_types, config.num_types), dtype=np.float32
+        )
         
         # Initialize Random Particles
         self._init_particles()
@@ -387,34 +398,43 @@ class PhysicsEngine:
             self._compute_all_forces()
 
         # Run substeps for stability
-        sub_dt = dt / self.cfg.substeps
-        for _ in range(self.cfg.substeps):
-            # 1. First half of Velocity Verlet (with wall collision damping)
-            integrate_verlet_1(
-                self.state.pos, self.state.vel, 
-                self.state.angle, self.state.ang_vel,
-                self.forces_cache, self.torques_cache, 
-                n, sub_dt, bounds,
-                self.cfg.collision_damping  # Haskell-style wall bounce damping
-            )
-            
-            # 2. Compute forces at new positions r(t+dt)
-            self._rebuild_grid()
-            self._compute_all_forces()
-            
-            # 3. Second half of Velocity Verlet (NO slowdown here - applied per-frame below)
-            integrate_verlet_2(
-                self.state.vel, self.state.ang_vel,
-                self.forces_cache, self.torques_cache,
-                n, sub_dt, self.cfg.friction, self.cfg.angular_friction,
-                self.cfg.max_velocity,
-                1.0  # No per-substep slowdown - applied once per frame below
-            )
+        # Use a FIXED internal dt for physics consistency regardless of frame rate
+        # This ensures simulation behaves the same at any FPS
+        base_dt = 0.005  # Fixed physics timestep
+        sub_dt = base_dt / self.cfg.substeps
         
-        # 4. Haskell-style slowdown: v *= factor ONCE per frame (not per substep!)
-        # This is critical for correct emergence dynamics
-        if self.cfg.slowdown_factor < 1.0:
-            self.state.vel[:n] *= self.cfg.slowdown_factor
+        # Number of physics steps to take this frame
+        n_steps = max(1, int(dt / base_dt + 0.5))
+        
+        for _ in range(n_steps):
+            for _ in range(self.cfg.substeps):
+                # 1. First half of Velocity Verlet (with wall collision damping)
+                integrate_verlet_1(
+                    self.state.pos, self.state.vel, 
+                    self.state.angle, self.state.ang_vel,
+                    self.forces_cache, self.torques_cache, 
+                    n, sub_dt, bounds,
+                    self.cfg.collision_damping  # Haskell-style wall bounce damping
+                )
+                
+                # 2. Compute forces at new positions r(t+dt)
+                self._rebuild_grid()
+                self._compute_all_forces()
+                
+                # 3. Second half of Velocity Verlet
+                integrate_verlet_2(
+                    self.state.vel, self.state.ang_vel,
+                    self.forces_cache, self.torques_cache,
+                    n, sub_dt, self.cfg.friction, self.cfg.angular_friction,
+                    self.cfg.max_velocity,
+                    1.0  # No per-substep slowdown
+                )
+            
+            # 4. Haskell-style slowdown: v *= factor per physics step (not per substep!)
+            # This is critical for correct emergence dynamics
+            # The Haskell code applies this AFTER adding acceleration to velocity
+            if self.cfg.slowdown_factor < 1.0:
+                self.state.vel[:n] *= self.cfg.slowdown_factor
         
         # 5. Apply thermostat AFTER full velocity update (correct NVT ordering)
         if self.cfg.thermostat_enabled:
@@ -430,7 +450,7 @@ class PhysicsEngine:
             self._apply_spin_flips()
     
     def _compute_all_forces(self):
-        """Compute all forces: standard + exclusion."""
+        """Compute all forces: standard + wave-perimeter exclusion + spin coupling."""
         n = self.state.active
         matrices, params = self._pack_rules()
         species_params = self._pack_species()
@@ -444,13 +464,24 @@ class PhysicsEngine:
             self.cfg.gravity, self.cfg.half_world
         )
         
-        # Add exclusion forces if enabled
+        # Add WAVE-PERIMETER exclusion forces if enabled
         if self.exclusion_enabled:
-            apply_exclusion_forces(
-                self.state.pos, self.state.colors, self.spin,
-                self.species_config.radius, self.behavior_matrix,
-                self.forces_cache, n,
+            apply_exclusion_forces_wave(
+                self.state.pos, self.state.colors, self.state.angle, self.spin,
+                species_params,  # Contains [radius, freq, amp, inertia, spin_fric, base_spin]
+                self.behavior_matrix,
+                self.forces_cache, self.torques_cache, n,
                 self.exclusion_strength, self.exclusion_radius_factor,
+                self.grid_counts, self.grid_cells, self.cell_size,
+                self.cfg.half_world
+            )
+        
+        # Add spin-spin coupling for angular dynamics
+        if self.spin_enabled and hasattr(self, 'spin_coupling_matrix'):
+            apply_spin_coupling(
+                self.state.pos, self.spin, self.state.ang_vel, self.state.colors,
+                self.spin_coupling_matrix, self.torques_cache, n,
+                self.spin_coupling_strength, self.spin_interaction_range,
                 self.grid_counts, self.grid_cells, self.cell_size,
                 self.cfg.half_world
             )

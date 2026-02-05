@@ -104,6 +104,7 @@ def main() -> int:
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--warmup", type=int, default=10, help="Warmup steps")
+    parser.add_argument("--output", type=str, default="", help="Write metrics to JSON")
     parser.add_argument(
         "--gene-interpreter",
         action="store_true",
@@ -178,6 +179,26 @@ def main() -> int:
     max_ms = float(np.max(step_arr) * 1000.0)
     steps_per_s = float(args.steps / max(elapsed, 1e-9))
 
+    summary = {
+        "steps": args.steps,
+        "total_s": elapsed,
+        "mean_ms": per_step_ms,
+        "median_ms": median_ms,
+        "p95_ms": p95_ms,
+        "p99_ms": p99_ms,
+        "min_ms": min_ms,
+        "max_ms": max_ms,
+        "steps_per_s": steps_per_s,
+        "cell_types": args.cell_types,
+        "particles": args.particles,
+        "dimensions": args.dimensions,
+        "force_registry": args.force_registry,
+        "force_yukawa": args.force_yukawa,
+        "force_lj": args.force_lj,
+        "force_morse": args.force_morse,
+        "morton": args.morton,
+    }
+
     print(
         "INFO "
         f"steps={args.steps} total_s={elapsed:.4f} "
@@ -186,6 +207,13 @@ def main() -> int:
         f"min_ms={min_ms:.3f} max_ms={max_ms:.3f} "
         f"steps_per_s={steps_per_s:.2f}"
     )
+
+    if args.output:
+        import json
+
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2)
+        print(f"INFO wrote metrics to {args.output}")
 
     pygame.quit()
     return 0

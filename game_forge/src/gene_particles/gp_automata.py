@@ -582,7 +582,7 @@ class CellularAutomata:
                 )
                 use_numba = HAS_NUMBA and view.total >= INTERACTION_GRAPH_NUMBA_THRESHOLD
                 backend = "numba" if use_numba else "numpy"
-                positions_graph = positions.astype(np.float32, copy=False)
+                positions_graph = view.positions.astype(np.float32, copy=False)
                 order: Optional[np.ndarray] = None
                 if (
                     self.config.use_morton_ordering

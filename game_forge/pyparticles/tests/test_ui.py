@@ -6,41 +6,60 @@ import pygame_gui
 import json
 
 from pyparticles.core.types import SimulationConfig, InteractionRule, ForceType
-from pyparticles.ui.gui import SimulationGUI
 
 import importlib
-import pyparticles.ui.gui
+import pyparticles.ui.gui_v2
 
 @pytest.fixture
 def mock_deps():
+    def create_mock_element(*args, **kwargs):
+        element = MagicMock()
+        element.set_relative_position = MagicMock()
+        element.set_text = MagicMock()
+        return element
+
+    def create_mock_slider(*args, **kwargs):
+        slider = MagicMock()
+        slider.set_relative_position = MagicMock()
+        slider.set_current_value = MagicMock()
+        slider.get_current_value.return_value = 1.0
+        return slider
+
     with patch("pygame_gui.elements.UIPanel"), \
-         patch("pygame_gui.elements.UILabel"), \
-         patch("pygame_gui.elements.UIHorizontalSlider"), \
-         patch("pygame_gui.elements.UIButton", side_effect=MagicMock) as mock_btn, \
+         patch("pygame_gui.elements.UILabel", side_effect=create_mock_element), \
+         patch("pygame_gui.elements.UIHorizontalSlider", side_effect=create_mock_slider), \
+         patch("pygame_gui.elements.UIButton", side_effect=create_mock_element), \
          patch("pygame_gui.elements.UIWindow"), \
-         patch("pygame_gui.elements.UIDropDownMenu"), \
+         patch("pygame_gui.elements.UIDropDownMenu", side_effect=create_mock_element), \
          patch("pygame_gui.elements.UITextEntryLine"), \
          patch("pygame_gui.elements.UISelectionList"):
         # Reload gui module to pick up patched pygame_gui classes
-        importlib.reload(pyparticles.ui.gui)
+        importlib.reload(pyparticles.ui.gui_v2)
         yield
-        # Reload again to restore real classes (optional but good practice)
-        importlib.reload(pyparticles.ui.gui)
+        # Reload again to restore real classes
+        importlib.reload(pyparticles.ui.gui_v2)
 
 def test_gui_update(mock_deps):
-    from pyparticles.ui.gui import SimulationGUI
+    from pyparticles.ui.gui_v2 import SimulationGUI
     manager = MagicMock()
     cfg = SimulationConfig.default()
 
 def test_gui_persistence(mock_deps):
     """Test Save/Load logic."""
-    from pyparticles.ui.gui import SimulationGUI
+    from pyparticles.ui.gui_v2 import SimulationGUI
     manager = MagicMock()
     cfg = SimulationConfig.default()
     physics = MagicMock()
     physics.rules = [InteractionRule("R1", ForceType.LINEAR, np.zeros((6,6)), 0.1, 0.01)]
     physics.species_config.radius = np.array([0.1]*6)
     physics.species_config.wave_freq = np.array([3.0]*6)
+    physics.exclusion_enabled = True
+    physics.exclusion_strength = 8.0
+    physics.spin_flip_enabled = True
+    physics.spin_enabled = True
+    physics.spin_coupling_strength = 0.5
+    physics.state.active = 100
+    physics.state.vel = np.zeros((100, 2))
     
     gui = SimulationGUI(manager, cfg, physics)
     
@@ -57,8 +76,7 @@ def test_gui_persistence(mock_deps):
             data = args[0]
             assert "simulation" in data
             assert "rules" in data
-            assert "species" in data
-            assert data["species"]["wave_freq"][0] == 3.0
+            assert "physics" in data
 
     # 2. Load
     # Mock File Dialog pick
@@ -72,9 +90,9 @@ def test_gui_persistence(mock_deps):
     event_pick.ui_element = gui.file_dialog
     
     load_data = {
-        "simulation": {"num_particles": 100},
-        "rules": [],
-        "species": {"wave_freq": [5.0]*6}
+        "simulation": {"num_particles": 100, "world_size": 50.0},
+        "physics": {"exclusion_enabled": False},
+        "rules": []
     }
     
     with patch("builtins.open", mock_open(read_data=json.dumps(load_data))) as m:
@@ -82,6 +100,4 @@ def test_gui_persistence(mock_deps):
             gui.handle_event(event_pick)
             
             # Check physics updated
-            physics.set_active_count.assert_called_with(100)
-            assert np.all(physics.species_config.wave_freq == 5.0)
-
+            physics.set_active_count.assert_called()

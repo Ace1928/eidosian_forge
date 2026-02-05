@@ -1,6 +1,6 @@
 """
-Eidosian PyParticles V6 - Application Loop
-Advanced OpenGL Rendering with full GUI control.
+Eidosian PyParticles V6.2 - Application Loop
+Advanced OpenGL Rendering with collapsible GUI.
 """
 import sys
 import os
@@ -17,7 +17,7 @@ if __name__ == "__main__": # pragma: no cover
 from .core.types import SimulationConfig, RenderMode
 from .physics.engine import PhysicsEngine
 from .rendering.gl_renderer import GLCanvas
-from .ui.gui import SimulationGUI 
+from .ui.gui_v2 import SimulationGUI  # New collapsible GUI
 
 
 def run_benchmark():

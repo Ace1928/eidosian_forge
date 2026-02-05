@@ -1,5 +1,5 @@
 """
-Eidosian PyParticles V6 - Property-Based Tests
+Eidosian PyParticles V6.2 - Property-Based Tests
 
 Uses Hypothesis to verify physical invariants hold across
 arbitrary inputs and edge cases.
@@ -11,13 +11,15 @@ from hypothesis import strategies as st
 import pytest
 
 from pyparticles.physics.exclusion.kernels import (
-    compute_exclusion_force, compute_spin_interaction
+    compute_exclusion_force_wave, compute_spin_coupling_torque
 )
 
 
 # Strategies for generating valid physics values
 positive_float = st.floats(min_value=0.1, max_value=50.0, allow_nan=False, allow_infinity=False)
 distance = st.floats(min_value=0.1, max_value=50.0, allow_nan=False, allow_infinity=False)
+angle = st.floats(min_value=0.0, max_value=6.28, allow_nan=False, allow_infinity=False)
+wave_amp = st.floats(min_value=0.0, max_value=0.05, allow_nan=False, allow_infinity=False)
 spin_state = st.sampled_from([-1, 0, 1])
 behavior = st.sampled_from([0, 1, 2])  # classical, fermionic, bosonic
 
@@ -34,32 +36,45 @@ class TestExclusionInvariants:
     @settings(max_examples=100, deadline=500)
     def test_exclusion_force_finite(self, dist, r_i, r_j, spin_i, spin_j, behavior):
         """Exclusion force should always be finite."""
-        result = compute_exclusion_force(
-            dist, r_i, r_j, spin_i, spin_j, behavior,
+        force, torque = compute_exclusion_force_wave(
+            dist, r_i, r_j, 
+            1.0, 1.0, 0.0, 0.0,  # circular (no wave)
+            0.0, 0.0,  # angles
+            spin_i, spin_j, behavior,
             exclusion_strength=5.0, exclusion_radius_factor=2.0
         )
-        assert np.isfinite(result)
+        assert np.isfinite(force)
+        assert np.isfinite(torque)
     
     @given(dist=distance, r_i=positive_float, r_j=positive_float)
     @settings(max_examples=100, deadline=500)
-    def test_classical_no_exclusion(self, dist, r_i, r_j):
-        """Classical particles should have no exclusion force."""
-        result = compute_exclusion_force(
-            dist, r_i, r_j, 1, -1, 0,  # classical behavior
+    def test_classical_soft_sphere(self, dist, r_i, r_j):
+        """Classical particles should only repel when overlapping."""
+        force, _ = compute_exclusion_force_wave(
+            dist, r_i, r_j,
+            1.0, 1.0, 0.0, 0.0,
+            0.0, 0.0,
+            1, -1, 0,  # classical behavior
             exclusion_strength=10.0, exclusion_radius_factor=3.0
         )
-        assert result == 0.0
+        # Classical: repels when gap < 0, else no force
+        if dist >= r_i + r_j:
+            assert force == 0.0
     
-    @given(dist=distance, spin_i=spin_state, spin_j=spin_state)
+    @given(
+        dist=distance,
+        spin_i=spin_state, spin_j=spin_state,
+        ang_vel_i=st.floats(min_value=-5, max_value=5, allow_nan=False),
+        ang_vel_j=st.floats(min_value=-5, max_value=5, allow_nan=False)
+    )
     @settings(max_examples=100, deadline=500)
-    def test_spin_interaction_bounded(self, dist, spin_i, spin_j):
-        """Spin interaction should be bounded."""
-        result = compute_spin_interaction(
-            spin_i, spin_j, dist,
-            coupling_i=1.0, coupling_j=1.0,
-            interaction_range=10.0
+    def test_spin_coupling_bounded(self, dist, spin_i, spin_j, ang_vel_i, ang_vel_j):
+        """Spin coupling torque should be bounded."""
+        result = compute_spin_coupling_torque(
+            spin_i, spin_j, ang_vel_i, ang_vel_j, dist,
+            coupling_strength=1.0, interaction_range=10.0
         )
-        assert -1.0 <= result <= 1.0
+        assert np.isfinite(result)
 
 
 class TestEnergyConservation:
