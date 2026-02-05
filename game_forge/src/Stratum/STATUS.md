@@ -1,6 +1,6 @@
 # Stratum Project Status
 
-**Last Updated**: 2024-01-11
+**Last Updated**: 2026-02-05
 
 ## Overview
 
@@ -10,7 +10,7 @@ Stratum is a prototype simulation engine for emergent, layered physical simulati
 
 | Metric | Status |
 |--------|--------|
-| Tests | ✅ 197 passing |
+| Tests | ✅ 208 passing (full game_forge suite) |
 | Test Coverage | ~85% estimated |
 | Documentation | ✅ Complete |
 | Code Quality | ⚠️ Good, with known warnings |
@@ -108,6 +108,13 @@ Stratum is a prototype simulation engine for emergent, layered physical simulati
 ### Small Grid (32×32)
 - Runs in real-time with visualization
 - ~1000+ ticks achievable in 30 seconds
+
+### Benchmark (16×16, 10 ticks)
+- Reference run captured on 2026-02-05
+- elapsed_seconds: 29.871
+- ticks_per_second: 0.335
+- microticks_per_second: 15.868
+- cells_per_second: 85.702
 
 ### Medium Grid (64×64)
 - Acceptable performance for batch runs
