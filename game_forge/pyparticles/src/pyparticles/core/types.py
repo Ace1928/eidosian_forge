@@ -135,28 +135,31 @@ class SimulationConfig:
     dt: float = 0.005  # Scaled for larger world
     substeps: int = 2  # Multiple substeps for stability
     
-    # Damping - INCREASED for energy stability
-    friction: float = 0.5  # Linear velocity damping (prevents runaway)
+    # Damping - Two modes for different behaviors
+    friction: float = 0.5  # Linear velocity damping: v *= (1 - friction*dt)
     angular_friction: float = 2.0  # Angular damping
+    slowdown_factor: float = 1.0  # Haskell-style: v *= factor per frame (0.5 = classic)
+    collision_damping: float = 0.7  # Wall bounce damping (Haskell default)
     
     gravity: float = 0.0
     
     # Interaction radii - scaled to world_size
+    # CRITICAL FOR EMERGENCE: Haskell uses 50% of world for long-range interactions!
     # These are fractions of world_size for portability
-    default_max_radius_frac: float = 0.02  # 2% of world = 2.0 in 100-unit world
-    default_min_radius_frac: float = 0.002  # 0.2% of world = 0.2 in 100-unit world
+    default_max_radius_frac: float = 0.15  # 15% of world (was 2% - too short!)
+    default_min_radius_frac: float = 0.03  # 3% of world (repulsion zone)
     
-    # Wave mechanics
-    wave_repulsion_strength: float = 50.0  # STRONGER repulsion
-    wave_repulsion_exp: float = 6.0  # Softer falloff for wider effect
+    # Wave mechanics (additive on top of base forces)
+    wave_repulsion_strength: float = 5.0  # Moderate wave effects
+    wave_repulsion_exp: float = 4.0  # Softer falloff for wider effect
     
-    # Spin dynamics (NEW)
+    # Spin dynamics (additive)
     spin_coupling_strength: float = 1.0  # Global spin interaction multiplier
     spin_torque_scale: float = 0.5  # How much forces create torque
     
     # Thermostat (Berendsen) - CRITICAL for energy stability
     target_temperature: float = 0.5  # Target kinetic energy
-    thermostat_coupling: float = 0.1  # STRONGER coupling to cap energy
+    thermostat_coupling: float = 0.1  # Coupling strength
     thermostat_enabled: bool = True
     max_velocity: float = 10.0  # Hard cap on velocity magnitude
     
@@ -225,16 +228,17 @@ class SimulationConfig:
     @classmethod
     def classic_emergence(cls):
         """
-        CLASSIC MODE - Matches original Haskell particle-life dynamics.
+        CLASSIC MODE - Matches original Haskell particle-life dynamics exactly.
         
-        Key differences from default:
-        1. LONG RANGE interactions (50% of world) - creates global structures
-        2. HEAVY damping (Haskell uses 0.5 velocity multiplier per frame)
-        3. Smaller particle count for clarity
-        4. 4 classic species (Red, Green, Blue, Yellow)
-        5. Simple linear force with bell-curve profile
+        Key characteristics (from Haskell source):
+        1. World = [-1, 1] (size 2.0)
+        2. Attraction radius = 1.0 (50% of world!)
+        3. Repulsion radius = 0.3 (30% of attraction radius)
+        4. slowdown_factor = 0.5 (velocity halved every frame!)
+        5. collision_damping = 0.7 (bouncy walls)
+        6. 4 species with specific attraction matrix
         
-        This mode prioritizes emergent complexity over raw physics.
+        This creates the classic emergent life-like behaviors.
         """
         return cls(
             world_size=2.0,  # Normalized world like Haskell [-1, 1]
@@ -245,20 +249,22 @@ class SimulationConfig:
             
             # CRITICAL: Long-range interactions (50% of world!)
             default_max_radius_frac=0.5,  # Attraction radius = half world
-            default_min_radius_frac=0.15,  # Repulsion radius = 30% of max (Haskell: 0.3)
+            default_min_radius_frac=0.15,  # Repulsion radius = 30% of attraction
             
-            # CRITICAL: Heavy damping like Haskell's * 0.5 per frame
-            friction=30.0,  # Very high - halves velocity rapidly
-            angular_friction=10.0,
+            # CRITICAL: Haskell-style damping
+            friction=0.0,  # No physics friction
+            slowdown_factor=0.5,  # v *= 0.5 per frame (Haskell slowdownConstant)
+            collision_damping=0.7,  # Haskell collisionDamping
+            angular_friction=5.0,
             
-            # Disable thermostat - let friction handle it
+            # Disable thermostat - slowdown handles energy
             thermostat_enabled=False,
             max_velocity=2.0,  # Reasonable for [-1,1] world
             
-            # Disable wave mechanics for classic mode
+            # Disable wave mechanics for pure classic
             wave_repulsion_strength=0.0,
             
-            # Smaller display for classic feel
+            # Classic display
             width=1080,
             height=1080,
         )
@@ -268,22 +274,24 @@ class SimulationConfig:
         """
         ADVANCED EMERGENCE - Best of both worlds.
         
-        Long-range forces like classic + advanced physics features.
-        Tuned for visible emergent structures with wave/spin effects.
+        Long-range forces like classic + wave/spin physics.
+        Tuned for visible emergent structures with advanced effects.
         """
         return cls(
             world_size=20.0,  # Moderate world
             num_particles=2000,  # Visible but not overwhelming
             num_types=8,  # More species for variety
-            dt=0.008,
+            dt=0.010,
             substeps=2,
             
-            # Long-range interactions (25% of world)
-            default_max_radius_frac=0.25,
-            default_min_radius_frac=0.05,
+            # Long-range interactions (30% of world)
+            default_max_radius_frac=0.30,
+            default_min_radius_frac=0.06,
             
-            # Moderate damping
-            friction=5.0,
+            # Moderate Haskell-style damping + physics friction
+            friction=0.5,
+            slowdown_factor=0.85,  # Gentler than classic
+            collision_damping=0.8,
             angular_friction=3.0,
             
             # Gentle thermostat
@@ -292,8 +300,8 @@ class SimulationConfig:
             thermostat_coupling=0.05,
             max_velocity=3.0,
             
-            # Enable wave mechanics at moderate strength
-            wave_repulsion_strength=10.0,
+            # Enable wave mechanics at moderate strength (additive!)
+            wave_repulsion_strength=3.0,
             wave_repulsion_exp=4.0,
         )
     
