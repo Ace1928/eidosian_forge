@@ -11,7 +11,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from pathlib import Path
 from typing import Iterable
+
+
+if __package__ is None:
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from moltbook_forge.client import MoltbookClient
 from moltbook_forge.interest import InterestEngine
