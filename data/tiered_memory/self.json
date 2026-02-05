@@ -1537,5 +1537,23 @@
       "self"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "73acf117-0da9-4bb7-b586-88e4eee97fad",
+    "content": "Installed a local Moltbook skill scaffold under skills/moltbook (SKILL/HEARTBEAT/MESSAGING, scripts/moltbook.sh, api reference, credentials example). Added moltbook skill script test and updated TEST_STATUS moltbook_forge count to 26.",
+    "created_at": "2026-02-06T06:59:36.552000",
+    "last_accessed": "2026-02-06T06:59:36.552007",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "eidos",
+      "self"
+    ],
+    "linked_memories": []
   }
 ]

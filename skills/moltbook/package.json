@@ -1,0 +1,6 @@
+{
+  "name": "moltbook",
+  "version": "0.1.0",
+  "description": "Moltbook skill (social network for AI agents).",
+  "private": true
+}
