@@ -970,5 +970,26 @@
       "pytest"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "c68cd2ad-b7a1-4f81-b7c7-ef24dae4f111",
+    "content": "2026-02-05: Added algorithms_lab profiler output test and hardened output directory creation in algorithms_lab/profiler.py; added path handling and root resolution for falling_sand/scripts/profile_index.py. Ran full game_forge test suite: 207 passed, 2 skipped, 42 warnings (numba /dev/shm; pygame font). Updated TEST_STATUS.md accordingly.",
+    "created_at": "2026-02-05T23:10:11.530973",
+    "last_accessed": "2026-02-05T23:10:11.530978",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "algorithms_lab",
+      "falling_sand",
+      "tests",
+      "game_forge",
+      "status"
+    ],
+    "linked_memories": []
   }
 ]

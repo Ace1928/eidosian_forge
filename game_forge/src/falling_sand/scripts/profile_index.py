@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import argparse
 import cProfile
+import sys
 from pathlib import Path
 from typing import Sequence
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+if __package__ is None:
+    sys.path.append(str(PROJECT_ROOT / "src"))
 
 from falling_sand.indexer import index_project
 from eidosian_core import eidosian
@@ -37,12 +43,21 @@ def profile_index(
     return output
 
 
+def _resolve_root(path: Path) -> Path:
+    if path.is_absolute():
+        return path
+    candidate = PROJECT_ROOT / path
+    return candidate if candidate.exists() else path
+
+
 @eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the profiling CLI."""
 
     args = build_parser().parse_args(argv)
-    profile_index(args.source_root, args.tests_root, args.output)
+    source_root = _resolve_root(args.source_root)
+    tests_root = _resolve_root(args.tests_root)
+    profile_index(source_root, tests_root, args.output)
     return 0
 
 

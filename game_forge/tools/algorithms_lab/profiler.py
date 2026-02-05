@@ -191,6 +191,7 @@ def main() -> int:
     profiler.enable()
     run()
     profiler.disable()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     profiler.dump_stats(str(args.output))
     stats = pstats.Stats(profiler).strip_dirs().sort_stats("cumulative")
     stats.print_stats(20)
