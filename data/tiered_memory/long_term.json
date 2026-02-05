@@ -661,5 +661,26 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "13e93cd7-2cc3-4cde-bf3f-868900afbbf1",
+    "content": "2026-02-05: Ran full game_forge test suite with /home/lloyd/eidosian_forge/eidosian_venv/bin/python -m pytest game_forge/tests -> 201 passed, 2 skipped, 42 warnings (numba semaphore warning about /dev/shm perms; pygame missing Fira Sans font). Updated TEST_STATUS.md to mark game_forge fully passing with 2 skipped optional GPU tests and updated Last Updated timestamp.",
+    "created_at": "2026-02-05T22:26:21.506089",
+    "last_accessed": "2026-02-05T22:26:21.506094",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "warnings",
+      "game_forge",
+      "status",
+      "pytest"
+    ],
+    "linked_memories": []
   }
 ]

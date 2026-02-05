@@ -1,6 +1,6 @@
 # Test Status: Eidosian Forge System
 
-**Last Updated**: 2026-01-25T03:15:00Z
+**Last Updated**: 2026-02-05T12:25:59Z
 **Test Framework**: pytest 9.0.2
 
 ---
@@ -9,10 +9,10 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Fully Passing | 26 |
+| ✅ Fully Passing | 27 |
 | 🟡 Partial (>50%) | 5 |
 | 🔴 Needs Work | 0 |
-| ⬜ Special Cases | 3 |
+| ⬜ Special Cases | 2 |
 
 ---
 
@@ -46,6 +46,7 @@
 | version_forge | 7 | Tests rewritten |
 | computer_control_forge | 4 | Created pyproject.toml |
 | ollama_forge | 27+ | Major rewrite |
+| game_forge | 201 | 2 skipped optional GPU tests |
 
 ---
 
@@ -64,7 +65,6 @@
 ## ⬜ Special Cases
 
 - word_forge (NLP - slow)
-- game_forge (syntax errors)
 - web_interface_forge (browser)
 
 ---
