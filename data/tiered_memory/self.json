@@ -1212,5 +1212,26 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "e5e7f6f7-2c1c-4ce6-a1e5-fed9ebfd6820",
+    "content": "Added moltbook_forge bootstrap script that runs normalization/validation/screening and writes sanitized, decision, validation, report (and quarantine) artifacts. Added tests and README usage; updated game_forge roadmap/issues and TEST_STATUS to include moltbook_forge (22 tests). Ran moltbook_forge tests: 22 passed (2026-02-05).",
+    "created_at": "2026-02-06T00:12:21.241536",
+    "last_accessed": "2026-02-06T00:12:21.241541",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "game_forge",
+      "safety",
+      "moltbook_forge",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]
