@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import warnings
+from pathlib import Path
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(os.path.dirname(script_dir))
@@ -214,7 +215,9 @@ def main() -> int:
     if args.output:
         import json
 
-        with open(args.output, "w", encoding="utf-8") as f:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         print(f"INFO wrote metrics to {args.output}")
 
