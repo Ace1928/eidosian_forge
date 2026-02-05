@@ -625,8 +625,8 @@
     "id": "a3be0e1e-1c21-482b-aaf0-98f7bd67f992",
     "content": "2026-02-05: Added ECosmos StateManager tests in game_forge/tests/test_ecosmos_state_manager.py (config + data_structures module injection). Ran pytest on ECosmos tests (state_manager/config/data_structures): 16 passed. Commit: \"Add ECosmos StateManager tests\" (git -c commit.gpgsign=false due to gpg agent permission errors).",
     "created_at": "2026-02-05T22:22:05.004266",
-    "last_accessed": "2026-02-05T22:22:05.004270",
-    "access_count": 0,
+    "last_accessed": "2026-02-05T22:31:49.946747",
+    "access_count": 1,
     "tier": "long_term",
     "namespace": "eidos",
     "memory_type": "episodic",
@@ -666,8 +666,8 @@
     "id": "13e93cd7-2cc3-4cde-bf3f-868900afbbf1",
     "content": "2026-02-05: Ran full game_forge test suite with /home/lloyd/eidosian_forge/eidosian_venv/bin/python -m pytest game_forge/tests -> 201 passed, 2 skipped, 42 warnings (numba semaphore warning about /dev/shm perms; pygame missing Fira Sans font). Updated TEST_STATUS.md to mark game_forge fully passing with 2 skipped optional GPU tests and updated Last Updated timestamp.",
     "created_at": "2026-02-05T22:26:21.506089",
-    "last_accessed": "2026-02-05T22:26:21.506094",
-    "access_count": 0,
+    "last_accessed": "2026-02-05T22:31:49.946668",
+    "access_count": 1,
     "tier": "long_term",
     "namespace": "eidos",
     "memory_type": "episodic",
@@ -721,6 +721,28 @@
       "docs",
       "status",
       "game_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "a132052b-bd92-4aba-a0e3-67123b46d43a",
+    "content": "2026-02-05: Added JSON output support to game_forge/tools/algorithms_lab/benchmark.py. Ran benchmarks and recorded artifacts: Stratum single grid benchmark (16x16, 10 ticks) -> game_forge/src/Stratum/tests/artifacts/benchmark_single_20260205.json (elapsed ~29.87s, ticks/s ~0.335). Falling_sand benchmarks run with PYTHONPATH=src, runs=5 -> game_forge/tools/artifacts/falling_sand_benchmark_20260205.json (indexer mean ~0.052s; simulation ~0.004s; streaming ~0.705s; terrain ~0.014s). Gene_particles benchmark steps=200, cell-types=4, particles=200 -> game_forge/tools/artifacts/gene_particles_benchmark_20260205.json (total_s ~5.817, mean_ms ~29.086, steps/s ~34.38). Algorithms_lab benchmark particles=256, steps=50 -> game_forge/tools/artifacts/algorithms_lab_benchmark_20260205.json. Noted warnings: pygame missing 'Fira Sans' font; numba /dev/shm lock warning. Stratum scaling benchmark was attempted but stopped due to long runtime.",
+    "created_at": "2026-02-05T22:41:27.374075",
+    "last_accessed": "2026-02-05T22:41:27.374082",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "algorithms_lab",
+      "benchmarks",
+      "game_forge",
+      "gene_particles",
+      "stratum"
     ],
     "linked_memories": []
   }

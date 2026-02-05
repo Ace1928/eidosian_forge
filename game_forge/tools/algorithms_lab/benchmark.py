@@ -3,12 +3,15 @@
 
 Example:
   python game_forge/tools/algorithms_lab/benchmark.py --algorithms all --particles 1024
+  python game_forge/tools/algorithms_lab/benchmark.py --particles 256 --steps 50 --output artifacts/algorithms_lab.json
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import time
+from pathlib import Path
 from typing import Callable, Dict, List
 
 import numpy as np
@@ -55,6 +58,12 @@ def parse_args() -> argparse.Namespace:
         choices=["auto", "numpy", "numba"],
         default="auto",
         help="Neighbor backend for SPH/PBF",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Write benchmark results to JSON",
     )
     return parser.parse_args()
 
@@ -234,6 +243,26 @@ def main() -> int:
         results["xpbd"] = timer("xpbd", run_xpbd)
 
     print("INFO benchmark complete")
+
+    if args.output is not None:
+        payload = {
+            "parameters": {
+                "algorithms": args.algorithms,
+                "particles": args.particles,
+                "steps": args.steps,
+                "seed": args.seed,
+                "dt": args.dt,
+                "fmm_levels": args.fmm_levels,
+                "force_types": args.force_types,
+                "force_multi": args.force_multi,
+                "bh_backend": args.bh_backend,
+                "neighbor_backend": args.neighbor_backend,
+            },
+            "results_seconds": results,
+        }
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        print(f"INFO wrote results to {args.output}")
     return 0
 
 
