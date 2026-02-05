@@ -1,4 +1,4 @@
-# 💎 Eidosian PyParticles V6
+# 💎 Eidosian PyParticles V6.2
 
 > *"Precision is the foundation of elegance; emergence is the path to understanding."*
 
@@ -27,7 +27,7 @@ A **production-grade, ultra-high-performance particle physics simulation** with 
 
 ### GUI
 - **Real-time Controls**: Particle size, world size, velocity limits
-- **Simulation Presets**: Small world, large world, dense, minimal
+- **Simulation Presets**: Small, Large, Huge, Classic, Emergence
 - **Performance Monitoring**: FPS, physics time, render time
 - **Species Editor**: Randomize and configure particle types
 
@@ -54,10 +54,13 @@ pip install -r requirements.txt
 ./bin/pyparticles_app --num 20000 --types 8 --world-size 200.0
 
 # With preset
-./bin/pyparticles_app --preset huge_world
+./bin/pyparticles_app --preset huge
 
 # Headless benchmark
-python3 -c "from pyparticles.profiling import run_standard_benchmarks; run_standard_benchmarks()"
+PYTHONPATH=src SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python -m pyparticles.app --benchmark
+
+# Headless profiling
+PYTHONPATH=src SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python -m pyparticles.app --profile -n 5000
 ```
 
 ## 🏗️ Architecture
@@ -90,7 +93,7 @@ pyparticles/
 │   │   ├── gl_renderer.py        # ModernGL renderer
 │   │   └── shaders/              # GLSL shaders
 │   ├── ui/
-│   │   └── gui.py                # Advanced GUI controls
+│   │   └── gui_v2.py             # Collapsible GUI controls
 │   └── profiling/
 │       └── __init__.py           # Benchmarking tools
 └── tests/                        # 132+ comprehensive tests
@@ -139,11 +142,13 @@ Spin dynamics:
 
 ## 📊 Performance
 
-| Particles | FPS | ms/step |
-|-----------|-----|---------|
-| 1,000 | 1000+ | <1 |
-| 5,000 | 70+ | ~14 |
-| 10,000 | 19+ | ~53 |
+| Particles | ms/step | Notes |
+|-----------|---------|-------|
+| 1,000 | ~7 | Small world preset |
+| 5,000 | ~199 | Default preset |
+| 10,000 | ~800 | Default preset |
+
+These numbers are a baseline snapshot (Feb 5, 2026) on the current dev machine; expect variation across hardware.
 
 Target: 100k+ particles with GPU compute shaders (planned).
 

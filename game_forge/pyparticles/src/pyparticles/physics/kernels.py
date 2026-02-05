@@ -157,17 +157,18 @@ def compute_force_by_type(
 
 
 @njit(parallel=True, fastmath=True, cache=True)
-def compute_forces_multi(
+def compute_forces_multi_inplace(
     pos, colors, angle, n_active,
     # Rules: matrices (N_rules, T, T), params (N_rules, 8)
     rule_matrices, rule_params,
     # Species: (T, 6) -> [rad, freq, amp, inertia, spin_friction, base_spin]
-    species_params, 
+    species_params,
     wave_strength, wave_exp,
     # Grid
     grid_counts, grid_cells, cell_size,
     gravity,
-    half_world: float = 1.0
+    forces, torques,
+    half_world: float = 1.0,
 ):
     """
     Compute all forces and torques for active particles.
@@ -190,15 +191,20 @@ def compute_forces_multi(
         gravity: Downward gravity (positive = down)
         half_world: Half the world size for grid coordinate mapping
         
-    Returns:
-        forces: (N, 2) force vectors
-        torques: (N,) torque values
+    Writes results in-place into `forces` and `torques`.
     """
-    forces = np.zeros_like(pos)
-    torques = np.zeros_like(angle)
-    
+    forces.fill(0.0)
+    torques.fill(0.0)
+
     n_rules = rule_matrices.shape[0]
     grid_h, grid_w = grid_counts.shape
+    wave_enabled = wave_strength > 0.0
+
+    max_rule_radius = 0.0
+    for r in range(n_rules):
+        max_r = rule_params[r, 1]
+        if max_r > max_rule_radius:
+            max_rule_radius = max_r
     
     for i in prange(n_active):
         p_pos = pos[i]
@@ -209,6 +215,8 @@ def compute_forces_multi(
         p_freq = species_params[p_type, 1]
         p_amp = species_params[p_type, 2]
         p_inertia = species_params[p_type, 3] if species_params.shape[1] > 3 else 1.0
+        p_amp_abs = abs(p_amp)
+        interaction_range = p_rad + p_amp_abs + 0.1
         
         fx = 0.0
         fy = 0.0
@@ -248,6 +256,9 @@ def compute_forces_multi(
                     nx_vec = dx_vec / dist
                     ny_vec = dy_vec / dist
                     
+                    if dist >= max_rule_radius and (not wave_enabled or dist >= interaction_range):
+                        continue
+
                     # ========== FORCE RULES ==========
                     for r in range(n_rules):
                         max_r = rule_params[r, 1]
@@ -275,9 +286,7 @@ def compute_forces_multi(
                         fy += ny_vec * force_val
                     
                     # ========== WAVE MECHANICS ==========
-                    interaction_range = p_rad + abs(p_amp) + 0.1
-                    
-                    if dist < interaction_range and wave_strength > 0:
+                    if wave_enabled and dist < interaction_range:
                         o_type = colors[j]
                         o_rad = species_params[o_type, 0]
                         o_freq = species_params[o_type, 1]
@@ -303,7 +312,7 @@ def compute_forces_multi(
                         if gap < 0:
                             # Interference multiplier
                             M = 1.0
-                            if abs(p_amp) > 0.001 and abs(o_amp) > 0.001:
+                            if p_amp_abs > 0.001 and abs(o_amp) > 0.001:
                                 norm_i = h_i / p_amp
                                 norm_j = h_j / o_amp
                                 # Constructive: both peaks (+1) or both troughs (-1)
@@ -327,7 +336,42 @@ def compute_forces_multi(
         forces[i, 0] = fx
         forces[i, 1] = fy - gravity
         torques[i] = tau
+
+    return
+
+
+@njit(fastmath=True, cache=True)
+def compute_forces_multi(
+    pos, colors, angle, n_active,
+    # Rules: matrices (N_rules, T, T), params (N_rules, 8)
+    rule_matrices, rule_params,
+    # Species: (T, 6) -> [rad, freq, amp, inertia, spin_friction, base_spin]
+    species_params,
+    wave_strength, wave_exp,
+    # Grid
+    grid_counts, grid_cells, cell_size,
+    gravity,
+    half_world: float = 1.0,
+):
+    """
+    Compute all forces and torques for active particles.
     
+    Returns:
+        forces: (N, 2) force vectors
+        torques: (N,) torque values
+    """
+    forces = np.zeros_like(pos)
+    torques = np.zeros_like(angle)
+    compute_forces_multi_inplace(
+        pos, colors, angle, n_active,
+        rule_matrices, rule_params,
+        species_params,
+        wave_strength, wave_exp,
+        grid_counts, grid_cells, cell_size,
+        gravity,
+        forces, torques,
+        half_world,
+    )
     return forces, torques
 
 # ============================================================================

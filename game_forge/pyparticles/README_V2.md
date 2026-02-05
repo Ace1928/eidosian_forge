@@ -1,4 +1,4 @@
-# Eidosian PyParticles V2
+# Eidosian PyParticles V2 (Legacy Notes)
 
 The high-performance, modular Python implementation of Particle Life.
 
@@ -15,7 +15,7 @@ This V2 refactor introduces a strictly modular architecture designed for extensi
 *   **`pyparticles.rendering`**:
     *   `canvas.py`: Pygame-based renderer with support for Sprites, Pixels, and Glow modes.
 *   **`pyparticles.ui`**:
-    *   `gui.py`: `pygame_gui` integration for real-time parameter tuning.
+    *   `gui_v2.py`: `pygame_gui` integration for real-time parameter tuning.
 *   **`pyparticles.app`**: The application loop and dependency injection.
 
 ## 🚀 Performance
@@ -33,11 +33,11 @@ This V2 refactor introduces a strictly modular architecture designed for extensi
 # Standard Run
 python3 bin/pyparticles_app
 
-# High Performance Mode
-python3 bin/pyparticles_app --num 10000 --mode pixels
+# Custom size
+python3 bin/pyparticles_app --num 10000 --types 8 --world-size 200
 
-# Glow Mode (Visual Candy)
-python3 bin/pyparticles_app --num 2000 --mode glow
+# Preset modes
+python3 bin/pyparticles_app --preset huge
 ```
 
 ## 🧪 Testing

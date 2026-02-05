@@ -38,7 +38,7 @@ from ..core.types import (
     SpeciesConfig, SpinInteractionMatrix
 )
 from .kernels import (
-    fill_grid, compute_forces_multi, apply_thermostat, 
+    fill_grid, compute_forces_multi, compute_forces_multi_inplace, apply_thermostat,
     integrate_verlet_1, integrate_verlet_2
 )
 from .exclusion.kernels import (
@@ -456,12 +456,14 @@ class PhysicsEngine:
         species_params = self._pack_species()
         
         # Standard particle life forces
-        self.forces_cache, self.torques_cache = compute_forces_multi(
+        compute_forces_multi_inplace(
             self.state.pos, self.state.colors, self.state.angle, n,
             matrices, params, species_params,
             self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
             self.grid_counts, self.grid_cells, self.cell_size,
-            self.cfg.gravity, self.cfg.half_world
+            self.cfg.gravity,
+            self.forces_cache, self.torques_cache,
+            self.cfg.half_world,
         )
         
         # Add WAVE-PERIMETER exclusion forces if enabled

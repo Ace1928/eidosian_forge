@@ -3,7 +3,7 @@ import numpy as np
 from unittest.mock import patch, MagicMock
 from pyparticles.core.types import SimulationConfig
 from pyparticles.physics.engine import PhysicsEngine
-from pyparticles.physics.kernels import compute_forces_multi
+from pyparticles.physics.kernels import compute_forces_multi, compute_forces_multi_inplace
 
 def test_engine_rules():
     cfg = SimulationConfig.default()
@@ -102,3 +102,51 @@ def test_kernel_repel_only():
     # Repel Only: factor=-1.0. fx should be negative for P0
     assert forces[0, 0] < 0.0
     assert forces[1, 0] > 0.0
+
+
+def test_kernel_compute_forces_multi_inplace_matches():
+    pos = np.array([[0.0, 0.0], [0.05, 0.0]], dtype=np.float32)
+    colors = np.array([0, 0], dtype=np.int32)
+    angle = np.zeros(2, dtype=np.float32)
+    n = 2
+
+    mats = np.zeros((1, 1, 1), dtype=np.float32)
+    mats[0, 0, 0] = 1.0
+
+    params = np.zeros((1, 8), dtype=np.float32)
+    params[0, 0] = 0.01
+    params[0, 1] = 0.5
+    params[0, 2] = 1.0
+    params[0, 4] = 0.0
+
+    species_params = np.array([[0.05, 1.0, 0.0, 1.0, 1.0, 0.0]], dtype=np.float32)
+
+    cell_size = 0.5
+    grid_counts = np.zeros((4, 4), dtype=np.int32)
+    grid_cells = np.zeros((4, 4, 10), dtype=np.int32)
+    grid_counts[2, 2] = 2
+    grid_cells[2, 2, 0] = 0
+    grid_cells[2, 2, 1] = 1
+
+    forces_ref, torques_ref = compute_forces_multi(
+        pos, colors, angle, n,
+        mats, params, species_params,
+        0.0, 10.0,
+        grid_counts, grid_cells, cell_size,
+        0.0, 1.0,
+    )
+
+    forces = np.zeros_like(pos)
+    torques = np.zeros_like(angle)
+    compute_forces_multi_inplace(
+        pos, colors, angle, n,
+        mats, params, species_params,
+        0.0, 10.0,
+        grid_counts, grid_cells, cell_size,
+        0.0,
+        forces, torques,
+        1.0,
+    )
+
+    np.testing.assert_allclose(forces, forces_ref, rtol=1e-6, atol=1e-6)
+    np.testing.assert_allclose(torques, torques_ref, rtol=1e-6, atol=1e-6)
