@@ -1312,5 +1312,25 @@
       "completions"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d8946245-8cae-4f4f-a0ce-d64d68d74e56",
+    "content": "Updated bin/eidosian to add repo root to sys.path so forge discovery shows local forges (moltbook/web/terminal now importable). Verified via `eidosian --json forges` output.",
+    "created_at": "2026-02-06T00:35:07.668211",
+    "last_accessed": "2026-02-06T00:35:07.668215",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "eidosian",
+      "cli",
+      "forges",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]
