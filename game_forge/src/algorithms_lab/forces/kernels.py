@@ -108,7 +108,7 @@ if HAS_NUMBA:
             return force_val * strength
         return 0.0
 
-    @njit(cache=True, fastmath=True, parallel=True)
+    @njit(cache=True, fastmath=True)
     def accumulate_forces(
         positions: np.ndarray,
         type_ids: np.ndarray,
@@ -132,7 +132,7 @@ if HAS_NUMBA:
         if n_edges == 0 or n_forces == 0:
             return acc
 
-        for e in prange(n_edges):
+        for e in range(n_edges):
             i = rows[e]
             j = cols[e]
             if i == j:

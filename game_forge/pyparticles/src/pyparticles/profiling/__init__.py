@@ -16,6 +16,20 @@ import json
 import os
 
 
+def warn_if_shm_unavailable() -> None:
+    """Warn if /dev/shm is not writable (Numba parallel uses shared semaphores)."""
+    shm_path = "/dev/shm"
+    if not os.path.isdir(shm_path):
+        print("WARN /dev/shm missing; Numba parallel performance may be limited.")
+        return
+    if not os.access(shm_path, os.W_OK | os.X_OK):
+        print(
+            "WARN /dev/shm not writable. Numba parallel may be limited. "
+            "Consider remounting /dev/shm with write permissions or "
+            "running with NUMBA_THREADING_LAYER=workqueue."
+        )
+
+
 @dataclass
 class BenchmarkResult:
     """Result from a single benchmark run."""
@@ -232,6 +246,87 @@ class Benchmarker:
         
         self.results.append(result)
         return result
+
+    def benchmark_render(
+        self, config, n_iterations: int = 100, warmup: int = 10
+    ) -> Optional[BenchmarkResult]:
+        """Benchmark OpenGL render path (if display/context is available)."""
+        if os.environ.get("SDL_VIDEODRIVER") == "dummy":
+            print("WARN skipping render benchmark under SDL_VIDEODRIVER=dummy.")
+            return None
+        try:
+            import pygame
+            from ..rendering.gl_renderer import GLCanvas
+            from ..physics.engine import PhysicsEngine
+        except Exception as exc:
+            print(f"WARN render benchmark unavailable: {exc}")
+            return None
+
+        try:
+            pygame.display.init()
+            pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
+            pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
+            pygame.display.gl_set_attribute(
+                pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE
+            )
+            hidden_flag = getattr(pygame, "HIDDEN", 0)
+            pygame.display.set_mode(
+                (config.width, config.height),
+                pygame.OPENGL | pygame.DOUBLEBUF | hidden_flag,
+            )
+            canvas = GLCanvas(config)
+        except Exception as exc:
+            print(f"WARN render benchmark failed to init GL: {exc}")
+            return None
+
+        engine = PhysicsEngine(config)
+        engine.update(config.dt)
+        species_params = engine._pack_species()
+
+        def render_once() -> None:
+            canvas.render(
+                engine.state.pos,
+                engine.state.vel,
+                engine.state.colors,
+                engine.state.angle,
+                species_params,
+                engine.state.active,
+                fps=0.0,
+                world_size=config.world_size,
+                particle_scale=config.particle_scale,
+                render_mode=0,
+            )
+            pygame.display.flip()
+
+        for _ in range(warmup):
+            render_once()
+
+        times = []
+        for _ in range(n_iterations):
+            t0 = time.perf_counter()
+            render_once()
+            t1 = time.perf_counter()
+            times.append((t1 - t0) * 1000)
+
+        pygame.display.quit()
+
+        times = np.array(times)
+        mean_ms = np.mean(times)
+        result = BenchmarkResult(
+            name="render_gl",
+            n_particles=config.num_particles,
+            n_types=config.num_types,
+            world_size=config.world_size,
+            mean_ms=mean_ms,
+            std_ms=np.std(times),
+            min_ms=np.min(times),
+            max_ms=np.max(times),
+            n_iterations=n_iterations,
+            particles_per_sec=config.num_particles / (mean_ms / 1000.0),
+            interactions_per_sec=0.0,
+        )
+        self.results.append(result)
+        return result
     
     def benchmark_scaling(self, base_config, particle_counts: List[int],
                           n_iterations: int = 50) -> List[BenchmarkResult]:
@@ -309,6 +404,7 @@ def run_standard_benchmarks(output_dir: str = ".") -> None:
     print("=" * 60)
     
     bench = Benchmarker()
+    warn_if_shm_unavailable()
     
     # 1. Physics step benchmarks at different scales
     print("\n[1/3] Physics Step Scaling...")
@@ -332,6 +428,9 @@ def run_standard_benchmarks(output_dir: str = ".") -> None:
         cfg.num_particles = 10000
         result = bench.benchmark_physics(cfg, n_iterations=30)
         print(f"  world_size={ws}: {result.mean_ms:.2f}ms")
+
+    # 4. Render benchmark (best effort)
+    bench.benchmark_render(SimulationConfig.default(), n_iterations=30, warmup=5)
     
     # Save results
     output_path = os.path.join(output_dir, "benchmark_results.json")

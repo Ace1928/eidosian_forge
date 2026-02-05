@@ -61,6 +61,18 @@ PYTHONPATH=src SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python -m pyparticles
 
 # Headless profiling
 PYTHONPATH=src SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python -m pyparticles.app --profile -n 5000
+
+# Render benchmark (requires OpenGL context; skipped under dummy driver)
+PYTHONPATH=src python -m pyparticles.app --benchmark
+
+# Compare to baseline
+PYTHONPATH=src python - <<'PY'
+from pyparticles.profiling import Benchmarker
+from pyparticles.core.types import SimulationConfig
+bench = Benchmarker()
+bench.benchmark_physics(SimulationConfig.default(), n_iterations=10)
+print(bench.compare_to_baseline("benchmarks/baseline.json"))
+PY
 ```
 
 ## 🏗️ Architecture
@@ -151,6 +163,11 @@ Spin dynamics:
 These numbers are a baseline snapshot (Feb 5, 2026) on the current dev machine; expect variation across hardware.
 
 Target: 100k+ particles with GPU compute shaders (planned).
+
+### Troubleshooting Numba Parallel Warnings
+- If you see warnings about `/dev/shm` permissions, ensure `/dev/shm` is writable.
+  On Linux that typically means the tmpfs mount is present and writable.
+  As a workaround, you can set `NUMBA_THREADING_LAYER=workqueue` before running.
 
 ## 🧪 Testing
 

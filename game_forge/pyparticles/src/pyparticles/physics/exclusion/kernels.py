@@ -158,7 +158,7 @@ def compute_exclusion_force_wave(
     return force, spin_torque
 
 
-@njit(parallel=True, fastmath=True, cache=True)
+@njit(fastmath=True, cache=True)
 def apply_exclusion_forces_wave(
     pos: np.ndarray,           # (N, 2)
     colors: np.ndarray,        # (N,) int32 - particle types
@@ -189,7 +189,7 @@ def apply_exclusion_forces_wave(
     # Small threshold for "effectively zero" wave amplitude
     WAVE_THRESHOLD = 0.001
     
-    for i in prange(n_active):
+    for i in range(n_active):
         p_pos = pos[i]
         p_type = colors[i]
         p_angle = angle[i]
@@ -433,7 +433,7 @@ def compute_spin_coupling_torque(
     return 0.0
 
 
-@njit(parallel=True, fastmath=True, cache=True)
+@njit(fastmath=True, cache=True)
 def apply_spin_coupling(
     pos: np.ndarray,
     spin: np.ndarray,
@@ -459,7 +459,7 @@ def apply_spin_coupling(
     grid_h, grid_w = grid_counts.shape
     interaction_range_sq = interaction_range * interaction_range
     
-    for i in prange(n_active):
+    for i in range(n_active):
         if spin[i] == 0:
             continue
         
