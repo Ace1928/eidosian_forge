@@ -43,6 +43,17 @@ def test_apply_all_interactions_3d_path():
     pygame.quit()
 
 
+def test_apply_all_interactions_morton_path():
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=4)
+    config.use_morton_ordering = True
+    config.morton_min_particles = 0
+    config.use_force_registry = False
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(120, 120))
+    automata.apply_all_interactions()
+    pygame.quit()
+
+
 @pytest.mark.skipif(not HAS_NUMBA, reason="numba required for force registry path")
 def test_apply_all_interactions_force_registry_path():
     pygame.init()
