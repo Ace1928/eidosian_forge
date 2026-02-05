@@ -21,3 +21,10 @@
 - Command: `/home/lloyd/eidosian_forge/eidosian_venv/bin/python game_forge/tools/algorithms_lab/benchmark.py --algorithms all --particles 256 --steps 50 --output game_forge/tools/artifacts/algorithms_lab_benchmark_20260205.json`
 - Results (seconds): grid=0.162, neighbor-list=0.001, barnes-hut=0.036, fmm2d=0.797, fmm-ml=1.734, forces=0.030, sph=0.025, pbf=0.055, xpbd=0.055
 - Warning: numba could not obtain multiprocessing lock due to /dev/shm permissions.
+
+## pyparticles
+- Command: `/home/lloyd/eidosian_forge/eidosian_venv/bin/python game_forge/pyparticles/benchmarks/benchmark.py --particles 512 --steps 10 --dt 0.01 --warmup 1 --no-profile --output game_forge/pyparticles/benchmarks/artifacts/benchmark_engine_20260205.json`
+- Results: elapsed_seconds=0.757, fps=13.203, particles=512, steps=10, dt=0.01
+- Command: `/home/lloyd/eidosian_forge/eidosian_venv/bin/python game_forge/pyparticles/benchmarks/benchmark_sim.py --particles 512 --steps 10 --dt 0.01 --warmup 1 --no-profile --output game_forge/pyparticles/benchmarks/artifacts/benchmark_sim_20260205.json`
+- Results: elapsed_seconds=0.081, fps=123.672, particles=512, steps=10, dt=0.01
+- Warning: numba could not obtain multiprocessing lock due to /dev/shm permissions.

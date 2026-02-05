@@ -22,3 +22,5 @@ def test_run_launcher_list() -> None:
     assert "algorithms-lab-benchmark" in result.stdout
     assert "falling-sand-benchmark" in result.stdout
     assert "stratum-benchmark" in result.stdout
+    assert "pyparticles-benchmark" in result.stdout
+    assert "pyparticles-benchmark-sim" in result.stdout

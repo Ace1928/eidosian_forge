@@ -356,6 +356,9 @@ class Benchmarker:
             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
             'results': [r.to_dict() for r in self.results]
         }
+        parent = os.path.dirname(filepath)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
         print(f"Saved {len(self.results)} benchmark results to {filepath}")

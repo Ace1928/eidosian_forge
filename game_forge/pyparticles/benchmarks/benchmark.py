@@ -1,46 +1,98 @@
-"""
-Benchmark Script.
-"""
-import time
-import sys
-import os
+"""Benchmark Script."""
+
+from __future__ import annotations
+
+import argparse
 import cProfile
+import json
+import os
 import pstats
+import sys
+import time
+from pathlib import Path
+
 import numpy as np
 
-# Path adjustment
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 
 from pyparticles.core.types import SimulationConfig
 from pyparticles.physics.engine import PhysicsEngine
 
-def run_benchmark():
-    N = 10000
-    print(f"Benchmarking Physics Engine (N={N})...")
-    
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Benchmark the PyParticles physics engine",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--particles", type=int, default=10000)
+    parser.add_argument("--steps", type=int, default=100)
+    parser.add_argument("--dt", type=float, default=0.02)
+    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--output", type=Path, default=None, help="Write JSON summary output")
+    parser.add_argument("--profile", action="store_true", default=True, help="Enable cProfile output")
+    parser.add_argument("--no-profile", dest="profile", action="store_false", help="Disable cProfile output")
+    return parser.parse_args(argv)
+
+
+def run_benchmark(args: argparse.Namespace) -> dict[str, float]:
+    n_particles = args.particles
+    steps = args.steps
+    dt = args.dt
+    np.random.seed(args.seed)
+
+    print(f"Benchmarking Physics Engine (N={n_particles})...")
+
     cfg = SimulationConfig.default()
-    cfg.num_particles = N
+    cfg.num_particles = n_particles
     engine = PhysicsEngine(cfg)
-    
-    # Warmup
-    print("Warming up JIT...")
-    engine.update(0.01)
-    
-    print("Starting Profile Run (100 frames)...")
-    t0 = time.time()
-    for _ in range(100):
-        engine.update(0.02)
-    t1 = time.time()
-    
-    dt = t1 - t0
-    fps = 100 / dt
-    print(f"Done. Time: {dt:.4f}s, FPS: {fps:.2f}")
+
+    if args.warmup > 0:
+        print("Warming up JIT...")
+        for _ in range(args.warmup):
+            engine.update(dt)
+
+    print(f"Starting Run ({steps} frames)...")
+    start = time.perf_counter()
+    for _ in range(steps):
+        engine.update(dt)
+    elapsed = time.perf_counter() - start
+
+    fps = steps / elapsed if elapsed > 0 else 0.0
+    print(f"Done. Time: {elapsed:.4f}s, FPS: {fps:.2f}")
+
+    return {
+        "particles": n_particles,
+        "steps": steps,
+        "dt": dt,
+        "warmup": args.warmup,
+        "elapsed_seconds": elapsed,
+        "fps": fps,
+    }
+
+
+def write_output(path: Path, payload: dict[str, float]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    if args.profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
+        payload = run_benchmark(args)
+        profiler.disable()
+        stats = pstats.Stats(profiler).sort_stats("cumtime")
+        stats.print_stats(20)
+    else:
+        payload = run_benchmark(args)
+
+    if args.output is not None:
+        write_output(args.output, payload)
+        print(f"INFO wrote results to {args.output}")
+    return 0
+
 
 if __name__ == "__main__":
-    profiler = cProfile.Profile()
-    profiler.enable()
-    run_benchmark()
-    profiler.disable()
-    
-    stats = pstats.Stats(profiler).sort_stats('cumtime')
-    stats.print_stats(20)
+    raise SystemExit(main())

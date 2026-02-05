@@ -8,6 +8,8 @@ Example:
   python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
   python game_forge/tools/run.py stratum-benchmark -- --grid 16 --ticks 10
   python game_forge/tools/run.py falling-sand-benchmark -- --runs 5
+  python game_forge/tools/run.py pyparticles-benchmark -- --particles 512 --steps 10
+  python game_forge/tools/run.py pyparticles-benchmark-sim -- --particles 512 --steps 10
 """
 
 from __future__ import annotations
@@ -148,6 +150,20 @@ def load_targets(root: Path) -> dict[str, Target]:
             name="stratum-benchmark",
             description="Stratum benchmark suite",
             command=[str(root / "game_forge" / "src" / "Stratum" / "tests" / "benchmark.py")],
+        ),
+        "pyparticles-benchmark": Target(
+            name="pyparticles-benchmark",
+            description="PyParticles engine benchmark",
+            command=[str(root / "game_forge" / "pyparticles" / "benchmarks" / "benchmark.py")],
+            extra_pythonpath=[root / "game_forge" / "pyparticles" / "src"],
+            requires=["numpy"],
+        ),
+        "pyparticles-benchmark-sim": Target(
+            name="pyparticles-benchmark-sim",
+            description="PyParticles simulation benchmark",
+            command=[str(root / "game_forge" / "pyparticles" / "benchmarks" / "benchmark_sim.py")],
+            extra_pythonpath=[root / "game_forge" / "pyparticles" / "src"],
+            requires=["numpy"],
         ),
     }
 
