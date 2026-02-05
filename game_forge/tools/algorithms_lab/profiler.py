@@ -17,6 +17,7 @@ import numpy as np
 from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.core import Domain, WrapMode
 from algorithms_lab.fmm2d import FMM2D
+from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.neighbor_list import NeighborList
 from algorithms_lab.sph import SPHState, SPHSolver
@@ -31,12 +32,28 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--algorithm",
-        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf", "xpbd"],
+        choices=[
+            "grid",
+            "neighbor-list",
+            "barnes-hut",
+            "fmm2d",
+            "fmm-ml",
+            "sph",
+            "pbf",
+            "xpbd",
+        ],
         default="barnes-hut",
     )
     parser.add_argument("--particles", type=int, default=2048)
     parser.add_argument("--steps", type=int, default=50)
     parser.add_argument("--dt", type=float, default=0.01)
+    parser.add_argument("--fmm-levels", type=int, default=4)
+    parser.add_argument(
+        "--bh-backend",
+        choices=["auto", "numpy", "numba"],
+        default="auto",
+        help="Backend for Barnes-Hut traversal",
+    )
     parser.add_argument("--output", type=Path, default=Path("/tmp/algorithms_lab.prof"))
     return parser.parse_args()
 
@@ -74,12 +91,24 @@ def main() -> int:
         def run() -> None:
             nonlocal positions, velocities
             for _ in range(args.steps):
-                acc = tree.compute_acceleration(positions, masses, theta=0.6)
+                acc = tree.compute_acceleration(
+                    positions, masses, theta=0.6, backend=args.bh_backend
+                )
                 velocities = velocities + acc * args.dt
                 positions = domain.wrap_positions(positions + velocities * args.dt)
 
     elif args.algorithm == "fmm2d":
         fmm = FMM2D(domain, cell_size=0.1)
+
+        def run() -> None:
+            nonlocal positions, velocities
+            for _ in range(args.steps):
+                acc = fmm.compute_acceleration(positions, masses)
+                velocities = velocities + acc * args.dt
+                positions = domain.wrap_positions(positions + velocities * args.dt)
+
+    elif args.algorithm == "fmm-ml":
+        fmm = MultiLevelFMM(domain, levels=args.fmm_levels)
 
         def run() -> None:
             nonlocal positions, velocities

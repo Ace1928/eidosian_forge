@@ -10,6 +10,7 @@ from algorithms_lab.kdtree import KDTreeNeighborSearch
 from algorithms_lab.morton import morton_encode, morton_sort
 from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.fmm2d import FMM2D
+from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.sph import SPHSolver
 from algorithms_lab.pbf import PBFSolver
 from algorithms_lab.xpbd import XPBFSolver
@@ -29,6 +30,7 @@ __all__ = [
     "morton_sort",
     "BarnesHutTree",
     "FMM2D",
+    "MultiLevelFMM",
     "SPHSolver",
     "PBFSolver",
     "XPBFSolver",

@@ -29,6 +29,8 @@ choices and guidance for extending the system.
   caching of subtrees in higher-level structures.
 - `FMM2D` uses a two-level approximation; for large particle counts, a
   true multi-level FMM or GPU backend is recommended.
+- `MultiLevelFMM` amortizes far-field work across levels; tune the
+  number of levels to balance near-field cost vs far-field accuracy.
 
 ## Optional Accelerators
 If you want further speedups, consider adding optional accelerators:

@@ -12,6 +12,7 @@ codebases with minimal dependency overhead.
 - Verlet neighbor lists (CSR format).
 - Barnes-Hut tree for approximate N-body forces.
 - Two-level FMM-style approximation (2D).
+- Multi-level FMM-style solver (2D/3D).
 - SPH and PBF fluid solvers.
 - XPBD (compliant) fluid solver.
 - Optional numba and SciPy cKDTree acceleration.
@@ -51,6 +52,8 @@ python game_forge/tools/algorithms_lab/demo.py --algorithm sph --visual
 python game_forge/tools/algorithms_lab/demo.py --algorithm barnes-hut --visual
 python game_forge/tools/algorithms_lab/benchmark.py --algorithms all
 python game_forge/tools/algorithms_lab/demo.py --algorithm xpbd --neighbor-backend numba
+python game_forge/tools/algorithms_lab/demo.py --algorithm fmm-ml --fmm-levels 4
+python game_forge/tools/algorithms_lab/demo.py --algorithm barnes-hut --style modern --bh-backend numba
 python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 ```
 

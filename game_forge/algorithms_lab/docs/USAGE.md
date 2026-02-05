@@ -13,6 +13,7 @@ from algorithms_lab.kdtree import KDTreeNeighborSearch
 from algorithms_lab.xpbd import XPBFSolver, XPBFState
 from algorithms_lab.neighbors import NeighborSearch
 from algorithms_lab.gpu import OpenCLNBody, CuPyNBody, HAS_PYOPENCL, HAS_CUPY
+from algorithms_lab.fmm_multilevel import MultiLevelFMM
 
 pos = np.random.rand(256, 2).astype(np.float32)
 mass = np.ones(256, dtype=np.float32)
@@ -29,6 +30,10 @@ pairs_i, pairs_j = search.neighbor_pairs(pos, radius=0.05)
 # Unified neighbor search (auto-selects kdtree if available)
 neighbors = NeighborSearch(domain, radius=0.05, method="auto", backend="numba")
 pairs_i, pairs_j = neighbors.pairs(pos)
+
+# Multi-level FMM acceleration
+fmm = MultiLevelFMM(domain, levels=4)
+acc = fmm.compute_acceleration(pos, mass)
 
 # GPU N-body acceleration (optional)
 if HAS_PYOPENCL:
@@ -50,7 +55,7 @@ state = solver.step(state)
 
 ```bash
 # Visual demos
-python game_forge/tools/algorithms_lab/demo.py --algorithm pbf --visual
+python game_forge/tools/algorithms_lab/demo.py --algorithm pbf --visual --style modern
 
 # Headless benchmarks
 python game_forge/tools/algorithms_lab/benchmark.py --algorithms all
@@ -64,6 +69,8 @@ python game_forge/tools/algorithms_lab/profiler.py --algorithm barnes-hut
 - 3D simulations are supported; demos render the XY projection.
 - For maximum speed, enable the numba backend for neighbor searches:
   `--neighbor-backend numba`.
+- For Barnes-Hut, you can request the JIT backend:
+  `--bh-backend numba`.
 
 ## Optional Dependencies
 - `numba` enables JIT-accelerated neighbor enumeration.

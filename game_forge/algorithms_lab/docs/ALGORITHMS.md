@@ -25,10 +25,16 @@ Algorithms Lab and how they are expected to be used.
 ## Barnes-Hut Tree
 - Approximates distant particle groups as a single mass.
 - Good for reducing O(N^2) to roughly O(N log N) for N-body forces.
+- Supports an optional numba backend for traversal.
 
 ## Two-level FMM (2D)
 - Uses a uniform grid and far-field approximation by cell.
 - Near-field interactions are computed directly for accuracy.
+
+## Multi-level FMM (2D/3D)
+- Builds a uniform quadtree/octree hierarchy.
+- Computes monopole far-field contributions via interaction lists.
+- Direct near-field interactions at the leaf level.
 
 ## SPH
 - Density, pressure, and viscosity forces using Poly6/Spiky kernels.

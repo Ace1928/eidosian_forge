@@ -10,13 +10,15 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from typing import Callable, Tuple
+from dataclasses import dataclass
+from typing import Callable, Iterable, Tuple
 
 import numpy as np
 
 from algorithms_lab.barnes_hut import BarnesHutTree
 from algorithms_lab.core import Domain, WrapMode
 from algorithms_lab.fmm2d import FMM2D
+from algorithms_lab.fmm_multilevel import MultiLevelFMM
 from algorithms_lab.neighbor_list import NeighborList
 from algorithms_lab.spatial_hash import UniformGrid
 from algorithms_lab.sph import SPHState, SPHSolver
@@ -38,7 +40,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--algorithm",
-        choices=["grid", "neighbor-list", "barnes-hut", "fmm2d", "sph", "pbf", "xpbd"],
+        choices=[
+            "grid",
+            "neighbor-list",
+            "barnes-hut",
+            "fmm2d",
+            "fmm-ml",
+            "sph",
+            "pbf",
+            "xpbd",
+        ],
         default="sph",
         help="Which demo to run",
     )
@@ -49,12 +60,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--width", type=int, default=900)
     parser.add_argument("--height", type=int, default=700)
     parser.add_argument("--dt", type=float, default=0.01)
+    parser.add_argument("--fmm-levels", type=int, default=4)
+    parser.add_argument(
+        "--bh-backend",
+        choices=["auto", "numpy", "numba"],
+        default="auto",
+        help="Backend for Barnes-Hut traversal",
+    )
     parser.add_argument(
         "--neighbor-backend",
         choices=["auto", "numpy", "numba"],
         default="auto",
         help="Neighbor backend for SPH/PBF",
     )
+    parser.add_argument(
+        "--style",
+        choices=["classic", "modern"],
+        default="modern",
+        help="Visual style",
+    )
+    parser.add_argument("--point-size", type=int, default=3)
     return parser.parse_args()
 
 
@@ -67,13 +92,80 @@ def jittered_grid(count: int) -> np.ndarray:
     return coords.astype(np.float32)
 
 
-def render_particles(screen: pygame.Surface, positions: np.ndarray, color: Tuple[int, int, int]) -> None:
+@dataclass
+class VisualTheme:
+    background_top: Tuple[int, int, int]
+    background_bottom: Tuple[int, int, int]
+    particle: Tuple[int, int, int]
+    glow: Tuple[int, int, int]
+    panel_bg: Tuple[int, int, int, int]
+    panel_border: Tuple[int, int, int]
+    text: Tuple[int, int, int]
+
+
+def _blend_color(a: Tuple[int, int, int], b: Tuple[int, int, int], t: float) -> Tuple[int, int, int]:
+    return (
+        int(a[0] + (b[0] - a[0]) * t),
+        int(a[1] + (b[1] - a[1]) * t),
+        int(a[2] + (b[2] - a[2]) * t),
+    )
+
+
+def build_background(size: Tuple[int, int], theme: VisualTheme) -> pygame.Surface:
+    width, height = size
+    surface = pygame.Surface(size)
+    for y in range(height):
+        t = y / max(1, height - 1)
+        color = _blend_color(theme.background_top, theme.background_bottom, t)
+        pygame.draw.line(surface, color, (0, y), (width, y))
+    rng = np.random.default_rng(42)
+    for _ in range(120):
+        x = int(rng.integers(0, width))
+        y = int(rng.integers(0, height))
+        shade = int(rng.integers(180, 255))
+        surface.set_at((x, y), (shade, shade, shade))
+    return surface
+
+
+def render_particles_modern(
+    screen: pygame.Surface,
+    background: pygame.Surface,
+    positions: np.ndarray,
+    theme: VisualTheme,
+    font: pygame.font.Font,
+    hud_lines: Iterable[str],
+    point_size: int,
+) -> None:
+    screen.blit(background, (0, 0))
+    width, height = screen.get_size()
+    for x, y in positions:
+        px = int(x * width)
+        py = int(y * height)
+        for radius, alpha in ((point_size + 6, 30), (point_size + 2, 80), (point_size, 220)):
+            glow = pygame.Surface((radius * 2 + 2, radius * 2 + 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (*theme.glow, alpha), (radius + 1, radius + 1), radius)
+            screen.blit(glow, (px - radius - 1, py - radius - 1), special_flags=pygame.BLEND_ALPHA_SDL2)
+        pygame.draw.circle(screen, theme.particle, (px, py), point_size)
+    panel = pygame.Surface((260, 130), pygame.SRCALPHA)
+    panel.fill(theme.panel_bg)
+    pygame.draw.rect(panel, theme.panel_border, panel.get_rect(), width=1, border_radius=8)
+    y = 10
+    for line in hud_lines:
+        text = font.render(line, True, theme.text)
+        panel.blit(text, (12, y))
+        y += 22
+    screen.blit(panel, (12, 12))
+
+
+def render_particles_classic(
+    screen: pygame.Surface, positions: np.ndarray, color: Tuple[int, int, int], point_size: int
+) -> None:
     screen.fill((10, 12, 18))
     width, height = screen.get_size()
     for x, y in positions:
         px = int(x * width)
         py = int(y * height)
-        pygame.draw.circle(screen, color, (px, py), 3)
+        pygame.draw.circle(screen, color, (px, py), point_size)
 
 
 def run_headless(step_fn: Callable[[int], None], steps: int) -> None:
@@ -118,12 +210,23 @@ def main() -> int:
 
         def step_fn(_: int) -> None:
             nonlocal positions, velocities
-            acc = tree.compute_acceleration(positions, masses, theta=0.6)
+            acc = tree.compute_acceleration(
+                positions, masses, theta=0.6, backend=args.bh_backend
+            )
             velocities = velocities + acc * args.dt
             positions = domain.wrap_positions(positions + velocities * args.dt)
 
     elif args.algorithm == "fmm2d":
         fmm = FMM2D(domain, cell_size=0.1)
+
+        def step_fn(_: int) -> None:
+            nonlocal positions, velocities
+            acc = fmm.compute_acceleration(positions, masses)
+            velocities = velocities + acc * args.dt
+            positions = domain.wrap_positions(positions + velocities * args.dt)
+
+    elif args.algorithm == "fmm-ml":
+        fmm = MultiLevelFMM(domain, levels=args.fmm_levels)
 
         def step_fn(_: int) -> None:
             nonlocal positions, velocities
@@ -177,6 +280,17 @@ def main() -> int:
     screen = pygame.display.set_mode((args.width, args.height))
     pygame.display.set_caption(f"Algorithms Lab Demo: {args.algorithm}")
     clock = pygame.time.Clock()
+    theme = VisualTheme(
+        background_top=(10, 12, 25),
+        background_bottom=(5, 5, 8),
+        particle=(210, 230, 255),
+        glow=(120, 160, 255),
+        panel_bg=(10, 14, 20, 170),
+        panel_border=(70, 90, 120),
+        text=(220, 230, 240),
+    )
+    font = pygame.font.SysFont("Fira Sans", 16)
+    background = build_background(screen.get_size(), theme)
 
     running = True
     step = 0
@@ -192,7 +306,24 @@ def main() -> int:
             pos = state.positions
         else:
             pos = positions
-        render_particles(screen, pos, (200, 200, 255))
+        if args.style == "modern":
+            hud = [
+                f"Algorithm: {args.algorithm}",
+                f"Particles: {args.particles}",
+                f"Step: {step}",
+                f"Backend: {args.neighbor_backend}",
+            ]
+            render_particles_modern(
+                screen,
+                background,
+                pos,
+                theme,
+                font,
+                hud,
+                args.point_size,
+            )
+        else:
+            render_particles_classic(screen, pos, (200, 200, 255), args.point_size)
         pygame.display.flip()
         clock.tick(60)
         step += 1

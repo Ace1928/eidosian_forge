@@ -8,7 +8,9 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from algorithms_lab.core import Domain, ensure_f32
+from algorithms_lab.backends import HAS_NUMBA
+from algorithms_lab.core import Domain, WrapMode, ensure_f32
+from algorithms_lab.barnes_hut_numba import barnes_hut_accel
 
 
 @dataclass(frozen=True)
@@ -105,13 +107,41 @@ class BarnesHutTree:
         theta: float = 0.5,
         G: float = 1.0,
         softening: float = 1e-3,
+        backend: str = "auto",
     ) -> NDArray[np.float32]:
-        """Compute accelerations using Barnes-Hut approximation."""
+        """Compute accelerations using Barnes-Hut approximation.
+
+        backend:
+            - ``auto``: use numba if available, else numpy traversal.
+            - ``numpy``: pure python/numpy traversal.
+            - ``numba``: JIT-accelerated traversal (requires numba).
+        """
 
         if theta <= 0:
             raise ValueError("theta must be positive")
+        if backend not in ("auto", "numpy", "numba"):
+            raise ValueError("backend must be one of: auto, numpy, numba")
         data = self._data or self.build(positions, masses)
         pos = ensure_f32(positions)
+        if backend in ("auto", "numba") and HAS_NUMBA:
+            return barnes_hut_accel(
+                pos,
+                data.centers,
+                data.half_sizes,
+                data.children,
+                data.masses,
+                data.com,
+                data.particle,
+                float(theta),
+                float(G),
+                float(softening),
+                self.domain.sizes,
+                self.domain.inv_sizes,
+                1 if self.domain.wrap == WrapMode.WRAP else 0,
+                self.domain.dims,
+            )
+        if backend == "numba" and not HAS_NUMBA:
+            raise ImportError("numba backend requested but numba is not installed")
         acc = np.zeros_like(pos)
         for i in range(pos.shape[0]):
             acc[i] = self._accumulate_force(i, pos, data, theta, G, softening)
