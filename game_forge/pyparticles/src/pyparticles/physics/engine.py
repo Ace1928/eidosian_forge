@@ -108,6 +108,8 @@ class PhysicsEngine:
             for i in range(old_count, count):
                 t = self.state.colors[i]
                 self.state.ang_vel[i] = self.species_config.wave_phase_speed[t]
+        # Invalidate force cache when particle count changes
+        self._invalidate_cache()
 
     def set_species_count(self, n_types: int):
         if n_types == self.cfg.num_types: return
@@ -115,15 +117,31 @@ class PhysicsEngine:
         self.species_config = SpeciesConfig.default(n_types)
         self.rules = []
         self._init_default_rules()
+        self._invalidate_cache()
         self.reset()
+    
+    def _invalidate_cache(self):
+        """Invalidate cached forces/torques to force recomputation."""
+        if hasattr(self, 'forces_cache'):
+            delattr(self, 'forces_cache')
+        if hasattr(self, 'torques_cache'):
+            delattr(self, 'torques_cache')
 
     def _pack_rules(self):
+        """Pack rules into arrays for Numba kernel (8-column format)."""
         active_rules = [r for r in self.rules if r.enabled]
         n_rules = len(active_rules)
         n_types = self.cfg.num_types
         
+        if n_rules == 0:
+            # Return minimal arrays to avoid kernel issues
+            return (
+                np.zeros((1, n_types, n_types), dtype=np.float32),
+                np.zeros((1, 8), dtype=np.float32),
+            )
+        
         matrices = np.zeros((n_rules, n_types, n_types), dtype=np.float32)
-        params = np.zeros((n_rules, 5), dtype=np.float32)
+        params = np.zeros((n_rules, 8), dtype=np.float32)
         
         for i, r in enumerate(active_rules):
             matrices[i] = r.matrix
@@ -132,6 +150,11 @@ class PhysicsEngine:
             params[i, 2] = r.strength
             params[i, 3] = r.softening
             params[i, 4] = float(r.force_type)
+            # Extra params (5, 6, 7) for advanced force types
+            # Default to 0.0, can be extended per-rule
+            params[i, 5] = 0.0  # param1 (e.g., decay_length, sigma)
+            params[i, 6] = 0.0  # param2 (e.g., r0, well_width)
+            params[i, 7] = 0.0  # param3
             
         return matrices, params
 
@@ -144,30 +167,23 @@ class PhysicsEngine:
         return arr
 
     def update(self, dt: float = None):
+        """
+        Velocity Verlet integration step with proper thermostat ordering.
+        
+        Correct NVT ensemble: thermostat AFTER velocity update, not before.
+        This ensures we measure actual kinetic energy before scaling.
+        """
         if dt is None: dt = self.cfg.dt
         n = self.state.active
+        if n == 0:
+            return
         
-        # 0. Thermostat (Check Temp & Scale Velocity)
-        # Apply BEFORE integration step to regulate KE?
-        # Or after full step?
-        # Standard: Every step or every N steps.
-        apply_thermostat(
-            self.state.vel, n, 
-            self.cfg.target_temperature, 
-            self.cfg.thermostat_coupling, 
-            dt
-        )
-        
-        # 1. First Integration Step (Velocity Verlet Part 1)
-        # r(t+dt), v(t+0.5dt) using forces(t)
-        # BUT we haven't computed forces(t) for the VERY FIRST FRAME if we just started.
-        # We need stored forces from previous step.
-        # Initialize forces if needed?
+        # Initialize force cache on first frame
         if not hasattr(self, 'forces_cache'):
             self.forces_cache = np.zeros_like(self.state.pos)
             self.torques_cache = np.zeros_like(self.state.angle)
-            # Initial Force Calc
-            fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
+            # Compute initial forces
+            self._rebuild_grid()
             matrices, params = self._pack_rules()
             species_params = self._pack_species()
             self.forces_cache, self.torques_cache = compute_forces_multi(
@@ -178,6 +194,9 @@ class PhysicsEngine:
                 self.cfg.gravity
             )
 
+        # 1. First half of Velocity Verlet
+        # v(t + 0.5dt) = v(t) + 0.5 * a(t) * dt
+        # r(t + dt) = r(t) + v(t + 0.5dt) * dt
         integrate_verlet_1(
             self.state.pos, self.state.vel, 
             self.state.angle, self.state.ang_vel,
@@ -185,8 +204,8 @@ class PhysicsEngine:
             n, dt, np.array([-1.0, 1.0])
         )
         
-        # 2. Compute Forces at New Position r(t+dt)
-        fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
+        # 2. Compute forces at new positions r(t+dt)
+        self._rebuild_grid()
         matrices, params = self._pack_rules()
         species_params = self._pack_species()
         
@@ -198,13 +217,40 @@ class PhysicsEngine:
             self.cfg.gravity
         )
         
-        # 3. Second Integration Step (Velocity Verlet Part 2)
+        # 3. Second half of Velocity Verlet
+        # v(t + dt) = v(t + 0.5dt) + 0.5 * a(t + dt) * dt
         integrate_verlet_2(
             self.state.vel, self.state.ang_vel,
             new_forces, new_torques,
-            n, dt, self.cfg.friction
+            n, dt, self.cfg.friction, self.cfg.angular_friction
         )
         
-        # Update Cache
+        # 4. Apply thermostat AFTER full velocity update (correct NVT ordering)
+        if self.cfg.thermostat_enabled:
+            apply_thermostat(
+                self.state.vel, n, 
+                self.cfg.target_temperature, 
+                self.cfg.thermostat_coupling, 
+                dt
+            )
+        
+        # Update force cache for next step
         self.forces_cache = new_forces
         self.torques_cache = new_torques
+    
+    def _rebuild_grid(self):
+        """Rebuild spatial grid with overflow detection."""
+        n = self.state.active
+        fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
+        # Check for overflow
+        max_count = np.max(self.grid_counts)
+        if max_count >= self.max_per_cell:
+            # Dynamically resize grid capacity
+            self._resize_grid(max_count * 2)
+    
+    def _resize_grid(self, new_max_per_cell: int):
+        """Resize grid cell capacity to handle denser regions."""
+        self.max_per_cell = new_max_per_cell
+        self.grid_cells = np.zeros((self.grid_h, self.grid_w, self.max_per_cell), dtype=np.int32)
+        # Refill with new capacity
+        fill_grid(self.state.pos, self.state.active, self.cell_size, self.grid_counts, self.grid_cells)

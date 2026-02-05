@@ -13,7 +13,7 @@ def test_engine_rules():
     # Check packing
     mats, params = engine._pack_rules()
     assert mats.shape == (3, 6, 6)
-    assert params.shape == (3, 5)
+    assert params.shape == (3, 8)  # V6: Extended params format
 
 def test_kernel_compute_forces_multi_logic():
     # Setup 2 particles
