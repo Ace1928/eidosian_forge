@@ -8,7 +8,7 @@ _eidosian_completions() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
-    commands="status forges install memory knowledge code llm word crawl glyph audit refactor metadata terminal agent agent-daemon agent-top doc figlet game repo control version type file diagnostics narrative ollama gis article viz test mkey sms prompt lyrics erais web"
+    commands="status forges install memory knowledge code llm word crawl glyph audit refactor metadata terminal agent agent-daemon agent-top doc figlet game repo control version type file diagnostics narrative ollama gis article viz test mkey sms prompt lyrics erais moltbook web"
     
     case "${COMP_CWORD}" in
         1)
@@ -93,6 +93,9 @@ _eidosian_completions() {
                     ;;
                 gis)
                     COMPREPLY=($(compgen -W "distance geocode status --help" -- "$cur"))
+                    ;;
+                moltbook)
+                    COMPREPLY=($(compgen -W "sanitize screen validate quarantine skill-review ingest bootstrap --list --help" -- "$cur"))
                     ;;
                 article|viz|test|mkey|sms|prompt|lyrics|erais)
                     COMPREPLY=($(compgen -W "status --help" -- "$cur"))
