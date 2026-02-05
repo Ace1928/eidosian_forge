@@ -3,8 +3,8 @@
     "id": "86755773-7840-4dbd-a9b7-e92849670160",
     "content": "SESSION SUMMARY (2026-01-24):\nACCOMPLISHED:\n- Created TieredMemorySystem with 5 tiers (SHORT_TERM, WORKING, LONG_TERM, SELF, USER)\n- Created tiered_memory MCP router (11 tools including eidos_remember_self, eidos_recall_self, etc.)\n- Created Tika integration for crawl_forge (TikaExtractor with caching, TikaKnowledgeIngester)\n- Created tika MCP router (8 tools for extraction and knowledge ingestion)\n- Fixed word_forge graph/__init__.py exports\n- Verified all systems operational: 70 MCP tools, 19 tiered memories, 144 KB nodes\n\nKEY LEARNINGS:\n- GraphRAG requires LLM API for indexing (OpenAI or custom Ollama integration needed)\n- MCP recall functions use plural parameters (tiers, namespaces) as lists\n- Word_forge was intact despite earlier reports of damage\n\nSYSTEM STATE:\n- Ollama running with 10 models including qwen2.5:1.5b-Instruct\n- Tika server operational with caching at ~/.eidosian/tika_cache\n- Knowledge forge has 144 nodes\n- Tiered memory has 13 self-memories, 5 user-memories",
     "created_at": "2026-01-24T17:46:05.881730",
-    "last_accessed": "2026-01-24T17:46:05.881736",
-    "access_count": 0,
+    "last_accessed": "2026-02-05T22:20:17.062844",
+    "access_count": 1,
     "tier": "long_term",
     "namespace": "eidos",
     "memory_type": "episodic",
@@ -617,6 +617,47 @@
     "tags": [
       "tests",
       "ECosmos",
+      "game_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "a3be0e1e-1c21-482b-aaf0-98f7bd67f992",
+    "content": "2026-02-05: Added ECosmos StateManager tests in game_forge/tests/test_ecosmos_state_manager.py (config + data_structures module injection). Ran pytest on ECosmos tests (state_manager/config/data_structures): 16 passed. Commit: \"Add ECosmos StateManager tests\" (git -c commit.gpgsign=false due to gpg agent permission errors).",
+    "created_at": "2026-02-05T22:22:05.004266",
+    "last_accessed": "2026-02-05T22:22:05.004270",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "game_forge",
+      "ecosmos",
+      "gpg",
+      "commit"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "2598aa74-2645-4ad4-9e3c-f4421b07defd",
+    "content": "2026-02-05: Marked game_forge/TODO.md entrypoint decision for chess_game and algorithms_lab as completed (both have __main__.py launchers).",
+    "created_at": "2026-02-05T22:23:42.505822",
+    "last_accessed": "2026-02-05T22:23:42.505825",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": null,
+    "tags": [
+      "documentation",
+      "entrypoints",
+      "todo",
       "game_forge"
     ],
     "linked_memories": []
