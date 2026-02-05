@@ -84,7 +84,7 @@ eidosian_forge/
 
 ### Command Line Interface (CLI)
 
-Eidosian Forge provides a central CLI hub with 10 integrated forge CLIs:
+Eidosian Forge provides a central CLI hub with 35 integrated forge CLIs:
 
 **Central Hub:**
 ```bash
@@ -104,22 +104,10 @@ python bin/eidosian glyph version
 python bin/eidosian audit coverage
 python bin/eidosian refactor script.py --analyze-only
 python bin/eidosian metadata template
+python bin/eidosian forges
 ```
 
-**Available Forges (10):**
-
-| Forge | Type | Commands |
-|-------|------|----------|
-| memory | StandardCLI | status, list, search, store, introspect, context, stats, cleanup |
-| knowledge | StandardCLI | status, list, search, add, link, path, concepts, unified, stats |
-| code | StandardCLI | status, analyze, index, search, ingest, library, stats |
-| llm | StandardCLI | status, models, chat, embed, config, test |
-| word | StandardCLI | status, lookup, define, related, synsets, graph, build |
-| crawl | StandardCLI | status, fetch, extract, robots, tika, cache |
-| glyph | Typer | version, interactive, list-commands, bannerize, imagize |
-| audit | Typer | coverage, mark, todo |
-| refactor | argparse | analyze, refactor (positional file) |
-| metadata | argparse | template, validate, version |
+Use `python bin/eidosian forges` for the full list of forge commands.
 
 **Individual Forge CLIs:**
 ```bash
