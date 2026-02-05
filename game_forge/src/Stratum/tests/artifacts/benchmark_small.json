@@ -1,0 +1,9 @@
+{
+  "grid_size": 16,
+  "ticks": 3,
+  "total_seconds": 11.742,
+  "ticks_per_second": 0.26,
+  "microticks_per_second": 16,
+  "cells_per_second": 65,
+  "peak_memory_mb": 0.3
+}

@@ -314,5 +314,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "b51f00ec-971f-46c7-a5c2-8eae1887924d",
+    "content": "Ran Stratum benchmark (game_forge/src/Stratum/tests/benchmark.py) with grid 16 and 3 ticks: total 11.742s, 0.26 ticks/s, 16 microticks/s, 65 cells/s, peak memory 0.3 MB. Stored baseline at game_forge/src/Stratum/tests/artifacts/benchmark_small.json.",
+    "created_at": "2026-02-05T21:24:13.672942",
+    "last_accessed": "2026-02-05T21:24:13.672947",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [
+      "stratum",
+      "benchmark",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
