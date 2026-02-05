@@ -887,5 +887,26 @@
       "pyparticles"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "3b14c833-86cc-4c3b-9419-f31a45e5ab2d",
+    "content": "2026-02-05: gene_particles_profile now creates output directory before dumping stats. Added test in game_forge/tests/test_gene_particles_performance_tools.py to assert profile output file creation; ran pytest for that file (3 passed).",
+    "created_at": "2026-02-05T22:59:55.974331",
+    "last_accessed": "2026-02-05T22:59:55.974335",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.6,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "game_forge",
+      "cli",
+      "profile",
+      "gene_particles"
+    ],
+    "linked_memories": []
   }
 ]

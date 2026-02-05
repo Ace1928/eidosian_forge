@@ -12,6 +12,7 @@ import os
 import sys
 import pstats
 import warnings
+from pathlib import Path
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root = os.path.dirname(os.path.dirname(script_dir))
@@ -170,7 +171,9 @@ def main() -> int:
 
     stats = pstats.Stats(profiler)
     if args.output:
-        stats.dump_stats(args.output)
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        stats.dump_stats(str(output_path))
         print(f"INFO wrote profile to {args.output}")
     stats.sort_stats("tottime").print_stats(args.top)
     stats.sort_stats("cumulative").print_stats(args.top)
