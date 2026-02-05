@@ -1,6 +1,6 @@
 # Test Status: Eidosian Forge System
 
-**Last Updated**: 2026-02-05T12:25:59Z
+**Last Updated**: 2026-02-05T12:57:45Z
 **Test Framework**: pytest 9.0.2
 
 ---
@@ -46,7 +46,7 @@
 | version_forge | 7 | Tests rewritten |
 | computer_control_forge | 4 | Created pyproject.toml |
 | ollama_forge | 27+ | Major rewrite |
-| game_forge | 201 | 2 skipped optional GPU tests |
+| game_forge | 204 | 2 skipped optional GPU tests |
 
 ---
 
