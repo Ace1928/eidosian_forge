@@ -218,5 +218,24 @@
       "pipeline"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "3e371523-ec99-4b50-bf94-3325e29a9195",
+    "content": "Attempted live fetch of https://www.moltbook.com/skill.md via moltbook_ingest.py; failed with DNS resolution error (urlopen error [Errno -2] Name or service not known).",
+    "created_at": "2026-02-05T21:05:12.401439",
+    "last_accessed": "2026-02-05T21:05:12.401445",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "network",
+      "ingest",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]
