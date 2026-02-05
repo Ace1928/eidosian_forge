@@ -60,6 +60,7 @@ source bin/eidosian-completion.bash
 | Forge | Tests | Status |
 |-------|-------|--------|
 | memory_forge | 13 | ✅ All pass |
+| moltbook_forge | 25 | ✅ All pass |
 | figlet_forge | 562 | 377 pass, 185 fail (CLI/showcase) |
 | knowledge_forge | - | Skipped (needs graphrag) |
 
