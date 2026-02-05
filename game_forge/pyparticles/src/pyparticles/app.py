@@ -114,6 +114,11 @@ def main():
     print("[System] Initializing Physics...")
     physics = PhysicsEngine(cfg)
     
+    # For classic mode, use exact Haskell attraction matrix
+    if args.preset == 'classic':
+        physics.setup_classic_rules()
+        physics.exclusion_enabled = False  # Disable extra exclusion for pure classic
+    
     if args.jit_warmup:
         print("[System] JIT Warmup...")
         t0 = time.time()

@@ -53,8 +53,8 @@ class SpeciesConfig:
     @classmethod
     def default(cls, n_types: int, world_size: float = 100.0):
         """Create default species config scaled to world size."""
-        # Scale radius to world size - MUCH SMALLER (0.1% of world)
-        base_radius = 0.001 * world_size  # 0.1% of world size = tiny particles
+        # Scale radius to world size - matches Haskell: 0.01 in world 2.0 = 0.5%
+        base_radius = 0.005 * world_size  # 0.5% of world size (Haskell-accurate)
         
         return cls(
             radius=np.full(n_types, base_radius, dtype=np.float32) * 

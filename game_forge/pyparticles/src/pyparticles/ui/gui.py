@@ -297,8 +297,8 @@ class SimulationGUI:
         y += 22
         self.worldsize_slider = UIHorizontalSlider(
             pygame.Rect(10, y, 250, 22),
-            start_value=self.cfg.world_size,
-            value_range=(10.0, 500.0),
+            start_value=max(2.0, min(500.0, self.cfg.world_size)),  # Clamp to range
+            value_range=(2.0, 500.0),  # Support classic world_size=2.0
             manager=self.manager,
             container=self.visual_panel
         )
@@ -322,7 +322,7 @@ class SimulationGUI:
                 manager=self.manager, container=self.visual_panel)
         y += 22
         self.preset_selector = UIDropDownMenu(
-            options_list=["Default", "Small", "Large", "Huge", "Minimal", "Dense"],
+            options_list=["Default", "Small", "Large", "Huge", "Classic", "Emergence", "Dense"],
             starting_option="Default",
             relative_rect=pygame.Rect(10, y, 250, 28),
             manager=self.manager,
@@ -606,12 +606,46 @@ class SimulationGUI:
             cfg = SimulationConfig.large_world()
         elif preset_name == "Huge":
             cfg = SimulationConfig.huge_world()
-        elif preset_name == "Minimal":
-            self.cfg.num_particles = 500
-            self.cfg.num_types = 4
-            self.cfg.world_size = 20.0
-            self.physics.set_species_count(4)
-            self.physics.set_active_count(500)
+        elif preset_name == "Classic":
+            cfg = SimulationConfig.classic_emergence()
+            # Apply classic Haskell rules
+            self.cfg.world_size = cfg.world_size
+            self.cfg.num_particles = cfg.num_particles
+            self.cfg.num_types = cfg.num_types
+            self.cfg.dt = cfg.dt
+            self.cfg.friction = cfg.friction
+            self.cfg.slowdown_factor = cfg.slowdown_factor
+            self.cfg.collision_damping = cfg.collision_damping
+            self.cfg.thermostat_enabled = cfg.thermostat_enabled
+            self.cfg.max_velocity = cfg.max_velocity
+            self.cfg.wave_repulsion_strength = cfg.wave_repulsion_strength
+            self.cfg.default_max_radius_frac = cfg.default_max_radius_frac
+            self.cfg.default_min_radius_frac = cfg.default_min_radius_frac
+            self.physics.set_species_count(cfg.num_types)
+            self.physics.set_active_count(cfg.num_particles)
+            self.physics.setup_classic_rules()
+            self.physics.exclusion_enabled = False
+            self._update_ui_from_config()
+            self._rebuild_matrix_grid()
+            self._update_rule_list()
+            return
+        elif preset_name == "Emergence":
+            cfg = SimulationConfig.emergence_advanced()
+            self.cfg.world_size = cfg.world_size
+            self.cfg.num_particles = cfg.num_particles
+            self.cfg.num_types = cfg.num_types
+            self.cfg.dt = cfg.dt
+            self.cfg.friction = cfg.friction
+            self.cfg.slowdown_factor = cfg.slowdown_factor
+            self.cfg.thermostat_enabled = cfg.thermostat_enabled
+            self.cfg.max_velocity = cfg.max_velocity
+            self.cfg.wave_repulsion_strength = cfg.wave_repulsion_strength
+            self.physics.set_species_count(cfg.num_types)
+            self.physics.set_active_count(cfg.num_particles)
+            self.physics.exclusion_enabled = True
+            self._update_ui_from_config()
+            self._rebuild_matrix_grid()
+            self._update_rule_list()
             return
         elif preset_name == "Dense":
             self.cfg.num_particles = 30000
@@ -634,14 +668,18 @@ class SimulationGUI:
         self.physics.set_active_count(cfg.num_particles)
         
         # Update UI
-        self.worldsize_slider.set_current_value(cfg.world_size)
-        self.dt_slider.set_current_value(cfg.dt)
-        self.friction_slider.set_current_value(cfg.friction)
-        self.input_particles.set_text(str(cfg.num_particles))
-        self.input_species.set_text(str(cfg.num_types))
-        
+        self._update_ui_from_config()
         self._rebuild_matrix_grid()
         self._update_rule_list()
+    
+    def _update_ui_from_config(self):
+        """Update all UI elements from current config."""
+        self.worldsize_slider.set_current_value(self.cfg.world_size)
+        self.dt_slider.set_current_value(self.cfg.dt)
+        self.friction_slider.set_current_value(self.cfg.friction)
+        self.maxvel_slider.set_current_value(self.cfg.max_velocity)
+        self.input_particles.set_text(str(self.cfg.num_particles))
+        self.input_species.set_text(str(self.cfg.num_types))
 
     def _save_config(self, filepath="pyparticles_config.json"):
         """Save current configuration to JSON."""

@@ -178,6 +178,71 @@ class PhysicsEngine:
             softening=min_r * 0.5
         )
         self.rules.append(rule_repel)
+    
+    def setup_classic_rules(self):
+        """
+        Setup EXACT Haskell particle-life attraction matrix.
+        
+        This replaces the random rules with the specific matrix from
+        the original Haskell implementation for authentic emergence.
+        
+        Haskell attraction matrix (4 species: Red, Green, Blue, Yellow):
+          Red-Red: 0.6, Red-Green: -0.3, Red-Blue: 0.2, Red-Yellow: -0.4
+          Green-Green: 2.0, Green-Blue: 0.3, Green-Yellow: -0.2
+          Blue-Blue: -0.4, Blue-Yellow: 0.5
+          Yellow-Yellow: -0.2
+        """
+        if self.cfg.num_types != 4:
+            print("[Warning] Classic rules expect 4 types, got {}".format(self.cfg.num_types))
+        
+        # Clear existing rules
+        self.rules = []
+        
+        max_r = self.cfg.default_max_radius
+        min_r = self.cfg.default_min_radius
+        
+        # Build the exact Haskell attraction matrix
+        mat = np.zeros((4, 4), dtype=np.float32)
+        # Red=0, Green=1, Blue=2, Yellow=3
+        mat[0, 0] =  0.6   # Red-Red
+        mat[0, 1] = -0.3   # Red-Green
+        mat[0, 2] =  0.2   # Red-Blue
+        mat[0, 3] = -0.4   # Red-Yellow
+        mat[1, 1] =  2.0   # Green-Green
+        mat[1, 2] =  0.3   # Green-Blue
+        mat[1, 3] = -0.2   # Green-Yellow
+        mat[2, 2] = -0.4   # Blue-Blue
+        mat[2, 3] =  0.5   # Blue-Yellow
+        mat[3, 3] = -0.2   # Yellow-Yellow
+        # Symmetric
+        mat[1, 0] = mat[0, 1]
+        mat[2, 0] = mat[0, 2]
+        mat[2, 1] = mat[1, 2]
+        mat[3, 0] = mat[0, 3]
+        mat[3, 1] = mat[1, 3]
+        mat[3, 2] = mat[2, 3]
+        
+        # Single LINEAR force rule (exactly like Haskell)
+        rule_lin = InteractionRule(
+            name="Classic Particle Life",
+            force_type=ForceType.LINEAR,
+            matrix=mat,
+            max_radius=max_r,
+            min_radius=min_r,
+            strength=1.0  # Use matrix values directly
+        )
+        self.rules.append(rule_lin)
+        
+        # CRITICAL: Disable wave visuals for classic mode (Haskell doesn't have waves)
+        n = self.cfg.num_types
+        self.species_config.wave_amp = np.zeros(n, dtype=np.float32)
+        self.species_config.wave_freq = np.ones(n, dtype=np.float32)  # Circular shape
+        
+        # Rebuild grid with new max radius
+        self.max_interaction_radius = self._get_max_radius()
+        self.cell_size = max(self.max_interaction_radius, 0.1 * self.cfg.world_size)
+        self._invalidate_cache()
+        print("[Classic] Haskell attraction matrix loaded: 4 species, max_r={:.2f}, min_r={:.2f}".format(max_r, min_r))
 
     def _get_max_radius(self):
         if not self.rules: 
@@ -337,16 +402,21 @@ class PhysicsEngine:
             self._rebuild_grid()
             self._compute_all_forces()
             
-            # 3. Second half of Velocity Verlet with damping
+            # 3. Second half of Velocity Verlet (NO slowdown here - applied per-frame below)
             integrate_verlet_2(
                 self.state.vel, self.state.ang_vel,
                 self.forces_cache, self.torques_cache,
                 n, sub_dt, self.cfg.friction, self.cfg.angular_friction,
                 self.cfg.max_velocity,
-                self.cfg.slowdown_factor  # Haskell-style v *= factor per frame
+                1.0  # No per-substep slowdown - applied once per frame below
             )
         
-        # 4. Apply thermostat AFTER full velocity update (correct NVT ordering)
+        # 4. Haskell-style slowdown: v *= factor ONCE per frame (not per substep!)
+        # This is critical for correct emergence dynamics
+        if self.cfg.slowdown_factor < 1.0:
+            self.state.vel[:n] *= self.cfg.slowdown_factor
+        
+        # 5. Apply thermostat AFTER full velocity update (correct NVT ordering)
         if self.cfg.thermostat_enabled:
             apply_thermostat(
                 self.state.vel, n, 
