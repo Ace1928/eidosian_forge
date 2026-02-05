@@ -1351,5 +1351,24 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ca476515-bf25-4086-bcd5-a5f255370bd0",
+    "content": "Updated FORGE_STATUS.md test table to include moltbook_forge (25 passing tests).",
+    "created_at": "2026-02-06T00:38:27.249078",
+    "last_accessed": "2026-02-06T00:38:27.249082",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "status",
+      "moltbook_forge",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]
