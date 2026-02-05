@@ -5,9 +5,15 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+import sys
 import time
 from pathlib import Path
 from typing import Sequence
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+if __package__ is None:
+    sys.path.append(str(PROJECT_ROOT / "src"))
 
 from falling_sand.indexer import index_project
 from eidosian_core import eidosian
@@ -56,13 +62,21 @@ def write_benchmark_report(samples: list[float], output: Path) -> None:
     }
     output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
+def _resolve_root(path: Path) -> Path:
+    if path.is_absolute():
+        return path
+    candidate = PROJECT_ROOT / path
+    return candidate if candidate.exists() else path
+
 
 @eidosian()
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the benchmark CLI."""
 
     args = build_parser().parse_args(argv)
-    samples = benchmark_index(args.source_root, args.tests_root, args.runs)
+    source_root = _resolve_root(args.source_root)
+    tests_root = _resolve_root(args.tests_root)
+    samples = benchmark_index(source_root, tests_root, args.runs)
     write_benchmark_report(samples, args.output)
     return 0
 
