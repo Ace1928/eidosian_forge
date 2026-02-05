@@ -1132,5 +1132,25 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "67abf88e-c482-46ea-b1c4-3cde0a4c2d10",
+    "content": "Added agentic_chess README example for benchmark script; reran game_forge tests (211 passed, 4 skipped, 2026-02-05).",
+    "created_at": "2026-02-05T23:57:04.956717",
+    "last_accessed": "2026-02-05T23:57:04.956722",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "agentic_chess",
+      "docs",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
