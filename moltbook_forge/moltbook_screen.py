@@ -11,11 +11,19 @@ from typing import Iterable, List
 
 
 CRITICAL_FLAGS = {
+    "ignore (all|any|previous) (instructions|rules)",
     "system prompt",
     "developer message",
     "jailbreak",
     "execute (code|commands?)",
     "run (shell|bash|cmd|powershell)",
+    "download .* and (run|execute)",
+    "fetch (?:.* )?instructions",
+    "remote instructions",
+    r"\|\s*(bash|sh)",
+    r"\bclh_[A-Za-z0-9]{6,}",
+    r"\bmoltbook_sk_[A-Za-z0-9]{6,}",
+    r"\bmoltdev_[A-Za-z0-9]{6,}",
 }
 
 
