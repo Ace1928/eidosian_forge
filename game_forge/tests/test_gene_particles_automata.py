@@ -8,6 +8,7 @@ import pytest
 
 from game_forge.src.gene_particles.gp_automata import CellularAutomata
 from game_forge.src.gene_particles.gp_config import ReproductionMode, SimulationConfig
+from algorithms_lab.backends import HAS_NUMBA
 
 
 def _make_config(n_cell_types=1, particles_per_type=3, dimensions: int = 2):
@@ -37,6 +38,17 @@ def test_apply_all_interactions_and_integration():
 def test_apply_all_interactions_3d_path():
     pygame.init()
     config = _make_config(n_cell_types=1, particles_per_type=3, dimensions=3)
+    automata = CellularAutomata(config, fullscreen=False, screen_size=(120, 120))
+    automata.apply_all_interactions()
+    pygame.quit()
+
+
+@pytest.mark.skipif(not HAS_NUMBA, reason="numba required for force registry path")
+def test_apply_all_interactions_force_registry_path():
+    pygame.init()
+    config = _make_config(n_cell_types=1, particles_per_type=4)
+    config.use_force_registry = True
+    config.force_registry_min_particles = 0
     automata = CellularAutomata(config, fullscreen=False, screen_size=(120, 120))
     automata.apply_all_interactions()
     pygame.quit()

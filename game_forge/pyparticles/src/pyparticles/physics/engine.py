@@ -324,24 +324,26 @@ class PhysicsEngine:
         # Run substeps for stability
         sub_dt = dt / self.cfg.substeps
         for _ in range(self.cfg.substeps):
-            # 1. First half of Velocity Verlet
+            # 1. First half of Velocity Verlet (with wall collision damping)
             integrate_verlet_1(
                 self.state.pos, self.state.vel, 
                 self.state.angle, self.state.ang_vel,
                 self.forces_cache, self.torques_cache, 
-                n, sub_dt, bounds
+                n, sub_dt, bounds,
+                self.cfg.collision_damping  # Haskell-style wall bounce damping
             )
             
             # 2. Compute forces at new positions r(t+dt)
             self._rebuild_grid()
             self._compute_all_forces()
             
-            # 3. Second half of Velocity Verlet with velocity capping
+            # 3. Second half of Velocity Verlet with damping
             integrate_verlet_2(
                 self.state.vel, self.state.ang_vel,
                 self.forces_cache, self.torques_cache,
                 n, sub_dt, self.cfg.friction, self.cfg.angular_friction,
-                self.cfg.max_velocity
+                self.cfg.max_velocity,
+                self.cfg.slowdown_factor  # Haskell-style v *= factor per frame
             )
         
         # 4. Apply thermostat AFTER full velocity update (correct NVT ordering)

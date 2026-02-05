@@ -61,7 +61,10 @@ def main():
     parser.add_argument("--types", "-t", type=int, default=None, help="Number of species")
     parser.add_argument("--world-size", "-w", type=float, default=None, help="World size")
     parser.add_argument("--jit-warmup", action="store_true", default=True)
-    parser.add_argument("--preset", choices=['small', 'default', 'large', 'huge'], default='default')
+    parser.add_argument("--preset", 
+                        choices=['small', 'default', 'large', 'huge', 'classic', 'emergence'],
+                        default='default',
+                        help="Simulation preset (classic=Haskell-like emergence)")
     parser.add_argument("--benchmark", action="store_true", help="Run benchmark suite")
     parser.add_argument("--profile", action="store_true", help="Run with profiling")
     
@@ -84,6 +87,12 @@ def main():
         cfg = SimulationConfig.large_world()
     elif args.preset == 'huge':
         cfg = SimulationConfig.huge_world()
+    elif args.preset == 'classic':
+        cfg = SimulationConfig.classic_emergence()
+        print("🎮 CLASSIC MODE: Haskell-style particle life dynamics")
+    elif args.preset == 'emergence':
+        cfg = SimulationConfig.emergence_advanced()
+        print("✨ ADVANCED EMERGENCE: Long-range forces + wave/spin physics")
     else:
         cfg = SimulationConfig.default()
     
