@@ -49,3 +49,31 @@ def test_benchmark_suite_dry_run() -> None:
     assert result.returncode == 0
     assert "dry-run" in result.stdout
     assert "agentic-chess-benchmark" in result.stdout
+
+
+def test_benchmark_suite_summary_dry_run(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[2]
+    runner = root / "game_forge" / "tools" / "benchmark_suite.py"
+    summary_path = tmp_path / "summary.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(runner),
+            "--dry-run",
+            "--no-check-deps",
+            "--only",
+            "agentic-chess",
+            "--summary",
+            str(summary_path),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert summary_path.exists()
+    payload = summary_path.read_text(encoding="utf-8")
+    assert '"dry_run": true' in payload
+    assert '"status": "dry-run"' in payload

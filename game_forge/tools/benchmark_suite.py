@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import importlib.util
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -47,6 +48,10 @@ def default_tag() -> str:
 def build_output_path(output_dir: Path, name: str, tag: str) -> Path:
     safe_name = name.replace(" ", "_").replace("/", "_")
     return output_dir / f"{safe_name}_{tag}.json"
+
+
+def json_dump(payload: object) -> str:
+    return json.dumps(payload, indent=2, sort_keys=True)
 
 
 def missing_modules(modules: Iterable[str]) -> list[str]:
@@ -213,6 +218,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Print commands without running")
     parser.add_argument("--keep-going", action="store_true", help="Continue after failures")
     parser.add_argument(
+        "--summary",
+        type=str,
+        default="",
+        help="Write aggregate summary JSON to this path",
+    )
+    parser.add_argument(
         "--check-deps",
         action="store_true",
         default=True,
@@ -261,6 +272,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     failures = 0
     skipped = 0
     ran = 0
+    records: list[dict[str, object]] = []
 
     for bench in items:
         if only and bench.name not in only:
@@ -271,8 +283,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.check_deps:
             missing = missing_modules(bench.module_checks)
             if missing:
-                print(f"WARN skipping {bench.name}: missing modules {', '.join(missing)}")
+                missing_list = ", ".join(missing)
+                print(f"WARN skipping {bench.name}: missing modules {missing_list}")
                 skipped += 1
+                records.append(
+                    {
+                        "name": bench.name,
+                        "target": bench.target,
+                        "status": "skipped",
+                        "reason": f"missing modules: {missing_list}",
+                    }
+                )
                 continue
 
         output_path = build_output_path(output_dir, bench.name, tag)
@@ -283,21 +304,70 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.dry_run:
             print("INFO dry-run:", bench.name)
             print("INFO command:", " ".join(cmd))
+            records.append(
+                {
+                    "name": bench.name,
+                    "target": bench.target,
+                    "status": "dry-run",
+                    "output": str(output_path),
+                }
+            )
             continue
 
         print(f"INFO running {bench.name}")
         ran += 1
         exit_code = subprocess.call(cmd)
+        status = "ok" if exit_code == 0 else "failed"
+        record: dict[str, object] = {
+            "name": bench.name,
+            "target": bench.target,
+            "status": status,
+            "output": str(output_path),
+            "exit_code": exit_code,
+        }
         if exit_code != 0:
             failures += 1
             print(f"ERROR {bench.name} failed with exit code {exit_code}")
+            records.append(record)
             if not args.keep_going:
                 break
+        else:
+            records.append(record)
 
     if args.dry_run:
+        if args.summary:
+            summary_path = Path(args.summary)
+            summary_path.parent.mkdir(parents=True, exist_ok=True)
+            summary = {
+                "preset": args.preset,
+                "tag": tag,
+                "output_dir": str(output_dir),
+                "dry_run": True,
+                "ran": ran,
+                "failed": failures,
+                "skipped": skipped,
+                "benchmarks": records,
+            }
+            summary_path.write_text(json_dump(summary), encoding="utf-8")
+            print(f"INFO wrote summary to {summary_path}")
         return 0
 
     print(f"INFO benchmark suite complete: ran={ran} failed={failures} skipped={skipped}")
+    if args.summary:
+        summary_path = Path(args.summary)
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary = {
+            "preset": args.preset,
+            "tag": tag,
+            "output_dir": str(output_dir),
+            "dry_run": False,
+            "ran": ran,
+            "failed": failures,
+            "skipped": skipped,
+            "benchmarks": records,
+        }
+        summary_path.write_text(json_dump(summary), encoding="utf-8")
+        print(f"INFO wrote summary to {summary_path}")
     return 0 if failures == 0 else 1
 
 
