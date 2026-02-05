@@ -1152,5 +1152,25 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "5880fa6c-8780-4c90-9e43-4cbb1bd53618",
+    "content": "Added agentic_chess CLI PGN output test (skips without python-chess). game_forge tests: 211 passed, 5 skipped (2026-02-05).",
+    "created_at": "2026-02-05T23:59:21.150869",
+    "last_accessed": "2026-02-05T23:59:21.150874",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "agentic_chess",
+      "pgn",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
