@@ -634,6 +634,11 @@ class SimulationConfig:
         self.force_registry_morse_r0: float = 0.1
         self.force_registry_morse_width: float = 5.0
 
+        # Morton ordering controls (cache-friendly neighbor traversal)
+        self.use_morton_ordering: bool = True
+        self.morton_min_particles: int = 2048
+        self.morton_cell_scale: float = 1.0
+
         # Flocking behavior parameters
         self.alignment_strength: float = 0.25
         self.cohesion_strength: float = 0.25
@@ -959,6 +964,12 @@ class SimulationConfig:
             raise ValueError("Force registry Morse r0 must be positive")
         if self.force_registry_morse_width <= 0:
             raise ValueError("Force registry Morse width must be positive")
+        if not isinstance(self.use_morton_ordering, bool):
+            raise ValueError("Morton ordering toggle must be boolean")
+        if self.morton_min_particles <= 0:
+            raise ValueError("Morton min particles must be positive")
+        if self.morton_cell_scale <= 0:
+            raise ValueError("Morton cell scale must be positive")
 
     @eidosian()
     def advance_environment(self, frame_count: int) -> None:

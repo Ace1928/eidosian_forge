@@ -47,6 +47,14 @@ def build_automata(args: argparse.Namespace) -> CellularAutomata:
     config.world_depth = args.world_depth
     config.use_gene_interpreter = args.gene_interpreter
     config.reproduction_mode = ReproductionMode(args.reproduction_mode)
+    config.use_force_registry = args.force_registry
+    config.force_registry_min_particles = args.force_registry_min_particles
+    config.force_registry_family_scale["yukawa"] = args.force_yukawa
+    config.force_registry_family_scale["lennard_jones"] = args.force_lj
+    config.force_registry_family_scale["morse"] = args.force_morse
+    config.use_morton_ordering = args.morton
+    config.morton_min_particles = args.morton_min_particles
+    config.morton_cell_scale = args.morton_cell_scale
     return CellularAutomata(
         config,
         fullscreen=False,
@@ -103,6 +111,24 @@ def main() -> int:
         help="Enable genetic interpreter",
     )
     parser.add_argument(
+        "--force-registry",
+        action="store_true",
+        default=False,
+        help="Enable force registry interactions",
+    )
+    parser.add_argument(
+        "--force-registry-min-particles",
+        type=int,
+        default=512,
+        help="Minimum particles to enable force registry",
+    )
+    parser.add_argument("--force-yukawa", type=float, default=0.0)
+    parser.add_argument("--force-lj", type=float, default=0.0)
+    parser.add_argument("--force-morse", type=float, default=0.0)
+    parser.add_argument("--morton", action="store_true", default=False)
+    parser.add_argument("--morton-min-particles", type=int, default=2048)
+    parser.add_argument("--morton-cell-scale", type=float, default=1.0)
+    parser.add_argument(
         "--reproduction-mode",
         type=str,
         choices=["manager", "genes", "hybrid"],
@@ -125,6 +151,8 @@ def main() -> int:
 
     if args.headless:
         os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
     np.random.seed(args.seed)
     pygame.init()

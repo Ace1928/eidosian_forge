@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, List, Tuple
 
 import pygame
+import numpy as np
 
 from game_forge.src.gene_particles.gp_config import SimulationConfig
 
@@ -100,12 +101,26 @@ class SimulationUI:
             self._toggle_force_family("lennard_jones", 0.5)
         elif key == pygame.K_o:
             self._toggle_force_family("morse", 0.5)
+        elif key in (pygame.K_1, pygame.K_2, pygame.K_3):
+            delta = 0.1 if (event.mod & pygame.KMOD_SHIFT) else -0.1
+            if key == pygame.K_1:
+                self._adjust_force_family("yukawa", delta)
+            elif key == pygame.K_2:
+                self._adjust_force_family("lennard_jones", delta)
+            else:
+                self._adjust_force_family("morse", delta)
 
     def _toggle_force_family(self, name: str, enabled_value: float) -> None:
         """Toggle a force family scale between zero and a provided value."""
         scale = self.config.force_registry_family_scale
         current = float(scale.get(name, 0.0))
         scale[name] = 0.0 if current != 0.0 else float(enabled_value)
+
+    def _adjust_force_family(self, name: str, delta: float) -> None:
+        """Adjust a force family scale by a delta within [0, 2]."""
+        scale = self.config.force_registry_family_scale
+        current = float(scale.get(name, 0.0))
+        scale[name] = float(np.clip(current + delta, 0.0, 2.0))
 
     def draw_panel(
         self, rect: pygame.Rect, title: str, lines: Iterable[str]
@@ -179,6 +194,8 @@ class SimulationUI:
                 "M: projection mode",
                 "F: force registry toggle",
                 "Y/L/O: toggle Yukawa/LJ/Morse",
+                "1/2/3: dec Yukawa/LJ/Morse",
+                "Shift+1/2/3: inc Yukawa/LJ/Morse",
                 "+/-: particle size",
                 "[/]: cluster radius",
                 ",/.: temperature",

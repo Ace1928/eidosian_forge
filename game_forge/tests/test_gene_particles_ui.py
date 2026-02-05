@@ -63,6 +63,10 @@ def test_ui_handle_event_toggles_and_config():
     ui.handle_event(pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_y}), object())
     assert config.force_registry_family_scale.get("yukawa", 0.0) != scale_before
 
+    config.force_registry_family_scale["yukawa"] = 0.5
+    ui.handle_event(pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_1}), object())
+    assert config.force_registry_family_scale["yukawa"] < 0.5
+
     pygame.quit()
 
 

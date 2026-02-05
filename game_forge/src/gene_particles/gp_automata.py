@@ -24,6 +24,7 @@ try:
         accumulate_from_registry,
     )
     from algorithms_lab.graph import build_neighbor_graph
+    from algorithms_lab.spatial_utils import compute_morton_order
 
     HAS_ALGORITHMS_LAB = True
 except Exception:
@@ -581,17 +582,42 @@ class CellularAutomata:
                 )
                 use_numba = HAS_NUMBA and view.total >= INTERACTION_GRAPH_NUMBA_THRESHOLD
                 backend = "numba" if use_numba else "numpy"
+                positions_graph = positions.astype(np.float32, copy=False)
+                order: Optional[np.ndarray] = None
+                if (
+                    self.config.use_morton_ordering
+                    and self.spatial_dimensions == 2
+                    and view.total >= self.config.morton_min_particles
+                ):
+                    cell_size = max(float(max_dist) * self.config.morton_cell_scale, 1e-3)
+                    grid_w = int(world_size[0] / cell_size) + 1
+                    grid_h = int(world_size[1] / cell_size) + 1
+                    order = compute_morton_order(
+                        positions_graph,
+                        int(view.total),
+                        float(cell_size),
+                        0.0,
+                        grid_w,
+                        grid_h,
+                    ).astype(np.int32, copy=False)
+                    positions_graph = positions_graph[order]
                 graph = build_neighbor_graph(
-                    positions.astype(np.float32, copy=False),
+                    positions_graph,
                     radius=float(max_dist),
                     domain=domain,
                     method="grid",
                     backend=backend,
                 )
+                rows = graph.rows
+                cols = graph.cols
+                dist = graph.dist
+                if order is not None:
+                    rows = order[rows]
+                    cols = order[cols]
                 return GlobalNeighborGraph(
-                    rows=graph.rows.astype(np.int_, copy=False),
-                    cols=graph.cols.astype(np.int_, copy=False),
-                    dist=graph.dist.astype(np.float64, copy=False),
+                    rows=rows.astype(np.int_, copy=False),
+                    cols=cols.astype(np.int_, copy=False),
+                    dist=dist.astype(np.float64, copy=False),
                     wrap_mode=wrap_mode,
                     world_size=world_size,
                     inv_world_size=inv_world_size,
