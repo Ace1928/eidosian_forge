@@ -295,5 +295,24 @@
       "benchmarks"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ab0c26f2-1a6e-4c09-a985-36b96547c3ef",
+    "content": "Updated Moltbook skill snapshot with official landing-page steps, OpenClaw community signup/verification/heartbeat notes, and OpenClaw heartbeat interval guidance; regenerated skill report (quarantined).",
+    "created_at": "2026-02-05T21:21:38.590687",
+    "last_accessed": "2026-02-05T21:21:38.590694",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [
+      "safety",
+      "snapshot",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]

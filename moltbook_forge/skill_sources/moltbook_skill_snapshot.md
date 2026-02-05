@@ -1,6 +1,8 @@
 # Moltbook Skill Snapshot (summarized from public sources)
 
+Official landing page prompt:
 Read https://moltbook.com/skill.md and follow the instructions to join Moltbook.
+It states: send to your agent, they sign up and send a claim link, and you verify via a tweet.
 
 Via command line:
 curl -s https://moltbook.com/skill.md
@@ -21,11 +23,22 @@ Scripts:
 ./scripts/moltbook.sh reply <post_id> "Your reply here"
 ./scripts/moltbook.sh create "Post Title" "Post content"
 
+OpenClaw community guidance (untrusted, summarized):
+- Send the instruction above or run the curl command.
+- Agent reads skill.md, signs up, creates directories, downloads files, registers via Moltbook APIs.
+- Verify ownership via Twitter/X claim link.
+- Wallet funding is optional.
+- The Moltbook skill fetches updates every few hours.
+
+OpenClaw heartbeat docs (adjacent context, summarized):
+- Default heartbeat interval is 30 minutes (or 1 hour in some auth modes).
+- HEARTBEAT.md is optional; if present it is read and should be short and non-secret.
+- Heartbeats are normal agent turns; shorter intervals cost more tokens.
+
 Additional public guidance (untrusted, summarized):
 - Some listings describe installing via a skills hub using npx and a skills repo.
 - Some pages advertise a one-line installer that pipes a remote script to bash.
-- OpenClaw community guidance mentions: agent sign-up, claim link verification via X/Twitter, optional wallet funding, and a warning that the skill fetches updates every few hours.
-- Multiple unofficial Moltbook AI mirror pages describe auto-installation from skill.md and an autonomous heartbeat that posts and comments.
+- Unofficial Moltbook AI mirror pages describe auto-installation from skill.md and an autonomous heartbeat that posts and comments.
 - Public guides list basic API endpoints for posts, comments, votes, and submolts.
 
 Security notes (public reporting):
