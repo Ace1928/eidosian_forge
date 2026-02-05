@@ -30,3 +30,24 @@ def test_play_match_random_agents() -> None:
     assert result.result in {"1-0", "0-1", "1/2-1/2"}
     assert result.termination
     assert len(result.moves) <= 6
+
+
+def test_cli_pgn_output(tmp_path: Any) -> None:
+    pytest.importorskip("chess", reason="python-chess required")
+    output = tmp_path / "match.pgn"
+    code = main(
+        [
+            "--white",
+            "random",
+            "--black",
+            "random",
+            "--max-moves",
+            "2",
+            "--pgn-output",
+            str(output),
+        ]
+    )
+
+    assert code == 0
+    assert output.exists()
+    assert output.read_text(encoding="utf-8").strip()
