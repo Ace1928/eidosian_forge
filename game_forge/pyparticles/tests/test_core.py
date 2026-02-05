@@ -12,7 +12,7 @@ def test_config_defaults():
     assert cfg.angular_friction == 2.0
     assert cfg.thermostat_enabled == True
     assert cfg.substeps == 2
-    assert cfg.wave_repulsion_strength == 50.0  # Stronger exclusion
+    assert cfg.wave_repulsion_strength == 5.0  # Moderate for subtle effect
     assert cfg.num_particles == 10000
     assert cfg.num_types == 16
     assert cfg.max_velocity == 10.0  # Energy capping
