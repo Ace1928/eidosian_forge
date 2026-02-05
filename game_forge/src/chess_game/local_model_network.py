@@ -17,11 +17,11 @@ import requests
 import httpx
 import torch
 from transformers import (  # type: ignore[import]
-from eidosian_core import eidosian
     AutoModelForCausalLM,
     AutoTokenizer,
     pipeline,
 )
+from eidosian_core import eidosian
 from accelerate import disk_offload  # type: ignore[import]
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor, as_completed

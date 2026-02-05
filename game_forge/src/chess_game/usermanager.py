@@ -6,10 +6,10 @@ import os  # For file system operations, like checking if a file exists and repl
 import json  # For encoding and decoding player profile data to and from JSON format.
 import logging  # For structured logging of events, errors, and debugging information.
 from typing import (
-from eidosian_core import eidosian
     Dict,
     Any,
 )  # For type hinting, improving code readability and maintainability.
+from eidosian_core import eidosian
 
 
 DEFAULT_PROFILE = {  # Define a default profile here for testing purposes if init.py is not accessible in test context

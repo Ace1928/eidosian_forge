@@ -6,11 +6,11 @@ from queue import Queue
 from lark import logger
 from tenacity import retry, wait_exponential, stop_after_attempt
 from transformers import (  # type: ignore[import]
-from eidosian_core import eidosian
     AutoModelForCausalLM,
     AutoTokenizer,
     pipeline,
 )
+from eidosian_core import eidosian
 from accelerate import disk_offload  # type: ignore[import]
 from typing import (
     Any,

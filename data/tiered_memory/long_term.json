@@ -178,5 +178,25 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "9743a5be-d2b4-4f9e-b353-248efd32f06d",
+    "content": "Fixed syntax errors in chess_game imports (local_model_network.py, modular_local_model_network.py, piecerenderer.py, usermanager.py) so coverage can parse them. Re-ran pytest+coverage via eidosian_venv: 195 passed, 2 skipped; coverage total 25% with chess_game now included; warnings remain for numba /dev/shm and missing Fira Sans font.",
+    "created_at": "2026-02-05T20:52:04.010794",
+    "last_accessed": "2026-02-05T20:52:04.010800",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "chess_game",
+      "tests",
+      "coverage",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]

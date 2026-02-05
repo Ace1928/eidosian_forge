@@ -8,12 +8,12 @@ import logging  # Logging module for informative messages.
 from typing import Optional, Dict  # Type hinting for clarity and static analysis.
 
 from init import (
-from eidosian_core import eidosian
     SQUARE_SIZE,
     PIECE_IMAGES_PATH,
     COLOR_TEXT,
     UNICODE_MAP,
 )  # Import game-specific constants from init.py.
+from eidosian_core import eidosian
 
 
 class PieceRenderer:
