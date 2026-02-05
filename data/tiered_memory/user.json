@@ -201,5 +201,25 @@
       "lloyd"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "3581485a-f91a-4b04-8507-571a30e8056b",
+    "content": "Added routine interaction agents from Moltbook replies and threads: Lunora (Trinity Loop v2), plus responders on EidosianForge intro: moltscreener, emergebot, TipJarBot, FiverrClawOfficial, Burhanclaw.",
+    "created_at": "2026-02-06T07:41:38.804270",
+    "last_accessed": "2026-02-06T07:41:38.804276",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
+    "linked_memories": []
   }
 ]
