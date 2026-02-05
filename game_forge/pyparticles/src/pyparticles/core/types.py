@@ -1,5 +1,6 @@
 """
 Core data structures and type definitions.
+Refactored for Procedural Physics (Thermostat, No Biology).
 """
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
@@ -10,35 +11,33 @@ class RenderMode(Enum):
     SPRITES = "sprites"
     PIXELS = "pixels"
     GLOW = "glow"
-    WAVE = "wave" # New mode to visualize shapes
+    WAVE = "wave"
+    OPENGL = "opengl"
 
 class ForceType(IntEnum):
-    LINEAR = 0          # Peak at center, linear falloff
-    INVERSE_SQUARE = 1  # 1/r^2
-    INVERSE_CUBE = 2    # 1/r^3 (Strong force)
-    REPEL_ONLY = 3      # Linear repulsion only
+    LINEAR = 0          
+    INVERSE_SQUARE = 1  
+    INVERSE_CUBE = 2    
+    REPEL_ONLY = 3      
 
 @dataclass
 class InteractionRule:
-    """Definition of a specific interaction force layer."""
     name: str
     force_type: ForceType
-    matrix: np.ndarray     # (T, T)
+    matrix: np.ndarray     
     max_radius: float
     min_radius: float
     strength: float = 1.0
     softening: float = 0.05 
-    enabled: bool = True   # Toggle support
+    enabled: bool = True
 
 @dataclass
 class SpeciesConfig:
-    """Properties for particle species."""
-    # Base physical radius
     radius: np.ndarray        # (T,) float32
-    # Wave properties
-    wave_freq: np.ndarray     # (T,) float32 (Integer usually, e.g., 3 lobes)
+    # Wave Params
+    wave_freq: np.ndarray     # (T,) float32
     wave_amp: np.ndarray      # (T,) float32
-    wave_phase_speed: np.ndarray # (T,) float32 (Auto-rotation speed)
+    wave_phase_speed: np.ndarray # (T,) float32
 
     @classmethod
     def default(cls, n_types: int):
@@ -51,29 +50,36 @@ class SpeciesConfig:
 
 @dataclass
 class SimulationConfig:
-    """Master configuration for the simulation."""
     width: int = 1200
     height: int = 1000
     
     max_particles: int = 50000
     num_particles: int = 5000
     num_types: int = 6
-    dt: float = 0.01 # Lower DT for exponential forces stability
-    friction: float = 0.5
+    dt: float = 0.01 
+    friction: float = 0.0 # Friction removed? No, friction implies energy loss. Thermostat replaces it?
+                          # Usually Thermostat + Conservative forces = NVT.
+                          # But we want "medium" drag?
+                          # Let's keep friction but set default to 1.0 (no drag) or small drag?
+                          # If we have drag, thermostat pumps energy in.
+                          # Let's keep a small "Langevin-like" drag or just user controllable.
+    
     gravity: float = 0.0
     
-    # Global Physics
     default_max_radius: float = 0.1
     default_min_radius: float = 0.02
     
-    # Wave Mechanics
-    wave_repulsion_strength: float = 50.0 # High strength for hard collisions
-    wave_repulsion_exp: float = 10.0 # Exponential falloff rate
+    wave_repulsion_strength: float = 50.0 
+    wave_repulsion_exp: float = 10.0 
+    
+    # Thermostat
+    target_temperature: float = 0.5 # Target Kinetic Energy per particle
+    thermostat_coupling: float = 0.1 # Coupling strength (0.0 to 1.0)
     
     threads: int = 4
     jit_cache: bool = True
     
-    render_mode: RenderMode = RenderMode.WAVE
+    render_mode: RenderMode = RenderMode.OPENGL
     show_fps: bool = True
     
     @classmethod
@@ -82,15 +88,11 @@ class SimulationConfig:
 
 @dataclass
 class ParticleState:
-    """SoA container."""
     pos: np.ndarray        # (N, 2)
     vel: np.ndarray        # (N, 2)
     colors: np.ndarray     # (N,) int32
-    
-    # New Wave State
-    angle: np.ndarray      # (N,) float32 (Orientation)
-    ang_vel: np.ndarray    # (N,) float32 (Angular Velocity)
-    
+    angle: np.ndarray      # (N,) float32
+    ang_vel: np.ndarray    # (N,) float32
     active: int
     
     @classmethod

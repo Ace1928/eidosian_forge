@@ -1,11 +1,14 @@
 """
 Physics Engine Manager.
-Handles memory allocation, state management, and multi-rule configuration.
+Updated for Velocity Verlet Integration.
 """
 import numpy as np
 from typing import List
 from ..core.types import ParticleState, SimulationConfig, InteractionRule, ForceType, SpeciesConfig
-from .kernels import fill_grid, compute_forces_multi, integrate
+from .kernels import (
+    fill_grid, compute_forces_multi, apply_thermostat, 
+    integrate_verlet_1, integrate_verlet_2
+)
 
 class PhysicsEngine:
     def __init__(self, config: SimulationConfig):
@@ -26,9 +29,7 @@ class PhysicsEngine:
         self._init_particles()
         
         # Grid Memory
-        # Use largest of max_radius or wave radius (heuristic)
         self.max_interaction_radius = self._get_max_radius()
-        # Ensure cell size covers wave radius (approx 0.1)
         self.cell_size = max(self.max_interaction_radius, 0.2)
         
         self.grid_w = int(2.0 / self.cell_size) + 2
@@ -41,8 +42,6 @@ class PhysicsEngine:
         self.grid_cells = np.zeros((self.grid_h, self.grid_w, self.max_per_cell), dtype=np.int32)
         
     def _init_default_rules(self):
-        """Create the default Linear and Gravity rules."""
-        # 1. Standard Linear (Particle Life)
         mat_linear = np.random.uniform(-1.0, 1.0, (self.cfg.num_types, self.cfg.num_types)).astype(np.float32)
         rule_lin = InteractionRule(
             name="Particle Life (Linear)",
@@ -54,7 +53,6 @@ class PhysicsEngine:
         )
         self.rules.append(rule_lin)
         
-        # 2. Gravity / Inverse Square
         mat_grav = np.zeros((self.cfg.num_types, self.cfg.num_types), dtype=np.float32)
         rule_grav = InteractionRule(
             name="Gravity (InvSq)",
@@ -67,7 +65,6 @@ class PhysicsEngine:
         )
         self.rules.append(rule_grav)
         
-        # 3. Strong Force (Inverse Cube)
         mat_strong = np.zeros((self.cfg.num_types, self.cfg.num_types), dtype=np.float32)
         rule_strong = InteractionRule(
             name="Strong Force (InvCube)",
@@ -90,9 +87,7 @@ class PhysicsEngine:
         self.state.vel[:n] = 0.0
         self.state.colors[:n] = np.random.randint(0, self.cfg.num_types, n)
         self.state.angle[:n] = np.random.uniform(0, 2*np.pi, n)
-        # Init ang_vel from species wave speed
-        # Need vectorized lookup
-        # Slow python loop ok for init
+        
         for i in range(n):
             t = self.state.colors[i]
             self.state.ang_vel[i] = self.species_config.wave_phase_speed[t]
@@ -115,21 +110,14 @@ class PhysicsEngine:
                 self.state.ang_vel[i] = self.species_config.wave_phase_speed[t]
 
     def set_species_count(self, n_types: int):
-        """Update species count and resize config arrays."""
         if n_types == self.cfg.num_types: return
         self.cfg.num_types = n_types
-        # Re-generate species params
         self.species_config = SpeciesConfig.default(n_types)
-        # Re-generate rules matrices
-        # We lose old matrix data here, which is expected behavior for "resetting species"
         self.rules = []
         self._init_default_rules()
         self.reset()
 
     def _pack_rules(self):
-        """
-        Pack enabled rules into Numba-friendly arrays.
-        """
         active_rules = [r for r in self.rules if r.enabled]
         n_rules = len(active_rules)
         n_types = self.cfg.num_types
@@ -148,7 +136,6 @@ class PhysicsEngine:
         return matrices, params
 
     def _pack_species(self):
-        """Pack species config to (T, 3) array."""
         n = self.cfg.num_types
         arr = np.zeros((n, 3), dtype=np.float32)
         arr[:, 0] = self.species_config.radius
@@ -160,30 +147,64 @@ class PhysicsEngine:
         if dt is None: dt = self.cfg.dt
         n = self.state.active
         
-        # 1. Spatial Hash
-        fill_grid(
-            self.state.pos, n, self.cell_size,
-            self.grid_counts, self.grid_cells
+        # 0. Thermostat (Check Temp & Scale Velocity)
+        # Apply BEFORE integration step to regulate KE?
+        # Or after full step?
+        # Standard: Every step or every N steps.
+        apply_thermostat(
+            self.state.vel, n, 
+            self.cfg.target_temperature, 
+            self.cfg.thermostat_coupling, 
+            dt
         )
         
-        # 2. Compute Forces (Multi-Rule + Waves)
+        # 1. First Integration Step (Velocity Verlet Part 1)
+        # r(t+dt), v(t+0.5dt) using forces(t)
+        # BUT we haven't computed forces(t) for the VERY FIRST FRAME if we just started.
+        # We need stored forces from previous step.
+        # Initialize forces if needed?
+        if not hasattr(self, 'forces_cache'):
+            self.forces_cache = np.zeros_like(self.state.pos)
+            self.torques_cache = np.zeros_like(self.state.angle)
+            # Initial Force Calc
+            fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
+            matrices, params = self._pack_rules()
+            species_params = self._pack_species()
+            self.forces_cache, self.torques_cache = compute_forces_multi(
+                self.state.pos, self.state.colors, self.state.angle, n,
+                matrices, params, species_params,
+                self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
+                self.grid_counts, self.grid_cells, self.cell_size,
+                self.cfg.gravity
+            )
+
+        integrate_verlet_1(
+            self.state.pos, self.state.vel, 
+            self.state.angle, self.state.ang_vel,
+            self.forces_cache, self.torques_cache, 
+            n, dt, np.array([-1.0, 1.0])
+        )
+        
+        # 2. Compute Forces at New Position r(t+dt)
+        fill_grid(self.state.pos, n, self.cell_size, self.grid_counts, self.grid_cells)
         matrices, params = self._pack_rules()
         species_params = self._pack_species()
         
-        forces, torques = compute_forces_multi(
-            self.state.pos, self.state.vel, self.state.colors, 
-            self.state.angle, self.state.ang_vel, n,
-            matrices, params,
-            species_params, 
+        new_forces, new_torques = compute_forces_multi(
+            self.state.pos, self.state.colors, self.state.angle, n,
+            matrices, params, species_params,
             self.cfg.wave_repulsion_strength, self.cfg.wave_repulsion_exp,
             self.grid_counts, self.grid_cells, self.cell_size,
-            dt, self.cfg.friction, self.cfg.gravity
+            self.cfg.gravity
         )
         
-        # 3. Integrate
-        integrate(
-            self.state.pos, self.state.vel, 
-            self.state.angle, self.state.ang_vel,
-            forces, torques, n,
-            dt, self.cfg.friction, np.array([-1.0, 1.0])
+        # 3. Second Integration Step (Velocity Verlet Part 2)
+        integrate_verlet_2(
+            self.state.vel, self.state.ang_vel,
+            new_forces, new_torques,
+            n, dt, self.cfg.friction
         )
+        
+        # Update Cache
+        self.forces_cache = new_forces
+        self.torques_cache = new_torques

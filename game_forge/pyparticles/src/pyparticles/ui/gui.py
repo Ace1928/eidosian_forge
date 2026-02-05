@@ -1,6 +1,6 @@
 """
 Modern GUI Layer.
-Updated for Multi-Force Toggle, Species Count, Wave Params, and Persistence.
+Updated for Procedural Physics (Thermostat, No Biology).
 """
 import pygame
 import pygame_gui
@@ -20,7 +20,6 @@ class SimulationGUI:
         self.physics = physics_engine
         self.window_size = (config.width, config.height)
         
-        # State
         self.paused = False
         self.active_rule_idx = 0
         self.active_species_idx = 0
@@ -31,7 +30,6 @@ class SimulationGUI:
         self._setup_species_editor()
 
     def _setup_hud(self):
-        """Main Sidebar Control."""
         rect = pygame.Rect(10, 10, 260, 700)
         self.hud_panel = UIPanel(
             relative_rect=rect,
@@ -40,11 +38,10 @@ class SimulationGUI:
         )
         
         y = 10
-        UILabel(pygame.Rect(10, y, 240, 30), "EIDOSIAN CONTROLS V3", 
+        UILabel(pygame.Rect(10, y, 240, 30), "EIDOSIAN CONTROLS V4", 
                 manager=self.manager, container=self.hud_panel)
         y += 35
         
-        # Stats
         self.fps_label = UILabel(pygame.Rect(10, y, 240, 20), "FPS: --", 
                                  manager=self.manager, container=self.hud_panel)
         y += 20
@@ -52,8 +49,7 @@ class SimulationGUI:
                                    manager=self.manager, container=self.hud_panel)
         y += 30
         
-        # --- Physics Config ---
-        # Particle Count Input
+        # Particles Config
         UILabel(pygame.Rect(10, y, 240, 20), "Total Particles:", manager=self.manager, container=self.hud_panel)
         y += 20
         self.input_particles = UITextEntryLine(
@@ -68,7 +64,7 @@ class SimulationGUI:
         )
         y += 40
         
-        # Species Count Input
+        # Species Config
         UILabel(pygame.Rect(10, y, 240, 20), "Species Count:", manager=self.manager, container=self.hud_panel)
         y += 20
         self.input_species = UITextEntryLine(
@@ -84,7 +80,7 @@ class SimulationGUI:
         y += 40
 
         # Sliders
-        UILabel(pygame.Rect(10, y, 240, 20), "Friction", manager=self.manager, container=self.hud_panel)
+        UILabel(pygame.Rect(10, y, 240, 20), "Friction (1.0 = None)", manager=self.manager, container=self.hud_panel)
         y += 20
         self.friction_slider = UIHorizontalSlider(
             pygame.Rect(10, y, 240, 20),
@@ -104,13 +100,34 @@ class SimulationGUI:
             manager=self.manager,
             container=self.hud_panel
         )
+        y += 30
+        
+        # Thermostat Sliders
+        UILabel(pygame.Rect(10, y, 240, 20), "Target Temp (KE)", manager=self.manager, container=self.hud_panel)
+        y += 20
+        self.temp_slider = UIHorizontalSlider(
+            pygame.Rect(10, y, 240, 20),
+            start_value=self.cfg.target_temperature,
+            value_range=(0.0, 2.0),
+            manager=self.manager,
+            container=self.hud_panel
+        )
+        y += 30
+        
+        UILabel(pygame.Rect(10, y, 240, 20), "Thermostat Coupling", manager=self.manager, container=self.hud_panel)
+        y += 20
+        self.coupling_slider = UIHorizontalSlider(
+            pygame.Rect(10, y, 240, 20),
+            start_value=self.cfg.thermostat_coupling,
+            value_range=(0.0, 1.0),
+            manager=self.manager,
+            container=self.hud_panel
+        )
         y += 40
         
-        # --- Force Rule Toggles ---
+        # Rules
         UILabel(pygame.Rect(10, y, 240, 20), "Active Force Layers", manager=self.manager, container=self.hud_panel)
         y += 25
-        
-        # Initial list
         self.rule_list_box = UISelectionList(
             relative_rect=pygame.Rect(10, y, 240, 100),
             item_list=[],
@@ -121,7 +138,7 @@ class SimulationGUI:
         self._update_rule_list()
         y += 110
 
-        # Matrix Editor Selection
+        # Matrix
         UILabel(pygame.Rect(10, y, 240, 20), "Edit Rule Matrix", manager=self.manager, container=self.hud_panel)
         y += 20
         rule_names = [r.name for r in self.physics.rules]
@@ -134,7 +151,6 @@ class SimulationGUI:
         )
         y += 35
         
-        # Active Rule Param Sliders
         self.lbl_radius = UILabel(pygame.Rect(10, y, 240, 20), "Rule Max Radius", manager=self.manager, container=self.hud_panel)
         y += 20
         self.radius_slider = UIHorizontalSlider(
@@ -157,17 +173,14 @@ class SimulationGUI:
         )
         y += 40
 
-        # Control Buttons
         self.pause_btn = UIButton(pygame.Rect(10, y, 115, 30), "Pause", 
                                   manager=self.manager, container=self.hud_panel)
         self.reset_btn = UIButton(pygame.Rect(135, y, 115, 30), "Reset Sim",
                                   manager=self.manager, container=self.hud_panel)
 
     def _setup_matrix_editor(self):
-        """Right Side Matrix."""
         cell_size = 30
         grid_size = min(300, self.cfg.num_types * cell_size) + 60
-        
         rect = pygame.Rect(self.cfg.width - grid_size - 10, 10, grid_size, grid_size + 40)
         
         self.matrix_window = UIWindow(
@@ -195,11 +208,9 @@ class SimulationGUI:
         self._rebuild_matrix_grid()
         
     def _rebuild_matrix_grid(self):
-        """Recreate buttons when species count changes."""
         for btn in self.matrix_buttons.values():
             btn.kill()
         self.matrix_buttons = {}
-        
         cell_size = 30
         
         for r in range(self.cfg.num_types):
@@ -216,9 +227,8 @@ class SimulationGUI:
                     self.matrix_buttons[(r, c)] = btn
 
     def _setup_species_editor(self):
-        """Bottom Species Config (Waves)."""
         w = 500
-        h = 150
+        h = 120 # Reduced height (removed biology)
         rect = pygame.Rect((self.cfg.width - w)//2, self.cfg.height - h - 10, w, h)
         
         self.species_window = UIWindow(
@@ -233,7 +243,6 @@ class SimulationGUI:
         UILabel(pygame.Rect(x, y, 100, 30), "Select Type:", 
                 manager=self.manager, container=self.species_window)
         
-        # Need to update this if species count changes
         type_options = [str(i) for i in range(self.cfg.num_types)]
         self.species_selector = UIDropDownMenu(
             options_list=type_options,
@@ -245,7 +254,6 @@ class SimulationGUI:
         
         x = 10
         y += 40
-        # Frequency
         UILabel(pygame.Rect(x, y, 80, 20), "Freq (Lobes)", manager=self.manager, container=self.species_window)
         self.freq_slider = UIHorizontalSlider(
             pygame.Rect(x+90, y, 120, 20),
@@ -256,7 +264,6 @@ class SimulationGUI:
         )
         
         x += 230
-        # Amplitude
         UILabel(pygame.Rect(x, y, 80, 20), "Amplitude", manager=self.manager, container=self.species_window)
         self.amp_slider = UIHorizontalSlider(
             pygame.Rect(x+90, y, 120, 20),
@@ -268,7 +275,6 @@ class SimulationGUI:
         
         x = 10
         y += 30
-        # Phase Speed
         UILabel(pygame.Rect(x, y, 80, 20), "Spin", manager=self.manager, container=self.species_window)
         self.spin_slider = UIHorizontalSlider(
             pygame.Rect(x+90, y, 120, 20),
@@ -296,16 +302,15 @@ class SimulationGUI:
     def update(self, dt):
         self.cfg.friction = self.friction_slider.get_current_value()
         self.cfg.dt = self.dt_slider.get_current_value()
+        self.cfg.target_temperature = self.temp_slider.get_current_value()
+        self.cfg.thermostat_coupling = self.coupling_slider.get_current_value()
         
-        # Rule Params
         current_rule = self.physics.rules[self.active_rule_idx]
         current_rule.max_radius = self.radius_slider.get_current_value()
         current_rule.strength = self.strength_slider.get_current_value()
         
-        # Species Params
         idx = self.active_species_idx
         sc = self.physics.species_config
-        
         if idx < len(sc.wave_freq):
             sc.wave_freq[idx] = round(self.freq_slider.get_current_value())
             sc.wave_amp[idx] = self.amp_slider.get_current_value()
@@ -318,7 +323,9 @@ class SimulationGUI:
                 "num_types": self.cfg.num_types,
                 "friction": self.cfg.friction,
                 "dt": self.cfg.dt,
-                "render_mode": self.cfg.render_mode.value
+                "render_mode": self.cfg.render_mode.value,
+                "target_temp": self.cfg.target_temperature,
+                "coupling": self.cfg.thermostat_coupling
             },
             "rules": [
                 {
@@ -352,26 +359,13 @@ class SimulationGUI:
             num_types = sim.get("num_types", self.cfg.num_types)
             self.cfg.friction = sim.get("friction", self.cfg.friction)
             self.cfg.dt = sim.get("dt", self.cfg.dt)
+            self.cfg.target_temperature = sim.get("target_temp", self.cfg.target_temperature)
+            self.cfg.thermostat_coupling = sim.get("coupling", self.cfg.thermostat_coupling)
             
-            # Apply basic settings
             self.physics.set_active_count(self.cfg.num_particles)
             self.physics.set_species_count(num_types)
             
-            # Restore Rules
             rule_data = data.get("rules", [])
-            # We assume rules order matches or we clear and rebuild?
-            # Physics set_species_count resets default rules.
-            # We should overwrite them if names match, or create new.
-            # Safer: overwrite existing by index/name or clear.
-            # Let's map by name.
-            
-            # Clear existing logic rules to avoid duplicates if names match
-            # But PhysicsEngine has fixed defaults.
-            # Let's iterate loaded rules and update or append.
-            
-            # Reset physics rules first?
-            # self.physics.rules = [] # No, keep defaults logic?
-            # Best is to clear and load.
             self.physics.rules = []
             for r in rule_data:
                 rule = InteractionRule(
@@ -385,7 +379,6 @@ class SimulationGUI:
                 )
                 self.physics.rules.append(rule)
                 
-            # Restore Species
             sp_data = data.get("species", {})
             sc = self.physics.species_config
             if "radius" in sp_data: sc.radius = np.array(sp_data["radius"], dtype=np.float32)
@@ -393,9 +386,11 @@ class SimulationGUI:
             if "wave_amp" in sp_data: sc.wave_amp = np.array(sp_data["wave_amp"], dtype=np.float32)
             if "wave_phase_speed" in sp_data: sc.wave_phase_speed = np.array(sp_data["wave_phase_speed"], dtype=np.float32)
             
-            # UI Updates
             self.friction_slider.set_current_value(self.cfg.friction)
             self.dt_slider.set_current_value(self.cfg.dt)
+            self.temp_slider.set_current_value(self.cfg.target_temperature)
+            self.coupling_slider.set_current_value(self.cfg.thermostat_coupling)
+            
             self.input_particles.set_text(str(self.cfg.num_particles))
             self.input_species.set_text(str(self.cfg.num_types))
             
@@ -429,7 +424,6 @@ class SimulationGUI:
             elif event.ui_element == self.save_btn:
                 self._save_config()
             elif event.ui_element == self.load_btn:
-                # Open File Dialog
                 self.file_dialog = UIFileDialog(
                     rect=pygame.Rect(100, 100, 400, 400),
                     manager=self.manager,
@@ -438,7 +432,6 @@ class SimulationGUI:
                     allow_picking_directories=False
                 )
 
-            # Matrix Buttons
             for (r, c), btn in self.matrix_buttons.items():
                 if event.ui_element == btn:
                     mat = self.physics.rules[self.active_rule_idx].matrix
@@ -474,7 +467,6 @@ class SimulationGUI:
                         break
                 self._update_rule_list()
                 
-        # File Dialog Events
         if event.type == pygame_gui.UI_WINDOW_CLOSE:
             if event.ui_element == self.file_dialog:
                 self.file_dialog = None
