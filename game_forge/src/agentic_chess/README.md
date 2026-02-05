@@ -8,6 +8,7 @@ Agent-versus-agent chess runner with optional Agent Forge integration.
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 PYTHONPATH=game_forge/src:agent_forge/src python -m agentic_chess --list-agents
 PYTHONPATH=game_forge/src:agent_forge/src python -m agentic_chess --white random --black agent-forge
+python game_forge/tools/agentic_chess_benchmark.py --games 5 --max-moves 60 --output game_forge/tools/artifacts/agentic_chess_benchmark.json
 ```
 
 ## Options
