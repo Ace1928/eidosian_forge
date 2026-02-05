@@ -36,6 +36,21 @@
     "output_dir": {
       "type": "string"
     },
+    "policy_manifest_path": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional path to a JSON policy manifest embedded in the summary."
+    },
+    "policy_manifest": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Optional policy manifest describing allowed tools/IO for the benchmark run.",
+      "additionalProperties": true
+    },
     "dry_run": {
       "type": "boolean"
     },

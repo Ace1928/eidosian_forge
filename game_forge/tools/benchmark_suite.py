@@ -55,6 +55,17 @@ def json_dump(payload: object) -> str:
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
+def load_policy_manifest(path: str) -> tuple[str, object]:
+    manifest_path = Path(path)
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise SystemExit(f"ERROR policy manifest not found: {manifest_path}")
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"ERROR invalid policy manifest JSON: {manifest_path}: {exc}")
+    return str(manifest_path), payload
+
+
 def missing_modules(modules: Iterable[str]) -> list[str]:
     missing = []
     for module in modules:
@@ -225,6 +236,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="Write aggregate summary JSON to this path",
     )
     parser.add_argument(
+        "--policy-manifest",
+        type=str,
+        default="",
+        help="Optional JSON policy manifest to embed in the summary",
+    )
+    parser.add_argument(
         "--check-deps",
         action="store_true",
         default=True,
@@ -272,6 +289,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     run_py = repo_root() / "game_forge" / "tools" / "run.py"
     run_id = str(uuid.uuid4())
     generated_at = dt.datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    policy_manifest_path = ""
+    policy_manifest: object | None = None
+    if args.policy_manifest:
+        policy_manifest_path, policy_manifest = load_policy_manifest(args.policy_manifest)
     failures = 0
     skipped = 0
     ran = 0
@@ -356,6 +377,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "preset": args.preset,
                 "tag": tag,
                 "output_dir": str(output_dir),
+                "policy_manifest_path": policy_manifest_path or None,
+                "policy_manifest": policy_manifest,
                 "dry_run": True,
                 "ran": ran,
                 "failed": failures,
@@ -376,6 +399,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "preset": args.preset,
             "tag": tag,
             "output_dir": str(output_dir),
+            "policy_manifest_path": policy_manifest_path or None,
+            "policy_manifest": policy_manifest,
             "dry_run": False,
             "ran": ran,
             "failed": failures,

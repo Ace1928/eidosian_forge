@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "allowed_tools": [
+    "game_forge/tools/run.py"
+  ],
+  "io": {
+    "read_paths": [
+      "game_forge/"
+    ],
+    "write_paths": [
+      "game_forge/tools/artifacts/"
+    ]
+  },
+  "network": {
+    "allowed": false
+  },
+  "notes": "Example policy manifest for benchmark-suite summaries."
+}
