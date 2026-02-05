@@ -1172,5 +1172,25 @@
       "game_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "f17182c4-0f58-40a5-9793-ab2c94da2c1a",
+    "content": "Documented agentic_chess README note about legacy eidosian_monorepo scaffolding; reran game_forge tests (211 passed, 5 skipped, 2026-02-05).",
+    "created_at": "2026-02-06T00:01:47.788174",
+    "last_accessed": "2026-02-06T00:01:47.788179",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "agentic_chess",
+      "docs",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
