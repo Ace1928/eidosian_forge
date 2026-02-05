@@ -5,8 +5,7 @@ Provides an extensible control panel for the simulation.
 import pygame
 import pygame_gui
 import json
-from pygame_gui.elements import UIWindow, UIHorizontalSlider, UILabel, UIButton, UIPanel
-from pygame_gui.windows import UIFileDialog
+from pygame_gui.elements import UIWindow, UIHorizontalSlider, UILabel, UIButton, UIPanel, UIDropDownMenu
 from ..core.types import SimulationConfig
 from ..utils.colors import generate_hsv_palette
 
@@ -19,38 +18,35 @@ class SimulationGUI:
         
         # State
         self.paused = False
+        self.active_rule_idx = 0
         
         self._setup_hud()
         self._setup_matrix_editor()
 
     def _setup_hud(self):
         """Create the main control sidebar."""
-        rect = pygame.Rect(10, 10, 250, 450)
+        rect = pygame.Rect(10, 10, 250, 500)
         self.hud_panel = UIPanel(
             relative_rect=rect,
             starting_height=1,
             manager=self.manager
         )
         
-        # Title
         y = 10
         UILabel(pygame.Rect(10, y, 230, 30), "EIDOSIAN CONTROLS", 
                 manager=self.manager, container=self.hud_panel)
         y += 40
         
-        # FPS Label
         self.fps_label = UILabel(pygame.Rect(10, y, 230, 20), "FPS: --", 
                                  manager=self.manager, container=self.hud_panel)
         y += 30
         
-        # Particle Count
         self.count_label = UILabel(pygame.Rect(10, y, 230, 20), f"N: {self.cfg.num_particles}",
                                    manager=self.manager, container=self.hud_panel)
         y += 30
         
-        # Controls
         # Friction
-        UILabel(pygame.Rect(10, y, 230, 20), "Friction (Damping)", manager=self.manager, container=self.hud_panel)
+        UILabel(pygame.Rect(10, y, 230, 20), "Friction", manager=self.manager, container=self.hud_panel)
         y += 20
         self.friction_slider = UIHorizontalSlider(
             pygame.Rect(10, y, 230, 25),
@@ -62,7 +58,7 @@ class SimulationGUI:
         y += 35
         
         # DT
-        UILabel(pygame.Rect(10, y, 230, 20), "Time Step (DT)", manager=self.manager, container=self.hud_panel)
+        UILabel(pygame.Rect(10, y, 230, 20), "Time Step", manager=self.manager, container=self.hud_panel)
         y += 20
         self.dt_slider = UIHorizontalSlider(
             pygame.Rect(10, y, 230, 25),
@@ -73,13 +69,26 @@ class SimulationGUI:
         )
         y += 35
         
-        # Repulsion Radius
-        UILabel(pygame.Rect(10, y, 230, 20), "Repulsion Radius", manager=self.manager, container=self.hud_panel)
+        # Rule Selector
+        UILabel(pygame.Rect(10, y, 230, 20), "Active Force Rule", manager=self.manager, container=self.hud_panel)
         y += 20
-        self.rep_slider = UIHorizontalSlider(
+        rule_names = [r.name for r in self.physics.rules]
+        self.rule_selector = UIDropDownMenu(
+            options_list=rule_names,
+            starting_option=rule_names[0],
+            relative_rect=pygame.Rect(10, y, 230, 30),
+            manager=self.manager,
+            container=self.hud_panel
+        )
+        y += 40
+
+        # Radius (For active rule)
+        self.lbl_radius = UILabel(pygame.Rect(10, y, 230, 20), "Rule Max Radius", manager=self.manager, container=self.hud_panel)
+        y += 20
+        self.radius_slider = UIHorizontalSlider(
             pygame.Rect(10, y, 230, 25),
-            start_value=self.cfg.max_radius * 0.3, # Approx default
-            value_range=(0.01, self.cfg.max_radius),
+            start_value=self.physics.rules[0].max_radius,
+            value_range=(0.01, 1.0),
             manager=self.manager,
             container=self.hud_panel
         )
@@ -94,7 +103,7 @@ class SimulationGUI:
     def _setup_matrix_editor(self):
         """Create a visual grid for editing interaction rules."""
         cell_size = 30
-        grid_size = self.cfg.num_types * cell_size + 80 # + padding and save button
+        grid_size = self.cfg.num_types * cell_size + 80 
         
         rect = pygame.Rect(self.cfg.width - grid_size - 10, 10, grid_size, grid_size)
         
@@ -107,11 +116,10 @@ class SimulationGUI:
         
         self.matrix_buttons = {} # (row, col) -> button
         
-        # We don't need colors for buttons themselves usually, but let's keep logic
-        
         for r in range(self.cfg.num_types):
             for c in range(self.cfg.num_types):
-                val = self.physics.matrix[r, c]
+                # Init with rule 0
+                val = self.physics.rules[0].matrix[r, c]
                 
                 btn_rect = pygame.Rect(20 + c*cell_size, 20 + r*cell_size, cell_size-2, cell_size-2)
                 
@@ -124,7 +132,6 @@ class SimulationGUI:
                 )
                 self.matrix_buttons[(r, c)] = btn
         
-        # Save Button in Matrix Window
         save_btn_rect = pygame.Rect(20, self.cfg.num_types * cell_size + 30, 80, 30)
         self.save_btn = UIButton(
             relative_rect=save_btn_rect,
@@ -133,12 +140,24 @@ class SimulationGUI:
             container=self.matrix_window
         )
 
+    def _refresh_matrix_buttons(self):
+        """Update button text to match active rule."""
+        mat = self.physics.rules[self.active_rule_idx].matrix
+        for (r, c), btn in self.matrix_buttons.items():
+            val = mat[r, c]
+            btn.set_text(f"{val:.1f}")
+            
+        # Also update radius slider
+        self.radius_slider.set_current_value(self.physics.rules[self.active_rule_idx].max_radius)
+
     def update(self, dt):
         """Update GUI state based on sliders."""
-        # FPS passed in via set_text separately if needed, or we read from clock in main
-        # But we need to update sliders to config
         self.cfg.friction = self.friction_slider.get_current_value()
         self.cfg.dt = self.dt_slider.get_current_value()
+        
+        # Update active rule radius
+        current_rule = self.physics.rules[self.active_rule_idx]
+        current_rule.max_radius = self.radius_slider.get_current_value()
 
     def handle_event(self, event):
         """Handle UI-specific events."""
@@ -149,19 +168,36 @@ class SimulationGUI:
             elif event.ui_element == self.reset_btn:
                 self.physics.reset()
             elif event.ui_element == self.save_btn:
-                # Save Matrix
+                # Save All Rules
                 data = {
-                    "matrix": self.physics.matrix.tolist()
+                    "rules": [
+                        {
+                            "name": r.name,
+                            "matrix": r.matrix.tolist(),
+                            "max_r": r.max_radius,
+                            "type": int(r.force_type)
+                        } for r in self.physics.rules
+                    ]
                 }
-                with open("matrix_config.json", "w") as f:
+                with open("rules_config.json", "w") as f:
                     json.dump(data, f)
-                print("Matrix saved to matrix_config.json")
+                print("Rules saved to rules_config.json")
             
-            # Check matrix buttons
+            # Matrix Buttons
             for (r, c), btn in self.matrix_buttons.items():
                 if event.ui_element == btn:
-                    val = self.physics.matrix[r, c]
+                    mat = self.physics.rules[self.active_rule_idx].matrix
+                    val = mat[r, c]
                     val -= 0.5
                     if val < -1.0: val = 1.0
-                    self.physics.matrix[r, c] = val
+                    mat[r, c] = val
                     btn.set_text(f"{val:.1f}")
+                    
+        elif event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
+            if event.ui_element == self.rule_selector:
+                # Find index
+                for i, r in enumerate(self.physics.rules):
+                    if r.name == event.text:
+                        self.active_rule_idx = i
+                        self._refresh_matrix_buttons()
+                        break

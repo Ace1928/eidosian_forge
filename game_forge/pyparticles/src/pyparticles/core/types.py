@@ -4,12 +4,28 @@ Core data structures and type definitions.
 from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 import numpy as np
-from enum import Enum
+from enum import IntEnum, Enum
 
 class RenderMode(Enum):
-    SPRITES = "sprites"  # High quality, slower (N < 5000)
-    PIXELS = "pixels"    # Fast, 1px dots (N > 5000)
-    GLOW = "glow"        # Additive blending (experimental)
+    SPRITES = "sprites"
+    PIXELS = "pixels"
+    GLOW = "glow"
+
+class ForceType(IntEnum):
+    LINEAR = 0          # Standard Particle Life: Peak at center, linear falloff
+    INVERSE_SQUARE = 1  # Gravity/Electrostatics: 1/r^2 (softened)
+    REPEL_ONLY = 2      # Hard collision only
+
+@dataclass
+class InteractionRule:
+    """Definition of a specific interaction force layer."""
+    name: str
+    force_type: ForceType
+    matrix: np.ndarray     # (T, T)
+    max_radius: float
+    min_radius: float
+    strength: float = 1.0
+    softening: float = 0.05 # For inverse square to prevent singularity
 
 @dataclass
 class SimulationConfig:
@@ -26,10 +42,10 @@ class SimulationConfig:
     friction: float = 0.5
     gravity: float = 0.0
     
-    # Interaction
-    max_radius: float = 0.1
-    min_radius: float = 0.02
-    repulsion_strength: float = 2.0
+    # Global Physics properties (legacy/global)
+    # Individual rules now handle radii, but we keep defaults for init
+    default_max_radius: float = 0.1
+    default_min_radius: float = 0.02
     
     # System
     threads: int = 4
@@ -45,10 +61,7 @@ class SimulationConfig:
 
 @dataclass
 class ParticleState:
-    """
-    Structure of Arrays (SoA) container for particle data.
-    Designed for Numba access.
-    """
+    """Structure of Arrays (SoA) container for particle data."""
     pos: np.ndarray        # (N, 2) float32
     vel: np.ndarray        # (N, 2) float32
     colors: np.ndarray     # (N,) int32

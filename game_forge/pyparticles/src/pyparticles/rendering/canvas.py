@@ -34,7 +34,7 @@ class Canvas:
         self.colors = generate_hsv_palette(self.cfg.num_types)
         
         # Calculate visual radius
-        r_px = max(2, int(self.cfg.max_radius * 0.3 * self.scale))
+        r_px = max(2, int(self.cfg.default_max_radius * 0.3 * self.scale))
         self.radius_px = r_px
         
         self.sprites = []
