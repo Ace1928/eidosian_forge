@@ -5120,5 +5120,31 @@
       0.6666666666666666,
       0.7058823529411765
     ]
+  },
+  "af8c3352-1185-432f-8f69-93bc68ea207d": {
+    "id": "af8c3352-1185-432f-8f69-93bc68ea207d",
+    "content": "Added Algorithms Lab force registry + batched Numba kernels (ForceDefinition/ForceRegistry/ForcePack) and neighbor graph builder; updated demos/bench/profiler with new \"forces\" algorithm; added tests for forces/graph and docs incl. FORCES.md + references (Lennard-Jones/Yukawa/Morse/Boids). Integrated algorithms_lab graph path into gene_particles global neighbor graph. Added gene_particles docs: PYPARTICLES_LESSONS.md + IMPROVEMENTS_TODO.md. Benchmarked forces demo (512 particles, 100 steps) and profiled forces (512, 50 steps) in eidosian_venv; numba warns about /dev/shm semaphore lock. Committed changes: 5c63a11aa7 (pyparticles wave/exclusion/profiling + UI updates) and 3320baec5f (algorithms_lab forces/graph + gene_particles docs).",
+    "created_at": "2026-02-05T14:17:19.434375",
+    "type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "embedding": [
+      0.17254901960784313,
+      0.611764705882353,
+      0.26666666666666666,
+      0.027450980392156862,
+      0.011764705882352941,
+      0.7647058823529411,
+      0.03529411764705882,
+      0.9686274509803922,
+      0.043137254901960784,
+      0.6588235294117647,
+      0.3058823529411765,
+      0.42745098039215684,
+      0.19607843137254902,
+      0.803921568627451,
+      0.6039215686274509,
+      0.23529411764705882
+    ]
   }
 }
