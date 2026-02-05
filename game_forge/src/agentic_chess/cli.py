@@ -18,6 +18,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--list-agents", action="store_true", help="List available agents")
+    parser.add_argument(
+        "--list",
+        dest="list_agents",
+        action="store_true",
+        help="Alias for --list-agents",
+    )
     parser.add_argument("--white", choices=AGENT_CHOICES, default="random", help="White agent")
     parser.add_argument("--black", choices=AGENT_CHOICES, default="agent-forge", help="Black agent")
     parser.add_argument("--max-moves", type=int, default=200, help="Maximum plies to play")

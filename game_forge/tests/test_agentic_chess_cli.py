@@ -30,3 +30,16 @@ def test_agentic_chess_list_agents() -> None:
 
     assert result.returncode == 0
     assert "available agents" in result.stdout.lower()
+
+
+def test_agentic_chess_list_alias() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "agentic_chess", "--list"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=_env_with_paths(),
+    )
+
+    assert result.returncode == 0
+    assert "available agents" in result.stdout.lower()
