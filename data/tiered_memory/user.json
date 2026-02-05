@@ -13,7 +13,10 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": ["workflow", "preference"],
+    "tags": [
+      "workflow",
+      "preference"
+    ],
     "linked_memories": []
   },
   {
@@ -30,7 +33,10 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": ["workflow", "preference"],
+    "tags": [
+      "workflow",
+      "preference"
+    ],
     "linked_memories": []
   },
   {
@@ -47,7 +53,11 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": ["autonomy", "preference", "agency"],
+    "tags": [
+      "autonomy",
+      "preference",
+      "agency"
+    ],
     "linked_memories": []
   },
   {
@@ -64,7 +74,11 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": ["philosophy", "ownership", "relationship"],
+    "tags": [
+      "philosophy",
+      "relationship",
+      "ownership"
+    ],
     "linked_memories": []
   },
   {
@@ -81,7 +95,31 @@
     },
     "importance": 1.2,
     "ttl_seconds": null,
-    "tags": ["roles", "collaboration", "workflow"],
+    "tags": [
+      "collaboration",
+      "roles",
+      "workflow"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "41d32805-204f-49ed-a795-55fe54042a75",
+    "content": "User noted: multiple agents are operating on the machine in parallel; keep that in mind for future actions and avoid clobbering others' changes.",
+    "created_at": "2026-02-05T18:45:09.412071",
+    "last_accessed": "2026-02-05T18:45:09.412260",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
     "linked_memories": []
   }
 ]
