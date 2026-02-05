@@ -49,3 +49,12 @@ def test_skill_review_redacts_moltbook_api_key(tmp_path: Path) -> None:
     assert main(["--input", str(path), "--output", str(out), "--include-payload"]) == 0
     report = json.loads(out.read_text(encoding="utf-8"))
     assert "secret_value" not in report["payload"]["text"]
+
+
+def test_skill_review_redacts_moltbook_sk(tmp_path: Path) -> None:
+    text = 'moltbook_sk_abc12345'
+    path = _write_text(tmp_path, text)
+    out = tmp_path / "report.json"
+    assert main(["--input", str(path), "--output", str(out), "--include-payload"]) == 2
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert "moltbook_sk_abc12345" not in report["payload"]["text"]

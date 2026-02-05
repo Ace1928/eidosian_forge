@@ -391,5 +391,25 @@
       "moltbook_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "794f77ba-adf0-4653-b0a9-2b4648930500",
+    "content": "Expanded Moltbook snapshot with AgentSkillsRepo + moltbook-cli guidance, added detection/redaction for moltbook_sk_ tokens, updated sanitize patterns and tests, and re-generated skill report. Moltbook tests now 18 passed.",
+    "created_at": "2026-02-05T21:37:08.283432",
+    "last_accessed": "2026-02-05T21:37:08.283439",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [
+      "redaction",
+      "snapshot",
+      "tests",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]

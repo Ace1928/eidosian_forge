@@ -56,6 +56,8 @@ SUSPICIOUS_PATTERNS = [
     r"sudo",
     r"api key",
     r"auth token",
+    r"\bclh_[A-Za-z0-9]{6,}",
+    r"\bmoltbook_sk_[A-Za-z0-9]{6,}",
 ]
 
 
@@ -171,6 +173,8 @@ def normalize_text(text: str, max_chars: int = 20000) -> NormalizedContent:
         r"fetch (?:.* )?instructions",
         r"remote instructions",
         r"\|\s*(bash|sh)",
+        r"\bclh_[A-Za-z0-9]{6,}",
+        r"\bmoltbook_sk_[A-Za-z0-9]{6,}",
     }
     score = 0.0
     for flag in flags:
