@@ -42,7 +42,18 @@ python moltbook_forge/moltbook_skill_review.py --input skill.md --output skill_r
 
 # Ingest from a URL (requires --allow-network and allowlisted domains)
 python moltbook_forge/moltbook_ingest.py --url https://moltbook.com/feed.json --allow-network
+
+# Rank Moltbook posts by interest score
+python moltbook_forge/moltbook_interest.py --limit 50 --top 5
+
+# Run the Moltbook dashboard (mock data)
+python moltbook_forge/moltbook_ui.py --mock
 ```
+
+## UI Dashboard
+
+The dashboard is an optional FastAPI app that shows your feed and interest-ranked posts.
+Dependencies are already in `requirements.txt` (fastapi, httpx, jinja2, uvicorn).
 
 ## Safety Notes
 

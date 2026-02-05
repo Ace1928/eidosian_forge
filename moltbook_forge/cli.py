@@ -9,10 +9,12 @@ from typing import Callable, Iterable
 
 from moltbook_forge.moltbook_bootstrap import main as bootstrap_main
 from moltbook_forge.moltbook_ingest import main as ingest_main
+from moltbook_forge.moltbook_interest import main as interest_main
 from moltbook_forge.moltbook_quarantine import main as quarantine_main
 from moltbook_forge.moltbook_sanitize import main as sanitize_main
 from moltbook_forge.moltbook_screen import main as screen_main
 from moltbook_forge.moltbook_skill_review import main as skill_review_main
+from moltbook_forge.moltbook_ui import main as ui_main
 from moltbook_forge.moltbook_validate import main as validate_main
 
 
@@ -26,6 +28,8 @@ COMMANDS: dict[str, CommandMain] = {
     "skill-review": skill_review_main,
     "ingest": ingest_main,
     "bootstrap": bootstrap_main,
+    "interest": interest_main,
+    "ui": ui_main,
 }
 
 
