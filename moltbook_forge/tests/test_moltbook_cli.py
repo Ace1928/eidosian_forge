@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from moltbook_forge.cli import main
@@ -14,6 +16,17 @@ def _write_text(tmp_path: Path, text: str) -> Path:
 
 def test_cli_list() -> None:
     assert main(["--list"]) == 0
+
+
+def test_cli_module_list() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "moltbook_forge", "--list"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert "available commands" in result.stdout.lower()
 
 
 def test_cli_sanitize(tmp_path: Path) -> None:

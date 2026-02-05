@@ -1,6 +1,6 @@
 # Test Status: Eidosian Forge System
 
-**Last Updated**: 2026-02-05T14:19:15Z
+**Last Updated**: 2026-02-05T14:22:30Z
 **Test Framework**: pytest 9.0.2
 
 ---
@@ -33,7 +33,7 @@
 | narrative_forge | 1 | |
 | viz_forge | 3 | |
 | mkey_forge | 5 | |
-| moltbook_forge | 24 | Safety pipeline + CLI |
+| moltbook_forge | 25 | Safety pipeline + CLI |
 | glyph_forge | 171 | Full coverage |
 | crawl_forge | 2 | |
 | lyrics_forge | 4 | |
