@@ -237,5 +237,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "4eea6aa0-a425-4eb0-90fb-6787074e0396",
+    "content": "Fixed falling_sand reports.py import syntax. Ran falling_sand benchmarks via PYTHONPATH=src and benchmarks.main with 5 runs; wrote /tmp/falling_sand_benchmark.json with mean times: indexer ~0.0493s, simulation ~0.0048s, streaming ~0.7604s, terrain ~0.0146s.",
+    "created_at": "2026-02-05T21:08:33.722971",
+    "last_accessed": "2026-02-05T21:08:33.722976",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.1,
+    "ttl_seconds": null,
+    "tags": [
+      "falling_sand",
+      "benchmarks",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
