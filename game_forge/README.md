@@ -24,6 +24,9 @@
 ## 🚀 Usage
 
 ```bash
+# Ensure the forge virtualenv is active
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
+
 # Run Gene Particles simulation
 python -m game_forge.src.gene_particles
 
@@ -40,6 +43,7 @@ python game_forge/tools/algorithms_lab/demo.py --algorithm sph --visual
 ## Launcher
 
 ```bash
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 python game_forge/tools/run.py --list
 python game_forge/tools/run.py gene-particles
 python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
@@ -48,6 +52,7 @@ python game_forge/tools/run.py stratum --list
 ```
 
 ```bash
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 PYTHONPATH=game_forge/src python -m algorithms_lab --demo -- --algorithm sph --visual
 PYTHONPATH=game_forge/src python -m chess_game --list
 ```

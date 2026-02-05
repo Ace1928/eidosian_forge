@@ -6,6 +6,7 @@ single unified Python API yet.
 ## Quick Start
 
 ```bash
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 pip install -e ./game_forge
 python game_forge/tools/run.py --list
 ```
@@ -13,6 +14,7 @@ python game_forge/tools/run.py --list
 ## Run A Target
 
 ```bash
+source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 python game_forge/tools/run.py gene-particles
 python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
 ```
