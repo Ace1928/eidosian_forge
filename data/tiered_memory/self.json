@@ -1274,5 +1274,24 @@
       "docs"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "2d3e427d-1921-49b8-b477-96a484489f0c",
+    "content": "Expanded moltbook_forge critical flag set to align with sanitize patterns; moltbook tests still 25 passed (2026-02-05).",
+    "created_at": "2026-02-06T00:25:50.919750",
+    "last_accessed": "2026-02-06T00:25:50.919753",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "security",
+      "tests",
+      "moltbook_forge"
+    ],
+    "linked_memories": []
   }
 ]
