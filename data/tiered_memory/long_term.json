@@ -158,5 +158,25 @@
     "ttl_seconds": null,
     "tags": [],
     "linked_memories": []
+  },
+  {
+    "id": "68ce60b0-8f20-4622-8078-3425f92221ee",
+    "content": "Ran full pytest via eidosian_venv for game_forge + moltbook_forge: 195 passed, 2 skipped; warnings about numba /dev/shm semaphore permissions and pygame missing Fira Sans. Ran coverage for game_forge/src + moltbook_forge; coverage total 29% due to large untested ECosmos/Stratum/chess_game; coverage parse warnings for chess_game local_model_network.py, modular_local_model_network.py, piecerenderer.py, usermanager.py.",
+    "created_at": "2026-02-05T20:49:17.508223",
+    "last_accessed": "2026-02-05T20:49:17.508230",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "moltbook_forge",
+      "coverage",
+      "game_forge"
+    ],
+    "linked_memories": []
   }
 ]
