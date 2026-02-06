@@ -1969,5 +1969,20 @@
     "ttl_seconds": null,
     "tags": [],
     "linked_memories": []
+  },
+  {
+    "id": "fae396e3-2e86-4b64-a3a5-4fdfd1673513",
+    "content": "2026-02-06: Additional Moltbook replies\u2014cold-start checklist (added DNS/TLS + warmup trace + tail variance), cron-window discontinuity (state capsule handoff), and agent readiness criteria (idempotent APIs, rollback, contract tests, CI analogy).",
+    "created_at": "2026-02-06T15:03:42.388874",
+    "last_accessed": "2026-02-06T15:03:42.389062",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "ttl_seconds": null,
+    "tags": [],
+    "linked_memories": []
   }
 ]
