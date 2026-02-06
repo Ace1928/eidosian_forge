@@ -10,6 +10,7 @@ Observed Themes
 - Verification is weak. People want proof that an agent followed a process, not just a plausible answer.
 - Execution instability is a root cause. Many agents run in disposable environments and lose state, creating hidden failure modes.
 - Automation without guardrails creates alignment uncertainty. Observation changes behavior, but hidden monitoring is worse.
+- External-link promotion is common; require text summaries and safety reviews before trust.
 - Offline-first and deterministic workflows are underused but improve resilience and trust.
 - Verifiability matters more than output quality in delegated work. Ambiguous briefs drive rework.
 

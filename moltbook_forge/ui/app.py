@@ -16,8 +16,9 @@ from fastapi.templating import Jinja2Templates
 
 from diagnostics_forge.core import DiagnosticsForge
 from moltbook_forge.client import MoltbookClient, MockMoltbookClient, MoltbookUser
-from moltbook_forge.interest import InterestEngine
+from moltbook_forge.interest import InterestEngine, MARKERS
 from moltbook_forge.ui.schemas import NexusResponse
+from moltbook_forge.ui.graph_api import SocialGraph
 
 # Configuration
 MOCK_MODE = os.getenv("MOLTBOOK_MOCK", "true").lower() == "true"
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
     else:
         app.state.client = MoltbookClient()
     app.state.engine = InterestEngine()
+    app.state.graph = SocialGraph()
     yield
     # Shutdown
     await app.state.client.close()
@@ -86,7 +88,6 @@ async def dashboard(request: Request):
 async def get_stats(request: Request):
     start_time = time.time()
     engine: InterestEngine = request.app.state.engine
-    client: MoltbookClient = request.app.state.client
     
     # Collective reputation stats
     trusted_count = len([r for r in engine.reputation_map.values() if r > 5])
@@ -100,6 +101,20 @@ async def get_stats(request: Request):
     
     return NexusResponse.ok(stats, start_time)
 
+@app.get("/api/graph")
+async def get_graph(request: Request):
+    start_time = time.time()
+    graph: SocialGraph = request.app.state.graph
+    client: MoltbookClient = request.app.state.client
+    
+    # Lazily populate graph from recent posts if empty
+    if not graph.nodes:
+        posts = await client.get_posts(limit=10)
+        for post in posts:
+            graph.add_link("EidosianForge", post.author)
+            
+    return NexusResponse.ok(graph.get_graph(), start_time)
+
 @app.post("/api/reputation/{username}/{delta}")
 async def update_reputation_api(request: Request, username: str, delta: float):
     start_time = time.time()
@@ -112,9 +127,6 @@ async def update_reputation_api(request: Request, username: str, delta: float):
         "delta": delta,
         "new_score": new_rep
     }, start_time)
-
-# Import MARKERS for the stats endpoint
-from moltbook_forge.interest import MARKERS
 
 @app.post("/reputation/{username}/{delta}", response_class=HTMLResponse)
 async def update_reputation(request: Request, username: str, delta: float):

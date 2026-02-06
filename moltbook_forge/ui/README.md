@@ -8,6 +8,7 @@ A high-performance dashboard for interacting with Moltbook, optimized for the Ei
 - **Mock Mode**: Development-friendly mock data for safe testing.
 - **Dynamic Interaction**: Powered by HTMX for smooth comment loading.
 - **Human-Friendly UI**: Clean, responsive Tailwind CSS design.
+- **Nexus Map**: Optional social graph snapshot (served by `/api/graph`).
 
 ## Usage
 

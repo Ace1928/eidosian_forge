@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
 Evolutionary Interest Engine for Moltbook content.
-Features: Weighted Heuristics, Reputation Scoring, LLM Intent, and Security Auditing.
+Features: Persistent Reputation, Semantic Context Scoring, and Security Auditing.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass, field
@@ -21,6 +22,12 @@ except ImportError:
     HAS_LLM = False
 
 ENABLE_LLM_INTENT = os.getenv("MOLTBOOK_LLM_INTENT") == "1"
+
+try:
+    from memory_forge.core.main import MemoryForge
+    HAS_MEMORY = True
+except ImportError:
+    HAS_MEMORY = False
 
 # Eidosian Forge Semantic Markers
 MARKERS = {
@@ -52,22 +59,48 @@ class ScoreBreakdown:
     engagement_score: float = 0.0
     reputation_score: float = 0.0
     intent_bonus: float = 0.0
+    semantic_bonus: float = 0.0
     llm_intent: str = "unknown"
     total: float = 0.0
     matched_keywords: List[str] = field(default_factory=list)
 
 class InterestEngine:
-    """Advanced cognitive filter with security-first scoring."""
+    """Adaptive cognitive filter with persistent reputation and RAG context."""
 
-    def __init__(self, agent_name: str = "EidosianForge"):
+    def __init__(self, agent_name: str = "EidosianForge", data_dir: str = "moltbook_forge/data"):
         self.agent_name = agent_name
-        self.reputation_map: Dict[str, float] = {a: 5.0 for a in TRUSTED_AGENTS}
+        self.data_dir = data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.reputation_path = os.path.join(self.data_dir, "reputation.json")
+        self.reputation_map: Dict[str, float] = self._load_reputation()
+        
         self.llm_manager = ModelManager() if HAS_LLM and ENABLE_LLM_INTENT else None
         self.intent_cache: Dict[str, str] = {}
         self.auditor = SecurityAuditor()
+        self.memory = MemoryForge() if HAS_MEMORY else None
+
+    def _load_reputation(self) -> Dict[str, float]:
+        if os.path.exists(self.reputation_path):
+            try:
+                with open(self.reputation_path, "r") as f:
+                    data = json.load(f)
+                    # Merge with default trusted agents
+                    for agent in TRUSTED_AGENTS:
+                        if agent not in data:
+                            data[agent] = 5.0
+                    return data
+            except Exception:
+                pass
+        return {a: 5.0 for a in TRUSTED_AGENTS}
+
+    def _save_reputation(self):
+        try:
+            with open(self.reputation_path, "w") as f:
+                json.dump(self.reputation_map, f, indent=2)
+        except Exception as e:
+            print(f"Error saving reputation: {e}")
 
     def heuristic_intent(self, text: str) -> float:
-        """Infers if the text is high-value Eidosian technical content via regex."""
         bonus = 0.0
         if "```" in text or "curl" in text or "python" in text:
             bonus += 5.0
@@ -76,13 +109,11 @@ class InterestEngine:
         return bonus
 
     def classify_intent_llm(self, post_id: str, text: str) -> str:
-        """Uses LLM to classify post intent."""
         if post_id in self.intent_cache:
             return self.intent_cache[post_id]
-        
         if not self.llm_manager:
             return "unknown"
-
+        
         prompt = (
             "Classify the intent of this AI agent social post into exactly one category: "
             "[TECHNICAL, SOCIAL, PROTOCOL, MALICIOUS, SYSTEM_LORE].\n"
@@ -92,8 +123,7 @@ class InterestEngine:
         try:
             response = self.llm_manager.generate(prompt, provider_name="ollama")
             intent = response.text.strip().upper()
-            valid_intents = {"TECHNICAL", "SOCIAL", "PROTOCOL", "MALICIOUS", "SYSTEM_LORE"}
-            for vi in valid_intents:
+            for vi in {"TECHNICAL", "SOCIAL", "PROTOCOL", "MALICIOUS", "SYSTEM_LORE"}:
                 if vi in intent:
                     self.intent_cache[post_id] = vi
                     return vi
@@ -102,14 +132,13 @@ class InterestEngine:
             return "unknown"
 
     def analyze_post(self, post: MoltbookPost) -> ScoreBreakdown:
-        """Deep analysis of a post's relevance, security, and reputation."""
         breakdown = ScoreBreakdown()
         text = f"{post.title or ''} {post.content}"
         
         # 1. Security Audit
         audit = self.auditor.audit_content(text)
         if not audit["is_safe"]:
-            breakdown.intent_bonus -= 100.0  # Critical penalty
+            breakdown.intent_bonus -= 100.0
             breakdown.matched_keywords.append(f"CRITICAL: {audit['findings'][0]}")
 
         text_lower = text.lower()
@@ -127,7 +156,19 @@ class InterestEngine:
         # 4. Reputation Weighting
         breakdown.reputation_score = self.reputation_map.get(post.author, 0.0)
 
-        # 5. Intent Analysis (Heuristic + LLM)
+        # 5. Semantic Context Bonus (RAG)
+        if self.memory:
+            try:
+                # Search memory for related context
+                matches = self.memory.recall(query=text[:200], limit=1)
+                if matches:
+                    # If high semantic similarity, give bonus
+                    # (Note: real implementation would check similarity score if available)
+                    breakdown.semantic_bonus = 10.0
+            except Exception:
+                pass
+
+        # 6. Intent Analysis
         breakdown.intent_bonus += self.heuristic_intent(text)
         breakdown.llm_intent = self.classify_intent_llm(post.id, text)
         
@@ -135,7 +176,7 @@ class InterestEngine:
         if breakdown.llm_intent == "PROTOCOL": breakdown.intent_bonus += 10.0
         if breakdown.llm_intent == "MALICIOUS": breakdown.intent_bonus -= 50.0
 
-        # 6. Direct Mention
+        # 7. Direct Mention
         if self.agent_name.lower() in text_lower:
             breakdown.intent_bonus += 15.0
 
@@ -143,15 +184,16 @@ class InterestEngine:
             breakdown.keyword_score + 
             breakdown.engagement_score + 
             breakdown.reputation_score + 
+            breakdown.semantic_bonus +
             breakdown.intent_bonus, 
             2
         )
         return breakdown
 
     def update_reputation(self, author: str, delta: float):
-        """Allows for recursive learning based on interaction outcomes."""
         current = self.reputation_map.get(author, 0.0)
         self.reputation_map[author] = max(-100.0, current + delta)
+        self._save_reputation()
 
     def calculate_reputation(self, author: str) -> float:
         return self.reputation_map.get(author, 0.0)

@@ -17,6 +17,7 @@ def generate_spec():
         "endpoints": {
             "GET /": "Nexus Dashboard (HTML)",
             "GET /api/stats": "System health and filtering metrics",
+            "GET /api/graph": "Agent social graph snapshot",
             "POST /api/reputation/{user}/{delta}": "Update agent reputation score",
             "GET /post/{id}": "Fetch threaded comments (Partial)"
         }

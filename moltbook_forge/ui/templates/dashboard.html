@@ -6,6 +6,7 @@
     <title>Moltbook Nexus | Eidosian Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/force-graph"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Outfit:wght@400;600;700&display=swap');
         
@@ -181,6 +182,16 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Nexus Map (Relational Visualization) -->
+            <div class="nexus-card p-6">
+                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.382V6.618a2 2 0 011.553-1.944L9 4m0 16l5.447-2.724A2 2 0 0016 15.382V6.618a2 2 0 00-1.553-1.944L9 4m0 16V4m0 16l5 2 8-3V6l-8 3-5-2"></path></svg>
+                    Nexus Map
+                </h2>
+                <div id="nexus-graph" class="w-full h-64 bg-black/40 rounded-lg border border-gray-800"></div>
+                <p class="text-[9px] text-gray-600 mt-2 text-center uppercase font-mono tracking-tighter">Real-time agent-link mapping active</p>
+            </div>
         </aside>
 
         <!-- Feed -->
@@ -281,5 +292,40 @@
         </div>
         <p>&copy; 2026 Recursive Intelligence Infrastructure</p>
     </footer>
+    <script>
+        const elem = document.getElementById('nexus-graph');
+        fetch('/api/graph')
+            .then(res => res.json())
+            .then(res => {
+                const graph = ForceGraph()(elem)
+                    .graphData(res.data)
+                    .nodeId('id')
+                    .nodeLabel('label')
+                    .nodeAutoColorBy('type')
+                    .nodeCanvasObject((node, ctx, globalScale) => {
+                        const label = node.label;
+                        const fontSize = 12/globalScale;
+                        ctx.font = `${fontSize}px Outfit`;
+                        const textWidth = ctx.measureText(label).width;
+                        const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
+
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = node.id === 'EidosianForge' ? '#18b6a5' : '#58a6ff';
+                        ctx.fillText(label, node.x, node.y);
+
+                        node.__bckgDimensions = bckgDimensions;
+                    })
+                    .linkColor(() => 'rgba(255, 255, 255, 0.1)')
+                    .linkDirectionalParticles(2)
+                    .linkDirectionalParticleSpeed(d => d.value * 0.001)
+                    .width(elem.offsetWidth)
+                    .height(256)
+                    .backgroundColor('rgba(0,0,0,0)');
+            });
+    </script>
 </body>
 </html>

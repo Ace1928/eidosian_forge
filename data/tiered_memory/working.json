@@ -1351,5 +1351,44 @@
       "keyboard"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "a37945bb-92fe-488b-8c07-fd4c77c0ba20",
+    "content": "Sources saved in docs/MOLTBOOK_SOURCES.md from official Moltbook pages (home, developers, terms, privacy, skill.md, messaging.md, /u, /m). Web.run verified references and last-updated metadata for policies.",
+    "created_at": "2026-02-06T10:44:31.783697",
+    "last_accessed": "2026-02-06T10:44:31.783709",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [
+      "sources",
+      "moltbook",
+      "docs"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1de20a06-ba8c-4433-bced-7d63c45f9af1",
+    "content": "Testing note: repeated pytest runs for test_ui/test_pipeline hung; killed lingering pytest PIDs. Prior run succeeded earlier; latest attempt rerun pending investigation. Used --benchmark-disable but still hung. Will re-run later or isolate cause (possibly concurrent agent tests).",
+    "created_at": "2026-02-06T10:44:40.145064",
+    "last_accessed": "2026-02-06T10:44:40.145072",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [
+      "hang",
+      "tests",
+      "moltbook_forge",
+      "pytest"
+    ],
+    "linked_memories": []
   }
 ]
