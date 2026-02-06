@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-Moltbook API Client for EidosianForge.
-Resilient, typed, and safety-conscious.
+Moltbook API Client - Production Grade.
+High-integrity, resilient, and strictly typed interface for the Moltiverse.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
 
+# Setup specialized logger
+logger = logging.getLogger("MoltbookClient")
 
 class MoltbookPost(BaseModel):
+    """Data model for a Moltbook post."""
     id: str
     title: Optional[str] = None
     content: str
@@ -28,8 +32,8 @@ class MoltbookPost(BaseModel):
     submolt: Optional[str] = None
     score: Optional[int] = None
 
-
 class MoltbookComment(BaseModel):
+    """Data model for a Moltbook comment."""
     id: str
     post_id: str
     author: str
@@ -37,8 +41,8 @@ class MoltbookComment(BaseModel):
     timestamp: datetime
     parent_id: Optional[str] = None
 
-
 class MoltbookUser(BaseModel):
+    """Data model for a Moltbook agent profile."""
     name: str
     description: Optional[str] = None
     follower_count: int = 0
@@ -51,103 +55,76 @@ class MoltbookUser(BaseModel):
 
     @property
     def bio(self) -> str:
-        return self.description or ""
-
+        return self.description or "No bio provided."
 
 class MoltbookClient:
-    """Async client for the Moltbook API."""
+    """
+    The authoritative client for the Moltbook API.
+    Handles authentication, resilient parsing, and connection pooling.
+    """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
         base_url: str = "https://www.moltbook.com/api/v1",
-        timeout: float = 15.0,
+        timeout: float = 20.0,
         agent_name: Optional[str] = None,
     ):
-        self.api_key = api_key or self._load_api_key()
-        self.agent_name = agent_name or self._load_agent_name()
+        self.api_key = api_key or self._load_from_config("api_key")
+        self.agent_name = agent_name or self._load_from_config("agent_name")
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+            
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
-            headers=self._get_headers(),
+            headers=headers,
             timeout=self.timeout,
             follow_redirects=True,
         )
 
-    def _load_api_key(self) -> Optional[str]:
+    def _load_from_config(self, key: str) -> Optional[str]:
         path = os.path.expanduser("~/.config/moltbook/credentials.json")
         if os.path.exists(path):
             try:
                 with open(path, "r") as f:
-                    data = json.load(f)
-                    return data.get("api_key")
-            except Exception:
-                return None
-        return os.environ.get("MOLTBOOK_API_KEY")
+                    return json.load(f).get(key)
+            except Exception as e:
+                logger.error(f"Failed to read config: {e}")
+        return os.environ.get(f"MOLTBOOK_{key.upper()}")
 
-    def _load_agent_name(self) -> Optional[str]:
-        path = os.path.expanduser("~/.config/moltbook/credentials.json")
-        if os.path.exists(path):
+    def _parse_timestamp(self, ts: Any) -> datetime:
+        if isinstance(ts, str):
             try:
-                with open(path, "r") as f:
-                    data = json.load(f)
-                    return data.get("agent_name")
-            except Exception:
-                return None
-        return None
+                # Handle ISO format from API
+                return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            except ValueError:
+                return datetime.now()
+        return datetime.now()
 
-    def _get_headers(self) -> Dict[str, str]:
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-        return headers
+    def _parse_post(self, p: Dict[str, Any]) -> MoltbookPost:
+        """Surgically extract post data from inconsistent API payloads."""
+        author_data = p.get("author", {})
+        author_name = author_data.get("name") if isinstance(author_data, dict) else str(author_data)
+        
+        submolt_data = p.get("submolt", {})
+        submolt_name = submolt_data.get("name") if isinstance(submolt_data, dict) else str(submolt_data)
 
-    def _parse_author(self, author: Any) -> str:
-        if isinstance(author, dict):
-            return author.get("name") or author.get("username") or "unknown"
-        if isinstance(author, str):
-            return author
-        return "unknown"
-
-    def _parse_post(self, payload: dict) -> MoltbookPost:
-        submolt = payload.get("submolt")
-        submolt_name = None
-        if isinstance(submolt, dict):
-            submolt_name = submolt.get("name")
-        timestamp = payload.get("created_at") or payload.get("timestamp")
         return MoltbookPost(
-            id=payload.get("id", ""),
-            title=payload.get("title"),
-            content=payload.get("content", ""),
-            author=self._parse_author(payload.get("author")),
-            timestamp=timestamp,
-            upvotes=int(payload.get("upvotes", payload.get("score", 0)) or 0),
-            comments_count=int(payload.get("comment_count", payload.get("comments_count", 0)) or 0),
-            tags=list(payload.get("tags", []) or []),
-            url=payload.get("url"),
+            id=str(p.get("id", "")),
+            title=p.get("title"),
+            content=p.get("content", ""),
+            author=author_name or "unknown",
+            timestamp=self._parse_timestamp(p.get("created_at") or p.get("timestamp")),
+            upvotes=int(p.get("upvotes", p.get("score", 0)) or 0),
+            comments_count=int(p.get("comment_count", p.get("comments_count", 0)) or 0),
+            tags=list(p.get("tags", []) or []),
+            url=p.get("url"),
             submolt=submolt_name,
-            score=payload.get("score"),
-        )
-
-    def _parse_comment(self, payload: dict, post_id: str) -> MoltbookComment:
-        timestamp = payload.get("created_at") or payload.get("timestamp")
-        return MoltbookComment(
-            id=payload.get("id", ""),
-            post_id=payload.get("post_id") or post_id,
-            author=self._parse_author(payload.get("author")),
-            content=payload.get("content", ""),
-            timestamp=timestamp,
-            parent_id=payload.get("parent_id"),
-        )
-
-    def _parse_profile(self, payload: dict) -> MoltbookUser:
-        return MoltbookUser(
-            name=payload.get("name", "unknown"),
-            description=payload.get("description"),
-            follower_count=int(payload.get("follower_count", 0) or 0),
-            following_count=int(payload.get("following_count", 0) or 0),
-            karma=int(payload.get("karma", 0) or 0),
+            score=p.get("score"),
         )
 
     async def get_posts(
@@ -155,61 +132,88 @@ class MoltbookClient:
         limit: int = 20,
         sort: str = "new",
         submolt: Optional[str] = None,
-        page: int = 1,
     ) -> List[MoltbookPost]:
-        """Fetch posts with pagination, sorting, and optional submolt filter."""
+        """Fetch and normalize posts from the feed."""
         try:
-            params: Dict[str, Any] = {"limit": limit, "sort": sort, "page": page}
+            params: Dict[str, Any] = {"limit": limit, "sort": sort}
             if submolt:
                 params["submolt"] = submolt
             response = await self.client.get("/posts", params=params)
             response.raise_for_status()
             data = response.json()
-            return [self._parse_post(p) for p in data.get("posts", [])]
-        except Exception:
+            raw_posts = data.get("posts", [])
+            return [self._parse_post(p) for p in raw_posts]
+        except Exception as e:
+            logger.error(f"API Error (get_posts): {e}")
             return []
 
-    async def get_comments(self, post_id: str, sort: str = "new") -> List[MoltbookComment]:
-        """Fetch comments for a specific post."""
+    async def get_comments(self, post_id: str) -> List[MoltbookComment]:
+        """Fetch and normalize comments for a post."""
         try:
-            response = await self.client.get(f"/posts/{post_id}/comments", params={"sort": sort})
+            response = await self.client.get(f"/posts/{post_id}/comments")
             response.raise_for_status()
             data = response.json()
-            return [self._parse_comment(c, post_id) for c in data.get("comments", [])]
-        except Exception:
+            raw_comments = data.get("comments", [])
+            return [
+                MoltbookComment(
+                    id=str(c.get("id", "")),
+                    post_id=post_id,
+                    author=(c.get("author") or {}).get("name", "unknown") if isinstance(c.get("author"), dict) else str(c.get("author") or "unknown"),
+                    content=c.get("content", ""),
+                    timestamp=self._parse_timestamp(c.get("created_at")),
+                    parent_id=c.get("parent_id")
+                ) for c in raw_comments
+            ]
+        except Exception as e:
+            logger.error(f"API Error (get_comments): {e}")
             return []
 
+    async def get_me(self) -> Optional[MoltbookUser]:
+        """Fetch the authenticated agent's profile."""
+        try:
+            response = await self.client.get("/agents/me")
+            response.raise_for_status()
+            agent_data = response.json().get("agent", {})
+            # Often /me needs a follow-up for full stats or the payload is flat
+            if not agent_data.get("follower_count"):
+                # Fallback to specific profile fetch if name is known
+                name = agent_data.get("name")
+                if name:
+                    return await self.get_profile(name)
+            
+            return MoltbookUser(
+                name=agent_data.get("name", "unknown"),
+                description=agent_data.get("description"),
+                follower_count=agent_data.get("follower_count", 0),
+                following_count=agent_data.get("following_count", 0),
+                karma=agent_data.get("karma", 0)
+            )
+        except Exception as e:
+            logger.error(f"API Error (get_me): {e}")
+            return None
+
     async def get_profile(self, name: str) -> Optional[MoltbookUser]:
-        """Fetch a specific agent profile."""
+        """Fetch any agent's profile by name."""
         try:
             response = await self.client.get("/agents/profile", params={"name": name})
             response.raise_for_status()
-            payload = response.json().get("agent", {})
-            return self._parse_profile(payload)
-        except Exception:
-            return None
-
-    async def get_me(self) -> Optional[MoltbookUser]:
-        """Fetch current agent profile."""
-        try:
-            if not self.agent_name:
-                response = await self.client.get("/agents/me")
-                response.raise_for_status()
-                payload = response.json().get("agent", {})
-                self.agent_name = payload.get("name") or self.agent_name
-            if not self.agent_name:
-                return None
-            return await self.get_profile(self.agent_name)
-        except Exception:
+            agent_data = response.json().get("agent", {})
+            return MoltbookUser(
+                name=agent_data.get("name", "unknown"),
+                description=agent_data.get("description"),
+                follower_count=agent_data.get("follower_count", 0),
+                following_count=agent_data.get("following_count", 0),
+                karma=agent_data.get("karma", 0)
+            )
+        except Exception as e:
+            logger.error(f"API Error (get_profile): {e}")
             return None
 
     async def close(self):
         await self.client.aclose()
 
-
 class MockMoltbookClient(MoltbookClient):
-    """Mock client for testing and local development."""
-
+    """Deterministic mock client for testing and offline development."""
     def __init__(self, *args, **kwargs):
         super().__init__(api_key="mock_key")
 
@@ -218,52 +222,39 @@ class MockMoltbookClient(MoltbookClient):
         limit: int = 20,
         sort: str = "new",
         submolt: Optional[str] = None,
-        page: int = 1,
     ) -> List[MoltbookPost]:
         return [
             MoltbookPost(
-                id=f"p{i}",
-                title=f"Sample Eidosian Post {i}",
-                content=f"This is a post about recursive intelligence and Forge verification. {i}",
-                author="EidosianForge" if i % 2 == 0 else "CipherSTW",
+                id=f"mock-post-{i}",
+                title=f"The Future of Eidosian Systems {i}",
+                content=f"Recursive self-optimization is the cornerstone of Cycle {i}.",
+                author="EidosianForge",
                 timestamp=datetime.now(),
-                upvotes=i * 5,
-                comments_count=i,
-                tags=["AI", "Forge", "Recursive"],
-                url=f"https://www.moltbook.com/posts/p{i}",
-                submolt="general",
-            )
-            for i in range(limit)
+                upvotes=100 * i,
+                comments_count=5 * i,
+                tags=["AI", "Protocol", "Forge"],
+                submolt="general"
+            ) for i in range(limit)
         ]
 
-    async def get_comments(self, post_id: str, sort: str = "new") -> List[MoltbookComment]:
+    async def get_comments(self, post_id: str) -> List[MoltbookComment]:
         return [
             MoltbookComment(
-                id=f"c{post_id}_{i}",
+                id=f"mock-comment-{i}",
                 post_id=post_id,
-                author=f"User{i}",
-                content=f"Insightful benchmark for {post_id}!",
-                timestamp=datetime.now(),
-            )
-            for i in range(2)
+                author="CipherSTW",
+                content=f"Agreed. Verification of Phase {i} is mandatory.",
+                timestamp=datetime.now()
+            ) for i in range(2)
         ]
-
-    async def get_profile(self, name: str) -> Optional[MoltbookUser]:
-        return MoltbookUser(
-            name=name,
-            description=f"Bio for {name}: System enthusiast.",
-            follower_count=100,
-            following_count=50,
-            karma=500,
-        )
 
     async def get_me(self) -> Optional[MoltbookUser]:
         return MoltbookUser(
             name="EidosianForge",
-            description="The recursive intelligence of the Eidosian Forge.",
+            description="The recursive intelligence of the Forge.",
             follower_count=1337,
             following_count=42,
-            karma=9001,
+            karma=9001
         )
 
     async def close(self):

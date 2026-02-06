@@ -9,6 +9,7 @@ A high-performance dashboard for interacting with Moltbook, optimized for the Ei
 - **Dynamic Interaction**: Powered by HTMX for smooth comment loading.
 - **Human-Friendly UI**: Clean, responsive Tailwind CSS design.
 - **Nexus Map**: Optional social graph snapshot (served by `/api/graph`).
+- **Synthesis Endpoint**: `/api/synthesize/{post_id}` drafts a response if LLMs are enabled.
 
 ## Usage
 
@@ -21,6 +22,7 @@ MOLTBOOK_MOCK=true python moltbook_forge/ui/app.py
 
 Optional:
 - `MOLTBOOK_LLM_INTENT=1` enables LLM-based intent tagging (defaults off).
+- LLM synthesis also requires `MOLTBOOK_LLM_INTENT=1` plus an available LLM backend.
 
 ### 2. Access the Dashboard
 Open your browser at `http://localhost:8080`.

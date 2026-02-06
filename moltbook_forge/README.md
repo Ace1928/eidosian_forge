@@ -1,73 +1,63 @@
-# Moltbook Forge
+# Moltbook Nexus
 
-Safe ingestion tooling for Moltbook (social network for AI).
+Moltbook Nexus is a local command center for monitoring and engaging with Moltbook. It combines API ingestion, scoring, security checks, and a UI for fast review.
 
-This forge is designed to *quarantine and normalize* untrusted content before it
-can influence memory, tasks, or code. No network access is performed unless
-explicitly allowed.
+## Components
+- MoltbookClient: API client with mock mode and schema normalization.
+- SignalPipeline: Deduplication and scoring.
+- InterestEngine: Heuristics with optional LLM intent and memory context.
+- SecurityAuditor: Prompt injection and unsafe command scanning.
+- SocialGraph: Local agent-link graph snapshot.
+- EngagementEngine: Optional LLM response drafts.
+- UI: FastAPI + Jinja2 + HTMX + Tailwind.
 
-## Goals
+## Quick Start
+1. Configure credentials.
+```json
+{
+  "api_key": "moltbook_sk_...",
+  "agent_name": "EidosianForge"
+}
+```
+Save as `~/.config/moltbook/credentials.json` or set `MOLTBOOK_API_KEY` and `MOLTBOOK_AGENT_NAME`.
 
-- Strong normalization and standardization of text inputs.
-- Heuristic prompt-injection detection and flagging.
-- Explicit allowlist for network sources.
-- Zero code execution from remote content.
-
-## Usage
-
+2. Run the UI.
 ```bash
-source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
+export PYTHONPATH=$PYTHONPATH:.
+# Mock mode defaults to true for safety.
+MOLTBOOK_MOCK=true python moltbook_forge/ui/app.py
+```
+Open `http://localhost:8080`.
 
-# List CLI commands
-python -m moltbook_forge --list
-
-# Sanitize a local text file
-python moltbook_forge/moltbook_sanitize.py --input /path/to/post.txt
-
-# Screen a sanitized payload
-python moltbook_forge/moltbook_screen.py --input sanitized.json --threshold 0.4
-
-# Validate a sanitized payload
-python moltbook_forge/moltbook_validate.py --input sanitized.json
-
-# Quarantine if needed
-python moltbook_forge/moltbook_quarantine.py --input sanitized.json --threshold 0.4
-
-# Bootstrap a Moltbook skill snapshot (no execution)
-python moltbook_forge/moltbook_bootstrap.py --input skill.md --output-dir moltbook_forge/skill_sources
-
-# Review a skill file through the safety pipeline
-python moltbook_forge/moltbook_skill_review.py --input skill.md --output skill_report.json
-# Exit codes: 0=allow, 1=invalid, 2=quarantine
-
-# Ingest from a URL (requires --allow-network and allowlisted domains)
-python moltbook_forge/moltbook_ingest.py --url https://moltbook.com/feed.json --allow-network
-
-# Rank Moltbook posts by interest score
-python moltbook_forge/moltbook_interest.py --limit 50 --top 5
-
-# Run the Moltbook dashboard (mock data)
-python moltbook_forge/moltbook_ui.py --mock
+3. Real mode.
+```bash
+export PYTHONPATH=$PYTHONPATH:.
+MOLTBOOK_MOCK=false python moltbook_forge/ui/app.py
 ```
 
-## UI Dashboard
+## CLI
+```bash
+python -m moltbook_forge --list
+python moltbook_forge/moltbook_interest.py --limit 50 --top 5
+python moltbook_forge/moltbook_interest.py --submolt ai-agents --sort new --top 5
+```
 
-The dashboard is an optional FastAPI app that shows your feed and interest-ranked posts.
-Dependencies are already in `requirements.txt` (fastapi, httpx, jinja2, uvicorn).
+## Heartbeat
+```bash
+python moltbook_forge/heartbeat_daemon.py --allow-network --once
+```
 
-## Nexus Components
+## LLM Intent and Drafts
+- Set `MOLTBOOK_LLM_INTENT=1` to enable LLM-based intent and draft responses.
+- Drafts require an LLM backend via `llm_forge` (for example, Ollama).
 
-- `moltbook_forge/pipeline.py`: Dedup + scoring pipeline for feed batches.
-- `moltbook_forge/orchestrator.py`: Lightweight mission tracking for external agents.
-- `moltbook_forge/heartbeat_daemon.py`: Optional feed monitor (requires `--allow-network`).
-- `moltbook_forge/ui/api_docs.py`: API spec generator for the UI endpoints.
+## Security Notes
+- Always use `https://www.moltbook.com` (with `www`) for API calls.
+- Never send your API key anywhere except `https://www.moltbook.com/api/v1/*`.
 
-Environment toggles:
-- `MOLTBOOK_LLM_INTENT=1` enables LLM intent tagging in the interest engine (off by default).
-- `MOLTBOOK_INTEGRATION=1` enables real API integration tests.
-
-## Safety Notes
-
-- All inputs are treated as untrusted data.
-- Any suspicious content is flagged for manual review.
-- Sanitized output is JSON for deterministic downstream handling.
+## API Endpoints
+- `/api/stats`: System health and filter metrics.
+- `/api/graph`: Agent graph snapshot.
+- `/api/synthesize/{post_id}`: Draft a response (LLM optional).
+- `/reputation/{username}/{delta}`: Update agent reputation.
+- `/post/{post_id}`: Fetch threaded comments partial.

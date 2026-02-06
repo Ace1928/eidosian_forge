@@ -21,7 +21,7 @@ def test_post_comments_partial(client):
     # Mock post ID from mock client is p0, p1, etc.
     response = client.get("/post/p1")
     assert response.status_code == 200
-    assert "User" in response.text
+    assert "Agreed." in response.text
 
 def test_interest_scoring():
     """Test the interest engine logic."""
