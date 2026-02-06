@@ -1,26 +1,3 @@
-{
-  "run_id": "161a6460fc84d275",
-  "root_path": "/home/lloyd/eidosian_forge/code_forge",
-  "mode": "analysis",
-  "files_processed": 16,
-  "units_created": 223,
-  "errors": 0,
-  "files": [
-    "/home/lloyd/eidosian_forge/code_forge/code_core.py",
-    "/home/lloyd/eidosian_forge/code_forge/tests/conftest.py",
-    "/home/lloyd/eidosian_forge/code_forge/tests/test_code.py",
-    "/home/lloyd/eidosian_forge/code_forge/tests/test_library_db.py",
-    "/home/lloyd/eidosian_forge/code_forge/tests/test_ingest_runner.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/cli.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/__init__.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/library/db.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/library/__init__.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/librarian/core.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/librarian/__init__.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/ingest/runner.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/ingest/__init__.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/analyzer/code_indexer.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/analyzer/python_analyzer.py",
-    "/home/lloyd/eidosian_forge/code_forge/src/code_forge/analyzer/__init__.py"
-  ]
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:658c36ae741c587b853a6fe809b540d99ab1285985207e9738026e198a6885fb
+size 1385

@@ -1,8 +1,3 @@
-{
-  "dt": 0.01,
-  "elapsed_seconds": 0.08085904200561345,
-  "fps": 123.6720068895421,
-  "particles": 512,
-  "steps": 10,
-  "warmup": 1
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:f8da067e72be60a19af06ee0d68d6c3ef4efae687fb6026daf0cf839ccd27287
+size 137

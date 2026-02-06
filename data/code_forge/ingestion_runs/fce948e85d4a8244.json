@@ -1,14 +1,3 @@
-{
-  "run_id": "fce948e85d4a8244",
-  "root_path": "/home/lloyd/eidosian_forge/archive_forge",
-  "mode": "analysis",
-  "files_processed": 0,
-  "units_created": 0,
-  "errors": 0,
-  "files_total": 20,
-  "loc_total": 4379,
-  "bytes_total": 178086,
-  "files_skipped": 20,
-  "interrupted": false,
-  "files": []
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:6d81a64007d62f774e43470c2ea8ee88e4457e2e7378710a4423b083543d8d72
+size 306

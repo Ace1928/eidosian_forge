@@ -1,25 +1,3 @@
-{
-  "parameters": {
-    "algorithms": "all",
-    "bh_backend": "auto",
-    "dt": 0.01,
-    "fmm_levels": 4,
-    "force_multi": false,
-    "force_types": 6,
-    "neighbor_backend": "auto",
-    "particles": 256,
-    "seed": 7,
-    "steps": 50
-  },
-  "results_seconds": {
-    "barnes-hut": 0.03563158100587316,
-    "fmm-ml": 1.733814730978338,
-    "fmm2d": 0.796760903991526,
-    "forces": 0.03039297999930568,
-    "grid": 0.16244186498806812,
-    "neighbor-list": 0.0011016410135198385,
-    "pbf": 0.05516761000035331,
-    "sph": 0.025394150987267494,
-    "xpbd": 0.05541132402140647
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:2764e3d0e4fb8788833d5f6d13f5d2ea7f714e4d8234b357b9cc6be54097e77a
+size 588

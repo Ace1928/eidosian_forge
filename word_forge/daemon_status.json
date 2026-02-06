@@ -1,13 +1,3 @@
-{
-  "status": "RUNNING",
-  "uptime_seconds": 111340.75321316719,
-  "processed_items": 50766,
-  "errors": 0,
-  "graph_nodes": 4611,
-  "llm_completed": 0,
-  "multilingual_processed": 5,
-  "queue_size": 0,
-  "last_term": "juridical days",
-  "last_heartbeat": "2026-02-02T15:38:15.149365",
-  "model": "qwen/qwen2.5-1.5b-instruct"
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:4c922da7fa9a637a3bd6118ef30c7e62ab7eb5f7cb89e39723e6341c48604b37
+size 328
