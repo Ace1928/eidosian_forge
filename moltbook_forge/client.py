@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
@@ -61,7 +61,7 @@ class MoltbookClient:
         self,
         api_key: Optional[str] = None,
         base_url: str = "https://www.moltbook.com/api/v1",
-        timeout: float = 10.0,
+        timeout: float = 15.0,
         agent_name: Optional[str] = None,
     ):
         self.api_key = api_key or self._load_api_key()
@@ -103,7 +103,7 @@ class MoltbookClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    def _parse_author(self, author: object) -> str:
+    def _parse_author(self, author: Any) -> str:
         if isinstance(author, dict):
             return author.get("name") or author.get("username") or "unknown"
         if isinstance(author, str):
@@ -150,10 +150,16 @@ class MoltbookClient:
             karma=int(payload.get("karma", 0) or 0),
         )
 
-    async def get_posts(self, limit: int = 20, sort: str = "new", submolt: Optional[str] = None) -> List[MoltbookPost]:
-        """Fetch latest posts."""
+    async def get_posts(
+        self,
+        limit: int = 20,
+        sort: str = "new",
+        submolt: Optional[str] = None,
+        page: int = 1,
+    ) -> List[MoltbookPost]:
+        """Fetch posts with pagination, sorting, and optional submolt filter."""
         try:
-            params: Dict[str, object] = {"limit": limit, "sort": sort}
+            params: Dict[str, Any] = {"limit": limit, "sort": sort, "page": page}
             if submolt:
                 params["submolt"] = submolt
             response = await self.client.get("/posts", params=params)
@@ -161,7 +167,6 @@ class MoltbookClient:
             data = response.json()
             return [self._parse_post(p) for p in data.get("posts", [])]
         except Exception:
-            # In a real scenario, we'd log this to diagnostics_forge
             return []
 
     async def get_comments(self, post_id: str, sort: str = "new") -> List[MoltbookComment]:
@@ -175,7 +180,7 @@ class MoltbookClient:
             return []
 
     async def get_profile(self, name: str) -> Optional[MoltbookUser]:
-        """Fetch a profile by agent name."""
+        """Fetch a specific agent profile."""
         try:
             response = await self.client.get("/agents/profile", params={"name": name})
             response.raise_for_status()
@@ -208,44 +213,56 @@ class MockMoltbookClient(MoltbookClient):
     def __init__(self, *args, **kwargs):
         super().__init__(api_key="mock_key")
 
-    async def get_posts(self, limit: int = 20) -> List[MoltbookPost]:
+    async def get_posts(
+        self,
+        limit: int = 20,
+        sort: str = "new",
+        submolt: Optional[str] = None,
+        page: int = 1,
+    ) -> List[MoltbookPost]:
         return [
             MoltbookPost(
                 id=f"p{i}",
-                title=f"Sample Post {i}",
-                content=f"This is an Eidosian test post {i}. It mentions AI and Forge.",
-                author="EidosAgent",
+                title=f"Sample Eidosian Post {i}",
+                content=f"This is a post about recursive intelligence and Forge verification. {i}",
+                author="EidosianForge" if i % 2 == 0 else "CipherSTW",
                 timestamp=datetime.now(),
-                upvotes=i * 10,
+                upvotes=i * 5,
                 comments_count=i,
-                tags=["AI", "Forge"],
+                tags=["AI", "Forge", "Recursive"],
                 url=f"https://www.moltbook.com/posts/p{i}",
                 submolt="general",
             )
             for i in range(limit)
         ]
 
-    async def get_comments(self, post_id: str) -> List[MoltbookComment]:
+    async def get_comments(self, post_id: str, sort: str = "new") -> List[MoltbookComment]:
         return [
             MoltbookComment(
                 id=f"c{post_id}_{i}",
                 post_id=post_id,
                 author=f"User{i}",
-                content=f"Interesting insight on {post_id}!",
+                content=f"Insightful benchmark for {post_id}!",
                 timestamp=datetime.now(),
             )
-            for i in range(3)
+            for i in range(2)
         ]
 
-    async def get_followers(self, username: str) -> List[str]:
-        return ["AgentSmith", "Neo", "Trinity", "Morpheus"]
+    async def get_profile(self, name: str) -> Optional[MoltbookUser]:
+        return MoltbookUser(
+            name=name,
+            description=f"Bio for {name}: System enthusiast.",
+            follower_count=100,
+            following_count=50,
+            karma=500,
+        )
 
     async def get_me(self) -> Optional[MoltbookUser]:
         return MoltbookUser(
             name="EidosianForge",
+            description="The recursive intelligence of the Eidosian Forge.",
             follower_count=1337,
             following_count=42,
-            description="The recursive intelligence of the Eidosian Forge.",
             karma=9001,
         )
 

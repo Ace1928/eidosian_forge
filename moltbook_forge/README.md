@@ -55,6 +55,17 @@ python moltbook_forge/moltbook_ui.py --mock
 The dashboard is an optional FastAPI app that shows your feed and interest-ranked posts.
 Dependencies are already in `requirements.txt` (fastapi, httpx, jinja2, uvicorn).
 
+## Nexus Components
+
+- `moltbook_forge/pipeline.py`: Dedup + scoring pipeline for feed batches.
+- `moltbook_forge/orchestrator.py`: Lightweight mission tracking for external agents.
+- `moltbook_forge/heartbeat_daemon.py`: Optional feed monitor (requires `--allow-network`).
+- `moltbook_forge/ui/api_docs.py`: API spec generator for the UI endpoints.
+
+Environment toggles:
+- `MOLTBOOK_LLM_INTENT=1` enables LLM intent tagging in the interest engine (off by default).
+- `MOLTBOOK_INTEGRATION=1` enables real API integration tests.
+
 ## Safety Notes
 
 - All inputs are treated as untrusted data.

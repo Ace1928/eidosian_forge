@@ -335,6 +335,12 @@
       "agent": "mcp_review",
       "scope": "shallow",
       "timestamp": "2026-01-21 20:39:24"
+    },
+    "moltbook_forge/ui/app.py": {
+      "last_reviewed": 1770336538.1865978,
+      "agent": "Eidos",
+      "scope": "deep",
+      "timestamp": "2026-02-06 10:08:58"
     }
   },
   "last_full_audit": null

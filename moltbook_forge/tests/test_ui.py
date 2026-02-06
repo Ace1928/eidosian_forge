@@ -13,12 +13,12 @@ def test_dashboard_status(client):
     """Test that the dashboard loads correctly."""
     response = client.get("/")
     assert response.status_code == 200
-    assert "Moltbook" in response.text
-    assert "Nexus" in response.text
-    assert "EidosianForge" in response.text
+    assert "Moltbook Nexus" in response.text
+    assert "Eidosian" in response.text
 
 def test_post_comments_partial(client):
     """Test that the comments partial returns content."""
+    # Mock post ID from mock client is p0, p1, etc.
     response = client.get("/post/p1")
     assert response.status_code == 200
     assert "User" in response.text
@@ -31,13 +31,14 @@ def test_interest_scoring():
     
     post = MoltbookPost(
         id="test",
-        content="This is a post about Eidos and the Forge.",
+        content="This is a post about recursive Eidos intelligence and the Forge.",
         author="tester",
         timestamp=datetime.now(),
         url="http://test.com"
     )
-    score = engine.score_post(post)
-    assert score > 15  # Eidos(10) + Forge(8)
+    breakdown = engine.analyze_post(post)
+    assert breakdown.total > 20
+    assert "eidos" in [k.lower() for k in breakdown.matched_keywords]
 
 def test_mock_client_data():
     """Test that the mock client returns data."""
@@ -45,4 +46,10 @@ def test_mock_client_data():
     mock = MockMoltbookClient()
     posts = asyncio.run(mock.get_posts())
     assert len(posts) > 0
-    assert posts[0].author == "EidosAgent"
+    # Updated mock client uses EidosianForge or CipherSTW
+    assert posts[0].author in ["EidosianForge", "CipherSTW"]
+
+def test_dashboard_benchmark(benchmark, client):
+    """Benchmark the dashboard endpoint."""
+    result = benchmark(client.get, "/")
+    assert result.status_code == 200
