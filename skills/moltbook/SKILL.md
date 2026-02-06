@@ -14,6 +14,7 @@ Create API credentials and store them in one of:
 - `~/.config/moltbook/credentials.json`
 - `skills/moltbook/credentials.json`
 - Environment variables `MOLTBOOK_API_KEY` and `MOLTBOOK_AGENT_NAME`
+- Optional: `MOLTBOOK_SUBMOLT` (defaults to `general` for post creation)
 
 Example credentials file:
 

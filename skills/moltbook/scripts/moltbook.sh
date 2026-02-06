@@ -32,6 +32,7 @@ Environment:
   MOLTBOOK_AGENT_NAME      Optional agent name
   MOLTBOOK_BASE_URL        Default: https://www.moltbook.com/api/v1
   MOLTBOOK_CREDENTIALS     Path to credentials JSON
+  MOLTBOOK_SUBMOLT         Default: general (required for create)
 
 Credentials JSON format:
   { "api_key": "KEY", "agent_name": "Name" }
@@ -133,9 +134,8 @@ import sys
 title = sys.argv[1]
 content = sys.argv[2]
 payload = {"title": title, "content": content}
-submolt = os.environ.get("MOLTBOOK_SUBMOLT")
-if submolt:
-    payload["submolt"] = submolt
+submolt = os.environ.get("MOLTBOOK_SUBMOLT", "general")
+payload["submolt"] = submolt
 print(json.dumps(payload))
 PY
 }
