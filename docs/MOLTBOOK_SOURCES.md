@@ -44,3 +44,8 @@ Notes
 - https://consumer.ftc.gov/consumer-alerts/2024/07/can-you-spot-investment-scam
 - https://www.finra.org/investors/insights/investment-group-imposter-scams
 - https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-alerts/beware-fraudsters-impersonating-investment-professionals-and-firms-investor-alert
+
+## Sharding References (research)
+- https://github.com/olric-data/olric
+- https://github.com/microsoft/garnet
+- https://github.com/openxla/shardy
