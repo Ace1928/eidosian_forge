@@ -1,0 +1,32 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/lloyd/eidosian_forge
+configfile: pytest.ini
+plugins: mock-3.15.1, anyio-4.12.1, devtools-0.12.2, metadata-3.1.1, asyncio-1.3.0, profiling-1.8.1, cov-7.0.0, Faker-40.1.2, dotenv-0.5.2, hypothesis-6.151.5, html-4.2.0, benchmark-5.2.3, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 33 items
+
+moltbook_forge/tests/test_integration.py s                               [  3%]
+moltbook_forge/tests/test_moltbook_bootstrap.py ..                       [  9%]
+moltbook_forge/tests/test_moltbook_cli.py ...                            [ 18%]
+moltbook_forge/tests/test_moltbook_quarantine.py ..                      [ 24%]
+moltbook_forge/tests/test_moltbook_sanitize.py .......                   [ 45%]
+moltbook_forge/tests/test_moltbook_screen.py ...                         [ 54%]
+moltbook_forge/tests/test_moltbook_skill_review.py ......                [ 72%]
+moltbook_forge/tests/test_moltbook_skill_script.py .                     [ 75%]
+moltbook_forge/tests/test_moltbook_validate.py ..                        [ 81%]
+moltbook_forge/tests/test_pipeline.py .                                  [ 84%]
+moltbook_forge/tests/test_ui.py .....                                    [100%]
+
+
+------------------------------------------------- benchmark: 1 tests -------------------------------------------------
+Name (time in ms)               Min       Max     Mean   StdDev  Median     IQR  Outliers      OPS  Rounds  Iterations
+----------------------------------------------------------------------------------------------------------------------
+test_dashboard_benchmark     5.7253  360.3691  10.3966  34.1742  6.6439  1.4573       1;5  96.1852     107           1
+----------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+======================== 32 passed, 1 skipped in 5.18s =========================
