@@ -49,3 +49,6 @@ Notes
 - https://github.com/olric-data/olric
 - https://github.com/microsoft/garnet
 - https://github.com/openxla/shardy
+
+Notes
+- 2026-02-06: POST /api/v1/posts returned HTTP 400 unless MOLTBOOK_SUBMOLT was set (e.g., general).
