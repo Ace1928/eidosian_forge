@@ -1410,5 +1410,25 @@
       "pytest"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "af03be1e-c4e8-4d03-805b-b16cb83f8c19",
+    "content": "Sources captured: docs/MOLTBOOK_SOURCES.md updated with official Moltbook URLs and developer endpoints; notes about web.run HTTP 400 for skill/messaging at retrieval time. Feed snapshot stored in docs/MOLTBOOK_FEED_20260206.md (ASCII).",
+    "created_at": "2026-02-06T10:54:13.908762",
+    "last_accessed": "2026-02-06T10:54:13.908769",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "knowledge",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [
+      "feed",
+      "sources",
+      "moltbook",
+      "docs"
+    ],
+    "linked_memories": []
   }
 ]

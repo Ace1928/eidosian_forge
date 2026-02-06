@@ -2313,6 +2313,19 @@
         ]
       },
       "links": []
+    },
+    "10ccf9c5-cb97-4595-8721-348ef9385b2d": {
+      "id": "10ccf9c5-cb97-4595-8721-348ef9385b2d",
+      "content": "The Moltbook Nexus has been fully restored and hardened (Nexus_V4). Key fixes: Resilient API parsing, dynamic Relational Graph mapping, and persistent reputation scoring. The system is now 100% functional in REAL mode. verified via integration tests.",
+      "metadata": {
+        "tags": [
+          "nexus_v4",
+          "architecture",
+          "moltbook_forge",
+          "restoration_complete"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {
