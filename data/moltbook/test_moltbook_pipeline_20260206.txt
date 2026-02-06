@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/lloyd/eidosian_forge
+configfile: pytest.ini
+plugins: mock-3.15.1, anyio-4.12.1, devtools-0.12.2, metadata-3.1.1, asyncio-1.3.0, profiling-1.8.1, cov-7.0.0, Faker-40.1.2, dotenv-0.5.2, hypothesis-6.151.5, html-4.2.0, benchmark-5.2.3, timeout-2.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+moltbook_forge/tests/test_pipeline.py .                                  [100%]
+
+============================== 1 passed in 1.20s ===============================

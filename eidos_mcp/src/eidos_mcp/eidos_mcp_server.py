@@ -38,6 +38,7 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.knowledge",
         "eidos_mcp.routers.memory",
+        "eidos_mcp.routers.moltbook",
         "eidos_mcp.routers.nexus",
         "eidos_mcp.routers.refactor",
         "eidos_mcp.routers.system",

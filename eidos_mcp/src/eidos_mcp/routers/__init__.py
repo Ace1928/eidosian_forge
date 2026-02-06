@@ -22,6 +22,7 @@ from . import diagnostics  # noqa: E402,F401
 from . import gis  # noqa: E402,F401
 from . import knowledge  # noqa: E402,F401
 from . import memory  # noqa: E402,F401
+from . import moltbook  # noqa: E402,F401
 from . import nexus  # noqa: E402,F401
 from . import refactor  # noqa: E402,F401
 from . import system  # noqa: E402,F401

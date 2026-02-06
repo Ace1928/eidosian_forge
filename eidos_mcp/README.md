@@ -10,7 +10,7 @@
 `eidos_mcp` is the implementation of the [Model Context Protocol](https://github.com/model-context-protocol/mcp) server.
 It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.) as **Tools** and **Resources** to the LLM.
 
-**Current Status**: 79 MCP tools across 19 categories, 4 plugins loaded.
+**Current Status**: 101 MCP tools across 20 categories, 4 plugins loaded.
 
 ## 🔗 Tool Categories
 
@@ -35,6 +35,7 @@ It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.
 | refactor | 1 | Code analysis |
 | system | 1 | System info |
 | venv | 1 | Virtual env commands |
+| moltbook | 22 | Moltbook social network operations |
 
 ## 🔌 Plugins (33 additional tools)
 

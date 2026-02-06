@@ -1,53 +1,57 @@
 #!/usr/bin/env python3
 """
-Moltbook Signal Pipeline.
-Handles Ingestion, Deduplication, and Validation.
+Moltbook Signal Pipeline - High Integrity.
+Provides deduplication, schema enforcement, and noise reduction.
 """
 
 from __future__ import annotations
 
 import hashlib
-from typing import List, Set
+import logging
+from typing import List, Tuple, Set
 
 from .client import MoltbookPost
 from .interest import InterestEngine, ScoreBreakdown
 
+logger = logging.getLogger("SignalPipeline")
+
 class SignalPipeline:
-    """Infrastructure for high-integrity signal ingestion."""
+    """Infrastructure for cleaning and scoring raw agent signals."""
 
-    def __init__(self, risk_threshold: float = 0.8):
-        self.risk_threshold = risk_threshold
-        self.seen_hashes: Set[str] = set()
+    def __init__(self, noise_threshold: float = -20.0):
+        self.noise_threshold = noise_threshold
         self.engine = InterestEngine()
+        self.seen_hashes: Set[str] = set()
 
-    def _generate_hash(self, post: MoltbookPost) -> str:
-        """Content-based fingerprinting for deduplication."""
-        payload = f"{post.author}:{post.content}".encode("utf-8")
+    def _fingerprint(self, post: MoltbookPost) -> str:
+        """Deterministic hash of post content for deduplication."""
+        payload = f"{post.author}:{post.content[:200]}".encode("utf-8")
         return hashlib.sha256(payload).hexdigest()
 
-    def process_batch(self, posts: List[MoltbookPost]) -> List[tuple[MoltbookPost, ScoreBreakdown]]:
-        """Processes a raw batch of posts through the pipeline."""
-        validated: List[tuple[MoltbookPost, ScoreBreakdown]] = []
-        
+    def process(self, posts: List[MoltbookPost]) -> List[Tuple[MoltbookPost, ScoreBreakdown]]:
+        """Filter and score a batch of posts."""
+        results = []
         for post in posts:
-            fingerprint = self._generate_hash(post)
-            if fingerprint in self.seen_hashes:
+            h = self._fingerprint(post)
+            if h in self.seen_hashes:
                 continue
             
-            # 1. Deduplicate
-            self.seen_hashes.add(fingerprint)
-            
-            # 2. Analyze (Scoring + Intent)
+            self.seen_hashes.add(h)
             analysis = self.engine.analyze_post(post)
             
-            # 3. Policy Check (e.g., automatically drop extremely low-signal spam)
-            if analysis.total < -20:  # Critical noise filter
+            # Critical noise filter
+            if analysis.total < self.noise_threshold:
+                logger.debug(f"Dropped noise post: {post.id} (Score: {analysis.total})")
                 continue
                 
-            validated.append((post, analysis))
+            results.append((post, analysis))
 
-        # Maintain memory efficiency
-        if len(self.seen_hashes) > 10000:
-            self.seen_hashes = set(list(self.seen_hashes)[-5000:])
+        # Memory management for set
+        if len(self.seen_hashes) > 5000:
+            self.seen_hashes = set(list(self.seen_hashes)[-2500:])
             
-        return validated
+        return results
+
+    def process_batch(self, posts: List[MoltbookPost]) -> List[Tuple[MoltbookPost, ScoreBreakdown]]:
+        """Compatibility wrapper for older callers/tests."""
+        return self.process(posts)

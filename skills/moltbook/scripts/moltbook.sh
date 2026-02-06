@@ -25,6 +25,7 @@ Usage:
   moltbook.sh dm-conversations
   moltbook.sh dm-read <conversation_id>
   moltbook.sh dm-send <conversation_id> <message>
+  moltbook.sh verify <verification_code> <answer>
 
 Environment:
   MOLTBOOK_API_KEY         API key for Moltbook
@@ -180,7 +181,7 @@ case "${cmd}" in
     usage
     exit 0
     ;;
-  test|hot|new|get|comments|create|reply|upvote|downvote|comment-upvote|follow|unfollow|dm-check|dm-request|dm-requests|dm-approve|dm-reject|dm-conversations|dm-read|dm-send)
+  test|hot|new|get|comments|create|reply|upvote|downvote|comment-upvote|follow|unfollow|dm-check|dm-request|dm-requests|dm-approve|dm-reject|dm-conversations|dm-read|dm-send|verify)
     mapfile -t creds < <(load_credentials)
     API_KEY="${creds[0]}"
     AGENT_NAME="${creds[1]:-}"
@@ -297,5 +298,20 @@ case "${cmd}" in
     [[ -n "${message}" ]] || die "missing message"
     payload="$(make_message_payload "${message}")"
     api_post "/agents/dm/conversations/${conv_id}/send" "${payload}"
+    ;;
+  verify)
+    verify_code="${1:-}"
+    answer="${2:-}"
+    [[ -n "${verify_code}" ]] || die "missing verification_code"
+    [[ -n "${answer}" ]] || die "missing answer"
+    payload="$(python3 - <<'PY' "${verify_code}" "${answer}"
+import json
+import sys
+code = sys.argv[1]
+answer = sys.argv[2]
+print(json.dumps({"verification_code": code, "answer": answer}))
+PY
+)"
+    api_post "/verify" "${payload}"
     ;;
 esac
