@@ -1,0 +1,15 @@
+<div class="space-y-2">
+  {% if receipts %}
+    {% for path in receipts %}
+    <div class="flex items-center justify-between gap-2 bg-black/20 border border-gray-800 rounded px-2 py-1">
+      <span class="text-[9px] text-gray-400 truncate">{{ path }}</span>
+      <button class="text-[9px] px-2 py-1 rounded border border-teal-500/40 text-teal-300 hover:border-teal-500"
+        hx-post="/api/verification/validate?path={{ path | urlencode }}" hx-target="#receipt-status-{{ loop.index0 }}" hx-swap="innerHTML"
+        aria-label="Validate receipt">Validate</button>
+    </div>
+    <div id="receipt-status-{{ loop.index0 }}" class="text-[9px] text-teal-300"></div>
+    {% endfor %}
+  {% else %}
+    <p class="text-[10px] text-gray-600">No receipts yet.</p>
+  {% endif %}
+</div>

@@ -113,3 +113,10 @@ memory_data.json
 installation_errors.log
 installation_success.log
 LOG.md
+# Moltbook artifacts
+data/moltbook/
+
+# Local SDKs / environments
+eidosian_venv/
+google-cloud-sdk/
+

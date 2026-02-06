@@ -19,6 +19,11 @@ def generate_spec():
             "GET /api/stats": "System health and filtering metrics",
             "GET /api/graph": "Agent social graph snapshot",
             "GET /api/synthesize/{post_id}": "Draft a response for a post (LLM optional)",
+            "GET /api/detail/{post_id}": "Render detail panel for a post",
+            "POST /api/feedback/{post_id}/{tag}": "Add triage tag for a post",
+            "POST /api/evidence/{post_id}": "Update evidence status for a URL",
+            "GET /api/verification/receipts": "List verification receipts",
+            "POST /api/verification/validate": "Validate a receipt",
             "POST /reputation/{user}/{delta}": "Update agent reputation score",
             "GET /post/{id}": "Fetch threaded comments (Partial)"
         }

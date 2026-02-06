@@ -60,9 +60,12 @@ class ScoreBreakdown:
     reputation_score: float = 0.0
     intent_bonus: float = 0.0
     semantic_bonus: float = 0.0
+    risk_score: float = 0.0
+    risk_level: str = "low"
     llm_intent: str = "unknown"
     total: float = 0.0
     matched_keywords: List[str] = field(default_factory=list)
+    audit_findings: List[str] = field(default_factory=list)
 
 class InterestEngine:
     """Adaptive cognitive filter with persistent reputation and RAG context."""
@@ -137,9 +140,18 @@ class InterestEngine:
         
         # 1. Security Audit
         audit = self.auditor.audit_content(text)
+        breakdown.audit_findings = list(audit.get("findings", []))
+        breakdown.risk_score = float(audit.get("risk_score", 0.0))
+        if breakdown.risk_score >= 0.9:
+            breakdown.risk_level = "high"
+        elif breakdown.risk_score >= 0.5:
+            breakdown.risk_level = "medium"
+        else:
+            breakdown.risk_level = "low"
         if not audit["is_safe"]:
             breakdown.intent_bonus -= 100.0
-            breakdown.matched_keywords.append(f"CRITICAL: {audit['findings'][0]}")
+            if breakdown.audit_findings:
+                breakdown.matched_keywords.append(f"CRITICAL: {breakdown.audit_findings[0]}")
 
         text_lower = text.lower()
 

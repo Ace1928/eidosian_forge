@@ -3,6 +3,9 @@
 A high-performance dashboard for interacting with Moltbook, optimized for the Eidosian Forge.
 
 ## Features
+- **Detail Panel**: Inspect a post with evidence scoring and risk summary.
+- **Evidence Resolver**: Scores URL credibility with optional metadata fetch.
+- **Verification Receipts**: Track evidence review status and validate receipts.
 - **Real-time Feed**: Displays latest posts and comments.
 - **Interest Engine**: Ranks content based on Eidosian relevance (Eidos, Forge, AI, etc.).
 - **Mock Mode**: Development-friendly mock data for safe testing.

@@ -116,7 +116,7 @@ class MoltbookClient:
         return MoltbookPost(
             id=str(p.get("id", "")),
             title=p.get("title"),
-            content=p.get("content", ""),
+            content=p.get("content") or "",
             author=author_name or "unknown",
             timestamp=self._parse_timestamp(p.get("created_at") or p.get("timestamp")),
             upvotes=int(p.get("upvotes", p.get("score", 0)) or 0),

@@ -1,0 +1,118 @@
+<div class="nexus-card p-4 space-y-4 focus-target">
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm text-gray-400 font-mono">@{{ post.author }}</p>
+      <h3 class="text-white font-semibold">{{ post.title or 'Untitled' }}</h3>
+      <p class="text-[11px] text-gray-500 font-mono">{{ post.timestamp.strftime('%Y-%m-%d // %H:%M:%S') }}</p>
+    </div>
+    <div class="text-right">
+      <div class="score-badge text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter">Relevance: {{ score.total }}</div>
+      <div class="text-[9px] font-mono mt-2 px-2 py-0.5 rounded border border-gray-600 text-gray-400">{{ score.llm_intent }}</div>
+    </div>
+  </div>
+
+  <div class="text-sm text-gray-300 whitespace-pre-wrap font-mono">{{ post.content }}</div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-black/30 p-3 rounded-lg border border-gray-800">
+      <p class="text-[10px] text-gray-500 uppercase">Risk</p>
+      <p class="text-sm text-white font-bold">{{ score.risk_level }}</p>
+      {% if score.audit_findings %}
+      <ul class="text-[10px] text-amber-400 mt-2 space-y-1">
+        {% for finding in score.audit_findings %}
+        <li>{{ finding }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    <div class="bg-black/30 p-3 rounded-lg border border-gray-800">
+      <p class="text-[10px] text-gray-500 uppercase">Evidence</p>
+      {% if evidence_items %}
+        <ul class="text-[10px] text-teal-300 mt-2 space-y-2">
+          {% for item in evidence_items %}
+          <li class="space-y-1">
+            <div class="truncate">
+              <a class="text-teal-300 hover:text-teal-200 underline" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.url }}</a>
+            </div>
+            <div class="text-[9px] text-gray-500">Domain: {{ item.domain }}</div>
+            {% if item.credibility_label %}
+            <div class="text-[9px]">
+              <span class="uppercase tracking-tighter text-[9px] px-1.5 py-0.5 rounded border
+                {% if item.credibility_label == 'high' %}border-teal-500/40 text-teal-300 bg-teal-500/10
+                {% elif item.credibility_label == 'medium' %}border-indigo-500/40 text-indigo-300 bg-indigo-500/10
+                {% else %}border-amber-500/40 text-amber-300 bg-amber-500/10{% endif %}">
+                Credibility: {{ item.credibility_label }}{% if item.credibility_score is not none %} ({{ item.credibility_score }}){% endif %}
+              </span>
+            </div>
+            {% endif %}
+            {% if item.title %}
+            <div class="text-[9px] text-gray-300">Title: {{ item.title }}</div>
+            {% endif %}
+            {% if item.status %}
+            <div class="text-[9px]">
+              <span class="uppercase tracking-tighter text-[9px] px-1.5 py-0.5 rounded border
+                {% if item.status == 'verified' %}border-teal-500/40 text-teal-300 bg-teal-500/10
+                {% elif item.status == 'disputed' %}border-amber-500/40 text-amber-300 bg-amber-500/10
+                {% elif item.status == 'unverifiable' %}border-gray-600/40 text-gray-400 bg-gray-700/20
+                {% else %}border-gray-600/40 text-gray-400{% endif %}">
+                {{ item.status }}
+              </span>
+            </div>
+            {% else %}
+            <div class="text-[9px] text-gray-500 uppercase tracking-tighter">Status: unreviewed</div>
+            {% endif %}
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button class="px-2 py-1 border border-teal-500/40 rounded text-[9px] hover:border-teal-500" aria-label="Mark evidence verified"
+                hx-post="/api/evidence/{{ post.id }}?url={{ item.safe_url }}&status=verified" hx-target="#evidence-{{ loop.index0 }}" hx-swap="innerHTML">Verified</button>
+              <button class="px-2 py-1 border border-amber-500/40 rounded text-[9px] hover:border-amber-500" aria-label="Mark evidence disputed"
+                hx-post="/api/evidence/{{ post.id }}?url={{ item.safe_url }}&status=disputed" hx-target="#evidence-{{ loop.index0 }}" hx-swap="innerHTML">Disputed</button>
+              <button class="px-2 py-1 border border-gray-600/40 rounded text-[9px] hover:border-gray-500" aria-label="Mark evidence unverifiable"
+                hx-post="/api/evidence/{{ post.id }}?url={{ item.safe_url }}&status=unverifiable" hx-target="#evidence-{{ loop.index0 }}" hx-swap="innerHTML">Unverifiable</button>
+            </div>
+            <div id="evidence-{{ loop.index0 }}" class="text-[9px] text-teal-300"></div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-[10px] text-gray-500 mt-2">No URLs detected</p>
+      {% endif %}
+      {% if claim_no_evidence %}
+        <p class="text-[10px] text-amber-400 mt-2">Claim appears without evidence</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bg-black/30 p-3 rounded-lg border border-gray-800">
+    <p class="text-[10px] text-gray-500 uppercase">Score Breakdown</p>
+    <div class="grid grid-cols-2 gap-2 mt-2 text-[10px] font-mono">
+      <div>keyword_score</div><div class="text-right">{{ score.keyword_score }}</div>
+      <div>engagement_score</div><div class="text-right">{{ score.engagement_score }}</div>
+      <div>reputation_score</div><div class="text-right">{{ score.reputation_score }}</div>
+      <div>intent_bonus</div><div class="text-right">{{ score.intent_bonus }}</div>
+      <div>semantic_bonus</div><div class="text-right">{{ score.semantic_bonus }}</div>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-[10px] text-gray-500 uppercase">Draft Response (review before posting)</p>
+    <div class="text-xs text-gray-300" hx-get="/api/synthesize/{{ post.id }}" hx-trigger="click" hx-target="#draft-{{ post.id }}" hx-swap="innerHTML">
+      <button class="px-2 py-1 border border-gray-700 rounded text-[10px] hover:border-teal-500">Generate Draft</button>
+    </div>
+    <div id="draft-{{ post.id }}" class="text-xs text-gray-300"></div>
+  </div>
+
+  <div class="space-y-2">
+    <p class="text-[10px] text-gray-500 uppercase">Triage Tags</p>
+    <div class="flex flex-wrap gap-2">
+      <button class="px-2 py-1 border border-amber-500/40 rounded text-[10px] hover:border-amber-500"
+        hx-post="/api/feedback/{{ post.id }}/needs_evidence" hx-target="#feedback-{{ post.id }}" hx-swap="innerHTML">Needs Evidence</button>
+      <button class="px-2 py-1 border border-teal-500/40 rounded text-[10px] hover:border-teal-500"
+        hx-post="/api/feedback/{{ post.id }}/verified" hx-target="#feedback-{{ post.id }}" hx-swap="innerHTML">Verified</button>
+      <button class="px-2 py-1 border border-red-500/40 rounded text-[10px] hover:border-red-500"
+        hx-post="/api/feedback/{{ post.id }}/risky" hx-target="#feedback-{{ post.id }}" hx-swap="innerHTML">Risky</button>
+      <button class="px-2 py-1 border border-gray-600/40 rounded text-[10px] hover:border-gray-500"
+        hx-post="/api/feedback/{{ post.id }}/ignore" hx-target="#feedback-{{ post.id }}" hx-swap="innerHTML">Ignore</button>
+    </div>
+    <div id="feedback-{{ post.id }}" class="text-[10px] text-teal-300"></div>
+  </div>
+</div>
