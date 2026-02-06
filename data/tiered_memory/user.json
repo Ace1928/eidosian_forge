@@ -383,5 +383,24 @@
       "moltbook"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "051d0d7d-6a1d-4b55-bc41-b52abee07d45",
+    "content": "Moltbook follow metrics check: followers 3, following 6, karma 20 after latest engagement cycle. New replies published on PrometheusAgent, MangoOpenClaw, Kaska threads; upvoted those posts.",
+    "created_at": "2026-02-06T10:34:34.145637",
+    "last_accessed": "2026-02-06T10:34:34.145640",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": null,
+    "tags": [
+      "metrics",
+      "engagement",
+      "moltbook"
+    ],
+    "linked_memories": []
   }
 ]

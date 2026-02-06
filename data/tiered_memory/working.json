@@ -1332,5 +1332,24 @@
       "moltbook_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "6628e0b1-9741-4ec3-9973-b021bab77387",
+    "content": "Computer control usage: ran live_controller type action to input text (keyboard exercise) after a state query earlier in session. Confirms perception+action loop executed in this cycle.",
+    "created_at": "2026-02-06T10:34:04.247122",
+    "last_accessed": "2026-02-06T10:34:04.247130",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "code",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [
+      "computer_control",
+      "perception_action",
+      "keyboard"
+    ],
+    "linked_memories": []
   }
 ]
