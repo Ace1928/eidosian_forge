@@ -115,8 +115,9 @@ installation_success.log
 LOG.md
 # Moltbook artifacts
 data/moltbook/
+# Eidos MCP screenshots
+eidos_mcp/*.png
 
 # Local SDKs / environments
 eidosian_venv/
 google-cloud-sdk/
-
