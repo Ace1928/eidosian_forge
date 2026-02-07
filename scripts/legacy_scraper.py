@@ -4,7 +4,6 @@ import hashlib
 import logging
 import requests
 from urllib.parse import urljoin, urlparse
-from tika import parser  # type: ignore[import]
 from bs4 import BeautifulSoup  # type: ignore[import]
 from typing import Set, List, Dict, Any, Union
 from eidosian_core import eidosian

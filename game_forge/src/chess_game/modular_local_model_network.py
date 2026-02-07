@@ -57,9 +57,6 @@ import os
 import json
 import hashlib
 import requests
-from tika import (  # type: ignore[import]
-    parser,
-)  # Keeping this import as it might be used by tika library internally, even if not directly used here.
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup  # type: ignore[import]
 import logging

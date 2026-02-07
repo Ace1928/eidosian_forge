@@ -22,12 +22,23 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-try:
-    from tika import parser as tika_parser
-    TIKA_AVAILABLE = True
-except ImportError:
-    TIKA_AVAILABLE = False
-    tika_parser = None
+_TIKA_AVAILABLE: bool | None = None
+_TIKA_PARSER = None
+
+
+def _get_tika_parser() -> Optional[Any]:
+    global _TIKA_AVAILABLE, _TIKA_PARSER
+    if _TIKA_AVAILABLE is False:
+        return None
+    if _TIKA_PARSER is None:
+        try:
+            from tika import parser as tika_parser
+        except ImportError:
+            _TIKA_AVAILABLE = False
+            return None
+        _TIKA_PARSER = tika_parser
+        _TIKA_AVAILABLE = True
+    return _TIKA_PARSER
 
 
 class TikaExtractor:
@@ -50,10 +61,13 @@ class TikaExtractor:
             cache_dir: Directory to cache extracted content
             enable_cache: Whether to use caching
         """
-        if not TIKA_AVAILABLE:
+        parser = _get_tika_parser()
+        if not parser:
             raise ImportError(
                 "Apache Tika not available. Install with: pip install tika"
             )
+
+        self._parser = parser
         
         self.enable_cache = enable_cache
         if cache_dir:
@@ -131,7 +145,7 @@ class TikaExtractor:
             }
         
         try:
-            result = tika_parser.from_file(str(file_path))
+            result = self._parser.from_file(str(file_path))
             extracted = {
                 "content": result.get("content", ""),
                 "metadata": result.get("metadata", {}),
@@ -180,7 +194,7 @@ class TikaExtractor:
                 return cached
         
         try:
-            result = tika_parser.from_url(url)
+            result = self._parser.from_url(url)
             extracted = {
                 "content": result.get("content", ""),
                 "metadata": result.get("metadata", {}),
@@ -222,7 +236,7 @@ class TikaExtractor:
             Dict with 'content', 'metadata', 'status'
         """
         try:
-            result = tika_parser.from_buffer(buffer)
+            result = self._parser.from_buffer(buffer)
             return {
                 "content": result.get("content", ""),
                 "metadata": result.get("metadata", {}),
@@ -260,7 +274,7 @@ class TikaExtractor:
         
         try:
             # Use from_file with requestOptions to get only metadata
-            result = tika_parser.from_file(
+            result = self._parser.from_file(
                 str(file_path),
                 requestOptions={"headers": {"Accept": "application/json"}}
             )
