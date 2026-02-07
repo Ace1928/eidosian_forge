@@ -105,6 +105,23 @@ def main(argv: list[str] | None = None) -> int:
         rshow.add_argument("--run", required=True)
         rshow.add_argument("--head", type=int, default=200, help="max bytes to print per stream")
 
+        p_workspace = sub.add_parser("workspace", help="summarize workspace broadcasts")
+        p_workspace.add_argument("--dir", default="state", help="state directory")
+        p_workspace.add_argument("--since", help="ISO8601 Z lower bound (inclusive)")
+        p_workspace.add_argument("--limit", type=int, default=1000, help="max events to scan")
+        p_workspace.add_argument("--window", type=float, default=1.0, help="window size in seconds")
+        p_workspace.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
+        p_workspace.add_argument("--json", action="store_true", help="JSON output")
+
+        p_self = sub.add_parser("self-model", help="snapshot self-model state")
+        p_self.add_argument("--dir", default="state", help="state directory")
+        p_self.add_argument("--memory-dir", default="/home/lloyd/eidosian_forge/data/memory")
+        p_self.add_argument("--last", type=int, default=5, help="number of recent events to include")
+        p_self.add_argument("--window", type=float, default=1.0, help="window size in seconds")
+        p_self.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
+        p_self.add_argument("--emit", action="store_true", help="emit snapshot to workspace bus")
+        p_self.add_argument("--json", action="store_true", help="JSON output")
+
         args = ap.parse_args(argv)
 
         if args.cmd == "state":
@@ -203,6 +220,59 @@ def main(argv: list[str] | None = None) -> int:
                         print("<empty>")
                 return 0
 
+        if args.cmd == "workspace":
+            from agent_forge.core import workspace as WS  # type: ignore
+
+            summary = WS.summary(
+                args.dir,
+                since=args.since,
+                limit=args.limit,
+                window_seconds=args.window,
+                min_sources=args.min_sources,
+            )
+            if args.json:
+                print(json.dumps(summary, indent=2))
+            else:
+                print(
+                    f"[workspace] events={summary['event_count']} "
+                    f"windows={summary['window_count']} "
+                    f"ignitions={summary['ignition_count']}"
+                )
+                print(f"[workspace] sources={', '.join(summary['unique_sources'])}")
+            return 0
+
+        if args.cmd == "self-model":
+            from agent_forge.core import self_model as SM  # type: ignore
+
+            if args.emit:
+                snap = SM.emit_snapshot(
+                    state_dir=args.dir,
+                    memory_dir=args.memory_dir,
+                    last_events=args.last,
+                    window_seconds=args.window,
+                    min_sources=args.min_sources,
+                )
+            else:
+                snap = SM.snapshot(
+                    state_dir=args.dir,
+                    memory_dir=args.memory_dir,
+                    last_events=args.last,
+                    window_seconds=args.window,
+                    min_sources=args.min_sources,
+                )
+            if args.json:
+                print(json.dumps(snap, indent=2))
+            else:
+                memory = snap.get("memory") or {}
+                ws = snap.get("workspace") or {}
+                print(f"[self-model] ts={snap.get('timestamp')}")
+                print(f"[self-model] memory_total={memory.get('total_memories')}")
+                print(
+                    f"[self-model] workspace_events={ws.get('event_count')} "
+                    f"ignitions={ws.get('ignition_count')}"
+                )
+            return 0
+
         return 2
     except KeyboardInterrupt:
         print("aborted.", file=sys.stderr)
@@ -232,4 +302,3 @@ def _pretty_print_state(snap: dict) -> None:
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())
-

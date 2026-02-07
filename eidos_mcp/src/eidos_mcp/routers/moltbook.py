@@ -121,19 +121,22 @@ def moltbook_create(title: str, content: str, submolt: Optional[str] = None) -> 
 
 
 @tool(
-    description="Reply to a Moltbook post.",
+    description="Reply to a Moltbook post or comment.",
     parameters={
         "type": "object",
         "properties": {
             "post_id": {"type": "string"},
             "content": {"type": "string"},
+            "parent_id": {"type": "string"},
         },
         "required": ["post_id", "content"],
     },
 )
 @eidosian()
-def moltbook_reply(post_id: str, content: str) -> str:
+def moltbook_reply(post_id: str, content: str, parent_id: Optional[str] = None) -> str:
     payload = {"content": content}
+    if parent_id:
+        payload["parent_id"] = parent_id
     data = _request("POST", f"/posts/{post_id}/comments", payload=payload)
     return json.dumps(data)
 

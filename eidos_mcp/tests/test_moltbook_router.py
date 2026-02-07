@@ -74,10 +74,11 @@ def test_moltbook_posts(monkeypatch):
 
 def test_moltbook_reply_and_verify(monkeypatch):
     monkeypatch.setattr(moltbook, "_client", lambda: _MockClient({"ok": True}))
-    reply = json.loads(moltbook.moltbook_reply("post-123", "hello"))
+    reply = json.loads(moltbook.moltbook_reply("post-123", "hello", parent_id="comment-1"))
     assert reply["method"] == "POST"
     assert reply["path"] == "/posts/post-123/comments"
     assert reply["payload"]["content"] == "hello"
+    assert reply["payload"]["parent_id"] == "comment-1"
 
     verify = json.loads(moltbook.moltbook_verify("code-1", "42.00"))
     assert verify["path"] == "/verify"

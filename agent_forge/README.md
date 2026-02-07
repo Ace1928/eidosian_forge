@@ -7,6 +7,8 @@ Minimal scaffolding for the Eidos E3 system.
 
 ## CLI tools
 - `bin/eidctl` – inspect state snapshots and manage the JSONL journal.
+- `bin/eidctl workspace` – summarize workspace broadcasts and ignition windows.
+- `bin/eidctl self-model` – snapshot memory + workspace signals (optional emit).
 - `bin/eidosd` – daemon shim; `--once` runs one beat, `--loop` runs a scheduler collecting metrics
 - `bin/eidtop` – curses TUI for live beats and metrics.
 

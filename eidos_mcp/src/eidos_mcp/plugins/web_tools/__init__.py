@@ -364,14 +364,25 @@ _cache = WebCache(
     max_size_mb=100
 )
 
-# Try to import Tika
-try:
-    from tika import parser as tika_parser
-    import os
-    os.environ['TIKA_LOG_PATH'] = '/tmp'
-    _TIKA_AVAILABLE = True
-except ImportError:
-    _TIKA_AVAILABLE = False
+_TIKA_AVAILABLE: bool | None = None
+_TIKA_PARSER = None
+
+
+def _get_tika_parser():
+    global _TIKA_AVAILABLE, _TIKA_PARSER
+    if _TIKA_AVAILABLE is False:
+        return None
+    if _TIKA_PARSER is None:
+        try:
+            from tika import parser as tika_parser
+            import os
+            os.environ.setdefault("TIKA_LOG_PATH", "/tmp")
+            _TIKA_PARSER = tika_parser
+            _TIKA_AVAILABLE = True
+        except ImportError:
+            _TIKA_AVAILABLE = False
+            return None
+    return _TIKA_PARSER
 
 
 @eidosian()
@@ -507,7 +518,8 @@ def web_parse_document(
     Returns:
         JSON string with parsed content and metadata
     """
-    if not _TIKA_AVAILABLE:
+    tika_parser = _get_tika_parser()
+    if not tika_parser:
         return json.dumps({
             "status": "error",
             "error": "Tika not available. Install with: pip install tika"

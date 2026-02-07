@@ -16,16 +16,9 @@ from typing import Optional, List
 from ..core import tool
 from ..forge_loader import ensure_forge_import
 
-ensure_forge_import("crawl_forge")
-ensure_forge_import("knowledge_forge")
-
-try:
-    from crawl_forge import TikaExtractor, TikaKnowledgeIngester
-    TIKA_AVAILABLE = True
-except ImportError:
-    TIKA_AVAILABLE = False
-    TikaExtractor = None
-    TikaKnowledgeIngester = None
+TIKA_AVAILABLE: bool | None = None
+TikaExtractor = None
+TikaKnowledgeIngester = None
 
 try:
     from knowledge_forge.core.graph import KnowledgeForge
@@ -47,7 +40,9 @@ _ingester: Optional[TikaKnowledgeIngester] = None
 def _get_tika() -> Optional[TikaExtractor]:
     """Lazy-load the Tika extractor."""
     global _tika
-    if _tika is None and TIKA_AVAILABLE:
+    if _tika is None:
+        if not _load_tika():
+            return None
         _tika = TikaExtractor(cache_dir=TIKA_CACHE_DIR, enable_cache=True)
     return _tika
 
@@ -55,13 +50,32 @@ def _get_tika() -> Optional[TikaExtractor]:
 def _get_ingester() -> Optional[TikaKnowledgeIngester]:
     """Lazy-load the knowledge ingester."""
     global _ingester, _knowledge_forge
-    if _ingester is None and TIKA_AVAILABLE:
+    if _ingester is None:
+        if not _load_tika():
+            return None
         tika = _get_tika()
         if tika:
             if _knowledge_forge is None and KnowledgeForge:
                 _knowledge_forge = KnowledgeForge(persistence_path=KB_PATH)
             _ingester = TikaKnowledgeIngester(tika=tika, knowledge_forge=_knowledge_forge)
     return _ingester
+
+
+def _load_tika() -> bool:
+    global TIKA_AVAILABLE, TikaExtractor, TikaKnowledgeIngester
+    if TIKA_AVAILABLE is not None:
+        return TIKA_AVAILABLE
+    ensure_forge_import("crawl_forge")
+    ensure_forge_import("knowledge_forge")
+    try:
+        from crawl_forge import TikaExtractor as _TikaExtractor, TikaKnowledgeIngester as _TikaKnowledgeIngester
+    except ImportError:
+        TIKA_AVAILABLE = False
+        return False
+    TikaExtractor = _TikaExtractor
+    TikaKnowledgeIngester = _TikaKnowledgeIngester
+    TIKA_AVAILABLE = True
+    return True
 
 
 # =============================================================================

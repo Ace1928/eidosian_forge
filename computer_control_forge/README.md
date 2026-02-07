@@ -62,6 +62,19 @@ screenshot = control.capture_screen()
 control.stop()
 ```
 
+### Live telemetry (sensorimotor pipeline)
+
+The live controller can emit a structured sensorimotor trace and forward it to the
+Agent Forge workspace bus:
+
+```python
+from computer_control_forge.live_controller import LiveController, ControllerConfig
+
+config = ControllerConfig(enable_agent_bus=True, enable_pipeline_trace=True)
+with LiveController(config) as ctrl:
+    ctrl.move_to(960, 540)
+```
+
 ## Kill Switch Commands
 
 ```bash

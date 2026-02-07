@@ -262,6 +262,58 @@ class MCPChannel(FeedbackChannel):
         }
 
 
+def _load_agent_broadcast():
+    root = Path(__file__).resolve().parents[3]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    try:
+        from agent_forge.core import workspace
+    except ImportError as exc:
+        raise RuntimeError(f"agent_forge workspace unavailable: {exc}") from exc
+    return workspace.broadcast
+
+
+class AgentForgeBusChannel(FeedbackChannel):
+    """Forward feedback events into the Agent Forge workspace bus."""
+
+    def __init__(
+        self,
+        state_dir: str = "state",
+        tags: Optional[List[str]] = None,
+        channel: str = "sensorimotor",
+    ):
+        super().__init__("agent_bus")
+        self.state_dir = state_dir
+        self.tags = list(tags or ["sensorimotor"])
+        self.channel = channel
+        self._broadcast = _load_agent_broadcast()
+
+    def emit(self, event: FeedbackEvent) -> bool:
+        corr_id = event.data.get("corr_id") or event.data.get("pipeline_id")
+        parent_id = event.data.get("parent_id")
+        payload = {
+            "event_type": event.event_type,
+            "sequence": event.sequence,
+            "timestamp": event.timestamp,
+            "data": event.data,
+        }
+        try:
+            self._broadcast(
+                self.state_dir,
+                source=event.source,
+                payload=payload,
+                channel=self.channel,
+                tags=self.tags,
+                corr_id=corr_id,
+                parent_id=parent_id,
+            )
+            self._event_count += 1
+            return True
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"# Agent bus error: {exc}", file=sys.stderr)
+            return False
+
+
 class FeedbackHub:
     """
     Central hub managing all feedback channels.
@@ -315,6 +367,20 @@ class FeedbackHub:
         channel = MCPChannel(max_events)
         self.channels["mcp"] = channel
         return channel
+
+    def enable_agent_bus(
+        self,
+        state_dir: str = "state",
+        tags: Optional[List[str]] = None,
+        channel: str = "sensorimotor",
+    ) -> 'FeedbackHub':
+        """Enable forwarding to Agent Forge workspace bus."""
+        self.channels["agent_bus"] = AgentForgeBusChannel(
+            state_dir=state_dir,
+            tags=tags,
+            channel=channel,
+        )
+        return self
     
     def emit(self, event_type: str, data: Dict[str, Any], source: str = "eidos"):
         """Emit an event to all enabled channels."""
@@ -378,6 +444,8 @@ def main():
     parser.add_argument("--file", type=str, help="Enable file output")
     parser.add_argument("--fifo", type=str, nargs='?', const="/tmp/eidos_feedback", help="Enable FIFO")
     parser.add_argument("--socket", type=str, nargs='?', const="/tmp/eidos_feedback.sock", help="Enable socket")
+    parser.add_argument("--agent-bus", action="store_true", help="Enable Agent Forge bus output")
+    parser.add_argument("--agent-bus-dir", default="state", help="Agent Forge state directory")
     parser.add_argument("--demo", action="store_true", help="Run demo sequence")
     args = parser.parse_args()
     
@@ -391,6 +459,8 @@ def main():
         hub.enable_fifo(args.fifo)
     if args.socket:
         hub.enable_socket(args.socket)
+    if args.agent_bus:
+        hub.enable_agent_bus(args.agent_bus_dir)
     
     # Default to stdout if nothing specified
     if not hub.channels:

@@ -17,6 +17,7 @@ import subprocess
 import math
 import random
 import threading
+import uuid
 from typing import Tuple, Optional, List, Dict, Any, Callable
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -43,6 +44,9 @@ class ControllerConfig:
     fifo_path: str = "/tmp/eidos_feedback"
     enable_socket: bool = False
     socket_path: str = "/tmp/eidos_feedback.sock"
+    enable_agent_bus: bool = False
+    agent_bus_state_dir: str = "state"
+    enable_pipeline_trace: bool = False
     
     # Mouse settings
     mouse_tolerance: float = 8.0
@@ -112,10 +116,18 @@ class LiveController:
                 self.hub.enable_socket(self.config.socket_path)
             except:
                 pass
+        if self.config.enable_agent_bus:
+            self.hub.enable_agent_bus(self.config.agent_bus_state_dir)
     
     def _emit(self, event_type: str, data: Dict[str, Any]):
         """Emit feedback event."""
         self.hub.emit(event_type, data, source="live_controller")
+
+    def _emit_pipeline(self, stage: str, data: Dict[str, Any]):
+        if not self.config.enable_pipeline_trace:
+            return
+        payload = {"stage": stage, **data}
+        self.hub.emit(f"pipeline.{stage}", payload, source="sensorimotor")
     
     def _get_pos(self) -> Tuple[int, int]:
         """Get cursor position."""
@@ -176,6 +188,12 @@ class LiveController:
                         "dy": y - self._last_pos[1],
                         "edge": edge
                     })
+                    self._emit_pipeline("see", {
+                        "signal": "cursor",
+                        "x": x,
+                        "y": y,
+                        "edge": edge,
+                    })
                     self._last_pos = (x, y)
                 
                 # Window check (less frequent)
@@ -190,6 +208,11 @@ class LiveController:
                                 "caption": active.caption[:60],
                                 "class": active.resource_class
                             })
+                            self._emit_pipeline("see", {
+                                "signal": "window_focus",
+                                "caption": active.caption[:60],
+                                "class": active.resource_class,
+                            })
                             self._last_window = active.caption
                     except:
                         pass
@@ -201,6 +224,7 @@ class LiveController:
     
     def move_to(self, target_x: int, target_y: int) -> Dict[str, Any]:
         """Move cursor to target with live feedback."""
+        pipeline_id = uuid.uuid4().hex
         # Clamp target
         m = self.config.edge_margin
         target_x = max(m, min(target_x, self.config.screen_width - m - 1))
@@ -212,7 +236,13 @@ class LiveController:
         self._emit("move_start", {
             "from": [start_x, start_y],
             "to": [target_x, target_y],
-            "distance": round(total_dist, 1)
+            "distance": round(total_dist, 1),
+            "pipeline_id": pipeline_id,
+        })
+        self._emit_pipeline("act", {
+            "action": "move_to",
+            "pipeline_id": pipeline_id,
+            "target": [target_x, target_y],
         })
         
         start_time = time.time()
@@ -234,7 +264,8 @@ class LiveController:
                 "p": [x, y],
                 "err": round(dist, 1),
                 "edge": edge,
-                "iter": i
+                "iter": i,
+                "pipeline_id": pipeline_id,
             })
             
             # Check convergence
@@ -282,18 +313,32 @@ class LiveController:
             "error": round(final_dist, 1),
             "iterations": iterations,
             "duration_ms": round(elapsed_ms, 1),
-            "path_length": len(path)
+            "path_length": len(path),
+            "pipeline_id": pipeline_id,
         }
         
         self._emit("move_done", result)
+        self._emit_pipeline("verify", {
+            "action": "move_to",
+            "pipeline_id": pipeline_id,
+            "success": success,
+            "error": round(final_dist, 1),
+        })
         return result
     
     def click_at(self, x: int, y: int, button: str = "left") -> Dict[str, Any]:
         """Move to position and click."""
+        pipeline_id = uuid.uuid4().hex
         result = self.move_to(x, y)
         if result["success"]:
             self._click(button)
-            self._emit("click", {"pos": [x, y], "button": button})
+            self._emit("click", {"pos": [x, y], "button": button, "pipeline_id": pipeline_id})
+            self._emit_pipeline("act", {
+                "action": "click",
+                "pipeline_id": pipeline_id,
+                "pos": [x, y],
+                "button": button,
+            })
             result["clicked"] = True
         else:
             result["clicked"] = False
@@ -301,7 +346,13 @@ class LiveController:
     
     def type_text(self, text: str, wpm: int = 180) -> Dict[str, Any]:
         """Type text with live progress feedback."""
-        self._emit("type_start", {"length": len(text), "wpm": wpm})
+        pipeline_id = uuid.uuid4().hex
+        self._emit("type_start", {"length": len(text), "wpm": wpm, "pipeline_id": pipeline_id})
+        self._emit_pipeline("act", {
+            "action": "type_text",
+            "pipeline_id": pipeline_id,
+            "length": len(text),
+        })
         
         cps = (wpm * 5) / 60
         delay = 1.0 / cps
@@ -316,7 +367,8 @@ class LiveController:
                 self._emit("type_progress", {
                     "chars": i + 1,
                     "pct": round(100 * (i + 1) / len(text), 1),
-                    "preview": text[max(0, i-10):i+1][-20:]
+                    "preview": text[max(0, i-10):i+1][-20:],
+                    "pipeline_id": pipeline_id,
                 })
             
             time.sleep(delay + random.uniform(-0.01, 0.015))
@@ -328,13 +380,20 @@ class LiveController:
             "success": True,
             "chars_typed": len(text),
             "duration_ms": round(elapsed_ms, 1),
-            "actual_wpm": round(actual_wpm, 1)
+            "actual_wpm": round(actual_wpm, 1),
+            "pipeline_id": pipeline_id,
         }
         self._emit("type_done", result)
+        self._emit_pipeline("verify", {
+            "action": "type_text",
+            "pipeline_id": pipeline_id,
+            "chars_typed": len(text),
+        })
         return result
     
     def press_key(self, key: str) -> Dict[str, Any]:
         """Press a key."""
+        pipeline_id = uuid.uuid4().hex
         key_codes = {
             "enter": "28:1 28:0",
             "tab": "15:1 15:0",
@@ -350,10 +409,11 @@ class LiveController:
         code = key_codes.get(key.lower())
         if code:
             subprocess.run(["ydotool", "key"] + code.split(), capture_output=True)
-            self._emit("key_press", {"key": key})
+            self._emit("key_press", {"key": key, "pipeline_id": pipeline_id})
+            self._emit_pipeline("act", {"action": "press_key", "pipeline_id": pipeline_id, "key": key})
             return {"success": True, "key": key}
         else:
-            self._emit("key_error", {"key": key, "error": "unknown key"})
+            self._emit("key_error", {"key": key, "error": "unknown key", "pipeline_id": pipeline_id})
             return {"success": False, "key": key, "error": "unknown key"}
     
     def get_state(self) -> Dict[str, Any]:
@@ -373,6 +433,7 @@ class LiveController:
             "feedback_stats": self.hub.get_stats()
         }
         self._emit("state_query", state)
+        self._emit_pipeline("see", {"signal": "state_query"})
         return state
     
     def get_mcp_events(self, clear: bool = True) -> Dict[str, Any]:
