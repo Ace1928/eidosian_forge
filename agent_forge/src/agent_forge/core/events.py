@@ -132,7 +132,7 @@ def files_count(base: str | Path) -> int:
 def prune_old_days(base: str | Path, *, keep_days: int = 7) -> int:
     """Delete ``events/YYYYMMDD`` directories older than ``keep_days``."""
     b = Path(base) / "events"
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     cutoff = today - timedelta(days=keep_days)
     deleted = 0
     if not b.exists():
