@@ -75,6 +75,16 @@ with LiveController(config) as ctrl:
     ctrl.move_to(960, 540)
 ```
 
+CLI trace example:
+
+```bash
+python -m computer_control_forge.live_controller state \
+  --agent-bus \
+  --agent-bus-dir /home/lloyd/eidosian_forge/agent_forge/state \
+  --pipeline-trace \
+  --no-file
+```
+
 ## Kill Switch Commands
 
 ```bash

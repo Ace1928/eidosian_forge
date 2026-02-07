@@ -464,10 +464,16 @@ def main():
     parser.add_argument("--key", type=str)
     parser.add_argument("--duration", type=float, default=30.0)
     parser.add_argument("--no-file", action="store_true", help="Disable file output")
+    parser.add_argument("--agent-bus", action="store_true", help="Forward events to Agent Forge workspace bus")
+    parser.add_argument("--agent-bus-dir", type=str, default="state", help="Agent Forge state dir")
+    parser.add_argument("--pipeline-trace", action="store_true", help="Emit pipeline.see/act/verify events")
     args = parser.parse_args()
     
     config = ControllerConfig(
-        enable_file=not args.no_file
+        enable_file=not args.no_file,
+        enable_agent_bus=args.agent_bus,
+        agent_bus_state_dir=args.agent_bus_dir,
+        enable_pipeline_trace=args.pipeline_trace,
     )
     
     with LiveController(config) as ctrl:
