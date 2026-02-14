@@ -16,6 +16,8 @@ This directory contains operational scripts for:
 - `export_host_profile.sh`
 - `import_legacy_projects.sh`
 - `build_dual_live_usb.sh`
+- `repair_dual_live_usb.sh`
+- `verify_dual_live_usb.sh`
 - `restore_new_host.sh`
 - `verify_clone_state.sh`
 - `sync_mesh_enroll.sh`
@@ -24,6 +26,13 @@ This directory contains operational scripts for:
 - `snapshot_eidos_state.sh`
 - `refresh_usb_payload.sh`
 - `first_boot_wizard.sh`
+
+## USB Build Notes
+
+- `build_dual_live_usb.sh` now defaults `LIVE_MULTI` to `ext4` for stronger Ubuntu casper compatibility.
+- `--live-fs exfat` is supported for portability, but can fail ISO discovery on some firmware/initramfs combinations.
+- `--print-grub-config` renders boot config without requiring root/device access (used by automated tests).
+- GRUB boot entries include ISO path fallbacks (`/ubuntu-live.iso` and `/live/ubuntu-live.iso`).
 
 ## Conventions
 
