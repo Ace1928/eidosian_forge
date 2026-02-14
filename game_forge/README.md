@@ -20,6 +20,7 @@
 - **`algorithms_lab`**: High-performance spatial and particle algorithms (grid, Barnes-Hut, FMM, SPH, PBF).
 - **`Stratum`**: Layered physical simulation engine and scenario runner.
 - **`falling_sand`**: Falling sand simulation and tooling.
+- **`snake_ai_legacy`**: Curated INDEGO snake project import with module launcher.
 
 ## 🚀 Usage
 
@@ -55,6 +56,9 @@ python game_forge/tools/run.py benchmark-suite -- --preset quick --summary game_
 cat game_forge/tools/benchmark_suite_schema.json
 python game_forge/tools/run.py agentic-chess -- --white random --black agent-forge
 python game_forge/tools/run.py agentic-chess-benchmark -- --games 5 --max-moves 60
+python game_forge/tools/run.py snake-ai-legacy -- --list
+python game_forge/tools/run.py snake-ai-legacy -- --variant classic
+python game_forge/tools/run.py snake-ai-legacy-standalone
 ```
 
 Policy manifest notes:
@@ -65,5 +69,6 @@ Policy manifest notes:
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 PYTHONPATH=game_forge/src python -m algorithms_lab --demo -- --algorithm sph --visual
 PYTHONPATH=game_forge/src python -m chess_game --list
+PYTHONPATH=game_forge/src python -m snake_ai_legacy --list
 PYTHONPATH=game_forge/src:agent_forge/src python -m agentic_chess --list-agents
 ```

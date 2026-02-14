@@ -38,6 +38,12 @@ def test_chess_game_entrypoint_list() -> None:
     assert "available variants" in result.stdout.lower()
 
 
+def test_snake_ai_legacy_entrypoint_list() -> None:
+    result = _run_module("snake_ai_legacy", "--list")
+    assert result.returncode == 0
+    assert "available variants" in result.stdout.lower()
+
+
 def test_stratum_entrypoint_list() -> None:
     result = _run_module("Stratum", "--list")
     assert result.returncode == 0

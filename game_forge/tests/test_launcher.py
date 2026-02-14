@@ -24,6 +24,9 @@ def test_run_launcher_list() -> None:
     assert "benchmark-suite" in result.stdout
     assert "agentic-chess" in result.stdout
     assert "agentic-chess-benchmark" in result.stdout
+    assert "snake-ai-legacy" in result.stdout
+    assert "snake-ai-legacy-standalone" in result.stdout
+    assert "snake-ai-legacy-supersnake" in result.stdout
     assert "falling-sand-benchmark" in result.stdout
     assert "falling-sand-profile-index" in result.stdout
     assert "falling-sand-index" in result.stdout

@@ -5,6 +5,9 @@ Example:
   python game_forge/tools/run.py --list
   python game_forge/tools/run.py gene-particles
   python game_forge/tools/run.py ecosmos -- --ticks 100
+  python game_forge/tools/run.py snake-ai-legacy -- --list
+  python game_forge/tools/run.py snake-ai-legacy -- --variant classic
+  python game_forge/tools/run.py snake-ai-legacy-standalone
   python game_forge/tools/run.py algorithms-lab-demo -- --algorithm sph --visual
   python game_forge/tools/run.py stratum-benchmark -- --grid 16 --ticks 10
   python game_forge/tools/run.py agentic-chess -- --white random --black agent-forge
@@ -108,6 +111,24 @@ def load_targets(root: Path) -> dict[str, Target]:
             command=[str(root / "game_forge" / "src" / "ECosmos" / "main.py")],
             extra_pythonpath=[root / "game_forge" / "src" / "ECosmos"],
             requires=["numpy", "matplotlib (visual)"],
+        ),
+        "snake-ai-legacy": Target(
+            name="snake-ai-legacy",
+            description="Legacy INDEGO Snake AI package launcher",
+            command=["-m", "snake_ai_legacy"],
+            requires=["pygame"],
+        ),
+        "snake-ai-legacy-standalone": Target(
+            name="snake-ai-legacy-standalone",
+            description="Legacy standalone snake sandbox",
+            command=["-m", "snake_ai_legacy", "--variant", "standalone"],
+            requires=["pygame", "numpy", "torch", "scipy", "networkx", "scikit-learn"],
+        ),
+        "snake-ai-legacy-supersnake": Target(
+            name="snake-ai-legacy-supersnake",
+            description="Legacy supersnake prototype",
+            command=["-m", "snake_ai_legacy", "--variant", "supersnake"],
+            requires=["pygame", "pygame_gui"],
         ),
         "gene-particles": Target(
             name="gene-particles",
