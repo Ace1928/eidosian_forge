@@ -25,6 +25,7 @@ async def main() -> int:
     payload: dict[str, object] = {
         "url": URL,
         "ok": False,
+        "transport": "streamable-http",
         "tools": None,
         "diagnostics_ping": None,
         "memory_stats": None,

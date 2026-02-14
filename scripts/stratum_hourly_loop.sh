@@ -82,6 +82,12 @@ PY
   )"
   MCP_CHECK="$("$FORGE_ROOT/eidosian_venv/bin/eidos-mcp-check" 2>&1 || true)"
   MCP_PROBE="$("$FORGE_ROOT/eidosian_venv/bin/python3" "$FORGE_ROOT/scripts/mcp_cycle_probe.py" 2>&1 || true)"
+  GIT_FETCH="$(git -C "$FORGE_ROOT" fetch --all --prune 2>&1 || true)"
+  PULL_BRANCH="$BRANCH"
+  if [ -z "$PULL_BRANCH" ] || [ "$PULL_BRANCH" = "HEAD" ] || [ "$PULL_BRANCH" = "unknown" ]; then
+    PULL_BRANCH="main"
+  fi
+  GIT_PULL="$(git -C "$FORGE_ROOT" pull --ff-only origin "$PULL_BRANCH" 2>&1 || true)"
   STRATUM_GIT_STATUS="$(git -C "$FORGE_ROOT" status --short game_forge/src/Stratum game_forge/tests 2>&1 | sed -n '1,120p')"
 
   {
@@ -112,6 +118,15 @@ PY
     echo "$STRATUM_GIT_STATUS"
     echo '```'
     echo
+    echo "### Git Sync"
+    echo '```text'
+    echo "[fetch]"
+    echo "$GIT_FETCH"
+    echo
+    echo "[pull origin $PULL_BRANCH]"
+    echo "$GIT_PULL"
+    echo '```'
+    echo
     echo "### Recent Bridge Messages (received)"
     echo '```text'
     echo "$RECENT_MESSAGES"
@@ -138,6 +153,12 @@ PY
     echo
     echo "stratum_git_status_scoped:"
     echo "$STRATUM_GIT_STATUS" | sed -n '1,60p'
+    echo
+    echo "git_fetch:"
+    echo "$GIT_FETCH" | sed -n '1,40p'
+    echo
+    echo "git_pull_origin_${PULL_BRANCH}:"
+    echo "$GIT_PULL" | sed -n '1,40p'
     echo
     echo "recent_bridge_messages:"
     echo "$RECENT_MESSAGES" | sed -n '1,80p'
