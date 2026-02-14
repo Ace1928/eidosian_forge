@@ -1,0 +1,8 @@
+ M .gitignore
+ M data/tiered_memory/self.json
+?? archive_forge/manifests/
+?? data/shared_state/
+?? docs/legacy/
+?? projects/legacy/
+?? projects/research/
+?? scripts/machine_clone/

@@ -1,0 +1,62 @@
+log_function_call                                  #Decorator to log function calls
+log_exception                                      #Decorator to log exceptions
+get_order_book                                     #Get the order book for a given ticker from a specified exchange
+preprocess_data_for_lstm                           #Preprocess the data for LSTM model (which makes up the base trader)
+build_lstm_model                                   #Build the LSTM model
+train_and_predict_lstm                             #Train and predict using the LSTM model
+implement_adaptive_strategy                        #Implement an adaptive strategy based on market conditions
+#For Adaptive Strategy
+implement_donchian_strategy (Default strategy)     #Implement the donchian strategy
+implement_mean_reversion_strategy                  #Implement the mean reversion strategy
+implement_ml_strategy                              #Implement the machine learning strategy
+select_strategy                                    #Select the strategy to be used
+calculate_position_size                            #Calculate the position size
+update_model_weights                               #Update the model weights
+backtest_strategy                                  #Backtest the strategy
+optimize_strategy                                  #Optimize the strategy
+load_config                                        #Load the configuration
+save_config                                        #Save the configuration
+start_monitoring                                   #Start monitoring the market 
+send_alert                                         #Send an alert notification based on the strategy
+execute_trade                                      #Execute a trade based on the strategy and position and market conditions
+execute_trades_concurrently                        #Execute trades concurrently
+distribute_across_exchanges                        #Distribute trades across exchanges
+select_exchange                                    #Select the exchange to execute the trade
+get_historical_data                                #Get historical data for a given ticker, utilising a variety of sources and defaulting to google sheets method for real time data also (sheets can do this freely)
+load_credentials_gui                               #Load the credentials from the GUI
+setup_google_sheets                                #Setup the google sheets
+train_and_predict_lstm                             #Train and predict using the LSTM model
+build_lstm_model                                   #Build the LSTM model
+preprocess_data_for_lstm                           #Preprocess the data for LSTM model (which makes up the base trader)
+fetch_and_analyze_article_sentiment                #Fetch and analyze the sentiment of news articles
+donchian_strategy                                  #Implement the donchian strategy
+fetch_real_time_data                               #Fetch real time data from google sheets
+detect_significant_movement                        #Detect significant movement in the market
+get_current_position                               #Get the current position
+calculate_performance                              #Calculate the performance of the strategy
+update_dashboard                                   #Update the dashboard
+detect_anomaly                                     #Detect an anomaly in the market
+strategyfunc                                       #Function for the strategy to be used
+Adam                                               #Adam optimizer utilise this from torch so ignore it as a method   
+
+# Downloading necessary NLTK resources
+nltk.download("averaged_perceptron_tagger")
+nltk.download("vader_lexicon")
+nltk.download("punkt")
+
+# Setting global matplotlib parameters for plot size and style
+plt.rcParams["figure.figsize"]: Tuple[int, int] = (20, 10)
+plt.style.use("fivethirtyeight")
+
+#Custom Error Types
+NetworkError
+ExchangeError
+APIKeyError
+AuthorizationError
+TickerError
+StartDateError
+EndDateError
+InvalidOrderQuantityError
+InvalidOrderTypeError
+InvalidOrderStatusError
+InvalidOrderError

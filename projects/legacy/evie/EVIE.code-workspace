@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"editor.linkedEditing": true,
+		"explorer.fileNesting.enabled": true,
+		"git.autofetch": true
+	}
+}

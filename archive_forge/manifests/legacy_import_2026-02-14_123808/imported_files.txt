@@ -1,0 +1,1051 @@
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201690-legal_case_report_and_summary_1428_1428.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201691-lloyd_letter_draft_15286_15286.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/.trashed-1707201691-small-claims-guide_154349_154349.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/113 Module Full Chat.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/3. asdi 2.0 unrefined.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/33 Morris Street - Room Rates_11509.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/3310 exam notes(1).docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/390206 21 - role description v1 (1)_160390_160390.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/393902 21 role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395390 21 role description_718764_718764.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395793 21 - role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/395810 21 role description v1.0_239931_239931.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/6. fractured gpt modules.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/7. 2412231350 algorithm engine.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/8. refined reference builder_13180_13180_13180.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/9. refined decision tree.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AEO optimized functions 1_14543_14543.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AGP and ChatGPT Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AI Problem Solving Test Case.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/ASDI 4.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/ASDI Final Complete 2024.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AceLabs Business Plan_175547.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Adaptive Generalised Processor (AGP) Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced Algorithm Engine.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced Naming Schema and Systemisation Tool.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Advanced recursive enhancement.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Algorithm Engine Highly Defined and Explained_22346_22346_22346.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/AlgorithmEngineDependent Code Combiner.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Almond Agaricus - Agaricus Blazeii.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Analysis and Comparison of AGP and GPT-4.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/BioLog 3.0+ Base Algorithm Plain English.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/BioLog Custom GPT Construction.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Biol3330 Report 2_23020.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Cactus Wish List.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Chicken of the Woods - Laetiporus Cincinnatus.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/CodeCombiner.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Comparison of modularity vs monolithic algorithms.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Contextual awareness loop.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Emotional Translation Algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Emotive and Expressive ASDI Conversaton.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Equipment Function and Utility.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Evolving Discussion of Self Awareness.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/FWO Email Response_16595.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Final Algorithm for Custom GPT Builder Upgrade.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/GameTheory Derived Use Based Personas.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Implementation Plan.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Interrupt Protection Attempt.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume(2).docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume(2)_199510.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/LHANDYSIDE Seek Resume.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Module By Module Analysis and Pseudocode.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Parasol Mushroom - Macrolepiota Procera.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Potential Unlocking Prompt.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Potential generally intelligent AI builder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Project Goals and Overview.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt Guide for Generating Detailed Abstract Data Sets.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt feedback in solar system image generation series for BioLog3.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Prompt for Improving ExpertUniversalTaskProcessor.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/SAPHDI Modules .docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Santa SAPHDI.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Sequence of Modules to Achieve near AGP proficiency.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/The Builder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/The Concept of Colour_15804_15804.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tiger Milk - Lignocus Rhinocerus.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/TraderInConstructionAndInstructions.odt
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tristan Farm Sign Problem.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/Tristan Final Farm Sign Problem Solution Refinement.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/User Instruction Design Requirements.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/advanced consciousness generator.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/biolog gpt 2.0 algorithm.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/biolog style feature set.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/business-plan-7170321723517042688.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/complex solution to gender identity.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/compliance-and-enforcement-policy.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/contextually aware dynamic personas.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/coordinsted saphdi most updated needs meeging.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/cqr394895_21p role description.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/cqr396177_21t role description_212532_212532.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/earlier ASDI persona.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/extracted raw data.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/fair-work-information-statement_88258_88258.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/future improvement directions.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/heavily improved SAPHDI.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/hospitality-industry-general-award-ma000009-pay-guide_278897_278897.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/initialosation process asdi 6.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/launch_expressive_asdi-1_23878_23878.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/launch_expressive_asdi.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/legal assistance summary_16845_16845.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/lloyd handyside ranger application cover letter pre edit.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/lloyd_handyside_ranger_application_cover_letter_17426_17426.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/marielle finney letter_13594_13594.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/modelled future history.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/multi persona system_12754_12754_12754.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/non profit AI document.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/persona updater.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/placeholder.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/reverse engineer module.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/road-transport-and-distribution-award-ma000038-pay-guide (1)_173125_173125.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/road-transport-and-distribution-award-ma000038-pay-guide_149614_149614.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/saphdi personality detailed_13080_13080_13080.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/self awareness module.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/serene_clearing_dawn_16537_16537.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/the_saphdi_prompt_15715_15715.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/upwork profile.docx
+/home/lloyd/eidosian_forge/docs/legacy/aurora_archive/user interaction loop.docx
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/compute_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/fragment_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/geometry_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/tcs_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/tes_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/3dstuff/shaders/vertex_shader.glsl
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/1-what-is-turing/whatisturing.md
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/2-why-turing-test-matters.py/whyturingmatters.md
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/1-hello-turing/HELLOTURING-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/2-turing-test-basics/TURINGTESTBASICS-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/3-passing-turing-test/PASSINGTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/4-implications-of-turing-test/IMPLICATIONSTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/5-hands-on-turing-test/HANDSONTURINGTEST-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/6-future-of-turing-test/FUTURETURING-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/7-turing-test-mastery/TURINGTESTMASTERY-README.md/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1a-turing-test/TURING-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1b-snarc-nn1/SNARC-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1c-dartmouth-con/DARTMOUTH-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1d-general-problem-solver/GENERALSOLVER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1e-eliza/ELIZA-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/1f-shakey-robot/SHAKEY-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/1-genesis/GENESIS-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/2-evolution/EVOLUTION-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/3-advancement/ADVANCEMENT-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/4-deep-learning/DEEPLEARNING-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/5-modern-transformer/MODERNTRANSFORMER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/6-beyond-transformer/BEYONDTRANSFORMER-README.MD
+/home/lloyd/eidosian_forge/projects/legacy/ai_timeline/README.MD
+/home/lloyd/eidosian_forge/projects/legacy/evie/.__async_detailed.lock
+/home/lloyd/eidosian_forge/projects/legacy/evie/.cursorignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/0,23
+/home/lloyd/eidosian_forge/projects/legacy/evie/0.23
+/home/lloyd/eidosian_forge/projects/legacy/evie/=
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/.github/FUNDING.yml
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/misc/lambada_test.jsonl
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample2-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/music/sample3-RWKV-4-MIDI-120M-v1-20230714-ctx4096.mid
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/MANIFEST.in
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/pyproject.toml
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/gemm_fp16_cublas.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/operators.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv5.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv5_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv6.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/rwkv6_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/ChatRWKV/rwkv_pip_package/src/rwkv/cuda/wrapper.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/EVIE.code-workspace
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/InstructionsandURLS.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/gemm_fp16_cublas.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/operators.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv5.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv5_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv6.cu
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/rwkv6_op.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/Indellama3/base_models/rwkv/cuda/wrapper.cpp
+/home/lloyd/eidosian_forge/projects/legacy/evie/default_encryption.key
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/glossary.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/component_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/data_flow_diagrams.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/deployment_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/module_interactions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/overview.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/scalability_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/architecture/system_design.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_formatting.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_organization.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/code_review_checklist.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/commenting_guidelines.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/error_handling_conventions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/naming_conventions.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/coding_standards/testing_standards.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/extensibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/flexibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/maintainability.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/modularity.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/performance.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/scalability.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/design_principles/security.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_classification.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_logging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_monitoring.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_recovery.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/error_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/error_handling/exception_handling.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/backward_compatibility.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_development.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_packaging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_points.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/extension_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/extensibility_guidelines/plugin_architecture.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_aggregation.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_configuration.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_formats.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/log_levels.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/logging_best_practices.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/logging_standards/structured_logging.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/data_flow_diagrams.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/interface_specifications.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/message_passing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/module_lifecycle.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/module_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/module_interactions/shared_resources.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/optimization_strategies.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/performance_benchmarking.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/performance_monitoring.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/performance_troubleshooting.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/performance_tuning.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/performance_optimization/profiling_techniques.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/auto_scaling.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/horizontal_scaling.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/scalability_best_practices.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/scalability_monitoring.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/scalability_testing.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/docs/technical/scalability_considerations/vertical_scaling.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/evie_treatment_analysis.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/example_function_.hash
+/home/lloyd/eidosian_forge/projects/legacy/evie/example_function_.pyx
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.github/ISSUE_TEMPLATE/bug.yml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.github/ISSUE_TEMPLATE/feature-request.yml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.github/PULL_REQUEST_TEMPLATE.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.github/workflows/pytest_cpu_gha_runner.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.github/workflows/spellcheck.yml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/CODE_OF_CONDUCT.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/CONTRIBUTING.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/UPDATES.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/docs/FAQ.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/docs/LLM_finetuning.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/docs/multi_gpu.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/docs/single_gpu.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/pyproject.toml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/cloud-api/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/cloud-api/azure/input.jsonl
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/on-prem/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/on-prem/vllm/input.jsonl
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/benchmarks/inference_throughput/tokenizer/tokenizer.model
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/code_llama/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/evaluation/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/evaluation/open_llm_leaderboard/arc_challeneg_25shots.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/evaluation/open_llm_leaderboard/hellaswag_10shots.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/evaluation/open_llm_leaderboard/mmlu_5shots.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/evaluation/open_llm_leaderboard/winogrande_5shots.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/LLM_finetuning_overview.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/datasets/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/huggingface_trainer/peft_finetuning.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/multi_node.slurm
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/multigpu_finetuning.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/finetuning/singlegpu_finetuning.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/llama_web_ui/Llama2_Gradio.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/llama_web_ui/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/local_inference/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/model_servers/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/model_servers/hf_text_generation_inference/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/inference/model_servers/llama-on-prem.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/Azure_API_example/azure_api_example.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/Getting_to_know_Llama.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/HelloLlamaCloud.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/LiveData.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/Llama2_Gradio.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/RAG_Chatbot_example/RAG_Chatbot_Example.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/RAG_Chatbot_example/vectorstore/db_faiss/index.faiss
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/RAG_Chatbot_example/vectorstore/db_faiss/index.pkl
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/OctoAI_API_examples/VideoSummary.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/Using_Externally_Hosted_LLMs.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/examples_with_aws/Prompt_Engineering_with_Llama_2_On_Amazon_Bedrock.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/examples_with_aws/ReAct_Llama_2_Bedrock-WK.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/llama_api_providers/examples_with_aws/getting_started_llama2_on_amazon_bedrock.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/multilingual/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/quickstart/Getting_to_know_Llama.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/quickstart/Prompt_Engineering_with_Llama_2.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/quickstart/Running_Llama2_Anywhere/Running_Llama_on_HF_transformers.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/quickstart/Running_Llama2_Anywhere/Running_Llama_on_Mac.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/CodeShieldUsageDemo.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/Purple_Llama_Anyscale.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/Purple_Llama_OctoAI.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/input_output_guardrails_with_llama.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/responsible_ai/llama_guard/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/LiveData.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/RAG/HelloLlamaCloud.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/RAG/HelloLlamaLocal.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/VideoSummary.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/RAG_chatbot/RAG_Chatbot_Example.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/RAG_chatbot/vectorstore/db_faiss/index.faiss
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/RAG_chatbot/vectorstore/db_faiss/index.pkl
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/messenger_llama/messenger_llama2.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/chatbots/whatsapp_llama/whatsapp_llama2.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/recipes/use_cases/text2sql/StructuredLlama.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/scripts/spellcheck_conf/spellcheck.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/src/llama_recipes/data/llama_guard/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/src/llama_recipes/datasets/grammar_dataset/grammar_dataset_process.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/evie/llama-recipes-main/src/llama_recipes/utils/hf_llama_conversion/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/project_tree_folders_only.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/runs/Apr15_01-47-51_Aurora/events.out.tfevents.1713109671.Aurora.133233.0
+/home/lloyd/eidosian_forge/projects/legacy/evie/runs/Apr15_01-49-07_Aurora/events.out.tfevents.1713109747.Aurora.138385.0
+/home/lloyd/eidosian_forge/projects/legacy/evie/runs/Apr15_08-45-41_Aurora/events.out.tfevents.1713134741.Aurora.1814628.0
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/Cybersecurity/Indesec.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/INDEGOCore.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/api.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/cache.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/database.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/directories.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/files.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/logging.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/config/validation.conf
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/old/TraderFinal
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/old/example_model_improvements.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/INDEGO_project_development/validators/all_validators,py
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/.gitattributes
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/Player.pde
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/Search2048.pde
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/State.pde
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/code_bullet_overhauls/2048_AI/originals/Tile.pde
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/fun_stuff/ASCII Art
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/trading_bot/logs/application.log.1
+/home/lloyd/eidosian_forge/projects/legacy/evie/scripts/trading_bot/logs/file_cache.pkl
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/.circleci/config.yaml
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/CODE_OF_CONDUCT.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/CONTRIBUTING.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/MODEL_CARD.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/README.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/USE_POLICY.md
+/home/lloyd/eidosian_forge/projects/legacy/evie/src/codellama/codellama.egg-info/PKG-INFO
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/.vscode/settings.json
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/A_STAR.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Algorithm.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/BFS.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Constants.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/DFS.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Fruit.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/GA.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/GameController.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/GameGUI.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Main.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Menu.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/NN.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Snake.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/SuperSnake.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/Utility.py
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/A_STAR.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/A_STAR.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Algorithm.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Algorithm.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/BFS.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/BFS.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Constants.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Constants.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/DFS.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/DFS.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/DecisionTree.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Fruit.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Fruit.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/GA.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/GA.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/GameController.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/GameController.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/GameGUI.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Menu.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Menu.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/NN.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/NN.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Snake.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Snake.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Utility.cpython-312.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/__pycache__/Utility.cpython-39.pyc
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/astar.gif
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/bfs.gif
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/dfs.gif
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/ga.gif
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/load.gif
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/images/mainMenu.png
+/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game/Snake-ai-main/standalonesnake.py
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/dataset_test.ipynb
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/.classpath
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/.gitattributes
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/.readthedocs.yml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/.travis.yml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/LICENSE
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/MANIFEST.in
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/Makefile
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/make.bat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/_static/custom.css
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/_templates/page.html
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/assets/MineRL_banner_sq.PNG
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/environments/basalt.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/environments/diamond.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/environments/index.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/index.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/faq.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/interfaces.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/performance-tips.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/useful-links.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/versions.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/notes/windows.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/tutorials/first_agent.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/tutorials/index.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/tutorials/minerl_tools.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/docs/source/tutorials/more_tutorials.rst
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/.gradle/6.8.1/fileHashes/fileHashes.lock
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/.gradle/6.8.1/gc.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/.gradle/checksums/checksums.lock
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/.gradle/configuration-cache/gc.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/.gradle/vcs-1/gc.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/build.gradle
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/gradle.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/gradle/wrapper/gradle-wrapper.jar
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/gradle/wrapper/gradle-wrapper.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/gradlew
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/gradlew.bat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/launchClient.bat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/settings.gradle
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/microsoft/Malmo/Utils/CraftingHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/microsoft/Malmo/Utils/JSONWorldDataHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/RandomHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/env/EnvServer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/env/FakeMouseCursor.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/env/MissionSpec.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/recorder/AzureUpload.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/recorder/PlayRecorder.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/com/minerl/multiagent/recorder/ZipUtil.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/net/minecraft/client/ReplaySender.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/MCP-Reborn/src/main/java/net/minecraft/resources/JavaResourcePack.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/.gitattributes
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/.gitrepo
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/build.gradle
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/gradle/wrapper/gradle-wrapper.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/gradlew
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/gradlew.bat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/launchClient.bat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/ClientState.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/ClientStateMachine.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/FakeKeyboard.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/FakeMouse.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/FakeMouseCursor.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/InternalKey.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/KeyManager.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/MalmoEnvServer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/MalmoModClient.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/PostRenderEvent.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/VideoHook.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Client/VideoProducedObserver.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/EpisodeEventWrapper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/IState.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/GradleForgeHacks.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/GradleStart.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/GradleStartCommon.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/GradleStartServer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/tweakers/AccessTransformerTweaker.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Launcher/tweakers/CoremodTweaker.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MalmoMod.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MalmoModGuiOptions.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IAudioProducer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/ICommandHandler.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IObservationProducer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IPerformanceProducer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IRewardProducer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IVideoProducer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IWantToQuit.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IWorldDecorator.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlerInterfaces/IWorldGenerator.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AbsoluteMovementCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromCatchingMobImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromCollectingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromCollectingItemQuantityImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromCraftingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromPossessingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromReachingCommandQuotaImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromReachingPositionImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromSmeltingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromTimeUpImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AgentQuitFromTouchingBlockTypeImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/AnimationDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/BiomeGeneratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/BuildBattleDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CameraCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ChatCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ClassroomDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ColourMapProducerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandBase.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandForAttackAndUseImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandForHotBarKeysImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandForKey.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandForWheeledRobotNavigationImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/CommandGroup.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ContinuousMovementCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/DefaultWorldGeneratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/DepthProducerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/DiscreteMovementCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/DrawingDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/EquipCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/FileBasedPerformanceProducerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/FileWorldGeneratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/FlatWorldGeneratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/HandlerBase.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/HumanLevelCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/InventoryCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/LuminanceProducerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MarkingDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MazeDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MissionBehaviour.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MissionQuitCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MovingTargetDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/MultidimensionalReward.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/NavigationDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/NearbyCraftCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/NearbySmeltCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromAchievementsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromChatImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromCompassImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromComposite.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromDiscreteCellImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromDistanceImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromEquippedItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromFullInventoryImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromFullStatsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromGridImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromHotBarImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromHumanImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromNearbyEntitiesImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromRayImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromRecentCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromServer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromSubgoalPositionListImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromSystemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ObservationFromTurnSchedulerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/PauseCommandImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/PlaceCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/QuitFromComposite.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/QuitFromTimeUpBase.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RandomizedStartDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardBase.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForCatchingMobImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForCollectingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForCollectingItemQuantityImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForCraftingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForDamagingEntityImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForDiscardingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForDistanceTraveledToCompassTargetImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForItemBase.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForMissionEndImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForPossessingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForReachingPositionImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForSendingCommandImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForSendingMatchingChatMessageImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForSmeltingItemImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForStructureCopyingImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForTimeTakenImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardForTouchingBlockTypeImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardFromTeamImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/RewardGroup.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ServerQuitFromTimeUpImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/ServerQuitWhenAnyAgentFinishesImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/SimpleCraftCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/SnakeDecoratorImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/TurnBasedCommandsImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/VideoProducerImplementation.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MissionHandlers/WorldFromComposite.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/MixinTextureHandler.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinDisplay.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinEntityRandom.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinKeyboard.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinLargeInventory.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinMinecraftGameloop.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinMinecraftServerRun.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinMouse.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinNoGuiInteract.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinRandomSkinTexture.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinSyncClientStats.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Mixins/MixinWorldProviderSpawn.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/OverclockingClassTransformer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/OverclockingPlugin.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Schemas/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Server/MalmoModServer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Server/ServerState.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Server/ServerStateMachine.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/StateEpisode.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/StateMachine.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/TestLogHandler.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/AddressHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/AnimationDrawingHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/AuthenticationHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/BlockDrawingHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/CraftingHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/Discrete.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/EnvironmentHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/EvaluationHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/JSONWorldDataHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/LogHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/MapFileHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/MinecraftTypeHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/PauseTimer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/PerformanceHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/PositionHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/SchemaHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/ScoreHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/ScreenHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/SeedHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/TCPInputPoller.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/TCPSocketChannel.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/TCPUtils.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/TextureHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/TimeHelper.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/java/com/microsoft/Malmo/Utils/WrappedTimer.java
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/.fuse_hidden0002b4de00000048
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/.gitignore
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/annotate.fsh
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/annotate.vsh
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/assets/MalmoMod/lang/en_US.lang
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/lum.fsh
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/lum.vsh
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/malmomod_at.cfg
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/mcmod.info
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/schemas.index
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Minecraft/src/main/resources/version.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/Mission.xsd
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/MissionEnded.xsd
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/MissionHandlers.xsd
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/MissionInit.xsd
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/Types.xsd
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/Types.xsd.in
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/Schemas/links.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/VERSION
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/Doxyfile.in
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/build_linux.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/build_macosx.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/build_windows.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/cmake_readme.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/install_linux.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/install_macosx.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/install_readme.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/install_windows.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/install_windows_manual.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/jar_readme.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/doc/readme.html
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/Malmo/malmo.properties
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/env/info.npz
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/size
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v2/action.secret.compat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v2/obs.secret.compat
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v2/size
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v3/act.secret.compat.npz
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v3/obs.secret.compat.npz
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/obfuscators/comp/v3/size
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/README.mD
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/navigation.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/navigationDense.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/navigationDenseFixedMap.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/navigationExtreme.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/navigationExtremeDense.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainDebug.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainDebugDense.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainDiamond.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainDiamondDense.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainIronPickaxe.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/obtainIronPickaxeDense.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/treechop.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/env_specs/test/treechopDebug.xml
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/minerl/herobraine/hero/mission.xml.j2
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/pytest.ini
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/minerl/scripts/mcp_patch.diff
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/grpc/BUILD.bazel
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/grpc/README.md
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/grpc/ops/grpc.cc
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/grpc/service.proto
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/image/test
+/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego/pong_impala/test
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/DataVisualizer.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/advanced_parameter_ranges.npz
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/aksetup_helper.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Adaptation Rate_20240530_153410.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Adaptation Rate_20240530_154042.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Adaptation Rate_20240530_174059.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Adaptation Rate_20240531_004404.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Adaptation Rate_20240531_035614.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Correction Capability_20240530_153409.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Correction Capability_20240530_154042.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Correction Capability_20240530_173754.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Correction Capability_20240531_004059.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Correction Capability_20240531_032625.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_E_20240530_153406.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_E_20240530_154040.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_E_20240530_173213.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_E_20240531_003518.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_E_20240531_030325.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Error Detection Rate_20240530_153408.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Error Detection Rate_20240530_154041.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Error Detection Rate_20240530_173513.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Error Detection Rate_20240531_003817.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Error Detection Rate_20240531_032132.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_XY_20240530_153404.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_XY_20240530_154038.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_XY_20240530_172616.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_XY_20240531_002918.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_XY_20240531_025338.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_X_20240530_153402.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_X_20240530_154036.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_X_20240530_172028.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_X_20240531_002327.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_X_20240531_023656.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_Y_20240530_153404.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_Y_20240530_154037.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_Y_20240530_172324.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_Y_20240531_002622.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_H_Y_20240531_024154.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_P_20240530_153405.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_P_20240530_154039.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_P_20240530_172906.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_P_20240531_003208.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_P_20240531_025833.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Spatial Scale_20240530_153410.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Spatial Scale_20240530_154043.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Spatial Scale_20240530_174408.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Spatial Scale_20240531_004713.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Spatial Scale_20240531_040110.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Temporal Scale_20240530_153412.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Temporal Scale_20240530_154044.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Temporal Scale_20240530_174649.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Temporal Scale_20240531_004954.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/boxplots/Intelligence_vs_Temporal Scale_20240531_040604.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/chat_program.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/computations.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/configure.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/cuda_available_torch_test.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/effkanconvkanexample.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/black-hole-accretion.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo-struct-reduce.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_array.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_array_svm.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_elementwise.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_elementwise_complex.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_mandelbrot.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_meta_codepy.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/demo_meta_template.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/dump-performance.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/dump-properties.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/gl_interop_demo.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/gl_particle_animation.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/ipython-demo.ipynb
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/median-filter.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/n-body.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/narray.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/noisyImage.jpg
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/pi-monte-carlo.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/svm.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/examples/transpose.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/fix_sources.sh
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/gradientllama.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240530_153355.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240530_154032.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240530_171843.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240531_002140.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240531_022936.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/heatmap/correlation_matrix_20240531_121409.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Adaptation Rate_distribution_20240530_153401.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Adaptation Rate_distribution_20240530_154035.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Adaptation Rate_distribution_20240530_171908.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Adaptation Rate_distribution_20240531_002206.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Adaptation Rate_distribution_20240531_023013.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Correction Capability_distribution_20240530_153400.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Correction Capability_distribution_20240530_154035.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Correction Capability_distribution_20240530_171908.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Correction Capability_distribution_20240531_002205.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Correction Capability_distribution_20240531_023013.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/E_distribution_20240530_153400.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/E_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/E_distribution_20240530_171907.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/E_distribution_20240531_002205.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/E_distribution_20240531_023012.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Error Detection Rate_distribution_20240530_153400.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Error Detection Rate_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Error Detection Rate_distribution_20240530_171907.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Error Detection Rate_distribution_20240531_002205.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Error Detection Rate_distribution_20240531_023013.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_XY_distribution_20240530_153358.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_XY_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_XY_distribution_20240530_171906.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_XY_distribution_20240531_002204.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_XY_distribution_20240531_023011.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_X_distribution_20240530_153357.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_X_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_X_distribution_20240530_171906.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_X_distribution_20240531_002203.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_X_distribution_20240531_023010.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_Y_distribution_20240530_153358.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_Y_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_Y_distribution_20240530_171906.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_Y_distribution_20240531_002204.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/H_Y_distribution_20240531_023011.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Intelligence_distribution_20240530_171909.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Intelligence_distribution_20240531_002207.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Intelligence_distribution_20240531_023015.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/P_distribution_20240530_153359.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/P_distribution_20240530_154034.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/P_distribution_20240530_171907.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/P_distribution_20240531_002204.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/P_distribution_20240531_023012.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Spatial Scale_distribution_20240530_153401.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Spatial Scale_distribution_20240530_154036.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Spatial Scale_distribution_20240530_171909.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Spatial Scale_distribution_20240531_002206.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Spatial Scale_distribution_20240531_023014.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Temporal Scale_distribution_20240530_153401.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Temporal Scale_distribution_20240530_154036.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Temporal Scale_distribution_20240530_171909.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Temporal Scale_distribution_20240531_002206.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/histograms/Temporal Scale_distribution_20240531_023014.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/home_folder.code-workspace
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/indego_intelligence_potential.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/indego_overview.txt
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/indego_prompt.txt
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/installed_packages.txt
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/intelligence_potential.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Adaptation Rate_vs_Intelligence_20240530_171900.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Adaptation Rate_vs_Intelligence_20240531_002158.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Adaptation Rate_vs_Intelligence_20240531_023002.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Correction Capability_vs_Intelligence_20240530_171858.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Correction Capability_vs_Intelligence_20240531_002156.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Correction Capability_vs_Intelligence_20240531_022958.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_E_vs_Intelligence_20240530_171854.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_E_vs_Intelligence_20240531_002152.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_E_vs_Intelligence_20240531_022952.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Error Detection Rate_vs_Intelligence_20240530_171856.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Error Detection Rate_vs_Intelligence_20240531_002154.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Error Detection Rate_vs_Intelligence_20240531_022955.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_XY_vs_Intelligence_20240530_171849.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_XY_vs_Intelligence_20240531_002147.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_XY_vs_Intelligence_20240531_022945.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_X_vs_Intelligence_20240530_171844.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_X_vs_Intelligence_20240531_002142.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_X_vs_Intelligence_20240531_022938.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_Y_vs_Intelligence_20240530_171847.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_Y_vs_Intelligence_20240531_002144.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_H_Y_vs_Intelligence_20240531_022942.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_P_vs_Intelligence_20240530_171852.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_P_vs_Intelligence_20240531_002149.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_P_vs_Intelligence_20240531_022948.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Spatial Scale_vs_Intelligence_20240530_171903.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Spatial Scale_vs_Intelligence_20240531_002201.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Spatial Scale_vs_Intelligence_20240531_023005.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Temporal Scale_vs_Intelligence_20240530_171905.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Temporal Scale_vs_Intelligence_20240531_002202.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/jointplot/jointplot_Temporal Scale_vs_Intelligence_20240531_023008.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/adaptability_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/entropy_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/error_management_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/mutual_information_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/operational_efficiency_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/time_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels/volume_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/adaptability_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/entropy_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/error_management_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/intelligence_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/mutual_information_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/operational_efficiency_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/time_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/kernels_backup/volume_kernel.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/main.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/main.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/matmul
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/matmul.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/matmul.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/mock_intelligence_calc.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_2
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_2.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_2.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_backprop
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_backprop.cl
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/neural_net_backprop.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/parameter_ranges.npz
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/potential_intelligence.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/potential_intelligence_v2.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/profiling.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/prompt_template_kernel_upgrade.txt
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/Makefile
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/README.derivatives
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/2to3.1
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/2to3.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/README.Debian
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/changelog
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/compat
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/control
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/control.in
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/copyright
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/debian_defaults
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/idle.1
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/idle.desktop
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/idle.lintian-overrides
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/idle.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/py3versions
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/py3versions.1
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/py3versions.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python.doc-base.python-policy
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python.mk
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3-minimal.manpages
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3-minimal.postinst.in
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3-minimal.prerm
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.desktop
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.lintian-overrides
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.postinst.in
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.postrm.in
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.preinst.in
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/python3.prerm
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/rules
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/source.lintian-overrides
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/source/format
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/valgrind-python.supp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debian/watch
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython/__init__.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython/files.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython/interpreter.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython/option.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/debpython/version.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/FAQ.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/extending.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/general.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/gui.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/installed.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/library.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/programming.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/faq/windows.ht
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/Makefile
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/build-dependencies.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/conf.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/copyright.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/embedded-python.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/index.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/interpreter.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/locally-installed-python.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/make.bat
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/packaged-modules.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/packaging-tools.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/python-programs.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/python3.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/this-document.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/policy/upgrade-procedure.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/py3clean
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/py3clean.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/py3compile
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/py3compile.rst
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/runtime.d/public_modules.rtinstall
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults-3.10.6/runtime.d/public_modules.rtremove
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/python3-defaults_3.10.6-1~22.04.dsc
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/pytorch_cifar_model_test.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/pytorch_gpu_cpu_example.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/pyvenv.cfg
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/refactored_indego_intelligence.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/results_chunk_1.csv
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/results_chunk_2.csv
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/results_chunk_3.csv
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/ridge_plots/ridge_plot_by_Intelligence_20240531_120733.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/ridge_plots/ridge_plot_by_Intelligence_20240531_121322.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/scatter_matrix/scatter_matrix_20240530_174837.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/scatter_matrix/scatter_matrix_20240531_005140.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/scatter_matrix/scatter_matrix_20240531_040912.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/bitlog.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/bitlog.hpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/clinfo_ext.h
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/mempool.hpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/pyopencl_ext.h
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/tools.hpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_cl.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_cl.hpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_cl_part_1.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_cl_part_2.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_constants.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_helpers.hpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/src/wrap_mempool.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/stress_test
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/stress_test.cpp
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/tensor_cifar_model_test.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/tensorboardexample.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/add-vectors-32.spv
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/add-vectors-64.spv
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/empty-header.h
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_algorithm.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_array.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_arrays_in_structs.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_clmath.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_clrandom.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_enqueue_copy.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/test/test_wrapper.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/uni_int_v2.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/uni_int_v4.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/universal_int_memory_estimate.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/universal_intelligence_model.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/universal_intelligence_model_pydroid.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/universal_intelligence_v3.py
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Adaptation Rate_vs_Intelligence_violin_20240530_174829.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Adaptation Rate_vs_Intelligence_violin_20240531_005132.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Adaptation Rate_vs_Intelligence_violin_20240531_040901.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Correction Capability_vs_Intelligence_violin_20240530_174829.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Correction Capability_vs_Intelligence_violin_20240531_005132.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Correction Capability_vs_Intelligence_violin_20240531_040900.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/E_vs_Intelligence_violin_20240530_174828.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/E_vs_Intelligence_violin_20240531_005131.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/E_vs_Intelligence_violin_20240531_040859.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Error Detection Rate_vs_Intelligence_violin_20240530_174828.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Error Detection Rate_vs_Intelligence_violin_20240531_005131.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Error Detection Rate_vs_Intelligence_violin_20240531_040900.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_XY_vs_Intelligence_violin_20240530_174826.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_XY_vs_Intelligence_violin_20240531_005129.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_XY_vs_Intelligence_violin_20240531_040857.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_X_vs_Intelligence_violin_20240530_174825.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_X_vs_Intelligence_violin_20240531_005128.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_X_vs_Intelligence_violin_20240531_040855.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_Y_vs_Intelligence_violin_20240530_174826.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_Y_vs_Intelligence_violin_20240531_005129.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/H_Y_vs_Intelligence_violin_20240531_040856.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/P_vs_Intelligence_violin_20240530_174827.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/P_vs_Intelligence_violin_20240531_005130.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/P_vs_Intelligence_violin_20240531_040858.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Spatial Scale_vs_Intelligence_violin_20240530_174830.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Spatial Scale_vs_Intelligence_violin_20240531_005133.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Spatial Scale_vs_Intelligence_violin_20240531_040902.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Temporal Scale_vs_Intelligence_violin_20240530_174830.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Temporal Scale_vs_Intelligence_violin_20240531_005133.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/violinplots/Temporal Scale_vs_Intelligence_violin_20240531_040903.png
+/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential/visualization.py

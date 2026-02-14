@@ -121,3 +121,13 @@ eidos_mcp/*.png
 # Local SDKs / environments
 eidosian_venv/
 google-cloud-sdk/
+
+# Machine clone runtime artifacts
+archive_forge/clone_kits/
+archive_forge/iso_cache/
+archive_forge/manifests/*/imported_files.null
+*.null
+
+# Imported legacy runtime detritus
+projects/legacy/evie/runs/
+projects/legacy/evie/default_encryption.key

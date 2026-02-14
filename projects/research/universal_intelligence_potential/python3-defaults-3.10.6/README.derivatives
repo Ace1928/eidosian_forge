@@ -1,0 +1,13 @@
+How to change a list of supported Python versions?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Open debian/debian_defaults file and change `supported-versions` variable,
+  separating multiple values by comma
+* Open debian/control.in file and edit python3-all, python3-all-dev and
+  python3-all-dbg's Depends line (add or remove pythonX.Y packages)
+
+
+How to change default Python version?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Open debian/debian_defaults file and change `default-version` variable
