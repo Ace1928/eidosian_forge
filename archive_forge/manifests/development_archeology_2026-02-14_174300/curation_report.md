@@ -55,3 +55,8 @@
 2. Add smoke tests for imported EMemory and python_repository entry points.
 3. Promote stable notebooks/papers into doc_forge index manifests with topic tags.
 4. Keep raw legacy imports immutable under timestamped directories; build curated derivatives in forge-native paths.
+
+## Drift Patch Artifacts
+
+- `ecosmos_drift.patch`
+- `chess_game_drift.patch`
