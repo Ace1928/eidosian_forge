@@ -39,8 +39,12 @@ async def main() -> int:
                 tools = await session.list_tools()
                 payload["tools"] = len(tools.tools)
                 payload["diagnostics_ping"] = await _call_tool(session, "diagnostics_ping")
-                payload["memory_stats"] = await _call_tool(session, "memory_stats")[:500]
-                payload["eidos_memory_stats"] = await _call_tool(session, "eidos_memory_stats")[:500]
+                payload["memory_stats"] = (await _call_tool(session, "memory_stats"))[:500]
+                # Optional compatibility path: some deployments expose only `memory_stats`.
+                try:
+                    payload["eidos_memory_stats"] = (await _call_tool(session, "eidos_memory_stats"))[:500]
+                except Exception:
+                    payload["eidos_memory_stats"] = None
                 payload["ok"] = True
     except Exception as exc:
         payload["error"] = repr(exc)
