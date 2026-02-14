@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 import json
+import time
 from typing import Optional
 
 from ..core import tool
@@ -112,15 +113,43 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
             return f"Error: Failed to run tests: {e}"
 
     # If we got here, tests passed or were skipped. Restart the service.
-    try:
-        # We use systemctl --user
-        subprocess.run(
-            ["systemctl", "--user", "restart", "eidos-mcp"],
-            check=True,
-            capture_output=True,
-            text=True
-        )
-    except subprocess.CalledProcessError as e:
-        return f"Error: Failed to restart service: {e.stderr}"
+    # Use explicit user bus in case the MCP process runs without it in env.
+    service_name = os.environ.get("EIDOS_MCP_SYSTEMD_SERVICE", "eidos-mcp.service")
+    user_bus = os.environ.get("DBUS_SESSION_BUS_ADDRESS") or f"unix:path=/run/user/{os.getuid()}/bus"
+    restart_env = dict(os.environ)
+    restart_env["DBUS_SESSION_BUS_ADDRESS"] = user_bus
 
-    return f"Upgrade successful. Service restarted.\nBenefit: {benefit}"
+    # Return success before the process potentially restarts itself.
+    # We schedule restart slightly in the future so this response can flush cleanly.
+    try:
+        subprocess.Popen(
+            [
+                "bash",
+                "-lc",
+                f"sleep 1 && systemctl --user restart {service_name}",
+            ],
+            env=restart_env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as e:
+        return f"Error: Failed to schedule service restart: {e}"
+
+    # Best-effort wait to verify the command can at least resolve service state.
+    # This does not block for full restart completion.
+    try:
+        time.sleep(0.1)
+        probe = subprocess.run(
+            ["systemctl", "--user", "show", service_name, "-p", "Id"],
+            env=restart_env,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if probe.returncode != 0:
+            detail = (probe.stderr or probe.stdout or "").strip()
+            return f"Error: Restart scheduled but service probe failed: {detail}"
+    except Exception as e:
+        return f"Error: Restart scheduled but probe failed: {e}"
+
+    return f"Upgrade scheduled. Service will restart shortly.\nBenefit: {benefit}"

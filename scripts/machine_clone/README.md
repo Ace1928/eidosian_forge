@@ -9,6 +9,7 @@ This directory contains operational scripts for:
 - verifying host parity after restore
 - enrolling a node into the Eidos sync mesh
 - running post-boot onboarding checks on the restored host
+- validating Moltbook credential continuity and API access after restore
 
 ## Scripts
 
@@ -22,6 +23,7 @@ This directory contains operational scripts for:
 - `post_boot_onboarding.sh`
 - `snapshot_eidos_state.sh`
 - `refresh_usb_payload.sh`
+- `first_boot_wizard.sh`
 
 ## Conventions
 

@@ -63,6 +63,11 @@ if [[ -d "$CONFIGS_DIR/home" ]]; then
   rsync -a "$CONFIGS_DIR/home/" "$HOME/"
 fi
 
+# Harden secrets-bearing client credentials restored from profile sync.
+if [[ -f "$HOME/.config/moltbook/credentials.json" ]]; then
+  chmod 600 "$HOME/.config/moltbook/credentials.json" || true
+fi
+
 if [[ -f "$CONFIGS_DIR/dconf_dump.ini" ]]; then
   dconf load / < "$CONFIGS_DIR/dconf_dump.ini" || true
 fi
@@ -111,6 +116,10 @@ WorkingDirectory=${FORGE_ROOT}/eidos_mcp
 Environment=EIDOS_FORGE_DIR=${FORGE_ROOT}
 Environment=EIDOS_MCP_TRANSPORT=streamable-http
 Environment=EIDOS_MCP_MOUNT_PATH=/mcp
+Environment=EIDOS_MCP_STATELESS_HTTP=1
+Environment=EIDOS_MCP_ENABLE_COMPAT_HEADERS=1
+Environment=EIDOS_MCP_ENABLE_SESSION_RECOVERY=1
+Environment=EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT=1
 Environment=FASTMCP_HOST=127.0.0.1
 Environment=FASTMCP_PORT=8928
 Environment=EIDOS_MCP_SERVICE_STATE=%h/.eidosian/run/mcp_service_state.json

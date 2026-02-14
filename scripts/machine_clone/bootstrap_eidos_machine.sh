@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap_eidos_machine.sh [--vault-root <path>] [--forge-root <path>] [--repo-url <url>] [--branch <name>] [--profile-dir <path>] [--setup-sync yes|no] [--install-codex yes|no] [--enable-post-boot-check yes|no]
+  bootstrap_eidos_machine.sh [--vault-root <path>] [--forge-root <path>] [--repo-url <url>] [--branch <name>] [--profile-dir <path>] [--setup-sync yes|no] [--install-codex yes|no] [--enable-post-boot-check yes|no] [--launch-first-boot-wizard yes|no]
 
 Description:
   Rehydrates a fresh machine into an Eidos-compatible workstation:
@@ -24,6 +24,7 @@ PROFILE_DIR=""
 SETUP_SYNC="yes"
 INSTALL_CODEX="yes"
 ENABLE_POST_BOOT_CHECK="yes"
+LAUNCH_FIRST_BOOT_WIZARD="yes"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     --setup-sync) SETUP_SYNC="${2:-}"; shift 2 ;;
     --install-codex) INSTALL_CODEX="${2:-}"; shift 2 ;;
     --enable-post-boot-check) ENABLE_POST_BOOT_CHECK="${2:-}"; shift 2 ;;
+    --launch-first-boot-wizard) LAUNCH_FIRST_BOOT_WIZARD="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage; exit 1 ;;
   esac
@@ -129,9 +131,22 @@ EOF
   systemctl --user enable eidos-post-boot.service || true
 fi
 
+if [[ "$LAUNCH_FIRST_BOOT_WIZARD" == "yes" ]]; then
+  mkdir -p "$HOME/.config/autostart"
+  cat > "$HOME/.config/autostart/eidos-first-boot.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Eidos First Boot Wizard
+Exec=gnome-terminal -- bash -lc "${FORGE_ROOT}/scripts/machine_clone/first_boot_wizard.sh --forge-root ${FORGE_ROOT} --self-disable-autostart yes"
+X-GNOME-Autostart-enabled=true
+Terminal=false
+Comment=Guided Eidos first-boot setup wizard
+EOF
+fi
+
 echo "Bootstrap complete."
 echo "Next actions:"
 echo "1) sudo tailscale up --hostname=$(hostname -s) --accept-routes=false"
 echo "2) codex --version"
 echo "3) systemctl --user status eidos-mcp.service"
-echo "4) reboot (post-boot checks will run via eidos-post-boot.service)"
+echo "4) reboot (post-boot checks + first-boot wizard will run automatically)"

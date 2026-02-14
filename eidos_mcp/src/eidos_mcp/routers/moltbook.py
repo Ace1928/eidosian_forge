@@ -13,6 +13,7 @@ from ..core import tool
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
 DEFAULT_BASE_URL = "https://www.moltbook.com/api/v1"
+MOLTBOOK_TIMEOUT_SEC = float(os.environ.get("MOLTBOOK_TIMEOUT_SEC", "8.0"))
 
 
 def _load_credentials() -> Dict[str, Optional[str]]:
@@ -41,14 +42,49 @@ def _client() -> httpx.Client:
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
         headers["X-API-Key"] = api_key
-    return httpx.Client(base_url=base_url, headers=headers, timeout=20.0)
+    timeout = httpx.Timeout(
+        timeout=MOLTBOOK_TIMEOUT_SEC,
+        connect=MOLTBOOK_TIMEOUT_SEC,
+        read=MOLTBOOK_TIMEOUT_SEC,
+        write=MOLTBOOK_TIMEOUT_SEC,
+        pool=MOLTBOOK_TIMEOUT_SEC,
+    )
+    return httpx.Client(base_url=base_url, headers=headers, timeout=timeout)
 
 
 def _request(method: str, path: str, params: Optional[dict] = None, payload: Optional[dict] = None) -> dict:
-    with _client() as client:
-        resp = client.request(method, path, params=params, json=payload)
-        resp.raise_for_status()
-        return resp.json()
+    try:
+        with _client() as client:
+            resp = client.request(method, path, params=params, json=payload)
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.TimeoutException as exc:
+        return {
+            "ok": False,
+            "error": "timeout",
+            "method": method,
+            "path": path,
+            "detail": str(exc),
+        }
+    except httpx.HTTPStatusError as exc:
+        preview = exc.response.text[:400] if exc.response is not None else ""
+        status_code = exc.response.status_code if exc.response is not None else None
+        return {
+            "ok": False,
+            "error": "http_status",
+            "status_code": status_code,
+            "method": method,
+            "path": path,
+            "detail": preview or str(exc),
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "error": "request_failed",
+            "method": method,
+            "path": path,
+            "detail": str(exc),
+        }
 
 
 @tool(

@@ -95,6 +95,42 @@ log "eidos-mcp enabled:  $(status_or_unknown 'systemctl --user is-enabled eidos-
 log "eidos-mcp active:   $(status_or_unknown 'systemctl --user is-active eidos-mcp.service')"
 log
 
+log "[moltbook]"
+MOLTBOOK_CREDS="${HOME}/.config/moltbook/credentials.json"
+if [[ -f "$MOLTBOOK_CREDS" ]]; then
+  perms="$(stat -c '%a' "$MOLTBOOK_CREDS" 2>/dev/null || echo unknown)"
+  log "credentials file:   present (${MOLTBOOK_CREDS})"
+  log "credentials perms:  ${perms}"
+  if command -v jq >/dev/null 2>&1; then
+    api_key="$(jq -r '.api_key // ""' "$MOLTBOOK_CREDS" 2>/dev/null || true)"
+    agent_name="$(jq -r '.agent_name // ""' "$MOLTBOOK_CREDS" 2>/dev/null || true)"
+    if [[ -n "$agent_name" ]]; then
+      log "agent name:         ${agent_name}"
+    fi
+    if [[ -n "$api_key" ]] && command -v curl >/dev/null 2>&1; then
+      probe_code="$(curl -sS -o /tmp/.moltbook_status_probe.json -w '%{http_code}' \
+        -H "Authorization: Bearer ${api_key}" \
+        -H "X-API-Key: ${api_key}" \
+        -H "Content-Type: application/json" \
+        https://www.moltbook.com/api/v1/agents/status || true)"
+      if [[ "$probe_code" == "200" ]]; then
+        log "api probe:          ok (HTTP 200)"
+      else
+        log "api probe:          failed (HTTP ${probe_code:-unknown})"
+      fi
+      rm -f /tmp/.moltbook_status_probe.json
+    else
+      log "api probe:          skipped (missing api_key or curl)"
+    fi
+  else
+    log "api probe:          skipped (jq unavailable)"
+  fi
+else
+  log "credentials file:   missing (${MOLTBOOK_CREDS})"
+  log "action required:    restore ~/.config/moltbook/credentials.json"
+fi
+log
+
 log "[forge git]"
 if [[ -d "${FORGE_ROOT}/.git" ]]; then
   log "branch:             $(git -C "${FORGE_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"

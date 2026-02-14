@@ -13,11 +13,22 @@ from eidosian_core import eidosian
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
 _FASTMCP_PORT = int(os.environ.get("FASTMCP_PORT", "8928"))
 _FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp")
+
+
+def _env_truthy(key: str, default: bool = False) -> bool:
+    value = os.environ.get(key)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+_FASTMCP_STATELESS_HTTP = _env_truthy("EIDOS_MCP_STATELESS_HTTP", default=False)
 mcp = FastMCP(
     "Eidosian Nexus",
     host=_FASTMCP_HOST,
     port=_FASTMCP_PORT,
     streamable_http_path=_FASTMCP_STREAMABLE_HTTP_PATH,
+    stateless_http=_FASTMCP_STATELESS_HTTP,
 )
 
 _TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {}

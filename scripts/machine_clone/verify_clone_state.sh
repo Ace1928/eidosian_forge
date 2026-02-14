@@ -59,4 +59,21 @@ systemctl is-enabled ssh 2>/dev/null || true
 systemctl is-enabled tailscaled 2>/dev/null || true
 systemctl --user is-enabled syncthing.service 2>/dev/null || true
 
+echo
+echo "== Moltbook credentials =="
+profile_creds="$CONFIGS_DIR/home/.config/moltbook/credentials.json"
+host_creds="$HOME/.config/moltbook/credentials.json"
+if [[ -f "$profile_creds" ]]; then
+  echo "profile credentials: present"
+else
+  echo "profile credentials: missing"
+fi
+if [[ -f "$host_creds" ]]; then
+  echo "host credentials:    present"
+  perms="$(stat -c '%a' "$host_creds" 2>/dev/null || echo unknown)"
+  echo "host perms:          ${perms}"
+else
+  echo "host credentials:    missing"
+fi
+
 echo "Verification complete."

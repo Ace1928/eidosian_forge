@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
-from typing import Iterable, Dict, Any, Optional
+from typing import Iterable, Dict, Any, Optional, Sequence
 
 import importlib
 import sys
@@ -13,6 +14,8 @@ setup_logging()
 
 from starlette.responses import JSONResponse
 from starlette.requests import Request
+from starlette.types import ASGIApp, Scope, Receive, Send
+import uvicorn
 
 from .core import mcp, resource, list_tool_metadata
 from .state import gis, llm, refactor, agent, ROOT_DIR, FORGE_DIR
@@ -101,6 +104,9 @@ _load_plugins()
 
 
 _PERSONA_HEADER = "EIDOSIAN SYSTEM CONTEXT"
+_JSON_MEDIA_TYPE = "application/json"
+_SSE_MEDIA_TYPE = "text/event-stream"
+_JSON_ERROR_CODE = -32000
 
 
 def _read_first(paths: Iterable[Path]) -> str:
@@ -120,6 +126,372 @@ def _persona_payload() -> str:
     if _PERSONA_HEADER not in body:
         body = f"{_PERSONA_HEADER}\n\n{body}"
     return body
+
+
+def _is_truthy(value: Optional[str], default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _merge_accept_header(current: str, required_types: Sequence[str]) -> str:
+    parts = [p.strip() for p in current.split(",") if p.strip()]
+    lowered = [p.lower() for p in parts]
+    for media_type in required_types:
+        media_lower = media_type.lower()
+        if not any(existing.startswith(media_lower) for existing in lowered):
+            parts.append(media_type)
+            lowered.append(media_lower)
+    return ", ".join(parts)
+
+
+def _get_header_value(headers: list[tuple[bytes, bytes]], name: bytes) -> Optional[str]:
+    target = name.lower()
+    for key, value in reversed(headers):
+        if key.lower() == target:
+            return value.decode("latin-1")
+    return None
+
+
+def _upsert_header(headers: list[tuple[bytes, bytes]], name: bytes, value: str) -> list[tuple[bytes, bytes]]:
+    target = name.lower()
+    updated: list[tuple[bytes, bytes]] = []
+    replaced = False
+    encoded_value = value.encode("latin-1")
+    for key, existing_value in headers:
+        if key.lower() == target:
+            if not replaced:
+                updated.append((target, encoded_value))
+                replaced = True
+            continue
+        updated.append((key, existing_value))
+    if not replaced:
+        updated.append((target, encoded_value))
+    return updated
+
+
+def _headers_to_dict(headers: list[tuple[bytes, bytes]]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for key, value in headers:
+        result[key.decode("latin-1").lower()] = value.decode("latin-1")
+    return result
+
+
+def _strip_content_headers(
+    headers: list[tuple[bytes, bytes]],
+) -> list[tuple[bytes, bytes]]:
+    stripped: list[tuple[bytes, bytes]] = []
+    for key, value in headers:
+        lowered = key.lower()
+        if lowered in {b"content-type", b"content-length"}:
+            continue
+        stripped.append((key, value))
+    return stripped
+
+
+def _extract_jsonrpc_id(raw_body: bytes) -> Any:
+    if not raw_body:
+        return None
+    try:
+        parsed = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        return None
+    if isinstance(parsed, dict):
+        return parsed.get("id")
+    if isinstance(parsed, list):
+        for item in parsed:
+            if isinstance(item, dict) and "id" in item:
+                return item.get("id")
+    return None
+
+
+class MCPHeaderCompatibilityMiddleware:
+    """Normalize missing/partial MCP transport headers for fragile clients."""
+
+    def __init__(self, app: ASGIApp, mount_path: str) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") == "http":
+            method = (scope.get("method") or "").upper()
+            path = scope.get("path") or ""
+            if method in {"POST", "GET"} and self._is_transport_path(path):
+                headers = list(scope.get("headers", []))
+                if method == "POST":
+                    content_type = (_get_header_value(headers, b"content-type") or "").lower()
+                    if not content_type.startswith(_JSON_MEDIA_TYPE):
+                        headers = _upsert_header(headers, b"content-type", _JSON_MEDIA_TYPE)
+                    accept = _get_header_value(headers, b"accept") or ""
+                    merged_accept = _merge_accept_header(accept, (_JSON_MEDIA_TYPE, _SSE_MEDIA_TYPE))
+                    headers = _upsert_header(headers, b"accept", merged_accept)
+                elif method == "GET":
+                    accept = _get_header_value(headers, b"accept") or ""
+                    merged_accept = _merge_accept_header(accept, (_SSE_MEDIA_TYPE,))
+                    headers = _upsert_header(headers, b"accept", merged_accept)
+
+                scope = dict(scope)
+                scope["headers"] = headers
+
+        await self.app(scope, receive, send)
+
+
+class MCPErrorResponseCompatibilityMiddleware:
+    """Normalize transport errors to explicit JSON responses for strict clients."""
+
+    def __init__(self, app: ASGIApp, mount_path: str) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "").upper()
+        path = scope.get("path") or ""
+        if method not in {"POST", "GET", "DELETE"} or not self._is_transport_path(path):
+            await self.app(scope, receive, send)
+            return
+
+        response_start: dict[str, Any] | None = None
+        rewrite_body = bytearray()
+        should_rewrite = False
+        request_body = bytearray()
+        buffered_messages: list[dict[str, Any]] = []
+
+        if method == "POST":
+            while True:
+                message = await receive()
+                buffered_messages.append(message)
+                if message.get("type") != "http.request":
+                    break
+                request_body.extend(message.get("body", b""))
+                if not message.get("more_body", False):
+                    break
+
+        async def receive_wrapper():
+            if buffered_messages:
+                return buffered_messages.pop(0)
+            return await receive()
+
+        async def send_wrapper(message):
+            nonlocal response_start, should_rewrite, rewrite_body
+            if message["type"] == "http.response.start":
+                status = int(message.get("status", 0))
+                headers = list(message.get("headers", []))
+                response_headers = _headers_to_dict(headers)
+                response_content_type = response_headers.get("content-type", "").lower().strip()
+                is_supported_type = response_content_type.startswith(_JSON_MEDIA_TYPE) or response_content_type.startswith(
+                    _SSE_MEDIA_TYPE
+                )
+                should_rewrite = status >= 400 and not is_supported_type
+                if should_rewrite:
+                    response_start = message
+                    return
+                await send(message)
+                return
+
+            if message["type"] == "http.response.body" and should_rewrite:
+                rewrite_body.extend(message.get("body", b""))
+                if message.get("more_body", False):
+                    return
+
+                status_code = int((response_start or {}).get("status", 500))
+                error_message = rewrite_body.decode("utf-8", errors="replace").strip()
+                if not error_message:
+                    error_message = f"Transport error (HTTP {status_code})"
+
+                request_id = _extract_jsonrpc_id(bytes(request_body))
+                payload = {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "error": {
+                        "code": _JSON_ERROR_CODE,
+                        "message": error_message,
+                        "data": {"http_status": status_code},
+                    },
+                }
+                payload_bytes = json.dumps(payload, ensure_ascii=True).encode("utf-8")
+
+                start_headers = _strip_content_headers(list((response_start or {}).get("headers", [])))
+                start_headers.append((b"content-type", b"application/json; charset=utf-8"))
+                start_headers.append((b"content-length", str(len(payload_bytes)).encode("ascii")))
+
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": status_code,
+                        "headers": start_headers,
+                    }
+                )
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": payload_bytes,
+                        "more_body": False,
+                    }
+                )
+                return
+
+            await send(message)
+
+        await self.app(scope, receive_wrapper, send_wrapper)
+
+
+class MCPSessionRecoveryMiddleware:
+    """Recover stale MCP sessions by clearing unknown session ids."""
+
+    def __init__(self, app: ASGIApp, mount_path: str) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "").upper()
+        path = scope.get("path") or ""
+        if method != "POST" or not self._is_transport_path(path):
+            await self.app(scope, receive, send)
+            return
+
+        headers = list(scope.get("headers", []))
+        request_session_id = _get_header_value(headers, b"mcp-session-id")
+        if request_session_id:
+            manager = getattr(mcp, "_session_manager", None)
+            known_sessions = getattr(manager, "_server_instances", None)
+            is_stateless = bool(getattr(manager, "stateless", False))
+            if isinstance(known_sessions, dict) and not is_stateless and request_session_id not in known_sessions:
+                headers = [(k, v) for k, v in headers if k.lower() != b"mcp-session-id"]
+                scope = dict(scope)
+                scope["headers"] = headers
+                log_debug("Recovered stale MCP session id by forcing fresh session creation")
+
+        await self.app(scope, receive, send)
+
+
+class MCPTransportAuditMiddleware:
+    """Emit transport-level audit logs for MCP HTTP traffic."""
+
+    def __init__(self, app: ASGIApp, mount_path: str) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "").upper()
+        path = scope.get("path") or ""
+        if method not in {"POST", "GET", "DELETE"} or not self._is_transport_path(path):
+            await self.app(scope, receive, send)
+            return
+
+        request_headers = _headers_to_dict(list(scope.get("headers", [])))
+        start = time.perf_counter()
+        response_status = 0
+        response_content_type = ""
+        response_preview = bytearray()
+
+        async def send_wrapper(message):
+            nonlocal response_status, response_content_type, response_preview
+            if message["type"] == "http.response.start":
+                response_status = message.get("status", 0)
+                headers = _headers_to_dict(list(message.get("headers", [])))
+                response_content_type = headers.get("content-type", "")
+            elif message["type"] == "http.response.body" and response_status >= 400:
+                chunk = message.get("body", b"")
+                remaining = max(0, 256 - len(response_preview))
+                if remaining:
+                    response_preview.extend(chunk[:remaining])
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+        duration_ms = int((time.perf_counter() - start) * 1000)
+        log_payload = {
+            "method": method,
+            "path": path,
+            "status": response_status,
+            "duration_ms": duration_ms,
+            "request_content_type": request_headers.get("content-type", ""),
+            "request_accept": request_headers.get("accept", ""),
+            "request_has_session_id": bool(request_headers.get("mcp-session-id")),
+            "request_has_protocol_version": bool(request_headers.get("mcp-protocol-version")),
+            "response_content_type": response_content_type,
+        }
+        if response_status >= 400 and response_preview:
+            log_payload["error_preview"] = response_preview.decode("utf-8", errors="replace")
+            log_error("mcp_transport_http", json.dumps(log_payload, ensure_ascii=True))
+        else:
+            log_debug(f"mcp_transport_http {json.dumps(log_payload, ensure_ascii=True)}")
+
+
+def _build_streamable_http_app(
+    mount_path: str,
+    enable_compat_headers: Optional[bool] = None,
+    enable_session_recovery: Optional[bool] = None,
+    enable_error_response_compat: Optional[bool] = None,
+) -> ASGIApp:
+    if mcp.settings.streamable_http_path != mount_path:
+        mcp.settings.streamable_http_path = mount_path
+        mcp._session_manager = None  # type: ignore[attr-defined]
+
+    app = mcp.streamable_http_app()
+
+    if enable_compat_headers is None:
+        enable_compat_headers = _is_truthy(
+            os.environ.get("EIDOS_MCP_ENABLE_COMPAT_HEADERS"),
+            default=True,
+        )
+    if enable_error_response_compat is None:
+        enable_error_response_compat = _is_truthy(
+            os.environ.get("EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT"),
+            default=True,
+        )
+    if enable_session_recovery is None:
+        enable_session_recovery = _is_truthy(
+            os.environ.get("EIDOS_MCP_ENABLE_SESSION_RECOVERY"),
+            default=True,
+        )
+    enable_transport_audit = _is_truthy(
+        os.environ.get("EIDOS_MCP_AUDIT_TRANSPORT"),
+        default=True,
+    )
+
+    if enable_compat_headers:
+        app = MCPHeaderCompatibilityMiddleware(app, mount_path)
+    if enable_session_recovery:
+        app = MCPSessionRecoveryMiddleware(app, mount_path)
+    if enable_error_response_compat:
+        app = MCPErrorResponseCompatibilityMiddleware(app, mount_path)
+    if enable_transport_audit:
+        app = MCPTransportAuditMiddleware(app, mount_path)
+
+    return app
+
+
+def _run_streamable_http_server(mount_path: str) -> None:
+    app = _build_streamable_http_app(mount_path)
+    host = os.environ.get("FASTMCP_HOST", "127.0.0.1")
+    port = int(os.environ.get("FASTMCP_PORT", "8928"))
+    log_level = os.environ.get("FASTMCP_LOG_LEVEL", "info").lower()
+    uvicorn.run(app, host=host, port=port, log_level=log_level)
 
 
 @eidosian()
@@ -164,7 +536,17 @@ def resource_todo() -> str:
 @eidosian()
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(_request):
-    return JSONResponse({"status": "ok"})
+    return JSONResponse(
+        {
+            "status": "ok",
+            "transport": os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http"),
+            "streamable_http_path": mcp.settings.streamable_http_path,
+            "stateless_http": mcp.settings.stateless_http,
+            "tool_count": len(list_tool_metadata()),
+            "plugin_count": len(list_plugins()),
+            "plugin_tool_count": len(list_tools()),
+        }
+    )
 
 
 def _extract_bearer(header_value: Optional[str]) -> Optional[str]:
@@ -220,7 +602,11 @@ def main() -> None:
     log_debug(f"Starting Eidosian MCP Server (Transport: {transport}, Mount: {mount_path})...")
     log_startup(transport)
     try:
-        mcp.run(transport=transport, mount_path=mount_path)
+        normalized_transport = transport.strip().lower().replace("_", "-")
+        if normalized_transport == "streamable-http":
+            _run_streamable_http_server(mount_path)
+        else:
+            mcp.run(transport=transport, mount_path=mount_path)
     except Exception as e:
         msg = f"Critical Error: MCP Server failed to start: {e}"
         log_debug(msg)

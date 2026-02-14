@@ -10,7 +10,7 @@
 `eidos_mcp` is the implementation of the [Model Context Protocol](https://github.com/model-context-protocol/mcp) server.
 It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.) as **Tools** and **Resources** to the LLM.
 
-**Current Status**: 101 MCP tools across 20 categories, 4 plugins loaded.
+**Current Status**: 109 MCP tools across 20 categories, 4 plugins loaded.
 
 ## 🔗 Tool Categories
 
@@ -53,15 +53,32 @@ source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 # Start the server (stdio)
 python -m eidos_mcp.eidos_mcp_server
 
-# Start the server (SSE/HTTP)
+# Start the server (SSE)
 EIDOS_MCP_TRANSPORT=sse FASTMCP_HOST=127.0.0.1 FASTMCP_PORT=8928 \
+  python -m eidos_mcp.eidos_mcp_server
+
+# Start the server (StreamableHTTP)
+EIDOS_MCP_TRANSPORT=streamable-http EIDOS_MCP_MOUNT_PATH=/mcp \
+EIDOS_MCP_STATELESS_HTTP=1 \
+EIDOS_MCP_ENABLE_COMPAT_HEADERS=1 EIDOS_MCP_ENABLE_SESSION_RECOVERY=1 \
+EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT=1 \
+FASTMCP_HOST=127.0.0.1 FASTMCP_PORT=8928 \
   python -m eidos_mcp.eidos_mcp_server
 ```
 
 ## 🛠️ Configuration
 Configuration is loaded from the **GIS** (Global Info System) or `config.json`.
 Key env vars (all default-safe):
-- `EIDOS_MCP_TRANSPORT` (`stdio`|`sse`)
+- `EIDOS_MCP_TRANSPORT` (`stdio`|`sse`|`streamable-http`)
+- `EIDOS_MCP_MOUNT_PATH` (default `/mcp`, StreamableHTTP endpoint path)
+- `EIDOS_MCP_STATELESS_HTTP` (`1`/`0`, default `0`) to disable session pinning and
+  allow per-request handling for clients that cannot preserve MCP session state
+- `EIDOS_MCP_ENABLE_COMPAT_HEADERS` (`1`/`0`, default `1`) to normalize missing
+  `Accept` / `Content-Type` headers from fragile clients
+- `EIDOS_MCP_ENABLE_SESSION_RECOVERY` (`1`/`0`, default `1`) to clear stale
+  `mcp-session-id` headers and transparently establish a fresh session
+- `EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT` (`1`/`0`, default `1`) to coerce
+  non-MCP transport error bodies into explicit JSON with `Content-Type`
 - `FASTMCP_HOST` / `FASTMCP_PORT`
 - `EIDOS_FORGE_DIR`
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
@@ -107,9 +124,10 @@ systemctl --user enable --now eidos-mcp.service
 loginctl enable-linger lloyd
 ```
 
-3) Health check (StreamableHTTP):
+3) Health checks (StreamableHTTP):
 ```bash
-curl -s http://127.0.0.1:8928/streamable-http | head -n 1
+curl -s http://127.0.0.1:8928/health | jq .
+curl -s -D - -o /dev/null http://127.0.0.1:8928/mcp
 ```
 
 Service guard state lives at `~/.eidosian/run/mcp_service_state.json` and tracks

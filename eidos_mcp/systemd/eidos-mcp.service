@@ -7,7 +7,12 @@ Type=simple
 WorkingDirectory=/home/lloyd/eidosian_forge/eidos_mcp
 Environment=PYTHONPATH=/home/lloyd/eidosian_forge/eidos_mcp/src
 Environment=EIDOS_FORGE_DIR=/home/lloyd/eidosian_forge
-Environment=EIDOS_MCP_TRANSPORT=sse
+Environment=EIDOS_MCP_TRANSPORT=streamable-http
+Environment=EIDOS_MCP_MOUNT_PATH=/mcp
+Environment=EIDOS_MCP_STATELESS_HTTP=1
+Environment=EIDOS_MCP_ENABLE_COMPAT_HEADERS=1
+Environment=EIDOS_MCP_ENABLE_SESSION_RECOVERY=1
+Environment=EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT=1
 Environment=FASTMCP_HOST=127.0.0.1
 Environment=FASTMCP_PORT=8928
 Environment=EIDOS_OAUTH2_PROVIDER=google

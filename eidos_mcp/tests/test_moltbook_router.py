@@ -5,9 +5,16 @@ import sys
 import types
 
 import pytest
+import httpx
 
 
 def _install_mcp_stub() -> None:
+    try:
+        from mcp.server.fastmcp import FastMCP  # noqa: F401
+        return
+    except Exception:
+        pass
+
     if "mcp.server.fastmcp" in sys.modules:
         return
     mcp_module = types.ModuleType("mcp")
@@ -63,6 +70,45 @@ class _MockClient:
         return _MockResponse({"method": method, "path": path, "params": params, "payload": json, **self.payload})
 
 
+class _TimeoutClient:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def request(self, method, path, params=None, json=None):
+        raise httpx.TimeoutException("timed out")
+
+
+class _ErrorResponse:
+    def __init__(self, status_code: int, text: str):
+        self.status_code = status_code
+        self.text = text
+        self.request = httpx.Request("GET", "https://www.moltbook.com/api/v1/test")
+
+    def raise_for_status(self) -> None:
+        raise httpx.HTTPStatusError(
+            "boom",
+            request=self.request,
+            response=httpx.Response(self.status_code, request=self.request, text=self.text),
+        )
+
+    def json(self) -> dict:
+        return {}
+
+
+class _ErrorClient:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def request(self, method, path, params=None, json=None):
+        return _ErrorResponse(500, '{"success":false}')
+
+
 def test_moltbook_posts(monkeypatch):
     monkeypatch.setattr(moltbook, "_client", lambda: _MockClient({"posts": []}))
     data = json.loads(moltbook.moltbook_posts(sort="hot", limit=5))
@@ -94,3 +140,16 @@ def test_moltbook_dm_request(monkeypatch):
 
     res_owner = json.loads(moltbook.moltbook_dm_request("@owner", "Hi", to_owner=True))
     assert res_owner["payload"]["to_owner"] == "owner"
+
+
+def test_moltbook_timeout_and_http_errors(monkeypatch):
+    monkeypatch.setattr(moltbook, "_client", lambda: _TimeoutClient())
+    timeout_res = json.loads(moltbook.moltbook_status())
+    assert timeout_res["ok"] is False
+    assert timeout_res["error"] == "timeout"
+
+    monkeypatch.setattr(moltbook, "_client", lambda: _ErrorClient())
+    status_res = json.loads(moltbook.moltbook_status())
+    assert status_res["ok"] is False
+    assert status_res["error"] == "http_status"
+    assert status_res["status_code"] == 500
