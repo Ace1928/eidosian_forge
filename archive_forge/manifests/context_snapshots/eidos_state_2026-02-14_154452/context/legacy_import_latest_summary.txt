@@ -1,0 +1,13 @@
+Run dir: /home/lloyd/eidosian_forge/archive_forge/manifests/legacy_import_2026-02-14_123808
+Imported file count: 1051
+Dedup removals: 0
+Docs source files: 216
+Docs unique files copied: 105
+Target sizes:
+6.1M	/home/lloyd/eidosian_forge/projects/legacy/evie
+1.3M	/home/lloyd/eidosian_forge/projects/legacy/indego_snake_game
+4.9M	/home/lloyd/eidosian_forge/projects/legacy/minecraft_ai_indego
+384K	/home/lloyd/eidosian_forge/projects/legacy/ai_timeline
+32K	/home/lloyd/eidosian_forge/projects/legacy/3dstuff
+12M	/home/lloyd/eidosian_forge/projects/research/universal_intelligence_potential
+8.6M	/home/lloyd/eidosian_forge/docs/legacy/aurora_archive
