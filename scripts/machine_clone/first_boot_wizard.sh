@@ -181,6 +181,7 @@ probe_moltbook_api() {
 run_plan_step() {
   local idx="$1"
   local total="$2"
+  local step_no=$((idx + 1))
   local id="${PLAN_IDS[$idx]}"
   local desc="${PLAN_DESC[$idx]}"
   local est="${PLAN_EST[$idx]}"
@@ -192,7 +193,7 @@ run_plan_step() {
   (( remaining < 0 )) && remaining=0
 
   log_line
-  log_line "[${idx}/${total}] ${desc}"
+  log_line "[${step_no}/${total}] ${desc}"
   log_line "    mode=${mode} est=$(format_seconds "$est") elapsed=$(format_seconds "$elapsed") eta_remaining=$(format_seconds "$remaining")"
 
   local step_start rc=0
@@ -378,8 +379,7 @@ fi
 if [[ "$EXECUTE_PLAN" == "yes" && ${#PLAN_IDS[@]} -gt 0 ]]; then
   total_steps="${#PLAN_IDS[@]}"
   for i in "${!PLAN_IDS[@]}"; do
-    step_no=$((i + 1))
-    run_plan_step "$step_no" "$total_steps"
+    run_plan_step "$i" "$total_steps"
   done
 fi
 
