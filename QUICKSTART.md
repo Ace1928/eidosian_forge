@@ -17,6 +17,7 @@ cd /home/lloyd/eidosian_forge
 source eidosian_venv/bin/activate
 
 # 3. Install core forges (recommended)
+pip install -e lib
 pip install -e memory_forge
 pip install -e knowledge_forge
 pip install -e code_forge
@@ -216,6 +217,13 @@ python -m eidos_mcp.eidos_mcp_server
 ### Import Errors
 ```bash
 export PYTHONPATH="${PYTHONPATH}:/home/lloyd/eidosian_forge/lib"
+```
+
+### `eidosian_core` Not Found
+```bash
+cd /home/lloyd/eidosian_forge
+source eidosian_venv/bin/activate
+pip install -e lib
 ```
 
 ### Ollama Not Running

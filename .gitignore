@@ -50,11 +50,15 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/*
 !lib/eidosian_core/
 !lib/eidosian_core/**
 !lib/cli/
 !lib/cli/**
+!lib/pyproject.toml
+!lib/README.md
+!lib/tests/
+!lib/tests/**
 lib64/
 parts/
 sdist/

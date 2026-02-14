@@ -50,6 +50,9 @@ It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.
 # Activate the dedicated venv
 source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
 
+# Ensure local core package is installed from source checkout
+pip install -e /home/lloyd/eidosian_forge/lib
+
 # Start the server (stdio)
 python -m eidos_mcp.eidos_mcp_server
 

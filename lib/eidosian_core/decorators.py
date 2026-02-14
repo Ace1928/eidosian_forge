@@ -294,10 +294,23 @@ def eidosian(
     effective_benchmark = config.benchmarking.enabled if benchmark is None else bool(benchmark)
     effective_trace = config.tracing.enabled if trace is None else bool(trace)
     if not (effective_log or effective_profile or effective_benchmark or effective_trace):
+        passthrough_meta = {
+            "log": False,
+            "profile": False,
+            "benchmark": False,
+            "trace": False,
+            "passthrough": True,
+        }
         if func is not None:
+            setattr(func, "__eidosian_decorated__", True)
+            setattr(func, "__eidosian_config__", passthrough_meta)
             return func
+
         def passthrough(inner: F) -> F:
+            setattr(inner, "__eidosian_decorated__", True)
+            setattr(inner, "__eidosian_config__", passthrough_meta)
             return inner
+
         return passthrough
 
     decorator = EidosianDecorator(

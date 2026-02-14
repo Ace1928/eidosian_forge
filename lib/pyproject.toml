@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eidosian-core"
+version = "0.1.0"
+description = "Eidosian core decorators, logging, profiling, benchmarking, and tracing utilities"
+requires-python = ">=3.10"
+readme = "README.md"
+authors = [
+  { name = "Eidosian Forge" }
+]
+keywords = ["decorators", "profiling", "benchmarking", "tracing", "logging"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
+]
+dependencies = []
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["eidosian_core*", "cli*"]

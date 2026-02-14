@@ -1,3 +1,5 @@
+-e ./lib
+
 aeidon
 aiofiles
 aiohappyeyeballs
