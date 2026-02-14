@@ -1,0 +1,24 @@
+# Core NLP & Embedding Models
+sentence-transformers
+transformers
+
+# Information Retrieval & Vector Search
+chromadb
+rank_bm25
+nltk
+
+# Lightweight & Adaptive LLM Backend
+litellm
+ollama
+openai
+
+# Machine Learning & Numerical Computation
+numpy
+scikit-learn
+
+# Retry Logic
+tenacity
+
+# Testing
+pytest
+unittest-xml-reporting

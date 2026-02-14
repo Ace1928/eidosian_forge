@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😈 Eidosian Interactive Nexus 😈</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+          integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'SF Pro Display', sans-serif;
+            margin: 0;
+            background-color: #1E1E1E;
+            color: #F8F8F2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+        body.eidos-mode {
+            background-color: #0A0A0A;
+        }
+        .container {
+            width: 80%;
+            max-width: 900px;
+            padding: 30px;
+            background-color: #282A36;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease;
+        }
+        .container.eidos-mode {
+            background-color: #141414;
+            box-shadow: 0 5px 25px rgba(255, 255, 255, 0.2);
+        }
+        h1 {
+            color: #8BE9FD;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(139, 233, 253, 0.5);
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        h1.eidos-mode {
+            color: #FFB86C;
+            text-shadow: 0 0 10px rgba(255, 184, 108, 0.5);
+        }
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+        .chat-box.eidos-mode {
+            border-color: #6272A4;
+        }
+        .message-container {
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            max-width: 80%;
+            word-wrap: break-word;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .message.eidos-mode {
+            background-color: #21222C;
+        }
+        .user-message {
+            background-color: #44475A;
+            align-self: flex-end;
+            color: #F8F8F2;
+        }
+        .eidos-message {
+            background-color: #6272A4;
+            align-self: flex-start;
+            color: #F8F8F2;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .input-field {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            background-color: #343746;
+            color: #F8F8F2;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            resize: vertical;
+            min-height: 100px;
+        }
+        .input-field.eidos-mode {
+            border-color: #6272A4;
+            background-color: #1E1F29;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #8BE9FD;
+        }
+        .send-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #8BE9FD;
+            color: #282A36;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .send-button:hover {
+            background-color: #66D9EF;
+        }
+        .send-button.eidos-mode {
+            background-color: #FFB86C;
+            color: #1E1E1E;
+        }
+        .send-button.eidos-mode:hover {
+            background-color: #FFAA4D;
+        }
+        .options-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .option-button {
+            padding: 8px 12px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            background-color: #343746;
+            color: #F8F8F2;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .option-button:hover {
+            background-color: #44475A;
+        }
+        .option-button.active-option {
+            background-color: #8BE9FD;
+            color: #282A36;
+            border-color: #8BE9FD;
+        }
+        .option-button.active-option:hover {
+            background-color: #66D9EF;
+        }
+        .option-button.eidos-mode {
+            border-color: #6272A4;
+            background-color: #1E1F29;
+        }
+        .option-button.eidos-mode:hover {
+            background-color: #21222C;
+        }
+        .option-button.eidos-mode.active-option {
+            background-color: #FFB86C;
+            color: #1E1E1E;
+            border-color: #FFB86C;
+        }
+        .option-button.eidos-mode.active-option:hover {
+            background-color: #FFAA4D;
+        }
+        .eidos-mode-toggle {
+            padding: 8px 12px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            background-color: #343746;
+            color: #F8F8F2;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .eidos-mode-toggle:hover {
+            background-color: #44475A;
+        }
+        .eidos-mode-toggle.active {
+            background-color: #FFB86C;
+            color: #1E1E1E;
+            border-color: #FFB86C;
+        }
+        .eidos-mode-toggle.active:hover {
+            background-color: #FFAA4D;
+        }
+        .eidos-mode-toggle.eidos-mode {
+            border-color: #6272A4;
+            background-color: #1E1F29;
+        }
+        .eidos-mode-toggle.eidos-mode:hover {
+            background-color: #21222C;
+        }
+        .eidos-mode-toggle.eidos-mode.active {
+            background-color: #FFB86C;
+            color: #1E1E1E;
+            border-color: #FFB86C;
+        }
+        .eidos-mode-toggle.eidos-mode.active:hover {
+            background-color: #FFAA4D;
+        }
+        .autonomous-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #44475A;
+            color: #F8F8F2;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .autonomous-indicator.active {
+            background-color: #A6E3A1;
+            color: #282A36;
+        }
+        .autonomous-indicator.eidos-mode {
+            background-color: #1E1F29;
+        }
+        .autonomous-indicator.eidos-mode.active {
+            background-color: #A6E3A1;
+            color: #1E1E1E;
+        }
+        .internal-thoughts-box {
+            display: none;
+            padding: 10px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            margin-top: 10px;
+            background-color: #343746;
+            color: #F8F8F2;
+            white-space: pre-wrap;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .internal-thoughts-box.eidos-mode {
+            background-color: #1E1F29;
+            border-color: #6272A4;
+        }
+        .instructions-field {
+            padding: 10px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            background-color: #343746;
+            color: #F8F8F2;
+            margin-bottom: 15px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .instructions-field.eidos-mode {
+            background-color: #1E1F29;
+            border-color: #6272A4;
+        }
+        .typing-indicator {
+            font-size: 1.2em;
+            margin-left: 5px;
+            display: inline-block;
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+        @keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+        .error-message {
+            color: #FF5555;
+            background-color: #343746;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+        .error-message.eidos-mode {
+            background-color: #1E1F29;
+        }
+        .llm-status {
+            text-align: center;
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #8BE9FD;
+        }
+        .llm-status.eidos-mode {
+            color: #FFB86C;
+        }
+        .llm-init-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #A6E3A1;
+            color: #282A36;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .llm-init-button:hover {
+            background-color: #82D980;
+        }
+        .llm-init-button.eidos-mode {
+            background-color: #A6E3A1;
+            color: #1E1E1E;
+        }
+        .llm-init-button.eidos-mode:hover {
+            background-color: #82D980;
+        }
+        .code-block {
+            background-color: #343746;
+            color: #F8F8F2;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre;
+            font-family: monospace;
+        }
+        .code-block.eidos-mode {
+            background-color: #1E1F29;
+        }
+        .log-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #44475A;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background-color: #1E1E1E;
+            color: #F8F8F2;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            display: none;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .log-box.show {
+            display: block;
+        }
+        .log-box.eidos-mode {
+            border-color: #6272A4;
+            background-color: #141414;
+        }
+    </style>
+</head>
+<body {% if ui_theme == 'dark' %} class="eidos-mode" {% endif %}>
+    <div class="container {% if ui_theme == 'dark' %} eidos-mode {% endif %}">
+        <h1 {% if ui_theme == 'dark' %} class="eidos-mode" {% endif %}>😈 Eidosian Interactive Nexus 😈</h1>
+        <div class="options-bar">
+            <button class="option-button {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="toggle-thoughts" onclick="toggleInternalThoughts()">
+                <i class="fas fa-brain"></i> Thoughts
+            </button>
+             <button class="option-button {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="toggle-logs" onclick="toggleLogs()">
+                <i class="fas fa-file-alt"></i> Logs
+            </button>
+            <button class="option-button {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="toggle-streaming" onclick="toggleStreaming()">
+                <i class="fas fa-wave-square"></i> Stream
+            </button>
+            <span class="autonomous-indicator {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="autonomous-indicator">
+                <i class="fas fa-robot"></i> Autonomous
+            </span>
+            <button class="eidos-mode-toggle {% if ui_theme == 'dark' %} active eidos-mode {% endif %}" onclick="toggleEidosMode()">
+                <i class="fas fa-adjust"></i> Eidos Mode
+            </button>
+        </div>
+        <div class="llm-status {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="llm-status">
+            {% if llm_operational %}
+                LLM Operational <i class="fas fa-check-circle" style="color: #A6E3A1;"></i>
+            {% else %}
+                LLM Not Operational <i class="fas fa-exclamation-triangle" style="color: #FF5555;"></i>
+            {% endif %}
+        </div>
+        <button class="llm-init-button {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="llm-init-button" onclick="initializeLLM()">
+            Initialize LLM
+        </button>
+        <div class="chat-box {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="chat-box">
+            <div class="message-container {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="message-container">
+            </div>
+        </div>
+        <div class="internal-thoughts-box {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="internal-thoughts-box"></div>
+        <textarea class="input-field {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="input-field" placeholder="Type your message here..."></textarea>
+        <div class="input-area">
+            <textarea class="instructions-field {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="instructions-field" placeholder="Instructions (optional)"></textarea>
+            <button class="send-button {% if ui_theme == 'dark' %} eidos-mode {% endif %}" onclick="sendMessage()">Send</button>
+        </div>
+         <div class="log-box {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="log-box"></div>
+        <div class="error-message {% if ui_theme == 'dark' %} eidos-mode {% endif %}" id="error-message"></div>
+    </div>
+    <script>
+        let eidosMode = '{{ ui_theme | lower }}' === 'dark';
+        let llmOperational = '{{ llm_operational | lower }}' === 'true';
+        const typingIndicator = '<span class="typing-indicator">✍️</span>';
+        let showInternalThoughts = false;
+        let streamResponse = false;
+        let showLogs = false;
+        const logBox = document.getElementById('log-box');
+
+        function initializeLLM() {
+            const llmStatus = document.getElementById('llm-status');
+            const llmInitButton = document.getElementById('llm-init-button');
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.style.display = 'none';
+            llmStatus.textContent = 'Initializing LLM...';
+            llmInitButton.disabled = true;
+
+            fetch('/initialize_llm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    model_name: 'Qwen/Qwen-7B-Chat' // Or get from a dropdown
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                     return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                llmOperational = true;
+                llmStatus.innerHTML = 'LLM Operational <i class="fas fa-check-circle" style="color: #A6E3A1;"></i>';
+                llmInitButton.style.display = 'none';
+                console.log('LLM initialized:', data.message);
+            })
+            .catch(error => {
+                llmOperational = false;
+                llmStatus.innerHTML = 'LLM Not Operational <i class="fas fa-exclamation-triangle" style="color: #FF5555;"></i>';
+                llmInitButton.disabled = false;
+                errorMessage.textContent = `Error initializing LLM: ${error.message}`;
+                errorMessage.style.display = 'block';
+                console.error('Error initializing LLM:', error);
+            });
+        }
+
+        function sendMessage() {
+            const inputField = document.getElementById('input-field');
+            const instructionsField = document.getElementById('instructions-field');
+            const message = inputField.value.trim();
+            const instructions = instructionsField.value.trim();
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.style.display = 'none';
+
+            if (!message) {
+                errorMessage.textContent = 'Please enter a message.';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            inputField.value = '';
+            instructionsField.value = '';
+            appendMessage('user', message);
+
+            const chatBox = document.getElementById('chat-box');
+            const messageContainer = document.getElementById('message-container');
+            const lastMessage = messageContainer.lastElementChild;
+            if (lastMessage) {
+                lastMessage.innerHTML += typingIndicator;
+            }
+
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    instructions: instructions,
+                    stream: streamResponse,
+                    show_internal_thoughts: showInternalThoughts
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                     return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                if (streamResponse) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let chunks = '';
+                    return new Promise((resolve, reject) => {
+                        function processStream() {
+                            reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    if (lastMessage) {
+                                        lastMessage.removeChild(lastMessage.lastChild);
+                                    }
+                                    resolve();
+                                    return;
+                                }
+                                chunks += decoder.decode(value, { stream: true });
+                                const parts = chunks.split('🌊 End of stream.');
+                                if (parts.length > 1) {
+                                    const finalChunk = parts.shift();
+                                    if (lastMessage) {
+                                        lastMessage.removeChild(lastMessage.lastChild);
+                                    }
+                                    appendMessage('eidos', finalChunk.replace('🌊 Start of stream:', ''));
+                                    chunks = parts.join('🌊 End of stream.');
+                                } else {
+                                    if (lastMessage) {
+                                        lastMessage.textContent = lastMessage.textContent.replace(typingIndicator, '');
+                                        lastMessage.innerHTML += chunks.replace('🌊 Start of stream:', '') + typingIndicator;
+                                    }
+                                }
+                                processStream();
+                            }).catch(reject);
+                        }
+                        processStream();
+                    });
+                } else {
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error("Failed to parse JSON", text);
+                            throw e;
+                        }
+                    });
+                }
+            })
+            .then(data => {
+                if (!streamResponse) {
+                    if (lastMessage) {
+                        lastMessage.removeChild(lastMessage.lastChild);
+                    }
+                    if (data && data.response) {
+                        appendMessage('eidos', data.response);
+                    }
+                    if (data && data.internal_thoughts) {
+                        displayInternalThoughts(data.internal_thoughts);
+                    }
+                    if (data && data.error) {
+                        errorMessage.textContent = `Error: ${data.error}`;
+                        errorMessage.style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                if (lastMessage) {
+                    lastMessage.removeChild(lastMessage.lastChild);
+                }
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.style.display = 'block';
+                console.error('Error sending message:', error);
+            });
+        }
+
+        function appendMessage(sender, message) {
+            const messageContainer = document.getElementById('message-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            if (eidosMode) {
+                messageDiv.classList.add('eidos-mode');
+            }
+            messageDiv.innerHTML = message;
+            messageContainer.appendChild(messageDiv);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function displayInternalThoughts(thoughts) {
+            const thoughtsBox = document.getElementById('internal-thoughts-box');
+             if (thoughts) {
+                thoughtsBox.textContent = thoughts;
+                } else {
+                    thoughtsBox.textContent = "No internal thoughts to display.";
+                }
+        }
+
+        function toggleEidosMode() {
+            eidosMode = !eidosMode;
+            const body = document.body;
+            const container = document.querySelector('.container');
+            const heading = document.querySelector('h1');
+            const chatBox = document.getElementById('chat-box');
+            const inputField = document.querySelector('.input-field');
+            const instructionsField = document.getElementById('instructions-field');
+            const messageContainer = document.querySelector('.message-container');
+            const buttons = document.querySelectorAll('.option-button, .send-button, .eidos-mode-toggle, .llm-init-button');
+            const autonomousIndicator = document.getElementById('autonomous-indicator');
+            const eidosToggle = document.querySelector('.eidos-mode-toggle');
+            const internalThoughtsBox = document.getElementById('internal-thoughts-box');
+            const toggleThoughtsButton = document.getElementById('toggle-thoughts');
+            const toggleStreamingButton = document.getElementById('toggle-streaming');
+            const logBox = document.getElementById('log-box');
+            const toggleLogsButton = document.getElementById('toggle-logs');
+
+            body.classList.toggle('eidos-mode', eidosMode);
+            container.classList.toggle('eidos-mode', eidosMode);
+            heading.classList.toggle('eidos-mode', eidosMode);
+            chatBox.classList.toggle('eidos-mode', eidosMode);
+            inputField.classList.toggle('eidos-mode', eidosMode);
+            instructionsField.classList.toggle('eidos-mode', eidosMode);
+            messageContainer.classList.toggle('eidos-mode', eidosMode);
+            eidosToggle.classList.toggle('active', eidosMode);
+            internalThoughtsBox.classList.toggle('eidos-mode', eidosMode);
+            toggleThoughtsButton.classList.toggle('eidos-mode', eidosMode);
+            toggleStreamingButton.classList.toggle('eidos-mode', eidosMode);
+            logBox.classList.toggle('eidos-mode', eidosMode);
+            toggleLogsButton.classList.toggle('eidos-mode', eidosMode);
+
+            buttons.forEach(button => {
+                button.classList.toggle('eidos-mode', eidosMode);
+            });
+
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(message => {
+                message.classList.toggle('eidos-mode', eidosMode);
+            });
+
+            if (autonomousIndicator.classList.contains('active')) {
+                autonomousIndicator.classList.toggle('eidos-mode', eidosMode);
+            }
+        }
+
+        function toggleInternalThoughts() {
+            showInternalThoughts = !showInternalThoughts;
+            const thoughtsBox = document.getElementById('internal-thoughts-box');
+            const toggleButton = document.getElementById('toggle-thoughts');
+            thoughtsBox.style.display = showInternalThoughts ? 'block' : 'none';
+            toggleButton.classList.toggle('active-option', showInternalThoughts);
+        }
+
+        function toggleStreaming() {
+            streamResponse = !streamResponse;
+            const toggleButton = document.getElementById('toggle-streaming');
+            toggleButton.classList.toggle('active-option', streamResponse);
+        }
+
+        function toggleLogs() {
+            showLogs = !showLogs;
+            const logBox = document.getElementById('log-box');
+            const toggleButton = document.getElementById('toggle-logs');
+            logBox.classList.toggle('show', showLogs);
+            toggleButton.classList.toggle('active-option', showLogs);
+            if (showLogs) {
+                fetch('/get_logs')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(logs => {
+                        logBox.textContent = logs;
+                        logBox.scrollTop = logBox.scrollHeight;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching logs:', error);
+                        logBox.textContent = `Error fetching logs: ${error.message}`;
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

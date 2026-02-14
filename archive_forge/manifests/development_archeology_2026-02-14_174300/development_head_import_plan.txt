@@ -1,0 +1,17 @@
+timestamp=2026-02-14T17:31:38+10:00
+mode=execute
+development_repo=/home/lloyd/Development
+forge_root=/home/lloyd/eidosian_forge
+tag=2026-02-14_174300
+
+source             | files     | size      | destination
+-------------------+-----------+-----------+-------------------------------
+ECosmos            | 9         | 184K      | game_forge/src/ECosmos
+chess_game         | 12        | 712K      | game_forge/src/chess_game
+EMemory            | 17        | 356K      | memory_forge/legacy_imports/development_head_2026-02-14_174300/EMemory
+python_repository  | 72        | 3.1M      | llm_forge/legacy_imports/development_head_2026-02-14_174300/python_repository
+oumi-main          | 294       | 3.2M      | llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main
+eidos_framework    | 5         | 128K      | llm_forge/legacy_imports/development_head_2026-02-14_174300/eidos_framework
+templates          | 8         | 64K       | prompt_forge/legacy_imports/development_head_2026-02-14_174300/templates
+notebooks          | 18        | 5.6M      | doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks
+papers             | 12        | 48M       | doc_forge/legacy_imports/development_head_2026-02-14_174300/papers
