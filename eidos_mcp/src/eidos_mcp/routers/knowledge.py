@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
+from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 from eidosian_core import eidosian
 
@@ -23,7 +24,7 @@ from ..transactions import (
 from ..embeddings import SimpleEmbedder
 
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
 try:
     from memory_forge import MemoryConfig, MemoryForge

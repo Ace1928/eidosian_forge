@@ -4,9 +4,12 @@ import os
 import subprocess
 import json
 import time
+import sys
+from pathlib import Path
 from typing import Optional
 
 from ..core import tool
+from .. import FORGE_ROOT
 from ..state import agent
 from eidosian_core import eidosian
 
@@ -93,13 +96,18 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
     if not benefit.strip():
         return "Error: A specific, measurable benefit must be provided for the upgrade."
 
-    forge_dir = os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")
+    forge_dir = os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))
     
     if run_tests:
         # Run tests in the forge directory
         try:
             # We use the venv python to run pytest
-            venv_python = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
+            venv_python = os.environ.get(
+                "EIDOS_PYTHON_BIN",
+                str(Path(forge_dir) / "eidosian_venv" / "bin" / "python3"),
+            )
+            if not Path(venv_python).exists():
+                venv_python = sys.executable
             result = subprocess.run(
                 [venv_python, "-m", "pytest", "eidos_mcp"],
                 cwd=forge_dir,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -10,7 +11,8 @@ import time
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
 from code_forge.library.db import CodeLibraryDB, CodeUnit
 
-DEFAULT_RUNS_DIR = Path("/home/lloyd/eidosian_forge/data/code_forge/ingestion_runs")
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
+DEFAULT_RUNS_DIR = FORGE_ROOT / "data" / "code_forge" / "ingestion_runs"
 ANALYSIS_VERSION = 2
 DEFAULT_EXTENSIONS = {".py"}
 

@@ -16,8 +16,8 @@ Enhanced with other forges:
 from __future__ import annotations
 from eidosian_core import eidosian
 
-import sys
 import os
+import sys
 import json
 from pathlib import Path
 from typing import Optional
@@ -37,10 +37,11 @@ from code_forge import (
 )
 
 # Default paths
-DEFAULT_INDEX_PATH = Path("/home/lloyd/eidosian_forge/data/code_index.json")
-DEFAULT_LIBRARY_PATH = Path("/home/lloyd/eidosian_forge/data/code_library.json")
-DEFAULT_DB_PATH = Path("/home/lloyd/eidosian_forge/data/code_forge/library.sqlite")
-DEFAULT_RUNS_DIR = Path("/home/lloyd/eidosian_forge/data/code_forge/ingestion_runs")
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
+DEFAULT_INDEX_PATH = FORGE_ROOT / "data" / "code_index.json"
+DEFAULT_LIBRARY_PATH = FORGE_ROOT / "data" / "code_library.json"
+DEFAULT_DB_PATH = FORGE_ROOT / "data" / "code_forge" / "library.sqlite"
+DEFAULT_RUNS_DIR = FORGE_ROOT / "data" / "code_forge" / "ingestion_runs"
 
 
 class CodeForgeCLI(StandardCLI):
@@ -119,7 +120,7 @@ class CodeForgeCLI(StandardCLI):
         index_parser.add_argument(
             "path",
             nargs="?",
-            default="/home/lloyd/eidosian_forge",
+            default=str(FORGE_ROOT),
             help="Path to index (default: eidosian_forge)",
         )
         index_parser.add_argument(
@@ -480,7 +481,7 @@ class CodeForgeCLI(StandardCLI):
                     cmd.extend(["--max-files", str(args.max_files)])
 
                 env = dict(**os.environ)
-                env["PYTHONPATH"] = "/home/lloyd/eidosian_forge/code_forge/src:/home/lloyd/eidosian_forge/lib"
+                env["PYTHONPATH"] = f"{FORGE_ROOT / 'code_forge' / 'src'}:{FORGE_ROOT / 'lib'}"
                 subprocess.Popen(cmd, env=env)
 
                 result = CommandResult(

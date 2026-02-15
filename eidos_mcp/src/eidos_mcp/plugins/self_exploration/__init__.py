@@ -12,15 +12,24 @@ from __future__ import annotations
 from eidosian_core import eidosian
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+FORGE_ROOT = Path(
+    os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))
+).resolve()
+
 # Add self_exploration to path
-SELF_EXPLORATION_PATH = Path("/home/lloyd/eidosian_forge/projects/src")
+SELF_EXPLORATION_PATH = Path(
+    os.environ.get("EIDOS_SELF_EXPLORATION_PATH", str(FORGE_ROOT / "projects" / "src"))
+).resolve()
 if str(SELF_EXPLORATION_PATH) not in sys.path:
     sys.path.insert(0, str(SELF_EXPLORATION_PATH))
+
+SELF_EXPLORATION_ROOT = SELF_EXPLORATION_PATH / "self_exploration"
 
 # Plugin manifest for dynamic loading
 PLUGIN_MANIFEST = {
@@ -135,9 +144,9 @@ def identity_status() -> str:
     Returns:
         JSON string with identity status
     """
-    identity_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/identity")
-    data_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/data")
-    prov_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/provenance")
+    identity_dir = SELF_EXPLORATION_ROOT / "identity"
+    data_dir = SELF_EXPLORATION_ROOT / "data"
+    prov_dir = SELF_EXPLORATION_ROOT / "provenance"
     
     try:
         # Find latest identity version
@@ -185,7 +194,7 @@ def identity_evolve(
     Returns:
         JSON string with new version info
     """
-    identity_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/identity")
+    identity_dir = SELF_EXPLORATION_ROOT / "identity"
     
     try:
         # Find latest version
@@ -248,9 +257,9 @@ def exploration_summary() -> str:
     Returns:
         JSON string with exploration summary
     """
-    data_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/data")
-    audit_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/audits")
-    identity_dir = Path("/home/lloyd/eidosian_forge/projects/src/self_exploration/identity")
+    data_dir = SELF_EXPLORATION_ROOT / "data"
+    audit_dir = SELF_EXPLORATION_ROOT / "audits"
+    identity_dir = SELF_EXPLORATION_ROOT / "identity"
     
     try:
         # Collect all insights and uncertainties

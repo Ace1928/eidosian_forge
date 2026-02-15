@@ -9,6 +9,7 @@ from eidosian_core import eidosian
 
 import json
 import logging
+import os
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -16,6 +17,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
+
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
 
 
 @dataclass
@@ -56,7 +59,7 @@ class MemoryIntrospector:
     """
     
     def __init__(self, memory_dir: Optional[Path] = None):
-        self.memory_dir = memory_dir or Path("/home/lloyd/eidosian_forge/data/memory")
+        self.memory_dir = memory_dir or (FORGE_ROOT / "data" / "memory")
         self._memory_system = None
     
     @property

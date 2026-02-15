@@ -11,6 +11,7 @@ from typing import Any, Iterable, cast
 
 import pstats
 
+from eidosian_core import eidosian
 from falling_sand.models import (
     BenchmarkCase,
     BenchmarkSummary,
@@ -20,7 +21,6 @@ from falling_sand.models import (
     TestOutcome,
     TestSummary,
 )
-from eidosian_core import eidosian
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Eidosian Forge bash completions
-# Source this file: source /home/lloyd/eidosian_forge/bin/eidosian-completion.bash
+# Source this file: source /path/to/eidosian_forge/bin/eidosian-completion.bash
 
 # Main eidosian command completion
 _eidosian_completions() {

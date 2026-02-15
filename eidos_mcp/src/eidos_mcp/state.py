@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 from pathlib import Path
 from typing import Any, Optional, Type
 
+from . import FORGE_ROOT
 from .forge_loader import ensure_forge_import
 from eidosian_core import eidosian
 
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")).resolve()
-ROOT_DIR = Path(os.environ.get("EIDOS_ROOT_DIR", "/home/lloyd")).resolve()
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
+ROOT_DIR = Path(os.environ.get("EIDOS_ROOT_DIR", str(FORGE_DIR.parent))).resolve()
 
 
 def _import_symbol(module_name: str, symbol: str) -> Optional[Type[Any]]:
@@ -24,7 +26,38 @@ def _import_symbol(module_name: str, symbol: str) -> Optional[Type[Any]]:
 ensure_forge_import("gis_forge")
 GisCore = _import_symbol("gis_forge.core", "GisCore")
 GIS_PATH = Path(os.environ.get("EIDOS_GIS_PATH", FORGE_DIR / "gis_forge" / "gis_data.json"))
-gis = GisCore(persistence_path=GIS_PATH) if GisCore else None
+
+
+def _looks_like_lfs_pointer(path: Path) -> bool:
+    try:
+        if not path.exists():
+            return False
+        first = path.read_text(encoding="utf-8", errors="ignore").splitlines()[:1]
+        return bool(first) and first[0].startswith("version https://git-lfs.github.com/spec/v1")
+    except Exception:
+        return False
+
+
+def _init_gis() -> Any:
+    if not GisCore:
+        return None
+
+    primary = GIS_PATH
+    fallback = Path.home() / ".eidosian" / "gis_data.local.json"
+    fallback.parent.mkdir(parents=True, exist_ok=True)
+    if not fallback.exists():
+        fallback.write_text(json.dumps({}, indent=2), encoding="utf-8")
+
+    candidates = [primary, fallback] if _looks_like_lfs_pointer(primary) else [primary, fallback]
+    for candidate in candidates:
+        try:
+            return GisCore(persistence_path=candidate)
+        except Exception:
+            continue
+    return None
+
+
+gis = _init_gis()
 
 ensure_forge_import("audit_forge")
 AuditForge = _import_symbol("audit_forge.audit_core", "AuditForge")

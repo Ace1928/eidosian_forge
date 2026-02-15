@@ -1,13 +1,19 @@
 import os
+import sys
 import subprocess
 import shutil
 from pathlib import Path
 import tempfile
+
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parent.parent))).resolve()
+LIB_PATH = FORGE_ROOT / "lib"
+if LIB_PATH.exists():
+    sys.path.insert(0, str(LIB_PATH))
+
 from eidosian_core import eidosian
 
 # Configuration
 GITHUB_USER = "Ace1928"
-FORGE_ROOT = Path("/home/lloyd/eidosian_forge")
 IGNORE_PATTERNS = shutil.ignore_patterns(".git", "__pycache__", ".venv", "venv", "*.pyc")
 
 @eidosian()

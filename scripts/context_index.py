@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a high-level index + catalog reference for /home/lloyd."""
+"""Generate a high-level index + catalog reference for the current user home."""
 
 import argparse
 import grp

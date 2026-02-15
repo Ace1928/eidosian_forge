@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 #!/usr/bin/env python3
 """
 Port Audit Script for Eidosian Forge.
@@ -8,11 +7,18 @@ Start: 8928
 Multiples of 2 (8928, 8930, 8932...)
 """
 
-import os
 import sys
-import json
 import socket
 from pathlib import Path
+import os
+
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parent.parent))).resolve()
+for extra in (FORGE_DIR / "lib", FORGE_DIR):
+    extra_str = str(extra)
+    if extra.exists() and extra_str not in sys.path:
+        sys.path.insert(0, extra_str)
+
+from eidosian_core import eidosian
 
 # Convention
 START_PORT = 8928
@@ -27,14 +33,14 @@ def check_port_open(port: int) -> bool:
 
 @eidosian()
 def audit_configs():
-    forge_dir = Path("/home/lloyd/eidosian_forge")
+    forge_dir = FORGE_DIR
     configs = []
     
     # Check known config locations
     locations = [
         forge_dir / "eidos_mcp" / "src" / "eidos_mcp" / "core.py",
         forge_dir / "gis_forge" / "gis_data.json",
-        Path("/home/lloyd/.gemini/GEMINI.md"), # Sometimes configs are documented
+        Path.home() / ".gemini" / "GEMINI.md", # Sometimes configs are documented
     ]
     
     print("--- Configuration Audit ---")

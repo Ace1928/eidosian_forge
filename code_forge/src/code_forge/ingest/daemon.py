@@ -11,8 +11,9 @@ from pathlib import Path
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 
-DEFAULT_DB_PATH = Path("/home/lloyd/eidosian_forge/data/code_forge/library.sqlite")
-DEFAULT_RUNS_DIR = Path("/home/lloyd/eidosian_forge/data/code_forge/ingestion_runs")
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
+DEFAULT_DB_PATH = FORGE_ROOT / "data" / "code_forge" / "library.sqlite"
+DEFAULT_RUNS_DIR = FORGE_ROOT / "data" / "code_forge" / "ingestion_runs"
 LATEST_RUN_PATH = DEFAULT_RUNS_DIR / "latest_run.json"
 
 

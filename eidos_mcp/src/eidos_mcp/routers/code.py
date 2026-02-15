@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from ..core import tool
+from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 
 ensure_forge_import("code_forge")
@@ -25,7 +26,7 @@ except ImportError:
     CodeIndexer = None
     CodeAnalyzer = None
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
 # Lazy-loaded instances
 _indexer = None

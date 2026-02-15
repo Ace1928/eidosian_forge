@@ -16,7 +16,7 @@ from pathlib import Path
 from eidosian_core import eidosian
 
 # Setup paths and imports
-BASE_DIR = Path(__file__).resolve().parent.parent.parent # /home/lloyd
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR / "eidosian_forge"))
 
 try:

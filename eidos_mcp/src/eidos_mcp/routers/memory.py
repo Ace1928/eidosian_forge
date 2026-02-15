@@ -6,6 +6,7 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
+from .. import FORGE_ROOT
 from eidosian_core import eidosian
 from ..core import tool
 from ..transactions import (
@@ -25,7 +26,7 @@ except Exception:  # pragma: no cover - fallback for missing deps
     MemoryForge = None
 
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 MEMORY_PATH = Path(os.environ.get("EIDOS_MEMORY_PATH", FORGE_DIR / "memory_data.json"))
 
 _embedder = SimpleEmbedder()

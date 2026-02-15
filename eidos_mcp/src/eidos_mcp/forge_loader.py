@@ -5,10 +5,11 @@ import os
 import sys
 from pathlib import Path
 from typing import Iterable
+from . import FORGE_ROOT
 from eidosian_core import eidosian
 
 
-_FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge")).resolve()
+_FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
 
 def _ensure_forge_subdir(module_name: str) -> None:

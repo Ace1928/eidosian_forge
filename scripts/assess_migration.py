@@ -3,7 +3,7 @@ from eidosian_core import eidosian
 """
 Migration Assessment Tool.
 
-Analyzes a directory in /home/lloyd/Development and scores it for
+Analyzes a candidate development directory and scores it for
 integration into eidosian_forge.
 """
 

@@ -17,6 +17,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 import subprocess
 import sys
@@ -445,12 +447,18 @@ class EidosianCLI:
             "knowledge_nodes": 0,
             "code_elements": 0,
         }
+
+        # Preload all forge src paths so cross-forge imports resolve consistently.
+        for info in FORGE_REGISTRY.values():
+            forge_src = str(info["path"])
+            if forge_src not in sys.path:
+                sys.path.insert(0, forge_src)
         
         # Check each forge
         for name, info in FORGE_REGISTRY.items():
             try:
-                sys.path.insert(0, str(info["path"]))
-                mod = __import__(info["module"], fromlist=["*"])
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    mod = __import__(info["module"], fromlist=["*"])
                 
                 # Check CLI type and set status
                 if info.get("typer") or info.get("argparse"):
@@ -462,11 +470,12 @@ class EidosianCLI:
                     }
                 elif info.get("class"):
                     # StandardCLI-based
-                    cli_class = getattr(mod, info["class"])
-                    cli = cli_class()
-                    
-                    # Get status
-                    result = cli.cmd_status(argparse.Namespace(json=False, no_color=True, quiet=True))
+                    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        cli_class = getattr(mod, info["class"])
+                        cli = cli_class()
+                        
+                        # Get status
+                        result = cli.cmd_status(argparse.Namespace(json=False, no_color=True, quiet=True))
                     status["forges"][name] = {
                         "available": True,
                         "status": "operational" if result.success else "error",
@@ -489,9 +498,10 @@ class EidosianCLI:
         # Check MCP tools
         try:
             sys.path.insert(0, str(FORGE_ROOT / "eidos_mcp" / "src"))
-            from eidos_mcp import EidosMCPServer
-            server = EidosMCPServer()
-            status["mcp_tools"] = len(server._mcp.list_tools())
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                import eidos_mcp.eidos_mcp_server  # noqa: F401
+                from eidos_mcp.core import list_tool_metadata
+                status["mcp_tools"] = len(list_tool_metadata())
         except Exception:
             pass
         

@@ -29,9 +29,11 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from functools import lru_cache
+import os
+from .. import FORGE_ROOT
 
 # Configuration paths
-CONFIG_DIR = Path("/home/lloyd/eidosian_forge/data")
+CONFIG_DIR = Path(os.environ.get("EIDOS_MODEL_CONFIG_DIR", str(FORGE_ROOT / "data"))).resolve()
 CONFIG_FILE = CONFIG_DIR / "model_config.json"
 
 

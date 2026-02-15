@@ -12,6 +12,7 @@ from eidosian_core import eidosian
 
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -19,9 +20,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
+
 # Default paths
-DEFAULT_MEMORY_DIR = Path("/home/lloyd/eidosian_forge/data/memory")
-DEFAULT_KB_PATH = Path("/home/lloyd/eidosian_forge/data/kb.json")
+DEFAULT_MEMORY_DIR = FORGE_ROOT / "data" / "memory"
+DEFAULT_KB_PATH = FORGE_ROOT / "data" / "kb.json"
 
 
 @dataclass

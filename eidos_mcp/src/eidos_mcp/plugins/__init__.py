@@ -30,13 +30,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 from functools import wraps
+from .. import FORGE_ROOT
 
 logger = logging.getLogger("eidos.plugins")
 
 # Plugin directories
 PLUGIN_DIRS = [
     Path(__file__).parent,  # This is eidos_mcp/plugins itself
-    Path(os.environ.get("EIDOS_PLUGIN_DIR", "/home/lloyd/eidosian_forge/plugins")),
+    Path(os.environ.get("EIDOS_PLUGIN_DIR", str(FORGE_ROOT / "plugins"))),
 ]
 
 # Plugin registry

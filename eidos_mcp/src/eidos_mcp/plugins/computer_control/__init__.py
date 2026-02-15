@@ -14,10 +14,17 @@ import sys
 import subprocess
 import json
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Any, Optional, List
 
+FORGE_ROOT = Path(
+    os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))
+).resolve()
+
 # Add computer_control_forge to path
-sys.path.insert(0, '/home/lloyd/eidosian_forge/computer_control_forge/src')
+COMPUTER_CONTROL_SRC = FORGE_ROOT / "computer_control_forge" / "src"
+if COMPUTER_CONTROL_SRC.exists():
+    sys.path.insert(0, str(COMPUTER_CONTROL_SRC))
 
 PLUGIN_MANIFEST = {
     "name": "computer_control",

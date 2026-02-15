@@ -1,4 +1,3 @@
-from eidosian_core import eidosian
 """
 Orchestration script to initialize Eidosian Foundation forges.
 """
@@ -6,9 +5,13 @@ import sys
 import os
 from pathlib import Path
 
-# Add eidosian_forge to path
-sys.path.append(str(Path(__file__).parent.parent / "eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parent.parent))).resolve()
+for extra in (FORGE_DIR / "lib", FORGE_DIR):
+    extra_str = str(extra)
+    if extra.exists() and extra_str not in sys.path:
+        sys.path.insert(0, extra_str)
 
+from eidosian_core import eidosian
 from gis_forge import GisCore
 from diagnostics_forge import DiagnosticsForge
 from type_forge import TypeCore
@@ -27,8 +30,7 @@ from agent_forge import AgentForge
 @eidosian()
 def bootstrap():
     print("🚀 Initializing Eidosian Foundation...")
-    HOME_DIR = Path("/home/lloyd")
-    FORGE_DIR = HOME_DIR / "eidosian_forge"
+    home_dir = FORGE_DIR.parent
     
     # 1. Initialize GIS with persistence
     gis = GisCore(persistence_path=FORGE_DIR / "gis_data.json")
@@ -53,8 +55,8 @@ def bootstrap():
     refactor = RefactorForge()
     crawl = CrawlForge()
     figlet = FigletForge()
-    file_f = FileForge(base_path=HOME_DIR)
-    doc = DocForge(base_path=HOME_DIR)
+    file_f = FileForge(base_path=home_dir)
+    doc = DocForge(base_path=home_dir)
     agent = AgentForge(llm=llm)
     
     diag.log_event("INFO", "All Forges initialized with persistent state")

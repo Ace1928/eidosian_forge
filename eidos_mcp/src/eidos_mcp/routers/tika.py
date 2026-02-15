@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from ..core import tool
+from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 
 TIKA_AVAILABLE: bool | None = None
@@ -25,7 +26,7 @@ try:
 except ImportError:
     KnowledgeForge = None
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 TIKA_CACHE_DIR = Path(
     os.environ.get("EIDOS_TIKA_CACHE_DIR", Path.home() / ".eidosian" / "tika_cache")
 )

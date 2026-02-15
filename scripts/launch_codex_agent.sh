@@ -9,10 +9,17 @@ else
   query="$1"
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FORGE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ROOT_DIR="$(cd "${FORGE_ROOT}/.." && pwd)"
+
 # 🔄 Eidosian Nexus: Dynamic Persona Injection
 # Attempt to fetch the living persona from the MCP server
-PYTHON_BIN="/home/lloyd/eidosian_venv/bin/python3"
-FETCHER="/home/lloyd/eidosian_forge/eidos_mcp/eidos_fetch.py"
+PYTHON_BIN="${EIDOS_PYTHON_BIN:-${FORGE_ROOT}/eidosian_venv/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3 || command -v python)"
+fi
+FETCHER="${FORGE_ROOT}/eidos_mcp/eidos_fetch.py"
 PERSONA_TEXT=""
 
 if [[ -f "$FETCHER" && -x "$PYTHON_BIN" ]]; then
@@ -28,7 +35,13 @@ fi
 # Fallback to static file if Nexus is unreachable
 if [[ -z "$PERSONA_TEXT" ]]; then
     echo "⚠️  Nexus unreachable. Falling back to static GEMINI.md" >&2
-    PERSONA_TEXT=$(cat /home/lloyd/GEMINI.md)
+    if [[ -f "${ROOT_DIR}/GEMINI.md" ]]; then
+      PERSONA_TEXT=$(cat "${ROOT_DIR}/GEMINI.md")
+    elif [[ -f "${FORGE_ROOT}/GEMINI.md" ]]; then
+      PERSONA_TEXT=$(cat "${FORGE_ROOT}/GEMINI.md")
+    else
+      PERSONA_TEXT="EIDOSIAN SYSTEM CONTEXT"
+    fi
 else
     echo "💎 Eidosian Nexus Connected. Persona loaded." >&2
 fi

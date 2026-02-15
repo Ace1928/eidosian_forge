@@ -9,9 +9,10 @@ import httpx
 from eidosian_core import eidosian
 
 from ..core import tool
+from .. import FORGE_ROOT
 
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 DEFAULT_BASE_URL = "https://www.moltbook.com/api/v1"
 MOLTBOOK_TIMEOUT_SEC = float(os.environ.get("MOLTBOOK_TIMEOUT_SEC", "8.0"))
 

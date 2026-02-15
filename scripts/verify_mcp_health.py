@@ -1,17 +1,23 @@
 import asyncio
 import sys
 import os
-from eidosian_core import eidosian
+from pathlib import Path
 
-# Ensure we can find the mcp package
-sys.path.append(os.path.join(os.environ["HOME"], "eidosian_forge", "eidosian_venv", "lib", "python3.12", "site-packages"))
+# Ensure local repo modules are available when not installed globally.
+FORGE_ROOT = Path(__file__).resolve().parent.parent
+for extra_path in (FORGE_ROOT / "lib", FORGE_ROOT / "eidos_mcp" / "src", FORGE_ROOT):
+    str_path = str(extra_path)
+    if extra_path.exists() and str_path not in sys.path:
+        sys.path.insert(0, str_path)
+
+from eidosian_core import eidosian
 
 from mcp.client.sse import sse_client
 from mcp.client.session import ClientSession
 
 @eidosian()
 async def check_health():
-    url = "http://127.0.0.1:8928/sse"
+    url = os.environ.get("EIDOS_MCP_HEALTH_URL", "http://127.0.0.1:8928/sse")
     print(f"Attempting to connect to {url}...")
     try:
         async with sse_client(url) as (read, write):

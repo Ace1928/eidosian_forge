@@ -17,6 +17,7 @@ Enhanced with other forges:
 from __future__ import annotations
 from eidosian_core import eidosian
 
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -29,7 +30,8 @@ from cli import StandardCLI, CommandResult, ForgeDetector
 from knowledge_forge import KnowledgeForge, KnowledgeMemoryBridge
 
 # Default paths
-DEFAULT_KB_PATH = Path("/home/lloyd/eidosian_forge/data/kb.json")
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
+DEFAULT_KB_PATH = FORGE_ROOT / "data" / "kb.json"
 
 
 class KnowledgeForgeCLI(StandardCLI):

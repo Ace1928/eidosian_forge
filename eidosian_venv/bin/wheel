@@ -1,4 +1,4 @@
-#!/home/lloyd/eidosian_forge/eidosian_venv/bin/python3
+#!/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

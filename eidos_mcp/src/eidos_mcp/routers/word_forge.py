@@ -17,8 +17,9 @@ from typing import Optional, List, Dict, Any
 import networkx as nx
 
 from ..core import tool
+from .. import FORGE_ROOT
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 SEMANTIC_GRAPH_PATH = FORGE_DIR / "data" / "eidos_semantic_graph.json"
 
 # Simple in-memory graph
@@ -468,4 +469,3 @@ def wf_build_from_text(text: str, min_word_length: int = 4) -> str:
         "total_nodes": graph.number_of_nodes(),
         "total_edges": graph.number_of_edges(),
     }, indent=2)
-

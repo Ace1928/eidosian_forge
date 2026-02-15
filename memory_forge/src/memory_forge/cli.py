@@ -18,6 +18,7 @@ Enhanced with other forges:
 from __future__ import annotations
 from eidosian_core import eidosian
 
+import os
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -38,7 +39,8 @@ from memory_forge import (
 from memory_forge.core.interfaces import MemoryType
 
 # Default paths
-DEFAULT_MEMORY_DIR = Path("/home/lloyd/eidosian_forge/data/memory")
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
+DEFAULT_MEMORY_DIR = FORGE_ROOT / "data" / "memory"
 
 
 class MemoryForgeCLI(StandardCLI):

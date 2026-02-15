@@ -10,6 +10,7 @@ from eidosian_core import eidosian
 import hashlib
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,8 @@ from typing import Any, Dict, List, Optional, Set
 from .python_analyzer import CodeAnalyzer
 
 logger = logging.getLogger(__name__)
+
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
 
 
 @dataclass
@@ -70,7 +73,7 @@ class CodeIndexer:
     
     def __init__(self, index_path: Optional[Path] = None):
         self.analyzer = CodeAnalyzer()
-        self.index_path = index_path or Path("/home/lloyd/eidosian_forge/data/code_index.json")
+        self.index_path = index_path or (FORGE_ROOT / "data" / "code_index.json")
         self.elements: Dict[str, CodeElement] = {}
         self._knowledge_forge = None
         
@@ -82,7 +85,7 @@ class CodeIndexer:
         if self._knowledge_forge is None:
             try:
                 from knowledge_forge import KnowledgeForge
-                kb_path = Path("/home/lloyd/eidosian_forge/data/kb.json")
+                kb_path = FORGE_ROOT / "data" / "kb.json"
                 self._knowledge_forge = KnowledgeForge(persistence_path=kb_path)
             except ImportError as e:
                 logger.warning(f"Could not import KnowledgeForge: {e}")
@@ -301,7 +304,7 @@ class CodeIndexer:
 def index_forge_codebase() -> Dict[str, int]:
     """Index the entire eidosian_forge codebase."""
     indexer = CodeIndexer()
-    forge_root = Path("/home/lloyd/eidosian_forge")
+    forge_root = FORGE_ROOT
     
     stats = indexer.index_directory(
         forge_root,

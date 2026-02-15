@@ -60,6 +60,12 @@ lib/*
 !lib/tests/
 !lib/tests/**
 lib64/
+!lib/
+lib/*
+!lib/eidosian_core/
+!lib/eidosian_core/**
+!lib/cli.py
+lib/**/__pycache__/
 parts/
 sdist/
 var/

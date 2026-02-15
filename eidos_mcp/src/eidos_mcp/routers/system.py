@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from eidosian_core import eidosian
+from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 from ..transactions import (
     begin_transaction,
@@ -31,9 +32,9 @@ from ..core import tool
 diag = DiagnosticsForge(service_name="mcp_system")
 file_forge = FileForge()
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 _DEFAULT_ALLOWED = [
-    Path("/home/lloyd"),
+    Path.home(),
     Path("/tmp"),
     FORGE_DIR,
 ]

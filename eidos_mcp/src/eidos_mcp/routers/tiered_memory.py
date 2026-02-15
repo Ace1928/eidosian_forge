@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from ..core import tool
+from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 
 ensure_forge_import("memory_forge")
@@ -37,7 +38,7 @@ except ImportError:
     MemoryTier = None
     MemoryNamespace = None
 
-FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", "/home/lloyd/eidosian_forge"))
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 TIERED_MEMORY_DIR = Path(
     os.environ.get("EIDOS_TIERED_MEMORY_DIR", FORGE_DIR / "data" / "tiered_memory")
 )

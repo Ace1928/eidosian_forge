@@ -13,9 +13,11 @@ from __future__ import annotations
 from eidosian_core import eidosian
 
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Set, Tuple
 
 from .interfaces import MemoryItem
@@ -27,6 +29,8 @@ from .tiered_memory import (
 )
 
 logger = logging.getLogger(__name__)
+
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
 
 
 class EmbedderProtocol(Protocol):
@@ -424,7 +428,7 @@ class AutoContextEngine:
 @eidosian()
 def get_auto_context(
     prompt: str,
-    persistence_dir: str = "/home/lloyd/eidosian_forge/data/memory",
+    persistence_dir: str | None = None,
     max_suggestions: int = 5,
 ) -> List[ContextSuggestion]:
     """
@@ -435,8 +439,7 @@ def get_auto_context(
         for s in suggestions:
             print(f"- {s.memory.content[:100]}... (score: {s.relevance_score})")
     """
-    from pathlib import Path
-    
-    memory_system = TieredMemorySystem(persistence_dir=Path(persistence_dir))
+    memory_path = Path(persistence_dir) if persistence_dir else (FORGE_ROOT / "data" / "memory")
+    memory_system = TieredMemorySystem(persistence_dir=memory_path)
     engine = AutoContextEngine(memory_system)
     return engine.suggest_context(prompt, max_suggestions=max_suggestions)

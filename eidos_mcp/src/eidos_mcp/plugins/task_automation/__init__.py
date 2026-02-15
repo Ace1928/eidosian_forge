@@ -22,6 +22,10 @@ from pathlib import Path
 from queue import Queue, Empty
 from typing import Any, Callable, Dict, List, Optional
 
+FORGE_ROOT = Path(
+    os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))
+).resolve()
+
 PLUGIN_MANIFEST = {
     "id": "task_automation",
     "name": "Task Automation",
@@ -39,7 +43,7 @@ PLUGIN_MANIFEST = {
 }
 
 # Task storage
-TASK_DIR = Path("/home/lloyd/eidosian_forge/data/tasks")
+TASK_DIR = Path(os.environ.get("EIDOS_TASK_DIR", str(FORGE_ROOT / "data" / "tasks"))).resolve()
 TASK_DIR.mkdir(parents=True, exist_ok=True)
 
 # In-memory task queue
