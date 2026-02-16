@@ -1,34 +1,3 @@
-{
-  "generated_at": "2026-02-16T05:11:28Z",
-  "window_days": 30,
-  "counts": {
-    "core_benchmarks": 2,
-    "integrated_benchmarks": 1,
-    "trials": 4,
-    "mcp_audits": 16
-  },
-  "core_benchmark": {
-    "mean_composite": 0.338946,
-    "latest_composite": 0.366268,
-    "latest_id": "benchmark_20260216_040344_30079123",
-    "gate_pass_rate": 0.0
-  },
-  "integrated_benchmark": {
-    "mean_integrated": 0.227878,
-    "latest_integrated": 0.227878,
-    "latest_delta": 0.0,
-    "latest_id": "integrated_20260216_040430_8bba4c5e",
-    "gate_pass_rate": 0.0
-  },
-  "trials": {
-    "mean_rci_delta": 0.019698,
-    "positive_rci_delta_rate": 0.75,
-    "latest_id": "trial_20260216_040435_708691d9"
-  },
-  "mcp_audit": {
-    "hard_fail_free_rate": 0.875,
-    "latest_tool_hard_fail": 0,
-    "latest_resource_hard_fail": 0,
-    "latest_report": "/data/data/com.termux/files/home/eidosian_forge/reports/mcp_audit_20260216_043002.json"
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:3ededa4d2acffe29bffbed36f8b3e56ae6cd2b9382eaf3dc3a84169af0e35a1c
+size 935
