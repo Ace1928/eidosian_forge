@@ -89,6 +89,10 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 - Files: `agent_forge/tests/test_consciousness_integrated_benchmark.py`
 - Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
 - Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
+6. Add automated Linux parity benchmark trend job.
+- Files: `.github/workflows/consciousness-parity.yml`
+- Files: `scripts/consciousness_benchmark_trend.py`
+- Files: `scripts/tests/test_consciousness_benchmark_trend.py`
 
 ## Validation Commands
 

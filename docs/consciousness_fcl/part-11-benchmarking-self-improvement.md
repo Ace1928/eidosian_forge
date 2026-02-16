@@ -49,6 +49,17 @@ Provide objective, repeatable measurements for capability growth, runtime perfor
   - `human_eval`
 - Normalized against documented targets and included in composite score.
 
+5. Automated parity benchmark trend publishing:
+- Workflow: `.github/workflows/consciousness-parity.yml`
+- Schedule: daily at `02:17 UTC` (`cron: 17 2 * * *`)
+- Trend script: `scripts/consciousness_benchmark_trend.py`
+- CI artifacts include:
+  - core benchmark reports
+  - integrated benchmark reports
+  - trial reports
+  - MCP audit reports
+  - trend JSON/Markdown summaries
+
 ## Usage
 
 ```bash
@@ -73,6 +84,14 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
   --json
 ```
 
+```bash
+./eidosian_venv/bin/python scripts/consciousness_benchmark_trend.py \
+  --reports-root reports \
+  --window-days 30 \
+  --output-json reports/consciousness_trends/latest_trend.json \
+  --output-md reports/consciousness_trends/latest_trend.md
+```
+
 ## Acceptance Criteria
 
 1. Benchmark run emits a `benchmark.run` event with score and gate payload.
@@ -80,3 +99,4 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
 3. Latest benchmark can be retrieved via CLI and MCP.
 4. Baseline delta and non-regression gate are populated when baseline is available.
 5. Integrated benchmark persists to `reports/consciousness_integrated_benchmarks/` and emits `benchmark.integrated`.
+6. CI generates trend artifacts (`reports/consciousness_trends/latest_trend.{json,md}`) on push and schedule.

@@ -73,7 +73,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add defensive filesystem handling for Android/Termux constraints.~~
 - [x] ~~Add robust URL/TLS fallback handling for Termux Tika URL ingestion paths.~~
 - [x] ~~Add Linux parity smoke script and CI workflow (`scripts/linux_parity_smoke.sh`, `.github/workflows/consciousness-parity.yml`).~~
-- [ ] Verify parity behavior in Linux runner.
+- [x] ~~Verify parity behavior in Linux runner.~~
 
 ## Phase 9: Documentation and Operations
 
@@ -93,4 +93,4 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add baseline comparison and non-regression gates.~~
 - [x] ~~Add optional external benchmark score ingestion + normalization.~~
 - [x] ~~Add integrated stack benchmark (kernel + trials + optional MCP + optional local LLM) with persisted reports and baseline delta.~~
-- [ ] Add automated Linux parity benchmark job and publish trend reports.
+- [x] ~~Add automated Linux parity benchmark job and publish trend reports.~~

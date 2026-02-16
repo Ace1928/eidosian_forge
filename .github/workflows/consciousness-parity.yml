@@ -9,8 +9,12 @@ on:
       - "eidos_mcp/src/eidos_mcp/routers/consciousness.py"
       - "crawl_forge/src/crawl_forge/tika_extractor.py"
       - "scripts/linux_parity_smoke.sh"
+      - "scripts/consciousness_benchmark_trend.py"
+      - "scripts/tests/test_consciousness_benchmark_trend.py"
       - "docs/consciousness_fcl/**"
       - ".github/workflows/consciousness-parity.yml"
+  schedule:
+    - cron: "17 2 * * *"
   workflow_dispatch:
 
 permissions:
@@ -45,3 +49,44 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: |
           bash scripts/linux_parity_smoke.sh
+
+      - name: Run Consciousness Benchmarks (CI Baseline)
+        env:
+          PYTHONUNBUFFERED: "1"
+          PYTHONPATH: ${{ github.workspace }}/lib:${{ github.workspace }}/agent_forge/src:${{ github.workspace }}/eidos_mcp/src:${{ github.workspace }}/crawl_forge/src
+        run: |
+          python agent_forge/bin/eidctl consciousness benchmark \
+            --dir state \
+            --ticks 8 \
+            --json > /tmp/consciousness_benchmark_ci.json
+
+          python agent_forge/bin/eidctl consciousness full-benchmark \
+            --dir state \
+            --rounds 1 \
+            --bench-ticks 3 \
+            --trial-ticks 2 \
+            --skip-llm \
+            --json > /tmp/consciousness_full_benchmark_ci.json
+
+      - name: Generate Consciousness Trend Reports
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python scripts/consciousness_benchmark_trend.py \
+            --reports-root reports \
+            --window-days 30 \
+            --output-json reports/consciousness_trends/latest_trend.json \
+            --output-md reports/consciousness_trends/latest_trend.md
+
+      - name: Upload Consciousness Trend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: consciousness-parity-trend-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/consciousness_benchmarks/*.json
+            reports/consciousness_integrated_benchmarks/*.json
+            reports/consciousness_trials/*.json
+            reports/consciousness_trends/*.json
+            reports/consciousness_trends/*.md
+            reports/mcp_audit_*.json
