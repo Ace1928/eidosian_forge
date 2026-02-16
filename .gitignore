@@ -127,6 +127,8 @@ LOG.md
 data/moltbook/
 # Eidos MCP screenshots
 eidos_mcp/*.png
+# Local backup snapshots (keep out of repo)
+Backups/
 
 # Local SDKs / environments
 eidosian_venv/
