@@ -169,6 +169,7 @@ class ConsciousnessBenchmarkSuite:
         rci = response_complexity(recent[-300:])
         memory_status = _latest_event_data(recent, "memory_bridge.status") or {}
         knowledge_status = _latest_event_data(recent, "knowledge_bridge.status") or {}
+        phenom = _latest_event_data(recent, "phenom.snapshot") or {}
 
         perf = {
             "ticks": ticks,
@@ -188,6 +189,13 @@ class ConsciousnessBenchmarkSuite:
             "prediction_error": _latest_metric(recent, "consciousness.world.prediction_error"),
             "meta_confidence": _latest_metric(recent, "consciousness.meta.confidence"),
             "report_groundedness": _latest_metric(recent, "consciousness.report.groundedness"),
+            "phenom_unity_index": _safe_float(phenom.get("unity_index"), default=0.0),
+            "phenom_continuity_index": _safe_float(phenom.get("continuity_index"), default=0.0),
+            "phenom_ownership_index": _safe_float(phenom.get("ownership_index"), default=0.0),
+            "phenom_perspective_coherence_index": _safe_float(
+                phenom.get("perspective_coherence_index"), default=0.0
+            ),
+            "phenom_dream_likeness_index": _safe_float(phenom.get("dream_likeness_index"), default=0.0),
             "memory_recalls": _latest_metric(recent, "consciousness.memory_bridge.recalls"),
             "knowledge_hits": _latest_metric(recent, "consciousness.knowledge_bridge.total_hits"),
             "memory_bridge_available": memory_status.get("available"),
@@ -216,6 +224,11 @@ class ConsciousnessBenchmarkSuite:
             + 0.12 * _safe_float(capability.get("report_groundedness"))
             + 0.08 * memory_recall_norm
             + 0.07 * knowledge_hits_norm
+            + 0.05 * _safe_float(capability.get("phenom_unity_index"))
+            + 0.04 * _safe_float(capability.get("phenom_continuity_index"))
+            + 0.04 * _safe_float(capability.get("phenom_ownership_index"))
+            + 0.03 * _safe_float(capability.get("phenom_perspective_coherence_index"))
+            - 0.02 * _safe_float(capability.get("phenom_dream_likeness_index"))
         )
         perf_index = 1.0 / max(1.0, perf["tick_latency_ms_p95"] / 10.0)
 

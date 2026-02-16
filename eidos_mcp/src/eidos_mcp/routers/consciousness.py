@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import tempfile
 from pathlib import Path
+from contextlib import contextmanager
 from typing import Optional
 
 from eidosian_core import eidosian
@@ -60,6 +63,20 @@ def _full_bench(state_dir: Optional[str] = None) -> Optional[IntegratedStackBenc
     if IntegratedStackBenchmark is None:
         return None
     return IntegratedStackBenchmark(_state_dir(state_dir))
+
+
+@contextmanager
+def _transient_state_dir(state_dir: Optional[str], persist: bool):
+    if state_dir or persist:
+        yield _state_dir(state_dir)
+        return
+    root = (_state_dir(None) / "_scratch").resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix="consciousness-bench-", dir=str(root))).resolve()
+    try:
+        yield scratch
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def _bridge_status_payload(state_dir: Optional[str] = None) -> dict[str, object]:
@@ -335,18 +352,19 @@ def consciousness_kernel_benchmark(
     external_scores: Optional[dict[str, float]] = None,
     external_sources: Optional[dict[str, str]] = None,
 ) -> str:
-    bench = _bench(state_dir)
-    if bench is None or ConsciousnessKernel is None:
-        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
-    kernel = ConsciousnessKernel(_state_dir(state_dir))
-    result = bench.run(
-        kernel=kernel,
-        ticks=max(1, int(ticks)),
-        persist=bool(persist),
-        external_scores=external_scores or {},
-        external_sources=external_sources or {},
-    )
-    return json.dumps(result.report, indent=2)
+    with _transient_state_dir(state_dir, bool(persist)) as run_state_dir:
+        bench = _bench(str(run_state_dir))
+        if bench is None or ConsciousnessKernel is None:
+            return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+        kernel = ConsciousnessKernel(run_state_dir)
+        result = bench.run(
+            kernel=kernel,
+            ticks=max(1, int(ticks)),
+            persist=bool(persist),
+            external_scores=external_scores or {},
+            external_sources=external_sources or {},
+        )
+        return json.dumps(result.report, indent=2)
 
 
 @tool(
@@ -402,21 +420,22 @@ def consciousness_kernel_full_benchmark(
     ollama_endpoint: str = "http://127.0.0.1:11434",
     timeout_sec: float = 45.0,
 ) -> str:
-    full = _full_bench(state_dir)
-    if full is None:
-        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
-    result = full.run(
-        rounds=max(1, int(rounds)),
-        bench_ticks=max(1, int(bench_ticks)),
-        trial_ticks=max(1, int(trial_ticks)),
-        run_mcp=bool(run_mcp),
-        run_llm=bool(run_llm),
-        persist=bool(persist),
-        llm_model=llm_model,
-        ollama_endpoint=ollama_endpoint,
-        timeout_sec=max(1.0, float(timeout_sec)),
-    )
-    return json.dumps(result.report, indent=2)
+    with _transient_state_dir(state_dir, bool(persist)) as run_state_dir:
+        full = _full_bench(str(run_state_dir))
+        if full is None:
+            return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+        result = full.run(
+            rounds=max(1, int(rounds)),
+            bench_ticks=max(1, int(bench_ticks)),
+            trial_ticks=max(1, int(trial_ticks)),
+            run_mcp=bool(run_mcp),
+            run_llm=bool(run_llm),
+            persist=bool(persist),
+            llm_model=llm_model,
+            ollama_endpoint=ollama_endpoint,
+            timeout_sec=max(1.0, float(timeout_sec)),
+        )
+        return json.dumps(result.report, indent=2)
 
 
 @tool(

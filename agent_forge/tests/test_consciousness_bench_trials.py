@@ -65,3 +65,5 @@ def test_trial_spec_hash_is_stable_and_no_persist_mode(tmp_path: Path) -> None:
     result = runner.run_trial(spec, persist=False)
     assert result.output_dir is None
     assert result.report.get("spec_hash") == h1
+    assert "phenomenology" in (result.report.get("before") or {})
+    assert "phenomenology" in (result.report.get("after") or {})

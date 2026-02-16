@@ -56,6 +56,15 @@ def _latest_metric(items: list[dict[str, Any]], key: str) -> Optional[float]:
     return None
 
 
+def _latest_event_data(items: list[dict[str, Any]], etype: str) -> dict[str, Any]:
+    for evt in reversed(items):
+        if str(evt.get("type") or "") != etype:
+            continue
+        data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+        return dict(data)
+    return {}
+
+
 @dataclass
 class TrialSpec:
     name: str = "default"
@@ -109,6 +118,7 @@ class ConsciousnessBenchRunner:
         conn = effective_connectivity(recent_events[-500:])
         dirn = directionality_asymmetry(recent_events[-500:])
         stab = self_stability(recent_events[-500:])
+        phenom = _latest_event_data(recent_events, "phenom.snapshot")
         return {
             "workspace": ws,
             "coherence_ratio": float(coh.get("coherence_ratio") or 0.0),
@@ -117,6 +127,7 @@ class ConsciousnessBenchRunner:
             "connectivity": conn,
             "directionality": dirn,
             "self_stability": stab,
+            "phenomenology": phenom,
             "agency": _latest_metric(recent_events, "consciousness.agency"),
             "boundary_stability": _latest_metric(recent_events, "consciousness.boundary_stability"),
             "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),

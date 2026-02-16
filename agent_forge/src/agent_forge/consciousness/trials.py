@@ -64,15 +64,28 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
     rci = response_complexity(recent_events[-250:])
     memory_status = _latest_event_data(recent_events, "memory_bridge.status") or {}
     knowledge_status = _latest_event_data(recent_events, "knowledge_bridge.status") or {}
+    phenom = _latest_event_data(recent_events, "phenom.snapshot") or {}
     return {
         "workspace": ws,
         "coherence": coherence,
         "rci": rci,
+        "phenomenology": phenom,
         "agency": _latest_metric(recent_events, "consciousness.agency"),
         "boundary_stability": _latest_metric(recent_events, "consciousness.boundary_stability"),
         "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),
         "meta_confidence": _latest_metric(recent_events, "consciousness.meta.confidence"),
         "report_groundedness": _latest_metric(recent_events, "consciousness.report.groundedness"),
+        "unity_index": _latest_metric(recent_events, "consciousness.phenom.unity_index"),
+        "continuity_index": _latest_metric(recent_events, "consciousness.phenom.continuity_index"),
+        "ownership_index": _latest_metric(recent_events, "consciousness.phenom.ownership_index"),
+        "perspective_coherence_index": _latest_metric(
+            recent_events,
+            "consciousness.phenom.perspective_coherence_index",
+        ),
+        "dream_likeness_index": _latest_metric(
+            recent_events,
+            "consciousness.phenom.dream_likeness_index",
+        ),
         "memory_recalls": _latest_metric(recent_events, "consciousness.memory_bridge.recalls"),
         "knowledge_hits": _latest_metric(recent_events, "consciousness.knowledge_bridge.total_hits"),
         "memory_bridge": {

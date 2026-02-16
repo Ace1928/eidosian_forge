@@ -17,6 +17,7 @@ from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
 from .modules.meta import MetaModule
 from .modules.policy import PolicyModule
+from .modules.phenomenology_probe import PhenomenologyProbeModule
 from .modules.report import ReportModule
 from .modules.sense import SenseModule
 from .modules.self_model_ext import SelfModelExtModule
@@ -73,6 +74,7 @@ class ConsciousnessKernel:
                 SelfModelExtModule(),
                 MetaModule(),
                 ReportModule(),
+                PhenomenologyProbeModule(),
             ]
         )
 

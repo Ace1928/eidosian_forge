@@ -25,6 +25,8 @@ def compute_trial_deltas(before: Mapping[str, Any], after: Mapping[str, Any]) ->
     a_dir = after.get("directionality") if isinstance(after.get("directionality"), Mapping) else {}
     b_stab = before.get("self_stability") if isinstance(before.get("self_stability"), Mapping) else {}
     a_stab = after.get("self_stability") if isinstance(after.get("self_stability"), Mapping) else {}
+    b_ph = before.get("phenomenology") if isinstance(before.get("phenomenology"), Mapping) else {}
+    a_ph = after.get("phenomenology") if isinstance(after.get("phenomenology"), Mapping) else {}
 
     return {
         "ignition_delta": _delta(a_ws.get("ignition_count"), b_ws.get("ignition_count")),
@@ -40,6 +42,14 @@ def compute_trial_deltas(before: Mapping[str, Any], after: Mapping[str, Any]) ->
         "workspace_centrality_delta": _delta(a_conn.get("workspace_centrality"), b_conn.get("workspace_centrality")),
         "directionality_delta": _delta(a_dir.get("mean_abs_asymmetry"), b_dir.get("mean_abs_asymmetry")),
         "self_stability_delta": _delta(a_stab.get("stability_score"), b_stab.get("stability_score")),
+        "unity_delta": _delta(a_ph.get("unity_index"), b_ph.get("unity_index")),
+        "continuity_delta": _delta(a_ph.get("continuity_index"), b_ph.get("continuity_index")),
+        "ownership_delta": _delta(a_ph.get("ownership_index"), b_ph.get("ownership_index")),
+        "perspective_coherence_delta": _delta(
+            a_ph.get("perspective_coherence_index"),
+            b_ph.get("perspective_coherence_index"),
+        ),
+        "dream_likeness_delta": _delta(a_ph.get("dream_likeness_index"), b_ph.get("dream_likeness_index")),
     }
 
 
@@ -55,4 +65,9 @@ def composite_trial_score(deltas: Mapping[str, Any]) -> float:
     score += 0.10 * _safe_float(deltas.get("agency_delta"))
     score += 0.10 * _safe_float(deltas.get("groundedness_delta"))
     score += 0.08 * _safe_float(deltas.get("self_stability_delta"))
+    score += 0.05 * _safe_float(deltas.get("unity_delta"))
+    score += 0.05 * _safe_float(deltas.get("continuity_delta"))
+    score += 0.05 * _safe_float(deltas.get("ownership_delta"))
+    score += 0.05 * _safe_float(deltas.get("perspective_coherence_delta"))
+    score -= 0.03 * _safe_float(deltas.get("dream_likeness_delta"))
     return round(float(score), 6)

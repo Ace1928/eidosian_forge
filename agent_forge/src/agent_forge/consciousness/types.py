@@ -448,6 +448,7 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
             "self_model_ext": 1,
             "meta": 2,
             "report": 2,
+            "phenomenology_probe": 3,
         },
         "disable_modules": [],
         "sense_scan_events": 220,
@@ -510,6 +511,13 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "report_emit_interval_secs": 2.0,
         "report_emit_delta_threshold": 0.08,
         "report_broadcast_min_groundedness": 0.35,
+        "phenom_scan_events": 900,
+        "phenom_window_seconds": 16.0,
+        "phenom_emit_interval_secs": 3.0,
+        "phenom_emit_delta_threshold": 0.05,
+        "phenom_unity_trace_threshold": 0.45,
+        "phenom_broadcast_enable": True,
+        "phenom_broadcast_min_confidence": 0.25,
         "consciousness_require_links": False,
     }
     for key, value in cfg.items():

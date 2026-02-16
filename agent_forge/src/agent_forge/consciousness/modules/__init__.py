@@ -5,6 +5,7 @@ from .knowledge_bridge import KnowledgeBridgeModule
 from .memory_bridge import MemoryBridgeModule
 from .meta import MetaModule
 from .policy import PolicyModule
+from .phenomenology_probe import PhenomenologyProbeModule
 from .report import ReportModule
 from .self_model_ext import SelfModelExtModule
 from .sense import SenseModule
@@ -21,6 +22,7 @@ __all__ = [
     "MemoryBridgeModule",
     "MetaModule",
     "PolicyModule",
+    "PhenomenologyProbeModule",
     "ReportModule",
     "SelfModelExtModule",
     "SenseModule",
