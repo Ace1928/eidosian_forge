@@ -37,6 +37,7 @@ def _ensure_router_tools() -> None:
     router_modules = [
         "eidos_mcp.routers.audit",
         "eidos_mcp.routers.auth",
+        "eidos_mcp.routers.consciousness",
         "eidos_mcp.routers.diagnostics",
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.knowledge",

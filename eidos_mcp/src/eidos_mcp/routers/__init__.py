@@ -18,6 +18,7 @@ prepare_forge_imports(
 )
 
 from . import audit  # noqa: E402,F401
+from . import consciousness  # noqa: E402,F401
 from . import diagnostics  # noqa: E402,F401
 from . import gis  # noqa: E402,F401
 from . import knowledge  # noqa: E402,F401
