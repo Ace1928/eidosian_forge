@@ -1,3 +1,66 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7ad0c829df9b372754f3a44c73dbc4d1c2fec481062b104c53c66fb9831c5b65
-size 3609
+{
+  "nodes": [
+    {
+      "id": "eidos"
+    },
+    {
+      "id": "forge"
+    },
+    {
+      "source": "text_extraction",
+      "id": "termux"
+    },
+    {
+      "source": "text_extraction",
+      "id": "eidosian"
+    },
+    {
+      "source": "text_extraction",
+      "id": "runs"
+    }
+  ],
+  "edges": [
+    {
+      "source": "eidos",
+      "target": "forge",
+      "type": "related_to",
+      "weight": 0.5
+    },
+    {
+      "source": "forge",
+      "target": "termux",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "runs",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "eidosian",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "termux",
+      "target": "eidosian",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "termux",
+      "target": "runs",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidosian",
+      "target": "runs",
+      "type": "co_occurrence",
+      "weight": 0.3
+    }
+  ]
+}

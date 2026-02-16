@@ -17,8 +17,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -26,8 +26,8 @@
     "id": "fd1f8db3-6af7-4ed9-9466-a37840b20e11",
     "content": "termux audit content",
     "created_at": "2026-02-16T10:26:44.298521",
-    "last_accessed": "2026-02-16T11:56:39.233565",
-    "access_count": 12,
+    "last_accessed": "2026-02-16T12:30:38.642797",
+    "access_count": 13,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -58,8 +58,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -67,8 +67,8 @@
     "id": "b9acef05-8d56-416e-af78-f9ca85be749a",
     "content": "termux audit content",
     "created_at": "2026-02-16T10:30:01.337126",
-    "last_accessed": "2026-02-16T11:56:39.233586",
-    "access_count": 11,
+    "last_accessed": "2026-02-16T12:30:38.642905",
+    "access_count": 12,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -99,8 +99,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -108,8 +108,8 @@
     "id": "f7de80f3-0b5a-42b6-8240-13aeb6eb449f",
     "content": "termux audit content",
     "created_at": "2026-02-16T10:31:00.927901",
-    "last_accessed": "2026-02-16T11:56:39.233600",
-    "access_count": 10,
+    "last_accessed": "2026-02-16T12:30:38.642990",
+    "access_count": 11,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -140,8 +140,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -149,8 +149,8 @@
     "id": "0057f3ee-c1b6-4481-9f57-884de381b70f",
     "content": "termux audit content",
     "created_at": "2026-02-16T10:32:28.838496",
-    "last_accessed": "2026-02-16T11:56:39.233612",
-    "access_count": 9,
+    "last_accessed": "2026-02-16T12:30:38.643070",
+    "access_count": 10,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -181,8 +181,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -190,8 +190,8 @@
     "id": "ad848821-a075-4a5b-af0a-baf8495478dd",
     "content": "termux audit content",
     "created_at": "2026-02-16T10:36:17.013664",
-    "last_accessed": "2026-02-16T11:56:39.233625",
-    "access_count": 8,
+    "last_accessed": "2026-02-16T12:30:38.643150",
+    "access_count": 9,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -221,13 +221,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "mcp",
-      "lesson",
       "self-improvement",
-      "pathing",
+      "termux",
       "portability",
-      "learning"
+      "learning",
+      "mcp",
+      "pathing",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -248,13 +248,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
-      "stdio",
-      "lesson",
       "self-improvement",
-      "logging",
+      "protocol",
       "learning",
-      "protocol"
+      "stdio",
+      "mcp",
+      "logging",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -275,13 +275,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "self-improvement",
+      "compatibility",
+      "learning",
+      "tiered_memory",
       "fix",
       "memory",
-      "lesson",
-      "compatibility",
-      "self-improvement",
-      "tiered_memory",
-      "learning"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -298,10 +298,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "integration",
       "termux",
-      "mcp",
       "milestone",
-      "integration"
+      "mcp"
     ],
     "linked_memories": []
   },
@@ -318,10 +318,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
+      "continuity",
       "identity",
-      "safety",
-      "continuity"
+      "workflow",
+      "safety"
     ],
     "linked_memories": []
   },
@@ -343,8 +343,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -384,8 +384,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -425,8 +425,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -466,8 +466,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -506,13 +506,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "metrics",
-      "falsifiability",
-      "consciousness_protocol",
-      "lesson",
       "self-improvement",
+      "consciousness_protocol",
       "learning",
-      "evidence"
+      "falsifiability",
+      "evidence",
+      "metrics",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -533,13 +533,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "lesson",
-      "diagnostics",
       "self-improvement",
-      "integration",
+      "registry",
+      "termux",
+      "diagnostics",
       "learning",
-      "registry"
+      "integration",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -560,13 +560,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
-      "robustness",
-      "tooling",
-      "error_handling",
-      "lesson",
       "self-improvement",
-      "learning"
+      "learning",
+      "mcp",
+      "tooling",
+      "robustness",
+      "error_handling",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -585,8 +585,8 @@
     "tags": [
       "eidos",
       "identity",
-      "self_model",
-      "operational_awareness"
+      "operational_awareness",
+      "self_model"
     ],
     "linked_memories": []
   },
@@ -608,8 +608,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -648,13 +648,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "mcp",
-      "imports",
-      "lesson",
       "self-improvement",
+      "imports",
+      "termux",
       "learning",
-      "agentforge"
+      "agentforge",
+      "mcp",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -671,10 +671,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "consciousness",
       "ignition",
+      "competition",
       "kernel",
-      "competition"
+      "consciousness"
     ],
     "linked_memories": []
   },
@@ -696,8 +696,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -737,8 +737,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -778,8 +778,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -819,8 +819,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -842,8 +842,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -865,8 +865,8 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson"
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -875,6 +875,47 @@
     "content": "Completed Milestone B/C implementation for consciousness runtime with policy/efference, agency/boundary estimation, trial runner, eidctl consciousness commands, and MCP runtime tools.",
     "created_at": "2026-02-16T12:00:31.108094",
     "last_accessed": "2026-02-16T12:00:31.108095",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "eidos",
+      "self"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e3091135-4666-4da0-9730-757b74e91aa5",
+    "content": "LESSON: lesson-value",
+    "created_at": "2026-02-16T12:30:38.672430",
+    "last_accessed": "2026-02-16T12:30:38.672443",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "lesson-value",
+      "context": null,
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "self-improvement",
+      "lesson",
+      "learning"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "84cf711b-c20f-40c0-a07b-14bfa8f210ff",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T12:30:38.703419",
+    "last_accessed": "2026-02-16T12:30:38.703425",
     "access_count": 0,
     "tier": "self",
     "namespace": "eidos",
