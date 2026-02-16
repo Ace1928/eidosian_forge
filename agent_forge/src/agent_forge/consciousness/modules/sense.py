@@ -39,6 +39,28 @@ class SenseModule:
         max_percepts = max(1, int(ctx.config.get("sense_max_percepts_per_tick", 6)))
         emit_threshold = clamp01(ctx.config.get("sense_emit_threshold"), default=0.72)
         scan_events = max(20, int(ctx.config.get("sense_scan_events", 220)))
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_floor = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
 
         state = ctx.module_state(
             self.name,
@@ -58,7 +80,10 @@ class SenseModule:
         }
 
         created = 0
-        for evt in reversed(ctx.all_events()[-scan_events:]):
+        candidates = list(reversed(ctx.all_events()[-scan_events:]))
+        if scramble and len(candidates) > 1:
+            ctx.rng.shuffle(candidates)
+        for evt in candidates:
             etype = str(evt.get("type") or "")
             if not self._should_perceive(etype):
                 continue
@@ -69,6 +94,12 @@ class SenseModule:
             prior = float(counts_map.get(etype, 0))
             novelty = 1.0 / (1.0 + prior)
             uncertainty = clamp01(1.0 - (prior / max(prior + 3.0, 1.0)), default=0.5)
+            if noise_mag > 0.0:
+                novelty = clamp01(novelty + ctx.rng.uniform(-noise_mag, noise_mag), default=novelty)
+                uncertainty = clamp01(
+                    uncertainty + ctx.rng.uniform(-(noise_mag * 0.5), noise_mag * 0.5),
+                    default=uncertainty,
+                )
             source = etype.split(".", 1)[0]
 
             percept_evt = ctx.emit_event(
@@ -88,7 +119,7 @@ class SenseModule:
                 parent_id=str(evt.get("parent_id") or "") or None,
             )
 
-            if novelty >= emit_threshold:
+            if novelty >= max(emit_threshold, clamp_floor):
                 payload = WorkspacePayload(
                     kind="PERCEPT",
                     source_module=self.name,

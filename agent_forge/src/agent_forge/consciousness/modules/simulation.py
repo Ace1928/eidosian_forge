@@ -22,6 +22,28 @@ class SimulationModule:
     def tick(self, ctx: TickContext) -> None:
         if not bool(ctx.config.get("simulation_enable", True)):
             return
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                max(0.0, min(1.0, float(p.get("magnitude") or 0.0)))
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_mag = max(
+            [
+                max(0.0, min(1.0, float(p.get("magnitude") or 0.0)))
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
 
         max_per_tick = max(1, int(ctx.config.get("simulation_max_per_tick", 3)))
         obs_window = max(20, int(ctx.config.get("simulation_observation_window", 120)))
@@ -66,6 +88,9 @@ class SimulationModule:
         rollout = belief_data.get("rollout_preview") if isinstance(belief_data.get("rollout_preview"), list) else []
         if not rollout:
             return
+        if scramble and len(rollout) > 1:
+            rollout = list(rollout)
+            ctx.rng.shuffle(rollout)
 
         state = ctx.module_state(self.name, defaults={"last_rollout_sig": "", "generated_total": 0})
         sig = _rollout_signature({"rollout": rollout, "mode": meta_mode, "real": real_percepts})
@@ -79,6 +104,10 @@ class SimulationModule:
         for step in rollout[:max_per_tick]:
             predicted_event_type = str(step.get("predicted_event_type") or "unknown")
             confidence = max(0.0, min(1.0, float(step.get("confidence") or 0.0)))
+            if noise_mag > 0.0:
+                confidence = max(0.0, min(1.0, confidence + ctx.rng.uniform(-noise_mag, noise_mag)))
+            if clamp_mag > 0.0:
+                confidence = min(confidence, max(0.0, 1.0 - clamp_mag))
             evt = ctx.emit_event(
                 "sense.simulated_percept",
                 {

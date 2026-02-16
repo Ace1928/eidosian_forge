@@ -156,6 +156,7 @@ Status checkpoint:
 - PR-H6 delivered (world model v1.5 predictive coding with feature extraction, persistent belief state, surprise decomposition, and rollout API).
 - PR-H7 delivered (simulation stream module + meta/report simulated-state integration + regression tests).
 - PR-H8 delivered (phenomenology probe module with PPX indices, runtime/status integration, and scoring deltas).
+- PR-H9 delivered (perturbation recipe library v2, recipe-aware trial expansion, expected-signature checks, and module-level perturb hooks).
 
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`

@@ -84,6 +84,28 @@ class SelfModelExtModule:
     def tick(self, ctx: TickContext) -> None:
         window = int(ctx.config.get("self_observation_window", 120))
         emit_delta = float(ctx.config.get("self_emit_delta_threshold", 0.05))
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                max(0.0, min(1.0, float(p.get("magnitude") or 0.0)))
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_mag = max(
+            [
+                max(0.0, min(1.0, float(p.get("magnitude") or 0.0)))
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
 
         combined = list(ctx.recent_events)[-window:] + list(ctx.emitted_events)
 
@@ -104,9 +126,22 @@ class SelfModelExtModule:
             "expected_source": observed_sig.get("observed_source"),
             "expected_kind": observed_sig.get("observed_kind"),
         }
+        if scramble:
+            observed_for_match["expected_event_type"] = predicted_sig.get("expected_event_type")
+            observed_for_match["expected_source"] = predicted_sig.get("expected_source")
+            observed_for_match["expected_kind"] = ""
         agency = agency_confidence(predicted_sig, observed_for_match)
 
         boundary, boundary_meta = self._boundary_stability(combined)
+        if noise_mag > 0.0:
+            agency = max(0.0, min(1.0, agency + ctx.rng.uniform(-noise_mag, noise_mag)))
+            boundary = max(0.0, min(1.0, boundary + ctx.rng.uniform(-noise_mag, noise_mag)))
+        if clamp_mag > 0.0:
+            cap = max(0.0, 1.0 - clamp_mag)
+            agency = min(agency, cap)
+            boundary = min(boundary, cap)
+        agency = round(float(agency), 6)
+        boundary = round(float(boundary), 6)
 
         agency_evt = ctx.emit_event(
             "self.agency_estimate",

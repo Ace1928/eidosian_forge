@@ -58,6 +58,31 @@ class WorkingSetModule:
             0.2, float(ctx.config.get("working_set_emit_interval_secs", 2.0))
         )
         scan_limit = max(10, int(ctx.config.get("working_set_scan_broadcasts", 120)))
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            ctx.metric("consciousness.working_set.size", 0.0)
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_cap = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
+        if clamp_cap > 0.0:
+            capacity = max(1, int(round(capacity * max(0.15, 1.0 - clamp_cap))))
 
         state = ctx.module_state(
             self.name,
@@ -83,6 +108,11 @@ class WorkingSetModule:
                 continue
             item = dict(row)
             item["salience"] = round(salience, 6)
+            if noise_mag > 0.0:
+                item["salience"] = round(
+                    clamp01(item["salience"] + ctx.rng.uniform(-noise_mag, noise_mag), default=item["salience"]),
+                    6,
+                )
             active.append(item)
 
         by_key: Dict[str, Dict[str, Any]] = {
@@ -108,6 +138,8 @@ class WorkingSetModule:
                 continue
 
             salience = clamp01(payload.get("salience"), default=0.5)
+            if noise_mag > 0.0:
+                salience = clamp01(salience + ctx.rng.uniform(-noise_mag, noise_mag), default=salience)
             confidence = clamp01(payload.get("confidence"), default=0.5)
             links = (
                 payload.get("links")
@@ -147,6 +179,8 @@ class WorkingSetModule:
             ),
             reverse=True,
         )
+        if scramble and len(ranked) > 1:
+            ctx.rng.shuffle(ranked)
         trimmed = ranked[:capacity]
         if len(trimmed) != len(previous_items):
             changed = True

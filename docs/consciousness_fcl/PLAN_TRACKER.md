@@ -122,6 +122,6 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Upgrade world model to belief-state predictive coding with rollout API.~~
 - [x] ~~Add simulation stream module and mode-aware report/meta integration.~~
 - [x] ~~Add phenomenology probe module (PPX indices + snapshot events).~~
-- [ ] Add perturbation library v2 composite recipes with expected signatures.
+- [x] ~~Add perturbation library v2 composite recipes with expected signatures.~~
 - [x] ~~Add ablation matrix, golden ranges, and regression gates (initial runner + checks + tests).~~
 - [ ] Add adversarial self red-team campaigns and counterexample bundles.

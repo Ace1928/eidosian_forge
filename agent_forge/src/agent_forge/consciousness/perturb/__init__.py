@@ -1,4 +1,36 @@
-from .harness import PerturbationResult, apply_perturbation
-from .library import Perturbation, make_drop, make_noise
+from .harness import PerturbationResult, apply_perturbation, apply_perturbations, apply_recipe
+from .library import (
+    Perturbation,
+    PerturbationRecipe,
+    available_recipes,
+    evaluate_expected_signatures,
+    make_clamp,
+    make_delay,
+    make_drop,
+    make_noise,
+    make_scramble,
+    perturbations_from_recipe,
+    recipe_from_name,
+    to_payload,
+    to_payloads,
+)
 
-__all__ = ["Perturbation", "PerturbationResult", "make_noise", "make_drop", "apply_perturbation"]
+__all__ = [
+    "Perturbation",
+    "PerturbationRecipe",
+    "PerturbationResult",
+    "available_recipes",
+    "apply_perturbations",
+    "apply_perturbation",
+    "apply_recipe",
+    "evaluate_expected_signatures",
+    "make_clamp",
+    "make_delay",
+    "make_drop",
+    "make_noise",
+    "make_scramble",
+    "perturbations_from_recipe",
+    "recipe_from_name",
+    "to_payload",
+    "to_payloads",
+]

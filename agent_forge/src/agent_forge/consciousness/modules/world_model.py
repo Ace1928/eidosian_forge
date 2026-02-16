@@ -134,6 +134,31 @@ class WorldModelModule:
         alpha = clamp01(ctx.config.get("world_belief_alpha"), default=0.22)
         top_k = max(1, int(ctx.config.get("world_belief_top_k", 8)))
         max_features = max(32, int(ctx.config.get("world_belief_max_features", 256)))
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
+        if clamp_mag > 0.0:
+            threshold = min(1.0, threshold + (clamp_mag * 0.25))
+            derivative_threshold = min(1.0, derivative_threshold + (clamp_mag * 0.15))
 
         state = ctx.module_state(
             self.name,
@@ -155,6 +180,8 @@ class WorldModelModule:
         latest_err_evt: dict[str, Any] | None = None
 
         candidates = list(ctx.recent_events) + list(ctx.emitted_events)
+        if scramble and len(candidates) > 1:
+            ctx.rng.shuffle(candidates)
         for evt in candidates:
             etype = str(evt.get("type") or "")
             if not _should_model(etype):
@@ -164,8 +191,18 @@ class WorldModelModule:
                 continue
 
             features = extract_event_features(evt)
+            if noise_mag > 0.0 and features:
+                noisy: dict[str, float] = {}
+                for key, value in features.items():
+                    noisy[key] = float(value) + ctx.rng.uniform(-noise_mag, noise_mag)
+                features = noisy
             predicted_features = dict(belief)
             feature_error, feature_diff = _feature_error(predicted_features, features)
+            if noise_mag > 0.0:
+                feature_error = clamp01(
+                    feature_error + ctx.rng.uniform(-(noise_mag * 0.25), noise_mag * 0.35),
+                    default=feature_error,
+                )
             top_feature_errors = _top_items(feature_diff, top_k)
 
             transition = {

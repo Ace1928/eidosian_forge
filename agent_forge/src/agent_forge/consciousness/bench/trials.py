@@ -16,6 +16,7 @@ from ..metrics import (
     response_complexity,
     self_stability,
 )
+from ..perturb import evaluate_expected_signatures, perturbations_from_recipe, to_payload
 from ..types import clamp01
 from .reporting import spec_hash, trial_output_dir, write_json, write_jsonl, write_summary
 from .scoring import compute_trial_deltas, composite_trial_score
@@ -189,6 +190,8 @@ class ConsciousnessBenchRunner:
 
         stage_rows: list[dict[str, Any]] = []
         perturbation_rows: list[dict[str, Any]] = []
+        recipe_rows: list[dict[str, Any]] = []
+        recipe_expected_signatures: dict[str, str] = {}
         trial_corr = uuid.uuid4().hex
         try:
             for _ in range(warmup_beats):
@@ -203,7 +206,23 @@ class ConsciousnessBenchRunner:
                 )
             )
 
+            expanded_perturbations: list[dict[str, Any]] = []
             for raw in norm["perturbations"]:
+                recipe, recipe_perturbs = perturbations_from_recipe(raw)
+                if recipe is not None:
+                    recipe_rows.append(
+                        {
+                            "name": recipe.name,
+                            "description": recipe.description,
+                            "expected_signatures": dict(recipe.expected_signatures),
+                        }
+                    )
+                    recipe_expected_signatures.update(dict(recipe.expected_signatures))
+                    expanded_perturbations.extend([to_payload(p) for p in recipe_perturbs])
+                else:
+                    expanded_perturbations.append(dict(raw))
+
+            for raw in expanded_perturbations:
                 payload = {
                     "id": str(raw.get("id") or uuid.uuid4().hex),
                     "kind": str(raw.get("kind") or "noise"),
@@ -249,6 +268,11 @@ class ConsciousnessBenchRunner:
 
         deltas = compute_trial_deltas(before, after)
         score = composite_trial_score(deltas)
+        expectation_eval = evaluate_expected_signatures(
+            recipe_expected_signatures,
+            deltas,
+            tolerance=0.01,
+        )
         trial_hash = spec_hash(norm)
         trial_spec = {
             **norm,
@@ -273,6 +297,8 @@ class ConsciousnessBenchRunner:
             "deltas": deltas,
             "composite_score": score,
             "perturbations": perturbation_rows,
+            "recipes": recipe_rows,
+            "recipe_expectations": expectation_eval,
             "events_window_count": len(window_events),
             "stage_rows": len(stage_rows),
         }
@@ -286,6 +312,8 @@ class ConsciousnessBenchRunner:
                 "name": str(norm["name"]),
                 "composite_score": score,
                 "deltas": deltas,
+                "recipes": recipe_rows,
+                "recipe_expectations": expectation_eval,
                 "events_window_count": len(window_events),
                 "stage_rows": len(stage_rows),
             },
@@ -315,6 +343,7 @@ class ConsciousnessBenchRunner:
                     f"- coherence_delta: `{deltas.get('coherence_delta')}`",
                     f"- rci_delta: `{deltas.get('rci_delta')}`",
                     f"- trace_strength_delta: `{deltas.get('trace_strength_delta')}`",
+                    f"- recipe_expectations: `{expectation_eval.get('pass')}`",
                     f"- artifacts: `spec.json`, `metrics.jsonl`, `events_window.jsonl`, `report.json`",
                 ],
             )

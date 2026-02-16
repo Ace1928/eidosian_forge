@@ -34,6 +34,27 @@ class InteroModule:
         emit_threshold = clamp01(
             ctx.config.get("intero_broadcast_threshold"), default=0.45
         )
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
 
         state = ctx.module_state(
             self.name,
@@ -124,6 +145,13 @@ class InteroModule:
                 default=0.35,
             ),
         }
+        if noise_mag > 0.0:
+            for key, value in list(targets.items()):
+                targets[key] = clamp01(value + ctx.rng.uniform(-noise_mag, noise_mag), default=value)
+        if clamp_mag > 0.0:
+            cap = max(0.0, 1.0 - clamp_mag)
+            for key, value in list(targets.items()):
+                targets[key] = min(cap, value)
 
         updated: dict[str, float] = {}
         strongest_name = ""

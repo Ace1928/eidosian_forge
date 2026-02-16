@@ -4,6 +4,11 @@
 
 Provide a structured library of composite perturbation recipes with expected signatures and validation hooks.
 
+## Status
+
+- Completed in PR-H9.
+- Recipes are now first-class inputs in bench trial specs via `perturbations: [{"recipe": "..."}]`.
+
 ## Deliverables
 
 1. recipe catalog with multi-module perturb composition
@@ -15,7 +20,15 @@ Provide a structured library of composite perturbation recipes with expected sig
 
 - `agent_forge/src/agent_forge/consciousness/perturb/library.py`
 - `agent_forge/src/agent_forge/consciousness/perturb/harness.py`
-- `agent_forge/src/agent_forge/consciousness/bench/tasks.py`
+- `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+- `agent_forge/src/agent_forge/consciousness/modules/sense.py`
+- `agent_forge/src/agent_forge/consciousness/modules/intero.py`
+- `agent_forge/src/agent_forge/consciousness/modules/affect.py`
+- `agent_forge/src/agent_forge/consciousness/modules/world_model.py`
+- `agent_forge/src/agent_forge/consciousness/modules/working_set.py`
+- `agent_forge/src/agent_forge/consciousness/modules/self_model_ext.py`
+- `agent_forge/src/agent_forge/consciousness/modules/simulation.py`
+- `agent_forge/tests/test_consciousness_perturb_recipes.py`
 
 ## Recipe Set
 
@@ -67,6 +80,17 @@ Provide a structured library of composite perturbation recipes with expected sig
 - each recipe has a control comparison trial
 - expected signatures checked by benchmark assertions
 - failed expectation emits diagnostic event
+
+Executed in Termux:
+
+```sh
+PYTHONPATH=lib:agent_forge/src:memory_forge/src:knowledge_forge/src:eidos_mcp/src \
+  eidosian_venv/bin/python -m pytest \
+  agent_forge/tests/test_consciousness_perturb_recipes.py \
+  agent_forge/tests/test_consciousness_continuity.py \
+  agent_forge/tests/test_consciousness_milestone_d.py \
+  eidos_mcp/tests/test_mcp_tool_calls_individual.py::TestMcpToolCallsIndividual::test_tool_call_consciousness_kernel_full_benchmark -q
+```
 
 ## Acceptance Criteria
 

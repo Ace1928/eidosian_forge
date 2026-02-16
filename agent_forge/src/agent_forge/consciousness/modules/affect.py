@@ -14,6 +14,28 @@ class AffectModule:
         emit_delta = clamp01(
             ctx.config.get("affect_emit_delta_threshold"), default=0.04
         )
+        perturbations = ctx.perturbations_for(self.name)
+        if any(str(p.get("kind") or "") == "drop" for p in perturbations):
+            return
+        if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
+            return
+        noise_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "noise"
+            ]
+            or [0.0]
+        )
+        clamp_mag = max(
+            [
+                clamp01(p.get("magnitude"), default=0.0)
+                for p in perturbations
+                if str(p.get("kind") or "") == "clamp"
+            ]
+            or [0.0]
+        )
+        scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
 
         state = ctx.module_state(
             self.name,
@@ -67,6 +89,18 @@ class AffectModule:
                 (0.45 + (0.45 * threat) + (0.25 * coherence_hunger)), default=0.6
             ),
         }
+        if scramble:
+            targets["exploration_rate"], targets["learning_rate"] = (
+                targets["learning_rate"],
+                targets["exploration_rate"],
+            )
+        if noise_mag > 0.0:
+            for key, value in list(targets.items()):
+                targets[key] = clamp01(value + ctx.rng.uniform(-noise_mag, noise_mag), default=value)
+        if clamp_mag > 0.0:
+            cap = max(0.0, 1.0 - clamp_mag)
+            for key, value in list(targets.items()):
+                targets[key] = min(cap, value)
 
         updated: dict[str, float] = {}
         max_delta = 0.0
