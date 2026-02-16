@@ -1,0 +1,61 @@
+name: Workflow Action Pin Audit
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - "scripts/audit_workflow_action_pins.py"
+      - "audit_data/workflow_action_lock.json"
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - "scripts/audit_workflow_action_pins.py"
+      - "audit_data/workflow_action_lock.json"
+  schedule:
+    - cron: "47 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-action-pin-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit Workflow Action Pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Action Pin Audit (Policy Enforced)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/audit_workflow_action_pins.py \
+            --workflows-dir .github/workflows \
+            --lock-file audit_data/workflow_action_lock.json \
+            --report-json reports/security/workflow_action_pin_audit.json \
+            --enforce-lock \
+            --fail-on-mutable
+
+      - name: Upload Audit Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-action-pin-audit-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/security/workflow_action_pin_audit.json
+            audit_data/workflow_action_lock.json

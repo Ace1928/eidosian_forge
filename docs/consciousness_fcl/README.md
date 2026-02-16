@@ -47,3 +47,4 @@
 - Part 34: `docs/consciousness_fcl/part-34-benchmark-index-migration.md`
 - Part 35: `docs/consciousness_fcl/part-35-workflow-security-audit.md`
 - Part 36: `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`
+- Part 37: `docs/consciousness_fcl/part-37-workflow-action-pin-drift-policy.md`

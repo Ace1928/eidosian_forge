@@ -29,6 +29,7 @@ The plan is decomposed into focused implementation parts:
 17. Index-based benchmark extraction parity with runtime module indexing paths.
 18. Security-audit workflow loop with optional severity hard gates and artifacted inventory reports.
 19. Security inventory delta-to-issue remediation automation with baseline markers and close-on-clear behavior.
+20. Workflow action pin drift audit with lock-file policy enforcement in CI.
 
 ## Principle
 
@@ -59,3 +60,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-34-benchmark-index-migration.md`
 - `docs/consciousness_fcl/part-35-workflow-security-audit.md`
 - `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`
+- `docs/consciousness_fcl/part-37-workflow-action-pin-drift-policy.md`

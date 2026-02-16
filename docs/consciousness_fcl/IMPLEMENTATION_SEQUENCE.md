@@ -313,6 +313,7 @@ Status checkpoint:
 Status checkpoint:
 - PR-J1 delivered (scheduled/manual security audit workflow using Dependabot inventory script, optional severity hard-fail gates, and artifacted reports).
 - PR-J2 delivered (automated delta-to-issue remediation loop with baseline markers and close-on-clear semantics).
+- PR-J3 delivered (workflow action pin drift audit script + lock file + CI enforcement workflow).
 
 1. Dependency security inventory workflow (PR-J1).
 - Files: `.github/workflows/security-audit.yml`
@@ -322,3 +323,9 @@ Status checkpoint:
 2. Security inventory delta remediation issues (PR-J2).
 - Files: `.github/workflows/security-audit.yml`
 - Files: `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`
+
+3. Workflow action pin drift policy enforcement (PR-J3).
+- Files: `scripts/audit_workflow_action_pins.py`
+- Files: `.github/workflows/workflow-action-pin-audit.yml`
+- Files: `audit_data/workflow_action_lock.json`
+- Files: `scripts/tests/test_audit_workflow_action_pins.py`

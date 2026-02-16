@@ -235,6 +235,29 @@ jobs:
 
 ---
 
+#### 8. **workflow-action-pin-audit.yml** - Workflow Action Pin Drift Audit
+*Detects workflow action reference drift against a committed lock file and enforces policy in CI*
+
+**Triggers:**
+- Push/PR when workflow files or pin-audit script/lock change
+- Daily scheduled run
+- Manual workflow dispatch
+
+**Jobs:**
+1. **audit** - Runs `scripts/audit_workflow_action_pins.py` with:
+   - lock enforcement (`--enforce-lock`)
+   - mutable-ref guard (`--fail-on-mutable`)
+2. **artifact upload** - Publishes JSON audit output and the lock file
+
+**Policy Model:**
+- Lock file: `audit_data/workflow_action_lock.json`
+- Enforced guarantees:
+  - no unlocked workflow action refs
+  - no lock drift for known action refs
+  - no mutable branch refs (e.g. `@main`, `@master`)
+
+---
+
 ## 🔧 Local Development Setup
 
 ### Workflow Config
