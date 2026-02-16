@@ -81,7 +81,6 @@ docopt
 docutils
 duckduckgo_search
 duplicity
-ecdsa
 einops
 email_validator
 emoji

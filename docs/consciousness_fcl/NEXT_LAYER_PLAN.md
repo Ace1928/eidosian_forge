@@ -32,6 +32,7 @@ The plan is decomposed into focused implementation parts:
 20. Workflow action pin drift audit with lock-file policy enforcement in CI.
 21. Phase 16 remediation batch orchestration from security inventory to actionable issue queues.
 22. Phase 17 deterministic pip dependency auto-patch execution with backup-safe write mode and idempotent verification.
+23. Phase 17 no-fix advisory mitigation path (dependency minimization + manual vulnerable-range escape where safe and verifiable).
 
 ## Principle
 

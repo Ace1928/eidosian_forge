@@ -45,6 +45,28 @@ Convert Phase 16 planning outputs into production remediation execution by gener
 - Post-write dry-run confirmed idempotency:
 - `changed=0`, `updated=0`, `unresolved=0/0`.
 
+## Iteration 2 (All-Severity + No-Fix Mitigations)
+
+1. Auto-patch expansion
+- Ran all-severity (`critical,high,medium,low`) write pass.
+- Applied additional `32` deterministic pin updates.
+- Post-write dry-run remained idempotent (`changed=0`, `updated=0`).
+
+2. No-fix advisory handling
+- Advisories without `first_patched_version` were reduced by dependency minimization and manual range-safe bumping:
+- Removed direct `ecdsa` dependency from:
+- `requirements.txt`
+- `requirements/eidos_venv_reqs.txt`
+- Removed direct `keras` dependency from:
+- `doc_forge/requirements.txt`
+- `doc_forge/docs/requirements.txt`
+- Manually bumped `orjson` in `requirements/eidos_venv_reqs.txt`:
+- `3.10.16 -> 3.11.5` (above vulnerable range `<= 3.11.4`).
+
+3. Local closure estimate
+- Using raw alert metadata + current manifest scan, local estimator reports `0` remaining open vulnerable requirements mappings.
+- GitHub Dependabot UI/API may continue reporting stale totals until repository re-analysis completes.
+
 ## CI Integration
 
 `/.github/workflows/security-audit.yml` now also:

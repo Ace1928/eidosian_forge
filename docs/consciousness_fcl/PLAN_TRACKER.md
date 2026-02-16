@@ -162,4 +162,6 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add regression tests for target resolution, patch semantics, and backup behavior (`scripts/tests/test_dependabot_autopatch_requirements.py`).~~
 - [x] ~~Integrate auto-patch dry-run report generation into `security-audit.yml` summaries/artifacts.~~
 - [x] ~~Execute high/critical write pass for pip manifests with post-write idempotency verification (`changed=0` on re-run).~~
-- [ ] Iterate medium/low remediation batches with functional validation and repeated Dependabot inventory deltas until open alert count converges to zero.
+- [x] ~~Execute all-severity (`critical/high/medium/low`) write pass and verify idempotency (`changed=0` on re-run).~~
+- [x] ~~Mitigate no-fix direct dependency alerts via dependency minimization and safe manual range bump (`orjson`).~~
+- [ ] Confirm GitHub Dependabot re-analysis converges to zero open alerts and close remaining remediation issues automatically.

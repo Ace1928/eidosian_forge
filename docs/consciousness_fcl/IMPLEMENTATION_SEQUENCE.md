@@ -348,6 +348,8 @@ Status checkpoint:
 - PR-L1 delivered (raw-alert-driven pip requirement auto-patch tool with dry-run/write + rollback backups + tests).
 - PR-L2 delivered (`security-audit.yml` now exports raw alerts and publishes autopatch dry-run summary/artifacts).
 - PR-L3 delivered (high/critical write pass across four pip manifests with post-write idempotency verification).
+- PR-L4 delivered (all-severity write pass with deterministic pin upgrades and post-write idempotency verification).
+- PR-L5 delivered (no-fix advisory mitigation via direct dependency minimization and manual vulnerable-range escape for `orjson`).
 
 1. Auto-patch tool from raw Dependabot alerts (PR-L1).
 - Files: `scripts/dependabot_autopatch_requirements.py`
@@ -363,5 +365,17 @@ Status checkpoint:
 - Files: `doc_forge/requirements.txt`
 - Files: `doc_forge/docs/requirements.txt`
 
-4. Next remediation loop (pending).
-- Apply medium/low batches, run regression validation, and re-run Dependabot inventory until open alerts converge.
+4. All-severity deterministic patch pass (PR-L4).
+- Files: `requirements/eidos_venv_reqs.txt`
+- Files: `requirements/eidosian_venv_reqs.txt`
+- Files: `doc_forge/requirements.txt`
+- Files: `doc_forge/docs/requirements.txt`
+
+5. No-fix advisory mitigation set (PR-L5).
+- Files: `requirements/eidos_venv_reqs.txt`
+- Files: `requirements.txt`
+- Files: `doc_forge/requirements.txt`
+- Files: `doc_forge/docs/requirements.txt`
+
+6. Next remediation loop (pending).
+- Wait for Dependabot re-analysis refresh, then re-run inventory/issue sync until GitHub reports zero open alerts.

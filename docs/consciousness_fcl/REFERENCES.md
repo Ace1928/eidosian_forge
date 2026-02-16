@@ -87,6 +87,10 @@ Accessed: 2026-02-16 (UTC).
    https://pip.pypa.io/en/stable/reference/requirements-file-format/
 3. GitHub Actions hardening guidance (workflow security model and token scope baseline).
    https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions
+4. GitHub Advisory GHSA-wj6h-64fc-37mp (python-ecdsa, no patched version listed at time of implementation).
+   https://github.com/advisories/GHSA-wj6h-64fc-37mp
+5. GitHub Advisory GHSA-gfmx-qqqh-f38q (keras, no patched version listed at time of implementation).
+   https://github.com/advisories/GHSA-gfmx-qqqh-f38q
 
 ## Repository Anchors
 

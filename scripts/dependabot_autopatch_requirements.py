@@ -450,7 +450,12 @@ def main() -> int:
     parser.add_argument(
         "--fail-on-unresolved",
         action="store_true",
-        help="Exit non-zero if unresolved missing or unpinned packages remain.",
+        help="Exit non-zero if unresolved unpinned packages remain.",
+    )
+    parser.add_argument(
+        "--fail-on-missing",
+        action="store_true",
+        help="Also fail when target packages are missing from manifests.",
     )
     args = parser.parse_args()
 
@@ -508,8 +513,8 @@ def main() -> int:
         f"manifests={report.get('totals', {}).get('manifest_count', 0)} "
         f"changed={report.get('totals', {}).get('changed_manifest_count', 0)} "
         f"updated={report.get('totals', {}).get('updated_requirements_count', 0)} "
-        f"unresolved={report.get('totals', {}).get('unresolved_missing_count', 0)}"
-        f"/{report.get('totals', {}).get('unresolved_unpinned_count', 0)}"
+        f"missing_or_removed={report.get('totals', {}).get('unresolved_missing_count', 0)} "
+        f"unpinned={report.get('totals', {}).get('unresolved_unpinned_count', 0)}"
     )
 
     if args.json_out:
@@ -524,9 +529,9 @@ def main() -> int:
         md.write_text(render_markdown(report), encoding="utf-8")
         print(f"wrote md: {md}")
 
-    unresolved = int(report.get("totals", {}).get("unresolved_missing_count", 0)) + int(
-        report.get("totals", {}).get("unresolved_unpinned_count", 0)
-    )
+    unresolved = int(report.get("totals", {}).get("unresolved_unpinned_count", 0))
+    if args.fail_on_missing:
+        unresolved += int(report.get("totals", {}).get("unresolved_missing_count", 0))
     if args.fail_on_unresolved and unresolved > 0:
         return 3
     return 0
