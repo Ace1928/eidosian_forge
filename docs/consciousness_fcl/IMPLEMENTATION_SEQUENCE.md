@@ -147,6 +147,10 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 
 ## Stage H (Active): Causal Traceability and Consciousness-Lab Instrumentation
 
+Status checkpoint:
+- PR-H1 core delivered (canonical links + `EventIndex` + `TickContext` index/link helpers + regression tests).
+- Remaining PR-H1 scope: migrate critical modules to indexed lookup paths.
+
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`
 - Files: `agent_forge/src/agent_forge/consciousness/linking.py` (new)

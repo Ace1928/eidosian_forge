@@ -300,11 +300,26 @@ class WorkspaceCompetitionModule:
         for winner in winners:
             if drop_winners:
                 continue
+            raw_links = (
+                winner.get("links")
+                if isinstance(winner.get("links"), Mapping)
+                else {}
+            )
+            winner_candidate_id = str(winner.get("candidate_id") or "")
+            winner_links = ctx.link(
+                parent_id=str(raw_links.get("parent_id") or "") or None,
+                corr_id=str(raw_links.get("corr_id") or "") or None,
+                candidate_id=winner_candidate_id,
+                winner_candidate_id=winner_candidate_id,
+                memory_ids=list(raw_links.get("memory_ids") or []),
+                raw_links=raw_links,
+            )
             payload = WorkspacePayload(
                 kind="GW_WINNER",
                 source_module="workspace_competition",
                 content={
-                    "candidate_id": winner.get("candidate_id"),
+                    "candidate_id": winner_candidate_id,
+                    "winner_candidate_id": winner_candidate_id,
                     "source_event_type": winner.get("source_event_type"),
                     "source_module": winner.get("source_module"),
                     "reason": "top_ranked_competition_winner",
@@ -312,7 +327,7 @@ class WorkspaceCompetitionModule:
                 },
                 confidence=float(winner.get("confidence", 0.5)),
                 salience=float(winner.get("salience", 0.5)),
-                links=dict(winner.get("links") or {}),
+                links=winner_links,
             ).as_dict()
             payload = normalize_workspace_payload(
                 payload,
@@ -345,10 +360,13 @@ class WorkspaceCompetitionModule:
                 "gw.reaction_trace",
                 {
                     "winner_id": str(winner.get("candidate_id") or ""),
+                    "winner_corr_id": str(winner_links.get("corr_id") or ""),
                     **trace,
                     "reaction_window_secs": reaction_window,
                 },
                 tags=["consciousness", "gw", "reaction_trace"],
+                corr_id=str(winner_links.get("corr_id") or "") or None,
+                parent_id=str(winner_links.get("parent_id") or "") or None,
             )
 
         if winners and not drop_winners:

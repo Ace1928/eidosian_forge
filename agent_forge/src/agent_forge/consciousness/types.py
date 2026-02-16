@@ -19,6 +19,13 @@ from agent_forge.core import db as DB
 from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
+from .index import EventIndex, build_index
+from .linking import (
+    canonical_links,
+    new_corr_id as generate_corr_id,
+    payload_link_candidates,
+)
+
 if TYPE_CHECKING:
     from .state_store import ModuleStateStore
 
@@ -93,6 +100,28 @@ def normalize_workspace_payload(
     payload: Mapping[str, Any], *, fallback_kind: str, source_module: str
 ) -> Dict[str, Any]:
     links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
+    content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
+    inferred_candidate_id, inferred_winner_candidate_id = payload_link_candidates(payload)
+    candidate_id = str(
+        payload.get("candidate_id")
+        or links.get("candidate_id")
+        or inferred_candidate_id
+        or ""
+    )
+    winner_candidate_id = str(
+        payload.get("winner_candidate_id")
+        or links.get("winner_candidate_id")
+        or inferred_winner_candidate_id
+        or ""
+    )
+    normalized_links = canonical_links(
+        links,
+        corr_id=str(payload.get("corr_id") or links.get("corr_id") or ""),
+        parent_id=str(payload.get("parent_id") or links.get("parent_id") or ""),
+        memory_ids=list(links.get("memory_ids") or []),
+        candidate_id=candidate_id,
+        winner_candidate_id=winner_candidate_id,
+    )
     normalized = {
         "kind": str(payload.get("kind") or fallback_kind),
         "ts": str(payload.get("ts") or _now_iso()),
@@ -100,12 +129,8 @@ def normalize_workspace_payload(
         "source_module": str(payload.get("source_module") or source_module),
         "confidence": clamp01(payload.get("confidence"), default=0.5),
         "salience": clamp01(payload.get("salience"), default=0.5),
-        "content": dict(payload.get("content") or {}),
-        "links": {
-            "corr_id": str(links.get("corr_id") or ""),
-            "parent_id": str(links.get("parent_id") or ""),
-            "memory_ids": list(links.get("memory_ids") or []),
-        },
+        "content": dict(content),
+        "links": normalized_links,
     }
     return normalized
 
@@ -137,6 +162,7 @@ class TickContext:
     _broadcast_events: Optional[list[Dict[str, Any]]] = field(
         default=None, init=False, repr=False
     )
+    _event_index: Optional[EventIndex] = field(default=None, init=False, repr=False)
     _ephemeral_module_state: Dict[str, Dict[str, Any]] = field(
         default_factory=dict, init=False, repr=False
     )
@@ -207,6 +233,57 @@ class TickContext:
         self._build_indexes()
         return list(self._broadcast_events or [])
 
+    @property
+    def index(self) -> EventIndex:
+        if self._event_index is None:
+            self._event_index = build_index(self.all_events())
+        return self._event_index
+
+    def events_by_corr_id(self, corr_id: str) -> list[Dict[str, Any]]:
+        return list(self.index.by_corr_id.get(str(corr_id), []))
+
+    def children(self, parent_id: str) -> list[Dict[str, Any]]:
+        return list(self.index.children_by_parent.get(str(parent_id), []))
+
+    def candidate(self, candidate_id: str) -> Optional[Dict[str, Any]]:
+        return self.index.candidates_by_id.get(str(candidate_id))
+
+    def winner_for_candidate(self, candidate_id: str) -> Optional[Dict[str, Any]]:
+        return self.index.winners_by_candidate_id.get(str(candidate_id))
+
+    def new_corr_id(self, seed: str | None = None) -> str:
+        if seed:
+            return generate_corr_id(seed)
+        return generate_corr_id()
+
+    def link(
+        self,
+        *,
+        parent_id: str | None = None,
+        corr_id: str | None = None,
+        candidate_id: str | None = None,
+        winner_candidate_id: str | None = None,
+        memory_ids: Sequence[str] | None = None,
+        raw_links: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        resolved_corr_id = str(corr_id or "") or self.new_corr_id(
+            seed=f"{self.beat_count}:{candidate_id or winner_candidate_id or ''}"
+        )
+        return canonical_links(
+            raw_links,
+            corr_id=resolved_corr_id,
+            parent_id=str(parent_id or ""),
+            memory_ids=list(memory_ids or []),
+            candidate_id=str(candidate_id or ""),
+            winner_candidate_id=str(winner_candidate_id or ""),
+        )
+
+    def _invalidate_indexes(self) -> None:
+        self._event_type_index = None
+        self._broadcast_kind_index = None
+        self._broadcast_events = None
+        self._event_index = None
+
     def module_state(
         self,
         module_name: str,
@@ -267,18 +344,26 @@ class TickContext:
         corr_id: Optional[str] = None,
         parent_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        data_dict = dict(data or {})
+        links = (
+            data_dict.get("links")
+            if isinstance(data_dict.get("links"), Mapping)
+            else {}
+        )
+        resolved_corr_id = str(corr_id or links.get("corr_id") or "") or self.new_corr_id(
+            seed=f"{etype}:{self.beat_count}:{len(self.emitted_events)}"
+        )
+        resolved_parent_id = str(parent_id or links.get("parent_id") or "")
         evt = bus.append(
             self.state_dir,
             etype,
-            dict(data or {}),
+            data_dict,
             tags=list(tags or []),
-            corr_id=corr_id,
-            parent_id=parent_id,
+            corr_id=resolved_corr_id,
+            parent_id=resolved_parent_id or None,
         )
         self.emitted_events.append(evt)
-        self._event_type_index = None
-        self._broadcast_kind_index = None
-        self._broadcast_events = None
+        self._invalidate_indexes()
         return evt
 
     def broadcast(
@@ -291,19 +376,42 @@ class TickContext:
         corr_id: Optional[str] = None,
         parent_id: Optional[str] = None,
     ) -> Dict[str, Any]:
+        fallback_kind = str(payload.get("kind") or "SIGNAL")
+        normalized_payload = normalize_workspace_payload(
+            payload,
+            fallback_kind=fallback_kind,
+            source_module=source,
+        )
+        payload_links = (
+            normalized_payload.get("links")
+            if isinstance(normalized_payload.get("links"), Mapping)
+            else {}
+        )
+        candidate_id, winner_candidate_id = payload_link_candidates(normalized_payload)
+        resolved_corr_id = str(corr_id or payload_links.get("corr_id") or "") or self.new_corr_id(
+            seed=f"broadcast:{source}:{fallback_kind}:{self.beat_count}:{len(self.emitted_events)}"
+        )
+        resolved_parent_id = str(parent_id or payload_links.get("parent_id") or "")
+        normalized_payload["links"] = self.link(
+            parent_id=resolved_parent_id or None,
+            corr_id=resolved_corr_id,
+            candidate_id=candidate_id or str(payload_links.get("candidate_id") or ""),
+            winner_candidate_id=winner_candidate_id
+            or str(payload_links.get("winner_candidate_id") or ""),
+            memory_ids=list(payload_links.get("memory_ids") or []),
+            raw_links=payload_links,
+        )
         evt = workspace.broadcast(
             self.state_dir,
             source=source,
-            payload=dict(payload),
+            payload=dict(normalized_payload),
             channel=channel,
             tags=list(tags or []),
-            corr_id=corr_id,
-            parent_id=parent_id,
+            corr_id=resolved_corr_id,
+            parent_id=resolved_parent_id or None,
         )
         self.emitted_events.append(evt)
-        self._event_type_index = None
-        self._broadcast_kind_index = None
-        self._broadcast_events = None
+        self._invalidate_indexes()
         return evt
 
     def metric(self, key: str, value: float, *, ts: Optional[str] = None) -> None:
@@ -382,6 +490,7 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "report_emit_interval_secs": 2.0,
         "report_emit_delta_threshold": 0.08,
         "report_broadcast_min_groundedness": 0.35,
+        "consciousness_require_links": False,
     }
     for key, value in cfg.items():
         if isinstance(merged.get(key), Mapping) and isinstance(value, Mapping):
