@@ -33,6 +33,7 @@ echo "-- pytest matrix --"
   agent_forge/tests/test_workspace.py \
   agent_forge/tests/test_db_and_daemon.py \
   crawl_forge/tests/test_tika_extractor_fallback.py \
+  scripts/tests/test_consciousness_benchmark_trend.py \
   eidos_mcp/tests/test_mcp_tool_calls_individual.py \
   eidos_mcp/tests/test_diagnostics_transport_matrix.py
 
