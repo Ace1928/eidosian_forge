@@ -94,7 +94,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 - Files: `scripts/consciousness_benchmark_trend.py`
 - Files: `scripts/tests/test_consciousness_benchmark_trend.py`
 
-## Stage F (Active): Dynamical Continuity and Multi-Timescale Runtime
+## Stage F (Completed): Dynamical Continuity and Multi-Timescale Runtime
 
 1. Add persistent module state store and kernel beat persistence.
 - Files: `agent_forge/src/agent_forge/consciousness/state_store.py`
@@ -118,6 +118,32 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 
 6. Add continuity and cadence regression tests.
 - Files: `agent_forge/tests/test_consciousness_continuity.py`
+
+## Stage G (Active): Cross-Forge Memory/Knowledge Integration
+
+1. Add memory bridge module with optional `memory_forge` introspection/recall.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/memory_bridge.py`
+
+2. Add knowledge bridge module with optional `knowledge_forge` unified context lookup.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/knowledge_bridge.py`
+
+3. Wire bridge modules into default kernel path and module cadence defaults.
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/__init__.py`
+
+4. Expose bridge state in runtime snapshots and benchmark surfaces.
+- Files: `agent_forge/src/agent_forge/consciousness/trials.py`
+- Files: `agent_forge/src/agent_forge/consciousness/benchmarks.py`
+- Files: `agent_forge/src/agent_forge/core/self_model.py`
+
+5. Expose bridge status through MCP tool/resource.
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+
+6. Add bridge integration regression tests and parity matrix coverage.
+- Files: `agent_forge/tests/test_consciousness_memory_knowledge_bridge.py`
+- Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
+- Files: `scripts/linux_parity_smoke.sh`
 
 ## Validation Commands
 

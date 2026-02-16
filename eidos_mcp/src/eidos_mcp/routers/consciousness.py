@@ -62,6 +62,21 @@ def _full_bench(state_dir: Optional[str] = None) -> Optional[IntegratedStackBenc
     return IntegratedStackBenchmark(_state_dir(state_dir))
 
 
+def _bridge_status_payload(state_dir: Optional[str] = None) -> dict[str, object]:
+    runner = _runner(state_dir)
+    if runner is None:
+        return {"error": "agent_forge consciousness runtime unavailable"}
+    status = runner.status()
+    return {
+        "timestamp": status.get("timestamp"),
+        "state_dir": status.get("state_dir"),
+        "memory_bridge": status.get("memory_bridge") or {},
+        "knowledge_bridge": status.get("knowledge_bridge") or {},
+        "memory_recalls": status.get("memory_recalls"),
+        "knowledge_hits": status.get("knowledge_hits"),
+    }
+
+
 @tool(
     name="consciousness_hypothesis_upsert",
     description="Create or update a falsifiable hypothesis used by the consciousness assessment protocol.",
@@ -205,6 +220,21 @@ def consciousness_kernel_status(state_dir: Optional[str] = None) -> str:
     if runner is None:
         return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
     return json.dumps(runner.status(), indent=2)
+
+
+@tool(
+    name="consciousness_bridge_status",
+    description="Return memory_forge and knowledge_forge bridge status from the runtime consciousness stack.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_bridge_status(state_dir: Optional[str] = None) -> str:
+    return json.dumps(_bridge_status_payload(state_dir), indent=2)
 
 
 @tool(
@@ -443,6 +473,15 @@ def consciousness_runtime_status_resource() -> str:
     if runner is None:
         return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
     return json.dumps(runner.status(), indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/runtime-integrations",
+    description="Runtime integration status for memory_bridge and knowledge_bridge modules.",
+)
+@eidosian()
+def consciousness_runtime_integrations_resource() -> str:
+    return json.dumps(_bridge_status_payload(), indent=2)
 
 
 @resource(

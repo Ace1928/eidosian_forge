@@ -66,8 +66,8 @@ Upgrade the consciousness runtime from mostly event-window inference to persiste
 1. World model predictive coding v1
 - Move from event-type transition model to feature-space prediction with latent belief state.
 
-2. Memory bridge integration
-- Add memory-forge introspection/recall ingestion into attention candidate generation.
+2. Cross-forge bridge integration
+- Implemented in Stage G: `memory_bridge` + `knowledge_bridge` modules now emit runtime recalls/context and MCP-visible status.
 
 3. Ablation benchmark suite
 - Add module-disable trial matrix and expected-delta assertions for ignition, RCI, agency, and report groundedness.

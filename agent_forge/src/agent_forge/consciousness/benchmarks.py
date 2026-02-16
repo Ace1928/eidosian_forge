@@ -50,6 +50,18 @@ def _latest_metric(items: list[dict[str, Any]], key: str) -> Optional[float]:
     return None
 
 
+def _latest_event_data(
+    items: list[dict[str, Any]],
+    etype: str,
+) -> Optional[dict[str, Any]]:
+    for evt in reversed(items):
+        if str(evt.get("type") or "") != etype:
+            continue
+        data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+        return dict(data)
+    return None
+
+
 def _percentile(values: list[float], p: float) -> float:
     if not values:
         return 0.0
@@ -63,6 +75,10 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _clamp(value: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, value))
 
 
 def _normalize_external_scores(
@@ -151,6 +167,8 @@ class ConsciousnessBenchmarkSuite:
         ws = workspace.summary(self.state_dir, limit=400, window_seconds=1.0, min_sources=3)
         coherence = coherence_from_workspace_summary(ws)
         rci = response_complexity(recent[-300:])
+        memory_status = _latest_event_data(recent, "memory_bridge.status") or {}
+        knowledge_status = _latest_event_data(recent, "knowledge_bridge.status") or {}
 
         perf = {
             "ticks": ticks,
@@ -170,16 +188,34 @@ class ConsciousnessBenchmarkSuite:
             "prediction_error": _latest_metric(recent, "consciousness.world.prediction_error"),
             "meta_confidence": _latest_metric(recent, "consciousness.meta.confidence"),
             "report_groundedness": _latest_metric(recent, "consciousness.report.groundedness"),
+            "memory_recalls": _latest_metric(recent, "consciousness.memory_bridge.recalls"),
+            "knowledge_hits": _latest_metric(recent, "consciousness.knowledge_bridge.total_hits"),
+            "memory_bridge_available": memory_status.get("available"),
+            "knowledge_bridge_available": knowledge_status.get("available"),
         }
 
         pred_err = _safe_float(capability.get("prediction_error"), default=1.0)
+        memory_recall_norm = _clamp(
+            _safe_float(capability.get("memory_recalls"), default=0.0)
+            / max(float(kernel.config.get("memory_bridge_recall_limit", 4)), 1.0),
+            0.0,
+            1.0,
+        )
+        knowledge_hits_norm = _clamp(
+            _safe_float(capability.get("knowledge_hits"), default=0.0)
+            / max(float(kernel.config.get("knowledge_bridge_context_limit", 6)), 1.0),
+            0.0,
+            1.0,
+        )
         cap_index = (
-            0.25 * _safe_float(capability.get("coherence_ratio"))
-            + 0.20 * _safe_float(capability.get("rci"))
-            + 0.15 * _safe_float(capability.get("agency"))
-            + 0.10 * _safe_float(capability.get("boundary_stability"))
-            + 0.15 * (1.0 - min(1.0, pred_err))
-            + 0.15 * _safe_float(capability.get("report_groundedness"))
+            0.22 * _safe_float(capability.get("coherence_ratio"))
+            + 0.18 * _safe_float(capability.get("rci"))
+            + 0.12 * _safe_float(capability.get("agency"))
+            + 0.08 * _safe_float(capability.get("boundary_stability"))
+            + 0.13 * (1.0 - min(1.0, pred_err))
+            + 0.12 * _safe_float(capability.get("report_groundedness"))
+            + 0.08 * memory_recall_norm
+            + 0.07 * knowledge_hits_norm
         )
         perf_index = 1.0 / max(1.0, perf["tick_latency_ms_p95"] / 10.0)
 
@@ -209,6 +245,8 @@ class ConsciousnessBenchmarkSuite:
             "world_model_online": capability.get("prediction_error") is not None,
             "meta_online": capability.get("meta_confidence") is not None,
             "report_online": capability.get("report_groundedness") is not None,
+            "memory_bridge_observed": capability.get("memory_bridge_available") is not None,
+            "knowledge_bridge_observed": capability.get("knowledge_bridge_available") is not None,
             "latency_p95_under_100ms": bool(perf["tick_latency_ms_p95"] < 100.0),
             "non_regression_vs_baseline": improved if improved is not None else True,
         }

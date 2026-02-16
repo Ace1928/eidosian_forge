@@ -78,6 +78,12 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
         "consciousness_kernel_status missing expected keys",
     ),
     (
+        "consciousness_bridge_status",
+        {},
+        lambda r: "\"memory_bridge\"" in r and "\"knowledge_bridge\"" in r,
+        "consciousness_bridge_status missing expected keys",
+    ),
+    (
         "consciousness_kernel_benchmark",
         {"ticks": 2, "persist": False},
         lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
@@ -131,6 +137,14 @@ class TestMcpToolCallsIndividual(unittest.IsolatedAsyncioTestCase):
         async with _stdio_session() as session:
             result = await asyncio.wait_for(
                 session.read_resource("eidos://consciousness/runtime-latest-full-benchmark"),
+                timeout=20,
+            )
+        self.assertTrue(result.contents)
+
+    async def test_resource_consciousness_runtime_integrations(self) -> None:
+        async with _stdio_session() as session:
+            result = await asyncio.wait_for(
+                session.read_resource("eidos://consciousness/runtime-integrations"),
                 timeout=20,
             )
         self.assertTrue(result.contents)

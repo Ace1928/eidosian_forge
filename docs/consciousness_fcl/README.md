@@ -22,3 +22,4 @@
 - Part 10: `docs/consciousness_fcl/part-10-level-gates-falsification.md`
 - Part 11: `docs/consciousness_fcl/part-11-benchmarking-self-improvement.md`
 - Part 12: `docs/consciousness_fcl/part-12-dynamical-continuity.md`
+- Part 13: `docs/consciousness_fcl/part-13-cross-forge-integration.md`

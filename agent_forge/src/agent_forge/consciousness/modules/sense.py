@@ -26,6 +26,10 @@ class SenseModule:
                 "report.",
                 "wm.",
                 "metrics.",
+                "mem.",
+                "knowledge.",
+                "memory_bridge.",
+                "knowledge_bridge.",
             )
         ):
             return False

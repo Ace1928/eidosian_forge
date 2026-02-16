@@ -31,6 +31,7 @@ echo "-- pytest matrix --"
   agent_forge/tests/test_consciousness_benchmarks.py \
   agent_forge/tests/test_consciousness_integrated_benchmark.py \
   agent_forge/tests/test_consciousness_continuity.py \
+  agent_forge/tests/test_consciousness_memory_knowledge_bridge.py \
   agent_forge/tests/test_workspace.py \
   agent_forge/tests/test_db_and_daemon.py \
   crawl_forge/tests/test_tika_extractor_fallback.py \

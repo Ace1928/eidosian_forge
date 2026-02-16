@@ -17,6 +17,10 @@ def _guess_kind(event_type: str) -> str:
         return "PERCEPT"
     if event_type.startswith("intero."):
         return "DRIVE"
+    if event_type.startswith("mem."):
+        return "MEMORY"
+    if event_type.startswith("knowledge."):
+        return "KNOWLEDGE"
     if event_type.startswith("world.prediction_error"):
         return "PRED_ERR"
     if event_type.startswith("policy."):
@@ -54,6 +58,9 @@ def _score_candidate(evt: Mapping[str, Any]) -> tuple[float, float]:
     if etype == "daemon.beat":
         base_salience = 0.2
         confidence = 0.8
+    elif etype.startswith(("mem.", "knowledge.")):
+        base_salience = clamp01(data.get("salience"), default=0.55)
+        confidence = clamp01(data.get("confidence"), default=0.68)
     elif etype.startswith("workspace.broadcast"):
         payload = data.get("payload") if isinstance(data, Mapping) else {}
         base_salience = clamp01((payload or {}).get("salience"), default=0.45)

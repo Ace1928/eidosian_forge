@@ -113,6 +113,10 @@ def _consciousness_snapshot(state_dir: Path, *, last_events: int = 300) -> Dict[
     latest_boundary = _latest_event_data(items, "self.boundary_estimate")
     latest_meta = _latest_event_data(items, "meta.state_estimate")
     latest_report = _latest_event_data(items, "report.self_report")
+    latest_memory_bridge = _latest_event_data(items, "memory_bridge.status")
+    latest_knowledge_bridge = _latest_event_data(items, "knowledge_bridge.status")
+    latest_memory_recall = _latest_event_data(items, "mem.recall")
+    latest_knowledge_context = _latest_event_data(items, "knowledge.context")
 
     return {
         "agency": {
@@ -129,6 +133,12 @@ def _consciousness_snapshot(state_dir: Path, *, last_events: int = 300) -> Dict[
         },
         "meta": latest_meta or {},
         "latest_report": latest_report or {},
+        "integration": {
+            "memory_bridge": latest_memory_bridge or {},
+            "knowledge_bridge": latest_knowledge_bridge or {},
+            "latest_memory_recall": latest_memory_recall or {},
+            "latest_knowledge_context": latest_knowledge_context or {},
+        },
         "recent_winners": _recent_winners(items, limit=5),
     }
 

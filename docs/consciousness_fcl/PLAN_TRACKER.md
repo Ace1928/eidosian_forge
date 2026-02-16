@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone F` active (dynamical continuity + multi-timescale runtime)
+- Current phase: `Milestone G` active (cross-forge bridge integration + ablation readiness)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 
@@ -105,5 +105,6 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Promote perturbation runtime to active module-aware behavior (`drop`, `noise`, `delay`, `clamp`, `scramble`).~~
 - [x] ~~Add continuity regression tests (`test_consciousness_continuity.py`).~~
 - [ ] Extend world-model to latent feature predictive coding (beyond event-type transitions).
-- [ ] Add explicit memory bridge module (`memory_forge` insights -> candidates).
+- [x] ~~Add explicit memory and knowledge bridge modules (`memory_forge` + `knowledge_forge` -> recalls/context/events).~~
+- [x] ~~Expose bridge integration status through MCP (`consciousness_bridge_status`, `eidos://consciousness/runtime-integrations`).~~
 - [ ] Add ablation benchmark runner and contribution assertions.

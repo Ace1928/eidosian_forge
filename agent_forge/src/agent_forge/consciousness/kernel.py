@@ -13,6 +13,8 @@ from agent_forge.core import workspace
 from .modules.attention import AttentionModule
 from .modules.affect import AffectModule
 from .modules.intero import InteroModule
+from .modules.knowledge_bridge import KnowledgeBridgeModule
+from .modules.memory_bridge import MemoryBridgeModule
 from .modules.meta import MetaModule
 from .modules.policy import PolicyModule
 from .modules.report import ReportModule
@@ -60,6 +62,8 @@ class ConsciousnessKernel:
                 InteroModule(),
                 AffectModule(),
                 WorldModelModule(),
+                MemoryBridgeModule(),
+                KnowledgeBridgeModule(),
                 AttentionModule(),
                 WorkspaceCompetitionModule(),
                 WorkingSetModule(),

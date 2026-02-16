@@ -46,10 +46,24 @@ def _latest_metric(items: list[dict[str, Any]], key: str) -> Optional[float]:
     return None
 
 
+def _latest_event_data(
+    items: list[dict[str, Any]],
+    etype: str,
+) -> Optional[dict[str, Any]]:
+    for evt in reversed(items):
+        if str(evt.get("type") or "") != etype:
+            continue
+        data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+        return dict(data)
+    return None
+
+
 def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> dict[str, Any]:
     ws = workspace.summary(state_dir, limit=400, window_seconds=1.0, min_sources=3)
     coherence = coherence_from_workspace_summary(ws)
     rci = response_complexity(recent_events[-250:])
+    memory_status = _latest_event_data(recent_events, "memory_bridge.status") or {}
+    knowledge_status = _latest_event_data(recent_events, "knowledge_bridge.status") or {}
     return {
         "workspace": ws,
         "coherence": coherence,
@@ -59,6 +73,21 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
         "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),
         "meta_confidence": _latest_metric(recent_events, "consciousness.meta.confidence"),
         "report_groundedness": _latest_metric(recent_events, "consciousness.report.groundedness"),
+        "memory_recalls": _latest_metric(recent_events, "consciousness.memory_bridge.recalls"),
+        "knowledge_hits": _latest_metric(recent_events, "consciousness.knowledge_bridge.total_hits"),
+        "memory_bridge": {
+            "available": memory_status.get("available"),
+            "introspector_available": memory_status.get("introspector_available"),
+            "query": memory_status.get("query"),
+            "recall_count": memory_status.get("recall_count"),
+            "last_error": memory_status.get("last_error"),
+        },
+        "knowledge_bridge": {
+            "available": knowledge_status.get("available"),
+            "query": knowledge_status.get("query"),
+            "total_hits": knowledge_status.get("total_hits"),
+            "last_error": knowledge_status.get("last_error"),
+        },
     }
 
 
@@ -222,19 +251,10 @@ class ConsciousnessTrialRunner:
 
     def status(self) -> dict[str, Any]:
         recent = events.iter_events(self.state_dir, limit=500)
-        ws = workspace.summary(self.state_dir, limit=400, window_seconds=1.0, min_sources=3)
-        coherence = coherence_from_workspace_summary(ws)
-        rci = response_complexity(recent[-250:])
+        snapshot = _metrics_snapshot(self.state_dir, recent)
         return {
             "timestamp": _now_iso(),
             "state_dir": str(self.state_dir),
-            "workspace": ws,
-            "coherence": coherence,
-            "rci": rci,
-            "agency": _latest_metric(recent, "consciousness.agency"),
-            "boundary_stability": _latest_metric(recent, "consciousness.boundary_stability"),
-            "world_prediction_error": _latest_metric(recent, "consciousness.world.prediction_error"),
-            "meta_confidence": _latest_metric(recent, "consciousness.meta.confidence"),
-            "report_groundedness": _latest_metric(recent, "consciousness.report.groundedness"),
+            **snapshot,
             "latest_trial": self.latest_trial(),
         }
