@@ -21,7 +21,7 @@ python:
     black:
       line_length: 120
       target_version: py312
-      exclude: "/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/"
+      exclude: '/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/'
     
     isort:
       profile: black
@@ -46,7 +46,7 @@ python:
     mypy:
       ignore_missing_imports: true
       show_error_codes: true
-      exclude: "(\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)"
+      exclude: '(\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)'
   
   # Testing
   testing:

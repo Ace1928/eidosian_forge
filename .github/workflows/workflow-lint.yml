@@ -1,0 +1,42 @@
+name: Workflow Lint
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/workflow-config.yml"
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/workflow-config.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Validate GitHub Workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.11
+
+      - name: Lint workflows
+        run: |
+          "$(go env GOPATH)/bin/actionlint" -color -oneline .github/workflows/*.yml

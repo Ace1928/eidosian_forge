@@ -159,7 +159,7 @@ git commit -m "Update README [skip ci]"
 | File | Purpose |
 |------|---------|
 | `.pre-commit-config.yaml` | Local git hooks configuration |
-| `.github/workflows/config.yml` | Reference for workflow settings |
+| `.github/workflow-config.yml` | Reference for workflow settings |
 | `ruff.toml` | Ruff linter configuration |
 | `pytest.ini` | Pytest configuration |
 | `game_forge/src/autoseed/eslint.config.js` | ESLint configuration |

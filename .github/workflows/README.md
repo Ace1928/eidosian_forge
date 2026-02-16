@@ -48,7 +48,7 @@ This directory contains comprehensive GitHub Actions workflows for the Eidosian 
 
 ### Primary Workflows
 
-#### 1. **ci.yml** - Main CI Pipeline (v4.0.0)
+#### 1. **ci.yml** - Main CI Pipeline (v4.0.1)
 *Comprehensive continuous integration pipeline*
 
 **Triggers:**
@@ -75,7 +75,23 @@ This directory contains comprehensive GitHub Actions workflows for the Eidosian 
 
 ---
 
-#### 2. **format.yml** - Auto-Format Code (v1.0.0)
+#### 2. **workflow-lint.yml** - Workflow Syntax Validation
+*Validates all GitHub Actions workflows with `actionlint`*
+
+**Triggers:**
+- Push and pull requests that touch workflow/config files
+- Manual workflow dispatch
+
+**Jobs:**
+1. **actionlint** - Runs `actionlint` against `.github/workflows/*.yml`
+
+**Key Features:**
+- Catches workflow expression/syntax issues before merge
+- Prevents non-workflow YAML from breaking workflow linting
+
+---
+
+#### 3. **format.yml** - Auto-Format Code (v1.0.0)
 *Automatically formats code and commits changes*
 
 **Triggers:**
@@ -103,7 +119,7 @@ This directory contains comprehensive GitHub Actions workflows for the Eidosian 
 
 ---
 
-#### 3. **lint.yml** - Comprehensive Linting (v1.0.0)
+#### 4. **lint.yml** - Comprehensive Linting (v1.0.0)
 *Detailed code quality checks with granular feedback*
 
 **Triggers:**
@@ -138,7 +154,7 @@ This directory contains comprehensive GitHub Actions workflows for the Eidosian 
 
 ### Reusable Workflows
 
-#### 4. **reusable-python-test.yml** - Reusable Python Testing
+#### 5. **reusable-python-test.yml** - Reusable Python Testing
 *Standardized Python testing workflow*
 
 **Inputs:**
@@ -166,7 +182,7 @@ jobs:
 
 ---
 
-#### 5. **reusable-node-test.yml** - Reusable Node.js Testing
+#### 6. **reusable-node-test.yml** - Reusable Node.js Testing
 *Standardized TypeScript/JavaScript testing workflow*
 
 **Inputs:**
@@ -195,6 +211,14 @@ jobs:
 ---
 
 ## 🔧 Local Development Setup
+
+### Workflow Config
+
+Repository-wide workflow tuning values are stored in:
+
+- `.github/workflow-config.yml`
+
+This file is intentionally outside `.github/workflows/` so workflow linters only parse executable workflow files.
 
 ### Pre-commit Hooks
 
