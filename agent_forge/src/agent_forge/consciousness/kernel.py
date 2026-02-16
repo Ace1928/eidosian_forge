@@ -12,6 +12,7 @@ from agent_forge.core import workspace
 
 from .modules.attention import AttentionModule
 from .modules.affect import AffectModule
+from .modules.autotune import AutotuneModule
 from .modules.intero import InteroModule
 from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
@@ -26,6 +27,7 @@ from .modules.world_model import WorldModelModule
 from .modules.working_set import WorkingSetModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
 from .state_store import ModuleStateStore
+from .tuning.overlay import load_tuned_overlay, resolve_config
 from .types import Module, TickContext, merged_config
 
 
@@ -45,16 +47,23 @@ class ConsciousnessKernel:
         config: Optional[Mapping[str, Any]] = None,
         modules: Optional[Iterable[Module]] = None,
         seed: int = 1337,
+        respect_tuned_overlay: bool = True,
     ) -> None:
         self.state_dir = Path(state_dir)
-        self.config = merged_config(config or {})
+        self._base_config = merged_config(config or {})
+        self._runtime_overrides: Dict[str, Any] = {}
+        self._respect_tuned_overlay = bool(respect_tuned_overlay)
+        self._tuned_overlay: Dict[str, Any] = {}
+        self._last_invalid_overlay_keys: tuple[str, ...] = ()
+        self.config = dict(self._base_config)
         self.rng = random.Random(seed)
         self.state_store = ModuleStateStore(
             self.state_dir,
             autosave_interval_secs=float(
-                self.config.get("state_autosave_interval_secs", 2.0)
+                self._base_config.get("state_autosave_interval_secs", 2.0)
             ),
         )
+        self._refresh_config()
         self.beat_count = int(self.state_store.get_meta("beat_count", 0) or 0)
         self._active_perturbations: list[dict[str, Any]] = []
         self.modules: List[Module] = list(
@@ -75,7 +84,33 @@ class ConsciousnessKernel:
                 MetaModule(),
                 ReportModule(),
                 PhenomenologyProbeModule(),
+                AutotuneModule(),
             ]
+        )
+
+    def set_runtime_overrides(self, overrides: Mapping[str, Any] | None) -> None:
+        self._runtime_overrides = dict(overrides or {})
+        self._refresh_config()
+
+    def _refresh_config(self) -> None:
+        if self._respect_tuned_overlay:
+            tuned_overlay, invalid = load_tuned_overlay(self.state_store)
+            self._tuned_overlay = dict(tuned_overlay)
+            invalid_tuple = tuple(sorted(str(k) for k in invalid))
+            if invalid_tuple and invalid_tuple != self._last_invalid_overlay_keys:
+                bus.append(
+                    self.state_dir,
+                    "consciousness.param_invalid",
+                    {"invalid_keys": list(invalid_tuple)},
+                    tags=["consciousness", "config"],
+                )
+            self._last_invalid_overlay_keys = invalid_tuple
+        else:
+            self._tuned_overlay = {}
+        self.config = resolve_config(
+            self._base_config,
+            tuned_overlay=self._tuned_overlay,
+            runtime_overrides=self._runtime_overrides,
         )
 
     def register_perturbation(self, payload: Mapping[str, Any]) -> None:
@@ -138,6 +173,7 @@ class ConsciousnessKernel:
         return False
 
     def _collect_context(self) -> TickContext:
+        self._refresh_config()
         event_limit = int(self.config.get("recent_events_limit", 300))
         broadcast_limit = int(self.config.get("recent_broadcast_limit", 300))
         events = bus.iter_events(self.state_dir, limit=event_limit)

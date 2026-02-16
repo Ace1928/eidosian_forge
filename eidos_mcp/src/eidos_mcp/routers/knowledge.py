@@ -84,6 +84,8 @@ def memory_search(query: str) -> str:
         if memory is None:
             return "Error searching memory: memory backend unavailable"
         results = memory.recall(query)
+        if not results:
+            return f"No semantic memory matches for query: {query}"
         return "\n".join([f"- {r.content}" for r in results])
     except Exception as exc:
         return f"Error searching memory: {exc}"

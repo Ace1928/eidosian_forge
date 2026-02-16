@@ -237,3 +237,33 @@ PYTHONPATH=/data/data/com.termux/files/home/eidosian_forge/lib:/data/data/com.te
 - Revert by commit boundaries only.
 - Preserve runtime data snapshots and transaction logs.
 - Avoid hard reset in shared workflows.
+
+## Stage I (Active): Self-Upgrading Loop Substrate
+
+Status checkpoint:
+- PR-I1 delivered (parameter specs + overlay sanitation/persistence + kernel config precedence).
+- PR-I2 delivered (overlay-aware trial execution + guardrail counters in trial reports).
+- PR-I3 delivered (bootstrap `autotune` module with propose/trial/commit/rollback loop and metrics).
+- PR-I4 pending (optimizer upgrade to Bayesian/multi-objective search).
+- PR-I5 pending (adaptive attention/competition weight learning).
+- PR-I6 pending (experiment-designer module + adversarial tuning campaigns).
+
+1. Parameter control plane and safety classes (PR-I1).
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/params.py`
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/overlay.py`
+
+2. Kernel config precedence and runtime overrides (PR-I1).
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+
+3. Trial runner overlay execution + explicit guardrail metrics (PR-I2).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+
+4. Autotune runtime module (PR-I3).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/autotune.py`
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/optimizer.py`
+
+5. Planned frontier additions (PR-I4+).
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/bayes_optimizer.py` (planned)
+- Files: `agent_forge/src/agent_forge/consciousness/modules/experiment_designer.py` (planned)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (planned)

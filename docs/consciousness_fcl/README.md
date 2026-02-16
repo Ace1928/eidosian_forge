@@ -37,3 +37,7 @@
 - Part 24: `docs/consciousness_fcl/part-24-frontier-upgrades.md`
 - Part 25: `docs/consciousness_fcl/part-25-pr-order-and-gates.md`
 - Part 26: `docs/consciousness_fcl/part-26-adversarial-red-team.md`
+- Part 27: `docs/consciousness_fcl/part-27-self-upgrading-loop-architecture.md`
+- Part 28: `docs/consciousness_fcl/part-28-parameter-store-overlay.md`
+- Part 29: `docs/consciousness_fcl/part-29-autotune-module.md`
+- Part 30: `docs/consciousness_fcl/part-30-self-experimentation-frontier.md`

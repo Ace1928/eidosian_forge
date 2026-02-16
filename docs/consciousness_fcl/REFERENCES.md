@@ -44,6 +44,21 @@ This document tracks external references used to design and validate the Forge C
 7. HELM benchmark framework (Stanford CRFM).
    https://crfm.stanford.edu/helm/
 
+## Self-Tuning and Safe Optimization References
+
+1. Auer, Cesa-Bianchi, and Fischer. “Finite-time Analysis of the Multiarmed Bandit Problem.” *Machine Learning* (2002).
+   https://www.cs.utexas.edu/~shivaram/readings/b2hd-AuerCF2002.html
+2. Snoek, Larochelle, and Adams. “Practical Bayesian Optimization of Machine Learning Algorithms.” NeurIPS (2012).
+   https://arxiv.org/abs/1206.2944
+3. Hansen. “The CMA Evolution Strategy: A Tutorial.” (2016).
+   https://arxiv.org/abs/1604.00772
+4. Jaderberg et al. “Population Based Training of Neural Networks.” (2017).
+   https://arxiv.org/abs/1711.09846
+5. Garcia and Fernández. “A Comprehensive Survey on Safe Reinforcement Learning.” *JAIR* (2015).
+   https://www.jair.org/index.php/jair/article/view/10312
+6. Gu et al. “A Review of Safe Reinforcement Learning: Methods, Theory and Applications.” (2022).
+   https://arxiv.org/abs/2205.10330
+
 Accessed: 2026-02-16 (UTC).
 
 ## Engineering and Termux References

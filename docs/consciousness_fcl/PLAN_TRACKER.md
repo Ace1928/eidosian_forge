@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone H` active (causal traceability + consciousness lab instrumentation)
+- Current phase: `Milestone I` active (self-upgrading loop substrate + safe autotuning)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -126,3 +126,16 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add perturbation library v2 composite recipes with expected signatures.~~
 - [x] ~~Add ablation matrix, golden ranges, and regression gates (initial runner + checks + tests).~~
 - [ ] Add adversarial self red-team campaigns and counterexample bundles.
+
+## Phase 14: Self-Upgrading Consciousness Loops
+
+- [x] ~~Add canonical parameter spec layer (`tuning/params.py`) with safety/range metadata.~~
+- [x] ~~Add tuned overlay sanitation + persistence + versioned history (`tuning/overlay.py`).~~
+- [x] ~~Integrate base+tuned+runtime config resolution in kernel (`resolve_config` + runtime overrides).~~
+- [x] ~~Extend trial runner with overlay-aware execution and explicit guardrail metrics (`module_error_count`, `degraded_mode_ratio`, `winner_count`, `ignitions_without_trace`).~~
+- [x] ~~Add bootstrap autotune runtime module with propose→trial→commit/rollback loop (`modules/autotune.py`).~~
+- [ ] Upgrade optimizer from bandit hill-climbing to Bayesian/multi-objective strategy.
+- [ ] Add adaptive attention/competition weights learned from trial objective feedback.
+- [ ] Add closed-loop micro-task suite (`self_other_discrimination`, continuity under distraction, report-grounding challenge).
+- [ ] Add experiment-designer module for safe self-generated perturbation campaigns.
+- [ ] Add adversarial tuner red-team gates and regression bundles.

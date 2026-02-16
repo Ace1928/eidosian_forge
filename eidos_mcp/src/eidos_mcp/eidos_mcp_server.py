@@ -382,6 +382,82 @@ class MCPSessionRecoveryMiddleware:
         await self.app(scope, receive, send)
 
 
+class MCPInvalidSessionCompatibilityMiddleware:
+    """Reject stale MCP session ids with deterministic 400 compatibility responses."""
+
+    def __init__(
+        self, app: ASGIApp, mount_path: str, *, emit_json_error: bool
+    ) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+        self.emit_json_error = bool(emit_json_error)
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "").upper()
+        path = scope.get("path") or ""
+        if method != "POST" or not self._is_transport_path(path):
+            await self.app(scope, receive, send)
+            return
+
+        headers = list(scope.get("headers", []))
+        request_session_id = _get_header_value(headers, b"mcp-session-id")
+        if not request_session_id:
+            await self.app(scope, receive, send)
+            return
+
+        manager = getattr(mcp, "_session_manager", None)
+        known_sessions = getattr(manager, "_server_instances", None)
+        is_stateless = bool(getattr(manager, "stateless", False))
+        has_known_session = isinstance(known_sessions, dict) and request_session_id in known_sessions
+        if is_stateless or has_known_session:
+            await self.app(scope, receive, send)
+            return
+
+        buffered_messages: list[dict[str, Any]] = []
+        request_body = bytearray()
+        while True:
+            message = await receive()
+            buffered_messages.append(message)
+            if message.get("type") != "http.request":
+                break
+            request_body.extend(message.get("body", b""))
+            if not message.get("more_body", False):
+                break
+
+        request_id = _extract_jsonrpc_id(bytes(request_body))
+        status_code = 400
+        if self.emit_json_error:
+            payload = {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {
+                    "code": _JSON_ERROR_CODE,
+                    "message": "Bad Request: No valid session ID provided",
+                    "data": {"http_status": status_code},
+                },
+            }
+            body = json.dumps(payload, ensure_ascii=True).encode("utf-8")
+            headers_out = [
+                (b"content-type", b"application/json; charset=utf-8"),
+                (b"content-length", str(len(body)).encode("ascii")),
+            ]
+            await send({"type": "http.response.start", "status": status_code, "headers": headers_out})
+            await send({"type": "http.response.body", "body": body, "more_body": False})
+            log_debug("Rejected stale MCP session id with JSON compatibility error")
+            return
+
+        await send({"type": "http.response.start", "status": status_code, "headers": []})
+        await send({"type": "http.response.body", "body": b"", "more_body": False})
+        log_debug("Rejected stale MCP session id with legacy empty 400 response")
+
+
 class MCPTransportAuditMiddleware:
     """Emit transport-level audit logs for MCP HTTP traffic."""
 
@@ -479,6 +555,12 @@ def _build_streamable_http_app(
         app = MCPHeaderCompatibilityMiddleware(app, mount_path)
     if enable_session_recovery:
         app = MCPSessionRecoveryMiddleware(app, mount_path)
+    else:
+        app = MCPInvalidSessionCompatibilityMiddleware(
+            app,
+            mount_path,
+            emit_json_error=bool(enable_error_response_compat),
+        )
     if enable_error_response_compat:
         app = MCPErrorResponseCompatibilityMiddleware(app, mount_path)
     if enable_transport_audit:

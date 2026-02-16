@@ -23,6 +23,8 @@ The plan is decomposed into focused implementation parts:
 11. Frontier upgrades.
 12. PR execution order and release gates.
 13. Adversarial self-red-team loop.
+14. Self-upgrading loop substrate (param store + overlay + safe autotuner).
+15. Adaptive policy/attention learning and experiment-designer frontier.
 
 ## Principle
 
@@ -43,3 +45,7 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-24-frontier-upgrades.md`
 - `docs/consciousness_fcl/part-25-pr-order-and-gates.md`
 - `docs/consciousness_fcl/part-26-adversarial-red-team.md`
+- `docs/consciousness_fcl/part-27-self-upgrading-loop-architecture.md`
+- `docs/consciousness_fcl/part-28-parameter-store-overlay.md`
+- `docs/consciousness_fcl/part-29-autotune-module.md`
+- `docs/consciousness_fcl/part-30-self-experimentation-frontier.md`

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -73,10 +74,14 @@ class TrialSpec:
     baseline_seconds: float = 2.0
     perturb_seconds: float = 2.0
     recovery_seconds: float = 2.0
+    baseline_beats: int = 0
+    perturb_beats: int = 0
+    recovery_beats: int = 0
     beat_seconds: float = 0.25
     task: str | None = "noop"
     perturbations: list[dict[str, Any]] = field(default_factory=list)
     disable_modules: list[str] = field(default_factory=list)
+    overlay: dict[str, Any] = field(default_factory=dict)
     seed: int = 1337
 
     def normalized(self) -> dict[str, Any]:
@@ -86,10 +91,14 @@ class TrialSpec:
             "baseline_seconds": _safe_float(self.baseline_seconds, default=2.0, minimum=0.0),
             "perturb_seconds": _safe_float(self.perturb_seconds, default=2.0, minimum=0.0),
             "recovery_seconds": _safe_float(self.recovery_seconds, default=2.0, minimum=0.0),
+            "baseline_beats": _safe_int(self.baseline_beats, default=0, minimum=0),
+            "perturb_beats": _safe_int(self.perturb_beats, default=0, minimum=0),
+            "recovery_beats": _safe_int(self.recovery_beats, default=0, minimum=0),
             "beat_seconds": max(0.05, _safe_float(self.beat_seconds, default=0.25, minimum=0.05)),
             "task": str(self.task or "noop"),
             "perturbations": [dict(p) for p in self.perturbations if isinstance(p, Mapping)],
             "disable_modules": sorted({str(m) for m in self.disable_modules if str(m)}),
+            "overlay": dict(self.overlay or {}),
             "seed": _safe_int(self.seed, default=1337, minimum=0),
         }
 
@@ -173,20 +182,42 @@ class ConsciousnessBenchRunner:
         persist: bool = True,
     ) -> TrialRunResult:
         norm = spec.normalized()
-        kernel = kernel or ConsciousnessKernel(self.state_dir, seed=int(norm["seed"]))
+        kernel = kernel or ConsciousnessKernel(
+            self.state_dir,
+            config=dict(norm["overlay"] or {}),
+            seed=int(norm["seed"]),
+            respect_tuned_overlay=False,
+        )
         before_events = events.iter_events(self.state_dir, limit=None)
         before_count = len(before_events)
         before = self._snapshot(before_events[-800:])
 
         original_disable = list(kernel.config.get("disable_modules") or [])
+        original_runtime_overrides = copy.deepcopy(
+            getattr(kernel, "_runtime_overrides", {})
+        )
         disabled = sorted({str(x) for x in original_disable} | set(norm["disable_modules"]))
         kernel.config["disable_modules"] = disabled
+        if norm["overlay"]:
+            kernel.set_runtime_overrides(dict(norm["overlay"]))
 
         beat_seconds = float(norm["beat_seconds"])
         warmup_beats = int(norm["warmup_beats"])
-        baseline_beats = self._beats_for(float(norm["baseline_seconds"]), beat_seconds)
-        perturb_beats = self._beats_for(float(norm["perturb_seconds"]), beat_seconds)
-        recovery_beats = self._beats_for(float(norm["recovery_seconds"]), beat_seconds)
+        baseline_beats = (
+            int(norm["baseline_beats"])
+            if int(norm["baseline_beats"]) > 0
+            else self._beats_for(float(norm["baseline_seconds"]), beat_seconds)
+        )
+        perturb_beats = (
+            int(norm["perturb_beats"])
+            if int(norm["perturb_beats"]) > 0
+            else self._beats_for(float(norm["perturb_seconds"]), beat_seconds)
+        )
+        recovery_beats = (
+            int(norm["recovery_beats"])
+            if int(norm["recovery_beats"]) > 0
+            else self._beats_for(float(norm["recovery_seconds"]), beat_seconds)
+        )
 
         stage_rows: list[dict[str, Any]] = []
         perturbation_rows: list[dict[str, Any]] = []
@@ -261,10 +292,46 @@ class ConsciousnessBenchRunner:
             )
         finally:
             kernel.config["disable_modules"] = original_disable
+            if norm["overlay"]:
+                kernel.set_runtime_overrides(original_runtime_overrides)
 
         all_events = events.iter_events(self.state_dir, limit=None)
         after = self._snapshot(all_events[-1000:])
         window_events = all_events[before_count:]
+        threshold = float(kernel.config.get("competition_trace_strength_threshold", 0.45))
+
+        event_type_counts: dict[str, int] = {}
+        module_error_count = 0
+        meta_total = 0
+        degraded_count = 0
+        winner_count = 0
+        ignitions_without_trace = 0
+        for evt in window_events:
+            etype = str(evt.get("type") or "")
+            event_type_counts[etype] = int(event_type_counts.get(etype, 0)) + 1
+            if etype == "consciousness.module_error":
+                module_error_count += 1
+            elif etype == "meta.state_estimate":
+                meta_total += 1
+                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+                if str(data.get("mode") or "").lower() == "degraded":
+                    degraded_count += 1
+            elif etype == "workspace.broadcast":
+                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+                payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
+                if str(payload.get("kind") or "") == "GW_WINNER":
+                    winner_count += 1
+            elif etype == "gw.ignite":
+                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+                try:
+                    trace_strength = float(data.get("trace_strength") or 0.0)
+                except (TypeError, ValueError):
+                    trace_strength = 0.0
+                if trace_strength < threshold:
+                    ignitions_without_trace += 1
+        degraded_mode_ratio = (
+            round(float(degraded_count) / float(meta_total), 6) if meta_total > 0 else 0.0
+        )
 
         deltas = compute_trial_deltas(before, after)
         score = composite_trial_score(deltas)
@@ -300,6 +367,11 @@ class ConsciousnessBenchRunner:
             "recipes": recipe_rows,
             "recipe_expectations": expectation_eval,
             "events_window_count": len(window_events),
+            "event_type_counts": event_type_counts,
+            "module_error_count": module_error_count,
+            "degraded_mode_ratio": degraded_mode_ratio,
+            "winner_count": winner_count,
+            "ignitions_without_trace": ignitions_without_trace,
             "stage_rows": len(stage_rows),
         }
 
@@ -315,6 +387,10 @@ class ConsciousnessBenchRunner:
                 "recipes": recipe_rows,
                 "recipe_expectations": expectation_eval,
                 "events_window_count": len(window_events),
+                "module_error_count": module_error_count,
+                "degraded_mode_ratio": degraded_mode_ratio,
+                "winner_count": winner_count,
+                "ignitions_without_trace": ignitions_without_trace,
                 "stage_rows": len(stage_rows),
             },
             tags=["consciousness", "bench", "trial"],
