@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone D` complete, benchmark expansion active
+- Current phase: `Milestone F` active (dynamical continuity + multi-timescale runtime)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 
@@ -94,3 +94,16 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add optional external benchmark score ingestion + normalization.~~
 - [x] ~~Add integrated stack benchmark (kernel + trials + optional MCP + optional local LLM) with persisted reports and baseline delta.~~
 - [x] ~~Add automated Linux parity benchmark job and publish trend reports.~~
+
+## Phase 12: Dynamical Continuity and Emergence
+
+- [x] ~~Add persistent per-module state store (`state_store.py`) with periodic checkpoints.~~
+- [x] ~~Add multi-rate module scheduling (`module_tick_periods`) and module disable controls.~~
+- [x] ~~Implement stateful `sense`, `intero`, and `affect` modules and wire into default kernel path.~~
+- [x] ~~Implement `working_set` continuity module with decay/capacity and `WM_STATE` broadcast.~~
+- [x] ~~Upgrade competition to emit winner-linked `gw.reaction_trace` and stronger ignition criteria.~~
+- [x] ~~Promote perturbation runtime to active module-aware behavior (`drop`, `noise`, `delay`, `clamp`, `scramble`).~~
+- [x] ~~Add continuity regression tests (`test_consciousness_continuity.py`).~~
+- [ ] Extend world-model to latent feature predictive coding (beyond event-type transitions).
+- [ ] Add explicit memory bridge module (`memory_forge` insights -> candidates).
+- [ ] Add ablation benchmark runner and contribution assertions.

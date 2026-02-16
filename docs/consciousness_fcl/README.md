@@ -21,3 +21,4 @@
 - Part 09: `docs/consciousness_fcl/part-09-documentation-ops.md`
 - Part 10: `docs/consciousness_fcl/part-10-level-gates-falsification.md`
 - Part 11: `docs/consciousness_fcl/part-11-benchmarking-self-improvement.md`
+- Part 12: `docs/consciousness_fcl/part-12-dynamical-continuity.md`

@@ -1,6 +1,7 @@
 from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
+from .state_store import ModuleStateStore
 from .trials import ConsciousnessTrialRunner, TrialResult
 from .types import Module, TickContext, WorkspacePayload, normalize_workspace_payload
 
@@ -12,6 +13,7 @@ __all__ = [
     "IntegratedBenchmarkResult",
     "IntegratedStackBenchmark",
     "KernelResult",
+    "ModuleStateStore",
     "Module",
     "TrialResult",
     "TickContext",

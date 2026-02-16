@@ -94,11 +94,40 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 - Files: `scripts/consciousness_benchmark_trend.py`
 - Files: `scripts/tests/test_consciousness_benchmark_trend.py`
 
+## Stage F (Active): Dynamical Continuity and Multi-Timescale Runtime
+
+1. Add persistent module state store and kernel beat persistence.
+- Files: `agent_forge/src/agent_forge/consciousness/state_store.py`
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+
+2. Extend `TickContext` for indexed access and perturb querying.
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+
+3. Wire substrate modules into default execution path.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/sense.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/intero.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/affect.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/working_set.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/__init__.py`
+
+4. Improve GNW quality with winner-linked reaction traces and inhibition-of-return.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/workspace_competition.py`
+
+5. Promote perturb harness from no-op adapter to active kernel registration.
+- Files: `agent_forge/src/agent_forge/consciousness/perturb/harness.py`
+
+6. Add continuity and cadence regression tests.
+- Files: `agent_forge/tests/test_consciousness_continuity.py`
+
 ## Validation Commands
 
 1. Agent Forge targeted tests:
 ```sh
 PYTHONPATH=/data/data/com.termux/files/home/eidosian_forge/lib:/data/data/com.termux/files/home/eidosian_forge/agent_forge/src ../eidosian_venv/bin/python -m pytest -q tests/test_consciousness_milestone_a.py tests/test_workspace.py tests/test_db_and_daemon.py
+```
+1.1 Continuity tests:
+```sh
+PYTHONPATH=/data/data/com.termux/files/home/eidosian_forge/lib:/data/data/com.termux/files/home/eidosian_forge/agent_forge/src:/data/data/com.termux/files/home/eidosian_forge/eidos_mcp/src:/data/data/com.termux/files/home/eidosian_forge/crawl_forge/src eidosian_venv/bin/python -m pytest -q agent_forge/tests/test_consciousness_continuity.py
 ```
 2. MCP tests:
 ```sh

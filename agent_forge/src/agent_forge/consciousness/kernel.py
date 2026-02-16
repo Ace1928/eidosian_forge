@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import random
+import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
@@ -10,12 +11,17 @@ from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
 from .modules.attention import AttentionModule
+from .modules.affect import AffectModule
+from .modules.intero import InteroModule
 from .modules.meta import MetaModule
 from .modules.policy import PolicyModule
 from .modules.report import ReportModule
+from .modules.sense import SenseModule
 from .modules.self_model_ext import SelfModelExtModule
 from .modules.world_model import WorldModelModule
+from .modules.working_set import WorkingSetModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
+from .state_store import ModuleStateStore
 from .types import Module, TickContext, merged_config
 
 
@@ -39,18 +45,89 @@ class ConsciousnessKernel:
         self.state_dir = Path(state_dir)
         self.config = merged_config(config or {})
         self.rng = random.Random(seed)
+        self.state_store = ModuleStateStore(
+            self.state_dir,
+            autosave_interval_secs=float(
+                self.config.get("state_autosave_interval_secs", 2.0)
+            ),
+        )
+        self.beat_count = int(self.state_store.get_meta("beat_count", 0) or 0)
+        self._active_perturbations: list[dict[str, Any]] = []
         self.modules: List[Module] = list(
             modules
             or [
+                SenseModule(),
+                InteroModule(),
+                AffectModule(),
                 WorldModelModule(),
                 AttentionModule(),
                 WorkspaceCompetitionModule(),
+                WorkingSetModule(),
                 PolicyModule(),
                 SelfModelExtModule(),
                 MetaModule(),
                 ReportModule(),
             ]
         )
+
+    def register_perturbation(self, payload: Mapping[str, Any]) -> None:
+        now = datetime.now(timezone.utc)
+        ts = str(payload.get("ts") or now.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        duration = max(0.0, float(payload.get("duration_s") or 0.0))
+        expires_at = now
+        if duration > 0.0:
+            expires_at = now + timedelta(seconds=duration)
+        self._active_perturbations.append(
+            {
+                "id": str(payload.get("id") or uuid.uuid4().hex),
+                "kind": str(payload.get("kind") or ""),
+                "target": str(payload.get("target") or "*"),
+                "magnitude": float(payload.get("magnitude") or 0.0),
+                "duration_s": duration,
+                "meta": dict(payload.get("meta") or {}),
+                "ts": ts,
+                "_expires_at": expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            }
+        )
+
+    def _refresh_perturbations(self, now: datetime) -> None:
+        kept: list[dict[str, Any]] = []
+        for row in self._active_perturbations:
+            exp_text = str(row.get("_expires_at") or "")
+            expires_at: datetime | None = None
+            if exp_text:
+                try:
+                    if exp_text.endswith("Z"):
+                        exp_text = exp_text[:-1] + "+00:00"
+                    expires_at = datetime.fromisoformat(exp_text)
+                    if expires_at.tzinfo is None:
+                        expires_at = expires_at.replace(tzinfo=timezone.utc)
+                    else:
+                        expires_at = expires_at.astimezone(timezone.utc)
+                except Exception:
+                    expires_at = None
+            if expires_at is not None and now > expires_at:
+                continue
+            kept.append(row)
+        self._active_perturbations = kept
+
+    def _module_period(self, module_name: str) -> int:
+        periods = self.config.get("module_tick_periods")
+        if isinstance(periods, Mapping):
+            value = periods.get(module_name)
+            if isinstance(value, (int, float)):
+                return max(1, int(value))
+        direct = self.config.get(f"module_period_{module_name}")
+        if isinstance(direct, (int, float)):
+            return max(1, int(direct))
+        return 1
+
+    def _module_disabled(self, module_name: str) -> bool:
+        raw = self.config.get("disable_modules")
+        if isinstance(raw, (list, tuple, set)):
+            disabled = {str(x) for x in raw}
+            return module_name in disabled
+        return False
 
     def _collect_context(self) -> TickContext:
         event_limit = int(self.config.get("recent_events_limit", 300))
@@ -63,14 +140,24 @@ class ConsciousnessKernel:
             recent_events=events,
             recent_broadcasts=broadcasts,
             rng=self.rng,
+            beat_count=self.beat_count,
+            state_store=self.state_store,
+            active_perturbations=list(self._active_perturbations),
             now=datetime.now(timezone.utc),
         )
 
     def tick(self) -> KernelResult:
+        now = datetime.now(timezone.utc)
+        self._refresh_perturbations(now)
         ctx = self._collect_context()
         errors: List[str] = []
         names: List[str] = []
         for module in self.modules:
+            if self._module_disabled(module.name):
+                continue
+            period = self._module_period(module.name)
+            if period > 1 and (self.beat_count % period) != 0:
+                continue
             names.append(module.name)
             try:
                 module.tick(ctx)
@@ -82,6 +169,10 @@ class ConsciousnessKernel:
                     {"module": module.name, "error": str(exc)},
                     tags=["consciousness", "module_error"],
                 )
+
+        self.beat_count += 1
+        self.state_store.set_meta("beat_count", self.beat_count)
+        self.state_store.flush()
 
         return KernelResult(
             ts=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
