@@ -50,6 +50,34 @@ def test_world_model_emits_prediction_error_and_pred_err_broadcast(tmp_path: Pat
     assert pred_err_broadcasts
 
 
+def test_world_model_emits_belief_state_and_rollout(tmp_path: Path) -> None:
+    base = tmp_path / "state"
+    events.append(base, "sense.percept", {"novelty": 0.7})
+    events.append(base, "intero.drive", {"strength": 0.5})
+    events.append(base, "policy.action", {"score": 0.6})
+
+    module = WorldModelModule()
+    kernel = ConsciousnessKernel(
+        base,
+        modules=[module],
+        config={"world_prediction_window": 50, "world_rollout_default_steps": 4},
+        seed=5,
+    )
+    result = kernel.tick()
+    assert result.errors == []
+
+    all_events = events.iter_events(base, limit=None)
+    belief_events = [evt for evt in all_events if evt.get("type") == "world.belief_state"]
+    assert belief_events
+    latest = belief_events[-1]["data"]
+    assert int(latest.get("feature_count") or 0) >= 1
+    assert isinstance(latest.get("belief_top_features"), list)
+
+    rollout = module.rollout(steps=4)
+    assert len(rollout) == 4
+    assert all("predicted_event_type" in row for row in rollout)
+
+
 def test_meta_emits_grounded_mode_when_signals_are_stable(tmp_path: Path) -> None:
     base = tmp_path / "state"
     workspace.broadcast(base, "sense", {"kind": "PERCEPT", "content": {"x": 1}})

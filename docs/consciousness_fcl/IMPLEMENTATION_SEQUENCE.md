@@ -153,6 +153,7 @@ Status checkpoint:
 - PR-H3 delivered (new `consciousness/bench/` package with `TrialSpec`, stage lifecycle execution, artifact persistence, and regression tests).
 - PR-H4 delivered (metrics v2 modules: `entropy`, `connectivity`, `directionality`, `self_stability`, plus upgraded `rci_v2` and bench integration).
 - PR-H5 delivered (ablation matrix runner, golden checks, and regression tests).
+- PR-H6 delivered (world model v1.5 predictive coding with feature extraction, persistent belief state, surprise decomposition, and rollout API).
 
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`

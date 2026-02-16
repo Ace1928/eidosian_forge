@@ -1,5 +1,7 @@
 # Part 19: World Model v1.5 - Belief State and Predictive Coding
 
+Status: core PR-H6 delivery complete (`features.py` + upgraded `world_model.py` + rollout and belief-state emissions).
+
 ## Goal
 
 Upgrade world modeling from event-type transitions to feature-based predictive coding with persistent belief dynamics and rollout capability.
