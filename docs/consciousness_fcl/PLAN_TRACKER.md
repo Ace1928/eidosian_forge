@@ -7,6 +7,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - Current phase: `Milestone H` active (causal traceability + consciousness lab instrumentation)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
+- MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
 
 ## Phase 0: Operational Definition
 
