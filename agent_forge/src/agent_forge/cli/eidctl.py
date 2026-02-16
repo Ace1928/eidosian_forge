@@ -172,6 +172,22 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cfull = csub.add_parser("full-benchmark", help="run integrated stack benchmark (kernel + trials + MCP + local LLM)")
+        cfull.add_argument("--dir", default="state", help="state directory")
+        cfull.add_argument("--rounds", type=int, default=3, help="number of core benchmark rounds")
+        cfull.add_argument("--bench-ticks", type=int, default=10, help="ticks per core benchmark round")
+        cfull.add_argument("--trial-ticks", type=int, default=3, help="ticks per perturbation trial")
+        cfull.add_argument("--model", default="qwen2.5:1.5b", help="local Ollama model to benchmark")
+        cfull.add_argument("--ollama-endpoint", default="http://127.0.0.1:11434", help="Ollama endpoint URL")
+        cfull.add_argument("--skip-llm", action="store_true", help="skip local LLM task benchmark")
+        cfull.add_argument("--skip-mcp", action="store_true", help="skip MCP runtime benchmark")
+        cfull.add_argument("--no-persist", action="store_true", help="do not persist report file")
+        cfull.add_argument("--json", action="store_true", help="JSON output")
+
+        cfull_latest = csub.add_parser("latest-full-benchmark", help="show latest integrated stack benchmark report")
+        cfull_latest.add_argument("--dir", default="state", help="state directory")
+        cfull_latest.add_argument("--json", action="store_true", help="JSON output")
+
         args = ap.parse_args(argv)
 
         if args.cmd == "state":
@@ -367,11 +383,13 @@ def main(argv: list[str] | None = None) -> int:
                 ConsciousnessBenchmarkSuite,
                 ConsciousnessKernel,
                 ConsciousnessTrialRunner,
+                IntegratedStackBenchmark,
             )
             from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise  # type: ignore
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
+            full = IntegratedStackBenchmark(args.dir)
 
             if args.conscious_cmd == "status":
                 from agent_forge.core import events as EV  # type: ignore
@@ -469,6 +487,58 @@ def main(argv: list[str] | None = None) -> int:
                             f"[consciousness] latest_benchmark={latest.get('benchmark_id')} "
                             f"composite={scores.get('composite')} "
                             f"delta={scores.get('delta_composite')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "full-benchmark":
+                result = full.run(
+                    rounds=max(1, int(args.rounds)),
+                    bench_ticks=max(1, int(args.bench_ticks)),
+                    trial_ticks=max(1, int(args.trial_ticks)),
+                    run_mcp=not args.skip_mcp,
+                    run_llm=not args.skip_llm,
+                    persist=not args.no_persist,
+                    llm_model=args.model,
+                    ollama_endpoint=args.ollama_endpoint,
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    scores = payload.get("scores") or {}
+                    gates = payload.get("gates") or {}
+                    print(
+                        f"[consciousness] full_benchmark={payload.get('benchmark_id')} "
+                        f"integrated={scores.get('integrated')} "
+                        f"delta={scores.get('delta')}"
+                    )
+                    print(
+                        f"[consciousness] gates="
+                        f"core={gates.get('core_score_min')} "
+                        f"trial={gates.get('trial_score_min')} "
+                        f"llm={gates.get('llm_success_min')} "
+                        f"mcp={gates.get('mcp_success_min')} "
+                        f"non_regression={gates.get('non_regression')}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
+
+            if args.conscious_cmd == "latest-full-benchmark":
+                latest = full.latest()
+                if latest is None:
+                    latest = {"error": "No integrated benchmark report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        scores = latest.get("scores") or {}
+                        print(
+                            f"[consciousness] latest_full_benchmark={latest.get('benchmark_id')} "
+                            f"integrated={scores.get('integrated')} "
+                            f"delta={scores.get('delta')}"
                         )
                 return 0
 

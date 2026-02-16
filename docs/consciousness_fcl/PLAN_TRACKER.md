@@ -55,6 +55,8 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Expose MCP tools/resources for consciousness status, perturbation, and trial execution.~~
 - [x] ~~Add `eidctl consciousness benchmark` and `latest-benchmark`.~~
 - [x] ~~Expose MCP benchmark tools/resources for runtime benchmark reports.~~
+- [x] ~~Add `eidctl consciousness full-benchmark` and `latest-full-benchmark`.~~
+- [x] ~~Expose MCP integrated benchmark tool/resource (`consciousness_kernel_full_benchmark`, `consciousness_kernel_latest_full_benchmark`, `eidos://consciousness/runtime-latest-full-benchmark`).~~
 
 ## Phase 7: Tests and Validation
 
@@ -90,4 +92,5 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add internal benchmark suite with latency, capability, and gate checks.~~
 - [x] ~~Add baseline comparison and non-regression gates.~~
 - [x] ~~Add optional external benchmark score ingestion + normalization.~~
+- [x] ~~Add integrated stack benchmark (kernel + trials + optional MCP + optional local LLM) with persisted reports and baseline delta.~~
 - [ ] Add automated Linux parity benchmark job and publish trend reports.

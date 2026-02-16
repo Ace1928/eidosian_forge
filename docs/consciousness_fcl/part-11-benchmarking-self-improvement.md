@@ -30,11 +30,16 @@ Provide objective, repeatable measurements for capability growth, runtime perfor
 3. CLI and MCP integration:
 - `eidctl consciousness benchmark`
 - `eidctl consciousness latest-benchmark`
+- `eidctl consciousness full-benchmark`
+- `eidctl consciousness latest-full-benchmark`
 - MCP tools:
   - `consciousness_kernel_benchmark`
   - `consciousness_kernel_latest_benchmark`
+  - `consciousness_kernel_full_benchmark`
+  - `consciousness_kernel_latest_full_benchmark`
 - MCP resource:
   - `eidos://consciousness/runtime-latest-benchmark`
+  - `eidos://consciousness/runtime-latest-full-benchmark`
 
 4. External benchmark score ingestion:
 - Optional score ingestion for:
@@ -56,9 +61,22 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
   --json
 ```
 
+```bash
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python agent_forge/bin/eidctl consciousness full-benchmark \
+  --dir state \
+  --rounds 1 \
+  --bench-ticks 2 \
+  --trial-ticks 1 \
+  --skip-llm \
+  --skip-mcp \
+  --json
+```
+
 ## Acceptance Criteria
 
 1. Benchmark run emits a `benchmark.run` event with score and gate payload.
 2. Benchmarks persist to `reports/consciousness_benchmarks/`.
 3. Latest benchmark can be retrieved via CLI and MCP.
 4. Baseline delta and non-regression gate are populated when baseline is available.
+5. Integrated benchmark persists to `reports/consciousness_integrated_benchmarks/` and emits `benchmark.integrated`.

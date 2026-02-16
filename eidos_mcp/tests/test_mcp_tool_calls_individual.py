@@ -83,6 +83,19 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
         lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
         "consciousness_kernel_benchmark missing expected keys",
     ),
+    (
+        "consciousness_kernel_full_benchmark",
+        {
+            "rounds": 1,
+            "bench_ticks": 2,
+            "trial_ticks": 1,
+            "run_mcp": False,
+            "run_llm": False,
+            "persist": False,
+        },
+        lambda r: "\"benchmark_id\"" in r and "\"integrated\"" in r,
+        "consciousness_kernel_full_benchmark missing expected keys",
+    ),
 ]
 
 
@@ -112,6 +125,14 @@ class TestMcpToolCallsIndividual(unittest.IsolatedAsyncioTestCase):
     async def test_resource_todo(self) -> None:
         async with _stdio_session() as session:
             result = await asyncio.wait_for(session.read_resource("eidos://todo"), timeout=20)
+        self.assertTrue(result.contents)
+
+    async def test_resource_consciousness_runtime_latest_full_benchmark(self) -> None:
+        async with _stdio_session() as session:
+            result = await asyncio.wait_for(
+                session.read_resource("eidos://consciousness/runtime-latest-full-benchmark"),
+                timeout=20,
+            )
         self.assertTrue(result.contents)
 
 

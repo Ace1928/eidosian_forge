@@ -84,6 +84,11 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 3. Add benchmark tests and baseline-delta checks.
 - Files: `agent_forge/tests/test_consciousness_benchmarks.py`
 4. Add external benchmark score ingestion adapters and normalization.
+5. Add integrated stack benchmark and MCP accessors.
+- Files: `agent_forge/src/agent_forge/consciousness/integrated_benchmark.py`
+- Files: `agent_forge/tests/test_consciousness_integrated_benchmark.py`
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+- Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
 
 ## Validation Commands
 

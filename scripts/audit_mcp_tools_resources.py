@@ -118,6 +118,26 @@ def _build_arguments(
         return {"directory": context["sandbox_dir"], "recursive": True}
     if tool_name in {"tika_extract_url", "tika_ingest_url"}:
         return {"url": "https://example.com"}
+    if tool_name == "consciousness_kernel_benchmark":
+        return {"ticks": 2, "persist": False}
+    if tool_name == "consciousness_kernel_trial":
+        return {
+            "kind": "noise",
+            "target": "attention",
+            "magnitude": 0.2,
+            "duration_s": 1.0,
+            "ticks": 1,
+            "persist": False,
+        }
+    if tool_name == "consciousness_kernel_full_benchmark":
+        return {
+            "rounds": 1,
+            "bench_ticks": 2,
+            "trial_ticks": 1,
+            "run_mcp": False,
+            "run_llm": False,
+            "persist": False,
+        }
     if tool_name == "mcp_self_upgrade":
         # Intentionally not called: side-effecting self mutation and git operations.
         return {}
@@ -245,10 +265,14 @@ async def run_audit(root: Path, timeout_sec: float) -> dict[str, Any]:
 
                 input_schema = getattr(tool, "inputSchema", {}) or {}
                 arguments = _build_arguments(tool.name, input_schema, context, state)
+                call_timeout = timeout_sec
+                if tool.name in {"consciousness_kernel_full_benchmark"}:
+                    # Full benchmark is intentionally heavier than single-probe tools.
+                    call_timeout = max(timeout_sec, 30.0)
                 try:
                     result = await asyncio.wait_for(
                         session.call_tool(tool.name, arguments=arguments),
-                        timeout=timeout_sec,
+                        timeout=call_timeout,
                     )
                     text = _extract_text(result)
 

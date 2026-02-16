@@ -19,12 +19,14 @@ try:
         ConsciousnessBenchmarkSuite,
         ConsciousnessKernel,
         ConsciousnessTrialRunner,
+        IntegratedStackBenchmark,
     )
     from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise
 except Exception:  # pragma: no cover - defensive for partial installs
     ConsciousnessBenchmarkSuite = None
     ConsciousnessKernel = None
     ConsciousnessTrialRunner = None
+    IntegratedStackBenchmark = None
     Perturbation = None
     make_drop = None
     make_noise = None
@@ -52,6 +54,12 @@ def _bench(state_dir: Optional[str] = None) -> Optional[ConsciousnessBenchmarkSu
     if ConsciousnessBenchmarkSuite is None:
         return None
     return ConsciousnessBenchmarkSuite(_state_dir(state_dir))
+
+
+def _full_bench(state_dir: Optional[str] = None) -> Optional[IntegratedStackBenchmark]:
+    if IntegratedStackBenchmark is None:
+        return None
+    return IntegratedStackBenchmark(_state_dir(state_dir))
 
 
 @tool(
@@ -332,6 +340,76 @@ def consciousness_kernel_latest_benchmark(state_dir: Optional[str] = None) -> st
     return json.dumps(latest, indent=2)
 
 
+@tool(
+    name="consciousness_kernel_full_benchmark",
+    description="Run integrated consciousness benchmark (core/trials + optional MCP + optional local LLM).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "rounds": {"type": "integer"},
+            "bench_ticks": {"type": "integer"},
+            "trial_ticks": {"type": "integer"},
+            "run_mcp": {"type": "boolean"},
+            "run_llm": {"type": "boolean"},
+            "persist": {"type": "boolean"},
+            "state_dir": {"type": "string"},
+            "llm_model": {"type": "string"},
+            "ollama_endpoint": {"type": "string"},
+            "timeout_sec": {"type": "number"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_full_benchmark(
+    rounds: int = 2,
+    bench_ticks: int = 6,
+    trial_ticks: int = 2,
+    run_mcp: bool = False,
+    run_llm: bool = False,
+    persist: bool = True,
+    state_dir: Optional[str] = None,
+    llm_model: str = "qwen2.5:1.5b",
+    ollama_endpoint: str = "http://127.0.0.1:11434",
+    timeout_sec: float = 45.0,
+) -> str:
+    full = _full_bench(state_dir)
+    if full is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    result = full.run(
+        rounds=max(1, int(rounds)),
+        bench_ticks=max(1, int(bench_ticks)),
+        trial_ticks=max(1, int(trial_ticks)),
+        run_mcp=bool(run_mcp),
+        run_llm=bool(run_llm),
+        persist=bool(persist),
+        llm_model=llm_model,
+        ollama_endpoint=ollama_endpoint,
+        timeout_sec=max(1.0, float(timeout_sec)),
+    )
+    return json.dumps(result.report, indent=2)
+
+
+@tool(
+    name="consciousness_kernel_latest_full_benchmark",
+    description="Return latest persisted integrated consciousness benchmark report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_latest_full_benchmark(state_dir: Optional[str] = None) -> str:
+    full = _full_bench(state_dir)
+    if full is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = full.latest()
+    if latest is None:
+        return json.dumps({"error": "No integrated benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
 @resource(
     uri="eidos://consciousness/hypotheses",
     description="Configured falsifiable hypotheses for the consciousness assessment protocol.",
@@ -394,4 +472,19 @@ def consciousness_runtime_latest_benchmark_resource() -> str:
     latest = bench.latest_benchmark()
     if latest is None:
         return json.dumps({"error": "No benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/runtime-latest-full-benchmark",
+    description="Latest runtime integrated consciousness benchmark report.",
+)
+@eidosian()
+def consciousness_runtime_latest_full_benchmark_resource() -> str:
+    full = _full_bench()
+    if full is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = full.latest()
+    if latest is None:
+        return json.dumps({"error": "No integrated benchmark report found"}, indent=2)
     return json.dumps(latest, indent=2)

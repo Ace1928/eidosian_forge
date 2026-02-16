@@ -1,4 +1,5 @@
 from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
+from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
 from .trials import ConsciousnessTrialRunner, TrialResult
 from .types import Module, TickContext, WorkspacePayload, normalize_workspace_payload
@@ -8,6 +9,8 @@ __all__ = [
     "ConsciousnessBenchmarkSuite",
     "ConsciousnessKernel",
     "ConsciousnessTrialRunner",
+    "IntegratedBenchmarkResult",
+    "IntegratedStackBenchmark",
     "KernelResult",
     "Module",
     "TrialResult",
