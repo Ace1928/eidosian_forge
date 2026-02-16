@@ -1,5 +1,7 @@
 # Part 20: Simulation Stream - Internal Generative Percepts
 
+Status: core PR-H7 delivery complete (`simulation.py` + meta/report integration + regression tests).
+
 ## Goal
 
 Introduce a controlled simulated percept stream ("dreaming") driven by world model rollouts and validated by meta-state recognition.
@@ -28,9 +30,11 @@ Simulation activates when one or more conditions hold:
 
 Config keys:
 
-- `simulation_quiet_window_beats`
-- `simulation_max_percepts_per_tick`
-- `simulation_confidence_penalty`
+- `simulation_observation_window`
+- `simulation_max_per_tick`
+- `simulation_quiet_percepts_threshold`
+- `simulation_allow_when_quiet`
+- `simulation_broadcast_min_confidence`
 
 ## Event Schema
 

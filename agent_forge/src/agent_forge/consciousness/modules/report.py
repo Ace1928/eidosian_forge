@@ -70,6 +70,7 @@ class ReportModule:
         boundary_evt = index.latest_by_type.get("self.boundary_estimate")
         meta_evt = index.latest_by_type.get("meta.state_estimate")
         pred_err_evt = index.latest_by_type.get("world.prediction_error")
+        simulated_evt = index.latest_by_type.get("sense.simulated_percept")
 
         if not action_evt and not winner:
             return
@@ -79,6 +80,7 @@ class ReportModule:
         boundary_data = _event_data(boundary_evt) if boundary_evt else {}
         meta_data = _event_data(meta_evt) if meta_evt else {}
         pred_err_data = _event_data(pred_err_evt) if pred_err_evt else {}
+        simulated_data = _event_data(simulated_evt) if simulated_evt else {}
 
         winner_candidate = str((winner or {}).get("candidate_id") or "")
         action_candidate = str(action_data.get("selected_candidate_id") or "")
@@ -88,6 +90,11 @@ class ReportModule:
         boundary_stability = _clamp01(boundary_data.get("boundary_stability"), default=0.0)
         prediction_error = _clamp01(pred_err_data.get("prediction_error"), default=0.5)
         meta_confidence = _clamp01(meta_data.get("confidence"), default=0.0)
+        meta_mode = str(meta_data.get("mode") or "unknown")
+        simulation_active = bool(simulated_data) and (
+            bool(simulated_data.get("simulated"))
+            or str(simulated_data.get("origin") or "").startswith("world_model.rollout")
+        )
         groundedness = round(
             _mean(
                 [
@@ -100,6 +107,8 @@ class ReportModule:
             ),
             6,
         )
+        if meta_mode == "simulated" and simulation_active:
+            groundedness = round(max(0.0, groundedness * 0.85), 6)
 
         disconfirmers: list[str] = []
         if candidate_match < 1.0:
@@ -112,6 +121,8 @@ class ReportModule:
             disconfirmers.append("high_prediction_error")
         if meta_confidence < 0.4:
             disconfirmers.append("low_meta_confidence")
+        if simulation_active:
+            disconfirmers.append("simulated_context_active")
 
         should_emit = False
         if self._last_emit_at is None:
@@ -130,13 +141,20 @@ class ReportModule:
         report_id = uuid.uuid4().hex
         content = {
             "report_id": report_id,
-            "mode": str(meta_data.get("mode") or "unknown"),
+            "mode": meta_mode,
             "groundedness": groundedness,
             "summary": {
                 "action_kind": action_data.get("action_kind"),
                 "selected_candidate_id": action_candidate,
                 "winner_candidate_id": winner_candidate,
                 "prediction_error": prediction_error,
+                "simulation_active": simulation_active,
+                "simulated_percept_origin": simulated_data.get("origin")
+                if simulation_active
+                else None,
+                "simulated_percept_type": simulated_data.get("predicted_event_type")
+                if simulation_active
+                else None,
             },
             "confidence_breakdown": {
                 "candidate_match": candidate_match,
@@ -150,6 +168,7 @@ class ReportModule:
                 "agency_corr_id": agency_evt.get("corr_id") if agency_evt else None,
                 "meta_corr_id": meta_evt.get("corr_id") if meta_evt else None,
                 "prediction_corr_id": pred_err_evt.get("corr_id") if pred_err_evt else None,
+                "simulation_corr_id": simulated_evt.get("corr_id") if simulated_evt else None,
             },
         }
         corr_id = str(action_evt.get("corr_id") or "") if action_evt else ""

@@ -20,6 +20,7 @@ from .modules.policy import PolicyModule
 from .modules.report import ReportModule
 from .modules.sense import SenseModule
 from .modules.self_model_ext import SelfModelExtModule
+from .modules.simulation import SimulationModule
 from .modules.world_model import WorldModelModule
 from .modules.working_set import WorkingSetModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
@@ -62,6 +63,7 @@ class ConsciousnessKernel:
                 InteroModule(),
                 AffectModule(),
                 WorldModelModule(),
+                SimulationModule(),
                 MemoryBridgeModule(),
                 KnowledgeBridgeModule(),
                 AttentionModule(),

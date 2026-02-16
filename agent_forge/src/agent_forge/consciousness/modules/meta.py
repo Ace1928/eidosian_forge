@@ -46,6 +46,7 @@ class MetaModule:
         report_groundedness: float,
         ignition_burst: float,
         source_gini: float,
+        simulated_fraction: float,
     ) -> tuple[str, float, list[str]]:
         disconfirmers: list[str] = []
         if coherence < 0.2:
@@ -58,16 +59,24 @@ class MetaModule:
             disconfirmers.append("weak_ignition_burst")
         if source_gini > 0.75:
             disconfirmers.append("source_dominance")
+        if simulated_fraction > 0.5:
+            disconfirmers.append("high_simulated_fraction")
 
         grounded_cond = (
             coherence >= 0.2
             and mean_prediction_error <= 0.5
             and report_groundedness >= 0.5
             and source_gini <= 0.75
+            and simulated_fraction <= 0.5
         )
         if grounded_cond:
             conf = (0.45 + 0.42 * coherence) + (0.08 * min(1.0, ignition_burst / 2.0))
             return "grounded", max(0.0, min(1.0, conf)), disconfirmers
+        if simulated_fraction > 0.5 and mean_prediction_error <= 0.8:
+            conf = (0.42 + 0.25 * min(1.0, simulated_fraction)) + (
+                0.15 * (1.0 - min(1.0, mean_prediction_error))
+            )
+            return "simulated", max(0.0, min(1.0, conf)), disconfirmers
         if coherence >= 0.1 and mean_prediction_error <= 0.75:
             conf = (0.4 + 0.35 * coherence) + (0.08 * min(1.0, ignition_burst / 2.0))
             return "simulated", max(0.0, min(1.0, conf)), disconfirmers
@@ -94,15 +103,23 @@ class MetaModule:
             report_groundedness = 0.0
 
         pred_errors: list[float] = []
+        sim_count = 0
+        real_percept_count = 0
         for evt in events:
-            if str(evt.get("type") or "") != "world.prediction_error":
-                continue
-            data = _event_data(evt)
-            try:
-                pred_errors.append(float(data.get("prediction_error")))
-            except (TypeError, ValueError):
-                continue
+            etype = str(evt.get("type") or "")
+            if etype == "world.prediction_error":
+                data = _event_data(evt)
+                try:
+                    pred_errors.append(float(data.get("prediction_error")))
+                except (TypeError, ValueError):
+                    pass
+            elif etype == "sense.simulated_percept":
+                sim_count += 1
+            elif etype == "sense.percept":
+                real_percept_count += 1
         mean_prediction_error = _mean(pred_errors[-40:])
+        total_percepts = sim_count + real_percept_count
+        simulated_fraction = (sim_count / total_percepts) if total_percepts > 0 else 0.0
 
         mode, confidence, disconfirmers = self._mode_from_signals(
             coherence=coherence,
@@ -110,6 +127,7 @@ class MetaModule:
             report_groundedness=report_groundedness,
             ignition_burst=ignition_burst,
             source_gini=source_gini,
+            simulated_fraction=simulated_fraction,
         )
         confidence = round(float(confidence), 6)
 
@@ -143,6 +161,9 @@ class MetaModule:
                     "ignition_count": int(ws.get("ignition_count") or 0),
                     "max_ignition_burst": round(ignition_burst, 6),
                     "source_gini": round(source_gini, 6),
+                    "simulated_fraction": round(simulated_fraction, 6),
+                    "simulated_percept_count": int(sim_count),
+                    "real_percept_count": int(real_percept_count),
                 },
                 "disconfirmers": disconfirmers,
             },
@@ -160,6 +181,7 @@ class MetaModule:
                     "mean_prediction_error": round(mean_prediction_error, 6),
                     "max_ignition_burst": round(ignition_burst, 6),
                     "source_gini": round(source_gini, 6),
+                    "simulated_fraction": round(simulated_fraction, 6),
                 },
                 "disconfirmers": disconfirmers,
             },

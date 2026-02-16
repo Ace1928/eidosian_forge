@@ -120,7 +120,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add standardized consciousness trial harness package (`bench/`) with persisted artifacts (`spec.json`, `metrics.jsonl`, `events_window.jsonl`, `summary.md`).~~
 - [x] ~~Upgrade metrics suite to v2 (`entropy`, `connectivity`, `directionality`, `self_stability`).~~
 - [x] ~~Upgrade world model to belief-state predictive coding with rollout API.~~
-- [ ] Add simulation stream module and mode-aware report/meta integration.
+- [x] ~~Add simulation stream module and mode-aware report/meta integration.~~
 - [ ] Add phenomenology probe module (PPX indices + snapshot events).
 - [ ] Add perturbation library v2 composite recipes with expected signatures.
 - [x] ~~Add ablation matrix, golden ranges, and regression gates (initial runner + checks + tests).~~

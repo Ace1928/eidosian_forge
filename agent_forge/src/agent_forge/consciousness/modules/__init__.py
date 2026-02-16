@@ -8,6 +8,7 @@ from .policy import PolicyModule
 from .report import ReportModule
 from .self_model_ext import SelfModelExtModule
 from .sense import SenseModule
+from .simulation import SimulationModule
 from .world_model import WorldModelModule
 from .working_set import WorkingSetModule
 from .workspace_competition import WorkspaceCompetitionModule
@@ -23,6 +24,7 @@ __all__ = [
     "ReportModule",
     "SelfModelExtModule",
     "SenseModule",
+    "SimulationModule",
     "WorldModelModule",
     "WorkingSetModule",
     "WorkspaceCompetitionModule",
