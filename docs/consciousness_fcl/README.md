@@ -45,3 +45,4 @@
 - Part 32: `docs/consciousness_fcl/part-32-integrated-red-team-gates.md`
 - Part 33: `docs/consciousness_fcl/part-33-autotune-red-team-commit-gates.md`
 - Part 34: `docs/consciousness_fcl/part-34-benchmark-index-migration.md`
+- Part 35: `docs/consciousness_fcl/part-35-workflow-security-audit.md`

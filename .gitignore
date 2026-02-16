@@ -142,6 +142,7 @@ Backups/
 
 # Local SDKs / environments
 eidosian_venv/
+.bin/
 google-cloud-sdk/
 
 # Machine clone runtime artifacts

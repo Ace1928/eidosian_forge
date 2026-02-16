@@ -143,3 +143,9 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add adversarial tuner red-team gates and regression bundles (red-team campaign + runtime CLI/MCP surfaces).~~
 - [x] ~~Integrate red-team outputs into full-benchmark composite scoring and hard gate checks.~~
 - [x] ~~Gate autotune overlay commits behind quick red-team thresholds with availability safeguards and explicit rollback reason tracing.~~
+
+## Phase 15: Workflow and Supply-Chain Hardening
+
+- [x] ~~Add scheduled/manual security audit workflow for Dependabot inventory with optional critical/high fail gates and artifacted reports.~~
+- [ ] Add automated remediation issue generation from security inventory deltas.
+- [ ] Add pinned-action drift audit and update policy enforcement in CI.

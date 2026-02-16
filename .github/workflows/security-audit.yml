@@ -1,0 +1,174 @@
+name: Security Dependency Audit
+
+on:
+  schedule:
+    - cron: "29 3 * * *"
+  workflow_dispatch:
+    inputs:
+      state:
+        description: "Dependabot alert state filter"
+        required: false
+        default: "open"
+        type: choice
+        options:
+          - open
+          - fixed
+          - dismissed
+          - auto_dismissed
+      fail_on_critical:
+        description: "Fail workflow when open critical alerts exist"
+        required: false
+        default: false
+        type: boolean
+      fail_on_high:
+        description: "Fail workflow when open high alerts exist"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  security-events: read
+
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependabot-audit:
+    name: Dependabot Alert Inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect Dependabot Summary
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_STATE: ${{ github.event.inputs.state }}
+        run: |
+          set -eu
+          mkdir -p reports/security
+          STATE="${INPUT_STATE:-open}"
+          REPORT_PATH="reports/security/dependabot_alerts_${STATE}.json"
+          RAW_LOG="reports/security/dependabot_alerts_${STATE}.log"
+
+          if python scripts/dependabot_alert_inventory.py \
+            --repo "${{ github.repository }}" \
+            --state "$STATE" \
+            --json-out "$REPORT_PATH" > "$RAW_LOG" 2>&1; then
+            echo "report_path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+            echo "state=$STATE" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependabot summary generated at $REPORT_PATH"
+          else
+            echo "::warning::Dependabot summary failed; writing fallback report"
+            python - <<'PY'
+            import json
+            from pathlib import Path
+
+            out = Path("reports/security/dependabot_alerts_error.json")
+            out.write_text(
+                json.dumps(
+                    {
+                        "error": "dependabot_alert_inventory_failed",
+                        "hint": "Ensure workflow token has security-events:read or use a PAT with security_events scope.",
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            PY
+            echo "report_path=reports/security/dependabot_alerts_error.json" >> "$GITHUB_OUTPUT"
+            echo "state=$STATE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish Summary
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          STATE: ${{ steps.collect.outputs.state }}
+        run: |
+          set -eu
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ.get("REPORT_PATH", ""))
+          state = os.environ.get("STATE", "open")
+          summary_lines = ["## Security Dependency Audit", "", f"- state: `{state}`", f"- report: `{path}`"]
+
+          if path.exists():
+              data = json.loads(path.read_text(encoding="utf-8"))
+              if "error" in data:
+                  summary_lines.extend(
+                      [
+                          "- status: `warning`",
+                          f"- error: `{data.get('error')}`",
+                          f"- hint: `{data.get('hint')}`",
+                      ]
+                  )
+              else:
+                  totals = data.get("totals") or {}
+                  open_by_severity = data.get("open_by_severity") or {}
+                  summary_lines.extend(
+                      [
+                          f"- alerts: `{totals.get('alerts', 0)}`",
+                          f"- open: `{totals.get('open', 0)}`",
+                          f"- fixed: `{totals.get('fixed', 0)}`",
+                          f"- open_critical: `{open_by_severity.get('critical', 0)}`",
+                          f"- open_high: `{open_by_severity.get('high', 0)}`",
+                      ]
+                  )
+          else:
+              summary_lines.append("- status: `error` (report missing)")
+
+          summary_path = Path(os.environ.get("GITHUB_STEP_SUMMARY", ""))
+          if summary_path:
+              with summary_path.open("a", encoding="utf-8") as fh:
+                  fh.write("\n".join(summary_lines) + "\n")
+          PY
+
+      - name: Enforce Critical/High Gates
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          FAIL_ON_CRITICAL: ${{ github.event.inputs.fail_on_critical }}
+          FAIL_ON_HIGH: ${{ github.event.inputs.fail_on_high }}
+        run: |
+          set -eu
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ.get("REPORT_PATH", ""))
+          if not path.exists():
+              raise SystemExit(0)
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if "error" in data:
+              raise SystemExit(0)
+          open_by_severity = data.get("open_by_severity") or {}
+          critical = int(open_by_severity.get("critical", 0))
+          high = int(open_by_severity.get("high", 0))
+          fail_on_critical = str(os.environ.get("FAIL_ON_CRITICAL", "")).lower() == "true"
+          fail_on_high = str(os.environ.get("FAIL_ON_HIGH", "")).lower() == "true"
+          if fail_on_critical and critical > 0:
+              raise SystemExit(f"Open critical Dependabot alerts: {critical}")
+          if fail_on_high and high > 0:
+              raise SystemExit(f"Open high Dependabot alerts: {high}")
+          PY
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dependabot-audit-${{ github.run_number }}
+          if-no-files-found: warn
+          path: |
+            reports/security/*.json
+            reports/security/*.log

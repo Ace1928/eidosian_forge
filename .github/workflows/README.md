@@ -210,6 +210,31 @@ jobs:
 
 ---
 
+#### 7. **security-audit.yml** - Dependency Security Inventory
+*Scheduled/manual Dependabot alert inventory with optional hard-fail gates*
+
+**Triggers:**
+- Daily scheduled run
+- Manual workflow dispatch
+
+**Inputs (manual dispatch):**
+- `state` (`open|fixed|dismissed|auto_dismissed`)
+- `fail_on_critical` (boolean)
+- `fail_on_high` (boolean)
+
+**Jobs:**
+1. **dependabot-audit** - Collects alert summary via `scripts/dependabot_alert_inventory.py`
+2. **publish summary** - Adds alert counts and severity breakdown to workflow summary
+3. **optional gate enforcement** - Fails run when configured thresholds are exceeded
+4. **artifact upload** - Stores JSON/log reports in `reports/security/`
+
+**Key Features:**
+- Uses `security-events: read` permission for API access
+- Produces report artifacts even if API access fails (fallback JSON)
+- Supports strict/manual enforcement without forcing scheduled-run failures
+
+---
+
 ## 🔧 Local Development Setup
 
 ### Workflow Config

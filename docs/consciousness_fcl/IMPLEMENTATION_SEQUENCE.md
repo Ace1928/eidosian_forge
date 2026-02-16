@@ -307,3 +307,13 @@ Status checkpoint:
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`
 - Files: `agent_forge/tests/test_consciousness_autotune.py`
 - Files: `agent_forge/tests/test_consciousness_red_team.py`
+
+## Stage J (Active): Workflow and Supply-Chain Hardening
+
+Status checkpoint:
+- PR-J1 delivered (scheduled/manual security audit workflow using Dependabot inventory script, optional severity hard-fail gates, and artifacted reports).
+
+1. Dependency security inventory workflow (PR-J1).
+- Files: `.github/workflows/security-audit.yml`
+- Files: `scripts/dependabot_alert_inventory.py`
+- Files: `.github/workflows/README.md`
