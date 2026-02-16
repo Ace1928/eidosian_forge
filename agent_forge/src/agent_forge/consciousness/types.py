@@ -153,6 +153,13 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "policy_max_actions_per_tick": 1,
         "self_emit_delta_threshold": 0.05,
         "self_observation_window": 120,
+        "world_prediction_window": 120,
+        "world_error_broadcast_threshold": 0.55,
+        "meta_emit_delta_threshold": 0.05,
+        "meta_observation_window": 160,
+        "report_emit_interval_secs": 2.0,
+        "report_emit_delta_threshold": 0.08,
+        "report_broadcast_min_groundedness": 0.35,
     }
     defaults.update(cfg)
     return defaults

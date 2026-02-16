@@ -1,3 +1,883 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1798249133b972f91ac2362d286c7b337a63a1cde30850863d23020b0aa1d52f
-size 17232
+{
+  "nodes": {
+    "36b3add2-d61c-4eaf-b79c-5fcbc2b85848": {
+      "id": "36b3add2-d61c-4eaf-b79c-5fcbc2b85848",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "44d0c9d9-2811-4802-b8b3-3d6e48e5970a": {
+      "id": "44d0c9d9-2811-4802-b8b3-3d6e48e5970a",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "c07cbbae-0605-4392-99f8-2880ff9bb31e": {
+      "id": "c07cbbae-0605-4392-99f8-2880ff9bb31e",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "28336cf2-93e3-4e12-b0f5-fb2ce2896574": {
+      "id": "28336cf2-93e3-4e12-b0f5-fb2ce2896574",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "90aeb5da-02b3-464c-b426-2ede1e99ea4f": {
+      "id": "90aeb5da-02b3-464c-b426-2ede1e99ea4f",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "5f7d61b4-72bd-4fef-8ce7-11023f7960bd": {
+      "id": "5f7d61b4-72bd-4fef-8ce7-11023f7960bd",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "c0b3d031-7c1f-4d0c-9ac0-b28299ff9376": {
+      "id": "c0b3d031-7c1f-4d0c-9ac0-b28299ff9376",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "6d5bb15b-519f-4129-a9f5-20aefc2aeca4": {
+      "id": "6d5bb15b-519f-4129-a9f5-20aefc2aeca4",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "fb0ce176-e14c-4161-bc80-24108e67e47e": {
+      "id": "fb0ce176-e14c-4161-bc80-24108e67e47e",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "13a1c4f4-6338-4cc2-a6d4-7605e5f97717": {
+      "id": "13a1c4f4-6338-4cc2-a6d4-7605e5f97717",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "831f7927-5368-4552-b4e6-872f30e862e7"
+      ]
+    },
+    "831f7927-5368-4552-b4e6-872f30e862e7": {
+      "id": "831f7927-5368-4552-b4e6-872f30e862e7",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "13a1c4f4-6338-4cc2-a6d4-7605e5f97717"
+      ]
+    },
+    "22babe49-e525-45eb-af88-a0f17369dbbc": {
+      "id": "22babe49-e525-45eb-af88-a0f17369dbbc",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "9c2eb7a0-af6b-4027-8cbf-be95f4e5a1fe"
+      ]
+    },
+    "9c2eb7a0-af6b-4027-8cbf-be95f4e5a1fe": {
+      "id": "9c2eb7a0-af6b-4027-8cbf-be95f4e5a1fe",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "22babe49-e525-45eb-af88-a0f17369dbbc"
+      ]
+    },
+    "8a332a8d-34c7-407b-a8ed-1fa00292a096": {
+      "id": "8a332a8d-34c7-407b-a8ed-1fa00292a096",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "d4208754-acb7-430b-850f-533a97031356"
+      ]
+    },
+    "d4208754-acb7-430b-850f-533a97031356": {
+      "id": "d4208754-acb7-430b-850f-533a97031356",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "8a332a8d-34c7-407b-a8ed-1fa00292a096"
+      ]
+    },
+    "c39fbde8-7a40-4079-ac54-2b782e90e7d6": {
+      "id": "c39fbde8-7a40-4079-ac54-2b782e90e7d6",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "774982a1-b76a-4056-9662-cff9752f3685"
+      ]
+    },
+    "774982a1-b76a-4056-9662-cff9752f3685": {
+      "id": "774982a1-b76a-4056-9662-cff9752f3685",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "c39fbde8-7a40-4079-ac54-2b782e90e7d6"
+      ]
+    },
+    "b97fedcc-5601-4738-b486-4a609ae7a260": {
+      "id": "b97fedcc-5601-4738-b486-4a609ae7a260",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "f084ebee-376c-4f70-8937-6780c5d6617a"
+      ]
+    },
+    "f084ebee-376c-4f70-8937-6780c5d6617a": {
+      "id": "f084ebee-376c-4f70-8937-6780c5d6617a",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "b97fedcc-5601-4738-b486-4a609ae7a260"
+      ]
+    },
+    "90515194-9ab9-437a-a689-fb0336aa128e": {
+      "id": "90515194-9ab9-437a-a689-fb0336aa128e",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "c7b27894-fe2a-4485-ac56-bad1d3ea6e0b": {
+      "id": "c7b27894-fe2a-4485-ac56-bad1d3ea6e0b",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "d4adba5a-8b01-44d8-9f9d-3523972a8678": {
+      "id": "d4adba5a-8b01-44d8-9f9d-3523972a8678",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "c5fb5fd6-3e96-43fe-9b2a-85f7a0b9f1db": {
+      "id": "c5fb5fd6-3e96-43fe-9b2a-85f7a0b9f1db",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "3395def4-d910-4198-9a21-de075ac1ac13"
+      ]
+    },
+    "3395def4-d910-4198-9a21-de075ac1ac13": {
+      "id": "3395def4-d910-4198-9a21-de075ac1ac13",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "c5fb5fd6-3e96-43fe-9b2a-85f7a0b9f1db"
+      ]
+    },
+    "371b5dcb-7b87-493c-aa8b-da52315b81b4": {
+      "id": "371b5dcb-7b87-493c-aa8b-da52315b81b4",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "7c218178-80a0-49bf-a01c-8227f4633d7b"
+      ]
+    },
+    "7c218178-80a0-49bf-a01c-8227f4633d7b": {
+      "id": "7c218178-80a0-49bf-a01c-8227f4633d7b",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "371b5dcb-7b87-493c-aa8b-da52315b81b4"
+      ]
+    },
+    "93ac19ac-04c5-4158-b126-f80962f959a0": {
+      "id": "93ac19ac-04c5-4158-b126-f80962f959a0",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "7bc19e73-bd47-4ad3-8ada-edcd85dc3c70": {
+      "id": "7bc19e73-bd47-4ad3-8ada-edcd85dc3c70",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "321937dc-55b4-4199-9ae3-a436ff8937ed": {
+      "id": "321937dc-55b4-4199-9ae3-a436ff8937ed",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "3b7b8424-71dd-497b-a7f3-b32f7459ac06": {
+      "id": "3b7b8424-71dd-497b-a7f3-b32f7459ac06",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "b4ef8f0e-b533-4538-83b0-5fb93a12efb3": {
+      "id": "b4ef8f0e-b533-4538-83b0-5fb93a12efb3",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "e48dd3dd-a360-4361-bfc4-6a079b642be3": {
+      "id": "e48dd3dd-a360-4361-bfc4-6a079b642be3",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "213245d9-b848-4b1d-aa97-0c61a7683e2a": {
+      "id": "213245d9-b848-4b1d-aa97-0c61a7683e2a",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "41fee082-c407-4e10-ba64-8234a9bb3fd5": {
+      "id": "41fee082-c407-4e10-ba64-8234a9bb3fd5",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "5a6b7a3e-2ae5-43b8-9c03-70de1a2283ca": {
+      "id": "5a6b7a3e-2ae5-43b8-9c03-70de1a2283ca",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "ee01d7a0-de77-4432-b1e2-f84cbb2986e6": {
+      "id": "ee01d7a0-de77-4432-b1e2-f84cbb2986e6",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "9c37a592-6cb8-49c9-a043-453d1488e09e"
+      ]
+    },
+    "9c37a592-6cb8-49c9-a043-453d1488e09e": {
+      "id": "9c37a592-6cb8-49c9-a043-453d1488e09e",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "ee01d7a0-de77-4432-b1e2-f84cbb2986e6"
+      ]
+    },
+    "e5016cb1-e13f-482b-b96c-0e095465ef59": {
+      "id": "e5016cb1-e13f-482b-b96c-0e095465ef59",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "35eed566-b7c3-4d3a-ab6f-ec2369f965c0"
+      ]
+    },
+    "35eed566-b7c3-4d3a-ab6f-ec2369f965c0": {
+      "id": "35eed566-b7c3-4d3a-ab6f-ec2369f965c0",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "e5016cb1-e13f-482b-b96c-0e095465ef59"
+      ]
+    },
+    "86c9a5dd-8090-40c3-b959-0c41c5a39cec": {
+      "id": "86c9a5dd-8090-40c3-b959-0c41c5a39cec",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "7529b1de-7e36-4385-8d70-6eadf23e5a9e": {
+      "id": "7529b1de-7e36-4385-8d70-6eadf23e5a9e",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "787b843a-048b-40e1-b178-579ad1251b8e": {
+      "id": "787b843a-048b-40e1-b178-579ad1251b8e",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "231b718b-70be-46f5-8f58-0c6c0cd011e6": {
+      "id": "231b718b-70be-46f5-8f58-0c6c0cd011e6",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "7b6ecf2a-420a-410d-b434-e1b988d3ca87"
+      ]
+    },
+    "7b6ecf2a-420a-410d-b434-e1b988d3ca87": {
+      "id": "7b6ecf2a-420a-410d-b434-e1b988d3ca87",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "231b718b-70be-46f5-8f58-0c6c0cd011e6"
+      ]
+    },
+    "303fb3fb-e2f4-4f57-af91-962779846f66": {
+      "id": "303fb3fb-e2f4-4f57-af91-962779846f66",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "cf66b501-75e7-4d0e-b836-e4d0569688c9"
+      ]
+    },
+    "cf66b501-75e7-4d0e-b836-e4d0569688c9": {
+      "id": "cf66b501-75e7-4d0e-b836-e4d0569688c9",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "303fb3fb-e2f4-4f57-af91-962779846f66"
+      ]
+    },
+    "5704769c-58c2-49a2-a80e-52ca317413d5": {
+      "id": "5704769c-58c2-49a2-a80e-52ca317413d5",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "15e6b8a2-fbd9-4f40-b5cb-921d6a9bcb9a": {
+      "id": "15e6b8a2-fbd9-4f40-b5cb-921d6a9bcb9a",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "1da8e7c1-3151-4576-af1f-ba1965431839": {
+      "id": "1da8e7c1-3151-4576-af1f-ba1965431839",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "fcc12e46-ca0c-4990-bb4d-61d4ed9bd4c8": {
+      "id": "fcc12e46-ca0c-4990-bb4d-61d4ed9bd4c8",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "5838138b-ec1b-4476-a3b5-00d161b845fc": {
+      "id": "5838138b-ec1b-4476-a3b5-00d161b845fc",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "adde74a8-ea42-4201-b943-d23eabfe6129": {
+      "id": "adde74a8-ea42-4201-b943-d23eabfe6129",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "f00ce827-78c3-4fd5-9d69-dcbe6a06936b": {
+      "id": "f00ce827-78c3-4fd5-9d69-dcbe6a06936b",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "cd4099a2-5506-4a6a-812b-b677537a2acb": {
+      "id": "cd4099a2-5506-4a6a-812b-b677537a2acb",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "924e612b-cae5-4b2e-a80c-708223d7d37a": {
+      "id": "924e612b-cae5-4b2e-a80c-708223d7d37a",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "18c9549a-1bbf-4a4d-b5ac-c1bf51502bd3": {
+      "id": "18c9549a-1bbf-4a4d-b5ac-c1bf51502bd3",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "814efb73-53f3-4429-8912-d1d34c373d68": {
+      "id": "814efb73-53f3-4429-8912-d1d34c373d68",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "1b552ddd-059b-442b-bafe-bf4ba3ef733f": {
+      "id": "1b552ddd-059b-442b-bafe-bf4ba3ef733f",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "a9293898-d517-48e6-85f4-04ea450f2284": {
+      "id": "a9293898-d517-48e6-85f4-04ea450f2284",
+      "content": "Example Domain\n\nExample Domain\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\nLearn more",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:web",
+          "domain:example.com"
+        ]
+      },
+      "links": []
+    },
+    "e9c55cd9-18f0-45f4-97e7-de986475b54e": {
+      "id": "e9c55cd9-18f0-45f4-97e7-de986475b54e",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "34668d9e-12cf-4b38-97ea-63f9ce88f433"
+      ]
+    },
+    "34668d9e-12cf-4b38-97ea-63f9ce88f433": {
+      "id": "34668d9e-12cf-4b38-97ea-63f9ce88f433",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "e9c55cd9-18f0-45f4-97e7-de986475b54e"
+      ]
+    },
+    "63a93a02-0754-4a2f-bc7f-022f5a5703bd": {
+      "id": "63a93a02-0754-4a2f-bc7f-022f5a5703bd",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "6a622e88-f51e-4d9a-aba0-e6da74ceb0f9"
+      ]
+    },
+    "6a622e88-f51e-4d9a-aba0-e6da74ceb0f9": {
+      "id": "6a622e88-f51e-4d9a-aba0-e6da74ceb0f9",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "63a93a02-0754-4a2f-bc7f-022f5a5703bd"
+      ]
+    },
+    "e2bcb7ef-7f76-4405-8131-3c6eecef9e44": {
+      "id": "e2bcb7ef-7f76-4405-8131-3c6eecef9e44",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "c15f112c-ff27-4d29-aaf7-a7e734a0c5fe": {
+      "id": "c15f112c-ff27-4d29-aaf7-a7e734a0c5fe",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "d874d0d0-cc27-4ad5-bd74-6e90a6d0a75d": {
+      "id": "d874d0d0-cc27-4ad5-bd74-6e90a6d0a75d",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "cc74c3dc-c9a9-4e04-b024-64809dd9e6dd": {
+      "id": "cc74c3dc-c9a9-4e04-b024-64809dd9e6dd",
+      "content": "Example Domain\n\nExample Domain\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\nLearn more",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:web",
+          "domain:example.com"
+        ]
+      },
+      "links": []
+    },
+    "944f098a-20df-457f-b422-57bb041cf3b6": {
+      "id": "944f098a-20df-457f-b422-57bb041cf3b6",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "5cfdba8b-3e93-41ad-939f-2f10f472d892": {
+      "id": "5cfdba8b-3e93-41ad-939f-2f10f472d892",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample_copy.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "95cf378e-671c-4547-8de7-7ef056061e84": {
+      "id": "95cf378e-671c-4547-8de7-7ef056061e84",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample.txt"
+        ]
+      },
+      "links": []
+    },
+    "be9f1f25-06b9-41cc-863d-8df00bfd0c2c": {
+      "id": "be9f1f25-06b9-41cc-863d-8df00bfd0c2c",
+      "content": "Example Domain\n\nExample Domain\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\nLearn more",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "domain:example.com",
+          "source:web"
+        ]
+      },
+      "links": []
+    }
+  },
+  "concept_map": {}
+}

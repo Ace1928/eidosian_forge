@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone C` complete, `Milestone D` queued
+- Current phase: `Milestone D` complete, benchmark expansion active
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 
@@ -38,9 +38,9 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~`workspace_competition` winner selection and ignition marking.~~
 - [x] ~~`policy` action/efference loop.~~
 - [x] ~~`self_model_ext` agency/boundary estimates.~~
-- [ ] `world_model` prediction and error streams.
-- [ ] `meta` mode estimation.
-- [ ] `report` grounded self-reporting.
+- [x] ~~`world_model` prediction and error streams.~~
+- [x] ~~`meta` mode estimation.~~
+- [x] ~~`report` grounded self-reporting.~~
 
 ## Phase 5: Perturb and Measure
 
@@ -53,6 +53,8 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Extend `eidctl workspace` with winners/coherence/RCI/agency views.~~
 - [x] ~~Add `eidctl consciousness` commands for status and trials.~~
 - [x] ~~Expose MCP tools/resources for consciousness status, perturbation, and trial execution.~~
+- [x] ~~Add `eidctl consciousness benchmark` and `latest-benchmark`.~~
+- [x] ~~Expose MCP benchmark tools/resources for runtime benchmark reports.~~
 
 ## Phase 7: Tests and Validation
 
@@ -60,6 +62,8 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add perturbation-response metric tests.~~
 - [x] ~~Add agency-binding falsification tests.~~
 - [x] ~~Add integration test for daemon + kernel + event log outputs.~~
+- [x] ~~Add Stage D tests for world/model/meta/report event behavior.~~
+- [x] ~~Add benchmark suite tests for baseline delta and CLI path.~~
 
 ## Phase 8: Termux and Linux Hardening
 
@@ -79,3 +83,10 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Map level labels to measurable signatures only.~~
 - [x] ~~Add acceptance/failure criteria per level.~~
 - [x] ~~Add explicit disconfirmation criteria and reporting.~~
+
+## Phase 11: Continuous Improvement Benchmarking
+
+- [x] ~~Add internal benchmark suite with latency, capability, and gate checks.~~
+- [x] ~~Add baseline comparison and non-regression gates.~~
+- [x] ~~Add optional external benchmark score ingestion + normalization.~~
+- [ ] Add automated Linux parity benchmark job and publish trend reports.

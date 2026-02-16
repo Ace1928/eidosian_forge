@@ -15,9 +15,14 @@ from ..forge_loader import ensure_forge_import
 ensure_forge_import("agent_forge")
 
 try:
-    from agent_forge.consciousness import ConsciousnessKernel, ConsciousnessTrialRunner
+    from agent_forge.consciousness import (
+        ConsciousnessBenchmarkSuite,
+        ConsciousnessKernel,
+        ConsciousnessTrialRunner,
+    )
     from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise
 except Exception:  # pragma: no cover - defensive for partial installs
+    ConsciousnessBenchmarkSuite = None
     ConsciousnessKernel = None
     ConsciousnessTrialRunner = None
     Perturbation = None
@@ -41,6 +46,12 @@ def _runner(state_dir: Optional[str] = None) -> Optional[ConsciousnessTrialRunne
     if ConsciousnessTrialRunner is None:
         return None
     return ConsciousnessTrialRunner(_state_dir(state_dir))
+
+
+def _bench(state_dir: Optional[str] = None) -> Optional[ConsciousnessBenchmarkSuite]:
+    if ConsciousnessBenchmarkSuite is None:
+        return None
+    return ConsciousnessBenchmarkSuite(_state_dir(state_dir))
 
 
 @tool(
@@ -264,6 +275,63 @@ def consciousness_kernel_latest_trial(state_dir: Optional[str] = None) -> str:
     return json.dumps(latest, indent=2)
 
 
+@tool(
+    name="consciousness_kernel_benchmark",
+    description="Run internal consciousness benchmark suite and return scored results.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "ticks": {"type": "integer"},
+            "persist": {"type": "boolean"},
+            "state_dir": {"type": "string"},
+            "external_scores": {"type": "object"},
+            "external_sources": {"type": "object"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_benchmark(
+    ticks: int = 12,
+    persist: bool = True,
+    state_dir: Optional[str] = None,
+    external_scores: Optional[dict[str, float]] = None,
+    external_sources: Optional[dict[str, str]] = None,
+) -> str:
+    bench = _bench(state_dir)
+    if bench is None or ConsciousnessKernel is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    kernel = ConsciousnessKernel(_state_dir(state_dir))
+    result = bench.run(
+        kernel=kernel,
+        ticks=max(1, int(ticks)),
+        persist=bool(persist),
+        external_scores=external_scores or {},
+        external_sources=external_sources or {},
+    )
+    return json.dumps(result.report, indent=2)
+
+
+@tool(
+    name="consciousness_kernel_latest_benchmark",
+    description="Return latest persisted consciousness benchmark report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_latest_benchmark(state_dir: Optional[str] = None) -> str:
+    bench = _bench(state_dir)
+    if bench is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = bench.latest_benchmark()
+    if latest is None:
+        return json.dumps({"error": "No benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
 @resource(
     uri="eidos://consciousness/hypotheses",
     description="Configured falsifiable hypotheses for the consciousness assessment protocol.",
@@ -311,4 +379,19 @@ def consciousness_runtime_latest_trial_resource() -> str:
     latest = runner.latest_trial()
     if latest is None:
         return json.dumps({"error": "No trial report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/runtime-latest-benchmark",
+    description="Latest runtime consciousness benchmark report.",
+)
+@eidosian()
+def consciousness_runtime_latest_benchmark_resource() -> str:
+    bench = _bench()
+    if bench is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = bench.latest_benchmark()
+    if latest is None:
+        return json.dumps({"error": "No benchmark report found"}, indent=2)
     return json.dumps(latest, indent=2)

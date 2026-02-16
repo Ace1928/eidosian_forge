@@ -66,7 +66,9 @@ class AttentionModule:
     def tick(self, ctx: TickContext) -> None:
         max_candidates = int(ctx.config.get("attention_max_candidates", 12))
         created = 0
-        for evt in reversed(ctx.recent_events):
+        # Prioritize fresh events emitted by earlier modules in this same tick.
+        event_stream = list(ctx.recent_events) + list(ctx.emitted_events)
+        for evt in reversed(event_stream):
             etype = str(evt.get("type") or "")
             if not etype or etype.startswith("attn.") or etype.startswith("gw."):
                 continue

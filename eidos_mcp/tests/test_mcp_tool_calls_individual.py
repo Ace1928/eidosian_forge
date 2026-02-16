@@ -71,6 +71,18 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
     ("moltbook_feed", {"sort": "new", "limit": 3}, lambda r: "\"posts\"" in r or "\"ok\"" in r, "moltbook_feed missing expected keys"),
     ("moltbook_posts", {"sort": "hot", "limit": 3}, lambda r: "\"posts\"" in r or "\"ok\"" in r, "moltbook_posts missing expected keys"),
     ("moltbook_dm_check", {}, lambda r: "\"has_activity\"" in r or "\"ok\"" in r, "moltbook_dm_check missing expected keys"),
+    (
+        "consciousness_kernel_status",
+        {},
+        lambda r: "\"workspace\"" in r and "\"rci\"" in r,
+        "consciousness_kernel_status missing expected keys",
+    ),
+    (
+        "consciousness_kernel_benchmark",
+        {"ticks": 2, "persist": False},
+        lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
+        "consciousness_kernel_benchmark missing expected keys",
+    ),
 ]
 
 

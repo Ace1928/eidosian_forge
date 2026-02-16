@@ -63,12 +63,27 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
   - `agent_forge/tests/test_consciousness_trials.py`
   - `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
 
-## Stage D (Next): World/Meta/Report
+## Stage D (Completed): World/Meta/Report
 
 1. Implement predictive world model and prediction error streams.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/world_model.py`
 2. Implement `meta` state mode classifier from measured dynamics.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/meta.py`
 3. Implement grounded `report` module with explicit disconfirmers.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/report.py`
 4. Add calibration tests for report confidence quality.
+- Files: `agent_forge/tests/test_consciousness_milestone_d.py`
+
+## Stage E (Active): Continuous Benchmark Expansion
+
+1. Add internal benchmark suite with reproducible scoring.
+- Files: `agent_forge/src/agent_forge/consciousness/benchmarks.py`
+2. Expose benchmark controls through CLI and MCP.
+- Files: `agent_forge/src/agent_forge/cli/eidctl.py`
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+3. Add benchmark tests and baseline-delta checks.
+- Files: `agent_forge/tests/test_consciousness_benchmarks.py`
+4. Add external benchmark score ingestion adapters and normalization.
 
 ## Validation Commands
 

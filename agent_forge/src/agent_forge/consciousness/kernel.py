@@ -10,8 +10,11 @@ from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
 from .modules.attention import AttentionModule
+from .modules.meta import MetaModule
 from .modules.policy import PolicyModule
+from .modules.report import ReportModule
 from .modules.self_model_ext import SelfModelExtModule
+from .modules.world_model import WorldModelModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
 from .types import Module, TickContext, merged_config
 
@@ -39,10 +42,13 @@ class ConsciousnessKernel:
         self.modules: List[Module] = list(
             modules
             or [
+                WorldModelModule(),
                 AttentionModule(),
                 WorkspaceCompetitionModule(),
                 PolicyModule(),
                 SelfModelExtModule(),
+                MetaModule(),
+                ReportModule(),
             ]
         )
 

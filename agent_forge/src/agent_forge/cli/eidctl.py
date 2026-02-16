@@ -150,6 +150,28 @@ def main(argv: list[str] | None = None) -> int:
         clatest.add_argument("--dir", default="state", help="state directory")
         clatest.add_argument("--json", action="store_true", help="JSON output")
 
+        cbench = csub.add_parser("benchmark", help="run consciousness benchmark suite")
+        cbench.add_argument("--dir", default="state", help="state directory")
+        cbench.add_argument("--ticks", type=int, default=12, help="kernel ticks for benchmark run")
+        cbench.add_argument("--no-persist", action="store_true", help="do not write benchmark report file")
+        cbench.add_argument("--json", action="store_true", help="JSON output")
+        cbench.add_argument(
+            "--external-score",
+            action="append",
+            default=[],
+            help="external benchmark score in form name=value (repeatable)",
+        )
+        cbench.add_argument(
+            "--external-source",
+            action="append",
+            default=[],
+            help="external score source in form name=url (repeatable)",
+        )
+
+        cbench_latest = csub.add_parser("latest-benchmark", help="show latest persisted consciousness benchmark report")
+        cbench_latest.add_argument("--dir", default="state", help="state directory")
+        cbench_latest.add_argument("--json", action="store_true", help="JSON output")
+
         args = ap.parse_args(argv)
 
         if args.cmd == "state":
@@ -341,12 +363,19 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.cmd == "consciousness":
-            from agent_forge.consciousness import ConsciousnessKernel, ConsciousnessTrialRunner  # type: ignore
+            from agent_forge.consciousness import (  # type: ignore
+                ConsciousnessBenchmarkSuite,
+                ConsciousnessKernel,
+                ConsciousnessTrialRunner,
+            )
             from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise  # type: ignore
 
             runner = ConsciousnessTrialRunner(args.dir)
+            bench = ConsciousnessBenchmarkSuite(args.dir)
 
             if args.conscious_cmd == "status":
+                from agent_forge.core import events as EV  # type: ignore
+
                 status = runner.status()
                 if args.json:
                     print(json.dumps(status, indent=2))
@@ -354,6 +383,10 @@ def main(argv: list[str] | None = None) -> int:
                     ws = status.get("workspace") or {}
                     coh = status.get("coherence") or {}
                     rci = status.get("rci") or {}
+                    recent = EV.iter_events(args.dir, limit=400)
+                    world_error = _latest_metric(recent, "consciousness.world.prediction_error")
+                    report_groundedness = _latest_metric(recent, "consciousness.report.groundedness")
+                    meta_confidence = _latest_metric(recent, "consciousness.meta.confidence")
                     print(
                         f"[consciousness] events={ws.get('event_count')} "
                         f"ignitions={ws.get('ignition_count')} "
@@ -364,6 +397,12 @@ def main(argv: list[str] | None = None) -> int:
                         f"agency={status.get('agency')} "
                         f"boundary={status.get('boundary_stability')}"
                     )
+                    if world_error is not None:
+                        print(f"[consciousness] world_prediction_error={world_error}")
+                    if report_groundedness is not None:
+                        print(f"[consciousness] report_groundedness={report_groundedness}")
+                    if meta_confidence is not None:
+                        print(f"[consciousness] meta_confidence={meta_confidence}")
                 return 0
 
             if args.conscious_cmd == "latest-trial":
@@ -379,6 +418,57 @@ def main(argv: list[str] | None = None) -> int:
                         print(
                             f"[consciousness] latest_trial={latest.get('report_id')} "
                             f"rci_after={((latest.get('after') or {}).get('rci') or {}).get('rci')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "benchmark":
+                external_scores = _parse_kv_float(args.external_score)
+                external_sources = _parse_kv_str(args.external_source)
+                kernel = ConsciousnessKernel(args.dir)
+                result = bench.run(
+                    kernel=kernel,
+                    ticks=max(1, int(args.ticks)),
+                    persist=not args.no_persist,
+                    external_scores=external_scores,
+                    external_sources=external_sources,
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    scores = payload.get("scores") or {}
+                    gates = payload.get("gates") or {}
+                    print(
+                        f"[consciousness] benchmark={payload.get('benchmark_id')} "
+                        f"composite={scores.get('composite')} "
+                        f"delta={scores.get('delta_composite')}"
+                    )
+                    print(
+                        f"[consciousness] gates="
+                        f"world={gates.get('world_model_online')} "
+                        f"meta={gates.get('meta_online')} "
+                        f"report={gates.get('report_online')} "
+                        f"latency={gates.get('latency_p95_under_100ms')}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
+
+            if args.conscious_cmd == "latest-benchmark":
+                latest = bench.latest_benchmark()
+                if latest is None:
+                    latest = {"error": "No benchmark report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        scores = latest.get("scores") or {}
+                        print(
+                            f"[consciousness] latest_benchmark={latest.get('benchmark_id')} "
+                            f"composite={scores.get('composite')} "
+                            f"delta={scores.get('delta_composite')}"
                         )
                 return 0
 
@@ -480,6 +570,33 @@ def _latest_metric(events: list[dict], key: str) -> float | None:
     if not matches:
         return None
     return matches[-1]
+
+
+def _parse_kv_float(items: list[str]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for item in items:
+        if "=" not in item:
+            continue
+        key, value = item.split("=", 1)
+        key = key.strip()
+        try:
+            out[key] = float(value.strip())
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _parse_kv_str(items: list[str]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for item in items:
+        if "=" not in item:
+            continue
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            continue
+        out[key] = value.strip()
+    return out
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

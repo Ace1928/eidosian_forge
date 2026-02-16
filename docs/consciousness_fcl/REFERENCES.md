@@ -21,6 +21,25 @@ This document tracks external references used to design and validate the Forge C
 8. Abraham Wald. *Sequential Analysis* (1945/1947) foundational sequential testing text.
    https://projecteuclid.org/euclid.aoms/1177731118
 
+## External Benchmark References (Capabilities)
+
+1. Hendrycks et al. “Measuring Massive Multitask Language Understanding” (MMLU, 2020).
+   https://arxiv.org/abs/2009.03300
+2. Rein et al. “GPQA: A Graduate-Level Google-Proof Q&A Benchmark” (2023/2024).
+   https://arxiv.org/abs/2311.12022
+3. Chen et al. “Evaluating Large Language Models Trained on Code” (HumanEval, 2021).
+   https://arxiv.org/abs/2107.03374
+4. SWE-bench official dataset/docs.
+   https://www.swebench.com/
+5. OpenAI research note on SWE-bench Verified setup and evaluation context.
+   https://openai.com/index/introducing-swe-bench-verified/
+6. Jain et al. “LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code” (2024).
+   https://arxiv.org/abs/2403.07974
+7. HELM benchmark framework (Stanford CRFM).
+   https://crfm.stanford.edu/helm/
+
+Accessed: 2026-02-16 (UTC).
+
 ## Engineering and Termux References
 
 1. Termux execution environment variables and filesystem behavior (official docs).

@@ -56,6 +56,9 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
         "rci": rci,
         "agency": _latest_metric(recent_events, "consciousness.agency"),
         "boundary_stability": _latest_metric(recent_events, "consciousness.boundary_stability"),
+        "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),
+        "meta_confidence": _latest_metric(recent_events, "consciousness.meta.confidence"),
+        "report_groundedness": _latest_metric(recent_events, "consciousness.report.groundedness"),
     }
 
 
@@ -151,6 +154,13 @@ class ConsciousnessTrialRunner:
             ),
             "agency_delta": _numeric_delta(after.get("agency"), before.get("agency")),
             "boundary_delta": _numeric_delta(after.get("boundary_stability"), before.get("boundary_stability")),
+            "world_prediction_error_delta": _numeric_delta(
+                after.get("world_prediction_error"), before.get("world_prediction_error")
+            ),
+            "meta_confidence_delta": _numeric_delta(after.get("meta_confidence"), before.get("meta_confidence")),
+            "report_groundedness_delta": _numeric_delta(
+                after.get("report_groundedness"), before.get("report_groundedness")
+            ),
         }
 
         report_id = f"trial_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}"
@@ -223,5 +233,8 @@ class ConsciousnessTrialRunner:
             "rci": rci,
             "agency": _latest_metric(recent, "consciousness.agency"),
             "boundary_stability": _latest_metric(recent, "consciousness.boundary_stability"),
+            "world_prediction_error": _latest_metric(recent, "consciousness.world.prediction_error"),
+            "meta_confidence": _latest_metric(recent, "consciousness.meta.confidence"),
+            "report_groundedness": _latest_metric(recent, "consciousness.report.groundedness"),
             "latest_trial": self.latest_trial(),
         }

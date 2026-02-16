@@ -20,3 +20,4 @@
 - Part 08: `docs/consciousness_fcl/part-08-termux-linux-hardening.md`
 - Part 09: `docs/consciousness_fcl/part-09-documentation-ops.md`
 - Part 10: `docs/consciousness_fcl/part-10-level-gates-falsification.md`
+- Part 11: `docs/consciousness_fcl/part-11-benchmarking-self-improvement.md`
