@@ -128,6 +128,13 @@ data/moltbook/
 # Consciousness protocol runtime artifacts
 data/consciousness/
 reports/consciousness/
+# Runtime benchmark/audit artifacts (generated frequently in Termux/Linux validation)
+reports/consciousness_benchmarks/benchmark_*.json
+reports/consciousness_trials/trial_*.json
+reports/consciousness_integrated_benchmarks/integrated_*.json
+reports/mcp_audit_*.json
+# Local runtime state snapshots/checkpoints
+state/
 # Eidos MCP screenshots
 eidos_mcp/*.png
 # Local backup snapshots (keep out of repo)
