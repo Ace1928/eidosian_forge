@@ -75,6 +75,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add robust URL/TLS fallback handling for Termux Tika URL ingestion paths.~~
 - [x] ~~Add Linux parity smoke script and CI workflow (`scripts/linux_parity_smoke.sh`, `.github/workflows/consciousness-parity.yml`).~~
 - [x] ~~Verify parity behavior in Linux runner.~~
+- [x] ~~Harden full MCP integration tests to backup/restore KB and memory artifacts to prevent repo-state pollution.~~
 
 ## Phase 9: Documentation and Operations
 

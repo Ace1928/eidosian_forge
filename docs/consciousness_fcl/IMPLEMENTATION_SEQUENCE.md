@@ -35,6 +35,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
   - `os.getloadavg` graceful fallback in Termux.
   - defensive `llm_forge` import handling to avoid `AgentForge=None` in MCP state.
   - safe package import behavior for partial startup.
+  - full MCP integration test harness now backs up/restores mutable files (`data/kb.json`, `memory_data.json`, tiered memory JSONs, semantic memory) to keep repo state idempotent.
 - Validation:
   - `eidos_mcp.state` now resolves `AgentForge` and non-`None` `agent`.
   - daemon tests pass in Termux.

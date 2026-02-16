@@ -20,6 +20,11 @@ HOME = Path.home()
 SANDBOX = HOME / ".eidosian/tmp/mcp_sandbox"
 AUDIT_DATA = ROOT / "audit_data/coverage_map.json"
 TODO_PATH = HOME / "TODO.md"
+KB_PATH = ROOT / "data" / "kb.json"
+MEMORY_PATH = ROOT / "memory_data.json"
+SEMANTIC_MEMORY_PATH = ROOT / "data" / "semantic_memory.json"
+TIERED_SELF_PATH = ROOT / "data" / "tiered_memory" / "self.json"
+TIERED_USER_PATH = ROOT / "data" / "tiered_memory" / "user.json"
 VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
 MCP_HOST = "127.0.0.1"
 MCP_PORT = int(os.environ.get("EIDOS_TEST_MCP_PORT", "18928"))
@@ -89,6 +94,8 @@ def _backup_file(path: Path) -> str | None:
 
 def _restore_file(path: Path, content: str | None) -> None:
     if content is None:
+        if path.exists():
+            path.unlink()
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
@@ -118,12 +125,19 @@ async def _call_tool(
 
 class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        self.todo_backup = _backup_file(TODO_PATH)
-        self.audit_backup = _backup_file(AUDIT_DATA)
+        self.file_backups = {
+            TODO_PATH: _backup_file(TODO_PATH),
+            AUDIT_DATA: _backup_file(AUDIT_DATA),
+            KB_PATH: _backup_file(KB_PATH),
+            MEMORY_PATH: _backup_file(MEMORY_PATH),
+            SEMANTIC_MEMORY_PATH: _backup_file(SEMANTIC_MEMORY_PATH),
+            TIERED_SELF_PATH: _backup_file(TIERED_SELF_PATH),
+            TIERED_USER_PATH: _backup_file(TIERED_USER_PATH),
+        }
 
     async def asyncTearDown(self) -> None:
-        _restore_file(TODO_PATH, self.todo_backup)
-        _restore_file(AUDIT_DATA, self.audit_backup)
+        for path, content in self.file_backups.items():
+            _restore_file(path, content)
         if SANDBOX.exists():
             shutil.rmtree(SANDBOX)
 
