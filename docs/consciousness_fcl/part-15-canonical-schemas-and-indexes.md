@@ -1,5 +1,7 @@
 # Part 15: Canonical Schemas and Event Indexes
 
+Status: core EventIndex and runtime module migrations delivered in Stage H PR-H1/PR-H2; benchmark path migration pending.
+
 ## Goal
 
 Introduce a uniform schema and cached index layer so causal queries, metrics, and trial analysis remain fast and correct as event volume grows.
@@ -50,6 +52,7 @@ class EventIndex:
     children_by_parent: dict[str, list[dict]]
     candidates_by_id: dict[str, dict]
     winners_by_candidate_id: dict[str, dict]
+    references_by_candidate_id: dict[str, list[dict]]
 ```
 
 ## TickContext Integration

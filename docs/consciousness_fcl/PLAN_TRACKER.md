@@ -114,8 +114,9 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Publish next-layer execution plan documents (`part-14` through `part-26`).~~
 - [x] ~~Enforce canonical link contract (`corr_id`, `parent_id`, `winner_candidate_id`, `candidate_id`) across scored workspace events.~~
 - [x] ~~Add beat-local `EventIndex` foundation and TickContext index helpers.~~
-- [ ] Migrate critical modules to index-based lookups (`workspace_competition`, `report`, benchmark extraction paths).
-- [ ] Implement winner-linked ignition tracing metric (`trace_strength`) and ignition v3 gates.
+- [x] ~~Migrate critical runtime modules to index-based lookups (`workspace_competition`, `report`).~~
+- [ ] Migrate benchmark extraction paths to index-based lookups.
+- [x] ~~Implement winner-linked ignition tracing metric (`trace_strength`) and ignition v3 gates.~~
 - [ ] Add standardized consciousness trial harness package (`bench/`) with persisted artifacts.
 - [ ] Upgrade metrics suite to v2 (`entropy`, `connectivity`, `directionality`, `self_stability`).
 - [ ] Upgrade world model to belief-state predictive coding with rollout API.

@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
-size 3
+{
+  "7aed433a-309d-4d9b-890e-de67534a6a25": {
+    "id": "7aed433a-309d-4d9b-890e-de67534a6a25",
+    "content": "Workspace competition now finalizes winner-linked reaction traces on subsequent beats, with ignition gated by trace_strength and linked-source/reaction thresholds.",
+    "created_at": "2026-02-16T17:51:00.298572",
+    "type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "embedding": [
+      0.14901960784313725,
+      0.984313725490196,
+      0.9137254901960784,
+      0.42745098039215684,
+      0.807843137254902,
+      0.054901960784313725,
+      0.2627450980392157,
+      0.3411764705882353,
+      0.2627450980392157,
+      0.9764705882352941,
+      0.35294117647058826,
+      0.07450980392156863,
+      0.11764705882352941,
+      0.6196078431372549,
+      0.9215686274509803,
+      0.4549019607843137
+    ]
+  }
+}

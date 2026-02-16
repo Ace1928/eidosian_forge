@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Mapping
 
+from ..metrics.ignition_trace import parse_iso_utc, winner_reaction_trace
 from ..types import TickContext, WorkspacePayload, clamp01, normalize_workspace_payload
 
 
@@ -13,86 +14,12 @@ def _candidate_score(candidate: Mapping[str, Any]) -> float:
         return 0.0
 
 
-def _parse_iso(ts: str) -> datetime | None:
-    try:
-        text = ts
-        if text.endswith("Z"):
-            text = text[:-1] + "+00:00"
-        parsed = datetime.fromisoformat(text)
-        if parsed.tzinfo is None:
-            return parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
-    except Exception:
-        return None
-
-
-def _event_source(evt: Mapping[str, Any]) -> str:
-    etype = str(evt.get("type") or "")
-    data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-    if etype == "workspace.broadcast":
-        src = str(data.get("source") or "")
-        if src:
-            return src
-    if isinstance(data, Mapping):
-        src = str(data.get("source_module") or data.get("source") or "")
-        if src:
-            return src
-    if "." in etype:
-        return etype.split(".", 1)[0]
-    return etype or "unknown"
-
-
 def _winner_signature(candidate: Mapping[str, Any]) -> str:
     return (
         f"{candidate.get('source_module','')}|"
         f"{candidate.get('source_event_type','')}|"
         f"{candidate.get('kind','')}"
     )
-
-
-def _string_links(mapping: Mapping[str, Any]) -> dict[str, str]:
-    links = mapping.get("links") if isinstance(mapping.get("links"), Mapping) else {}
-    return {
-        "corr_id": str(links.get("corr_id") or ""),
-        "parent_id": str(links.get("parent_id") or ""),
-    }
-
-
-def _event_references_winner(evt: Mapping[str, Any], winner: Mapping[str, Any]) -> bool:
-    candidate_id = str(winner.get("candidate_id") or "")
-    winner_links = _string_links(winner)
-    evt_corr = str(evt.get("corr_id") or "")
-    evt_parent = str(evt.get("parent_id") or "")
-    if winner_links["corr_id"] and winner_links["corr_id"] in {evt_corr, evt_parent}:
-        return True
-    if winner_links["parent_id"] and winner_links["parent_id"] in {
-        evt_corr,
-        evt_parent,
-    }:
-        return True
-
-    data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-    if candidate_id and str(data.get("candidate_id") or "") == candidate_id:
-        return True
-    payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
-    content = (
-        payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
-    )
-    if candidate_id and str(content.get("candidate_id") or "") == candidate_id:
-        return True
-
-    payload_links = (
-        _string_links(payload) if payload else {"corr_id": "", "parent_id": ""}
-    )
-    if winner_links["corr_id"] and winner_links["corr_id"] in set(
-        payload_links.values()
-    ):
-        return True
-    if winner_links["parent_id"] and winner_links["parent_id"] in set(
-        payload_links.values()
-    ):
-        return True
-    return False
 
 
 class WorkspaceCompetitionModule:
@@ -113,75 +40,184 @@ class WorkspaceCompetitionModule:
             out.append(item)
         return out
 
-    def _window_reaction_sources(
-        self, ctx: TickContext, *, window_secs: float
-    ) -> set[str]:
-        cutoff = ctx.now - timedelta(seconds=window_secs)
-        sources: set[str] = set()
-        for evt in ctx.all_broadcasts():
-            parsed = _parse_iso(str(evt.get("ts") or ""))
-            if parsed is None or parsed < cutoff:
-                continue
-            src = _event_source(evt)
-            if src:
-                sources.add(src)
-        return sources
-
-    def _winner_reaction_trace(
-        self, ctx: TickContext, winner: Mapping[str, Any], *, window_secs: float
-    ) -> Dict[str, Any]:
-        cutoff = ctx.now - timedelta(seconds=window_secs)
-        reactions: list[Mapping[str, Any]] = []
-        for evt in ctx.all_events():
-            etype = str(evt.get("type") or "")
-            if etype.startswith(("attn.", "gw.", "perturb.")):
-                continue
-            if etype == "workspace.broadcast":
-                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-                src = str(data.get("source") or "")
-                payload = (
-                    data.get("payload")
-                    if isinstance(data.get("payload"), Mapping)
-                    else {}
-                )
-                content = (
-                    payload.get("content")
-                    if isinstance(payload.get("content"), Mapping)
-                    else {}
-                )
-                if (
-                    src == "workspace_competition"
-                    and str(payload.get("kind") or "") == "GW_WINNER"
-                ):
-                    if str(content.get("candidate_id") or "") == str(
-                        winner.get("candidate_id") or ""
-                    ):
-                        continue
-            parsed = _parse_iso(str(evt.get("ts") or ""))
-            if parsed is None or parsed < cutoff:
-                continue
-            if _event_references_winner(evt, winner):
-                reactions.append(evt)
-
-        sources = sorted(
-            {_event_source(evt) for evt in reactions if _event_source(evt)}
+    def _load_pending_winners(self, ctx: TickContext) -> list[dict[str, Any]]:
+        state = ctx.module_state(
+            self.name,
+            defaults={"recent_winner_signatures": [], "pending_winners": []},
         )
-        first_latency_ms = None
-        winner_ts = _parse_iso(str((winner.get("_event") or {}).get("ts") or ""))
-        if winner_ts and reactions:
-            first_evt_ts = _parse_iso(str(reactions[0].get("ts") or ""))
-            if first_evt_ts:
-                first_latency_ms = round(
-                    (first_evt_ts - winner_ts).total_seconds() * 1000.0, 6
+        raw = state.get("pending_winners")
+        if not isinstance(raw, list):
+            return []
+        out: list[dict[str, Any]] = []
+        for row in raw:
+            if isinstance(row, Mapping):
+                out.append(dict(row))
+        return out
+
+    def _save_pending_winners(
+        self, ctx: TickContext, rows: list[dict[str, Any]]
+    ) -> None:
+        state = ctx.module_state(
+            self.name,
+            defaults={"recent_winner_signatures": [], "pending_winners": []},
+        )
+        state["pending_winners"] = rows[-300:]
+
+    def _candidate_pool_for_winner(
+        self,
+        ctx: TickContext,
+        *,
+        winner_candidate_id: str,
+        winner_corr_id: str,
+        winner_parent_id: str,
+    ) -> list[dict[str, Any]]:
+        pool: list[dict[str, Any]] = []
+        if winner_corr_id:
+            pool.extend(ctx.events_by_corr_id(winner_corr_id))
+            pool.extend(ctx.children(winner_corr_id))
+        if winner_parent_id:
+            pool.extend(ctx.events_by_corr_id(winner_parent_id))
+            pool.extend(ctx.children(winner_parent_id))
+        if winner_candidate_id:
+            pool.extend(ctx.candidate_references(winner_candidate_id))
+
+        if not pool:
+            pool = list(ctx.all_events())
+
+        deduped: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str, str]] = set()
+        for evt in pool:
+            key = (
+                str(evt.get("ts") or ""),
+                str(evt.get("type") or ""),
+                str(evt.get("corr_id") or ""),
+                str(evt.get("parent_id") or ""),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(evt)
+        return deduped
+
+    def _finalize_pending_winners(
+        self,
+        ctx: TickContext,
+        *,
+        reaction_window: float,
+        reaction_min_sources: int,
+        reaction_min_count: int,
+        trace_strength_threshold: float,
+        trace_target_sources: int,
+        trace_target_reactions: int,
+        trace_max_latency_ms: float,
+        trace_min_eval_secs: float,
+    ) -> dict[str, Any]:
+        pending = self._load_pending_winners(ctx)
+        if not pending:
+            return {"traces": [], "ignitions": []}
+
+        pending_next: list[dict[str, Any]] = []
+        traces: list[dict[str, Any]] = []
+        ignitions: list[dict[str, Any]] = []
+
+        for row in pending:
+            winner_id = str(row.get("winner_candidate_id") or "")
+            winner_corr_id = str(row.get("winner_corr_id") or "")
+            winner_parent_id = str(row.get("winner_parent_id") or "")
+            winner_ts = str(row.get("winner_ts") or "")
+            winner_beat = int(row.get("winner_beat") or -1)
+
+            if not winner_id:
+                continue
+            if ctx.beat_count <= winner_beat:
+                pending_next.append(row)
+                continue
+
+            winner_time = parse_iso_utc(winner_ts)
+            elapsed = max(
+                0.0,
+                (ctx.now - winner_time).total_seconds() if winner_time else reaction_window,
+            )
+
+            candidate_pool = self._candidate_pool_for_winner(
+                ctx,
+                winner_candidate_id=winner_id,
+                winner_corr_id=winner_corr_id,
+                winner_parent_id=winner_parent_id,
+            )
+            trace = winner_reaction_trace(
+                candidate_pool,
+                winner_candidate_id=winner_id,
+                winner_corr_id=winner_corr_id,
+                winner_parent_id=winner_parent_id,
+                winner_ts=winner_ts,
+                reaction_window_secs=reaction_window,
+                target_sources=trace_target_sources,
+                target_reactions=trace_target_reactions,
+                max_latency_ms=trace_max_latency_ms,
+            )
+
+            reaction_count = int(trace.get("reaction_count") or 0)
+            source_count = int(trace.get("reaction_source_count") or 0)
+            trace_strength = clamp01(trace.get("trace_strength"), default=0.0)
+            ready = (
+                elapsed >= max(0.0, trace_min_eval_secs)
+                and (reaction_count > 0 or elapsed >= reaction_window)
+            )
+            if not ready:
+                pending_next.append(row)
+                continue
+
+            trace_event = {
+                "winner_id": winner_id,
+                "winner_candidate_id": winner_id,
+                "winner_corr_id": winner_corr_id,
+                "winner_parent_id": winner_parent_id,
+                "winner_beat": winner_beat,
+                "reaction_window_secs": reaction_window,
+                **trace,
+            }
+            traces.append(trace_event)
+            ctx.emit_event(
+                "gw.reaction_trace",
+                trace_event,
+                tags=["consciousness", "gw", "reaction_trace"],
+                corr_id=winner_corr_id or None,
+                parent_id=winner_parent_id or None,
+            )
+            ctx.metric("consciousness.ignition.trace_strength", float(trace_strength))
+            ctx.metric("consciousness.gw.reaction_count", float(reaction_count))
+
+            ignite = (
+                source_count >= max(0, reaction_min_sources)
+                and reaction_count >= max(0, reaction_min_count)
+                and trace_strength >= clamp01(trace_strength_threshold, default=0.0)
+            )
+            if ignite:
+                ignition_data = {
+                    "winner_ids": [winner_id],
+                    "winner_candidate_id": winner_id,
+                    "winner_corr_id": winner_corr_id,
+                    "winner_parent_id": winner_parent_id,
+                    "reaction_sources": list(trace.get("reaction_sources") or []),
+                    "reaction_source_count": source_count,
+                    "reaction_count": reaction_count,
+                    "reaction_window_secs": reaction_window,
+                    "reaction_traces": [trace],
+                    "trace_strength": trace_strength,
+                    "ignition_rule": "winner_linked_trace_v3",
+                }
+                ignitions.append(ignition_data)
+                ctx.emit_event(
+                    "gw.ignite",
+                    ignition_data,
+                    tags=["consciousness", "gw", "ignite"],
+                    corr_id=winner_corr_id or None,
+                    parent_id=winner_parent_id or None,
                 )
 
-        return {
-            "candidate_id": str(winner.get("candidate_id") or ""),
-            "reaction_count": len(reactions),
-            "reaction_sources": sources,
-            "reaction_source_count": len(sources),
-            "time_to_first_reaction_ms": first_latency_ms,
-        }
+        self._save_pending_winners(ctx, pending_next)
+        return {"traces": traces, "ignitions": ignitions}
 
     def _apply_cooldown_filter(
         self, ctx: TickContext, ranked: list[Dict[str, Any]]
@@ -193,7 +229,10 @@ class WorkspaceCompetitionModule:
         if cooldown_s <= 0.0:
             return ranked
 
-        state = ctx.module_state(self.name, defaults={"recent_winner_signatures": []})
+        state = ctx.module_state(
+            self.name,
+            defaults={"recent_winner_signatures": [], "pending_winners": []},
+        )
         raw_recent = state.get("recent_winner_signatures")
         recent: list[Mapping[str, Any]] = []
         if isinstance(raw_recent, list):
@@ -201,7 +240,7 @@ class WorkspaceCompetitionModule:
         by_sig: dict[str, datetime] = {}
         for row in recent:
             sig = str(row.get("signature") or "")
-            parsed = _parse_iso(str(row.get("ts") or ""))
+            parsed = parse_iso_utc(str(row.get("ts") or ""))
             if sig and parsed is not None:
                 by_sig[sig] = parsed
 
@@ -233,11 +272,30 @@ class WorkspaceCompetitionModule:
     def tick(self, ctx: TickContext) -> None:
         top_k = int(ctx.config.get("competition_top_k", 2))
         min_score = float(ctx.config.get("competition_min_score", 0.15))
-        reaction_window = float(ctx.config.get("competition_reaction_window_secs", 1.5))
-        reaction_min_sources = int(
-            ctx.config.get("competition_reaction_min_sources", 2)
+        reaction_window = max(
+            0.0, float(ctx.config.get("competition_reaction_window_secs", 1.5))
         )
-        reaction_min_count = int(ctx.config.get("competition_reaction_min_count", 2))
+        reaction_min_sources = max(
+            0, int(ctx.config.get("competition_reaction_min_sources", 2))
+        )
+        reaction_min_count = max(
+            0, int(ctx.config.get("competition_reaction_min_count", 2))
+        )
+        trace_strength_threshold = float(
+            ctx.config.get("competition_trace_strength_threshold", 0.45)
+        )
+        trace_target_sources = max(
+            1, int(ctx.config.get("competition_trace_target_sources", 5))
+        )
+        trace_target_reactions = max(
+            1, int(ctx.config.get("competition_trace_target_reactions", 10))
+        )
+        trace_max_latency_ms = float(
+            ctx.config.get("competition_trace_max_latency_ms", 1500.0)
+        )
+        trace_min_eval_secs = max(
+            0.0, float(ctx.config.get("competition_trace_min_eval_secs", 0.0))
+        )
         drop_winners = bool(ctx.config.get("competition_drop_winners", False))
 
         perturbations = ctx.perturbations_for(self.name)
@@ -260,15 +318,27 @@ class WorkspaceCompetitionModule:
         if delayed and (ctx.beat_count % 2 == 1):
             return
 
+        finalized = self._finalize_pending_winners(
+            ctx,
+            reaction_window=reaction_window,
+            reaction_min_sources=reaction_min_sources,
+            reaction_min_count=reaction_min_count,
+            trace_strength_threshold=trace_strength_threshold,
+            trace_target_sources=trace_target_sources,
+            trace_target_reactions=trace_target_reactions,
+            trace_max_latency_ms=trace_max_latency_ms,
+            trace_min_eval_secs=trace_min_eval_secs,
+        )
+        if finalized.get("traces"):
+            ctx.metric("consciousness.gw.trace_events", float(len(finalized["traces"])))
+
         candidates = self._collect_candidates(ctx)
         if not candidates:
             return
 
         if noise_mag > 0.0:
             for candidate in candidates:
-                noisy = _candidate_score(candidate) + ctx.rng.uniform(
-                    -noise_mag, noise_mag
-                )
+                noisy = _candidate_score(candidate) + ctx.rng.uniform(-noise_mag, noise_mag)
                 candidate["score"] = round(clamp01(noisy, default=0.0), 6)
         if scramble:
             ctx.rng.shuffle(candidates)
@@ -287,24 +357,16 @@ class WorkspaceCompetitionModule:
                 "winner_count": len(winners),
                 "winner_ids": winner_ids,
                 "top_score": _candidate_score(ranked[0]) if ranked else 0.0,
-                "perturbations_active": [
-                    str(p.get("kind") or "") for p in perturbations
-                ],
+                "perturbations_active": [str(p.get("kind") or "") for p in perturbations],
             },
             tags=["consciousness", "competition"],
         )
 
-        trace_rows: list[Dict[str, Any]] = []
-        ignition_sources: set[str] = set()
-        ignition_reaction_count = 0
+        pending_rows = self._load_pending_winners(ctx)
         for winner in winners:
             if drop_winners:
                 continue
-            raw_links = (
-                winner.get("links")
-                if isinstance(winner.get("links"), Mapping)
-                else {}
-            )
+            raw_links = winner.get("links") if isinstance(winner.get("links"), Mapping) else {}
             winner_candidate_id = str(winner.get("candidate_id") or "")
             winner_links = ctx.link(
                 parent_id=str(raw_links.get("parent_id") or "") or None,
@@ -334,68 +396,29 @@ class WorkspaceCompetitionModule:
                 fallback_kind="GW_WINNER",
                 source_module="workspace_competition",
             )
-            links = (
-                payload.get("links")
-                if isinstance(payload.get("links"), Mapping)
-                else {}
-            )
-            corr_id = links.get("corr_id")
-            parent_id = links.get("parent_id")
-            ctx.broadcast(
+            links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
+            corr_id = str(links.get("corr_id") or "")
+            parent_id = str(links.get("parent_id") or "")
+            winner_evt = ctx.broadcast(
                 "workspace_competition",
                 payload,
                 tags=["consciousness", "gw", "winner"],
-                corr_id=str(corr_id) if corr_id else None,
-                parent_id=str(parent_id) if parent_id else None,
+                corr_id=corr_id or None,
+                parent_id=parent_id or None,
             )
-            self._processed_ids.add(str(winner.get("candidate_id")))
+            self._processed_ids.add(winner_candidate_id)
 
-            trace = self._winner_reaction_trace(
-                ctx, winner, window_secs=reaction_window
-            )
-            trace_rows.append(trace)
-            ignition_sources.update(set(trace.get("reaction_sources") or []))
-            ignition_reaction_count += int(trace.get("reaction_count") or 0)
-            ctx.emit_event(
-                "gw.reaction_trace",
+            pending_rows.append(
                 {
-                    "winner_id": str(winner.get("candidate_id") or ""),
-                    "winner_corr_id": str(winner_links.get("corr_id") or ""),
-                    **trace,
-                    "reaction_window_secs": reaction_window,
-                },
-                tags=["consciousness", "gw", "reaction_trace"],
-                corr_id=str(winner_links.get("corr_id") or "") or None,
-                parent_id=str(winner_links.get("parent_id") or "") or None,
+                    "winner_candidate_id": winner_candidate_id,
+                    "winner_corr_id": corr_id,
+                    "winner_parent_id": parent_id,
+                    "winner_ts": str(winner_evt.get("ts") or ""),
+                    "winner_beat": ctx.beat_count,
+                }
             )
-
-        if winners and not drop_winners:
-            fallback_sources = self._window_reaction_sources(
-                ctx, window_secs=reaction_window
-            )
-            if not ignition_sources:
-                ignition_sources = fallback_sources
-            ignite = (
-                len(ignition_sources) >= reaction_min_sources
-                and max(ignition_reaction_count, len(fallback_sources))
-                >= reaction_min_count
-            )
-            if ignite:
-                ctx.emit_event(
-                    "gw.ignite",
-                    {
-                        "winner_ids": winner_ids,
-                        "reaction_sources": sorted(ignition_sources),
-                        "reaction_source_count": len(ignition_sources),
-                        "reaction_count": ignition_reaction_count,
-                        "reaction_window_secs": reaction_window,
-                        "reaction_traces": trace_rows,
-                    },
-                    tags=["consciousness", "gw", "ignite"],
-                )
+        if pending_rows:
+            self._save_pending_winners(ctx, pending_rows)
 
         if winners and not drop_winners:
             ctx.metric("consciousness.gw.winner_count", float(len(winners)))
-            ctx.metric(
-                "consciousness.gw.reaction_count", float(ignition_reaction_count)
-            )

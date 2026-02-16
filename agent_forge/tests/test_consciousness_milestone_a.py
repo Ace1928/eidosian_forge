@@ -6,7 +6,7 @@ from pathlib import Path
 
 from agent_forge.consciousness.kernel import ConsciousnessKernel
 from agent_forge.consciousness.modules import AttentionModule, WorkspaceCompetitionModule
-from agent_forge.core import events, workspace
+from agent_forge.core import events
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EIDOSD = REPO_ROOT / "agent_forge" / "bin" / "eidosd"
@@ -31,9 +31,6 @@ def test_attention_emits_candidates(tmp_path: Path) -> None:
 
 def test_competition_broadcasts_winner_and_ignite(tmp_path: Path) -> None:
     base = tmp_path / "state"
-    workspace.broadcast(base, "sense", {"kind": "PERCEPT", "content": {"x": 1}})
-    workspace.broadcast(base, "intero", {"kind": "DRIVE", "content": {"x": 2}})
-
     events.append(
         base,
         "attn.candidate",
@@ -56,12 +53,25 @@ def test_competition_broadcasts_winner_and_ignite(tmp_path: Path) -> None:
         config={
             "competition_top_k": 1,
             "competition_reaction_window_secs": 120,
-            "competition_reaction_min_sources": 2,
+            "competition_reaction_min_sources": 1,
+            "competition_reaction_min_count": 1,
             "competition_min_score": 0.1,
+            "competition_trace_strength_threshold": 0.1,
+            "competition_trace_target_sources": 1,
+            "competition_trace_target_reactions": 1,
+            "competition_trace_min_eval_secs": 0.0,
         },
         seed=42,
     )
     result = kernel.tick()
+    events.append(
+        base,
+        "policy.action",
+        {"action_id": "a-ignite", "selected_candidate_id": "cand-1"},
+        corr_id="c1",
+        parent_id="p1",
+    )
+    kernel.tick()
 
     all_events = events.iter_events(base, limit=None)
     assert result.errors == []

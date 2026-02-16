@@ -20,6 +20,12 @@ This document tracks external references used to design and validate the Forge C
    https://proceedings.mlr.press/v70/guo17a.html
 8. Abraham Wald. *Sequential Analysis* (1945/1947) foundational sequential testing text.
    https://projecteuclid.org/euclid.aoms/1177731118
+9. Cogitate Consortium et al. “Adversarial testing of global neuronal workspace and integrated information theories of consciousness.” *Nature* (2025).
+   https://www.nature.com/articles/s41586-025-08888-1
+10. Yuan-hao Wu et al. “Network mechanisms of ongoing brain activity’s influence on conscious visual perception.” *Nature Communications* (2024).
+   https://www.nature.com/articles/s41467-024-50102-9
+11. Jacob A. Miller and Christos Constantinidis. “Timescales of learning in prefrontal cortex.” *Nature Reviews Neuroscience* (2024).
+   https://www.nature.com/articles/s41583-024-00836-8
 
 ## External Benchmark References (Capabilities)
 

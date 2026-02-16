@@ -106,10 +106,6 @@ def test_competition_emits_reaction_trace_and_ignite(tmp_path: Path) -> None:
             "content": {"note": "trace me"},
         },
     )
-    events.append(
-        base, "policy.action", {"action_id": "a-rx"}, corr_id="c-rx", parent_id="p-rx"
-    )
-
     kernel = ConsciousnessKernel(
         base,
         modules=[WorkspaceCompetitionModule()],
@@ -119,8 +115,15 @@ def test_competition_emits_reaction_trace_and_ignite(tmp_path: Path) -> None:
             "competition_reaction_min_sources": 1,
             "competition_reaction_min_count": 1,
             "competition_min_score": 0.1,
+            "competition_trace_strength_threshold": 0.1,
+            "competition_trace_min_eval_secs": 0.0,
         },
         seed=11,
+    )
+
+    kernel.tick()
+    events.append(
+        base, "policy.action", {"action_id": "a-rx"}, corr_id="c-rx", parent_id="p-rx"
     )
     kernel.tick()
 

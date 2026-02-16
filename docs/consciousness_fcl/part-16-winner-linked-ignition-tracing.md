@@ -1,5 +1,7 @@
 # Part 16: Winner-Linked Ignition Tracing
 
+Status: implemented in Stage H PR-H2 (pending winner finalization + trace-strength ignition v3).
+
 ## Goal
 
 Upgrade ignition detection from source-count proxy to winner-linked trace evidence.
@@ -46,14 +48,16 @@ Normalized to `[0,1]`.
 
 ```json
 {
+  "winner_id": "...",
   "winner_candidate_id": "...",
   "winner_corr_id": "...",
   "reaction_count": 7,
-  "distinct_sources": 4,
+  "reaction_source_count": 4,
+  "reaction_sources": ["meta", "policy", "working_set", "report"],
   "modules_reacted": ["meta", "policy", "working_set", "report"],
-  "latency_ms": 320,
+  "time_to_first_reaction_ms": 320,
   "trace_strength": 0.78,
-  "window_secs": 1.5
+  "reaction_window_secs": 1.5
 }
 ```
 
@@ -68,7 +72,11 @@ Emit `gw.ignite` only if:
 
 Config keys:
 
-- `competition_trace_strength_min`
+- `competition_trace_strength_threshold`
+- `competition_trace_target_sources`
+- `competition_trace_target_reactions`
+- `competition_trace_max_latency_ms`
+- `competition_trace_min_eval_secs`
 - `competition_reaction_min_count`
 - `competition_reaction_min_sources`
 

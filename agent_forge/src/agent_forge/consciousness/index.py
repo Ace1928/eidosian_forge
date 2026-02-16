@@ -33,6 +33,7 @@ class EventIndex:
     children_by_parent: dict[str, list[dict[str, Any]]]
     candidates_by_id: dict[str, dict[str, Any]]
     winners_by_candidate_id: dict[str, dict[str, Any]]
+    references_by_candidate_id: dict[str, list[dict[str, Any]]]
 
 
 def build_index(events: list[dict[str, Any]]) -> EventIndex:
@@ -43,6 +44,7 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
     children_by_parent: dict[str, list[dict[str, Any]]] = {}
     candidates_by_id: dict[str, dict[str, Any]] = {}
     winners_by_candidate_id: dict[str, dict[str, Any]] = {}
+    references_by_candidate_id: dict[str, list[dict[str, Any]]] = {}
 
     for evt in events:
         etype = str(evt.get("type") or "")
@@ -62,14 +64,21 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
             children_by_parent.setdefault(parent_id, []).append(evt)
 
         data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+        refs: set[str] = set()
         candidate_id = ""
         if isinstance(data, Mapping):
             candidate_id = str(data.get("candidate_id") or "")
+            winner_candidate = str(data.get("winner_candidate_id") or "")
+            if candidate_id:
+                refs.add(candidate_id)
+            if winner_candidate:
+                refs.add(winner_candidate)
         if etype == "attn.candidate":
             cid = str(data.get("candidate_id") or "") if isinstance(data, Mapping) else ""
             if cid:
                 candidates_by_id[cid] = evt
                 candidate_id = candidate_id or cid
+                refs.add(cid)
 
         if etype == "workspace.broadcast":
             payload = _payload(evt)
@@ -94,12 +103,17 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
             )
             if payload_candidate:
                 candidate_id = candidate_id or payload_candidate
+                refs.add(payload_candidate)
             if winner_candidate:
                 winners_by_candidate_id[winner_candidate] = evt
+                refs.add(winner_candidate)
 
         if candidate_id:
             # Last write wins; preserves the newest candidate-relevant event.
             candidates_by_id[candidate_id] = evt
+        for ref in refs:
+            if ref:
+                references_by_candidate_id.setdefault(ref, []).append(evt)
 
     return EventIndex(
         latest_by_type=latest_by_type,
@@ -109,4 +123,5 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
         children_by_parent=children_by_parent,
         candidates_by_id=candidates_by_id,
         winners_by_candidate_id=winners_by_candidate_id,
+        references_by_candidate_id=references_by_candidate_id,
     )

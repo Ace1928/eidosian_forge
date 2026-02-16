@@ -124,6 +124,7 @@ def test_event_index_maps_corr_parent_candidate_and_winner(tmp_path: Path) -> No
     assert len(ctx.events_by_corr_id("corr-A")) == 3
     assert len(ctx.children("root-A")) == 3
     assert ctx.candidate("cand-A") is not None
+    assert len(ctx.candidate_references("cand-A")) >= 2
     winner_evt = ctx.winner_for_candidate("cand-A")
     assert winner_evt is not None
     payload = ((winner_evt.get("data") or {}).get("payload") or {})

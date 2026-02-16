@@ -251,6 +251,9 @@ class TickContext:
     def winner_for_candidate(self, candidate_id: str) -> Optional[Dict[str, Any]]:
         return self.index.winners_by_candidate_id.get(str(candidate_id))
 
+    def candidate_references(self, candidate_id: str) -> list[Dict[str, Any]]:
+        return list(self.index.references_by_candidate_id.get(str(candidate_id), []))
+
     def new_corr_id(self, seed: str | None = None) -> str:
         if seed:
             return generate_corr_id(seed)
@@ -460,6 +463,11 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "competition_reaction_window_secs": 1.5,
         "competition_reaction_min_sources": 2,
         "competition_reaction_min_count": 2,
+        "competition_trace_strength_threshold": 0.45,
+        "competition_trace_target_sources": 5,
+        "competition_trace_target_reactions": 10,
+        "competition_trace_max_latency_ms": 1500.0,
+        "competition_trace_min_eval_secs": 0.0,
         "competition_min_score": 0.15,
         "competition_cooldown_secs": 2.5,
         "competition_cooldown_override_score": 0.9,

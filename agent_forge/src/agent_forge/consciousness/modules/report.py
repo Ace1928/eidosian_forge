@@ -11,37 +11,24 @@ def _event_data(evt: Mapping[str, Any]) -> Mapping[str, Any]:
     return evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
 
 
-def _latest_event(events: list[Mapping[str, Any]], etype: str) -> Optional[Mapping[str, Any]]:
-    for evt in reversed(events):
-        if str(evt.get("type") or "") == etype:
-            return evt
-    return None
-
-
 def _winner_from_event(evt: Mapping[str, Any]) -> Optional[dict[str, Any]]:
     data = _event_data(evt)
     payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
     if str(payload.get("kind") or "") != "GW_WINNER":
         return None
     content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
+    links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
     return {
         "candidate_id": content.get("candidate_id"),
+        "winner_candidate_id": content.get("winner_candidate_id") or links.get("winner_candidate_id"),
         "source_event_type": content.get("source_event_type"),
         "source_module": content.get("source_module"),
         "score": content.get("score"),
         "salience": payload.get("salience"),
         "confidence": payload.get("confidence"),
+        "corr_id": links.get("corr_id"),
+        "parent_id": links.get("parent_id"),
     }
-
-
-def _latest_winner(events: list[Mapping[str, Any]]) -> Optional[dict[str, Any]]:
-    for evt in reversed(events):
-        if str(evt.get("type") or "") != "workspace.broadcast":
-            continue
-        winner = _winner_from_event(evt)
-        if winner:
-            return winner
-    return None
 
 
 def _clamp01(value: Any, default: float = 0.0) -> float:
@@ -73,14 +60,16 @@ class ReportModule:
         emit_interval = float(ctx.config.get("report_emit_interval_secs", 2.0))
         emit_delta = float(ctx.config.get("report_emit_delta_threshold", 0.08))
         min_broadcast_groundedness = float(ctx.config.get("report_broadcast_min_groundedness", 0.35))
-        events = list(ctx.recent_events)[-220:] + list(ctx.emitted_events)
-
-        winner = _latest_winner(events)
-        action_evt = _latest_event(events, "policy.action")
-        agency_evt = _latest_event(events, "self.agency_estimate")
-        boundary_evt = _latest_event(events, "self.boundary_estimate")
-        meta_evt = _latest_event(events, "meta.state_estimate")
-        pred_err_evt = _latest_event(events, "world.prediction_error")
+        index = ctx.index
+        winner = None
+        winner_broadcasts = index.broadcasts_by_kind.get("GW_WINNER") or []
+        if winner_broadcasts:
+            winner = _winner_from_event(winner_broadcasts[-1])
+        action_evt = index.latest_by_type.get("policy.action")
+        agency_evt = index.latest_by_type.get("self.agency_estimate")
+        boundary_evt = index.latest_by_type.get("self.boundary_estimate")
+        meta_evt = index.latest_by_type.get("meta.state_estimate")
+        pred_err_evt = index.latest_by_type.get("world.prediction_error")
 
         if not action_evt and not winner:
             return
