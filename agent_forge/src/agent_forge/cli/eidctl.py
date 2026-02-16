@@ -111,6 +111,10 @@ def main(argv: list[str] | None = None) -> int:
         p_workspace.add_argument("--limit", type=int, default=1000, help="max events to scan")
         p_workspace.add_argument("--window", type=float, default=1.0, help="window size in seconds")
         p_workspace.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
+        p_workspace.add_argument("--show-winners", action="store_true", help="show recent GW competition winners")
+        p_workspace.add_argument("--show-coherence", action="store_true", help="show coherence/ignition density details")
+        p_workspace.add_argument("--show-rci", action="store_true", help="show latest response complexity metric")
+        p_workspace.add_argument("--show-agency", action="store_true", help="show latest agency confidence metric")
         p_workspace.add_argument("--json", action="store_true", help="JSON output")
 
         p_self = sub.add_parser("self-model", help="snapshot self-model state")
@@ -222,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.cmd == "workspace":
             from agent_forge.core import workspace as WS  # type: ignore
+            from agent_forge.core import events as EV  # type: ignore
 
             summary = WS.summary(
                 args.dir,
@@ -230,8 +235,17 @@ def main(argv: list[str] | None = None) -> int:
                 window_seconds=args.window,
                 min_sources=args.min_sources,
             )
+            winners = _recent_winners(EV.iter_events(args.dir, limit=max(args.limit, 200)))
+            rci = _latest_metric(EV.iter_events(args.dir, limit=max(args.limit, 300)), "consciousness.rci")
+            agency = _latest_metric(EV.iter_events(args.dir, limit=max(args.limit, 300)), "consciousness.agency")
             if args.json:
-                print(json.dumps(summary, indent=2))
+                payload = {
+                    "summary": summary,
+                    "winners": winners if args.show_winners else [],
+                    "rci": rci if args.show_rci else None,
+                    "agency": agency if args.show_agency else None,
+                }
+                print(json.dumps(payload, indent=2))
             else:
                 print(
                     f"[workspace] events={summary['event_count']} "
@@ -239,6 +253,30 @@ def main(argv: list[str] | None = None) -> int:
                     f"ignitions={summary['ignition_count']}"
                 )
                 print(f"[workspace] sources={', '.join(summary['unique_sources'])}")
+                if args.show_coherence:
+                    density = (
+                        float(summary["ignition_count"]) / float(summary["window_count"])
+                        if summary.get("window_count")
+                        else 0.0
+                    )
+                    print(f"[workspace] coherence_ratio={summary.get('coherence_ratio')} ignition_density={density:.3f}")
+                if args.show_winners:
+                    print(f"[workspace] recent_winner_broadcasts={len(winners)}")
+                    for item in winners[:5]:
+                        print(
+                            f"[workspace] winner candidate={item.get('candidate_id')} "
+                            f"score={item.get('score')} source={item.get('source_module')}"
+                        )
+                if args.show_rci:
+                    if rci is None:
+                        print("[workspace] rci=n/a")
+                    else:
+                        print(f"[workspace] rci={rci}")
+                if args.show_agency:
+                    if agency is None:
+                        print("[workspace] agency=n/a")
+                    else:
+                        print(f"[workspace] agency={agency}")
             return 0
 
         if args.cmd == "self-model":
@@ -299,6 +337,44 @@ def _pretty_print_state(snap: dict) -> None:
             f"{k}={files.get(k,0)}" for k in ["events", "bus", "vector_store", "weights", "adapters", "snaps"]
         )
     )
+
+
+def _recent_winners(events: list[dict]) -> list[dict]:
+    out: list[dict] = []
+    for evt in events:
+        if evt.get("type") != "workspace.broadcast":
+            continue
+        data = evt.get("data") if isinstance(evt.get("data"), dict) else {}
+        payload = data.get("payload") if isinstance(data.get("payload"), dict) else {}
+        if payload.get("kind") != "GW_WINNER":
+            continue
+        content = payload.get("content") if isinstance(payload.get("content"), dict) else {}
+        out.append(
+            {
+                "ts": evt.get("ts"),
+                "candidate_id": content.get("candidate_id"),
+                "score": content.get("score"),
+                "source_module": content.get("source_module"),
+            }
+        )
+    return out[-10:]
+
+
+def _latest_metric(events: list[dict], key: str) -> float | None:
+    matches: list[float] = []
+    for evt in events:
+        if evt.get("type") != "metrics.sample":
+            continue
+        data = evt.get("data") if isinstance(evt.get("data"), dict) else {}
+        if str(data.get("key")) != key:
+            continue
+        try:
+            matches.append(float(data.get("value")))
+        except (TypeError, ValueError):
+            continue
+    if not matches:
+        return None
+    return matches[-1]
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

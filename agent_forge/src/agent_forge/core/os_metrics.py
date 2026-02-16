@@ -46,7 +46,7 @@ def process_stats() -> Dict[str, Optional[float]]:
         utime, stime = _read_proc_stat()
         out["cpu_user_s"] = utime
         out["cpu_sys_s"] = stime
-    except OSError:
+    except (AttributeError, OSError):
         pass
     if psutil is not None:
         try:
@@ -73,7 +73,7 @@ def system_stats() -> Dict[str, Optional[float]]:
     try:
         load1, load5, load15 = os.getloadavg()
         out.update({"load1": load1, "load5": load5, "load15": load15})
-    except OSError:
+    except (AttributeError, OSError):
         pass
     try:
         with open("/proc/meminfo", "r", encoding="utf-8") as f:

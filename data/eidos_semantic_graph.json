@@ -54,6 +54,21 @@
       "definition": "Independent operation capability",
       "pos": "noun",
       "id": "autonomy"
+    },
+    {
+      "id": "eidos"
+    },
+    {
+      "source": "text_extraction",
+      "id": "runs"
+    },
+    {
+      "source": "text_extraction",
+      "id": "eidosian"
+    },
+    {
+      "source": "text_extraction",
+      "id": "termux"
     }
   ],
   "edges": [
@@ -124,10 +139,52 @@
       "weight": 0.85
     },
     {
+      "source": "forge",
+      "target": "eidos",
+      "type": "related_to",
+      "weight": 0.5
+    },
+    {
+      "source": "forge",
+      "target": "runs",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "termux",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "forge",
+      "target": "eidosian",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
       "source": "emergence",
       "target": "recursion",
       "type": "enables",
       "weight": 0.7
+    },
+    {
+      "source": "runs",
+      "target": "termux",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "runs",
+      "target": "eidosian",
+      "type": "co_occurrence",
+      "weight": 0.3
+    },
+    {
+      "source": "eidosian",
+      "target": "termux",
+      "type": "co_occurrence",
+      "weight": 0.3
     }
   ]
 }

@@ -1,3 +1,17 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:c4adcbcbf645bd9b7008b3447c24f10a726a94e98882fed34e4e925948bdc0c5
-size 10765
+{
+  "coverage": {
+    "/data/data/com.termux/files/home/.eidosian/tmp/mcp_tool_audit/a.txt": {
+      "last_reviewed": 1771201604.2124455,
+      "agent": "mcp-audit",
+      "scope": "shallow",
+      "timestamp": "2026-02-16 10:26:44"
+    },
+    "path-value": {
+      "last_reviewed": 1771204497.7525554,
+      "agent": "mcp-audit",
+      "scope": "shallow",
+      "timestamp": "2026-02-16 11:14:57"
+    }
+  },
+  "last_full_audit": null
+}

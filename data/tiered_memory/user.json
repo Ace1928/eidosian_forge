@@ -1,3 +1,223 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:e2b9ec383e1603c9357bc2c052aefa936051ad7372079c4cda4ad528483e11bd
-size 13845
+[
+  {
+    "id": "82b1b648-b891-4318-ad14-b5489c33d0d7",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:26:44.303384",
+    "last_accessed": "2026-02-16T11:14:58.044295",
+    "access_count": 9,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ff7f1c3d-a4f9-4f66-b0fc-f3538cd3ef05",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:30:01.359564",
+    "last_accessed": "2026-02-16T11:14:58.044322",
+    "access_count": 8,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "6d3ba268-53cd-46a3-9161-667a8c5da383",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:31:00.945435",
+    "last_accessed": "2026-02-16T11:14:58.044342",
+    "access_count": 7,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1579b940-552c-4bde-bdcc-359e538aafb5",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:32:28.864016",
+    "last_accessed": "2026-02-16T11:14:58.044359",
+    "access_count": 6,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "987f5713-80ae-4983-9909-dc495502fc1f",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:36:17.019263",
+    "last_accessed": "2026-02-16T11:14:58.044376",
+    "access_count": 5,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "201982ed-a69b-44cb-8a9f-5009946c3787",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:48:51.213494",
+    "last_accessed": "2026-02-16T11:14:58.044393",
+    "access_count": 4,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "a855d888-e7be-4330-9497-6fb9e43c9c5f",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:49:50.009297",
+    "last_accessed": "2026-02-16T11:14:58.044409",
+    "access_count": 3,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "8c29e578-7675-4a46-9183-9ad4e1562952",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:50:32.798249",
+    "last_accessed": "2026-02-16T11:14:58.044425",
+    "access_count": 2,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "01e67dd9-68e1-4dd2-9961-06495c44b95e",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T10:53:07.684846",
+    "last_accessed": "2026-02-16T11:14:58.044441",
+    "access_count": 1,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "4ad32771-b55c-49b7-abaf-37bf0b6a053e",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T11:14:58.073165",
+    "last_accessed": "2026-02-16T11:14:58.073172",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "lloyd",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e5aa847e-68b4-494c-b598-64aee92b2d43",
+    "content": "User prioritizes idempotent operations, rollback safety, frequent commits, and Termux-first robustness.",
+    "created_at": "2026-02-16T11:15:59.961353",
+    "last_accessed": "2026-02-16T11:15:59.961355",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "preferences",
+      "termux",
+      "workflow"
+    ],
+    "linked_memories": []
+  }
+]

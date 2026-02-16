@@ -23,10 +23,17 @@ from agent_forge.core import events as E  # type: ignore
 from agent_forge.core import db as DB    # type: ignore
 from agent_forge.core import os_metrics as OM  # type: ignore
 from agent_forge.core import scheduler as SCH  # type: ignore
+from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
 
 
 @eidosian()
-def run_once(state_dir: str, *, tick_secs: float, cpu: OM.CpuPercent) -> None:
+def run_once(
+    state_dir: str,
+    *,
+    tick_secs: float,
+    cpu: OM.CpuPercent,
+    kernel: ConsciousnessKernel | None = None,
+) -> None:
     """Execute one beat: collect metrics, emit event, journal, and scheduler step."""
     p = OM.process_stats()
     s = OM.system_stats()
@@ -59,6 +66,22 @@ def run_once(state_dir: str, *, tick_secs: float, cpu: OM.CpuPercent) -> None:
     DB.insert_journal(state_dir, "daemon.beat", "beat")
     E.append(state_dir, "daemon.beat", payload, tags=["daemon", "beat"])
     S.append_journal(state_dir, "daemon.beat", etype="daemon.beat")
+    if kernel is not None:
+        try:
+            kres = kernel.tick()
+            E.append(
+                state_dir,
+                "consciousness.beat",
+                {
+                    "modules": kres.modules,
+                    "emitted_events": kres.emitted_events,
+                    "errors": kres.errors,
+                },
+                tags=["consciousness", "beat"],
+            )
+            DB.insert_metric(state_dir, "consciousness.emitted_events", float(kres.emitted_events))
+        except Exception as exc:  # pragma: no cover - defensive runtime guard
+            S.append_journal(state_dir, f"consciousness beat error: {exc}", etype="consciousness.error")
 
     # scheduler heartbeat
     SCH.STATE_DIR = state_dir
@@ -107,7 +130,7 @@ def _load_cfg() -> dict:
     try:
         with cfg_path.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        return data.get("daemon", {})
+        return data
     except Exception:
         return {}
 
@@ -126,11 +149,15 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     cfg = _load_cfg()
-    tick_secs = float(args.tick if args.tick is not None else cfg.get("tick_secs", 5))
-    jitter_ms = int(args.jitter_ms if args.jitter_ms is not None else cfg.get("jitter_ms", 0))
-    max_backoff = float(args.max_backoff_secs if args.max_backoff_secs is not None else cfg.get("max_backoff_secs", 30.0))
-    max_beats = int(args.max_beats or cfg.get("max_beats", 0))
-    ret = cfg.get("retention", {})
+    daemon_cfg = cfg.get("daemon", {}) if isinstance(cfg.get("daemon", {}), dict) else {}
+    consciousness_cfg = cfg.get("consciousness", {}) if isinstance(cfg.get("consciousness", {}), dict) else {}
+    tick_secs = float(args.tick if args.tick is not None else daemon_cfg.get("tick_secs", 5))
+    jitter_ms = int(args.jitter_ms if args.jitter_ms is not None else daemon_cfg.get("jitter_ms", 0))
+    max_backoff = float(
+        args.max_backoff_secs if args.max_backoff_secs is not None else daemon_cfg.get("max_backoff_secs", 30.0)
+    )
+    max_beats = int(args.max_beats or daemon_cfg.get("max_beats", 0))
+    ret = daemon_cfg.get("retention", {})
     metrics_max = int(ret.get("metrics_per_key_max", 10000))
     events_days = int(ret.get("events_keep_days", 7))
     journal_max = int(ret.get("journal_max_bytes", 5 * 1024 * 1024))
@@ -143,10 +170,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"eidosd setup error: {e}", file=sys.stderr)
         return 1
 
+    kernel: ConsciousnessKernel | None = None
+    if bool(consciousness_cfg.get("enabled", True)):
+        try:
+            kernel_cfg = consciousness_cfg.get("config", {})
+            if not isinstance(kernel_cfg, dict):
+                kernel_cfg = {}
+            kernel_seed = int(consciousness_cfg.get("seed", 1337))
+            kernel = ConsciousnessKernel(args.state_dir, config=kernel_cfg, seed=kernel_seed)
+        except Exception as e:
+            S.append_journal(args.state_dir, f"consciousness init error: {e}", etype="consciousness.error")
+
     cpu = OM.CpuPercent()
     if args.once:
         try:
-            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu)
+            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel)
             return 0
         except Exception as e:
             print(f"eidosd run error: {e}", file=sys.stderr)
@@ -164,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
 
         def _beat() -> None:
             nonlocal beats
-            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu)
+            run_once(args.state_dir, tick_secs=tick_secs, cpu=cpu, kernel=kernel)
             beats += 1
             if beats % maint_every == 0:
                 try:

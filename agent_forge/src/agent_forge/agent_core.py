@@ -15,7 +15,7 @@ from agent_forge.utils.parsing import extract_json_from_text
 
 try:
     from llm_forge.core import LLMForge
-except ImportError:
+except Exception:
     LLMForge = None
 
 from agent_forge.models.schemas import Task

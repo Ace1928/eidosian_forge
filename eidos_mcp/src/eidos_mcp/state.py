@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any, Optional, Type
 
@@ -19,7 +20,16 @@ def _import_symbol(module_name: str, symbol: str) -> Optional[Type[Any]]:
     try:
         module = importlib.import_module(module_name)
     except Exception:
-        return None
+        # Retry once after forcing forge path setup and clearing namespace-only stubs.
+        root_module = module_name.split(".", 1)[0]
+        ensure_forge_import(root_module)
+        existing = sys.modules.get(root_module)
+        if existing is not None and getattr(existing, "__file__", None) is None:
+            sys.modules.pop(root_module, None)
+        try:
+            module = importlib.import_module(module_name)
+        except Exception:
+            return None
     return getattr(module, symbol, None)
 
 
