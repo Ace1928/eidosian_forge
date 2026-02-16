@@ -29,6 +29,7 @@ on:
 permissions:
   contents: read
   security-events: read
+  issues: write
 
 concurrency:
   group: security-audit-${{ github.ref }}
@@ -163,6 +164,181 @@ jobs:
           if fail_on_high and high > 0:
               raise SystemExit(f"Open high Dependabot alerts: {high}")
           PY
+
+      - name: Create or Update Security Delta Issue
+        uses: actions/github-script@v7
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          ISSUE_TITLE: Security Dependency Delta Report
+        with:
+          script: |
+            const fs = require("fs");
+
+            const reportPath = process.env.REPORT_PATH || "";
+            if (!reportPath || !fs.existsSync(reportPath)) {
+              core.warning(`security report missing at '${reportPath}'`);
+              return;
+            }
+            let payload = {};
+            try {
+              payload = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+            } catch (err) {
+              core.warning(`failed to parse report JSON: ${err}`);
+              return;
+            }
+            if (payload.error) {
+              core.warning(`security report contains error: ${payload.error}`);
+              return;
+            }
+
+            const totals = payload.totals || {};
+            const openBySeverity = payload.open_by_severity || {};
+            const current = {
+              open: Number(totals.open || 0),
+              critical: Number(openBySeverity.critical || 0),
+              high: Number(openBySeverity.high || 0),
+              moderate: Number(openBySeverity.moderate || 0),
+              low: Number(openBySeverity.low || 0),
+            };
+
+            const marker = "<!-- eidos-security-audit -->";
+            const baselinePrefix = "<!-- eidos-security-baseline:";
+            const baselineSuffix = "-->";
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = process.env.ISSUE_TITLE || "Security Dependency Delta Report";
+
+            function parseBaseline(body) {
+              const empty = { open: 0, critical: 0, high: 0, moderate: 0, low: 0 };
+              const text = String(body || "");
+              const start = text.indexOf(baselinePrefix);
+              if (start < 0) return empty;
+              const jsonStart = start + baselinePrefix.length;
+              const end = text.indexOf(baselineSuffix, jsonStart);
+              if (end < 0) return empty;
+              try {
+                const parsed = JSON.parse(text.slice(jsonStart, end));
+                return {
+                  open: Number(parsed.open || 0),
+                  critical: Number(parsed.critical || 0),
+                  high: Number(parsed.high || 0),
+                  moderate: Number(parsed.moderate || 0),
+                  low: Number(parsed.low || 0),
+                };
+              } catch (err) {
+                core.warning(`failed to parse prior baseline marker: ${err}`);
+                return empty;
+              }
+            }
+
+            function renderBody(previous, now, delta) {
+              const ts = new Date().toISOString();
+              return [
+                marker,
+                `${baselinePrefix}${JSON.stringify(now)}${baselineSuffix}`,
+                `# Security Dependency Delta Report`,
+                ``,
+                `Automated update from \`security-audit.yml\` at \`${ts}\`.`,
+                ``,
+                `## Current Open Alerts`,
+                `- critical: \`${now.critical}\``,
+                `- high: \`${now.high}\``,
+                `- moderate: \`${now.moderate}\``,
+                `- low: \`${now.low}\``,
+                `- total_open: \`${now.open}\``,
+                ``,
+                `## Delta Since Previous Baseline`,
+                `- critical_delta: \`${delta.critical}\``,
+                `- high_delta: \`${delta.high}\``,
+                `- moderate_delta: \`${delta.moderate}\``,
+                `- low_delta: \`${delta.low}\``,
+                `- open_total_delta: \`${delta.open}\``,
+                ``,
+                `## Previous Baseline`,
+                `- critical: \`${previous.critical}\``,
+                `- high: \`${previous.high}\``,
+                `- moderate: \`${previous.moderate}\``,
+                `- low: \`${previous.low}\``,
+                `- total_open: \`${previous.open}\``,
+              ].join("\n");
+            }
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: "open",
+              labels: "security-audit",
+              per_page: 100,
+            });
+            let issue = openIssues.find((row) => row.title === title);
+            if (!issue) {
+              issue = openIssues.find((row) => String(row.body || "").includes(marker));
+            }
+
+            const baseline = parseBaseline(issue ? issue.body : "");
+            const delta = {
+              open: current.open - baseline.open,
+              critical: current.critical - baseline.critical,
+              high: current.high - baseline.high,
+              moderate: current.moderate - baseline.moderate,
+              low: current.low - baseline.low,
+            };
+            const riskActive = current.critical > 0 || current.high > 0;
+            const regression = delta.critical > 0 || delta.high > 0;
+            const body = renderBody(baseline, current, delta);
+
+            if (issue) {
+              if (String(issue.body || "") !== body) {
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body,
+                });
+              }
+              if (!riskActive && !regression) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  body: "Security audit reports no active high/critical dependency alerts. Closing issue.",
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: issue.number,
+                  state: "closed",
+                });
+                core.notice(`closed issue #${issue.number} because security risk is clear`);
+              } else {
+                core.notice(`updated issue #${issue.number} for current dependency risk baseline`);
+              }
+              return;
+            }
+
+            if (!riskActive && !regression) {
+              core.notice("no open high/critical risk and no regression; no issue created");
+              return;
+            }
+
+            try {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: ["security-audit", "dependencies"],
+              });
+              core.notice(`created issue #${created.data.number} for dependency security delta tracking`);
+            } catch (err) {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+              });
+              core.notice(`created unlabeled issue #${created.data.number} after label failure: ${err}`);
+            }
 
       - name: Upload Security Report
         uses: actions/upload-artifact@v4

@@ -312,8 +312,13 @@ Status checkpoint:
 
 Status checkpoint:
 - PR-J1 delivered (scheduled/manual security audit workflow using Dependabot inventory script, optional severity hard-fail gates, and artifacted reports).
+- PR-J2 delivered (automated delta-to-issue remediation loop with baseline markers and close-on-clear semantics).
 
 1. Dependency security inventory workflow (PR-J1).
 - Files: `.github/workflows/security-audit.yml`
 - Files: `scripts/dependabot_alert_inventory.py`
 - Files: `.github/workflows/README.md`
+
+2. Security inventory delta remediation issues (PR-J2).
+- Files: `.github/workflows/security-audit.yml`
+- Files: `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`

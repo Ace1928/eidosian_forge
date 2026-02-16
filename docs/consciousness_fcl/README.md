@@ -46,3 +46,4 @@
 - Part 33: `docs/consciousness_fcl/part-33-autotune-red-team-commit-gates.md`
 - Part 34: `docs/consciousness_fcl/part-34-benchmark-index-migration.md`
 - Part 35: `docs/consciousness_fcl/part-35-workflow-security-audit.md`
+- Part 36: `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`

@@ -147,5 +147,5 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 ## Phase 15: Workflow and Supply-Chain Hardening
 
 - [x] ~~Add scheduled/manual security audit workflow for Dependabot inventory with optional critical/high fail gates and artifacted reports.~~
-- [ ] Add automated remediation issue generation from security inventory deltas.
+- [x] ~~Add automated remediation issue generation from security inventory deltas.~~
 - [ ] Add pinned-action drift audit and update policy enforcement in CI.
