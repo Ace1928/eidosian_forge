@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 from agent_forge.core import events as bus
 from agent_forge.core import workspace
@@ -174,6 +174,123 @@ class ConsciousnessKernel:
             return module_name in disabled
         return False
 
+    def _watchdog_enabled(self) -> bool:
+        return bool(self.config.get("kernel_watchdog_enabled", True))
+
+    def _watchdog_modules_state(self) -> MutableMapping[str, Any]:
+        ns = self.state_store.namespace("__kernel_watchdog__", defaults={"modules": {}})
+        modules = ns.get("modules")
+        if not isinstance(modules, MutableMapping):
+            modules = {}
+            ns["modules"] = modules
+            self.state_store.mark_dirty()
+        return modules
+
+    def _watchdog_module_state(self, module_name: str) -> MutableMapping[str, Any]:
+        modules = self._watchdog_modules_state()
+        module_key = str(module_name)
+        state = modules.get(module_key)
+        if not isinstance(state, MutableMapping):
+            state = {
+                "consecutive_errors": 0,
+                "total_errors": 0,
+                "quarantine_count": 0,
+                "recoveries": 0,
+                "quarantined_until_beat": 0,
+                "last_error": "",
+                "last_error_ts": "",
+            }
+            modules[module_key] = state
+            self.state_store.mark_dirty()
+        return state
+
+    def _handle_watchdog_release(self, module_name: str, ctx: TickContext) -> bool:
+        if not self._watchdog_enabled():
+            return False
+        state = self._watchdog_module_state(module_name)
+        quarantined_until = int(state.get("quarantined_until_beat") or 0)
+        if quarantined_until <= 0:
+            return False
+        if self.beat_count < quarantined_until:
+            return True
+
+        state["quarantined_until_beat"] = 0
+        state["recoveries"] = int(state.get("recoveries") or 0) + 1
+        state["consecutive_errors"] = 0
+        self.state_store.mark_dirty()
+        ctx.emit_event(
+            "consciousness.module_recovered",
+            {
+                "module": module_name,
+                "beat": int(self.beat_count),
+                "recoveries": int(state.get("recoveries") or 0),
+            },
+            tags=["consciousness", "watchdog", "recovery"],
+        )
+        return False
+
+    def _register_module_success(self, module_name: str) -> None:
+        if not self._watchdog_enabled():
+            return
+        state = self._watchdog_module_state(module_name)
+        if int(state.get("consecutive_errors") or 0) != 0:
+            state["consecutive_errors"] = 0
+            self.state_store.mark_dirty()
+
+    def _register_module_error(self, module_name: str, error_text: str, ctx: TickContext) -> None:
+        state = self._watchdog_module_state(module_name)
+        consecutive_errors = int(state.get("consecutive_errors") or 0) + 1
+        total_errors = int(state.get("total_errors") or 0) + 1
+        state["consecutive_errors"] = consecutive_errors
+        state["total_errors"] = total_errors
+        state["last_error"] = str(error_text)
+        state["last_error_ts"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.state_store.mark_dirty()
+
+        quarantined_until = int(state.get("quarantined_until_beat") or 0)
+        threshold = max(
+            1,
+            int(self.config.get("kernel_watchdog_max_consecutive_errors", 3) or 3),
+        )
+        quarantine_beats = max(
+            1,
+            int(self.config.get("kernel_watchdog_quarantine_beats", 20) or 20),
+        )
+        quarantined = False
+        if self._watchdog_enabled() and consecutive_errors >= threshold:
+            next_until = int(self.beat_count) + quarantine_beats + 1
+            if next_until > quarantined_until:
+                state["quarantined_until_beat"] = next_until
+                state["quarantine_count"] = int(state.get("quarantine_count") or 0) + 1
+                quarantined_until = next_until
+                quarantined = True
+                self.state_store.mark_dirty()
+
+        ctx.emit_event(
+            "consciousness.module_error",
+            {
+                "module": module_name,
+                "error": str(error_text),
+                "consecutive_errors": int(consecutive_errors),
+                "total_errors": int(total_errors),
+                "quarantined_until_beat": int(quarantined_until),
+            },
+            tags=["consciousness", "module_error"],
+        )
+        if quarantined:
+            ctx.emit_event(
+                "consciousness.module_quarantined",
+                {
+                    "module": module_name,
+                    "beat": int(self.beat_count),
+                    "consecutive_errors": int(consecutive_errors),
+                    "threshold": int(threshold),
+                    "quarantined_until_beat": int(quarantined_until),
+                    "quarantine_beats": int(quarantine_beats),
+                },
+                tags=["consciousness", "watchdog", "quarantine"],
+            )
+
     def _collect_context(self) -> TickContext:
         self._refresh_config()
         event_limit = int(self.config.get("recent_events_limit", 300))
@@ -201,20 +318,19 @@ class ConsciousnessKernel:
         for module in self.modules:
             if self._module_disabled(module.name):
                 continue
+            if self._handle_watchdog_release(module.name, ctx):
+                continue
             period = self._module_period(module.name)
             if period > 1 and (self.beat_count % period) != 0:
                 continue
             names.append(module.name)
             try:
                 module.tick(ctx)
+                self._register_module_success(module.name)
             except Exception as exc:  # pragma: no cover - defensive safety path
                 msg = f"{module.name}: {exc}"
                 errors.append(msg)
-                ctx.emit_event(
-                    "consciousness.module_error",
-                    {"module": module.name, "error": str(exc)},
-                    tags=["consciousness", "module_error"],
-                )
+                self._register_module_error(module.name, str(exc), ctx)
 
         self.beat_count += 1
         self.state_store.set_meta("beat_count", self.beat_count)

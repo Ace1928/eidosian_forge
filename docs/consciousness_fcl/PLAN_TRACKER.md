@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone I` + `Phase 17` active (self-upgrading loop substrate + deterministic dependency remediation execution)
+- Current phase: `Phase 18` active (runtime hardening upgrades on top of completed Phases 0-17)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -166,3 +166,11 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Execute all-severity (`critical/high/medium/low`) write pass and verify idempotency (`changed=0` on re-run).~~
 - [x] ~~Mitigate no-fix direct dependency alerts via dependency minimization and safe manual range bump (`orjson`).~~
 - [x] ~~Confirm GitHub Dependabot re-analysis converges to zero open alerts and close remaining remediation issues automatically.~~
+
+## Phase 18: Runtime Hardening and Scalability Upgrade
+
+- [x] ~~Add kernel module watchdog controls with consecutive-error quarantine and recovery events.~~
+- [x] ~~Add payload safety limits for event/broadcast paths with bounded truncation and telemetry (`consciousness.payload_truncated`).~~
+- [x] ~~Add regression tests for watchdog and payload safety (`test_consciousness_kernel_hardening.py`).~~
+- [ ] Add watchdog/health visibility to CLI and MCP status surfaces.
+- [ ] Add stress benchmark profile for payload safety overhead and event bus pressure.

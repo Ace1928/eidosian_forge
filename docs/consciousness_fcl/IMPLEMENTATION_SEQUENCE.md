@@ -75,7 +75,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 4. Add calibration tests for report confidence quality.
 - Files: `agent_forge/tests/test_consciousness_milestone_d.py`
 
-## Stage E (Active): Continuous Benchmark Expansion
+## Stage E (Completed): Continuous Benchmark Expansion
 
 1. Add internal benchmark suite with reproducible scoring.
 - Files: `agent_forge/src/agent_forge/consciousness/benchmarks.py`
@@ -146,7 +146,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 - Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
 - Files: `scripts/linux_parity_smoke.sh`
 
-## Stage H (Active): Causal Traceability and Consciousness-Lab Instrumentation
+## Stage H (Completed): Causal Traceability and Consciousness-Lab Instrumentation
 
 Status checkpoint:
 - PR-H1 delivered (canonical links + `EventIndex` + `TickContext` index/link helpers + indexed `workspace_competition`/`report` lookups + regression tests).
@@ -245,7 +245,7 @@ PYTHONPATH=/data/data/com.termux/files/home/eidosian_forge/lib:/data/data/com.te
 - Preserve runtime data snapshots and transaction logs.
 - Avoid hard reset in shared workflows.
 
-## Stage I (Active): Self-Upgrading Loop Substrate
+## Stage I (Completed): Self-Upgrading Loop Substrate
 
 Status checkpoint:
 - PR-I1 delivered (parameter specs + overlay sanitation/persistence + kernel config precedence).
@@ -308,7 +308,7 @@ Status checkpoint:
 - Files: `agent_forge/tests/test_consciousness_autotune.py`
 - Files: `agent_forge/tests/test_consciousness_red_team.py`
 
-## Stage J (Active): Workflow and Supply-Chain Hardening
+## Stage J (Completed): Workflow and Supply-Chain Hardening
 
 Status checkpoint:
 - PR-J1 delivered (scheduled/manual security audit workflow using Dependabot inventory script, optional severity hard-fail gates, and artifacted reports).
@@ -330,7 +330,7 @@ Status checkpoint:
 - Files: `audit_data/workflow_action_lock.json`
 - Files: `scripts/tests/test_audit_workflow_action_pins.py`
 
-## Stage K (Active): Vulnerability Remediation Orchestration
+## Stage K (Completed): Vulnerability Remediation Orchestration
 
 Status checkpoint:
 - PR-K1 delivered (Dependabot remediation batching planner, issue sync engine, workflow integration, and regression tests).
@@ -383,3 +383,27 @@ Status checkpoint:
 - Files: `scripts/dependabot_remediation_plan.py`
 - Files: `scripts/sync_security_remediation_issues.py`
 - Output: zero open alerts + remediation issue closure sync (`closed=4`).
+
+## Stage M (Active): Runtime Hardening Upgrades
+
+Status checkpoint:
+- PR-M1 delivered (kernel module watchdog with consecutive-error quarantine/recovery eventing and persisted watchdog state).
+- PR-M2 delivered (event/broadcast payload safety limits with bounded sanitization and truncation telemetry).
+- PR-M3 delivered (hardening regression tests and consciousness suite validation).
+
+1. Kernel watchdog reliability envelope (PR-M1).
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+
+2. Payload safety bounds and truncation telemetry (PR-M2).
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+- Events: `consciousness.payload_truncated`
+- Metrics: `consciousness.payload_truncated.count`
+
+3. Regression validation (PR-M3).
+- Files: `agent_forge/tests/test_consciousness_kernel_hardening.py`
+- Validation: `PYTHONPATH=... ./eidosian_venv/bin/python -m pytest -q agent_forge/tests/test_consciousness_*.py`
+
+4. Next hardening increment (pending).
+- Expose watchdog state through CLI/MCP.
+- Add payload-safety stress benchmark profile and non-regression gates.

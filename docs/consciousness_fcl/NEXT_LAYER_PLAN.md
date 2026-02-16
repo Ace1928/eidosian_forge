@@ -33,6 +33,8 @@ The plan is decomposed into focused implementation parts:
 21. Phase 16 remediation batch orchestration from security inventory to actionable issue queues.
 22. Phase 17 deterministic pip dependency auto-patch execution with backup-safe write mode and idempotent verification.
 23. Phase 17 no-fix advisory mitigation path (dependency minimization + manual vulnerable-range escape where safe and verifiable).
+24. Phase 18 kernel watchdog reliability envelope with automatic module quarantine/recovery controls.
+25. Phase 18 payload safety envelope with bounded serialization/truncation telemetry for event bus scalability.
 
 ## Principle
 
@@ -66,3 +68,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-37-workflow-action-pin-drift-policy.md`
 - `docs/consciousness_fcl/part-38-phase16-remediation-batching.md`
 - `docs/consciousness_fcl/part-39-phase17-autopatch-execution.md`
+- `docs/consciousness_fcl/part-40-phase18-runtime-hardening.md`

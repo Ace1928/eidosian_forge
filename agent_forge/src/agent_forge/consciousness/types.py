@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -44,6 +45,191 @@ def clamp01(value: Any, *, default: float = 0.5) -> float:
     if v > 1.0:
         return 1.0
     return v
+
+
+def _json_size_bytes(value: Any) -> int:
+    try:
+        return len(json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
+    except Exception:
+        return len(str(value).encode("utf-8", errors="ignore"))
+
+
+def _safe_int(value: Any, *, default: int, minimum: int) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return max(minimum, default)
+    return max(minimum, parsed)
+
+
+def _truncate_text(value: str, *, limit: int, stats: Dict[str, int]) -> str:
+    if len(value) <= limit:
+        return value
+    stats["truncated_strings"] = int(stats.get("truncated_strings", 0)) + 1
+    return value[:limit] + "...<truncated>"
+
+
+def _sanitize_value(
+    value: Any,
+    *,
+    max_depth: int,
+    max_items: int,
+    max_string_chars: int,
+    depth: int,
+    seen: set[int],
+    stats: Dict[str, int],
+) -> Any:
+    if depth >= max_depth:
+        stats["truncated_depth"] = int(stats.get("truncated_depth", 0)) + 1
+        return "<truncated:depth>"
+
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+
+    if isinstance(value, str):
+        return _truncate_text(value, limit=max_string_chars, stats=stats)
+
+    if isinstance(value, bytes):
+        text = value.decode("utf-8", errors="replace")
+        stats["coerced_non_json"] = int(stats.get("coerced_non_json", 0)) + 1
+        return _truncate_text(text, limit=max_string_chars, stats=stats)
+
+    if isinstance(value, Mapping):
+        value_id = id(value)
+        if value_id in seen:
+            stats["truncated_cycles"] = int(stats.get("truncated_cycles", 0)) + 1
+            return "<truncated:cycle>"
+        seen.add(value_id)
+        out: Dict[str, Any] = {}
+        items = list(value.items())
+        for idx, (key, item_value) in enumerate(items):
+            if idx >= max_items:
+                omitted = len(items) - max_items
+                if omitted > 0:
+                    stats["truncated_items"] = int(stats.get("truncated_items", 0)) + omitted
+                    out["_truncated_items"] = omitted
+                break
+            key_text = _truncate_text(str(key), limit=max_string_chars, stats=stats)
+            out[key_text] = _sanitize_value(
+                item_value,
+                max_depth=max_depth,
+                max_items=max_items,
+                max_string_chars=max_string_chars,
+                depth=depth + 1,
+                seen=seen,
+                stats=stats,
+            )
+        seen.discard(value_id)
+        return out
+
+    if isinstance(value, (list, tuple, set)):
+        value_id = id(value)
+        if value_id in seen:
+            stats["truncated_cycles"] = int(stats.get("truncated_cycles", 0)) + 1
+            return ["<truncated:cycle>"]
+        seen.add(value_id)
+        seq = list(value)
+        out: list[Any] = []
+        for idx, item in enumerate(seq):
+            if idx >= max_items:
+                omitted = len(seq) - max_items
+                if omitted > 0:
+                    stats["truncated_items"] = int(stats.get("truncated_items", 0)) + omitted
+                    out.append({"_truncated_items": omitted})
+                break
+            out.append(
+                _sanitize_value(
+                    item,
+                    max_depth=max_depth,
+                    max_items=max_items,
+                    max_string_chars=max_string_chars,
+                    depth=depth + 1,
+                    seen=seen,
+                    stats=stats,
+                )
+            )
+        seen.discard(value_id)
+        return out
+
+    stats["coerced_non_json"] = int(stats.get("coerced_non_json", 0)) + 1
+    return _truncate_text(str(value), limit=max_string_chars, stats=stats)
+
+
+def sanitize_payload_mapping(
+    payload: Mapping[str, Any],
+    *,
+    max_payload_bytes: int,
+    max_depth: int,
+    max_items: int,
+    max_string_chars: int,
+    max_rounds: int = 5,
+) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    rounds = 0
+    current: Any = dict(payload)
+    depth = max(2, int(max_depth))
+    items = max(4, int(max_items))
+    chars = max(32, int(max_string_chars))
+    aggregate_stats: Dict[str, int] = {
+        "truncated_strings": 0,
+        "truncated_items": 0,
+        "truncated_depth": 0,
+        "truncated_cycles": 0,
+        "coerced_non_json": 0,
+    }
+    used_fallback = False
+    oversize_rounds = 0
+
+    while True:
+        local_stats: Dict[str, int] = {}
+        sanitized = _sanitize_value(
+            current,
+            max_depth=depth,
+            max_items=items,
+            max_string_chars=chars,
+            depth=0,
+            seen=set(),
+            stats=local_stats,
+        )
+        if not isinstance(sanitized, Mapping):
+            sanitized = {"value": sanitized}
+        for key in aggregate_stats:
+            aggregate_stats[key] = int(aggregate_stats[key]) + int(local_stats.get(key, 0))
+        payload_size = _json_size_bytes(sanitized)
+        if payload_size <= max_payload_bytes:
+            break
+
+        oversize_rounds += 1
+        rounds += 1
+        if rounds >= max_rounds:
+            used_fallback = True
+            summary = {
+                "type": str(type(payload).__name__),
+                "keys": [str(k) for k in list(dict(payload).keys())[: max(1, min(items, 8))]],
+                "oversize_bytes": payload_size,
+            }
+            sanitized = {
+                "_truncated_payload": True,
+                "summary": summary,
+            }
+            payload_size = _json_size_bytes(sanitized)
+            break
+
+        current = sanitized
+        depth = max(2, depth - 1)
+        items = max(4, items // 2)
+        chars = max(32, chars // 2)
+
+    truncated = used_fallback or oversize_rounds > 0 or any(aggregate_stats.values())
+    meta: Dict[str, Any] = {
+        "truncated": bool(truncated),
+        "bytes": int(payload_size),
+        "max_payload_bytes": int(max_payload_bytes),
+        "oversize_rounds": int(oversize_rounds),
+        "used_fallback": bool(used_fallback),
+    }
+    for key, value in aggregate_stats.items():
+        meta[key] = int(value)
+    return dict(sanitized), meta
 
 
 def _parse_ts(value: Any) -> datetime | None:
@@ -338,6 +524,74 @@ class TickContext:
             )
         return active
 
+    def _payload_safety_limits(self) -> Dict[str, int]:
+        return {
+            "max_payload_bytes": _safe_int(
+                self.config.get("consciousness_max_payload_bytes"),
+                default=16384,
+                minimum=1024,
+            ),
+            "max_depth": _safe_int(
+                self.config.get("consciousness_max_depth"),
+                default=8,
+                minimum=2,
+            ),
+            "max_items": _safe_int(
+                self.config.get("consciousness_max_collection_items"),
+                default=64,
+                minimum=4,
+            ),
+            "max_string_chars": _safe_int(
+                self.config.get("consciousness_max_string_chars"),
+                default=2048,
+                minimum=32,
+            ),
+        }
+
+    def _sanitize_payload(self, payload: Mapping[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+        limits = self._payload_safety_limits()
+        return sanitize_payload_mapping(
+            payload,
+            max_payload_bytes=int(limits["max_payload_bytes"]),
+            max_depth=int(limits["max_depth"]),
+            max_items=int(limits["max_items"]),
+            max_string_chars=int(limits["max_string_chars"]),
+        )
+
+    def _emit_payload_truncation(
+        self,
+        *,
+        source_type: str,
+        source_name: str,
+        source_event_type: str,
+        corr_id: str,
+        parent_id: str | None,
+        channel: str | None = None,
+        meta: Mapping[str, Any],
+    ) -> None:
+        if not bool(self.config.get("consciousness_payload_truncation_event", True)):
+            return
+        if source_event_type == "consciousness.payload_truncated":
+            return
+        event_data: Dict[str, Any] = {
+            "source_type": str(source_type),
+            "source_name": str(source_name),
+            "source_event_type": str(source_event_type),
+            "channel": str(channel or ""),
+            "meta": dict(meta),
+        }
+        evt = bus.append(
+            self.state_dir,
+            "consciousness.payload_truncated",
+            event_data,
+            tags=["consciousness", "payload_safety"],
+            corr_id=corr_id,
+            parent_id=parent_id or corr_id,
+        )
+        self.emitted_events.append(evt)
+        self.metric("consciousness.payload_truncated.count", 1.0)
+        self._invalidate_indexes()
+
     def emit_event(
         self,
         etype: str,
@@ -348,6 +602,7 @@ class TickContext:
         parent_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         data_dict = dict(data or {})
+        data_dict, payload_meta = self._sanitize_payload(data_dict)
         links = (
             data_dict.get("links")
             if isinstance(data_dict.get("links"), Mapping)
@@ -366,6 +621,15 @@ class TickContext:
             parent_id=resolved_parent_id or None,
         )
         self.emitted_events.append(evt)
+        if bool(payload_meta.get("truncated")):
+            self._emit_payload_truncation(
+                source_type="event",
+                source_name=str(etype),
+                source_event_type=str(etype),
+                corr_id=resolved_corr_id,
+                parent_id=resolved_parent_id or None,
+                meta=payload_meta,
+            )
         self._invalidate_indexes()
         return evt
 
@@ -404,16 +668,51 @@ class TickContext:
             memory_ids=list(payload_links.get("memory_ids") or []),
             raw_links=payload_links,
         )
+        safe_payload, payload_meta = self._sanitize_payload(normalized_payload)
+        safe_payload.setdefault("kind", normalized_payload.get("kind", fallback_kind))
+        safe_payload.setdefault("ts", normalized_payload.get("ts", _now_iso()))
+        safe_payload.setdefault("id", normalized_payload.get("id", uuid.uuid4().hex))
+        safe_payload.setdefault("source_module", normalized_payload.get("source_module", source))
+        safe_payload["confidence"] = clamp01(
+            safe_payload.get("confidence", normalized_payload.get("confidence", 0.5)),
+            default=0.5,
+        )
+        safe_payload["salience"] = clamp01(
+            safe_payload.get("salience", normalized_payload.get("salience", 0.5)),
+            default=0.5,
+        )
+        if not isinstance(safe_payload.get("content"), Mapping):
+            safe_payload["content"] = dict(normalized_payload.get("content") or {})
+        if not isinstance(safe_payload.get("links"), Mapping):
+            safe_payload["links"] = dict(normalized_payload.get("links") or {})
+        safe_payload["links"] = self.link(
+            parent_id=resolved_parent_id or None,
+            corr_id=resolved_corr_id,
+            candidate_id=str((safe_payload.get("links") or {}).get("candidate_id") or candidate_id or ""),
+            winner_candidate_id=str((safe_payload.get("links") or {}).get("winner_candidate_id") or winner_candidate_id or ""),
+            memory_ids=list((safe_payload.get("links") or {}).get("memory_ids") or []),
+            raw_links=(safe_payload.get("links") if isinstance(safe_payload.get("links"), Mapping) else {}),
+        )
         evt = workspace.broadcast(
             self.state_dir,
             source=source,
-            payload=dict(normalized_payload),
+            payload=dict(safe_payload),
             channel=channel,
             tags=list(tags or []),
             corr_id=resolved_corr_id,
             parent_id=resolved_parent_id or None,
         )
         self.emitted_events.append(evt)
+        if bool(payload_meta.get("truncated")):
+            self._emit_payload_truncation(
+                source_type="broadcast",
+                source_name=str(source),
+                source_event_type="workspace.broadcast",
+                corr_id=resolved_corr_id,
+                parent_id=resolved_parent_id or None,
+                channel=channel,
+                meta=payload_meta,
+            )
         self._invalidate_indexes()
         return evt
 
@@ -569,6 +868,14 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "experiment_designer_recipe_magnitude": 0.35,
         "experiment_designer_max_recent_errors": 3,
         "consciousness_require_links": False,
+        "consciousness_max_payload_bytes": 16384,
+        "consciousness_max_depth": 8,
+        "consciousness_max_collection_items": 64,
+        "consciousness_max_string_chars": 2048,
+        "consciousness_payload_truncation_event": True,
+        "kernel_watchdog_enabled": True,
+        "kernel_watchdog_max_consecutive_errors": 3,
+        "kernel_watchdog_quarantine_beats": 20,
     }
     for key, value in cfg.items():
         if isinstance(merged.get(key), Mapping) and isinstance(value, Mapping):
