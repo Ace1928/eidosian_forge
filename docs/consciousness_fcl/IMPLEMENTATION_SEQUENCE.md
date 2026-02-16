@@ -341,3 +341,27 @@ Status checkpoint:
 - Files: `scripts/tests/test_dependabot_remediation_plan.py`
 - Files: `scripts/tests/test_sync_security_remediation_issues.py`
 - Files: `.github/workflows/security-audit.yml`
+
+## Stage L (Active): Deterministic Dependency Auto-Patch Execution
+
+Status checkpoint:
+- PR-L1 delivered (raw-alert-driven pip requirement auto-patch tool with dry-run/write + rollback backups + tests).
+- PR-L2 delivered (`security-audit.yml` now exports raw alerts and publishes autopatch dry-run summary/artifacts).
+- PR-L3 delivered (high/critical write pass across four pip manifests with post-write idempotency verification).
+
+1. Auto-patch tool from raw Dependabot alerts (PR-L1).
+- Files: `scripts/dependabot_autopatch_requirements.py`
+- Files: `scripts/tests/test_dependabot_autopatch_requirements.py`
+
+2. CI dry-run autopatch visibility and artifacting (PR-L2).
+- Files: `.github/workflows/security-audit.yml`
+- Files: `.github/workflows/README.md`
+
+3. High/critical patch execution cycle and verification (PR-L3).
+- Files: `requirements/eidos_venv_reqs.txt`
+- Files: `requirements/eidosian_venv_reqs.txt`
+- Files: `doc_forge/requirements.txt`
+- Files: `doc_forge/docs/requirements.txt`
+
+4. Next remediation loop (pending).
+- Apply medium/low batches, run regression validation, and re-run Dependabot inventory until open alerts converge.

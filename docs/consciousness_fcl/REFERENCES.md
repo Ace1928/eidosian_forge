@@ -79,6 +79,15 @@ Accessed: 2026-02-16 (UTC).
 3. Android and Termux storage/process constraints (official docs).
    https://wiki.termux.com/wiki/Internal_and_external_storage
 
+## Security and Dependency Remediation References
+
+1. GitHub REST API: Dependabot alerts (`security_vulnerability.first_patched_version` schema used for deterministic patch targeting).
+   https://docs.github.com/en/rest/dependabot/alerts?apiVersion=2022-11-28
+2. pip requirements file syntax and constraints (pin parsing behavior for auto-patch tool).
+   https://pip.pypa.io/en/stable/reference/requirements-file-format/
+3. GitHub Actions hardening guidance (workflow security model and token scope baseline).
+   https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions
+
 ## Repository Anchors
 
 1. Event bus: `agent_forge/src/agent_forge/core/events.py`

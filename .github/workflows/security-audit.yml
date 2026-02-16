@@ -108,6 +108,45 @@ jobs:
           echo "plan_json=$PLAN_JSON" >> "$GITHUB_OUTPUT"
           echo "plan_md=$PLAN_MD" >> "$GITHUB_OUTPUT"
 
+      - name: Collect Dependabot Raw Alerts
+        id: collect_raw
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATE: ${{ steps.collect.outputs.state }}
+        run: |
+          set -eu
+          mkdir -p reports/security
+          RAW_PATH="reports/security/dependabot_alerts_${STATE}_raw.json"
+          RAW_LOG="reports/security/dependabot_alerts_${STATE}_raw.log"
+          if gh api -X GET "repos/${{ github.repository }}/dependabot/alerts" -F "state=${STATE}" --paginate > "$RAW_PATH" 2> "$RAW_LOG"; then
+            echo "raw_path=$RAW_PATH" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependabot raw alert export generated at $RAW_PATH"
+          else
+            echo "::warning::Dependabot raw export failed; writing empty fallback payload"
+            printf '[]\n' > "$RAW_PATH"
+            echo "raw_path=$RAW_PATH" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Requirement Auto-Patch Dry-Run
+        id: autopatch
+        env:
+          RAW_PATH: ${{ steps.collect_raw.outputs.raw_path }}
+          STATE: ${{ steps.collect.outputs.state }}
+        run: |
+          set -eu
+          PATCH_JSON="reports/security/dependabot_autopatch_${STATE}.json"
+          PATCH_MD="reports/security/dependabot_autopatch_${STATE}.md"
+          python scripts/dependabot_autopatch_requirements.py \
+            --alerts-json "$RAW_PATH" \
+            --repo-root . \
+            --severity "critical,high" \
+            --state "$STATE" \
+            --ecosystem "pip" \
+            --json-out "$PATCH_JSON" \
+            --md-out "$PATCH_MD"
+          echo "autopatch_json=$PATCH_JSON" >> "$GITHUB_OUTPUT"
+          echo "autopatch_md=$PATCH_MD" >> "$GITHUB_OUTPUT"
+
       - name: Sync Remediation Batch Issues
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -125,6 +164,7 @@ jobs:
           REPORT_PATH: ${{ steps.collect.outputs.report_path }}
           STATE: ${{ steps.collect.outputs.state }}
           PLAN_JSON: ${{ steps.remediation_plan.outputs.plan_json }}
+          AUTOPATCH_JSON: ${{ steps.autopatch.outputs.autopatch_json }}
         run: |
           set -eu
           python - <<'PY'
@@ -165,6 +205,19 @@ jobs:
                           [
                               f"- remediation_batch_count: `{plan.get('batch_count', 0)}`",
                               f"- remediation_alerts_batched: `{plan.get('total_batched_alerts', 0)}`",
+                          ]
+                      )
+                  autopatch_path = Path(os.environ.get("AUTOPATCH_JSON", ""))
+                  if autopatch_path.exists():
+                      autopatch = json.loads(autopatch_path.read_text(encoding="utf-8"))
+                      autopatch_totals = autopatch.get("totals") or {}
+                      summary_lines.extend(
+                          [
+                              f"- autopatch_manifest_count: `{autopatch_totals.get('manifest_count', 0)}`",
+                              f"- autopatch_changed_manifest_count: `{autopatch_totals.get('changed_manifest_count', 0)}`",
+                              f"- autopatch_updates_needed: `{autopatch_totals.get('updated_requirements_count', 0)}`",
+                              f"- autopatch_unresolved_missing: `{autopatch_totals.get('unresolved_missing_count', 0)}`",
+                              f"- autopatch_unresolved_unpinned: `{autopatch_totals.get('unresolved_unpinned_count', 0)}`",
                           ]
                       )
           else:

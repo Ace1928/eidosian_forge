@@ -225,14 +225,16 @@ jobs:
 **Jobs:**
 1. **dependabot-audit** - Collects alert summary via `scripts/dependabot_alert_inventory.py`
 2. **remediation batch plan** - Builds deterministic vulnerability batches via `scripts/dependabot_remediation_plan.py`
-3. **remediation issue sync** - Creates/updates/closes remediation batch issues via `scripts/sync_security_remediation_issues.py`
-4. **publish summary** - Adds alert and remediation-batch counts to workflow summary
-5. **optional gate enforcement** - Fails run when configured thresholds are exceeded
-6. **artifact upload** - Stores JSON/Markdown/log reports in `reports/security/`
+3. **raw alert export + autopatch dry-run** - Exports full Dependabot payload and generates deterministic pip pin update report via `scripts/dependabot_autopatch_requirements.py`
+4. **remediation issue sync** - Creates/updates/closes remediation batch issues via `scripts/sync_security_remediation_issues.py`
+5. **publish summary** - Adds alert, batch, and autopatch counts to workflow summary
+6. **optional gate enforcement** - Fails run when configured thresholds are exceeded
+7. **artifact upload** - Stores JSON/Markdown/log reports in `reports/security/`
 
 **Key Features:**
 - Uses `security-events: read` permission for API access
 - Produces report artifacts even if API access fails (fallback JSON)
+- Produces a no-write dependency patch plan from `first_patched_version` metadata for fast remediation commits
 - Supports strict/manual enforcement without forcing scheduled-run failures
 
 ---

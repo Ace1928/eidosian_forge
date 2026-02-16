@@ -31,6 +31,7 @@ The plan is decomposed into focused implementation parts:
 19. Security inventory delta-to-issue remediation automation with baseline markers and close-on-clear behavior.
 20. Workflow action pin drift audit with lock-file policy enforcement in CI.
 21. Phase 16 remediation batch orchestration from security inventory to actionable issue queues.
+22. Phase 17 deterministic pip dependency auto-patch execution with backup-safe write mode and idempotent verification.
 
 ## Principle
 
@@ -63,3 +64,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`
 - `docs/consciousness_fcl/part-37-workflow-action-pin-drift-policy.md`
 - `docs/consciousness_fcl/part-38-phase16-remediation-batching.md`
+- `docs/consciousness_fcl/part-39-phase17-autopatch-execution.md`

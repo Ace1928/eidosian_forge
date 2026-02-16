@@ -49,3 +49,4 @@
 - Part 36: `docs/consciousness_fcl/part-36-security-delta-remediation-issues.md`
 - Part 37: `docs/consciousness_fcl/part-37-workflow-action-pin-drift-policy.md`
 - Part 38: `docs/consciousness_fcl/part-38-phase16-remediation-batching.md`
+- Part 39: `docs/consciousness_fcl/part-39-phase17-autopatch-execution.md`

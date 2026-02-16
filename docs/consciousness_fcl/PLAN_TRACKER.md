@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone I` active (self-upgrading loop substrate + safe autotuning)
+- Current phase: `Milestone I` + `Phase 17` active (self-upgrading loop substrate + deterministic dependency remediation execution)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -155,3 +155,11 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add remediation batch planning from Dependabot summaries with deterministic severity-aware grouping.~~
 - [x] ~~Synchronize remediation batch issues automatically (create/update/close/duplicate cleanup).~~
 - [x] ~~Integrate remediation planner and issue sync into `security-audit.yml` with artifacted reports.~~
+
+## Phase 17: Deterministic Dependency Auto-Patch Execution
+
+- [x] ~~Add `scripts/dependabot_autopatch_requirements.py` with dry-run/write modes, severity/state/ecosystem filters, and backup-safe rollback snapshots.~~
+- [x] ~~Add regression tests for target resolution, patch semantics, and backup behavior (`scripts/tests/test_dependabot_autopatch_requirements.py`).~~
+- [x] ~~Integrate auto-patch dry-run report generation into `security-audit.yml` summaries/artifacts.~~
+- [x] ~~Execute high/critical write pass for pip manifests with post-write idempotency verification (`changed=0` on re-run).~~
+- [ ] Iterate medium/low remediation batches with functional validation and repeated Dependabot inventory deltas until open alert count converges to zero.
