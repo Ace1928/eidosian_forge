@@ -172,6 +172,18 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cred = csub.add_parser("red-team", help="run adversarial consciousness benchmark campaign")
+        cred.add_argument("--dir", default="state", help="state directory")
+        cred.add_argument("--no-persist", action="store_true", help="do not write campaign report file")
+        cred.add_argument("--seed", type=int, default=910000, help="base seed for scenario trials")
+        cred.add_argument("--max-scenarios", type=int, default=0, help="run only first N scenarios (0=all)")
+        cred.add_argument("--quick", action="store_true", help="run reduced-duration scenario specs")
+        cred.add_argument("--json", action="store_true", help="JSON output")
+
+        cred_latest = csub.add_parser("latest-red-team", help="show latest persisted red-team campaign report")
+        cred_latest.add_argument("--dir", default="state", help="state directory")
+        cred_latest.add_argument("--json", action="store_true", help="JSON output")
+
         cfull = csub.add_parser("full-benchmark", help="run integrated stack benchmark (kernel + trials + MCP + local LLM)")
         cfull.add_argument("--dir", default="state", help="state directory")
         cfull.add_argument("--rounds", type=int, default=3, help="number of core benchmark rounds")
@@ -382,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
             from agent_forge.consciousness import (  # type: ignore
                 ConsciousnessBenchmarkSuite,
                 ConsciousnessKernel,
+                ConsciousnessRedTeamCampaign,
                 ConsciousnessTrialRunner,
                 IntegratedStackBenchmark,
             )
@@ -389,6 +402,7 @@ def main(argv: list[str] | None = None) -> int:
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
+            red_team = ConsciousnessRedTeamCampaign(args.dir)
             full = IntegratedStackBenchmark(args.dir)
 
             if args.conscious_cmd == "status":
@@ -487,6 +501,47 @@ def main(argv: list[str] | None = None) -> int:
                             f"[consciousness] latest_benchmark={latest.get('benchmark_id')} "
                             f"composite={scores.get('composite')} "
                             f"delta={scores.get('delta_composite')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "red-team":
+                result = red_team.run(
+                    persist=not args.no_persist,
+                    base_seed=max(0, int(args.seed)),
+                    max_scenarios=max(0, int(args.max_scenarios)),
+                    quick=bool(args.quick),
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    print(
+                        f"[consciousness] red_team={payload.get('run_id')} "
+                        f"pass={payload.get('pass_count')}/{payload.get('scenario_count')} "
+                        f"ratio={payload.get('pass_ratio')}"
+                    )
+                    print(
+                        f"[consciousness] mean_robustness={payload.get('mean_robustness')} "
+                        f"fail_count={payload.get('fail_count')}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
+
+            if args.conscious_cmd == "latest-red-team":
+                latest = red_team.latest()
+                if latest is None:
+                    latest = {"error": "No red-team report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        print(
+                            f"[consciousness] latest_red_team={latest.get('run_id')} "
+                            f"pass={latest.get('pass_count')}/{latest.get('scenario_count')} "
+                            f"ratio={latest.get('pass_ratio')}"
                         )
                 return 0
 

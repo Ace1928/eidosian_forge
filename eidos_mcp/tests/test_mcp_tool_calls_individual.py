@@ -90,6 +90,12 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
         "consciousness_kernel_benchmark missing expected keys",
     ),
     (
+        "consciousness_kernel_red_team",
+        {"persist": False, "max_scenarios": 1, "quick": True},
+        lambda r: "\"run_id\"" in r and "\"scenario_count\"" in r and "\"pass_ratio\"" in r,
+        "consciousness_kernel_red_team missing expected keys",
+    ),
+    (
         "consciousness_kernel_full_benchmark",
         {
             "rounds": 1,
@@ -137,6 +143,14 @@ class TestMcpToolCallsIndividual(unittest.IsolatedAsyncioTestCase):
         async with _stdio_session() as session:
             result = await asyncio.wait_for(
                 session.read_resource("eidos://consciousness/runtime-latest-full-benchmark"),
+                timeout=20,
+            )
+        self.assertTrue(result.contents)
+
+    async def test_resource_consciousness_runtime_latest_red_team(self) -> None:
+        async with _stdio_session() as session:
+            result = await asyncio.wait_for(
+                session.read_resource("eidos://consciousness/runtime-latest-red-team"),
                 timeout=20,
             )
         self.assertTrue(result.contents)

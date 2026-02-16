@@ -41,3 +41,4 @@
 - Part 28: `docs/consciousness_fcl/part-28-parameter-store-overlay.md`
 - Part 29: `docs/consciousness_fcl/part-29-autotune-module.md`
 - Part 30: `docs/consciousness_fcl/part-30-self-experimentation-frontier.md`
+- Part 31: `docs/consciousness_fcl/part-31-autonomous-experiment-design-and-red-team.md`

@@ -450,6 +450,7 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
             "report": 2,
             "phenomenology_probe": 3,
             "autotune": 60,
+            "experiment_designer": 80,
         },
         "disable_modules": [],
         "sense_scan_events": 220,
@@ -551,6 +552,13 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "autotune_guardrail_max_degraded_ratio": 0.45,
         "autotune_guardrail_max_winner_count": 120,
         "autotune_guardrail_max_trace_violations": 0,
+        "experiment_designer_enabled": True,
+        "experiment_designer_interval_beats": 120,
+        "experiment_designer_auto_inject": False,
+        "experiment_designer_min_trials": 3,
+        "experiment_designer_recipe_duration_s": 1.5,
+        "experiment_designer_recipe_magnitude": 0.35,
+        "experiment_designer_max_recent_errors": 3,
         "consciousness_require_links": False,
     }
     for key, value in cfg.items():

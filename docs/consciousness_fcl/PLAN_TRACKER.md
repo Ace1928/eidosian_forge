@@ -125,7 +125,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add phenomenology probe module (PPX indices + snapshot events).~~
 - [x] ~~Add perturbation library v2 composite recipes with expected signatures.~~
 - [x] ~~Add ablation matrix, golden ranges, and regression gates (initial runner + checks + tests).~~
-- [ ] Add adversarial self red-team campaigns and counterexample bundles.
+- [x] ~~Add adversarial self red-team campaigns and counterexample bundles.~~
 
 ## Phase 14: Self-Upgrading Consciousness Loops
 
@@ -136,6 +136,6 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add bootstrap autotune runtime module with propose→trial→commit/rollback loop (`modules/autotune.py`).~~
 - [x] ~~Upgrade optimizer from bandit hill-climbing to Bayesian/multi-objective strategy (`bayes_pareto` acquisition + frontier tracking).~~
 - [x] ~~Add adaptive attention/competition weights learned from trial objective and ignition trace feedback.~~
-- [ ] Add closed-loop micro-task suite (`self_other_discrimination`, continuity under distraction, report-grounding challenge).
-- [ ] Add experiment-designer module for safe self-generated perturbation campaigns.
-- [ ] Add adversarial tuner red-team gates and regression bundles.
+- [x] ~~Add closed-loop micro-task suite (`self_other_discrimination`, continuity under distraction, report-grounding challenge).~~
+- [x] ~~Add experiment-designer module for safe self-generated perturbation campaigns.~~
+- [x] ~~Add adversarial tuner red-team gates and regression bundles (red-team campaign + runtime CLI/MCP surfaces).~~

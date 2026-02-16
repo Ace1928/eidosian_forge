@@ -13,6 +13,7 @@ from agent_forge.core import workspace
 from .modules.attention import AttentionModule
 from .modules.affect import AffectModule
 from .modules.autotune import AutotuneModule
+from .modules.experiment_designer import ExperimentDesignerModule
 from .modules.intero import InteroModule
 from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
@@ -85,6 +86,7 @@ class ConsciousnessKernel:
                 ReportModule(),
                 PhenomenologyProbeModule(),
                 AutotuneModule(),
+                ExperimentDesignerModule(),
             ]
         )
 

@@ -1,6 +1,7 @@
 from .attention import AttentionModule
 from .affect import AffectModule
 from .autotune import AutotuneModule
+from .experiment_designer import ExperimentDesignerModule
 from .intero import InteroModule
 from .knowledge_bridge import KnowledgeBridgeModule
 from .memory_bridge import MemoryBridgeModule
@@ -19,6 +20,7 @@ __all__ = [
     "AttentionModule",
     "AffectModule",
     "AutotuneModule",
+    "ExperimentDesignerModule",
     "InteroModule",
     "KnowledgeBridgeModule",
     "MemoryBridgeModule",

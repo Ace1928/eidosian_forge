@@ -21,6 +21,7 @@ try:
     from agent_forge.consciousness import (
         ConsciousnessBenchmarkSuite,
         ConsciousnessKernel,
+        ConsciousnessRedTeamCampaign,
         ConsciousnessTrialRunner,
         IntegratedStackBenchmark,
     )
@@ -28,6 +29,7 @@ try:
 except Exception:  # pragma: no cover - defensive for partial installs
     ConsciousnessBenchmarkSuite = None
     ConsciousnessKernel = None
+    ConsciousnessRedTeamCampaign = None
     ConsciousnessTrialRunner = None
     IntegratedStackBenchmark = None
     Perturbation = None
@@ -63,6 +65,12 @@ def _full_bench(state_dir: Optional[str] = None) -> Optional[IntegratedStackBenc
     if IntegratedStackBenchmark is None:
         return None
     return IntegratedStackBenchmark(_state_dir(state_dir))
+
+
+def _red_team(state_dir: Optional[str] = None) -> Optional[ConsciousnessRedTeamCampaign]:
+    if ConsciousnessRedTeamCampaign is None:
+        return None
+    return ConsciousnessRedTeamCampaign(_state_dir(state_dir))
 
 
 @contextmanager
@@ -389,6 +397,62 @@ def consciousness_kernel_latest_benchmark(state_dir: Optional[str] = None) -> st
 
 
 @tool(
+    name="consciousness_kernel_red_team",
+    description="Run adversarial red-team campaign against the consciousness benchmark harness.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "persist": {"type": "boolean"},
+            "state_dir": {"type": "string"},
+            "seed": {"type": "integer"},
+            "max_scenarios": {"type": "integer"},
+            "quick": {"type": "boolean"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_red_team(
+    persist: bool = True,
+    state_dir: Optional[str] = None,
+    seed: int = 910000,
+    max_scenarios: int = 0,
+    quick: bool = False,
+) -> str:
+    with _transient_state_dir(state_dir, bool(persist)) as run_state_dir:
+        red_team = _red_team(str(run_state_dir))
+        if red_team is None:
+            return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+        result = red_team.run(
+            persist=bool(persist),
+            base_seed=max(0, int(seed)),
+            max_scenarios=max(0, int(max_scenarios)),
+            quick=bool(quick),
+        )
+        return json.dumps(result.report, indent=2)
+
+
+@tool(
+    name="consciousness_kernel_latest_red_team",
+    description="Return latest persisted adversarial red-team campaign report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_latest_red_team(state_dir: Optional[str] = None) -> str:
+    red_team = _red_team(state_dir)
+    if red_team is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = red_team.latest()
+    if latest is None:
+        return json.dumps({"error": "No red-team report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@tool(
     name="consciousness_kernel_full_benchmark",
     description="Run integrated consciousness benchmark (core/trials + optional MCP + optional local LLM).",
     parameters={
@@ -530,6 +594,21 @@ def consciousness_runtime_latest_benchmark_resource() -> str:
     latest = bench.latest_benchmark()
     if latest is None:
         return json.dumps({"error": "No benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/runtime-latest-red-team",
+    description="Latest runtime adversarial consciousness red-team report.",
+)
+@eidosian()
+def consciousness_runtime_latest_red_team_resource() -> str:
+    red_team = _red_team()
+    if red_team is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = red_team.latest()
+    if latest is None:
+        return json.dumps({"error": "No red-team report found"}, indent=2)
     return json.dumps(latest, indent=2)
 
 

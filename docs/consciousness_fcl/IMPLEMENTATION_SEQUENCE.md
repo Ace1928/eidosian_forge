@@ -246,7 +246,7 @@ Status checkpoint:
 - PR-I3 delivered (bootstrap `autotune` module with propose/trial/commit/rollback loop and metrics).
 - PR-I4 delivered (Bayesian/multi-objective optimizer path with Pareto frontier tracking and acquisition scoring).
 - PR-I5 delivered (adaptive attention and competition policy learning loops driven by ignition trace feedback).
-- PR-I6 pending (experiment-designer module + adversarial tuning campaigns).
+- PR-I6 delivered (experiment-designer runtime module + red-team campaign harness + CLI/MCP integration + regression tests).
 
 1. Parameter control plane and safety classes (PR-I1).
 - Files: `agent_forge/src/agent_forge/consciousness/tuning/params.py`
@@ -273,6 +273,15 @@ Status checkpoint:
 - Files: `agent_forge/src/agent_forge/consciousness/modules/workspace_competition.py`
 - Files: `agent_forge/tests/test_consciousness_attention_competition_learning.py`
 
-7. Planned frontier additions (PR-I6+).
-- Files: `agent_forge/src/agent_forge/consciousness/modules/experiment_designer.py` (planned)
-- Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (planned)
+7. Experiment-designer runtime module and safe perturb proposal loop (PR-I6).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/experiment_designer.py`
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+
+8. Adversarial red-team campaigns and integration surfaces (PR-I6).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py`
+- Files: `agent_forge/src/agent_forge/consciousness/bench/tasks.py`
+- Files: `agent_forge/src/agent_forge/cli/eidctl.py`
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+- Files: `agent_forge/tests/test_consciousness_red_team.py`
+- Files: `agent_forge/tests/test_consciousness_experiment_designer.py`

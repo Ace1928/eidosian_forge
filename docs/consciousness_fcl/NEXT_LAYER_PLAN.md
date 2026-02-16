@@ -49,3 +49,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-28-parameter-store-overlay.md`
 - `docs/consciousness_fcl/part-29-autotune-module.md`
 - `docs/consciousness_fcl/part-30-self-experimentation-frontier.md`
+- `docs/consciousness_fcl/part-31-autonomous-experiment-design-and-red-team.md`

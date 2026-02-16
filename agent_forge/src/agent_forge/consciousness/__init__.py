@@ -1,6 +1,11 @@
 from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
-from .bench import ConsciousnessBenchRunner, TrialSpec as BenchTrialSpec
+from .bench import (
+    ConsciousnessBenchRunner,
+    ConsciousnessRedTeamCampaign,
+    TrialSpec as BenchTrialSpec,
+)
 from .bench.ablations import AblationResult, ConsciousnessAblationMatrix
+from .bench.red_team import RedTeamResult, RedTeamScenario
 from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
@@ -16,6 +21,7 @@ __all__ = [
     "ConsciousnessAblationMatrix",
     "ConsciousnessBenchmarkSuite",
     "ConsciousnessKernel",
+    "ConsciousnessRedTeamCampaign",
     "ConsciousnessTrialRunner",
     "EventIndex",
     "IntegratedBenchmarkResult",
@@ -23,6 +29,8 @@ __all__ = [
     "KernelResult",
     "ModuleStateStore",
     "Module",
+    "RedTeamResult",
+    "RedTeamScenario",
     "TrialResult",
     "TickContext",
     "WorkspacePayload",

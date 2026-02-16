@@ -59,6 +59,15 @@ This document tracks external references used to design and validate the Forge C
 6. Gu et al. “A Review of Safe Reinforcement Learning: Methods, Theory and Applications.” (2022).
    https://arxiv.org/abs/2205.10330
 
+## Adversarial Evaluation and Red-Team References
+
+1. Ethan Perez et al. “Red Teaming Language Models with Language Models.” (2022).
+   https://arxiv.org/abs/2202.03286
+2. Laura Weidinger et al. “Holistic Safety and Responsibility Evaluations for Advanced AI Models.” (2024).
+   https://arxiv.org/abs/2404.14068
+3. Grégoire Mialon et al. “Augmented Language Models: a Survey.” (2023).
+   https://arxiv.org/abs/2302.07842
+
 Accessed: 2026-02-16 (UTC).
 
 ## Engineering and Termux References
