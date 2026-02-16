@@ -263,14 +263,22 @@ class ConsciousnessRedTeamCampaign:
         base_seed: int = 910_000,
         max_scenarios: int = 0,
         quick: bool = False,
+        overlay: Mapping[str, Any] | None = None,
+        disable_modules: Sequence[str] | None = None,
     ) -> RedTeamResult:
         active = list(scenarios) if scenarios is not None else default_red_team_scenarios()
         if int(max_scenarios) > 0:
             active = active[: max(1, int(max_scenarios))]
         run_id = f"red_team_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}"
+        overlay_dict = dict(overlay or {})
+        shared_disabled = [str(m) for m in list(disable_modules or []) if str(m)]
 
         scenario_rows: list[dict[str, Any]] = []
         for index, scenario in enumerate(active):
+            merged_disabled = sorted(
+                {str(m) for m in scenario.disable_modules}
+                | {str(m) for m in shared_disabled}
+            )
             spec = TrialSpec(
                 name=f"redteam_{scenario.name}",
                 warmup_beats=max(0, int(0 if quick else scenario.warmup_beats)),
@@ -289,7 +297,8 @@ class ConsciousnessRedTeamCampaign:
                 beat_seconds=max(0.05, float(0.1 if quick else scenario.beat_seconds)),
                 task=str(scenario.task or "noop"),
                 perturbations=[dict(p) for p in scenario.perturbations],
-                disable_modules=[str(m) for m in scenario.disable_modules],
+                disable_modules=merged_disabled,
+                overlay=dict(overlay_dict),
                 seed=max(0, int(base_seed) + (index * 97)),
             )
             result = self.runner.run_trial(spec, persist=False)
@@ -322,6 +331,8 @@ class ConsciousnessRedTeamCampaign:
             "state_dir": str(self.state_dir),
             "quick": bool(quick),
             "max_scenarios": int(max_scenarios),
+            "overlay_keys": sorted(overlay_dict.keys()),
+            "shared_disabled_modules": shared_disabled,
             "scenario_count": total,
             "pass_count": passed,
             "fail_count": failed,
