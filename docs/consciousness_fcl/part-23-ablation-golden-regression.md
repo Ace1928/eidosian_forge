@@ -1,5 +1,7 @@
 # Part 23: Ablation Matrix, Golden Ranges, and Regression Gates
 
+Status: initial PR-H5 delivery complete (`bench/ablations.py`, `bench/golden.py`, `test_consciousness_ablations.py`).
+
 ## Goal
 
 Prove each module contributes meaningful dynamics by running repeatable ablations and enforcing expected metric deltas.

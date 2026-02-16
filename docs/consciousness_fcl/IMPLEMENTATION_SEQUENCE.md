@@ -152,6 +152,7 @@ Status checkpoint:
 - PR-H2 delivered (winner-linked `trace_strength` instrumentation + ignition v3 gates + pending winner finalization + regressions).
 - PR-H3 delivered (new `consciousness/bench/` package with `TrialSpec`, stage lifecycle execution, artifact persistence, and regression tests).
 - PR-H4 delivered (metrics v2 modules: `entropy`, `connectivity`, `directionality`, `self_stability`, plus upgraded `rci_v2` and bench integration).
+- PR-H5 delivered (ablation matrix runner, golden checks, and regression tests).
 
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`
