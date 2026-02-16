@@ -8,19 +8,22 @@ import unittest
 import asyncio
 import time
 import json
+import sys
 from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import os
 
-PYTHON_BIN = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
+ROOT = Path(__file__).resolve().parent.parent
+HOME = Path.home()
+PYTHON_BIN = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
 SERVER_ARGS = ["-m", "eidos_mcp.eidos_mcp_server"]
-MEMORY_FILE = Path("/home/lloyd/eidosian_forge/memory_data.json")
+MEMORY_FILE = ROOT / "memory_data.json"
 
 class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        pythonpath = "/home/lloyd/eidosian_forge/eidos_mcp/src:/home/lloyd/eidosian_forge"
+        pythonpath = f"{ROOT}/eidos_mcp/src:{ROOT}"
         env = {**os.environ, "PYTHONPATH": pythonpath}
         self.server_params = StdioServerParameters(
             command=PYTHON_BIN,
@@ -167,7 +170,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_file_read(self):
         """Verify the file_read tool can read file content and handles errors."""
-        test_dir = Path("/home/lloyd/.gemini/tmp/file_read_test")
+        test_dir = HOME / ".gemini/tmp/file_read_test"
         test_dir.mkdir(parents=True, exist_ok=True)
         test_file_path = test_dir / "test_read_file.txt"
         test_content = "Hello, this is a test file for reading."
@@ -214,7 +217,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_file_write(self):
         """Verify the file_write tool can write content to a file."""
-        test_dir = Path("/home/lloyd/.gemini/tmp/file_write_test")
+        test_dir = HOME / ".gemini/tmp/file_write_test"
         test_dir.mkdir(parents=True, exist_ok=True)
         test_file_path = test_dir / "test_write_file.txt"
         original_content = "This is some content to write to the file."
@@ -258,7 +261,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_file_create(self):
         """Verify the file_create tool can create an empty file."""
-        test_dir = Path("/home/lloyd/.gemini/tmp/file_create_test")
+        test_dir = HOME / ".gemini/tmp/file_create_test"
         test_dir.mkdir(parents=True, exist_ok=True)
         test_file_path = test_dir / "test_created_file.txt"
 
@@ -289,7 +292,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_file_delete(self):
         """Verify the file_delete tool can delete files and empty directories, and handles errors."""
-        base_test_dir = Path("/home/lloyd/.gemini/tmp/file_delete_test_base")
+        base_test_dir = HOME / ".gemini/tmp/file_delete_test_base"
         base_test_dir.mkdir(parents=True, exist_ok=True)
 
         file_to_delete = base_test_dir / "temp_file.txt"
@@ -393,7 +396,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_run_shell_command(self):
         """Verify the run_shell_command tool can execute commands and capture output."""
-        test_dir = Path("/home/lloyd/.gemini/tmp/shell_command_test")
+        test_dir = HOME / ".gemini/tmp/shell_command_test"
         test_dir.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -458,7 +461,7 @@ class TestEidosianNexus(unittest.IsolatedAsyncioTestCase):
 
     async def test_run_tests(self):
         """Verify the run_tests tool can execute test commands."""
-        test_dir = Path("/home/lloyd/.gemini/tmp/run_tests_test")
+        test_dir = HOME / ".gemini/tmp/run_tests_test"
         test_dir.mkdir(parents=True, exist_ok=True)
         test_file_path = test_dir / "test_example.py"
         
@@ -504,7 +507,7 @@ def test_failing_example():
 
     async def test_venv_run(self):
         """Verify the venv_run tool can execute commands within a specified virtual environment."""
-        venv_base_dir = Path("/home/lloyd/.gemini/tmp/venv_run_test_base")
+        venv_base_dir = HOME / ".gemini/tmp/venv_run_test_base"
         venv_base_dir.mkdir(parents=True, exist_ok=True)
         temp_venv_path = venv_base_dir / "temp_venv"
 

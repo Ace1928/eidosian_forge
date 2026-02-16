@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 import unittest
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
-VENV_PYTHON = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
-PYTHONPATH = "/home/lloyd/eidosian_forge/eidos_mcp/src:/home/lloyd/eidosian_forge"
+ROOT = Path(__file__).resolve().parents[2]
+VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
+PYTHONPATH = f"{ROOT}/eidos_mcp/src:{ROOT}"
 
 
 async def _call_tool(
@@ -41,7 +44,7 @@ async def _stdio_session() -> AsyncIterator[ClientSession]:
         env={
             **os.environ,
             "PYTHONPATH": PYTHONPATH,
-            "EIDOS_FORGE_DIR": "/home/lloyd/eidosian_forge",
+            "EIDOS_FORGE_DIR": str(ROOT),
             "EIDOS_MCP_TRANSPORT": "stdio",
             "EIDOS_MCP_STATELESS_HTTP": "1",
         },

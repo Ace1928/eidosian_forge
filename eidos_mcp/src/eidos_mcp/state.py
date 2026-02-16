@@ -38,6 +38,16 @@ def _looks_like_lfs_pointer(path: Path) -> bool:
         return False
 
 
+def _is_valid_json(path: Path) -> bool:
+    try:
+        if not path.exists() or path.stat().st_size == 0:
+            return False
+        json.loads(path.read_text(encoding="utf-8"))
+        return True
+    except Exception:
+        return False
+
+
 def _init_gis() -> Any:
     if not GisCore:
         return None
@@ -48,7 +58,10 @@ def _init_gis() -> Any:
     if not fallback.exists():
         fallback.write_text(json.dumps({}, indent=2), encoding="utf-8")
 
-    candidates = [primary, fallback] if _looks_like_lfs_pointer(primary) else [primary, fallback]
+    if _looks_like_lfs_pointer(primary) or not _is_valid_json(primary):
+        candidates = [fallback, primary]
+    else:
+        candidates = [primary, fallback]
     for candidate in candidates:
         try:
             return GisCore(persistence_path=candidate)

@@ -118,7 +118,8 @@ class EidosianLogger:
         self._logger.handlers.clear()
         
         # Console handler
-        console_handler = logging.StreamHandler(sys.stdout)
+        # Use stderr for diagnostic logs so stdout remains protocol-safe (e.g., MCP stdio JSON-RPC).
+        console_handler = logging.StreamHandler(sys.stderr)
         if structured:
             console_handler.setFormatter(StructuredFormatter())
         else:

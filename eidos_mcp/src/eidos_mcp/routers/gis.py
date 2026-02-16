@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from ..core import tool
-from ..state import gis, GIS_PATH
+from ..state import gis, GIS_PATH, _is_valid_json
 from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
 from eidosian_core import eidosian
 
@@ -88,8 +88,15 @@ def gis_restore(transaction_id: Optional[str] = None) -> str:
     if not txn:
         return "Error: Transaction not found"
     txn.rollback("gis_restore")
-    try:
-        gis.load(GIS_PATH)
-    except Exception:
-        pass
+
+    # Reload from the best available persistence file without throwing noisy decode errors.
+    primary = Path(GIS_PATH)
+    fallback = Path.home() / ".eidosian" / "gis_data.local.json"
+    reload_path = primary if _is_valid_json(primary) else fallback
+    if _is_valid_json(reload_path):
+        try:
+            gis.load(reload_path)
+        except Exception:
+            pass
+
     return f"GIS restored ({txn_id})"

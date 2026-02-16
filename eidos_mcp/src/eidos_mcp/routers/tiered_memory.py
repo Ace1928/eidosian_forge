@@ -454,11 +454,24 @@ def tiered_memory_cleanup() -> str:
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     before = mem.stats()["total"]
-    mem.cleanup()
-    after = mem.stats()["total"]
-    removed = before - after
+    if hasattr(mem, "cleanup_expired"):
+        removed = int(mem.cleanup_expired())
+    elif hasattr(mem, "cleanup"):
+        # Backward compatibility for older TieredMemorySystem implementations.
+        mem.cleanup()  # type: ignore[attr-defined]
+        after = mem.stats()["total"]
+        removed = before - after
+    else:
+        return "Error: Tiered memory cleanup not supported by current memory backend"
+
+    if hasattr(mem, "save_all"):
+        try:
+            mem.save_all()  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
     return f"Cleanup complete: removed {removed} expired memories"
 
 

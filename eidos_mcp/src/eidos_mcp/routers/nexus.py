@@ -30,7 +30,16 @@ from eidosian_core import eidosian
 def agent_run_task(objective: str, execute: bool = False) -> str:
     """Delegate a complex objective to the Agent Forge."""
     if not agent:
-        return json.dumps({"error": "Agent Forge not available (import failed)"})
+        return json.dumps(
+            {
+                "objective": objective,
+                "status": "unavailable",
+                "execute": execute,
+                "tasks": [],
+                "error": "Agent Forge not available (import failed)",
+            },
+            indent=2,
+        )
     
     goal = agent.create_goal(objective, plan=True)
     

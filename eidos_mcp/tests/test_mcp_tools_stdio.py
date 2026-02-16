@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -13,18 +14,21 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
 from mcp.client.stdio import stdio_client
-SANDBOX = Path("/home/lloyd/.eidosian/tmp/mcp_sandbox")
-AUDIT_DATA = Path("/home/lloyd/eidosian_forge/audit_data/coverage_map.json")
-TODO_PATH = Path("/home/lloyd/TODO.md")
-VENV_PYTHON = "/home/lloyd/eidosian_forge/eidosian_venv/bin/python3"
+
+ROOT = Path(__file__).resolve().parents[2]
+HOME = Path.home()
+SANDBOX = HOME / ".eidosian/tmp/mcp_sandbox"
+AUDIT_DATA = ROOT / "audit_data/coverage_map.json"
+TODO_PATH = HOME / "TODO.md"
+VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
 MCP_HOST = "127.0.0.1"
 MCP_PORT = int(os.environ.get("EIDOS_TEST_MCP_PORT", "18928"))
 
 
 def _start_http_server() -> subprocess.Popen:
     env = dict(os.environ)
-    env.setdefault("PYTHONPATH", "/home/lloyd/eidosian_forge/eidos_mcp/src:/home/lloyd/eidosian_forge")
-    env["EIDOS_FORGE_DIR"] = "/home/lloyd/eidosian_forge"
+    env.setdefault("PYTHONPATH", f"{ROOT}/eidos_mcp/src:{ROOT}")
+    env["EIDOS_FORGE_DIR"] = str(ROOT)
     env["EIDOS_MCP_TRANSPORT"] = "streamable-http"
     env["EIDOS_MCP_MOUNT_PATH"] = "/mcp"
     env["EIDOS_MCP_STATELESS_HTTP"] = "1"
@@ -288,7 +292,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         refactor = await _call_tool(
             session,
             "refactor_analyze",
-            {"path": "/home/lloyd/eidosian_forge/eidos_mcp/src/eidos_mcp/forge_loader.py"},
+            {"path": str(ROOT / "eidos_mcp/src/eidos_mcp/forge_loader.py")},
         )
         self.assertIn("file_info", refactor)
 
@@ -315,7 +319,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         venv_run = await _call_tool(
             session,
             "venv_run",
-            {"venv_path": "/home/lloyd/eidosian_forge/eidosian_venv", "command": "python -V"},
+            {"venv_path": str(ROOT / "eidosian_venv"), "command": "python -V"},
         )
         self.assertIn("Python 3.12", venv_run)
 
@@ -348,8 +352,8 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
             args=["-u", "-c", "import eidos_mcp.eidos_mcp_server as s; s.main()"],
             env={
                 **os.environ,
-                "PYTHONPATH": "/home/lloyd/eidosian_forge/eidos_mcp/src:/home/lloyd/eidosian_forge",
-                "EIDOS_FORGE_DIR": "/home/lloyd/eidosian_forge",
+                "PYTHONPATH": f"{ROOT}/eidos_mcp/src:{ROOT}",
+                "EIDOS_FORGE_DIR": str(ROOT),
                 "EIDOS_MCP_TRANSPORT": "stdio",
             },
         )
