@@ -6,6 +6,7 @@
 - Tracker: `docs/consciousness_fcl/PLAN_TRACKER.md`
 - References: `docs/consciousness_fcl/REFERENCES.md`
 - Execution Sequence: `docs/consciousness_fcl/IMPLEMENTATION_SEQUENCE.md`
+- Next Layer Overview: `docs/consciousness_fcl/NEXT_LAYER_PLAN.md`
 
 ## Part Documents
 
@@ -23,3 +24,16 @@
 - Part 11: `docs/consciousness_fcl/part-11-benchmarking-self-improvement.md`
 - Part 12: `docs/consciousness_fcl/part-12-dynamical-continuity.md`
 - Part 13: `docs/consciousness_fcl/part-13-cross-forge-integration.md`
+- Part 14: `docs/consciousness_fcl/part-14-north-star-causal-traceability.md`
+- Part 15: `docs/consciousness_fcl/part-15-canonical-schemas-and-indexes.md`
+- Part 16: `docs/consciousness_fcl/part-16-winner-linked-ignition-tracing.md`
+- Part 17: `docs/consciousness_fcl/part-17-consciousness-trial-runner.md`
+- Part 18: `docs/consciousness_fcl/part-18-metrics-v2-connectivity.md`
+- Part 19: `docs/consciousness_fcl/part-19-world-model-v1-5.md`
+- Part 20: `docs/consciousness_fcl/part-20-simulation-stream.md`
+- Part 21: `docs/consciousness_fcl/part-21-phenomenology-probes.md`
+- Part 22: `docs/consciousness_fcl/part-22-perturbation-library-v2.md`
+- Part 23: `docs/consciousness_fcl/part-23-ablation-golden-regression.md`
+- Part 24: `docs/consciousness_fcl/part-24-frontier-upgrades.md`
+- Part 25: `docs/consciousness_fcl/part-25-pr-order-and-gates.md`
+- Part 26: `docs/consciousness_fcl/part-26-adversarial-red-team.md`

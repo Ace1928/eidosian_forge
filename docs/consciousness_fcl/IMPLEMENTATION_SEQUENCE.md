@@ -119,7 +119,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 6. Add continuity and cadence regression tests.
 - Files: `agent_forge/tests/test_consciousness_continuity.py`
 
-## Stage G (Active): Cross-Forge Memory/Knowledge Integration
+## Stage G (Completed): Cross-Forge Memory/Knowledge Integration
 
 1. Add memory bridge module with optional `memory_forge` introspection/recall.
 - Files: `agent_forge/src/agent_forge/consciousness/modules/memory_bridge.py`
@@ -144,6 +144,61 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 - Files: `agent_forge/tests/test_consciousness_memory_knowledge_bridge.py`
 - Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
 - Files: `scripts/linux_parity_smoke.sh`
+
+## Stage H (Active): Causal Traceability and Consciousness-Lab Instrumentation
+
+1. Canonical link contract and schema hardening (PR-H1).
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+- Files: `agent_forge/src/agent_forge/consciousness/linking.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/schemas.py` (new)
+
+2. Event index foundation and indexed module migration (PR-H1 continuation).
+- Files: `agent_forge/src/agent_forge/consciousness/index.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/workspace_competition.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/report.py`
+
+3. Winner-linked ignition tracing and ignition v3 gates (PR-H2).
+- Files: `agent_forge/src/agent_forge/consciousness/metrics/ignition_trace.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/modules/workspace_competition.py`
+
+4. Standardized CTR package for reproducible trials (PR-H3).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/tasks.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/scoring.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/reporting.py` (new)
+
+5. Metrics v2 and connectivity instrumentation (PR-H4).
+- Files: `agent_forge/src/agent_forge/consciousness/metrics/entropy.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/metrics/connectivity.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/metrics/self_stability.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/metrics/rci.py`
+
+6. Ablation matrix and golden ranges (PR-H5).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/ablations.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/golden.py` (new)
+- Files: `agent_forge/tests/test_consciousness_ablations.py` (new)
+
+7. World model v1.5 predictive coding and rollout API (PR-H6).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/world_model.py`
+- Files: `agent_forge/src/agent_forge/consciousness/features.py` (new)
+
+8. Simulation stream integration (PR-H7).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/simulation.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/modules/meta.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/report.py`
+
+9. Phenomenology probes and PPX indices (PR-H8).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/phenomenology_probe.py` (new)
+- Files: `agent_forge/src/agent_forge/consciousness/bench/scoring.py`
+
+10. Perturbation library v2 recipes (PR-H9).
+- Files: `agent_forge/src/agent_forge/consciousness/perturb/library.py`
+- Files: `agent_forge/src/agent_forge/consciousness/perturb/harness.py`
+
+11. Adversarial red-team campaigns (PR-H11).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (new)
+- Files: `agent_forge/tests/test_consciousness_red_team.py` (new)
 
 ## Validation Commands
 

@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone G` active (cross-forge bridge integration + ablation readiness)
+- Current phase: `Milestone H` active (causal traceability + consciousness lab instrumentation)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 
@@ -108,3 +108,18 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add explicit memory and knowledge bridge modules (`memory_forge` + `knowledge_forge` -> recalls/context/events).~~
 - [x] ~~Expose bridge integration status through MCP (`consciousness_bridge_status`, `eidos://consciousness/runtime-integrations`).~~
 - [ ] Add ablation benchmark runner and contribution assertions.
+
+## Phase 13: Causal Instrumentation and Experimental Rigor
+
+- [x] ~~Publish next-layer execution plan documents (`part-14` through `part-26`).~~
+- [ ] Enforce canonical link contract (`corr_id`, `parent_id`, `winner_candidate_id`, `candidate_id`) across scored events.
+- [ ] Add beat-local `EventIndex` and migrate critical modules to index-based lookups.
+- [ ] Implement winner-linked ignition tracing metric (`trace_strength`) and ignition v3 gates.
+- [ ] Add standardized consciousness trial harness package (`bench/`) with persisted artifacts.
+- [ ] Upgrade metrics suite to v2 (`entropy`, `connectivity`, `directionality`, `self_stability`).
+- [ ] Upgrade world model to belief-state predictive coding with rollout API.
+- [ ] Add simulation stream module and mode-aware report/meta integration.
+- [ ] Add phenomenology probe module (PPX indices + snapshot events).
+- [ ] Add perturbation library v2 composite recipes with expected signatures.
+- [ ] Add ablation matrix, golden ranges, and regression gates.
+- [ ] Add adversarial self red-team campaigns and counterexample bundles.

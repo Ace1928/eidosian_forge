@@ -48,6 +48,27 @@ The implemented layer must provide:
 2. Milestone B: policy efference loop and self-binding metrics.
 3. Milestone C: perturbation harness and RCI-based trial runner.
 4. Milestone D: world-model prediction error, meta-state, and grounded report generation.
+5. Milestone E/F/G: benchmark expansion, dynamical continuity, and cross-forge memory/knowledge integration.
+6. Milestone H: causal traceability and consciousness-lab instrumentation (schema/index/ignition trace/trial harness/ablations/simulation/PPX/red-team).
+
+## Next Layer Expansion
+
+Detailed Stage H plan documents:
+
+- `docs/consciousness_fcl/NEXT_LAYER_PLAN.md`
+- `docs/consciousness_fcl/part-14-north-star-causal-traceability.md`
+- `docs/consciousness_fcl/part-15-canonical-schemas-and-indexes.md`
+- `docs/consciousness_fcl/part-16-winner-linked-ignition-tracing.md`
+- `docs/consciousness_fcl/part-17-consciousness-trial-runner.md`
+- `docs/consciousness_fcl/part-18-metrics-v2-connectivity.md`
+- `docs/consciousness_fcl/part-19-world-model-v1-5.md`
+- `docs/consciousness_fcl/part-20-simulation-stream.md`
+- `docs/consciousness_fcl/part-21-phenomenology-probes.md`
+- `docs/consciousness_fcl/part-22-perturbation-library-v2.md`
+- `docs/consciousness_fcl/part-23-ablation-golden-regression.md`
+- `docs/consciousness_fcl/part-24-frontier-upgrades.md`
+- `docs/consciousness_fcl/part-25-pr-order-and-gates.md`
+- `docs/consciousness_fcl/part-26-adversarial-red-team.md`
 
 ## Quality Gates
 
