@@ -249,6 +249,7 @@ Status checkpoint:
 - PR-I5 delivered (adaptive attention and competition policy learning loops driven by ignition trace feedback).
 - PR-I6 delivered (experiment-designer runtime module + red-team campaign harness + CLI/MCP integration + regression tests).
 - PR-I7 delivered (integrated benchmark red-team scoring + gate integration + CLI/MCP full-benchmark controls).
+- PR-I8 delivered (autotune commit-path red-team gate with configurable pass/robustness thresholds and availability-safe rollback semantics).
 
 1. Parameter control plane and safety classes (PR-I1).
 - Files: `agent_forge/src/agent_forge/consciousness/tuning/params.py`
@@ -294,3 +295,9 @@ Status checkpoint:
 - Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
 - Files: `agent_forge/tests/test_consciousness_integrated_benchmark.py`
 - Files: `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
+
+10. Autotune commit-path red-team guard and rollback reason tracing (PR-I8).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/autotune.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+- Files: `agent_forge/tests/test_consciousness_autotune.py`
+- Files: `agent_forge/tests/test_consciousness_red_team.py`

@@ -43,3 +43,4 @@
 - Part 30: `docs/consciousness_fcl/part-30-self-experimentation-frontier.md`
 - Part 31: `docs/consciousness_fcl/part-31-autonomous-experiment-design-and-red-team.md`
 - Part 32: `docs/consciousness_fcl/part-32-integrated-red-team-gates.md`
+- Part 33: `docs/consciousness_fcl/part-33-autotune-red-team-commit-gates.md`

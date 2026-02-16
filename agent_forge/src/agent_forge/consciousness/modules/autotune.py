@@ -146,6 +146,107 @@ class AutotuneModule:
 
         return (len(reasons) == 0), reasons
 
+    def _run_red_team_guard(
+        self,
+        ctx: TickContext,
+        *,
+        overlay: Mapping[str, Any],
+        seed: int,
+    ) -> tuple[bool, list[str], dict[str, Any]]:
+        enabled = bool(ctx.config.get("autotune_run_red_team", True))
+        if not enabled:
+            return True, [], {"enabled": False, "available": True}
+
+        quick = bool(ctx.config.get("autotune_red_team_quick", True))
+        max_scenarios = max(0, int(ctx.config.get("autotune_red_team_max_scenarios", 1)))
+        persist = bool(ctx.config.get("autotune_red_team_persist", False))
+        min_pass_ratio = _safe_float(
+            ctx.config.get("autotune_red_team_min_pass_ratio"), default=0.75
+        )
+        min_robustness = _safe_float(
+            ctx.config.get("autotune_red_team_min_robustness"), default=0.70
+        )
+        require_available = bool(
+            ctx.config.get("autotune_red_team_require_available", True)
+        )
+        configured_disable = [
+            str(name)
+            for name in list(ctx.config.get("autotune_red_team_disable_modules") or [])
+            if str(name)
+        ]
+        merged_disable = sorted({self.name, *configured_disable})
+
+        report: dict[str, Any]
+        reasons: list[str] = []
+        try:
+            from ..bench.red_team import ConsciousnessRedTeamCampaign
+
+            campaign = ConsciousnessRedTeamCampaign(ctx.state_dir)
+            campaign_report = campaign.run(
+                persist=persist,
+                base_seed=max(0, int(seed)),
+                max_scenarios=max_scenarios,
+                quick=quick,
+                overlay=dict(overlay or {}),
+                disable_modules=merged_disable,
+            ).report
+            report = dict(campaign_report)
+            report["enabled"] = True
+            report["available"] = True
+        except Exception as exc:
+            report = {
+                "enabled": True,
+                "available": False,
+                "error": f"{type(exc).__name__}: {exc}",
+                "pass_ratio": 0.0,
+                "mean_robustness": 0.0,
+            }
+            if require_available:
+                reasons.append("red_team_unavailable")
+            ctx.emit_event(
+                "tune.red_team_error",
+                {
+                    "error": report["error"],
+                    "quick": quick,
+                    "max_scenarios": max_scenarios,
+                    "require_available": require_available,
+                },
+                tags=["consciousness", "autotune", "red_team", "error"],
+            )
+
+        pass_ratio = _safe_float(report.get("pass_ratio"), default=0.0)
+        robustness = _safe_float(report.get("mean_robustness"), default=0.0)
+        if report.get("available", False):
+            if pass_ratio < min_pass_ratio:
+                reasons.append("red_team_pass_ratio")
+            if robustness < min_robustness:
+                reasons.append("red_team_robustness")
+
+        guard_ok = len(reasons) == 0
+        guard_payload = {
+            "guard_ok": guard_ok,
+            "reasons": reasons,
+            "pass_ratio": pass_ratio,
+            "mean_robustness": robustness,
+            "min_pass_ratio": min_pass_ratio,
+            "min_robustness": min_robustness,
+            "quick": quick,
+            "max_scenarios": max_scenarios,
+            "seed": int(seed),
+            "require_available": require_available,
+            "available": bool(report.get("available", False)),
+            "overlay_keys": sorted(str(k) for k in dict(overlay or {}).keys()),
+            "disable_modules": merged_disable,
+            "run_id": str(report.get("run_id") or ""),
+            "scenario_count": int(report.get("scenario_count") or 0),
+        }
+        ctx.emit_event(
+            "tune.red_team",
+            guard_payload,
+            tags=["consciousness", "autotune", "red_team"],
+        )
+        return guard_ok, reasons, report
+
     def tick(self, ctx: TickContext) -> None:
         state = ctx.module_state(
             self.name,
@@ -238,10 +339,26 @@ class AutotuneModule:
         score = _safe_float(trial_report.get("composite_score"), default=0.0)
         objectives = objectives_from_trial_report(trial_report)
         guard_ok, guard_reasons = self._guardrails(ctx, trial_report)
+        red_team_seed = int(ctx.config.get("autotune_red_team_seed_offset", 2_000_000)) + int(
+            ctx.beat_count
+        )
 
         best_score = _safe_float(state.get("best_score"), default=_safe_float(baseline_score, default=0.0))
         min_improvement = _safe_float(ctx.config.get("autotune_min_improvement"), default=0.03)
-        accepted = bool(guard_ok and score >= (best_score + min_improvement))
+        improved = score >= (best_score + min_improvement)
+        red_team_ok = True
+        red_team_reasons: list[str] = []
+        red_team_report: dict[str, Any] = {"enabled": False, "available": True}
+        if guard_ok and improved:
+            red_team_ok, red_team_reasons, red_team_report = self._run_red_team_guard(
+                ctx,
+                overlay=proposal_overlay,
+                seed=red_team_seed,
+            )
+        elif bool(ctx.config.get("autotune_run_red_team", True)):
+            red_team_reasons.append("red_team_skipped")
+
+        accepted = bool(guard_ok and improved and red_team_ok)
         optimizer.observe_result(
             accepted=accepted,
             score=score,
@@ -256,6 +373,14 @@ class AutotuneModule:
         state["last_trial_id"] = str(trial_report.get("trial_id") or "")
         baseline = _safe_float(state.get("baseline_score"), default=0.0)
         state["baseline_score"] = round((0.9 * baseline) + (0.1 * score), 6)
+        state["last_red_team"] = {
+            "enabled": bool(red_team_report.get("enabled", False)),
+            "available": bool(red_team_report.get("available", False)),
+            "pass_ratio": _safe_float(red_team_report.get("pass_ratio"), default=0.0),
+            "mean_robustness": _safe_float(red_team_report.get("mean_robustness"), default=0.0),
+            "run_id": str(red_team_report.get("run_id") or ""),
+            "reasons": list(red_team_reasons),
+        }
 
         if accepted:
             persisted = persist_tuned_overlay(
@@ -280,22 +405,54 @@ class AutotuneModule:
                     "trial_id": trial_report.get("trial_id"),
                     "optimizer": optimizer_mode,
                     "objectives": objectives,
+                    "red_team": {
+                        "enabled": bool(red_team_report.get("enabled", False)),
+                        "available": bool(red_team_report.get("available", False)),
+                        "run_id": str(red_team_report.get("run_id") or ""),
+                        "pass_ratio": _safe_float(red_team_report.get("pass_ratio"), default=0.0),
+                        "mean_robustness": _safe_float(
+                            red_team_report.get("mean_robustness"), default=0.0
+                        ),
+                    },
                 },
                 tags=["consciousness", "autotune", "commit"],
             )
         else:
+            rollback_reasons: list[str] = []
+            rollback_reasons.extend(str(r) for r in guard_reasons if str(r))
+            if not improved:
+                rollback_reasons.append("no_improvement")
+            rollback_reasons.extend(str(r) for r in red_team_reasons if str(r))
+            if not rollback_reasons:
+                rollback_reasons.append("no_improvement")
+            deduped_reasons: list[str] = []
+            seen: set[str] = set()
+            for reason in rollback_reasons:
+                if reason in seen:
+                    continue
+                seen.add(reason)
+                deduped_reasons.append(reason)
             ctx.emit_event(
                 "tune.rollback",
                 {
                     "score": score,
                     "best_score": best_score,
-                    "reasons": list(guard_reasons) if guard_reasons else ["no_improvement"],
+                    "reasons": deduped_reasons,
                     "key": proposal.get("key"),
                     "before": proposal.get("before"),
                     "after": proposal.get("after"),
                     "trial_id": trial_report.get("trial_id"),
                     "optimizer": optimizer_mode,
                     "objectives": objectives,
+                    "red_team": {
+                        "enabled": bool(red_team_report.get("enabled", False)),
+                        "available": bool(red_team_report.get("available", False)),
+                        "run_id": str(red_team_report.get("run_id") or ""),
+                        "pass_ratio": _safe_float(red_team_report.get("pass_ratio"), default=0.0),
+                        "mean_robustness": _safe_float(
+                            red_team_report.get("mean_robustness"), default=0.0
+                        ),
+                    },
                 },
                 tags=["consciousness", "autotune", "rollback"],
             )
@@ -309,3 +466,12 @@ class AutotuneModule:
         accepts = int(state.get("accepted_count") or 0)
         ratio = float(accepts) / float(trials) if trials > 0 else 0.0
         ctx.metric("consciousness.autotune.acceptance_ratio", ratio)
+        if bool(red_team_report.get("enabled", False)):
+            ctx.metric(
+                "consciousness.autotune.red_team_pass_ratio",
+                _safe_float(red_team_report.get("pass_ratio"), default=0.0),
+            )
+            ctx.metric(
+                "consciousness.autotune.red_team_robustness",
+                _safe_float(red_team_report.get("mean_robustness"), default=0.0),
+            )

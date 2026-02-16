@@ -56,3 +56,46 @@ def test_red_team_campaign_latest_reads_persisted_report(tmp_path: Path) -> None
     assert run.report_path.exists()
     assert latest is not None
     assert latest.get("run_id") == run.run_id
+
+
+def test_red_team_campaign_applies_shared_overlay_and_disable_modules(
+    monkeypatch, tmp_path: Path
+) -> None:
+    base = tmp_path / "state"
+    campaign = ConsciousnessRedTeamCampaign(base)
+    captured_specs: list[dict[str, object]] = []
+
+    def _fake_run_trial(spec, persist=False):  # type: ignore[no-untyped-def]
+        captured_specs.append(spec.normalized())
+
+        class _Result:
+            trial_id = "trial-fake"
+            report = {
+                "module_error_count": 0,
+                "degraded_mode_ratio": 0.0,
+                "winner_count": 1,
+                "ignitions_without_trace": 0,
+                "after": {
+                    "report_groundedness": 0.8,
+                    "trace_strength": 0.8,
+                },
+                "recipe_expectations": {"pass": True},
+            }
+
+        return _Result()
+
+    monkeypatch.setattr(campaign.runner, "run_trial", _fake_run_trial)
+
+    campaign.run(
+        scenarios=[_smoke_scenario("smoke-overlay")],
+        persist=False,
+        base_seed=222,
+        overlay={"competition_top_k": 2},
+        disable_modules=["autotune"],
+    )
+
+    assert len(captured_specs) == 1
+    spec = captured_specs[0]
+    assert spec.get("overlay") == {"competition_top_k": 2}
+    disabled = list(spec.get("disable_modules") or [])
+    assert "autotune" in disabled

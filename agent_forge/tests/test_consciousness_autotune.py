@@ -18,6 +18,7 @@ def _ctx(
         "autotune_interval_beats": 1,
         "autotune_min_improvement": 0.01,
         "autotune_persist_trials": False,
+        "autotune_run_red_team": False,
     }
     if cfg:
         merged.update(dict(cfg))
@@ -153,3 +154,110 @@ def test_autotune_bayes_mode_tracks_history(monkeypatch, tmp_path: Path) -> None
     history = optimizer_state.get("history")
     assert isinstance(history, list)
     assert len(history) >= 1
+
+
+def test_autotune_red_team_guard_blocks_commit(monkeypatch, tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    store = ModuleStateStore(state_dir, autosave_interval_secs=0.0)
+    module = AutotuneModule()
+    reports = [
+        {
+            "trial_id": "baseline",
+            "composite_score": 0.20,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 2,
+            "ignitions_without_trace": 0,
+        },
+        {
+            "trial_id": "candidate",
+            "composite_score": 0.42,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 2,
+            "ignitions_without_trace": 0,
+        },
+    ]
+    monkeypatch.setattr(
+        module,
+        "_run_micro_trial",
+        lambda *_args, **_kwargs: reports.pop(0),
+    )
+    monkeypatch.setattr(
+        module,
+        "_run_red_team_guard",
+        lambda *_args, **_kwargs: (
+            False,
+            ["red_team_pass_ratio"],
+            {
+                "enabled": True,
+                "available": True,
+                "run_id": "rt_fail",
+                "pass_ratio": 0.50,
+                "mean_robustness": 0.60,
+            },
+        ),
+    )
+
+    module.tick(_ctx(state_dir, store, beat=240, cfg={"autotune_run_red_team": True}))
+
+    assert int(store.get_meta("tuned_overlay_version", 0)) == 0
+    all_events = events.iter_events(state_dir, limit=None)
+    rollback = [evt for evt in all_events if evt.get("type") == "tune.rollback"]
+    assert rollback
+    reasons = ((rollback[-1].get("data") or {}).get("reasons") or [])
+    assert "red_team_pass_ratio" in reasons
+
+
+def test_autotune_red_team_guard_allows_commit(monkeypatch, tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    store = ModuleStateStore(state_dir, autosave_interval_secs=0.0)
+    module = AutotuneModule()
+    reports = [
+        {
+            "trial_id": "baseline",
+            "composite_score": 0.10,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 1,
+            "ignitions_without_trace": 0,
+        },
+        {
+            "trial_id": "candidate",
+            "composite_score": 0.35,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 2,
+            "ignitions_without_trace": 0,
+        },
+    ]
+    monkeypatch.setattr(
+        module,
+        "_run_micro_trial",
+        lambda *_args, **_kwargs: reports.pop(0),
+    )
+    monkeypatch.setattr(
+        module,
+        "_run_red_team_guard",
+        lambda *_args, **_kwargs: (
+            True,
+            [],
+            {
+                "enabled": True,
+                "available": True,
+                "run_id": "rt_pass",
+                "pass_ratio": 1.0,
+                "mean_robustness": 1.0,
+            },
+        ),
+    )
+
+    module.tick(_ctx(state_dir, store, beat=260, cfg={"autotune_run_red_team": True}))
+
+    assert int(store.get_meta("tuned_overlay_version", 0)) == 1
+    all_events = events.iter_events(state_dir, limit=None)
+    commits = [evt for evt in all_events if evt.get("type") == "tune.commit"]
+    assert commits
+    payload = commits[-1].get("data") or {}
+    red_team = payload.get("red_team") or {}
+    assert red_team.get("run_id") == "rt_pass"
