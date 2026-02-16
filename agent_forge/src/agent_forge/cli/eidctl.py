@@ -193,6 +193,10 @@ def main(argv: list[str] | None = None) -> int:
         cfull.add_argument("--ollama-endpoint", default="http://127.0.0.1:11434", help="Ollama endpoint URL")
         cfull.add_argument("--skip-llm", action="store_true", help="skip local LLM task benchmark")
         cfull.add_argument("--skip-mcp", action="store_true", help="skip MCP runtime benchmark")
+        cfull.add_argument("--skip-red-team", action="store_true", help="skip adversarial red-team benchmark campaign")
+        cfull.add_argument("--red-team-quick", action="store_true", help="run reduced-duration red-team scenarios")
+        cfull.add_argument("--red-team-max-scenarios", type=int, default=1, help="max red-team scenarios to run")
+        cfull.add_argument("--red-team-seed", type=int, default=910000, help="base seed for red-team scenarios")
         cfull.add_argument("--no-persist", action="store_true", help="do not persist report file")
         cfull.add_argument("--json", action="store_true", help="JSON output")
 
@@ -552,6 +556,10 @@ def main(argv: list[str] | None = None) -> int:
                     trial_ticks=max(1, int(args.trial_ticks)),
                     run_mcp=not args.skip_mcp,
                     run_llm=not args.skip_llm,
+                    run_red_team=not args.skip_red_team,
+                    red_team_quick=bool(args.red_team_quick),
+                    red_team_max_scenarios=max(0, int(args.red_team_max_scenarios)),
+                    red_team_seed=max(0, int(args.red_team_seed)),
                     persist=not args.no_persist,
                     llm_model=args.model,
                     ollama_endpoint=args.ollama_endpoint,
@@ -573,6 +581,7 @@ def main(argv: list[str] | None = None) -> int:
                         f"trial={gates.get('trial_score_min')} "
                         f"llm={gates.get('llm_success_min')} "
                         f"mcp={gates.get('mcp_success_min')} "
+                        f"red_team={gates.get('red_team_pass_min')} "
                         f"non_regression={gates.get('non_regression')}"
                     )
                     if payload.get("report_path"):

@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, Mapping, Optional
 
 from agent_forge.core import events
 
+from .bench.red_team import ConsciousnessRedTeamCampaign
 from .benchmarks import ConsciousnessBenchmarkSuite
 from .kernel import ConsciousnessKernel
 from .perturb import make_drop, make_noise
@@ -44,6 +45,14 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
 
 def _clamp(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
+
+
+def _weighted_score(components: list[tuple[float, float, bool]]) -> float:
+    active_weight = sum(weight for _, weight, enabled in components if enabled and weight > 0.0)
+    if active_weight <= 0.0:
+        return 0.0
+    total = sum(score * weight for score, weight, enabled in components if enabled and weight > 0.0)
+    return round(float(total) / float(active_weight), 6)
 
 
 def _load_json(path: Path) -> Optional[dict[str, Any]]:
@@ -285,6 +294,10 @@ class IntegratedStackBenchmark:
         trial_ticks: int = 3,
         run_mcp: bool = True,
         run_llm: bool = True,
+        run_red_team: bool = False,
+        red_team_quick: bool = True,
+        red_team_max_scenarios: int = 1,
+        red_team_seed: int = 910_000,
         persist: bool = True,
         llm_model: str = "qwen2.5:1.5b",
         ollama_endpoint: str = "http://127.0.0.1:11434",
@@ -334,6 +347,37 @@ class IntegratedStackBenchmark:
         else:
             mcp_report = {"available": False, "skipped": True, "success_rate": 0.0}
 
+        red_team_report: dict[str, Any]
+        if run_red_team:
+            try:
+                campaign = ConsciousnessRedTeamCampaign(self.state_dir)
+                rt = campaign.run(
+                    persist=False,
+                    base_seed=max(0, int(red_team_seed)),
+                    max_scenarios=max(0, int(red_team_max_scenarios)),
+                    quick=bool(red_team_quick),
+                )
+                red_team_report = {
+                    **dict(rt.report),
+                    "available": True,
+                }
+            except Exception as exc:
+                red_team_report = {
+                    "available": False,
+                    "error": str(exc),
+                    "pass_ratio": 0.0,
+                    "mean_robustness": 0.0,
+                    "scenario_count": 0,
+                }
+        else:
+            red_team_report = {
+                "available": False,
+                "skipped": True,
+                "pass_ratio": 0.0,
+                "mean_robustness": 0.0,
+                "scenario_count": 0,
+            }
+
         core_composites = [_safe_float((row.get("scores") or {}).get("composite")) for row in core_runs]
         core_score = sum(core_composites) / max(len(core_composites), 1)
         trial_rci_delta = [
@@ -342,10 +386,18 @@ class IntegratedStackBenchmark:
         trial_score = _clamp(0.5 + (sum(trial_rci_delta) / max(len(trial_rci_delta), 1)), 0.0, 1.5)
         llm_score = _safe_float(llm_report.get("success_rate"), default=0.0)
         mcp_score = _safe_float(mcp_report.get("success_rate"), default=0.0)
+        red_team_pass_ratio = _safe_float(red_team_report.get("pass_ratio"), default=0.0)
+        red_team_robustness = _safe_float(red_team_report.get("mean_robustness"), default=0.0)
+        red_team_score = _clamp((0.6 * red_team_pass_ratio) + (0.4 * red_team_robustness), 0.0, 1.0)
 
-        integrated_score = round(
-            0.45 * core_score + 0.20 * trial_score + 0.20 * llm_score + 0.15 * mcp_score,
-            6,
+        integrated_score = _weighted_score(
+            [
+                (float(core_score), 0.45, True),
+                (float(trial_score), 0.20, True),
+                (float(llm_score), 0.20, bool(run_llm)),
+                (float(mcp_score), 0.15, bool(run_mcp)),
+                (float(red_team_score), 0.15, bool(run_red_team)),
+            ]
         )
 
         latest = self.latest()
@@ -368,6 +420,10 @@ class IntegratedStackBenchmark:
                 "trial_ticks": trial_ticks,
                 "run_mcp": run_mcp,
                 "run_llm": run_llm,
+                "run_red_team": run_red_team,
+                "red_team_quick": bool(red_team_quick),
+                "red_team_max_scenarios": max(0, int(red_team_max_scenarios)),
+                "red_team_seed": max(0, int(red_team_seed)),
                 "llm_model": llm_model,
                 "ollama_endpoint": ollama_endpoint,
             },
@@ -375,11 +431,13 @@ class IntegratedStackBenchmark:
             "trials": trials,
             "local_llm": llm_report,
             "mcp_runtime": mcp_report,
+            "red_team": red_team_report,
             "scores": {
                 "core_score": round(core_score, 6),
                 "trial_score": round(float(trial_score), 6),
                 "llm_score": round(float(llm_score), 6),
                 "mcp_score": round(float(mcp_score), 6),
+                "red_team_score": round(float(red_team_score), 6),
                 "integrated": integrated_score,
                 "baseline": baseline_score,
                 "delta": delta_score,
@@ -389,8 +447,11 @@ class IntegratedStackBenchmark:
                 "trial_score_min": trial_score >= 0.35,
                 "llm_available": bool(llm_report.get("available")),
                 "mcp_available": bool(mcp_report.get("available")),
+                "red_team_available": bool(red_team_report.get("available")) if run_red_team else True,
                 "llm_success_min": llm_score >= 0.5 if run_llm else True,
                 "mcp_success_min": mcp_score >= 0.75 if run_mcp else True,
+                "red_team_pass_min": red_team_pass_ratio >= 0.75 if run_red_team else True,
+                "red_team_robustness_min": red_team_robustness >= 0.70 if run_red_team else True,
                 "non_regression": improved if improved is not None else True,
             },
         }

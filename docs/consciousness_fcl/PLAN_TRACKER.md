@@ -95,6 +95,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add optional external benchmark score ingestion + normalization.~~
 - [x] ~~Add integrated stack benchmark (kernel + trials + optional MCP + optional local LLM) with persisted reports and baseline delta.~~
 - [x] ~~Add automated Linux parity benchmark job and publish trend reports.~~
+- [x] ~~Integrate adversarial red-team scoring/gates into integrated benchmark runtime and exposed CLI/MCP surfaces.~~
 
 ## Phase 12: Dynamical Continuity and Emergence
 
@@ -139,3 +140,4 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add closed-loop micro-task suite (`self_other_discrimination`, continuity under distraction, report-grounding challenge).~~
 - [x] ~~Add experiment-designer module for safe self-generated perturbation campaigns.~~
 - [x] ~~Add adversarial tuner red-team gates and regression bundles (red-team campaign + runtime CLI/MCP surfaces).~~
+- [x] ~~Integrate red-team outputs into full-benchmark composite scoring and hard gate checks.~~

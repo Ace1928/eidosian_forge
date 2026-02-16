@@ -16,6 +16,8 @@ Status: implemented with online trace-feedback learning loops in `attention` and
 Status: implemented and wired into kernel default modules (`experiment.proposed` / `experiment.executed`).
 5. ~~Add adversarial red-team campaigns as regression gates.~~
 Status: implemented in `bench/red_team.py` with CLI and MCP runtime surfaces.
+6. ~~Fold red-team outputs into integrated full-benchmark scoring and gate checks.~~
+Status: implemented via `IntegratedStackBenchmark` red-team component with active-weight normalization.
 
 ## Safety Envelope
 

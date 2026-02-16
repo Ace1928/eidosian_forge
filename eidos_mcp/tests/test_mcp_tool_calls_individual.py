@@ -103,6 +103,7 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
             "trial_ticks": 1,
             "run_mcp": False,
             "run_llm": False,
+            "run_red_team": False,
             "persist": False,
         },
         lambda r: "\"benchmark_id\"" in r and "\"integrated\"" in r,
