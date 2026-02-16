@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Mapping, MutableMapping, Protocol
 
+from ..tuning.bayes_optimizer import BayesParetoOptimizer
+from ..tuning.objectives import objectives_from_trial_report
 from ..tuning.optimizer import BanditOptimizer
 from ..tuning.overlay import load_tuned_overlay, persist_tuned_overlay
 from ..tuning.params import default_param_specs
@@ -13,6 +15,20 @@ def _safe_float(value: Any, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return float(default)
+
+
+class _Optimizer(Protocol):
+    def propose(self, current_overlay: Mapping[str, Any]) -> Mapping[str, Any]: ...
+
+    def observe_result(
+        self,
+        *,
+        accepted: bool,
+        score: float | None = None,
+        overlay: Mapping[str, Any] | None = None,
+        objectives: Mapping[str, float] | None = None,
+        report: Mapping[str, Any] | None = None,
+    ) -> None: ...
 
 
 class AutotuneModule:
@@ -73,6 +89,36 @@ class AutotuneModule:
             persist=bool(ctx.config.get("autotune_persist_trials", True)),
         )
         return result.report
+
+    def _build_optimizer(
+        self,
+        *,
+        mode: str,
+        specs: Mapping[str, Any],
+        state: MutableMapping[str, Any],
+        rng: Any,
+        config: Mapping[str, Any],
+    ) -> _Optimizer:
+        key = str(mode or "bandit").strip().lower().replace("-", "_")
+        state["optimizer_kind"] = key
+        if key in {"bayes", "bayes_pareto", "bayesian"}:
+            state["candidate_pool"] = int(
+                config.get("autotune_bayes_candidate_pool", state.get("candidate_pool", 14))
+            )
+            state["kernel_gamma"] = float(
+                config.get("autotune_bayes_kernel_gamma", state.get("kernel_gamma", 3.5))
+            )
+            state["kappa"] = float(
+                config.get("autotune_bayes_kappa", state.get("kappa", 0.35))
+            )
+            state["exploration"] = float(
+                config.get("autotune_bayes_exploration", state.get("exploration", 0.12))
+            )
+            return BayesParetoOptimizer(param_specs=specs, state=state, rng=rng)
+        state["step_scale"] = float(
+            config.get("autotune_bandit_step_scale", state.get("step_scale", 0.2))
+        )
+        return BanditOptimizer(param_specs=specs, state=state, rng=rng)
 
     def _guardrails(
         self, ctx: TickContext, report: Mapping[str, Any]
@@ -137,10 +183,13 @@ class AutotuneModule:
                 {"invalid_keys": invalid_keys},
                 tags=["consciousness", "autotune", "config"],
             )
-        optimizer = BanditOptimizer(
-            param_specs=specs,
+        optimizer_mode = str(ctx.config.get("autotune_optimizer", "bayes_pareto"))
+        optimizer = self._build_optimizer(
+            mode=optimizer_mode,
+            specs=specs,
             state=state["optimizer_state"],  # type: ignore[arg-type]
             rng=ctx.rng,
+            config=ctx.config,
         )
 
         base_seed = int(ctx.config.get("autotune_seed_offset", 1_000_000))
@@ -175,6 +224,8 @@ class AutotuneModule:
                 "key": proposal.get("key"),
                 "before": proposal.get("before"),
                 "after": proposal.get("after"),
+                "optimizer": optimizer_mode,
+                "acquisition": proposal.get("acquisition"),
             },
             tags=["consciousness", "autotune"],
         )
@@ -185,12 +236,19 @@ class AutotuneModule:
             seed=base_seed + int(ctx.beat_count) + 1,
         )
         score = _safe_float(trial_report.get("composite_score"), default=0.0)
+        objectives = objectives_from_trial_report(trial_report)
         guard_ok, guard_reasons = self._guardrails(ctx, trial_report)
 
         best_score = _safe_float(state.get("best_score"), default=_safe_float(baseline_score, default=0.0))
         min_improvement = _safe_float(ctx.config.get("autotune_min_improvement"), default=0.03)
         accepted = bool(guard_ok and score >= (best_score + min_improvement))
-        optimizer.observe(accepted=accepted)
+        optimizer.observe_result(
+            accepted=accepted,
+            score=score,
+            overlay=proposal_overlay,
+            objectives=objectives,
+            report=trial_report,
+        )
 
         state["trial_count"] = int(state.get("trial_count") or 0) + 1
         state["last_run_beat"] = int(ctx.beat_count)
@@ -204,7 +262,7 @@ class AutotuneModule:
                 ctx.state_store,
                 proposal_overlay,
                 source="autotune",
-                reason=f"score_improved_by_{round(score - best_score, 6)}",
+                reason=f"{optimizer_mode}_score_improved_by_{round(score - best_score, 6)}",
                 score=score,
             )
             state["best_score"] = score
@@ -220,6 +278,8 @@ class AutotuneModule:
                     "before": proposal.get("before"),
                     "after": proposal.get("after"),
                     "trial_id": trial_report.get("trial_id"),
+                    "optimizer": optimizer_mode,
+                    "objectives": objectives,
                 },
                 tags=["consciousness", "autotune", "commit"],
             )
@@ -234,6 +294,8 @@ class AutotuneModule:
                     "before": proposal.get("before"),
                     "after": proposal.get("after"),
                     "trial_id": trial_report.get("trial_id"),
+                    "optimizer": optimizer_mode,
+                    "objectives": objectives,
                 },
                 tags=["consciousness", "autotune", "rollback"],
             )
@@ -247,4 +309,3 @@ class AutotuneModule:
         accepts = int(state.get("accepted_count") or 0)
         ratio = float(accepts) / float(trials) if trials > 0 else 0.0
         ctx.metric("consciousness.autotune.acceptance_ratio", ratio)
-

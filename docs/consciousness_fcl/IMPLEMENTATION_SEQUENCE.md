@@ -244,7 +244,7 @@ Status checkpoint:
 - PR-I1 delivered (parameter specs + overlay sanitation/persistence + kernel config precedence).
 - PR-I2 delivered (overlay-aware trial execution + guardrail counters in trial reports).
 - PR-I3 delivered (bootstrap `autotune` module with propose/trial/commit/rollback loop and metrics).
-- PR-I4 pending (optimizer upgrade to Bayesian/multi-objective search).
+- PR-I4 delivered (Bayesian/multi-objective optimizer path with Pareto frontier tracking and acquisition scoring).
 - PR-I5 pending (adaptive attention/competition weight learning).
 - PR-I6 pending (experiment-designer module + adversarial tuning campaigns).
 
@@ -263,7 +263,11 @@ Status checkpoint:
 - Files: `agent_forge/src/agent_forge/consciousness/modules/autotune.py`
 - Files: `agent_forge/src/agent_forge/consciousness/tuning/optimizer.py`
 
-5. Planned frontier additions (PR-I4+).
-- Files: `agent_forge/src/agent_forge/consciousness/tuning/bayes_optimizer.py` (planned)
+5. Bayesian/multi-objective optimizer path (PR-I4).
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/bayes_optimizer.py`
+- Files: `agent_forge/src/agent_forge/consciousness/tuning/objectives.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/autotune.py`
+
+6. Planned frontier additions (PR-I5+).
 - Files: `agent_forge/src/agent_forge/consciousness/modules/experiment_designer.py` (planned)
 - Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (planned)

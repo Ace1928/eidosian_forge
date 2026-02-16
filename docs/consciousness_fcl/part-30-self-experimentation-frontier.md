@@ -6,7 +6,8 @@ Move from threshold tuning to structured self-experimentation: adaptive paramete
 
 ## Near-Term Upgrades
 
-1. Replace hill-climbing with Bayesian optimizer for expensive trial budgets.
+1. ~~Replace hill-climbing with Bayesian optimizer for expensive trial budgets.~~
+Status: implemented as `bayes_pareto` acquisition path in autotune.
 2. Add multi-objective selection (coherence, trace strength, ownership, groundedness, stability).
 3. Add adaptive attention/competition weights trained from trial rewards.
 4. Add experiment-designer module that proposes perturbation recipes from uncertainty gaps.
@@ -47,4 +48,3 @@ Move from threshold tuning to structured self-experimentation: adaptive paramete
 2. Multi-objective tuning avoids single-attractor collapse.
 3. Experiment designer proposals increase information gain without safety violations.
 4. Red-team suite catches confabulation/fake-ignition regressions pre-commit.
-

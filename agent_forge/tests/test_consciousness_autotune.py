@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 from pathlib import Path
+from typing import Mapping, Any
 
 from agent_forge.consciousness.modules.autotune import AutotuneModule
 from agent_forge.consciousness.state_store import ModuleStateStore
@@ -9,17 +10,20 @@ from agent_forge.consciousness.types import TickContext, merged_config
 from agent_forge.core import events
 
 
-def _ctx(state_dir: Path, store: ModuleStateStore, beat: int) -> TickContext:
+def _ctx(
+    state_dir: Path, store: ModuleStateStore, beat: int, cfg: Mapping[str, Any] | None = None
+) -> TickContext:
+    merged = {
+        "autotune_enabled": True,
+        "autotune_interval_beats": 1,
+        "autotune_min_improvement": 0.01,
+        "autotune_persist_trials": False,
+    }
+    if cfg:
+        merged.update(dict(cfg))
     return TickContext(
         state_dir=state_dir,
-        config=merged_config(
-            {
-                "autotune_enabled": True,
-                "autotune_interval_beats": 1,
-                "autotune_min_improvement": 0.01,
-                "autotune_persist_trials": False,
-            }
-        ),
+        config=merged_config(merged),
         recent_events=events.iter_events(state_dir, limit=400),
         recent_broadcasts=[],
         rng=random.Random(7),
@@ -103,3 +107,49 @@ def test_autotune_rolls_back_on_guardrail_failure(monkeypatch, tmp_path: Path) -
     all_events = events.iter_events(state_dir, limit=None)
     assert any(evt.get("type") == "tune.rollback" for evt in all_events)
 
+
+def test_autotune_bayes_mode_tracks_history(monkeypatch, tmp_path: Path) -> None:
+    state_dir = tmp_path / "state"
+    store = ModuleStateStore(state_dir, autosave_interval_secs=0.0)
+    module = AutotuneModule()
+    reports = [
+        {
+            "trial_id": "baseline",
+            "composite_score": 0.10,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 1,
+            "ignitions_without_trace": 0,
+            "deltas": {"coherence_delta": 0.01, "groundedness_delta": 0.01},
+        },
+        {
+            "trial_id": "candidate",
+            "composite_score": 0.25,
+            "module_error_count": 0,
+            "degraded_mode_ratio": 0.0,
+            "winner_count": 2,
+            "ignitions_without_trace": 0,
+            "deltas": {"coherence_delta": 0.02, "groundedness_delta": 0.03},
+        },
+    ]
+
+    monkeypatch.setattr(
+        module,
+        "_run_micro_trial",
+        lambda *_args, **_kwargs: reports.pop(0),
+    )
+    module.tick(
+        _ctx(
+            state_dir,
+            store,
+            beat=120,
+            cfg={"autotune_optimizer": "bayes_pareto"},
+        )
+    )
+    state = store.namespace("autotune")
+    optimizer_state = state.get("optimizer_state")
+    assert isinstance(optimizer_state, dict)
+    assert optimizer_state.get("optimizer_kind") == "bayes_pareto"
+    history = optimizer_state.get("history")
+    assert isinstance(history, list)
+    assert len(history) >= 1

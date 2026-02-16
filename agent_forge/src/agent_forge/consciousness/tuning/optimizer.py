@@ -111,3 +111,15 @@ class BanditOptimizer:
         scale = float(self.state.get("step_scale") or 0.2)
         self.state["step_scale"] = max(0.04, scale * 0.95)
 
+    def observe_result(
+        self,
+        *,
+        accepted: bool,
+        score: float | None = None,
+        overlay: Mapping[str, Any] | None = None,
+        objectives: Mapping[str, float] | None = None,
+        report: Mapping[str, Any] | None = None,
+    ) -> None:
+        # Compatibility hook for shared optimizer interface.
+        self.observe(accepted=accepted)
+
