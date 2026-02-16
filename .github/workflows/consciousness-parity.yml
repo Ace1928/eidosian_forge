@@ -1,0 +1,47 @@
+name: Consciousness Linux Parity
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "agent_forge/src/agent_forge/consciousness/**"
+      - "agent_forge/src/agent_forge/cli/eidctl.py"
+      - "eidos_mcp/src/eidos_mcp/routers/consciousness.py"
+      - "crawl_forge/src/crawl_forge/tika_extractor.py"
+      - "scripts/linux_parity_smoke.sh"
+      - "docs/consciousness_fcl/**"
+      - ".github/workflows/consciousness-parity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: consciousness-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-parity:
+    name: Linux Parity Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Linux Parity Smoke
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          bash scripts/linux_parity_smoke.sh

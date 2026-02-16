@@ -1,3 +1,22 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6fdb89eb7f2babf01b72827aac7716b6515dab520211c978ff3ab24c1b56d539
-size 7859
+[
+  {
+    "id": "39f5b9ec-4aa2-43ce-b838-6c1e7d973e91",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T13:22:10.773255",
+    "last_accessed": "2026-02-16T13:22:10.773260",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "user",
+      "lloyd"
+    ],
+    "linked_memories": []
+  }
+]

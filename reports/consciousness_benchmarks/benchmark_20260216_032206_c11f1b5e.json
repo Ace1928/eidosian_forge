@@ -1,0 +1,115 @@
+{
+  "benchmark_id": "benchmark_20260216_032206_c11f1b5e",
+  "timestamp": "2026-02-16T03:22:06Z",
+  "state_dir": "/data/data/com.termux/files/home/eidosian_forge/state",
+  "performance": {
+    "ticks": 12,
+    "tick_latency_ms_p50": 588.887135,
+    "tick_latency_ms_p95": 860.906198,
+    "tick_latency_ms_max": 1003.596562,
+    "events_emitted_total": 870,
+    "events_emitted_per_tick": 72.5,
+    "wall_time_ms": 7136.873487
+  },
+  "capability": {
+    "coherence_ratio": 0.875,
+    "rci": 0.054771,
+    "agency": 1.0,
+    "boundary_stability": 1.0,
+    "prediction_error": 1.0,
+    "meta_confidence": 0.377582,
+    "report_groundedness": 0.6
+  },
+  "workspace": {
+    "event_count": 65,
+    "window_seconds": 1.0,
+    "min_sources": 3,
+    "ignition_count": 4,
+    "ignitions": [
+      {
+        "bucket": 1771212122,
+        "start": "2026-02-16T03:22:02+00:00",
+        "end": "2026-02-16T03:22:03+00:00",
+        "event_count": 14,
+        "sources": [
+          "policy",
+          "workspace_competition",
+          "world_model"
+        ]
+      },
+      {
+        "bucket": 1771212123,
+        "start": "2026-02-16T03:22:03+00:00",
+        "end": "2026-02-16T03:22:04+00:00",
+        "event_count": 20,
+        "sources": [
+          "policy",
+          "report",
+          "workspace_competition",
+          "world_model"
+        ]
+      },
+      {
+        "bucket": 1771212124,
+        "start": "2026-02-16T03:22:04+00:00",
+        "end": "2026-02-16T03:22:05+00:00",
+        "event_count": 23,
+        "sources": [
+          "policy",
+          "report",
+          "workspace_competition",
+          "world_model"
+        ]
+      },
+      {
+        "bucket": 1771212125,
+        "start": "2026-02-16T03:22:05+00:00",
+        "end": "2026-02-16T03:22:06+00:00",
+        "event_count": 8,
+        "sources": [
+          "policy",
+          "workspace_competition",
+          "world_model"
+        ]
+      }
+    ],
+    "window_count": 4,
+    "unique_sources": [
+      "policy",
+      "report",
+      "workspace_competition",
+      "world_model"
+    ],
+    "avg_sources_per_window": 3.5,
+    "coherence_ratio": 0.875
+  },
+  "coherence": {
+    "coherence_ratio": 0.875,
+    "ignition_density": 1.0
+  },
+  "rci": {
+    "compression_ratio": 0.082875,
+    "event_type_diversity": 0.04,
+    "source_diversity": 0.013333,
+    "rci": 0.054771
+  },
+  "external": {
+    "scores": {},
+    "external_index": null
+  },
+  "scores": {
+    "capability_index": 0.569704,
+    "performance_index": 0.011616,
+    "external_index": null,
+    "composite": 0.317403,
+    "baseline_composite": 0.311625,
+    "delta_composite": 0.005778
+  },
+  "gates": {
+    "world_model_online": true,
+    "meta_online": true,
+    "report_online": true,
+    "latency_p95_under_100ms": false,
+    "non_regression_vs_baseline": true
+  }
+}

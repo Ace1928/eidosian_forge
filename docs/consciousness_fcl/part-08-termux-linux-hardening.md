@@ -11,7 +11,8 @@ Ensure operational parity and robust fallback behavior across environments.
 3. ~~Verify subprocess/scheduler behavior in Android constraints.~~
 4. ~~Provide fallback for missing optional dependencies.~~
 5. ~~Harden Tika URL extraction for missing `from_url` API and Termux SSL-chain failures.~~
-6. [ ] Validate Linux CI runner parity against the same audit matrix.
+6. ~~Add Linux parity smoke automation script and CI workflow.~~
+7. [ ] Validate Linux CI runner parity against the same audit matrix.
 
 ## Acceptance Criteria
 

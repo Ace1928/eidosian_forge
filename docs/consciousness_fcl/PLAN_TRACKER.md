@@ -70,6 +70,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Verify venv compatibility and import path stability in Termux.~~
 - [x] ~~Add defensive filesystem handling for Android/Termux constraints.~~
 - [x] ~~Add robust URL/TLS fallback handling for Termux Tika URL ingestion paths.~~
+- [x] ~~Add Linux parity smoke script and CI workflow (`scripts/linux_parity_smoke.sh`, `.github/workflows/consciousness-parity.yml`).~~
 - [ ] Verify parity behavior in Linux runner.
 
 ## Phase 9: Documentation and Operations

@@ -1,3 +1,53 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:625362c3ba0c3adf9ab79b66fe4aad6f1d2b496a11888dc91aa5a83c89a40159
-size 18365
+{
+  "nodes": {
+    "b2a008ae-91e3-4315-9d1a-11b5429d2e60": {
+      "id": "b2a008ae-91e3-4315-9d1a-11b5429d2e60",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "705e13ec-2199-4b44-baa6-b425db23a2b4": {
+      "id": "705e13ec-2199-4b44-baa6-b425db23a2b4",
+      "content": "audit_ok",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "type:txt",
+          "source:sample_copy.txt"
+        ]
+      },
+      "links": []
+    },
+    "dd446bc6-5865-4a90-ac5e-defd48b77907": {
+      "id": "dd446bc6-5865-4a90-ac5e-defd48b77907",
+      "content": "audit content",
+      "metadata": {
+        "tags": [
+          "chunk:1/1",
+          "source:sample.txt",
+          "type:txt"
+        ]
+      },
+      "links": []
+    },
+    "f9e6bbda-6b9e-4979-9f46-296a26b779b1": {
+      "id": "f9e6bbda-6b9e-4979-9f46-296a26b779b1",
+      "content": "Example Domain\n\nExample Domain\nThis domain is for use in documentation examples without needing permission. Avoid use in operations.\nLearn more",
+      "metadata": {
+        "tags": [
+          "domain:example.com",
+          "chunk:1/1",
+          "source:web"
+        ]
+      },
+      "links": []
+    }
+  },
+  "concept_map": {}
+}
