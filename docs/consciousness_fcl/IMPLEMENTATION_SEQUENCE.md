@@ -158,6 +158,7 @@ Status checkpoint:
 - PR-H7 delivered (simulation stream module + meta/report simulated-state integration + regression tests).
 - PR-H8 delivered (phenomenology probe module with PPX indices, runtime/status integration, and scoring deltas).
 - PR-H9 delivered (perturbation recipe library v2, recipe-aware trial expansion, expected-signature checks, and module-level perturb hooks).
+- PR-H10 delivered (benchmark extraction path migration to `EventIndex` for snapshot and trial window counters).
 
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`
@@ -211,6 +212,11 @@ Status checkpoint:
 11. Adversarial red-team campaigns (PR-H11).
 - Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (new)
 - Files: `agent_forge/tests/test_consciousness_red_team.py` (new)
+
+12. Benchmark extraction migration to index-backed lookups (PR-H10).
+- Files: `agent_forge/src/agent_forge/consciousness/index.py`
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+- Files: `agent_forge/tests/test_consciousness_linking_index.py`
 
 ## Validation Commands
 

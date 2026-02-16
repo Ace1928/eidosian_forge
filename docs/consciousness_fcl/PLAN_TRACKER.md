@@ -107,10 +107,10 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Upgrade competition to emit winner-linked `gw.reaction_trace` and stronger ignition criteria.~~
 - [x] ~~Promote perturbation runtime to active module-aware behavior (`drop`, `noise`, `delay`, `clamp`, `scramble`).~~
 - [x] ~~Add continuity regression tests (`test_consciousness_continuity.py`).~~
-- [ ] Extend world-model to latent feature predictive coding (beyond event-type transitions).
+- [x] ~~Extend world-model to latent feature predictive coding (beyond event-type transitions).~~
 - [x] ~~Add explicit memory and knowledge bridge modules (`memory_forge` + `knowledge_forge` -> recalls/context/events).~~
 - [x] ~~Expose bridge integration status through MCP (`consciousness_bridge_status`, `eidos://consciousness/runtime-integrations`).~~
-- [ ] Add ablation benchmark runner and contribution assertions.
+- [x] ~~Add ablation benchmark runner and contribution assertions.~~
 
 ## Phase 13: Causal Instrumentation and Experimental Rigor
 
@@ -118,7 +118,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Enforce canonical link contract (`corr_id`, `parent_id`, `winner_candidate_id`, `candidate_id`) across scored workspace events.~~
 - [x] ~~Add beat-local `EventIndex` foundation and TickContext index helpers.~~
 - [x] ~~Migrate critical runtime modules to index-based lookups (`workspace_competition`, `report`).~~
-- [ ] Migrate benchmark extraction paths to index-based lookups.
+- [x] ~~Migrate benchmark extraction paths to index-based lookups.~~
 - [x] ~~Implement winner-linked ignition tracing metric (`trace_strength`) and ignition v3 gates.~~
 - [x] ~~Add standardized consciousness trial harness package (`bench/`) with persisted artifacts (`spec.json`, `metrics.jsonl`, `events_window.jsonl`, `summary.md`).~~
 - [x] ~~Upgrade metrics suite to v2 (`entropy`, `connectivity`, `directionality`, `self_stability`).~~

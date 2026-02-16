@@ -26,6 +26,7 @@ def _payload(evt: Mapping[str, Any]) -> Mapping[str, Any]:
 
 @dataclass
 class EventIndex:
+    by_type: dict[str, list[dict[str, Any]]]
     latest_by_type: dict[str, dict[str, Any]]
     latest_by_module: dict[str, dict[str, Any]]
     broadcasts_by_kind: dict[str, list[dict[str, Any]]]
@@ -37,6 +38,7 @@ class EventIndex:
 
 
 def build_index(events: list[dict[str, Any]]) -> EventIndex:
+    by_type: dict[str, list[dict[str, Any]]] = {}
     latest_by_type: dict[str, dict[str, Any]] = {}
     latest_by_module: dict[str, dict[str, Any]] = {}
     broadcasts_by_kind: dict[str, list[dict[str, Any]]] = {}
@@ -49,6 +51,7 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
     for evt in events:
         etype = str(evt.get("type") or "")
         if etype:
+            by_type.setdefault(etype, []).append(evt)
             latest_by_type[etype] = evt
 
         module = _event_source(evt)
@@ -116,6 +119,7 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
                 references_by_candidate_id.setdefault(ref, []).append(evt)
 
     return EventIndex(
+        by_type=by_type,
         latest_by_type=latest_by_type,
         latest_by_module=latest_by_module,
         broadcasts_by_kind=broadcasts_by_kind,

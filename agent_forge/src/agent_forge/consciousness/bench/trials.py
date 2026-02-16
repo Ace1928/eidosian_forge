@@ -9,6 +9,7 @@ from typing import Any, Dict, Mapping, Optional
 
 from agent_forge.core import events, workspace
 
+from ..index import EventIndex, build_index
 from ..kernel import ConsciousnessKernel
 from ..metrics import (
     coherence_from_workspace_summary,
@@ -44,10 +45,8 @@ def _safe_float(value: Any, default: float = 0.0, minimum: float = 0.0) -> float
     return max(float(minimum), parsed)
 
 
-def _latest_metric(items: list[dict[str, Any]], key: str) -> Optional[float]:
-    for evt in reversed(items):
-        if str(evt.get("type") or "") != "metrics.sample":
-            continue
+def _latest_metric(index: EventIndex, key: str) -> Optional[float]:
+    for evt in reversed(index.by_type.get("metrics.sample") or []):
         data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
         if str(data.get("key") or "") != key:
             continue
@@ -58,10 +57,9 @@ def _latest_metric(items: list[dict[str, Any]], key: str) -> Optional[float]:
     return None
 
 
-def _latest_event_data(items: list[dict[str, Any]], etype: str) -> dict[str, Any]:
-    for evt in reversed(items):
-        if str(evt.get("type") or "") != etype:
-            continue
+def _latest_event_data(index: EventIndex, etype: str) -> dict[str, Any]:
+    evt = index.latest_by_type.get(str(etype))
+    if evt is not None:
         data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
         return dict(data)
     return {}
@@ -128,7 +126,8 @@ class ConsciousnessBenchRunner:
         conn = effective_connectivity(recent_events[-500:])
         dirn = directionality_asymmetry(recent_events[-500:])
         stab = self_stability(recent_events[-500:])
-        phenom = _latest_event_data(recent_events, "phenom.snapshot")
+        index = build_index(recent_events)
+        phenom = _latest_event_data(index, "phenom.snapshot")
         return {
             "workspace": ws,
             "coherence_ratio": float(coh.get("coherence_ratio") or 0.0),
@@ -138,11 +137,11 @@ class ConsciousnessBenchRunner:
             "directionality": dirn,
             "self_stability": stab,
             "phenomenology": phenom,
-            "agency": _latest_metric(recent_events, "consciousness.agency"),
-            "boundary_stability": _latest_metric(recent_events, "consciousness.boundary_stability"),
-            "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),
-            "report_groundedness": _latest_metric(recent_events, "consciousness.report.groundedness"),
-            "trace_strength": _latest_metric(recent_events, "consciousness.ignition.trace_strength"),
+            "agency": _latest_metric(index, "consciousness.agency"),
+            "boundary_stability": _latest_metric(index, "consciousness.boundary_stability"),
+            "world_prediction_error": _latest_metric(index, "consciousness.world.prediction_error"),
+            "report_groundedness": _latest_metric(index, "consciousness.report.groundedness"),
+            "trace_strength": _latest_metric(index, "consciousness.ignition.trace_strength"),
         }
 
     def _run_stage(
@@ -299,36 +298,32 @@ class ConsciousnessBenchRunner:
         after = self._snapshot(all_events[-1000:])
         window_events = all_events[before_count:]
         threshold = float(kernel.config.get("competition_trace_strength_threshold", 0.45))
+        index = build_index(window_events)
 
-        event_type_counts: dict[str, int] = {}
-        module_error_count = 0
-        meta_total = 0
+        event_type_counts = {
+            etype: int(len(rows))
+            for etype, rows in index.by_type.items()
+            if str(etype)
+        }
+        module_error_count = int(len(index.by_type.get("consciousness.module_error") or []))
+        meta_events = index.by_type.get("meta.state_estimate") or []
+        meta_total = int(len(meta_events))
         degraded_count = 0
-        winner_count = 0
+        for evt in meta_events:
+            data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+            if str(data.get("mode") or "").lower() == "degraded":
+                degraded_count += 1
+
+        winner_count = int(len(index.broadcasts_by_kind.get("GW_WINNER") or []))
         ignitions_without_trace = 0
-        for evt in window_events:
-            etype = str(evt.get("type") or "")
-            event_type_counts[etype] = int(event_type_counts.get(etype, 0)) + 1
-            if etype == "consciousness.module_error":
-                module_error_count += 1
-            elif etype == "meta.state_estimate":
-                meta_total += 1
-                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-                if str(data.get("mode") or "").lower() == "degraded":
-                    degraded_count += 1
-            elif etype == "workspace.broadcast":
-                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-                payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
-                if str(payload.get("kind") or "") == "GW_WINNER":
-                    winner_count += 1
-            elif etype == "gw.ignite":
-                data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-                try:
-                    trace_strength = float(data.get("trace_strength") or 0.0)
-                except (TypeError, ValueError):
-                    trace_strength = 0.0
-                if trace_strength < threshold:
-                    ignitions_without_trace += 1
+        for evt in index.by_type.get("gw.ignite") or []:
+            data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+            try:
+                trace_strength = float(data.get("trace_strength") or 0.0)
+            except (TypeError, ValueError):
+                trace_strength = 0.0
+            if trace_strength < threshold:
+                ignitions_without_trace += 1
         degraded_mode_ratio = (
             round(float(degraded_count) / float(meta_total), 6) if meta_total > 0 else 0.0
         )

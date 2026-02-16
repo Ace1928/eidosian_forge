@@ -26,6 +26,7 @@ The plan is decomposed into focused implementation parts:
 14. Self-upgrading loop substrate (param store + overlay + safe autotuner).
 15. Adaptive policy/attention learning and experiment-designer frontier.
 16. Autotune commit-path adversarial gates (candidate overlay must pass red-team checks before persistence).
+17. Index-based benchmark extraction parity with runtime module indexing paths.
 
 ## Principle
 
@@ -53,3 +54,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-31-autonomous-experiment-design-and-red-team.md`
 - `docs/consciousness_fcl/part-32-integrated-red-team-gates.md`
 - `docs/consciousness_fcl/part-33-autotune-red-team-commit-gates.md`
+- `docs/consciousness_fcl/part-34-benchmark-index-migration.md`

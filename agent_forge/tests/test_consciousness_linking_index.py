@@ -120,6 +120,8 @@ def test_event_index_maps_corr_parent_candidate_and_winner(tmp_path: Path) -> No
     ctx = _ctx(base)
     idx = ctx.index
 
+    assert len(idx.by_type.get("attn.candidate") or []) == 1
+    assert len(idx.by_type.get("workspace.broadcast") or []) == 1
     assert idx.latest_by_type.get("report.self_report") is not None
     assert len(ctx.events_by_corr_id("corr-A")) == 3
     assert len(ctx.children("root-A")) == 3
