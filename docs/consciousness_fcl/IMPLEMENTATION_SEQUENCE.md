@@ -245,7 +245,7 @@ Status checkpoint:
 - PR-I2 delivered (overlay-aware trial execution + guardrail counters in trial reports).
 - PR-I3 delivered (bootstrap `autotune` module with propose/trial/commit/rollback loop and metrics).
 - PR-I4 delivered (Bayesian/multi-objective optimizer path with Pareto frontier tracking and acquisition scoring).
-- PR-I5 pending (adaptive attention/competition weight learning).
+- PR-I5 delivered (adaptive attention and competition policy learning loops driven by ignition trace feedback).
 - PR-I6 pending (experiment-designer module + adversarial tuning campaigns).
 
 1. Parameter control plane and safety classes (PR-I1).
@@ -268,6 +268,11 @@ Status checkpoint:
 - Files: `agent_forge/src/agent_forge/consciousness/tuning/objectives.py`
 - Files: `agent_forge/src/agent_forge/consciousness/modules/autotune.py`
 
-6. Planned frontier additions (PR-I5+).
+6. Adaptive attention/competition learning (PR-I5).
+- Files: `agent_forge/src/agent_forge/consciousness/modules/attention.py`
+- Files: `agent_forge/src/agent_forge/consciousness/modules/workspace_competition.py`
+- Files: `agent_forge/tests/test_consciousness_attention_competition_learning.py`
+
+7. Planned frontier additions (PR-I6+).
 - Files: `agent_forge/src/agent_forge/consciousness/modules/experiment_designer.py` (planned)
 - Files: `agent_forge/src/agent_forge/consciousness/bench/red_team.py` (planned)

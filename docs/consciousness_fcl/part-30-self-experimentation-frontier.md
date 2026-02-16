@@ -9,7 +9,8 @@ Move from threshold tuning to structured self-experimentation: adaptive paramete
 1. ~~Replace hill-climbing with Bayesian optimizer for expensive trial budgets.~~
 Status: implemented as `bayes_pareto` acquisition path in autotune.
 2. Add multi-objective selection (coherence, trace strength, ownership, groundedness, stability).
-3. Add adaptive attention/competition weights trained from trial rewards.
+3. ~~Add adaptive attention/competition weights trained from trial rewards.~~
+Status: implemented with online trace-feedback learning loops in `attention` and `workspace_competition`.
 4. Add experiment-designer module that proposes perturbation recipes from uncertainty gaps.
 5. Add adversarial red-team campaigns as regression gates.
 

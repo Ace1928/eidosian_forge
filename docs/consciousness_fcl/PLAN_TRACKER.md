@@ -135,7 +135,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Extend trial runner with overlay-aware execution and explicit guardrail metrics (`module_error_count`, `degraded_mode_ratio`, `winner_count`, `ignitions_without_trace`).~~
 - [x] ~~Add bootstrap autotune runtime module with propose→trial→commit/rollback loop (`modules/autotune.py`).~~
 - [x] ~~Upgrade optimizer from bandit hill-climbing to Bayesian/multi-objective strategy (`bayes_pareto` acquisition + frontier tracking).~~
-- [ ] Add adaptive attention/competition weights learned from trial objective feedback.
+- [x] ~~Add adaptive attention/competition weights learned from trial objective and ignition trace feedback.~~
 - [ ] Add closed-loop micro-task suite (`self_other_discrimination`, continuity under distraction, report-grounding challenge).
 - [ ] Add experiment-designer module for safe self-generated perturbation campaigns.
 - [ ] Add adversarial tuner red-team gates and regression bundles.

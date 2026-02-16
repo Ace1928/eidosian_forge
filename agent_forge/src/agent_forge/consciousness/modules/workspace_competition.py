@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, MutableMapping
 
 from ..metrics.ignition_trace import parse_iso_utc, winner_reaction_trace
 from ..types import TickContext, WorkspacePayload, clamp01, normalize_workspace_payload
@@ -269,6 +269,123 @@ class WorkspaceCompetitionModule:
         state["recent_winner_signatures"] = kept_recent[-200:]
         return accepted
 
+    def _adaptive_state(self, ctx: TickContext) -> MutableMapping[str, Any]:
+        return ctx.module_state(
+            self.name,
+            defaults={
+                "recent_winner_signatures": [],
+                "pending_winners": [],
+                "adaptive": {
+                    "min_score_bias": 0.0,
+                    "top_k_bias": 0.0,
+                    "baseline_trace": 0.45,
+                    "seen_trace_keys": [],
+                },
+            },
+        )
+
+    def _apply_adaptive_policy(
+        self,
+        ctx: TickContext,
+        *,
+        top_k: int,
+        min_score: float,
+    ) -> tuple[int, float]:
+        if not bool(ctx.config.get("competition_adaptive_enabled", True)):
+            return top_k, min_score
+
+        state = self._adaptive_state(ctx)
+        adaptive = state.get("adaptive")
+        if not isinstance(adaptive, MutableMapping):
+            adaptive = {
+                "min_score_bias": 0.0,
+                "top_k_bias": 0.0,
+                "baseline_trace": 0.45,
+                "seen_trace_keys": [],
+            }
+            state["adaptive"] = adaptive
+
+        learning_rate = clamp01(ctx.config.get("competition_adaptive_lr"), default=0.08)
+        seen_cap = max(80, int(ctx.config.get("competition_adaptive_seen_cap", 400)))
+        seen_keys = (
+            list(adaptive.get("seen_trace_keys"))
+            if isinstance(adaptive.get("seen_trace_keys"), list)
+            else []
+        )
+        seen_set = {str(x) for x in seen_keys}
+        baseline_trace = float(adaptive.get("baseline_trace", 0.45) or 0.45)
+        min_score_bias = float(adaptive.get("min_score_bias", 0.0) or 0.0)
+        top_k_bias = float(adaptive.get("top_k_bias", 0.0) or 0.0)
+
+        updates = 0
+        for evt in ctx.latest_events("gw.reaction_trace", k=64):
+            data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
+            key = (
+                f"{data.get('winner_candidate_id','')}:"
+                f"{data.get('winner_beat','')}:"
+                f"{data.get('reaction_count','')}"
+            )
+            if key in seen_set:
+                continue
+            seen_set.add(key)
+            seen_keys.append(key)
+
+            trace_strength = clamp01(data.get("trace_strength"), default=0.0)
+            reward = trace_strength - baseline_trace
+            baseline_trace = (0.95 * baseline_trace) + (0.05 * trace_strength)
+
+            # Positive reward => can admit broader candidate diversity.
+            min_score_bias -= learning_rate * reward * 0.28
+            top_k_bias += learning_rate * reward * 1.10
+            updates += 1
+
+        # Context-sensitive modulation from intero drives.
+        intero = ctx.module_state("intero", defaults={"drives": {}})
+        drives = intero.get("drives") if isinstance(intero.get("drives"), Mapping) else {}
+        threat = clamp01(drives.get("threat"), default=0.0)
+        curiosity = clamp01(drives.get("curiosity"), default=0.0)
+        min_score_bias += (0.10 * threat) - (0.06 * curiosity)
+        top_k_bias += (0.75 * curiosity) - (0.85 * threat)
+
+        min_score_bias = max(-0.2, min(0.25, min_score_bias))
+        top_k_bias = max(-1.5, min(2.5, top_k_bias))
+        adaptive["min_score_bias"] = round(min_score_bias, 6)
+        adaptive["top_k_bias"] = round(top_k_bias, 6)
+        adaptive["baseline_trace"] = round(baseline_trace, 6)
+        adaptive["seen_trace_keys"] = seen_keys[-seen_cap:]
+        state["adaptive"] = adaptive
+
+        effective_top_k = max(
+            1,
+            int(round(top_k + top_k_bias)),
+        )
+        effective_top_k = min(
+            int(ctx.config.get("competition_adaptive_max_top_k", 5)),
+            effective_top_k,
+        )
+        effective_min_score = max(
+            0.01,
+            min(0.99, float(min_score + min_score_bias)),
+        )
+        if updates > 0:
+            ctx.emit_event(
+                "gw.policy_update",
+                {
+                    "effective_top_k": effective_top_k,
+                    "effective_min_score": round(effective_min_score, 6),
+                    "top_k_bias": round(top_k_bias, 6),
+                    "min_score_bias": round(min_score_bias, 6),
+                    "baseline_trace": round(baseline_trace, 6),
+                    "updates": updates,
+                    "threat": round(threat, 6),
+                    "curiosity": round(curiosity, 6),
+                },
+                tags=["consciousness", "competition", "learning"],
+            )
+            ctx.metric("consciousness.gw.policy.top_k", float(effective_top_k))
+            ctx.metric("consciousness.gw.policy.min_score", float(effective_min_score))
+        return effective_top_k, effective_min_score
+
     def tick(self, ctx: TickContext) -> None:
         top_k = int(ctx.config.get("competition_top_k", 2))
         min_score = float(ctx.config.get("competition_min_score", 0.15))
@@ -331,6 +448,12 @@ class WorkspaceCompetitionModule:
         )
         if finalized.get("traces"):
             ctx.metric("consciousness.gw.trace_events", float(len(finalized["traces"])))
+
+        top_k, min_score = self._apply_adaptive_policy(
+            ctx,
+            top_k=top_k,
+            min_score=min_score,
+        )
 
         candidates = self._collect_candidates(ctx)
         if not candidates:
