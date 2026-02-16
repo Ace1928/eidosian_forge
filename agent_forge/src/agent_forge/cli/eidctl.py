@@ -11,6 +11,7 @@ Usage examples:
 from __future__ import annotations
 from eidosian_core import eidosian
 import argparse, json, dataclasses as dc
+import os
 
 # add repo root to sys.path so local 'core' can be imported without PYTHONPATH
 import sys
@@ -119,12 +120,35 @@ def main(argv: list[str] | None = None) -> int:
 
         p_self = sub.add_parser("self-model", help="snapshot self-model state")
         p_self.add_argument("--dir", default="state", help="state directory")
-        p_self.add_argument("--memory-dir", default="/home/lloyd/eidosian_forge/data/memory")
+        p_self.add_argument(
+            "--memory-dir",
+            default=os.environ.get("EIDOS_MEMORY_DIR", str(_P.cwd() / "data" / "memory")),
+        )
         p_self.add_argument("--last", type=int, default=5, help="number of recent events to include")
         p_self.add_argument("--window", type=float, default=1.0, help="window size in seconds")
         p_self.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
         p_self.add_argument("--emit", action="store_true", help="emit snapshot to workspace bus")
         p_self.add_argument("--json", action="store_true", help="JSON output")
+
+        p_conscious = sub.add_parser("consciousness", help="consciousness kernel status and perturbation trials")
+        csub = p_conscious.add_subparsers(dest="conscious_cmd", required=True)
+        cstatus = csub.add_parser("status", help="show current consciousness runtime status")
+        cstatus.add_argument("--dir", default="state", help="state directory")
+        cstatus.add_argument("--json", action="store_true", help="JSON output")
+
+        ctrial = csub.add_parser("trial", help="run a perturbation trial and report deltas")
+        ctrial.add_argument("--dir", default="state", help="state directory")
+        ctrial.add_argument("--kind", default="noise", choices=["noise", "drop", "zero", "jitter"], help="perturbation kind")
+        ctrial.add_argument("--target", default="attention", help="perturbation target module")
+        ctrial.add_argument("--magnitude", type=float, default=0.2, help="perturbation magnitude")
+        ctrial.add_argument("--duration", type=float, default=1.0, help="perturbation duration seconds")
+        ctrial.add_argument("--ticks", type=int, default=3, help="kernel ticks to execute for trial")
+        ctrial.add_argument("--no-persist", action="store_true", help="do not write report file")
+        ctrial.add_argument("--json", action="store_true", help="JSON output")
+
+        clatest = csub.add_parser("latest-trial", help="show latest persisted consciousness trial report")
+        clatest.add_argument("--dir", default="state", help="state directory")
+        clatest.add_argument("--json", action="store_true", help="JSON output")
 
         args = ap.parse_args(argv)
 
@@ -303,13 +327,94 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 memory = snap.get("memory") or {}
                 ws = snap.get("workspace") or {}
+                consciousness = snap.get("consciousness") or {}
+                agency = (consciousness.get("agency") or {}).get("confidence")
+                boundary = (consciousness.get("boundary") or {}).get("stability")
+                winners = consciousness.get("recent_winners") or []
                 print(f"[self-model] ts={snap.get('timestamp')}")
                 print(f"[self-model] memory_total={memory.get('total_memories')}")
                 print(
                     f"[self-model] workspace_events={ws.get('event_count')} "
                     f"ignitions={ws.get('ignition_count')}"
                 )
+                print(f"[self-model] agency={agency} boundary={boundary} winners={len(winners)}")
             return 0
+
+        if args.cmd == "consciousness":
+            from agent_forge.consciousness import ConsciousnessKernel, ConsciousnessTrialRunner  # type: ignore
+            from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise  # type: ignore
+
+            runner = ConsciousnessTrialRunner(args.dir)
+
+            if args.conscious_cmd == "status":
+                status = runner.status()
+                if args.json:
+                    print(json.dumps(status, indent=2))
+                else:
+                    ws = status.get("workspace") or {}
+                    coh = status.get("coherence") or {}
+                    rci = status.get("rci") or {}
+                    print(
+                        f"[consciousness] events={ws.get('event_count')} "
+                        f"ignitions={ws.get('ignition_count')} "
+                        f"coherence={coh.get('coherence_ratio')}"
+                    )
+                    print(
+                        f"[consciousness] rci={rci.get('rci')} "
+                        f"agency={status.get('agency')} "
+                        f"boundary={status.get('boundary_stability')}"
+                    )
+                return 0
+
+            if args.conscious_cmd == "latest-trial":
+                latest = runner.latest_trial()
+                if latest is None:
+                    latest = {"error": "No trial report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        print(
+                            f"[consciousness] latest_trial={latest.get('report_id')} "
+                            f"rci_after={((latest.get('after') or {}).get('rci') or {}).get('rci')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "trial":
+                if args.kind == "noise":
+                    perturbation = make_noise(args.target, args.magnitude, args.duration)
+                elif args.kind == "drop":
+                    perturbation = make_drop(args.target, args.duration)
+                else:
+                    perturbation = Perturbation(
+                        kind=args.kind,
+                        target=args.target,
+                        magnitude=float(args.magnitude),
+                        duration_s=float(args.duration),
+                        meta={},
+                    )
+
+                kernel = ConsciousnessKernel(args.dir)
+                result = runner.run_trial(
+                    kernel=kernel,
+                    perturbation=perturbation,
+                    ticks=args.ticks,
+                    persist=not args.no_persist,
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    print(
+                        f"[consciousness] trial={payload.get('report_id')} "
+                        f"kind={args.kind} target={args.target} "
+                        f"rci_delta={(payload.get('delta') or {}).get('rci_delta')}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
 
         return 2
     except KeyboardInterrupt:

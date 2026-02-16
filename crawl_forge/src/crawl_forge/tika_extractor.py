@@ -16,9 +16,12 @@ from eidosian_core import eidosian
 import hashlib
 import json
 import logging
+import os
+import ssl
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +111,53 @@ class TikaExtractor:
             )
         except Exception as e:
             logger.warning(f"Cache write failed for {source}: {e}")
+
+    def _allow_insecure_ssl_fallback(self) -> bool:
+        val = os.environ.get("EIDOS_TIKA_INSECURE_SSL_FALLBACK")
+        if val is not None:
+            return val.strip().lower() in {"1", "true", "yes", "on"}
+        return "com.termux" in os.environ.get("PREFIX", "")
+
+    def _read_response(self, resp: Any) -> tuple[bytes, Dict[str, str]]:
+        body = resp.read()
+        headers = {
+            "content_type": str(resp.headers.get("Content-Type", "")),
+            "content_length": str(resp.headers.get("Content-Length", "")),
+        }
+        return body, headers
+
+    def _download_url_bytes(self, url: str, timeout: int = 20) -> tuple[bytes, Dict[str, str]]:
+        """Download URL content for parser.from_buffer fallback paths."""
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ValueError(f"Unsupported URL: {url}")
+
+        req = Request(
+            url,
+            headers={
+                "User-Agent": "EidosianForge-TikaExtractor/1.0",
+                "Accept": "*/*",
+            },
+        )
+        try:
+            with urlopen(req, timeout=timeout) as resp:
+                body, headers = self._read_response(resp)
+            headers["ssl_verify"] = "true"
+            return body, headers
+        except Exception as e:
+            if not self._allow_insecure_ssl_fallback():
+                raise
+            if "CERTIFICATE_VERIFY_FAILED" not in str(e).upper():
+                raise
+            logger.warning(
+                "SSL verification failed for %s; retrying with unverified context due to fallback policy",
+                url,
+            )
+            context = ssl._create_unverified_context()
+            with urlopen(req, timeout=timeout, context=context) as resp:
+                body, headers = self._read_response(resp)
+            headers["ssl_verify"] = "false"
+            return body, headers
     
     @eidosian()
     def extract_from_file(
@@ -193,29 +243,60 @@ class TikaExtractor:
                 cached["from_cache"] = True
                 return cached
         
+        from_url_error: Optional[Exception] = None
+
+        # Prefer direct URL extraction when available in installed tika version.
+        from_url = getattr(self._parser, "from_url", None)
+        if callable(from_url):
+            try:
+                result = from_url(url)
+                extracted = {
+                    "content": result.get("content", ""),
+                    "metadata": result.get("metadata", {}),
+                    "status": "success" if result.get("content") else "empty",
+                    "source": url,
+                    "from_cache": False,
+                }
+                if use_cache:
+                    self._set_cached(url, extracted)
+                return extracted
+            except Exception as e:
+                from_url_error = e
+                logger.warning(f"Tika from_url failed for {url}, falling back to from_buffer: {e}")
+
         try:
-            result = self._parser.from_url(url)
+            body, fetch_meta = self._download_url_bytes(url)
+            result = self._parser.from_buffer(body)
+            metadata = dict(result.get("metadata", {}) or {})
+            metadata.update(
+                {
+                    "source_url": url,
+                    "fetch_content_type": fetch_meta.get("content_type", ""),
+                    "fetch_content_length": fetch_meta.get("content_length", ""),
+                    "fetch_ssl_verify": fetch_meta.get("ssl_verify", ""),
+                }
+            )
             extracted = {
                 "content": result.get("content", ""),
-                "metadata": result.get("metadata", {}),
+                "metadata": metadata,
                 "status": "success" if result.get("content") else "empty",
                 "source": url,
                 "from_cache": False,
             }
-            
-            # Cache the result
             if use_cache:
                 self._set_cached(url, extracted)
-            
             return extracted
-            
         except Exception as e:
-            logger.error(f"Tika extraction failed for {url}: {e}")
+            if from_url_error is not None:
+                err = f"from_url_error={from_url_error}; fallback_error={e}"
+            else:
+                err = str(e)
+            logger.error(f"Tika extraction failed for {url}: {err}")
             return {
                 "content": None,
                 "metadata": {},
                 "status": "error",
-                "error": str(e),
+                "error": err,
                 "source": url,
             }
     

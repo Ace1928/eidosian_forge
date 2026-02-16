@@ -76,6 +76,9 @@ class AttentionModule:
                 continue
 
             salience, confidence = _score_candidate(evt)
+            noise = float(ctx.config.get("attention_score_noise", 0.0))
+            if noise > 0.0:
+                salience = clamp01(salience + ctx.rng.uniform(-noise, noise), default=salience)
             candidate_id = uuid.uuid4().hex
             data: Dict[str, Any] = {
                 "candidate_id": candidate_id,

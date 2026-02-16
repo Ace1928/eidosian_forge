@@ -10,6 +10,8 @@ from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
 from .modules.attention import AttentionModule
+from .modules.policy import PolicyModule
+from .modules.self_model_ext import SelfModelExtModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
 from .types import Module, TickContext, merged_config
 
@@ -34,7 +36,15 @@ class ConsciousnessKernel:
         self.state_dir = Path(state_dir)
         self.config = merged_config(config or {})
         self.rng = random.Random(seed)
-        self.modules: List[Module] = list(modules or [AttentionModule(), WorkspaceCompetitionModule()])
+        self.modules: List[Module] = list(
+            modules
+            or [
+                AttentionModule(),
+                WorkspaceCompetitionModule(),
+                PolicyModule(),
+                SelfModelExtModule(),
+            ]
+        )
 
     def _collect_context(self) -> TickContext:
         event_limit = int(self.config.get("recent_events_limit", 300))

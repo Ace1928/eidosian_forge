@@ -5,6 +5,9 @@ from core import db as DB
 from core import events as E
 from core import state as S
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+EIDOSD = REPO_ROOT / "agent_forge" / "bin" / "eidosd"
+
 
 def test_db_helpers(tmp_path: Path):
     base = tmp_path / "state"
@@ -20,8 +23,8 @@ def test_db_helpers(tmp_path: Path):
 
 def test_eidosd_once(tmp_path: Path):
     state_dir = tmp_path / "state"
-    cmd = [sys.executable, "bin/eidosd", "--state-dir", str(state_dir), "--once"]
-    res = subprocess.run(cmd, capture_output=True, text=True)
+    cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
+    res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
     assert res.returncode == 0, res.stderr
 
     conn = sqlite3.connect(state_dir / "e3.sqlite")

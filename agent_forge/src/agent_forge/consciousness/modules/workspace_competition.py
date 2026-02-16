@@ -61,6 +61,7 @@ class WorkspaceCompetitionModule:
         min_score = float(ctx.config.get("competition_min_score", 0.15))
         reaction_window = float(ctx.config.get("competition_reaction_window_secs", 1.5))
         reaction_min_sources = int(ctx.config.get("competition_reaction_min_sources", 2))
+        drop_winners = bool(ctx.config.get("competition_drop_winners", False))
 
         candidates = self._collect_candidates(ctx)
         if not candidates:
@@ -82,6 +83,8 @@ class WorkspaceCompetitionModule:
         )
 
         for winner in winners:
+            if drop_winners:
+                continue
             payload = WorkspacePayload(
                 kind="GW_WINNER",
                 source_module="workspace_competition",
@@ -110,7 +113,7 @@ class WorkspaceCompetitionModule:
             self._processed_ids.add(str(winner.get("candidate_id")))
 
         reaction_sources = self._recent_reaction_sources(ctx, window_secs=reaction_window)
-        if winners and len(reaction_sources) >= reaction_min_sources:
+        if winners and not drop_winners and len(reaction_sources) >= reaction_min_sources:
             ctx.emit_event(
                 "gw.ignite",
                 {
@@ -122,5 +125,5 @@ class WorkspaceCompetitionModule:
                 tags=["consciousness", "gw", "ignite"],
             )
 
-        if winners:
+        if winners and not drop_winners:
             ctx.metric("consciousness.gw.winner_count", float(len(winners)))

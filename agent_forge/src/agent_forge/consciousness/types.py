@@ -149,6 +149,10 @@ def merged_config(raw: Mapping[str, Any]) -> Dict[str, Any]:
         "competition_reaction_window_secs": 1.5,
         "competition_reaction_min_sources": 2,
         "competition_min_score": 0.15,
+        "policy_emit_broadcast": True,
+        "policy_max_actions_per_tick": 1,
+        "self_emit_delta_threshold": 0.05,
+        "self_observation_window": 120,
     }
     defaults.update(cfg)
     return defaults

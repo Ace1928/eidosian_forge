@@ -8,6 +8,9 @@ from agent_forge.consciousness.kernel import ConsciousnessKernel
 from agent_forge.consciousness.modules import AttentionModule, WorkspaceCompetitionModule
 from agent_forge.core import events, workspace
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+EIDOSD = REPO_ROOT / "agent_forge" / "bin" / "eidosd"
+
 
 def test_attention_emits_candidates(tmp_path: Path) -> None:
     base = tmp_path / "state"
@@ -78,8 +81,8 @@ def test_competition_broadcasts_winner_and_ignite(tmp_path: Path) -> None:
 
 def test_eidosd_once_emits_consciousness_beat(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
-    cmd = [sys.executable, "bin/eidosd", "--state-dir", str(state_dir), "--once"]
-    res = subprocess.run(cmd, capture_output=True, text=True)
+    cmd = [sys.executable, str(EIDOSD), "--state-dir", str(state_dir), "--once"]
+    res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_ROOT))
     assert res.returncode == 0, res.stderr
 
     all_events = events.iter_events(state_dir, limit=None)

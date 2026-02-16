@@ -1,3 +1,47 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:52c1a8263f47d82cf0a0a58131d7b9b4e0c7a0439551eddcfbddfa2b6bef1de3
-size 1233
+[
+  {
+    "id": "07354e75-6ce2-41b3-a6d1-a9d751712c80",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T11:52:53.418454",
+    "last_accessed": "2026-02-16T11:56:49.495773",
+    "access_count": 2,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "8dc8d592-da7d-4107-89c3-cbd5ce3f099f",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T11:55:13.187823",
+    "last_accessed": "2026-02-16T11:56:49.495796",
+    "access_count": 1,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [],
+    "linked_memories": []
+  },
+  {
+    "id": "e4896617-3543-45ee-b273-0cbe4f6234b6",
+    "content": "termux audit content",
+    "created_at": "2026-02-16T11:56:49.500029",
+    "last_accessed": "2026-02-16T11:56:49.500033",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.5,
+    "ttl_seconds": 86400,
+    "tags": [],
+    "linked_memories": []
+  }
+]

@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Milestone B` preparation (Milestone A complete)
+- Current phase: `Milestone C` complete, `Milestone D` queued
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 
@@ -36,8 +36,8 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 - [x] ~~`attention` candidate generation.~~
 - [x] ~~`workspace_competition` winner selection and ignition marking.~~
-- [ ] `policy` action/efference loop.
-- [ ] `self_model_ext` agency/boundary estimates.
+- [x] ~~`policy` action/efference loop.~~
+- [x] ~~`self_model_ext` agency/boundary estimates.~~
 - [ ] `world_model` prediction and error streams.
 - [ ] `meta` mode estimation.
 - [ ] `report` grounded self-reporting.
@@ -46,25 +46,26 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 - [x] ~~Add perturbation library and harness.~~
 - [x] ~~Add response complexity metric (RCI-like) and supporting metrics.~~
-- [ ] Add standardized trial runner and report persistence.
+- [x] ~~Add standardized trial runner and report persistence.~~
 
 ## Phase 6: CLI and MCP
 
 - [x] ~~Extend `eidctl workspace` with winners/coherence/RCI/agency views.~~
-- [ ] Add `eidctl consciousness` commands for status and trials.
-- [ ] Expose MCP tools/resources for consciousness status, perturbation, and trial execution.
+- [x] ~~Add `eidctl consciousness` commands for status and trials.~~
+- [x] ~~Expose MCP tools/resources for consciousness status, perturbation, and trial execution.~~
 
 ## Phase 7: Tests and Validation
 
 - [x] ~~Add unit tests for attention/competition/ignition.~~
-- [ ] Add perturbation-response metric tests.
-- [ ] Add agency-binding falsification tests.
+- [x] ~~Add perturbation-response metric tests.~~
+- [x] ~~Add agency-binding falsification tests.~~
 - [x] ~~Add integration test for daemon + kernel + event log outputs.~~
 
 ## Phase 8: Termux and Linux Hardening
 
 - [x] ~~Verify venv compatibility and import path stability in Termux.~~
-- [ ] Add defensive filesystem handling for Android/Termux constraints.
+- [x] ~~Add defensive filesystem handling for Android/Termux constraints.~~
+- [x] ~~Add robust URL/TLS fallback handling for Termux Tika URL ingestion paths.~~
 - [ ] Verify parity behavior in Linux runner.
 
 ## Phase 9: Documentation and Operations

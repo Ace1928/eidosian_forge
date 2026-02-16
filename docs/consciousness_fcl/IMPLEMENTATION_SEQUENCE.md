@@ -39,22 +39,29 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
   - `eidos_mcp.state` now resolves `AgentForge` and non-`None` `agent`.
   - daemon tests pass in Termux.
 
-## Stage B (Next): Self-Binding Loop
+## Stage B (Completed): Self-Binding Loop
 
 1. Add `policy` module for action/efference emission.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/policy.py`
 2. Add `self_model_ext` module for agency/boundary confidence.
+- Files: `agent_forge/src/agent_forge/consciousness/modules/self_model_ext.py`
 3. Extend self snapshot output in `agent_forge/src/agent_forge/core/self_model.py`.
 4. Add falsification tests:
-- efference mismatch decreases agency confidence
-- controllability changes boundary stability
+- `agent_forge/tests/test_consciousness_milestone_b.py::test_self_model_ext_reduces_agency_on_efference_mismatch`
+- `agent_forge/tests/test_consciousness_milestone_b.py::test_self_model_ext_emits_agency_and_boundary`
 
-## Stage C (Next): Perturb and Measure
+## Stage C (Completed): Perturb and Measure
 
 1. Expand perturb harness to active injection adapters.
 2. Add trial runner with fixed perturbation protocols and persisted reports.
+- Files: `agent_forge/src/agent_forge/consciousness/trials.py`
 3. Persist RCI and supporting features into event + metrics stores.
 4. Add CLI command group `eidctl consciousness trial/status`.
 5. Add MCP tools for perturb/trial/export trace.
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+- Validation:
+  - `agent_forge/tests/test_consciousness_trials.py`
+  - `eidos_mcp/tests/test_mcp_tool_calls_individual.py`
 
 ## Stage D (Next): World/Meta/Report
 
