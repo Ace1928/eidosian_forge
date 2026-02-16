@@ -329,3 +329,15 @@ Status checkpoint:
 - Files: `.github/workflows/workflow-action-pin-audit.yml`
 - Files: `audit_data/workflow_action_lock.json`
 - Files: `scripts/tests/test_audit_workflow_action_pins.py`
+
+## Stage K (Active): Vulnerability Remediation Orchestration
+
+Status checkpoint:
+- PR-K1 delivered (Dependabot remediation batching planner, issue sync engine, workflow integration, and regression tests).
+
+1. Remediation batch planner + issue synchronization (PR-K1).
+- Files: `scripts/dependabot_remediation_plan.py`
+- Files: `scripts/sync_security_remediation_issues.py`
+- Files: `scripts/tests/test_dependabot_remediation_plan.py`
+- Files: `scripts/tests/test_sync_security_remediation_issues.py`
+- Files: `.github/workflows/security-audit.yml`

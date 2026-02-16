@@ -224,9 +224,11 @@ jobs:
 
 **Jobs:**
 1. **dependabot-audit** - Collects alert summary via `scripts/dependabot_alert_inventory.py`
-2. **publish summary** - Adds alert counts and severity breakdown to workflow summary
-3. **optional gate enforcement** - Fails run when configured thresholds are exceeded
-4. **artifact upload** - Stores JSON/log reports in `reports/security/`
+2. **remediation batch plan** - Builds deterministic vulnerability batches via `scripts/dependabot_remediation_plan.py`
+3. **remediation issue sync** - Creates/updates/closes remediation batch issues via `scripts/sync_security_remediation_issues.py`
+4. **publish summary** - Adds alert and remediation-batch counts to workflow summary
+5. **optional gate enforcement** - Fails run when configured thresholds are exceeded
+6. **artifact upload** - Stores JSON/Markdown/log reports in `reports/security/`
 
 **Key Features:**
 - Uses `security-events: read` permission for API access

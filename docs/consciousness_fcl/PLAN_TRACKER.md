@@ -149,3 +149,9 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add scheduled/manual security audit workflow for Dependabot inventory with optional critical/high fail gates and artifacted reports.~~
 - [x] ~~Add automated remediation issue generation from security inventory deltas.~~
 - [x] ~~Add pinned-action drift audit and update policy enforcement in CI.~~
+
+## Phase 16: Vulnerability Remediation Orchestration
+
+- [x] ~~Add remediation batch planning from Dependabot summaries with deterministic severity-aware grouping.~~
+- [x] ~~Synchronize remediation batch issues automatically (create/update/close/duplicate cleanup).~~
+- [x] ~~Integrate remediation planner and issue sync into `security-audit.yml` with artifacted reports.~~

@@ -90,10 +90,41 @@ jobs:
             echo "state=$STATE" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build Remediation Batch Plan
+        id: remediation_plan
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+        run: |
+          set -eu
+          PLAN_JSON="reports/security/dependabot_remediation_plan.json"
+          PLAN_MD="reports/security/dependabot_remediation_plan.md"
+          python scripts/dependabot_remediation_plan.py \
+            --summary-json "$REPORT_PATH" \
+            --repo "${{ github.repository }}" \
+            --severity "critical,high" \
+            --max-batches 30 \
+            --json-out "$PLAN_JSON" \
+            --md-out "$PLAN_MD"
+          echo "plan_json=$PLAN_JSON" >> "$GITHUB_OUTPUT"
+          echo "plan_md=$PLAN_MD" >> "$GITHUB_OUTPUT"
+
+      - name: Sync Remediation Batch Issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PLAN_JSON: ${{ steps.remediation_plan.outputs.plan_json }}
+        run: |
+          set -eu
+          python scripts/sync_security_remediation_issues.py \
+            --repo "${{ github.repository }}" \
+            --plan-json "$PLAN_JSON" \
+            --token-env GITHUB_TOKEN \
+            --json-out reports/security/dependabot_remediation_sync.json
+
       - name: Publish Summary
         env:
           REPORT_PATH: ${{ steps.collect.outputs.report_path }}
           STATE: ${{ steps.collect.outputs.state }}
+          PLAN_JSON: ${{ steps.remediation_plan.outputs.plan_json }}
         run: |
           set -eu
           python - <<'PY'
@@ -127,6 +158,15 @@ jobs:
                           f"- open_high: `{open_by_severity.get('high', 0)}`",
                       ]
                   )
+                  plan_path = Path(os.environ.get("PLAN_JSON", ""))
+                  if plan_path.exists():
+                      plan = json.loads(plan_path.read_text(encoding="utf-8"))
+                      summary_lines.extend(
+                          [
+                              f"- remediation_batch_count: `{plan.get('batch_count', 0)}`",
+                              f"- remediation_alerts_batched: `{plan.get('total_batched_alerts', 0)}`",
+                          ]
+                      )
           else:
               summary_lines.append("- status: `error` (report missing)")
 
@@ -347,4 +387,5 @@ jobs:
           if-no-files-found: warn
           path: |
             reports/security/*.json
+            reports/security/*.md
             reports/security/*.log
