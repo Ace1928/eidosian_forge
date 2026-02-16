@@ -1,5 +1,7 @@
 # Part 18: Metrics Suite v2 - Connectivity, Directionality, Stability
 
+Status: core metrics v2 package delivered in Stage H PR-H4 (`rci_v2`, `entropy`, `connectivity`, `directionality`, `self_stability`).
+
 ## Goal
 
 Add richer, falsifiable measurement primitives beyond basic RCI/coherence.

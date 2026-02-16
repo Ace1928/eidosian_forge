@@ -9,7 +9,13 @@ from typing import Any, Dict, Mapping, Optional
 from agent_forge.core import events, workspace
 
 from ..kernel import ConsciousnessKernel
-from ..metrics import coherence_from_workspace_summary, response_complexity
+from ..metrics import (
+    coherence_from_workspace_summary,
+    directionality_asymmetry,
+    effective_connectivity,
+    response_complexity,
+    self_stability,
+)
 from ..types import clamp01
 from .reporting import spec_hash, trial_output_dir, write_json, write_jsonl, write_summary
 from .scoring import compute_trial_deltas, composite_trial_score
@@ -100,11 +106,17 @@ class ConsciousnessBenchRunner:
         ws = workspace.summary(self.state_dir, limit=500, window_seconds=1.0, min_sources=3)
         coh = coherence_from_workspace_summary(ws)
         rci = response_complexity(recent_events[-300:])
+        conn = effective_connectivity(recent_events[-500:])
+        dirn = directionality_asymmetry(recent_events[-500:])
+        stab = self_stability(recent_events[-500:])
         return {
             "workspace": ws,
             "coherence_ratio": float(coh.get("coherence_ratio") or 0.0),
             "ignition_density": float(coh.get("ignition_density") or 0.0),
             "rci": rci,
+            "connectivity": conn,
+            "directionality": dirn,
+            "self_stability": stab,
             "agency": _latest_metric(recent_events, "consciousness.agency"),
             "boundary_stability": _latest_metric(recent_events, "consciousness.boundary_stability"),
             "world_prediction_error": _latest_metric(recent_events, "consciousness.world.prediction_error"),
