@@ -1,4 +1,5 @@
 from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
+from .bench import ConsciousnessBenchRunner, TrialSpec as BenchTrialSpec
 from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
@@ -8,6 +9,8 @@ from .types import Module, TickContext, WorkspacePayload, normalize_workspace_pa
 
 __all__ = [
     "BenchmarkResult",
+    "BenchTrialSpec",
+    "ConsciousnessBenchRunner",
     "ConsciousnessBenchmarkSuite",
     "ConsciousnessKernel",
     "ConsciousnessTrialRunner",

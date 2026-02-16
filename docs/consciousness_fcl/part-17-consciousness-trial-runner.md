@@ -1,5 +1,7 @@
 # Part 17: Consciousness Trial Runner (CTR)
 
+Status: core CTR package delivered in Stage H PR-H3 (`trials.py`, `tasks.py`, `scoring.py`, `reporting.py` + tests).
+
 ## Goal
 
 Transform ad hoc testing into reproducible, persisted, benchmark-grade experiments.
@@ -20,9 +22,9 @@ Files:
 - `trials.py`
 - `tasks.py`
 - `scoring.py`
-- `ablations.py`
 - `reporting.py`
-- `golden.py`
+- `ablations.py` (pending PR-H5)
+- `golden.py` (pending PR-H5)
 
 ## TrialSpec Contract
 
@@ -59,7 +61,7 @@ class TrialSpec:
 - `spec.json`
 - `metrics.jsonl`
 - `events_window.jsonl`
-- `reports.jsonl`
+- `report.json`
 - `summary.md`
 
 ## Scoring Domains

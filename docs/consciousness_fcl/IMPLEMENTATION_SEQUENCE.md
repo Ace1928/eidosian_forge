@@ -150,6 +150,7 @@ This sequence is commit-sized, idempotent, and rollback-friendly. Each step incl
 Status checkpoint:
 - PR-H1 delivered (canonical links + `EventIndex` + `TickContext` index/link helpers + indexed `workspace_competition`/`report` lookups + regression tests).
 - PR-H2 delivered (winner-linked `trace_strength` instrumentation + ignition v3 gates + pending winner finalization + regressions).
+- PR-H3 delivered (new `consciousness/bench/` package with `TrialSpec`, stage lifecycle execution, artifact persistence, and regression tests).
 
 1. Canonical link contract and schema hardening (PR-H1).
 - Files: `agent_forge/src/agent_forge/consciousness/types.py`
