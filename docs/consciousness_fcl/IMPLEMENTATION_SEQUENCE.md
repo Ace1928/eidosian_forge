@@ -342,7 +342,7 @@ Status checkpoint:
 - Files: `scripts/tests/test_sync_security_remediation_issues.py`
 - Files: `.github/workflows/security-audit.yml`
 
-## Stage L (Active): Deterministic Dependency Auto-Patch Execution
+## Stage L (Completed): Deterministic Dependency Auto-Patch Execution
 
 Status checkpoint:
 - PR-L1 delivered (raw-alert-driven pip requirement auto-patch tool with dry-run/write + rollback backups + tests).
@@ -350,6 +350,7 @@ Status checkpoint:
 - PR-L3 delivered (high/critical write pass across four pip manifests with post-write idempotency verification).
 - PR-L4 delivered (all-severity write pass with deterministic pin upgrades and post-write idempotency verification).
 - PR-L5 delivered (no-fix advisory mitigation via direct dependency minimization and manual vulnerable-range escape for `orjson`).
+- PR-L6 delivered (Dependabot refresh converged to zero open alerts; remediation issue sync closed remaining Phase 16/17 issue set).
 
 1. Auto-patch tool from raw Dependabot alerts (PR-L1).
 - Files: `scripts/dependabot_autopatch_requirements.py`
@@ -377,5 +378,8 @@ Status checkpoint:
 - Files: `doc_forge/requirements.txt`
 - Files: `doc_forge/docs/requirements.txt`
 
-6. Next remediation loop (pending).
-- Wait for Dependabot re-analysis refresh, then re-run inventory/issue sync until GitHub reports zero open alerts.
+6. Closure loop (PR-L6).
+- Files: `scripts/dependabot_alert_inventory.py`
+- Files: `scripts/dependabot_remediation_plan.py`
+- Files: `scripts/sync_security_remediation_issues.py`
+- Output: zero open alerts + remediation issue closure sync (`closed=4`).
