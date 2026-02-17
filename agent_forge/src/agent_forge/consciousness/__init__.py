@@ -10,6 +10,7 @@ from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
 from .state_store import ModuleStateStore
+from .stress import ConsciousnessStressBenchmark, StressBenchmarkResult
 from .trials import ConsciousnessTrialRunner, TrialResult
 from .types import Module, TickContext, WorkspacePayload, normalize_workspace_payload
 
@@ -27,6 +28,8 @@ __all__ = [
     "IntegratedBenchmarkResult",
     "IntegratedStackBenchmark",
     "KernelResult",
+    "ConsciousnessStressBenchmark",
+    "StressBenchmarkResult",
     "ModuleStateStore",
     "Module",
     "RedTeamResult",

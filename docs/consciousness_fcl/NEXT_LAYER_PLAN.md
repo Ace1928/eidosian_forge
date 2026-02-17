@@ -35,6 +35,7 @@ The plan is decomposed into focused implementation parts:
 23. Phase 17 no-fix advisory mitigation path (dependency minimization + manual vulnerable-range escape where safe and verifiable).
 24. Phase 18 kernel watchdog reliability envelope with automatic module quarantine/recovery controls.
 25. Phase 18 payload safety envelope with bounded serialization/truncation telemetry for event bus scalability.
+26. Phase 18 completion: watchdog/payload status surface exposure (CLI + MCP) and payload stress benchmark profile with CI trend aggregation.
 
 ## Principle
 
@@ -69,3 +70,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-38-phase16-remediation-batching.md`
 - `docs/consciousness_fcl/part-39-phase17-autopatch-execution.md`
 - `docs/consciousness_fcl/part-40-phase18-runtime-hardening.md`
+- `docs/consciousness_fcl/part-41-phase18-status-and-stress-completion.md`

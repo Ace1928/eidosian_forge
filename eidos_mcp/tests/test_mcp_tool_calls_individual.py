@@ -74,7 +74,7 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
     (
         "consciousness_kernel_status",
         {},
-        lambda r: "\"workspace\"" in r and "\"rci\"" in r,
+        lambda r: "\"workspace\"" in r and "\"rci\"" in r and "\"watchdog\"" in r and "\"payload_safety\"" in r,
         "consciousness_kernel_status missing expected keys",
     ),
     (
@@ -88,6 +88,19 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
         {"ticks": 2, "persist": False},
         lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
         "consciousness_kernel_benchmark missing expected keys",
+    ),
+    (
+        "consciousness_kernel_stress_benchmark",
+        {
+            "ticks": 2,
+            "event_fanout": 4,
+            "broadcast_fanout": 2,
+            "payload_chars": 4000,
+            "max_payload_bytes": 1024,
+            "persist": False,
+        },
+        lambda r: "\"benchmark_id\"" in r and "\"payload_truncations_observed\"" in r,
+        "consciousness_kernel_stress_benchmark missing expected keys",
     ),
     (
         "consciousness_kernel_red_team",
@@ -152,6 +165,14 @@ class TestMcpToolCallsIndividual(unittest.IsolatedAsyncioTestCase):
         async with _stdio_session() as session:
             result = await asyncio.wait_for(
                 session.read_resource("eidos://consciousness/runtime-latest-red-team"),
+                timeout=20,
+            )
+        self.assertTrue(result.contents)
+
+    async def test_resource_consciousness_runtime_latest_stress_benchmark(self) -> None:
+        async with _stdio_session() as session:
+            result = await asyncio.wait_for(
+                session.read_resource("eidos://consciousness/runtime-latest-stress-benchmark"),
                 timeout=20,
             )
         self.assertTrue(result.contents)

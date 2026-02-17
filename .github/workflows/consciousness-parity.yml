@@ -60,6 +60,15 @@ jobs:
             --ticks 8 \
             --json > /tmp/consciousness_benchmark_ci.json
 
+          python agent_forge/bin/eidctl consciousness stress-benchmark \
+            --dir state \
+            --ticks 4 \
+            --event-fanout 6 \
+            --broadcast-fanout 3 \
+            --payload-chars 4096 \
+            --max-payload-bytes 1024 \
+            --json > /tmp/consciousness_stress_benchmark_ci.json
+
           python agent_forge/bin/eidctl consciousness full-benchmark \
             --dir state \
             --rounds 1 \
@@ -85,6 +94,7 @@ jobs:
           if-no-files-found: warn
           path: |
             reports/consciousness_benchmarks/*.json
+            reports/consciousness_stress_benchmarks/*.json
             reports/consciousness_integrated_benchmarks/*.json
             reports/consciousness_trials/*.json
             reports/consciousness_trends/*.json

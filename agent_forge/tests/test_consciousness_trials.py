@@ -64,6 +64,8 @@ def test_trial_runner_persists_and_status_exposes_latest(tmp_path: Path, monkeyp
 
     status = runner.status()
     assert status.get("latest_trial") is not None
+    assert "watchdog" in status
+    assert "payload_safety" in status
 
 
 def test_eidctl_consciousness_commands(tmp_path: Path) -> None:

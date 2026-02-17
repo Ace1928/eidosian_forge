@@ -384,12 +384,14 @@ Status checkpoint:
 - Files: `scripts/sync_security_remediation_issues.py`
 - Output: zero open alerts + remediation issue closure sync (`closed=4`).
 
-## Stage M (Active): Runtime Hardening Upgrades
+## Stage M (Completed): Runtime Hardening Upgrades
 
 Status checkpoint:
 - PR-M1 delivered (kernel module watchdog with consecutive-error quarantine/recovery eventing and persisted watchdog state).
 - PR-M2 delivered (event/broadcast payload safety limits with bounded sanitization and truncation telemetry).
 - PR-M3 delivered (hardening regression tests and consciousness suite validation).
+- PR-M4 delivered (watchdog/payload-safety status surfaced in `eidctl` + MCP runtime status resources/tools).
+- PR-M5 delivered (stress benchmark profile for payload-safety overhead + event-bus pressure + CI trend aggregation).
 
 1. Kernel watchdog reliability envelope (PR-M1).
 - Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
@@ -404,6 +406,15 @@ Status checkpoint:
 - Files: `agent_forge/tests/test_consciousness_kernel_hardening.py`
 - Validation: `PYTHONPATH=... ./eidosian_venv/bin/python -m pytest -q agent_forge/tests/test_consciousness_*.py`
 
-4. Next hardening increment (pending).
-- Expose watchdog state through CLI/MCP.
-- Add payload-safety stress benchmark profile and non-regression gates.
+4. Watchdog/health visibility in status surfaces (PR-M4).
+- Files: `agent_forge/src/agent_forge/consciousness/kernel.py`
+- Files: `agent_forge/src/agent_forge/consciousness/trials.py`
+- Files: `agent_forge/src/agent_forge/cli/eidctl.py`
+- Files: `eidos_mcp/src/eidos_mcp/routers/consciousness.py`
+
+5. Stress benchmark profile + CI trend wiring (PR-M5).
+- Files: `agent_forge/src/agent_forge/consciousness/stress.py`
+- Files: `agent_forge/tests/test_consciousness_stress_benchmark.py`
+- Files: `scripts/consciousness_benchmark_trend.py`
+- Files: `scripts/tests/test_consciousness_benchmark_trend.py`
+- Files: `.github/workflows/consciousness-parity.yml`

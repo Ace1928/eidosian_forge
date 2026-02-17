@@ -172,6 +172,20 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cstress = csub.add_parser("stress-benchmark", help="run payload safety + event pressure stress benchmark")
+        cstress.add_argument("--dir", default="state", help="state directory")
+        cstress.add_argument("--ticks", type=int, default=20, help="kernel ticks for stress benchmark run")
+        cstress.add_argument("--event-fanout", type=int, default=14, help="events emitted per tick by stress module")
+        cstress.add_argument("--broadcast-fanout", type=int, default=6, help="workspace broadcasts emitted per tick")
+        cstress.add_argument("--payload-chars", type=int, default=12000, help="synthetic payload size in chars")
+        cstress.add_argument("--max-payload-bytes", type=int, default=2048, help="payload safety cap used during run")
+        cstress.add_argument("--no-persist", action="store_true", help="do not write stress benchmark report file")
+        cstress.add_argument("--json", action="store_true", help="JSON output")
+
+        cstress_latest = csub.add_parser("latest-stress-benchmark", help="show latest persisted stress benchmark report")
+        cstress_latest.add_argument("--dir", default="state", help="state directory")
+        cstress_latest.add_argument("--json", action="store_true", help="JSON output")
+
         cred = csub.add_parser("red-team", help="run adversarial consciousness benchmark campaign")
         cred.add_argument("--dir", default="state", help="state directory")
         cred.add_argument("--no-persist", action="store_true", help="do not write campaign report file")
@@ -399,6 +413,7 @@ def main(argv: list[str] | None = None) -> int:
                 ConsciousnessBenchmarkSuite,
                 ConsciousnessKernel,
                 ConsciousnessRedTeamCampaign,
+                ConsciousnessStressBenchmark,
                 ConsciousnessTrialRunner,
                 IntegratedStackBenchmark,
             )
@@ -406,6 +421,7 @@ def main(argv: list[str] | None = None) -> int:
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
+            stress = ConsciousnessStressBenchmark(args.dir)
             red_team = ConsciousnessRedTeamCampaign(args.dir)
             full = IntegratedStackBenchmark(args.dir)
 
@@ -419,6 +435,8 @@ def main(argv: list[str] | None = None) -> int:
                     ws = status.get("workspace") or {}
                     coh = status.get("coherence") or {}
                     rci = status.get("rci") or {}
+                    watchdog = status.get("watchdog") or {}
+                    payload_safety = status.get("payload_safety") or {}
                     recent = EV.iter_events(args.dir, limit=400)
                     world_error = _latest_metric(recent, "consciousness.world.prediction_error")
                     report_groundedness = _latest_metric(recent, "consciousness.report.groundedness")
@@ -432,6 +450,17 @@ def main(argv: list[str] | None = None) -> int:
                         f"[consciousness] rci={rci.get('rci')} "
                         f"agency={status.get('agency')} "
                         f"boundary={status.get('boundary_stability')}"
+                    )
+                    print(
+                        f"[consciousness] watchdog_enabled={watchdog.get('enabled')} "
+                        f"quarantined_modules={watchdog.get('quarantined_modules')} "
+                        f"total_errors={watchdog.get('total_errors')}"
+                    )
+                    print(
+                        f"[consciousness] payload_limit={payload_safety.get('max_payload_bytes')} "
+                        f"max_depth={payload_safety.get('max_depth')} "
+                        f"truncations_recent={status.get('payload_truncations_recent')} "
+                        f"truncation_rate_recent={status.get('payload_truncation_rate_recent')}"
                     )
                     if world_error is not None:
                         print(f"[consciousness] world_prediction_error={world_error}")
@@ -505,6 +534,54 @@ def main(argv: list[str] | None = None) -> int:
                             f"[consciousness] latest_benchmark={latest.get('benchmark_id')} "
                             f"composite={scores.get('composite')} "
                             f"delta={scores.get('delta_composite')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "stress-benchmark":
+                result = stress.run(
+                    ticks=max(1, int(args.ticks)),
+                    event_fanout=max(1, int(args.event_fanout)),
+                    broadcast_fanout=max(0, int(args.broadcast_fanout)),
+                    payload_chars=max(64, int(args.payload_chars)),
+                    max_payload_bytes=max(512, int(args.max_payload_bytes)),
+                    persist=not args.no_persist,
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    perf = payload.get("performance") or {}
+                    pressure = payload.get("pressure") or {}
+                    gates = payload.get("gates") or {}
+                    print(
+                        f"[consciousness] stress_benchmark={payload.get('benchmark_id')} "
+                        f"events_per_sec={perf.get('events_per_second')} "
+                        f"p95_ms={perf.get('tick_latency_ms_p95')}"
+                    )
+                    print(
+                        f"[consciousness] truncations={pressure.get('payload_truncations_observed')} "
+                        f"module_errors={pressure.get('module_error_count')} "
+                        f"gates={gates}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
+
+            if args.conscious_cmd == "latest-stress-benchmark":
+                latest = stress.latest_stress_benchmark()
+                if latest is None:
+                    latest = {"error": "No stress benchmark report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        perf = latest.get("performance") or {}
+                        print(
+                            f"[consciousness] latest_stress_benchmark={latest.get('benchmark_id')} "
+                            f"events_per_sec={perf.get('events_per_second')} "
+                            f"p95_ms={perf.get('tick_latency_ms_p95')}"
                         )
                 return 0
 

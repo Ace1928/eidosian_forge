@@ -59,6 +59,21 @@ def test_build_trend_report_aggregates_expected_fields(tmp_path: Path) -> None:
         },
     )
     _write_json(
+        reports / "consciousness_stress_benchmarks" / "stress_test.json",
+        {
+            "timestamp": "2026-02-16T00:01:30Z",
+            "benchmark_id": "stress_test",
+            "performance": {"events_per_second": 120.0, "tick_latency_ms_p95": 45.0},
+            "pressure": {"truncation_rate_per_emitted_event": 0.11},
+            "gates": {
+                "payload_truncation_observed": True,
+                "event_pressure_hits_target": True,
+                "latency_p95_under_200ms": True,
+                "module_error_free": True,
+            },
+        },
+    )
+    _write_json(
         reports / "consciousness_trials" / "trial_test.json",
         {
             "timestamp": "2026-02-16T00:02:00Z",
@@ -76,10 +91,12 @@ def test_build_trend_report_aggregates_expected_fields(tmp_path: Path) -> None:
 
     result = trend.build_trend_report(reports_root=reports, window_days=3650)
     assert result["counts"]["core_benchmarks"] == 1
+    assert result["counts"]["stress_benchmarks"] == 1
     assert result["counts"]["integrated_benchmarks"] == 1
     assert result["counts"]["trials"] == 1
     assert result["counts"]["mcp_audits"] == 1
     assert result["core_benchmark"]["latest_id"] == "benchmark_test"
+    assert result["stress_benchmark"]["latest_id"] == "stress_test"
     assert result["integrated_benchmark"]["latest_id"] == "integrated_test"
     assert result["trials"]["latest_id"] == "trial_test"
     assert result["mcp_audit"]["hard_fail_free_rate"] == 1.0
@@ -98,6 +115,21 @@ def test_main_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
                 "meta_online": False,
                 "report_online": True,
                 "latency_p95_under_100ms": True,
+            },
+        },
+    )
+    _write_json(
+        reports / "consciousness_stress_benchmarks" / "stress_test.json",
+        {
+            "timestamp": "2026-02-16T00:00:30Z",
+            "benchmark_id": "stress_test",
+            "performance": {"events_per_second": 90.0, "tick_latency_ms_p95": 55.0},
+            "pressure": {"truncation_rate_per_emitted_event": 0.14},
+            "gates": {
+                "payload_truncation_observed": True,
+                "event_pressure_hits_target": True,
+                "latency_p95_under_200ms": True,
+                "module_error_free": True,
             },
         },
     )
@@ -126,5 +158,7 @@ def test_main_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
     assert out_md.exists()
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert payload["counts"]["core_benchmarks"] == 1
+    assert payload["counts"]["stress_benchmarks"] == 1
     md = out_md.read_text(encoding="utf-8")
     assert "# Consciousness Benchmark Trend" in md
+    assert "Stress mean events/s" in md

@@ -62,6 +62,9 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
     ws = workspace.summary(state_dir, limit=400, window_seconds=1.0, min_sources=3)
     coherence = coherence_from_workspace_summary(ws)
     rci = response_complexity(recent_events[-250:])
+    truncations = sum(
+        1 for evt in recent_events if str(evt.get("type") or "") == "consciousness.payload_truncated"
+    )
     memory_status = _latest_event_data(recent_events, "memory_bridge.status") or {}
     knowledge_status = _latest_event_data(recent_events, "knowledge_bridge.status") or {}
     phenom = _latest_event_data(recent_events, "phenom.snapshot") or {}
@@ -88,6 +91,11 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
         ),
         "memory_recalls": _latest_metric(recent_events, "consciousness.memory_bridge.recalls"),
         "knowledge_hits": _latest_metric(recent_events, "consciousness.knowledge_bridge.total_hits"),
+        "payload_truncations_recent": int(truncations),
+        "payload_truncation_rate_recent": round(
+            float(truncations) / max(float(len(recent_events)), 1.0),
+            6,
+        ),
         "memory_bridge": {
             "available": memory_status.get("available"),
             "introspector_available": memory_status.get("introspector_available"),
@@ -265,9 +273,12 @@ class ConsciousnessTrialRunner:
     def status(self) -> dict[str, Any]:
         recent = events.iter_events(self.state_dir, limit=500)
         snapshot = _metrics_snapshot(self.state_dir, recent)
+        health = ConsciousnessKernel(self.state_dir).runtime_health()
         return {
             "timestamp": _now_iso(),
             "state_dir": str(self.state_dir),
             **snapshot,
+            "watchdog": health.get("watchdog") or {},
+            "payload_safety": health.get("payload_safety") or {},
             "latest_trial": self.latest_trial(),
         }

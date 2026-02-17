@@ -90,7 +90,24 @@ Result: `73 passed`.
 - Payload safety is applied at write boundaries only, preserving module internals while protecting bus/workspace durability.
 - Truncation telemetry is explicit and queryable for observability and benchmark-driven tuning.
 
-## Next Hardening Increments
+## Completed Increments
 
-1. Expose watchdog state and quarantine/recovery counters through `eidctl consciousness status` and MCP status resources.
-2. Add payload-safety stress benchmark profile and non-regression gate thresholds to CI trend reporting.
+1. Watchdog and payload-safety status surfaced through runtime status APIs.
+- `eidctl consciousness status` now reports:
+- `watchdog` (enabled, thresholds, quarantine counts, error totals)
+- `payload_safety` limits and recent truncation counters
+- MCP `consciousness_kernel_status` and `eidos://consciousness/runtime-status` now include the same fields through shared `runner.status()` payload.
+
+2. Stress benchmark profile added for payload safety overhead and event pressure.
+- New runtime benchmark:
+- `eidctl consciousness stress-benchmark`
+- `eidctl consciousness latest-stress-benchmark`
+- New MCP tools:
+- `consciousness_kernel_stress_benchmark`
+- `consciousness_kernel_latest_stress_benchmark`
+- New MCP resource:
+- `eidos://consciousness/runtime-latest-stress-benchmark`
+- CI parity workflow now runs stress benchmark and trend aggregation includes stress metrics.
+
+3. Follow-on documentation:
+- `docs/consciousness_fcl/part-41-phase18-status-and-stress-completion.md`

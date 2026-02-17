@@ -291,6 +291,76 @@ class ConsciousnessKernel:
                 tags=["consciousness", "watchdog", "quarantine"],
             )
 
+    def watchdog_status(self) -> dict[str, Any]:
+        snapshot = self.state_store.snapshot()
+        modules_root = snapshot.get("modules")
+        watchdog_root: Mapping[str, Any] = {}
+        if isinstance(modules_root, Mapping):
+            raw_watchdog = modules_root.get("__kernel_watchdog__")
+            if isinstance(raw_watchdog, Mapping):
+                watchdog_root = raw_watchdog
+        module_rows_raw = watchdog_root.get("modules")
+        rows: list[dict[str, Any]] = []
+        if isinstance(module_rows_raw, Mapping):
+            for module_name, row in module_rows_raw.items():
+                if not isinstance(row, Mapping):
+                    continue
+                quarantined_until = int(row.get("quarantined_until_beat") or 0)
+                rows.append(
+                    {
+                        "module": str(module_name),
+                        "consecutive_errors": int(row.get("consecutive_errors") or 0),
+                        "total_errors": int(row.get("total_errors") or 0),
+                        "quarantine_count": int(row.get("quarantine_count") or 0),
+                        "recoveries": int(row.get("recoveries") or 0),
+                        "quarantined_until_beat": quarantined_until,
+                        "quarantined": quarantined_until > int(self.beat_count),
+                        "last_error": str(row.get("last_error") or ""),
+                        "last_error_ts": str(row.get("last_error_ts") or ""),
+                    }
+                )
+        rows.sort(key=lambda item: item["module"])
+        quarantined = [row for row in rows if bool(row.get("quarantined"))]
+        return {
+            "enabled": bool(self._watchdog_enabled()),
+            "max_consecutive_errors": int(
+                self.config.get("kernel_watchdog_max_consecutive_errors", 3) or 3
+            ),
+            "quarantine_beats": int(
+                self.config.get("kernel_watchdog_quarantine_beats", 20) or 20
+            ),
+            "beat_count": int(self.beat_count),
+            "module_count": len(rows),
+            "quarantined_modules": len(quarantined),
+            "modules": rows,
+            "quarantined_module_names": [str(row.get("module") or "") for row in quarantined],
+            "total_errors": sum(int(row.get("total_errors") or 0) for row in rows),
+        }
+
+    def payload_safety_status(self) -> dict[str, Any]:
+        return {
+            "max_payload_bytes": int(
+                self.config.get("consciousness_max_payload_bytes", 16384) or 16384
+            ),
+            "max_depth": int(self.config.get("consciousness_max_depth", 8) or 8),
+            "max_collection_items": int(
+                self.config.get("consciousness_max_collection_items", 64) or 64
+            ),
+            "max_string_chars": int(
+                self.config.get("consciousness_max_string_chars", 4096) or 4096
+            ),
+            "truncation_event_enabled": bool(
+                self.config.get("consciousness_payload_truncation_event", True)
+            ),
+        }
+
+    def runtime_health(self) -> dict[str, Any]:
+        return {
+            "beat_count": int(self.beat_count),
+            "watchdog": self.watchdog_status(),
+            "payload_safety": self.payload_safety_status(),
+        }
+
     def _collect_context(self) -> TickContext:
         self._refresh_config()
         event_limit = int(self.config.get("recent_events_limit", 300))

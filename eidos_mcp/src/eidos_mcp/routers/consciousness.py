@@ -22,6 +22,7 @@ try:
         ConsciousnessBenchmarkSuite,
         ConsciousnessKernel,
         ConsciousnessRedTeamCampaign,
+        ConsciousnessStressBenchmark,
         ConsciousnessTrialRunner,
         IntegratedStackBenchmark,
     )
@@ -30,6 +31,7 @@ except Exception:  # pragma: no cover - defensive for partial installs
     ConsciousnessBenchmarkSuite = None
     ConsciousnessKernel = None
     ConsciousnessRedTeamCampaign = None
+    ConsciousnessStressBenchmark = None
     ConsciousnessTrialRunner = None
     IntegratedStackBenchmark = None
     Perturbation = None
@@ -71,6 +73,12 @@ def _red_team(state_dir: Optional[str] = None) -> Optional[ConsciousnessRedTeamC
     if ConsciousnessRedTeamCampaign is None:
         return None
     return ConsciousnessRedTeamCampaign(_state_dir(state_dir))
+
+
+def _stress_bench(state_dir: Optional[str] = None) -> Optional[ConsciousnessStressBenchmark]:
+    if ConsciousnessStressBenchmark is None:
+        return None
+    return ConsciousnessStressBenchmark(_state_dir(state_dir))
 
 
 @contextmanager
@@ -397,6 +405,68 @@ def consciousness_kernel_latest_benchmark(state_dir: Optional[str] = None) -> st
 
 
 @tool(
+    name="consciousness_kernel_stress_benchmark",
+    description="Run payload safety + event pressure stress benchmark for the consciousness kernel runtime.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "ticks": {"type": "integer"},
+            "event_fanout": {"type": "integer"},
+            "broadcast_fanout": {"type": "integer"},
+            "payload_chars": {"type": "integer"},
+            "max_payload_bytes": {"type": "integer"},
+            "persist": {"type": "boolean"},
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_stress_benchmark(
+    ticks: int = 20,
+    event_fanout: int = 14,
+    broadcast_fanout: int = 6,
+    payload_chars: int = 12000,
+    max_payload_bytes: int = 2048,
+    persist: bool = True,
+    state_dir: Optional[str] = None,
+) -> str:
+    with _transient_state_dir(state_dir, bool(persist)) as run_state_dir:
+        stress = _stress_bench(str(run_state_dir))
+        if stress is None:
+            return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+        result = stress.run(
+            ticks=max(1, int(ticks)),
+            event_fanout=max(1, int(event_fanout)),
+            broadcast_fanout=max(0, int(broadcast_fanout)),
+            payload_chars=max(64, int(payload_chars)),
+            max_payload_bytes=max(512, int(max_payload_bytes)),
+            persist=bool(persist),
+        )
+        return json.dumps(result.report, indent=2)
+
+
+@tool(
+    name="consciousness_kernel_latest_stress_benchmark",
+    description="Return latest persisted stress benchmark report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_kernel_latest_stress_benchmark(state_dir: Optional[str] = None) -> str:
+    stress = _stress_bench(state_dir)
+    if stress is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = stress.latest_stress_benchmark()
+    if latest is None:
+        return json.dumps({"error": "No stress benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@tool(
     name="consciousness_kernel_red_team",
     description="Run adversarial red-team campaign against the consciousness benchmark harness.",
     parameters={
@@ -606,6 +676,21 @@ def consciousness_runtime_latest_benchmark_resource() -> str:
     latest = bench.latest_benchmark()
     if latest is None:
         return json.dumps({"error": "No benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/runtime-latest-stress-benchmark",
+    description="Latest runtime payload safety + event pressure stress benchmark report.",
+)
+@eidosian()
+def consciousness_runtime_latest_stress_benchmark_resource() -> str:
+    stress = _stress_bench()
+    if stress is None:
+        return json.dumps({"error": "agent_forge consciousness runtime unavailable"}, indent=2)
+    latest = stress.latest_stress_benchmark()
+    if latest is None:
+        return json.dumps({"error": "No stress benchmark report found"}, indent=2)
     return json.dumps(latest, indent=2)
 
 

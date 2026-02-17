@@ -159,7 +159,11 @@ async def _run_mcp_suite(state_dir: Path, timeout_sec: float = 45.0) -> dict[str
     cases: list[tuple[str, dict[str, Any], Callable[[str], bool]]] = [
         ("diagnostics_ping", {}, lambda r: r.strip() == "ok"),
         ("system_info", {}, lambda r: "Linux" in r or "Android" in r),
-        ("consciousness_kernel_status", {"state_dir": str(state_dir)}, lambda r: "\"workspace\"" in r and "\"rci\"" in r),
+        (
+            "consciousness_kernel_status",
+            {"state_dir": str(state_dir)},
+            lambda r: "\"workspace\"" in r and "\"rci\"" in r and "\"watchdog\"" in r and "\"payload_safety\"" in r,
+        ),
         (
             "consciousness_bridge_status",
             {"state_dir": str(state_dir)},
@@ -169,6 +173,19 @@ async def _run_mcp_suite(state_dir: Path, timeout_sec: float = 45.0) -> dict[str
             "consciousness_kernel_benchmark",
             {"state_dir": str(state_dir), "ticks": 2, "persist": False},
             lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
+        ),
+        (
+            "consciousness_kernel_stress_benchmark",
+            {
+                "state_dir": str(state_dir),
+                "ticks": 2,
+                "event_fanout": 4,
+                "broadcast_fanout": 2,
+                "payload_chars": 4000,
+                "max_payload_bytes": 1024,
+                "persist": False,
+            },
+            lambda r: "\"benchmark_id\"" in r and "\"payload_truncations_observed\"" in r,
         ),
     ]
 
