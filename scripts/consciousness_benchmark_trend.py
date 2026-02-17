@@ -89,6 +89,10 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         (reports_root / "consciousness_stress_benchmarks").glob("stress_*.json"),
         cutoff_ts,
     )
+    linux_audit_rows = _iter_reports(
+        reports_root.glob("linux_audit_*.json"),
+        cutoff_ts,
+    )
     full_rows = _iter_reports(
         (reports_root / "consciousness_integrated_benchmarks").glob("integrated_*.json"),
         cutoff_ts,
@@ -103,6 +107,8 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         _safe_float((row[1].get("pressure") or {}).get("truncation_rate_per_emitted_event"))
         for row in stress_rows
     ]
+    linux_audit_fail_counts = [_safe_int((row[1].get("counts") or {}).get("checks_fail")) for row in linux_audit_rows]
+    linux_audit_check_totals = [_safe_int((row[1].get("counts") or {}).get("checks_total")) for row in linux_audit_rows]
     full_scores = [_safe_float((row[1].get("scores") or {}).get("integrated")) for row in full_rows]
     trial_rci_delta = [_safe_float((row[1].get("delta") or {}).get("rci_delta")) for row in trial_rows]
 
@@ -131,6 +137,7 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         and bool(g.get("module_error_free"))
         for g in stress_gate_rows
     )
+    linux_audit_pass_rate = _bool_rate(count == 0 for count in linux_audit_fail_counts)
 
     audit_hard_fails = [
         _safe_int((row[1].get("counts") or {}).get("tool_hard_fail"))
@@ -141,6 +148,7 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
 
     latest_core = _latest(core_rows)
     latest_stress = _latest(stress_rows)
+    latest_linux_audit = _latest(linux_audit_rows)
     latest_full = _latest(full_rows)
     latest_trial = _latest(trial_rows)
     latest_audit = _latest(audit_rows)
@@ -151,6 +159,7 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         "counts": {
             "core_benchmarks": len(core_rows),
             "stress_benchmarks": len(stress_rows),
+            "linux_audits": len(linux_audit_rows),
             "integrated_benchmarks": len(full_rows),
             "trials": len(trial_rows),
             "mcp_audits": len(audit_rows),
@@ -167,6 +176,15 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
             "mean_truncation_rate_per_emitted_event": _mean(stress_trunc_rate),
             "latest_id": latest_stress[1].get("benchmark_id") if latest_stress else None,
             "gate_pass_rate": stress_gate_pass,
+        },
+        "linux_audit": {
+            "pass_rate": linux_audit_pass_rate,
+            "mean_fail_count": _mean(linux_audit_fail_counts),
+            "mean_checks_total": _mean(linux_audit_check_totals),
+            "latest_fail_count": _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_fail")) if latest_linux_audit else None,
+            "latest_checks_total": _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_total")) if latest_linux_audit else None,
+            "latest_id": latest_linux_audit[1].get("run_id") if latest_linux_audit else None,
+            "latest_report": str(latest_linux_audit[2]) if latest_linux_audit else None,
         },
         "integrated_benchmark": {
             "mean_integrated": _mean(full_scores),
@@ -194,6 +212,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     counts = report.get("counts") or {}
     core = report.get("core_benchmark") or {}
     stress = report.get("stress_benchmark") or {}
+    linux_audit = report.get("linux_audit") or {}
     full = report.get("integrated_benchmark") or {}
     trials = report.get("trials") or {}
     audit = report.get("mcp_audit") or {}
@@ -210,6 +229,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "| --- | ---: |",
         f"| Core benchmark reports | {counts.get('core_benchmarks', 0)} |",
         f"| Stress benchmark reports | {counts.get('stress_benchmarks', 0)} |",
+        f"| Linux audit reports | {counts.get('linux_audits', 0)} |",
         f"| Integrated benchmark reports | {counts.get('integrated_benchmarks', 0)} |",
         f"| Trial reports | {counts.get('trials', 0)} |",
         f"| MCP audit reports | {counts.get('mcp_audits', 0)} |",
@@ -225,6 +245,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Stress mean p95 latency ms | {stress.get('mean_tick_latency_ms_p95')} |",
         f"| Stress mean truncation rate | {stress.get('mean_truncation_rate_per_emitted_event')} |",
         f"| Stress gate pass rate | {stress.get('gate_pass_rate')} |",
+        f"| Linux audit pass rate | {linux_audit.get('pass_rate')} |",
+        f"| Linux audit mean fail count | {linux_audit.get('mean_fail_count')} |",
+        f"| Linux audit latest fail count | {linux_audit.get('latest_fail_count')} |",
         f"| Integrated mean | {full.get('mean_integrated')} |",
         f"| Integrated latest | {full.get('latest_integrated')} |",
         f"| Integrated latest delta | {full.get('latest_delta')} |",
@@ -239,6 +262,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Core benchmark: `{core.get('latest_id')}`",
         f"- Stress benchmark: `{stress.get('latest_id')}`",
+        f"- Linux audit: `{linux_audit.get('latest_id')}`",
         f"- Integrated benchmark: `{full.get('latest_id')}`",
         f"- Trial report: `{trials.get('latest_id')}`",
         f"- MCP audit report: `{audit.get('latest_report')}`",

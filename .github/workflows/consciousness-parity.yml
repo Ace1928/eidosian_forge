@@ -89,6 +89,27 @@ jobs:
             --output-json reports/consciousness_trends/latest_trend.json \
             --output-md reports/consciousness_trends/latest_trend.md
 
+      - name: Enforce Linux Audit Matrix Gate
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          trend_path = Path("reports/consciousness_trends/latest_trend.json")
+          if not trend_path.exists():
+              raise SystemExit("missing trend report")
+          payload = json.loads(trend_path.read_text(encoding="utf-8"))
+          linux = payload.get("linux_audit") or {}
+          latest_fail = linux.get("latest_fail_count")
+          if latest_fail is None:
+              raise SystemExit("linux_audit.latest_fail_count missing")
+          if int(latest_fail) > 0:
+              raise SystemExit(f"linux audit gate failed: latest_fail_count={latest_fail}")
+          print(f"linux audit gate pass: latest_fail_count={latest_fail}")
+          PY
+
       - name: Upload Consciousness Trend Artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -37,6 +37,7 @@ The plan is decomposed into focused implementation parts:
 25. Phase 18 payload safety envelope with bounded serialization/truncation telemetry for event bus scalability.
 26. Phase 18 completion: watchdog/payload status surface exposure (CLI + MCP) and payload stress benchmark profile with CI trend aggregation.
 27. Phase 19 Linux parity closure via deterministic audit matrix runner integrated into smoke/CI artifacts.
+28. Phase 20 Linux audit trend observability and CI fail-count gate enforcement.
 
 ## Principle
 
@@ -73,3 +74,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-40-phase18-runtime-hardening.md`
 - `docs/consciousness_fcl/part-41-phase18-status-and-stress-completion.md`
 - `docs/consciousness_fcl/part-42-phase19-linux-audit-matrix-parity.md`
+- `docs/consciousness_fcl/part-43-phase20-audit-observability-gates.md`

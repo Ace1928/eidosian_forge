@@ -88,15 +88,26 @@ def test_build_trend_report_aggregates_expected_fields(tmp_path: Path) -> None:
             "counts": {"tool_hard_fail": 0, "resource_hard_fail": 0},
         },
     )
+    _write_json(
+        reports / "linux_audit_20260216_000100.json",
+        {
+            "timestamp": "2026-02-16T00:04:00Z",
+            "run_id": "linux_audit_test",
+            "counts": {"checks_total": 5, "checks_fail": 0},
+        },
+    )
 
     result = trend.build_trend_report(reports_root=reports, window_days=3650)
     assert result["counts"]["core_benchmarks"] == 1
     assert result["counts"]["stress_benchmarks"] == 1
+    assert result["counts"]["linux_audits"] == 1
     assert result["counts"]["integrated_benchmarks"] == 1
     assert result["counts"]["trials"] == 1
     assert result["counts"]["mcp_audits"] == 1
     assert result["core_benchmark"]["latest_id"] == "benchmark_test"
     assert result["stress_benchmark"]["latest_id"] == "stress_test"
+    assert result["linux_audit"]["latest_id"] == "linux_audit_test"
+    assert result["linux_audit"]["pass_rate"] == 1.0
     assert result["integrated_benchmark"]["latest_id"] == "integrated_test"
     assert result["trials"]["latest_id"] == "trial_test"
     assert result["mcp_audit"]["hard_fail_free_rate"] == 1.0
@@ -133,6 +144,14 @@ def test_main_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
             },
         },
     )
+    _write_json(
+        reports / "linux_audit_20260216_000100.json",
+        {
+            "timestamp": "2026-02-16T00:01:00Z",
+            "run_id": "linux_audit_test",
+            "counts": {"checks_total": 5, "checks_fail": 0},
+        },
+    )
 
     out_json = reports / "consciousness_trends" / "custom.json"
     out_md = reports / "consciousness_trends" / "custom.md"
@@ -159,6 +178,8 @@ def test_main_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert payload["counts"]["core_benchmarks"] == 1
     assert payload["counts"]["stress_benchmarks"] == 1
+    assert payload["counts"]["linux_audits"] == 1
     md = out_md.read_text(encoding="utf-8")
     assert "# Consciousness Benchmark Trend" in md
     assert "Stress mean events/s" in md
+    assert "Linux audit pass rate" in md

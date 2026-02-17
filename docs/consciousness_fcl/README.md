@@ -53,3 +53,4 @@
 - Part 40: `docs/consciousness_fcl/part-40-phase18-runtime-hardening.md`
 - Part 41: `docs/consciousness_fcl/part-41-phase18-status-and-stress-completion.md`
 - Part 42: `docs/consciousness_fcl/part-42-phase19-linux-audit-matrix-parity.md`
+- Part 43: `docs/consciousness_fcl/part-43-phase20-audit-observability-gates.md`

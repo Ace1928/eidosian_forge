@@ -437,3 +437,19 @@ Status checkpoint:
 - Files: `scripts/tests/test_linux_audit_matrix.py`
 - Files: `docs/consciousness_fcl/part-08-termux-linux-hardening.md`
 - Files: `docs/consciousness_fcl/PLAN_TRACKER.md`
+
+## Stage O (Completed): Linux Audit Observability Gates
+
+Status checkpoint:
+- PR-O1 delivered (trend aggregation now includes Linux audit report coverage and pass/fail metrics).
+- PR-O2 delivered (trend regression tests expanded for Linux audit data and markdown rendering).
+- PR-O3 delivered (CI parity workflow now enforces latest Linux audit fail-count gate).
+
+1. Trend aggregation integration (PR-O1).
+- Files: `scripts/consciousness_benchmark_trend.py`
+
+2. Regression coverage (PR-O2).
+- Files: `scripts/tests/test_consciousness_benchmark_trend.py`
+
+3. CI enforcement gate (PR-O3).
+- Files: `.github/workflows/consciousness-parity.yml`
