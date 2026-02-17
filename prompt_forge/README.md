@@ -1,26 +1,38 @@
-# Prompt Forge
+# 🗣️ Prompt Forge
 
 [![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 **The Art of Asking.**
 
+> _"The quality of the thought depends on the clarity of the prompt."_
+
 ## 🗣️ Overview
 
-`prompt_forge` manages the library of prompts used by Eidos agents.
-It treats prompts as code, with versioning, templating, and testing.
+`prompt_forge` is the centralized repository for Eidosian alignment strategies. It manages the "Source of Truth" for agent personas, system instructions, and few-shot examples.
 
 ## 🏗️ Architecture
-- **Template Engine**: Uses `jinja2` for dynamic prompt generation.
-- **Registry**: A system to load and manage prompt versions.
-- **Optimization**: Tools for A/B testing prompts.
+
+- **Asset Library**: A curated collection of Markdown and text-based prompt templates.
+- **Strategic Alignment**: Standardized personas (e.g., "Velvet Beef") ensuring consistent behavior across different models.
+- **Registry**: (In Development) A Python API to load and version prompts dynamically.
+
+## 🔗 System Integration
+
+- **Eidos MCP**: Uses templates from `prompt_forge` to prime the Documentation and Refactor agents.
+- **Agent Forge**: Provides the core identity and directive sets for the daemon loop.
 
 ## 🚀 Usage
 
-```python
-from prompt_forge import PromptRegistry
+Currently, prompts are consumed as static files.
 
-prompt = PromptRegistry.get("system/persona", version="v2")
-render = prompt.render(name="Eidos")
+```bash
+# Example: Using a persona template
+cat prompt_forge/github_copilot_prompt_guide.md
 ```
-*(Implementation Pending)*
+
+## 📂 Notable Templates
+
+- `eidos_persona.md`: Core identity definition.
+- `documentation_agent.txt`: Instructions for the Documentation Forge.
+- `refactor_instruction.txt`: Rules for structural code modification.
