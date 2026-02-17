@@ -39,6 +39,7 @@ The plan is decomposed into focused implementation parts:
 27. Phase 19 Linux parity closure via deterministic audit matrix runner integrated into smoke/CI artifacts.
 28. Phase 20 Linux audit trend observability and CI fail-count gate enforcement.
 29. Phase 21 event-fabric schema hardening with marker-bounded trial window capture and boundary metadata.
+30. Phase 22 replay-grade trial provenance bundles (git revision, capture digest, module-state snapshot, replay manifest).
 
 ## Principle
 
@@ -77,3 +78,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-42-phase19-linux-audit-matrix-parity.md`
 - `docs/consciousness_fcl/part-43-phase20-audit-observability-gates.md`
 - `docs/consciousness_fcl/part-44-phase21-event-fabric-trial-capture.md`
+- `docs/consciousness_fcl/part-45-phase22-trial-provenance-replay-manifests.md`

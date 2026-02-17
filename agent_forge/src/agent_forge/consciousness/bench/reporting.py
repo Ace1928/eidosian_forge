@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -47,3 +48,22 @@ def write_jsonl(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
 def write_summary(path: Path, lines: Sequence[str]) -> None:
     text = "\n".join(str(line) for line in lines).rstrip() + "\n"
     path.write_text(text, encoding="utf-8")
+
+
+def git_revision(path: Path) -> str | None:
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(path), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+            check=False,
+        )
+    except Exception:
+        return None
+    if proc.returncode != 0:
+        return None
+    sha = str(proc.stdout or "").strip()
+    if len(sha) < 7:
+        return None
+    return sha

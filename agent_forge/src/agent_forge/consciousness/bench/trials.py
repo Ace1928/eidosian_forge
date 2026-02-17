@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -20,7 +21,14 @@ from ..metrics import (
 )
 from ..perturb import evaluate_expected_signatures, perturbations_from_recipe, to_payload
 from ..types import clamp01
-from .reporting import spec_hash, trial_output_dir, write_json, write_jsonl, write_summary
+from .reporting import (
+    git_revision,
+    spec_hash,
+    trial_output_dir,
+    write_json,
+    write_jsonl,
+    write_summary,
+)
 from .scoring import compute_trial_deltas, composite_trial_score
 from .tasks import apply_task_stage, resolve_task
 
@@ -471,6 +479,41 @@ class ConsciousnessBenchRunner:
             for etype, rows in build_index(window_events).by_type.items()
             if str(etype)
         }
+        window_event_ids: list[str] = []
+        event_id_present = 0
+        for evt in window_events:
+            event_id = str(evt.get("event_id") or "")
+            if event_id:
+                event_id_present += 1
+                window_event_ids.append(event_id)
+            else:
+                window_event_ids.append(
+                    f"{str(evt.get('ts') or '')}|{str(evt.get('type') or '')}"
+                )
+        window_digest = hashlib.sha1(
+            ("\n".join(window_event_ids)).encode("utf-8", "replace")
+        ).hexdigest()
+        state_snapshot = kernel.state_store.snapshot()
+        state_modules = (
+            state_snapshot.get("modules")
+            if isinstance(state_snapshot.get("modules"), Mapping)
+            else {}
+        )
+        report["provenance"] = {
+            "git_sha": git_revision(self.state_dir),
+            "seed": int(norm["seed"]),
+            "trial_corr_id": trial_corr,
+            "capture_event_digest": window_digest,
+            "capture_event_id_coverage": (
+                round(float(event_id_present) / float(len(window_events)), 6)
+                if window_events
+                else 0.0
+            ),
+            "capture_start_ts": str(trial_start_event.get("ts") or ""),
+            "capture_end_ts": str(trial_end_event.get("ts") or ""),
+            "module_state_count": len(state_modules),
+            "kernel_beat_count": int(kernel.beat_count),
+        }
 
         output_dir: Optional[Path] = None
         if persist:
@@ -482,6 +525,20 @@ class ConsciousnessBenchRunner:
             write_json(output_dir / "spec.json", trial_spec)
             write_jsonl(output_dir / "metrics.jsonl", stage_rows)
             write_jsonl(output_dir / "events_window.jsonl", window_events)
+            write_json(output_dir / "module_state_snapshot.json", state_snapshot)
+            write_json(
+                output_dir / "replay_manifest.json",
+                {
+                    "trial_id": trial_id,
+                    "spec_hash": trial_hash,
+                    "capture_method": report.get("capture_method"),
+                    "capture_start_event_id": report.get("capture_start_event_id"),
+                    "capture_end_event_id": report.get("capture_end_event_id"),
+                    "capture_event_digest": window_digest,
+                    "seed": int(norm["seed"]),
+                    "git_sha": (report.get("provenance") or {}).get("git_sha"),
+                },
+            )
             write_json(output_dir / "report.json", report)
             write_summary(
                 output_dir / "summary.md",
@@ -494,7 +551,9 @@ class ConsciousnessBenchRunner:
                     f"- rci_delta: `{deltas.get('rci_delta')}`",
                     f"- trace_strength_delta: `{deltas.get('trace_strength_delta')}`",
                     f"- recipe_expectations: `{expectation_eval.get('pass')}`",
-                    f"- artifacts: `spec.json`, `metrics.jsonl`, `events_window.jsonl`, `report.json`",
+                    f"- capture_method: `{report.get('capture_method')}`",
+                    f"- capture_event_digest: `{window_digest}`",
+                    f"- artifacts: `spec.json`, `metrics.jsonl`, `events_window.jsonl`, `module_state_snapshot.json`, `replay_manifest.json`, `report.json`",
                 ],
             )
             report["output_dir"] = str(output_dir)

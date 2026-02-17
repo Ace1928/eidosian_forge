@@ -37,11 +37,16 @@ def test_bench_runner_persists_required_artifacts(tmp_path: Path) -> None:
     assert (result.output_dir / "spec.json").exists()
     assert (result.output_dir / "metrics.jsonl").exists()
     assert (result.output_dir / "events_window.jsonl").exists()
+    assert (result.output_dir / "module_state_snapshot.json").exists()
+    assert (result.output_dir / "replay_manifest.json").exists()
     assert (result.output_dir / "summary.md").exists()
     assert (result.output_dir / "report.json").exists()
     assert result.report.get("capture_method") in {"event_id_markers", "before_count_fallback"}
     assert str(result.report.get("capture_start_event_id") or "")
     assert str(result.report.get("capture_end_event_id") or "")
+    provenance = result.report.get("provenance") or {}
+    assert "capture_event_digest" in provenance
+    assert "capture_event_id_coverage" in provenance
 
     all_events = events.iter_events(base, limit=None)
     assert any(evt.get("type") == "bench.trial_result" for evt in all_events)

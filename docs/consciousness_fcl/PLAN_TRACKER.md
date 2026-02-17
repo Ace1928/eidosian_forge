@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Phase 21` completed (event-fabric IDs + marker-bounded trial capture delivered)
+- Current phase: `Phase 22` completed (trial provenance and replay-manifest hardening delivered)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -195,3 +195,10 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Extend consciousness index/context with event-ID lookup support (`agent_forge/src/agent_forge/consciousness/index.py`, `agent_forge/src/agent_forge/consciousness/types.py`).~~
 - [x] ~~Implement marker-bounded trial capture (`bench.trial_start` / `bench.trial_end`) with fallback and report metadata (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
 - [x] ~~Add regression coverage for event metadata and capture boundaries (`agent_forge/tests/test_events_corr.py`, `agent_forge/tests/test_consciousness_bench_trials.py`).~~
+
+## Phase 22: Trial Provenance and Replay Bundles
+
+- [x] ~~Add bench reporting helper for best-effort git revision capture (`agent_forge/src/agent_forge/consciousness/bench/reporting.py`).~~
+- [x] ~~Extend trial report provenance with capture digest, event-id coverage, seed/corr metadata, and kernel beat snapshot (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
+- [x] ~~Persist replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) for deterministic post-run inspection (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
+- [x] ~~Expand bench trial regression tests to enforce artifact and provenance fields (`agent_forge/tests/test_consciousness_bench_trials.py`).~~

@@ -55,3 +55,4 @@
 - Part 42: `docs/consciousness_fcl/part-42-phase19-linux-audit-matrix-parity.md`
 - Part 43: `docs/consciousness_fcl/part-43-phase20-audit-observability-gates.md`
 - Part 44: `docs/consciousness_fcl/part-44-phase21-event-fabric-trial-capture.md`
+- Part 45: `docs/consciousness_fcl/part-45-phase22-trial-provenance-replay-manifests.md`

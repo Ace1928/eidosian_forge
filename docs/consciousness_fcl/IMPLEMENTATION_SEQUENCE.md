@@ -475,3 +475,23 @@ Status checkpoint:
 4. Regression coverage (PR-P4).
 - Files: `agent_forge/tests/test_events_corr.py`
 - Files: `agent_forge/tests/test_consciousness_bench_trials.py`
+
+## Stage Q (Completed): Trial Provenance and Replay Manifests
+
+Status checkpoint:
+- PR-Q1 delivered (bench reporting helper now resolves best-effort git revision for trial provenance).
+- PR-Q2 delivered (trial reports now include provenance digest, capture event-id coverage, seed/corr lineage, and kernel beat snapshot).
+- PR-Q3 delivered (trial persistence now exports `module_state_snapshot.json` and `replay_manifest.json` alongside existing artifacts).
+- PR-Q4 delivered (bench-trial regression assertions expanded to cover provenance and new artifacts).
+
+1. Bench provenance helper (PR-Q1).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/reporting.py`
+
+2. Runtime provenance enrichment (PR-Q2).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+
+3. Replay artifact persistence (PR-Q3).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+
+4. Regression validation (PR-Q4).
+- Files: `agent_forge/tests/test_consciousness_bench_trials.py`
