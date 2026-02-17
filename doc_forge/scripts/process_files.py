@@ -35,37 +35,55 @@ def get_file_content(rel_path):
 
 def call_llm(prompt):
     """Call the local llama-cli with the given prompt."""
+    import tempfile
+    
     if not LLAMA_CLI.exists():
         return "ERROR: llama-cli not found. Build may still be in progress."
     
-    # Use a simpler prompt for the CLI if needed, or wrap it in instruct tags
     # Qwen-style prompt
-    full_prompt = f"<|im_start|>system
+    full_prompt = f"""<|im_start|>system
 {SYSTEM_PROMPT}<|im_end|>
 <|im_start|>user
 {prompt}<|im_end|>
 <|im_start|>assistant
-"
+"""
     
+    # Write prompt to a temporary file to avoid CLI arg length limits
+    with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8', delete=False) as tmp_file:
+        tmp_file.write(full_prompt)
+        tmp_file_path = tmp_file.name
+
     cmd = [
         str(LLAMA_CLI),
         "-m", str(MODEL_PATH),
-        "-p", full_prompt,
-        "-n", "1024", # Limit output length
+        "-f", tmp_file_path,       # Use file input
+        "-n", "2048",              # Reasonable limit
         "--temp", "0.7",
         "--repeat-penalty", "1.1",
-        "--no-display-prompt"
+        "--no-display-prompt",
+        "--simple-io",
+        "-e",                      # Enable escapes
+        "-c", "4096",              # Reasonable context
+        "-st"                      # Single-turn mode: exit after generation
     ]
     
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        # We don't need stdin=subprocess.DEVNULL when using -f usually, but good for safety
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, stdin=subprocess.DEVNULL)
+        
+        # Cleanup
+        os.unlink(tmp_file_path)
+        
         if result.returncode != 0:
-            return f"ERROR: llama-cli failed with return code {result.returncode}
-{result.stderr}"
+            return f"ERROR: llama-cli failed with return code {result.returncode}\n{result.stdout}\n{result.stderr}"
         return result.stdout.strip()
     except subprocess.TimeoutExpired:
-        return "ERROR: llama-cli timed out after 5 minutes."
+        if os.path.exists(tmp_file_path):
+            os.unlink(tmp_file_path)
+        return "ERROR: llama-cli timed out after 10 minutes."
     except Exception as e:
+        if os.path.exists(tmp_file_path):
+            os.unlink(tmp_file_path)
         return f"ERROR: Unexpected error calling llama-cli: {e}"
 
 def pre_check(content):
@@ -92,12 +110,12 @@ def process_file(rel_dir, filename):
     print(f"Processing {rel_path}...")
     content = get_file_content(rel_path)
     
-    prompt = f"Please document the following file: {rel_path}
+    prompt = f"""Please document the following file: {rel_path}
 
 CONTENT:
 ```
 {content}
-```"
+```"""
     
     max_retries = 2
     for attempt in range(max_retries + 1):
@@ -115,17 +133,27 @@ CONTENT:
                 time.sleep(2) # Brief wait before retry
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate documentation using local LLM.")
+    parser.add_argument("--limit", type=int, default=0, help="Limit number of files to process (0 for all).")
+    args = parser.parse_args()
+
     if not LLAMA_CLI.exists():
         print("Waiting for llama-cli to be built...")
         return
         
     index = load_index()
     
+    count = 0
     # Process files directory-by-directory
     for rel_dir, files in index.items():
         print(f"Entering directory: {rel_dir}")
         for filename in files:
+            if args.limit > 0 and count >= args.limit:
+                print(f"Limit of {args.limit} files reached.")
+                return
             process_file(rel_dir, filename)
+            count += 1
 
 if __name__ == "__main__":
     main()

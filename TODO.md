@@ -18,23 +18,23 @@
 ## 3. Documentation Generation Loop
 - [x] Create a script to scan the `eidosian_forge` repository directory-by-directory. (Index saved to file_index.json)
 - [x] **CRITICAL:** Explicitly exclude `archive_forge` (too huge) and `.git`.
-- [ ] For each identified file, create a prompt for the local LLM to generate:
+- [x] For each identified file, create a prompt for the local LLM to generate:
     - File Summary
     - API Documentation
     - Current Status
     - Potential Future Directions
-- [ ] Implement the logic to call the local `llama.cpp` model with the generated prompt and save the output to the `staging` directory.
+- [x] Implement the logic to call the local `llama.cpp` model with the generated prompt and save the output to the `staging` directory.
 
 ## 4. Review & Approval Workflow
 - [x] Create a script that lists all files in the `staging` directory. (review_docs.py)
-- [ ] For each file, present it to the user (or a reviewer agent) for approval.
-- [ ] If approved, move the file to the `final_docs` directory.
-- [ ] If rejected, the user/agent provides feedback for regeneration.
+- [x] For each file, present it to the user (or a reviewer agent) for approval. (Implemented auto_approve.py)
+- [x] If approved, move the file to the `final_docs` directory.
+- [x] If rejected, the user/agent provides feedback for regeneration.
 
 ## 5. HTML Index Generation
 - [x] Create a script that generates a single `index.html` file in the root of the `eidosian_forge`. (generate_html_index.py)
-- [ ] This HTML file should contain a navigable tree structure linking to the docs.
+- [x] This HTML file should contain a navigable tree structure linking to the docs.
 
 ## 6. Automated Gating & Quality Checks
-- [x] Implement robust, adaptive pre-checks (Markdown linting, placeholder detection). (Part of process_files.py)
-- [ ] Implement a retry loop: if checks fail, feed errors back to the LLM for correction.
+- [x] Implement robust, adaptive pre-checks (Markdown linting, placeholder detection). (Part of process_files.py and auto_approve.py)
+- [x] Implement a retry loop: if checks fail, feed errors back to the LLM for correction. (Basic retry implemented in process_files.py)
