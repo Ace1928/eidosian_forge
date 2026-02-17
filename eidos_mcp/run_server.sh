@@ -2,11 +2,12 @@
 # Eidosian MCP Server launcher (Streamable HTTP transport)
 # Serves on http://localhost:8928/mcp
 
-VENV_BIN="/home/lloyd/eidosian_forge/eidosian_venv/bin"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-export PATH="/home/lloyd/eidosian_forge/google-cloud-sdk/bin:${VENV_BIN}:$PATH"
-export EIDOS_FORGE_DIR="/home/lloyd/eidosian_forge"
+VENV_BIN="${FORGE_ROOT}/eidosian_venv/bin"
+
+export PATH="${VENV_BIN}:$PATH"
+export EIDOS_FORGE_DIR="${FORGE_ROOT}"
 export EIDOS_MCP_TRANSPORT="streamable-http"
 export EIDOS_MCP_MOUNT_PATH="/mcp"
 export EIDOS_MCP_STATELESS_HTTP="${EIDOS_MCP_STATELESS_HTTP:-1}"
