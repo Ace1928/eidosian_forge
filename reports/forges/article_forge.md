@@ -1,0 +1,58 @@
+# Forge Analysis Report: article_forge
+
+## Summary Statistics
+- **Total Size**: 242.46 KB
+- **Total Files & Dirs**: 16 items
+- **Total Lines of Code**: 2688
+- **Total Word Count**: 27611
+- **Path**: `/data/data/com.termux/files/home/eidosian_forge/article_forge`
+
+## File and Folder Tree
+- medium_articles/ (Dir, 222.99 KB, 4 items, 2437 LOC, 26534 words)
+  - autobiography/ (Dir, 89.99 KB, 2 items, 487 LOC, 14856 words)
+    - overview/ (Dir, 74.71 KB, 12 items, 318 LOC, 12694 words)
+      - chanel_to_st_brendans.md (File, 6.22 KB, 26 LOC, 1056 words)
+      - family_breakdown_isolation_into_year_12.md (File, 6.33 KB, 31 LOC, 1117 words)
+      - first_six_months.md (File, 4.75 KB, 22 LOC, 825 words)
+      - from_two_to_four.md (File, 7.93 KB, 27 LOC, 1350 words)
+      - one_to_two_and_half_years.md (File, 5.76 KB, 22 LOC, 977 words)
+      - primary_four_to_seven.md (File, 7.27 KB, 27 LOC, 1245 words)
+      - primary_one_to_four.md (File, 7.49 KB, 24 LOC, 1247 words)
+      - six_to_twelve_months.md (File, 4.63 KB, 19 LOC, 787 words)
+      - st_brendans_year_nine_ten.md (File, 6.96 KB, 21 LOC, 1196 words)
+      - two_and_half_to_four.md (File, 7.93 KB, 27 LOC, 1350 words)
+      - year_11.md (File, 9.42 KB, 72 LOC, 1544 words)
+      - year_12.md (File, 0 B)
+    - part_one/ (Dir, 15.29 KB, 2 items, 169 LOC, 2162 words)
+      - 1993/ (Dir, 15.29 KB, 1 items, 169 LOC, 2162 words)
+        - 1993.md (File, 15.29 KB, 169 LOC, 2162 words)
+      - lloyd_handyside_part_one_1993_to_1997.md (File, 0 B)
+  - about_me.md (File, 5.57 KB, 53 LOC, 860 words)
+  - about_me_guide.md (File, 10.29 KB, 95 LOC, 1722 words)
+  - vscode_setup.md (File, 117.13 KB, 1802 LOC, 9096 words)
+- scripts/ (Dir, 4.17 KB, 2 items, 87 LOC, 429 words)
+  - extract_profile_data.py (File, 2.48 KB, 50 LOC, 265 words)
+  - parse_vscode_config.py (File, 1.7 KB, 37 LOC, 164 words)
+- src/ (Dir, 2.63 KB, 1 items, 28 LOC, 82 words)
+  - article_forge/ (Dir, 2.63 KB, 3 items, 28 LOC, 82 words)
+    - __pycache__/ (Dir, 237.0 B, 1 items)
+      - __init__.cpython-312.pyc (File, 237.0 B)
+    - cli/ (Dir, 2.37 KB, 2 items, 27 LOC, 78 words)
+      - __pycache__/ (Dir, 1.51 KB, 1 items)
+        - __init__.cpython-312.pyc (File, 1.51 KB)
+      - __init__.py (File, 873.0 B, 27 LOC, 78 words)
+    - __init__.py (File, 35.0 B, 1 LOC, 4 words)
+- tests/ (Dir, 525.0 B, 1 items, 9 LOC, 52 words)
+  - test_layout.py (File, 525.0 B, 9 LOC, 52 words)
+- CURRENT_STATE.md (File, 265.0 B, 10 LOC, 38 words)
+- GOALS.md (File, 271.0 B, 8 LOC, 43 words)
+- INSTALL.md (File, 467.0 B, 16 LOC, 58 words)
+- ISSUES.md (File, 434.0 B, 18 LOC, 62 words)
+- LICENSE (File, 1.07 KB)
+- PLAN.md (File, 363.0 B, 15 LOC, 55 words)
+- README.md (File, 350.0 B, 10 LOC, 52 words)
+- ROADMAP.md (File, 659.0 B, 27 LOC, 121 words)
+- TODO.md (File, 129.0 B, 3 LOC, 21 words)
+- __init__.py.shadow_bak (File, 422.0 B)
+- article-forge.code-workspace (File, 7.29 KB)
+- pyproject.toml (File, 528.0 B, 20 LOC, 64 words)

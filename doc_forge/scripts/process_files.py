@@ -9,6 +9,8 @@ from pathlib import Path
 ROOT_DIR = Path.cwd()
 INDEX_FILE = ROOT_DIR / 'doc_forge' / 'file_index.json'
 STAGING_DIR = ROOT_DIR / 'doc_forge' / 'staging'
+FINAL_DOCS_DIR = ROOT_DIR / 'doc_forge' / 'final_docs'
+STATUS_FILE = ROOT_DIR / 'doc_forge' / 'forge_status.json'
 LLAMA_CLI = ROOT_DIR / 'doc_forge' / 'llama.cpp' / 'build' / 'bin' / 'llama-cli'
 MODEL_PATH = ROOT_DIR / 'doc_forge' / 'models' / 'qwen2.5-1.5b-instruct-q5_k_m.gguf'
 
@@ -24,6 +26,14 @@ Ensure the output is in valid Markdown format. Maintain a professional, precise,
 def load_index():
     with open(INDEX_FILE, 'r') as f:
         return json.load(f)
+
+def update_status(stats):
+    """Update the status file with current progress."""
+    try:
+        with open(STATUS_FILE, 'w') as f:
+            json.dump(stats, f, indent=2)
+    except Exception:
+        pass # Don't crash on status update failure
 
 def get_file_content(rel_path):
     abs_path = ROOT_DIR / rel_path
@@ -98,13 +108,21 @@ def pre_check(content):
             return False, "LLM failed to analyze properly"
     return True, "OK"
 
-def process_file(rel_dir, filename):
+def process_file(rel_dir, filename, stats):
     rel_path = Path(rel_dir) / filename
     staging_path = STAGING_DIR / rel_path.with_suffix('.md')
+    final_path = FINAL_DOCS_DIR / rel_path.with_suffix('.md')
+    
     staging_path.parent.mkdir(parents=True, exist_ok=True)
     
     if staging_path.exists():
         print(f"Skipping {rel_path} - already exists in staging.")
+        stats['skipped'] += 1
+        return
+        
+    if final_path.exists():
+        print(f"Skipping {rel_path} - already exists in final_docs.")
+        stats['skipped'] += 1
         return
         
     print(f"Processing {rel_path}...")
@@ -126,11 +144,15 @@ CONTENT:
             with open(staging_path, 'w') as f:
                 f.write(llm_output)
             print(f"Successfully documented {rel_path} to {staging_path}")
+            stats['processed'] += 1
             return
         else:
             print(f"Attempt {attempt + 1} failed for {rel_path}: {msg}")
             if attempt < max_retries:
                 time.sleep(2) # Brief wait before retry
+    
+    stats['errors'] += 1
+    print(f"Failed to document {rel_path} after retries.")
 
 def main():
     import argparse
@@ -144,6 +166,14 @@ def main():
         
     index = load_index()
     
+    stats = {
+        'total_files': sum(len(files) for files in index.values()),
+        'processed': 0,
+        'skipped': 0,
+        'errors': 0,
+        'start_time': time.time()
+    }
+    
     count = 0
     # Process files directory-by-directory
     for rel_dir, files in index.items():
@@ -151,8 +181,11 @@ def main():
         for filename in files:
             if args.limit > 0 and count >= args.limit:
                 print(f"Limit of {args.limit} files reached.")
+                update_status(stats)
                 return
-            process_file(rel_dir, filename)
+            
+            process_file(rel_dir, filename, stats)
+            update_status(stats)
             count += 1
 
 if __name__ == "__main__":

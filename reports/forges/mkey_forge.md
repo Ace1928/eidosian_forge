@@ -1,0 +1,57 @@
+# Forge Analysis Report: mkey_forge
+
+## Summary Statistics
+- **Total Size**: 315.4 KB
+- **Total Files & Dirs**: 15 items
+- **Total Lines of Code**: 7737
+- **Total Word Count**: 36318
+- **Path**: `/data/data/com.termux/files/home/eidosian_forge/mkey_forge`
+
+## File and Folder Tree
+- src/ (Dir, 268.9 KB, 1 items, 7592 LOC, 35761 words)
+  - mkey_forge/ (Dir, 268.9 KB, 5 items, 7592 LOC, 35761 words)
+    - __pycache__/ (Dir, 17.21 KB, 2 items)
+      - __init__.cpython-312.pyc (File, 337.0 B)
+      - mkey.cpython-312.pyc (File, 16.88 KB)
+    - cli/ (Dir, 2.46 KB, 2 items, 29 LOC, 83 words)
+      - __pycache__/ (Dir, 1.58 KB, 1 items)
+        - __init__.cpython-312.pyc (File, 1.58 KB)
+      - __init__.py (File, 905.0 B, 29 LOC, 83 words)
+    - source/ (Dir, 230.91 KB, 9 items, 7147 LOC, 33616 words)
+      - polarssl/ (Dir, 193.15 KB, 11 items, 5959 LOC, 29122 words)
+        - aes.c (File, 38.66 KB, 1002 LOC, 5514 words)
+        - aes.h (File, 4.19 KB, 127 LOC, 577 words)
+        - bignum.c (File, 40.99 KB, 1604 LOC, 7296 words)
+        - bignum.h (File, 14.61 KB, 487 LOC, 2305 words)
+        - bn_mul.h (File, 27.98 KB, 644 LOC, 4022 words)
+        - config.h (File, 6.66 KB, 298 LOC, 892 words)
+        - padlock.h (File, 2.81 KB, 85 LOC, 391 words)
+        - rsa.c (File, 20.66 KB, 648 LOC, 2649 words)
+        - rsa.h (File, 11.38 KB, 319 LOC, 1419 words)
+        - sha2.c (File, 20.74 KB, 606 LOC, 3351 words)
+        - sha2.h (File, 4.46 KB, 139 LOC, 706 words)
+      - ctr.c (File, 3.09 KB, 126 LOC, 296 words)
+      - ctr.h (File, 1.53 KB, 41 LOC, 110 words)
+      - main.c (File, 4.81 KB, 131 LOC, 580 words)
+      - mkey.c (File, 21.29 KB, 592 LOC, 2469 words)
+      - mkey.h (File, 1.56 KB, 40 LOC, 225 words)
+      - types.h (File, 309.0 B, 15 LOC, 37 words)
+      - utils.c (File, 4.05 KB, 200 LOC, 626 words)
+      - utils.h (File, 1.14 KB, 43 LOC, 151 words)
+    - __init__.py (File, 126.0 B, 3 LOC, 17 words)
+    - mkey.py (File, 18.19 KB, 413 LOC, 2045 words)
+- tests/ (Dir, 1.01 KB, 1 items, 26 LOC, 90 words)
+  - test_mkey.py (File, 1.01 KB, 26 LOC, 90 words)
+- CURRENT_STATE.md (File, 332.0 B, 10 LOC, 46 words)
+- GOALS.md (File, 268.0 B, 8 LOC, 43 words)
+- INSTALL.md (File, 332.0 B, 13 LOC, 45 words)
+- ISSUES.md (File, 327.0 B, 15 LOC, 51 words)
+- LICENSE (File, 33.71 KB)
+- LICENSE-ctrtool (File, 1.06 KB)
+- Makefile (File, 479.0 B)
+- PLAN.md (File, 295.0 B, 14 LOC, 47 words)
+- README.md (File, 254.0 B, 8 LOC, 40 words)
+- ROADMAP.md (File, 602.0 B, 26 LOC, 111 words)
+- TODO.md (File, 140.0 B, 3 LOC, 21 words)
+- mkey-forge.code-workspace (File, 7.28 KB)
+- pyproject.toml (File, 490.0 B, 22 LOC, 63 words)

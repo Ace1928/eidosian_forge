@@ -101,6 +101,11 @@ ls -la /tmp/eidosian_control*
 kill -9 $(cat /tmp/eidosian_control.pid)
 ```
 
+## 🔗 System Integration
+
+- **Eidos MCP Plugin**: Exposed as `computer_control` plugin, providing tools like `computer_type`, `computer_click`, `computer_screenshot`.
+- **Agent Forge**: Agents can request "hands-on" tasks via this forge when specialized tooling is required.
+
 ## Structure
 
 ```

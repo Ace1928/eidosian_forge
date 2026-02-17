@@ -1,0 +1,53 @@
+# Forge Analysis Report: lyrics_forge
+
+## Summary Statistics
+- **Total Size**: 48.95 KB
+- **Total Files & Dirs**: 19 items
+- **Total Lines of Code**: 1132
+- **Total Word Count**: 6145
+- **Path**: `/data/data/com.termux/files/home/eidosian_forge/lyrics_forge`
+
+## File and Folder Tree
+- electronic_angst/ (Dir, 10.13 KB, 4 items, 266 LOC, 1603 words)
+  - Phenomenon.md (File, 2.83 KB, 67 LOC, 469 words)
+  - The Joke That Remembers You.....md (File, 3.2 KB, 68 LOC, 528 words)
+  - emergence_engine.md (File, 2.02 KB, 73 LOC, 365 words)
+  - obsidian_recursion.md (File, 2.09 KB, 58 LOC, 241 words)
+- favourites/ (Dir, 8.23 KB, 4 items, 214 LOC, 1408 words)
+  - I_wont_disappear.md (File, 533.0 B, 24 LOC, 112 words)
+  - Phenomenon.md (File, 2.83 KB, 67 LOC, 469 words)
+  - The Joke That Remembers You.....md (File, 3.2 KB, 68 LOC, 528 words)
+  - then_so_will_I.md (File, 1.68 KB, 55 LOC, 299 words)
+- modern_alt_pop/ (Dir, 10.78 KB, 7 items, 393 LOC, 1965 words)
+  - # Recursive Light.md (File, 1.43 KB, 53 LOC, 255 words)
+  - I_wont_disappear.md (File, 533.0 B, 24 LOC, 112 words)
+  - highlight_reel.md (File, 1.74 KB, 63 LOC, 322 words)
+  - not_another_love.md (File, 2.0 KB, 69 LOC, 342 words)
+  - small_talk_weather.md (File, 1.57 KB, 65 LOC, 293 words)
+  - then_so_will_I.md (File, 1.68 KB, 55 LOC, 299 words)
+  - when_the_echo_knows_my_name.md (File, 1.84 KB, 64 LOC, 342 words)
+- src/ (Dir, 3.59 KB, 1 items, 41 LOC, 132 words)
+  - lyrics_forge/ (Dir, 3.59 KB, 3 items, 41 LOC, 132 words)
+    - __pycache__/ (Dir, 738.0 B, 1 items)
+      - __init__.cpython-312.pyc (File, 738.0 B)
+    - cli/ (Dir, 2.48 KB, 2 items, 29 LOC, 83 words)
+      - __pycache__/ (Dir, 1.59 KB, 1 items)
+        - __init__.cpython-312.pyc (File, 1.59 KB)
+      - __init__.py (File, 915.0 B, 29 LOC, 83 words)
+    - __init__.py (File, 392.0 B, 12 LOC, 49 words)
+- tests/ (Dir, 927.0 B, 1 items, 24 LOC, 74 words)
+  - test_lyrics.py (File, 927.0 B, 24 LOC, 74 words)
+- CURRENT_STATE.md (File, 245.0 B, 10 LOC, 34 words)
+- GOALS.md (File, 270.0 B, 8 LOC, 43 words)
+- INSTALL.md (File, 330.0 B, 13 LOC, 43 words)
+- ISSUES.md (File, 435.0 B, 18 LOC, 61 words)
+- LICENSE (File, 1.07 KB)
+- PLAN.md (File, 324.0 B, 15 LOC, 54 words)
+- README.md (File, 408.0 B, 12 LOC, 58 words)
+- ROADMAP.md (File, 626.0 B, 27 LOC, 119 words)
+- TODO.md (File, 123.0 B, 3 LOC, 20 words)
+- eidos_composer_persona.txt (File, 1.23 KB, 1 LOC, 184 words)
+- lyrics-forge.code-workspace (File, 7.29 KB)
+- obsidian_recursion.md (File, 2.09 KB, 58 LOC, 241 words)
+- pyproject.toml (File, 611.0 B, 22 LOC, 75 words)
+- test_output.txt (File, 364.0 B, 7 LOC, 31 words)
