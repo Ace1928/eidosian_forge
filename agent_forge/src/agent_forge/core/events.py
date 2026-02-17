@@ -72,10 +72,13 @@ def append(
         except OSError:
             pass
 
+    now = datetime.now(timezone.utc)
     corr_id = corr_id or uuid.uuid4().hex
     parent_id = parent_id or corr_id
     evt = {
-        "ts": _now_iso(),
+        "event_id": uuid.uuid4().hex,
+        "ts": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ts_ms": int(now.timestamp() * 1000),
         "type": str(etype),
         "data": dict(data or {}),
         "tags": list(tags or []),

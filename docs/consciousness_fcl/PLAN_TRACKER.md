@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Phase 20` completed (Linux audit observability and CI gate enforcement delivered)
+- Current phase: `Phase 21` completed (event-fabric IDs + marker-bounded trial capture delivered)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -188,3 +188,10 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Integrate Linux audit report aggregation into trend analytics (`scripts/consciousness_benchmark_trend.py`).~~
 - [x] ~~Expand trend tests to validate Linux audit metrics and markdown output (`scripts/tests/test_consciousness_benchmark_trend.py`).~~
 - [x] ~~Enforce Linux audit fail-count gate in CI parity workflow (`.github/workflows/consciousness-parity.yml`).~~
+
+## Phase 21: Event Fabric and Trial Capture Boundaries
+
+- [x] ~~Promote core event schema with `event_id` and `ts_ms` metadata for deterministic traceability (`agent_forge/src/agent_forge/core/events.py`).~~
+- [x] ~~Extend consciousness index/context with event-ID lookup support (`agent_forge/src/agent_forge/consciousness/index.py`, `agent_forge/src/agent_forge/consciousness/types.py`).~~
+- [x] ~~Implement marker-bounded trial capture (`bench.trial_start` / `bench.trial_end`) with fallback and report metadata (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
+- [x] ~~Add regression coverage for event metadata and capture boundaries (`agent_forge/tests/test_events_corr.py`, `agent_forge/tests/test_consciousness_bench_trials.py`).~~

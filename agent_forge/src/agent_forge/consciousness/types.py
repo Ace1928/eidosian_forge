@@ -428,6 +428,9 @@ class TickContext:
     def events_by_corr_id(self, corr_id: str) -> list[Dict[str, Any]]:
         return list(self.index.by_corr_id.get(str(corr_id), []))
 
+    def event(self, event_id: str) -> Optional[Dict[str, Any]]:
+        return self.index.by_event_id.get(str(event_id))
+
     def children(self, parent_id: str) -> list[Dict[str, Any]]:
         return list(self.index.children_by_parent.get(str(parent_id), []))
 

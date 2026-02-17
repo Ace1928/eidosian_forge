@@ -453,3 +453,25 @@ Status checkpoint:
 
 3. CI enforcement gate (PR-O3).
 - Files: `.github/workflows/consciousness-parity.yml`
+
+## Stage P (Completed): Event Fabric v2 and Marker-Bounded Trial Capture
+
+Status checkpoint:
+- PR-P1 delivered (core bus events now emit `event_id` and `ts_ms` alongside existing correlation linkage).
+- PR-P2 delivered (EventIndex and TickContext now expose event-id lookup primitives for strict boundary instrumentation).
+- PR-P3 delivered (bench runner now emits `bench.trial_start` / `bench.trial_end` markers and captures `events_window` by marker IDs with fallback).
+- PR-P4 delivered (regression tests cover event metadata fields and marker-bounded capture boundaries).
+
+1. Event schema enrichment (PR-P1).
+- Files: `agent_forge/src/agent_forge/core/events.py`
+
+2. Event-ID indexing and context lookup (PR-P2).
+- Files: `agent_forge/src/agent_forge/consciousness/index.py`
+- Files: `agent_forge/src/agent_forge/consciousness/types.py`
+
+3. Marker-bounded trial capture (PR-P3).
+- Files: `agent_forge/src/agent_forge/consciousness/bench/trials.py`
+
+4. Regression coverage (PR-P4).
+- Files: `agent_forge/tests/test_events_corr.py`
+- Files: `agent_forge/tests/test_consciousness_bench_trials.py`

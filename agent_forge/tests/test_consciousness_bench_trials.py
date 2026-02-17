@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from agent_forge.consciousness.bench.reporting import spec_hash
@@ -38,10 +39,30 @@ def test_bench_runner_persists_required_artifacts(tmp_path: Path) -> None:
     assert (result.output_dir / "events_window.jsonl").exists()
     assert (result.output_dir / "summary.md").exists()
     assert (result.output_dir / "report.json").exists()
+    assert result.report.get("capture_method") in {"event_id_markers", "before_count_fallback"}
+    assert str(result.report.get("capture_start_event_id") or "")
+    assert str(result.report.get("capture_end_event_id") or "")
 
     all_events = events.iter_events(base, limit=None)
     assert any(evt.get("type") == "bench.trial_result" for evt in all_events)
+    assert any(evt.get("type") == "bench.trial_start" for evt in all_events)
+    assert any(evt.get("type") == "bench.trial_end" for evt in all_events)
     assert any(evt.get("type") == "perturb.inject" for evt in all_events)
+
+    window_events = [
+        json.loads(line)
+        for line in (result.output_dir / "events_window.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert window_events
+    assert (
+        str(window_events[0].get("event_id") or "")
+        == str(result.report.get("capture_start_event_id") or "")
+    )
+    assert (
+        str(window_events[-1].get("event_id") or "")
+        == str(result.report.get("capture_end_event_id") or "")
+    )
 
 
 def test_trial_spec_hash_is_stable_and_no_persist_mode(tmp_path: Path) -> None:

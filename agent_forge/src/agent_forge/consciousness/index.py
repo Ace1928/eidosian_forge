@@ -30,6 +30,7 @@ class EventIndex:
     latest_by_type: dict[str, dict[str, Any]]
     latest_by_module: dict[str, dict[str, Any]]
     broadcasts_by_kind: dict[str, list[dict[str, Any]]]
+    by_event_id: dict[str, dict[str, Any]]
     by_corr_id: dict[str, list[dict[str, Any]]]
     children_by_parent: dict[str, list[dict[str, Any]]]
     candidates_by_id: dict[str, dict[str, Any]]
@@ -42,6 +43,7 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
     latest_by_type: dict[str, dict[str, Any]] = {}
     latest_by_module: dict[str, dict[str, Any]] = {}
     broadcasts_by_kind: dict[str, list[dict[str, Any]]] = {}
+    by_event_id: dict[str, dict[str, Any]] = {}
     by_corr_id: dict[str, list[dict[str, Any]]] = {}
     children_by_parent: dict[str, list[dict[str, Any]]] = {}
     candidates_by_id: dict[str, dict[str, Any]] = {}
@@ -57,6 +59,10 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
         module = _event_source(evt)
         if module:
             latest_by_module[module] = evt
+
+        event_id = str(evt.get("event_id") or "")
+        if event_id:
+            by_event_id[event_id] = evt
 
         corr_id = str(evt.get("corr_id") or "")
         if corr_id:
@@ -123,6 +129,7 @@ def build_index(events: list[dict[str, Any]]) -> EventIndex:
         latest_by_type=latest_by_type,
         latest_by_module=latest_by_module,
         broadcasts_by_kind=broadcasts_by_kind,
+        by_event_id=by_event_id,
         by_corr_id=by_corr_id,
         children_by_parent=children_by_parent,
         candidates_by_id=candidates_by_id,

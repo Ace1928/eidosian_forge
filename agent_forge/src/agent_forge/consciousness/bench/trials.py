@@ -65,6 +65,31 @@ def _latest_event_data(index: EventIndex, etype: str) -> dict[str, Any]:
     return {}
 
 
+def _slice_events_by_event_ids(
+    all_events: list[dict[str, Any]],
+    *,
+    start_event_id: str,
+    end_event_id: str,
+) -> list[dict[str, Any]]:
+    if not start_event_id or not end_event_id:
+        return []
+    window: list[dict[str, Any]] = []
+    capturing = False
+    for evt in all_events:
+        event_id = str(evt.get("event_id") or "")
+        if not capturing and event_id == start_event_id:
+            capturing = True
+        if capturing:
+            window.append(evt)
+        if capturing and event_id == end_event_id:
+            break
+    if not window:
+        return []
+    if str(window[-1].get("event_id") or "") != end_event_id:
+        return []
+    return window
+
+
 @dataclass
 class TrialSpec:
     name: str = "default"
@@ -181,6 +206,12 @@ class ConsciousnessBenchRunner:
         persist: bool = True,
     ) -> TrialRunResult:
         norm = spec.normalized()
+        trial_hash = spec_hash(norm)
+        trial_id = (
+            f"trial_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_"
+            f"{str(norm['name'])}_{trial_hash[:8]}"
+        )
+        trial_corr = uuid.uuid4().hex
         kernel = kernel or ConsciousnessKernel(
             self.state_dir,
             config=dict(norm["overlay"] or {}),
@@ -222,7 +253,22 @@ class ConsciousnessBenchRunner:
         perturbation_rows: list[dict[str, Any]] = []
         recipe_rows: list[dict[str, Any]] = []
         recipe_expected_signatures: dict[str, str] = {}
-        trial_corr = uuid.uuid4().hex
+        trial_start_event = events.append(
+            self.state_dir,
+            "bench.trial_start",
+            {
+                "trial_id": trial_id,
+                "spec_hash": trial_hash,
+                "name": str(norm["name"]),
+                "warmup_beats": warmup_beats,
+                "baseline_beats": baseline_beats,
+                "perturb_beats": perturb_beats,
+                "recovery_beats": recovery_beats,
+            },
+            tags=["consciousness", "bench", "trial"],
+            corr_id=trial_corr,
+            parent_id=trial_corr,
+        )
         try:
             for _ in range(warmup_beats):
                 kernel.tick()
@@ -296,9 +342,9 @@ class ConsciousnessBenchRunner:
 
         all_events = events.iter_events(self.state_dir, limit=None)
         after = self._snapshot(all_events[-1000:])
-        window_events = all_events[before_count:]
+        analysis_window_events = all_events[before_count:]
         threshold = float(kernel.config.get("competition_trace_strength_threshold", 0.45))
-        index = build_index(window_events)
+        index = build_index(analysis_window_events)
 
         event_type_counts = {
             etype: int(len(rows))
@@ -335,7 +381,6 @@ class ConsciousnessBenchRunner:
             deltas,
             tolerance=0.01,
         )
-        trial_hash = spec_hash(norm)
         trial_spec = {
             **norm,
             "warmup_beats": warmup_beats,
@@ -343,10 +388,6 @@ class ConsciousnessBenchRunner:
             "perturb_beats": perturb_beats,
             "recovery_beats": recovery_beats,
         }
-        trial_id = (
-            f"trial_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_"
-            f"{str(norm['name'])}_{trial_hash[:8]}"
-        )
 
         report: dict[str, Any] = {
             "trial_id": trial_id,
@@ -361,13 +402,16 @@ class ConsciousnessBenchRunner:
             "perturbations": perturbation_rows,
             "recipes": recipe_rows,
             "recipe_expectations": expectation_eval,
-            "events_window_count": len(window_events),
+            "events_window_count": len(analysis_window_events),
             "event_type_counts": event_type_counts,
             "module_error_count": module_error_count,
             "degraded_mode_ratio": degraded_mode_ratio,
             "winner_count": winner_count,
             "ignitions_without_trace": ignitions_without_trace,
             "stage_rows": len(stage_rows),
+            "capture_method": "before_count_fallback",
+            "capture_start_event_id": str(trial_start_event.get("event_id") or ""),
+            "capture_end_event_id": "",
         }
 
         events.append(
@@ -381,7 +425,7 @@ class ConsciousnessBenchRunner:
                 "deltas": deltas,
                 "recipes": recipe_rows,
                 "recipe_expectations": expectation_eval,
-                "events_window_count": len(window_events),
+                "events_window_count": len(analysis_window_events),
                 "module_error_count": module_error_count,
                 "degraded_mode_ratio": degraded_mode_ratio,
                 "winner_count": winner_count,
@@ -392,6 +436,41 @@ class ConsciousnessBenchRunner:
             corr_id=trial_corr,
             parent_id=trial_corr,
         )
+
+        trial_end_event = events.append(
+            self.state_dir,
+            "bench.trial_end",
+            {
+                "trial_id": trial_id,
+                "spec_hash": trial_hash,
+                "name": str(norm["name"]),
+                "composite_score": score,
+            },
+            tags=["consciousness", "bench", "trial"],
+            corr_id=trial_corr,
+            parent_id=trial_corr,
+        )
+
+        final_events = events.iter_events(self.state_dir, limit=None)
+        marker_window = _slice_events_by_event_ids(
+            final_events,
+            start_event_id=str(trial_start_event.get("event_id") or ""),
+            end_event_id=str(trial_end_event.get("event_id") or ""),
+        )
+        if marker_window:
+            window_events = marker_window
+            report["capture_method"] = "event_id_markers"
+        else:
+            window_events = final_events[before_count:]
+            report["capture_method"] = "before_count_fallback"
+
+        report["capture_end_event_id"] = str(trial_end_event.get("event_id") or "")
+        report["events_window_count"] = len(window_events)
+        report["event_type_counts"] = {
+            etype: int(len(rows))
+            for etype, rows in build_index(window_events).by_type.items()
+            if str(etype)
+        }
 
         output_dir: Optional[Path] = None
         if persist:
