@@ -495,3 +495,24 @@ Status checkpoint:
 
 4. Regression validation (PR-Q4).
 - Files: `agent_forge/tests/test_consciousness_bench_trials.py`
+
+## Stage R (Completed): Repository Docs Atlas and Validation Cycle
+
+Status checkpoint:
+- PR-R1 delivered (automated directory atlas/index generator with deterministic markdown + full index outputs).
+- PR-R2 delivered (root/docs/script entrypoints refreshed for modern navigation and explicit directory coverage links).
+- PR-R3 delivered (validation cycle executed across consciousness, scripts, MCP tool-call regressions, benchmark and stress benchmark commands).
+
+1. Directory documentation generator (PR-R1).
+- Files: `scripts/generate_directory_atlas.py`
+- Files: `docs/DIRECTORY_ATLAS.md`
+- Files: `docs/DIRECTORY_INDEX_FULL.txt`
+- Files: `scripts/tests/test_generate_directory_atlas.py`
+
+2. Entrypoint documentation refresh (PR-R2).
+- Files: `README.md`
+- Files: `docs/README.md`
+- Files: `scripts/README.md`
+
+3. Validation execution (PR-R3).
+- Commands: consciousness benchmark + stress benchmark (`eidctl`) and full regression suite in `eidosian_venv`.

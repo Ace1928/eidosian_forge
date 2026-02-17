@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Phase 22` completed (trial provenance and replay-manifest hardening delivered)
+- Current phase: `Phase 23` completed (repository docs atlas + benchmark validation cycle delivered)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -202,3 +202,10 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Extend trial report provenance with capture digest, event-id coverage, seed/corr metadata, and kernel beat snapshot (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
 - [x] ~~Persist replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) for deterministic post-run inspection (`agent_forge/src/agent_forge/consciousness/bench/trials.py`).~~
 - [x] ~~Expand bench trial regression tests to enforce artifact and provenance fields (`agent_forge/tests/test_consciousness_bench_trials.py`).~~
+
+## Phase 23: Repository Documentation Atlas and Validation
+
+- [x] ~~Add automated directory coverage generator producing linked atlas + full recursive index (`scripts/generate_directory_atlas.py`).~~
+- [x] ~~Publish complete directory documentation artifacts (`docs/DIRECTORY_ATLAS.md`, `docs/DIRECTORY_INDEX_FULL.txt`).~~
+- [x] ~~Modernize docs entrypoints with linked navigation and explicit regeneration commands (`README.md`, `docs/README.md`, `scripts/README.md`).~~
+- [x] ~~Run validation cycle: atlas tests, consciousness suites, MCP tool-call tests, benchmark + stress benchmark commands (`eidosian_venv`).~~

@@ -1,278 +1,121 @@
-# 💎 Eidosian Forge
+# Eidosian Forge
 
-> **Brutal Clarity, Unmistakably Eidosian.**
+Brutal clarity, production-first engineering, and modular agent infrastructure in one monorepo.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](README.md)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![CI](https://github.com/Ace1928/eidosian_forge/workflows/Eidosian%20Universal%20CI/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/ci.yml)
-[![Lint](https://github.com/Ace1928/eidosian_forge/workflows/Lint%20Code/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/lint.yml)
-[![Format](https://github.com/Ace1928/eidosian_forge/workflows/Auto%20Format%20Code/badge.svg)](https://github.com/Ace1928/eidosian_forge/actions/workflows/format.yml)
 
-## 📋 Overview
+## What This Repo Is
 
-The **Eidosian Forge** is a monolithic repository containing a suite of specialized "Forges" (modules) designed to construct the **Eidosian Intelligence System**. It houses the tools, agents, libraries, and the central nervous system that power the Eidosian Nexus.
+`eidosian_forge` is a unified Forge stack:
 
-It serves as the central foundry for developing distributed AI agents, knowledge graphs, code analysis tools, and memory systems. The project follows a strict "Forge" architecture where each `*_forge` directory represents a composable, self-contained domain of capability, all governed by unified standards.
+- Runtime orchestration (`agent_forge`, `eidos_mcp`, `memory_forge`, `knowledge_forge`)
+- Capability forges (code, docs, diagnostics, terminal, metadata, testing, visualization, and more)
+- Shared libraries, scripts, workflows, reports, and state artifacts
 
-## 🏗️ Project Structure
+Each `*_forge` directory is a composable module with its own source tree and test surface.
 
-The repository is organized into specialized domains following a strict `src`-based layout:
+## Start Here
 
-```
-eidosian_forge/
-├── <forge_name>/
-│   ├── src/
-│   │   └── <package_name>/
-│   │       ├── __init__.py
-│   │       └── ...
-│   ├── tests/
-│   ├── pyproject.toml
-│   ├── README.md
-│   └── ...
-```
+1. Clone and enter the repository.
+2. Use the canonical environment (`eidosian_venv`) for all project commands.
+3. Run status and tests before making changes.
 
-### Core Forges
-
-| Forge | Description |
-| :--- | :--- |
-| **`eidos_mcp`** | The Central Nervous System (Model Context Protocol server). Replaces legacy `eidos_brain`. |
-| **`agent_forge`** | Toolkit for building, managing, and deploying autonomous agents. |
-| **`memory_forge`** | Long-term memory, semantic storage, and context management. |
-| **`knowledge_forge`** | Knowledge graph construction and ontology management. |
-| **`gis_forge`** | Global Identity System (Configuration state). |
-| **`code_forge`** | Source code analysis, generation, and refactoring tools. |
-| **`llm_forge`** | Interfaces and abstractions for Large Language Models. |
-| **`prompt_forge`** | Prompt engineering, templating, and management. |
-| **`game_forge`** | A collection of simulation projects (Stratum, Falling Sand, Gene Particles, etc.). |
-
-*See `REVIEW_MASTER_PLAN.md` for a full list of active modules.*
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Python**: 3.12+
-- **Node.js**: 18+ (for web components)
-- **Rust**: 1.70+ (for high-performance extensions)
-
-### Installation
-
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/Neuroforge/eidosian_forge.git
-    cd eidosian_forge
-    ```
-
-2.  **Set up the Environment**:
-    ```bash
-    # Activate the canonical Eidosian virtual environment
-    # Ensure you have moved/created it at eidosian_forge/eidosian_venv
-    source eidosian_venv/bin/activate
-    
-    # Install the MCP server and core forges in editable mode using standard pip
-    pip install -e eidos_mcp/
-    ```
-
-3.  **Bootstrap a Specific Forge** (e.g., `agent_forge`):
-    ```bash
-    cd agent_forge
-    pip install -e .
-    ```
-
-## 🛠️ Usage
-
-### Command Line Interface (CLI)
-
-Eidosian Forge provides a central CLI hub with 35 integrated forge CLIs:
-
-**Central Hub:**
 ```bash
-# Check overall system status
+git clone https://github.com/Ace1928/eidosian_forge.git
+cd eidosian_forge
+source eidosian_venv/bin/activate
+
 python bin/eidosian status
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src python -m pytest -q
+```
 
-# List available forges
+## Documentation Hub
+
+| Topic | Path |
+| --- | --- |
+| Docs portal | `docs/README.md` |
+| Quickstart | `QUICKSTART.md` |
+| Architecture | `ARCHITECTURE.md` |
+| Forge architecture notes | `docs/FORGE_ARCHITECTURE.md` |
+| Workflows quickstart | `WORKFLOWS_QUICKSTART.md` |
+| Consciousness implementation docs | `docs/consciousness_fcl/README.md` |
+| Security docs | `docs/security/` |
+| CI/workflow docs | `.github/workflows/README.md` |
+
+## Directory Coverage
+
+Repository directory documentation is now explicit and complete:
+
+- User-friendly atlas (top-level + second-level, linked): `docs/DIRECTORY_ATLAS.md`
+- Full recursive directory index (all detected directories): `docs/DIRECTORY_INDEX_FULL.txt`
+- Generator script: `scripts/generate_directory_atlas.py`
+
+Regenerate directory docs at any time:
+
+```bash
+./eidosian_venv/bin/python scripts/generate_directory_atlas.py \
+  --repo-root . \
+  --atlas-output docs/DIRECTORY_ATLAS.md \
+  --full-output docs/DIRECTORY_INDEX_FULL.txt \
+  --max-depth 2
+```
+
+## Core Runtime Commands
+
+### Unified CLI Hub
+
+```bash
+python bin/eidosian status
 python bin/eidosian forges
-
-# Route to specific forges
 python bin/eidosian memory status
-python bin/eidosian knowledge search "eidos"
-python bin/eidosian code analyze file.py
-python bin/eidosian llm chat "Hello"
-python bin/eidosian word define "intelligence"
-python bin/eidosian glyph version
-python bin/eidosian audit coverage
-python bin/eidosian refactor script.py --analyze-only
-python bin/eidosian metadata template
-python bin/eidosian forges
+python bin/eidosian knowledge search "architecture"
+python bin/eidosian code analyze README.md
 ```
 
-Use `python bin/eidosian forges` for the full list of forge commands.
-
-**Individual Forge CLIs:**
-```bash
-# Memory Forge - Tiered memory system
-memory-forge status
-memory-forge store "Important info" --tier long_term
-memory-forge search "important"
-
-# Knowledge Forge - Knowledge graph
-knowledge-forge status
-knowledge-forge list
-knowledge-forge search "architecture"
-
-# Code Forge - Code analysis
-code-forge status
-code-forge analyze path/to/file.py
-code-forge search "function_name"
-
-# LLM Forge - Unified LLM interface
-llm-forge status
-llm-forge models
-llm-forge chat "Explain X"
-
-# Word Forge - Living lexicon
-word-forge status
-word-forge define "philosophy"
-word-forge related "intelligence"
-
-# Glyph Forge - Image to ASCII
-glyph-forge version
-glyph-forge imagize convert image.png
-
-# Audit Forge - Code audit
-audit-forge coverage
-audit-forge mark path/to/file.py
-
-# Refactor Forge - Code modularization
-refactor-forge script.py --analyze-only
-refactor-forge script.py -o ./output
-
-# Metadata Forge - Eidosian metadata
-metadata-forge template
-metadata-forge validate config.json
-```
-
-**Enable Bash Completions:**
-```bash
-source bin/eidosian-completion.bash
-# Add to ~/.bashrc for permanent completions
-```
-
-### MCP Server
+### Consciousness Runtime and Benchmarks
 
 ```bash
-python -m eidos_mcp.eidos_mcp_server
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m agent_forge.cli.eidctl consciousness status --json
+
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m agent_forge.cli.eidctl consciousness benchmark --ticks 40 --json
+
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m agent_forge.cli.eidctl consciousness stress-benchmark --ticks 40 --json
+
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m agent_forge.cli.eidctl consciousness full-benchmark \
+  --rounds 2 --bench-ticks 30 --trial-ticks 20 --skip-llm --red-team-quick --json
 ```
 
-### Python API
-
-```python
-from memory_forge import TieredMemorySystem
-from knowledge_forge import KnowledgeForge, KnowledgeMemoryBridge
-from code_forge import CodeIndexer
-
-# Memory
-memory = TieredMemorySystem()
-memory.remember("Important", tier=MemoryTier.LONG_TERM)
-
-# Knowledge
-kb = KnowledgeForge("/path/to/kb.json")
-kb.add_knowledge("Content", concepts=["topic"])
-
-# Unified search
-bridge = KnowledgeMemoryBridge()
-results = bridge.unified_search("query")
-```
-
-See [QUICKSTART.md](QUICKSTART.md) for detailed examples.
-
-## 🧪 Testing
-
-We use `pytest` with a strict configuration defined in `pytest.ini`.
+## Testing and Quality Gates
 
 ```bash
-# Run all tests
-pytest
+# Core consciousness + ops regression suite
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m pytest -q \
+  agent_forge/tests/test_consciousness_*.py \
+  agent_forge/tests/test_events_corr.py \
+  scripts/tests/test_consciousness_benchmark_trend.py \
+  scripts/tests/test_linux_audit_matrix.py
 
-# Run core tests
-pytest -m unit
-
-# Run with coverage
-pytest --cov=. --cov-report=html
+# MCP tool call regression
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m pytest -q eidos_mcp/tests/test_mcp_tool_calls_individual.py
 ```
 
-## 🔄 Development & CI/CD
+## Major Top-Level Areas
 
-### Automated Workflows
+| Group | Directories |
+| --- | --- |
+| Core runtime | `agent_forge`, `eidos_mcp`, `memory_forge`, `knowledge_forge`, `ollama_forge` |
+| Engineering forges | `code_forge`, `doc_forge`, `diagnostics_forge`, `test_forge`, `terminal_forge`, `metadata_forge`, `refactor_forge`, `repo_forge` |
+| Product/domain forges | `file_forge`, `word_forge`, `glyph_forge`, `llm_forge`, `prompt_forge`, `viz_forge`, `web_interface_forge`, `game_forge`, `lyrics_forge`, `sms_forge`, `mkey_forge`, `narrative_forge`, `erais_forge`, `type_forge`, `version_forge`, `archive_forge`, `article_forge`, `computer_control_forge`, `crawl_forge`, `audit_forge`, `figlet_forge`, `gis_forge`, `moltbook_forge` |
+| Shared/core infra | `lib`, `bin`, `scripts`, `requirements`, `.github`, `docs` |
+| Runtime data | `data`, `state`, `reports`, `logs`, `audit_data`, `Backups` |
 
-The repository includes comprehensive CI/CD workflows for maintaining code quality:
-
-- **🚀 CI Pipeline** - Runs on every push and PR
-  - Multi-version Python testing (3.10, 3.11, 3.12)
-  - TypeScript/JavaScript testing
-  - Cross-platform testing (Ubuntu + Windows)
-  - Documentation building
-  - Package validation
-
-- **🎨 Auto-Format** - Formats code automatically
-  - Python: Black, isort, Ruff
-  - TypeScript/JavaScript: Prettier
-  - Auto-commits changes (can be disabled)
-
-- **🔍 Lint** - Comprehensive code quality checks
-  - Python: Ruff, Flake8, Pylint, Mypy
-  - TypeScript: ESLint, TypeScript compiler
-  - Detailed error reporting
-
-### Local Development
-
-Install pre-commit hooks for automatic formatting and linting:
-
-```bash
-# Install pre-commit
-pip install pre-commit
-
-# Install hooks
-pre-commit install
-
-# Run on all files
-pre-commit run --all-files
-```
-
-Run all checks locally before pushing:
-
-```bash
-# Run all checks
-./scripts/run-checks.sh
-
-# Auto-fix formatting issues
-./scripts/run-checks.sh --fix
-
-# Run only Python checks
-./scripts/run-checks.sh --python-only
-
-# Run only TypeScript checks
-./scripts/run-checks.sh --ts-only
-```
-
-See [.github/workflows/README.md](.github/workflows/README.md) for detailed workflow documentation.
-
-## 🤝 Contributing
-
-We follow the **Eidosian Standards**.
-
-1.  **Code Style**: Ruff (configuration in `ruff.toml`). Replaces Black/Isort/Flake8.
-2.  **Documentation**: Google-style docstrings, Sphinx-ready.
-3.  **Typing**: Strict `mypy` compliance.
-4.  **Structure**: All new forges must follow the `src/<package_name>` directory layout.
-5.  **Testing**: Use pytest with coverage; maintain high test coverage.
-6.  **Pre-commit**: Install and use pre-commit hooks for automatic formatting.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-**Maintained by**: Lloyd Handyside (Neuroforge)
-**Contributor**: Eidos
+For exhaustive per-directory detail, use `docs/DIRECTORY_ATLAS.md` and `docs/DIRECTORY_INDEX_FULL.txt`.

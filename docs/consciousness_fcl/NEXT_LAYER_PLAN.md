@@ -40,6 +40,7 @@ The plan is decomposed into focused implementation parts:
 28. Phase 20 Linux audit trend observability and CI fail-count gate enforcement.
 29. Phase 21 event-fabric schema hardening with marker-bounded trial window capture and boundary metadata.
 30. Phase 22 replay-grade trial provenance bundles (git revision, capture digest, module-state snapshot, replay manifest).
+31. Phase 23 repository documentation atlas + full directory index with benchmark/test-backed validation cycle.
 
 ## Principle
 
@@ -79,3 +80,4 @@ Every claim must map to measurable signatures, replayable traces, and ablation-s
 - `docs/consciousness_fcl/part-43-phase20-audit-observability-gates.md`
 - `docs/consciousness_fcl/part-44-phase21-event-fabric-trial-capture.md`
 - `docs/consciousness_fcl/part-45-phase22-trial-provenance-replay-manifests.md`
+- `docs/consciousness_fcl/part-46-phase23-repo-docs-atlas-benchmark-cycle.md`

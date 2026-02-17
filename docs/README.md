@@ -1,0 +1,58 @@
+# Documentation Portal
+
+This is the documentation index for `eidosian_forge`.
+
+## Core Guides
+
+| Guide | Path | Purpose |
+| --- | --- | --- |
+| Repository README | `README.md` | High-level entrypoint and quick commands |
+| Quickstart | `QUICKSTART.md` | Setup and first-run flow |
+| Architecture | `ARCHITECTURE.md` | System-level architecture overview |
+| Forge architecture | `docs/FORGE_ARCHITECTURE.md` | Forge patterns and conventions |
+| Workflow quickstart | `WORKFLOWS_QUICKSTART.md` | CI/CD and automation usage |
+
+## Directory Documentation
+
+| Artifact | Path | Scope |
+| --- | --- | --- |
+| Directory atlas | `docs/DIRECTORY_ATLAS.md` | User-friendly linked map (top + second-level) |
+| Full directory index | `docs/DIRECTORY_INDEX_FULL.txt` | Full recursive directory listing |
+| Atlas generator | `scripts/generate_directory_atlas.py` | Regenerates both directory docs |
+
+## Consciousness Runtime Docs
+
+| Document | Path |
+| --- | --- |
+| Consciousness docs index | `docs/consciousness_fcl/README.md` |
+| Plan tracker | `docs/consciousness_fcl/PLAN_TRACKER.md` |
+| Implementation sequence | `docs/consciousness_fcl/IMPLEMENTATION_SEQUENCE.md` |
+| Next-layer plan | `docs/consciousness_fcl/NEXT_LAYER_PLAN.md` |
+
+## Security and Operations
+
+| Document | Path |
+| --- | --- |
+| Security docs directory | `docs/security/` |
+| Test status | `TEST_STATUS.md` |
+| Forge status | `FORGE_STATUS.md` |
+| CI workflow docs | `.github/workflows/README.md` |
+
+## Regeneration Commands
+
+```bash
+# Directory documentation
+./eidosian_venv/bin/python scripts/generate_directory_atlas.py \
+  --repo-root . \
+  --atlas-output docs/DIRECTORY_ATLAS.md \
+  --full-output docs/DIRECTORY_INDEX_FULL.txt \
+  --max-depth 2
+
+# Core validation
+PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
+./eidosian_venv/bin/python -m pytest -q \
+  agent_forge/tests/test_consciousness_*.py \
+  agent_forge/tests/test_events_corr.py \
+  scripts/tests/test_consciousness_benchmark_trend.py \
+  scripts/tests/test_linux_audit_matrix.py
+```
