@@ -12,6 +12,14 @@ It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.
 
 **Current Status**: 109 MCP tools across 20 categories, 4 plugins loaded.
 
+## 🔗 System Integration
+
+The Nexus integrates deeply with the Eidosian ecosystem:
+- **Documentation Forge**: `eidos_mcp` is recursively documented by the `doc_forge`, ensuring its capabilities are always indexed.
+- **Agent Forge**: Provides the tool registry for autonomous agents.
+- **Memory Forge**: Centralizes episodic and semantic recall.
+- **Global Info System (GIS)**: Acts as the configuration backbone.
+
 ## 🔗 Tool Categories
 
 | Category | Tools | Purpose |
@@ -46,27 +54,30 @@ It exposes the capabilities of all other Forges (Memory, Knowledge, Coding, etc.
 
 ## 🚀 Usage
 
+**Recommended:** Use the portable launcher script.
+
+```bash
+# Start the server (StreamableHTTP on port 8928)
+./run_server.sh
+```
+
+**Manual Start:**
+
 ```bash
 # Activate the dedicated venv
-source /home/lloyd/eidosian_forge/eidosian_venv/bin/activate
+source ../eidosian_venv/bin/activate
 
-# Ensure local core package is installed from source checkout
-pip install -e /home/lloyd/eidosian_forge/lib
+# Ensure local core package is installed
+pip install -e ../lib
 
 # Start the server (stdio)
 python -m eidos_mcp.eidos_mcp_server
 
-# Start the server (SSE)
-EIDOS_MCP_TRANSPORT=sse FASTMCP_HOST=127.0.0.1 FASTMCP_PORT=8928 \
-  python -m eidos_mcp.eidos_mcp_server
-
-# Start the server (StreamableHTTP)
-EIDOS_MCP_TRANSPORT=streamable-http EIDOS_MCP_MOUNT_PATH=/mcp \
-EIDOS_MCP_STATELESS_HTTP=1 \
-EIDOS_MCP_ENABLE_COMPAT_HEADERS=1 EIDOS_MCP_ENABLE_SESSION_RECOVERY=1 \
-EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT=1 \
-FASTMCP_HOST=127.0.0.1 FASTMCP_PORT=8928 \
-  python -m eidos_mcp.eidos_mcp_server
+# Start the server (SSE/StreamableHTTP)
+export EIDOS_MCP_TRANSPORT=streamable-http 
+export EIDOS_MCP_MOUNT_PATH=/mcp 
+export FASTMCP_PORT=8928
+python -m eidos_mcp.eidos_mcp_server
 ```
 
 ## 🛠️ Configuration
