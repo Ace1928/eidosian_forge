@@ -418,3 +418,22 @@ Status checkpoint:
 - Files: `scripts/consciousness_benchmark_trend.py`
 - Files: `scripts/tests/test_consciousness_benchmark_trend.py`
 - Files: `.github/workflows/consciousness-parity.yml`
+
+## Stage N (Completed): Linux Audit Matrix Parity
+
+Status checkpoint:
+- PR-N1 delivered (deterministic Linux audit matrix runner covering forge, MCP, and consciousness runtime checks).
+- PR-N2 delivered (parity smoke script upgraded to execute audit matrix in quick mode for CI-safe runtime).
+- PR-N3 delivered (workflow triggers/artifacts extended; audit matrix unit tests added; Part 08 checklist closure).
+
+1. Linux audit matrix runner (PR-N1).
+- Files: `scripts/linux_audit_matrix.py`
+
+2. Linux parity smoke integration (PR-N2).
+- Files: `scripts/linux_parity_smoke.sh`
+
+3. CI + test + docs parity closure (PR-N3).
+- Files: `.github/workflows/consciousness-parity.yml`
+- Files: `scripts/tests/test_linux_audit_matrix.py`
+- Files: `docs/consciousness_fcl/part-08-termux-linux-hardening.md`
+- Files: `docs/consciousness_fcl/PLAN_TRACKER.md`

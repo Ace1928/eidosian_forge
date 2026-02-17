@@ -132,7 +132,9 @@ reports/consciousness/
 reports/consciousness_benchmarks/benchmark_*.json
 reports/consciousness_trials/trial_*.json
 reports/consciousness_integrated_benchmarks/integrated_*.json
+reports/consciousness_stress_benchmarks/stress_*.json
 reports/mcp_audit_*.json
+reports/linux_audit_*.json
 reports/security/
 # Local runtime state snapshots/checkpoints
 state/

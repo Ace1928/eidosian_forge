@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Phase 18` completed (runtime hardening upgrades delivered on top of completed Phases 0-17)
+- Current phase: `Phase 19` completed (Linux audit matrix parity closure delivered after runtime hardening upgrades)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -174,3 +174,11 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Add regression tests for watchdog and payload safety (`test_consciousness_kernel_hardening.py`).~~
 - [x] ~~Add watchdog/health visibility to CLI and MCP status surfaces.~~
 - [x] ~~Add stress benchmark profile for payload safety overhead and event bus pressure.~~
+
+## Phase 19: Linux Audit Matrix Parity Closure
+
+- [x] ~~Add deterministic Linux audit matrix runner (`scripts/linux_audit_matrix.py`) covering forge status, MCP tool/resource audit, consciousness status, benchmark, and stress benchmark checks.~~
+- [x] ~~Wire Linux parity smoke to execute the same audit matrix checks (`scripts/linux_parity_smoke.sh`).~~
+- [x] ~~Expand CI path triggers and artifacts for Linux audit matrix reports (`.github/workflows/consciousness-parity.yml`).~~
+- [x] ~~Add unit tests for audit-matrix evaluators and parser helpers (`scripts/tests/test_linux_audit_matrix.py`).~~
+- [x] ~~Close remaining unchecked parity checklist in Part 08 (`docs/consciousness_fcl/part-08-termux-linux-hardening.md`).~~

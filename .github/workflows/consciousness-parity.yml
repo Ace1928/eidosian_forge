@@ -9,6 +9,8 @@ on:
       - "eidos_mcp/src/eidos_mcp/routers/consciousness.py"
       - "crawl_forge/src/crawl_forge/tika_extractor.py"
       - "scripts/linux_parity_smoke.sh"
+      - "scripts/linux_audit_matrix.py"
+      - "scripts/tests/test_linux_audit_matrix.py"
       - "scripts/consciousness_benchmark_trend.py"
       - "scripts/tests/test_consciousness_benchmark_trend.py"
       - "docs/consciousness_fcl/**"
@@ -97,6 +99,7 @@ jobs:
             reports/consciousness_stress_benchmarks/*.json
             reports/consciousness_integrated_benchmarks/*.json
             reports/consciousness_trials/*.json
+            reports/linux_audit_*.json
             reports/consciousness_trends/*.json
             reports/consciousness_trends/*.md
             reports/mcp_audit_*.json

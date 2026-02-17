@@ -44,6 +44,6 @@ EIDOS_RUN_FULL_INTEGRATION=1 "$PYTHON_BIN" -m pytest -q eidos_mcp/tests/test_mcp
 
 echo "-- protocol + runtime audit --"
 "$PYTHON_BIN" scripts/run_consciousness_protocol.py --trials 2 > "$TMP_BASE/consciousness_protocol_smoke.json"
-"$PYTHON_BIN" scripts/audit_mcp_tools_resources.py --timeout 8
+"$PYTHON_BIN" scripts/linux_audit_matrix.py --quick --timeout 240 --mcp-timeout 8 --report-dir reports
 
 echo "Linux parity smoke PASS"

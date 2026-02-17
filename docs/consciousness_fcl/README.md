@@ -52,3 +52,4 @@
 - Part 39: `docs/consciousness_fcl/part-39-phase17-autopatch-execution.md`
 - Part 40: `docs/consciousness_fcl/part-40-phase18-runtime-hardening.md`
 - Part 41: `docs/consciousness_fcl/part-41-phase18-status-and-stress-completion.md`
+- Part 42: `docs/consciousness_fcl/part-42-phase19-linux-audit-matrix-parity.md`
