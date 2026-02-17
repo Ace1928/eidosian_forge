@@ -68,6 +68,17 @@ def test_trial_runner_persists_and_status_exposes_latest(tmp_path: Path, monkeyp
     assert "payload_safety" in status
 
 
+def test_status_snapshot_is_side_effect_free(tmp_path: Path) -> None:
+    base = tmp_path / "state"
+    runner = ConsciousnessTrialRunner(base)
+    before = len(events.iter_events(base, limit=None))
+    status = runner.status()
+    after = len(events.iter_events(base, limit=None))
+
+    assert isinstance(status, dict)
+    assert after == before
+
+
 def test_eidctl_consciousness_commands(tmp_path: Path) -> None:
     base = tmp_path / "state"
     env = dict(os.environ)

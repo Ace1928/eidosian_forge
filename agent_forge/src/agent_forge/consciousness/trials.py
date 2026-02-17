@@ -273,7 +273,7 @@ class ConsciousnessTrialRunner:
     def status(self) -> dict[str, Any]:
         recent = events.iter_events(self.state_dir, limit=500)
         snapshot = _metrics_snapshot(self.state_dir, recent)
-        health = ConsciousnessKernel(self.state_dir).runtime_health()
+        health = ConsciousnessKernel.read_runtime_health(self.state_dir)
         return {
             "timestamp": _now_iso(),
             "state_dir": str(self.state_dir),

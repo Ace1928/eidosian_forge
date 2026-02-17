@@ -291,8 +291,13 @@ class ConsciousnessKernel:
                 tags=["consciousness", "watchdog", "quarantine"],
             )
 
-    def watchdog_status(self) -> dict[str, Any]:
-        snapshot = self.state_store.snapshot()
+    @staticmethod
+    def _watchdog_status_from_snapshot(
+        *,
+        snapshot: Mapping[str, Any],
+        config: Mapping[str, Any],
+        beat_count: int,
+    ) -> dict[str, Any]:
         modules_root = snapshot.get("modules")
         watchdog_root: Mapping[str, Any] = {}
         if isinstance(modules_root, Mapping):
@@ -314,7 +319,7 @@ class ConsciousnessKernel:
                         "quarantine_count": int(row.get("quarantine_count") or 0),
                         "recoveries": int(row.get("recoveries") or 0),
                         "quarantined_until_beat": quarantined_until,
-                        "quarantined": quarantined_until > int(self.beat_count),
+                        "quarantined": quarantined_until > int(beat_count),
                         "last_error": str(row.get("last_error") or ""),
                         "last_error_ts": str(row.get("last_error_ts") or ""),
                     }
@@ -322,14 +327,14 @@ class ConsciousnessKernel:
         rows.sort(key=lambda item: item["module"])
         quarantined = [row for row in rows if bool(row.get("quarantined"))]
         return {
-            "enabled": bool(self._watchdog_enabled()),
+            "enabled": bool(config.get("kernel_watchdog_enabled", True)),
             "max_consecutive_errors": int(
-                self.config.get("kernel_watchdog_max_consecutive_errors", 3) or 3
+                config.get("kernel_watchdog_max_consecutive_errors", 3) or 3
             ),
             "quarantine_beats": int(
-                self.config.get("kernel_watchdog_quarantine_beats", 20) or 20
+                config.get("kernel_watchdog_quarantine_beats", 20) or 20
             ),
-            "beat_count": int(self.beat_count),
+            "beat_count": int(beat_count),
             "module_count": len(rows),
             "quarantined_modules": len(quarantined),
             "modules": rows,
@@ -337,22 +342,72 @@ class ConsciousnessKernel:
             "total_errors": sum(int(row.get("total_errors") or 0) for row in rows),
         }
 
-    def payload_safety_status(self) -> dict[str, Any]:
+    @staticmethod
+    def _payload_safety_status_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
         return {
             "max_payload_bytes": int(
-                self.config.get("consciousness_max_payload_bytes", 16384) or 16384
+                config.get("consciousness_max_payload_bytes", 16384) or 16384
             ),
-            "max_depth": int(self.config.get("consciousness_max_depth", 8) or 8),
+            "max_depth": int(config.get("consciousness_max_depth", 8) or 8),
             "max_collection_items": int(
-                self.config.get("consciousness_max_collection_items", 64) or 64
+                config.get("consciousness_max_collection_items", 64) or 64
             ),
             "max_string_chars": int(
-                self.config.get("consciousness_max_string_chars", 4096) or 4096
+                config.get("consciousness_max_string_chars", 4096) or 4096
             ),
             "truncation_event_enabled": bool(
-                self.config.get("consciousness_payload_truncation_event", True)
+                config.get("consciousness_payload_truncation_event", True)
             ),
         }
+
+    @classmethod
+    def read_runtime_health(
+        cls,
+        state_dir: str | Path,
+        *,
+        config: Optional[Mapping[str, Any]] = None,
+        respect_tuned_overlay: bool = True,
+    ) -> dict[str, Any]:
+        state_path = Path(state_dir)
+        base_config = merged_config(config or {})
+        store = ModuleStateStore(
+            state_path,
+            autosave_interval_secs=float(
+                base_config.get("state_autosave_interval_secs", 2.0)
+            ),
+        )
+        tuned_overlay: Mapping[str, Any] = {}
+        if respect_tuned_overlay:
+            loaded_overlay, _ = load_tuned_overlay(store)
+            tuned_overlay = loaded_overlay
+        resolved_config = resolve_config(
+            base_config,
+            tuned_overlay=tuned_overlay,
+            runtime_overrides={},
+        )
+        beat_count = int(store.get_meta("beat_count", 0) or 0)
+        snapshot = store.snapshot()
+        return {
+            "beat_count": int(beat_count),
+            "watchdog": cls._watchdog_status_from_snapshot(
+                snapshot=snapshot,
+                config=resolved_config,
+                beat_count=beat_count,
+            ),
+            "payload_safety": cls._payload_safety_status_from_config(
+                resolved_config
+            ),
+        }
+
+    def watchdog_status(self) -> dict[str, Any]:
+        return self._watchdog_status_from_snapshot(
+            snapshot=self.state_store.snapshot(),
+            config=self.config,
+            beat_count=int(self.beat_count),
+        )
+
+    def payload_safety_status(self) -> dict[str, Any]:
+        return self._payload_safety_status_from_config(self.config)
 
     def runtime_health(self) -> dict[str, Any]:
         return {
