@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import statistics
 import time
@@ -39,7 +40,7 @@ def _event_ts(payload: dict[str, Any], fallback_path: Path) -> float:
         # Accept simple RFC3339 UTC timestamps like 2026-02-16T04:30:02Z.
         try:
             parsed = time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
-            return time.mktime(parsed)
+            return float(calendar.timegm(parsed))
         except ValueError:
             pass
     return fallback_path.stat().st_mtime
