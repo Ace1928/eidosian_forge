@@ -13,7 +13,7 @@ A modular, automation-friendly collection of local scripts.
 - `clipboard_diagnostics.sh`: detect clipboard backends
 - `completion_install`: install shell completions from executables
 - `forge_builder`: create project structures
-- `generate_directory_atlas.py`: generate linked directory atlas + full recursive index
+- `generate_directory_atlas.py`: generate linked directory atlas + full recursive index (deterministic tracked scope by default; optional filesystem scope)
 - `glyph_stream`: render images/video to glyph art
 - `interactive_delete`: safe interactive deletion helper
 - `overwrite`: overwrite a file from clipboard/stdin

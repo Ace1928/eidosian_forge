@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -26,16 +27,23 @@ def _run_git_ls_files(root: Path) -> list[str]:
 
 
 def _iter_parent_dirs(path: str) -> Iterable[str]:
-    p = Path(path)
-    parent = p.parent
+    parent = Path(path).parent
     while str(parent) not in {"", "."}:
         yield parent.as_posix()
         parent = parent.parent
 
 
-def _collect_all_dirs(root: Path) -> list[str]:
+def _tracked_dirs_from_files(tracked_files: list[str]) -> list[str]:
     dirs: set[str] = set()
-    for current_root, subdirs, _files in __import__("os").walk(root):
+    for file_path in tracked_files:
+        for parent in _iter_parent_dirs(file_path):
+            dirs.add(parent)
+    return sorted(dirs, key=lambda p: (p.split("/", 1)[0], p.count("/"), p.lower()))
+
+
+def _collect_filesystem_dirs(root: Path, *, include_hidden_top: bool) -> list[str]:
+    dirs: set[str] = set()
+    for current_root, subdirs, _files in os.walk(root):
         current_rel = Path(current_root).resolve().relative_to(root).as_posix()
         if current_rel == ".":
             current_rel = ""
@@ -44,12 +52,12 @@ def _collect_all_dirs(root: Path) -> list[str]:
         for name in subdirs:
             if name == ".git":
                 continue
-            if current_rel == "" and name.startswith(".") and name not in KEEP_HIDDEN_TOP:
-                continue
+            if current_rel == "" and name.startswith("."):
+                if not include_hidden_top and name not in KEEP_HIDDEN_TOP:
+                    continue
             filtered.append(name)
 
         subdirs[:] = filtered
-
         for name in filtered:
             rel = f"{current_rel}/{name}" if current_rel else name
             dirs.add(rel)
@@ -57,11 +65,24 @@ def _collect_all_dirs(root: Path) -> list[str]:
     return sorted(dirs, key=lambda p: (p.split("/", 1)[0], p.count("/"), p.lower()))
 
 
+def _runtime_top_level_dirs(root: Path, *, include_hidden_top: bool) -> list[str]:
+    out: list[str] = []
+    for child in sorted(root.iterdir(), key=lambda p: p.name.lower()):
+        if not child.is_dir():
+            continue
+        if child.name == ".git":
+            continue
+        if child.name.startswith(".") and not include_hidden_top and child.name not in KEEP_HIDDEN_TOP:
+            continue
+        out.append(child.name)
+    return out
+
+
 def _readme_for_dir(root: Path, rel_dir: str) -> str:
     base = root / rel_dir
     for name in README_CANDIDATES:
-        cand = base / name
-        if cand.exists() and cand.is_file():
+        candidate = base / name
+        if candidate.exists() and candidate.is_file():
             return f"{rel_dir}/{name}" if rel_dir else name
     return ""
 
@@ -134,13 +155,30 @@ def _md_link(rel_from_docs: str, label: str | None = None) -> str:
     return f"[`{text}`]({target})"
 
 
-def build_atlas(repo_root: Path, all_dirs: list[str], tracked_files: list[str], max_depth: int) -> str:
+def _resolve_generated_at(value: str) -> str | None:
+    candidate = value.strip()
+    if not candidate:
+        return None
+    if candidate.lower() == "now":
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
+    return candidate
+
+
+def build_atlas(
+    repo_root: Path,
+    all_dirs: list[str],
+    tracked_files: list[str],
+    *,
+    max_depth: int,
+    scope: str,
+    generated_at: str | None,
+) -> str:
     visible_dirs = [d for d in all_dirs if (d.count("/") + 1) <= max_depth]
 
     tracked_file_count: dict[str, int] = defaultdict(int)
     for file_path in tracked_files:
-        for d in _iter_parent_dirs(file_path):
-            tracked_file_count[d] += 1
+        for parent in _iter_parent_dirs(file_path):
+            tracked_file_count[parent] += 1
 
     direct_subdirs: dict[str, set[str]] = defaultdict(set)
     for d in all_dirs:
@@ -150,16 +188,18 @@ def build_atlas(repo_root: Path, all_dirs: list[str], tracked_files: list[str], 
         direct_subdirs[parent].add(d)
 
     top_levels = sorted({d.split("/", 1)[0] for d in all_dirs})
-
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
     lines: list[str] = []
     lines.append("# Eidosian Forge Directory Atlas")
     lines.append("")
-    lines.append("> User-focused inventory: every top-level and second-level directory, with links and purpose labels.")
+    lines.append("> User-focused inventory with linked paths and purpose labels.")
     lines.append("")
-    lines.append(f"- Generated: `{now}`")
+    if generated_at:
+        lines.append(f"- Generated: `{generated_at}`")
+    else:
+        lines.append("- Generated: `deterministic (timestamp omitted)`")
+    lines.append(f"- Scope: `{scope}`")
     lines.append(f"- Tracked files: `{len(tracked_files)}`")
-    lines.append(f"- Full directory count (recursive): `{len(all_dirs)}`")
+    lines.append(f"- Full directory count (scope): `{len(all_dirs)}`")
     lines.append(f"- Atlas directory count (depth <= {max_depth}): `{len(visible_dirs)}`")
     lines.append("- Full recursive index: [`docs/DIRECTORY_INDEX_FULL.txt`](./DIRECTORY_INDEX_FULL.txt)")
     lines.append("")
@@ -208,9 +248,19 @@ def build_atlas(repo_root: Path, all_dirs: list[str], tracked_files: list[str], 
     return "\n".join(lines).rstrip() + "\n"
 
 
-def write_full_index(full_index_path: Path, all_dirs: list[str]) -> None:
+def write_full_index(
+    full_index_path: Path,
+    all_dirs: list[str],
+    *,
+    scope: str,
+    generated_at: str | None,
+) -> None:
     lines = ["# Full Recursive Directory Index", ""]
-    lines.append(f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')}")
+    if generated_at:
+        lines.append(f"Generated: {generated_at}")
+    else:
+        lines.append("Generated: deterministic (timestamp omitted)")
+    lines.append(f"Scope: {scope}")
     lines.append(f"Directory count: {len(all_dirs)}")
     lines.append("")
     for d in all_dirs:
@@ -224,6 +274,27 @@ def main() -> int:
     parser.add_argument("--atlas-output", default="docs/DIRECTORY_ATLAS.md", help="Atlas markdown path")
     parser.add_argument("--full-output", default="docs/DIRECTORY_INDEX_FULL.txt", help="Full recursive directory index path")
     parser.add_argument("--max-depth", type=int, default=2, help="Max directory depth for atlas inventory")
+    parser.add_argument(
+        "--scope",
+        choices=("tracked", "filesystem"),
+        default="tracked",
+        help="Directory scope: tracked (deterministic repo scope) or filesystem (local runtime scope)",
+    )
+    parser.add_argument(
+        "--include-runtime-top-level",
+        action="store_true",
+        help="When scope=tracked, include detected top-level filesystem directories",
+    )
+    parser.add_argument(
+        "--include-hidden-top-level",
+        action="store_true",
+        help="Include hidden top-level directories (except .git, which is always excluded)",
+    )
+    parser.add_argument(
+        "--generated-at",
+        default="",
+        help="Optional generation timestamp text. Use 'now' for current UTC. Omit for deterministic output.",
+    )
     args = parser.parse_args()
 
     root = Path(args.repo_root).resolve()
@@ -231,13 +302,41 @@ def main() -> int:
     full_out = (root / args.full_output).resolve()
     atlas_out.parent.mkdir(parents=True, exist_ok=True)
     full_out.parent.mkdir(parents=True, exist_ok=True)
+    generated_at = _resolve_generated_at(str(args.generated_at))
 
-    all_dirs = _collect_all_dirs(root)
     tracked_files = _run_git_ls_files(root)
+    tracked_dirs = _tracked_dirs_from_files(tracked_files)
 
-    atlas_md = build_atlas(root, all_dirs, tracked_files, max_depth=max(1, int(args.max_depth)))
+    if args.scope == "filesystem":
+        all_dirs = _collect_filesystem_dirs(
+            root,
+            include_hidden_top=bool(args.include_hidden_top_level),
+        )
+    else:
+        dir_set = set(tracked_dirs)
+        if args.include_runtime_top_level:
+            for top in _runtime_top_level_dirs(
+                root,
+                include_hidden_top=bool(args.include_hidden_top_level),
+            ):
+                dir_set.add(top)
+        all_dirs = sorted(dir_set, key=lambda p: (p.split("/", 1)[0], p.count("/"), p.lower()))
+
+    atlas_md = build_atlas(
+        root,
+        all_dirs,
+        tracked_files,
+        max_depth=max(1, int(args.max_depth)),
+        scope=str(args.scope),
+        generated_at=generated_at,
+    )
     atlas_out.write_text(atlas_md, encoding="utf-8")
-    write_full_index(full_out, all_dirs)
+    write_full_index(
+        full_out,
+        all_dirs,
+        scope=str(args.scope),
+        generated_at=generated_at,
+    )
 
     print(f"Directory atlas written: {atlas_out}")
     print(f"Full recursive index written: {full_out}")

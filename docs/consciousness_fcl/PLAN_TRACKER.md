@@ -4,7 +4,7 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 
 ## Status Summary
 
-- Current phase: `Phase 23` completed (repository docs atlas + benchmark validation cycle delivered)
+- Current phase: `Phase 24` completed (deterministic atlas scope controls + CI drift guard delivered)
 - Runtime targets: `Termux` and `Linux`
 - Rollback strategy: small commits per vertical slice
 - MCP audit status (February 16, 2026): tools `122/123` ok with `1` intentional skip (`mcp_self_upgrade`), resources `11/11` ok.
@@ -209,3 +209,12 @@ This tracker is the execution control plane for the Forge Consciousness Layer. C
 - [x] ~~Publish complete directory documentation artifacts (`docs/DIRECTORY_ATLAS.md`, `docs/DIRECTORY_INDEX_FULL.txt`).~~
 - [x] ~~Modernize docs entrypoints with linked navigation and explicit regeneration commands (`README.md`, `docs/README.md`, `scripts/README.md`).~~
 - [x] ~~Run validation cycle: atlas tests, consciousness suites, MCP tool-call tests, benchmark + stress benchmark commands (`eidosian_venv`).~~
+
+## Phase 24: Deterministic Atlas Scope Controls and Drift Guard
+
+- [x] ~~Harden atlas generation with deterministic timestamp-free output and explicit `--generated-at` override support (`scripts/generate_directory_atlas.py`).~~
+- [x] ~~Add explicit scope controls (`--scope tracked|filesystem`) and runtime directory inclusion toggles (`--include-runtime-top-level`, `--include-hidden-top-level`) for Termux/Linux-safe operation (`scripts/generate_directory_atlas.py`).~~
+- [x] ~~Expand atlas generator regression coverage for tracked scope rendering, hidden directory behavior, generated-at resolution, and deterministic index shape (`scripts/tests/test_generate_directory_atlas.py`).~~
+- [x] ~~Add CI drift gate workflow that regenerates tracked-scope artifacts and fails on stale docs (`.github/workflows/directory-atlas-drift.yml`).~~
+- [x] ~~Update workflow/docs entrypoints to document deterministic regeneration and scope usage (`.github/workflows/README.md`, `README.md`, `docs/README.md`, `scripts/README.md`).~~
+- [x] ~~Execute validation cycle with deterministic regeneration idempotency checks, regression suites, and benchmark + stress benchmark evidence (`state/bench_phase24`, `reports/consciousness_*`).~~

@@ -1,48 +1,374 @@
 # Full Recursive Directory Index
 
-Generated: 2026-02-17 03:27:08Z
-Directory count: 3122
+Generated: deterministic (timestamp omitted)
+Scope: tracked
+Directory count: 2960
 
-.bin
+.eidos_chrome_profile
+.eidos_chrome_profile/ActorSafetyLists
+.eidos_chrome_profile/AmountExtractionHeuristicRegexes
+.eidos_chrome_profile/AutofillStates
+.eidos_chrome_profile/BrowserMetrics
+.eidos_chrome_profile/CertificateRevocation
+.eidos_chrome_profile/component_crx_cache
+.eidos_chrome_profile/CookieReadinessList
+.eidos_chrome_profile/Crowd Deny
+.eidos_chrome_profile/Default
+.eidos_chrome_profile/Dictionaries
+.eidos_chrome_profile/extensions_crx_cache
+.eidos_chrome_profile/FileTypePolicies
+.eidos_chrome_profile/FirstPartySetsPreloaded
+.eidos_chrome_profile/GraphiteDawnCache
+.eidos_chrome_profile/GrShaderCache
+.eidos_chrome_profile/hyphen-data
+.eidos_chrome_profile/MEIPreload
+.eidos_chrome_profile/OnDeviceHeadSuggestModel
+.eidos_chrome_profile/OpenCookieDatabase
+.eidos_chrome_profile/optimization_guide_model_store
+.eidos_chrome_profile/OptimizationHints
+.eidos_chrome_profile/PKIMetadata
+.eidos_chrome_profile/SafetyTips
+.eidos_chrome_profile/segmentation_platform
+.eidos_chrome_profile/ShaderCache
+.eidos_chrome_profile/SSLErrorAssistant
+.eidos_chrome_profile/Subresource Filter
+.eidos_chrome_profile/TpcdMetadata
+.eidos_chrome_profile/TrustTokenKeyCommitments
+.eidos_chrome_profile/WasmTtsEngine
+.eidos_chrome_profile/WidevineCdm
+.eidos_chrome_profile/ZxcvbnData
+.eidos_chrome_profile/ActorSafetyLists/8.5866.7803
+.eidos_chrome_profile/AmountExtractionHeuristicRegexes/4
+.eidos_chrome_profile/AutofillStates/2025.6.13.84507
+.eidos_chrome_profile/CertificateRevocation/10299
+.eidos_chrome_profile/CookieReadinessList/2024.11.26.0
+.eidos_chrome_profile/Crowd Deny/2026.1.22.121
+.eidos_chrome_profile/Default/Accounts
+.eidos_chrome_profile/Default/AutofillAiModelCache
+.eidos_chrome_profile/Default/AutofillStrikeDatabase
+.eidos_chrome_profile/Default/BudgetDatabase
+.eidos_chrome_profile/Default/Cache
+.eidos_chrome_profile/Default/chrome_cart_db
+.eidos_chrome_profile/Default/ClientCertificates
+.eidos_chrome_profile/Default/Code Cache
+.eidos_chrome_profile/Default/commerce_subscription_db
+.eidos_chrome_profile/Default/DawnGraphiteCache
+.eidos_chrome_profile/Default/DawnWebGPUCache
+.eidos_chrome_profile/Default/discount_infos_db
+.eidos_chrome_profile/Default/discounts_db
+.eidos_chrome_profile/Default/Download Service
+.eidos_chrome_profile/Default/Extension Rules
+.eidos_chrome_profile/Default/Extension Scripts
+.eidos_chrome_profile/Default/Extension State
+.eidos_chrome_profile/Default/Extensions
+.eidos_chrome_profile/Default/Feature Engagement Tracker
+.eidos_chrome_profile/Default/GCM Store
+.eidos_chrome_profile/Default/GPUCache
+.eidos_chrome_profile/Default/image_cache
+.eidos_chrome_profile/Default/Local Extension Settings
+.eidos_chrome_profile/Default/Local Storage
+.eidos_chrome_profile/Default/optimization_guide_hint_cache_store
+.eidos_chrome_profile/Default/parcel_tracking_db
+.eidos_chrome_profile/Default/PersistentOriginTrials
+.eidos_chrome_profile/Default/Segmentation Platform
+.eidos_chrome_profile/Default/Service Worker
+.eidos_chrome_profile/Default/Session Storage
+.eidos_chrome_profile/Default/Sessions
+.eidos_chrome_profile/Default/Shared Dictionary
+.eidos_chrome_profile/Default/shared_proto_db
+.eidos_chrome_profile/Default/Site Characteristics Database
+.eidos_chrome_profile/Default/Storage
+.eidos_chrome_profile/Default/Sync Data
+.eidos_chrome_profile/Default/Sync Extension Settings
+.eidos_chrome_profile/Default/Web Applications
+.eidos_chrome_profile/Default/WebStorage
+.eidos_chrome_profile/FileTypePolicies/145.0.7584.0
+.eidos_chrome_profile/FirstPartySetsPreloaded/2025.7.24.0
+.eidos_chrome_profile/hyphen-data/120.0.6050.0
+.eidos_chrome_profile/MEIPreload/1.0.7.1744928549
+.eidos_chrome_profile/OnDeviceHeadSuggestModel/20251024.824731831.14
+.eidos_chrome_profile/OpenCookieDatabase/2024.10.17.0
+.eidos_chrome_profile/optimization_guide_model_store/13
+.eidos_chrome_profile/optimization_guide_model_store/15
+.eidos_chrome_profile/optimization_guide_model_store/2
+.eidos_chrome_profile/optimization_guide_model_store/20
+.eidos_chrome_profile/optimization_guide_model_store/24
+.eidos_chrome_profile/optimization_guide_model_store/25
+.eidos_chrome_profile/optimization_guide_model_store/26
+.eidos_chrome_profile/optimization_guide_model_store/43
+.eidos_chrome_profile/optimization_guide_model_store/45
+.eidos_chrome_profile/optimization_guide_model_store/9
+.eidos_chrome_profile/OptimizationHints/614
+.eidos_chrome_profile/PKIMetadata/1557
+.eidos_chrome_profile/SafetyTips/3091
+.eidos_chrome_profile/SSLErrorAssistant/7
+.eidos_chrome_profile/Subresource Filter/Indexed Rules
+.eidos_chrome_profile/Subresource Filter/Unindexed Rules
+.eidos_chrome_profile/TpcdMetadata/2025.10.7.1
+.eidos_chrome_profile/TrustTokenKeyCommitments/2025.9.29.1
+.eidos_chrome_profile/WasmTtsEngine/20260105.1
+.eidos_chrome_profile/ZxcvbnData/3
+.eidos_chrome_profile/ActorSafetyLists/8.5866.7803/_metadata
+.eidos_chrome_profile/AmountExtractionHeuristicRegexes/4/_metadata
+.eidos_chrome_profile/AutofillStates/2025.6.13.84507/_metadata
+.eidos_chrome_profile/CertificateRevocation/10299/_metadata
+.eidos_chrome_profile/CookieReadinessList/2024.11.26.0/_metadata
+.eidos_chrome_profile/Crowd Deny/2026.1.22.121/_metadata
+.eidos_chrome_profile/Default/Accounts/Avatar Images
+.eidos_chrome_profile/Default/Cache/Cache_Data
+.eidos_chrome_profile/Default/Cache/No_Vary_Search
+.eidos_chrome_profile/Default/Code Cache/js
+.eidos_chrome_profile/Default/Code Cache/wasm
+.eidos_chrome_profile/Default/Download Service/EntryDB
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda
+.eidos_chrome_profile/Default/Feature Engagement Tracker/AvailabilityDB
+.eidos_chrome_profile/Default/Feature Engagement Tracker/EventDB
+.eidos_chrome_profile/Default/GCM Store/Encryption
+.eidos_chrome_profile/Default/image_cache/cached_image_fetcher_images
+.eidos_chrome_profile/Default/image_cache/image_data_storage
+.eidos_chrome_profile/Default/Local Extension Settings/ghbmnnjooekpmoecnnnilnnbdlolhkhi
+.eidos_chrome_profile/Default/Local Storage/leveldb
+.eidos_chrome_profile/Default/Segmentation Platform/SegmentInfoDB
+.eidos_chrome_profile/Default/Segmentation Platform/SignalDB
+.eidos_chrome_profile/Default/Segmentation Platform/SignalStorageConfigDB
+.eidos_chrome_profile/Default/Service Worker/Database
+.eidos_chrome_profile/Default/Service Worker/ScriptCache
+.eidos_chrome_profile/Default/Shared Dictionary/cache
+.eidos_chrome_profile/Default/shared_proto_db/metadata
+.eidos_chrome_profile/Default/Storage/ext
+.eidos_chrome_profile/Default/Sync Data/LevelDB
+.eidos_chrome_profile/Default/Sync Extension Settings/gmlllbghnfkpflemihljekbapjopfjik
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources
+.eidos_chrome_profile/FileTypePolicies/145.0.7584.0/_metadata
+.eidos_chrome_profile/FirstPartySetsPreloaded/2025.7.24.0/_metadata
+.eidos_chrome_profile/hyphen-data/120.0.6050.0/_metadata
+.eidos_chrome_profile/MEIPreload/1.0.7.1744928549/_metadata
+.eidos_chrome_profile/OnDeviceHeadSuggestModel/20251024.824731831.14/_metadata
+.eidos_chrome_profile/OpenCookieDatabase/2024.10.17.0/_metadata
+.eidos_chrome_profile/optimization_guide_model_store/13/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/15/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/2/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/20/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/24/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/25/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/26/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/43/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/45/A3BFD4A403A877EC
+.eidos_chrome_profile/optimization_guide_model_store/9/A3BFD4A403A877EC
+.eidos_chrome_profile/OptimizationHints/614/_metadata
+.eidos_chrome_profile/PKIMetadata/1557/_metadata
+.eidos_chrome_profile/SafetyTips/3091/_metadata
+.eidos_chrome_profile/SSLErrorAssistant/7/_metadata
+.eidos_chrome_profile/Subresource Filter/Indexed Rules/37
+.eidos_chrome_profile/Subresource Filter/Unindexed Rules/9.64.0
+.eidos_chrome_profile/TpcdMetadata/2025.10.7.1/_metadata
+.eidos_chrome_profile/TrustTokenKeyCommitments/2025.9.29.1/_metadata
+.eidos_chrome_profile/WasmTtsEngine/20260105.1/_metadata
+.eidos_chrome_profile/ZxcvbnData/3/_metadata
+.eidos_chrome_profile/Default/Cache/Cache_Data/index-dir
+.eidos_chrome_profile/Default/Code Cache/js/index-dir
+.eidos_chrome_profile/Default/Code Cache/wasm/index-dir
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0
+.eidos_chrome_profile/Default/Service Worker/ScriptCache/index-dir
+.eidos_chrome_profile/Default/Shared Dictionary/cache/index-dir
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/aghbiahbpaijignceidepookljebhfak
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/agimnkijcaahngcdmfeangaknmldooml
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/efmjfjelnicpmdcmfikempdhlmainjcb
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fhihpiojkbmbpdjeoajapmgkhlnakfjf
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fmgjjmmmlfnkbppncabfkddbjimcfncm
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/kefjledonklijopmnomlcbpllchaibag
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mdpkiolbdkhdjpekfbkbmhigcaggjagi
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mpnpojknpmmopombnjdcgaaiekajbnjb
+.eidos_chrome_profile/optimization_guide_model_store/13/A3BFD4A403A877EC/BDE7180C3922972C
+.eidos_chrome_profile/optimization_guide_model_store/15/A3BFD4A403A877EC/0169356A198C1317
+.eidos_chrome_profile/optimization_guide_model_store/2/A3BFD4A403A877EC/4978909F1AF64653
+.eidos_chrome_profile/optimization_guide_model_store/20/A3BFD4A403A877EC/552896E68F35A65E
+.eidos_chrome_profile/optimization_guide_model_store/24/A3BFD4A403A877EC/94D05E15654B6F50
+.eidos_chrome_profile/optimization_guide_model_store/25/A3BFD4A403A877EC/F1D1316716D7F3FA
+.eidos_chrome_profile/optimization_guide_model_store/26/A3BFD4A403A877EC/D2E13EC86878A9CC
+.eidos_chrome_profile/optimization_guide_model_store/43/A3BFD4A403A877EC/0F4F1527DB8E9AAA
+.eidos_chrome_profile/optimization_guide_model_store/45/A3BFD4A403A877EC/6F17D6C41E862618
+.eidos_chrome_profile/optimization_guide_model_store/9/A3BFD4A403A877EC/817499A314C598E6
+.eidos_chrome_profile/Subresource Filter/Indexed Rules/37/9.64.0
+.eidos_chrome_profile/Subresource Filter/Unindexed Rules/9.64.0/_metadata
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_metadata
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_metadata
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/css
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/html
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/images
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/aghbiahbpaijignceidepookljebhfak/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/aghbiahbpaijignceidepookljebhfak/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/agimnkijcaahngcdmfeangaknmldooml/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/agimnkijcaahngcdmfeangaknmldooml/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/efmjfjelnicpmdcmfikempdhlmainjcb/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fhihpiojkbmbpdjeoajapmgkhlnakfjf/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fhihpiojkbmbpdjeoajapmgkhlnakfjf/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fmgjjmmmlfnkbppncabfkddbjimcfncm/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fmgjjmmmlfnkbppncabfkddbjimcfncm/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/kefjledonklijopmnomlcbpllchaibag/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/kefjledonklijopmnomlcbpllchaibag/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mdpkiolbdkhdjpekfbkbmhigcaggjagi/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mdpkiolbdkhdjpekfbkbmhigcaggjagi/Trusted Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mpnpojknpmmopombnjdcgaaiekajbnjb/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mpnpojknpmmopombnjdcgaaiekajbnjb/Trusted Icons
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/af
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/am
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ar
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/as
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/az
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/be
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/bg
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/bn
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ca
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/cs
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/cy
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/da
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/de
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/el
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/en
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/en_CA
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/en_GB
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/en_US
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/es
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/es_419
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/et
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/eu
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/fa
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/fi
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/fil
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/fr
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/fr_CA
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/gl
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/gu
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/hi
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/hr
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/hu
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/hy
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/id
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/is
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/it
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/iw
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ja
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ka
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/kk
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/km
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/kn
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ko
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/lo
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/lt
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/lv
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/mk
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ml
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/mn
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/mr
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ms
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/my
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ne
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/nl
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/no
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/or
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/pa
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/pl
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/pt_BR
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/pt_PT
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ro
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ru
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/si
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sk
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sl
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sq
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sr
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sv
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/sw
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ta
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/te
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/th
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/tr
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/uk
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/ur
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/uz
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/vi
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/zh_CN
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/zh_HK
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/zh_TW
+.eidos_chrome_profile/Default/Extensions/ghbmnnjooekpmoecnnnilnnbdlolhkhi/1.100.1_0/_locales/zu
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/bg
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/ca
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/cs
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/da
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/de
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/el
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/en
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/en_GB
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/es
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/es_419
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/et
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/fi
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/fil
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/fr
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/hi
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/hr
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/hu
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/id
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/it
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/ja
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/ko
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/lt
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/lv
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/nb
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/nl
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/pl
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/pt_BR
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/pt_PT
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/ro
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/ru
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/sk
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/sl
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/sr
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/sv
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/th
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/tr
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/uk
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/vi
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/zh_CN
+.eidos_chrome_profile/Default/Extensions/nmmhkkegccagdldgiimedpiccmgmieda/1.0.0.6_0/_locales/zh_TW
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/DawnGraphiteCache
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/DawnWebGPUCache
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/GPUCache
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Local Storage
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Session Storage
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Shared Dictionary
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/aghbiahbpaijignceidepookljebhfak/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/agimnkijcaahngcdmfeangaknmldooml/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fhihpiojkbmbpdjeoajapmgkhlnakfjf/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/fmgjjmmmlfnkbppncabfkddbjimcfncm/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/kefjledonklijopmnomlcbpllchaibag/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mdpkiolbdkhdjpekfbkbmhigcaggjagi/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Web Applications/Manifest Resources/mpnpojknpmmopombnjdcgaaiekajbnjb/Trusted Icons/Icons
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/js
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/wasm
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Local Storage/leveldb
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Shared Dictionary/cache
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/js/index-dir
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/wasm/index-dir
+.eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Shared Dictionary/cache/index-dir
 .github
 .github/prompts_old
 .github/workflows
+.graphrag_index
+.graphrag_index/cache
+.graphrag_index/cache/community_reporting
+.graphrag_index/cache/extract_graph
+.graphrag_index/cache/text_embedding
 .vscode
-Backups
-Backups/eidosian_venv_20260216_095326
-Backups/security_dependency_patches
-Backups/eidosian_venv_20260216_095326/bin
-Backups/eidosian_venv_20260216_095326/include
-Backups/eidosian_venv_20260216_095326/share
-Backups/security_dependency_patches/20260216T224858Z
-Backups/security_dependency_patches/20260216T230451Z
-Backups/eidosian_venv_20260216_095326/include/site
-Backups/eidosian_venv_20260216_095326/share/bash-completion
-Backups/eidosian_venv_20260216_095326/share/doc
-Backups/eidosian_venv_20260216_095326/share/fish
-Backups/eidosian_venv_20260216_095326/share/jupyter
-Backups/eidosian_venv_20260216_095326/share/man
-Backups/eidosian_venv_20260216_095326/share/zsh
-Backups/security_dependency_patches/20260216T224858Z/doc_forge
-Backups/security_dependency_patches/20260216T224858Z/requirements
-Backups/security_dependency_patches/20260216T230451Z/doc_forge
-Backups/security_dependency_patches/20260216T230451Z/requirements
-Backups/eidosian_venv_20260216_095326/include/site/python3.12
-Backups/eidosian_venv_20260216_095326/share/bash-completion/completions
-Backups/eidosian_venv_20260216_095326/share/doc/yt_dlp
-Backups/eidosian_venv_20260216_095326/share/fish/vendor_completions.d
-Backups/eidosian_venv_20260216_095326/share/jupyter/labextensions
-Backups/eidosian_venv_20260216_095326/share/man/man1
-Backups/eidosian_venv_20260216_095326/share/zsh/site-functions
-Backups/security_dependency_patches/20260216T224858Z/doc_forge/docs
-Backups/security_dependency_patches/20260216T230451Z/doc_forge/docs
-Backups/eidosian_venv_20260216_095326/include/site/python3.12/greenlet
-Backups/eidosian_venv_20260216_095326/include/site/python3.12/pygame
-Backups/eidosian_venv_20260216_095326/share/jupyter/labextensions/jupyterlab-plotly
-Backups/eidosian_venv_20260216_095326/include/site/python3.12/pygame/include
-Backups/eidosian_venv_20260216_095326/share/jupyter/labextensions/jupyterlab-plotly/static
 agent_forge
-agent_forge/.pytest_cache
 agent_forge/.vscode
 agent_forge/bin
 agent_forge/cfg
@@ -55,7 +381,6 @@ agent_forge/scripts
 agent_forge/src
 agent_forge/state
 agent_forge/tests
-agent_forge/.pytest_cache/v
 agent_forge/managed_agents/CodeWizard
 agent_forge/src/agent_forge
 agent_forge/state/adapters
@@ -63,10 +388,7 @@ agent_forge/state/events
 agent_forge/state/snaps
 agent_forge/state/vector_store
 agent_forge/state/weights
-agent_forge/tests/__pycache__
-agent_forge/.pytest_cache/v/cache
 agent_forge/managed_agents/CodeWizard/tools
-agent_forge/src/agent_forge/__pycache__
 agent_forge/src/agent_forge/actuators
 agent_forge/src/agent_forge/agent
 agent_forge/src/agent_forge/cli
@@ -76,24 +398,12 @@ agent_forge/src/agent_forge/models
 agent_forge/src/agent_forge/planners
 agent_forge/src/agent_forge/systems
 agent_forge/src/agent_forge/utils
-agent_forge/src/agent_forge/actuators/__pycache__
-agent_forge/src/agent_forge/cli/__pycache__
-agent_forge/src/agent_forge/consciousness/__pycache__
 agent_forge/src/agent_forge/consciousness/bench
 agent_forge/src/agent_forge/consciousness/metrics
 agent_forge/src/agent_forge/consciousness/modules
 agent_forge/src/agent_forge/consciousness/perturb
 agent_forge/src/agent_forge/consciousness/tuning
-agent_forge/src/agent_forge/core/__pycache__
-agent_forge/src/agent_forge/models/__pycache__
-agent_forge/src/agent_forge/planners/__pycache__
 agent_forge/src/agent_forge/planners/templates
-agent_forge/src/agent_forge/utils/__pycache__
-agent_forge/src/agent_forge/consciousness/bench/__pycache__
-agent_forge/src/agent_forge/consciousness/metrics/__pycache__
-agent_forge/src/agent_forge/consciousness/modules/__pycache__
-agent_forge/src/agent_forge/consciousness/perturb/__pycache__
-agent_forge/src/agent_forge/consciousness/tuning/__pycache__
 archive_forge
 archive_forge/.vscode
 archive_forge/eidos_v1_concept
@@ -165,10 +475,8 @@ article_forge/medium_articles/autobiography
 article_forge/src/article_forge
 article_forge/medium_articles/autobiography/overview
 article_forge/medium_articles/autobiography/part_one
-article_forge/src/article_forge/__pycache__
 article_forge/src/article_forge/cli
 article_forge/medium_articles/autobiography/part_one/1993
-article_forge/src/article_forge/cli/__pycache__
 audit_data
 audit_data/home_audit_report
 audit_forge
@@ -176,9 +484,7 @@ audit_forge/completions
 audit_forge/src
 audit_forge/tests
 audit_forge/src/audit_forge
-audit_forge/src/audit_forge/__pycache__
 bin
-bin/__pycache__
 code_forge
 code_forge/.github
 code_forge/.vscode
@@ -188,15 +494,10 @@ code_forge/tests
 code_forge/.github/prompts
 code_forge/.github/workflows
 code_forge/src/code_forge
-code_forge/src/code_forge/__pycache__
 code_forge/src/code_forge/analyzer
 code_forge/src/code_forge/ingest
 code_forge/src/code_forge/librarian
 code_forge/src/code_forge/library
-code_forge/src/code_forge/analyzer/__pycache__
-code_forge/src/code_forge/ingest/__pycache__
-code_forge/src/code_forge/librarian/__pycache__
-code_forge/src/code_forge/library/__pycache__
 computer_control_forge
 computer_control_forge/demos
 computer_control_forge/docs
@@ -205,23 +506,18 @@ computer_control_forge/scripts
 computer_control_forge/src
 computer_control_forge/tests
 computer_control_forge/src/computer_control_forge
-computer_control_forge/src/computer_control_forge/__pycache__
 computer_control_forge/src/computer_control_forge/automation
 computer_control_forge/src/computer_control_forge/cli
 computer_control_forge/src/computer_control_forge/daemon
 computer_control_forge/src/computer_control_forge/perception
-computer_control_forge/src/computer_control_forge/cli/__pycache__
 crawl_forge
 crawl_forge/.vscode
 crawl_forge/completions
 crawl_forge/src
 crawl_forge/tests
 crawl_forge/src/crawl_forge
-crawl_forge/tests/__pycache__
-crawl_forge/src/crawl_forge/__pycache__
 data
 data/code_forge
-data/consciousness
 data/db
 data/memory
 data/moltbook
@@ -234,9 +530,7 @@ diagnostics_forge/.vscode
 diagnostics_forge/src
 diagnostics_forge/tests
 diagnostics_forge/src/diagnostics_forge
-diagnostics_forge/src/diagnostics_forge/__pycache__
 diagnostics_forge/src/diagnostics_forge/cli
-diagnostics_forge/src/diagnostics_forge/cli/__pycache__
 doc_forge
 doc_forge/.github
 doc_forge/.vscode
@@ -309,7 +603,6 @@ doc_forge/docs/user_docs/security
 doc_forge/docs/user_docs/troubleshooting
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks
 doc_forge/legacy_imports/development_head_2026-02-14_174300/papers
-doc_forge/src/doc_forge/__pycache__
 doc_forge/src/doc_forge/api
 doc_forge/src/doc_forge/config
 doc_forge/src/doc_forge/core
@@ -323,7 +616,6 @@ doc_forge/src/examples/tutorials
 doc_forge/src/examples/use-cases
 doc_forge/src/templates/credentials
 doc_forge/src/templates/tests
-doc_forge/src/tests/__pycache__
 doc_forge/src/tests/e2e
 doc_forge/src/tests/fixtures
 doc_forge/src/tests/integration
@@ -334,7 +626,6 @@ doc_forge/src/tests/unit
 doc_forge/src/tests/utils
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/learn2code
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/vim_wiki
-doc_forge/src/doc_forge/utils/__pycache__
 docs
 docs/consciousness_fcl
 docs/legacy
@@ -342,362 +633,26 @@ docs/security
 docs/legacy/aurora_archive
 docs/legacy/aurora_chat_logs
 eidos_mcp
-eidos_mcp/.pytest_cache
 eidos_mcp/scripts
 eidos_mcp/src
 eidos_mcp/systemd
 eidos_mcp/tests
-eidos_mcp/.pytest_cache/v
 eidos_mcp/src/eidos_mcp
-eidos_mcp/tests/__pycache__
-eidos_mcp/.pytest_cache/v/cache
-eidos_mcp/src/eidos_mcp/__pycache__
 eidos_mcp/src/eidos_mcp/config
 eidos_mcp/src/eidos_mcp/plugins
 eidos_mcp/src/eidos_mcp/routers
-eidos_mcp/src/eidos_mcp/config/__pycache__
-eidos_mcp/src/eidos_mcp/plugins/__pycache__
 eidos_mcp/src/eidos_mcp/plugins/computer_control
 eidos_mcp/src/eidos_mcp/plugins/self_exploration
 eidos_mcp/src/eidos_mcp/plugins/task_automation
 eidos_mcp/src/eidos_mcp/plugins/web_tools
-eidos_mcp/src/eidos_mcp/routers/__pycache__
-eidos_mcp/src/eidos_mcp/plugins/computer_control/__pycache__
-eidos_mcp/src/eidos_mcp/plugins/self_exploration/__pycache__
-eidos_mcp/src/eidos_mcp/plugins/task_automation/__pycache__
-eidos_mcp/src/eidos_mcp/plugins/web_tools/__pycache__
 eidosian_venv
 eidosian_venv/bin
-eidosian_venv/include
-eidosian_venv/lib
-eidosian_venv/lib64
-eidosian_venv/include/python3.12
-eidosian_venv/lib/python3.12
-eidosian_venv/lib/python3.12/site-packages
-eidosian_venv/lib/python3.12/site-packages/__pycache__
-eidosian_venv/lib/python3.12/site-packages/_distutils_hack
-eidosian_venv/lib/python3.12/site-packages/boolean
-eidosian_venv/lib/python3.12/site-packages/boolean_py-5.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/cyclonedx
-eidosian_venv/lib/python3.12/site-packages/cyclonedx_python_lib-11.6.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/license_expression
-eidosian_venv/lib/python3.12/site-packages/license_expression-30.4.4.dist-info
-eidosian_venv/lib/python3.12/site-packages/packageurl
-eidosian_venv/lib/python3.12/site-packages/packageurl_python-0.17.6.dist-info
-eidosian_venv/lib/python3.12/site-packages/pip
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info
-eidosian_venv/lib/python3.12/site-packages/pip_api
-eidosian_venv/lib/python3.12/site-packages/pip_api-0.0.34.dist-info
-eidosian_venv/lib/python3.12/site-packages/pip_audit
-eidosian_venv/lib/python3.12/site-packages/pip_audit-2.10.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/pip_requirements_parser-32.0.1.dist-info
-eidosian_venv/lib/python3.12/site-packages/py_serializable
-eidosian_venv/lib/python3.12/site-packages/py_serializable-2.1.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools
-eidosian_venv/lib/python3.12/site-packages/setuptools-82.0.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/wheel
-eidosian_venv/lib/python3.12/site-packages/wheel-0.46.3.dist-info
-eidosian_venv/lib/python3.12/site-packages/_distutils_hack/__pycache__
-eidosian_venv/lib/python3.12/site-packages/boolean/__pycache__
-eidosian_venv/lib/python3.12/site-packages/boolean_py-5.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/_internal
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/builder
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/exception
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/factory
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/model
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/output
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/schema
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/serialization
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/validation
-eidosian_venv/lib/python3.12/site-packages/cyclonedx_python_lib-11.6.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/license_expression-30.4.4.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/license_expression/__pycache__
-eidosian_venv/lib/python3.12/site-packages/license_expression/data
-eidosian_venv/lib/python3.12/site-packages/packageurl/__pycache__
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/pip/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor
-eidosian_venv/lib/python3.12/site-packages/pip_api/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor
-eidosian_venv/lib/python3.12/site-packages/pip_audit-2.10.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/pip_audit/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_dependency_source
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_format
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_service
-eidosian_venv/lib/python3.12/site-packages/py_serializable/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools-82.0.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor
-eidosian_venv/lib/python3.12/site-packages/setuptools/command
-eidosian_venv/lib/python3.12/site-packages/setuptools/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/config
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests
-eidosian_venv/lib/python3.12/site-packages/wheel-0.46.3.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/wheel/__pycache__
-eidosian_venv/lib/python3.12/site-packages/wheel/_commands
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/_internal/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/builder/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/component
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/hash
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/license
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/this
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/vulnerability
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/exception/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/factory/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/model/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/output/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/schema/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/schema/_res
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/serialization/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/validation/__pycache__
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib/django
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib/sqlalchemy
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/cli
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/commands
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/distributions
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/index
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/locations
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/metadata
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/models
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/network
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/req
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/utils
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/vcs
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/cachecontrol
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/certifi
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/dependency_groups
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/distlib
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/distro
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/idna
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/msgpack
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/packaging
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pkg_resources
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/platformdirs
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/requests
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/resolvelib
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/rich
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/tomli
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/tomli_w
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/truststore
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor/packaging
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor/tomli
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_dependency_source/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_format/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_audit/_service/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/command
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compilers
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/tests
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/autocommand
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/autocommand-2.2.2.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports.tarfile-1.2.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata-8.7.1.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco.text-4.0.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco_context-6.1.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco_functools-4.4.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools-10.8.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging-26.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/platformdirs
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/platformdirs-4.4.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/tomli
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/tomli-2.4.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel-0.46.3.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp-3.23.0.dist-info
-eidosian_venv/lib/python3.12/site-packages/setuptools/command/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/config/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/config/_validate_pyproject
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/config
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/indexes
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/integration
-eidosian_venv/lib/python3.12/site-packages/wheel/_commands/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/component/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/hash/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/license/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/this/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/contrib/vulnerability/__pycache__
-eidosian_venv/lib/python3.12/site-packages/cyclonedx/schema/_res/__pycache__
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib/django/__pycache__
-eidosian_venv/lib/python3.12/site-packages/packageurl/contrib/sqlalchemy/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/cli/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/commands/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/distributions/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/index/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/locations/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/metadata/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/metadata/importlib
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/models/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/network/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations/build
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations/install
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/req/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution/legacy
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/utils/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/vcs/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/cachecontrol/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/cachecontrol/caches
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/certifi/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/dependency_groups/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/distlib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/distro/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/idna/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/msgpack/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/packaging/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/packaging/licenses
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pkg_resources/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/platformdirs/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/filters
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/formatters
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/styles
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/requests/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/resolvelib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/resolvelib/resolvers
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/rich/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/tomli/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/tomli_w/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/truststore/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/packages
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/util
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor/packaging/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip_api/_vendor/tomli/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/command/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compilers/C
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/tests/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/tests/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/autocommand/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata-8.7.1.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/context
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/functools
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco_context-6.1.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco_functools-4.4.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools-10.8.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/more_itertools/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging-26.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/platformdirs-4.4.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/platformdirs/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/tomli-2.4.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/tomli/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel-0.46.3.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel/_commands
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp-3.23.0.dist-info/licenses
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/config/_validate_pyproject/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/config/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/config/downloads
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/indexes/test_links_priority
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/integration/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/metadata/importlib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations/build/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/operations/install/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution/legacy/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_internal/resolution/resolvelib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/cachecontrol/caches/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/packaging/licenses/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/filters/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/formatters/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/lexers/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pygments/styles/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/resolvelib/resolvers/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/backports
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/util/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/tests/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/compat
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/importlib_metadata/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/context/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/functools/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/jaraco/text/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/packaging/licenses/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/wheel/_commands/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/zipp/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/config/downloads/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/indexes/test_links_priority/simple
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/cachecontrol
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/certifi
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/dependency_groups
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/distlib
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/distro
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/idna
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/msgpack
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/packaging
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/pkg_resources
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/platformdirs
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/pygments
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/pyproject_hooks
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/requests
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/resolvelib
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/rich
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/tomli
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/tomli_w
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/truststore
-eidosian_venv/lib/python3.12/site-packages/pip-26.0.1.dist-info/licenses/src/pip/_vendor/urllib3
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/_securetransport/__pycache__
-eidosian_venv/lib/python3.12/site-packages/pip/_vendor/urllib3/packages/backports/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_distutils/compilers/C/tests/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/_vendor/backports/tarfile/compat/__pycache__
-eidosian_venv/lib/python3.12/site-packages/setuptools/tests/indexes/test_links_priority/simple/foobar
 erais_forge
 erais_forge/planning
 erais_forge/src
 erais_forge/tests
 erais_forge/src/erais_forge
-erais_forge/src/erais_forge/__pycache__
 erais_forge/src/erais_forge/cli
-erais_forge/src/erais_forge/cli/__pycache__
 figlet_forge
 figlet_forge/.github
 figlet_forge/.vscode
@@ -713,7 +668,6 @@ figlet_forge/tests/compat
 figlet_forge/tests/fonts
 figlet_forge/tests/integration
 figlet_forge/tests/unit
-figlet_forge/src/figlet_forge/__pycache__
 figlet_forge/src/figlet_forge/cli
 figlet_forge/src/figlet_forge/color
 figlet_forge/src/figlet_forge/compat
@@ -722,12 +676,8 @@ figlet_forge/src/figlet_forge/fonts
 figlet_forge/src/figlet_forge/render
 figlet_forge/src/figlet_forge/tools
 figlet_forge/src/figlet_forge/utils
-figlet_forge/src/figlet_forge/cli/__pycache__
-figlet_forge/src/figlet_forge/color/__pycache__
-figlet_forge/src/figlet_forge/core/__pycache__
 figlet_forge/src/figlet_forge/fonts/contrib
 figlet_forge/src/figlet_forge/fonts/standard
-figlet_forge/src/figlet_forge/render/__pycache__
 file_forge
 file_forge/.github
 file_forge/.vscode
@@ -779,7 +729,6 @@ file_forge/docs/source/examples
 file_forge/docs/source/getting_started
 file_forge/docs/source/guides
 file_forge/docs/source/reference
-file_forge/src/file_forge/__pycache__
 file_forge/src/file_forge/cli
 file_forge/docs/auto/cpp/api
 file_forge/docs/auto/cpp/benchmarks
@@ -871,13 +820,11 @@ file_forge/docs/manual/rust/faq
 file_forge/docs/manual/rust/guides
 file_forge/docs/manual/rust/security
 file_forge/docs/manual/rust/troubleshooting
-file_forge/src/file_forge/cli/__pycache__
 game_forge
 game_forge/.vscode
 game_forge/algorithms_lab
 game_forge/gene_particles
 game_forge/pyparticles
-game_forge/pyparticles_haskell_source
 game_forge/src
 game_forge/tests
 game_forge/tools
@@ -1022,7 +969,6 @@ game_forge/src/agentic_chess/eidosian_monorepo/tools/generators
 game_forge/src/agentic_chess/eidosian_monorepo/tools/linters
 game_forge/src/autoseed/coverage/src/core
 game_forge/src/autoseed/coverage/src/ui
-game_forge/src/falling_sand/src/falling_sand/__pycache__
 game_forge/src/falling_sand/src/falling_sand/engine
 game_forge/src/falling_sand/tests/unit/engine
 game_forge/src/agentic_chess/eidosian_monorepo/docs/auto/cpp
@@ -1043,7 +989,6 @@ game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src
 game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/tests
 game_forge/src/agentic_chess/eidosian_monorepo/projects/rust_project/src
 game_forge/src/agentic_chess/eidosian_monorepo/projects/rust_project/tests
-game_forge/src/falling_sand/src/falling_sand/engine/__pycache__
 game_forge/src/agentic_chess/eidosian_monorepo/projects/go_project/src/go_project
 game_forge/src/agentic_chess/eidosian_monorepo/projects/nodejs_project/src/nodejs_project
 game_forge/src/agentic_chess/eidosian_monorepo/projects/python_project/src/python_project
@@ -1080,9 +1025,7 @@ gis_forge/tests
 gis_forge/.github/prompts
 gis_forge/.github/workflows
 gis_forge/src/gis_forge
-gis_forge/src/gis_forge/__pycache__
 gis_forge/src/gis_forge/cli
-gis_forge/src/gis_forge/cli/__pycache__
 glyph_forge
 glyph_forge/.benchmarks
 glyph_forge/.github
@@ -1109,7 +1052,6 @@ glyph_forge/src/glyph_forge
 glyph_forge/templates/python
 glyph_forge/templates/ui
 glyph_forge/tests/benchmarks
-glyph_forge/src/glyph_forge/__pycache__
 glyph_forge/src/glyph_forge/api
 glyph_forge/src/glyph_forge/cli
 glyph_forge/src/glyph_forge/config
@@ -1120,18 +1062,7 @@ glyph_forge/src/glyph_forge/streaming
 glyph_forge/src/glyph_forge/transformers
 glyph_forge/src/glyph_forge/ui
 glyph_forge/src/glyph_forge/utils
-glyph_forge/src/glyph_forge/api/__pycache__
-glyph_forge/src/glyph_forge/cli/__pycache__
-glyph_forge/src/glyph_forge/config/__pycache__
-glyph_forge/src/glyph_forge/core/__pycache__
-glyph_forge/src/glyph_forge/renderers/__pycache__
-glyph_forge/src/glyph_forge/services/__pycache__
-glyph_forge/src/glyph_forge/streaming/__pycache__
 glyph_forge/src/glyph_forge/streaming/core
-glyph_forge/src/glyph_forge/transformers/__pycache__
-glyph_forge/src/glyph_forge/utils/__pycache__
-glyph_forge/src/glyph_forge/streaming/core/__pycache__
-graphrag
 graphrag_workspace
 graphrag_workspace/input
 graphrag_workspace/output
@@ -1239,7 +1170,6 @@ knowledge_forge/docs/source/guides
 knowledge_forge/docs/source/reference
 knowledge_forge/projects/python_project/src
 knowledge_forge/projects/python_project/tests
-knowledge_forge/src/knowledge_forge/__pycache__
 knowledge_forge/src/knowledge_forge/core
 knowledge_forge/src/knowledge_forge/integrations
 knowledge_forge/docs/auto/cpp/api
@@ -1333,8 +1263,6 @@ knowledge_forge/docs/manual/rust/guides
 knowledge_forge/docs/manual/rust/security
 knowledge_forge/docs/manual/rust/troubleshooting
 knowledge_forge/projects/python_project/src/python_project
-knowledge_forge/src/knowledge_forge/core/__pycache__
-knowledge_forge/src/knowledge_forge/integrations/__pycache__
 knowledge_forge/projects/python_project/src/python_project/api
 knowledge_forge/projects/python_project/src/python_project/config
 knowledge_forge/projects/python_project/src/python_project/core
@@ -1342,12 +1270,9 @@ knowledge_forge/projects/python_project/src/python_project/models
 knowledge_forge/projects/python_project/src/python_project/services
 knowledge_forge/projects/python_project/src/python_project/utils
 lib
-lib/__pycache__
 lib/cli
 lib/eidosian_core
 lib/tests
-lib/cli/__pycache__
-lib/eidosian_core/__pycache__
 llm_forge
 llm_forge/.vscode
 llm_forge/completions
@@ -1360,7 +1285,6 @@ llm_forge/src/llm_forge
 llm_forge/legacy_imports/development_head_2026-02-14_174300/eidos_framework
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main
 llm_forge/legacy_imports/development_head_2026-02-14_174300/python_repository
-llm_forge/src/llm_forge/__pycache__
 llm_forge/src/llm_forge/caching
 llm_forge/src/llm_forge/core
 llm_forge/src/llm_forge/providers
@@ -1370,9 +1294,6 @@ llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/notebooks
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/scripts
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/tests
-llm_forge/src/llm_forge/caching/__pycache__
-llm_forge/src/llm_forge/core/__pycache__
-llm_forge/src/llm_forge/providers/__pycache__
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/examples
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/recipes
@@ -1459,7 +1380,6 @@ llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/pr
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/src/experimental/configs/projects/zephyr
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects/aya/sft/output/deepseekr1_1_5b.aya.fft
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs/projects/aya/sft/output/deepseekr1_1_5b.aya.fft/telemetry
-logs
 lyrics_forge
 lyrics_forge/.vscode
 lyrics_forge/electronic_angst
@@ -1468,9 +1388,7 @@ lyrics_forge/modern_alt_pop
 lyrics_forge/src
 lyrics_forge/tests
 lyrics_forge/src/lyrics_forge
-lyrics_forge/src/lyrics_forge/__pycache__
 lyrics_forge/src/lyrics_forge/cli
-lyrics_forge/src/lyrics_forge/cli/__pycache__
 memory
 memory_forge
 memory_forge/.github
@@ -1569,7 +1487,6 @@ memory_forge/docs/source/getting_started
 memory_forge/docs/source/guides
 memory_forge/docs/source/reference
 memory_forge/legacy_imports/development_head_2026-02-14_174300/EMemory
-memory_forge/src/memory_forge/__pycache__
 memory_forge/src/memory_forge/backends
 memory_forge/src/memory_forge/compression
 memory_forge/src/memory_forge/context
@@ -1633,8 +1550,6 @@ memory_forge/docs/manual/rust/guides
 memory_forge/docs/manual/rust/security
 memory_forge/docs/manual/rust/troubleshooting
 memory_forge/legacy_imports/development_head_2026-02-14_174300/EMemory/tests
-memory_forge/src/memory_forge/backends/__pycache__
-memory_forge/src/memory_forge/core/__pycache__
 metadata_forge
 metadata_forge/.github
 metadata_forge/.vscode
@@ -1814,7 +1729,6 @@ metadata_forge/eidosian_monorepo/tools/generators
 metadata_forge/eidosian_monorepo/tools/linters
 metadata_forge/projects/python_project/src
 metadata_forge/projects/python_project/tests
-metadata_forge/src/metadata_forge/__pycache__
 metadata_forge/src/metadata_forge/schema
 metadata_forge/docs/auto/cpp/api
 metadata_forge/docs/auto/cpp/benchmarks
@@ -1937,7 +1851,6 @@ metadata_forge/eidosian_monorepo/projects/python_project/tests
 metadata_forge/eidosian_monorepo/projects/rust_project/src
 metadata_forge/eidosian_monorepo/projects/rust_project/tests
 metadata_forge/projects/python_project/src/python_project
-metadata_forge/src/metadata_forge/schema/__pycache__
 metadata_forge/eidosian_monorepo/docs/auto/cpp/api
 metadata_forge/eidosian_monorepo/docs/auto/cpp/benchmarks
 metadata_forge/eidosian_monorepo/docs/auto/cpp/configuration
@@ -2067,13 +1980,10 @@ mkey_forge/.vscode
 mkey_forge/src
 mkey_forge/tests
 mkey_forge/src/mkey_forge
-mkey_forge/src/mkey_forge/__pycache__
 mkey_forge/src/mkey_forge/cli
 mkey_forge/src/mkey_forge/source
-mkey_forge/src/mkey_forge/cli/__pycache__
 mkey_forge/src/mkey_forge/source/polarssl
 moltbook_forge
-moltbook_forge/__pycache__
 moltbook_forge/data
 moltbook_forge/skill_sources
 moltbook_forge/tests
@@ -2085,7 +1995,6 @@ narrative_forge
 narrative_forge/src
 narrative_forge/tests
 narrative_forge/src/narrative_forge
-narrative_forge/src/narrative_forge/__pycache__
 ollama_forge
 ollama_forge/.github
 ollama_forge/ci
@@ -2110,10 +2019,7 @@ ollama_forge/tests/performance
 ollama_forge/tests/security
 ollama_forge/tests/unit
 ollama_forge/tests/utils
-ollama_forge/src/ollama_forge/__pycache__
 ollama_forge/src/ollama_forge/cli
-ollama_forge/src/ollama_forge/cli/__pycache__
-plugins
 projects
 projects/legacy
 projects/research
@@ -2157,13 +2063,10 @@ projects/research/universal_intelligence_potential/src
 projects/research/universal_intelligence_potential/test
 projects/research/universal_intelligence_potential/violinplots
 projects/src/chatmock/tests
-projects/src/self_exploration/__pycache__
 projects/src/self_exploration/audits
 projects/src/self_exploration/benchmarks
 projects/src/self_exploration/data
-projects/src/self_exploration/experiments
 projects/src/self_exploration/identity
-projects/src/self_exploration/logs
 projects/src/self_exploration/provenance
 projects/src/self_exploration/screenshots
 projects/legacy/ai_timeline/1-genesis/1a-turing-test
@@ -2333,9 +2236,7 @@ prompt_forge/tests
 prompt_forge/legacy_imports/development_head_2026-02-14_174300
 prompt_forge/src/prompt_forge
 prompt_forge/legacy_imports/development_head_2026-02-14_174300/templates
-prompt_forge/src/prompt_forge/__pycache__
 prompt_forge/src/prompt_forge/cli
-prompt_forge/src/prompt_forge/cli/__pycache__
 refactor_forge
 refactor_forge/.github
 refactor_forge/.vscode
@@ -2346,7 +2247,6 @@ refactor_forge/tests
 refactor_forge/.github/prompts
 refactor_forge/.github/workflows
 refactor_forge/src/refactor_forge
-refactor_forge/src/refactor_forge/__pycache__
 repo_forge
 repo_forge/.github
 repo_forge/.vscode
@@ -2388,31 +2288,22 @@ repo_forge/docs/manual/go
 repo_forge/docs/manual/javascript
 repo_forge/docs/manual/python
 repo_forge/docs/manual/rust
-repo_forge/src/repo_forge/__pycache__
 repo_forge/src/repo_forge/constants
 repo_forge/src/repo_forge/core
 repo_forge/src/repo_forge/generators
-repo_forge/src/repo_forge/constants/__pycache__
-repo_forge/src/repo_forge/core/__pycache__
-repo_forge/src/repo_forge/generators/__pycache__
 reports
-reports/consciousness
 reports/consciousness_benchmarks
 reports/consciousness_integrated_benchmarks
-reports/consciousness_stress_benchmarks
 reports/consciousness_trends
 reports/consciousness_trials
-reports/security
 requirements
 scripts
-scripts/__pycache__
 scripts/docs
 scripts/machine_clone
 scripts/migration
 scripts/profiling
 scripts/tests
 scripts/docs/prompts
-scripts/tests/__pycache__
 skills
 skills/moltbook
 skills/moltbook/references
@@ -2425,32 +2316,7 @@ sms_forge/tests
 sms_forge/.github/prompts
 sms_forge/.github/workflows
 sms_forge/src/sms_forge
-sms_forge/src/sms_forge/__pycache__
 sms_forge/src/sms_forge/cli
-sms_forge/src/sms_forge/cli/__pycache__
-state
-state/_scratch
-state/bench_docs_cycle
-state/consciousness
-state/eidos_phase_i7_state
-state/events
-state/tiered_memory_runtime
-state/_scratch/consciousness-bench-0um4qzgt
-state/bench_docs_cycle/consciousness
-state/bench_docs_cycle/events
-state/consciousness/bench
-state/eidos_phase_i7_state/consciousness
-state/eidos_phase_i7_state/events
-state/events/20260216
-state/events/20260217
-state/_scratch/consciousness-bench-0um4qzgt/consciousness
-state/_scratch/consciousness-bench-0um4qzgt/events
-state/bench_docs_cycle/events/20260217
-state/consciousness/bench/red_team_20260216_143548_d19e9f1b
-state/consciousness/bench/red_team_20260217_013221_1153c42f
-state/consciousness/bench/red_team_20260217_013635_8f84f12c
-state/eidos_phase_i7_state/events/20260216
-state/_scratch/consciousness-bench-0um4qzgt/events/20260216
 terminal_forge
 terminal_forge/.github
 terminal_forge/.vscode
@@ -2649,7 +2515,6 @@ terminal_forge/eidosian_monorepo/tools/generators
 terminal_forge/eidosian_monorepo/tools/linters
 terminal_forge/projects/python_project/src
 terminal_forge/projects/python_project/tests
-terminal_forge/src/terminal_forge/__pycache__
 terminal_forge/src/terminal_forge/ascii_art
 terminal_forge/docs/assets/ascii/banners
 terminal_forge/docs/assets/ascii/borders
@@ -2940,9 +2805,7 @@ test_forge/tests
 test_forge/.github/prompts
 test_forge/.github/workflows
 test_forge/src/test_forge
-test_forge/src/test_forge/__pycache__
 test_forge/src/test_forge/cli
-test_forge/src/test_forge/cli/__pycache__
 type_forge
 type_forge/.vscode
 type_forge/docs
@@ -2960,7 +2823,6 @@ type_forge/docs/_build/html
 type_forge/docs/_templates/autoapi
 type_forge/docs/autoapi/src
 type_forge/docs/autoapi/type_forge
-type_forge/src/type_forge/__pycache__
 type_forge/src/type_forge/cli
 type_forge/docs/_build/html/.doctrees
 type_forge/docs/_build/html/_sphinx_design_static
@@ -2972,7 +2834,6 @@ type_forge/docs/autoapi/type_forge/forge
 type_forge/docs/autoapi/type_forge/typing
 type_forge/docs/autoapi/type_forge/utils
 type_forge/docs/autoapi/type_forge/validators
-type_forge/src/type_forge/cli/__pycache__
 type_forge/docs/_build/html/.doctrees/_templates
 type_forge/docs/_build/html/.doctrees/api
 type_forge/docs/_build/html/.doctrees/autoapi
@@ -3054,18 +2915,12 @@ version_forge/tests
 version_forge/.github/prompts
 version_forge/.github/workflows
 version_forge/src/version_forge
-version_forge/src/version_forge/__pycache__
 version_forge/src/version_forge/cli
 version_forge/src/version_forge/compatibility
 version_forge/src/version_forge/core
 version_forge/src/version_forge/operations
 version_forge/src/version_forge/protocols
 version_forge/src/version_forge/sources
-version_forge/src/version_forge/cli/__pycache__
-version_forge/src/version_forge/compatibility/__pycache__
-version_forge/src/version_forge/core/__pycache__
-version_forge/src/version_forge/operations/__pycache__
-version_forge/src/version_forge/protocols/__pycache__
 viz_forge
 viz_forge/.github
 viz_forge/.vscode
@@ -3074,22 +2929,16 @@ viz_forge/tests
 viz_forge/.github/prompts
 viz_forge/.github/workflows
 viz_forge/src/viz_forge
-viz_forge/src/viz_forge/__pycache__
 viz_forge/src/viz_forge/cli
-viz_forge/src/viz_forge/cli/__pycache__
 web_interface_forge
 web_interface_forge/src
 web_interface_forge/tests
 web_interface_forge/src/web_interface_forge
-web_interface_forge/src/web_interface_forge/__pycache__
 web_interface_forge/src/web_interface_forge/cli
-web_interface_forge/src/web_interface_forge/cli/__pycache__
 word_forge
 word_forge/.github
 word_forge/completions
-word_forge/data
 word_forge/docs
-word_forge/logs
 word_forge/scripts
 word_forge/src
 word_forge/tests
@@ -3102,7 +2951,6 @@ word_forge/src/old
 word_forge/src/word_forge
 word_forge/tests/fixtures
 word_forge/src/old/configs
-word_forge/src/word_forge/__pycache__
 word_forge/src/word_forge/configs
 word_forge/src/word_forge/conversation
 word_forge/src/word_forge/database
@@ -3115,13 +2963,4 @@ word_forge/src/word_forge/queue
 word_forge/src/word_forge/tools
 word_forge/src/word_forge/utils
 word_forge/src/word_forge/vectorizer
-word_forge/src/word_forge/configs/__pycache__
 word_forge/src/word_forge/configs/types
-word_forge/src/word_forge/conversation/__pycache__
-word_forge/src/word_forge/database/__pycache__
-word_forge/src/word_forge/emotion/__pycache__
-word_forge/src/word_forge/graph/__pycache__
-word_forge/src/word_forge/parser/__pycache__
-word_forge/src/word_forge/queue/__pycache__
-word_forge/src/word_forge/utils/__pycache__
-word_forge/src/word_forge/vectorizer/__pycache__

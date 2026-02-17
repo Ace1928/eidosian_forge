@@ -516,3 +516,29 @@ Status checkpoint:
 
 3. Validation execution (PR-R3).
 - Commands: consciousness benchmark + stress benchmark (`eidctl`) and full regression suite in `eidosian_venv`.
+
+## Stage S (Completed): Deterministic Atlas Scope Controls and CI Drift Guard
+
+Status checkpoint:
+- PR-S1 delivered (atlas generator now supports deterministic timestamp-free output with optional `--generated-at` plus `tracked|filesystem` scope controls).
+- PR-S2 delivered (atlas generator tests expanded for tracked scope rendering, hidden-directory controls, generated-at resolution, and deterministic index output).
+- PR-S3 delivered (new CI workflow enforces atlas/index drift gate by regenerating tracked-scope artifacts and failing on diff).
+- PR-S4 delivered (docs/trackers refreshed and validation cycle executed with benchmark + stress evidence in `state/bench_phase24`).
+
+1. Deterministic generation and scope controls (PR-S1).
+- Files: `scripts/generate_directory_atlas.py`
+
+2. Regression tests for atlas controls (PR-S2).
+- Files: `scripts/tests/test_generate_directory_atlas.py`
+
+3. CI drift enforcement workflow (PR-S3).
+- Files: `.github/workflows/directory-atlas-drift.yml`
+- Files: `.github/workflows/README.md`
+
+4. Docs and validation closure (PR-S4).
+- Files: `README.md`
+- Files: `docs/README.md`
+- Files: `docs/consciousness_fcl/PLAN_TRACKER.md`
+- Files: `docs/consciousness_fcl/NEXT_LAYER_PLAN.md`
+- Files: `docs/consciousness_fcl/part-47-phase24-deterministic-atlas-drift-guard.md`
+- Commands: regression suites + `eidctl consciousness benchmark` + `eidctl consciousness stress-benchmark`.

@@ -46,7 +46,17 @@ This is the documentation index for `eidosian_forge`.
   --repo-root . \
   --atlas-output docs/DIRECTORY_ATLAS.md \
   --full-output docs/DIRECTORY_INDEX_FULL.txt \
-  --max-depth 2
+  --max-depth 2 \
+  --scope tracked
+
+# Optional local runtime view (includes non-tracked local dirs)
+./eidosian_venv/bin/python scripts/generate_directory_atlas.py \
+  --repo-root . \
+  --atlas-output docs/DIRECTORY_ATLAS.md \
+  --full-output docs/DIRECTORY_INDEX_FULL.txt \
+  --max-depth 2 \
+  --scope filesystem \
+  --include-hidden-top-level
 
 # Core validation
 PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \

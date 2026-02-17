@@ -1,0 +1,58 @@
+name: Directory Atlas Drift Guard
+
+on:
+  push:
+    paths:
+      - "scripts/generate_directory_atlas.py"
+      - "scripts/tests/test_generate_directory_atlas.py"
+      - "docs/DIRECTORY_ATLAS.md"
+      - "docs/DIRECTORY_INDEX_FULL.txt"
+      - "README.md"
+      - "docs/README.md"
+      - ".github/workflows/directory-atlas-drift.yml"
+  pull_request:
+    paths:
+      - "scripts/generate_directory_atlas.py"
+      - "scripts/tests/test_generate_directory_atlas.py"
+      - "docs/DIRECTORY_ATLAS.md"
+      - "docs/DIRECTORY_INDEX_FULL.txt"
+      - "README.md"
+      - "docs/README.md"
+      - ".github/workflows/directory-atlas-drift.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  atlas-drift:
+    name: Atlas Drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run atlas unit tests
+        run: python -m pytest -q scripts/tests/test_generate_directory_atlas.py
+
+      - name: Regenerate directory atlas artifacts (tracked scope)
+        run: |
+          python scripts/generate_directory_atlas.py \
+            --repo-root . \
+            --atlas-output docs/DIRECTORY_ATLAS.md \
+            --full-output docs/DIRECTORY_INDEX_FULL.txt \
+            --max-depth 2 \
+            --scope tracked
+
+      - name: Enforce no drift
+        run: |
+          if ! git diff --exit-code -- docs/DIRECTORY_ATLAS.md docs/DIRECTORY_INDEX_FULL.txt; then
+            echo "::error::Directory atlas artifacts are stale. Regenerate with scripts/generate_directory_atlas.py --scope tracked and commit results."
+            git --no-pager diff -- docs/DIRECTORY_ATLAS.md docs/DIRECTORY_INDEX_FULL.txt
+            exit 1
+          fi

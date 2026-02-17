@@ -1,19 +1,20 @@
 # Eidosian Forge Directory Atlas
 
-> User-focused inventory: every top-level and second-level directory, with links and purpose labels.
+> User-focused inventory with linked paths and purpose labels.
 
-- Generated: `2026-02-17 03:27:08Z`
-- Tracked files: `731724`
-- Full directory count (recursive): `3122`
-- Atlas directory count (depth <= 2): `374`
+- Generated: `deterministic (timestamp omitted)`
+- Scope: `tracked`
+- Tracked files: `731730`
+- Full directory count (scope): `2960`
+- Atlas directory count (depth <= 2): `379`
 - Full recursive index: [`docs/DIRECTORY_INDEX_FULL.txt`](./DIRECTORY_INDEX_FULL.txt)
 
 ## Jump Table
 
-- [`.bin`](#bin)
+- [`.eidos_chrome_profile`](#eidos-chrome-profile)
 - [`.github`](#github)
+- [`.graphrag_index`](#graphrag-index)
 - [`.vscode`](#vscode)
-- [`Backups`](#backups)
 - [`agent_forge`](#agent-forge)
 - [`archive_forge`](#archive-forge)
 - [`article_forge`](#article-forge)
@@ -35,13 +36,11 @@
 - [`game_forge`](#game-forge)
 - [`gis_forge`](#gis-forge)
 - [`glyph_forge`](#glyph-forge)
-- [`graphrag`](#graphrag)
 - [`graphrag_workspace`](#graphrag-workspace)
 - [`knowledge_cache`](#knowledge-cache)
 - [`knowledge_forge`](#knowledge-forge)
 - [`lib`](#lib)
 - [`llm_forge`](#llm-forge)
-- [`logs`](#logs)
 - [`lyrics_forge`](#lyrics-forge)
 - [`memory`](#memory)
 - [`memory_forge`](#memory-forge)
@@ -50,7 +49,6 @@
 - [`moltbook_forge`](#moltbook-forge)
 - [`narrative_forge`](#narrative-forge)
 - [`ollama_forge`](#ollama-forge)
-- [`plugins`](#plugins)
 - [`projects`](#projects)
 - [`prompt_forge`](#prompt-forge)
 - [`refactor_forge`](#refactor-forge)
@@ -60,7 +58,6 @@
 - [`scripts`](#scripts)
 - [`skills`](#skills)
 - [`sms_forge`](#sms-forge)
-- [`state`](#state)
 - [`terminal_forge`](#terminal-forge)
 - [`test_forge`](#test-forge)
 - [`type_forge`](#type-forge)
@@ -73,72 +70,100 @@
 
 | Directory | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`.bin`](../.bin) | Project directory | 0 | 0 | - |
+| [`.eidos_chrome_profile`](../.eidos_chrome_profile) | Project directory | 1020 | 32 | - |
 | [`.github`](../.github) | CI/CD automation | 20 | 2 | - |
+| [`.graphrag_index`](../.graphrag_index) | Project directory | 110 | 1 | - |
 | [`.vscode`](../.vscode) | Project directory | 1 | 0 | - |
-| [`Backups`](../Backups) | Local backups | 0 | 2 | - |
-| [`agent_forge`](../agent_forge) | Forge module root | 198 | 13 | [`agent_forge/README.md`](../agent_forge/README.md) |
+| [`agent_forge`](../agent_forge) | Forge module root | 198 | 12 | [`agent_forge/README.md`](../agent_forge/README.md) |
 | [`archive_forge`](../archive_forge) | Forge module root | 722686 | 7 | [`archive_forge/README.md`](../archive_forge/README.md) |
 | [`article_forge`](../article_forge) | Forge module root | 37 | 6 | [`article_forge/README.md`](../article_forge/README.md) |
 | [`audit_data`](../audit_data) | Project directory | 4 | 1 | - |
 | [`audit_forge`](../audit_forge) | Forge module root | 19 | 3 | [`audit_forge/README.md`](../audit_forge/README.md) |
-| [`bin`](../bin) | Top-level CLI entrypoints | 2 | 1 | - |
+| [`bin`](../bin) | Top-level CLI entrypoints | 2 | 0 | - |
 | [`code_forge`](../code_forge) | Forge module root | 52 | 5 | [`code_forge/README.md`](../code_forge/README.md) |
 | [`computer_control_forge`](../computer_control_forge) | Forge module root | 82 | 6 | [`computer_control_forge/README.md`](../computer_control_forge/README.md) |
 | [`crawl_forge`](../crawl_forge) | Forge module root | 19 | 4 | [`crawl_forge/README.md`](../crawl_forge/README.md) |
-| [`data`](../data) | Data and memory artifacts | 172 | 8 | - |
+| [`data`](../data) | Data and memory artifacts | 172 | 7 | - |
 | [`diagnostics_forge`](../diagnostics_forge) | Forge module root | 19 | 3 | [`diagnostics_forge/README.md`](../diagnostics_forge/README.md) |
 | [`doc_forge`](../doc_forge) | Forge module root | 198 | 14 | [`doc_forge/README.md`](../doc_forge/README.md) |
-| [`docs`](../docs) | Documentation | 186 | 3 | [`docs/README.md`](../docs/README.md) |
-| [`eidos_mcp`](../eidos_mcp) | Project directory | 66 | 5 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
-| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 4 | - |
+| [`docs`](../docs) | Documentation | 190 | 3 | [`docs/README.md`](../docs/README.md) |
+| [`eidos_mcp`](../eidos_mcp) | Project directory | 66 | 4 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
+| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | - |
 | [`erais_forge`](../erais_forge) | Forge module root | 15 | 3 | [`erais_forge/README.md`](../erais_forge/README.md) |
 | [`figlet_forge`](../figlet_forge) | Forge module root | 789 | 8 | [`figlet_forge/README.md`](../figlet_forge/README.md) |
 | [`file_forge`](../file_forge) | Forge module root | 180 | 6 | [`file_forge/README.md`](../file_forge/README.md) |
-| [`game_forge`](../game_forge) | Forge module root | 643 | 8 | [`game_forge/README.md`](../game_forge/README.md) |
+| [`game_forge`](../game_forge) | Forge module root | 643 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
 | [`gis_forge`](../gis_forge) | Forge module root | 31 | 4 | [`gis_forge/README.md`](../gis_forge/README.md) |
 | [`glyph_forge`](../glyph_forge) | Forge module root | 1082 | 17 | [`glyph_forge/README.md`](../glyph_forge/README.md) |
-| [`graphrag`](../graphrag) | Project directory | 0 | 0 | - |
 | [`graphrag_workspace`](../graphrag_workspace) | Project directory | 8 | 3 | - |
 | [`knowledge_cache`](../knowledge_cache) | Project directory | 1 | 1 | - |
 | [`knowledge_forge`](../knowledge_forge) | Forge module root | 241 | 18 | [`knowledge_forge/README.md`](../knowledge_forge/README.md) |
-| [`lib`](../lib) | Shared libraries | 12 | 4 | [`lib/README.md`](../lib/README.md) |
+| [`lib`](../lib) | Shared libraries | 12 | 3 | [`lib/README.md`](../lib/README.md) |
 | [`llm_forge`](../llm_forge) | Forge module root | 408 | 6 | [`llm_forge/README.md`](../llm_forge/README.md) |
-| [`logs`](../logs) | Runtime logs | 0 | 0 | - |
 | [`lyrics_forge`](../lyrics_forge) | Forge module root | 33 | 6 | [`lyrics_forge/README.md`](../lyrics_forge/README.md) |
 | [`memory`](../memory) | Project directory | 1 | 0 | - |
 | [`memory_forge`](../memory_forge) | Forge module root | 220 | 19 | [`memory_forge/README.md`](../memory_forge/README.md) |
 | [`metadata_forge`](../metadata_forge) | Forge module root | 474 | 19 | [`metadata_forge/README.md`](../metadata_forge/README.md) |
 | [`mkey_forge`](../mkey_forge) | Forge module root | 38 | 3 | [`mkey_forge/README.md`](../mkey_forge/README.md) |
-| [`moltbook_forge`](../moltbook_forge) | Forge module root | 68 | 6 | [`moltbook_forge/README.md`](../moltbook_forge/README.md) |
+| [`moltbook_forge`](../moltbook_forge) | Forge module root | 68 | 5 | [`moltbook_forge/README.md`](../moltbook_forge/README.md) |
 | [`narrative_forge`](../narrative_forge) | Forge module root | 14 | 2 | [`narrative_forge/README.md`](../narrative_forge/README.md) |
 | [`ollama_forge`](../ollama_forge) | Forge module root | 76 | 7 | [`ollama_forge/README.md`](../ollama_forge/README.md) |
-| [`plugins`](../plugins) | Project directory | 0 | 0 | - |
 | [`projects`](../projects) | Project directory | 996 | 3 | - |
 | [`prompt_forge`](../prompt_forge) | Forge module root | 22 | 3 | [`prompt_forge/README.md`](../prompt_forge/README.md) |
 | [`refactor_forge`](../refactor_forge) | Forge module root | 43 | 6 | [`refactor_forge/README.md`](../refactor_forge/README.md) |
 | [`repo_forge`](../repo_forge) | Forge module root | 92 | 8 | [`repo_forge/README.md`](../repo_forge/README.md) |
-| [`reports`](../reports) | Benchmark/audit reports | 14 | 7 | - |
+| [`reports`](../reports) | Benchmark/audit reports | 14 | 4 | - |
 | [`requirements`](../requirements) | Dependency manifests | 4 | 0 | - |
-| [`scripts`](../scripts) | Automation scripts | 150 | 6 | [`scripts/README.md`](../scripts/README.md) |
+| [`scripts`](../scripts) | Automation scripts | 152 | 5 | [`scripts/README.md`](../scripts/README.md) |
 | [`skills`](../skills) | Project directory | 7 | 1 | - |
 | [`sms_forge`](../sms_forge) | Forge module root | 26 | 4 | [`sms_forge/README.md`](../sms_forge/README.md) |
-| [`state`](../state) | Runtime state | 0 | 6 | - |
 | [`terminal_forge`](../terminal_forge) | Forge module root | 544 | 18 | [`terminal_forge/README.md`](../terminal_forge/README.md) |
 | [`test_forge`](../test_forge) | Forge module root | 36 | 4 | [`test_forge/README.md`](../test_forge/README.md) |
 | [`type_forge`](../type_forge) | Forge module root | 134 | 5 | [`type_forge/README.md`](../type_forge/README.md) |
 | [`version_forge`](../version_forge) | Forge module root | 45 | 3 | [`version_forge/README.md`](../version_forge/README.md) |
 | [`viz_forge`](../viz_forge) | Forge module root | 35 | 4 | [`viz_forge/README.md`](../viz_forge/README.md) |
 | [`web_interface_forge`](../web_interface_forge) | Forge module root | 13 | 2 | [`web_interface_forge/README.md`](../web_interface_forge/README.md) |
-| [`word_forge`](../word_forge) | Forge module root | 304 | 9 | [`word_forge/README.md`](../word_forge/README.md) |
+| [`word_forge`](../word_forge) | Forge module root | 304 | 7 | [`word_forge/README.md`](../word_forge/README.md) |
 
 ## Directory Inventory (Depth-Limited)
 
-### `.bin`
+### `.eidos_chrome_profile`
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`.bin`](../.bin) | Project directory | 0 | 0 | - |
+| [`.eidos_chrome_profile`](../.eidos_chrome_profile) | Project directory | 1020 | 32 | - |
+| [`.eidos_chrome_profile/ActorSafetyLists`](../.eidos_chrome_profile/ActorSafetyLists) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/AmountExtractionHeuristicRegexes`](../.eidos_chrome_profile/AmountExtractionHeuristicRegexes) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/AutofillStates`](../.eidos_chrome_profile/AutofillStates) | Project directory | 227 | 1 | - |
+| [`.eidos_chrome_profile/BrowserMetrics`](../.eidos_chrome_profile/BrowserMetrics) | Project directory | 1 | 0 | - |
+| [`.eidos_chrome_profile/CertificateRevocation`](../.eidos_chrome_profile/CertificateRevocation) | Project directory | 4 | 1 | - |
+| [`.eidos_chrome_profile/component_crx_cache`](../.eidos_chrome_profile/component_crx_cache) | Project directory | 22 | 0 | - |
+| [`.eidos_chrome_profile/CookieReadinessList`](../.eidos_chrome_profile/CookieReadinessList) | Project directory | 4 | 1 | - |
+| [`.eidos_chrome_profile/Crowd Deny`](../.eidos_chrome_profile/Crowd Deny) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/Default`](../.eidos_chrome_profile/Default) | Project directory | 583 | 39 | - |
+| [`.eidos_chrome_profile/Dictionaries`](../.eidos_chrome_profile/Dictionaries) | Project directory | 1 | 0 | - |
+| [`.eidos_chrome_profile/extensions_crx_cache`](../.eidos_chrome_profile/extensions_crx_cache) | Project directory | 1 | 0 | - |
+| [`.eidos_chrome_profile/FileTypePolicies`](../.eidos_chrome_profile/FileTypePolicies) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/FirstPartySetsPreloaded`](../.eidos_chrome_profile/FirstPartySetsPreloaded) | Project directory | 4 | 1 | - |
+| [`.eidos_chrome_profile/GraphiteDawnCache`](../.eidos_chrome_profile/GraphiteDawnCache) | Project directory | 5 | 0 | - |
+| [`.eidos_chrome_profile/GrShaderCache`](../.eidos_chrome_profile/GrShaderCache) | Project directory | 5 | 0 | - |
+| [`.eidos_chrome_profile/hyphen-data`](../.eidos_chrome_profile/hyphen-data) | Project directory | 54 | 1 | - |
+| [`.eidos_chrome_profile/MEIPreload`](../.eidos_chrome_profile/MEIPreload) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/OnDeviceHeadSuggestModel`](../.eidos_chrome_profile/OnDeviceHeadSuggestModel) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/OpenCookieDatabase`](../.eidos_chrome_profile/OpenCookieDatabase) | Project directory | 4 | 1 | - |
+| [`.eidos_chrome_profile/optimization_guide_model_store`](../.eidos_chrome_profile/optimization_guide_model_store) | Project directory | 26 | 10 | - |
+| [`.eidos_chrome_profile/OptimizationHints`](../.eidos_chrome_profile/OptimizationHints) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/PKIMetadata`](../.eidos_chrome_profile/PKIMetadata) | Project directory | 5 | 1 | - |
+| [`.eidos_chrome_profile/SafetyTips`](../.eidos_chrome_profile/SafetyTips) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/segmentation_platform`](../.eidos_chrome_profile/segmentation_platform) | Project directory | 2 | 0 | - |
+| [`.eidos_chrome_profile/ShaderCache`](../.eidos_chrome_profile/ShaderCache) | Project directory | 5 | 0 | - |
+| [`.eidos_chrome_profile/SSLErrorAssistant`](../.eidos_chrome_profile/SSLErrorAssistant) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/Subresource Filter`](../.eidos_chrome_profile/Subresource Filter) | Project directory | 5 | 2 | - |
+| [`.eidos_chrome_profile/TpcdMetadata`](../.eidos_chrome_profile/TpcdMetadata) | Project directory | 3 | 1 | - |
+| [`.eidos_chrome_profile/TrustTokenKeyCommitments`](../.eidos_chrome_profile/TrustTokenKeyCommitments) | Project directory | 4 | 1 | - |
+| [`.eidos_chrome_profile/WasmTtsEngine`](../.eidos_chrome_profile/WasmTtsEngine) | Project directory | 10 | 1 | - |
+| [`.eidos_chrome_profile/WidevineCdm`](../.eidos_chrome_profile/WidevineCdm) | Project directory | 1 | 0 | - |
+| [`.eidos_chrome_profile/ZxcvbnData`](../.eidos_chrome_profile/ZxcvbnData) | Project directory | 9 | 1 | - |
 
 ### `.github`
 
@@ -148,26 +173,24 @@
 | [`.github/prompts_old`](../.github/prompts_old) | CI/CD automation | 8 | 0 | - |
 | [`.github/workflows`](../.github/workflows) | CI/CD automation | 10 | 0 | [`.github/workflows/README.md`](../.github/workflows/README.md) |
 
+### `.graphrag_index`
+
+| Path | Category | Tracked files | Direct subdirs | README |
+| --- | --- | ---: | ---: | --- |
+| [`.graphrag_index`](../.graphrag_index) | Project directory | 110 | 1 | - |
+| [`.graphrag_index/cache`](../.graphrag_index/cache) | Project directory | 109 | 3 | - |
+
 ### `.vscode`
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
 | [`.vscode`](../.vscode) | Project directory | 1 | 0 | - |
 
-### `Backups`
-
-| Path | Category | Tracked files | Direct subdirs | README |
-| --- | --- | ---: | ---: | --- |
-| [`Backups`](../Backups) | Local backups | 0 | 2 | - |
-| [`Backups/eidosian_venv_20260216_095326`](../Backups/eidosian_venv_20260216_095326) | Local backups | 0 | 3 | - |
-| [`Backups/security_dependency_patches`](../Backups/security_dependency_patches) | Local backups | 0 | 2 | - |
-
 ### `agent_forge`
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`agent_forge`](../agent_forge) | Forge module root | 198 | 13 | [`agent_forge/README.md`](../agent_forge/README.md) |
-| [`agent_forge/.pytest_cache`](../agent_forge/.pytest_cache) | Project directory | 0 | 1 | [`agent_forge/.pytest_cache/README.md`](../agent_forge/.pytest_cache/README.md) |
+| [`agent_forge`](../agent_forge) | Forge module root | 198 | 12 | [`agent_forge/README.md`](../agent_forge/README.md) |
 | [`agent_forge/.vscode`](../agent_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`agent_forge/bin`](../agent_forge/bin) | Executable scripts | 3 | 0 | - |
 | [`agent_forge/cfg`](../agent_forge/cfg) | Project directory | 6 | 0 | - |
@@ -179,7 +202,7 @@
 | [`agent_forge/scripts`](../agent_forge/scripts) | Module scripts | 1 | 0 | - |
 | [`agent_forge/src`](../agent_forge/src) | Source code | 98 | 1 | - |
 | [`agent_forge/state`](../agent_forge/state) | Project directory | 5 | 5 | - |
-| [`agent_forge/tests`](../agent_forge/tests) | Test suite | 51 | 1 | - |
+| [`agent_forge/tests`](../agent_forge/tests) | Test suite | 51 | 0 | - |
 
 ### `archive_forge`
 
@@ -226,8 +249,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`bin`](../bin) | Top-level CLI entrypoints | 2 | 1 | - |
-| [`bin/__pycache__`](../bin/__pycache__) | Top-level CLI entrypoints | 0 | 0 | - |
+| [`bin`](../bin) | Top-level CLI entrypoints | 2 | 0 | - |
 
 ### `code_forge`
 
@@ -260,15 +282,14 @@
 | [`crawl_forge/.vscode`](../crawl_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`crawl_forge/completions`](../crawl_forge/completions) | Shell completions | 1 | 0 | - |
 | [`crawl_forge/src`](../crawl_forge/src) | Source code | 3 | 1 | - |
-| [`crawl_forge/tests`](../crawl_forge/tests) | Test suite | 2 | 1 | - |
+| [`crawl_forge/tests`](../crawl_forge/tests) | Test suite | 2 | 0 | - |
 
 ### `data`
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`data`](../data) | Data and memory artifacts | 172 | 8 | - |
+| [`data`](../data) | Data and memory artifacts | 172 | 7 | - |
 | [`data/code_forge`](../data/code_forge) | Data and memory artifacts | 11 | 1 | - |
-| [`data/consciousness`](../data/consciousness) | Data and memory artifacts | 0 | 0 | - |
 | [`data/db`](../data/db) | Data and memory artifacts | 4 | 0 | - |
 | [`data/memory`](../data/memory) | Data and memory artifacts | 5 | 0 | - |
 | [`data/moltbook`](../data/moltbook) | Data and memory artifacts | 132 | 0 | - |
@@ -309,8 +330,8 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`docs`](../docs) | Documentation | 186 | 3 | [`docs/README.md`](../docs/README.md) |
-| [`docs/consciousness_fcl`](../docs/consciousness_fcl) | Documentation | 52 | 0 | [`docs/consciousness_fcl/README.md`](../docs/consciousness_fcl/README.md) |
+| [`docs`](../docs) | Documentation | 190 | 3 | [`docs/README.md`](../docs/README.md) |
+| [`docs/consciousness_fcl`](../docs/consciousness_fcl) | Documentation | 53 | 0 | [`docs/consciousness_fcl/README.md`](../docs/consciousness_fcl/README.md) |
 | [`docs/legacy`](../docs/legacy) | Documentation | 109 | 2 | - |
 | [`docs/security`](../docs/security) | Documentation | 2 | 0 | - |
 
@@ -318,22 +339,18 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`eidos_mcp`](../eidos_mcp) | Project directory | 66 | 5 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
-| [`eidos_mcp/.pytest_cache`](../eidos_mcp/.pytest_cache) | Project directory | 0 | 1 | [`eidos_mcp/.pytest_cache/README.md`](../eidos_mcp/.pytest_cache/README.md) |
+| [`eidos_mcp`](../eidos_mcp) | Project directory | 66 | 4 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
 | [`eidos_mcp/scripts`](../eidos_mcp/scripts) | Module scripts | 2 | 0 | - |
 | [`eidos_mcp/src`](../eidos_mcp/src) | Source code | 40 | 1 | - |
 | [`eidos_mcp/systemd`](../eidos_mcp/systemd) | Project directory | 1 | 0 | - |
-| [`eidos_mcp/tests`](../eidos_mcp/tests) | Test suite | 8 | 1 | - |
+| [`eidos_mcp/tests`](../eidos_mcp/tests) | Test suite | 8 | 0 | - |
 
 ### `eidosian_venv`
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 4 | - |
+| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | - |
 | [`eidosian_venv/bin`](../eidosian_venv/bin) | Local virtual environment | 11 | 0 | - |
-| [`eidosian_venv/include`](../eidosian_venv/include) | Local virtual environment | 0 | 1 | - |
-| [`eidosian_venv/lib`](../eidosian_venv/lib) | Local virtual environment | 0 | 1 | - |
-| [`eidosian_venv/lib64`](../eidosian_venv/lib64) | Local virtual environment | 0 | 0 | - |
 
 ### `erais_forge`
 
@@ -374,12 +391,11 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`game_forge`](../game_forge) | Forge module root | 643 | 8 | [`game_forge/README.md`](../game_forge/README.md) |
+| [`game_forge`](../game_forge) | Forge module root | 643 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
 | [`game_forge/.vscode`](../game_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`game_forge/algorithms_lab`](../game_forge/algorithms_lab) | Project directory | 18 | 2 | - |
 | [`game_forge/gene_particles`](../game_forge/gene_particles) | Project directory | 2 | 1 | - |
 | [`game_forge/pyparticles`](../game_forge/pyparticles) | Project directory | 53 | 4 | [`game_forge/pyparticles/README.md`](../game_forge/pyparticles/README.md) |
-| [`game_forge/pyparticles_haskell_source`](../game_forge/pyparticles_haskell_source) | Project directory | 0 | 0 | - |
 | [`game_forge/src`](../game_forge/src) | Source code | 487 | 10 | - |
 | [`game_forge/tests`](../game_forge/tests) | Test suite | 44 | 0 | - |
 | [`game_forge/tools`](../game_forge/tools) | Developer tools | 25 | 2 | - |
@@ -416,12 +432,6 @@
 | [`glyph_forge/src`](../glyph_forge/src) | Source code | 50 | 1 | - |
 | [`glyph_forge/templates`](../glyph_forge/templates) | Templates | 3 | 2 | - |
 | [`glyph_forge/tests`](../glyph_forge/tests) | Test suite | 24 | 1 | - |
-
-### `graphrag`
-
-| Path | Category | Tracked files | Direct subdirs | README |
-| --- | --- | ---: | ---: | --- |
-| [`graphrag`](../graphrag) | Project directory | 0 | 0 | - |
 
 ### `graphrag_workspace`
 
@@ -467,10 +477,9 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`lib`](../lib) | Shared libraries | 12 | 4 | [`lib/README.md`](../lib/README.md) |
-| [`lib/__pycache__`](../lib/__pycache__) | Shared libraries | 0 | 0 | - |
-| [`lib/cli`](../lib/cli) | Shared libraries | 1 | 1 | - |
-| [`lib/eidosian_core`](../lib/eidosian_core) | Shared libraries | 7 | 1 | - |
+| [`lib`](../lib) | Shared libraries | 12 | 3 | [`lib/README.md`](../lib/README.md) |
+| [`lib/cli`](../lib/cli) | Shared libraries | 1 | 0 | - |
+| [`lib/eidosian_core`](../lib/eidosian_core) | Shared libraries | 7 | 0 | - |
 | [`lib/tests`](../lib/tests) | Shared libraries | 1 | 0 | - |
 
 ### `llm_forge`
@@ -484,12 +493,6 @@
 | [`llm_forge/legacy_imports`](../llm_forge/legacy_imports) | Project directory | 371 | 1 | - |
 | [`llm_forge/src`](../llm_forge/src) | Source code | 11 | 1 | - |
 | [`llm_forge/tests`](../llm_forge/tests) | Test suite | 7 | 0 | - |
-
-### `logs`
-
-| Path | Category | Tracked files | Direct subdirs | README |
-| --- | --- | ---: | ---: | --- |
-| [`logs`](../logs) | Runtime logs | 0 | 0 | - |
 
 ### `lyrics_forge`
 
@@ -572,8 +575,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`moltbook_forge`](../moltbook_forge) | Forge module root | 68 | 6 | [`moltbook_forge/README.md`](../moltbook_forge/README.md) |
-| [`moltbook_forge/__pycache__`](../moltbook_forge/__pycache__) | Project directory | 0 | 0 | - |
+| [`moltbook_forge`](../moltbook_forge) | Forge module root | 68 | 5 | [`moltbook_forge/README.md`](../moltbook_forge/README.md) |
 | [`moltbook_forge/data`](../moltbook_forge/data) | Project directory | 2 | 0 | - |
 | [`moltbook_forge/skill_sources`](../moltbook_forge/skill_sources) | Project directory | 2 | 0 | - |
 | [`moltbook_forge/tests`](../moltbook_forge/tests) | Test suite | 20 | 0 | - |
@@ -600,12 +602,6 @@
 | [`ollama_forge/notebooks`](../ollama_forge/notebooks) | Project directory | 1 | 0 | - |
 | [`ollama_forge/src`](../ollama_forge/src) | Source code | 4 | 1 | - |
 | [`ollama_forge/tests`](../ollama_forge/tests) | Test suite | 17 | 8 | - |
-
-### `plugins`
-
-| Path | Category | Tracked files | Direct subdirs | README |
-| --- | --- | ---: | ---: | --- |
-| [`plugins`](../plugins) | Project directory | 0 | 0 | - |
 
 ### `projects`
 
@@ -655,14 +651,11 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`reports`](../reports) | Benchmark/audit reports | 14 | 7 | - |
-| [`reports/consciousness`](../reports/consciousness) | Benchmark/audit reports | 0 | 0 | - |
+| [`reports`](../reports) | Benchmark/audit reports | 14 | 4 | - |
 | [`reports/consciousness_benchmarks`](../reports/consciousness_benchmarks) | Benchmark/audit reports | 2 | 0 | - |
 | [`reports/consciousness_integrated_benchmarks`](../reports/consciousness_integrated_benchmarks) | Benchmark/audit reports | 1 | 0 | - |
-| [`reports/consciousness_stress_benchmarks`](../reports/consciousness_stress_benchmarks) | Benchmark/audit reports | 0 | 0 | - |
 | [`reports/consciousness_trends`](../reports/consciousness_trends) | Benchmark/audit reports | 2 | 0 | - |
 | [`reports/consciousness_trials`](../reports/consciousness_trials) | Benchmark/audit reports | 4 | 0 | - |
-| [`reports/security`](../reports/security) | Benchmark/audit reports | 0 | 0 | - |
 
 ### `requirements`
 
@@ -674,13 +667,12 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`scripts`](../scripts) | Automation scripts | 150 | 6 | [`scripts/README.md`](../scripts/README.md) |
-| [`scripts/__pycache__`](../scripts/__pycache__) | Automation scripts | 0 | 0 | - |
+| [`scripts`](../scripts) | Automation scripts | 152 | 5 | [`scripts/README.md`](../scripts/README.md) |
 | [`scripts/docs`](../scripts/docs) | Automation scripts | 1 | 1 | - |
 | [`scripts/machine_clone`](../scripts/machine_clone) | Automation scripts | 14 | 0 | [`scripts/machine_clone/README.md`](../scripts/machine_clone/README.md) |
 | [`scripts/migration`](../scripts/migration) | Automation scripts | 4 | 0 | - |
 | [`scripts/profiling`](../scripts/profiling) | Automation scripts | 40 | 0 | - |
-| [`scripts/tests`](../scripts/tests) | Automation scripts | 14 | 1 | - |
+| [`scripts/tests`](../scripts/tests) | Automation scripts | 15 | 0 | - |
 
 ### `skills`
 
@@ -698,18 +690,6 @@
 | [`sms_forge/.vscode`](../sms_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`sms_forge/src`](../sms_forge/src) | Source code | 2 | 1 | - |
 | [`sms_forge/tests`](../sms_forge/tests) | Test suite | 1 | 0 | - |
-
-### `state`
-
-| Path | Category | Tracked files | Direct subdirs | README |
-| --- | --- | ---: | ---: | --- |
-| [`state`](../state) | Runtime state | 0 | 6 | - |
-| [`state/_scratch`](../state/_scratch) | Runtime state | 0 | 1 | - |
-| [`state/bench_docs_cycle`](../state/bench_docs_cycle) | Runtime state | 0 | 2 | - |
-| [`state/consciousness`](../state/consciousness) | Runtime state | 0 | 1 | - |
-| [`state/eidos_phase_i7_state`](../state/eidos_phase_i7_state) | Runtime state | 0 | 2 | - |
-| [`state/events`](../state/events) | Runtime state | 0 | 2 | - |
-| [`state/tiered_memory_runtime`](../state/tiered_memory_runtime) | Runtime state | 0 | 0 | - |
 
 ### `terminal_forge`
 
@@ -787,12 +767,10 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`word_forge`](../word_forge) | Forge module root | 304 | 9 | [`word_forge/README.md`](../word_forge/README.md) |
+| [`word_forge`](../word_forge) | Forge module root | 304 | 7 | [`word_forge/README.md`](../word_forge/README.md) |
 | [`word_forge/.github`](../word_forge/.github) | Project directory | 3 | 1 | - |
 | [`word_forge/completions`](../word_forge/completions) | Shell completions | 1 | 0 | - |
-| [`word_forge/data`](../word_forge/data) | Project directory | 0 | 0 | - |
 | [`word_forge/docs`](../word_forge/docs) | Module docs | 8 | 3 | - |
-| [`word_forge/logs`](../word_forge/logs) | Project directory | 0 | 0 | - |
 | [`word_forge/scripts`](../word_forge/scripts) | Module scripts | 7 | 0 | - |
 | [`word_forge/src`](../word_forge/src) | Source code | 105 | 2 | - |
 | [`word_forge/tests`](../word_forge/tests) | Test suite | 37 | 1 | - |

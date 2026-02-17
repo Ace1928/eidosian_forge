@@ -262,6 +262,26 @@ jobs:
 
 ---
 
+#### 9. **directory-atlas-drift.yml** - Directory Atlas Drift Guard
+*Enforces deterministic repository directory documentation artifacts*
+
+**Triggers:**
+- Push/PR when atlas generator, atlas artifacts, or docs entrypoints change
+- Manual workflow dispatch
+
+**Jobs:**
+1. **atlas-drift** - Runs:
+   - `scripts/tests/test_generate_directory_atlas.py`
+   - `scripts/generate_directory_atlas.py --scope tracked`
+   - drift gate: fails if regenerated `docs/DIRECTORY_ATLAS.md` or `docs/DIRECTORY_INDEX_FULL.txt` differ from committed files
+
+**Key Features:**
+- Deterministic tracked-scope generation for CI-safe reproducibility
+- Explicit failure output with `git diff` patch for fast remediation
+- Prevents stale directory coverage docs from drifting out of sync
+
+---
+
 ## 🔧 Local Development Setup
 
 ### Workflow Config

@@ -57,3 +57,4 @@
 - Part 44: `docs/consciousness_fcl/part-44-phase21-event-fabric-trial-capture.md`
 - Part 45: `docs/consciousness_fcl/part-45-phase22-trial-provenance-replay-manifests.md`
 - Part 46: `docs/consciousness_fcl/part-46-phase23-repo-docs-atlas-benchmark-cycle.md`
+- Part 47: `docs/consciousness_fcl/part-47-phase24-deterministic-atlas-drift-guard.md`
