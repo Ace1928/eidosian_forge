@@ -44,11 +44,11 @@ def get_file_content(rel_path):
         return f"Error reading file: {e}"
 
 def call_llm(prompt):
-    """Call the local llama-cli with the given prompt."""
-    import tempfile
+    """Call the local llama-server with the given prompt."""
+    import requests
+    import json
     
-    if not LLAMA_CLI.exists():
-        return "ERROR: llama-cli not found. Build may still be in progress."
+    url = "http://127.0.0.1:8080/completion"
     
     # Qwen-style prompt
     full_prompt = f"""<|im_start|>system
@@ -58,44 +58,23 @@ def call_llm(prompt):
 <|im_start|>assistant
 """
     
-    # Write prompt to a temporary file to avoid CLI arg length limits
-    with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8', delete=False) as tmp_file:
-        tmp_file.write(full_prompt)
-        tmp_file_path = tmp_file.name
-
-    cmd = [
-        str(LLAMA_CLI),
-        "-m", str(MODEL_PATH),
-        "-f", tmp_file_path,       # Use file input
-        "-n", "2048",              # Reasonable limit
-        "--temp", "0.7",
-        "--repeat-penalty", "1.1",
-        "--no-display-prompt",
-        "--simple-io",
-        "--log-disable",  # Suppress all logs
-        "-e",                      # Enable escapes
-        "-c", "4096",              # Reasonable context
-        "-st"                      # Single-turn mode: exit after generation
-    ]
+    payload = {
+        "prompt": full_prompt,
+        "n_predict": 2048,
+        "temperature": 0.7,
+        "stop": ["<|im_end|>", "<|im_start|>"],
+        "stream": False
+    }
     
     try:
-        # We don't need stdin=subprocess.DEVNULL when using -f usually, but good for safety
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600, stdin=subprocess.DEVNULL)
+        response = requests.post(url, json=payload, timeout=600)
+        if response.status_code != 200:
+            return f"ERROR: llama-server returned status {response.status_code}\n{response.text}"
         
-        # Cleanup
-        os.unlink(tmp_file_path)
-        
-        if result.returncode != 0:
-            return f"ERROR: llama-cli failed with return code {result.returncode}\n{result.stdout}\n{result.stderr}"
-        return result.stdout.strip()
-    except subprocess.TimeoutExpired:
-        if os.path.exists(tmp_file_path):
-            os.unlink(tmp_file_path)
-        return "ERROR: llama-cli timed out after 10 minutes."
+        data = response.json()
+        return data.get("content", "").strip()
     except Exception as e:
-        if os.path.exists(tmp_file_path):
-            os.unlink(tmp_file_path)
-        return f"ERROR: Unexpected error calling llama-cli: {e}"
+        return f"ERROR: Failed to connect to llama-server: {e}"
 
 def pre_check(content):
     """Perform automated gating and quality checks on the LLM output."""
