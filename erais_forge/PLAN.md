@@ -9,9 +9,8 @@
 - [x] ~~**Controller (`src/erais_forge/controller.py`)**: The main loop (Select -> Mutate -> Evaluate -> Store).~~
 
 ## 🏋️ Phase 3: The Fitness Gym
-- [ ] **Gym Adapter (`src/erais_forge/gym.py`)**: Interface to `game_forge`.
-    - *Spec*: Run `agentic_chess` or `gene_particles` with a specific Genome.
-    - *Metric*: Win rate or Survival time.
+- [x] ~~**Gym Adapter (`src/erais_forge/gym.py`)**: Interface to `game_forge`.~~
+- [x] ~~**Tests & Benchmarking**: Verified FitnessGym interface and GeneticLibrary performance.~~
 
 ## 🔌 Phase 4: Integration & Observability
 - [ ] **MCP Tools (`src/eidos_mcp/routers/erais.py`)**: `erais_evolve`, `erais_list_genes`.
