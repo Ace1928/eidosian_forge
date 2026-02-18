@@ -1,51 +1,28 @@
 from __future__ import annotations
-
 import json
-
 from ..core import tool
-from ..forge_loader import ensure_forge_import
+from diagnostics_forge.core import DiagnosticsForge
 from eidosian_core import eidosian
 
-ensure_forge_import("diagnostics_forge")
-
-try:
-    from diagnostics_forge.core import DiagnosticsForge
-except Exception:  # pragma: no cover - optional dependency
-    DiagnosticsForge = None
-
-
-diag = DiagnosticsForge(service_name="eidos_mcp") if DiagnosticsForge else None
-
+# Initialize core diagnostics
+diag = DiagnosticsForge()
 
 @tool(
-    name="diagnostics_ping",
-    description="Return basic diagnostics status.",
-    parameters={"type": "object", "properties": {}},
+    name="diagnostics_pulse",
+    description="Get real-time system resource usage (CPU, RAM, Disk).",
 )
 @eidosian()
-def diagnostics_ping() -> str:
-    """Return basic diagnostics status."""
-    if not diag:
-        return "Error: Diagnostics forge unavailable"
-    diag.log_event("INFO", "diagnostics_ping")
-    return "ok"
-
+def diagnostics_pulse() -> str:
+    """Get real-time system resource usage."""
+    pulse = diag.get_system_pulse()
+    return json.dumps(pulse, indent=2)
 
 @tool(
-    name="diagnostics_metrics",
-    description="Return diagnostics metrics summary.",
-    parameters={
-        "type": "object",
-        "properties": {"name": {"type": "string"}},
-    },
+    name="diagnostics_processes",
+    description="List active Eidosian-related processes and their resource consumption.",
 )
 @eidosian()
-def diagnostics_metrics(name: str | None = None) -> str:
-    """Return diagnostics metrics summary."""
-    if not diag:
-        return "Error: Diagnostics forge unavailable"
-    if name:
-        summary = diag.get_metrics_summary(name)
-    else:
-        summary = {k: diag.get_metrics_summary(k) for k in diag.metrics}
-    return json.dumps(summary, indent=2)
+def diagnostics_processes() -> str:
+    """List active Eidosian-related processes."""
+    procs = diag.get_process_metrics()
+    return json.dumps(procs, indent=2)
