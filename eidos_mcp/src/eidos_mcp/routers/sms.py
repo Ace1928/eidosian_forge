@@ -1,41 +1,78 @@
 from __future__ import annotations
 from typing import List, Optional
+from ..forge_loader import ensure_forge_import
+
+# Ensure dependencies are in path
+ensure_forge_import("memory_forge")
+ensure_forge_import("sms_forge")
+
 from sms_forge.core import SmsForge
-from ..core import mcp
+from ..core import tool
+from eidosian_core import eidosian
 
 # Initialize the forge
 sms = SmsForge()
 
-@mcp.tool()
+@tool(
+    name="sms_send",
+    description="Send an SMS message using a number or contact name.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "recipient": {"type": "string", "description": "Phone number or Contact Name (if saved)."},
+            "body": {"type": "string", "description": "The message content."},
+        },
+        "required": ["recipient", "body"],
+    },
+)
+@eidosian()
 async def sms_send(recipient: str, body: str) -> str:
-    """
-    Send an SMS message using the best available provider (Termux or Twilio).
-    :param recipient: Phone number in international format.
-    :param body: The message content.
-    """
+    """Send an SMS message using a number or contact name."""
     success = await sms.send_message(recipient, body)
-    return "SMS Sent Successfully" if success else "Failed to send SMS"
+    return f"SMS Sent to {recipient} Successfully" if success else f"Failed to send SMS to {recipient}"
 
-@mcp.tool()
-async def sms_get_codes(sender_pattern: Optional[str] = None) -> str:
-    """
-    Poll recent SMS for 2FA or verification codes.
-    :param sender_pattern: Optional string to filter sender name (e.g. 'Google', 'Bank').
-    """
-    code = await sms.get_2fa_code(sender_pattern)
-    return f"Latest Code: {code}" if code else "No verification code found in recent messages."
+@tool(
+    name="sms_add_contact",
+    description="Add a contact to the Eidosian directory.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "number": {"type": "string"},
+        },
+        "required": ["name", "number"],
+    },
+)
+@eidosian()
+async def sms_add_contact(name: str, number: str) -> str:
+    """Add a contact to the Eidosian directory."""
+    sms.contacts.add_contact(name, number)
+    return f"Contact '{name}' saved with number {number}."
 
-@mcp.tool()
-async def sms_list(limit: int = 5) -> str:
-    """
-    List the latest SMS messages.
-    """
-    msgs = await sms.get_latest_messages(limit)
+@tool(
+    name="sms_list",
+    description="List the latest SMS messages, optionally filtered by contact name.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "limit": {"type": "integer", "default": 5},
+            "contact_name": {"type": "string", "description": "Optional name to filter by."},
+        },
+    },
+)
+@eidosian()
+async def sms_list(limit: int = 5, contact_name: Optional[str] = None) -> str:
+    """List the latest SMS messages, optionally filtered by contact name."""
+    if contact_name:
+        msgs = await sms.get_messages_by_contact(contact_name, limit)
+    else:
+        msgs = await sms.get_latest_messages(limit)
+        
     if not msgs:
         return "No messages found."
     
     out = []
     for m in msgs:
-        out.append(f"[{m.timestamp}] {m.sender}: {m.body}")
-    return "
-".join(out)
+        direction = "INBOX" if m.received else "SENT"
+        out.append(f"[{m.timestamp}] {direction} | {m.sender}: {m.body}")
+    return "\n".join(out)
