@@ -5,11 +5,8 @@
 ## 🎯 Phase 1: The Genetic Substrate
 - [x] ~~**Data Model (`src/erais_forge/models.py`)**: Define `Gene`, `Genome`, and `Generation` using Pydantic.~~
 - [x] ~~**Genetic Library (`src/erais_forge/library.py`)**: Implement persistence layer.~~
-- [ ] **Mutator (`src/erais_forge/mutator.py`)**: Logic to modify genes.
-    - *Spec*: Wraps `llm_forge` to propose variations of prompts/code.
-    - *Safety*: Sandboxed execution (conceptual/mocked for now).
-- [ ] **Controller (`src/erais_forge/controller.py`)**: The main loop (Select -> Mutate -> Evaluate -> Store).
-    - *Spec*: Configurable population size and mutation rate.
+- [x] ~~**Mutator (`src/erais_forge/mutator.py`)**: Logic to modify genes.~~
+- [x] ~~**Controller (`src/erais_forge/controller.py`)**: The main loop (Select -> Mutate -> Evaluate -> Store).~~
 
 ## 🏋️ Phase 3: The Fitness Gym
 - [ ] **Gym Adapter (`src/erais_forge/gym.py`)**: Interface to `game_forge`.
