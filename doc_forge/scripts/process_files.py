@@ -48,7 +48,7 @@ def call_llm(prompt):
     import requests
     import json
     
-    url = "http://127.0.0.1:8080/completion"
+    url = "http://127.0.0.1:8081/completion"
     
     # Qwen-style prompt
     full_prompt = f"""<|im_start|>system
