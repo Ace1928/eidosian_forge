@@ -1,24 +1,22 @@
-# Plan: sms_forge
+# SMS Forge Elevation Plan
 
-**Objective**: Build SMS/messaging integration.
+**Objective**: Elevate SMS Forge to a sophisticated communication intelligence module.
 
----
+## 🎯 Phase 1: Core Foundation (DONE)
+- [x] ~~Termux SMS Backend implementation.~~
+- [x] ~~Basic contact management.~~
+- [x] ~~2FA Code parsing logic.~~
 
-## Current Sprint
+## 📡 Phase 2: Multi-Modal Retrieval (ACTIVE)
+- [ ] **Notification Sniffer (`advanced_retrieval.py`)**: Capture RCS/Signal/WhatsApp content.
+- [ ] **Hybrid Inbox**: Merge SMS and Notification signals into a single chronological view.
+- [ ] **Source Metadata**: Track whether a message was a legacy SMS or an active notification.
 
-- [ ] Design API interface
-- [ ] Set up Twilio credentials
-- [ ] Implement basic send/receive
-- [ ] Add message templates
+## 🛡️ Phase 3: Sophisticated Outreach
+- [ ] **Smart Auto-Reply**: Context-aware suggestions based on conversation history.
+- [ ] **Outreach Scheduling**: Batch messages for optimal delivery.
+- [ ] **Engagement Analytics**: Track response rates and social sentiment.
 
----
-
-## Success Criteria
-
-1. SMS sending works
-2. Receiving works
-3. Templates render correctly
-
----
-
-*Connect to the world.*
+## 🔌 Phase 4: Nexus Integration
+- [ ] **Enhanced `sms_list`**: Return unified signals with source attribution.
+- [ ] **Signal/MMS Detection**: Explicitly flag messages that might contain media or RCS specific features.

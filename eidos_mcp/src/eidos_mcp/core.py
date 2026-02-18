@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import inspect
 import os
-import time
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
 from mcp.server.fastmcp import FastMCP
@@ -45,6 +44,7 @@ _TYPE_MAP = {
 }
 
 
+@eidosian()
 def register_tool_metadata(name: str, description: str, parameters: Dict[str, Any], func: Any = None) -> None:
     _TOOL_REGISTRY[name] = {
         "name": name,
@@ -54,14 +54,17 @@ def register_tool_metadata(name: str, description: str, parameters: Dict[str, An
     }
 
 
+@eidosian()
 def list_tool_metadata() -> List[Dict[str, Any]]:
     return list(_TOOL_REGISTRY.values())
 
 
+@eidosian()
 def register_resource_metadata(uri: str, description: str) -> None:
     _RESOURCE_REGISTRY[uri] = {"uri": uri, "description": description}
 
 
+@eidosian()
 def list_resource_metadata() -> List[Dict[str, Any]]:
     return list(_RESOURCE_REGISTRY.values())
 
@@ -112,15 +115,15 @@ def _infer_parameters(func) -> Dict[str, Any]:
     return schema
 
 
+import time
+
+@eidosian()
 def tool(
     name: Optional[str] = None,
     description: Optional[str] = None,
     parameters: Optional[Dict[str, Any]] = None,
 ):
-    """
-    Eidosian tool decorator. 
-    Registers tool metadata and wraps with logging/tracing.
-    """
+    @eidosian()
     def decorator(func):
         tool_name = name or func.__name__
         desc = (description or func.__doc__ or "").strip()
@@ -128,6 +131,7 @@ def tool(
         register_tool_metadata(tool_name, desc, params, func=func)
 
         if inspect.iscoroutinefunction(func):
+            @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 sig = inspect.signature(func)
@@ -147,6 +151,7 @@ def tool(
                     log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
         else:
+            @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 sig = inspect.signature(func)
@@ -166,25 +171,24 @@ def tool(
                     log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
 
-        # Compatibility shim for mocks and FastMCP
-        try:
-            return mcp.tool(name=tool_name, description=desc)(wrapper)
-        except TypeError:
-            try:
-                return mcp.tool(tool_name)(wrapper)
-            except TypeError:
-                return mcp.tool()(wrapper)
+        if name is None:
+            mcp_decorator = mcp.tool()
+        else:
+            mcp_decorator = mcp.tool(tool_name)
+        return mcp_decorator(wrapper)
 
     return decorator
 
 
+@eidosian()
 def resource(uri: str, description: Optional[str] = None):
-    """Eidosian resource decorator."""
+    @eidosian()
     def decorator(func):
         desc = (description or func.__doc__ or "").strip()
         register_resource_metadata(uri, desc)
 
         if inspect.iscoroutinefunction(func):
+            @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 start = time.time()
@@ -196,6 +200,7 @@ def resource(uri: str, description: Optional[str] = None):
                     log_resource_read(uri, None, error=str(e), start_time=start)
                     raise
         else:
+            @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 start = time.time()

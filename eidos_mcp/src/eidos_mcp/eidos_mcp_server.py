@@ -39,7 +39,6 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.auth",
         "eidos_mcp.routers.consciousness",
         "eidos_mcp.routers.diagnostics",
-        "eidos_mcp.routers.erais",
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.knowledge",
         "eidos_mcp.routers.memory",
@@ -572,18 +571,11 @@ def _build_streamable_http_app(
 
 
 def _run_streamable_http_server(mount_path: str) -> None:
+    app = _build_streamable_http_app(mount_path)
     host = os.environ.get("FASTMCP_HOST", "127.0.0.1")
     port = int(os.environ.get("FASTMCP_PORT", "8928"))
     log_level = os.environ.get("FASTMCP_LOG_LEVEL", "info").lower()
-    reload = os.environ.get("FASTMCP_RELOAD", "false").lower() == "true"
-    
-    if reload:
-        uvicorn.run("eidos_mcp.eidos_mcp_server:app", host=host, port=port, log_level=log_level, reload=True)
-    else:
-        global app
-        if 'app' not in globals():
-            app = _build_streamable_http_app(mount_path)
-        uvicorn.run(app, host=host, port=port, log_level=log_level)
+    uvicorn.run(app, host=host, port=port, log_level=log_level)
 
 
 @eidosian()
@@ -693,11 +685,6 @@ def main() -> None:
     mount_path = os.environ.get("EIDOS_MCP_MOUNT_PATH", "/mcp")
     log_debug(f"Starting Eidosian MCP Server (Transport: {transport}, Mount: {mount_path})...")
     log_startup(transport)
-    
-    # Expose app at module level for uvicorn reload
-    global app
-    app = _build_streamable_http_app(mount_path)
-    
     try:
         normalized_transport = transport.strip().lower().replace("_", "-")
         if normalized_transport == "streamable-http":

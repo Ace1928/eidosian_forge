@@ -1,0 +1,3 @@
+[submodule "llm_forge/vendor/llama.cpp"]
+	path = llm_forge/vendor/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp
