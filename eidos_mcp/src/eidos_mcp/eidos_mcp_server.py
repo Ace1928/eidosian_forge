@@ -39,6 +39,7 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.auth",
         "eidos_mcp.routers.consciousness",
         "eidos_mcp.routers.diagnostics",
+        "eidos_mcp.routers.erais",
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.knowledge",
         "eidos_mcp.routers.memory",
