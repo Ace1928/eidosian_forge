@@ -1,24 +1,26 @@
-# Plan: erais_forge
+# ERAIS Forge Elevation Plan
 
-**Objective**: Safe recursive self-improvement.
+**Objective**: Transform `erais_forge` from a concept into a functional Recursive Self-Improvement (RSI) engine.
 
----
+## 🎯 Phase 1: The Genetic Substrate
+- [x] ~~**Data Model (`src/erais_forge/models.py`)**: Define `Gene`, `Genome`, and `Generation` using Pydantic.~~
+- [x] ~~**Genetic Library (`src/erais_forge/library.py`)**: Implement persistence layer.~~
+- [ ] **Mutator (`src/erais_forge/mutator.py`)**: Logic to modify genes.
+    - *Spec*: Wraps `llm_forge` to propose variations of prompts/code.
+    - *Safety*: Sandboxed execution (conceptual/mocked for now).
+- [ ] **Controller (`src/erais_forge/controller.py`)**: The main loop (Select -> Mutate -> Evaluate -> Store).
+    - *Spec*: Configurable population size and mutation rate.
 
-## Current Sprint
+## 🏋️ Phase 3: The Fitness Gym
+- [ ] **Gym Adapter (`src/erais_forge/gym.py`)**: Interface to `game_forge`.
+    - *Spec*: Run `agentic_chess` or `gene_particles` with a specific Genome.
+    - *Metric*: Win rate or Survival time.
 
-- [ ] Define self-evaluation metrics
-- [ ] Design improvement trigger logic
-- [ ] Create safety sandbox
-- [ ] Document theoretical framework
+## 🔌 Phase 4: Integration & Observability
+- [ ] **MCP Tools (`src/eidos_mcp/routers/erais.py`)**: `erais_evolve`, `erais_list_genes`.
+- [ ] **CLI**: `erais evolve --generations 10`.
+- [ ] **Tests**: >80% coverage.
 
----
-
-## Success Criteria
-
-1. Clear theory of operation
-2. Safe bounded execution
-3. Measurable improvement metric
-
----
-
-*Evolve. But safely.*
+## 🛡️ Constraints
+- No uncontrolled code modification (User approval required for commit).
+- Low resource footprint (runs in background).
