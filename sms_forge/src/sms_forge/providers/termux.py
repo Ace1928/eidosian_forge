@@ -1,7 +1,7 @@
 import json
 import subprocess
 import asyncio
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from .base import SmsProvider, SmsMessage
 from eidosian_core import eidosian
@@ -29,9 +29,12 @@ class TermuxProvider(SmsProvider):
         return proc.returncode == 0
 
     @eidosian
-    async def list_messages(self, limit: int = 10) -> List[SmsMessage]:
-        """List messages using termux-sms-list."""
+    async def list_messages(self, limit: int = 10, address: Optional[str] = None) -> List[SmsMessage]:
+        """List messages using termux-sms-list with optional address filtering."""
         cmd = ["termux-sms-list", "-l", str(limit)]
+        if address:
+            cmd.extend(["-f", address])
+            
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -47,13 +50,21 @@ class TermuxProvider(SmsProvider):
             messages = []
             for item in raw_data:
                 # Termux returns dates like "2026-02-18 07:15:00"
-                ts = datetime.strptime(item.get("received"), "%Y-%m-%d %H:%M:%S")
+                date_str = item.get("received") or item.get("date")
+                try:
+                    ts = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                except (ValueError, TypeError):
+                    ts = datetime.now()
+
+                # type 1 = inbox, type 2 = sent
+                msg_type = item.get("type", 1)
+                
                 messages.append(SmsMessage(
                     id=str(item.get("_id")),
                     sender=item.get("number"),
                     body=item.get("body"),
                     timestamp=ts,
-                    received=True
+                    received=(msg_type == 1)
                 ))
             return messages
         except (json.JSONDecodeError, ValueError):
