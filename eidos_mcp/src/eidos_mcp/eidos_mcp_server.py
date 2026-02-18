@@ -45,6 +45,7 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.moltbook",
         "eidos_mcp.routers.nexus",
         "eidos_mcp.routers.refactor",
+        "eidos_mcp.routers.sms",
         "eidos_mcp.routers.system",
         "eidos_mcp.routers.tika",
         "eidos_mcp.routers.tiered_memory",
