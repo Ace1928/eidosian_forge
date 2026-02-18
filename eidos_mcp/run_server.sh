@@ -15,7 +15,8 @@ export FASTMCP_HOST="${FASTMCP_HOST:-127.0.0.1}"
 export FASTMCP_RELOAD="${FASTMCP_RELOAD:-true}"
 export PYTHONUNBUFFERED=1
 
-# Ensure uvicorn can find the eidos_mcp package
+# Ensure uvicorn can find the eidos_mcp package and other forge modules
+source "${FORGE_ROOT}/eidos_env.sh"
 export PYTHONPATH="${SCRIPT_DIR}/src:${FORGE_ROOT}:${PYTHONPATH}"
 
 # Ensure local core package is installed from source checkout.

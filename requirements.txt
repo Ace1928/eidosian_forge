@@ -438,3 +438,5 @@ youtube-transcript-api
 yt-dlp
 zim
 zope.interface
+mcp
+pytest-asyncio

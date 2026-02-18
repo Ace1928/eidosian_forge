@@ -1,0 +1,458 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import List, Optional
+
+from .. import FORGE_ROOT
+from ..forge_loader import ensure_forge_import
+from eidosian_core import eidosian
+
+ensure_forge_import("knowledge_forge")
+ensure_forge_import("memory_forge")
+
+from knowledge_forge.core.graph import KnowledgeForge
+from knowledge_forge.integrations.graphrag import GraphRAGIntegration
+from knowledge_forge.integrations.memory_ingest import MemoryIngestor
+
+from ..core import tool
+from ..transactions import (
+    begin_transaction,
+    find_latest_transaction_for_path,
+    load_transaction,
+)
+from ..embeddings import SimpleEmbedder
+
+
+FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
+
+try:
+    from memory_forge import MemoryConfig, MemoryForge
+except Exception:  # pragma: no cover - fallback for missing deps
+    MemoryConfig = None
+    MemoryForge = None
+
+_embedder = SimpleEmbedder()
+memory = None
+if MemoryForge and MemoryConfig:
+    memory = MemoryForge(
+        config=MemoryConfig(
+            episodic={
+                "connection_string": str(FORGE_DIR / "data" / "semantic_memory.json"),
+                "type": "json",
+            }
+        ),
+        embedder=_embedder,
+    )
+kb = KnowledgeForge(persistence_path=FORGE_DIR / "data" / "kb.json")
+grag = GraphRAGIntegration(graphrag_root=FORGE_DIR / "graphrag")
+memory_ingestor = MemoryIngestor(knowledge_path=FORGE_DIR / "data" / "kb.json")
+SEMANTIC_MEMORY_PATH = FORGE_DIR / "data" / "semantic_memory.json"
+
+
+@tool(
+    name="memory_add_semantic",
+    description="Add a semantic memory entry to the knowledge memory store.",
+    parameters={
+        "type": "object",
+        "properties": {"content": {"type": "string"}},
+        "required": ["content"],
+    },
+)
+@eidosian()
+def memory_add_semantic(content: str) -> str:
+    """Add to semantic memory."""
+    if memory is None:
+        return "Error storing memory: memory backend unavailable"
+    with begin_transaction("memory_add_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
+        mid = memory.remember(content)
+        return f"Stored semantic memory: {mid} ({txn.id})"
+
+
+@tool(
+    description="Semantic search over memory.",
+    parameters={
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"],
+    },
+)
+@eidosian()
+def memory_search(query: str) -> str:
+    """Semantic search over memory."""
+    try:
+        if memory is None:
+            return "Error searching memory: memory backend unavailable"
+        results = memory.recall(query)
+        if not results:
+            return f"No semantic memory matches for query: {query}"
+        return "\n".join([f"- {r.content}" for r in results])
+    except Exception as exc:
+        return f"Error searching memory: {exc}"
+
+
+@tool(
+    name="kb_add",
+    description="Add fact to the knowledge graph.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "fact": {"type": "string"},
+            "tags": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["fact", "tags"],
+    },
+)
+@eidosian()
+def kb_add_fact(fact: str, tags: List[str]) -> str:
+    """Add fact to Knowledge Graph."""
+    persistence_path = getattr(kb, "persistence_path", None)
+    if not isinstance(persistence_path, Path):
+        persistence_path = None
+    
+    with begin_transaction("kb_add", [persistence_path]) as txn:
+        node = kb.add_knowledge(fact, tags=tags)
+        return f"Added node: {node.id} ({txn.id})"
+
+
+@tool(
+    name="kb_search",
+    description="Search the knowledge graph for matching content.",
+)
+@eidosian()
+def kb_search(query: str) -> str:
+    """Search the knowledge graph for matching content."""
+    results = kb.search(query)
+    payload = [n.to_dict() for n in results]
+    return str(payload)
+
+
+@tool(
+    name="kb_get_by_tag",
+    description="Find knowledge nodes by tag.",
+)
+@eidosian()
+def kb_get_by_tag(tag: str) -> str:
+    """Find knowledge nodes by tag."""
+    results = kb.get_by_tag(tag)
+    payload = [n.to_dict() for n in results]
+    return str(payload)
+
+
+@tool(
+    name="kb_link",
+    description="Create a bidirectional link between two knowledge nodes.",
+)
+@eidosian()
+def kb_link(node_id_a: str, node_id_b: str) -> str:
+    """Create a bidirectional link between two knowledge nodes."""
+    persistence_path = getattr(kb, "persistence_path", None)
+    if not isinstance(persistence_path, Path):
+        persistence_path = None
+    
+    with begin_transaction("kb_link", [persistence_path]) as txn:
+        kb.link_nodes(node_id_a, node_id_b)
+        return f"Linked {node_id_a} <-> {node_id_b} ({txn.id})"
+
+
+@tool(
+    name="kb_delete",
+    description="Delete a knowledge node by id.",
+    parameters={
+        "type": "object",
+        "properties": {"node_id": {"type": "string"}},
+        "required": ["node_id"],
+    },
+)
+@eidosian()
+def kb_delete(node_id: str) -> str:
+    """Delete a knowledge node by id."""
+    persistence_path = getattr(kb, "persistence_path", None)
+    if not isinstance(persistence_path, Path):
+        persistence_path = None
+    
+    with begin_transaction("kb_delete", [persistence_path]) as txn:
+        deleted = kb.delete_node(node_id)
+        if not deleted:
+            txn.rollback("no-op: not found")
+            return "No-op: Not found"
+        return f"Deleted node {node_id} ({txn.id})"
+
+
+@tool(
+    name="kb_restore",
+    description="Restore knowledge base from a transaction snapshot.",
+    parameters={
+        "type": "object",
+        "properties": {"transaction_id": {"type": "string"}},
+    },
+)
+@eidosian()
+def kb_restore(transaction_id: Optional[str] = None) -> str:
+    """Restore knowledge base from a snapshot transaction."""
+    persistence_path = getattr(kb, "persistence_path", None)
+    if not isinstance(persistence_path, Path):
+        persistence_path = None
+    if not persistence_path:
+        return "Error: Knowledge base persistence unavailable"
+    txn_id = transaction_id or find_latest_transaction_for_path(persistence_path)
+    if not txn_id:
+        return "Error: No transaction found for knowledge base"
+    txn = load_transaction(txn_id)
+    if not txn:
+        return "Error: Transaction not found"
+    txn.rollback("kb_restore")
+    try:
+        kb.load()
+    except Exception:
+        pass
+    return f"Knowledge base restored ({txn_id})"
+
+
+@tool(
+    name="kb_ingest_memory",
+    description="Ingest memory_data.json into Knowledge Forge.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "memory_path": {"type": "string"},
+            "tags": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["memory_path"],
+    },
+)
+@eidosian()
+def kb_ingest_memory(memory_path: str, tags: Optional[List[str]] = None) -> str:
+    result = memory_ingestor.ingest_memory_file(Path(memory_path), tags=tags or [])
+    return str(result)
+
+
+@tool(
+    name="memory_delete_semantic",
+    description="Delete a semantic memory entry by id.",
+)
+@eidosian()
+def memory_delete_semantic(item_id: str) -> str:
+    """Delete a semantic memory entry by id."""
+    if memory is None:
+        return "Error deleting memory: memory backend unavailable"
+    with begin_transaction("memory_delete_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
+        deleted = memory.episodic.delete(item_id)
+        if not deleted:
+            txn.rollback("no-op: not found")
+            return "No-op: Not found"
+        return f"Deleted ({txn.id})"
+
+
+@tool(
+    name="memory_clear_semantic",
+    description="Clear the semantic memory store.",
+)
+@eidosian()
+def memory_clear_semantic() -> str:
+    """Clear the semantic memory store."""
+    if memory is None:
+        return "Error clearing memory: memory backend unavailable"
+    if memory.episodic.count() == 0:
+        return "No-op: Memory already empty"
+    with begin_transaction("memory_clear_semantic", [SEMANTIC_MEMORY_PATH]) as txn:
+        memory.episodic.clear()
+        if memory.episodic.count() != 0:
+            txn.rollback("verification_failed: not_empty")
+            return f"Error: Verification failed; rolled back ({txn.id})"
+        return f"Memory cleared ({txn.id})"
+
+
+@tool(
+    name="memory_snapshot_semantic",
+    description="Create a snapshot of the semantic memory store.",
+    parameters={"type": "object", "properties": {}},
+)
+@eidosian()
+def memory_snapshot_semantic() -> str:
+    """Create a snapshot of the semantic memory store."""
+    txn = begin_transaction("memory_snapshot_semantic", [SEMANTIC_MEMORY_PATH])
+    txn.commit("snapshot")
+    return f"Snapshot created ({txn.id})"
+
+
+@tool(
+    name="memory_restore_semantic",
+    description="Restore semantic memory from a snapshot transaction.",
+    parameters={
+        "type": "object",
+        "properties": {"transaction_id": {"type": "string"}},
+    },
+)
+@eidosian()
+def memory_restore_semantic(transaction_id: Optional[str] = None) -> str:
+    """Restore semantic memory from a snapshot transaction."""
+    txn_id = transaction_id or find_latest_transaction_for_path(SEMANTIC_MEMORY_PATH)
+    if not txn_id:
+        return "Error: No transaction found for semantic memory"
+    txn = load_transaction(txn_id)
+    if not txn:
+        return "Error: Transaction not found"
+    txn.rollback("memory_restore_semantic")
+    try:
+        if memory and hasattr(memory.episodic, "_load"):
+            memory.episodic._load()
+    except Exception:
+        pass
+    return f"Semantic memory restored ({txn_id})"
+
+
+@tool(
+    name="grag_query",
+    description="Query GraphRAG.",
+    parameters={
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"],
+    },
+)
+@eidosian()
+def rag_query(query: str) -> str:
+    """Query GraphRAG."""
+    return str(grag.global_query(query))
+
+
+@tool(
+    name="grag_index",
+    description="Run a GraphRAG incremental index over scan roots.",
+)
+@eidosian()
+def grag_index(scan_roots: Optional[List[str]] = None) -> str:
+    """Run a GraphRAG incremental index over scan roots."""
+    roots = scan_roots or [str(FORGE_DIR)]
+    root_paths = [Path(p) for p in roots]
+    return str(grag.run_incremental_index(root_paths))
+
+
+@tool(
+    name="grag_query_local",
+    description="Run a local GraphRAG query.",
+)
+@eidosian()
+def grag_query_local(query: str) -> str:
+    """Run a local GraphRAG query."""
+    return str(grag.local_query(query))
+
+
+# =============================================================================
+# UNIFIED CONTEXT (Knowledge + Memory Bridge)
+# =============================================================================
+
+_knowledge_memory_bridge = None
+
+
+def _get_bridge():
+    """Lazy-load the knowledge-memory bridge."""
+    global _knowledge_memory_bridge
+    if _knowledge_memory_bridge is None:
+        try:
+            from knowledge_forge import KnowledgeMemoryBridge
+            _knowledge_memory_bridge = KnowledgeMemoryBridge()
+        except ImportError:
+            pass
+    return _knowledge_memory_bridge
+
+
+@tool(
+    name="unified_context_search",
+    description="Search across both memory and knowledge systems for comprehensive context.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Search query"
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Maximum results to return (default: 5)"
+            },
+            "include_memory": {
+                "type": "boolean",
+                "description": "Include memory results (default: true)"
+            },
+            "include_knowledge": {
+                "type": "boolean",
+                "description": "Include knowledge results (default: true)"
+            },
+        },
+        "required": ["query"],
+    },
+)
+@eidosian()
+def unified_context_search(
+    query: str,
+    max_results: int = 5,
+    include_memory: bool = True,
+    include_knowledge: bool = True,
+) -> str:
+    """Search across memory and knowledge for unified context."""
+    import json
+    bridge = _get_bridge()
+    if not bridge:
+        return "Error: Knowledge-memory bridge not available"
+    
+    context = bridge.get_memory_knowledge_context(query, max_results=max_results)
+    return json.dumps(context, indent=2)
+
+
+@tool(
+    name="promote_memory_to_knowledge",
+    description="Promote an important memory to a permanent knowledge node.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "memory_id": {
+                "type": "string",
+                "description": "ID of the memory to promote"
+            },
+            "concepts": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Concepts to associate with the knowledge node"
+            },
+            "tags": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Additional tags for the knowledge node"
+            },
+        },
+        "required": ["memory_id"],
+    },
+)
+@eidosian()
+def promote_memory_to_knowledge(
+    memory_id: str,
+    concepts: Optional[List[str]] = None,
+    tags: Optional[List[str]] = None,
+) -> str:
+    """Promote a memory to a knowledge node."""
+    bridge = _get_bridge()
+    if not bridge:
+        return "Error: Knowledge-memory bridge not available"
+    
+    node_id = bridge.promote_memory_to_knowledge(memory_id, concepts=concepts, tags=tags)
+    if node_id:
+        return f"Memory promoted to knowledge node: {node_id}"
+    return f"Error: Could not promote memory {memory_id}"
+
+
+@tool(
+    name="bridge_stats",
+    description="Get statistics about the knowledge-memory bridge.",
+    parameters={"type": "object", "properties": {}},
+)
+@eidosian()
+def bridge_stats() -> str:
+    """Get bridge statistics."""
+    import json
+    bridge = _get_bridge()
+    if not bridge:
+        return "Error: Knowledge-memory bridge not available"
+    
+    return json.dumps(bridge.stats(), indent=2)

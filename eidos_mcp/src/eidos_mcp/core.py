@@ -123,6 +123,10 @@ def tool(
     description: Optional[str] = None,
     parameters: Optional[Dict[str, Any]] = None,
 ):
+    """
+    Eidosian tool decorator. 
+    Registers tool metadata and wraps with logging/tracing.
+    """
     @eidosian()
     def decorator(func):
         tool_name = name or func.__name__
@@ -171,11 +175,14 @@ def tool(
                     log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
 
-        if name is None:
-            mcp_decorator = mcp.tool()
-        else:
-            mcp_decorator = mcp.tool(tool_name)
-        return mcp_decorator(wrapper)
+        # Compatibility shim for mocks and FastMCP
+        try:
+            return mcp.tool(name=tool_name, description=desc)(wrapper)
+        except TypeError:
+            try:
+                return mcp.tool(tool_name)(wrapper)
+            except TypeError:
+                return mcp.tool()(wrapper)
 
     return decorator
 

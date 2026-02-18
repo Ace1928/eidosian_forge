@@ -72,6 +72,7 @@ def call_llm(prompt):
         "--repeat-penalty", "1.1",
         "--no-display-prompt",
         "--simple-io",
+        "--log-disable",  # Suppress all logs
         "-e",                      # Enable escapes
         "-c", "4096",              # Reasonable context
         "-st"                      # Single-turn mode: exit after generation

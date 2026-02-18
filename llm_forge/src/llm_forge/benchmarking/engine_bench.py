@@ -55,14 +55,18 @@ class Benchmarker:
             raw_results = json.loads(stdout.decode())
             parsed = []
             for r in raw_results:
+                n_prompt = r.get("n_prompt", 0)
+                n_gen = r.get("n_gen", 0)
+                avg_ts = r.get("avg_ts", 0.0)
+                
                 parsed.append(BenchResult(
-                    model=r.get("model", ""),
-                    n_prompt=r.get("n_prompt", 0),
-                    n_gen=r.get("n_gen", 0),
-                    t_prompt_ms=r.get("t_prompt_ms", 0.0),
-                    t_gen_ms=r.get("t_gen_ms", 0.0),
-                    tokens_sec_prompt=r.get("t_prompt_tokens_per_second", 0.0),
-                    tokens_sec_gen=r.get("t_gen_tokens_per_second", 0.0)
+                    model=r.get("model_type", ""),
+                    n_prompt=n_prompt,
+                    n_gen=n_gen,
+                    t_prompt_ms=0.0, # Not provided directly in summary
+                    t_gen_ms=0.0,    # Not provided directly in summary
+                    tokens_sec_prompt=avg_ts if n_prompt > 0 and n_gen == 0 else 0.0,
+                    tokens_sec_gen=avg_ts if n_gen > 0 else 0.0
                 ))
             return parsed
         except Exception:
