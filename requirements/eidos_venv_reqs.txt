@@ -371,7 +371,7 @@ PyNaCl==1.6.2
 pyOpenSSL==25.0.0
 pypandoc==1.15
 pyparsing==3.2.3
-pypdf==6.6.2
+pypdf==6.7.1
 PyPika==0.48.9
 pyproj==3.7.1
 pyproject_hooks==1.2.0
