@@ -40,10 +40,10 @@
         "type": "object",
         "required": ["stage", "completed", "runtime_seconds", "stage_score"],
         "properties": {
-          "stage": {"type": "string"},
-          "completed": {"type": "boolean"},
-          "runtime_seconds": {"type": "number"},
-          "stage_score": {"type": "number", "minimum": 0, "maximum": 1}
+          "stage": { "type": "string" },
+          "completed": { "type": "boolean" },
+          "runtime_seconds": { "type": "number" },
+          "stage_score": { "type": "number", "minimum": 0, "maximum": 1 }
         },
         "additionalProperties": true
       }
@@ -54,16 +54,22 @@
         "type": "object",
         "required": ["judge", "scores"],
         "properties": {
-          "judge": {"type": "string"},
+          "judge": { "type": "string" },
           "scores": {
             "type": "object",
-            "required": ["factuality", "grounding", "coherence", "usefulness", "risk_awareness"],
+            "required": [
+              "factuality",
+              "grounding",
+              "coherence",
+              "usefulness",
+              "risk_awareness"
+            ],
             "properties": {
-              "factuality": {"type": "number", "minimum": 0, "maximum": 1},
-              "grounding": {"type": "number", "minimum": 0, "maximum": 1},
-              "coherence": {"type": "number", "minimum": 0, "maximum": 1},
-              "usefulness": {"type": "number", "minimum": 0, "maximum": 1},
-              "risk_awareness": {"type": "number", "minimum": 0, "maximum": 1}
+              "factuality": { "type": "number", "minimum": 0, "maximum": 1 },
+              "grounding": { "type": "number", "minimum": 0, "maximum": 1 },
+              "coherence": { "type": "number", "minimum": 0, "maximum": 1 },
+              "usefulness": { "type": "number", "minimum": 0, "maximum": 1 },
+              "risk_awareness": { "type": "number", "minimum": 0, "maximum": 1 }
             },
             "additionalProperties": true
           }
@@ -73,13 +79,23 @@
     },
     "aggregate": {
       "type": "object",
-      "required": ["deterministic_objective", "judge_score", "disagreement", "final_score", "rank"],
+      "required": [
+        "deterministic_objective",
+        "judge_score",
+        "disagreement",
+        "final_score",
+        "rank"
+      ],
       "properties": {
-        "deterministic_objective": {"type": "number", "minimum": 0, "maximum": 1},
-        "judge_score": {"type": "number", "minimum": 0, "maximum": 1},
-        "disagreement": {"type": "number", "minimum": 0},
-        "final_score": {"type": "number", "minimum": 0, "maximum": 1},
-        "rank": {"type": "string", "enum": ["A", "B", "C", "D"]}
+        "deterministic_objective": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "judge_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "disagreement": { "type": "number", "minimum": 0 },
+        "final_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rank": { "type": "string", "enum": ["A", "B", "C", "D"] }
       },
       "additionalProperties": true
     }
