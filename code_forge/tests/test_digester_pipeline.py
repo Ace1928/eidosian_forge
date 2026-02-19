@@ -79,5 +79,7 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert (out / "duplication_index.json").exists()
     assert (out / "dependency_graph.json").exists()
     assert (out / "triage.json").exists()
+    assert (out / "drift_report.json").exists()
+    assert payload.get("drift", {}).get("drift_report_json_path")
     validation = validate_output_dir(out)
     assert validation["pass"]

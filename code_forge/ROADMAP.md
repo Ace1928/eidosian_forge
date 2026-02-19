@@ -13,6 +13,7 @@
 - Canonical migration planning with staged compatibility shim generation.
 - Structural clone clustering and triage audit confidence/rule trace outputs.
 - Strict digester artifact schema validation and validation CLI.
+- Drift report generation (`drift_report.json/.md`) and persisted run history snapshots.
 
 ### In Progress
 - High-confidence canonical extraction workflow (old -> new module migration maps).
@@ -36,6 +37,6 @@
 
 ## v1.3 (Living Code Substrate)
 - Continuous digestion daemon mode with safe checkpoints.
-- Drift detection for rules, schemas, naming conventions.
+- Drift detection for rules, schemas, naming conventions (expanded thresholds + policy gates next).
 - Federated qualitative scoring adapters for model-assisted code review outputs.
 - Automated change advisories into Agent Forge planning workflows.

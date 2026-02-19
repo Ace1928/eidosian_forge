@@ -36,6 +36,7 @@ Build a production-grade archive digester and living code substrate that can:
 - [x] Idempotent ingestion semantics.
 - [x] Repeatable benchmark suite for ingestion/search/dependency graph plus regression gates.
 - [x] Canonical migration map + compatibility shim staging artifacts.
+- [x] Run-over-run drift report + immutable history snapshots.
 - [ ] Coverage target >= 90% for `code_forge/src/code_forge`.
 - [ ] Enforce deletion gate requiring tests + benchmark parity + migration map approvals.
 

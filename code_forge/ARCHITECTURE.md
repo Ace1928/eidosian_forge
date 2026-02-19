@@ -19,6 +19,8 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Archive Digester orchestration (intake -> dedup -> triage -> integration exports).
 - `digester/schema.py`
   - Strict artifact schema validation and contract checks.
+- `digester/drift.py`
+  - Run-over-run drift snapshots and regression warning reports.
 - `bench/runner.py`
   - Repeatable ingestion/search/graph benchmark suite with regression gates.
 - `canonicalize/planner.py`
@@ -82,6 +84,11 @@ Typed edges for structural and semantic traversal:
 - consume triage outputs
 - build migration map from source -> canonical targets
 - generate optional staged compatibility shims
+
+### Stage F: Drift Intelligence
+- compare current digester metrics vs previous snapshot
+- emit `drift_report.json` + `drift_report.md`
+- persist immutable snapshot into `history/*.json` for future comparisons
 
 ## Benchmark and Regression Gates
 

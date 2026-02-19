@@ -917,6 +917,19 @@
         ]
       },
       "links": []
+    },
+    "a8ab33be-0878-436e-856e-b4011466dcf8": {
+      "id": "a8ab33be-0878-436e-856e-b4011466dcf8",
+      "content": "Code Forge now has a drift intelligence stage with immutable history snapshots and a CLI command for run-over-run metric drift reporting.",
+      "metadata": {
+        "tags": [
+          "digester",
+          "code_forge",
+          "drift",
+          "artifact-validation"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

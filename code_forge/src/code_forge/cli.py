@@ -36,6 +36,7 @@ from code_forge import (
     IngestionRunner,
     build_canonical_migration_plan,
     build_dependency_graph,
+    build_drift_report_from_output,
     build_duplication_index,
     build_repo_index,
     build_triage_report,
@@ -544,6 +545,33 @@ class CodeForgeCLI(StandardCLI):
             action="store_true",
             help="Disable strict artifact schema validation failure mode",
         )
+        digest_parser.add_argument(
+            "--no-drift-report",
+            action="store_true",
+            help="Disable drift report generation",
+        )
+        digest_parser.add_argument(
+            "--no-history-snapshot",
+            action="store_true",
+            help="Disable drift history snapshot writes",
+        )
+        digest_parser.add_argument(
+            "--previous-snapshot",
+            default=None,
+            help="Optional path to previous drift history snapshot JSON",
+        )
+        digest_parser.add_argument(
+            "--drift-warn-pct",
+            type=float,
+            default=30.0,
+            help="Warning threshold for relative drift delta percent",
+        )
+        digest_parser.add_argument(
+            "--drift-min-abs-delta",
+            type=float,
+            default=1.0,
+            help="Warning threshold for absolute drift delta",
+        )
         digest_parser.set_defaults(func=self._cmd_digest)
 
         dep_graph_parser = subparsers.add_parser(
@@ -579,6 +607,39 @@ class CodeForgeCLI(StandardCLI):
             help="Digester artifact directory to validate",
         )
         validate_parser.set_defaults(func=self._cmd_validate_artifacts)
+
+        drift_parser = subparsers.add_parser(
+            "drift-report",
+            help="Generate/update drift report from digester artifacts",
+        )
+        drift_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Digester artifact directory",
+        )
+        drift_parser.add_argument(
+            "--previous-snapshot",
+            default=None,
+            help="Optional path to previous drift history snapshot JSON",
+        )
+        drift_parser.add_argument(
+            "--no-history-snapshot",
+            action="store_true",
+            help="Disable drift history snapshot writes",
+        )
+        drift_parser.add_argument(
+            "--drift-warn-pct",
+            type=float,
+            default=30.0,
+            help="Warning threshold for relative drift delta percent",
+        )
+        drift_parser.add_argument(
+            "--drift-min-abs-delta",
+            type=float,
+            default=1.0,
+            help="Warning threshold for absolute drift delta",
+        )
+        drift_parser.set_defaults(func=self._cmd_drift_report)
 
         benchmark_parser = subparsers.add_parser(
             "benchmark",
@@ -734,6 +795,8 @@ class CodeForgeCLI(StandardCLI):
                         "dependency_graph": str(digester_dir / "dependency_graph.json"),
                         "triage": str(digester_dir / "triage.json"),
                         "triage_audit": str(digester_dir / "triage_audit.json"),
+                        "drift_report": str(digester_dir / "drift_report.json"),
+                        "drift_history_dir": str(digester_dir / "history"),
                     },
                     "integrations": integrations,
                 }
@@ -1243,6 +1306,13 @@ class CodeForgeCLI(StandardCLI):
                     graphrag_output_dir=graphrag_out,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
                     strict_validation=not bool(args.no_strict_validation),
+                    write_drift_report=not bool(args.no_drift_report),
+                    write_history_snapshot=not bool(args.no_history_snapshot),
+                    previous_snapshot_path=(
+                        Path(args.previous_snapshot).resolve() if args.previous_snapshot else None
+                    ),
+                    drift_warn_pct=float(args.drift_warn_pct),
+                    drift_min_abs_delta=float(args.drift_min_abs_delta),
                 )
                 result = CommandResult(
                     True,
@@ -1295,6 +1365,29 @@ class CodeForgeCLI(StandardCLI):
                 )
         except Exception as e:
             result = CommandResult(False, f"Artifact validation error: {e}")
+        self._output(result, args)
+
+    def _cmd_drift_report(self, args) -> None:
+        """Generate a drift report using digester artifacts."""
+        try:
+            output_dir = Path(args.output_dir).resolve()
+            report = build_drift_report_from_output(
+                output_dir=output_dir,
+                previous_snapshot_path=(
+                    Path(args.previous_snapshot).resolve() if args.previous_snapshot else None
+                ),
+                history_dir=output_dir / "history",
+                write_history=not bool(args.no_history_snapshot),
+                warn_pct=float(args.drift_warn_pct),
+                min_abs_delta=float(args.drift_min_abs_delta),
+            )
+            result = CommandResult(
+                True,
+                "Drift report generated",
+                report,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Drift report error: {e}")
         self._output(result, args)
 
     def _cmd_benchmark(self, args) -> None:

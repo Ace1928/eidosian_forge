@@ -1,4 +1,9 @@
 ## Unreleased
+- Added drift intelligence module (`digester/drift.py`) with run-over-run metric comparison and warnings.
+- Added digester history snapshots (`history/*.json`) and automatic drift generation in `run_archive_digester`.
+- Added `code-forge drift-report` CLI command and digest-time drift controls.
+- Added optional strict validation for `drift_report.json` when present.
+- Added drift-focused tests for end-to-end output quality and schema enforcement.
 - Added structural clone hashing and structural duplicate clustering in duplication artifacts.
 - Added triage rule IDs, confidence scoring, and `triage_audit.json` decision traces.
 - Added strict schema validation (`digester/schema.py`) and CLI command `validate-artifacts`.

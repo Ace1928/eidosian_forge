@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
+from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
@@ -575,6 +576,11 @@ def run_archive_digester(
     graphrag_output_dir: Optional[Path] = None,
     graph_export_limit: int = 20000,
     strict_validation: bool = True,
+    write_drift_report: bool = True,
+    write_history_snapshot: bool = True,
+    previous_snapshot_path: Optional[Path] = None,
+    drift_warn_pct: float = 30.0,
+    drift_min_abs_delta: float = 1.0,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -640,6 +646,19 @@ def run_archive_digester(
 
     validation = validate_output_dir(output_dir)
     summary["validation"] = validation
+
+    if write_drift_report:
+        drift = build_drift_report_from_output(
+            output_dir=output_dir,
+            previous_snapshot_path=Path(previous_snapshot_path).resolve() if previous_snapshot_path else None,
+            history_dir=output_dir / "history",
+            write_history=bool(write_history_snapshot),
+            run_id=str(stats.run_id),
+            warn_pct=float(drift_warn_pct),
+            min_abs_delta=float(drift_min_abs_delta),
+        )
+        summary["drift"] = drift
+
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     if strict_validation and not bool(validation.get("pass")):
         raise RuntimeError(f"Artifact validation failed: {validation.get('errors')}")

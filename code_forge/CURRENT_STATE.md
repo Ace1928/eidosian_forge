@@ -27,6 +27,8 @@
   - `triage.json`
   - `triage.csv`
   - `triage_report.md`
+  - `drift_report.json`
+  - `history/*.json` snapshots
   - `archive_digester_summary.json`
 
 ## Validation
@@ -36,6 +38,7 @@
 - Canonical migration planner implemented with staged compatibility shim generation.
 - Triage now emits ruleset-bound confidence and `triage_audit.json`.
 - Digester artifacts validated against schema contracts (`validate-artifacts` CLI).
+- Digester now emits drift reports and persistent history snapshots for run-over-run monitoring.
 - Ingestion remains idempotent via `file_records` and `ANALYSIS_VERSION` gates.
 - Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
 

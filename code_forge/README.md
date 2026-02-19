@@ -19,6 +19,7 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
 - Stage C.1: triage audit (`triage_audit.json`) with rule ids and confidence scores
 - Stage D: dependency graph export (`dependency_graph.json`)
+- Stage E: drift intelligence (`drift_report.json`, `history/*.json`) for run-over-run regression visibility
 - Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
 - Canonical extraction planning with migration map and compatibility shim staging.
 - Strict artifact schema validation (`validate-artifacts`) and strict digest failure mode.
@@ -61,6 +62,9 @@ code-forge digest . \
   --output-dir data/code_forge/digester/latest \
   --sync-knowledge \
   --export-graphrag
+
+# Generate drift report explicitly (uses latest history snapshot by default)
+code-forge drift-report --output-dir data/code_forge/digester/latest
 
 # Integration exports
 code-forge sync-knowledge --kb-path data/kb.json
@@ -114,7 +118,6 @@ Primary DB tables:
 
 Primary digester artifacts:
 - `repo_index.json`: deterministic file-level intake index
-- `duplication_index.json`: exact/normalized/near duplication report
 - `duplication_index.json`: exact/normalized/structural/near duplication report
 - `dependency_graph.json`: file/module dependency graph from imports/calls/uses edges
 - `triage.json`: explainable classification with metrics and reasons
@@ -122,6 +125,9 @@ Primary digester artifacts:
 - `triage.csv`: tabular triage export
 - `triage_report.md`: human review report
 - `archive_digester_summary.json`: full run summary
+- `drift_report.json`: run-over-run metric comparison and warning set
+- `drift_report.md`: human-readable drift summary
+- `history/*.json`: immutable per-run metric snapshots used for drift comparison
 
 Canonicalization artifacts:
 - `migration_map.json`: source→canonical mapping with strategy labels

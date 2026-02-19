@@ -13,6 +13,10 @@ REQUIRED_FILES = {
     "archive_digester_summary.json": "archive_summary",
 }
 
+OPTIONAL_FILES = {
+    "drift_report.json": "drift_report",
+}
+
 
 def _require(condition: bool, errors: list[str], message: str) -> None:
     if not condition:
@@ -129,6 +133,36 @@ def validate_archive_summary(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_drift_report(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(isinstance(payload.get("generated_at"), str), errors, "drift_report.generated_at must be a string")
+    _require(isinstance(payload.get("output_dir"), str), errors, "drift_report.output_dir must be a string")
+    _require(
+        isinstance(payload.get("current_snapshot_path"), str),
+        errors,
+        "drift_report.current_snapshot_path must be a string",
+    )
+    comparison = payload.get("comparison")
+    _require(isinstance(comparison, dict), errors, "drift_report.comparison must be an object")
+    if isinstance(comparison, dict):
+        _require(
+            isinstance(comparison.get("compared_metric_count"), int),
+            errors,
+            "drift_report.comparison.compared_metric_count must be an int",
+        )
+        _require(
+            isinstance(comparison.get("comparisons"), list),
+            errors,
+            "drift_report.comparison.comparisons must be a list",
+        )
+        _require(
+            isinstance(comparison.get("warnings"), list),
+            errors,
+            "drift_report.comparison.warnings must be a list",
+        )
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -152,6 +186,7 @@ def validate_output_dir(output_dir: Path) -> dict[str, Any]:
         "triage": validate_triage,
         "triage_audit": validate_triage_audit,
         "archive_summary": validate_archive_summary,
+        "drift_report": validate_drift_report,
     }
 
     for filename, key in REQUIRED_FILES.items():
@@ -164,6 +199,25 @@ def validate_output_dir(output_dir: Path) -> dict[str, Any]:
             report["pass"] = False
             continue
 
+        try:
+            payload = _load_json(path)
+            validate_errors = validators[key](payload)
+            file_report["errors"].extend(validate_errors)
+            if validate_errors:
+                report["errors"].extend([f"{filename}: {e}" for e in validate_errors])
+                report["pass"] = False
+        except Exception as exc:
+            message = f"failed to load/validate JSON: {exc}"
+            file_report["errors"].append(message)
+            report["errors"].append(f"{filename}: {message}")
+            report["pass"] = False
+
+    for filename, key in OPTIONAL_FILES.items():
+        path = output_dir / filename
+        if not path.exists():
+            continue
+        file_report: dict[str, Any] = {"path": str(path), "exists": True, "errors": []}
+        report["files"][filename] = file_report
         try:
             payload = _load_json(path)
             validate_errors = validators[key](payload)
