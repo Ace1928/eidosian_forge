@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 """
 Ollama Forge CLI - Ollama model management and inference.
 """
@@ -6,6 +7,9 @@ import argparse
 import sys
 import json
 from typing import Optional, List
+
+DEFAULT_OLLAMA_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
+DEFAULT_OLLAMA_TAGS_URL = f"{DEFAULT_OLLAMA_URL}/api/tags"
 
 @eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
@@ -60,7 +64,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif args.command == "list":
         try:
             import requests
-            resp = requests.get("http://localhost:11434/api/tags", timeout=5)
+            resp = requests.get(DEFAULT_OLLAMA_TAGS_URL, timeout=5)
             data = resp.json()
             models = data.get("models", [])
             print("Available models:")

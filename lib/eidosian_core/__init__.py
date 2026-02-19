@@ -49,6 +49,18 @@ from .config import (
     get_config,
     set_config,
 )
+from .ports import (
+    clear_port_registry_cache,
+    detect_forge_root,
+    detect_registry_path,
+    get_service_config,
+    get_service_host,
+    get_service_path,
+    get_service_port,
+    get_service_url,
+    load_port_registry,
+    should_use_registry_fallback,
+)
 
 __version__ = "0.1.0"
 __all__ = [
@@ -81,4 +93,15 @@ __all__ = [
     "EidosianConfig",
     "get_config",
     "set_config",
+    # Port registry
+    "clear_port_registry_cache",
+    "detect_forge_root",
+    "detect_registry_path",
+    "get_service_config",
+    "get_service_host",
+    "get_service_path",
+    "get_service_port",
+    "get_service_url",
+    "load_port_registry",
+    "should_use_registry_fallback",
 ]

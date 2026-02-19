@@ -4,8 +4,9 @@ import httpx
 import json
 import subprocess
 from typing import Any, Dict, Optional
+from eidosian_core.ports import get_service_url
 
-DEFAULT_OLLAMA_API_URL = "http://localhost:11434"
+DEFAULT_OLLAMA_API_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
 
 
 def print_header(text: str) -> None:

@@ -13,12 +13,15 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional
 
 from agent_forge.core import events
+from eidosian_core.ports import get_service_url
 
 from .bench.red_team import ConsciousnessRedTeamCampaign
 from .benchmarks import ConsciousnessBenchmarkSuite
 from .kernel import ConsciousnessKernel
 from .perturb import make_drop, make_noise
 from .trials import ConsciousnessTrialRunner
+
+DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
 
 
 def _forge_root() -> Path:
@@ -317,7 +320,7 @@ class IntegratedStackBenchmark:
         red_team_seed: int = 910_000,
         persist: bool = True,
         llm_model: str = "qwen2.5:1.5b",
-        ollama_endpoint: str = "http://127.0.0.1:11434",
+        ollama_endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
         timeout_sec: float = 45.0,
     ) -> IntegratedBenchmarkResult:
         rounds = max(1, int(rounds))

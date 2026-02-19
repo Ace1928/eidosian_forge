@@ -42,6 +42,7 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src python -m pytest -q
 | Forge architecture notes | `docs/FORGE_ARCHITECTURE.md` |
 | Workflows quickstart | `WORKFLOWS_QUICKSTART.md` |
 | Consciousness implementation docs | `docs/consciousness_fcl/README.md` |
+| Port registry | `docs/PORT_REGISTRY.md` |
 | Security docs | `docs/security/` |
 | CI/workflow docs | `.github/workflows/README.md` |
 

@@ -1,0 +1,100 @@
+{
+  "schema": "eidosian.port-registry.v1",
+  "description": "Canonical local service port registry for Eidosian Forge.",
+  "ranges": {
+    "eidosian_service_range": {
+      "start": 8928,
+      "end": 8998,
+      "step": 2,
+      "description": "Preferred loopback service range for core forge daemons."
+    }
+  },
+  "services": {
+    "eidos_mcp": {
+      "description": "Eidosian MCP streamable-http server",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8928,
+      "path": "/mcp",
+      "health_path": "/health",
+      "env": ["FASTMCP_PORT", "EIDOS_MCP_PORT"]
+    },
+    "doc_forge_dashboard": {
+      "description": "Doc processor v2 API + dashboard",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8930,
+      "path": "/",
+      "health_path": "/health",
+      "env": ["EIDOS_DOC_FORGE_PORT"]
+    },
+    "web_interface_sidecar_ws": {
+      "description": "Web Interface Forge browser sidecar websocket",
+      "protocol": "ws",
+      "host": "127.0.0.1",
+      "port": 8932,
+      "path": "/",
+      "env": ["EIDOS_WEB_INTERFACE_WS_PORT"]
+    },
+    "web_interface_http": {
+      "description": "Web Interface Forge HTTP server",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8934,
+      "path": "/",
+      "env": ["EIDOS_WEB_INTERFACE_HTTP_PORT"]
+    },
+    "graphrag_llm": {
+      "description": "GraphRAG benchmark/query completion model server",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8081,
+      "path": "/completion",
+      "health_path": "/health",
+      "env": ["EIDOS_GRAPHRAG_LLM_PORT"]
+    },
+    "graphrag_embedding": {
+      "description": "GraphRAG embedding model server",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8082,
+      "path": "/embedding",
+      "health_path": "/health",
+      "env": ["EIDOS_GRAPHRAG_EMBED_PORT"]
+    },
+    "graphrag_judges_base": {
+      "description": "Base port for federated qualitative judge model servers",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8091,
+      "path": "/completion",
+      "health_path": "/health",
+      "env": ["EIDOS_GRAPHRAG_JUDGE_PORT_BASE"]
+    },
+    "doc_forge_llm": {
+      "description": "Doc processor managed local model server",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8093,
+      "path": "/completion",
+      "health_path": "/health",
+      "env": ["EIDOS_DOC_FORGE_LLM_PORT"]
+    },
+    "file_forge_embedding_proxy": {
+      "description": "OpenAI-compatible embeddings proxy",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 11435,
+      "path": "/v1/embeddings",
+      "env": ["EIDOS_FILE_FORGE_EMBED_PROXY_PORT"]
+    },
+    "ollama_http": {
+      "description": "Local Ollama HTTP API",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 11434,
+      "path": "/",
+      "env": ["EIDOS_OLLAMA_PORT"]
+    }
+  }
+}

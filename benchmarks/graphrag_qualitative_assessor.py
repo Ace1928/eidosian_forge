@@ -50,6 +50,27 @@ PLACEHOLDER_MARKERS = ["auto-generated placeholder", "fallback generated"]
 CONTRACT_VERSION = "graphrag.qualitative.assessment.v1"
 
 
+def _registry_port(service_key: str, fallback: int) -> int:
+    registry_path = Path("config/ports.json")
+    if not registry_path.exists():
+        return fallback
+    try:
+        payload = json.loads(registry_path.read_text())
+    except Exception:
+        return fallback
+    services = payload.get("services") if isinstance(payload, dict) else None
+    if not isinstance(services, dict):
+        return fallback
+    service = services.get(service_key)
+    if not isinstance(service, dict):
+        return fallback
+    try:
+        value = int(service.get("port", fallback))
+    except Exception:
+        return fallback
+    return value if value > 0 else fallback
+
+
 @dataclass
 class JudgeSpec:
     name: str
@@ -587,7 +608,12 @@ def main() -> int:
     parser.add_argument("--schema", default=str(DEFAULT_SCHEMA_PATH), help="Schema file path used for contract metadata.")
     parser.add_argument("--llama-server-bin", default=str(DEFAULT_LLAMA_SERVER_BIN), help="Path to llama-server binary.")
     parser.add_argument("--judge-model", action="append", default=[], help="Judge model spec name=path (repeatable).")
-    parser.add_argument("--port-base", type=int, default=8091, help="Base port for judge servers.")
+    parser.add_argument(
+        "--port-base",
+        type=int,
+        default=int(os.environ.get("EIDOS_GRAPHRAG_JUDGE_PORT_BASE", str(_registry_port("graphrag_judges_base", 8091)))),
+        help="Base port for judge servers.",
+    )
     parser.add_argument("--skip-judges", action="store_true", help="Skip local model judges and run deterministic scoring only.")
     args = parser.parse_args()
 

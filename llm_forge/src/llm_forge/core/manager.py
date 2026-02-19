@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 """
 LLM Forge - Model Manager.
 
@@ -17,7 +18,7 @@ try:
     DEFAULT_OLLAMA_URL = model_config.ollama.base_url
 except ImportError:
     DEFAULT_INFERENCE_MODEL = "phi3:mini"
-    DEFAULT_OLLAMA_URL = "http://localhost:11434"
+    DEFAULT_OLLAMA_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
 
 
 def _parse_timeout(value: Optional[str]) -> Optional[float]:

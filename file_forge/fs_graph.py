@@ -18,6 +18,7 @@ import numpy as np
 import networkx as nx
 from tqdm import tqdm
 import concurrent.futures
+from eidosian_core.ports import get_service_url
 
 # Configure detailed logging
 logging.basicConfig(
@@ -37,7 +38,7 @@ class Config:
     GRAPH_DB_PATH: str = './graph_db.pkl'
     LINK_FS_ROOT: str = './semantic_fs/'
     CONTEXTUAL_SEARCH_K: int = 10
-    LOCAL_LLM_ENDPOINT: str = 'http://localhost:11434/api/generate'
+    LOCAL_LLM_ENDPOINT: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="/api/generate")
     LOCAL_LLM_MODEL: str = 'deepseek-r1:1.5b'
     MAX_WORKERS: int = 4
     MAX_TEXT_SIZE_MB: int = 5

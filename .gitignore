@@ -55,6 +55,8 @@ reports/graphrag/bench_profile_*.txt
 reports/graphrag/bench_metrics_*.json
 reports/graphrag/qualitative_assessment_*.json
 reports/graphrag/qualitative_assessment_*.md
+reports/graphrag_sweep/
+doc_forge/runtime/
 benchmarks/eidosian_consensus_bench.py
 models/Llama-3.2-1B-Instruct-Q8_0.gguf
 models/Qwen2.5-0.5B-Instruct-Q8_0.gguf

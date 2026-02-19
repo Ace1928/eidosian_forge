@@ -5,8 +5,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -18,8 +18,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -31,8 +31,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -44,8 +44,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -57,10 +57,10 @@
       "content": "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "termux",
           "autotune",
-          "mcp"
+          "mcp",
+          "termux",
+          "consciousness"
         ]
       },
       "links": []
@@ -70,10 +70,10 @@
       "content": "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "termux",
           "autotune",
-          "mcp"
+          "mcp",
+          "termux",
+          "consciousness"
         ]
       },
       "links": []
@@ -83,10 +83,10 @@
       "content": "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "termux",
           "autotune",
-          "mcp"
+          "mcp",
+          "termux",
+          "consciousness"
         ]
       },
       "links": []
@@ -96,8 +96,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -109,8 +109,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -122,8 +122,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -135,8 +135,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -148,8 +148,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -161,8 +161,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -174,8 +174,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -187,8 +187,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -200,9 +200,9 @@
       "content": "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence.",
       "metadata": {
         "tags": [
-          "optimization",
+          "autotune",
           "consciousness",
-          "autotune"
+          "optimization"
         ]
       },
       "links": []
@@ -212,10 +212,10 @@
       "content": "Attention and workspace competition now adapt online from gw.reaction_trace reward signals.",
       "metadata": {
         "tags": [
-          "competition",
-          "consciousness",
+          "learning",
           "attention",
-          "learning"
+          "consciousness",
+          "competition"
         ]
       },
       "links": []
@@ -225,9 +225,9 @@
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
         "tags": [
+          "termux",
           "operations",
-          "validation",
-          "termux"
+          "validation"
         ]
       },
       "links": []
@@ -237,8 +237,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -250,8 +250,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -263,8 +263,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -276,8 +276,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -289,10 +289,10 @@
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
         "tags": [
-          "consciousness",
-          "red-team",
+          "mcp",
           "cli",
-          "mcp"
+          "consciousness",
+          "red-team"
         ]
       },
       "links": []
@@ -302,10 +302,10 @@
       "content": "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes.",
       "metadata": {
         "tags": [
-          "consciousness",
           "tasks",
-          "validation",
-          "bench"
+          "bench",
+          "consciousness",
+          "validation"
         ]
       },
       "links": []
@@ -315,8 +315,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -328,8 +328,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -341,8 +341,8 @@
       "content": "MCP test fact A",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -354,8 +354,8 @@
       "content": "MCP test fact B",
       "metadata": {
         "tags": [
-          "test",
-          "mcp"
+          "mcp",
+          "test"
         ]
       },
       "links": [
@@ -367,10 +367,10 @@
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
         "tags": [
+          "mcp",
           "consciousness",
           "red-team",
           "cli",
-          "mcp",
           "benchmark"
         ]
       },
@@ -381,10 +381,10 @@
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
         "tags": [
-          "gates",
+          "schema",
           "consciousness",
           "benchmark",
-          "schema"
+          "gates"
         ]
       },
       "links": []
@@ -394,10 +394,10 @@
       "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
       "metadata": {
         "tags": [
+          "mcp",
           "operations",
           "testing",
-          "hardening",
-          "mcp"
+          "hardening"
         ]
       },
       "links": []
@@ -407,10 +407,10 @@
       "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
       "metadata": {
         "tags": [
-          "consciousness",
+          "autotune",
           "termux",
-          "red-team",
-          "autotune"
+          "consciousness",
+          "red-team"
         ]
       },
       "links": []
@@ -420,10 +420,10 @@
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
         "tags": [
-          "index",
-          "consciousness",
           "termux",
-          "benchmark"
+          "consciousness",
+          "benchmark",
+          "index"
         ]
       },
       "links": []
@@ -433,9 +433,9 @@
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
-          "security",
-          "dependabot"
+          "security"
         ]
       },
       "links": []
@@ -445,10 +445,10 @@
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
           "security",
-          "issues",
-          "dependabot"
+          "issues"
         ]
       },
       "links": []
@@ -459,9 +459,9 @@
       "metadata": {
         "tags": [
           "lock",
-          "security",
           "actions",
-          "workflow"
+          "workflow",
+          "security"
         ]
       },
       "links": []
@@ -471,10 +471,10 @@
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
           "security",
-          "remediation",
-          "dependabot"
+          "remediation"
         ]
       },
       "links": []
@@ -485,11 +485,11 @@
       "metadata": {
         "tags": [
           "security",
-          "termux",
-          "pip",
           "automation",
+          "pip",
+          "dependabot",
           "phase17",
-          "dependabot"
+          "termux"
         ],
         "source": "phase17_autopatch_execution",
         "updated_at": "2026-02-16T22:54:34Z"
@@ -501,10 +501,10 @@
       "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
       "metadata": {
         "tags": [
-          "security",
-          "mitigation",
-          "no-fix",
           "advisory",
+          "mitigation",
+          "security",
+          "no-fix",
           "phase17"
         ],
         "source": "phase17_iteration2_no_fix_mitigation",
@@ -517,11 +517,11 @@
       "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
       "metadata": {
         "tags": [
-          "security",
           "closure",
+          "security",
           "automation",
-          "phase17",
-          "dependabot"
+          "dependabot",
+          "phase17"
         ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
@@ -533,11 +533,11 @@
       "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
       "metadata": {
         "tags": [
-          "watchdog",
           "consciousness",
           "hardening",
-          "payload-safety",
-          "phase18"
+          "watchdog",
+          "phase18",
+          "payload-safety"
         ],
         "source": "phase18_runtime_hardening",
         "updated_at": "2026-02-16T23:43:19Z"
@@ -549,13 +549,13 @@
       "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
       "metadata": {
         "tags": [
-          "watchdog",
-          "consciousness",
-          "ci",
+          "mcp",
           "stress-benchmark",
-          "payload-safety",
+          "consciousness",
+          "watchdog",
           "phase18",
-          "mcp"
+          "ci",
+          "payload-safety"
         ],
         "source": "phase18_status_stress_completion",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -567,11 +567,11 @@
       "content": "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance.",
       "metadata": {
         "tags": [
-          "consciousness",
           "side-effect-free",
+          "consciousness",
           "hardening",
-          "phase18",
-          "status"
+          "status",
+          "phase18"
         ],
         "source": "phase18_status_side_effect_fix",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -584,11 +584,11 @@
       "metadata": {
         "tags": [
           "consciousness",
-          "termux",
           "audit-matrix",
-          "ci",
           "linux-parity",
-          "phase19"
+          "phase19",
+          "termux",
+          "ci"
         ],
         "source": "phase19_linux_audit_matrix",
         "updated_at": "2026-02-17T01:44:44Z"
@@ -600,12 +600,12 @@
       "content": "Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow.",
       "metadata": {
         "tags": [
-          "trend",
-          "consciousness",
           "linux-audit",
+          "consciousness",
+          "observability",
           "ci-gate",
-          "phase20",
-          "observability"
+          "trend",
+          "phase20"
         ],
         "source": "phase20_audit_observability_gate",
         "updated_at": "2026-02-17T02:10:00Z"
@@ -618,10 +618,10 @@
       "metadata": {
         "tags": [
           "consciousness",
-          "trial-capture",
           "causal-trace",
-          "phase21",
-          "event-fabric"
+          "event-fabric",
+          "trial-capture",
+          "phase21"
         ],
         "source": "phase21_event_fabric_trial_capture",
         "updated_at": "2026-02-17T02:19:15Z"
@@ -634,10 +634,10 @@
       "metadata": {
         "tags": [
           "consciousness",
-          "provenance",
-          "phase22",
           "bench",
-          "replay-manifest"
+          "replay-manifest",
+          "provenance",
+          "phase22"
         ],
         "source": "phase22_trial_provenance_replay",
         "updated_at": "2026-02-17T02:33:24Z"
@@ -649,11 +649,11 @@
       "content": "Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs.",
       "metadata": {
         "tags": [
-          "directory-atlas",
-          "consciousness",
           "benchmarks",
-          "phase23",
-          "documentation"
+          "consciousness",
+          "directory-atlas",
+          "documentation",
+          "phase23"
         ],
         "source": "phase23_repo_docs_hardening",
         "updated_at": "2026-02-17T03:24:01Z"
@@ -665,11 +665,11 @@
       "content": "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow.",
       "metadata": {
         "tags": [
+          "determinism",
           "operations",
-          "ci",
-          "phase24",
           "documentation",
-          "determinism"
+          "ci",
+          "phase24"
         ]
       },
       "links": []
@@ -690,11 +690,11 @@
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
         "tags": [
-          "assessment",
-          "quality",
           "schema",
+          "graphrag",
           "benchmark",
-          "graphrag"
+          "quality",
+          "assessment"
         ]
       },
       "links": []
@@ -704,10 +704,10 @@
       "content": "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection.",
       "metadata": {
         "tags": [
-          "quality-gate",
+          "graphrag",
           "termux",
           "benchmark",
-          "graphrag"
+          "quality-gate"
         ]
       },
       "links": []
@@ -717,10 +717,37 @@
       "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
       "metadata": {
         "tags": [
-          "transport",
-          "termux",
           "stability",
-          "eidos_mcp"
+          "termux",
+          "eidos_mcp",
+          "transport"
+        ]
+      },
+      "links": []
+    },
+    "fd48a706-cd76-4a34-81b5-2b438717c73b": {
+      "id": "fd48a706-cd76-4a34-81b5-2b438717c73b",
+      "content": "Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules.",
+      "metadata": {
+        "tags": [
+          "ports",
+          "infrastructure",
+          "configuration",
+          "termux",
+          "services"
+        ]
+      },
+      "links": []
+    },
+    "06127ffa-a6d6-4cbd-92b9-cd49f71ff46e": {
+      "id": "06127ffa-a6d6-4cbd-92b9-cd49f71ff46e",
+      "content": "Eidosian Forge now has a canonical local service registry at config/ports.json, with fallback behavior implemented in launch scripts and runtime modules when env vars are unset or empty.",
+      "metadata": {
+        "tags": [
+          "config",
+          "ports",
+          "operations",
+          "termux"
         ]
       },
       "links": []

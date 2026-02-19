@@ -35,15 +35,36 @@ EMBED_MODEL = Path(
     )
 )
 LLAMA_SERVER_BIN = Path("llama.cpp/build/bin/llama-server")
-INPUT_DATA_DIR = Path("data/graphrag_test/input")
-WORKSPACE_DIR = Path("data/graphrag_test/workspace")
+INPUT_DATA_DIR = Path(os.environ.get("EIDOS_GRAPHRAG_INPUT_DIR", "data/graphrag_test/input"))
+WORKSPACE_DIR = Path(os.environ.get("EIDOS_GRAPHRAG_WORKSPACE_DIR", "data/graphrag_test/workspace"))
 VENV_PYTHON = Path("eidosian_venv/bin/python3")
 LOGS_DIR = Path("logs")
-REPORTS_DIR = Path("reports/graphrag")
+REPORTS_DIR = Path(os.environ.get("EIDOS_GRAPHRAG_REPORTS_DIR", "reports/graphrag"))
 
 # Ports
-LLM_PORT = 8081
-EMBED_PORT = 8082
+def _registry_port(service_key: str, fallback: int) -> int:
+    registry_path = Path("config/ports.json")
+    if not registry_path.exists():
+        return fallback
+    try:
+        payload = json.loads(registry_path.read_text())
+    except Exception:
+        return fallback
+    services = payload.get("services") if isinstance(payload, dict) else None
+    if not isinstance(services, dict):
+        return fallback
+    service = services.get(service_key)
+    if not isinstance(service, dict):
+        return fallback
+    try:
+        value = int(service.get("port", fallback))
+    except Exception:
+        return fallback
+    return value if value > 0 else fallback
+
+
+LLM_PORT = int(os.environ.get("EIDOS_GRAPHRAG_LLM_PORT", str(_registry_port("graphrag_llm", 8081))))
+EMBED_PORT = int(os.environ.get("EIDOS_GRAPHRAG_EMBED_PORT", str(_registry_port("graphrag_embedding", 8082))))
 QUERY_METHOD = os.environ.get("EIDOS_GRAPHRAG_QUERY_METHOD", "global")
 
 PLACEHOLDER_MARKERS = ("auto-generated placeholder", "fallback generated")

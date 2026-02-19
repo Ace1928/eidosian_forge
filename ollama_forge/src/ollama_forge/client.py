@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 """
 Ollama Forge - Python Client.
 
@@ -21,7 +22,7 @@ class OllamaResponse(BaseModel):
 class OllamaClient:
     def __init__(
         self,
-        base_url: str = "http://localhost:11434",
+        base_url: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
         timeout: Optional[float] = DEFAULT_LLM_TIMEOUT,
     ):
         self.base_url = base_url

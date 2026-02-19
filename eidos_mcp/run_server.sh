@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Eidosian MCP Server launcher (Streamable HTTP transport)
@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 VENV_BIN="${FORGE_ROOT}/eidosian_venv/bin"
 PYTHON_BIN="${VENV_BIN}/python3"
+PORT_REGISTRY_SCRIPT="${FORGE_ROOT}/scripts/port_registry.py"
 
 if [ ! -x "${PYTHON_BIN}" ]; then
   echo "ERROR: Missing venv python at ${PYTHON_BIN}" >&2
@@ -19,7 +20,8 @@ export EIDOS_FORGE_DIR="${FORGE_ROOT}"
 export EIDOS_MCP_TRANSPORT="${EIDOS_MCP_TRANSPORT:-streamable-http}"
 export EIDOS_MCP_MOUNT_PATH="${EIDOS_MCP_MOUNT_PATH:-/mcp}"
 export EIDOS_MCP_STATELESS_HTTP="${EIDOS_MCP_STATELESS_HTTP:-1}"
-export FASTMCP_PORT="${FASTMCP_PORT:-8928}"
+DEFAULT_MCP_PORT="$("${PYTHON_BIN}" "${PORT_REGISTRY_SCRIPT}" get --service eidos_mcp --field port --default 8928 2>/dev/null || echo 8928)"
+export FASTMCP_PORT="${FASTMCP_PORT:-${EIDOS_MCP_PORT:-${DEFAULT_MCP_PORT}}}"
 export FASTMCP_HOST="${FASTMCP_HOST:-127.0.0.1}"
 export FASTMCP_RELOAD="${FASTMCP_RELOAD:-false}"
 export EIDOS_MCP_ENABLE_COMPAT_HEADERS="${EIDOS_MCP_ENABLE_COMPAT_HEADERS:-1}"

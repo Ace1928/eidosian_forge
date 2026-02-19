@@ -17,9 +17,10 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from . import FORGE_ROOT
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 
-MCP_URL = "http://localhost:8928/mcp"
+MCP_URL = get_service_url("eidos_mcp", default_port=8928, default_host="localhost", default_path="/mcp")
 
 
 def _build_parser() -> argparse.ArgumentParser:

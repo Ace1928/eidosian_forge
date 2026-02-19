@@ -27,10 +27,10 @@
     "importance": 0.5,
     "ttl_seconds": 86400,
     "tags": [
-      "milestone-complete",
       "introspection",
-      "velvet-beef",
-      "identity"
+      "identity",
+      "milestone-complete",
+      "velvet-beef"
     ],
     "linked_memories": []
   },
@@ -47,10 +47,10 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
+      "graphrag",
       "assessment",
-      "quality",
       "benchmark",
-      "graphrag"
+      "quality"
     ],
     "linked_memories": []
   },
@@ -67,10 +67,10 @@
     "importance": 0.87,
     "ttl_seconds": 86400,
     "tags": [
-      "query-methods",
+      "graphrag",
       "termux",
       "benchmark",
-      "graphrag"
+      "query-methods"
     ],
     "linked_memories": []
   },
@@ -87,11 +87,52 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "termux",
-      "session",
-      "gemini",
+      "mcp",
       "codex",
-      "mcp"
+      "gemini",
+      "session",
+      "termux"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "2730cb06-a985-4e85-8e17-63adeb4be623",
+    "content": "Doc processor v2 now runs as FastAPI service with resumable state, staged->judge->approved flow, and live dashboard metrics endpoint on registry-managed port.",
+    "created_at": "2026-02-19T18:44:14.018045",
+    "last_accessed": "2026-02-19T18:44:14.018058",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ports",
+      "scribe",
+      "dashboard",
+      "doc_forge",
+      "termux"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "17a931b2-bcef-431b-9c70-29fcef3fe9d2",
+    "content": "Doc processor service robustness improved: when managed LLM is disabled/unavailable, processor now stays alive in waiting_for_llm state and retries instead of crashing thread; API endpoints remain available for monitoring.",
+    "created_at": "2026-02-19T18:55:01.314622",
+    "last_accessed": "2026-02-19T18:55:01.314634",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.84,
+    "ttl_seconds": 86400,
+    "tags": [
+      "stability",
+      "service",
+      "termux",
+      "doc_forge"
     ],
     "linked_memories": []
   }

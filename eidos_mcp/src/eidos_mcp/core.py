@@ -8,10 +8,15 @@ from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 from mcp.server.fastmcp import FastMCP
 from .logging_utils import log_tool_call, log_resource_read
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 
 
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
-_FASTMCP_PORT = int(os.environ.get("FASTMCP_PORT", "8928"))
+_FASTMCP_PORT = get_service_port(
+    "eidos_mcp",
+    default=8928,
+    env_keys=("FASTMCP_PORT", "EIDOS_MCP_PORT"),
+)
 _FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp")
 
 

@@ -10,6 +10,7 @@ Usage examples:
 
 from __future__ import annotations
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 import argparse, json, dataclasses as dc
 import os
 
@@ -34,6 +35,8 @@ from agent_forge.core.state import (  # type: ignore
     list_runs,
 )
 from agent_forge.core.artifacts import run_dir
+
+DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
 
 @eidosian()
 def main(argv: list[str] | None = None) -> int:
@@ -204,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         cfull.add_argument("--bench-ticks", type=int, default=10, help="ticks per core benchmark round")
         cfull.add_argument("--trial-ticks", type=int, default=3, help="ticks per perturbation trial")
         cfull.add_argument("--model", default="qwen2.5:1.5b", help="local Ollama model to benchmark")
-        cfull.add_argument("--ollama-endpoint", default="http://127.0.0.1:11434", help="Ollama endpoint URL")
+        cfull.add_argument("--ollama-endpoint", default=DEFAULT_OLLAMA_ENDPOINT, help="Ollama endpoint URL")
         cfull.add_argument("--skip-llm", action="store_true", help="skip local LLM task benchmark")
         cfull.add_argument("--skip-mcp", action="store_true", help="skip MCP runtime benchmark")
         cfull.add_argument("--skip-red-team", action="store_true", help="skip adversarial red-team benchmark campaign")

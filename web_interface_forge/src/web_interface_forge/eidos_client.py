@@ -32,8 +32,14 @@ from typing import Dict, List, Optional
 
 import websockets
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 
-DEFAULT_WS = "ws://127.0.0.1:8928"
+_DEFAULT_WS_PORT = get_service_port(
+    "web_interface_sidecar_ws",
+    default=8932,
+    env_keys=("EIDOS_WEB_INTERFACE_WS_PORT",),
+)
+DEFAULT_WS = os.environ.get("EIDOS_WEB_INTERFACE_WS_URL", f"ws://127.0.0.1:{_DEFAULT_WS_PORT}")
 RECONNECT_DELAY_S = 1.0
 MAX_RECONNECT_DELAY_S = 10.0
 

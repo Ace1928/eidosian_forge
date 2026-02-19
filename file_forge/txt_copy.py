@@ -47,6 +47,7 @@ from rich.progress import (
 import PyPDF2
 import docx
 import requests
+from eidosian_core.ports import get_service_url
 
 # Configure logging
 logging.basicConfig(
@@ -73,7 +74,10 @@ ProcessResult = Tuple[Optional[Path], bool]
 FutureResult = concurrent.futures.Future[Optional[Path]]
 
 # Default Ollama API URLs
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://0.0.0.0:11434")
+OLLAMA_BASE_URL = os.environ.get(
+        "OLLAMA_BASE_URL",
+        get_service_url("ollama_http", default_port=11434, default_host="127.0.0.1", default_path="")
+)
 OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
 OLLAMA_CHAT_URL = f"{OLLAMA_BASE_URL}/api/chat"
 OLLAMA_EMBEDDINGS_URL = f"{OLLAMA_BASE_URL}/api/embed"

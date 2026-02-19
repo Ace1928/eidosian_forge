@@ -13,6 +13,7 @@ for extra_path in (FORGE_ROOT / "lib", FORGE_ROOT / "eidos_mcp" / "src", FORGE_R
         sys.path.insert(0, str_path)
 
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamable_http_client
@@ -30,9 +31,11 @@ def _check_http_health(base_url: str) -> None:
 
 @eidosian()
 async def check_health():
-    url = os.environ.get("EIDOS_MCP_HEALTH_URL", "http://127.0.0.1:8928/mcp")
+    default_mcp_url = get_service_url("eidos_mcp", default_port=8928, default_path="/mcp")
+    url = os.environ.get("EIDOS_MCP_URL", default_mcp_url)
     print(f"Attempting to connect to {url}...")
-    _check_http_health(url.replace("/mcp", ""))
+    base_url = url.replace("/mcp", "") if "/mcp" in url else url
+    _check_http_health(base_url)
     try:
         client = streamable_http_client if "/mcp" in url else sse_client
         async with client(url) as (read, write, *_):

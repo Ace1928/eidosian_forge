@@ -13,6 +13,7 @@ relevance, importance, and access patterns.
 """
 from __future__ import annotations
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 import json
 import time
@@ -128,7 +129,11 @@ class OllamaEmbedder:
     Uses nomic-embed-text by default (768 dimensions, 8192 context).
     """
     
-    def __init__(self, model: Optional[str] = None, base_url: str = "http://localhost:11434"):
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        base_url: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
+    ):
         # Try to get model from unified config
         try:
             from eidos_mcp.config.models import model_config

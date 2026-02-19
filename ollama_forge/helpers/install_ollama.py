@@ -3,6 +3,9 @@
 import subprocess
 import sys
 from typing import Optional
+from eidosian_core.ports import get_service_url
+
+DEFAULT_OLLAMA_API_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
 
 
 def check_ollama_installed() -> bool:
@@ -19,7 +22,7 @@ def check_ollama_installed() -> bool:
         return False
 
 
-def check_ollama_running(url: str = "http://localhost:11434") -> bool:
+def check_ollama_running(url: str = DEFAULT_OLLAMA_API_URL) -> bool:
     """Check if Ollama server is running."""
     import httpx
     try:
@@ -59,7 +62,7 @@ def pull_model(model_name: str) -> bool:
         return False
 
 
-def ensure_ollama_running(url: str = "http://localhost:11434") -> bool:
+def ensure_ollama_running(url: str = DEFAULT_OLLAMA_API_URL) -> bool:
     """Ensure Ollama is running, attempt to start if not."""
     if check_ollama_running(url):
         return True

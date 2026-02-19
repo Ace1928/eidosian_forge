@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 """
 Ollama Provider for LLM Forge.
 
@@ -23,7 +24,7 @@ except ImportError:
 class OllamaProvider(LLMProvider, EmbeddingProvider):
     def __init__(
         self,
-        base_url: str = "http://localhost:11434",
+        base_url: str = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
         embedding_model: str = None,  # Uses unified config
         timeout: Optional[float] = None,
         default_model: str = None,  # Uses unified config

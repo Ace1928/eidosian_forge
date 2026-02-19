@@ -20,9 +20,9 @@ Security model:
   - Storage state (cookies/local storage) is sensitive: protect file permissions
 
 Usage (recommended):
-  python eidos_server.py --port 8928
+  python eidos_server.py --port 8932
   # then in another terminal:
-  python eidos_client.py --ws ws://127.0.0.1:8928
+  python eidos_client.py --ws ws://127.0.0.1:8932
 
 Notes on robustness:
   - ChatGPT web UI DOM changes. All selectors are centralized in ChatDOM.
@@ -54,11 +54,16 @@ from websockets.server import WebSocketServerProtocol
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 
 CHAT_URL = "https://chat.openai.com/"
 
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8928
+DEFAULT_PORT = get_service_port(
+    "web_interface_sidecar_ws",
+    default=8932,
+    env_keys=("EIDOS_WEB_INTERFACE_WS_PORT",),
+)
 DEFAULT_STATE_PATH = os.path.expanduser("~/.eidos_chatgpt_state.json")
 DEFAULT_LOG_PATH = os.path.expanduser("~/.eidos_sidecar_server.log")
 

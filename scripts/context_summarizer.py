@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 # Attempt to import LLMForge from the project root
 try:
@@ -46,12 +47,13 @@ class Summarizer:
         self.llm_forge = None
         if LLMForge:
             try:
+                default_ollama_url = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
                 if use_codex:
                     # Use ChatMock as primary
                     self.llm_forge = LLMForge(base_url="http://127.0.0.1:8000", use_codex=True)
                 else:
                     # Use local Ollama directly
-                    self.llm_forge = LLMForge(base_url="http://localhost:11434", use_codex=False)
+                    self.llm_forge = LLMForge(base_url=default_ollama_url, use_codex=False)
             except Exception as e:
                 self.logger.warning(f"Failed to initialize LLMForge: {e}")
 

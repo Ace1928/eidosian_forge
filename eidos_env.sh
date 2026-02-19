@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # 💎 EIDOSIAN FORGE ENVIRONMENT MODULE ⚡
 # "Precision is functional alignment; integration is perfection."
 

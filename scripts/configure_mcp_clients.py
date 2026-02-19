@@ -4,11 +4,20 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
+FORGE_ROOT = Path(__file__).resolve().parent.parent
+for extra in (FORGE_ROOT / "lib", FORGE_ROOT):
+    extra_str = str(extra)
+    if extra.exists() and extra_str not in sys.path:
+        sys.path.insert(0, extra_str)
 
-MCP_URL = "http://127.0.0.1:8928/mcp"
+from eidosian_core.ports import get_service_url
+
+
+MCP_URL = get_service_url("eidos_mcp", default_port=8928, default_path="/mcp")
 CODEX_SECTION = "[mcp_servers.eidosian_nexus]"
 CODEX_URL_LINE = f'url = "{MCP_URL}"'
 

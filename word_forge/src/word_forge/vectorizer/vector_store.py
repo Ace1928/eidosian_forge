@@ -21,6 +21,7 @@ Architecture:
 
 from __future__ import annotations
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 import json
 import logging
@@ -67,6 +68,8 @@ else:
 
 import numpy as np
 from numpy.typing import NDArray
+
+OLLAMA_EMBEDDINGS_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="/api/embeddings")
 
 from word_forge.config import config
 from word_forge.database.database_manager import DatabaseError, DBManager, WordEntryDict
@@ -1119,7 +1122,7 @@ class VectorStore:
 
             payload = {"model": self._ollama_model, "prompt": text}
             resp = requests.post(
-                "http://localhost:11434/api/embeddings",
+                OLLAMA_EMBEDDINGS_URL,
                 json=payload,
                 timeout=120,
             )

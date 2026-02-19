@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 from .. import FORGE_ROOT
 from ..consciousness_protocol import ConsciousnessProtocol, DEFAULT_REFERENCES
@@ -16,6 +17,7 @@ from ..core import resource, tool
 from ..forge_loader import ensure_forge_import
 
 ensure_forge_import("agent_forge")
+DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
 
 try:
     from agent_forge.consciousness import (
@@ -559,7 +561,7 @@ def consciousness_kernel_full_benchmark(
     persist: bool = True,
     state_dir: Optional[str] = None,
     llm_model: str = "qwen2.5:1.5b",
-    ollama_endpoint: str = "http://127.0.0.1:11434",
+    ollama_endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
     timeout_sec: float = 45.0,
 ) -> str:
     with _transient_state_dir(state_dir, bool(persist)) as run_state_dir:

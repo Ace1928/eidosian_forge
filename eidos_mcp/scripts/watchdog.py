@@ -10,9 +10,18 @@ import subprocess
 import urllib.request
 import urllib.error
 from datetime import datetime
+from pathlib import Path
+
+FORGE_ROOT = Path(__file__).resolve().parents[2]
+for extra in (FORGE_ROOT / "lib", FORGE_ROOT):
+    extra_str = str(extra)
+    if extra.exists() and extra_str not in sys.path:
+        sys.path.insert(0, extra_str)
+
+from eidosian_core.ports import get_service_url
 
 # Configuration
-HEALTH_URL = "http://127.0.0.1:8928/health"
+HEALTH_URL = get_service_url("eidos_mcp", default_port=8928, default_path="/health")
 CHECK_INTERVAL = 30  # Seconds between checks
 FAILURE_THRESHOLD = 3  # Number of consecutive failures before restart
 SERVICE_NAME = "eidos-mcp"

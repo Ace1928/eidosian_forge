@@ -16,13 +16,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "stage-h",
-      "termux",
-      "ignition-trace",
       "learning",
       "consciousness",
-      "self-improvement"
+      "ignition-trace",
+      "stage-h",
+      "lesson",
+      "self-improvement",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -43,14 +43,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "stage-h",
-      "termux",
-      "bench",
-      "trial-runner",
       "learning",
+      "bench",
       "consciousness",
-      "self-improvement"
+      "stage-h",
+      "lesson",
+      "self-improvement",
+      "trial-runner",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -71,15 +71,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "stage-h",
-      "termux",
-      "directionality",
-      "rci-v2",
       "learning",
       "consciousness",
+      "stage-h",
+      "lesson",
+      "rci-v2",
+      "directionality",
+      "self-improvement",
       "metrics",
-      "self-improvement"
+      "termux"
     ],
     "linked_memories": []
   },
@@ -100,15 +100,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "ablation",
-      "stage-h",
-      "regression",
-      "termux",
       "learning",
       "consciousness",
       "golden",
-      "self-improvement"
+      "ablation",
+      "stage-h",
+      "lesson",
+      "self-improvement",
+      "regression",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -129,15 +129,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "stage-h",
-      "world-model",
-      "rollout",
-      "termux",
-      "predictive-coding",
       "learning",
       "consciousness",
-      "self-improvement"
+      "stage-h",
+      "lesson",
+      "predictive-coding",
+      "self-improvement",
+      "rollout",
+      "termux",
+      "world-model"
     ],
     "linked_memories": []
   },
@@ -158,15 +158,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "stage-h",
-      "termux",
       "simulation",
       "consciousness",
       "learning",
-      "report",
+      "stage-h",
       "meta",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "termux",
+      "report"
     ],
     "linked_memories": []
   },
@@ -183,11 +183,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "integration",
-      "termux",
       "simulation",
       "consciousness",
-      "milestone_h"
+      "milestone_h",
+      "termux",
+      "integration"
     ],
     "linked_memories": []
   },
@@ -208,14 +208,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "testing",
-      "lesson",
-      "ci",
       "mcp",
-      "termux",
       "reliability",
       "learning",
-      "self-improvement"
+      "testing",
+      "lesson",
+      "self-improvement",
+      "termux",
+      "ci"
     ],
     "linked_memories": []
   },
@@ -232,9 +232,9 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "phenomenology",
       "consciousness",
       "ppx",
+      "phenomenology",
       "metrics",
       "milestone_h"
     ],
@@ -257,13 +257,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "falsifiability",
-      "methodology",
       "telemetry",
       "learning",
       "benchmarking",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "falsifiability",
+      "methodology"
     ],
     "linked_memories": []
   },
@@ -280,10 +280,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "recipes",
-      "perturbation",
-      "bench",
       "consciousness",
+      "bench",
+      "perturbation",
+      "recipes",
       "milestone_h"
     ],
     "linked_memories": []
@@ -305,14 +305,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "mcp",
-      "termux",
-      "benchmark",
       "reliability",
-      "learning",
       "timeouts",
-      "self-improvement"
+      "learning",
+      "lesson",
+      "self-improvement",
+      "benchmark",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -333,13 +333,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "autotune",
-      "lesson",
-      "optimization",
-      "bayes",
       "consciousness",
       "learning",
-      "self-improvement"
+      "autotune",
+      "bayes",
+      "lesson",
+      "self-improvement",
+      "optimization"
     ],
     "linked_memories": []
   },
@@ -360,12 +360,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "competition",
-      "attention",
-      "consciousness",
       "learning",
-      "self-improvement"
+      "consciousness",
+      "attention",
+      "lesson",
+      "self-improvement",
+      "competition"
     ],
     "linked_memories": []
   },
@@ -386,13 +386,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "workflow",
+      "learning",
       "validation",
       "lesson",
+      "self-improvement",
       "termux",
-      "workflow",
-      "venv",
-      "learning",
-      "self-improvement"
+      "venv"
     ],
     "linked_memories": []
   },
@@ -413,13 +413,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "experiment_designer",
       "learning",
       "consciousness",
-      "red_team",
+      "lesson",
       "phase_i6",
-      "self-improvement"
+      "red_team",
+      "self-improvement",
+      "experiment_designer"
     ],
     "linked_memories": []
   },
@@ -440,13 +440,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "mcp",
-      "termux",
       "reliability",
       "learning",
+      "lesson",
       "red_team",
-      "self-improvement"
+      "self-improvement",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -467,14 +467,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "gates",
-      "benchmark",
-      "learning",
       "consciousness",
+      "learning",
+      "gates",
+      "lesson",
       "red_team",
-      "phase_i7",
-      "self-improvement"
+      "self-improvement",
+      "benchmark",
+      "phase_i7"
     ],
     "linked_memories": []
   },
@@ -495,14 +495,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "normalization",
-      "benchmark",
-      "scoring",
       "learning",
       "consciousness",
-      "phase_i7",
-      "self-improvement"
+      "scoring",
+      "lesson",
+      "normalization",
+      "self-improvement",
+      "benchmark",
+      "phase_i7"
     ],
     "linked_memories": []
   },
@@ -523,13 +523,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "testing",
-      "lesson",
-      "idempotence",
       "mcp",
       "learning",
       "hardening",
-      "self-improvement"
+      "testing",
+      "lesson",
+      "self-improvement",
+      "idempotence"
     ],
     "linked_memories": []
   },
@@ -550,14 +550,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "learning",
       "red-team",
-      "lesson",
+      "consciousness",
       "autotune",
       "stage-i",
-      "termux",
-      "learning",
-      "consciousness",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -578,14 +578,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "index",
-      "stage-h",
-      "termux",
-      "benchmark",
       "learning",
       "consciousness",
-      "self-improvement"
+      "stage-h",
+      "lesson",
+      "self-improvement",
+      "benchmark",
+      "termux",
+      "index"
     ],
     "linked_memories": []
   },
@@ -606,14 +606,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "security",
-      "termux",
       "workflow",
-      "dependabot",
+      "security",
       "learning",
       "phase-15",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "dependabot",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -634,14 +634,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "remediation",
-      "security",
       "workflow",
-      "dependabot",
+      "security",
       "learning",
       "phase-15",
-      "self-improvement"
+      "remediation",
+      "lesson",
+      "self-improvement",
+      "dependabot"
     ],
     "linked_memories": []
   },
@@ -662,13 +662,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "security",
       "workflow",
       "learning",
+      "security",
       "phase-15",
-      "action-pins",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "action-pins"
     ],
     "linked_memories": []
   },
@@ -689,14 +689,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "remediation",
-      "security",
       "workflow",
-      "dependabot",
+      "security",
       "learning",
+      "remediation",
       "phase-16",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "dependabot"
     ],
     "linked_memories": []
   },
@@ -717,13 +717,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "supply-chain",
-      "lesson",
-      "security",
       "idempotent",
+      "security",
       "stage-l",
+      "lesson",
+      "dependabot",
       "termux",
-      "dependabot"
+      "supply-chain"
     ],
     "linked_memories": []
   },
@@ -744,12 +744,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "security",
       "stage-l",
-      "phase17",
+      "hardening",
+      "lesson",
       "dependabot",
-      "hardening"
+      "phase17"
     ],
     "linked_memories": []
   },
@@ -770,12 +770,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "security",
+      "closure",
       "stage-l",
-      "phase17",
+      "lesson",
       "dependabot",
-      "closure"
+      "phase17"
     ],
     "linked_memories": []
   },
@@ -796,12 +796,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "payload-safety",
-      "termux",
+      "hardening",
       "watchdog",
+      "lesson",
       "phase18",
-      "hardening"
+      "termux",
+      "payload-safety"
     ],
     "linked_memories": []
   },
@@ -822,12 +822,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "payload-safety",
-      "ci",
+      "stress-benchmark",
       "watchdog",
+      "lesson",
       "phase18",
-      "stress-benchmark"
+      "ci",
+      "payload-safety"
     ],
     "linked_memories": []
   },
@@ -848,11 +848,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "side-effect-free",
       "watchdog",
-      "phase18",
-      "status"
+      "lesson",
+      "status",
+      "phase18"
     ],
     "linked_memories": []
   },
@@ -873,12 +873,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "ci",
-      "audit-matrix",
-      "linux-parity",
       "mcp",
-      "phase19"
+      "audit-matrix",
+      "lesson",
+      "linux-parity",
+      "phase19",
+      "ci"
     ],
     "linked_memories": []
   },
@@ -899,10 +899,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "linux-audit",
       "lesson",
       "observability",
       "ci-gate",
-      "linux-audit",
       "phase20"
     ],
     "linked_memories": []
@@ -924,10 +924,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "memory-hygiene",
       "mcp",
       "kb",
+      "lesson",
+      "memory-hygiene",
       "phase20"
     ],
     "linked_memories": []
@@ -949,10 +949,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "causal-trace",
       "lesson",
       "event-fabric",
       "trial-capture",
-      "causal-trace",
       "phase21"
     ],
     "linked_memories": []
@@ -974,10 +974,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "provenance",
       "bench",
       "replay-manifest",
+      "lesson",
+      "provenance",
       "phase22"
     ],
     "linked_memories": []
@@ -1001,8 +1001,8 @@
     "tags": [
       "lesson",
       "directory-atlas",
-      "documentation",
       "test-coverage",
+      "documentation",
       "phase23"
     ],
     "linked_memories": []
@@ -1024,13 +1024,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "ci",
+      "docs",
+      "determinism",
+      "self-improvement",
       "atlas",
       "termux",
-      "docs",
-      "phase24",
-      "determinism",
-      "self-improvement"
+      "ci",
+      "phase24"
     ],
     "linked_memories": []
   },
@@ -1051,12 +1051,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "ast",
-      "lessons-learned",
-      "refactor",
       "learning",
-      "self-improvement"
+      "ast",
+      "lesson",
+      "self-improvement",
+      "refactor",
+      "lessons-learned"
     ],
     "linked_memories": []
   },
@@ -1077,10 +1077,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "prompt-engineering",
       "learning",
       "architecture",
+      "lesson",
       "self-improvement"
     ],
     "linked_memories": []
@@ -1102,12 +1102,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "strategy",
-      "learning",
-      "agency",
       "future-directions",
-      "self-improvement"
+      "learning",
+      "lesson",
+      "agency",
+      "self-improvement",
+      "strategy"
     ],
     "linked_memories": []
   },
@@ -1124,10 +1124,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "velvet-beef",
       "strategy-shift",
+      "introspection",
       "identity",
-      "introspection"
+      "velvet-beef"
     ],
     "linked_memories": []
   },
@@ -1148,11 +1148,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "philosophy",
-      "recursive-improvement",
       "learning",
-      "self-improvement"
+      "lesson",
+      "self-improvement",
+      "philosophy",
+      "recursive-improvement"
     ],
     "linked_memories": []
   },
@@ -1173,11 +1173,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "eidosian-core",
-      "sms-forge",
       "learning",
-      "self-improvement"
+      "sms-forge",
+      "lesson",
+      "self-improvement",
+      "eidosian-core"
     ],
     "linked_memories": []
   },
@@ -1198,11 +1198,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "mcp",
+      "learning",
       "fastmcp",
       "async-python",
-      "learning",
+      "lesson",
       "self-improvement"
     ],
     "linked_memories": []
@@ -1224,13 +1224,33 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "termux",
-      "lesson",
       "reliability",
-      "learning",
-      "strict-shell",
       "mcp",
-      "self-improvement"
+      "learning",
+      "lesson",
+      "self-improvement",
+      "strict-shell",
+      "termux"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "07e5e615-196c-4ea4-b09b-d1164382350f",
+    "content": "I improved reliability by replacing hardcoded service ports with registry-backed defaults and validated the new doc processor health/status endpoints in a live dry-run.",
+    "created_at": "2026-02-19T18:44:14.034582",
+    "last_accessed": "2026-02-19T18:44:14.034592",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "reliability",
+      "ports",
+      "validation",
+      "doc_forge"
     ],
     "linked_memories": []
   }

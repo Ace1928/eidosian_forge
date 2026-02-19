@@ -57,7 +57,7 @@ The Nexus integrates deeply with the Eidosian ecosystem:
 **Recommended:** Use the portable launcher script.
 
 ```bash
-# Start the server (StreamableHTTP on port 8928)
+# Start the server (default port from config/ports.json -> eidos_mcp)
 ./run_server.sh
 ```
 
@@ -100,6 +100,8 @@ Key env vars (all default-safe):
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
 
 `run_server.sh` defaults `EIDOS_MCP_STATELESS_HTTP=1` for Codex/Gemini compatibility.
+If `FASTMCP_PORT`/`EIDOS_MCP_PORT` are unset or empty, the server falls back to
+`config/ports.json` (`services.eidos_mcp.port`).
 
 ### Client Wiring (Codex + Gemini)
 

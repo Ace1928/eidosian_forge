@@ -5,6 +5,7 @@ import argparse
 import sys
 from typing import Optional, List
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 
 @eidosian()
 def main(argv: Optional[List[str]] = None) -> int:
@@ -19,7 +20,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     
     # Server
     serve_parser = subparsers.add_parser("serve", help="Start web server")
-    serve_parser.add_argument("--port", type=int, default=8080, help="Port")
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=get_service_port(
+            "web_interface_http",
+            default=8934,
+            env_keys=("EIDOS_WEB_INTERFACE_HTTP_PORT",),
+        ),
+        help="Port",
+    )
     serve_parser.add_argument("--host", default="localhost", help="Host")
     
     # Status

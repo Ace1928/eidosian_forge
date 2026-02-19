@@ -2,6 +2,9 @@
 from os import PathLike
 from typing import Any, Dict, List, Optional, Union, cast
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
+
+OLLAMA_GENERATE_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="/api/generate")
 
 try:  # Optional heavy dependencies
     import torch
@@ -238,7 +241,7 @@ class ModelState:
                 payload["options"]["num_predict"] = max_new_tokens
 
             resp = requests.post(
-                "http://localhost:11434/api/generate",
+                OLLAMA_GENERATE_URL,
                 json=payload,
                 timeout=900,
             )

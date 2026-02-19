@@ -23,6 +23,7 @@ from .state import gis, llm, refactor, agent, ROOT_DIR, FORGE_DIR
 from . import routers as _routers  # noqa: F401
 from .plugins import init_plugins, list_plugins, list_tools, get_loader
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 
 try:
     from google.oauth2 import id_token
@@ -699,7 +700,11 @@ app = _build_streamable_http_app(mount_path)
 
 def _run_streamable_http_server(mount_path: str) -> None:
     host = os.environ.get("FASTMCP_HOST", "127.0.0.1")
-    port = int(os.environ.get("FASTMCP_PORT", "8928"))
+    port = get_service_port(
+        "eidos_mcp",
+        default=8928,
+        env_keys=("FASTMCP_PORT", "EIDOS_MCP_PORT"),
+    )
     log_level = os.environ.get("FASTMCP_LOG_LEVEL", "info").lower()
     reload = os.environ.get("FASTMCP_RELOAD", "false").lower() == "true"
     

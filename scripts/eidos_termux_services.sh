@@ -1,7 +1,9 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 FORGE_ROOT="${EIDOS_FORGE_ROOT:-/data/data/com.termux/files/home/eidosian_forge}"
+PYTHON_BIN="${EIDOS_VENV_PYTHON:-${FORGE_ROOT}/eidosian_venv/bin/python}"
+PORT_REGISTRY_SCRIPT="${FORGE_ROOT}/scripts/port_registry.py"
 RUN_DIR="${HOME}/.eidosian/run"
 LOCK_FILE="${RUN_DIR}/services.lock"
 SHELL_COUNT_FILE="${RUN_DIR}/.interactive_shell_count"
@@ -9,9 +11,24 @@ MCP_PID_FILE="${RUN_DIR}/eidos_mcp.pid"
 DOC_PID_FILE="${RUN_DIR}/doc_forge.pid"
 MCP_LOG_FILE="${FORGE_ROOT}/doc_forge/mcp_server.log"
 DOC_LOG_FILE="${FORGE_ROOT}/doc_forge/orchestrator.log"
-MCP_PORT="${EIDOS_MCP_PORT:-8928}"
+_registry_port_default() {
+    local service="$1"
+    local fallback="$2"
+    if [ -x "${PYTHON_BIN}" ] && [ -f "${PORT_REGISTRY_SCRIPT}" ]; then
+        "${PYTHON_BIN}" "${PORT_REGISTRY_SCRIPT}" get --service "${service}" --field port --default "${fallback}" 2>/dev/null || printf '%s' "${fallback}"
+        return 0
+    fi
+    printf '%s' "${fallback}"
+}
+
+DEFAULT_MCP_PORT="$(_registry_port_default eidos_mcp 8928)"
+DEFAULT_DOC_PORT="$(_registry_port_default doc_forge_dashboard 8930)"
+
+MCP_PORT="${EIDOS_MCP_PORT:-${DEFAULT_MCP_PORT}}"
 MCP_HEALTH_URL="${EIDOS_MCP_HEALTH_URL:-http://127.0.0.1:${MCP_PORT}/health}"
-ENABLE_DOC_FORGE_AUTOSTART="${EIDOS_ENABLE_DOC_FORGE_AUTOSTART:-0}"
+DOC_PORT="${EIDOS_DOC_FORGE_PORT:-${DEFAULT_DOC_PORT}}"
+DOC_HEALTH_URL="${EIDOS_DOC_FORGE_HEALTH_URL:-http://127.0.0.1:${DOC_PORT}/health}"
+ENABLE_DOC_FORGE_AUTOSTART="${EIDOS_ENABLE_DOC_FORGE_AUTOSTART:-1}"
 
 mkdir -p "${RUN_DIR}"
 
@@ -180,7 +197,10 @@ case "${cmd}" in
         _with_lock _increment_shell_count_locked >/dev/null
         _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" || true
         if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
-            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" || true
+            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" || true
+            if ! _wait_http_ok "${DOC_HEALTH_URL}" 20; then
+                _log "warning: Doc Forge health check failed at ${DOC_HEALTH_URL}."
+            fi
         fi
         if ! _wait_http_ok "${MCP_HEALTH_URL}" 15; then
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
@@ -195,6 +215,12 @@ case "${cmd}" in
         ;;
     start)
         _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}"
+        if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
+            _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}"
+            _wait_http_ok "${DOC_HEALTH_URL}" 20 || {
+                _log "warning: Doc Forge health check failed at ${DOC_HEALTH_URL}."
+            }
+        fi
         _wait_http_ok "${MCP_HEALTH_URL}" 15 || {
             _log "warning: MCP health check failed at ${MCP_HEALTH_URL}."
             exit 1
@@ -210,7 +236,7 @@ case "${cmd}" in
         ;;
     status)
         _status_service "Eidos MCP Server" "${MCP_PID_FILE}" "${MCP_PORT}"
-        _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}"
+        _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}"
         printf 'Interactive shell refcount: %s\n' "$(_read_count)"
         ;;
     *)

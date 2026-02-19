@@ -19,9 +19,10 @@ for extra in (FORGE_DIR / "lib", FORGE_DIR):
         sys.path.insert(0, extra_str)
 
 from eidosian_core import eidosian
+from eidosian_core.ports import detect_registry_path, get_service_port, load_port_registry
 
 # Convention
-START_PORT = 8928
+START_PORT = get_service_port("eidos_mcp", default=8928, env_keys=("FASTMCP_PORT", "EIDOS_MCP_PORT"))
 STEP = 2
 MAX_PORT = 9000  # Arbitrary upper limit for checking
 
@@ -34,6 +35,8 @@ def check_port_open(port: int) -> bool:
 @eidosian()
 def audit_configs():
     forge_dir = FORGE_DIR
+    registry_path = detect_registry_path()
+    registry = load_port_registry(str(registry_path))
     configs = []
     
     # Check known config locations
@@ -44,6 +47,12 @@ def audit_configs():
     ]
     
     print("--- Configuration Audit ---")
+    print(f"Registry: {registry_path}")
+    services = registry.get("services", {}) if isinstance(registry, dict) else {}
+    if isinstance(services, dict):
+        print(f"Registry services: {len(services)}")
+    else:
+        print("WARN: Registry has no services map")
     # This is a heuristic text search, not a true parse for Python files
     for loc in locations:
         if loc.exists():

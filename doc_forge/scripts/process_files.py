@@ -47,8 +47,21 @@ def call_llm(prompt):
     """Call the local llama-server with the given prompt."""
     import requests
     import json
-    
-    url = "http://127.0.0.1:8081/completion"
+
+    def _registry_port(service_key: str, fallback: int) -> int:
+        registry = ROOT_DIR / "config" / "ports.json"
+        if not registry.exists():
+            return fallback
+        try:
+            payload = json.loads(registry.read_text(encoding="utf-8"))
+            services = payload.get("services", {})
+            value = int((services.get(service_key) or {}).get("port", fallback))
+            return value if value > 0 else fallback
+        except Exception:
+            return fallback
+
+    default_port = _registry_port("doc_forge_llm", 8093)
+    url = os.environ.get("EIDOS_DOC_FORGE_COMPLETION_URL", f"http://127.0.0.1:{default_port}/completion")
     
     # Qwen-style prompt
     full_prompt = f"""<|im_start|>system

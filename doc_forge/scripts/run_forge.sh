@@ -1,37 +1,46 @@
-#!/bin/bash
-# Eidosian Documentation Forge Orchestrator
-# Runs the documentation pipeline continuously until completion.
+#!/usr/bin/env bash
+set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-cd "$FORGE_ROOT"
 
-LOG_FILE="doc_forge/forge_run.log"
+VENV_PYTHON="${FORGE_ROOT}/eidosian_venv/bin/python"
+SERVICE_SCRIPT="${FORGE_ROOT}/doc_forge/scripts/scribe_service.py"
+PORT_REGISTRY_SCRIPT="${FORGE_ROOT}/scripts/port_registry.py"
 
-echo "Starting Eidosian Documentation Forge..." | tee -a "$LOG_FILE"
-
-# 1. Generate Index if missing
-if [ ! -f "doc_forge/file_index.json" ]; then
-    echo "Generating file index..." | tee -a "$LOG_FILE"
-    ./doc_forge/scripts/generate_docs.py >> "$LOG_FILE" 2>&1
+if [ ! -x "${VENV_PYTHON}" ]; then
+  echo "[doc-forge] missing python: ${VENV_PYTHON}" >&2
+  exit 1
 fi
 
-# 2. Main Processing Loop
-echo "Starting processing loop..." | tee -a "$LOG_FILE"
-# Run process_files.py with no limit (0). It handles resumption via file checks.
-./doc_forge/scripts/process_files.py --limit 0 >> "$LOG_FILE" 2>&1
-
-PROCESS_EXIT_CODE=$?
-
-if [ $PROCESS_EXIT_CODE -eq 0 ]; then
-    echo "Processing complete." | tee -a "$LOG_FILE"
-else
-    echo "Processing stopped with exit code $PROCESS_EXIT_CODE. Check logs." | tee -a "$LOG_FILE"
+if [ ! -f "${SERVICE_SCRIPT}" ]; then
+  echo "[doc-forge] missing service script: ${SERVICE_SCRIPT}" >&2
+  exit 1
 fi
 
-# 3. Auto-Approve & Index
-echo "Running auto-approval and indexing..." | tee -a "$LOG_FILE"
-./doc_forge/scripts/auto_approve.py >> "$LOG_FILE" 2>&1
-./doc_forge/scripts/generate_html_index.py >> "$LOG_FILE" 2>&1
+export EIDOS_FORGE_ROOT="${FORGE_ROOT}"
+DEFAULT_DOC_PORT="$("${VENV_PYTHON}" "${PORT_REGISTRY_SCRIPT}" get --service doc_forge_dashboard --field port --default 8930 2>/dev/null || echo 8930)"
+DEFAULT_DOC_LLM_PORT="$("${VENV_PYTHON}" "${PORT_REGISTRY_SCRIPT}" get --service doc_forge_llm --field port --default 8093 2>/dev/null || echo 8093)"
+MODEL_FROM_SWEEP="$("${VENV_PYTHON}" - <<'PY' 2>/dev/null
+import json
+from pathlib import Path
+path = Path("reports/graphrag_sweep/model_selection_latest.json")
+if path.exists():
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        model = ((payload.get("winner") or {}).get("model_path") or "").strip()
+        if model:
+            print(model)
+    except Exception:
+        pass
+PY
+)"
+export EIDOS_DOC_FORGE_PORT="${EIDOS_DOC_FORGE_PORT:-${DEFAULT_DOC_PORT}}"
+export EIDOS_DOC_FORGE_HOST="${EIDOS_DOC_FORGE_HOST:-127.0.0.1}"
+export EIDOS_DOC_FORGE_MODEL="${EIDOS_DOC_FORGE_MODEL:-${MODEL_FROM_SWEEP:-models/Qwen2.5-0.5B-Instruct-Q8_0.gguf}}"
+export EIDOS_DOC_FORGE_SOURCE_ROOT="${EIDOS_DOC_FORGE_SOURCE_ROOT:-${FORGE_ROOT}}"
+export EIDOS_DOC_FORGE_ENABLE_MANAGED_LLM="${EIDOS_DOC_FORGE_ENABLE_MANAGED_LLM:-1}"
+export EIDOS_DOC_FORGE_LLM_PORT="${EIDOS_DOC_FORGE_LLM_PORT:-${DEFAULT_DOC_LLM_PORT}}"
 
-echo "Forge run finished." | tee -a "$LOG_FILE"
+cd "${FORGE_ROOT}"
+exec "${VENV_PYTHON}" "${SERVICE_SCRIPT}" --host "${EIDOS_DOC_FORGE_HOST}" --port "${EIDOS_DOC_FORGE_PORT}"

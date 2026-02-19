@@ -2,12 +2,15 @@
 
 import httpx
 from typing import List, Optional
+from eidosian_core.ports import get_service_url
+
+DEFAULT_OLLAMA_API_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
 
 
 def create_embedding(
     text: str,
     model: str = "nomic-embed-text",
-    base_url: str = "http://localhost:11434",
+    base_url: str = DEFAULT_OLLAMA_API_URL,
 ) -> Optional[List[float]]:
     """Create an embedding for a single text."""
     try:
@@ -27,7 +30,7 @@ def create_embedding(
 def create_embeddings(
     texts: List[str],
     model: str = "nomic-embed-text",
-    base_url: str = "http://localhost:11434",
+    base_url: str = DEFAULT_OLLAMA_API_URL,
 ) -> List[Optional[List[float]]]:
     """Create embeddings for multiple texts."""
     return [create_embedding(text, model, base_url) for text in texts]

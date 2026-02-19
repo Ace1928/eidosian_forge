@@ -15,6 +15,7 @@ Enhanced with other forges:
 """
 from __future__ import annotations
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
 
 import sys
 from pathlib import Path
@@ -26,6 +27,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "lib"
 from cli import StandardCLI, CommandResult, ForgeDetector
 
 from llm_forge import ModelManager, OllamaProvider
+
+DEFAULT_OLLAMA_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
+DEFAULT_OLLAMA_TAGS_URL = f"{DEFAULT_OLLAMA_URL}/api/tags"
+DEFAULT_OLLAMA_EMBED_URL = f"{DEFAULT_OLLAMA_URL}/api/embeddings"
 
 
 class LLMForgeCLI(StandardCLI):
@@ -134,7 +139,7 @@ class LLMForgeCLI(StandardCLI):
             models = []
             try:
                 import requests
-                resp = requests.get("http://localhost:11434/api/tags", timeout=5)
+                resp = requests.get(DEFAULT_OLLAMA_TAGS_URL, timeout=5)
                 if resp.status_code == 200:
                     ollama_ok = True
                     data = resp.json()
@@ -165,7 +170,7 @@ class LLMForgeCLI(StandardCLI):
         """List available models."""
         try:
             import requests
-            resp = requests.get("http://localhost:11434/api/tags", timeout=10)
+            resp = requests.get(DEFAULT_OLLAMA_TAGS_URL, timeout=10)
             
             if resp.status_code != 200:
                 result = CommandResult(False, "Failed to connect to Ollama")
@@ -221,7 +226,7 @@ class LLMForgeCLI(StandardCLI):
             import requests
             
             resp = requests.post(
-                "http://localhost:11434/api/embeddings",
+                DEFAULT_OLLAMA_EMBED_URL,
                 json={"model": args.model, "prompt": args.text},
                 timeout=30,
             )
@@ -261,7 +266,7 @@ class LLMForgeCLI(StandardCLI):
                     "inference_model": "phi3:mini",
                     "embedding_model": "nomic-embed-text",
                     "embedding_dims": 768,
-                    "ollama_url": "http://localhost:11434",
+                    "ollama_url": DEFAULT_OLLAMA_URL,
                     "note": "Using defaults (eidos_mcp not available)",
                 }
             

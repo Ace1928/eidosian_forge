@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+from eidosian_core.ports import get_service_port
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation Command Center
 """
@@ -260,7 +261,13 @@ def cmd_check(args: argparse.Namespace) -> int:
 
 @eidosian()
 def cmd_serve(args: argparse.Namespace) -> int:
-    port = getattr(args, 'port', 8000)
+    port = getattr(args, "port", None)
+    if port is None:
+        port = get_service_port(
+            "doc_forge_dashboard",
+            default=8930,
+            env_keys=("EIDOS_DOC_FORGE_PORT",),
+        )
 
     code, _, err = run_command([
         sys.executable, "-c",
@@ -320,7 +327,7 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser('check', help='Check documentation for issues')
 
     serve_parser = subparsers.add_parser('serve', help='Serve documentation with live reload')
-    serve_parser.add_argument('-p', '--port', type=int, default=8000, help='Port to serve on')
+    serve_parser.add_argument('-p', '--port', type=int, default=None, help='Port to serve on')
     return parser
 
 @eidosian()

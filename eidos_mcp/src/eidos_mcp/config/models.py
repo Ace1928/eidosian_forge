@@ -31,17 +31,23 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 import os
 from .. import FORGE_ROOT
+from eidosian_core.ports import get_service_url
 
 # Configuration paths
 CONFIG_DIR = Path(os.environ.get("EIDOS_MODEL_CONFIG_DIR", str(FORGE_ROOT / "data"))).resolve()
 CONFIG_FILE = CONFIG_DIR / "model_config.json"
+DEFAULT_OLLAMA_BASE_URL = os.environ.get(
+    "EIDOS_OLLAMA_BASE_URL",
+    get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
+).rstrip("/")
+DEFAULT_OLLAMA_API_V1_URL = f"{DEFAULT_OLLAMA_BASE_URL}/v1"
 
 
 @dataclass
 class OllamaConfig:
     """Ollama server configuration."""
-    base_url: str = "http://localhost:11434"
-    api_v1_url: str = "http://localhost:11434/v1"
+    base_url: str = DEFAULT_OLLAMA_BASE_URL
+    api_v1_url: str = DEFAULT_OLLAMA_API_V1_URL
     timeout: float = 3600.0  # [EIDOS] 1 hour for slow local models
 
 
@@ -106,8 +112,8 @@ class ModelConfig:
                 data = json.load(f)
             
             self.ollama = OllamaConfig(
-                base_url=data.get("ollama", {}).get("base_url", "http://localhost:11434"),
-                api_v1_url=data.get("ollama", {}).get("api_v1_url", "http://localhost:11434/v1"),
+                base_url=data.get("ollama", {}).get("base_url", DEFAULT_OLLAMA_BASE_URL),
+                api_v1_url=data.get("ollama", {}).get("api_v1_url", DEFAULT_OLLAMA_API_V1_URL),
             )
             self.inference = InferenceConfig(
                 model=data.get("inference", {}).get("model", "phi3:mini"),
