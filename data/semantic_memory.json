@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
-size 2
+{
+  "9391e2b0-2460-4862-9876-bd518493fbc0": {
+    "id": "9391e2b0-2460-4862-9876-bd518493fbc0",
+    "content": "Commit 8338941faa pushed to main: adds RAC-AP protocol module, protocol/preregister CLI commands, protocol compatibility checks, interventional validity gate in validator, docs updates, and validation test expansion.",
+    "created_at": "2026-02-20T08:17:18.099321",
+    "type": "episodic",
+    "metadata": {},
+    "importance": 1.0,
+    "embedding": [
+      0.9607843137254902,
+      0.28627450980392155,
+      0.9333333333333333,
+      0.10980392156862745,
+      0.6352941176470588,
+      0.6196078431372549,
+      0.18823529411764706,
+      0.3176470588235294,
+      0.44313725490196076,
+      0.6901960784313725,
+      0.11372549019607843,
+      0.7843137254901961,
+      0.28627450980392155,
+      0.6980392156862745,
+      0.6470588235294118,
+      0.47843137254901963
+    ]
+  }
+}
