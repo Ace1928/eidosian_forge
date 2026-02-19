@@ -14,8 +14,14 @@ Status: Active development, consciousness runtime production operational.
   - reliability summary,
   - nomological expectation checks,
   - convergent/discriminant scores,
+  - interventional validity summary (perturbation effect consistency),
   - security boundary summary,
+  - protocol compatibility checks,
   - explicit gate outcomes.
+- Protocol surfaces:
+  - machine-readable schema artifact (`docs/consciousness/rac_ap_protocol_v1_2026_02_19.json`),
+  - CLI protocol validation/template export,
+  - CLI pre-registration manifest generation.
 
 ## Primary Docs
 - `agent_forge/docs/CONSCIOUSNESS_RAC_AP_RESEARCH_2026-02-19.md`
@@ -29,8 +35,10 @@ Status: Active development, consciousness runtime production operational.
 - `eidctl consciousness full-benchmark`
 - `eidctl consciousness validate`
 - `eidctl consciousness latest-validation`
+- `eidctl consciousness protocol`
+- `eidctl consciousness preregister`
 
 ## Current Gaps
 - RAC-AP validation currently depends on sufficient historical report volume.
 - Security gate is available but currently optional by protocol default.
-- External benchmark adapters and protocol pre-registration automation are pending.
+- External benchmark adapters and MCP validation resource integration are pending.

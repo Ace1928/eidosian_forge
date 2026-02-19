@@ -14,32 +14,34 @@ The plan is complete when RAC-AP claims are backed by reproducible, adversariall
 - [x] ~~Bench/trials/ablations/red-team/autotune infrastructure~~ (`consciousness/bench/**`, `modules/autotune.py`).
 
 ## Phase 1: Construct Definition and Protocolization
-- [x] Create in-repo RAC-AP reference brief.
-- [ ] Define machine-readable protocol schema:
-  - pillar definitions,
-  - expected relationships,
-  - negative controls,
-  - falsification thresholds,
-  - required sample sizes.
-- [ ] Add protocol versioning and compatibility checks.
+- [x] ~~Create in-repo RAC-AP reference brief.~~
+- [x] ~~Define machine-readable protocol schema:~~
+  - [x] ~~pillar definitions~~
+  - [x] ~~expected relationships~~
+  - [x] ~~negative controls~~
+  - [x] ~~falsification thresholds~~
+  - [x] ~~required sample sizes~~
+- [x] ~~Add protocol versioning and compatibility checks.~~
 
 ## Phase 2: Construct Validation Engine
-- [ ] Implement validation pipeline over persisted artifacts:
-  - benchmark reports,
-  - trial reports,
-  - red-team reports,
-  - integrated benchmark reports.
-- [ ] Compute:
-  - reliability (variance/CV over runs),
-  - convergent validity (expected directional correlations),
-  - discriminant validity (near-zero or opposite-sign controls),
-  - security boundary integrity summary,
-  - overall RAC-AP index with hard gates.
-- [ ] Persist versioned validation reports.
+- [x] ~~Implement validation pipeline over persisted artifacts:~~
+  - [x] ~~benchmark reports~~
+  - [x] ~~trial reports~~
+  - [x] ~~red-team reports~~
+  - [x] ~~integrated benchmark reports~~
+- [x] ~~Compute:~~
+  - [x] ~~reliability (variance/CV over runs)~~
+  - [x] ~~convergent validity (expected directional correlations)~~
+  - [x] ~~discriminant validity (near-zero or opposite-sign controls)~~
+  - [x] ~~interventional validity summary (perturbation effect consistency)~~
+  - [x] ~~security boundary integrity summary~~
+  - [x] ~~overall RAC-AP index with hard gates~~
+- [x] ~~Persist versioned validation reports.~~
 
 ## Phase 3: CLI/MCP Surfaces
-- [ ] Add `eidctl consciousness validate`.
-- [ ] Add `eidctl consciousness latest-validation`.
+- [x] ~~Add `eidctl consciousness validate`.~~
+- [x] ~~Add `eidctl consciousness latest-validation`.~~
+- [x] ~~Add `eidctl consciousness protocol` and `eidctl consciousness preregister`.~~
 - [ ] Expose validation summary in MCP consciousness tools/resources.
 
 ## Phase 4: Falsification-Centric Red Teaming
@@ -70,10 +72,10 @@ The plan is complete when RAC-AP claims are backed by reproducible, adversariall
 
 ## Current Execution Slice
 This cycle targets:
-1. Phase 1 protocol file and schema.
-2. Phase 2 validation engine.
-3. Phase 3 CLI commands.
-4. Tests + manual run artifacts.
+1. [x] ~~Phase 1 protocol file and schema.~~
+2. [x] ~~Phase 2 validation engine.~~
+3. [x] ~~Phase 3 CLI commands.~~
+4. [x] ~~Tests + manual run artifacts.~~
 
 ## Periodic Review Rule
 On each consciousness cycle:

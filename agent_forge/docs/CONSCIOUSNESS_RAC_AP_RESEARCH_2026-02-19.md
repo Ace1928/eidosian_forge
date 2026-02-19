@@ -69,3 +69,13 @@ RAC-AP is the property that an agent preserves and restores coherent control loo
 ## Notes
 This document is intentionally construct-first and avoids metaphysical overclaims.
 Phenomenal-consciousness assertions are out-of-scope for current measurement capability.
+
+## Source Links (Reviewed 2026-02-19)
+- Global workspace architecture: https://pubmed.ncbi.nlm.nih.gov/17998071/
+- GNW review and ignition framing: https://www.nature.com/articles/nrn3214
+- Perturbational complexity index (PCI): https://www.science.org/doi/10.1126/scitranslmed.3006294
+- Construct validity foundation: https://psycnet.apa.org/record/1956-03741-001
+- Prompt-injection guidance (NCSC): https://www.ncsc.gov.uk/collection/ai-guidelines/guidelines-for-secure-ai-system-development/prompt-injection
+- AgentBench: https://openreview.net/forum?id=zAdUB0aCTQ
+- WebArena: https://webarena.dev/
+- OSWorld: https://os-world.github.io/

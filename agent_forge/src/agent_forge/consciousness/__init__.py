@@ -9,6 +9,13 @@ from .bench.red_team import RedTeamResult, RedTeamScenario
 from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
+from .protocol import (
+    ProtocolValidationResult,
+    default_preregistration,
+    read_protocol_file,
+    validate_rac_ap_protocol,
+    write_protocol_file,
+)
 from .state_store import ModuleStateStore
 from .stress import ConsciousnessStressBenchmark, StressBenchmarkResult
 from .trials import ConsciousnessTrialRunner, TrialResult
@@ -42,6 +49,7 @@ __all__ = [
     "ModuleStateStore",
     "Module",
     "NomologicalExpectation",
+    "ProtocolValidationResult",
     "RedTeamResult",
     "RedTeamScenario",
     "TrialResult",
@@ -49,6 +57,10 @@ __all__ = [
     "ValidationResult",
     "WorkspacePayload",
     "build_index",
+    "default_preregistration",
     "default_rac_ap_protocol",
     "normalize_workspace_payload",
+    "read_protocol_file",
+    "validate_rac_ap_protocol",
+    "write_protocol_file",
 ]

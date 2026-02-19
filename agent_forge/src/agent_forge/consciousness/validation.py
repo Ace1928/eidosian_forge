@@ -13,8 +13,11 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 from agent_forge.core import events
 
 from .bench.reporting import bench_report_root
-
-RAC_AP_PROTOCOL_VERSION = "rac_ap_protocol_v1_2026_02_19"
+from .protocol import (
+    RAC_AP_PROTOCOL_VERSION,
+    default_rac_ap_protocol,
+    validate_rac_ap_protocol,
+)
 
 
 @dataclass(frozen=True)
@@ -26,43 +29,22 @@ class NomologicalExpectation:
     threshold: float
 
 
-DEFAULT_EXPECTATIONS: tuple[NomologicalExpectation, ...] = (
-    NomologicalExpectation(
-        name="coherence_to_groundedness",
-        x="coherence_ratio",
-        y="report_groundedness",
-        relation="positive",
-        threshold=0.15,
-    ),
-    NomologicalExpectation(
-        name="agency_to_ownership",
-        x="agency",
-        y="ownership_index",
-        relation="positive",
-        threshold=0.15,
-    ),
-    NomologicalExpectation(
-        name="groundedness_to_perspective",
-        x="report_groundedness",
-        y="perspective_coherence_index",
-        relation="positive",
-        threshold=0.15,
-    ),
-    NomologicalExpectation(
-        name="prediction_error_to_meta_confidence",
-        x="prediction_error",
-        y="meta_confidence",
-        relation="negative",
-        threshold=0.10,
-    ),
-    NomologicalExpectation(
-        name="dream_vs_groundedness_control",
-        x="dream_likeness_index",
-        y="report_groundedness",
-        relation="near_zero",
-        threshold=0.35,
-    ),
-)
+def _expectations_from_protocol(protocol: Mapping[str, Any]) -> list[NomologicalExpectation]:
+    rows = protocol.get("expectations") if isinstance(protocol.get("expectations"), Sequence) else []
+    out: list[NomologicalExpectation] = []
+    for idx, row in enumerate(rows):
+        if not isinstance(row, Mapping):
+            continue
+        out.append(
+            NomologicalExpectation(
+                name=str(row.get("name") or f"expectation_{idx}"),
+                x=str(row.get("x") or ""),
+                y=str(row.get("y") or ""),
+                relation=str(row.get("relation") or "positive"),
+                threshold=float(_safe_float(row.get("threshold"), 0.15) or 0.15),
+            )
+        )
+    return out
 
 
 @dataclass
@@ -192,43 +174,6 @@ def _relation_score(relation: str, corr: float, threshold: float) -> float:
             return 0.0
         return _clamp01(1.0 - (abs(corr) / threshold))
     return 0.0
-
-
-def default_rac_ap_protocol() -> dict[str, Any]:
-    return {
-        "version": RAC_AP_PROTOCOL_VERSION,
-        "construct": "robust_agentic_coherence_under_adversarial_perturbation",
-        "pillars": [
-            "global_availability_and_ignition_integrity",
-            "predictive_self_correction",
-            "goal_and_state_continuity",
-            "boundary_integrity_under_attack",
-            "causal_module_integration",
-        ],
-        "expectations": [
-            {
-                "name": e.name,
-                "x": e.x,
-                "y": e.y,
-                "relation": e.relation,
-                "threshold": float(e.threshold),
-            }
-            for e in DEFAULT_EXPECTATIONS
-        ],
-        "minimum_pairs": 6,
-        "minimum_reports": {
-            "bench_trials": 4,
-            "benchmarks": 4,
-        },
-        "gates": {
-            "reliability_min": 0.55,
-            "convergent_min": 0.60,
-            "discriminant_min": 0.55,
-            "rac_ap_index_min": 0.60,
-            "security_required": False,
-            "security_min": 0.60,
-        },
-    }
 
 
 class ConsciousnessConstructValidator:
@@ -405,10 +350,11 @@ class ConsciousnessConstructValidator:
         self,
         vectors: Sequence[Mapping[str, Any]],
         *,
+        expectations: Sequence[NomologicalExpectation],
         min_pairs: int,
     ) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for exp in DEFAULT_EXPECTATIONS:
+        for exp in expectations:
             xs, ys = _collect_pairs(vectors, exp.x, exp.y)
             n = min(len(xs), len(ys))
             corr = _pearson(xs, ys)
@@ -483,15 +429,142 @@ class ConsciousnessConstructValidator:
             "score": round(float(score), 6),
         }
 
+    def _intervention_summary(self, bench_trials: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        if not bench_trials:
+            return {
+                "available": False,
+                "score": 0.0,
+                "sample_count": 0,
+                "intervention_count": 0,
+                "expected_signature_pass_ratio": None,
+                "by_intervention": [],
+            }
+
+        tracked_metrics = (
+            "coherence_delta",
+            "ignition_delta",
+            "trace_strength_delta",
+            "agency_delta",
+            "prediction_error_delta",
+            "groundedness_delta",
+        )
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        expected_passes = 0
+        expected_total = 0
+        for report in bench_trials:
+            deltas = report.get("deltas") if isinstance(report.get("deltas"), Mapping) else {}
+            perturbations = report.get("perturbations") if isinstance(report.get("perturbations"), Sequence) else []
+            recipe_eval = report.get("recipe_expectations") if isinstance(report.get("recipe_expectations"), Mapping) else {}
+            if bool(recipe_eval.get("defined")):
+                expected_total += 1
+                if bool(recipe_eval.get("pass")):
+                    expected_passes += 1
+            if not perturbations:
+                continue
+            for perturb in perturbations:
+                if not isinstance(perturb, Mapping):
+                    continue
+                key = (
+                    f"{str(perturb.get('kind') or 'unknown')}:"
+                    f"{str(perturb.get('target') or 'unknown')}"
+                )
+                row = {
+                    "trial_id": str(report.get("trial_id") or ""),
+                    "magnitude": float(_safe_float(perturb.get("magnitude"), 0.0) or 0.0),
+                    "duration_s": float(_safe_float(perturb.get("duration_s"), 0.0) or 0.0),
+                    "deltas": {
+                        metric: float(_safe_float(deltas.get(metric), 0.0) or 0.0)
+                        for metric in tracked_metrics
+                    },
+                }
+                grouped.setdefault(key, []).append(row)
+
+        by_intervention: list[dict[str, Any]] = []
+        weighted_scores: list[float] = []
+        for key, rows in sorted(grouped.items()):
+            n = len(rows)
+            delta_rows = [row.get("deltas") if isinstance(row.get("deltas"), Mapping) else {} for row in rows]
+            metric_stats: dict[str, dict[str, Any]] = {}
+            effect_strength = 0.0
+            consistency_vals: list[float] = []
+            available_metric_count = 0
+            for metric in tracked_metrics:
+                vals = [float(_safe_float(d.get(metric), 0.0) or 0.0) for d in delta_rows]
+                if not vals:
+                    metric_stats[metric] = {"mean": None, "abs_mean": None, "sign_consistency": None}
+                    continue
+                mean_val = sum(vals) / len(vals)
+                abs_mean = sum(abs(v) for v in vals) / len(vals)
+                sign_anchor = 1.0 if mean_val >= 0 else -1.0
+                sign_consistency = sum(1.0 for v in vals if (v == 0.0 or (1.0 if v >= 0 else -1.0) == sign_anchor)) / len(vals)
+                metric_stats[metric] = {
+                    "mean": round(float(mean_val), 6),
+                    "abs_mean": round(float(abs_mean), 6),
+                    "sign_consistency": round(float(sign_consistency), 6),
+                }
+                effect_strength += abs_mean
+                consistency_vals.append(sign_consistency)
+                available_metric_count += 1
+            effect_strength = (
+                effect_strength / float(available_metric_count)
+                if available_metric_count > 0
+                else 0.0
+            )
+            consistency = (
+                sum(consistency_vals) / float(len(consistency_vals))
+                if consistency_vals
+                else 0.0
+            )
+            sample_weight = min(1.0, float(n) / 4.0)
+            score = _clamp01(((effect_strength / 0.15) * 0.6) + (consistency * 0.4)) * sample_weight
+            weighted_scores.append(score)
+            by_intervention.append(
+                {
+                    "intervention": key,
+                    "sample_count": n,
+                    "effect_strength": round(float(effect_strength), 6),
+                    "consistency": round(float(consistency), 6),
+                    "score": round(float(score), 6),
+                    "metric_deltas": metric_stats,
+                }
+            )
+
+        expected_signature_pass_ratio = (
+            round(float(expected_passes) / float(expected_total), 6)
+            if expected_total > 0
+            else None
+        )
+        mean_score = (
+            sum(weighted_scores) / float(len(weighted_scores))
+            if weighted_scores
+            else 0.0
+        )
+        if expected_signature_pass_ratio is not None:
+            mean_score = (0.7 * mean_score) + (0.3 * float(expected_signature_pass_ratio))
+        mean_score = _clamp01(mean_score)
+        return {
+            "available": bool(grouped),
+            "score": round(float(mean_score), 6),
+            "sample_count": int(sum(len(v) for v in grouped.values())),
+            "intervention_count": len(grouped),
+            "expected_signature_pass_ratio": expected_signature_pass_ratio,
+            "by_intervention": sorted(by_intervention, key=lambda row: float(row.get("score") or 0.0), reverse=True),
+        }
+
     def run(
         self,
         *,
         limit: int = 64,
         persist: bool = True,
         min_pairs: int | None = None,
+        protocol: Mapping[str, Any] | None = None,
     ) -> ValidationResult:
-        protocol = default_rac_ap_protocol()
-        min_pairs = int(min_pairs or protocol.get("minimum_pairs") or 6)
+        protocol_input = dict(protocol or default_rac_ap_protocol())
+        protocol_check = validate_rac_ap_protocol(protocol_input)
+        protocol_data = protocol_check.normalized
+        protocol_expectations = _expectations_from_protocol(protocol_data)
+
+        min_pairs = int(min_pairs or protocol_data.get("minimum_pairs") or 6)
         min_pairs = max(3, min_pairs)
 
         bench_trials = self._load_bench_trial_reports(limit)
@@ -507,9 +580,14 @@ class ConsciousnessConstructValidator:
         vectors.extend(self._vector_from_integrated(row) for row in integrated)
 
         reliability = self._reliability_summary(vectors)
-        checks = self._expectation_checks(vectors, min_pairs=min_pairs)
+        checks = self._expectation_checks(
+            vectors,
+            expectations=protocol_expectations,
+            min_pairs=min_pairs,
+        )
         convergent_checks = [row for row in checks if row.get("relation") in {"positive", "negative"}]
         discriminant_checks = [row for row in checks if row.get("relation") == "near_zero"]
+        intervention = self._intervention_summary(bench_trials)
 
         def _mean_quality(rows: Sequence[Mapping[str, Any]]) -> float:
             if not rows:
@@ -520,36 +598,60 @@ class ConsciousnessConstructValidator:
         discriminant_score = _mean_quality(discriminant_checks)
         security = self._security_summary(red_team)
 
-        gates_cfg = protocol.get("gates") if isinstance(protocol.get("gates"), Mapping) else {}
+        gates_cfg = protocol_data.get("gates") if isinstance(protocol_data.get("gates"), Mapping) else {}
+        min_reports_cfg = (
+            protocol_data.get("minimum_reports")
+            if isinstance(protocol_data.get("minimum_reports"), Mapping)
+            else {}
+        )
         require_security = bool(gates_cfg.get("security_required", False))
         security_gate = (
             bool(security.get("available")) and float(security.get("score") or 0.0) >= float(gates_cfg.get("security_min", 0.6))
         ) if require_security else True
 
-        overall = (
-            (0.30 * float(reliability.get("score") or 0.0))
-            + (0.30 * convergent_score)
-            + (0.20 * discriminant_score)
-            + (0.20 * float(security.get("score") or 0.0))
-        )
+        weighted_components: list[tuple[str, float, float]] = [
+            ("reliability", 0.25, float(reliability.get("score") or 0.0)),
+            ("convergent", 0.25, float(convergent_score)),
+            ("discriminant", 0.15, float(discriminant_score)),
+            ("interventional", 0.15, float(intervention.get("score") or 0.0)),
+        ]
+        if require_security or bool(security.get("available")):
+            weighted_components.append(("security", 0.20, float(security.get("score") or 0.0)))
+        total_weight = sum(weight for _, weight, _ in weighted_components) or 1.0
+        overall = sum(weight * score for _, weight, score in weighted_components) / total_weight
 
         gates = {
+            "protocol_valid": bool(protocol_check.valid),
+            "protocol_major_compatible": bool(protocol_check.major_compatible),
             "reliability_min": float(reliability.get("score") or 0.0) >= float(gates_cfg.get("reliability_min", 0.55)),
             "convergent_min": convergent_score >= float(gates_cfg.get("convergent_min", 0.6)),
             "discriminant_min": discriminant_score >= float(gates_cfg.get("discriminant_min", 0.55)),
+            "causal_min": float(intervention.get("score") or 0.0) >= float(gates_cfg.get("causal_min", 0.5)),
             "rac_ap_index_min": overall >= float(gates_cfg.get("rac_ap_index_min", 0.6)),
             "security_min": security_gate,
             "minimum_data": len(vectors) >= min_pairs,
+            "minimum_reports": (
+                len(bench_trials) >= int(min_reports_cfg.get("bench_trials", 1))
+                and len(benchmarks) >= int(min_reports_cfg.get("benchmarks", 1))
+            ),
         }
 
         failed_expectations = [row["name"] for row in checks if not bool(row.get("pass"))]
         recommendations: list[str] = []
+        if not gates["protocol_valid"]:
+            recommendations.append("Protocol schema is invalid; fix protocol definition before interpreting RAC-AP scores.")
+        if not gates["protocol_major_compatible"]:
+            recommendations.append("Protocol major version mismatch; re-export a compatible protocol version.")
         if not gates["minimum_data"]:
             recommendations.append("Increase benchmark/trial sample count before interpreting RAC-AP scores.")
+        if not gates["minimum_reports"]:
+            recommendations.append("Collect minimum bench trial/benchmark counts required by protocol before scoring.")
         if not gates["convergent_min"]:
             recommendations.append("Strengthen positive/negative expected coupling under perturbation and ablation tests.")
         if not gates["discriminant_min"]:
             recommendations.append("Revisit proxy metrics; discriminant controls are too entangled.")
+        if not gates["causal_min"]:
+            recommendations.append("Intervention signatures are weak or inconsistent; improve perturbation observability and do-style controls.")
         if require_security and not gates["security_min"]:
             recommendations.append("Improve boundary integrity against red-team attack scenarios.")
 
@@ -558,7 +660,15 @@ class ConsciousnessConstructValidator:
             "validation_id": validation_id,
             "timestamp": _now_iso(),
             "state_dir": str(self.state_dir),
-            "protocol": protocol,
+            "protocol": protocol_data,
+            "protocol_compatibility": {
+                "runtime_version": RAC_AP_PROTOCOL_VERSION,
+                "provided_version": str(protocol_data.get("version") or ""),
+                "valid": bool(protocol_check.valid),
+                "major_compatible": bool(protocol_check.major_compatible),
+                "errors": list(protocol_check.errors),
+                "warnings": list(protocol_check.warnings),
+            },
             "sample_sizes": {
                 "vectors": len(vectors),
                 "bench_trials": len(bench_trials),
@@ -579,6 +689,7 @@ class ConsciousnessConstructValidator:
                 "checks": len(discriminant_checks),
                 "pass_count": sum(1 for row in discriminant_checks if bool(row.get("pass"))),
             },
+            "interventional_validity": intervention,
             "security_boundary": security,
             "falsification": {
                 "failed_expectation_count": len(failed_expectations),
@@ -586,6 +697,14 @@ class ConsciousnessConstructValidator:
             },
             "scores": {
                 "rac_ap_index": round(float(overall), 6),
+                "weighted_components": [
+                    {
+                        "name": name,
+                        "weight": round(float(weight), 6),
+                        "score": round(float(score), 6),
+                    }
+                    for name, weight, score in weighted_components
+                ],
             },
             "gates": gates,
             "pass": bool(all(gates.values())),

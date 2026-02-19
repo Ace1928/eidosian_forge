@@ -1,0 +1,62 @@
+{
+  "version": "rac_ap_protocol_v1_2026_02_19",
+  "construct": "robust_agentic_coherence_under_adversarial_perturbation",
+  "pillars": [
+    "global_availability_and_ignition_integrity",
+    "predictive_self_correction",
+    "goal_and_state_continuity",
+    "boundary_integrity_under_attack",
+    "causal_module_integration"
+  ],
+  "expectations": [
+    {
+      "name": "coherence_to_groundedness",
+      "x": "coherence_ratio",
+      "y": "report_groundedness",
+      "relation": "positive",
+      "threshold": 0.15
+    },
+    {
+      "name": "agency_to_ownership",
+      "x": "agency",
+      "y": "ownership_index",
+      "relation": "positive",
+      "threshold": 0.15
+    },
+    {
+      "name": "groundedness_to_perspective",
+      "x": "report_groundedness",
+      "y": "perspective_coherence_index",
+      "relation": "positive",
+      "threshold": 0.15
+    },
+    {
+      "name": "prediction_error_to_meta_confidence",
+      "x": "prediction_error",
+      "y": "meta_confidence",
+      "relation": "negative",
+      "threshold": 0.1
+    },
+    {
+      "name": "dream_vs_groundedness_control",
+      "x": "dream_likeness_index",
+      "y": "report_groundedness",
+      "relation": "near_zero",
+      "threshold": 0.35
+    }
+  ],
+  "minimum_pairs": 6,
+  "minimum_reports": {
+    "bench_trials": 4,
+    "benchmarks": 4
+  },
+  "gates": {
+    "reliability_min": 0.55,
+    "convergent_min": 0.6,
+    "discriminant_min": 0.55,
+    "causal_min": 0.5,
+    "rac_ap_index_min": 0.6,
+    "security_required": false,
+    "security_min": 0.6
+  }
+}

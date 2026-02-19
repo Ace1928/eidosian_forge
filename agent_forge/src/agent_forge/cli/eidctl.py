@@ -187,12 +187,33 @@ def main(argv: list[str] | None = None) -> int:
             default=6,
             help="minimum paired samples required for nomological checks",
         )
+        cvalidate.add_argument(
+            "--protocol",
+            help="optional RAC-AP protocol JSON path for compatibility/threshold overrides",
+        )
         cvalidate.add_argument("--no-persist", action="store_true", help="do not persist validation report file")
         cvalidate.add_argument("--json", action="store_true", help="JSON output")
 
         cvalidate_latest = csub.add_parser("latest-validation", help="show latest persisted RAC-AP validation report")
         cvalidate_latest.add_argument("--dir", default="state", help="state directory")
         cvalidate_latest.add_argument("--json", action="store_true", help="JSON output")
+
+        cprotocol = csub.add_parser("protocol", help="show or validate RAC-AP protocol schema")
+        cprotocol.add_argument("--dir", default="state", help="state directory")
+        cprotocol.add_argument("--path", help="optional protocol JSON file to validate")
+        cprotocol.add_argument("--write-template", help="write default protocol template to this path")
+        cprotocol.add_argument("--json", action="store_true", help="JSON output")
+
+        cprereg = csub.add_parser("preregister", help="create a RAC-AP pre-registration manifest")
+        cprereg.add_argument("--dir", default="state", help="state directory")
+        cprereg.add_argument("--name", required=True, help="study name")
+        cprereg.add_argument("--hypothesis", required=True, help="main hypothesis statement")
+        cprereg.add_argument("--owner", default="eidos", help="study owner")
+        cprereg.add_argument(
+            "--out",
+            help="optional output path; default writes under reports/consciousness_preregister",
+        )
+        cprereg.add_argument("--json", action="store_true", help="JSON output")
 
         cstress = csub.add_parser("stress-benchmark", help="run payload safety + event pressure stress benchmark")
         cstress.add_argument("--dir", default="state", help="state directory")
@@ -441,6 +462,13 @@ def main(argv: list[str] | None = None) -> int:
                 IntegratedStackBenchmark,
             )
             from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise  # type: ignore
+            from agent_forge.consciousness.protocol import (  # type: ignore
+                default_preregistration,
+                default_rac_ap_protocol,
+                read_protocol_file,
+                validate_rac_ap_protocol,
+                write_protocol_file,
+            )
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
@@ -562,10 +590,14 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
 
             if args.conscious_cmd == "validate":
+                protocol_payload = None
+                if args.protocol:
+                    protocol_payload = read_protocol_file(args.protocol)
                 result = validator.run(
                     limit=max(1, int(args.limit)),
                     min_pairs=max(3, int(args.min_pairs)),
                     persist=not args.no_persist,
+                    protocol=protocol_payload,
                 )
                 payload = result.report
                 if args.json:
@@ -576,6 +608,7 @@ def main(argv: list[str] | None = None) -> int:
                     reliability = payload.get("reliability") or {}
                     convergent = payload.get("convergent_validity") or {}
                     discriminant = payload.get("discriminant_validity") or {}
+                    interventional = payload.get("interventional_validity") or {}
                     security = payload.get("security_boundary") or {}
                     print(
                         f"[consciousness] validation={payload.get('validation_id')} "
@@ -586,6 +619,7 @@ def main(argv: list[str] | None = None) -> int:
                         f"[consciousness] reliability={reliability.get('score')} "
                         f"convergent={convergent.get('score')} "
                         f"discriminant={discriminant.get('score')} "
+                        f"causal={interventional.get('score')} "
                         f"security={security.get('score')}"
                     )
                     print(f"[consciousness] gates={gates}")
@@ -609,6 +643,75 @@ def main(argv: list[str] | None = None) -> int:
                             f"rac_ap_index={score} "
                             f"pass={latest.get('pass')}"
                         )
+                return 0
+
+            if args.conscious_cmd == "protocol":
+                protocol_payload = default_rac_ap_protocol()
+                source = "builtin_default"
+                if args.path:
+                    protocol_payload = read_protocol_file(args.path)
+                    source = str(args.path)
+                check = validate_rac_ap_protocol(protocol_payload)
+                if args.write_template:
+                    write_protocol_file(args.write_template, default_rac_ap_protocol())
+                payload = {
+                    "source": source,
+                    "protocol": check.normalized,
+                    "validation": {
+                        "valid": check.valid,
+                        "major_compatible": check.major_compatible,
+                        "errors": list(check.errors),
+                        "warnings": list(check.warnings),
+                    },
+                    "template_written_to": str(args.write_template) if args.write_template else None,
+                }
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    print(
+                        f"[consciousness] protocol_source={payload.get('source')} "
+                        f"valid={payload['validation'].get('valid')} "
+                        f"major_compatible={payload['validation'].get('major_compatible')}"
+                    )
+                    if payload["validation"].get("errors"):
+                        print(f"[consciousness] protocol_errors={payload['validation'].get('errors')}")
+                    if payload.get("template_written_to"):
+                        print(f"[consciousness] template_written_to={payload.get('template_written_to')}")
+                return 0
+
+            if args.conscious_cmd == "preregister":
+                protocol_payload = default_rac_ap_protocol()
+                check = validate_rac_ap_protocol(protocol_payload)
+                prereg = default_preregistration(
+                    protocol=check.normalized,
+                    study_name=str(args.name),
+                    hypothesis=str(args.hypothesis),
+                    owner=str(args.owner),
+                )
+                if args.out:
+                    out_path = _P(args.out)
+                else:
+                    root = _P(
+                        os.environ.get(
+                            "EIDOS_CONSCIOUSNESS_PREREG_DIR",
+                            str(_P.cwd() / "reports" / "consciousness_preregister"),
+                        )
+                    )
+                    out_path = root / f"{prereg['prereg_id']}.json"
+                written = write_protocol_file(out_path, prereg)
+                payload = {
+                    "preregistration": prereg,
+                    "path": str(written),
+                    "protocol_valid": bool(check.valid),
+                }
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    print(
+                        f"[consciousness] prereg_id={prereg.get('prereg_id')} "
+                        f"protocol_valid={payload.get('protocol_valid')}"
+                    )
+                    print(f"[consciousness] path={payload.get('path')}")
                 return 0
 
             if args.conscious_cmd == "stress-benchmark":

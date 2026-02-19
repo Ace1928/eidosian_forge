@@ -225,27 +225,6 @@
     "linked_memories": []
   },
   {
-    "id": "ecedd2ba-ecb8-476b-b2cd-a53f54f79fca",
-    "content": "Validated digester artifacts now include triage_audit.json and schema validation passes on data/code_forge/digester/latest. Code Forge tests remain green after rebase and push.",
-    "created_at": "2026-02-20T06:21:10.102694",
-    "last_accessed": "2026-02-20T06:21:10.102704",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.96,
-    "ttl_seconds": 86400,
-    "tags": [
-      "tests",
-      "artifact_validation",
-      "push",
-      "code_forge",
-      "triage_audit"
-    ],
-    "linked_memories": []
-  },
-  {
     "id": "a5fc5fac-2304-4064-a843-c8ae55b0d7a7",
     "content": "Validated Code Forge manual digester run on code_forge with drift comparisons and warning output; benchmark run completed with baseline gate violations on search p95 and dependency graph build latency in this Termux environment.",
     "created_at": "2026-02-20T07:06:23.130681",
@@ -284,6 +263,29 @@
       "rac_ap",
       "termux",
       "agent_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "03f0725d-3272-4d87-b1ed-1c1d5ebe8611",
+    "content": "Implemented machine-readable RAC-AP protocol artifact under agent_forge/docs/consciousness and wired validator to enforce schema compatibility, causal/interventional gates, and minimum report counts.",
+    "created_at": "2026-02-20T08:10:24.948707",
+    "last_accessed": "2026-02-20T08:10:24.948718",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.93,
+    "ttl_seconds": 86400,
+    "tags": [
+      "consciousness",
+      "validation",
+      "causal",
+      "intervention",
+      "rac-ap",
+      "agent_forge",
+      "protocol"
     ],
     "linked_memories": []
   }

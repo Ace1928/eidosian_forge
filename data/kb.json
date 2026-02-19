@@ -944,6 +944,21 @@
         ]
       },
       "links": []
+    },
+    "a8065518-d17c-49d7-8079-b04d167c2779": {
+      "id": "a8065518-d17c-49d7-8079-b04d167c2779",
+      "content": "Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports.",
+      "metadata": {
+        "tags": [
+          "consciousness",
+          "validation",
+          "intervention",
+          "rac-ap",
+          "agent_forge",
+          "protocol"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

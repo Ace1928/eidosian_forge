@@ -32,9 +32,40 @@ def _seed_validation_artifacts(base: Path) -> tuple[Path, Path, Path]:
     dream_values = [0.45, 0.62, 0.39, 0.58, 0.51, 0.35, 0.55, 0.43]
 
     for idx in range(8):
+        noise_profile = idx % 2 == 0
+        perturbation = (
+            {"kind": "noise", "target": "attention", "magnitude": 0.35, "duration_s": 1.2}
+            if noise_profile
+            else {"kind": "drop", "target": "working_set", "magnitude": 1.0, "duration_s": 1.2}
+        )
+        deltas = (
+            {
+                "coherence_delta": 0.06,
+                "ignition_delta": 0.07,
+                "trace_strength_delta": 0.05,
+                "agency_delta": 0.03,
+                "prediction_error_delta": -0.02,
+                "groundedness_delta": 0.04,
+            }
+            if noise_profile
+            else {
+                "coherence_delta": -0.05,
+                "ignition_delta": -0.06,
+                "trace_strength_delta": -0.05,
+                "agency_delta": -0.04,
+                "prediction_error_delta": 0.05,
+                "groundedness_delta": -0.04,
+            }
+        )
         trial_payload = {
             "trial_id": f"trial_{idx}",
             "composite_score": 0.45 + (idx * 0.02),
+            "perturbations": [perturbation],
+            "deltas": deltas,
+            "recipe_expectations": {
+                "defined": True,
+                "pass": False if idx == 3 else True,
+            },
             "after": {
                 "coherence_ratio": coherence_values[idx],
                 "trace_strength": 0.40 + (idx * 0.02),
@@ -101,7 +132,10 @@ def test_construct_validator_runs_and_persists(tmp_path: Path, monkeypatch) -> N
     assert result.report_path is not None
     assert result.report_path.exists()
     assert result.report.get("protocol", {}).get("version")
+    assert result.report.get("protocol_compatibility", {}).get("valid") is True
     assert result.report.get("sample_sizes", {}).get("vectors", 0) >= 8
+    assert result.report.get("interventional_validity", {}).get("available") is True
+    assert result.report.get("interventional_validity", {}).get("intervention_count", 0) >= 2
     assert result.report.get("security_boundary", {}).get("available") is True
     assert result.report.get("scores", {}).get("rac_ap_index") is not None
 
@@ -142,6 +176,7 @@ def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     assert validate_res.returncode == 0, validate_res.stderr
     validate_payload = json.loads(validate_res.stdout)
     assert validate_payload.get("validation_id")
+    assert (validate_payload.get("interventional_validity") or {}).get("available") is True
 
     latest_cmd = [
         sys.executable,
@@ -156,3 +191,51 @@ def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     assert latest_res.returncode == 0, latest_res.stderr
     latest_payload = json.loads(latest_res.stdout)
     assert latest_payload.get("validation_id") == validate_payload.get("validation_id")
+
+
+def test_eidctl_consciousness_protocol_and_preregister(tmp_path: Path) -> None:
+    protocol_path = tmp_path / "protocol.json"
+    prereg_path = tmp_path / "preregister.json"
+    env = dict(os.environ)
+    env["PYTHONPATH"] = (
+        f"{REPO_ROOT / 'lib'}:"
+        f"{REPO_ROOT / 'agent_forge' / 'src'}:"
+        f"{REPO_ROOT / 'crawl_forge' / 'src'}:"
+        f"{REPO_ROOT / 'eidos_mcp' / 'src'}"
+    )
+
+    protocol_cmd = [
+        sys.executable,
+        str(EIDCTL),
+        "consciousness",
+        "protocol",
+        "--write-template",
+        str(protocol_path),
+        "--json",
+    ]
+    protocol_res = subprocess.run(protocol_cmd, capture_output=True, text=True, env=env, cwd=str(REPO_ROOT))
+    assert protocol_res.returncode == 0, protocol_res.stderr
+    protocol_payload = json.loads(protocol_res.stdout)
+    assert protocol_path.exists()
+    assert (protocol_payload.get("validation") or {}).get("valid") is True
+
+    prereg_cmd = [
+        sys.executable,
+        str(EIDCTL),
+        "consciousness",
+        "preregister",
+        "--name",
+        "rac_ap_validation_cycle",
+        "--hypothesis",
+        "Winner-linked ignition improves interventional validity under perturbation.",
+        "--owner",
+        "eidos",
+        "--out",
+        str(prereg_path),
+        "--json",
+    ]
+    prereg_res = subprocess.run(prereg_cmd, capture_output=True, text=True, env=env, cwd=str(REPO_ROOT))
+    assert prereg_res.returncode == 0, prereg_res.stderr
+    prereg_payload = json.loads(prereg_res.stdout)
+    assert prereg_path.exists()
+    assert (prereg_payload.get("preregistration") or {}).get("prereg_id")

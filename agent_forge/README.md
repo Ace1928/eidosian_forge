@@ -21,6 +21,7 @@ Key implemented capabilities:
 ## RAC-AP Research and Plan
 - Research brief: `agent_forge/docs/CONSCIOUSNESS_RAC_AP_RESEARCH_2026-02-19.md`
 - Implementation plan: `agent_forge/docs/CONSCIOUSNESS_RAC_AP_IMPLEMENTATION_PLAN.md`
+- Protocol artifacts: `agent_forge/docs/consciousness/README.md`
 
 ## CLI Examples
 ```bash
@@ -35,6 +36,13 @@ python agent_forge/bin/eidctl consciousness benchmark --dir state --ticks 12 --j
 
 # RAC-AP construct validation
 python agent_forge/bin/eidctl consciousness validate --dir state --limit 64 --min-pairs 6 --json
+
+# RAC-AP protocol schema checks / template export
+python agent_forge/bin/eidctl consciousness protocol --json
+python agent_forge/bin/eidctl consciousness protocol --write-template agent_forge/docs/consciousness/rac_ap_protocol_v1_2026_02_19.json
+
+# RAC-AP pre-registration manifest
+python agent_forge/bin/eidctl consciousness preregister --name "rac_ap_cycle" --hypothesis "Winner-linked ignition improves interventional validity." --owner eidos --json
 
 # Red-team campaign
 python agent_forge/bin/eidctl consciousness red-team --dir state --quick --json
