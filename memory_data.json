@@ -18,5 +18,63 @@
       0.8313725490196079, 0.8156862745098039, 0.4470588235294118,
       0.4666666666666667
     ]
+  },
+  "79119116-d224-4074-be05-1b87e753fdda": {
+    "id": "79119116-d224-4074-be05-1b87e753fdda",
+    "content": "GraphRAG benchmark hardening cycle: enforced strict no-placeholder behavior in benchmark validation, tuned community report prompts for schema-safe JSON, and verified end-to-end run with Qwen2.5-0.5B local model returning informative answer ('Kael and Seraphina are lovers').",
+    "created_at": "2026-02-19T16:42:24.712657",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "graphrag_strict_no_placeholder_20260219"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.06274509803921569,
+      0.8980392156862745,
+      0.615686274509804,
+      0.2980392156862745,
+      0.03529411764705882,
+      0.06274509803921569,
+      0.9568627450980393,
+      0.7529411764705882,
+      0.12156862745098039,
+      0.6039215686274509,
+      0.788235294117647,
+      0.4980392156862745,
+      0.7372549019607844,
+      0.5019607843137255,
+      0.8313725490196079,
+      0.9254901960784314
+    ]
+  },
+  "6d29e3db-ed4f-4263-a64f-02b5d1d15fe8": {
+    "id": "6d29e3db-ed4f-4263-a64f-02b5d1d15fe8",
+    "content": "Verified runtime fix: Eidos MCP launcher now defaults stateless HTTP for streamable transport, preventing stale-session failures for Codex/Gemini tool calls.",
+    "created_at": "2026-02-19T16:46:32.310092",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "mcp_stateless_default_fix_20260219"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.18823529411764706,
+      0.2235294117647059,
+      0.20392156862745098,
+      0.7019607843137254,
+      0.8,
+      0.27450980392156865,
+      0.6823529411764706,
+      0.7607843137254902,
+      0.796078431372549,
+      0.43529411764705883,
+      0.4392156862745098,
+      0.5215686274509804,
+      0.7803921568627451,
+      0.792156862745098,
+      0.5764705882352941,
+      0.6196078431372549
+    ]
   }
 }

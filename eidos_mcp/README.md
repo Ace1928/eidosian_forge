@@ -99,6 +99,8 @@ Key env vars (all default-safe):
 - `EIDOS_FORGE_DIR`
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
 
+`run_server.sh` defaults `EIDOS_MCP_STATELESS_HTTP=1` for Codex/Gemini compatibility.
+
 ### Client Wiring (Codex + Gemini)
 
 Codex (`~/.codex/config.toml`):

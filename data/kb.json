@@ -57,10 +57,10 @@
       "content": "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config.",
       "metadata": {
         "tags": [
-          "autotune",
-          "mcp",
           "consciousness",
-          "termux"
+          "termux",
+          "autotune",
+          "mcp"
         ]
       },
       "links": []
@@ -70,10 +70,10 @@
       "content": "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics.",
       "metadata": {
         "tags": [
-          "autotune",
-          "mcp",
           "consciousness",
-          "termux"
+          "termux",
+          "autotune",
+          "mcp"
         ]
       },
       "links": []
@@ -83,10 +83,10 @@
       "content": "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled.",
       "metadata": {
         "tags": [
-          "autotune",
-          "mcp",
           "consciousness",
-          "termux"
+          "termux",
+          "autotune",
+          "mcp"
         ]
       },
       "links": []
@@ -213,9 +213,9 @@
       "metadata": {
         "tags": [
           "competition",
+          "consciousness",
           "attention",
-          "learning",
-          "consciousness"
+          "learning"
         ]
       },
       "links": []
@@ -225,8 +225,8 @@
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
         "tags": [
-          "validation",
           "operations",
+          "validation",
           "termux"
         ]
       },
@@ -289,10 +289,10 @@
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
         "tags": [
-          "red-team",
-          "mcp",
           "consciousness",
-          "cli"
+          "red-team",
+          "cli",
+          "mcp"
         ]
       },
       "links": []
@@ -302,10 +302,10 @@
       "content": "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes.",
       "metadata": {
         "tags": [
-          "bench",
-          "tasks",
           "consciousness",
-          "validation"
+          "tasks",
+          "validation",
+          "bench"
         ]
       },
       "links": []
@@ -367,11 +367,11 @@
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
         "tags": [
+          "consciousness",
           "red-team",
-          "mcp",
           "cli",
-          "benchmark",
-          "consciousness"
+          "mcp",
+          "benchmark"
         ]
       },
       "links": []
@@ -381,10 +381,10 @@
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
         "tags": [
-          "benchmark",
-          "schema",
           "gates",
-          "consciousness"
+          "consciousness",
+          "benchmark",
+          "schema"
         ]
       },
       "links": []
@@ -394,10 +394,10 @@
       "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
       "metadata": {
         "tags": [
-          "testing",
           "operations",
-          "mcp",
-          "hardening"
+          "testing",
+          "hardening",
+          "mcp"
         ]
       },
       "links": []
@@ -407,10 +407,10 @@
       "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
       "metadata": {
         "tags": [
-          "autotune",
-          "red-team",
           "consciousness",
-          "termux"
+          "termux",
+          "red-team",
+          "autotune"
         ]
       },
       "links": []
@@ -420,10 +420,10 @@
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
         "tags": [
-          "benchmark",
           "index",
           "consciousness",
-          "termux"
+          "termux",
+          "benchmark"
         ]
       },
       "links": []
@@ -433,9 +433,9 @@
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
         "tags": [
-          "dependabot",
+          "workflow",
           "security",
-          "workflow"
+          "dependabot"
         ]
       },
       "links": []
@@ -445,10 +445,10 @@
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
         "tags": [
-          "issues",
-          "dependabot",
+          "workflow",
           "security",
-          "workflow"
+          "issues",
+          "dependabot"
         ]
       },
       "links": []
@@ -458,9 +458,9 @@
       "content": "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs.",
       "metadata": {
         "tags": [
-          "actions",
           "lock",
           "security",
+          "actions",
           "workflow"
         ]
       },
@@ -471,10 +471,10 @@
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
         "tags": [
-          "remediation",
-          "dependabot",
+          "workflow",
           "security",
-          "workflow"
+          "remediation",
+          "dependabot"
         ]
       },
       "links": []
@@ -484,9 +484,9 @@
       "content": "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports.",
       "metadata": {
         "tags": [
-          "pip",
           "security",
           "termux",
+          "pip",
           "automation",
           "phase17",
           "dependabot"
@@ -501,11 +501,11 @@
       "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
       "metadata": {
         "tags": [
+          "security",
+          "mitigation",
           "no-fix",
           "advisory",
-          "security",
-          "phase17",
-          "mitigation"
+          "phase17"
         ],
         "source": "phase17_iteration2_no_fix_mitigation",
         "updated_at": "2026-02-16T23:10:55Z"
@@ -518,10 +518,10 @@
       "metadata": {
         "tags": [
           "security",
+          "closure",
           "automation",
           "phase17",
-          "dependabot",
-          "closure"
+          "dependabot"
         ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
@@ -533,11 +533,11 @@
       "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
       "metadata": {
         "tags": [
-          "payload-safety",
           "watchdog",
           "consciousness",
-          "phase18",
-          "hardening"
+          "hardening",
+          "payload-safety",
+          "phase18"
         ],
         "source": "phase18_runtime_hardening",
         "updated_at": "2026-02-16T23:43:19Z"
@@ -549,13 +549,13 @@
       "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
       "metadata": {
         "tags": [
-          "payload-safety",
-          "ci",
-          "mcp",
           "watchdog",
           "consciousness",
+          "ci",
+          "stress-benchmark",
+          "payload-safety",
           "phase18",
-          "stress-benchmark"
+          "mcp"
         ],
         "source": "phase18_status_stress_completion",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -567,11 +567,11 @@
       "content": "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance.",
       "metadata": {
         "tags": [
-          "side-effect-free",
           "consciousness",
+          "side-effect-free",
+          "hardening",
           "phase18",
-          "status",
-          "hardening"
+          "status"
         ],
         "source": "phase18_status_side_effect_fix",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -583,11 +583,11 @@
       "content": "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk.",
       "metadata": {
         "tags": [
+          "consciousness",
+          "termux",
           "audit-matrix",
           "ci",
           "linux-parity",
-          "termux",
-          "consciousness",
           "phase19"
         ],
         "source": "phase19_linux_audit_matrix",
@@ -601,11 +601,11 @@
       "metadata": {
         "tags": [
           "trend",
-          "observability",
-          "ci-gate",
-          "linux-audit",
           "consciousness",
-          "phase20"
+          "linux-audit",
+          "ci-gate",
+          "phase20",
+          "observability"
         ],
         "source": "phase20_audit_observability_gate",
         "updated_at": "2026-02-17T02:10:00Z"
@@ -617,11 +617,11 @@
       "content": "Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction.",
       "metadata": {
         "tags": [
-          "event-fabric",
-          "trial-capture",
           "consciousness",
+          "trial-capture",
           "causal-trace",
-          "phase21"
+          "phase21",
+          "event-fabric"
         ],
         "source": "phase21_event_fabric_trial_capture",
         "updated_at": "2026-02-17T02:19:15Z"
@@ -633,11 +633,11 @@
       "content": "Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments.",
       "metadata": {
         "tags": [
-          "provenance",
-          "bench",
           "consciousness",
-          "replay-manifest",
-          "phase22"
+          "provenance",
+          "phase22",
+          "bench",
+          "replay-manifest"
         ],
         "source": "phase22_trial_provenance_replay",
         "updated_at": "2026-02-17T02:33:24Z"
@@ -650,10 +650,10 @@
       "metadata": {
         "tags": [
           "directory-atlas",
-          "documentation",
-          "benchmarks",
           "consciousness",
-          "phase23"
+          "benchmarks",
+          "phase23",
+          "documentation"
         ],
         "source": "phase23_repo_docs_hardening",
         "updated_at": "2026-02-17T03:24:01Z"
@@ -665,11 +665,11 @@
       "content": "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow.",
       "metadata": {
         "tags": [
+          "operations",
           "ci",
-          "documentation",
-          "determinism",
           "phase24",
-          "operations"
+          "documentation",
+          "determinism"
         ]
       },
       "links": []
@@ -679,8 +679,8 @@
       "content": "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal.",
       "metadata": {
         "tags": [
-          "refactor",
-          "code-intelligence"
+          "code-intelligence",
+          "refactor"
         ]
       },
       "links": []
@@ -690,11 +690,37 @@
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
         "tags": [
-          "schema",
           "assessment",
+          "quality",
+          "schema",
           "benchmark",
-          "graphrag",
-          "quality"
+          "graphrag"
+        ]
+      },
+      "links": []
+    },
+    "94f4fb6f-496f-4b81-8080-8b3c720b09b3": {
+      "id": "94f4fb6f-496f-4b81-8080-8b3c720b09b3",
+      "content": "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection.",
+      "metadata": {
+        "tags": [
+          "quality-gate",
+          "termux",
+          "benchmark",
+          "graphrag"
+        ]
+      },
+      "links": []
+    },
+    "fcccca30-873c-433a-b1e1-95ce0005d5e9": {
+      "id": "fcccca30-873c-433a-b1e1-95ce0005d5e9",
+      "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
+      "metadata": {
+        "tags": [
+          "transport",
+          "termux",
+          "stability",
+          "eidos_mcp"
         ]
       },
       "links": []
