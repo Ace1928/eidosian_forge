@@ -223,5 +223,26 @@
       "structural_duplicates"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ecedd2ba-ecb8-476b-b2cd-a53f54f79fca",
+    "content": "Validated digester artifacts now include triage_audit.json and schema validation passes on data/code_forge/digester/latest. Code Forge tests remain green after rebase and push.",
+    "created_at": "2026-02-20T06:21:10.102694",
+    "last_accessed": "2026-02-20T06:21:10.102704",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.96,
+    "ttl_seconds": 86400,
+    "tags": [
+      "tests",
+      "artifact_validation",
+      "push",
+      "code_forge",
+      "triage_audit"
+    ],
+    "linked_memories": []
   }
 ]
