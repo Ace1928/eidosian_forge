@@ -1,4 +1,22 @@
 ## Unreleased
+- Added roundtrip reconstruction subsystem (`reconstruct/pipeline.py`) with:
+  - deterministic project reconstruction from `file_records` + `code_text`,
+  - parity reports with hash-level verification,
+  - transactional apply with backup + apply report artifacts.
+- Added CLI commands:
+  - `reconstruct-project`
+  - `parity-report`
+  - `apply-reconstruction`
+  - `roundtrip`
+- Added integration run scoping improvements:
+  - Knowledge/GraphRAG exports now accept `run_id`,
+  - digest uses active run by default and falls back to latest effective source-root run when no new units were created.
+- Added DB helpers for regeneration and scoped exports:
+  - `iter_file_records`, `count_file_records`,
+  - `iter_units(run_id=...)`,
+  - `count_units(run_id=...)`,
+  - `latest_effective_run_for_root`.
+- Added roundtrip test suite coverage (`test_roundtrip_reconstruct.py`).
 - Added drift intelligence module (`digester/drift.py`) with run-over-run metric comparison and warnings.
 - Added digester history snapshots (`history/*.json`) and automatic drift generation in `run_archive_digester`.
 - Added `code-forge drift-report` CLI command and digest-time drift controls.

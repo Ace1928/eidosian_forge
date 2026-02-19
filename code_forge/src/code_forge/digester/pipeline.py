@@ -605,6 +605,12 @@ def run_archive_digester(
     dependency_graph = build_dependency_graph(db=db, output_dir=output_dir, limit_edges=graph_export_limit)
     triage = build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
 
+    integration_run_id = str(stats.run_id)
+    if int(stats.units_created) <= 0:
+        effective = db.latest_effective_run_for_root(str(root_path), mode=mode)
+        if effective and str(effective.get("run_id") or ""):
+            integration_run_id = str(effective["run_id"])
+
     knowledge_sync = None
     if sync_knowledge_path is not None:
         knowledge_sync = sync_units_to_knowledge_forge(
@@ -612,6 +618,7 @@ def run_archive_digester(
             kb_path=Path(sync_knowledge_path),
             limit=max(1, int(graph_export_limit)),
             min_token_count=5,
+            run_id=integration_run_id,
         )
 
     graphrag_export = None
@@ -621,6 +628,7 @@ def run_archive_digester(
             output_dir=Path(graphrag_output_dir),
             limit=max(1, int(graph_export_limit)),
             min_token_count=5,
+            run_id=integration_run_id,
         )
 
     summary = {
@@ -638,6 +646,7 @@ def run_archive_digester(
         "graphrag_export": graphrag_export,
         "relationship_counts": db.relationship_counts(),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
+        "integration_run_id": integration_run_id,
     }
     summary_path = output_dir / "archive_digester_summary.json"
     summary_path.write_text(

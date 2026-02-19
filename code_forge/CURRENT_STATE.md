@@ -30,6 +30,11 @@
   - `drift_report.json`
   - `history/*.json` snapshots
   - `archive_digester_summary.json`
+- Roundtrip/regeneration artifacts:
+  - `reconstruction_manifest.json`
+  - `parity_report.json`
+  - `roundtrip_summary.json`
+  - transactional backup/apply reports under `Backups/code_forge_roundtrip/*`
 
 ## Validation
 
@@ -41,9 +46,11 @@
 - Digester now emits drift reports and persistent history snapshots for run-over-run monitoring.
 - Ingestion remains idempotent via `file_records` and `ANALYSIS_VERSION` gates.
 - Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
+- Roundtrip CLI flow implemented (`reconstruct-project`, `parity-report`, `apply-reconstruction`, `roundtrip`).
+- Integration exports now scope to the active run and fall back to latest effective source-root run if no new units were produced.
 
 ## Open Gaps
 
-- Benchmark harness and performance baselines not yet first-class.
-- Canonical extraction/migration shims are not automated yet.
-- Relationship graph still centered on `contains`; import/call/use edges are next.
+- Signed/tamper-evident artifact manifests are not implemented yet.
+- Large-tree (>10k files) parallel parity hashing and regeneration stress baselines are pending.
+- Root-scoped export policy modes (`run` vs `effective_run` vs `global`) are not user-configurable yet.

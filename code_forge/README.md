@@ -22,6 +22,10 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Stage E: drift intelligence (`drift_report.json`, `history/*.json`) for run-over-run regression visibility
 - Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
 - Canonical extraction planning with migration map and compatibility shim staging.
+- Roundtrip reconstruction pipeline:
+  - reconstruct source trees from library file records/blobs,
+  - parity reports with hash-level verification,
+  - transactional apply with backups and audit reports.
 - Strict artifact schema validation (`validate-artifacts`) and strict digest failure mode.
 - Integration exports:
   - Knowledge Forge sync (`sync-knowledge`)
@@ -80,6 +84,22 @@ code-forge benchmark \
 code-forge canonical-plan \
   --triage-path data/code_forge/digester/latest/triage.json \
   --output-dir data/code_forge/canonicalization/latest
+
+# Reconstruct a forge from the library and validate parity
+code-forge reconstruct-project \
+  --source-root audit_forge \
+  --output-dir data/code_forge/roundtrip/audit_forge/reconstructed
+code-forge parity-report \
+  --source-root audit_forge \
+  --reconstructed-root data/code_forge/roundtrip/audit_forge/reconstructed \
+  --report-path data/code_forge/roundtrip/audit_forge/parity_report.json
+
+# Full roundtrip (digest + integrations + reconstruction + parity + optional apply)
+code-forge roundtrip audit_forge \
+  --workspace-dir data/code_forge/roundtrip/audit_forge \
+  --sync-knowledge \
+  --export-graphrag \
+  --apply
 ```
 
 ## Python API
@@ -129,6 +149,12 @@ Primary digester artifacts:
 - `drift_report.md`: human-readable drift summary
 - `history/*.json`: immutable per-run metric snapshots used for drift comparison
 
+Roundtrip artifacts:
+- `reconstruction_manifest.json`: file-level reconstruction manifest with content-hash verification
+- `parity_report.json`: source vs reconstructed hash-level parity result
+- `roundtrip_summary.json`: end-to-end digest+integration+reconstruction+apply summary
+- `Backups/code_forge_roundtrip/<transaction_id>/apply_report.json`: transactional apply audit record
+
 Canonicalization artifacts:
 - `migration_map.json`: source→canonical mapping with strategy labels
 - `canonicalization_plan.md`: actionable migration plan
@@ -141,8 +167,14 @@ Canonicalization artifacts:
 - `graphrag_forge`: `export_units_for_graphrag`
 - `scripts/living_knowledge_pipeline.py`: now includes Code Forge digester artifacts in code analysis report
 
+## Planning + Evidence
+
+- Roundtrip validation evidence (`audit_forge`): `code_forge/docs/ROUNDTRIP_AUDIT_FORGE_CYCLE_2026-02-19.md`
+- Next cycle implementation plan: `code_forge/docs/NEXT_CYCLE_PLAN_2026-02-19.md`
+
 ## Engineering Notes
 
 - Designed for idempotent ingestion (`file_records` + `ANALYSIS_VERSION`).
+- Integration exports are scoped to the active ingestion run when possible; if no new units are created, exports fall back to the latest effective run for that source root.
 - FTS5 search is used when available; fallback lexical search remains active.
 - Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

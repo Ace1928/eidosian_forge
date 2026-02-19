@@ -16,6 +16,7 @@ def sync_units_to_knowledge_forge(
     kb_path: Path,
     limit: int = 5000,
     min_token_count: int = 5,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
     from knowledge_forge.core.graph import KnowledgeForge
 
@@ -27,7 +28,7 @@ def sync_units_to_knowledge_forge(
         if unit_id:
             existing[str(unit_id)] = node_id
 
-    units = list(db.iter_units(limit=max(1, int(limit))))
+    units = list(db.iter_units(limit=max(1, int(limit)), run_id=run_id))
     created = 0
     updated = 0
     links = 0
@@ -91,6 +92,7 @@ def sync_units_to_knowledge_forge(
     kb.save()
     return {
         "kb_path": str(kb_path),
+        "run_id": run_id,
         "scanned_units": len(units),
         "created_nodes": created,
         "existing_nodes": updated,
@@ -103,6 +105,7 @@ def export_units_for_graphrag(
     output_dir: Path,
     limit: int = 20000,
     min_token_count: int = 5,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -111,7 +114,7 @@ def export_units_for_graphrag(
     skipped = 0
     by_language: dict[str, int] = {}
 
-    for unit in db.iter_units(limit=max(1, int(limit))):
+    for unit in db.iter_units(limit=max(1, int(limit)), run_id=run_id):
         if int(unit.get("token_count") or 0) < max(0, int(min_token_count)):
             skipped += 1
             continue
@@ -143,6 +146,7 @@ def export_units_for_graphrag(
 
     return {
         "output_dir": str(output_dir),
+        "run_id": run_id,
         "exported": exported,
         "skipped": skipped,
         "by_language": by_language,

@@ -46,6 +46,10 @@ from code_forge import (
     run_benchmark_suite,
     sync_units_to_knowledge_forge,
     validate_output_dir,
+    build_reconstruction_from_library,
+    compare_tree_parity,
+    apply_reconstruction,
+    run_roundtrip_pipeline,
 )
 
 # Default paths
@@ -740,6 +744,184 @@ class CodeForgeCLI(StandardCLI):
             help="Disable compatibility shim generation",
         )
         canonical_parser.set_defaults(func=self._cmd_canonical_plan)
+
+        reconstruct_parser = subparsers.add_parser(
+            "reconstruct-project",
+            help="Rebuild source files from Code Forge library file_records/content blobs",
+        )
+        reconstruct_parser.add_argument(
+            "--source-root",
+            required=True,
+            help="Source root that was ingested (prefix filter for file_records)",
+        )
+        reconstruct_parser.add_argument(
+            "--output-dir",
+            required=True,
+            help="Output directory for reconstructed files + manifest",
+        )
+        reconstruct_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="Optional file extensions filter (default: all tracked files under source-root)",
+        )
+        reconstruct_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Optional max file records to process",
+        )
+        reconstruct_parser.add_argument(
+            "--no-strict",
+            action="store_true",
+            help="Allow missing content blobs without failing command",
+        )
+        reconstruct_parser.set_defaults(func=self._cmd_reconstruct_project)
+
+        parity_parser = subparsers.add_parser(
+            "parity-report",
+            help="Compare source tree and reconstructed tree content hashes",
+        )
+        parity_parser.add_argument(
+            "--source-root",
+            required=True,
+            help="Original source root path",
+        )
+        parity_parser.add_argument(
+            "--reconstructed-root",
+            required=True,
+            help="Reconstructed tree root path",
+        )
+        parity_parser.add_argument(
+            "--report-path",
+            default=None,
+            help="Optional output path for parity_report.json",
+        )
+        parity_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="Optional extension filter for parity checks",
+        )
+        parity_parser.set_defaults(func=self._cmd_parity_report)
+
+        apply_parser = subparsers.add_parser(
+            "apply-reconstruction",
+            help="Apply reconstructed tree onto target root with transactional backup",
+        )
+        apply_parser.add_argument(
+            "--reconstructed-root",
+            required=True,
+            help="Reconstructed tree root path",
+        )
+        apply_parser.add_argument(
+            "--target-root",
+            required=True,
+            help="Target root to replace/sync",
+        )
+        apply_parser.add_argument(
+            "--backup-root",
+            default=str(FORGE_ROOT / "Backups" / "code_forge_roundtrip"),
+            help="Backup directory for transactional apply artifacts",
+        )
+        apply_parser.add_argument(
+            "--parity-report",
+            default=None,
+            help="Optional parity report JSON path to enforce before apply",
+        )
+        apply_parser.add_argument(
+            "--allow-non-parity",
+            action="store_true",
+            help="Allow apply even if parity report fails",
+        )
+        apply_parser.add_argument(
+            "--no-prune",
+            action="store_true",
+            help="Do not remove files missing from reconstructed tree",
+        )
+        apply_parser.set_defaults(func=self._cmd_apply_reconstruction)
+
+        roundtrip_parser = subparsers.add_parser(
+            "roundtrip",
+            help="Run digest + integration exports + reconstruction + parity (+optional apply)",
+        )
+        roundtrip_parser.add_argument(
+            "path",
+            nargs="?",
+            default=str(FORGE_ROOT),
+            help="Root path to process",
+        )
+        roundtrip_parser.add_argument(
+            "--workspace-dir",
+            required=True,
+            help="Workspace directory for digester/reconstruction/parity artifacts",
+        )
+        roundtrip_parser.add_argument(
+            "--mode",
+            choices=["analysis", "archival"],
+            default="analysis",
+            help="Ingestion mode (default: analysis)",
+        )
+        roundtrip_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="Optional file extensions include-list",
+        )
+        roundtrip_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Optional max files to process",
+        )
+        roundtrip_parser.add_argument(
+            "--progress-every",
+            type=int,
+            default=200,
+            help="Write ingestion progress every N files",
+        )
+        roundtrip_parser.add_argument(
+            "--sync-knowledge",
+            action="store_true",
+            help="Sync digested code units into Knowledge Forge",
+        )
+        roundtrip_parser.add_argument(
+            "--kb-path",
+            default=str(FORGE_ROOT / "data" / "kb.json"),
+            help="Knowledge graph persistence path",
+        )
+        roundtrip_parser.add_argument(
+            "--export-graphrag",
+            action="store_true",
+            help="Export GraphRAG-ready corpus from indexed units",
+        )
+        roundtrip_parser.add_argument(
+            "--graphrag-output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "graphrag_input"),
+            help="GraphRAG export output directory",
+        )
+        roundtrip_parser.add_argument(
+            "--graph-export-limit",
+            type=int,
+            default=20000,
+            help="Maximum units for Knowledge/GraphRAG exports",
+        )
+        roundtrip_parser.add_argument(
+            "--apply",
+            action="store_true",
+            help="Apply reconstructed tree to target after parity pass",
+        )
+        roundtrip_parser.add_argument(
+            "--backup-root",
+            default=str(FORGE_ROOT / "Backups" / "code_forge_roundtrip"),
+            help="Backup directory used when --apply is enabled",
+        )
+        roundtrip_parser.add_argument(
+            "--no-strict-validation",
+            action="store_true",
+            help="Disable strict schema/blob validation failure mode",
+        )
+        roundtrip_parser.set_defaults(func=self._cmd_roundtrip)
     
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
@@ -1450,6 +1632,100 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Canonical plan error: {e}")
+        self._output(result, args)
+
+    def _cmd_reconstruct_project(self, args) -> None:
+        """Reconstruct project files from library file records/content blobs."""
+        try:
+            payload = build_reconstruction_from_library(
+                db=self.library_db,
+                source_root=Path(args.source_root).resolve(),
+                output_dir=Path(args.output_dir).resolve(),
+                extensions=args.ext,
+                max_files=args.max_files,
+                strict=not bool(args.no_strict),
+            )
+            result = CommandResult(
+                True,
+                f"Reconstructed {payload.get('files_written', 0)} files",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Reconstruction error: {e}")
+        self._output(result, args)
+
+    def _cmd_parity_report(self, args) -> None:
+        """Generate source vs reconstructed tree parity report."""
+        try:
+            report_path = Path(args.report_path).resolve() if args.report_path else None
+            payload = compare_tree_parity(
+                source_root=Path(args.source_root).resolve(),
+                reconstructed_root=Path(args.reconstructed_root).resolve(),
+                report_path=report_path,
+                extensions=args.ext,
+            )
+            result = CommandResult(
+                bool(payload.get("pass")),
+                "Parity check passed" if payload.get("pass") else "Parity check failed",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Parity report error: {e}")
+        self._output(result, args)
+
+    def _cmd_apply_reconstruction(self, args) -> None:
+        """Apply reconstructed tree to target root with backups."""
+        try:
+            parity_payload = None
+            if args.parity_report:
+                parity_payload = json.loads(Path(args.parity_report).resolve().read_text(encoding="utf-8"))
+            payload = apply_reconstruction(
+                reconstructed_root=Path(args.reconstructed_root).resolve(),
+                target_root=Path(args.target_root).resolve(),
+                backup_root=Path(args.backup_root).resolve(),
+                parity_report=parity_payload,
+                require_parity_pass=not bool(args.allow_non_parity),
+                prune=not bool(args.no_prune),
+            )
+            result = CommandResult(
+                True,
+                "Reconstruction applied" if not payload.get("noop") else "Reconstruction apply no-op (already in sync)",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Apply reconstruction error: {e}")
+        self._output(result, args)
+
+    def _cmd_roundtrip(self, args) -> None:
+        """Run full digest + reconstruction + parity (+optional apply) pipeline."""
+        try:
+            root = Path(args.path).resolve()
+            if not root.is_dir():
+                result = CommandResult(False, f"Path must be a directory: {root}")
+            else:
+                payload = run_roundtrip_pipeline(
+                    root_path=root,
+                    db=self.library_db,
+                    runner=self.runner,
+                    workspace_dir=Path(args.workspace_dir).resolve(),
+                    mode=args.mode,
+                    extensions=args.ext,
+                    max_files=args.max_files,
+                    progress_every=max(1, int(args.progress_every)),
+                    sync_knowledge_path=Path(args.kb_path).resolve() if args.sync_knowledge else None,
+                    graphrag_output_dir=Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None,
+                    graph_export_limit=max(1, int(args.graph_export_limit)),
+                    strict_validation=not bool(args.no_strict_validation),
+                    apply=bool(args.apply),
+                    backup_root=Path(args.backup_root).resolve(),
+                )
+                result = CommandResult(
+                    bool(payload.get("parity_pass")),
+                    "Roundtrip pipeline complete",
+                    payload,
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Roundtrip error: {e}")
         self._output(result, args)
 
 

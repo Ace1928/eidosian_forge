@@ -40,12 +40,23 @@ Build a production-grade archive digester and living code substrate that can:
 - [ ] Coverage target >= 90% for `code_forge/src/code_forge`.
 - [ ] Enforce deletion gate requiring tests + benchmark parity + migration map approvals.
 
+### Stage F: Roundtrip Reconstruction and Auditability
+- [x] Reconstruct source trees from `file_records` + `code_text` deterministically.
+- [x] Generate parity report with file-level SHA256 checks.
+- [x] Add transactional apply flow with backup and apply report artifacts.
+- [x] Add one-shot `roundtrip` orchestration command for digest+integration+reconstruction+parity.
+- [x] Add fallback integration scoping: when a run has zero new units, use latest effective run for source root.
+- [ ] Add deterministic regeneration ordering checks for large mixed-language trees (>10k files).
+- [ ] Add signed artifact manifest option for tamper-evident promotion workflows.
+
 ## Near-Term Upgrades (v1.1)
 - [x] Add symbol/reference graph edges beyond `contains` (`imports`, `calls`, `uses`).
 - [x] Add structural clone detection (AST-shape similarity) for stronger near-dup filtering.
 - [x] Add canonical extraction templates and compatibility shim generation.
 - [x] Add triage confidence scoring and rule audit trace for every decision.
 - [x] Add strict schema validation contract for digester artifacts.
+- [x] Add reconstruction/parity/apply contracts for full project roundtrip validation.
+- [ ] Add source-root scoped semantic retrieval index for faster large-forge regeneration queries.
 
 ## Done Definition
 A Code Forge change is done only when:

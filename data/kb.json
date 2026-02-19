@@ -973,6 +973,21 @@
         ]
       },
       "links": []
+    },
+    "899adef5-cd25-46ed-a022-18b6e51cb7bd": {
+      "id": "899adef5-cd25-46ed-a022-18b6e51cb7bd",
+      "content": "Code Forge digest integration exports now use active run scoping with fallback to latest effective source-root run, preserving meaningful Knowledge Forge and GraphRAG exports during idempotent no-op ingestion cycles.",
+      "metadata": {
+        "tags": [
+          "idempotency",
+          "graphrag",
+          "run_scoping",
+          "code_forge",
+          "knowledge_forge",
+          "integration"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -27,6 +27,8 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Canonical migration map generation and compatibility shim staging.
 - `integration/pipeline.py`
   - Knowledge Forge sync and GraphRAG corpus export.
+- `reconstruct/pipeline.py`
+  - Source tree reconstruction, parity validation, transactional apply, and roundtrip orchestration.
 - `cli.py`
   - Operator surface for ingestion, search, dedup, triage, and digestion workflows.
 
@@ -90,6 +92,12 @@ Typed edges for structural and semantic traversal:
 - emit `drift_report.json` + `drift_report.md`
 - persist immutable snapshot into `history/*.json` for future comparisons
 
+### Stage G: Roundtrip Validation and Regeneration
+- reconstruct tracked source files from library state (`file_records` + `code_text`)
+- generate deterministic parity reports against live source tree
+- apply reconstructed tree with transactional backups and audit report (`apply_report.json`)
+- emit end-to-end `roundtrip_summary.json` for traceability
+
 ## Benchmark and Regression Gates
 
 `bench/runner.py` produces measurable artifacts for:
@@ -104,4 +112,5 @@ When a baseline exists, gate checks fail on configured regressions.
 - `file_records` + `ANALYSIS_VERSION` prevent unnecessary reprocessing.
 - Ingestion is non-destructive by default (`analysis` mode).
 - Generated digester outputs are excluded from default ingestion scans.
+- Roundtrip apply is parity-gated by default and records backup transaction artifacts.
 - All stage outputs are persisted as explicit artifacts for review and rollback.

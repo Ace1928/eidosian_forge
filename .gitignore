@@ -40,6 +40,7 @@ venv.bak/
 # Project Specific
 logs/
 data/
+Backups/
 cache/
 output/
 .env
@@ -57,6 +58,7 @@ reports/graphrag/qualitative_assessment_*.json
 reports/graphrag/qualitative_assessment_*.md
 reports/graphrag_sweep/
 reports/model_domain_suite/
+reports/code_forge/
 doc_forge/runtime/
 benchmarks/eidosian_consensus_bench.py
 models/.cache/
@@ -71,3 +73,6 @@ llama.cpp/
 # Lancedb build artifacts
 lib/lancedb_src/target/
 lib/lancedb_src/python/target/
+
+# Code Forge runtime workspaces (generated artifacts)
+data/code_forge/roundtrip/

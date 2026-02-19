@@ -29,6 +29,12 @@ from code_forge.library.similarity import (
     token_jaccard,
     tokenize_code_text,
 )
+from code_forge.reconstruct.pipeline import (
+    apply_reconstruction,
+    build_reconstruction_from_library,
+    compare_tree_parity,
+    run_roundtrip_pipeline,
+)
 
 __all__ = [
     "CodeAnalyzer",
@@ -63,4 +69,8 @@ __all__ = [
     "structural_normalize_code_text",
     "token_jaccard",
     "tokenize_code_text",
+    "build_reconstruction_from_library",
+    "compare_tree_parity",
+    "apply_reconstruction",
+    "run_roundtrip_pipeline",
 ]

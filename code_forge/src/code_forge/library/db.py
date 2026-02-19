@@ -389,6 +389,50 @@ class CodeLibraryDB:
             ).fetchone()
         return row[0] if row else None
 
+    def count_file_records(self, path_prefix: Optional[str] = None) -> int:
+        where = ""
+        params: list[Any] = []
+        if path_prefix:
+            prefix = str(Path(path_prefix).resolve())
+            where = "WHERE file_path = ? OR file_path LIKE ?"
+            params.extend([prefix, f"{prefix}/%"])
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT COUNT(*) AS c
+                FROM file_records
+                {where}
+                """,
+                tuple(params),
+            ).fetchone()
+        return int(row["c"]) if row else 0
+
+    def iter_file_records(
+        self,
+        path_prefix: Optional[str] = None,
+        limit: int = 200000,
+    ) -> Iterable[Dict[str, Any]]:
+        where = ""
+        params: list[Any] = []
+        if path_prefix:
+            prefix = str(Path(path_prefix).resolve())
+            where = "WHERE file_path = ? OR file_path LIKE ?"
+            params.extend([prefix, f"{prefix}/%"])
+        params.append(max(1, int(limit)))
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT file_path, content_hash, analysis_version, updated_at
+                FROM file_records
+                {where}
+                ORDER BY file_path ASC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        for row in rows:
+            yield dict(row)
+
     def add_relationship(self, parent_id: str, child_id: str, rel_type: str) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -509,17 +553,28 @@ class CodeLibraryDB:
             },
         }
 
-    def iter_units(self, limit: int = 1000) -> Iterable[Dict[str, Any]]:
+    def iter_units(
+        self,
+        limit: int = 1000,
+        run_id: Optional[str] = None,
+    ) -> Iterable[Dict[str, Any]]:
+        where = ""
+        params: list[Any] = []
+        if run_id:
+            where = "WHERE cu.run_id = ?"
+            params.append(str(run_id))
+        params.append(max(1, int(limit)))
         with self._connect() as conn:
             rows = conn.execute(
-                """
+                f"""
                 SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
                 FROM code_units cu
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
+                {where}
                 ORDER BY cu.created_at DESC
                 LIMIT ?
                 """,
-                (limit,),
+                tuple(params),
             ).fetchall()
         for row in rows:
             yield dict(row)
@@ -944,9 +999,17 @@ class CodeLibraryDB:
             "max_nodes": max_nodes,
         }
 
-    def count_units(self) -> int:
+    def count_units(self, run_id: Optional[str] = None) -> int:
+        where = ""
+        params: list[Any] = []
+        if run_id:
+            where = "WHERE run_id = ?"
+            params.append(str(run_id))
         with self._connect() as conn:
-            row = conn.execute("SELECT COUNT(*) AS c FROM code_units").fetchone()
+            row = conn.execute(
+                f"SELECT COUNT(*) AS c FROM code_units {where}",
+                tuple(params),
+            ).fetchone()
         return int(row["c"]) if row else 0
 
     def file_metrics(self, limit: int = 100000) -> list[Dict[str, Any]]:
@@ -1034,3 +1097,62 @@ class CodeLibraryDB:
                 item.pop("config_json", None)
             out.append(item)
         return out
+
+    def latest_run_for_root(self, root_path: str, mode: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        root = str(Path(root_path).resolve())
+        where = ["root_path = ?"]
+        params: list[Any] = [root]
+        if mode:
+            where.append("mode = ?")
+            params.append(str(mode))
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT run_id, root_path, mode, created_at, config_json
+                FROM ingestion_runs
+                WHERE {' AND '.join(where)}
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+        if not row:
+            return None
+        item = dict(row)
+        try:
+            item["config"] = json.loads(item.pop("config_json") or "{}")
+        except Exception:
+            item["config"] = {}
+            item.pop("config_json", None)
+        return item
+
+    def latest_effective_run_for_root(self, root_path: str, mode: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        root = str(Path(root_path).resolve())
+        where = ["r.root_path = ?"]
+        params: list[Any] = [root]
+        if mode:
+            where.append("r.mode = ?")
+            params.append(str(mode))
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT r.run_id, r.root_path, r.mode, r.created_at, r.config_json, COUNT(cu.id) AS unit_count
+                FROM ingestion_runs r
+                JOIN code_units cu ON cu.run_id = r.run_id
+                WHERE {' AND '.join(where)}
+                GROUP BY r.run_id, r.root_path, r.mode, r.created_at, r.config_json
+                ORDER BY r.created_at DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+        if not row:
+            return None
+        item = dict(row)
+        item["unit_count"] = int(item.get("unit_count") or 0)
+        try:
+            item["config"] = json.loads(item.pop("config_json") or "{}")
+        except Exception:
+            item["config"] = {}
+            item.pop("config_json", None)
+        return item
