@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eidosian.local/schemas/graphrag_qualitative_assessment.schema.json",
+  "title": "GraphRAG Qualitative Assessment v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "generated_at",
+    "workspace_root",
+    "deterministic_scores",
+    "stage_scores",
+    "judge_assessments",
+    "aggregate"
+  ],
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "graphrag.qualitative.assessment.v1"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "workspace_root": {
+      "type": "string"
+    },
+    "bench_metrics_path": {
+      "type": ["string", "null"]
+    },
+    "deterministic_scores": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "stage_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "completed", "runtime_seconds", "stage_score"],
+        "properties": {
+          "stage": {"type": "string"},
+          "completed": {"type": "boolean"},
+          "runtime_seconds": {"type": "number"},
+          "stage_score": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "additionalProperties": true
+      }
+    },
+    "judge_assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["judge", "scores"],
+        "properties": {
+          "judge": {"type": "string"},
+          "scores": {
+            "type": "object",
+            "required": ["factuality", "grounding", "coherence", "usefulness", "risk_awareness"],
+            "properties": {
+              "factuality": {"type": "number", "minimum": 0, "maximum": 1},
+              "grounding": {"type": "number", "minimum": 0, "maximum": 1},
+              "coherence": {"type": "number", "minimum": 0, "maximum": 1},
+              "usefulness": {"type": "number", "minimum": 0, "maximum": 1},
+              "risk_awareness": {"type": "number", "minimum": 0, "maximum": 1}
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "required": ["deterministic_objective", "judge_score", "disagreement", "final_score", "rank"],
+      "properties": {
+        "deterministic_objective": {"type": "number", "minimum": 0, "maximum": 1},
+        "judge_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "disagreement": {"type": "number", "minimum": 0},
+        "final_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "rank": {"type": "string", "enum": ["A", "B", "C", "D"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

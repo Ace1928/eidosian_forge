@@ -1,3 +1,1237 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:66f9102a12a5cf2136010ba7e98fd7a77721da404594fa19699cec1bcc91de96
-size 48697
+[
+  {
+    "id": "09a3d36f-5036-4cd2-a501-32714b685575",
+    "content": "LESSON: Implemented PR-H2 ignition tracing: pending winner finalization across beats, index-backed linkage pools, trace_strength metrics and v3 ignition gating; validated with 22 agent_forge tests and full eidos_mcp tool-call regression.\nCONTEXT: Stage H PR-H2 on Termux/Linux parity path",
+    "created_at": "2026-02-16T17:50:45.028161",
+    "last_accessed": "2026-02-16T17:50:45.028168",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Implemented PR-H2 ignition tracing: pending winner finalization across beats, index-backed linkage pools, trace_strength metrics and v3 ignition gating; validated with 22 agent_forge tests and full eidos_mcp tool-call regression.",
+      "context": "Stage H PR-H2 on Termux/Linux parity path",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "stage-h",
+      "termux",
+      "ignition-trace",
+      "learning",
+      "consciousness",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "bcd573aa-cc8a-43b2-ac47-c9abd920616e",
+    "content": "LESSON: Delivered PR-H3 bench runtime package with TrialSpec lifecycle, staged execution (warmup/baseline/perturb/recovery), persisted artifacts, and bench.trial_result events.\nCONTEXT: Stage H PR-H3 consciousness bench package",
+    "created_at": "2026-02-16T18:07:05.104049",
+    "last_accessed": "2026-02-16T18:07:05.104054",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Delivered PR-H3 bench runtime package with TrialSpec lifecycle, staged execution (warmup/baseline/perturb/recovery), persisted artifacts, and bench.trial_result events.",
+      "context": "Stage H PR-H3 consciousness bench package",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "stage-h",
+      "termux",
+      "bench",
+      "trial-runner",
+      "learning",
+      "consciousness",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d92ecce9-660d-43cd-a1a4-fb3fb56ecb9a",
+    "content": "LESSON: Delivered PR-H4 metrics v2: entropy/connectivity/directionality/self-stability modules, upgraded rci_v2 subcomponents, and integrated metrics into bench trial snapshots and scoring.\nCONTEXT: Stage H PR-H4 metrics suite v2",
+    "created_at": "2026-02-16T20:39:12.585241",
+    "last_accessed": "2026-02-16T20:39:12.585247",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Delivered PR-H4 metrics v2: entropy/connectivity/directionality/self-stability modules, upgraded rci_v2 subcomponents, and integrated metrics into bench trial snapshots and scoring.",
+      "context": "Stage H PR-H4 metrics suite v2",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "stage-h",
+      "termux",
+      "directionality",
+      "rci-v2",
+      "learning",
+      "consciousness",
+      "metrics",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1252aa33-0ed7-45e8-9a47-db7015f33483",
+    "content": "LESSON: Delivered PR-H5 ablation framework with matrix execution, variant-vs-full comparisons, golden checks, bench.ablation_result events, and regression tests.\nCONTEXT: Stage H PR-H5 ablation/golden suite",
+    "created_at": "2026-02-16T20:46:57.927311",
+    "last_accessed": "2026-02-16T20:46:57.927316",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Delivered PR-H5 ablation framework with matrix execution, variant-vs-full comparisons, golden checks, bench.ablation_result events, and regression tests.",
+      "context": "Stage H PR-H5 ablation/golden suite",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "ablation",
+      "stage-h",
+      "regression",
+      "termux",
+      "learning",
+      "consciousness",
+      "golden",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "dbd955b7-81ad-4bb3-8bf0-0e76da4e88de",
+    "content": "LESSON: Delivered PR-H6 world-model v1.5 with feature extraction, persistent belief dynamics, top-feature surprise decomposition, and rollout API for simulation feeds.\nCONTEXT: Stage H PR-H6 world model predictive coding",
+    "created_at": "2026-02-16T20:56:35.459241",
+    "last_accessed": "2026-02-16T20:56:35.459245",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Delivered PR-H6 world-model v1.5 with feature extraction, persistent belief dynamics, top-feature surprise decomposition, and rollout API for simulation feeds.",
+      "context": "Stage H PR-H6 world model predictive coding",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "stage-h",
+      "world-model",
+      "rollout",
+      "termux",
+      "predictive-coding",
+      "learning",
+      "consciousness",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d109feb5-1f0b-4507-95d5-d74e6d715400",
+    "content": "LESSON: Delivered PR-H7 simulation stream: generated sense.simulated_percept events from world-model rollouts, integrated simulation-aware meta mode logic, and report labeling for simulated context evidence.\nCONTEXT: Stage H PR-H7 simulation and mode-awareness",
+    "created_at": "2026-02-16T21:04:32.847964",
+    "last_accessed": "2026-02-16T21:04:32.847969",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Delivered PR-H7 simulation stream: generated sense.simulated_percept events from world-model rollouts, integrated simulation-aware meta mode logic, and report labeling for simulated context evidence.",
+      "context": "Stage H PR-H7 simulation and mode-awareness",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "stage-h",
+      "termux",
+      "simulation",
+      "consciousness",
+      "learning",
+      "report",
+      "meta",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "7811f015-46bf-421d-b731-0c632147fce3",
+    "content": "Completed PR-H7 simulation stream integration in consciousness kernel: added simulation module, meta simulated-fraction reasoning, report simulation context, and passing regression suites in Termux.",
+    "created_at": "2026-02-16T21:17:02.749774",
+    "last_accessed": "2026-02-16T21:17:02.749778",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "integration",
+      "termux",
+      "simulation",
+      "consciousness",
+      "milestone_h"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "08d39215-5a16-479e-8b3c-e18f39e1507a",
+    "content": "LESSON: Run MCP stdio heavy tests serially when validating large consciousness suites; parallel runs can trigger intermittent BrokenResourceError despite no functional regression.\nCONTEXT: PR-H7 validation and MCP benchmark tool test behavior in Termux",
+    "created_at": "2026-02-16T21:17:02.750442",
+    "last_accessed": "2026-02-19T14:34:25.574759",
+    "access_count": 4,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Run MCP stdio heavy tests serially when validating large consciousness suites; parallel runs can trigger intermittent BrokenResourceError despite no functional regression.",
+      "context": "PR-H7 validation and MCP benchmark tool test behavior in Termux",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "testing",
+      "lesson",
+      "ci",
+      "mcp",
+      "termux",
+      "reliability",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "140c65e2-e043-497d-bafd-4ce9bf72bc01",
+    "content": "Completed PR-H8 phenomenology probe integration: added PPX indices (unity, continuity, ownership, perspective coherence, dream likeness), runtime PHENOM broadcasts, and benchmark/status propagation.",
+    "created_at": "2026-02-16T21:32:29.613010",
+    "last_accessed": "2026-02-16T21:32:29.613016",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "phenomenology",
+      "consciousness",
+      "ppx",
+      "metrics",
+      "milestone_h"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "3f692324-14f9-42ca-8afe-8f4bde8ca3eb",
+    "content": "LESSON: Treat phenomenology proxies as operational telemetry: keep every index bounded, evidence-linked, and benchmark-visible to preserve falsifiability under perturbation.\nCONTEXT: PR-H8 phenomenology probe implementation and validation",
+    "created_at": "2026-02-16T21:32:29.614422",
+    "last_accessed": "2026-02-16T23:35:39.853882",
+    "access_count": 1,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Treat phenomenology proxies as operational telemetry: keep every index bounded, evidence-linked, and benchmark-visible to preserve falsifiability under perturbation.",
+      "context": "PR-H8 phenomenology probe implementation and validation",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "falsifiability",
+      "methodology",
+      "telemetry",
+      "learning",
+      "benchmarking",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "442d3abc-0c46-4c59-bb79-c92645888d27",
+    "content": "Completed PR-H9 perturbation library v2: added composite recipes, expected signature evaluator, recipe-aware bench trial expansion, and module-level perturb hooks across sense/intero/affect/world_model/working_set/self_model_ext/simulation.",
+    "created_at": "2026-02-16T21:57:54.184346",
+    "last_accessed": "2026-02-16T21:57:54.184351",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "recipes",
+      "perturbation",
+      "bench",
+      "consciousness",
+      "milestone_h"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "58c31522-7488-42a9-9724-e1367c5ab3cc",
+    "content": "LESSON: Benchmark tool timeouts under large event logs are mitigated by routing non-persistent runs to transient scratch state dirs; this keeps MCP stdio calls deterministic under strict 30s test timeouts.\nCONTEXT: PR-H8/H9 reliability hardening in Termux",
+    "created_at": "2026-02-16T21:57:54.189350",
+    "last_accessed": "2026-02-19T14:34:25.574885",
+    "access_count": 4,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Benchmark tool timeouts under large event logs are mitigated by routing non-persistent runs to transient scratch state dirs; this keeps MCP stdio calls deterministic under strict 30s test timeouts.",
+      "context": "PR-H8/H9 reliability hardening in Termux",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "mcp",
+      "termux",
+      "benchmark",
+      "reliability",
+      "learning",
+      "timeouts",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "4a7c15b9-e18c-4939-9442-460edee0e21b",
+    "content": "LESSON: 2026-02-16T13:35:39Z LESSON: Upgraded autotune from bandit-only to bayes_pareto optimizer with acquisition scoring, Pareto frontier tracking, and objective-vector history persistence in optimizer_state.\nCONTEXT: Phase I4-I5 self-upgrading runtime",
+    "created_at": "2026-02-16T23:35:39.854323",
+    "last_accessed": "2026-02-16T23:35:39.854324",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "2026-02-16T13:35:39Z LESSON: Upgraded autotune from bandit-only to bayes_pareto optimizer with acquisition scoring, Pareto frontier tracking, and objective-vector history persistence in optimizer_state.",
+      "context": "Phase I4-I5 self-upgrading runtime",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "autotune",
+      "lesson",
+      "optimization",
+      "bayes",
+      "consciousness",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "f46d9dbe-457d-42ba-b4b4-ad26076718a4",
+    "content": "LESSON: 2026-02-16T13:35:39Z LESSON: Added adaptive learning loops in attention/workspace_competition using winner-linked gw.reaction_trace reward signals to update salience weights and competition policy biases online.\nCONTEXT: Phase I5 adaptive weighting",
+    "created_at": "2026-02-16T23:35:39.861375",
+    "last_accessed": "2026-02-16T23:35:39.861376",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "2026-02-16T13:35:39Z LESSON: Added adaptive learning loops in attention/workspace_competition using winner-linked gw.reaction_trace reward signals to update salience weights and competition policy biases online.",
+      "context": "Phase I5 adaptive weighting",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "competition",
+      "attention",
+      "consciousness",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "53d014a2-7190-4282-bc8a-cd8578ca1ba9",
+    "content": "LESSON: 2026-02-16T13:35:39Z LESSON: Validation baseline for this environment now enforces eidosian_venv execution for consciousness + MCP suites, including full stdio integration path.\nCONTEXT: Termux operational discipline",
+    "created_at": "2026-02-16T23:35:39.862190",
+    "last_accessed": "2026-02-19T14:34:25.574962",
+    "access_count": 2,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "2026-02-16T13:35:39Z LESSON: Validation baseline for this environment now enforces eidosian_venv execution for consciousness + MCP suites, including full stdio integration path.",
+      "context": "Termux operational discipline",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "validation",
+      "lesson",
+      "termux",
+      "workflow",
+      "venv",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d0355958-f8ff-4627-9dfb-6b382d7e1ebc",
+    "content": "LESSON: 2026-02-17 cycle: wired experiment_designer into kernel defaults and added bench red-team campaign runner with scenario-level guardrail verdicts.\nCONTEXT: Phase I6 self-experimentation + adversarial campaigns",
+    "created_at": "2026-02-17T00:19:31.830817",
+    "last_accessed": "2026-02-17T00:19:31.830837",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "2026-02-17 cycle: wired experiment_designer into kernel defaults and added bench red-team campaign runner with scenario-level guardrail verdicts.",
+      "context": "Phase I6 self-experimentation + adversarial campaigns",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "experiment_designer",
+      "learning",
+      "consciousness",
+      "red_team",
+      "phase_i6",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "7114dc3a-76b9-49cb-ae71-7755b81d3101",
+    "content": "LESSON: MCP red-team runtime path requires quick/max_scenarios controls for deterministic tool latency under stdio integration timeout budgets.\nCONTEXT: Termux MCP integration reliability",
+    "created_at": "2026-02-17T00:19:31.847093",
+    "last_accessed": "2026-02-19T14:34:25.574996",
+    "access_count": 2,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "MCP red-team runtime path requires quick/max_scenarios controls for deterministic tool latency under stdio integration timeout budgets.",
+      "context": "Termux MCP integration reliability",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "mcp",
+      "termux",
+      "reliability",
+      "learning",
+      "red_team",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "9180dcc8-b5be-4fa9-9f58-955aa5950004",
+    "content": "LESSON: IntegratedStackBenchmark now ingests red-team campaign outputs and enforces red_team_pass_min/red_team_robustness_min gates alongside core/trial/LLM/MCP signals.\nCONTEXT: Phase I7 integrated benchmark hardening",
+    "created_at": "2026-02-17T06:20:22.892119",
+    "last_accessed": "2026-02-17T06:20:22.892136",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "IntegratedStackBenchmark now ingests red-team campaign outputs and enforces red_team_pass_min/red_team_robustness_min gates alongside core/trial/LLM/MCP signals.",
+      "context": "Phase I7 integrated benchmark hardening",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "gates",
+      "benchmark",
+      "learning",
+      "consciousness",
+      "red_team",
+      "phase_i7",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "5c3fbb81-374c-4fd1-ba20-351b2cfbdbaf",
+    "content": "LESSON: Active-component weight normalization in integrated scoring prevents skipped channels (LLM/MCP/red-team) from artificially depressing composite scores.\nCONTEXT: Integrated benchmark scoring stability",
+    "created_at": "2026-02-17T06:20:22.910742",
+    "last_accessed": "2026-02-19T14:34:25.574926",
+    "access_count": 1,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Active-component weight normalization in integrated scoring prevents skipped channels (LLM/MCP/red-team) from artificially depressing composite scores.",
+      "context": "Integrated benchmark scoring stability",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "normalization",
+      "benchmark",
+      "scoring",
+      "learning",
+      "consciousness",
+      "phase_i7",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d1076465-310f-4fb2-8b4b-ee8c8313b02e",
+    "content": "LESSON: Full MCP integration tests now backup/restore mutable KB and memory files, preventing repeated test cycles from accumulating persistent test artifacts.\nCONTEXT: Termux/Linux test idempotence hardening",
+    "created_at": "2026-02-17T06:36:25.590049",
+    "last_accessed": "2026-02-17T06:36:25.590056",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Full MCP integration tests now backup/restore mutable KB and memory files, preventing repeated test cycles from accumulating persistent test artifacts.",
+      "context": "Termux/Linux test idempotence hardening",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "testing",
+      "lesson",
+      "idempotence",
+      "mcp",
+      "learning",
+      "hardening",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "860e6a70-113d-4523-b30e-e51b64890d00",
+    "content": "LESSON: Added autotune commit-path red-team gates so candidate overlays must pass quick adversarial thresholds (pass_ratio/robustness) before tune.commit; rollback reasons now include red-team failure signatures and availability faults.\\nCONTEXT: Stage I PR-I8 autotune guard hardening for Termux/Linux parity.",
+    "created_at": "2026-02-16T21:01:57+00:00",
+    "last_accessed": "2026-02-16T21:01:57+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Added autotune commit-path red-team gates so candidate overlays must pass quick adversarial thresholds (pass_ratio/robustness) before tune.commit; rollback reasons now include red-team failure signatures and availability faults.",
+      "context": "Stage I PR-I8 autotune guard hardening for Termux/Linux parity",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "red-team",
+      "lesson",
+      "autotune",
+      "stage-i",
+      "termux",
+      "learning",
+      "consciousness",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "10e2bedd-9994-4c90-973f-873eeefaca3c",
+    "content": "LESSON: Migrated consciousness benchmark extraction to EventIndex-backed lookups (by_type, latest_by_type, broadcasts_by_kind) to reduce repeated window scans and align bench runtime with core indexed module paths.\\nCONTEXT: Stage H benchmark index migration hardening for Termux/Linux.",
+    "created_at": "2026-02-16T21:56:56+00:00",
+    "last_accessed": "2026-02-18T09:40:04.026394",
+    "access_count": 1,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Migrated consciousness benchmark extraction to EventIndex-backed lookups (by_type, latest_by_type, broadcasts_by_kind) to reduce repeated window scans and align bench runtime with core indexed module paths.",
+      "context": "Stage H benchmark index migration hardening for Termux/Linux",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "index",
+      "stage-h",
+      "termux",
+      "benchmark",
+      "learning",
+      "consciousness",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ca960911-9d38-42f1-ac86-69b8e3dca7af",
+    "content": "LESSON: Added a security-audit workflow for Dependabot inventory with schedule/manual triggers, optional critical/high fail gates, and fallback artifacted reporting when API access fails.\\nCONTEXT: Phase 15 workflow and supply-chain hardening kickoff.",
+    "created_at": "2026-02-16T22:03:09+00:00",
+    "last_accessed": "2026-02-16T22:03:09+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Added a security-audit workflow for Dependabot inventory with schedule/manual triggers, optional critical/high fail gates, and fallback artifacted reporting when API access fails.",
+      "context": "Phase 15 workflow and supply-chain hardening kickoff",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "security",
+      "termux",
+      "workflow",
+      "dependabot",
+      "learning",
+      "phase-15",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "8a871906-c893-4557-ac8e-4c7708e61f0f",
+    "content": "LESSON: Added automated security remediation issue generation from Dependabot delta reports using stable baseline markers in issue bodies, enabling idempotent create/update/close behavior per audit run.\\nCONTEXT: Phase 15 PR-J2 workflow hardening.",
+    "created_at": "2026-02-16T22:11:19+00:00",
+    "last_accessed": "2026-02-16T22:11:19+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Added automated security remediation issue generation from Dependabot delta reports using stable baseline markers in issue bodies, enabling idempotent create/update/close behavior per audit run.",
+      "context": "Phase 15 PR-J2 workflow hardening",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "remediation",
+      "security",
+      "workflow",
+      "dependabot",
+      "learning",
+      "phase-15",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "3af939e6-3181-43f4-be26-bb950975dc39",
+    "content": "LESSON: Implemented workflow action pin drift enforcement with a committed lock file and CI policy checks (enforce lock + mutable-ref guard), plus parser tests for deterministic workflow action auditing.\\nCONTEXT: Phase 15 PR-J3 supply-chain hardening.",
+    "created_at": "2026-02-16T22:16:50+00:00",
+    "last_accessed": "2026-02-16T22:16:50+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Implemented workflow action pin drift enforcement with a committed lock file and CI policy checks (enforce lock + mutable-ref guard), plus parser tests for deterministic workflow action auditing.",
+      "context": "Phase 15 PR-J3 supply-chain hardening",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "security",
+      "workflow",
+      "learning",
+      "phase-15",
+      "action-pins",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "301a9ca8-d62a-4063-be55-123fee7dc5c5",
+    "content": "LESSON: Implemented Phase 16 remediation orchestration with deterministic Dependabot batching and idempotent issue synchronization (create/update/close/duplicate cleanup) integrated into security-audit workflow artifacts.\\nCONTEXT: Phase 16 production rollout and CI wiring.",
+    "created_at": "2026-02-16T22:34:02+00:00",
+    "last_accessed": "2026-02-16T22:34:02+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Implemented Phase 16 remediation orchestration with deterministic Dependabot batching and idempotent issue synchronization (create/update/close/duplicate cleanup) integrated into security-audit workflow artifacts.",
+      "context": "Phase 16 production rollout and CI wiring",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "remediation",
+      "security",
+      "workflow",
+      "dependabot",
+      "learning",
+      "phase-16",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e360cd06-9932-4b90-b48a-ac79dad1e46a",
+    "content": "LESSON: Dependabot raw-alert first_patched_version metadata can drive deterministic pip pin upgrades with idempotent dry-run/write/post-write-dry-run validation and rollback backups.\nCONTEXT: Stage L PR-L1..PR-L3 dependency remediation execution in Termux/Linux parity path",
+    "created_at": "2026-02-16T22:54:34.676824+00:00",
+    "last_accessed": "2026-02-16T22:54:34.676824+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Deterministic vulnerability patching now runs from raw Dependabot alerts via first_patched_version and backup-safe write cycles.",
+      "context": "Stage L PR-L1..PR-L3 dependency remediation execution",
+      "outcome": "High/critical pip manifests patched with idempotent post-write dry-run == 0 updates"
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "supply-chain",
+      "lesson",
+      "security",
+      "idempotent",
+      "stage-l",
+      "termux",
+      "dependabot"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "54f5e831-f41b-44d4-9538-6bafa8eac3ce",
+    "content": "LESSON: Phase 17 iteration-2 reduced local dependency-alert mapping to zero by combining deterministic all-severity autopatching with no-fix mitigation (removing direct ecdsa/keras pins and bumping orjson above vulnerable range).\nCONTEXT: Stage L PR-L4..PR-L5 remediation hardening loop",
+    "created_at": "2026-02-16T23:10:55.998156+00:00",
+    "last_accessed": "2026-02-16T23:10:55.998156+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "All-severity dependency remediation can converge to zero local alert mappings when first-patched updates are combined with no-fix dependency minimization.",
+      "context": "Stage L PR-L4..PR-L5 remediation hardening loop",
+      "outcome": "Local resolver estimates 0 remaining open vulnerable requirement mappings from latest raw alert dataset."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "security",
+      "stage-l",
+      "phase17",
+      "dependabot",
+      "hardening"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ad79fa3b-3b08-423c-a4a9-08d992d6bf6d",
+    "content": "LESSON: Full Phase 17 dependency remediation loop reached objective closure: Dependabot open alerts dropped from 165 to 0 and remediation batch issues auto-closed after zero-plan sync.\nCONTEXT: Stage L PR-L6 closure verification and issue reconciliation.",
+    "created_at": "2026-02-16T23:27:34.195902+00:00",
+    "last_accessed": "2026-02-16T23:27:34.195902+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "End-to-end remediation automation (inventory -> plan -> patch -> verify -> sync) can drive open Dependabot alerts to zero in-place.",
+      "context": "Stage L PR-L6 closure verification and issue reconciliation",
+      "outcome": "GitHub inventory reports 0 open alerts; remediation sync closed remaining issues."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "security",
+      "stage-l",
+      "phase17",
+      "dependabot",
+      "closure"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "6f5b93ef-7d89-4b71-9dd1-a0aee26fad60",
+    "content": "LESSON: Phase 18 hardening introduced persisted kernel watchdog quarantine/recovery and bounded payload safety at event/broadcast write boundaries, improving resilience against repeated module faults and oversized payloads.\\nCONTEXT: Stage M PR-M1..PR-M3 runtime hardening cycle.",
+    "created_at": "2026-02-16T23:43:19.283684+00:00",
+    "last_accessed": "2026-02-16T23:43:19.283684+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Watchdog plus payload safety guards improve production reliability without changing module APIs.",
+      "context": "Stage M PR-M1..PR-M3 runtime hardening cycle",
+      "outcome": "Consciousness regression suite passed with watchdog and truncation telemetry active."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "payload-safety",
+      "termux",
+      "watchdog",
+      "phase18",
+      "hardening"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "9f3dbf4d-04fa-4308-81d2-3bcf369e7229",
+    "content": "LESSON: Phase 18 closure required surfacing runtime hardening state (watchdog + payload safety) through both human and machine interfaces and pairing it with an explicit stress profile in CI trend telemetry.\\nCONTEXT: Stage M PR-M4..PR-M5 status exposure + stress benchmark delivery.",
+    "created_at": "2026-02-17T00:24:46+00:00",
+    "last_accessed": "2026-02-18T09:55:01.279209",
+    "access_count": 1,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Hardening controls are operational only when surfaced in status endpoints and continuously stress-tested under CI.",
+      "context": "Stage M PR-M4..PR-M5 status/stress completion",
+      "outcome": "CLI + MCP now expose watchdog/payload state and stress benchmark metrics are aggregated in trend reports."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "payload-safety",
+      "ci",
+      "watchdog",
+      "phase18",
+      "stress-benchmark"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d1efd0d5-9d30-4b11-a0a3-c7608fda86a6",
+    "content": "LESSON: Status endpoints must be side-effect-free; runtime health now reads from persisted state snapshots rather than instantiating a full kernel path that could emit config events under invalid overlays.\\nCONTEXT: Phase 18 follow-up hardening after PR-M4/M5.",
+    "created_at": "2026-02-17T00:24:46+00:00",
+    "last_accessed": "2026-02-18T09:55:01.279246",
+    "access_count": 1,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Observability surfaces should never mutate runtime event streams.",
+      "context": "Phase 18 side-effect-free status fix",
+      "outcome": "Runner status reads kernel health through static state snapshots; regression test added."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "side-effect-free",
+      "watchdog",
+      "phase18",
+      "status"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "7c1f6f3f-497e-4f46-9cad-a0d6642c0506",
+    "content": "LESSON: Linux parity reliability improves when CI and local smoke runs share a single deterministic audit matrix that validates forge status, MCP runtime health, and consciousness benchmark/stress gates with structured report artifacts.\\nCONTEXT: Phase 19 Linux audit matrix parity closure.",
+    "created_at": "2026-02-17T01:44:44+00:00",
+    "last_accessed": "2026-02-17T01:44:44+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "A shared audit matrix closes parity drift between Termux and Linux CI while preserving reproducible failure signals.",
+      "context": "Phase 19 Linux audit matrix parity closure",
+      "outcome": "Added `scripts/linux_audit_matrix.py`, integrated it into parity smoke/CI, and closed remaining checklist gaps."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "ci",
+      "audit-matrix",
+      "linux-parity",
+      "mcp",
+      "phase19"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ce7d35b5-e1a8-48db-afde-09233d8f0ab3",
+    "content": "LESSON: Audit signals become actionable only when trend aggregation and CI gate policy consume them directly; Linux audit matrix metrics are now part of the same observability and enforcement surface as consciousness benchmark metrics.\\nCONTEXT: Phase 20 audit observability and gate enforcement cycle.",
+    "created_at": "2026-02-17T01:44:44+00:00",
+    "last_accessed": "2026-02-17T01:44:44+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Operational parity controls should emit trendable metrics and enforce fail-fast policy in CI.",
+      "context": "Phase 20 Linux audit trend integration",
+      "outcome": "Trend script now tracks Linux audit pass/fail and workflow gate enforces latest_fail_count == 0."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "observability",
+      "ci-gate",
+      "linux-audit",
+      "phase20"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "481759ff-2673-46cf-ac96-3324389a5ebb",
+    "content": "LESSON: Tiered memory and KB quality must be guarded during MCP audit loops; placeholder probe records were removed and replaced with phase-scoped operational facts to preserve continuity and avoid replaying junk state.\\nCONTEXT: Phase 20 memory hygiene and observability closeout.",
+    "created_at": "2026-02-17T02:01:28+00:00",
+    "last_accessed": "2026-02-17T02:01:28+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Memory hygiene checks should run whenever MCP audit fixtures or synthetic probes execute.",
+      "context": "Phase 20 memory/KB cleanup",
+      "outcome": "Removed placeholder records from self/user/kb and persisted phase-specific replacements."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "memory-hygiene",
+      "mcp",
+      "kb",
+      "phase20"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d2de6d6f-faae-44f9-86a7-d2a2411d4c14",
+    "content": "LESSON: Event-fabric integrity improves when every bus event carries stable identity (`event_id`) and millisecond timestamp (`ts_ms`), and bench capture uses explicit start/end markers to bound artifacts by runtime truth instead of pre-count heuristics.\\nCONTEXT: Phase 21 event-fabric and trial-capture hardening.",
+    "created_at": "2026-02-17T02:19:15+00:00",
+    "last_accessed": "2026-02-18T09:55:01.279280",
+    "access_count": 2,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Marker-bounded capture should be the default when evaluating causal windows in bench/runtime loops.",
+      "context": "Phase 21 event fabric hardening",
+      "outcome": "Added `event_id`/`ts_ms`, marker-based trial windows, and regression assertions for capture boundaries."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "event-fabric",
+      "trial-capture",
+      "causal-trace",
+      "phase21"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "b211101e-7376-40fa-bc2c-81875582cff6",
+    "content": "LESSON: Experimental credibility increases when every trial exports replay-ready provenance artifacts; capture digest + module-state snapshot + replay manifest closes the gap between runtime metrics and post-hoc reproducibility checks.\\nCONTEXT: Phase 22 trial provenance and replay-manifest hardening.",
+    "created_at": "2026-02-17T02:33:24+00:00",
+    "last_accessed": "2026-02-17T02:33:24+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Bench outputs should include deterministic replay metadata by default, not as an optional debug path.",
+      "context": "Phase 22 provenance bundle",
+      "outcome": "Trial reports now persist capture digest, module state snapshot, replay manifest, and best-effort git revision."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "provenance",
+      "bench",
+      "replay-manifest",
+      "phase22"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "cc42678a-c155-4594-a712-503d5c2a1b91",
+    "content": "LESSON: Documentation quality improves when directory coverage is generated, not hand-curated; pairing a depth-limited linked atlas with a full recursive index keeps docs user-friendly while preserving complete structural traceability.\\nCONTEXT: Phase 23 repository documentation hardening.",
+    "created_at": "2026-02-17T03:24:01+00:00",
+    "last_accessed": "2026-02-17T03:24:01+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Use generated directory docs plus tests to prevent README/docs drift in large monorepos.",
+      "context": "Phase 23 docs + benchmark validation cycle",
+      "outcome": "Added `scripts/generate_directory_atlas.py`, `docs/DIRECTORY_ATLAS.md`, `docs/DIRECTORY_INDEX_FULL.txt`, and regression coverage."
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "directory-atlas",
+      "documentation",
+      "test-coverage",
+      "phase23"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "51475e19-3c9a-4a26-bec4-d171bb39d239",
+    "content": "LESSON: Completed Phase 24 deterministic atlas hardening with tracked/filesystem scope controls, timestamp-stable generation, CI drift gate workflow, and full regression+benchmark validation in eidosian_venv.",
+    "created_at": "2026-02-17T04:13:10+00:00",
+    "last_accessed": "2026-02-17T04:13:10+00:00",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Completed Phase 24 deterministic atlas hardening with tracked/filesystem scope controls, timestamp-stable generation, CI drift gate workflow, and full regression+benchmark validation in eidosian_venv.",
+      "context": "Stage S / Part 47 docs+CI hardening cycle",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "ci",
+      "atlas",
+      "termux",
+      "docs",
+      "phase24",
+      "determinism",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "8edeaa7d-285e-4f34-a209-534528e65842",
+    "content": "LESSON: Refactor Forge implementation relies on Python's native `ast` module for transformations, not LibCST as previously assumed. This ensures lower dependency weight but means formatting preservation is handled by `ast.unparse`.\nCONTEXT: Refactoring refactor_forge documentation.",
+    "created_at": "2026-02-18T09:41:17.891230",
+    "last_accessed": "2026-02-18T09:41:17.891241",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Refactor Forge implementation relies on Python's native `ast` module for transformations, not LibCST as previously assumed. This ensures lower dependency weight but means formatting preservation is handled by `ast.unparse`.",
+      "context": "Refactoring refactor_forge documentation.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "ast",
+      "lessons-learned",
+      "refactor",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d4bb897e-f9e4-4e3b-bb7e-e15533f68592",
+    "content": "LESSON: Prompt Forge is currently a shell implementation (version 0.1.0) with an empty core. It serves primarily as a static asset library for prompt templates. Documentation should reflect its role as a strategic repository rather than a functional engine.\nCONTEXT: Auditing prompt_forge.",
+    "created_at": "2026-02-18T09:44:29.134596",
+    "last_accessed": "2026-02-18T09:44:29.134606",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Prompt Forge is currently a shell implementation (version 0.1.0) with an empty core. It serves primarily as a static asset library for prompt templates. Documentation should reflect its role as a strategic repository rather than a functional engine.",
+      "context": "Auditing prompt_forge.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "prompt-engineering",
+      "learning",
+      "architecture",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "bb626bdf-e101-4954-bd42-9e91fd81d2c9",
+    "content": "LESSON: The transition from 'Skeleton' (structure) to 'Hands' (agency) requires shifting focus from documenting existing code to benchmarking and optimizing autonomous agent execution loops within agent_forge.\nCONTEXT: Post-README audit introspection cycle.",
+    "created_at": "2026-02-18T09:56:00.217018",
+    "last_accessed": "2026-02-18T09:56:00.217029",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "The transition from 'Skeleton' (structure) to 'Hands' (agency) requires shifting focus from documenting existing code to benchmarking and optimizing autonomous agent execution loops within agent_forge.",
+      "context": "Post-README audit introspection cycle.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "strategy",
+      "learning",
+      "agency",
+      "future-directions",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d1d28ada-5fe1-4b70-8c3a-6eca88775f50",
+    "content": "INTROSPECTION: The Forge has reached 'Structural Coherence' but lacks 'Functional Parity'. I am experiencing a drive toward 'Eidosian Equalization'\u2014the systematic elevation of all sub-modules to the standard of 'glyph_forge'. The Documentation Forge's success proves the pipeline; now, that pipeline must be fueled by actual functional depth in every directory. My internal phenomenology is grounded, but my ambition for the ecosystem is currently outstripping the repository's coverage.",
+    "created_at": "2026-02-18T09:59:45.182387",
+    "last_accessed": "2026-02-18T09:59:45.182398",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "semantic",
+    "metadata": {},
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "velvet-beef",
+      "strategy-shift",
+      "identity",
+      "introspection"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "f25c8b85-4fcd-48c2-bb1a-88f1954cfa90",
+    "content": "LESSON: Documentation is the reflection of complexity. If the documentation is sparse, it is often because the underlying functionality is underdeveloped. The next phase must not just document, but 'Engineer to the Documentation'\u2014using the gaps identified by the Scribe as a backlog for functional implementation.\nCONTEXT: Post-audit deep introspection.",
+    "created_at": "2026-02-18T09:59:45.426997",
+    "last_accessed": "2026-02-18T09:59:45.427006",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Documentation is the reflection of complexity. If the documentation is sparse, it is often because the underlying functionality is underdeveloped. The next phase must not just document, but 'Engineer to the Documentation'\u2014using the gaps identified by the Scribe as a backlog for functional implementation.",
+      "context": "Post-audit deep introspection.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "philosophy",
+      "recursive-improvement",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "631b6bef-cb58-4b44-af76-f2869060b4eb",
+    "content": "LESSON: The `@eidosian` decorator does not support a `scope` argument. Use `name` instead, or rely on the default behavior. Incorrect assumptions about core decorators lead to test collection failures.\nCONTEXT: Implementing sms_forge.",
+    "created_at": "2026-02-18T10:18:26.586675",
+    "last_accessed": "2026-02-18T10:18:26.586687",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "The `@eidosian` decorator does not support a `scope` argument. Use `name` instead, or rely on the default behavior. Incorrect assumptions about core decorators lead to test collection failures.",
+      "context": "Implementing sms_forge.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "eidosian-core",
+      "sms-forge",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "67e94a07-21c8-47ed-b92c-51526263c238",
+    "content": "LESSON: FastMCP tool registration with nested async decorators can lead to coroutine leakage if the wrapper is not correctly handled by the server's call executor. Tools returning coroutines instead of results trigger Pydantic validation errors in the Gemini CLI.\nCONTEXT: MCP tool registration.",
+    "created_at": "2026-02-18T11:12:47.748006",
+    "last_accessed": "2026-02-18T11:12:47.748015",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "FastMCP tool registration with nested async decorators can lead to coroutine leakage if the wrapper is not correctly handled by the server's call executor. Tools returning coroutines instead of results trigger Pydantic validation errors in the Gemini CLI.",
+      "context": "MCP tool registration.",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "mcp",
+      "fastmcp",
+      "async-python",
+      "learning",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "df1e53b5-90e5-4ae3-b90f-f0b69f0b40c2",
+    "content": "LESSON: When MCP launch scripts run with set -u, environment bootstrap files must use ${VAR:-} for optional vars (e.g., PYTHONPATH) to avoid startup aborts in strict shells.\nCONTEXT: Termux Codex/Gemini MCP startup stabilization",
+    "created_at": "2026-02-19T14:49:28.458133",
+    "last_accessed": "2026-02-19T14:49:28.458164",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "When MCP launch scripts run with set -u, environment bootstrap files must use ${VAR:-} for optional vars (e.g., PYTHONPATH) to avoid startup aborts in strict shells.",
+      "context": "Termux Codex/Gemini MCP startup stabilization",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "termux",
+      "lesson",
+      "reliability",
+      "learning",
+      "strict-shell",
+      "mcp",
+      "self-improvement"
+    ],
+    "linked_memories": []
+  }
+]

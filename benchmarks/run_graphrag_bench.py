@@ -3,9 +3,15 @@ import subprocess
 import time
 import shutil
 import yaml
+import json
+import argparse
+import cProfile
+import pstats
+import io
 import urllib.request
 import urllib.error
 from pathlib import Path
+from datetime import datetime, timezone
 
 # Configuration
 MODELS_DIR = Path("models")
@@ -17,6 +23,7 @@ INPUT_DATA_DIR = Path("data/graphrag_test/input")
 WORKSPACE_DIR = Path("data/graphrag_test/workspace")
 VENV_PYTHON = Path("eidosian_venv/bin/python3")
 LOGS_DIR = Path("logs")
+REPORTS_DIR = Path("reports/graphrag")
 
 # Ports
 LLM_PORT = 8081
@@ -209,7 +216,7 @@ def create_settings():
     with open(WORKSPACE_DIR / "settings.yaml", "w") as f:
         yaml.dump(settings, f)
 
-def run_benchmark():
+def run_benchmark(query: str) -> dict:
     print("--- Starting GraphRAG Benchmark ---")
     llm_model = resolve_model(LLM_MODEL, LLM_MODEL_FALLBACK)
     embed_model = resolve_model(EMBED_MODEL)
@@ -246,16 +253,54 @@ def run_benchmark():
         start_time = time.time()
         
         query_cmd = [
-            str(VENV_PYTHON), "-m", "graphrag", "query",
-            "--root", str(WORKSPACE_DIR),
-            "--method", "global",
-            "--query", "What is the relationship between Kael and Seraphina?"
+            str(VENV_PYTHON),
+            "-m",
+            "graphrag",
+            "query",
+            "--root",
+            str(WORKSPACE_DIR),
+            "--method",
+            "global",
+            query,
         ]
         result = subprocess.run(query_cmd, capture_output=True, text=True)
-        
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"GraphRAG query failed with exit {result.returncode}: {result.stderr.strip() or result.stdout.strip()}"
+            )
+
         query_duration = time.time() - start_time
+        raw_query_text = result.stdout.strip() or result.stderr.strip()
+        filtered_lines = []
+        for line in raw_query_text.splitlines():
+            trimmed = line.strip()
+            if not trimmed:
+                continue
+            if trimmed.startswith("DEBUG:"):
+                continue
+            if trimmed.startswith("💎 "):
+                continue
+            filtered_lines.append(trimmed)
+        query_text = "\n".join(filtered_lines) if filtered_lines else raw_query_text
         print(f"[Benchmark] Global Query complete in {query_duration:.2f} seconds.")
-        print(f"Output: {result.stdout.strip()}")
+        print(f"Output: {query_text}")
+        benchmark_result = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "llm_model": str(llm_model),
+            "embed_model": str(embed_model),
+            "index_seconds": round(index_duration, 3),
+            "query_seconds": round(query_duration, 3),
+            "query": query,
+            "query_output": query_text,
+            "query_output_chars": len(query_text),
+            "workspace_root": str(WORKSPACE_DIR),
+        }
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_path = REPORTS_DIR / f"bench_metrics_{stamp}.json"
+        report_path.write_text(json.dumps(benchmark_result, indent=2) + "\n")
+        print(f"[Benchmark] Metrics saved to {report_path}")
+        return benchmark_result
         
     except subprocess.CalledProcessError as e:
         print(f"Error during benchmark: {e}")
@@ -273,4 +318,33 @@ def run_benchmark():
         embed_log.close()
 
 if __name__ == "__main__":
-    run_benchmark()
+    parser = argparse.ArgumentParser(description="Run GraphRAG benchmark with local llama.cpp backends.")
+    parser.add_argument(
+        "--query",
+        default="What is the relationship between Kael and Seraphina?",
+        help="Global query prompt for the benchmark.",
+    )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable cProfile and save profile + top functions report.",
+    )
+    args = parser.parse_args()
+
+    if args.profile:
+        profiler = cProfile.Profile()
+        profiler.enable()
+        run_benchmark(args.query)
+        profiler.disable()
+        REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        prof_path = REPORTS_DIR / f"bench_profile_{stamp}.prof"
+        txt_path = REPORTS_DIR / f"bench_profile_{stamp}.txt"
+        profiler.dump_stats(prof_path)
+        stats_buffer = io.StringIO()
+        pstats.Stats(profiler, stream=stats_buffer).sort_stats("cumulative").print_stats(40)
+        txt_path.write_text(stats_buffer.getvalue())
+        print(f"[Benchmark] Profile saved to {prof_path}")
+        print(f"[Benchmark] Profile summary saved to {txt_path}")
+    else:
+        run_benchmark(args.query)
