@@ -751,6 +751,19 @@
         ]
       },
       "links": []
+    },
+    "8069094c-4798-4f9f-9361-5bfe620e5508": {
+      "id": "8069094c-4798-4f9f-9361-5bfe620e5508",
+      "content": "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A).",
+      "metadata": {
+        "tags": [
+          "quality-gate",
+          "model-selection",
+          "benchmark",
+          "graphrag"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
