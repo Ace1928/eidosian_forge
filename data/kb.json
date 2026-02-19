@@ -777,6 +777,19 @@
         ]
       },
       "links": []
+    },
+    "2c0101c6-e1d1-4adc-83fd-ce4466ac6d4e": {
+      "id": "2c0101c6-e1d1-4adc-83fd-ce4466ac6d4e",
+      "content": "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected.",
+      "metadata": {
+        "tags": [
+          "robustness",
+          "quality",
+          "evaluation",
+          "graphrag"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
