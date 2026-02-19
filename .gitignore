@@ -52,9 +52,15 @@ reports/benchmark_matrix.json
 reports/graphrag/*.log
 reports/graphrag/*.prof
 reports/graphrag/bench_profile_*.txt
+reports/graphrag/bench_metrics_*.json
+reports/graphrag/qualitative_assessment_*.json
+reports/graphrag/qualitative_assessment_*.md
 benchmarks/eidosian_consensus_bench.py
 models/Llama-3.2-1B-Instruct-Q8_0.gguf
 models/Qwen2.5-0.5B-Instruct-Q8_0.gguf
+models/nomic-embed-text-v1.5.Q4_K_M.gguf
+models/.cache/
+llama.cpp/
 
 # Models (handled by LFS, but ignore local copies if not tracked)
 # models/*.gguf  <-- Commented out as we want to track them with LFS

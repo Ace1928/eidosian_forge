@@ -8,6 +8,7 @@ import argparse
 import cProfile
 import pstats
 import io
+import pandas as pd
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -15,9 +16,24 @@ from datetime import datetime, timezone
 
 # Configuration
 MODELS_DIR = Path("models")
-LLM_MODEL = MODELS_DIR / "qwen2.5-1.5b-instruct-q8_0.gguf"
-LLM_MODEL_FALLBACK = MODELS_DIR / "Qwen2.5-0.5B-Instruct-Q8_0.gguf"
-EMBED_MODEL = MODELS_DIR / "nomic-embed-text-v1.5.Q4_K_M.gguf"
+LLM_MODEL = Path(
+    os.environ.get(
+        "EIDOS_GRAPHRAG_LLM_MODEL",
+        str(MODELS_DIR / "Qwen2.5-0.5B-Instruct-Q8_0.gguf"),
+    )
+)
+LLM_MODEL_FALLBACK = Path(
+    os.environ.get(
+        "EIDOS_GRAPHRAG_LLM_MODEL_FALLBACK",
+        str(MODELS_DIR / "Llama-3.2-1B-Instruct-Q8_0.gguf"),
+    )
+)
+EMBED_MODEL = Path(
+    os.environ.get(
+        "EIDOS_GRAPHRAG_EMBED_MODEL",
+        str(MODELS_DIR / "nomic-embed-text-v1.5.Q4_K_M.gguf"),
+    )
+)
 LLAMA_SERVER_BIN = Path("llama.cpp/build/bin/llama-server")
 INPUT_DATA_DIR = Path("data/graphrag_test/input")
 WORKSPACE_DIR = Path("data/graphrag_test/workspace")
@@ -28,6 +44,70 @@ REPORTS_DIR = Path("reports/graphrag")
 # Ports
 LLM_PORT = 8081
 EMBED_PORT = 8082
+QUERY_METHOD = os.environ.get("EIDOS_GRAPHRAG_QUERY_METHOD", "global")
+
+PLACEHOLDER_MARKERS = ("auto-generated placeholder", "fallback generated")
+EXPECTED_STORY_TERMS = ("alaric", "seraphina", "kael", "malakar", "eidos", "crystal", "whispering caves")
+NON_ANSWER_MARKERS = (
+    "i am sorry",
+    "unable to answer",
+    "insufficient",
+    "i don't know",
+    "i do not know",
+)
+COMMUNITY_REPORT_TEXT_PROMPT_MINIMAL = """
+You are generating a strict JSON community report from provided source text.
+
+Rules:
+- Use only facts from the provided Text.
+- Never use Enron/example/template content.
+- If information is absent, state that clearly instead of inventing.
+- Keep output concise and grounded.
+- Return exactly one JSON object and no prose outside JSON.
+- Use short plain strings and avoid nested quotes inside values.
+
+Return a single valid JSON object with keys:
+- title (string)
+- summary (string)
+- rating (number 0-10)
+- rating_explanation (string)
+- findings (array of 3 to 5 objects with keys summary and explanation)
+- Findings should cover key actors, conflict, and relationship details present in Text.
+- Include named entities from Text when evidence exists.
+- Use entity names exactly as they appear in Text.
+
+Text:
+{input_text}
+
+Output JSON:
+"""
+
+COMMUNITY_REPORT_GRAPH_PROMPT_MINIMAL = """
+You are generating a strict JSON community report from entity/relationship context.
+
+Rules:
+- Use only facts from the provided Text block.
+- Never use tutorial/example/template content.
+- Mention concrete entities from the Text in title, summary, and findings.
+- If information is missing, say "insufficient evidence" for that point.
+- Return exactly one JSON object and no prose outside JSON.
+- Use short plain strings and avoid nested quotes inside values.
+- Use 3 to 5 findings and preserve relationship details.
+
+Return one valid JSON object:
+{
+  "title": "...",
+  "summary": "...",
+  "rating": <0-10>,
+  "rating_explanation": "...",
+  "findings": [{"summary":"...","explanation":"..."}]
+}
+
+Text:
+{input_text}
+
+Output JSON:
+"""
 
 
 def resolve_model(primary: Path, fallback: Path | None = None) -> Path:
@@ -81,11 +161,14 @@ def setup_data():
     (WORKSPACE_DIR / "input" / "story.txt").write_text(story)
 
 def start_server(model_path, port, embedding=False):
+    ctx_size = os.environ.get("EIDOS_LLAMA_CTX_SIZE", "4096")
+    temperature = os.environ.get("EIDOS_LLAMA_TEMPERATURE", "0")
     cmd = [
         str(LLAMA_SERVER_BIN),
         "-m", str(model_path),
         "--port", str(port),
-        "--ctx-size", "2048",
+        "--ctx-size", str(ctx_size),
+        "--temp", str(temperature),
         "--n-gpu-layers", os.environ.get("EIDOS_LLAMA_GPU_LAYERS", "0"),
     ]
     if embedding:
@@ -93,9 +176,10 @@ def start_server(model_path, port, embedding=False):
         cmd.append("--pooling")
         cmd.append("mean")
     else:
-        # Optimization for chat
+        # Keep parallel at 1 so each slot gets full ctx-size for GraphRAG prompts.
+        parallel_slots = os.environ.get("EIDOS_LLAMA_PARALLEL", "1")
         cmd.append("--parallel")
-        cmd.append("2")
+        cmd.append(str(parallel_slots))
         
     print(f"Starting server on port {port} with model {model_path}...")
     # Redirect output to file to keep console clean
@@ -108,19 +192,84 @@ def start_server(model_path, port, embedding=False):
     wait_for_http(f"http://127.0.0.1:{port}/health", timeout_s=60.0)
     return process, log_file
 
+
+def validate_pipeline_outputs() -> dict:
+    output_dir = WORKSPACE_DIR / "output"
+    reports_path = output_dir / "community_reports.parquet"
+    if not reports_path.exists():
+        raise RuntimeError(f"Missing community reports output: {reports_path}")
+    reports_df = pd.read_parquet(reports_path)
+    if reports_df.empty:
+        raise RuntimeError("Community reports output is empty.")
+
+    placeholder_rows = []
+    relevance_fail_rows = []
+    schema_fail_rows = []
+    for idx, row in reports_df.iterrows():
+        summary = str(row.get("summary", "")).lower()
+        full_content = str(row.get("full_content", "")).lower()
+        if any(marker in summary or marker in full_content for marker in PLACEHOLDER_MARKERS):
+            placeholder_rows.append(idx)
+        term_hits = [term for term in EXPECTED_STORY_TERMS if term in summary or term in full_content]
+        if len(term_hits) < 2:
+            relevance_fail_rows.append({"row": int(idx), "term_hits": term_hits})
+        findings = row.get("findings", None)
+        title = str(row.get("title", "")).strip()
+        rating = row.get("rating", row.get("rank", None))
+        if not title or findings is None or pd.isna(rating):
+            schema_fail_rows.append(
+                {
+                    "row": int(idx),
+                    "title_present": bool(title),
+                    "has_findings": findings is not None,
+                    "has_rating": not pd.isna(rating) if rating is not None else False,
+                }
+            )
+
+    if placeholder_rows:
+        raise RuntimeError(
+            f"Placeholder/fallback community reports detected at rows {placeholder_rows}; "
+            "GraphRAG output is not production-ready."
+        )
+    if relevance_fail_rows:
+        raise RuntimeError(
+            "Community report relevance validation failed. Expected story entities missing: "
+            f"{relevance_fail_rows}"
+        )
+    if schema_fail_rows:
+        raise RuntimeError(
+            "Community report schema validation failed for rows: "
+            f"{schema_fail_rows}"
+        )
+
+    return {
+        "community_reports_rows": int(len(reports_df)),
+        "placeholder_rows": int(len(placeholder_rows)),
+        "relevance_fail_rows": int(len(relevance_fail_rows)),
+        "schema_fail_rows": int(len(schema_fail_rows)),
+    }
+
 def create_settings():
+    prompts_dir = WORKSPACE_DIR / "prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+    text_prompt_path = (prompts_dir / "community_report_text_minimal.txt").resolve()
+    graph_prompt_path = (prompts_dir / "community_report_graph_minimal.txt").resolve()
+    text_prompt_path.write_text(COMMUNITY_REPORT_TEXT_PROMPT_MINIMAL.strip() + "\n")
+    graph_prompt_path.write_text(COMMUNITY_REPORT_GRAPH_PROMPT_MINIMAL.strip() + "\n")
+
     settings = {
         "completion_models": {
             "default_completion_model": {
                 "type": "litellm",
                 "model_provider": "openai",
-                "model": "qwen2.5-1.5b",
+                "model": "qwen2.5-0.5b-local",
                 "auth_method": "api_key",
                 "api_key": "sk-no-key-required",
                 "api_base": f"http://127.0.0.1:{LLM_PORT}/v1",
                 "call_args": {
                     "temperature": 0.0,
-                    "max_completion_tokens": 2048,
+                    "max_completion_tokens": int(os.environ.get("EIDOS_GRAPHRAG_MAX_COMPLETION_TOKENS", "512")),
+                    "max_tokens": int(os.environ.get("EIDOS_GRAPHRAG_MAX_TOKENS", "512")),
                 },
             }
         },
@@ -185,6 +334,10 @@ def create_settings():
         },
         "community_reports": {
             "completion_model_id": "default_completion_model",
+            "graph_prompt": str(graph_prompt_path),
+            "text_prompt": str(text_prompt_path),
+            "max_length": 400,
+            "max_input_length": 4000,
         },
         "prune_graph": {
             "min_node_freq": 1,
@@ -218,6 +371,8 @@ def create_settings():
 
 def run_benchmark(query: str) -> dict:
     print("--- Starting GraphRAG Benchmark ---")
+    if os.environ.get("EIDOS_GRAPHRAG_ALLOW_PLACEHOLDER", "0").strip().lower() in {"1", "true", "yes", "on"}:
+        raise RuntimeError("EIDOS_GRAPHRAG_ALLOW_PLACEHOLDER must be disabled for production benchmark runs.")
     llm_model = resolve_model(LLM_MODEL, LLM_MODEL_FALLBACK)
     embed_model = resolve_model(EMBED_MODEL)
     setup_data()
@@ -247,9 +402,16 @@ def run_benchmark(query: str) -> dict:
         
         index_duration = time.time() - start_time
         print(f"[Benchmark] Indexing complete in {index_duration:.2f} seconds.")
+        output_quality = validate_pipeline_outputs()
+        print(
+            f"[Benchmark] Output validation complete: "
+            f"community_reports_rows={output_quality['community_reports_rows']}, "
+            f"placeholder_rows={output_quality['placeholder_rows']}, "
+            f"relevance_fail_rows={output_quality['relevance_fail_rows']}."
+        )
         
-        # 2. Query Benchmark (Global)
-        print("\n[Benchmark] Starting Global Query...")
+        # 2. Query Benchmark
+        print(f"\n[Benchmark] Starting {QUERY_METHOD.title()} Query...")
         start_time = time.time()
         
         query_cmd = [
@@ -260,7 +422,9 @@ def run_benchmark(query: str) -> dict:
             "--root",
             str(WORKSPACE_DIR),
             "--method",
-            "global",
+            QUERY_METHOD,
+            "--response-type",
+            "Single Sentence",
             query,
         ]
         result = subprocess.run(query_cmd, capture_output=True, text=True)
@@ -282,7 +446,10 @@ def run_benchmark(query: str) -> dict:
                 continue
             filtered_lines.append(trimmed)
         query_text = "\n".join(filtered_lines) if filtered_lines else raw_query_text
-        print(f"[Benchmark] Global Query complete in {query_duration:.2f} seconds.")
+        lowered_query = query_text.lower()
+        if any(marker in lowered_query for marker in NON_ANSWER_MARKERS):
+            raise RuntimeError(f"Query output is non-informative: {query_text}")
+        print(f"[Benchmark] {QUERY_METHOD.title()} Query complete in {query_duration:.2f} seconds.")
         print(f"Output: {query_text}")
         benchmark_result = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -291,9 +458,11 @@ def run_benchmark(query: str) -> dict:
             "index_seconds": round(index_duration, 3),
             "query_seconds": round(query_duration, 3),
             "query": query,
+            "query_method": QUERY_METHOD,
             "query_output": query_text,
             "query_output_chars": len(query_text),
             "workspace_root": str(WORKSPACE_DIR),
+            "output_quality": output_quality,
         }
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -304,16 +473,23 @@ def run_benchmark(query: str) -> dict:
         
     except subprocess.CalledProcessError as e:
         print(f"Error during benchmark: {e}")
-        # Only print stderr if available
-        # subprocess.run raises CalledProcessError but stderr isn't captured unless capture_output=True
-        # For index_cmd we didn't capture, so it's in stdout.
+        raise
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        raise
     finally:
         # Cleanup
         print("\nStopping servers...")
         llm_proc.terminate()
         embed_proc.terminate()
+        try:
+            llm_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            llm_proc.kill()
+        try:
+            embed_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            embed_proc.kill()
         llm_log.close()
         embed_log.close()
 
@@ -322,7 +498,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--query",
         default="What is the relationship between Kael and Seraphina?",
-        help="Global query prompt for the benchmark.",
+        help="Query prompt for the benchmark.",
     )
     parser.add_argument(
         "--profile",

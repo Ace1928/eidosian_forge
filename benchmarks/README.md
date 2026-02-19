@@ -1,12 +1,24 @@
 # Benchmarks
 
 ## GraphRAG Runtime Benchmark
-Use `run_graphrag_bench.py` to run end-to-end GraphRAG indexing + global query against local `llama.cpp` servers.
+Use `run_graphrag_bench.py` to run end-to-end GraphRAG indexing + query against local `llama.cpp` servers with strict output quality gates.
 
 ### Run
 ```bash
 ./eidosian_venv/bin/python benchmarks/run_graphrag_bench.py
 ```
+
+### Strict quality gates
+- Placeholder community reports are blocked (`EIDOS_GRAPHRAG_ALLOW_PLACEHOLDER` must stay disabled).
+- Community reports are validated for schema completeness and entity relevance.
+- Non-informative query answers fail the run.
+- Benchmark exits non-zero on any failed stage.
+
+### Key env toggles
+- `EIDOS_GRAPHRAG_QUERY_METHOD` (default `global`)
+- `EIDOS_GRAPHRAG_LLM_MODEL` / `EIDOS_GRAPHRAG_LLM_MODEL_FALLBACK`
+- `EIDOS_GRAPHRAG_MAX_COMPLETION_TOKENS` / `EIDOS_GRAPHRAG_MAX_TOKENS`
+- `EIDOS_LLAMA_CTX_SIZE` / `EIDOS_LLAMA_PARALLEL` / `EIDOS_LLAMA_TEMPERATURE`
 
 ### With profiler
 ```bash
@@ -27,6 +39,15 @@ Use `graphrag_qualitative_assessor.py` to score GraphRAG artifacts with determin
 ./eidosian_venv/bin/python benchmarks/graphrag_qualitative_assessor.py \
   --workspace-root data/graphrag_test/workspace \
   --report-dir reports/graphrag
+```
+
+### Deterministic-only mode
+```bash
+./eidosian_venv/bin/python benchmarks/graphrag_qualitative_assessor.py \
+  --workspace-root data/graphrag_test/workspace \
+  --report-dir reports/graphrag \
+  --metrics-json reports/graphrag/bench_metrics_<stamp>.json \
+  --skip-judges
 ```
 
 ### Deterministic contract dimensions

@@ -451,6 +451,10 @@ def aggregate_scores(deterministic: dict[str, float], judge_assessments: list[di
         for dim, values in per_dim.items()
     }
     judge_score = sum(judge_median.values()) / len(judge_dimensions)
+    if not valid_assessments:
+        judge_score = deterministic_objective
+        judge_median = {dim: deterministic_objective for dim in judge_dimensions}
+        judge_spread = {dim: 0.0 for dim in judge_dimensions}
 
     disagreement = 0.0
     all_totals: list[float] = []

@@ -77,3 +77,17 @@ def test_aggregate_scores_outputs_rank_and_penalizes_disagreement() -> None:
 def test_validate_contract_requires_keys() -> None:
     with pytest.raises(ValueError):
         mod.validate_contract({"contract_version": mod.CONTRACT_VERSION})
+
+
+def test_aggregate_scores_without_judges_uses_deterministic_baseline() -> None:
+    deterministic = {
+        "pipeline_integrity": 1.0,
+        "workflow_completeness": 1.0,
+        "entity_coverage": 1.0,
+        "relationship_density": 1.0,
+        "community_report_quality": 1.0,
+        "query_answer_quality": 1.0,
+        "runtime_score": 1.0,
+    }
+    agg = mod.aggregate_scores(deterministic, [])
+    assert agg["judge_score"] == agg["deterministic_objective"]
