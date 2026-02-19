@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import hashlib
+import builtins
 
 class CodeAnalyzer:
     """Analyzes Python source code using the AST module."""
@@ -53,6 +54,7 @@ class CodeAnalyzer:
             "classes": [],
             "functions": [],
             "imports": [],
+            "edges": [],
             "docstring": ast.get_docstring(node),
             "module": {
                 "docstring": ast.get_docstring(node),
@@ -75,7 +77,7 @@ class CodeAnalyzer:
             parts = []
             cur = n
             while cur in parent_map:
-                if isinstance(cur, ast.FunctionDef):
+                if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     parts.append(cur.name)
                 if isinstance(cur, ast.ClassDef):
                     parts.append(cur.name)
@@ -138,6 +140,49 @@ class CodeAnalyzer:
                 }
             )
 
+        def owner_qualified_name_for(n: ast.AST) -> str:
+            cur = n
+            while cur in parent_map:
+                cur = parent_map[cur]
+                if isinstance(cur, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                    owner_qn = qualified_name_for(cur)
+                    if owner_qn:
+                        return owner_qn
+            return "__module__"
+
+        def expr_to_name(expr: ast.AST) -> Optional[str]:
+            if isinstance(expr, ast.Name):
+                return expr.id
+            if isinstance(expr, ast.Attribute):
+                parts: list[str] = []
+                cur: Optional[ast.AST] = expr
+                while isinstance(cur, ast.Attribute):
+                    parts.append(cur.attr)
+                    cur = cur.value
+                if isinstance(cur, ast.Name):
+                    parts.append(cur.id)
+                    return ".".join(reversed(parts))
+                return expr.attr
+            return None
+
+        edge_set: set[Tuple[str, str, str]] = set()
+        use_set: set[Tuple[str, str, str]] = set()
+        builtin_names = set(dir(builtins))
+
+        def add_edge(rel_type: str, source_qn: str, target: str) -> None:
+            key = (rel_type, source_qn, target)
+            if key in edge_set:
+                return
+            edge_set.add(key)
+            summary["edges"].append(
+                {
+                    "rel_type": rel_type,
+                    "source_qualified_name": source_qn,
+                    "target": target,
+                    "confidence": 1.0,
+                }
+            )
+
         for child in ast.iter_child_nodes(node):
             if isinstance(child, ast.ClassDef):
                 line_start, line_end, col_start, col_end = self._node_span(child)
@@ -179,6 +224,31 @@ class CodeAnalyzer:
                 summary["imports"].extend(names)
 
         for n in ast.walk(node):
+            source_owner = owner_qualified_name_for(n)
+            if isinstance(n, ast.Import):
+                for alias in n.names:
+                    target = alias.name
+                    summary["imports"].append(target)
+                    add_edge("imports", source_owner, target)
+            elif isinstance(n, ast.ImportFrom):
+                module_name = n.module or ""
+                for alias in n.names:
+                    target = f"{module_name}.{alias.name}" if module_name else alias.name
+                    summary["imports"].append(target)
+                    add_edge("imports", source_owner, target)
+            elif isinstance(n, ast.Call):
+                called = expr_to_name(n.func)
+                if called:
+                    add_edge("calls", source_owner, called)
+            elif isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load):
+                if n.id in builtin_names:
+                    continue
+                use_key = ("uses", source_owner, n.id)
+                if use_key in use_set:
+                    continue
+                use_set.add(use_key)
+                add_edge("uses", source_owner, n.id)
+
             if isinstance(n, ast.ClassDef):
                 add_node(n, "class", n.name)
             elif isinstance(n, ast.FunctionDef):
@@ -212,5 +282,15 @@ class CodeAnalyzer:
                 add_node(n, "gen_exp", "gen_exp")
             elif isinstance(n, ast.Lambda):
                 add_node(n, "lambda", "lambda")
+
+        # Preserve import order while removing duplicates.
+        seen_imports: set[str] = set()
+        unique_imports: list[str] = []
+        for imp in summary["imports"]:
+            if imp in seen_imports:
+                continue
+            seen_imports.add(imp)
+            unique_imports.append(imp)
+        summary["imports"] = unique_imports
 
         return summary

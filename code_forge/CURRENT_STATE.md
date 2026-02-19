@@ -17,6 +17,9 @@
   - normalized duplicate groups
   - near-duplicate pairs (SimHash/Hamming)
 - Hybrid semantic search (FTS5 when available, lexical fallback otherwise).
+- Relationship extraction and graphing:
+  - `imports`, `calls`, `uses` edge ingestion
+  - `dependency_graph.json` artifact generation
 - Archive digester artifacts:
   - `repo_index.json`
   - `duplication_index.json`
@@ -28,6 +31,8 @@
 ## Validation
 
 - Test suite expanded and passing under `eidosian_venv` (`code_forge/tests`).
+- Benchmark suite implemented with baseline-aware regression gates.
+- Canonical migration planner implemented with staged compatibility shim generation.
 - Ingestion remains idempotent via `file_records` and `ANALYSIS_VERSION` gates.
 - Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
 

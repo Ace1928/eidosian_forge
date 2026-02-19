@@ -17,6 +17,10 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Normalization/tokenization/fingerprint primitives (`normalized_hash`, `simhash64`).
 - `digester/pipeline.py`
   - Archive Digester orchestration (intake -> dedup -> triage -> integration exports).
+- `bench/runner.py`
+  - Repeatable ingestion/search/graph benchmark suite with regression gates.
+- `canonicalize/planner.py`
+  - Canonical migration map generation and compatibility shim staging.
 - `integration/pipeline.py`
   - Knowledge Forge sync and GraphRAG corpus export.
 - `cli.py`
@@ -44,7 +48,11 @@ Unit-level search corpus used by:
 - lexical fallback path
 
 ### `relationships`
-Typed edges (`contains` today) for structural traversal and trace output.
+Typed edges for structural and semantic traversal:
+- `contains`
+- `imports`
+- `calls`
+- `uses`
 
 ## Archive Digester Stages
 
@@ -66,6 +74,21 @@ Typed edges (`contains` today) for structural traversal and trace output.
 ### Stage D: Integration
 - optional Knowledge Forge sync
 - optional GraphRAG corpus export
+- dependency graph export (`dependency_graph.json`)
+
+### Stage E: Canonicalization Planning
+- consume triage outputs
+- build migration map from source -> canonical targets
+- generate optional staged compatibility shims
+
+## Benchmark and Regression Gates
+
+`bench/runner.py` produces measurable artifacts for:
+- ingestion throughput (`files/s`, `units/s`)
+- semantic search latency (`mean`, `p50`, `p95`, `max`)
+- dependency graph build latency
+
+When a baseline exists, gate checks fail on configured regressions.
 
 ## Safety and Idempotency
 

@@ -1,14 +1,14 @@
 # Code Forge TODO
 
 ## Critical
-- [ ] Add ingestion/query benchmarks with reproducible fixtures and JSON outputs.
+- [x] Add ingestion/query benchmarks with reproducible fixtures and JSON outputs.
 - [ ] Add coverage report target enforcement for `code_forge/src/code_forge`.
 - [ ] Implement canonical extraction generator + migration map artifact.
 
 ## High Priority
-- [ ] Add call/import/reference edge extraction to relationship graph.
+- [x] Add call/import/reference edge extraction to relationship graph.
 - [ ] Add triage confidence score and full rule audit trail output.
-- [ ] Add CLI command for benchmark execution and baseline comparison.
+- [x] Add CLI command for benchmark execution and baseline comparison.
 - [ ] Add strict schema validation for digester artifacts.
 
 ## Medium Priority

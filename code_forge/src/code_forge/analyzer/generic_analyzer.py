@@ -116,9 +116,26 @@ class GenericCodeAnalyzer:
         nodes: list[dict[str, Any]] = []
         classes: list[dict[str, Any]] = []
         functions: list[dict[str, Any]] = []
+        imports: list[str] = []
+        edges: list[dict[str, Any]] = []
 
         seen_signatures: set[tuple[str, str, int]] = set()
         active_parent: Optional[str] = None
+        edge_seen: set[tuple[str, str, str]] = set()
+
+        def add_edge(rel_type: str, source_qn: str, target: str) -> None:
+            key = (rel_type, source_qn, target)
+            if key in edge_seen:
+                return
+            edge_seen.add(key)
+            edges.append(
+                {
+                    "rel_type": rel_type,
+                    "source_qualified_name": source_qn,
+                    "target": target,
+                    "confidence": 0.6,
+                }
+            )
 
         for line_no, line in enumerate(lines, start=1):
             stripped = line.strip()
@@ -126,6 +143,25 @@ class GenericCodeAnalyzer:
                 continue
             if stripped.startswith(("//", "#", "*", "/*", "*/", "<!--")):
                 continue
+
+            owner_qn = active_parent or "__module__"
+
+            import_match = re.match(r"^(?:import|from)\s+([A-Za-z0-9_./-]+)", stripped)
+            if import_match:
+                target = import_match.group(1).replace("/", ".")
+                imports.append(target)
+                add_edge("imports", owner_qn, target)
+
+            require_match = re.findall(r"(?:require|import)\s*\(\s*[\"']([^\"']+)[\"']\s*\)", stripped)
+            for target in require_match:
+                imports.append(target)
+                add_edge("imports", owner_qn, target)
+
+            call_matches = re.findall(r"\b([A-Za-z_][A-Za-z0-9_.]{1,120})\s*\(", stripped)
+            for called in call_matches:
+                if called in {"if", "for", "while", "switch", "catch", "return"}:
+                    continue
+                add_edge("calls", owner_qn, called)
 
             for unit_type, pattern in self._patterns:
                 match = pattern.search(stripped)
@@ -197,7 +233,7 @@ class GenericCodeAnalyzer:
             "language": language,
             "classes": classes,
             "functions": functions,
-            "imports": [],
+            "imports": sorted(set(imports)),
             "docstring": None,
             "module": {
                 "docstring": None,
@@ -209,4 +245,5 @@ class GenericCodeAnalyzer:
                 "col_end": len(lines[-1]) if lines else 0,
             },
             "nodes": nodes,
+            "edges": edges,
         }

@@ -146,6 +146,13 @@ class CodeLibraryDB:
                     ON code_fingerprints(simhash64);
                 CREATE INDEX IF NOT EXISTS idx_code_fp_token_count
                     ON code_fingerprints(token_count);
+
+                CREATE INDEX IF NOT EXISTS idx_relationships_parent_type
+                    ON relationships(parent_id, rel_type);
+                CREATE INDEX IF NOT EXISTS idx_relationships_child_type
+                    ON relationships(child_id, rel_type);
+                CREATE INDEX IF NOT EXISTS idx_relationships_type
+                    ON relationships(rel_type);
                 """
             )
 
@@ -379,6 +386,116 @@ class CodeLibraryDB:
                 """,
                 (parent_id, child_id, rel_type, _utc_now()),
             )
+
+    def relationship_counts(self) -> Dict[str, int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT rel_type, COUNT(*) AS c
+                FROM relationships
+                GROUP BY rel_type
+                ORDER BY c DESC
+                """
+            ).fetchall()
+        return {str(r["rel_type"]): int(r["c"]) for r in rows}
+
+    def list_relationships(
+        self,
+        rel_type: Optional[str] = None,
+        limit: int = 5000,
+    ) -> list[Dict[str, Any]]:
+        where = ""
+        params: list[Any] = []
+        if rel_type:
+            where = "WHERE r.rel_type = ?"
+            params.append(rel_type)
+        params.append(max(1, int(limit)))
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT
+                    r.rel_type,
+                    r.parent_id,
+                    r.child_id,
+                    p.qualified_name AS parent_qualified_name,
+                    p.file_path AS parent_file_path,
+                    p.unit_type AS parent_unit_type,
+                    c.qualified_name AS child_qualified_name,
+                    c.file_path AS child_file_path,
+                    c.unit_type AS child_unit_type
+                FROM relationships r
+                LEFT JOIN code_units p ON p.id = r.parent_id
+                LEFT JOIN code_units c ON c.id = r.child_id
+                {where}
+                ORDER BY r.id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def module_dependency_graph(
+        self,
+        rel_types: Optional[list[str]] = None,
+        limit_edges: int = 20000,
+    ) -> Dict[str, Any]:
+        rel_types = rel_types or ["imports", "calls", "uses"]
+        rel_types = [r for r in rel_types if r]
+        if not rel_types:
+            return {"nodes": [], "edges": [], "summary": {"edge_count": 0, "node_count": 0}}
+
+        placeholders = ",".join(["?"] * len(rel_types))
+        params: list[Any] = list(rel_types)
+        params.append(max(1, int(limit_edges)))
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT
+                    r.rel_type,
+                    p.file_path AS parent_file,
+                    c.file_path AS child_file,
+                    p.qualified_name AS parent_qn,
+                    c.qualified_name AS child_qn
+                FROM relationships r
+                JOIN code_units p ON p.id = r.parent_id
+                JOIN code_units c ON c.id = r.child_id
+                WHERE r.rel_type IN ({placeholders})
+                ORDER BY r.id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+
+        node_map: Dict[str, Dict[str, Any]] = {}
+        edge_counts: Dict[tuple[str, str, str], int] = {}
+        for row in rows:
+            src = str(row["parent_file"] or "__unknown__")
+            dst = str(row["child_file"] or "__unknown__")
+            rel = str(row["rel_type"] or "unknown")
+            if src not in node_map:
+                node_map[src] = {"id": src, "path": src}
+            if dst not in node_map:
+                node_map[dst] = {"id": dst, "path": dst}
+            key = (src, dst, rel)
+            edge_counts[key] = edge_counts.get(key, 0) + 1
+
+        edges = [
+            {"source": src, "target": dst, "rel_type": rel, "weight": weight}
+            for (src, dst, rel), weight in edge_counts.items()
+        ]
+        edges.sort(key=lambda e: (e["rel_type"], -int(e["weight"]), e["source"], e["target"]))
+
+        return {
+            "nodes": list(node_map.values()),
+            "edges": edges,
+            "summary": {
+                "node_count": len(node_map),
+                "edge_count": len(edges),
+                "relationship_rows": len(rows),
+                "rel_types": rel_types,
+            },
+        }
 
     def iter_units(self, limit: int = 1000) -> Iterable[Dict[str, Any]]:
         with self._connect() as conn:

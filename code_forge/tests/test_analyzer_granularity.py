@@ -24,3 +24,24 @@ def test_analyzer_detects_lambdas_and_comprehensions(tmp_path: Path) -> None:
     assert "gen_exp" in types
     assert "lambda" in types
     # BoolOp only appears when explicit boolean operators are used.
+
+
+def test_analyzer_emits_import_call_use_edges(tmp_path: Path) -> None:
+    f = tmp_path / "edges.py"
+    f.write_text(
+        "import math\n"
+        "from os import path\n"
+        "def helper(value):\n"
+        "    return math.floor(value)\n"
+        "def run(v):\n"
+        "    return helper(v) + (1 if path.exists('x') else 0)\n"
+    )
+
+    analyzer = CodeAnalyzer()
+    res = analyzer.analyze_file(f)
+    edges = res["edges"]
+    assert edges
+    rel_types = {edge["rel_type"] for edge in edges}
+    assert "imports" in rel_types
+    assert "calls" in rel_types
+    assert "uses" in rel_types

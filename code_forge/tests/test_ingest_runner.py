@@ -60,3 +60,29 @@ def test_ingest_parent_relationships(tmp_path: Path) -> None:
     units = list(db.iter_units(limit=50))
     qn_to_unit = {u["qualified_name"]: u for u in units if u.get("qualified_name")}
     assert "A" in qn_to_unit or "mod.A" in qn_to_unit
+
+
+def test_ingest_builds_import_call_use_edges(tmp_path: Path) -> None:
+    root = tmp_path / "proj"
+    root.mkdir()
+    (root / "mod.py").write_text(
+        "import math\n"
+        "def helper(x):\n"
+        "    return math.floor(x)\n"
+        "def runner(v):\n"
+        "    return helper(v)\n",
+        encoding="utf-8",
+    )
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    runner.ingest_path(root, mode="analysis")
+
+    rel_counts = db.relationship_counts()
+    assert rel_counts.get("imports", 0) >= 1
+    assert rel_counts.get("calls", 0) >= 1
+    assert rel_counts.get("uses", 0) >= 1
+
+    dep = db.module_dependency_graph(rel_types=["imports", "calls", "uses"], limit_edges=2000)
+    assert dep["summary"]["relationship_rows"] >= 1
+    assert dep["summary"]["edge_count"] >= 1

@@ -417,6 +417,11 @@ def run_code_analysis(
     repo_index = build_repo_index(repo_root, digester_dir, max_files=max_files)
     duplication_index = build_duplication_index(db, digester_dir, limit_groups=200, near_limit=200)
     triage = build_triage_report(db, repo_index, duplication_index, digester_dir)
+    dependency_graph = db.module_dependency_graph(rel_types=["imports", "calls", "uses"], limit_edges=20000)
+    (digester_dir / "dependency_graph.json").write_text(
+        json.dumps(dependency_graph, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     code_report = {
         "generated_at": _now_utc(),
@@ -436,6 +441,9 @@ def run_code_analysis(
         "duplication_index_path": str(digester_dir / "duplication_index.json"),
         "triage_path": str(digester_dir / "triage.json"),
         "triage_label_counts": triage.get("label_counts", {}),
+        "dependency_graph_path": str(digester_dir / "dependency_graph.json"),
+        "dependency_graph_summary": dependency_graph.get("summary", {}),
+        "relationship_counts": db.relationship_counts(),
     }
     report_path = report_dir / "code_analysis_report.json"
     report_path.write_text(json.dumps(code_report, indent=2) + "\n", encoding="utf-8")

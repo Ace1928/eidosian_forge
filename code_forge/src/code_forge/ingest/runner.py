@@ -49,6 +49,7 @@ class IngestionRunner:
         self.generic_analyzer = GenericCodeAnalyzer()
         self.runs_dir = Path(runs_dir)
         self.runs_dir.mkdir(parents=True, exist_ok=True)
+        self._external_unit_cache: Dict[str, str] = {}
 
     @staticmethod
     def _module_qualified_name(rel_path: str) -> str:
@@ -98,10 +99,26 @@ class IngestionRunner:
         for file_path in root_path.rglob("*"):
             if not file_path.is_file():
                 continue
-            if any(part in str(file_path) for part in exclude_patterns):
+            if self._is_excluded(file_path, exclude_patterns):
                 continue
             if file_path.suffix.lower() in extensions:
                 yield file_path
+
+    @staticmethod
+    def _is_excluded(file_path: Path, exclude_patterns: Iterable[str]) -> bool:
+        full = str(file_path)
+        parts = set(file_path.parts)
+        for pattern in exclude_patterns:
+            token = str(pattern or "").strip()
+            if not token:
+                continue
+            if "/" in token:
+                if token in full:
+                    return True
+                continue
+            if token in parts:
+                return True
+        return False
 
     def _scan_files(
         self,
@@ -208,6 +225,7 @@ class IngestionRunner:
             module_qn: module_id,
             file_path.stem: module_id,
         }
+        simple_name_to_qualified: Dict[str, str] = {}
 
         for node in nodes:
             node_source = str(node.get("source") or "")
@@ -248,10 +266,136 @@ class IngestionRunner:
             unit_id = self.db.add_unit(unit)
             self.db.add_relationship(parent_id, unit_id, "contains")
             id_by_qualified[qualified] = unit_id
+            if name and name not in simple_name_to_qualified:
+                simple_name_to_qualified[name] = qualified
             created += 1
+
+        self._ingest_edges(
+            analysis=analysis,
+            module_qn=module_qn,
+            module_id=module_id,
+            id_by_qualified=id_by_qualified,
+            simple_name_to_qualified=simple_name_to_qualified,
+            run_id=run_id,
+        )
 
         self.db.update_file_record(abs_path, file_hash, ANALYSIS_VERSION)
         return created
+
+    @staticmethod
+    def _normalize_edge_qn(module_qn: str, raw_qn: Optional[str]) -> str:
+        qn = (raw_qn or "").strip()
+        if not qn or qn == "__module__":
+            return module_qn
+        if qn == module_qn or qn.startswith(module_qn + "."):
+            return qn
+        if qn.startswith("."):
+            qn = qn.lstrip(".")
+        return f"{module_qn}.{qn}" if module_qn else qn
+
+    def _get_or_create_external_unit(self, target: str, run_id: str) -> str:
+        key = target.strip()
+        if key in self._external_unit_cache:
+            return self._external_unit_cache[key]
+
+        ext_hash, ext_simhash, ext_token_count = build_fingerprint(key)
+        ext_content_hash = self.db.add_text(key)
+        ext_unit = CodeUnit(
+            unit_type="external_symbol",
+            name=key.split(".")[-1] if "." in key else key,
+            qualified_name=key,
+            file_path="__external__/symbols",
+            language="external",
+            content_hash=ext_content_hash,
+            run_id=run_id,
+            normalized_hash=ext_hash,
+            simhash64=f"{ext_simhash:016x}",
+            token_count=ext_token_count,
+            semantic_text=key,
+        )
+        unit_id = self.db.add_unit(ext_unit)
+        self._external_unit_cache[key] = unit_id
+        return unit_id
+
+    def _resolve_edge_target(
+        self,
+        target: str,
+        module_qn: str,
+        id_by_qualified: Dict[str, str],
+        simple_name_to_qualified: Dict[str, str],
+        run_id: str,
+    ) -> str:
+        candidate = target.strip()
+        if not candidate:
+            return ""
+
+        if candidate in simple_name_to_qualified:
+            local_qn = simple_name_to_qualified[candidate]
+            unit_id = id_by_qualified.get(local_qn)
+            if unit_id:
+                return unit_id
+
+        qualified_candidate = self._normalize_qualified(module_qn, candidate, candidate)
+        if qualified_candidate in id_by_qualified:
+            return id_by_qualified[qualified_candidate]
+
+        if candidate in id_by_qualified:
+            return id_by_qualified[candidate]
+
+        # Try best-effort module-local normalization for dotted names.
+        if "." in candidate and not candidate.startswith(module_qn + "."):
+            tail = candidate.split(".")[-1]
+            if tail in simple_name_to_qualified:
+                local_qn = simple_name_to_qualified[tail]
+                unit_id = id_by_qualified.get(local_qn)
+                if unit_id:
+                    return unit_id
+
+        return self._get_or_create_external_unit(candidate, run_id)
+
+    def _ingest_edges(
+        self,
+        analysis: Dict[str, object],
+        module_qn: str,
+        module_id: str,
+        id_by_qualified: Dict[str, str],
+        simple_name_to_qualified: Dict[str, str],
+        run_id: str,
+    ) -> None:
+        edges = analysis.get("edges", []) if isinstance(analysis, dict) else []
+        if not isinstance(edges, list):
+            return
+
+        # Bound edge ingestion per file to avoid pathological growth on noisy parsers.
+        max_edges = 1200
+        ingested = 0
+        for edge in edges:
+            if ingested >= max_edges:
+                break
+            if not isinstance(edge, dict):
+                continue
+            rel_type = str(edge.get("rel_type") or "").strip()
+            if rel_type not in {"imports", "calls", "uses"}:
+                continue
+
+            source_qn = self._normalize_edge_qn(module_qn, edge.get("source_qualified_name"))
+            source_id = id_by_qualified.get(source_qn, module_id)
+
+            target = str(edge.get("target") or "").strip()
+            if not target:
+                continue
+            target_id = self._resolve_edge_target(
+                target=target,
+                module_qn=module_qn,
+                id_by_qualified=id_by_qualified,
+                simple_name_to_qualified=simple_name_to_qualified,
+                run_id=run_id,
+            )
+            if not target_id:
+                continue
+
+            self.db.add_relationship(source_id, target_id, rel_type)
+            ingested += 1
 
     def ingest_path(
         self,

@@ -3,7 +3,10 @@
 from code_forge.analyzer.code_indexer import CodeElement, CodeIndexer, index_forge_codebase
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
+from code_forge.bench.runner import BenchmarkConfig, BenchmarkResult, run_benchmark_suite
+from code_forge.canonicalize.planner import build_canonical_migration_plan
 from code_forge.digester.pipeline import (
+    build_dependency_graph,
     build_duplication_index,
     build_repo_index,
     build_triage_report,
@@ -28,10 +31,15 @@ __all__ = [
     "GenericCodeAnalyzer",
     "CodeIndexer",
     "CodeElement",
+    "BenchmarkConfig",
+    "BenchmarkResult",
     "index_forge_codebase",
+    "run_benchmark_suite",
+    "build_canonical_migration_plan",
     "CodeLibrarian",
     "CodeLibraryDB",
     "CodeUnit",
+    "build_dependency_graph",
     "build_duplication_index",
     "build_repo_index",
     "build_triage_report",

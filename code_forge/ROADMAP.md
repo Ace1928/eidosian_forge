@@ -8,6 +8,9 @@
 - Hybrid semantic search.
 - Explainable triage pipeline with machine-readable artifacts.
 - Knowledge Forge and GraphRAG export integration.
+- Relationship-edge extraction (`imports`, `calls`, `uses`) and dependency graph artifact export.
+- Benchmark suite with regression gates and baseline support.
+- Canonical migration planning with staged compatibility shim generation.
 
 ### In Progress
 - High-confidence canonical extraction workflow (old -> new module migration maps).

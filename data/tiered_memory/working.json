@@ -35,26 +35,6 @@
     "linked_memories": []
   },
   {
-    "id": "dd0c9ef0-0f83-4912-9663-568b2935274e",
-    "content": "GraphRAG benchmark tool was fixed to use positional query arg and now emits metrics/profile artifacts under reports/graphrag with successful query output.",
-    "created_at": "2026-02-19T14:49:28.495983",
-    "last_accessed": "2026-02-19T14:49:28.496001",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.9,
-    "ttl_seconds": 86400,
-    "tags": [
-      "graphrag",
-      "assessment",
-      "benchmark",
-      "quality"
-    ],
-    "linked_memories": []
-  },
-  {
     "id": "15714d95-7074-49da-963e-a44b56f96ad8",
     "content": "Bench pipeline is currently stable in Termux when run with query method=global and qwen0.5 model default. Local/basic/drift methods currently hinge on LanceDB embeddings not generated in this workflow and can fail in this environment.",
     "created_at": "2026-02-19T16:42:34.538395",
@@ -157,27 +137,6 @@
     "linked_memories": []
   },
   {
-    "id": "c6aba3a3-73b5-4aa2-b978-fe7ebf2a8423",
-    "content": "Model-selection cycle added deterministic benchmark tasks for tool calling, extraction, reasoning, coding, safety, and optional vision OCR; judge aggregation weighted behind deterministic signals to avoid score gaming.",
-    "created_at": "2026-02-19T20:11:40.427615",
-    "last_accessed": "2026-02-19T20:11:40.427630",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.86,
-    "ttl_seconds": 86400,
-    "tags": [
-      "models",
-      "multimodal",
-      "judges",
-      "benchmark",
-      "tool-calling"
-    ],
-    "linked_memories": []
-  },
-  {
     "id": "3bfa5e32-b5bb-4e40-a583-20a94084b59d",
     "content": "Model benchmarking showed strong task-specific divergence: Qwen0.5 is most stable for strict GraphRAG community-report pipeline, while larger <=3B models can be stronger on deterministic tool/coding tasks but may regress on GraphRAG quality gates.",
     "created_at": "2026-02-19T21:18:43.230764",
@@ -199,47 +158,24 @@
     "linked_memories": []
   },
   {
-    "id": "00b4c6d7-6bab-4d51-b301-2bf254dbdb04",
-    "content": "Implemented and validated multi-language Code Forge upgrades in eidosian_forge: new generic analyzer, similarity fingerprints, digester pipeline, CLI commands (catalog/triage-report/digest), updated living_knowledge_pipeline integration, and passing code_forge test suite in eidosian_venv.",
-    "created_at": "2026-02-20T01:20:53.016922",
-    "last_accessed": "2026-02-20T01:20:53.016937",
+    "id": "6865a882-fd10-4c12-b0f6-e35897dcc67e",
+    "content": "Code Forge now supports measurable regression gating via code-forge benchmark and migration planning via code-forge canonical-plan. Dependency graph edges (imports/calls/uses) are ingested and exportable for graph analysis.",
+    "created_at": "2026-02-20T01:50:27.824683",
+    "last_accessed": "2026-02-20T01:50:27.824697",
     "access_count": 0,
     "tier": "working",
     "namespace": "task",
     "memory_type": "episodic",
     "metadata": {},
-    "importance": 0.92,
+    "importance": 0.95,
     "ttl_seconds": 86400,
     "tags": [
-      "semantic_search",
-      "graphrag",
-      "triage",
-      "digester",
+      "dependency_graph",
+      "canonicalization",
       "code_forge",
-      "dedup",
-      "knowledge_forge"
-    ],
-    "linked_memories": []
-  },
-  {
-    "id": "ecd50ab7-9247-4ae8-81c5-b668e6a8db89",
-    "content": "Validated post-rebase Code Forge suite in eidosian_venv: 24 tests passing. Push successful to origin/main at dedb968da9 with archive digester capabilities and updated docs/plans.",
-    "created_at": "2026-02-20T01:24:22.808915",
-    "last_accessed": "2026-02-20T01:24:22.808921",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.93,
-    "ttl_seconds": 86400,
-    "tags": [
-      "tests",
-      "push",
-      "commit",
-      "code_forge",
-      "archive_digester",
-      "production"
+      "benchmark",
+      "production",
+      "regression"
     ],
     "linked_memories": []
   }

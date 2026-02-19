@@ -859,6 +859,20 @@
         ]
       },
       "links": []
+    },
+    "9a27e3d0-0b30-4249-a0d2-9e557b970184": {
+      "id": "9a27e3d0-0b30-4249-a0d2-9e557b970184",
+      "content": "Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs.",
+      "metadata": {
+        "tags": [
+          "canonicalization",
+          "code_forge",
+          "regression_gate",
+          "migration_map",
+          "benchmark"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

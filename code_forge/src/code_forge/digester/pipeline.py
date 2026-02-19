@@ -238,6 +238,23 @@ def build_duplication_index(
     return payload
 
 
+def build_dependency_graph(
+    db: CodeLibraryDB,
+    output_dir: Path,
+    *,
+    rel_types: Optional[list[str]] = None,
+    limit_edges: int = 20000,
+) -> dict[str, Any]:
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    payload = db.module_dependency_graph(rel_types=rel_types, limit_edges=limit_edges)
+    payload["generated_at"] = _utc_now()
+    (output_dir / "dependency_graph.json").write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    return payload
+
+
 def _classify_file(metrics: dict[str, Any]) -> tuple[str, list[str]]:
     reasons: list[str] = []
     unit_count = int(metrics.get("unit_count") or 0)
@@ -460,6 +477,7 @@ def run_archive_digester(
         max_files=max_files,
     )
     duplication = build_duplication_index(db=db, output_dir=output_dir)
+    dependency_graph = build_dependency_graph(db=db, output_dir=output_dir, limit_edges=graph_export_limit)
     triage = build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
 
     knowledge_sync = None
@@ -487,10 +505,13 @@ def run_archive_digester(
         "ingestion_stats": asdict(stats),
         "repo_index_path": str(output_dir / "repo_index.json"),
         "duplication_index_path": str(output_dir / "duplication_index.json"),
+        "dependency_graph_path": str(output_dir / "dependency_graph.json"),
         "triage_json_path": str(output_dir / "triage.json"),
         "triage_report_path": str(output_dir / "triage_report.md"),
         "knowledge_sync": knowledge_sync,
         "graphrag_export": graphrag_export,
+        "relationship_counts": db.relationship_counts(),
+        "dependency_graph_summary": dependency_graph.get("summary", {}),
     }
     (output_dir / "archive_digester_summary.json").write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"

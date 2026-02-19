@@ -10,10 +10,15 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Exact duplicate detection, normalized duplicate detection, and near-duplicate detection via SimHash.
 - Hybrid semantic search (FTS when available + lexical scoring fallback).
 - Structural tracing of module/class/function containment graphs.
+- Relationship edge extraction for `imports`, `calls`, and `uses`.
+- Aggregated module dependency graph artifact generation (`dependency_graph.json`).
 - Archive digester pipeline:
   - Stage A: intake catalog (`repo_index.json`)
   - Stage B: duplication index (`duplication_index.json`)
   - Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
+  - Stage D: dependency graph export (`dependency_graph.json`)
+- Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
+- Canonical extraction planning with migration map and compatibility shim staging.
 - Integration exports:
   - Knowledge Forge sync (`sync-knowledge`)
   - GraphRAG corpus export (`export-graphrag`)
@@ -39,6 +44,9 @@ code-forge trace agent_forge.consciousness.kernel.ConsciousnessKernel --depth 3
 # Build intake artifacts only
 code-forge catalog . --output-dir data/code_forge/digester/latest
 
+# Build dependency graph from relationship edges
+code-forge dependency-graph --output-dir data/code_forge/digester/latest
+
 # Generate triage from existing intake artifacts
 code-forge triage-report --output-dir data/code_forge/digester/latest
 
@@ -51,6 +59,17 @@ code-forge digest . \
 # Integration exports
 code-forge sync-knowledge --kb-path data/kb.json
 code-forge export-graphrag --output-dir data/code_forge/graphrag_input
+
+# Regression-gated benchmark suite
+code-forge benchmark \
+  --root . \
+  --output reports/code_forge_benchmark_latest.json \
+  --baseline reports/code_forge_benchmark_baseline.json
+
+# Canonical migration map and shim staging artifacts
+code-forge canonical-plan \
+  --triage-path data/code_forge/digester/latest/triage.json \
+  --output-dir data/code_forge/canonicalization/latest
 ```
 
 ## Python API
@@ -90,10 +109,17 @@ Primary DB tables:
 Primary digester artifacts:
 - `repo_index.json`: deterministic file-level intake index
 - `duplication_index.json`: exact/normalized/near duplication report
+- `dependency_graph.json`: file/module dependency graph from imports/calls/uses edges
 - `triage.json`: explainable classification with metrics and reasons
 - `triage.csv`: tabular triage export
 - `triage_report.md`: human review report
 - `archive_digester_summary.json`: full run summary
+
+Canonicalization artifacts:
+- `migration_map.json`: source→canonical mapping with strategy labels
+- `canonicalization_plan.md`: actionable migration plan
+- `canonicalization_summary.json`: plan summary metadata
+- `shims/**`: staged compatibility shim files (optional)
 
 ## Integration Map
 

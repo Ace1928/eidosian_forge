@@ -1,4 +1,7 @@
 ## Unreleased
+- Added relationship-edge extraction (`imports`, `calls`, `uses`) during ingestion and dependency graph export artifacts.
+- Added benchmark suite with baseline regression gates and CLI entrypoint (`code-forge benchmark`).
+- Added canonical migration planner with staged compatibility shims (`code-forge canonical-plan`).
 - Added Archive Digester pipeline (`catalog`, `triage-report`, `digest`) with deterministic intake artifacts.
 - Added multi-language generic analyzer and fingerprint utilities for normalized/near dedup.
 - Added semantic search + file-level triage outputs (`triage.json`, `triage.csv`, `triage_report.md`).

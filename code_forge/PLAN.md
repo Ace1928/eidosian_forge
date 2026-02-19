@@ -34,12 +34,13 @@ Build a production-grade archive digester and living code substrate that can:
 ### Stage E: Proof and Safety Gates
 - [x] Expanded tests for similarity, multi-language analysis, triage pipeline.
 - [x] Idempotent ingestion semantics.
+- [x] Repeatable benchmark suite for ingestion/search/dependency graph plus regression gates.
+- [x] Canonical migration map + compatibility shim staging artifacts.
 - [ ] Coverage target >= 90% for `code_forge/src/code_forge`.
-- [ ] Repeatable benchmark suite for ingestion throughput + query latency.
-- [ ] Deletion gate requiring tests + benchmark parity + migration map.
+- [ ] Enforce deletion gate requiring tests + benchmark parity + migration map approvals.
 
 ## Near-Term Upgrades (v1.1)
-- [ ] Add symbol/reference graph edges beyond `contains` (`imports`, `calls`, `uses`).
+- [x] Add symbol/reference graph edges beyond `contains` (`imports`, `calls`, `uses`).
 - [ ] Add structural clone detection (AST-shape similarity) for stronger near-dup filtering.
 - [ ] Add canonical extraction templates and compatibility shim generation.
 - [ ] Add triage confidence scoring and rule audit trace for every decision.

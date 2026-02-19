@@ -34,12 +34,15 @@ from code_forge import (
     CodeLibrarian,
     CodeLibraryDB,
     IngestionRunner,
+    build_canonical_migration_plan,
+    build_dependency_graph,
     build_duplication_index,
     build_repo_index,
     build_triage_report,
     export_units_for_graphrag,
     index_forge_codebase,
     run_archive_digester,
+    run_benchmark_suite,
     sync_units_to_knowledge_forge,
 )
 
@@ -536,6 +539,129 @@ class CodeForgeCLI(StandardCLI):
             help="Maximum units for knowledge/GraphRAG export (default: 20000)",
         )
         digest_parser.set_defaults(func=self._cmd_digest)
+
+        dep_graph_parser = subparsers.add_parser(
+            "dependency-graph",
+            help="Build code dependency graph from imports/calls/uses relationships",
+        )
+        dep_graph_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Output directory for dependency_graph.json",
+        )
+        dep_graph_parser.add_argument(
+            "--rel-types",
+            nargs="*",
+            default=["imports", "calls", "uses"],
+            help="Relationship types to include",
+        )
+        dep_graph_parser.add_argument(
+            "--limit-edges",
+            type=int,
+            default=20000,
+            help="Maximum relationship rows to aggregate",
+        )
+        dep_graph_parser.set_defaults(func=self._cmd_dependency_graph)
+
+        benchmark_parser = subparsers.add_parser(
+            "benchmark",
+            help="Run ingestion/search/dependency benchmark suite with optional regression gates",
+        )
+        benchmark_parser.add_argument(
+            "--root",
+            default=str(FORGE_ROOT),
+            help="Root path for benchmark ingestion workload",
+        )
+        benchmark_parser.add_argument(
+            "--output",
+            default=str(FORGE_ROOT / "reports" / "code_forge_benchmark_latest.json"),
+            help="Output JSON report path",
+        )
+        benchmark_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="Extensions to include (default: multi-language set)",
+        )
+        benchmark_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=2000,
+            help="Max files for benchmark ingestion",
+        )
+        benchmark_parser.add_argument(
+            "--ingestion-repeats",
+            type=int,
+            default=1,
+            help="Ingestion benchmark repeat count",
+        )
+        benchmark_parser.add_argument(
+            "--query-repeats",
+            type=int,
+            default=5,
+            help="Per-query repeat count for semantic search benchmark",
+        )
+        benchmark_parser.add_argument(
+            "--query",
+            action="append",
+            default=[],
+            help="Add benchmark query (repeat option for multiple queries)",
+        )
+        benchmark_parser.add_argument(
+            "--baseline",
+            default=str(FORGE_ROOT / "reports" / "code_forge_benchmark_baseline.json"),
+            help="Baseline JSON path for regression gates",
+        )
+        benchmark_parser.add_argument(
+            "--max-regression-pct",
+            type=float,
+            default=25.0,
+            help="Allowed regression percent before gate fails",
+        )
+        benchmark_parser.add_argument(
+            "--skip-prepare-ingest",
+            action="store_true",
+            help="Skip ingestion prep on primary DB before search/graph benchmarks",
+        )
+        benchmark_parser.add_argument(
+            "--write-baseline",
+            action="store_true",
+            help="Write current run as new baseline at --baseline path",
+        )
+        benchmark_parser.set_defaults(func=self._cmd_benchmark)
+
+        canonical_parser = subparsers.add_parser(
+            "canonical-plan",
+            help="Build canonical migration map and compatibility shim staging from triage artifacts",
+        )
+        canonical_parser.add_argument(
+            "--triage-path",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest" / "triage.json"),
+            help="Path to triage.json artifact",
+        )
+        canonical_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "canonicalization" / "latest"),
+            help="Output directory for migration map and plan artifacts",
+        )
+        canonical_parser.add_argument(
+            "--labels",
+            nargs="*",
+            default=["extract", "refactor", "delete_candidate"],
+            help="Triage labels to include in canonical planning",
+        )
+        canonical_parser.add_argument(
+            "--max-entries",
+            type=int,
+            default=500,
+            help="Maximum triage entries to include",
+        )
+        canonical_parser.add_argument(
+            "--no-shims",
+            action="store_true",
+            help="Disable compatibility shim generation",
+        )
+        canonical_parser.set_defaults(func=self._cmd_canonical_plan)
     
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
@@ -565,6 +691,7 @@ class CodeForgeCLI(StandardCLI):
             db_total = self.library_db.count_units()
             db_by_type = self.library_db.count_units_by_type()
             db_by_language = self.library_db.count_units_by_language()
+            rel_counts = self.library_db.relationship_counts()
             digester_dir = FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"
             latest_runs = self.library_db.latest_runs(limit=5)
             
@@ -580,6 +707,7 @@ class CodeForgeCLI(StandardCLI):
                     "db_total_units": db_total,
                     "db_units_by_type": db_by_type,
                     "db_units_by_language": db_by_language,
+                    "db_relationship_counts": rel_counts,
                     "latest_ingestion_runs": latest_runs,
                     "supported_extensions": sorted(GenericCodeAnalyzer.supported_extensions()),
                     "digester_artifacts": {
@@ -1103,6 +1231,91 @@ class CodeForgeCLI(StandardCLI):
                 )
         except Exception as e:
             result = CommandResult(False, f"Digest error: {e}")
+        self._output(result, args)
+
+    def _cmd_dependency_graph(self, args) -> None:
+        """Build aggregated dependency graph artifacts."""
+        try:
+            output_dir = Path(args.output_dir).resolve()
+            payload = build_dependency_graph(
+                db=self.library_db,
+                output_dir=output_dir,
+                rel_types=list(args.rel_types or []),
+                limit_edges=max(1, int(args.limit_edges)),
+            )
+            result = CommandResult(
+                True,
+                "Dependency graph built",
+                {
+                    "output_dir": str(output_dir),
+                    "dependency_graph_path": str(output_dir / "dependency_graph.json"),
+                    "summary": payload.get("summary", {}),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Dependency graph error: {e}")
+        self._output(result, args)
+
+    def _cmd_benchmark(self, args) -> None:
+        """Run benchmark suite and optional regression gates."""
+        try:
+            output = Path(args.output).resolve()
+            baseline = Path(args.baseline).resolve() if args.baseline else None
+            queries = [q for q in (args.query or []) if str(q).strip()]
+            payload = run_benchmark_suite(
+                root_path=Path(args.root).resolve(),
+                db_path=DEFAULT_DB_PATH,
+                runs_dir=DEFAULT_RUNS_DIR,
+                output_path=output,
+                extensions=args.ext,
+                max_files=args.max_files,
+                ingestion_repeats=max(1, int(args.ingestion_repeats)),
+                query_repeats=max(1, int(args.query_repeats)),
+                queries=queries or None,
+                baseline_path=baseline,
+                max_regression_pct=float(args.max_regression_pct),
+                prepare_ingest=not bool(args.skip_prepare_ingest),
+                write_baseline=bool(args.write_baseline),
+            )
+
+            gate = payload.get("gate", {})
+            message = "Benchmark suite complete"
+            if gate.get("baseline_loaded") and not gate.get("pass", False):
+                message = "Benchmark suite complete (regression gate failed)"
+
+            result = CommandResult(
+                True,
+                message,
+                {
+                    "output": str(output),
+                    "baseline": str(baseline) if baseline else None,
+                    "gate": gate,
+                    "ingestion": payload.get("ingestion", {}),
+                    "search": payload.get("search", {}),
+                    "graph": payload.get("graph", {}),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Benchmark error: {e}")
+        self._output(result, args)
+
+    def _cmd_canonical_plan(self, args) -> None:
+        """Generate canonical migration map and shim staging artifacts."""
+        try:
+            payload = build_canonical_migration_plan(
+                triage_path=Path(args.triage_path).resolve(),
+                output_dir=Path(args.output_dir).resolve(),
+                include_labels=list(args.labels or []),
+                max_entries=max(1, int(args.max_entries)),
+                generate_shims=not bool(args.no_shims),
+            )
+            result = CommandResult(
+                True,
+                "Canonical migration plan generated",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Canonical plan error: {e}")
         self._output(result, args)
 
 

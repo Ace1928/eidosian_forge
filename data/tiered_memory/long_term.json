@@ -1,3 +1,88 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945
-size 2
+[
+  {
+    "id": "00b4c6d7-6bab-4d51-b301-2bf254dbdb04",
+    "content": "Implemented and validated multi-language Code Forge upgrades in eidosian_forge: new generic analyzer, similarity fingerprints, digester pipeline, CLI commands (catalog/triage-report/digest), updated living_knowledge_pipeline integration, and passing code_forge test suite in eidosian_venv.",
+    "created_at": "2026-02-20T01:20:53.016922",
+    "last_accessed": "2026-02-20T01:50:18.822809",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": null,
+    "tags": [
+      "semantic_search",
+      "graphrag",
+      "triage",
+      "digester",
+      "code_forge",
+      "dedup",
+      "knowledge_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ecd50ab7-9247-4ae8-81c5-b668e6a8db89",
+    "content": "Validated post-rebase Code Forge suite in eidosian_venv: 24 tests passing. Push successful to origin/main at dedb968da9 with archive digester capabilities and updated docs/plans.",
+    "created_at": "2026-02-20T01:24:22.808915",
+    "last_accessed": "2026-02-20T01:50:18.825956",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.93,
+    "ttl_seconds": null,
+    "tags": [
+      "tests",
+      "push",
+      "commit",
+      "code_forge",
+      "archive_digester",
+      "production"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "dd0c9ef0-0f83-4912-9663-568b2935274e",
+    "content": "GraphRAG benchmark tool was fixed to use positional query arg and now emits metrics/profile artifacts under reports/graphrag with successful query output.",
+    "created_at": "2026-02-19T14:49:28.495983",
+    "last_accessed": "2026-02-20T01:50:18.827424",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": null,
+    "tags": [
+      "graphrag",
+      "assessment",
+      "benchmark",
+      "quality"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "c6aba3a3-73b5-4aa2-b978-fe7ebf2a8423",
+    "content": "Model-selection cycle added deterministic benchmark tasks for tool calling, extraction, reasoning, coding, safety, and optional vision OCR; judge aggregation weighted behind deterministic signals to avoid score gaming.",
+    "created_at": "2026-02-19T20:11:40.427615",
+    "last_accessed": "2026-02-20T01:50:18.828911",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.86,
+    "ttl_seconds": null,
+    "tags": [
+      "models",
+      "multimodal",
+      "judges",
+      "benchmark",
+      "tool-calling"
+    ],
+    "linked_memories": []
+  }
+]
