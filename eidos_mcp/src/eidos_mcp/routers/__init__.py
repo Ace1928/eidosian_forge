@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-# Router modules register tools on import.
-from ..forge_loader import prepare_forge_imports
+from importlib import import_module
 
+from ..forge_loader import prepare_forge_imports
+from ..logging_utils import log_debug, log_error
+
+# Router modules register tools on import.
 prepare_forge_imports(
     [
         "audit_forge",
@@ -17,20 +20,36 @@ prepare_forge_imports(
     ]
 )
 
-from . import audit  # noqa: E402,F401
-from . import consciousness  # noqa: E402,F401
-from . import diagnostics  # noqa: E402,F401
-from . import gis  # noqa: E402,F401
-from . import llm  # noqa: E402,F401
-from . import knowledge  # noqa: E402,F401
-from . import memory  # noqa: E402,F401
-from . import moltbook  # noqa: E402,F401
-from . import nexus  # noqa: E402,F401
-from . import refactor  # noqa: E402,F401
-from . import sms  # noqa: E402,F401
-from . import system  # noqa: E402,F401
-from . import tika  # noqa: E402,F401
-from . import tiered_memory  # noqa: E402,F401
-from . import types  # noqa: E402,F401
-from . import word_forge  # noqa: E402,F401
-from . import erais  # noqa: E402,F401
+_ROUTER_MODULES = (
+    "audit",
+    "consciousness",
+    "diagnostics",
+    "gis",
+    "llm",
+    "knowledge",
+    "learner",
+    "memory",
+    "moltbook",
+    "nexus",
+    "prompt",
+    "refactor",
+    "sms",
+    "system",
+    "tika",
+    "tiered_memory",
+    "types",
+    "word_forge",
+    "erais",
+)
+
+
+def _safe_import_router(module_name: str) -> None:
+    try:
+        import_module(f"{__name__}.{module_name}")
+    except Exception as exc:  # pragma: no cover - defensive router loading
+        log_debug(f"Router import skipped: {module_name} ({exc})")
+        log_error(f"router_import:{module_name}", str(exc))
+
+
+for _module_name in _ROUTER_MODULES:
+    _safe_import_router(_module_name)

@@ -1,6 +1,6 @@
 # Gemini CLI Setup for Eidos MCP
 
-This server is configured to work with Gemini CLI using **Stdio**, **SSE** (open), or **SSE with Google Auth**.
+This server is configured for Gemini CLI over **Streamable HTTP** at `http://127.0.0.1:8928/mcp`.
 
 ## 1. Connection Methods
 
@@ -8,17 +8,30 @@ Your `~/.gemini/settings.json` supports these connections:
 
 | Server ID | Transport | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| **eidosian_nexus** | Stdio | None | **Default/Local**. Starts automatically. Best for speed. |
-| **eidosian_nexus_sse** | SSE (HTTP) | None | Connects to `http://localhost:8928/sse`. Requires running service. |
-| **eidosian_nexus_google** | SSE (HTTP) | **Google ADC** | Connects to `http://localhost:8928/sse` sending Google Identity tokens. |
+| **eidosian_nexus** | Streamable HTTP | None | **Default/Local**. Connects to `http://127.0.0.1:8928/mcp`. |
+| **eidosian_nexus_google** | Streamable HTTP | **Google ADC** | Same endpoint with Google bearer token if strict auth is enabled. |
 
-## 2. Running the SSE Service
+Recommended `~/.gemini/settings.json` entry:
 
-To use `eidosian_nexus_sse` or `eidosian_nexus_google`, the server must be running.
+```json
+{
+  "mcpServers": {
+    "eidosian_nexus": {
+      "httpUrl": "http://127.0.0.1:8928/mcp",
+      "url": "http://127.0.0.1:8928/mcp",
+      "trust": true
+    }
+  }
+}
+```
+
+## 2. Running the MCP Service
+
+To use `eidosian_nexus` or `eidosian_nexus_google`, the server must be running.
 
 ### Manual Start
 ```bash
-./run_server_sse.sh
+./run_server.sh
 ```
 
 ### Systemd Service (Recommended)
@@ -48,7 +61,7 @@ To use **eidosian_nexus_google**, you must have Google Application Default Crede
 ### How it Works
 1.  Gemini detects `authProviderType: "google_credentials"`.
 2.  It loads your ADC.
-3.  It adds an `Authorization: Bearer <token>` header to the SSE connection.
+3.  It adds an `Authorization: Bearer <token>` header to MCP HTTP requests.
 4.  The Eidos server receives this token (currently in `open` mode, but ready for validation).
 
 ### Token Persistence

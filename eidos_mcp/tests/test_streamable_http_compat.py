@@ -23,6 +23,7 @@ def _fresh_app(
     *,
     enable_session_recovery: bool = True,
     enable_error_response_compat: bool = True,
+    enforce_origin: bool = True,
 ):
     mcp._session_manager = None  # type: ignore[attr-defined]
     return _build_streamable_http_app(
@@ -30,6 +31,7 @@ def _fresh_app(
         enable_compat_headers=enable_compat_headers,
         enable_session_recovery=enable_session_recovery,
         enable_error_response_compat=enable_error_response_compat,
+        enforce_origin=enforce_origin,
     )
 
 
@@ -49,6 +51,37 @@ def test_missing_content_type_is_upgraded_when_compat_enabled() -> None:
     assert response.status_code == 200
     assert response.headers.get("content-type", "").startswith("text/event-stream")
     assert "mcp-session-id" in response.headers
+
+
+def test_mcp_origin_guard_rejects_untrusted_origin() -> None:
+    app = _fresh_app(enable_compat_headers=True, enforce_origin=True)
+    payload = _initialize_payload()
+
+    with TestClient(app, base_url="http://127.0.0.1:8928") as client:
+        response = client.post(
+            "/mcp",
+            content=json.dumps(payload),
+            headers={"origin": "https://evil.example"},
+        )
+
+    assert response.status_code == 403
+    body = response.json()
+    assert body["error"] == "forbidden_origin"
+
+
+def test_mcp_origin_guard_allows_localhost_origin() -> None:
+    app = _fresh_app(enable_compat_headers=True, enforce_origin=True)
+    payload = _initialize_payload()
+
+    with TestClient(app, base_url="http://127.0.0.1:8928") as client:
+        response = client.post(
+            "/mcp",
+            content=json.dumps(payload),
+            headers={"origin": "http://localhost"},
+        )
+
+    assert response.status_code == 200
+    assert response.headers.get("content-type", "").startswith("text/event-stream")
 
 
 def test_non_json_content_type_is_upgraded_when_compat_enabled() -> None:

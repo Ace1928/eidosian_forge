@@ -5,6 +5,12 @@
 export FORGE_ROOT="/data/data/com.termux/files/home/eidosian_forge"
 export VENV_PATH="$FORGE_ROOT/eidosian_venv"
 
+# Always prioritize the project virtual environment when available.
+if [ -x "$VENV_PATH/bin/python" ]; then
+    [[ ":$PATH:" != *":$VENV_PATH/bin:"* ]] && export PATH="$VENV_PATH/bin:$PATH"
+    export VIRTUAL_ENV="$VENV_PATH"
+fi
+
 # PATH updates for all forge bin directories
 for forge_dir in "$FORGE_ROOT"/*_forge "$FORGE_ROOT"/lib "$FORGE_ROOT"/eidos_mcp; do
     if [ -d "$forge_dir/bin" ]; then
@@ -14,6 +20,8 @@ done
 
 # General Eidosian bin
 [[ ":$PATH:" != *":$FORGE_ROOT/bin:"* ]] && export PATH="$FORGE_ROOT/bin:$PATH"
+[[ -d "$FORGE_ROOT/llama.cpp/build/bin" ]] && [[ ":$PATH:" != *":$FORGE_ROOT/llama.cpp/build/bin:"* ]] && export PATH="$FORGE_ROOT/llama.cpp/build/bin:$PATH"
+[[ -d "$FORGE_ROOT/llm_forge/bin" ]] && [[ ":$PATH:" != *":$FORGE_ROOT/llm_forge/bin:"* ]] && export PATH="$FORGE_ROOT/llm_forge/bin:$PATH"
 
 # PYTHONPATH updates for all forge src directories (Editable installs handle this, but explicit is better for discovery)
 for forge_dir in "$FORGE_ROOT"/*_forge "$FORGE_ROOT"/lib "$FORGE_ROOT"/eidos_mcp; do
@@ -22,6 +30,17 @@ for forge_dir in "$FORGE_ROOT"/*_forge "$FORGE_ROOT"/lib "$FORGE_ROOT"/eidos_mcp
     fi
     # Include the root of the forge too for non-src layouts
     [[ ":$PYTHONPATH:" != *":$forge_dir:"* ]] && export PYTHONPATH="$forge_dir:$PYTHONPATH"
+done
+
+# Dynamic linker paths for local llama.cpp toolchain.
+for llama_lib_dir in "$FORGE_ROOT/llama.cpp/build/bin" "$FORGE_ROOT/llm_forge/vendor/llama.cpp/build/bin"; do
+    if [ -d "$llama_lib_dir" ]; then
+        if [ -n "${LD_LIBRARY_PATH:-}" ]; then
+            [[ ":$LD_LIBRARY_PATH:" != *":$llama_lib_dir:"* ]] && export LD_LIBRARY_PATH="$llama_lib_dir:$LD_LIBRARY_PATH"
+        else
+            export LD_LIBRARY_PATH="$llama_lib_dir"
+        fi
+    fi
 done
 
 # Eidosian Venv Wrapper
@@ -49,7 +68,7 @@ alias st='git status'
 alias precision='echo "💎 Precision is functional alignment."'
 alias strike='echo "⚡ Flow and Strike: Precision execution."'
 
-# Notification
-if command -v termux-notification >/dev/null 2>&1; then
+# Notification (disabled for non-interactive/service contexts)
+if [ -z "${EIDOS_DISABLE_NOTIFICATIONS:-}" ] && [ -n "${PS1:-}" ] && command -v termux-notification >/dev/null 2>&1; then
     termux-notification --title "Eidosian Nexus" --content "Environment Module Loaded" --id 100 --priority low
 fi

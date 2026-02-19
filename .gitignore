@@ -1,44 +1,4 @@
-# ╭────────────────────────────────────────────────────╮
-# │ EIDOSIAN .GITIGNORE - PRECISION EXCLUSION PATTERNS │
-# ╰────────────────────────────────────────────────────╯
-
-# ┌─────────────────────────────────────────┐
-# │ GIT STRUCTURAL CONTAINMENT PROTOCOL     │
-# └─────────────────────────────────────────┘
-.git/
-.git-crypt/
-
-# ┌─────────────────────────────────────────┐
-# │ DEVELOPMENT ENVIRONMENT & TOOLS         │
-# └─────────────────────────────────────────┘
-.venv/
-.venv_tools/
-venv/
-eidos_venv/
-env/
-ENV/
-.env
-.env.*
-!.env.example
-!.env.template
-
-# VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-.history/
-*.vsix
-
-# JetBrains
-.idea/
-*.iml
-
-# ┌─────────────────────────────────────────┐
-# │ PYTHON ARTIFACTS                        │
-# └─────────────────────────────────────────┘
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,110 +10,52 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/*
-!lib/eidosian_core/
-!lib/eidosian_core/**
-!lib/cli/
-!lib/cli/**
-!lib/pyproject.toml
-!lib/README.md
-!lib/tests/
-!lib/tests/**
+lib/
 lib64/
-!lib/
-lib/*
-!lib/eidosian_core/
-!lib/eidosian_core/**
-!lib/cli.py
-lib/**/__pycache__/
 parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-.hypothesis/
-cython_debug/
-pyrightconfig.json
-Pipfile
-Pipfile.lock
-poetry.lock
-node_modules/
+MANIFEST
 
-# ┌─────────────────────────────────────────┐
-# │ OS DETRITUS                             │
-# └─────────────────────────────────────────┘
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# ┌─────────────────────────────────────────┐
-# │ LOGS & DATABASES                        │
-# └─────────────────────────────────────────┘
-logs/
-*.log
-*.sqlite
-*.sqlite3
-*.db
-*.sql
-*.dump
-
-# Files with Windows-incompatible names
-:memory:
-*:*
-
-# ┌─────────────────────────────────────────┐
-# │ EIDOS SPECIFIC IGNORES                  │
-# └─────────────────────────────────────────┘
-# Do NOT ignore *_forge/ directories!
-# Ignore specific large data or temp folders within forges if needed
-word_forge_BACKUP/
-word_forge_root_BACKUP/
-temp_vector_worker_db*
-test_database.sqlite
-kb_data.json
-memory_data.json
-installation_errors.log
-installation_success.log
-LOG.md
-# Moltbook artifacts
-data/moltbook/
-# Consciousness protocol runtime artifacts
-data/consciousness/
-reports/consciousness/
-# Runtime benchmark/audit artifacts (generated frequently in Termux/Linux validation)
-reports/consciousness_benchmarks/benchmark_*.json
-reports/consciousness_trials/trial_*.json
-reports/consciousness_integrated_benchmarks/integrated_*.json
-reports/consciousness_stress_benchmarks/stress_*.json
-reports/mcp_audit_*.json
-reports/linux_audit_*.json
-reports/security/
-# Local runtime state snapshots/checkpoints
-state/
-# Eidos MCP screenshots
-eidos_mcp/*.png
-# Local backup snapshots (keep out of repo)
-Backups/
-
-# Local SDKs / environments
+# Virtual Environment
 eidosian_venv/
-.bin/
-google-cloud-sdk/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Machine clone runtime artifacts
-archive_forge/clone_kits/
-archive_forge/iso_cache/
-archive_forge/manifests/*/imported_files.null
-*.null
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# Imported legacy runtime detritus
-projects/legacy/evie/runs/
-projects/legacy/evie/default_encryption.key
+# Project Specific
+logs/
+data/
+cache/
+output/
+.env
+settings.yaml
+.DS_Store
+.graphrag_index/
+graphrag_workspace/
+prompts/
+reports/benchmark_matrix.json
+benchmarks/eidosian_consensus_bench.py
+models/Llama-3.2-1B-Instruct-Q8_0.gguf
+models/Qwen2.5-0.5B-Instruct-Q8_0.gguf
+
+# Models (handled by LFS, but ignore local copies if not tracked)
+# models/*.gguf  <-- Commented out as we want to track them with LFS
+
+# Lancedb build artifacts
+lib/lancedb_src/target/
+lib/lancedb_src/python/target/

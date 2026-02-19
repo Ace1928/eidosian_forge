@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Eidosian build script for LLM Forge Engine (llama.cpp)
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,22 +15,18 @@ mkdir -p build
 cd build
 
 # 2. Configure with CMake
-# Using CPU-only optimizations for standard Termux environment
-cmake .. -DCMAKE_BUILD_TYPE=Release 
-         -DLLAMA_NATIVE=ON 
-         -DLLAMA_LTO=ON
+# Using CPU-only optimizations for standard Termux environment.
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGGML_NATIVE=ON \
+    -DGGML_LTO=ON
 
 # 3. Compile with multiple cores
 CORES=$(nproc)
 echo "Compiling with $CORES cores..."
 cmake --build . --config Release -j "$CORES"
+echo "--- ✅ Build Successful ---"
 
-if [ $? -eq 0 ]; then
-    echo "--- ✅ Build Successful ---"
-    # Create symlink to bin for easier access
-    cd "${FORGE_ROOT}/llm_forge"
-    ln -sfn vendor/llama.cpp/build/bin bin
-else
-    echo "--- ❌ Build Failed ---"
-    exit 1
-fi
+# Create symlink to bin for easier access.
+cd "${FORGE_ROOT}/llm_forge"
+ln -sfn vendor/llama.cpp/build/bin bin

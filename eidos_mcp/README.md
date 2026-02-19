@@ -93,9 +93,32 @@ Key env vars (all default-safe):
   `mcp-session-id` headers and transparently establish a fresh session
 - `EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT` (`1`/`0`, default `1`) to coerce
   non-MCP transport error bodies into explicit JSON with `Content-Type`
+- `EIDOS_MCP_ENFORCE_ORIGIN` (`1`/`0`, default `1`) to reject non-local browser origins
+- `EIDOS_MCP_ALLOWED_ORIGINS` (comma-separated origins, default local loopback origins)
 - `FASTMCP_HOST` / `FASTMCP_PORT`
 - `EIDOS_FORGE_DIR`
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
+
+### Client Wiring (Codex + Gemini)
+
+Codex (`~/.codex/config.toml`):
+```toml
+[mcp_servers.eidosian_nexus]
+url = "http://127.0.0.1:8928/mcp"
+```
+
+Gemini (`~/.gemini/settings.json`):
+```json
+{
+  "mcpServers": {
+    "eidosian_nexus": {
+      "httpUrl": "http://127.0.0.1:8928/mcp",
+      "url": "http://127.0.0.1:8928/mcp",
+      "trust": true
+    }
+  }
+}
+```
 
 ## ♻️ Rollback & Change Log
 - Changelog: `CHANGELOG.md`
@@ -146,3 +169,27 @@ curl -s -D - -o /dev/null http://127.0.0.1:8928/mcp
 
 Service guard state lives at `~/.eidosian/run/mcp_service_state.json` and tracks
 the last known-good snapshot for automatic rollback.
+
+## 📱 Termux Service Lifecycle
+
+Use the Termux-safe service manager:
+
+```bash
+./scripts/eidos_termux_services.sh start
+./scripts/eidos_termux_services.sh status
+./scripts/eidos_termux_services.sh stop
+```
+
+`~/.bashrc` should call:
+
+```bash
+/data/data/com.termux/files/home/eidosian_forge/scripts/eidos_termux_services.sh start-shell
+```
+
+and on shell exit:
+
+```bash
+/data/data/com.termux/files/home/eidosian_forge/scripts/eidos_termux_services.sh exit-shell
+```
+
+This keeps startup idempotent, prevents duplicate MCP instances, and safely shuts down managed services when the last interactive shell exits.

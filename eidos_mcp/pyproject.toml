@@ -47,7 +47,8 @@ packages = ["src/eidos_mcp"]
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
 pythonpath = [
-    "/home/lloyd/eidosian_forge/eidos_mcp/src",
-    "/home/lloyd/eidosian_forge",
+    "src",
+    "..",
 ]

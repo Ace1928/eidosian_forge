@@ -25,6 +25,7 @@ additional_dirs, ext_whitelist = [],[]
 # depending on the platform we're running on.
 if os.name=='posix':
     additional_dirs.append('./')
+    additional_dirs.append('/data/data/com.termux/files/usr/lib/')
     additional_dirs.append('/usr/lib/')
     additional_dirs.append('/usr/lib/x86_64-linux-gnu/')
     additional_dirs.append('/usr/lib/aarch64-linux-gnu/')

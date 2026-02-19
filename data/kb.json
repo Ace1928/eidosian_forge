@@ -1,3 +1,690 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ca0b587f88384cdc9b26ea52aeceeca2c36248af1a05ec2ea52acb7a4444ad17
-size 21365
+{
+  "nodes": {
+    "e60805ea-e88b-440a-815b-3bd37c34d7d1": {
+      "id": "e60805ea-e88b-440a-815b-3bd37c34d7d1",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "7d5e762c-13f5-426b-a9eb-1c78b26a1147"
+      ]
+    },
+    "7d5e762c-13f5-426b-a9eb-1c78b26a1147": {
+      "id": "7d5e762c-13f5-426b-a9eb-1c78b26a1147",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "e60805ea-e88b-440a-815b-3bd37c34d7d1"
+      ]
+    },
+    "3fdbb2cb-af88-4b28-924f-5751870c080c": {
+      "id": "3fdbb2cb-af88-4b28-924f-5751870c080c",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "fc89cb87-66de-420e-b89b-d251db91ae73"
+      ]
+    },
+    "fc89cb87-66de-420e-b89b-d251db91ae73": {
+      "id": "fc89cb87-66de-420e-b89b-d251db91ae73",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "3fdbb2cb-af88-4b28-924f-5751870c080c"
+      ]
+    },
+    "a9d5fc54-ce04-4836-ba41-0746c58b1b11": {
+      "id": "a9d5fc54-ce04-4836-ba41-0746c58b1b11",
+      "content": "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "mcp",
+          "autotune",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "5c084c80-f363-428a-84e7-10bc05ae4c2a": {
+      "id": "5c084c80-f363-428a-84e7-10bc05ae4c2a",
+      "content": "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "mcp",
+          "autotune",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "e8c8f867-3cec-4085-bb16-567b864f173d": {
+      "id": "e8c8f867-3cec-4085-bb16-567b864f173d",
+      "content": "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "mcp",
+          "autotune",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "c858723b-99c1-43ec-af65-622897c32658": {
+      "id": "c858723b-99c1-43ec-af65-622897c32658",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "04ee5920-e96b-44fa-8021-9e920e098aa3"
+      ]
+    },
+    "04ee5920-e96b-44fa-8021-9e920e098aa3": {
+      "id": "04ee5920-e96b-44fa-8021-9e920e098aa3",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "c858723b-99c1-43ec-af65-622897c32658"
+      ]
+    },
+    "857a29cb-6423-49c1-8592-e72aa88f6d12": {
+      "id": "857a29cb-6423-49c1-8592-e72aa88f6d12",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "bd8583fb-002a-44bf-8c64-a0986dd5205e"
+      ]
+    },
+    "bd8583fb-002a-44bf-8c64-a0986dd5205e": {
+      "id": "bd8583fb-002a-44bf-8c64-a0986dd5205e",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "857a29cb-6423-49c1-8592-e72aa88f6d12"
+      ]
+    },
+    "d1278c29-9cc7-4a70-a96f-bd1a65bf747e": {
+      "id": "d1278c29-9cc7-4a70-a96f-bd1a65bf747e",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "5ceb54de-de71-41d6-bc69-1be2339b5711"
+      ]
+    },
+    "5ceb54de-de71-41d6-bc69-1be2339b5711": {
+      "id": "5ceb54de-de71-41d6-bc69-1be2339b5711",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "d1278c29-9cc7-4a70-a96f-bd1a65bf747e"
+      ]
+    },
+    "c048672f-221c-45ef-8e4c-ac80e8af24af": {
+      "id": "c048672f-221c-45ef-8e4c-ac80e8af24af",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "b14edcc3-2cad-4804-90f7-3bc1cb1268d1"
+      ]
+    },
+    "b14edcc3-2cad-4804-90f7-3bc1cb1268d1": {
+      "id": "b14edcc3-2cad-4804-90f7-3bc1cb1268d1",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "c048672f-221c-45ef-8e4c-ac80e8af24af"
+      ]
+    },
+    "34cd2c39-0300-4f31-b20e-24fcc74af243": {
+      "id": "34cd2c39-0300-4f31-b20e-24fcc74af243",
+      "content": "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence.",
+      "metadata": {
+        "tags": [
+          "autotune",
+          "consciousness",
+          "optimization"
+        ]
+      },
+      "links": []
+    },
+    "b3fa722c-4274-4cb9-8dfa-df0388602254": {
+      "id": "b3fa722c-4274-4cb9-8dfa-df0388602254",
+      "content": "Attention and workspace competition now adapt online from gw.reaction_trace reward signals.",
+      "metadata": {
+        "tags": [
+          "competition",
+          "attention",
+          "learning",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "dc41bde2-2666-4eee-92f8-a02833d0ce54": {
+      "id": "dc41bde2-2666-4eee-92f8-a02833d0ce54",
+      "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "validation",
+          "operations"
+        ]
+      },
+      "links": []
+    },
+    "3540c15c-e2db-482c-897f-5afd5dff7bdd": {
+      "id": "3540c15c-e2db-482c-897f-5afd5dff7bdd",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "98d12879-712b-4cce-8e31-59758888fbf2"
+      ]
+    },
+    "98d12879-712b-4cce-8e31-59758888fbf2": {
+      "id": "98d12879-712b-4cce-8e31-59758888fbf2",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "3540c15c-e2db-482c-897f-5afd5dff7bdd"
+      ]
+    },
+    "0ca1ff67-30de-40dd-b183-ea6ffab2d787": {
+      "id": "0ca1ff67-30de-40dd-b183-ea6ffab2d787",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "890e39ba-be5d-4e3e-8827-37e67d06760a"
+      ]
+    },
+    "890e39ba-be5d-4e3e-8827-37e67d06760a": {
+      "id": "890e39ba-be5d-4e3e-8827-37e67d06760a",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "0ca1ff67-30de-40dd-b183-ea6ffab2d787"
+      ]
+    },
+    "e3859000-11f4-4c71-b86e-8ede0a5dbc23": {
+      "id": "e3859000-11f4-4c71-b86e-8ede0a5dbc23",
+      "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
+      "metadata": {
+        "tags": [
+          "mcp",
+          "red-team",
+          "consciousness",
+          "cli"
+        ]
+      },
+      "links": []
+    },
+    "c50325d0-db49-4112-8582-2b4318c49774": {
+      "id": "c50325d0-db49-4112-8582-2b4318c49774",
+      "content": "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes.",
+      "metadata": {
+        "tags": [
+          "bench",
+          "consciousness",
+          "validation",
+          "tasks"
+        ]
+      },
+      "links": []
+    },
+    "985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97": {
+      "id": "985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f"
+      ]
+    },
+    "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f": {
+      "id": "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97"
+      ]
+    },
+    "b786c236-5444-4d09-8db8-3be9f6fb43fa": {
+      "id": "b786c236-5444-4d09-8db8-3be9f6fb43fa",
+      "content": "MCP test fact A",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "018416b4-3a6f-48a5-8947-8276bc692653"
+      ]
+    },
+    "018416b4-3a6f-48a5-8947-8276bc692653": {
+      "id": "018416b4-3a6f-48a5-8947-8276bc692653",
+      "content": "MCP test fact B",
+      "metadata": {
+        "tags": [
+          "test",
+          "mcp"
+        ]
+      },
+      "links": [
+        "b786c236-5444-4d09-8db8-3be9f6fb43fa"
+      ]
+    },
+    "e74103f7-9d97-4b79-adc0-277e3b64929d": {
+      "id": "e74103f7-9d97-4b79-adc0-277e3b64929d",
+      "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
+      "metadata": {
+        "tags": [
+          "mcp",
+          "red-team",
+          "cli",
+          "benchmark",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "82292ab8-0f74-4b88-ac59-4e949259a765": {
+      "id": "82292ab8-0f74-4b88-ac59-4e949259a765",
+      "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
+      "metadata": {
+        "tags": [
+          "benchmark",
+          "schema",
+          "gates",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "7040c0c1-071c-45d8-9062-934add61992a": {
+      "id": "7040c0c1-071c-45d8-9062-934add61992a",
+      "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
+      "metadata": {
+        "tags": [
+          "hardening",
+          "mcp",
+          "testing",
+          "operations"
+        ]
+      },
+      "links": []
+    },
+    "f0dcdfbf-9ba4-4b31-9580-20a0b954c152": {
+      "id": "f0dcdfbf-9ba4-4b31-9580-20a0b954c152",
+      "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "autotune",
+          "red-team",
+          "consciousness"
+        ]
+      },
+      "links": []
+    },
+    "ba793301-b7c2-4940-8614-c4deebb3c4d6": {
+      "id": "ba793301-b7c2-4940-8614-c4deebb3c4d6",
+      "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
+      "metadata": {
+        "tags": [
+          "benchmark",
+          "termux",
+          "consciousness",
+          "index"
+        ]
+      },
+      "links": []
+    },
+    "59ede79a-5ee1-46a5-a0fa-6ac0060811e5": {
+      "id": "59ede79a-5ee1-46a5-a0fa-6ac0060811e5",
+      "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
+      "metadata": {
+        "tags": [
+          "dependabot",
+          "security",
+          "workflow"
+        ]
+      },
+      "links": []
+    },
+    "41815211-75ea-4242-9db3-cce8687ff33f": {
+      "id": "41815211-75ea-4242-9db3-cce8687ff33f",
+      "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
+      "metadata": {
+        "tags": [
+          "dependabot",
+          "issues",
+          "security",
+          "workflow"
+        ]
+      },
+      "links": []
+    },
+    "792397c3-1ee8-4a99-bcd3-6375e20c109f": {
+      "id": "792397c3-1ee8-4a99-bcd3-6375e20c109f",
+      "content": "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs.",
+      "metadata": {
+        "tags": [
+          "lock",
+          "actions",
+          "security",
+          "workflow"
+        ]
+      },
+      "links": []
+    },
+    "96e3a8ed-7eab-4a59-8efe-6308699d4e60": {
+      "id": "96e3a8ed-7eab-4a59-8efe-6308699d4e60",
+      "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
+      "metadata": {
+        "tags": [
+          "dependabot",
+          "workflow",
+          "security",
+          "remediation"
+        ]
+      },
+      "links": []
+    },
+    "ab5f4066-da38-4201-ab85-b5df3f45209c": {
+      "id": "ab5f4066-da38-4201-ab85-b5df3f45209c",
+      "content": "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "security",
+          "dependabot",
+          "phase17",
+          "pip",
+          "automation"
+        ],
+        "source": "phase17_autopatch_execution",
+        "updated_at": "2026-02-16T22:54:34Z"
+      },
+      "links": []
+    },
+    "3029ab9a-4a26-4596-bb1d-e62bc9398982": {
+      "id": "3029ab9a-4a26-4596-bb1d-e62bc9398982",
+      "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
+      "metadata": {
+        "tags": [
+          "mitigation",
+          "security",
+          "phase17",
+          "no-fix",
+          "advisory"
+        ],
+        "source": "phase17_iteration2_no_fix_mitigation",
+        "updated_at": "2026-02-16T23:10:55Z"
+      },
+      "links": []
+    },
+    "a145bade-f093-46f6-9f75-aa2001d30b2e": {
+      "id": "a145bade-f093-46f6-9f75-aa2001d30b2e",
+      "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
+      "metadata": {
+        "tags": [
+          "security",
+          "dependabot",
+          "phase17",
+          "automation",
+          "closure"
+        ],
+        "source": "phase17_final_closure",
+        "updated_at": "2026-02-16T23:27:34Z"
+      },
+      "links": []
+    },
+    "76077d8d-1e76-4170-857c-b5533c85d06e": {
+      "id": "76077d8d-1e76-4170-857c-b5533c85d06e",
+      "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
+      "metadata": {
+        "tags": [
+          "phase18",
+          "hardening",
+          "payload-safety",
+          "watchdog",
+          "consciousness"
+        ],
+        "source": "phase18_runtime_hardening",
+        "updated_at": "2026-02-16T23:43:19Z"
+      },
+      "links": []
+    },
+    "b0e6c2a8-cc94-41d4-8ef2-df475a2166aa": {
+      "id": "b0e6c2a8-cc94-41d4-8ef2-df475a2166aa",
+      "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
+      "metadata": {
+        "tags": [
+          "mcp",
+          "phase18",
+          "payload-safety",
+          "watchdog",
+          "stress-benchmark",
+          "ci",
+          "consciousness"
+        ],
+        "source": "phase18_status_stress_completion",
+        "updated_at": "2026-02-17T00:24:46Z"
+      },
+      "links": []
+    },
+    "ee5520b6-b8d4-4f73-8a9a-6ec96be3292d": {
+      "id": "ee5520b6-b8d4-4f73-8a9a-6ec96be3292d",
+      "content": "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance.",
+      "metadata": {
+        "tags": [
+          "phase18",
+          "hardening",
+          "side-effect-free",
+          "status",
+          "consciousness"
+        ],
+        "source": "phase18_status_side_effect_fix",
+        "updated_at": "2026-02-17T00:24:46Z"
+      },
+      "links": []
+    },
+    "40281b53-ab83-428b-a2f2-bb7cb52b114c": {
+      "id": "40281b53-ab83-428b-a2f2-bb7cb52b114c",
+      "content": "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk.",
+      "metadata": {
+        "tags": [
+          "phase19",
+          "termux",
+          "ci",
+          "audit-matrix",
+          "linux-parity",
+          "consciousness"
+        ],
+        "source": "phase19_linux_audit_matrix",
+        "updated_at": "2026-02-17T01:44:44Z"
+      },
+      "links": []
+    },
+    "207cd2e2-949a-47cd-8138-2079ab86cd7d": {
+      "id": "207cd2e2-949a-47cd-8138-2079ab86cd7d",
+      "content": "Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow.",
+      "metadata": {
+        "tags": [
+          "ci-gate",
+          "trend",
+          "linux-audit",
+          "phase20",
+          "observability",
+          "consciousness"
+        ],
+        "source": "phase20_audit_observability_gate",
+        "updated_at": "2026-02-17T02:10:00Z"
+      },
+      "links": []
+    },
+    "750ebc78-8e2e-4466-a8a6-2f000ea35dc6": {
+      "id": "750ebc78-8e2e-4466-a8a6-2f000ea35dc6",
+      "content": "Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction.",
+      "metadata": {
+        "tags": [
+          "event-fabric",
+          "causal-trace",
+          "phase21",
+          "trial-capture",
+          "consciousness"
+        ],
+        "source": "phase21_event_fabric_trial_capture",
+        "updated_at": "2026-02-17T02:19:15Z"
+      },
+      "links": []
+    },
+    "cb117831-7fb4-4322-bedb-98635ce8edb4": {
+      "id": "cb117831-7fb4-4322-bedb-98635ce8edb4",
+      "content": "Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments.",
+      "metadata": {
+        "tags": [
+          "bench",
+          "replay-manifest",
+          "provenance",
+          "phase22",
+          "consciousness"
+        ],
+        "source": "phase22_trial_provenance_replay",
+        "updated_at": "2026-02-17T02:33:24Z"
+      },
+      "links": []
+    },
+    "0cea89d1-c1ea-4eec-870c-d15fa56c3945": {
+      "id": "0cea89d1-c1ea-4eec-870c-d15fa56c3945",
+      "content": "Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs.",
+      "metadata": {
+        "tags": [
+          "benchmarks",
+          "directory-atlas",
+          "documentation",
+          "phase23",
+          "consciousness"
+        ],
+        "source": "phase23_repo_docs_hardening",
+        "updated_at": "2026-02-17T03:24:01Z"
+      },
+      "links": []
+    },
+    "90941e5b-422a-48dd-a948-86bec8955b6f": {
+      "id": "90941e5b-422a-48dd-a948-86bec8955b6f",
+      "content": "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow.",
+      "metadata": {
+        "tags": [
+          "documentation",
+          "operations",
+          "ci",
+          "phase24",
+          "determinism"
+        ]
+      },
+      "links": []
+    },
+    "6fb13215-06d7-4399-9797-274ce01ac435": {
+      "id": "6fb13215-06d7-4399-9797-274ce01ac435",
+      "content": "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal.",
+      "metadata": {
+        "tags": [
+          "code-intelligence",
+          "refactor"
+        ]
+      },
+      "links": []
+    }
+  },
+  "concept_map": {}
+}

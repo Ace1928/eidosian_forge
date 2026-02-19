@@ -1,5 +1,5 @@
 from __future__ import annotations
-import subprocess
+import os
 import json
 import asyncio
 from pathlib import Path
@@ -23,6 +23,18 @@ class Benchmarker:
     def __init__(self, bin_path: Optional[Path] = None):
         self.bin_path = bin_path or Path(__file__).resolve().parents[4] / "llm_forge/bin/llama-bench"
 
+    def _subprocess_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        bin_dir = str(self.bin_path.parent.resolve())
+        env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+        ld_library = env.get("LD_LIBRARY_PATH", "")
+        if ld_library:
+            if f":{bin_dir}:" not in f":{ld_library}:":
+                env["LD_LIBRARY_PATH"] = f"{bin_dir}:{ld_library}"
+        else:
+            env["LD_LIBRARY_PATH"] = bin_dir
+        return env
+
     @eidosian()
     async def run_throughput_test(self, model_path: str, p_tokens: List[int] = [512], g_tokens: List[int] = [128]) -> List[BenchResult]:
         """Run standard throughput benchmark."""
@@ -45,7 +57,8 @@ class Benchmarker:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
+                env=self._subprocess_env(),
             )
             stdout, _ = await proc.communicate()
             

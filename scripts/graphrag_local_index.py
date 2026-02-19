@@ -134,6 +134,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Report work without running GraphRAG or writing input.",
     )
+    parser.add_argument(
+        "--use-update",
+        action="store_true",
+        help="Use `graphrag update` after initial index. Disabled by default for compatibility.",
+    )
     return parser.parse_args()
 
 
@@ -225,6 +230,24 @@ def has_existing_output(root: Path) -> bool:
 
 
 @eidosian()
+def validate_index_output(root: Path) -> None:
+    stats_path = root / "output" / "stats.json"
+    if not stats_path.exists():
+        raise RuntimeError(f"GraphRAG index completed without stats output: {stats_path}")
+    try:
+        stats = json.loads(stats_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid GraphRAG stats.json: {stats_path}") from exc
+
+    num_documents = int(stats.get("num_documents", 0) or 0)
+    update_documents = int(stats.get("update_documents", 0) or 0)
+    if num_documents <= 0 and update_documents <= 0:
+        raise RuntimeError(
+            "GraphRAG index produced zero documents. Check settings.yaml input/input_storage configuration."
+        )
+
+
+@eidosian()
 def clear_input_dir(input_dir: Path) -> None:
     input_dir.mkdir(parents=True, exist_ok=True)
     for child in input_dir.iterdir():
@@ -277,8 +300,26 @@ def needs_index(path: Path, state: dict) -> bool:
 
 @eidosian()
 def run_graphrag(cmd: str, args: list[str]) -> None:
-    cmd_parts = shlex.split(cmd) + args
-    subprocess.run(cmd_parts, check=True)
+    cmd_parts = shlex.split(cmd)
+    if not cmd_parts:
+        raise ValueError("Empty GraphRAG command")
+    executable = cmd_parts[0]
+    # Prefer the canonical CLI entrypoint; fallback to binary if available.
+    if executable == "graphrag":
+        cmd_parts = [sys.executable, "-m", "graphrag"]
+    elif shutil.which(executable) is None:
+        raise FileNotFoundError(f"GraphRAG command not found: {executable}")
+
+    cmd_parts = cmd_parts + args
+    try:
+        subprocess.run(cmd_parts, check=True)
+    except subprocess.CalledProcessError:
+        # Compatibility fallback for environments where module execution fails.
+        if executable == "graphrag" and shutil.which("graphrag"):
+            fallback = ["graphrag"] + args
+            subprocess.run(fallback, check=True)
+            return
+        raise
 
 
 @eidosian()
@@ -330,17 +371,33 @@ def main() -> int:
             if files:
                 stage_files(input_dir, scan_root, files, args.copy)
 
-        if not state.get("indexed") and not has_existing_output(root):
-            cmd = ["index", "--root", str(root), "--method", args.method]
-            if args.verbose:
-                cmd.append("--verbose")
+        do_update = bool(args.use_update and state.get("indexed") and has_existing_output(root))
+        cmd = [("update" if do_update else "index"), "--root", str(root), "--method", args.method]
+        if args.verbose:
+            cmd.append("--verbose")
+
+        try:
             run_graphrag(args.graphrag_cmd, cmd)
-            state["indexed"] = True
-        else:
-            cmd = ["update", "--root", str(root), "--method", args.method]
-            if args.verbose:
-                cmd.append("--verbose")
-            run_graphrag(args.graphrag_cmd, cmd)
+        except subprocess.CalledProcessError:
+            # Some GraphRAG builds do not support all input types in fast mode.
+            if args.method == "fast":
+                retry_cmd = [cmd[0], "--root", str(root), "--method", "standard"]
+                if args.verbose:
+                    retry_cmd.append("--verbose")
+                print("Fast method failed; retrying with standard method.")
+                run_graphrag(args.graphrag_cmd, retry_cmd)
+            elif do_update:
+                # Compatibility fallback: rerun full index if update path is unsupported.
+                fallback_cmd = ["index", "--root", str(root), "--method", args.method]
+                if args.verbose:
+                    fallback_cmd.append("--verbose")
+                print("Update path failed; retrying with full index.")
+                run_graphrag(args.graphrag_cmd, fallback_cmd)
+            else:
+                raise
+
+        validate_index_output(root)
+        state["indexed"] = True
 
         for path in batch:
             stat = path.stat()

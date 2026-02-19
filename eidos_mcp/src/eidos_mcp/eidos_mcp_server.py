@@ -5,6 +5,7 @@ import os
 import time
 from pathlib import Path
 from typing import Iterable, Dict, Any, Optional, Sequence
+from urllib.parse import urlparse
 
 import importlib
 import sys
@@ -43,9 +44,11 @@ def _ensure_router_tools() -> None:
         "eidos_mcp.routers.gis",
         "eidos_mcp.routers.llm",
         "eidos_mcp.routers.knowledge",
+        "eidos_mcp.routers.learner",
         "eidos_mcp.routers.memory",
         "eidos_mcp.routers.moltbook",
         "eidos_mcp.routers.nexus",
+        "eidos_mcp.routers.prompt",
         "eidos_mcp.routers.refactor",
         "eidos_mcp.routers.sms",
         "eidos_mcp.routers.system",
@@ -241,6 +244,96 @@ class MCPHeaderCompatibilityMiddleware:
                 scope["headers"] = headers
 
         await self.app(scope, receive, send)
+
+
+class MCPHealthMiddleware:
+    """Expose a stable /health endpoint independent of FastMCP route wiring."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") == "http":
+            method = (scope.get("method") or "").upper()
+            path = scope.get("path") or ""
+            if method == "GET" and path in {"/health", "/healthz"}:
+                response = JSONResponse(
+                    {
+                        "status": "ok",
+                        "transport": os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http"),
+                        "streamable_http_path": mcp.settings.streamable_http_path,
+                        "stateless_http": mcp.settings.stateless_http,
+                        "tool_count": len(list_tool_metadata()),
+                        "plugin_count": len(list_plugins()),
+                        "plugin_tool_count": len(list_tools()),
+                    }
+                )
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+class MCPOriginGuardMiddleware:
+    """Enforce an allowlist for Origin header values on MCP transport routes."""
+
+    def __init__(self, app: ASGIApp, mount_path: str, allowed_origins: set[str]) -> None:
+        self.app = app
+        self.mount_path = mount_path.rstrip("/") or "/"
+        self.allowed_origins = {origin.lower().strip() for origin in allowed_origins if origin.strip()}
+
+    def _is_transport_path(self, path: str) -> bool:
+        return path == self.mount_path or path == f"{self.mount_path}/"
+
+    @staticmethod
+    def _normalize_origin(origin: str) -> str:
+        parsed = urlparse(origin)
+        host = (parsed.hostname or "").strip().lower()
+        if not host:
+            return origin.strip().lower()
+        scheme = (parsed.scheme or "http").strip().lower()
+        if parsed.port:
+            return f"{scheme}://{host}:{parsed.port}"
+        return f"{scheme}://{host}"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        method = (scope.get("method") or "").upper()
+        path = scope.get("path") or ""
+        if method not in {"POST", "GET", "DELETE"} or not self._is_transport_path(path):
+            await self.app(scope, receive, send)
+            return
+
+        headers = list(scope.get("headers", []))
+        origin = _get_header_value(headers, b"origin")
+        if not origin:
+            await self.app(scope, receive, send)
+            return
+
+        normalized = self._normalize_origin(origin)
+        if normalized in self.allowed_origins:
+            host = (_get_header_value(headers, b"host") or "").strip().lower()
+            scheme = (scope.get("scheme") or "http").strip().lower()
+            if host:
+                request_origin = f"{scheme}://{host}"
+                headers = _upsert_header(headers, b"origin", request_origin)
+                scope = dict(scope)
+                scope["headers"] = headers
+            await self.app(scope, receive, send)
+            return
+
+        response = JSONResponse(
+            {
+                "status": "error",
+                "error": "forbidden_origin",
+                "origin": origin,
+                "allowed_origins": sorted(self.allowed_origins),
+            },
+            status_code=403,
+        )
+        await response(scope, receive, send)
 
 
 class MCPErrorResponseCompatibilityMiddleware:
@@ -527,12 +620,14 @@ def _build_streamable_http_app(
     enable_compat_headers: Optional[bool] = None,
     enable_session_recovery: Optional[bool] = None,
     enable_error_response_compat: Optional[bool] = None,
+    enforce_origin: Optional[bool] = None,
 ) -> ASGIApp:
     if mcp.settings.streamable_http_path != mount_path:
         mcp.settings.streamable_http_path = mount_path
         mcp._session_manager = None  # type: ignore[attr-defined]
 
     app = mcp.streamable_http_app()
+    app = MCPHealthMiddleware(app)
 
     if enable_compat_headers is None:
         enable_compat_headers = _is_truthy(
@@ -549,13 +644,38 @@ def _build_streamable_http_app(
             os.environ.get("EIDOS_MCP_ENABLE_SESSION_RECOVERY"),
             default=True,
         )
+    if enforce_origin is None:
+        enforce_origin = _is_truthy(
+            os.environ.get("EIDOS_MCP_ENFORCE_ORIGIN"),
+            default=True,
+        )
     enable_transport_audit = _is_truthy(
         os.environ.get("EIDOS_MCP_AUDIT_TRANSPORT"),
         default=True,
     )
+    default_allowed_origins = {
+        "http://127.0.0.1",
+        "http://localhost",
+        "http://[::1]",
+        "https://127.0.0.1",
+        "https://localhost",
+        "https://[::1]",
+    }
+    raw_allowed_origins = os.environ.get("EIDOS_MCP_ALLOWED_ORIGINS", "")
+    allowed_origins = (
+        {
+            value.strip().lower()
+            for value in raw_allowed_origins.split(",")
+            if value.strip()
+        }
+        if raw_allowed_origins.strip()
+        else default_allowed_origins
+    )
 
     if enable_compat_headers:
         app = MCPHeaderCompatibilityMiddleware(app, mount_path)
+    if enforce_origin:
+        app = MCPOriginGuardMiddleware(app, mount_path, allowed_origins)
     if enable_session_recovery:
         app = MCPSessionRecoveryMiddleware(app, mount_path)
     else:
