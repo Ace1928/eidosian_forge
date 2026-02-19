@@ -56,16 +56,17 @@ reports/graphrag/bench_metrics_*.json
 reports/graphrag/qualitative_assessment_*.json
 reports/graphrag/qualitative_assessment_*.md
 reports/graphrag_sweep/
+reports/model_domain_suite/
 doc_forge/runtime/
 benchmarks/eidosian_consensus_bench.py
-models/Llama-3.2-1B-Instruct-Q8_0.gguf
-models/Qwen2.5-0.5B-Instruct-Q8_0.gguf
-models/nomic-embed-text-v1.5.Q4_K_M.gguf
 models/.cache/
+models/*.gguf
+models/mmproj-*.gguf
+models/download_manifest_*.json
 llama.cpp/
 
-# Models (handled by LFS, but ignore local copies if not tracked)
-# models/*.gguf  <-- Commented out as we want to track them with LFS
+# Models are downloaded locally by scripts/download_local_models.py and are not tracked by default.
+# Use explicit git add -f if you intentionally want LFS pointers in-repo.
 
 # Lancedb build artifacts
 lib/lancedb_src/target/

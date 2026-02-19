@@ -790,6 +790,33 @@
         ]
       },
       "links": []
+    },
+    "cc0bc34f-7801-4df5-a57e-f5e8ed95ec12": {
+      "id": "cc0bc34f-7801-4df5-a57e-f5e8ed95ec12",
+      "content": "Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models.",
+      "metadata": {
+        "tags": [
+          "graphrag",
+          "models",
+          "multimodal",
+          "termux",
+          "catalog"
+        ]
+      },
+      "links": []
+    },
+    "9c73bbdf-d09f-4c43-bc50-152885496535": {
+      "id": "9c73bbdf-d09f-4c43-bc50-152885496535",
+      "content": "GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled.",
+      "metadata": {
+        "tags": [
+          "quality-gates",
+          "model-selection",
+          "termux",
+          "graphrag"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

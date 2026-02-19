@@ -1,5 +1,20 @@
 # Benchmarks
 
+## Model Setup
+Use the curated model catalog in `config/model_catalog.json` and the downloader script:
+
+```bash
+./eidosian_venv/bin/python scripts/download_local_models.py --profile core
+./eidosian_venv/bin/python scripts/download_local_models.py --profile toolcalling
+./eidosian_venv/bin/python scripts/download_local_models.py --profile multimodal
+```
+
+Fast GraphRAG-only setup:
+
+```bash
+./scripts/download_graphrag_models.sh
+```
+
 ## GraphRAG Runtime Benchmark
 Use `run_graphrag_bench.py` to run end-to-end GraphRAG indexing + query against local `llama.cpp` servers with strict output quality gates.
 
@@ -72,3 +87,24 @@ Use `graphrag_qualitative_assessor.py` to score GraphRAG artifacts with determin
 
 Schema reference:
 - `benchmarks/schemas/graphrag_qualitative_assessment.schema.json`
+
+## Multi-Domain Model Suite
+Use `model_domain_suite.py` to benchmark local models across tool calling, extraction, reasoning, coding, safety, and optional multimodal OCR.
+
+### Run (catalog-driven)
+```bash
+./eidosian_venv/bin/python benchmarks/model_domain_suite.py --profile toolcalling
+```
+
+### Run with explicit models
+```bash
+./eidosian_venv/bin/python benchmarks/model_domain_suite.py \
+  --model qwen_0_5b=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf \
+  --model arch_3b=models/Arch-Function-3B-Q6_K.gguf
+```
+
+### Outputs
+- `reports/model_domain_suite/model_domain_suite_*.json`
+- `reports/model_domain_suite/model_domain_suite_*.md`
+- `reports/model_domain_suite/model_domain_suite_latest.json`
+- `reports/model_domain_suite/model_domain_suite_latest.md`

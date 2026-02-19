@@ -12,6 +12,7 @@ A modular, automation-friendly collection of local scripts.
 - `add_to_path`: add a directory to PATH
 - `clipboard_diagnostics.sh`: detect clipboard backends
 - `completion_install`: install shell completions from executables
+- `download_local_models.py`: curated Hugging Face model downloader using `config/model_catalog.json`
 - `forge_builder`: create project structures
 - `generate_directory_atlas.py`: generate linked directory atlas + full recursive index (deterministic tracked scope by default; optional filesystem scope)
 - `glyph_stream`: render images/video to glyph art

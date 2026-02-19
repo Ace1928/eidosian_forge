@@ -20,6 +20,11 @@ ASSESS_SCRIPT = Path("benchmarks/graphrag_qualitative_assessor.py")
 DEFAULT_MODELS: list[tuple[str, str]] = [
     ("qwen_0_5b", "models/Qwen2.5-0.5B-Instruct-Q8_0.gguf"),
     ("llama_3_2_1b", "models/Llama-3.2-1B-Instruct-Q8_0.gguf"),
+    ("qwen_1_5b", "models/Qwen2.5-1.5B-Instruct-Q8_0.gguf"),
+    ("qwen_3b", "models/Qwen2.5-3B-Instruct-Q6_K.gguf"),
+    ("arch_function_3b", "models/Arch-Function-3B-Q6_K.gguf"),
+    ("qwen_coder_3b", "models/Qwen2.5-Coder-3B-Instruct-Q6_K.gguf"),
+    ("llama_3_2_3b", "models/Llama-3.2-3B-Instruct-Q6_K.gguf"),
 ]
 
 

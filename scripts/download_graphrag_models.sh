@@ -1,16 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-mkdir -p models
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
-echo "Downloading Llama 3.2 1B Instruct..."
-huggingface-cli download bartowski/Llama-3.2-1B-Instruct-GGUF Llama-3.2-1B-Instruct-Q8_0.gguf --local-dir models --local-dir-use-symlinks False
+PYTHON_BIN="${PYTHON_BIN:-$REPO_ROOT/eidosian_venv/bin/python3}"
+if [ ! -x "$PYTHON_BIN" ]; then
+  PYTHON_BIN="python3"
+fi
 
-echo "Downloading Qwen 2.5 0.5B Instruct..."
-huggingface-cli download bartowski/Qwen2.5-0.5B-Instruct-GGUF Qwen2.5-0.5B-Instruct-Q8_0.gguf --local-dir models --local-dir-use-symlinks False
+"$PYTHON_BIN" scripts/download_local_models.py --profile graphrag
 
-echo "Downloading Nomic Embed Text..."
-huggingface-cli download lmstudio-community/nomic-embed-text-v1.5-GGUF nomic-embed-text-v1.5.Q4_K_M.gguf --local-dir models --local-dir-use-symlinks False
-
-echo "Model downloads complete."
-ls -lh models/
+echo "\nGraphRAG model inventory:"
+ls -lh models/ | sed -n '1,200p'
