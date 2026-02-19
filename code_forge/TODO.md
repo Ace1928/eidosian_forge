@@ -3,16 +3,16 @@
 ## Critical
 - [x] Add ingestion/query benchmarks with reproducible fixtures and JSON outputs.
 - [ ] Add coverage report target enforcement for `code_forge/src/code_forge`.
-- [ ] Implement canonical extraction generator + migration map artifact.
+- [x] Implement canonical extraction generator + migration map artifact.
 
 ## High Priority
 - [x] Add call/import/reference edge extraction to relationship graph.
-- [ ] Add triage confidence score and full rule audit trail output.
+- [x] Add triage confidence score and full rule audit trail output.
 - [x] Add CLI command for benchmark execution and baseline comparison.
-- [ ] Add strict schema validation for digester artifacts.
+- [x] Add strict schema validation for digester artifacts.
 
 ## Medium Priority
-- [ ] Add AST-structural clone detection and cluster reports.
+- [x] Add AST-structural clone detection and cluster reports.
 - [ ] Add per-language parser adapters (tree-sitter path) for deeper non-Python fidelity.
 - [ ] Integrate profile traces into triage decisions (hot path preservation).
 

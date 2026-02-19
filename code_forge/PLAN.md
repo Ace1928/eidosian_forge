@@ -41,9 +41,10 @@ Build a production-grade archive digester and living code substrate that can:
 
 ## Near-Term Upgrades (v1.1)
 - [x] Add symbol/reference graph edges beyond `contains` (`imports`, `calls`, `uses`).
-- [ ] Add structural clone detection (AST-shape similarity) for stronger near-dup filtering.
-- [ ] Add canonical extraction templates and compatibility shim generation.
-- [ ] Add triage confidence scoring and rule audit trace for every decision.
+- [x] Add structural clone detection (AST-shape similarity) for stronger near-dup filtering.
+- [x] Add canonical extraction templates and compatibility shim generation.
+- [x] Add triage confidence scoring and rule audit trace for every decision.
+- [x] Add strict schema validation contract for digester artifacts.
 
 ## Done Definition
 A Code Forge change is done only when:

@@ -7,6 +7,8 @@ from code_forge.library.similarity import (
     normalize_code_text,
     normalized_hash,
     simhash64,
+    structural_hash,
+    structural_normalize_code_text,
     token_jaccard,
     tokenize_code_text,
 )
@@ -19,6 +21,8 @@ __all__ = [
     "normalize_code_text",
     "normalized_hash",
     "simhash64",
+    "structural_hash",
+    "structural_normalize_code_text",
     "token_jaccard",
     "tokenize_code_text",
 ]

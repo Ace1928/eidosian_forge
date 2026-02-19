@@ -26,6 +26,7 @@ for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT)
 
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.digester.pipeline import build_duplication_index, build_repo_index, build_triage_report
+from code_forge.digester.schema import validate_output_dir
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
@@ -444,6 +445,7 @@ def run_code_analysis(
         "dependency_graph_path": str(digester_dir / "dependency_graph.json"),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
         "relationship_counts": db.relationship_counts(),
+        "artifact_validation": validate_output_dir(digester_dir),
     }
     report_path = report_dir / "code_analysis_report.json"
     report_path.write_text(json.dumps(code_report, indent=2) + "\n", encoding="utf-8")

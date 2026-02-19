@@ -47,6 +47,28 @@ _STOPWORDS = {
     "this",
 }
 
+_LANG_KEYWORDS = _STOPWORDS.union(
+    {
+        "import",
+        "from",
+        "while",
+        "try",
+        "except",
+        "finally",
+        "async",
+        "await",
+        "yield",
+        "switch",
+        "case",
+        "break",
+        "continue",
+        "match",
+        "where",
+        "package",
+        "namespace",
+    }
+)
+
 
 def split_identifier(token: str) -> list[str]:
     token = token.strip("_")
@@ -94,6 +116,31 @@ def tokenize_code_text(text: str) -> list[str]:
 
 def normalized_hash(text: str) -> str:
     return hashlib.sha256(normalize_code_text(text).encode("utf-8")).hexdigest()
+
+
+def structural_normalize_code_text(text: str) -> str:
+    """
+    Normalize code while abstracting identifier names.
+
+    This preserves control-flow/operator structure and literals but replaces
+    user identifiers with `id` tokens, enabling structural clone clustering.
+    """
+    normalized = normalize_code_text(text)
+    parts = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]*|[^\s]", normalized)
+    out: list[str] = []
+    for token in parts:
+        if re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", token):
+            if token in {"str", "num"} or token in _LANG_KEYWORDS:
+                out.append(token)
+            else:
+                out.append("id")
+        else:
+            out.append(token)
+    return " ".join(out)
+
+
+def structural_hash(text: str) -> str:
+    return hashlib.sha256(structural_normalize_code_text(text).encode("utf-8")).hexdigest()
 
 
 def simhash64(tokens: Sequence[str]) -> int:

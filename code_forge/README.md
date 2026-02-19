@@ -8,6 +8,7 @@ and produces explainable triage outputs for archive reduction and canonical extr
 
 - Multi-language ingestion into a normalized SQLite library (`code_units`, `code_text`, `relationships`, fingerprints, search index).
 - Exact duplicate detection, normalized duplicate detection, and near-duplicate detection via SimHash.
+- Structural clone clustering using identifier-abstracted structural hashes.
 - Hybrid semantic search (FTS when available + lexical scoring fallback).
 - Structural tracing of module/class/function containment graphs.
 - Relationship edge extraction for `imports`, `calls`, and `uses`.
@@ -15,10 +16,12 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Archive digester pipeline:
   - Stage A: intake catalog (`repo_index.json`)
   - Stage B: duplication index (`duplication_index.json`)
-  - Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
-  - Stage D: dependency graph export (`dependency_graph.json`)
+- Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
+- Stage C.1: triage audit (`triage_audit.json`) with rule ids and confidence scores
+- Stage D: dependency graph export (`dependency_graph.json`)
 - Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
 - Canonical extraction planning with migration map and compatibility shim staging.
+- Strict artifact schema validation (`validate-artifacts`) and strict digest failure mode.
 - Integration exports:
   - Knowledge Forge sync (`sync-knowledge`)
   - GraphRAG corpus export (`export-graphrag`)
@@ -46,6 +49,9 @@ code-forge catalog . --output-dir data/code_forge/digester/latest
 
 # Build dependency graph from relationship edges
 code-forge dependency-graph --output-dir data/code_forge/digester/latest
+
+# Validate artifact contracts
+code-forge validate-artifacts --output-dir data/code_forge/digester/latest
 
 # Generate triage from existing intake artifacts
 code-forge triage-report --output-dir data/code_forge/digester/latest
@@ -109,8 +115,10 @@ Primary DB tables:
 Primary digester artifacts:
 - `repo_index.json`: deterministic file-level intake index
 - `duplication_index.json`: exact/normalized/near duplication report
+- `duplication_index.json`: exact/normalized/structural/near duplication report
 - `dependency_graph.json`: file/module dependency graph from imports/calls/uses edges
 - `triage.json`: explainable classification with metrics and reasons
+- `triage_audit.json`: per-file rule trace with confidence values
 - `triage.csv`: tabular triage export
 - `triage_report.md`: human review report
 - `archive_digester_summary.json`: full run summary

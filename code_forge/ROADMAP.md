@@ -11,6 +11,8 @@
 - Relationship-edge extraction (`imports`, `calls`, `uses`) and dependency graph artifact export.
 - Benchmark suite with regression gates and baseline support.
 - Canonical migration planning with staged compatibility shim generation.
+- Structural clone clustering and triage audit confidence/rule trace outputs.
+- Strict digester artifact schema validation and validation CLI.
 
 ### In Progress
 - High-confidence canonical extraction workflow (old -> new module migration maps).

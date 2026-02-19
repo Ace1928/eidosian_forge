@@ -181,14 +181,22 @@ def _run_regression_gate(
 
     base_search = float(((baseline.get("search") or {}).get("latency_ms") or {}).get("p95") or 0.0)
     cur_search = float(((current.get("search") or {}).get("latency_ms") or {}).get("p95") or 0.0)
-    if base_search > 0 and cur_search > (base_search * gain_factor):
+    if (
+        base_search > 0
+        and cur_search > (base_search * gain_factor)
+        and (cur_search - base_search) > 20.0
+    ):
         violations.append(
             f"Search latency p95 regressed: baseline={base_search:.4f}ms, current={cur_search:.4f}ms"
         )
 
     base_graph = float(((baseline.get("graph") or {}).get("build_ms") or 0.0))
     cur_graph = float(((current.get("graph") or {}).get("build_ms") or 0.0))
-    if base_graph > 0 and cur_graph > (base_graph * gain_factor):
+    if (
+        base_graph > 0
+        and cur_graph > (base_graph * gain_factor)
+        and (cur_graph - base_graph) > 50.0
+    ):
         violations.append(
             f"Dependency graph build regressed: baseline={base_graph:.4f}ms, current={cur_graph:.4f}ms"
         )

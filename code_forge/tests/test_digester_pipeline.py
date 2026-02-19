@@ -6,6 +6,7 @@ from code_forge.digester.pipeline import (
     build_triage_report,
     run_archive_digester,
 )
+from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 
@@ -40,11 +41,14 @@ def test_build_repo_and_duplication_and_triage(tmp_path: Path) -> None:
     assert (output / "repo_index.json").exists()
     assert (output / "duplication_index.json").exists()
     assert (output / "triage.json").exists()
+    assert (output / "triage_audit.json").exists()
     assert (output / "triage.csv").exists()
     assert (output / "triage_report.md").exists()
+    assert duplication["summary"]["structural_group_count"] >= 1
 
     assert repo_index["files_total"] == 3
     assert triage["entries"]
+    assert all("confidence" in rec and "rule_id" in rec for rec in triage["entries"])
     labels = {rec["label"] for rec in triage["entries"]}
     assert labels.intersection({"extract", "delete_candidate", "keep", "refactor", "quarantine"})
 
@@ -73,4 +77,7 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert (out / "archive_digester_summary.json").exists()
     assert (out / "repo_index.json").exists()
     assert (out / "duplication_index.json").exists()
+    assert (out / "dependency_graph.json").exists()
     assert (out / "triage.json").exists()
+    validation = validate_output_dir(out)
+    assert validation["pass"]

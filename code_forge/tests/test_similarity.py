@@ -5,6 +5,8 @@ from code_forge.library.similarity import (
     normalized_hash,
     simhash64,
     split_identifier,
+    structural_hash,
+    structural_normalize_code_text,
     token_jaccard,
     tokenize_code_text,
 )
@@ -43,3 +45,11 @@ def test_build_fingerprint() -> None:
     assert len(norm) == 64
     assert isinstance(sim, int)
     assert token_count > 0
+
+
+def test_structural_hash_abstracts_identifiers() -> None:
+    left = "def add_total(items):\n    value = sum(items)\n    return value\n"
+    right = "def compute_total(values):\n    output = sum(values)\n    return output\n"
+
+    assert structural_normalize_code_text(left) == structural_normalize_code_text(right)
+    assert structural_hash(left) == structural_hash(right)

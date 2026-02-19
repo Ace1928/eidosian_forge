@@ -17,6 +17,8 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Normalization/tokenization/fingerprint primitives (`normalized_hash`, `simhash64`).
 - `digester/pipeline.py`
   - Archive Digester orchestration (intake -> dedup -> triage -> integration exports).
+- `digester/schema.py`
+  - Strict artifact schema validation and contract checks.
 - `bench/runner.py`
   - Repeatable ingestion/search/graph benchmark suite with regression gates.
 - `canonicalize/planner.py`
@@ -69,7 +71,7 @@ Typed edges for structural and semantic traversal:
 ### Stage C: Triage
 - aggregate file metrics from indexed units
 - classify `keep` / `extract` / `refactor` / `quarantine` / `delete_candidate`
-- emit `triage.json`, `triage.csv`, `triage_report.md`
+- emit `triage.json`, `triage.csv`, `triage_report.md`, `triage_audit.json`
 
 ### Stage D: Integration
 - optional Knowledge Forge sync

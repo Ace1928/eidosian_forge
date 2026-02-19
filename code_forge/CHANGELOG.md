@@ -1,4 +1,7 @@
 ## Unreleased
+- Added structural clone hashing and structural duplicate clustering in duplication artifacts.
+- Added triage rule IDs, confidence scoring, and `triage_audit.json` decision traces.
+- Added strict schema validation (`digester/schema.py`) and CLI command `validate-artifacts`.
 - Added relationship-edge extraction (`imports`, `calls`, `uses`) during ingestion and dependency graph export artifacts.
 - Added benchmark suite with baseline regression gates and CLI entrypoint (`code-forge benchmark`).
 - Added canonical migration planner with staged compatibility shims (`code-forge canonical-plan`).

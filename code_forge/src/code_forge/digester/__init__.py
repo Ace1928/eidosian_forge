@@ -7,6 +7,7 @@ from code_forge.digester.pipeline import (
     build_triage_report,
     run_archive_digester,
 )
+from code_forge.digester.schema import validate_output_dir
 
 __all__ = [
     "build_dependency_graph",
@@ -14,4 +15,5 @@ __all__ = [
     "build_repo_index",
     "build_triage_report",
     "run_archive_digester",
+    "validate_output_dir",
 ]

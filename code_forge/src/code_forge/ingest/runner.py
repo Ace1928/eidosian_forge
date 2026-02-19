@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
 from code_forge.library.db import CodeLibraryDB, CodeUnit
-from code_forge.library.similarity import build_fingerprint
+from code_forge.library.similarity import build_fingerprint, structural_hash
 
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[4]))).resolve()
 DEFAULT_RUNS_DIR = FORGE_ROOT / "data" / "code_forge" / "ingestion_runs"
@@ -197,6 +197,7 @@ class IngestionRunner:
         module_meta = analysis.get("module", {}) if isinstance(analysis, dict) else {}
         module_hash = file_hash
         norm_hash, simhash, token_count = build_fingerprint(source_text)
+        module_struct_hash = structural_hash(source_text)
 
         module_unit = CodeUnit(
             unit_type="module",
@@ -211,6 +212,7 @@ class IngestionRunner:
             content_hash=module_hash,
             run_id=run_id,
             normalized_hash=norm_hash,
+            structural_hash=module_struct_hash,
             simhash64=f"{simhash:016x}",
             token_count=token_count,
             semantic_text=source_text[:4000],
@@ -238,10 +240,12 @@ class IngestionRunner:
             parent_id = id_by_qualified.get(parent_qn, module_id)
 
             node_norm_hash = None
+            node_struct_hash = None
             node_simhash = None
             node_token_count = None
             if node_source:
                 node_norm_hash, raw_simhash, node_token_count = build_fingerprint(node_source)
+                node_struct_hash = structural_hash(node_source)
                 node_simhash = f"{raw_simhash:016x}"
 
             unit = CodeUnit(
@@ -259,6 +263,7 @@ class IngestionRunner:
                 run_id=run_id,
                 complexity=node.get("complexity"),
                 normalized_hash=node_norm_hash,
+                structural_hash=node_struct_hash,
                 simhash64=node_simhash,
                 token_count=node_token_count,
                 semantic_text=node_source[:2000] if node_source else None,
@@ -299,6 +304,7 @@ class IngestionRunner:
             return self._external_unit_cache[key]
 
         ext_hash, ext_simhash, ext_token_count = build_fingerprint(key)
+        ext_struct_hash = structural_hash(key)
         ext_content_hash = self.db.add_text(key)
         ext_unit = CodeUnit(
             unit_type="external_symbol",
@@ -309,6 +315,7 @@ class IngestionRunner:
             content_hash=ext_content_hash,
             run_id=run_id,
             normalized_hash=ext_hash,
+            structural_hash=ext_struct_hash,
             simhash64=f"{ext_simhash:016x}",
             token_count=ext_token_count,
             semantic_text=key,

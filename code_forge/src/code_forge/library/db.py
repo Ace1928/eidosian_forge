@@ -40,6 +40,7 @@ class CodeUnit:
     run_id: Optional[str] = None
     complexity: Optional[float] = None
     normalized_hash: Optional[str] = None
+    structural_hash: Optional[str] = None
     simhash64: Optional[str] = None  # 16-char hex
     token_count: Optional[int] = None
     semantic_text: Optional[str] = None
@@ -115,6 +116,7 @@ class CodeLibraryDB:
                 CREATE TABLE IF NOT EXISTS code_fingerprints (
                     unit_id TEXT PRIMARY KEY,
                     normalized_hash TEXT,
+                    structural_hash TEXT,
                     simhash64 TEXT,
                     token_count INTEGER,
                     fingerprint_version INTEGER NOT NULL DEFAULT 1,
@@ -158,6 +160,14 @@ class CodeLibraryDB:
 
             self._ensure_column(conn, "code_units", "complexity", "REAL")
             self._ensure_column(conn, "code_units", "language", "TEXT")
+
+            self._ensure_column(conn, "code_fingerprints", "structural_hash", "TEXT")
+            conn.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_code_fp_struct_hash
+                    ON code_fingerprints(structural_hash)
+                """
+            )
 
             try:
                 conn.execute(
@@ -248,10 +258,11 @@ class CodeLibraryDB:
         conn.execute(
             """
             INSERT INTO code_fingerprints (
-                unit_id, normalized_hash, simhash64, token_count, fingerprint_version, created_at
-            ) VALUES (?, ?, ?, ?, 1, ?)
+                unit_id, normalized_hash, structural_hash, simhash64, token_count, fingerprint_version, created_at
+            ) VALUES (?, ?, ?, ?, ?, 2, ?)
             ON CONFLICT(unit_id) DO UPDATE SET
                 normalized_hash=excluded.normalized_hash,
+                structural_hash=excluded.structural_hash,
                 simhash64=excluded.simhash64,
                 token_count=excluded.token_count,
                 fingerprint_version=excluded.fingerprint_version,
@@ -260,6 +271,7 @@ class CodeLibraryDB:
             (
                 unit_id,
                 unit.normalized_hash,
+                unit.structural_hash,
                 unit.simhash64,
                 unit.token_count,
                 _utc_now(),
@@ -360,7 +372,7 @@ class CodeLibraryDB:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
                 FROM code_units cu
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
                 WHERE cu.id = ?
@@ -501,7 +513,7 @@ class CodeLibraryDB:
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
                 FROM code_units cu
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
                 ORDER BY cu.created_at DESC
@@ -516,7 +528,7 @@ class CodeLibraryDB:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
                 FROM code_units cu
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
                 WHERE cu.qualified_name = ?
@@ -542,7 +554,7 @@ class CodeLibraryDB:
         with self._connect() as conn:
             rows = conn.execute(
                 f"""
-                SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count, r.rel_type
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count, r.rel_type
                 FROM relationships r
                 JOIN code_units cu ON cu.id = r.child_id
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
@@ -569,7 +581,7 @@ class CodeLibraryDB:
         with self._connect() as conn:
             rows = conn.execute(
                 f"""
-                SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count, r.rel_type
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count, r.rel_type
                 FROM relationships r
                 JOIN code_units cu ON cu.id = r.parent_id
                 LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
@@ -645,7 +657,7 @@ class CodeLibraryDB:
                 rows = conn.execute(
                     """
                     SELECT cu.id, cu.unit_type, cu.language, cu.qualified_name, cu.file_path,
-                           cu.line_start, cu.line_end, fp.simhash64, fp.token_count
+                           cu.line_start, cu.line_end, fp.structural_hash, fp.simhash64, fp.token_count
                     FROM code_units cu
                     JOIN code_fingerprints fp ON fp.unit_id = cu.id
                     WHERE fp.normalized_hash = ?
@@ -656,6 +668,49 @@ class CodeLibraryDB:
                 out.append(
                     {
                         "normalized_hash": normalized_hash,
+                        "occurrences": int(grp["occurrences"]),
+                        "units": [dict(r) for r in rows],
+                    }
+                )
+        return out
+
+    def list_structural_duplicates(
+        self,
+        min_occurrences: int = 2,
+        limit_groups: int = 200,
+    ) -> list[Dict[str, Any]]:
+        with self._connect() as conn:
+            groups = conn.execute(
+                """
+                SELECT fp.structural_hash, COUNT(*) AS occurrences
+                FROM code_fingerprints fp
+                WHERE fp.structural_hash IS NOT NULL
+                GROUP BY fp.structural_hash
+                HAVING COUNT(*) >= ?
+                ORDER BY occurrences DESC
+                LIMIT ?
+                """,
+                (max(2, min_occurrences), max(1, limit_groups)),
+            ).fetchall()
+
+            out: list[Dict[str, Any]] = []
+            for grp in groups:
+                structural_hash = grp["structural_hash"]
+                rows = conn.execute(
+                    """
+                    SELECT cu.id, cu.unit_type, cu.language, cu.qualified_name, cu.file_path,
+                           cu.line_start, cu.line_end,
+                           fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
+                    FROM code_units cu
+                    JOIN code_fingerprints fp ON fp.unit_id = cu.id
+                    WHERE fp.structural_hash = ?
+                    ORDER BY cu.file_path, cu.line_start
+                    """,
+                    (structural_hash,),
+                ).fetchall()
+                out.append(
+                    {
+                        "structural_hash": structural_hash,
                         "occurrences": int(grp["occurrences"]),
                         "units": [dict(r) for r in rows],
                     }
@@ -687,7 +742,7 @@ class CodeLibraryDB:
             rows = conn.execute(
                 f"""
                 SELECT cu.id, cu.language, cu.unit_type, cu.qualified_name, cu.file_path,
-                       cu.line_start, cu.line_end, fp.normalized_hash, fp.simhash64, fp.token_count
+                       cu.line_start, cu.line_end, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count
                 FROM code_units cu
                 JOIN code_fingerprints fp ON fp.unit_id = cu.id
                 WHERE {' AND '.join(where)}
@@ -810,7 +865,7 @@ class CodeLibraryDB:
 
                 row = conn.execute(
                     """
-                    SELECT cu.*, fp.normalized_hash, fp.simhash64, fp.token_count, cs.search_text
+                    SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count, cs.search_text
                     FROM code_units cu
                     LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
                     LEFT JOIN code_search cs ON cs.unit_id = cu.id

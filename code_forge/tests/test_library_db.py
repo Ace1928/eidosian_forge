@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from code_forge.library.db import CodeLibraryDB, CodeUnit
-from code_forge.library.similarity import build_fingerprint
+from code_forge.library.similarity import build_fingerprint, structural_hash
 
 
 def test_add_text_dedup(tmp_path: Path) -> None:
@@ -127,6 +127,8 @@ def test_normalized_and_near_duplicates_and_semantic_search(tmp_path: Path) -> N
     h_b = db.add_text(src_b)
     n_a, s_a, t_a = build_fingerprint(src_a)
     n_b, s_b, t_b = build_fingerprint(src_b)
+    st_a = structural_hash(src_a)
+    st_b = structural_hash(src_b)
 
     db.add_unit(
         CodeUnit(
@@ -137,6 +139,7 @@ def test_normalized_and_near_duplicates_and_semantic_search(tmp_path: Path) -> N
             content_hash=h_a,
             language="python",
             normalized_hash=n_a,
+            structural_hash=st_a,
             simhash64=f"{s_a:016x}",
             token_count=t_a,
             semantic_text=src_a,
@@ -151,6 +154,7 @@ def test_normalized_and_near_duplicates_and_semantic_search(tmp_path: Path) -> N
             content_hash=h_b,
             language="python",
             normalized_hash=n_b,
+            structural_hash=st_b,
             simhash64=f"{s_b:016x}",
             token_count=t_b,
             semantic_text=src_b,
@@ -160,6 +164,10 @@ def test_normalized_and_near_duplicates_and_semantic_search(tmp_path: Path) -> N
     normalized = db.list_normalized_duplicates(min_occurrences=2, limit_groups=20)
     # Function name differs, so normalized content should remain distinct.
     assert normalized == []
+
+    structural = db.list_structural_duplicates(min_occurrences=2, limit_groups=20)
+    assert structural
+    assert structural[0]["occurrences"] >= 2
 
     near = db.list_near_duplicates(max_hamming=32, min_token_count=1, limit_pairs=20)
     assert near
@@ -177,6 +185,8 @@ def test_file_metrics_and_language_counts(tmp_path: Path) -> None:
     h_js = db.add_text("function hi(){ return 'hi'; }\n")
     n_py, s_py, t_py = build_fingerprint("def hi():\n    return 'hi'\n")
     n_js, s_js, t_js = build_fingerprint("function hi(){ return 'hi'; }\n")
+    st_py = structural_hash("def hi():\n    return 'hi'\n")
+    st_js = structural_hash("function hi(){ return 'hi'; }\n")
 
     db.add_unit(
         CodeUnit(
@@ -187,6 +197,7 @@ def test_file_metrics_and_language_counts(tmp_path: Path) -> None:
             language="python",
             content_hash=h_py,
             normalized_hash=n_py,
+            structural_hash=st_py,
             simhash64=f"{s_py:016x}",
             token_count=t_py,
         )
@@ -200,6 +211,7 @@ def test_file_metrics_and_language_counts(tmp_path: Path) -> None:
             language="javascript",
             content_hash=h_js,
             normalized_hash=n_js,
+            structural_hash=st_js,
             simhash64=f"{s_js:016x}",
             token_count=t_js,
         )

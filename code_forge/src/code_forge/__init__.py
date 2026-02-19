@@ -12,6 +12,7 @@ from code_forge.digester.pipeline import (
     build_triage_report,
     run_archive_digester,
 )
+from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner, IngestionStats
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
 from code_forge.librarian.core import CodeLibrarian
@@ -22,6 +23,8 @@ from code_forge.library.similarity import (
     normalize_code_text,
     normalized_hash,
     simhash64,
+    structural_hash,
+    structural_normalize_code_text,
     token_jaccard,
     tokenize_code_text,
 )
@@ -44,6 +47,7 @@ __all__ = [
     "build_repo_index",
     "build_triage_report",
     "run_archive_digester",
+    "validate_output_dir",
     "IngestionRunner",
     "IngestionStats",
     "export_units_for_graphrag",
@@ -53,6 +57,8 @@ __all__ = [
     "normalize_code_text",
     "normalized_hash",
     "simhash64",
+    "structural_hash",
+    "structural_normalize_code_text",
     "token_jaccard",
     "tokenize_code_text",
 ]

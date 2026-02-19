@@ -888,6 +888,20 @@
         ]
       },
       "links": []
+    },
+    "711a3dd5-0a4c-44a6-8c89-0abcc9ccf391": {
+      "id": "711a3dd5-0a4c-44a6-8c89-0abcc9ccf391",
+      "content": "Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs.",
+      "metadata": {
+        "tags": [
+          "artifact_schema",
+          "validation",
+          "structural_clone",
+          "code_forge",
+          "triage_audit"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

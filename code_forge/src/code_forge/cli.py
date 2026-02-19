@@ -44,6 +44,7 @@ from code_forge import (
     run_archive_digester,
     run_benchmark_suite,
     sync_units_to_knowledge_forge,
+    validate_output_dir,
 )
 
 # Default paths
@@ -538,6 +539,11 @@ class CodeForgeCLI(StandardCLI):
             default=20000,
             help="Maximum units for knowledge/GraphRAG export (default: 20000)",
         )
+        digest_parser.add_argument(
+            "--no-strict-validation",
+            action="store_true",
+            help="Disable strict artifact schema validation failure mode",
+        )
         digest_parser.set_defaults(func=self._cmd_digest)
 
         dep_graph_parser = subparsers.add_parser(
@@ -562,6 +568,17 @@ class CodeForgeCLI(StandardCLI):
             help="Maximum relationship rows to aggregate",
         )
         dep_graph_parser.set_defaults(func=self._cmd_dependency_graph)
+
+        validate_parser = subparsers.add_parser(
+            "validate-artifacts",
+            help="Validate digester artifacts against strict schema contracts",
+        )
+        validate_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Digester artifact directory to validate",
+        )
+        validate_parser.set_defaults(func=self._cmd_validate_artifacts)
 
         benchmark_parser = subparsers.add_parser(
             "benchmark",
@@ -714,7 +731,9 @@ class CodeForgeCLI(StandardCLI):
                         "output_dir": str(digester_dir),
                         "repo_index": str(digester_dir / "repo_index.json"),
                         "duplication_index": str(digester_dir / "duplication_index.json"),
+                        "dependency_graph": str(digester_dir / "dependency_graph.json"),
                         "triage": str(digester_dir / "triage.json"),
+                        "triage_audit": str(digester_dir / "triage_audit.json"),
                     },
                     "integrations": integrations,
                 }
@@ -1223,6 +1242,7 @@ class CodeForgeCLI(StandardCLI):
                     sync_knowledge_path=kb_path,
                     graphrag_output_dir=graphrag_out,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
+                    strict_validation=not bool(args.no_strict_validation),
                 )
                 result = CommandResult(
                     True,
@@ -1254,6 +1274,27 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Dependency graph error: {e}")
+        self._output(result, args)
+
+    def _cmd_validate_artifacts(self, args) -> None:
+        """Validate digester artifacts against strict schema contracts."""
+        try:
+            output_dir = Path(args.output_dir).resolve()
+            report = validate_output_dir(output_dir)
+            if report.get("pass", False):
+                result = CommandResult(
+                    True,
+                    "Artifact validation passed",
+                    report,
+                )
+            else:
+                result = CommandResult(
+                    False,
+                    "Artifact validation failed",
+                    report,
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Artifact validation error: {e}")
         self._output(result, args)
 
     def _cmd_benchmark(self, args) -> None:

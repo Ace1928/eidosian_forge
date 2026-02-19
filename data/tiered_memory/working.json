@@ -201,5 +201,27 @@
       "canonical_plan"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "5a849642-192c-4c6f-bc22-54f0a8c4b871",
+    "content": "Latest Code Forge improvements validated: digest now outputs triage_audit and schema-validated artifact set, validate-artifacts passes on data/code_forge/digester/latest, benchmark gate passes with refreshed baseline in reports/code_forge_benchmark_baseline.json.",
+    "created_at": "2026-02-20T06:12:34.599917",
+    "last_accessed": "2026-02-20T06:12:34.599935",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.97,
+    "ttl_seconds": 86400,
+    "tags": [
+      "code_forge",
+      "benchmark_gate",
+      "schema_validation",
+      "termux",
+      "triage_audit",
+      "structural_duplicates"
+    ],
+    "linked_memories": []
   }
 ]
