@@ -1,87 +1,75 @@
 # Code Forge Architecture
 
-## Goals
+## Purpose
+Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous source files into normalized, searchable, and triageable code intelligence artifacts.
 
-- Ingest source code into a structured, searchable, and updatable library.
-- Preserve full reconstruction fidelity (file/module/class/function/statement).
-- Provide stable source maps and reversible, idempotent updates.
-- Support multiple languages via pluggable parsers (Python first).
-- Provide two modes: non-destructive analysis and destructive archival.
+## Runtime Components
 
-## Core Concepts
+- `analyzer/python_analyzer.py`
+  - AST-accurate Python extraction (module/class/function/method/node granularity).
+- `analyzer/generic_analyzer.py`
+  - Regex-backed multi-language fallback analyzer.
+- `ingest/runner.py`
+  - Idempotent ingestion runner with run manifests.
+- `library/db.py`
+  - SQLite schema for units, text blobs, relationships, fingerprints, and search index.
+- `library/similarity.py`
+  - Normalization/tokenization/fingerprint primitives (`normalized_hash`, `simhash64`).
+- `digester/pipeline.py`
+  - Archive Digester orchestration (intake -> dedup -> triage -> integration exports).
+- `integration/pipeline.py`
+  - Knowledge Forge sync and GraphRAG corpus export.
+- `cli.py`
+  - Operator surface for ingestion, search, dedup, triage, and digestion workflows.
 
-### Code Unit
-A Code Unit is the smallest addressable element in the library. Examples:
-- File
-- Module
-- Class
-- Function / Method
-- Block (e.g., loop, conditional)
-- Statement / Expression
+## Core Data Model
 
-Each unit has a stable ID and a source map.
+### `code_units`
+Canonical unit records (module/class/function/method/etc):
+- identity: `id`, `language`, `unit_type`, `qualified_name`
+- location: `file_path`, line/column span
+- content linkage: `content_hash`
+- run linkage: `run_id`
+- quality fields: `complexity`
 
-### Stable ID
-Stable IDs are derived from:
-- Language
-- File path (relative to ingestion root)
-- Symbol path (module.class.function)
-- Structural signature (AST hash)
+### `code_fingerprints`
+Per-unit dedup/search features:
+- `normalized_hash`
+- `simhash64`
+- `token_count`
 
-This enables diffable and idempotent updates.
+### `code_search`
+Unit-level search corpus used by:
+- FTS5 query path (when available)
+- lexical fallback path
 
-### Source Map
-Each Code Unit stores:
-- file_path
-- line_start / line_end
-- col_start / col_end
-- byte_start / byte_end (optional)
-- content_hash
+### `relationships`
+Typed edges (`contains` today) for structural traversal and trace output.
 
-### Library
-The library is a normalized store containing:
-- code_units table (metadata + pointers)
-- code_text table (content blobs, deduped by hash)
-- relationships (parent/child, call graph, imports)
-- tags / embeddings (optional)
+## Archive Digester Stages
 
-## Ingestion Pipeline
+### Stage A: Intake
+- scan and hash files
+- emit deterministic `repo_index.json`
 
-1. **Discovery**: Walk directories and identify source files.
-2. **Parsing**: Parse file into AST (Python via `ast`, later via tree-sitter).
-3. **Extraction**: Generate Code Units for hierarchical nodes.
-4. **Indexing**: Store units + source maps + hashes.
-5. **Linking**: Parent/child, imports, references.
-6. **Snapshot**: Record ingestion run + configuration.
+### Stage B: Duplication
+- exact duplicate groups
+- normalized duplicate groups
+- near-duplicate pairs
+- emit `duplication_index.json`
 
-## Modes
+### Stage C: Triage
+- aggregate file metrics from indexed units
+- classify `keep` / `extract` / `refactor` / `quarantine` / `delete_candidate`
+- emit `triage.json`, `triage.csv`, `triage_report.md`
 
-### Analysis & Archival (Non-Destructive)
-- Ingest without modifying originals.
-- Optional copy of input tree.
+### Stage D: Integration
+- optional Knowledge Forge sync
+- optional GraphRAG corpus export
 
-### Archival & Consolidation (Destructive)
-- Ingest + verify.
-- Create compressed snapshot (default).
-- Remove originals only after verification and user confirmation.
+## Safety and Idempotency
 
-## Update Workflow
-
-1. Modify Code Unit in library.
-2. Generate patch with source map alignment.
-3. Apply patch to all matching occurrences.
-4. Validate with tests.
-5. Commit change set (git).
-
-## Extensibility
-
-- `LanguageAdapter` interface for new languages.
-- `Parser` provides AST nodes and spans.
-- `Normalizer` maps nodes to standard Code Units.
-
-## Safety & Idempotency
-
-- Every destructive run requires explicit confirmation.
-- Each ingestion creates a manifest with hashes.
-- Re-ingestion of unchanged files is a no-op.
-
+- `file_records` + `ANALYSIS_VERSION` prevent unnecessary reprocessing.
+- Ingestion is non-destructive by default (`analysis` mode).
+- Generated digester outputs are excluded from default ingestion scans.
+- All stage outputs are persisted as explicit artifacts for review and rollback.

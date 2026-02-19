@@ -831,6 +831,20 @@
         ]
       },
       "links": []
+    },
+    "e9f0b6d2-aca6-405c-9ab9-0c5dbac51418": {
+      "id": "e9f0b6d2-aca6-405c-9ab9-0c5dbac51418",
+      "content": "Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest.",
+      "metadata": {
+        "tags": [
+          "graphrag",
+          "knowledge_graph",
+          "triage",
+          "code_forge",
+          "archive_digester"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

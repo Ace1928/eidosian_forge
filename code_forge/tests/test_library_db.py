@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from code_forge.library.db import CodeLibraryDB, CodeUnit
+from code_forge.library.similarity import build_fingerprint
 
 
 def test_add_text_dedup(tmp_path: Path) -> None:
@@ -114,3 +115,100 @@ def test_trace_contains_bfs(tmp_path: Path) -> None:
     assert by_type["module"] == 1
     assert by_type["class"] == 1
     assert by_type["method"] == 1
+
+
+def test_normalized_and_near_duplicates_and_semantic_search(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+
+    src_a = "def compute_total(items):\n    total = sum(items)\n    return total\n"
+    src_b = "def calculate_total(items):\n    total = sum(items)\n    return total\n"
+
+    h_a = db.add_text(src_a)
+    h_b = db.add_text(src_b)
+    n_a, s_a, t_a = build_fingerprint(src_a)
+    n_b, s_b, t_b = build_fingerprint(src_b)
+
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="compute_total",
+            qualified_name="math.compute_total",
+            file_path="src/a.py",
+            content_hash=h_a,
+            language="python",
+            normalized_hash=n_a,
+            simhash64=f"{s_a:016x}",
+            token_count=t_a,
+            semantic_text=src_a,
+        )
+    )
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="calculate_total",
+            qualified_name="math.calculate_total",
+            file_path="src/b.py",
+            content_hash=h_b,
+            language="python",
+            normalized_hash=n_b,
+            simhash64=f"{s_b:016x}",
+            token_count=t_b,
+            semantic_text=src_b,
+        )
+    )
+
+    normalized = db.list_normalized_duplicates(min_occurrences=2, limit_groups=20)
+    # Function name differs, so normalized content should remain distinct.
+    assert normalized == []
+
+    near = db.list_near_duplicates(max_hamming=32, min_token_count=1, limit_pairs=20)
+    assert near
+    pair = near[0]
+    assert pair["left"]["file_path"] != pair["right"]["file_path"]
+
+    matches = db.semantic_search("compute total items", limit=5, min_score=0.01)
+    assert matches
+    assert matches[0]["semantic_score"] >= 0.01
+
+
+def test_file_metrics_and_language_counts(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    h_py = db.add_text("def hi():\n    return 'hi'\n")
+    h_js = db.add_text("function hi(){ return 'hi'; }\n")
+    n_py, s_py, t_py = build_fingerprint("def hi():\n    return 'hi'\n")
+    n_js, s_js, t_js = build_fingerprint("function hi(){ return 'hi'; }\n")
+
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="hi",
+            qualified_name="m.hi",
+            file_path="src/m.py",
+            language="python",
+            content_hash=h_py,
+            normalized_hash=n_py,
+            simhash64=f"{s_py:016x}",
+            token_count=t_py,
+        )
+    )
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="hi",
+            qualified_name="web.hi",
+            file_path="src/web.js",
+            language="javascript",
+            content_hash=h_js,
+            normalized_hash=n_js,
+            simhash64=f"{s_js:016x}",
+            token_count=t_js,
+        )
+    )
+
+    by_lang = db.count_units_by_language()
+    assert by_lang["python"] == 1
+    assert by_lang["javascript"] == 1
+
+    metrics = db.file_metrics()
+    assert any(rec["file_path"] == "src/m.py" for rec in metrics)
+    assert any(rec["file_path"] == "src/web.js" for rec in metrics)

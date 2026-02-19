@@ -1,4 +1,9 @@
 ## Unreleased
+- Added Archive Digester pipeline (`catalog`, `triage-report`, `digest`) with deterministic intake artifacts.
+- Added multi-language generic analyzer and fingerprint utilities for normalized/near dedup.
+- Added semantic search + file-level triage outputs (`triage.json`, `triage.csv`, `triage_report.md`).
+- Added Knowledge Forge/GraphRAG integration helpers and CLI wiring.
+- Expanded test coverage for similarity, generic analysis, digester pipeline, and DB metrics.
 - Require models to load successfully and remove echo fallback.
 - Added virtual environment installer script and installation docs.
 - Default model updated to Qwen/Qwen3-1.7B-FP8.

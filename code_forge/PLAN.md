@@ -1,51 +1,53 @@
-# Plan: code_forge
+# Code Forge Plan
 
-**Objective**: Achieve comprehensive test coverage.
+## Mission
+Build a production-grade archive digester and living code substrate that can:
+1. Index and normalize multi-language code.
+2. Detect redundancy and semantic overlap deterministically.
+3. Classify code into actionable triage buckets with explainable evidence.
+4. Export proven artifacts into Knowledge Forge and GraphRAG.
+5. Gate deletions/refactors on measurable tests and benchmarks.
 
----
+## Stage Model (Archive Digester v1)
 
-## Current Sprint: Testing & Cleanup
+### Stage A: Intake (Deterministic Index)
+- [x] Multi-language file discovery and hashing.
+- [x] Deterministic `repo_index.json` artifact.
+- [x] Per-file metadata: language, category, size, LOC, sha256, mtime.
 
-### Phase A: Testing (Priority 1)
+### Stage B: Duplication and Similarity
+- [x] Exact duplicate groups (`content_hash`).
+- [x] Normalized duplicate groups (`normalized_hash`).
+- [x] Near-duplicate pairs (`simhash64` + Hamming distance).
+- [x] Hybrid semantic search (FTS + lexical fallback).
 
-- [ ] Test CodeAnalyzer edge cases
-- [ ] Test CodeIndexer full workflow
-- [ ] Test CodeLibrarian CRUD
-- [ ] Test CLI commands
-- [ ] Achieve 85% coverage
+### Stage C: Explainable Triage
+- [x] File-level metrics aggregation.
+- [x] Rule-based labels: `keep`, `extract`, `refactor`, `quarantine`, `delete_candidate`.
+- [x] Triage outputs: JSON + CSV + markdown report.
 
-### Phase B: Cleanup (Priority 2)
+### Stage D: Integration Outputs
+- [x] Knowledge Forge sync (`sync-knowledge`).
+- [x] GraphRAG export (`export-graphrag`).
+- [x] End-to-end digest command (`digest`) with optional integration exports.
 
-- [ ] Remove legacy `forgeengine/` if present
-- [ ] Clean up directory structure
-- [ ] Update imports
+### Stage E: Proof and Safety Gates
+- [x] Expanded tests for similarity, multi-language analysis, triage pipeline.
+- [x] Idempotent ingestion semantics.
+- [ ] Coverage target >= 90% for `code_forge/src/code_forge`.
+- [ ] Repeatable benchmark suite for ingestion throughput + query latency.
+- [ ] Deletion gate requiring tests + benchmark parity + migration map.
 
-### Phase C: Documentation (Priority 3)
+## Near-Term Upgrades (v1.1)
+- [ ] Add symbol/reference graph edges beyond `contains` (`imports`, `calls`, `uses`).
+- [ ] Add structural clone detection (AST-shape similarity) for stronger near-dup filtering.
+- [ ] Add canonical extraction templates and compatibility shim generation.
+- [ ] Add triage confidence scoring and rule audit trace for every decision.
 
-- [x] Create ROADMAP.md
-- [x] Create ISSUES.md
-- [x] Create PLAN.md
-- [ ] Complete README.md
-- [ ] Add API documentation
-
----
-
-## Timeline
-
-| Phase | Duration | Target |
-|-------|----------|--------|
-| A | 2 days | 2026-01-27 |
-| B | 1 day | 2026-01-28 |
-| C | 1 day | 2026-01-29 |
-
----
-
-## Success Criteria
-
-1. 85% test coverage
-2. No legacy code
-3. Complete documentation
-
----
-
-*Test. Clean. Document.*
+## Done Definition
+A Code Forge change is done only when:
+1. New behavior is tested.
+2. Artifacts are deterministic for the same commit + config.
+3. CLI and docs are updated.
+4. Integration paths (Knowledge Forge/GraphRAG) remain functional.
+5. Regressions are measured with benchmarks, not guesses.

@@ -1,54 +1,108 @@
-# 🏗️ Code Forge
+# Code Forge
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+Code Forge is the code digestion and structural indexing subsystem of Eidosian Forge.
+It ingests multi-language code, deduplicates and fingerprints units, builds searchable indexes,
+and produces explainable triage outputs for archive reduction and canonical extraction.
 
-**The Architect of Structure.**
+## What It Does
 
-> _"Code is thought frozen in silicon. We thaw it, reshape it, and freeze it anew."_
+- Multi-language ingestion into a normalized SQLite library (`code_units`, `code_text`, `relationships`, fingerprints, search index).
+- Exact duplicate detection, normalized duplicate detection, and near-duplicate detection via SimHash.
+- Hybrid semantic search (FTS when available + lexical scoring fallback).
+- Structural tracing of module/class/function containment graphs.
+- Archive digester pipeline:
+  - Stage A: intake catalog (`repo_index.json`)
+  - Stage B: duplication index (`duplication_index.json`)
+  - Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
+- Integration exports:
+  - Knowledge Forge sync (`sync-knowledge`)
+  - GraphRAG corpus export (`export-graphrag`)
 
-## 🛠️ Overview
-
-`code_forge` is the static analysis and code manipulation engine of Eidos. It deconstructs source code into its constituent parts (AST, Control Flow, Dependencies) to enable intelligent refactoring and understanding.
-
-## 🏗️ Architecture
-
-- **Analyzer**: Extracts semantic structure (Classes, Functions, Imports) using Python's `ast` module.
-- **Librarian**: Manages the "Universal Repository" of code snippets, indexing them for retrieval.
-- **Refactorer**: Provides tools for safe, programmatic code modification (used by `refactor_forge`).
-
-## 🔗 System Integration
-
-- **Documentation Forge**: `doc_forge` uses `code_forge` utilities to parse file structures before documenting them.
-- **Agent Forge**: Agents use `code_forge` tools to "read" code with structural awareness.
-
-## 🚀 Usage
-
-### CLI
+## Key Commands
 
 ```bash
-# Analyze a file structure
-code-forge analyze src/main.py
+# Health + index stats
+code-forge status
 
-# Ingest into library
-code-forge ingest src/main.py
+# Ingest repository code (multi-language defaults)
+code-forge ingest-dir . --mode analysis
 
-# Build/refresh SQLite structural index from a directory
-code-forge ingest-dir .
+# Duplicate and near-duplicate analysis
+code-forge dedup-report
+code-forge normalized-dedup-report
+code-forge near-dedup-report --max-hamming 6 --min-tokens 20
 
-# Report duplicate code units by normalized content hash
-code-forge dedup-report --min-occurrences 2 --limit-groups 50
+# Hybrid semantic search and structural trace
+code-forge semantic-search "workspace competition winner"
+code-forge trace agent_forge.consciousness.kernel.ConsciousnessKernel --depth 3
 
-# Trace hierarchical contains-graph for a unit
-code-forge trace module.path.ClassName --depth 3 --max-nodes 200
+# Build intake artifacts only
+code-forge catalog . --output-dir data/code_forge/digester/latest
+
+# Generate triage from existing intake artifacts
+code-forge triage-report --output-dir data/code_forge/digester/latest
+
+# Full archive-digester run
+code-forge digest . \
+  --output-dir data/code_forge/digester/latest \
+  --sync-knowledge \
+  --export-graphrag
+
+# Integration exports
+code-forge sync-knowledge --kb-path data/kb.json
+code-forge export-graphrag --output-dir data/code_forge/graphrag_input
 ```
 
-### Python API
+## Python API
 
 ```python
-from code_forge import Analyzer
+from pathlib import Path
 
-analyzer = Analyzer()
-structure = analyzer.parse_file("src/main.py")
-print(structure.classes)
+from code_forge import (
+    CodeLibraryDB,
+    IngestionRunner,
+    run_archive_digester,
+)
+
+db = CodeLibraryDB(Path("data/code_forge/library.sqlite"))
+runner = IngestionRunner(db=db, runs_dir=Path("data/code_forge/ingestion_runs"))
+
+summary = run_archive_digester(
+    root_path=Path("."),
+    db=db,
+    runner=runner,
+    output_dir=Path("data/code_forge/digester/latest"),
+    mode="analysis",
+)
+print(summary["triage_report_path"])
 ```
+
+## Data Contracts
+
+Primary DB tables:
+- `code_text`: deduplicated source blobs by SHA256
+- `code_units`: normalized module/class/function/method/etc units
+- `relationships`: typed edges (currently `contains`)
+- `code_fingerprints`: normalized hash, simhash64, token_count
+- `code_search`: semantic/lexical search text
+- `ingestion_runs`: deterministic ingestion run metadata
+
+Primary digester artifacts:
+- `repo_index.json`: deterministic file-level intake index
+- `duplication_index.json`: exact/normalized/near duplication report
+- `triage.json`: explainable classification with metrics and reasons
+- `triage.csv`: tabular triage export
+- `triage_report.md`: human review report
+- `archive_digester_summary.json`: full run summary
+
+## Integration Map
+
+- `knowledge_forge`: `sync_units_to_knowledge_forge`
+- `graphrag_forge`: `export_units_for_graphrag`
+- `scripts/living_knowledge_pipeline.py`: now includes Code Forge digester artifacts in code analysis report
+
+## Engineering Notes
+
+- Designed for idempotent ingestion (`file_records` + `ANALYSIS_VERSION`).
+- FTS5 search is used when available; fallback lexical search remains active.
+- Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

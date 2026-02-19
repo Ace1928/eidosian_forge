@@ -224,5 +224,34 @@
       0.5568627450980392, 0.9098039215686274, 0.8627450980392157,
       0.5176470588235295, 0.8156862745098039, 0.2, 0.9647058823529412
     ]
+  },
+  "ea24c7c2-126b-42fb-b1b9-d2b6e0d05437": {
+    "id": "ea24c7c2-126b-42fb-b1b9-d2b6e0d05437",
+    "content": "Code Forge archive digester v1 foundation implemented: deterministic repo intake index, duplication index (exact/normalized/near), explainable triage labels with CSV/JSON/markdown outputs, and full digest orchestration command integrated with knowledge/graphrag exports.",
+    "created_at": "2026-02-20T01:20:47.275108",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_archive_digester_v1_20260219"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.9294117647058824,
+      0.9607843137254902,
+      0.24705882352941178,
+      0.4117647058823529,
+      0.3333333333333333,
+      0.9607843137254902,
+      0.5294117647058824,
+      0.807843137254902,
+      1.0,
+      0.0196078431372549,
+      0.2980392156862745,
+      0.9215686274509803,
+      0.2901960784313726,
+      0.011764705882352941,
+      0.00392156862745098,
+      0.6980392156862745
+    ]
   }
 }

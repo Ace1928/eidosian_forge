@@ -29,11 +29,18 @@ from cli import StandardCLI, CommandResult, ForgeDetector
 
 from code_forge import (
     CodeAnalyzer,
+    GenericCodeAnalyzer,
     CodeIndexer,
     CodeLibrarian,
     CodeLibraryDB,
     IngestionRunner,
+    build_duplication_index,
+    build_repo_index,
+    build_triage_report,
+    export_units_for_graphrag,
     index_forge_codebase,
+    run_archive_digester,
+    sync_units_to_knowledge_forge,
 )
 
 # Default paths
@@ -181,7 +188,7 @@ class CodeForgeCLI(StandardCLI):
             "--ext",
             nargs="*",
             default=None,
-            help="File extensions to include (default: .py)",
+            help="File extensions to include (default: multi-language set)",
         )
         ingest_dir_parser.add_argument(
             "--max-files",
@@ -212,7 +219,7 @@ class CodeForgeCLI(StandardCLI):
             "--ext",
             nargs="*",
             default=None,
-            help="File extensions to include (default: .py)",
+            help="File extensions to include (default: multi-language set)",
         )
         ingest_bg_parser.add_argument(
             "--max-files",
@@ -273,6 +280,88 @@ class CodeForgeCLI(StandardCLI):
         )
         dedup_parser.set_defaults(func=self._cmd_dedup_report)
 
+        norm_dedup_parser = subparsers.add_parser(
+            "normalized-dedup-report",
+            help="Report duplicate code units by normalized fingerprints",
+        )
+        norm_dedup_parser.add_argument(
+            "--min-occurrences",
+            type=int,
+            default=2,
+            help="Minimum duplicate count to include (default: 2)",
+        )
+        norm_dedup_parser.add_argument(
+            "--limit-groups",
+            type=int,
+            default=100,
+            help="Maximum duplicate groups (default: 100)",
+        )
+        norm_dedup_parser.set_defaults(func=self._cmd_normalized_dedup_report)
+
+        near_dedup_parser = subparsers.add_parser(
+            "near-dedup-report",
+            help="Report near-duplicate code units using simhash distance",
+        )
+        near_dedup_parser.add_argument(
+            "--max-hamming",
+            type=int,
+            default=6,
+            help="Maximum hamming distance for near-duplicates (default: 6)",
+        )
+        near_dedup_parser.add_argument(
+            "--min-tokens",
+            type=int,
+            default=20,
+            help="Minimum token count for candidate units (default: 20)",
+        )
+        near_dedup_parser.add_argument(
+            "--limit-pairs",
+            type=int,
+            default=200,
+            help="Maximum near-duplicate pairs to return (default: 200)",
+        )
+        near_dedup_parser.add_argument(
+            "--language",
+            default=None,
+            help="Optional language filter (e.g., python, javascript, go)",
+        )
+        near_dedup_parser.add_argument(
+            "--type",
+            default=None,
+            help="Optional unit type filter (e.g., function, class, method)",
+        )
+        near_dedup_parser.set_defaults(func=self._cmd_near_dedup_report)
+
+        semantic_parser = subparsers.add_parser(
+            "semantic-search",
+            help="Hybrid semantic/code search across indexed units",
+        )
+        semantic_parser.add_argument("query", help="Search query")
+        semantic_parser.add_argument(
+            "-n",
+            "--limit",
+            type=int,
+            default=20,
+            help="Maximum results (default: 20)",
+        )
+        semantic_parser.add_argument(
+            "--language",
+            default=None,
+            help="Optional language filter",
+        )
+        semantic_parser.add_argument(
+            "--type",
+            default=None,
+            help="Optional unit type filter",
+        )
+        semantic_parser.add_argument(
+            "--min-score",
+            type=float,
+            default=0.05,
+            help="Minimum semantic score threshold (default: 0.05)",
+        )
+        semantic_parser.set_defaults(func=self._cmd_semantic_search)
+
         trace_parser = subparsers.add_parser(
             "trace",
             help="Trace contains-graph from a unit (qualified name or unit id)",
@@ -294,6 +383,159 @@ class CodeForgeCLI(StandardCLI):
             help="Maximum nodes in trace output (default: 300)",
         )
         trace_parser.set_defaults(func=self._cmd_trace)
+
+        sync_kb_parser = subparsers.add_parser(
+            "sync-knowledge",
+            help="Sync indexed code units into Knowledge Forge graph",
+        )
+        sync_kb_parser.add_argument(
+            "--kb-path",
+            default=str(FORGE_ROOT / "data" / "kb.json"),
+            help="Knowledge graph persistence path (default: data/kb.json)",
+        )
+        sync_kb_parser.add_argument(
+            "--limit",
+            type=int,
+            default=5000,
+            help="Maximum units to sync (default: 5000)",
+        )
+        sync_kb_parser.add_argument(
+            "--min-tokens",
+            type=int,
+            default=5,
+            help="Minimum token count to include (default: 5)",
+        )
+        sync_kb_parser.set_defaults(func=self._cmd_sync_knowledge)
+
+        export_grag_parser = subparsers.add_parser(
+            "export-graphrag",
+            help="Export code units as GraphRAG-ready text corpus",
+        )
+        export_grag_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "graphrag_input"),
+            help="Output directory for GraphRAG corpus documents",
+        )
+        export_grag_parser.add_argument(
+            "--limit",
+            type=int,
+            default=20000,
+            help="Maximum units to export (default: 20000)",
+        )
+        export_grag_parser.add_argument(
+            "--min-tokens",
+            type=int,
+            default=5,
+            help="Minimum token count to include (default: 5)",
+        )
+        export_grag_parser.set_defaults(func=self._cmd_export_graphrag)
+
+        catalog_parser = subparsers.add_parser(
+            "catalog",
+            help="Build deterministic repo + duplication intake artifacts",
+        )
+        catalog_parser.add_argument(
+            "path",
+            nargs="?",
+            default=str(FORGE_ROOT),
+            help="Root path to catalog (default: forge root)",
+        )
+        catalog_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Output directory for intake artifacts",
+        )
+        catalog_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="File extensions to include (default: multi-language set)",
+        )
+        catalog_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Maximum files to catalog (default: unlimited)",
+        )
+        catalog_parser.set_defaults(func=self._cmd_catalog)
+
+        triage_parser = subparsers.add_parser(
+            "triage-report",
+            help="Generate explainable keep/extract/refactor/quarantine/delete triage reports",
+        )
+        triage_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Directory containing repo_index.json/duplication_index.json and triage outputs",
+        )
+        triage_parser.set_defaults(func=self._cmd_triage_report)
+
+        digest_parser = subparsers.add_parser(
+            "digest",
+            help="Run end-to-end archive digester (ingest -> catalog -> dedup -> triage -> optional exports)",
+        )
+        digest_parser.add_argument(
+            "path",
+            nargs="?",
+            default=str(FORGE_ROOT),
+            help="Root path to process (default: forge root)",
+        )
+        digest_parser.add_argument(
+            "--mode",
+            choices=["analysis", "archival"],
+            default="analysis",
+            help="Ingestion mode (default: analysis)",
+        )
+        digest_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Output directory for digestion artifacts",
+        )
+        digest_parser.add_argument(
+            "--ext",
+            nargs="*",
+            default=None,
+            help="File extensions to include (default: multi-language set)",
+        )
+        digest_parser.add_argument(
+            "--max-files",
+            type=int,
+            default=None,
+            help="Maximum files to process (default: unlimited)",
+        )
+        digest_parser.add_argument(
+            "--progress-every",
+            type=int,
+            default=200,
+            help="Write ingestion progress every N files (default: 200)",
+        )
+        digest_parser.add_argument(
+            "--sync-knowledge",
+            action="store_true",
+            help="Sync digested code units into Knowledge Forge",
+        )
+        digest_parser.add_argument(
+            "--kb-path",
+            default=str(FORGE_ROOT / "data" / "kb.json"),
+            help="Knowledge graph path when --sync-knowledge is enabled",
+        )
+        digest_parser.add_argument(
+            "--export-graphrag",
+            action="store_true",
+            help="Export GraphRAG-ready text corpus after digestion",
+        )
+        digest_parser.add_argument(
+            "--graphrag-output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "graphrag_input"),
+            help="GraphRAG export output directory",
+        )
+        digest_parser.add_argument(
+            "--graph-export-limit",
+            type=int,
+            default=20000,
+            help="Maximum units for knowledge/GraphRAG export (default: 20000)",
+        )
+        digest_parser.set_defaults(func=self._cmd_digest)
     
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
@@ -317,16 +559,35 @@ class CodeForgeCLI(StandardCLI):
                 integrations.append("knowledge_forge")
             if ForgeDetector.is_available("llm_forge"):
                 integrations.append("llm_forge")
+            if ForgeDetector.is_available("graphrag"):
+                integrations.append("graphrag")
+
+            db_total = self.library_db.count_units()
+            db_by_type = self.library_db.count_units_by_type()
+            db_by_language = self.library_db.count_units_by_language()
+            digester_dir = FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"
+            latest_runs = self.library_db.latest_runs(limit=5)
             
             return CommandResult(
                 True,
-                f"Code Forge operational - {element_count} elements indexed",
+                f"Code Forge operational - {db_total} units in library",
                 {
                     "elements_indexed": element_count,
                     "types": type_counts,
                     "index_path": str(DEFAULT_INDEX_PATH),
                     "index_exists": index_exists,
                     "library_exists": lib_exists,
+                    "db_total_units": db_total,
+                    "db_units_by_type": db_by_type,
+                    "db_units_by_language": db_by_language,
+                    "latest_ingestion_runs": latest_runs,
+                    "supported_extensions": sorted(GenericCodeAnalyzer.supported_extensions()),
+                    "digester_artifacts": {
+                        "output_dir": str(digester_dir),
+                        "repo_index": str(digester_dir / "repo_index.json"),
+                        "duplication_index": str(digester_dir / "duplication_index.json"),
+                        "triage": str(digester_dir / "triage.json"),
+                    },
                     "integrations": integrations,
                 }
             )
@@ -606,6 +867,81 @@ class CodeForgeCLI(StandardCLI):
             result = CommandResult(False, f"Dedup report error: {e}")
         self._output(result, args)
 
+    def _cmd_normalized_dedup_report(self, args) -> None:
+        """Report normalized duplicate units."""
+        try:
+            groups = self.library_db.list_normalized_duplicates(
+                min_occurrences=max(2, int(args.min_occurrences)),
+                limit_groups=max(1, int(args.limit_groups)),
+            )
+            result = CommandResult(
+                True,
+                f"Found {len(groups)} normalized duplicate groups",
+                {
+                    "duplicate_groups": groups,
+                    "group_count": len(groups),
+                    "db_path": str(DEFAULT_DB_PATH),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Normalized dedup report error: {e}")
+        self._output(result, args)
+
+    def _cmd_near_dedup_report(self, args) -> None:
+        """Report near duplicate units by simhash distance."""
+        try:
+            pairs = self.library_db.list_near_duplicates(
+                max_hamming=max(0, int(args.max_hamming)),
+                min_token_count=max(0, int(args.min_tokens)),
+                limit_pairs=max(1, int(args.limit_pairs)),
+                language=args.language,
+                unit_type=args.type,
+            )
+            result = CommandResult(
+                True,
+                f"Found {len(pairs)} near-duplicate pairs",
+                {
+                    "pairs": pairs,
+                    "pair_count": len(pairs),
+                    "filters": {
+                        "max_hamming": int(args.max_hamming),
+                        "min_tokens": int(args.min_tokens),
+                        "language": args.language,
+                        "unit_type": args.type,
+                    },
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Near dedup report error: {e}")
+        self._output(result, args)
+
+    def _cmd_semantic_search(self, args) -> None:
+        """Run hybrid semantic search against indexed code units."""
+        try:
+            matches = self.library_db.semantic_search(
+                query=str(args.query),
+                limit=max(1, int(args.limit)),
+                language=args.language,
+                unit_type=args.type,
+                min_score=float(args.min_score),
+            )
+            result = CommandResult(
+                True,
+                f"Found {len(matches)} semantic matches for '{args.query}'",
+                {
+                    "query": args.query,
+                    "matches": matches,
+                    "filters": {
+                        "language": args.language,
+                        "unit_type": args.type,
+                        "min_score": float(args.min_score),
+                    },
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Semantic search error: {e}")
+        self._output(result, args)
+
     def _cmd_trace(self, args) -> None:
         """Trace contains relationships from a code unit."""
         try:
@@ -628,6 +964,145 @@ class CodeForgeCLI(StandardCLI):
                 )
         except Exception as e:
             result = CommandResult(False, f"Trace error: {e}")
+        self._output(result, args)
+
+    def _cmd_sync_knowledge(self, args) -> None:
+        """Sync code units into Knowledge Forge."""
+        try:
+            payload = sync_units_to_knowledge_forge(
+                db=self.library_db,
+                kb_path=Path(args.kb_path),
+                limit=max(1, int(args.limit)),
+                min_token_count=max(0, int(args.min_tokens)),
+            )
+            result = CommandResult(
+                True,
+                "Knowledge sync complete",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Knowledge sync error: {e}")
+        self._output(result, args)
+
+    def _cmd_export_graphrag(self, args) -> None:
+        """Export code units as GraphRAG-ready text corpus."""
+        try:
+            payload = export_units_for_graphrag(
+                db=self.library_db,
+                output_dir=Path(args.output_dir),
+                limit=max(1, int(args.limit)),
+                min_token_count=max(0, int(args.min_tokens)),
+            )
+            result = CommandResult(
+                True,
+                f"Exported {payload.get('exported', 0)} code documents",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"GraphRAG export error: {e}")
+        self._output(result, args)
+
+    def _cmd_catalog(self, args) -> None:
+        """Build intake catalog + duplication artifacts."""
+        try:
+            root = Path(args.path).resolve()
+            if not root.is_dir():
+                result = CommandResult(False, f"Path must be a directory: {root}")
+            else:
+                output_dir = Path(args.output_dir).resolve()
+                repo_index = build_repo_index(
+                    root_path=root,
+                    output_dir=output_dir,
+                    extensions=args.ext,
+                    max_files=args.max_files,
+                )
+                duplication = build_duplication_index(db=self.library_db, output_dir=output_dir)
+                result = CommandResult(
+                    True,
+                    f"Catalog complete for {repo_index.get('files_total', 0)} files",
+                    {
+                        "root_path": str(root),
+                        "output_dir": str(output_dir),
+                        "repo_index_path": str(output_dir / "repo_index.json"),
+                        "duplication_index_path": str(output_dir / "duplication_index.json"),
+                        "repo_index_summary": {
+                            "files_total": repo_index.get("files_total", 0),
+                            "by_language": repo_index.get("by_language", {}),
+                        },
+                        "duplication_summary": duplication.get("summary", {}),
+                    },
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Catalog error: {e}")
+        self._output(result, args)
+
+    def _cmd_triage_report(self, args) -> None:
+        """Build explainable triage report using latest intake artifacts."""
+        try:
+            output_dir = Path(args.output_dir).resolve()
+            repo_index_path = output_dir / "repo_index.json"
+            duplication_path = output_dir / "duplication_index.json"
+
+            if not repo_index_path.exists():
+                result = CommandResult(False, f"Missing intake artifact: {repo_index_path}")
+            elif not duplication_path.exists():
+                result = CommandResult(False, f"Missing intake artifact: {duplication_path}")
+            else:
+                repo_index = json.loads(repo_index_path.read_text(encoding="utf-8"))
+                duplication = json.loads(duplication_path.read_text(encoding="utf-8"))
+                payload = build_triage_report(
+                    db=self.library_db,
+                    repo_index=repo_index,
+                    duplication_index=duplication,
+                    output_dir=output_dir,
+                )
+                result = CommandResult(
+                    True,
+                    "Triage report generated",
+                    {
+                        "output_dir": str(output_dir),
+                        "triage_json": str(output_dir / "triage.json"),
+                        "triage_csv": str(output_dir / "triage.csv"),
+                        "triage_report": str(output_dir / "triage_report.md"),
+                        "label_counts": payload.get("label_counts", {}),
+                    },
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Triage error: {e}")
+        self._output(result, args)
+
+    def _cmd_digest(self, args) -> None:
+        """Run archive digester end-to-end."""
+        try:
+            root = Path(args.path).resolve()
+            if not root.is_dir():
+                result = CommandResult(False, f"Path must be a directory: {root}")
+            else:
+                output_dir = Path(args.output_dir).resolve()
+                kb_path = Path(args.kb_path).resolve() if args.sync_knowledge else None
+                graphrag_out = (
+                    Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
+                )
+                payload = run_archive_digester(
+                    root_path=root,
+                    db=self.library_db,
+                    runner=self.runner,
+                    output_dir=output_dir,
+                    mode=args.mode,
+                    extensions=args.ext,
+                    max_files=args.max_files,
+                    progress_every=max(1, int(args.progress_every)),
+                    sync_knowledge_path=kb_path,
+                    graphrag_output_dir=graphrag_out,
+                    graph_export_limit=max(1, int(args.graph_export_limit)),
+                )
+                result = CommandResult(
+                    True,
+                    "Archive digester completed",
+                    payload,
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Digest error: {e}")
         self._output(result, args)
 
 

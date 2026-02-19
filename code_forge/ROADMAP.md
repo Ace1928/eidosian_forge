@@ -1,55 +1,36 @@
-# Roadmap: code_forge
+# Code Forge Roadmap
 
-## Current Version: 1.0.0
+## Current Line: v1.0.x (Archive Digester Foundation)
 
----
+### Delivered
+- Multi-language ingestion and unit normalization.
+- Fingerprint-based deduplication (exact/normalized/near).
+- Hybrid semantic search.
+- Explainable triage pipeline with machine-readable artifacts.
+- Knowledge Forge and GraphRAG export integration.
 
-## Phase 1: Foundation (v0.1.0 → v1.0.0) ✅ Complete
+### In Progress
+- High-confidence canonical extraction workflow (old -> new module migration maps).
+- Performance profiling and benchmark dashboards.
+- Coverage expansion toward 90%+ on core ingestion/index/search paths.
 
-- [x] Python AST analyzer
-- [x] Code indexer with change detection
-- [x] CodeLibrarian snippet storage
-- [x] CLI interface
-- [x] Knowledge forge sync
+## v1.1 (Canonicalization and Safety)
+- Canonical module template generation for extracted code.
+- Automated compatibility shims for moved APIs.
+- Structural clone detection (AST shape + token features).
+- Deletion gate policy:
+  - no unique capability loss
+  - tests green
+  - benchmark non-regression
 
----
+## v1.2 (Graph-Native Code Intelligence)
+- Extended relationship graph (`imports`, `calls`, `uses`, `owns_test`).
+- File/module coupling risk score.
+- Redundancy pressure heatmaps for archive reduction.
+- Cross-linking code claims into Knowledge Forge evidence chains.
 
-## Phase 2: Production Ready (v1.0.0 → v1.5.0) - Current
-
-- [ ] Comprehensive test suite (85%+)
-- [ ] Type safety (mypy strict)
-- [ ] Performance optimization
-- [ ] Documentation completion
-
----
-
-## Phase 3: Multi-Language (v1.5.0 → v2.0.0)
-
-- [ ] JavaScript/TypeScript parser
-- [ ] Go parser
-- [ ] Rust parser
-- [ ] Unified AST representation
-
----
-
-## Phase 4: Intelligence (v2.0.0 → v3.0.0)
-
-- [ ] Semantic code search
-- [ ] Dependency graph
-- [ ] Code quality metrics
-- [ ] Refactoring suggestions
-
----
-
-## Timeline
-
-| Phase | Target | Status |
-|-------|--------|--------|
-| 1 | 2026-01 | ✅ Complete |
-| 2 | 2026-02 | 🔶 In Progress |
-| 3 | 2026-Q2 | ⬜ Planned |
-| 4 | 2026-Q3 | ⬜ Future |
-
----
-
-*Code is data. Forge understanding.*
+## v1.3 (Living Code Substrate)
+- Continuous digestion daemon mode with safe checkpoints.
+- Drift detection for rules, schemas, naming conventions.
+- Federated qualitative scoring adapters for model-assisted code review outputs.
+- Automated change advisories into Agent Forge planning workflows.

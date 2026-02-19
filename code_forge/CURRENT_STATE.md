@@ -1,72 +1,38 @@
-# Current State: code_forge
+# Current State: Code Forge
 
-**Date**: 2026-01-25
-**Status**: Production / Core System
-**Version**: 1.0.0
+**Date**: 2026-02-19  
+**Status**: Production active, archive-digester foundation implemented  
+**Version**: 1.0.x
 
-## 📊 Metrics
+## Snapshot
 
-| Metric | Value |
-|--------|-------|
-| **Python Files** | ~10 |
-| **Lines of Code** | ~1,500 |
-| **Test Coverage** | Minimal (2 tests) |
-| **Dependencies** | ast, hashlib |
+- Multi-language ingestion (Python + broad generic language coverage by extension).
+- SQLite-backed code library with:
+  - normalized units
+  - deduplicated source blobs
+  - relationship edges
+  - fingerprint/search indexes
+- Duplicate analysis surfaces:
+  - exact duplicate groups
+  - normalized duplicate groups
+  - near-duplicate pairs (SimHash/Hamming)
+- Hybrid semantic search (FTS5 when available, lexical fallback otherwise).
+- Archive digester artifacts:
+  - `repo_index.json`
+  - `duplication_index.json`
+  - `triage.json`
+  - `triage.csv`
+  - `triage_report.md`
+  - `archive_digester_summary.json`
 
-## 🏗️ Architecture
+## Validation
 
-Code Forge provides **code analysis, indexing, and search** capabilities - the codebase understanding layer for AI agents.
+- Test suite expanded and passing under `eidosian_venv` (`code_forge/tests`).
+- Ingestion remains idempotent via `file_records` and `ANALYSIS_VERSION` gates.
+- Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
 
-### Core Design
+## Open Gaps
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      CODE FORGE                              │
-├─────────────────────────────────────────────────────────────┤
-│  ┌───────────────────────┐  ┌────────────────────────────┐ │
-│  │    CodeAnalyzer       │  │     CodeIndexer            │ │
-│  │   (AST Analysis)      │  │   (Index & Search)         │ │
-│  └───────────┬───────────┘  └────────────┬───────────────┘ │
-│              │                            │                 │
-│              ▼                            ▼                 │
-│  ┌───────────────────────┐  ┌────────────────────────────┐ │
-│  │    CodeElement        │  │    Knowledge Sync          │ │
-│  │   (Extracted Data)    │  │   (→ knowledge_forge)      │ │
-│  └───────────────────────┘  └────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 🔧 Key Components
-
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| **CodeAnalyzer** | AST-based Python parsing | ✅ |
-| **CodeIndexer** | Codebase indexing + change detection | ✅ |
-| **CodeLibrarian** | Snippet storage + search | ✅ |
-| **CodeElement** | Extracted metadata dataclass | ✅ |
-| **CodeForgeCLI** | Command interface | ✅ |
-
-## 🔌 Features
-
-- **AST Analysis** - Functions, classes, imports, docstrings
-- **Change Detection** - MD5 hashing for incremental updates
-- **Search** - By name, qualified name, docstring
-- **Knowledge Sync** - Automatic sync to knowledge_forge
-
-## 🔌 Integrations
-
-| Integration | Status |
-|-------------|--------|
-| **knowledge_forge** | ✅ Sync available |
-| **eidos_mcp** | ✅ Tools exposed |
-| **eidosian_core** | ✅ Decorator |
-
-## 🐛 Known Issues
-
-- Minimal test coverage (2 tests)
-- No edge case handling
-- Legacy `forgeengine/` may exist
-
----
-
-**Last Verified**: 2026-01-25
+- Benchmark harness and performance baselines not yet first-class.
+- Canonical extraction/migration shims are not automated yet.
+- Relationship graph still centered on `contains`; import/call/use edges are next.

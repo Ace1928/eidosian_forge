@@ -25,6 +25,7 @@ for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT)
         sys.path.insert(0, extra_str)
 
 from code_forge.ingest.runner import IngestionRunner
+from code_forge.digester.pipeline import build_duplication_index, build_repo_index, build_triage_report
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
@@ -399,17 +400,23 @@ def run_code_analysis(
         mode="analysis",
         max_files=max_files,
         progress_every=200,
-        extensions=[".py"],
     )
 
     duplicate_groups = db.list_duplicate_units(min_occurrences=2, limit_groups=200)
+    normalized_duplicates = db.list_normalized_duplicates(min_occurrences=2, limit_groups=200)
+    near_duplicates = db.list_near_duplicates(max_hamming=6, min_token_count=20, limit_pairs=200)
     total_units = db.count_units()
     by_type = db.count_units_by_type()
+    by_language = db.count_units_by_language()
     module_samples = [u for u in db.iter_units(limit=2000) if u.get("unit_type") == "module"][:12]
     traces = [
         db.trace_contains(str(sample["id"]), max_depth=2, max_nodes=120)
         for sample in module_samples
     ]
+    digester_dir = report_dir / "code_digester"
+    repo_index = build_repo_index(repo_root, digester_dir, max_files=max_files)
+    duplication_index = build_duplication_index(db, digester_dir, limit_groups=200, near_limit=200)
+    triage = build_triage_report(db, repo_index, duplication_index, digester_dir)
 
     code_report = {
         "generated_at": _now_utc(),
@@ -417,9 +424,18 @@ def run_code_analysis(
         "run_stats": asdict(stats),
         "total_units": total_units,
         "units_by_type": by_type,
+        "units_by_language": by_language,
         "duplicate_group_count": len(duplicate_groups),
         "duplicate_groups": duplicate_groups,
+        "normalized_duplicate_group_count": len(normalized_duplicates),
+        "normalized_duplicate_groups": normalized_duplicates,
+        "near_duplicate_pair_count": len(near_duplicates),
+        "near_duplicate_pairs": near_duplicates,
         "trace_samples": traces,
+        "repo_index_path": str(digester_dir / "repo_index.json"),
+        "duplication_index_path": str(digester_dir / "duplication_index.json"),
+        "triage_path": str(digester_dir / "triage.json"),
+        "triage_label_counts": triage.get("label_counts", {}),
     }
     report_path = report_dir / "code_analysis_report.json"
     report_path.write_text(json.dumps(code_report, indent=2) + "\n", encoding="utf-8")
