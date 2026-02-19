@@ -24,13 +24,16 @@ done
 [[ -d "$FORGE_ROOT/llm_forge/bin" ]] && [[ ":$PATH:" != *":$FORGE_ROOT/llm_forge/bin:"* ]] && export PATH="$FORGE_ROOT/llm_forge/bin:$PATH"
 
 # PYTHONPATH updates for all forge src directories (Editable installs handle this, but explicit is better for discovery)
+_eidos_pythonpath="${PYTHONPATH:-}"
 for forge_dir in "$FORGE_ROOT"/*_forge "$FORGE_ROOT"/lib "$FORGE_ROOT"/eidos_mcp; do
     if [ -d "$forge_dir/src" ]; then
-        [[ ":$PYTHONPATH:" != *":$forge_dir/src:"* ]] && export PYTHONPATH="$forge_dir/src:$PYTHONPATH"
+        [[ ":$_eidos_pythonpath:" != *":$forge_dir/src:"* ]] && _eidos_pythonpath="$forge_dir/src:${_eidos_pythonpath}"
     fi
     # Include the root of the forge too for non-src layouts
-    [[ ":$PYTHONPATH:" != *":$forge_dir:"* ]] && export PYTHONPATH="$forge_dir:$PYTHONPATH"
+    [[ ":$_eidos_pythonpath:" != *":$forge_dir:"* ]] && _eidos_pythonpath="$forge_dir:${_eidos_pythonpath}"
 done
+export PYTHONPATH="${_eidos_pythonpath}"
+unset _eidos_pythonpath
 
 # Dynamic linker paths for local llama.cpp toolchain.
 for llama_lib_dir in "$FORGE_ROOT/llama.cpp/build/bin" "$FORGE_ROOT/llm_forge/vendor/llama.cpp/build/bin"; do
