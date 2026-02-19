@@ -91,3 +91,64 @@ def test_aggregate_scores_without_judges_uses_deterministic_baseline() -> None:
     }
     agg = mod.aggregate_scores(deterministic, [])
     assert agg["judge_score"] == agg["deterministic_objective"]
+
+
+def test_inconsistent_all_zero_judge_is_rejected_in_high_conf_context() -> None:
+    deterministic = {
+        "pipeline_integrity": 1.0,
+        "workflow_completeness": 1.0,
+        "entity_coverage": 0.8,
+        "relationship_density": 0.9,
+        "community_report_quality": 0.9,
+        "query_answer_quality": 0.95,
+        "runtime_score": 0.5,
+    }
+    bad_scores = {
+        "factuality": 0.0,
+        "grounding": 0.0,
+        "coherence": 0.0,
+        "usefulness": 0.0,
+        "risk_awareness": 0.0,
+    }
+    assert mod._is_judge_inconsistent(bad_scores, deterministic) is True
+
+
+def test_aggregate_includes_judge_rejection_counts() -> None:
+    deterministic = {
+        "pipeline_integrity": 1.0,
+        "workflow_completeness": 1.0,
+        "entity_coverage": 0.7,
+        "relationship_density": 0.8,
+        "community_report_quality": 0.9,
+        "query_answer_quality": 0.95,
+        "runtime_score": 0.7,
+    }
+    judges = [
+        {
+            "judge": "a",
+            "valid": True,
+            "scores": {
+                "factuality": 0.9,
+                "grounding": 0.9,
+                "coherence": 0.9,
+                "usefulness": 0.9,
+                "risk_awareness": 0.9,
+            },
+        },
+        {
+            "judge": "b",
+            "valid": False,
+            "scores": {
+                "factuality": 0.0,
+                "grounding": 0.0,
+                "coherence": 0.0,
+                "usefulness": 0.0,
+                "risk_awareness": 0.0,
+            },
+        },
+    ]
+
+    agg = mod.aggregate_scores(deterministic, judges)
+    assert agg["judge_total"] == 2
+    assert agg["judge_valid"] == 1
+    assert agg["judge_rejected"] == 1

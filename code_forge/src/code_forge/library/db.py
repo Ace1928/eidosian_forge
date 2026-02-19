@@ -260,3 +260,163 @@ class CodeLibraryDB:
             ).fetchall()
         for row in rows:
             yield dict(row)
+
+    def find_unit_by_qualified_name(self, qualified_name: str) -> Optional[Dict[str, Any]]:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM code_units
+                WHERE qualified_name = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (qualified_name,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def get_children(
+        self,
+        parent_id: str,
+        rel_type: Optional[str] = "contains",
+        limit: int = 500,
+    ) -> list[Dict[str, Any]]:
+        where = "r.parent_id = ?"
+        params: list[Any] = [parent_id]
+        if rel_type is not None:
+            where += " AND r.rel_type = ?"
+            params.append(rel_type)
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT cu.*, r.rel_type
+                FROM relationships r
+                JOIN code_units cu ON cu.id = r.child_id
+                WHERE {where}
+                ORDER BY cu.created_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_parents(
+        self,
+        child_id: str,
+        rel_type: Optional[str] = "contains",
+        limit: int = 500,
+    ) -> list[Dict[str, Any]]:
+        where = "r.child_id = ?"
+        params: list[Any] = [child_id]
+        if rel_type is not None:
+            where += " AND r.rel_type = ?"
+            params.append(rel_type)
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT cu.*, r.rel_type
+                FROM relationships r
+                JOIN code_units cu ON cu.id = r.parent_id
+                WHERE {where}
+                ORDER BY cu.created_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def list_duplicate_units(
+        self,
+        min_occurrences: int = 2,
+        limit_groups: int = 200,
+    ) -> list[Dict[str, Any]]:
+        with self._connect() as conn:
+            groups = conn.execute(
+                """
+                SELECT content_hash, COUNT(*) AS occurrences
+                FROM code_units
+                WHERE content_hash IS NOT NULL
+                GROUP BY content_hash
+                HAVING COUNT(*) >= ?
+                ORDER BY occurrences DESC
+                LIMIT ?
+                """,
+                (max(2, min_occurrences), max(1, limit_groups)),
+            ).fetchall()
+            out: list[Dict[str, Any]] = []
+            for grp in groups:
+                content_hash = grp["content_hash"]
+                rows = conn.execute(
+                    """
+                    SELECT id, unit_type, qualified_name, file_path, line_start, line_end
+                    FROM code_units
+                    WHERE content_hash = ?
+                    ORDER BY file_path, line_start
+                    """,
+                    (content_hash,),
+                ).fetchall()
+                out.append(
+                    {
+                        "content_hash": content_hash,
+                        "occurrences": int(grp["occurrences"]),
+                        "units": [dict(r) for r in rows],
+                    }
+                )
+        return out
+
+    def trace_contains(
+        self,
+        root_unit_id: str,
+        max_depth: int = 3,
+        max_nodes: int = 300,
+    ) -> Dict[str, Any]:
+        root = self.get_unit(root_unit_id)
+        if not root:
+            return {"root": None, "nodes": [], "edges": []}
+
+        nodes: Dict[str, Dict[str, Any]] = {root_unit_id: root}
+        edges: list[Dict[str, Any]] = []
+        frontier: list[tuple[str, int]] = [(root_unit_id, 0)]
+        seen: set[str] = {root_unit_id}
+
+        while frontier and len(nodes) < max_nodes:
+            node_id, depth = frontier.pop(0)
+            if depth >= max_depth:
+                continue
+            children = self.get_children(node_id, rel_type="contains", limit=max_nodes)
+            for child in children:
+                cid = str(child.get("id"))
+                edges.append({"from": node_id, "to": cid, "rel_type": "contains"})
+                if cid in seen:
+                    continue
+                seen.add(cid)
+                nodes[cid] = child
+                frontier.append((cid, depth + 1))
+                if len(nodes) >= max_nodes:
+                    break
+
+        return {
+            "root": root_unit_id,
+            "nodes": list(nodes.values()),
+            "edges": edges,
+            "max_depth": max_depth,
+            "max_nodes": max_nodes,
+        }
+
+    def count_units(self) -> int:
+        with self._connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS c FROM code_units").fetchone()
+        return int(row["c"]) if row else 0
+
+    def count_units_by_type(self) -> Dict[str, int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT unit_type, COUNT(*) AS c
+                FROM code_units
+                GROUP BY unit_type
+                ORDER BY c DESC
+                """
+            ).fetchall()
+        return {str(r["unit_type"]): int(r["c"]) for r in rows}

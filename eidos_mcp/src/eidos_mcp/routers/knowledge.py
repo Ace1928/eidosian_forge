@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
+import subprocess
 from pathlib import Path
 from typing import List, Optional
 
@@ -456,3 +458,91 @@ def bridge_stats() -> str:
         return "Error: Knowledge-memory bridge not available"
     
     return json.dumps(bridge.stats(), indent=2)
+
+
+@tool(
+    name="living_knowledge_pipeline_run",
+    description="Build unified memory+knowledge+docs+code corpus and optionally run GraphRAG indexing.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "run_graphrag": {"type": "boolean"},
+            "queries": {"type": "array", "items": {"type": "string"}},
+            "code_max_files": {"type": "integer"},
+            "max_file_bytes": {"type": "integer"},
+            "max_chars_per_doc": {"type": "integer"},
+        },
+    },
+)
+@eidosian()
+def living_knowledge_pipeline_run(
+    run_graphrag: bool = False,
+    queries: Optional[List[str]] = None,
+    code_max_files: Optional[int] = None,
+    max_file_bytes: int = 2_000_000,
+    max_chars_per_doc: int = 20_000,
+) -> str:
+    script = FORGE_DIR / "scripts" / "living_knowledge_pipeline.py"
+    python_bin = FORGE_DIR / "eidosian_venv" / "bin" / "python"
+    if not script.exists():
+        return f"Error: missing script {script}"
+    if not python_bin.exists():
+        return f"Error: missing python {python_bin}"
+
+    cmd = [
+        str(python_bin),
+        str(script),
+        "--repo-root",
+        str(FORGE_DIR),
+        "--output-root",
+        str(FORGE_DIR / "reports" / "living_knowledge"),
+        "--workspace-root",
+        str(FORGE_DIR / "data" / "living_knowledge" / "workspace"),
+        "--max-file-bytes",
+        str(max_file_bytes),
+        "--max-chars-per-doc",
+        str(max_chars_per_doc),
+    ]
+    if code_max_files is not None:
+        cmd.extend(["--code-max-files", str(code_max_files)])
+    if run_graphrag:
+        cmd.append("--run-graphrag")
+    for query in queries or []:
+        cmd.extend(["--query", query])
+
+    proc = subprocess.run(cmd, text=True, capture_output=True, check=False, cwd=FORGE_DIR)
+    if proc.returncode != 0:
+        stderr = (proc.stderr or "").strip()
+        stdout = (proc.stdout or "").strip()
+        return f"Error: pipeline failed (code={proc.returncode})\nstdout:\n{stdout}\nstderr:\n{stderr}"
+
+    payload = {}
+    try:
+        payload = json.loads((proc.stdout or "{}").strip())
+    except Exception:
+        payload = {"raw_stdout": (proc.stdout or "").strip()}
+
+    run_id = payload.get("run_id")
+    run_root = FORGE_DIR / "reports" / "living_knowledge" / str(run_id) if run_id else None
+    manifest_path = run_root / "manifest.json" if run_root else None
+    manifest = {}
+    if manifest_path and manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except Exception:
+            manifest = {}
+
+    return json.dumps(
+        {
+            "ok": proc.returncode == 0,
+            "run_id": run_id,
+            "manifest_path": str(manifest_path) if manifest_path else None,
+            "records_total": manifest.get("records_total"),
+            "records_by_kind": manifest.get("records_by_kind"),
+            "exact_duplicate_groups": manifest.get("exact_duplicate_groups"),
+            "near_duplicate_pairs": manifest.get("near_duplicate_pairs"),
+            "drift": manifest.get("drift"),
+            "graphrag": manifest.get("graphrag"),
+        },
+        indent=2,
+    )

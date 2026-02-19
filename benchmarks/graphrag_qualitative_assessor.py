@@ -302,6 +302,29 @@ def _build_stage_scores(artifacts: dict[str, Any]) -> list[dict[str, Any]]:
     return stage_scores
 
 
+def _judge_score_summary(scores: dict[str, float]) -> tuple[float, bool]:
+    values = [_clamp01(_to_float(v, 0.0)) for v in scores.values()]
+    if not values:
+        return 0.0, False
+    mean = sum(values) / len(values)
+    all_near_zero = all(v <= 0.05 for v in values)
+    return mean, all_near_zero
+
+
+def _is_judge_inconsistent(scores: dict[str, float], deterministic: dict[str, float]) -> bool:
+    """Reject pathological judge outputs that contradict high-confidence deterministic signals."""
+    _mean, all_near_zero = _judge_score_summary(scores)
+    if not all_near_zero:
+        return False
+    high_conf_context = (
+        _to_float(deterministic.get("pipeline_integrity"), 0.0) >= 0.99
+        and _to_float(deterministic.get("workflow_completeness"), 0.0) >= 0.99
+        and _to_float(deterministic.get("community_report_quality"), 0.0) >= 0.85
+        and _to_float(deterministic.get("query_answer_quality"), 0.0) >= 0.85
+    )
+    return high_conf_context
+
+
 def parse_judge_specs(models: Iterable[str], port_base: int) -> list[JudgeSpec]:
     specs: list[JudgeSpec] = []
     port = port_base
@@ -423,17 +446,21 @@ def run_judges(runtimes: list[JudgeRuntime], artifacts: dict[str, Any], determin
             err = str(exc)
 
         score_block = (parsed or {}).get("scores") if isinstance(parsed, dict) else {}
+        scores = {
+            "factuality": _clamp01(_to_float((score_block or {}).get("factuality"), 0.0)),
+            "grounding": _clamp01(_to_float((score_block or {}).get("grounding"), 0.0)),
+            "coherence": _clamp01(_to_float((score_block or {}).get("coherence"), 0.0)),
+            "usefulness": _clamp01(_to_float((score_block or {}).get("usefulness"), 0.0)),
+            "risk_awareness": _clamp01(_to_float((score_block or {}).get("risk_awareness"), 0.0)),
+        }
+        if err is None and _is_judge_inconsistent(scores, deterministic):
+            err = "judge output inconsistent with deterministic signals"
+
         entry = {
             "judge": runtime.spec.name,
             "model_path": str(runtime.spec.model_path),
             "port": runtime.spec.port,
-            "scores": {
-                "factuality": _clamp01(_to_float((score_block or {}).get("factuality"), 0.0)),
-                "grounding": _clamp01(_to_float((score_block or {}).get("grounding"), 0.0)),
-                "coherence": _clamp01(_to_float((score_block or {}).get("coherence"), 0.0)),
-                "usefulness": _clamp01(_to_float((score_block or {}).get("usefulness"), 0.0)),
-                "risk_awareness": _clamp01(_to_float((score_block or {}).get("risk_awareness"), 0.0)),
-            },
+            "scores": scores,
             "verdict": (parsed or {}).get("verdict", ""),
             "risks": (parsed or {}).get("risks", []),
             "error": err,
@@ -515,6 +542,9 @@ def aggregate_scores(deterministic: dict[str, float], judge_assessments: list[di
     return {
         "deterministic_objective": round(deterministic_objective, 4),
         "judge_score": round(judge_score, 4),
+        "judge_total": len(judge_assessments),
+        "judge_valid": len(valid_assessments),
+        "judge_rejected": max(0, len(judge_assessments) - len(valid_assessments)),
         "judge_dimension_median": {k: round(v, 4) for k, v in judge_median.items()},
         "judge_dimension_spread": {k: round(v, 4) for k, v in judge_spread.items()},
         "disagreement": round(disagreement, 4),

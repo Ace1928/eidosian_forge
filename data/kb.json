@@ -764,6 +764,19 @@
         ]
       },
       "links": []
+    },
+    "454d6328-5e95-49f8-9560-6ad0019783f6": {
+      "id": "454d6328-5e95-49f8-9560-6ad0019783f6",
+      "content": "Living knowledge pipeline scaffold added at scripts/living_knowledge_pipeline.py with strict run artifacts (manifest, records, dedup, drift, code analysis) and optional GraphRAG indexing/query execution.",
+      "metadata": {
+        "tags": [
+          "living-knowledge",
+          "code-forge",
+          "pipeline",
+          "graphrag"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

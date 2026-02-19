@@ -36,6 +36,7 @@ This is the documentation index for `eidosian_forge`.
 | --- | --- |
 | Security docs directory | `docs/security/` |
 | Port registry | `docs/PORT_REGISTRY.md` |
+| Living knowledge system | `docs/LIVING_KNOWLEDGE_SYSTEM.md` |
 | Test status | `TEST_STATUS.md` |
 | Forge status | `FORGE_STATUS.md` |
 | CI workflow docs | `.github/workflows/README.md` |

@@ -254,6 +254,46 @@ class CodeForgeCLI(StandardCLI):
             help="Show detailed statistics",
         )
         stats_parser.set_defaults(func=self._cmd_stats)
+
+        dedup_parser = subparsers.add_parser(
+            "dedup-report",
+            help="Report duplicate code units by content hash",
+        )
+        dedup_parser.add_argument(
+            "--min-occurrences",
+            type=int,
+            default=2,
+            help="Minimum duplicate count to include (default: 2)",
+        )
+        dedup_parser.add_argument(
+            "--limit-groups",
+            type=int,
+            default=100,
+            help="Maximum duplicate groups (default: 100)",
+        )
+        dedup_parser.set_defaults(func=self._cmd_dedup_report)
+
+        trace_parser = subparsers.add_parser(
+            "trace",
+            help="Trace contains-graph from a unit (qualified name or unit id)",
+        )
+        trace_parser.add_argument(
+            "target",
+            help="Qualified name (e.g. pkg.module.Class) or unit id hash",
+        )
+        trace_parser.add_argument(
+            "--depth",
+            type=int,
+            default=3,
+            help="Traversal depth (default: 3)",
+        )
+        trace_parser.add_argument(
+            "--max-nodes",
+            type=int,
+            default=300,
+            help="Maximum nodes in trace output (default: 300)",
+        )
+        trace_parser.set_defaults(func=self._cmd_trace)
     
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
@@ -544,6 +584,50 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
+        self._output(result, args)
+
+    def _cmd_dedup_report(self, args) -> None:
+        """Report duplicate code units."""
+        try:
+            groups = self.library_db.list_duplicate_units(
+                min_occurrences=max(2, int(args.min_occurrences)),
+                limit_groups=max(1, int(args.limit_groups)),
+            )
+            result = CommandResult(
+                True,
+                f"Found {len(groups)} duplicate groups",
+                {
+                    "duplicate_groups": groups,
+                    "group_count": len(groups),
+                    "db_path": str(DEFAULT_DB_PATH),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Dedup report error: {e}")
+        self._output(result, args)
+
+    def _cmd_trace(self, args) -> None:
+        """Trace contains relationships from a code unit."""
+        try:
+            target = str(args.target).strip()
+            root = self.library_db.get_unit(target)
+            if root is None:
+                root = self.library_db.find_unit_by_qualified_name(target)
+            if root is None:
+                result = CommandResult(False, f"Unit not found: {target}")
+            else:
+                trace = self.library_db.trace_contains(
+                    str(root["id"]),
+                    max_depth=max(1, int(args.depth)),
+                    max_nodes=max(1, int(args.max_nodes)),
+                )
+                result = CommandResult(
+                    True,
+                    f"Trace built: {len(trace.get('nodes', []))} nodes, {len(trace.get('edges', []))} edges",
+                    trace,
+                )
+        except Exception as e:
+            result = CommandResult(False, f"Trace error: {e}")
         self._output(result, args)
 
 
