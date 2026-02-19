@@ -930,6 +930,20 @@
         ]
       },
       "links": []
+    },
+    "9a0c47fd-d0ea-4ca2-9c36-b2121ae44c05": {
+      "id": "9a0c47fd-d0ea-4ca2-9c36-b2121ae44c05",
+      "content": "Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts.",
+      "metadata": {
+        "tags": [
+          "consciousness",
+          "validation",
+          "research",
+          "rac_ap",
+          "agent_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

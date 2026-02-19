@@ -1,61 +1,55 @@
-# 🤖 Agent Forge
+# Agent Forge
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Status: Operational](https://img.shields.io/badge/Status-Operational-green.svg)](README.md)
+Agent Forge is the runtime control layer for Eidosian agents.
+It now includes a full consciousness instrumentation stack with perturbation testing, ablations, red-team campaigns, and integrated benchmark reporting.
 
-**The Cognitive Architecture of Eidos.**
+## Core Surfaces
+- `src/agent_forge/core/`: event bus, workspace, state snapshots, daemon utilities.
+- `src/agent_forge/consciousness/`: kernel, modules, metrics, perturbations, tuning, and benchmark suites.
+- `src/agent_forge/cli/eidctl.py`: operational CLI for status, trials, benchmarks, and runtime diagnostics.
+- `bin/eidctl`, `bin/eidosd`, `bin/eidtop`: shell-facing control tools.
 
-> _"Agency is the intersection of logic and intent."_
+## Consciousness Stack
+Key implemented capabilities:
+- GNW-style attention -> competition -> winner broadcast loops.
+- Winner-linked ignition tracing with explicit trace-strength gates.
+- Predictive world-model metrics and self/boundary monitoring.
+- Phenomenology proxy metrics (unity, continuity, ownership, perspective coherence, dream-likeness).
+- Perturbation suite and trial harness with replayable artifacts.
+- Ablation matrix, red-team campaign, stress benchmark, integrated benchmark.
 
-## 🤖 Overview
+## RAC-AP Research and Plan
+- Research brief: `agent_forge/docs/CONSCIOUSNESS_RAC_AP_RESEARCH_2026-02-19.md`
+- Implementation plan: `agent_forge/docs/CONSCIOUSNESS_RAC_AP_IMPLEMENTATION_PLAN.md`
 
-`agent_forge` is the primary reasoning and orchestration module of the Eidosian ecosystem. It provides a modular framework for building autonomous agents capable of complex task planning, multi-step execution, and recursive self-reflection.
-
-It implements the **E3 Architecture** (Eidosian Execution Engine):
-1.  **Sense**: Gather environmental data (via Nexus tools).
-2.  **Think**: Plan and reason using local LLMs.
-3.  **Act**: Execute shell commands, file edits, and system interactions.
-
-## 🏗️ Architecture
-
-- **Core (`src/agent_forge/core/`)**:
-    - `agent.py`: The main autonomous loop.
-    - `planner.py`: HTN (Hierarchical Task Network) and simple linear planners.
-    - `model.py`: Unified interface for local and remote LLM providers.
-- **Consciousness Kernel**: A specialized monitoring layer that tracks internal state, attention, and cognitive load.
-- **Actuators**: Modular tool-calling interfaces for sandboxed and system-level execution.
-
-## 🔗 System Integration
-
-- **LLM Forge**: All agents utilize the centralized `llm_forge` local engine for inference.
-- **Memory Forge**: Episodic and semantic memory integration for long-term context retention.
-- **Nexus**: Exposes tools for agent deployment (`eidctl`) and monitoring (`eidtop`).
-
-## 🚀 Usage
-
-### Deploying an Agent
-
+## CLI Examples
 ```bash
-# Start the agent daemon
-./bin/eidosd start
+# Runtime status
+python agent_forge/bin/eidctl consciousness status --dir state --json
 
-# Interaction via CLI
-eidctl run --objective "Summarize the latest system logs"
+# Perturbation trial
+python agent_forge/bin/eidctl consciousness trial --dir state --kind noise --target attention --ticks 3 --json
+
+# Benchmark suite
+python agent_forge/bin/eidctl consciousness benchmark --dir state --ticks 12 --json
+
+# RAC-AP construct validation
+python agent_forge/bin/eidctl consciousness validate --dir state --limit 64 --min-pairs 6 --json
+
+# Red-team campaign
+python agent_forge/bin/eidctl consciousness red-team --dir state --quick --json
+
+# Integrated benchmark
+python agent_forge/bin/eidctl consciousness full-benchmark --dir state --skip-llm --skip-mcp --json
 ```
 
-### Cognitive Monitoring
-
+## Testing
 ```bash
-# Monitor agent "thoughts" and resource usage
-eidtop
+./eidosian_venv/bin/python -m pytest agent_forge/tests -q
 ```
 
-## 🛠️ Configuration
-
-Agent personalities and skillsets are defined in `cfg/self.yml` and `cfg/skills.yml`.
-
----
-
-**Version**: 1.0.0 (Titan's Arm)
-**Maintainer**: EIDOS
+## Engineering Rules
+- Prefer append-only events and explicit provenance.
+- Treat every metric claim as a falsifiable hypothesis.
+- Keep perturbation and ablation checks in CI-facing tests.
+- Do not equate fluent output with validated coherence.

@@ -1,85 +1,36 @@
 # Current State: agent_forge
 
-**Date**: 2026-01-25
-**Status**: Production / Core System
-**Version**: E3 (Evolution 3)
+Date: 2026-02-19
+Status: Active development, consciousness runtime production operational.
 
-## 📊 Metrics
+## Implemented
+- Core agent orchestration and event-sourced runtime (`core/*`).
+- Consciousness kernel with modular multi-rate execution (`consciousness/kernel.py`).
+- GNW-style competition and winner-linked ignition tracing.
+- Predictive world model, intero/affect modulation, self-model extensions.
+- Bench stack: trial runner, ablations, red-team, stress benchmark, integrated benchmark.
+- Autotune and experiment-designer modules.
+- RAC-AP construct validation engine with:
+  - reliability summary,
+  - nomological expectation checks,
+  - convergent/discriminant scores,
+  - security boundary summary,
+  - explicit gate outcomes.
 
-| Metric | Value |
-|--------|-------|
-| **Python Files** | 50+ |
-| **Lines of Code** | ~5,000 |
-| **Test Files** | 25 (~100+ tests) |
-| **Test Coverage** | ~70% |
-| **Dependencies** | pyyaml, rich, typer, sqlite3 |
+## Primary Docs
+- `agent_forge/docs/CONSCIOUSNESS_RAC_AP_RESEARCH_2026-02-19.md`
+- `agent_forge/docs/CONSCIOUSNESS_RAC_AP_IMPLEMENTATION_PLAN.md`
 
-## 🏗️ Architecture
+## Primary CLI Commands
+- `eidctl consciousness status`
+- `eidctl consciousness trial`
+- `eidctl consciousness benchmark`
+- `eidctl consciousness red-team`
+- `eidctl consciousness full-benchmark`
+- `eidctl consciousness validate`
+- `eidctl consciousness latest-validation`
 
-Agent Forge is the **autonomous agent orchestration system** - the brain that coordinates planning, execution, and reflection for AI agents.
-
-### Core Design
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     AGENT FORGE                              │
-├─────────────────────────────────────────────────────────────┤
-│  ┌───────────────────┐  ┌──────────────────────────────┐   │
-│  │    AgentForge     │  │      EidosianAgent           │   │
-│  │  (Orchestrator)   │  │    (Main Agent Impl)         │   │
-│  └─────────┬─────────┘  └──────────────────────────────┘   │
-│            │                                                 │
-│  ┌─────────┴──────────────────────────────────────────────┐│
-│  │                    CORE SYSTEMS                         ││
-│  ├──────────┬──────────┬──────────┬──────────┬──────────┤ │
-│  │  State   │  Events  │Scheduler │  Sandbox │ TaskMgr  │ │
-│  │ (JSONL)  │(EventBus)│ (Loop)   │(Isolation)│ (Queue)  │ │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┘ │
-│                                                              │
-│  ┌───────────────────┐  ┌──────────────────────────────┐   │
-│  │     Planners      │  │      SmolAgentSystem         │   │
-│  │   (HTN, YAML)     │  │   (Mini-agent delegation)    │   │
-│  └───────────────────┘  └──────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 🔧 Key Components
-
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| **AgentForge** | Top-level orchestrator | ✅ |
-| **EidosianAgent** | Main agent implementation | ✅ |
-| **TaskManager** | Task queue + dependencies | ✅ |
-| **SmolAgentSystem** | Mini-agent delegation | ✅ |
-| **State/Journal** | JSONL persistence | ✅ |
-| **EventBus** | Append-only events | ✅ |
-| **Scheduler** | Loop with backoff | ✅ |
-| **Sandbox** | Isolated execution | ✅ |
-| **HTNPlanner** | Hierarchical planning | ✅ |
-| **CLI Tools** | eidctl, eidosd, eidtop | ✅ |
-
-## 🔌 Features
-
-- **Goal-Oriented** - Goals → Plans → Steps → Runs
-- **Task Management** - Priority queue with dependencies
-- **Event Sourcing** - Append-only JSONL journal
-- **Process Isolation** - Sandboxed execution
-- **TUI Monitoring** - Rich terminal interface
-
-## 🔌 Integrations
-
-| Integration | Status |
-|-------------|--------|
-| **eidos_mcp** | ✅ Transactional ops |
-| **code_forge** | ✅ Code analysis |
-| **llm_forge** | ✅ Model interface |
-| **memory_forge** | ✅ Memory compression |
-
-## 🐛 Known Issues
-
-- Split between `core/` and `src/` needs investigation
-- Some tests may require Ollama running
-
----
-
-**Last Verified**: 2026-01-25
+## Current Gaps
+- RAC-AP validation currently depends on sufficient historical report volume.
+- Security gate is available but currently optional by protocol default.
+- External benchmark adapters and protocol pre-registration automation are pending.

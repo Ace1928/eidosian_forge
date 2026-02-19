@@ -1,57 +1,36 @@
 # Roadmap: agent_forge
 
-## Current Version: E3
+## Current Line: E3.9 (Consciousness Validation)
 
----
+### Delivered
+- Consciousness runtime kernel with persistent module state.
+- Multi-module GNW-style broadcast and winner competition.
+- Winner-linked ignition trace metrics and explicit ignition events.
+- Perturbation harness, trials, benchmark suite, ablation matrix, red-team campaign.
+- Integrated benchmark runner (kernel + MCP + local LLM + adversarial pass).
 
-## Phase 1: Foundation (E1 → E3) ✅ Complete
+### In Progress
+- RAC-AP construct validation engine (reliability + convergent/discriminant + falsification gates).
+- Protocolized, versioned research artifacts for repeatable claim evaluation.
 
-- [x] AgentForge orchestrator
-- [x] EidosianAgent implementation
-- [x] Task management system
-- [x] Event sourcing (JSONL)
-- [x] Process sandboxing
-- [x] HTN planner
-- [x] CLI tools (eidctl, eidosd, eidtop)
+## Next Milestones
 
----
+### E4.0: RAC-AP Protocol + Validation
+- Protocol schema and expected relationship contracts.
+- Validation reports from benchmark/trial/red-team history.
+- CLI and MCP surfaces for latest validation status.
 
-## Phase 2: Production Ready (E3 → E3.5) - Current
+### E4.1: Security-Integrated Agency Validation
+- Prompt/tool boundary takeover stressors.
+- Boundary integrity score as hard pass gate.
+- Recovery-latency and attack-success tracking in validation output.
 
-- [ ] Clarify directory structure
-- [ ] Complete documentation
-- [ ] 95% test coverage
-- [ ] Performance optimization
+### E4.2: External Robustness Coupling
+- External task benchmark adapters and deterministic import paths.
+- Perturbation-conditioned task robustness curves.
+- Cross-run drift detection with threshold governance.
 
----
-
-## Phase 3: Multi-Agent (E3.5 → E4)
-
-- [ ] Agent-to-agent communication
-- [ ] Task delegation protocol
-- [ ] Distributed execution
-- [ ] Consensus mechanisms
-
----
-
-## Phase 4: Learning (E4 → E5)
-
-- [ ] Execution history analysis
-- [ ] Strategy optimization
-- [ ] Self-tuning
-- [ ] Failure pattern recognition
-
----
-
-## Timeline
-
-| Phase | Target | Status |
-|-------|--------|--------|
-| 1 | 2026-01 | ✅ Complete |
-| 2 | 2026-02 | 🔶 In Progress |
-| 3 | 2026-Q2 | ⬜ Planned |
-| 4 | 2026-Q3 | ⬜ Future |
-
----
-
-*Agents are will. Forge autonomy.*
+### E4.3: Publishable Evidence Pipeline
+- Pre-registered protocol artifacts.
+- Reproducibility bundle (seed, SHA, event digest, gate outcomes).
+- Continuous validation and drift review automation.

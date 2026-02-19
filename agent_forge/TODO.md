@@ -1,11 +1,14 @@
 # TODO: agent_forge
 
-## 🚨 High Priority
-- [x] **Standardize**: Moved `core` and `bin` to `src/agent_forge/`.
-- [x] **Capabilities**: Implemented `capabilities.py` connecting to `code_forge`.
+## High Priority
+- [ ] Add machine-readable RAC-AP protocol schema file and validation against schema.
+- [ ] Integrate `ConsciousnessConstructValidator` outputs into MCP consciousness tools/resources.
+- [ ] Add security-required mode to RAC-AP gates for hard fail on missing/weak red-team evidence.
 
-## 🟡 Medium Priority
-- [ ] **Docs**: Document the "Journal" architecture.
-- [ ] **Fix Imports**: Check python files in `src/agent_forge` for broken imports.
+## Medium Priority
+- [ ] Add benchmark import adapters for external agent-eval suites.
+- [ ] Add periodic drift review command for validation reports.
+- [ ] Increase end-to-end reproducibility docs (seed/SHA/event-digest workflows).
 
-- [ ] **Features**: Enhance `eidtop` (TUI).
+## Low Priority
+- [ ] Add dashboard-style visualization for validation trend lines.

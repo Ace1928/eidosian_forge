@@ -175,6 +175,25 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cvalidate = csub.add_parser(
+            "validate",
+            help="run RAC-AP construct validation on benchmark/trial/red-team artifacts",
+        )
+        cvalidate.add_argument("--dir", default="state", help="state directory")
+        cvalidate.add_argument("--limit", type=int, default=64, help="max reports to scan per source")
+        cvalidate.add_argument(
+            "--min-pairs",
+            type=int,
+            default=6,
+            help="minimum paired samples required for nomological checks",
+        )
+        cvalidate.add_argument("--no-persist", action="store_true", help="do not persist validation report file")
+        cvalidate.add_argument("--json", action="store_true", help="JSON output")
+
+        cvalidate_latest = csub.add_parser("latest-validation", help="show latest persisted RAC-AP validation report")
+        cvalidate_latest.add_argument("--dir", default="state", help="state directory")
+        cvalidate_latest.add_argument("--json", action="store_true", help="JSON output")
+
         cstress = csub.add_parser("stress-benchmark", help="run payload safety + event pressure stress benchmark")
         cstress.add_argument("--dir", default="state", help="state directory")
         cstress.add_argument("--ticks", type=int, default=20, help="kernel ticks for stress benchmark run")
@@ -414,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.cmd == "consciousness":
             from agent_forge.consciousness import (  # type: ignore
                 ConsciousnessBenchmarkSuite,
+                ConsciousnessConstructValidator,
                 ConsciousnessKernel,
                 ConsciousnessRedTeamCampaign,
                 ConsciousnessStressBenchmark,
@@ -424,6 +444,7 @@ def main(argv: list[str] | None = None) -> int:
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
+            validator = ConsciousnessConstructValidator(args.dir)
             stress = ConsciousnessStressBenchmark(args.dir)
             red_team = ConsciousnessRedTeamCampaign(args.dir)
             full = IntegratedStackBenchmark(args.dir)
@@ -537,6 +558,56 @@ def main(argv: list[str] | None = None) -> int:
                             f"[consciousness] latest_benchmark={latest.get('benchmark_id')} "
                             f"composite={scores.get('composite')} "
                             f"delta={scores.get('delta_composite')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "validate":
+                result = validator.run(
+                    limit=max(1, int(args.limit)),
+                    min_pairs=max(3, int(args.min_pairs)),
+                    persist=not args.no_persist,
+                )
+                payload = result.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    scores = payload.get("scores") or {}
+                    gates = payload.get("gates") or {}
+                    reliability = payload.get("reliability") or {}
+                    convergent = payload.get("convergent_validity") or {}
+                    discriminant = payload.get("discriminant_validity") or {}
+                    security = payload.get("security_boundary") or {}
+                    print(
+                        f"[consciousness] validation={payload.get('validation_id')} "
+                        f"rac_ap_index={scores.get('rac_ap_index')} "
+                        f"pass={payload.get('pass')}"
+                    )
+                    print(
+                        f"[consciousness] reliability={reliability.get('score')} "
+                        f"convergent={convergent.get('score')} "
+                        f"discriminant={discriminant.get('score')} "
+                        f"security={security.get('score')}"
+                    )
+                    print(f"[consciousness] gates={gates}")
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
+                return 0
+
+            if args.conscious_cmd == "latest-validation":
+                latest = validator.latest_validation()
+                if latest is None:
+                    latest = {"error": "No validation report found"}
+                if args.json:
+                    print(json.dumps(latest, indent=2))
+                else:
+                    if latest.get("error"):
+                        print(f"[consciousness] {latest['error']}")
+                    else:
+                        score = (latest.get("scores") or {}).get("rac_ap_index")
+                        print(
+                            f"[consciousness] latest_validation={latest.get('validation_id')} "
+                            f"rac_ap_index={score} "
+                            f"pass={latest.get('pass')}"
                         )
                 return 0
 

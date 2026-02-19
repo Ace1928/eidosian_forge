@@ -1,52 +1,34 @@
 # Plan: agent_forge
 
-**Objective**: Clarify structure and complete documentation.
+Date: 2026-02-19
+Primary Track: Consciousness kernel hardening and RAC-AP validation.
 
----
+## Active Plan Documents
+- `agent_forge/docs/CONSCIOUSNESS_RAC_AP_RESEARCH_2026-02-19.md`
+- `agent_forge/docs/CONSCIOUSNESS_RAC_AP_IMPLEMENTATION_PLAN.md`
 
-## Current Sprint: Structure & Documentation
+## Program Goals
+1. Maintain high-integrity GNW-style runtime behavior under perturbation.
+2. Replace rhetorical claims with falsifiable construct-validation outputs.
+3. Tie internal metrics to external task robustness and security boundaries.
 
-### Phase A: Structure Analysis (Priority 1)
+## Workstream Status
+- [x] ~~Consciousness kernel, modules, perturbations, and benchmark stack implemented.~~
+- [x] ~~Winner-linked ignition tracing and ablation matrix implemented.~~
+- [x] ~~Autotune and experiment-designer modules implemented.~~
+- [ ] RAC-AP protocol schema and validation engine finalized.
+- [ ] Validation CLI/MCP integration finalized.
+- [ ] Security-boundary stress suite fully integrated into validation gates.
 
-- [ ] Map core/ vs src/ contents
-- [ ] Identify redundancy
-- [ ] Document intended structure
-- [ ] Create migration plan if needed
+## Immediate Execution Order
+1. Implement RAC-AP protocol contract and report generator.
+2. Wire validation into `eidctl consciousness` commands.
+3. Add tests for construct validity math, gates, and CLI integration.
+4. Run manual validation pass and persist artifacts.
 
-### Phase B: Documentation (Priority 2)
-
-- [x] Create ROADMAP.md
-- [x] Create ISSUES.md
-- [x] Create PLAN.md
-- [ ] Complete README.md
-- [ ] Document agent lifecycle
-- [ ] Document task execution flow
-
-### Phase C: Testing (Priority 3)
-
-- [ ] Review test coverage
-- [ ] Add missing integration tests
-- [ ] Mock Ollama for CI
-- [ ] Achieve 95% coverage
-
----
-
-## Timeline
-
-| Phase | Duration | Target |
-|-------|----------|--------|
-| A | 1 day | 2026-01-26 |
-| B | 2 days | 2026-01-28 |
-| C | 2 days | 2026-01-30 |
-
----
-
-## Success Criteria
-
-1. Clear directory structure
-2. Complete documentation
-3. 95% test coverage
-
----
-
-*Clarify. Document. Test.*
+## Done Criteria
+A cycle is done only when:
+- tests pass,
+- reports are persisted and reproducible,
+- docs are updated,
+- and evidence is explicitly tied to falsification gates.

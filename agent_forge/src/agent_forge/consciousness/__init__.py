@@ -13,6 +13,13 @@ from .state_store import ModuleStateStore
 from .stress import ConsciousnessStressBenchmark, StressBenchmarkResult
 from .trials import ConsciousnessTrialRunner, TrialResult
 from .types import Module, TickContext, WorkspacePayload, normalize_workspace_payload
+from .validation import (
+    RAC_AP_PROTOCOL_VERSION,
+    ConsciousnessConstructValidator,
+    NomologicalExpectation,
+    ValidationResult,
+    default_rac_ap_protocol,
+)
 
 __all__ = [
     "BenchmarkResult",
@@ -30,13 +37,18 @@ __all__ = [
     "KernelResult",
     "ConsciousnessStressBenchmark",
     "StressBenchmarkResult",
+    "RAC_AP_PROTOCOL_VERSION",
+    "ConsciousnessConstructValidator",
     "ModuleStateStore",
     "Module",
+    "NomologicalExpectation",
     "RedTeamResult",
     "RedTeamScenario",
     "TrialResult",
     "TickContext",
+    "ValidationResult",
     "WorkspacePayload",
     "build_index",
+    "default_rac_ap_protocol",
     "normalize_workspace_payload",
 ]
