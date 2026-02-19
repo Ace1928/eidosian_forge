@@ -845,6 +845,20 @@
         ]
       },
       "links": []
+    },
+    "e6d0fef3-9dd9-47be-ac40-7d0319f496e3": {
+      "id": "e6d0fef3-9dd9-47be-ac40-7d0319f496e3",
+      "content": "Commit dedb968da9 introduces Code Forge Archive Digester v1 with deterministic intake, duplication, triage artifacts, and CLI orchestration integrated into living_knowledge_pipeline.",
+      "metadata": {
+        "tags": [
+          "pipeline",
+          "commit",
+          "code_forge",
+          "archive_digester",
+          "integration"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
