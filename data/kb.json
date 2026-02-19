@@ -817,6 +817,20 @@
         ]
       },
       "links": []
+    },
+    "f12a8026-b90d-4c1d-b487-2e6a35188bad": {
+      "id": "f12a8026-b90d-4c1d-b487-2e6a35188bad",
+      "content": "Commit a5873193ae introduces curated <=3B model catalog plus automated downloader and multi-domain benchmark suite with optional multimodal OCR task and judge aggregation.",
+      "metadata": {
+        "tags": [
+          "benchmarking",
+          "models",
+          "automation",
+          "commit",
+          "eidosian_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
