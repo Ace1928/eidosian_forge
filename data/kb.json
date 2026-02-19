@@ -873,6 +873,21 @@
         ]
       },
       "links": []
+    },
+    "ade1434e-5b97-4272-8501-398b86c9e2a1": {
+      "id": "ade1434e-5b97-4272-8501-398b86c9e2a1",
+      "content": "Commit f911629d49 upgrades Code Forge with imports/calls/uses edge ingestion, dependency graph artifacts, baseline-aware benchmark gating, and canonical migration planning with compatibility shim staging.",
+      "metadata": {
+        "tags": [
+          "dependency_graph",
+          "canonicalization",
+          "commit",
+          "code_forge",
+          "benchmark",
+          "production"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
