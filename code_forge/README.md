@@ -131,7 +131,7 @@ print(summary["triage_report_path"])
 Primary DB tables:
 - `code_text`: deduplicated source blobs by SHA256
 - `code_units`: normalized module/class/function/method/etc units
-- `relationships`: typed edges (currently `contains`)
+- `relationships`: typed edges (`contains`, `imports`, `calls`, `uses`)
 - `code_fingerprints`: normalized hash, simhash64, token_count
 - `code_search`: semantic/lexical search text
 - `ingestion_runs`: deterministic ingestion run metadata
@@ -170,11 +170,14 @@ Canonicalization artifacts:
 ## Planning + Evidence
 
 - Roundtrip validation evidence (`audit_forge`): `code_forge/docs/ROUNDTRIP_AUDIT_FORGE_CYCLE_2026-02-19.md`
+- Roundtrip validation evidence (`sms_forge`): `code_forge/docs/ROUNDTRIP_SMS_FORGE_CYCLE_2026-02-19.md`
 - Next cycle implementation plan: `code_forge/docs/NEXT_CYCLE_PLAN_2026-02-19.md`
+- Next cycle implementation plan (Cycle 07): `code_forge/docs/NEXT_CYCLE_PLAN_2026-02-20.md`
 
 ## Engineering Notes
 
 - Designed for idempotent ingestion (`file_records` + `ANALYSIS_VERSION`).
 - Integration exports are scoped to the active ingestion run when possible; if no new units are created, exports fall back to the latest effective run for that source root.
+- Apply/replacement is managed-scope safe: prune/removal only applies to manifest-managed paths (or explicit scoped filters), preventing unmanaged file deletion.
 - FTS5 search is used when available; fallback lexical search remains active.
 - Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

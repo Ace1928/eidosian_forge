@@ -54,6 +54,20 @@ def _collect_tree_hashes(
     return out
 
 
+def _collect_selected_hashes(root: Path, relative_paths: Iterable[str]) -> dict[str, str]:
+    root = Path(root).resolve()
+    out: dict[str, str] = {}
+    for rel in sorted(set(str(p) for p in relative_paths if str(p))):
+        candidate = (root / rel).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            continue
+        if candidate.is_file():
+            out[rel] = _sha256_file(candidate)
+    return out
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -220,6 +234,8 @@ def apply_reconstruction(
     parity_report: Optional[dict[str, Any]] = None,
     require_parity_pass: bool = True,
     prune: bool = True,
+    extensions: Optional[Iterable[str]] = None,
+    managed_relative_paths: Optional[Iterable[str]] = None,
 ) -> dict[str, Any]:
     reconstructed_root = Path(reconstructed_root).resolve()
     target_root = Path(target_root).resolve()
@@ -240,11 +256,30 @@ def apply_reconstruction(
     if require_parity_pass and not bool(parity_report.get("pass")):
         raise RuntimeError("refusing apply: parity report is failing")
 
-    target_hashes = _collect_tree_hashes(target_root)
-    reconstructed_hashes = _collect_tree_hashes(
-        reconstructed_root,
-        exclude_relative_paths=roundtrip_meta,
-    )
+    scoped_paths = [str(p) for p in managed_relative_paths or [] if str(p)]
+    if not scoped_paths:
+        manifest_path = reconstructed_root / "reconstruction_manifest.json"
+        if manifest_path.exists():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                scoped_paths = [
+                    str(entry.get("relative_path") or "")
+                    for entry in manifest.get("entries", [])
+                    if entry.get("relative_path")
+                ]
+            except Exception:
+                scoped_paths = []
+
+    if scoped_paths:
+        target_hashes = _collect_selected_hashes(target_root, scoped_paths)
+        reconstructed_hashes = _collect_selected_hashes(reconstructed_root, scoped_paths)
+    else:
+        target_hashes = _collect_tree_hashes(target_root, extensions=extensions)
+        reconstructed_hashes = _collect_tree_hashes(
+            reconstructed_root,
+            extensions=extensions,
+            exclude_relative_paths=roundtrip_meta,
+        )
 
     changed_or_new = sorted(
         rel
@@ -382,6 +417,12 @@ def run_roundtrip_pipeline(
             parity_report=parity,
             require_parity_pass=True,
             prune=True,
+            extensions=effective_extensions,
+            managed_relative_paths=[
+                str(entry.get("relative_path") or "")
+                for entry in reconstruction.get("entries", [])
+                if entry.get("relative_path")
+            ],
         )
 
     summary = {

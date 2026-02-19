@@ -104,6 +104,34 @@ def test_apply_reconstruction_transactional_backup(tmp_path: Path) -> None:
     assert noop["noop"] is True
 
 
+def test_apply_reconstruction_prune_only_managed_scope(tmp_path: Path) -> None:
+    target = tmp_path / "target_scope"
+    target.mkdir()
+    (target / "kept.txt").write_text("keep-me\n", encoding="utf-8")
+    (target / "managed.py").write_text("VALUE = 1\n", encoding="utf-8")
+
+    reconstructed = tmp_path / "reconstructed_scope"
+    reconstructed.mkdir()
+    (reconstructed / "managed.py").write_text("VALUE = 2\n", encoding="utf-8")
+    (reconstructed / "reconstruction_manifest.json").write_text(
+        '{"entries":[{"relative_path":"managed.py"}]}\n',
+        encoding="utf-8",
+    )
+
+    report = apply_reconstruction(
+        reconstructed_root=reconstructed,
+        target_root=target,
+        backup_root=tmp_path / "backups",
+        parity_report={"pass": True},
+        require_parity_pass=True,
+        prune=True,
+    )
+    assert report["changed_or_new_count"] == 1
+    assert report["removed_count"] == 0
+    assert (target / "managed.py").read_text(encoding="utf-8") == "VALUE = 2\n"
+    assert (target / "kept.txt").exists()
+
+
 def test_roundtrip_pipeline_end_to_end(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()

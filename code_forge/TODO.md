@@ -12,6 +12,7 @@
 - [x] Add CLI command for benchmark execution and baseline comparison.
 - [x] Add strict schema validation for digester artifacts.
 - [x] Add reconstruct/parity/apply/roundtrip CLI flows with transactional backups.
+- [x] Harden apply prune scope to managed reconstruction paths (prevent unmanaged deletion).
 - [ ] Add root-scoped integration export policy toggles (`run`, `effective_run`, `global`).
 
 ## Medium Priority

@@ -48,6 +48,8 @@
 - Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
 - Roundtrip CLI flow implemented (`reconstruct-project`, `parity-report`, `apply-reconstruction`, `roundtrip`).
 - Integration exports now scope to the active run and fall back to latest effective source-root run if no new units were produced.
+- Apply flow is now managed-scope safe: prune/removals are restricted to reconstruction-managed paths.
+- Roundtrip validated on `audit_forge` and `sms_forge`; `sms_forge` source and reconstructed test suites both pass (`6/6`).
 
 ## Open Gaps
 

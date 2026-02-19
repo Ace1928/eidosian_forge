@@ -988,6 +988,20 @@
         ]
       },
       "links": []
+    },
+    "9fee45e5-ff7f-4a4d-9ce5-d4a2cc14a1ce": {
+      "id": "9fee45e5-ff7f-4a4d-9ce5-d4a2cc14a1ce",
+      "content": "Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity.",
+      "metadata": {
+        "tags": [
+          "idempotent",
+          "regeneration",
+          "sms_forge",
+          "code_forge",
+          "roundtrip"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

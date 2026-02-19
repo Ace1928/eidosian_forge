@@ -20,6 +20,8 @@ Scope: Scale the roundtrip workflow from one validated forge (`audit_forge`) to 
 - [ ] Add explicit `--jobs` control for reconstruction/parity.
 
 ## Phase 3: Multi-Forge Rollout
+- [x] Run roundtrip validation for:
+  - `sms_forge` (cycle06, parity pass, apply noop, source/reconstructed tests both pass).
 - [ ] Run roundtrip validation for:
   - `diagnostics_forge`
   - `erais_forge`

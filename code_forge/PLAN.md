@@ -46,6 +46,8 @@ Build a production-grade archive digester and living code substrate that can:
 - [x] Add transactional apply flow with backup and apply report artifacts.
 - [x] Add one-shot `roundtrip` orchestration command for digest+integration+reconstruction+parity.
 - [x] Add fallback integration scoping: when a run has zero new units, use latest effective run for source root.
+- [x] Scope apply/prune operations to reconstruction-managed paths to prevent unmanaged file deletion.
+- [x] Validate roundtrip on a second forge (`sms_forge`) with source/reconstructed test parity checks.
 - [ ] Add deterministic regeneration ordering checks for large mixed-language trees (>10k files).
 - [ ] Add signed artifact manifest option for tamper-evident promotion workflows.
 

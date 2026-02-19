@@ -113,4 +113,5 @@ When a baseline exists, gate checks fail on configured regressions.
 - Ingestion is non-destructive by default (`analysis` mode).
 - Generated digester outputs are excluded from default ingestion scans.
 - Roundtrip apply is parity-gated by default and records backup transaction artifacts.
+- Roundtrip apply/prune only touches reconstruction-managed scope (manifest paths or explicit scoped filters).
 - All stage outputs are persisted as explicit artifacts for review and rollback.

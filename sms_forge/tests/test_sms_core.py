@@ -1,6 +1,5 @@
 import pytest
-import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from sms_forge.core import SmsForge
 from sms_forge.providers.termux import TermuxProvider
 from sms_forge.utils.parser import extract_code
@@ -21,7 +20,7 @@ async def test_sms_forge_auto_detection():
 async def test_termux_send_mock():
     with patch('asyncio.create_subprocess_exec') as mock_exec:
         mock_proc = MagicMock()
-        mock_proc.communicate = asyncio.coroutine(lambda: (b"", b""))
+        mock_proc.communicate = AsyncMock(return_value=(b"", b""))
         mock_proc.returncode = 0
         mock_exec.return_value = mock_proc
         

@@ -1,4 +1,10 @@
 ## Unreleased
+- Fixed roundtrip apply safety regression:
+  - `apply_reconstruction` now scopes prune/removal to reconstruction-managed paths (or explicit scoped filters),
+  - prevents unmanaged file deletion during project regeneration.
+- Added regression test coverage for managed-scope apply pruning behavior.
+- Validated roundtrip/regeneration on `sms_forge` with parity pass and source/reconstructed test parity.
+- Updated `sms_forge` test compatibility for Python 3.12 (`AsyncMock` replacement for removed `asyncio.coroutine` usage).
 - Added roundtrip reconstruction subsystem (`reconstruct/pipeline.py`) with:
   - deterministic project reconstruction from `file_records` + `code_text`,
   - parity reports with hash-level verification,
