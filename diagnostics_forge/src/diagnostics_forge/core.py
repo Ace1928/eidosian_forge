@@ -1,9 +1,12 @@
 from __future__ import annotations
+import json
+import logging
 import os
 import time
 import psutil
 import subprocess
 import re
+from logging.handlers import RotatingFileHandler
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from eidosian_core import eidosian
@@ -14,9 +17,93 @@ class DiagnosticsForge:
     Provides parity between standard Linux and restricted Termux environments.
     """
 
-    def __init__(self, service_name: str = "core"):
+    def __init__(
+        self,
+        service_name: str = "core",
+        log_dir: str | Path | None = None,
+        json_format: bool = False,
+        max_bytes: int = 10 * 1024 * 1024,
+        backup_count: int = 5,
+    ):
         self.service_name = service_name
         self.start_time = time.time()
+        self.log_dir = Path(log_dir) if log_dir is not None else (Path.cwd() / "logs")
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.log_file = self.log_dir / f"{self.service_name}.log"
+        self.metrics_file = self.log_dir / f"{self.service_name}_metrics.json"
+        self.json_format = json_format
+        self._timers: dict[str, float] = {}
+        self._metrics: dict[str, list[float]] = {}
+        logger_key = str(self.log_file).replace(os.sep, "_")
+        self._logger = logging.getLogger(f"diagnostics_forge.{self.service_name}.{logger_key}")
+        self._logger.setLevel(logging.INFO)
+        self._logger.propagate = False
+        self._logger.handlers.clear()
+        handler = RotatingFileHandler(
+            self.log_file,
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding="utf-8",
+        )
+        formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        handler.setFormatter(formatter)
+        self._logger.addHandler(handler)
+
+    @eidosian()
+    def log_event(self, level: str, message: str, **data: Any) -> None:
+        """Log a structured diagnostics event."""
+        level_name = (level or "INFO").upper()
+        level_num = getattr(logging, level_name, logging.INFO)
+        if self.json_format:
+            payload: dict[str, Any] = {"level": level_name, "message": message}
+            payload.update(data)
+            with self.log_file.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(payload, ensure_ascii=True) + "\n")
+            return
+
+        suffix = ""
+        if data:
+            suffix = f' DATA: {json.dumps(data, ensure_ascii=True, sort_keys=True)}'
+        self._logger.log(level_num, f"{message}{suffix}")
+
+    @eidosian()
+    def start_timer(self, metric_name: str) -> str:
+        timer_id = f"{metric_name}:{time.time_ns()}"
+        self._timers[timer_id] = time.perf_counter()
+        return timer_id
+
+    @eidosian()
+    def stop_timer(self, timer_id: str) -> float:
+        start = self._timers.pop(timer_id, None)
+        if start is None:
+            return 0.0
+        duration = time.perf_counter() - start
+        metric_name = timer_id.split(":", 1)[0]
+        self._metrics.setdefault(metric_name, []).append(duration)
+        return duration
+
+    @eidosian()
+    def get_metrics_summary(self, metric_name: str) -> Dict[str, Any]:
+        values = self._metrics.get(metric_name, [])
+        if not values:
+            return {"count": 0, "avg": 0.0, "min": 0.0, "max": 0.0}
+        return {
+            "count": len(values),
+            "avg": sum(values) / len(values),
+            "min": min(values),
+            "max": max(values),
+        }
+
+    @eidosian()
+    def save_metrics(self, file_path: str | Path | None = None) -> Path:
+        out = Path(file_path) if file_path is not None else self.metrics_file
+        out.parent.mkdir(parents=True, exist_ok=True)
+        payload = {name: self.get_metrics_summary(name) for name in sorted(self._metrics)}
+        out.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
+        return out
 
     def _get_cpu_fallback(self) -> float:
         """Fallback for CPU usage using 'top'."""

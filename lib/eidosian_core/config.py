@@ -106,14 +106,21 @@ class EidosianConfig:
     @classmethod
     def from_json(cls, json_str: str) -> "EidosianConfig":
         """Create from JSON string."""
-        return cls.from_dict(json.loads(json_str))
+        payload = (json_str or "").strip()
+        if not payload:
+            return cls()
+        return cls.from_dict(json.loads(payload))
 
     @classmethod
     def load(cls, path: Path) -> "EidosianConfig":
         """Load configuration from file."""
         path = Path(path)
         if path.exists():
-            return cls.from_json(path.read_text())
+            try:
+                return cls.from_json(path.read_text())
+            except json.JSONDecodeError:
+                # Defensive fallback: malformed config should not break runtime initialization.
+                return cls()
         return cls()
 
     @classmethod

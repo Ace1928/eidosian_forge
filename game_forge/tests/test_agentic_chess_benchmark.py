@@ -10,11 +10,12 @@ import pytest
 
 def test_agentic_chess_benchmark_output(tmp_path: Path) -> None:
     pytest.importorskip("chess", reason="python-chess required")
+    script = Path(__file__).resolve().parents[1] / "tools" / "agentic_chess_benchmark.py"
     output = tmp_path / "agentic_chess.json"
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/tools/agentic_chess_benchmark.py",
+            str(script),
             "--white",
             "random",
             "--black",

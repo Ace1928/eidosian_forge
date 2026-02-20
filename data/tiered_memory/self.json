@@ -1336,5 +1336,31 @@
       "lesson"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "b1d47a68-35f8-4560-9be9-8f747115a6dc",
+    "content": "LESSON: When GitHub Actions run shell heredocs inside YAML run blocks, body and terminator indentation must match shell expectations after YAML de-indentation; otherwise workflows fail at runtime with unexpected EOF/syntax errors.\nCONTEXT: security-audit workflow fix on 2026-02-20",
+    "created_at": "2026-02-20T15:38:09.593929",
+    "last_accessed": "2026-02-20T15:38:09.593941",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "When GitHub Actions run shell heredocs inside YAML run blocks, body and terminator indentation must match shell expectations after YAML de-indentation; otherwise workflows fail at runtime with unexpected EOF/syntax errors.",
+      "context": "security-audit workflow fix on 2026-02-20",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "heredoc",
+      "self-improvement",
+      "learning",
+      "workflow",
+      "github-actions",
+      "lesson"
+    ],
+    "linked_memories": []
   }
 ]

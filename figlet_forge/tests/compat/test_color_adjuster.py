@@ -24,13 +24,14 @@ class TestColorDetection:
 
     def test_default_initialization(self):
         """Test default initialization of ColourAdjuster."""
-        with patch("figlet_forge.compat.colour_adjuster.terminal") as mock_terminal:
-            mock_terminal.supports_color = True
-            mock_terminal.color_depth = 256
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("figlet_forge.compat.colour_adjuster.terminal") as mock_terminal:
+                mock_terminal.supports_color = True
+                mock_terminal.color_depth = 256
 
-            adjuster = ColourAdjuster()
-            assert adjuster.supports_color is True
-            assert adjuster.effective_color_depth == 256
+                adjuster = ColourAdjuster()
+                assert adjuster.supports_color is True
+                assert adjuster.effective_color_depth == 256
 
     @pytest.mark.parametrize(
         "env_vars,expected_mode",

@@ -22,17 +22,20 @@ class TestEidosServer:
 
     def test_server_module_exists(self):
         """Test server module can be imported."""
+        pytest.importorskip("playwright", reason="playwright optional for eidos_server")
         from web_interface_forge import eidos_server
         assert hasattr(eidos_server, "main")
 
     def test_helper_functions(self):
         """Test helper functions exist."""
+        pytest.importorskip("playwright", reason="playwright optional for eidos_server")
         from web_interface_forge.eidos_server import sha256_text, safe_json
         assert callable(sha256_text)
         assert callable(safe_json)
 
     def test_sha256_text(self):
         """Test sha256_text function."""
+        pytest.importorskip("playwright", reason="playwright optional for eidos_server")
         from web_interface_forge.eidos_server import sha256_text
         result = sha256_text("test")
         assert isinstance(result, str)

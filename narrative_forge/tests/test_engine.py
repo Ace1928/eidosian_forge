@@ -5,7 +5,10 @@ from ollama_forge import OllamaClient
 def test_narrative_engine_real():
     # Check if model available
     client = OllamaClient()
-    models = client.list_models()
+    try:
+        models = client.list_models()
+    except Exception as exc:
+        pytest.skip(f"Ollama server unavailable: {exc}")
     if "qwen2.5:0.5b" not in models:
         pytest.skip("Model qwen2.5:0.5b not found")
 

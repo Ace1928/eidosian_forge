@@ -23,7 +23,11 @@ app = typer.Typer(help="Batch scan and process videos.")
 console = Console()
 
 
-def _parse_exts(exts: str) -> Set[str]:
+def _parse_exts(exts: str | object) -> Set[str]:
+    if exts is None:
+        return {ext.lower() for ext in VIDEO_EXTS}
+    if not isinstance(exts, str):
+        exts = str(exts)
     items = [item.strip().lower() for item in exts.split(",") if item.strip()]
     normalized = set()
     for item in items:

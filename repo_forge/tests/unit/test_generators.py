@@ -1,12 +1,18 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from pathlib import Path
+import tempfile
+import shutil
 from repo_forge.generators.scripts import create_script_files
 
 
 class TestScriptGenerator(unittest.TestCase):
     def setUp(self):
-        self.base_path = Path("/tmp/test_repo")
+        self._tmp_dir = tempfile.mkdtemp(prefix="repo_forge_test_")
+        self.base_path = Path(self._tmp_dir) / "test_repo"
+
+    def tearDown(self):
+        shutil.rmtree(self._tmp_dir, ignore_errors=True)
 
     @patch('repo_forge.generators.scripts.write_file')
     @patch('repo_forge.generators.scripts.make_executable')

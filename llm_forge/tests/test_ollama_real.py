@@ -5,7 +5,10 @@ def test_ollama_real_generation():
     provider = OllamaProvider()
     
     # Check if model exists
-    models = provider.list_models()
+    try:
+        models = provider.list_models()
+    except Exception as exc:
+        pytest.skip(f"Ollama server unavailable: {exc}")
     model = "qwen2.5:0.5b"
     if model not in models:
         pytest.skip(f"Model {model} not found locally")
@@ -17,7 +20,10 @@ def test_ollama_real_generation():
 def test_ollama_real_embedding():
     provider = OllamaProvider(embedding_model="nomic-embed-text")
     
-    models = provider.list_models()
+    try:
+        models = provider.list_models()
+    except Exception as exc:
+        pytest.skip(f"Ollama server unavailable: {exc}")
     if "nomic-embed-text:latest" not in models and "nomic-embed-text" not in models:
          pytest.skip("nomic-embed-text not found")
          

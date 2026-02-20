@@ -1098,6 +1098,19 @@
         ]
       },
       "links": []
+    },
+    "6408f454-d2d0-4925-bbe1-86faf2a6379a": {
+      "id": "6408f454-d2d0-4925-bbe1-86faf2a6379a",
+      "content": "Security dependency workflow failure root cause: mis-indented heredoc Python blocks in .github/workflows/security-audit.yml caused shell syntax error. Fixed by YAML-safe indentation that preserves shell heredoc termination semantics.",
+      "metadata": {
+        "tags": [
+          "bugfix",
+          "workflow",
+          "security-audit",
+          "github-actions"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

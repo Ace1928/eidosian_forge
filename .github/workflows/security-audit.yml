@@ -71,21 +71,21 @@ jobs:
           else
             echo "::warning::Dependabot summary failed; writing fallback report"
             python - <<'PY'
-            import json
-            from pathlib import Path
+          import json
+          from pathlib import Path
 
-            out = Path("reports/security/dependabot_alerts_error.json")
-            out.write_text(
-                json.dumps(
-                    {
-                        "error": "dependabot_alert_inventory_failed",
-                        "hint": "Ensure workflow token has security-events:read or use a PAT with security_events scope.",
-                    },
-                    indent=2,
-                ),
-                encoding="utf-8",
-            )
-            PY
+          out = Path("reports/security/dependabot_alerts_error.json")
+          out.write_text(
+              json.dumps(
+                  {
+                      "error": "dependabot_alert_inventory_failed",
+                      "hint": "Ensure workflow token has security-events:read or use a PAT with security_events scope.",
+                  },
+                  indent=2,
+              ),
+              encoding="utf-8",
+          )
+          PY
             echo "report_path=reports/security/dependabot_alerts_error.json" >> "$GITHUB_OUTPUT"
             echo "state=$STATE" >> "$GITHUB_OUTPUT"
           fi

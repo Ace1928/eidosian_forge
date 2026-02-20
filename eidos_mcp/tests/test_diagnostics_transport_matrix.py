@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -54,7 +55,13 @@ def _start_server(
     )
 
 
-def _wait_for_health(port: int, timeout: float = 20.0) -> None:
+def _get_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind((HOST, 0))
+        return int(sock.getsockname()[1])
+
+
+def _wait_for_health(port: int, timeout: float = 30.0) -> None:
     deadline = time.time() + timeout
     url = f"http://{HOST}:{port}/health"
     while time.time() < deadline:
@@ -109,7 +116,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual("ok", ping)
 
     async def test_diagnostics_ping_over_sse(self) -> None:
-        port = 8931
+        port = _get_free_port()
         proc = _start_server("sse", port, stateless_http=False, mount_path="/")
         try:
             _wait_for_health(port)
@@ -122,7 +129,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
             _stop_server(proc)
 
     async def test_diagnostics_ping_over_streamable_http_stateful(self) -> None:
-        port = 8932
+        port = _get_free_port()
         proc = _start_server("streamable-http", port, stateless_http=False)
         try:
             _wait_for_health(port)
@@ -135,7 +142,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
             _stop_server(proc)
 
     async def test_diagnostics_ping_over_streamable_http_stateless(self) -> None:
-        port = 8933
+        port = _get_free_port()
         proc = _start_server("streamable-http", port, stateless_http=True)
         try:
             _wait_for_health(port)

@@ -285,5 +285,25 @@
       "atlas"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "e4718aa0-8483-41f6-a7f8-da5b5cf4d7e3",
+    "content": "Adjusted CI test strategy to per-forge execution with explicit PYTHONPATH synthesis across lib + all forge src directories; this avoids root-level pytest import collisions and conftest mismatches in monorepo context.",
+    "created_at": "2026-02-20T15:37:54.838676",
+    "last_accessed": "2026-02-20T15:37:54.838690",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "monorepo",
+      "pytest",
+      "ci",
+      "stabilization"
+    ],
+    "linked_memories": []
   }
 ]
