@@ -83,3 +83,78 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert payload.get("drift", {}).get("drift_report_json_path")
     validation = validate_output_dir(out)
     assert validation["pass"]
+
+
+def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _make_repo(repo)
+    kb = tmp_path / "kb.json"
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+
+    first = run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=tmp_path / "out_first",
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        sync_knowledge_path=kb,
+        graphrag_output_dir=tmp_path / "grag_first",
+        graph_export_limit=200,
+        integration_policy="effective_run",
+    )
+    first_run_id = str((first["ingestion_stats"] or {}).get("run_id"))
+
+    run_policy = run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=tmp_path / "out_run",
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        sync_knowledge_path=kb,
+        graphrag_output_dir=tmp_path / "grag_run",
+        graph_export_limit=200,
+        integration_policy="run",
+    )
+    assert run_policy["integration_policy"] == "run"
+    assert run_policy["integration_run_id"] == str((run_policy["ingestion_stats"] or {}).get("run_id"))
+
+    effective_policy = run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=tmp_path / "out_effective",
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        sync_knowledge_path=kb,
+        graphrag_output_dir=tmp_path / "grag_effective",
+        graph_export_limit=200,
+        integration_policy="effective_run",
+    )
+    assert (effective_policy["ingestion_stats"] or {}).get("units_created") == 0
+    assert effective_policy["integration_policy"] == "effective_run"
+    assert effective_policy["integration_run_id"] == first_run_id
+
+    global_policy = run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=tmp_path / "out_global",
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        sync_knowledge_path=kb,
+        graphrag_output_dir=tmp_path / "grag_global",
+        graph_export_limit=200,
+        integration_policy="global",
+    )
+    assert global_policy["integration_policy"] == "global"
+    assert global_policy["integration_run_id"] is None
+    assert (tmp_path / "out_global" / "provenance_links.json").exists()

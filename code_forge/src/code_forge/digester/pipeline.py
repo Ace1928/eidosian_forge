@@ -13,6 +13,7 @@ from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
+from code_forge.integration.provenance import write_provenance_links
 from code_forge.library.db import CodeLibraryDB
 
 
@@ -575,6 +576,7 @@ def run_archive_digester(
     sync_knowledge_path: Optional[Path] = None,
     graphrag_output_dir: Optional[Path] = None,
     graph_export_limit: int = 20000,
+    integration_policy: str = "effective_run",
     strict_validation: bool = True,
     write_drift_report: bool = True,
     write_history_snapshot: bool = True,
@@ -605,11 +607,21 @@ def run_archive_digester(
     dependency_graph = build_dependency_graph(db=db, output_dir=output_dir, limit_edges=graph_export_limit)
     triage = build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
 
-    integration_run_id = str(stats.run_id)
-    if int(stats.units_created) <= 0:
-        effective = db.latest_effective_run_for_root(str(root_path), mode=mode)
-        if effective and str(effective.get("run_id") or ""):
-            integration_run_id = str(effective["run_id"])
+    normalized_policy = str(integration_policy).strip().lower() or "effective_run"
+    if normalized_policy not in {"run", "effective_run", "global"}:
+        raise ValueError("integration_policy must be one of: run, effective_run, global")
+
+    integration_run_id: str | None
+    if normalized_policy == "global":
+        integration_run_id = None
+    elif normalized_policy == "run":
+        integration_run_id = str(stats.run_id)
+    else:
+        integration_run_id = str(stats.run_id)
+        if int(stats.units_created) <= 0:
+            effective = db.latest_effective_run_for_root(str(root_path), mode=mode)
+            if effective and str(effective.get("run_id") or ""):
+                integration_run_id = str(effective["run_id"])
 
     knowledge_sync = None
     if sync_knowledge_path is not None:
@@ -619,6 +631,8 @@ def run_archive_digester(
             limit=max(1, int(graph_export_limit)),
             min_token_count=5,
             run_id=integration_run_id,
+            include_node_links=True,
+            node_links_limit=100,
         )
 
     graphrag_export = None
@@ -646,12 +660,40 @@ def run_archive_digester(
         "graphrag_export": graphrag_export,
         "relationship_counts": db.relationship_counts(),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
+        "integration_policy": normalized_policy,
         "integration_run_id": integration_run_id,
+        "provenance_path": None,
     }
     summary_path = output_dir / "archive_digester_summary.json"
     summary_path.write_text(
         json.dumps(summary, indent=2) + "\n", encoding="utf-8"
     )
+
+    provenance = write_provenance_links(
+        output_path=output_dir / "provenance_links.json",
+        stage="archive_digester",
+        root_path=Path(root_path),
+        source_run_id=str(stats.run_id),
+        integration_policy=normalized_policy,
+        integration_run_id=integration_run_id,
+        artifact_paths=[
+            ("repo_index", output_dir / "repo_index.json"),
+            ("duplication_index", output_dir / "duplication_index.json"),
+            ("dependency_graph", output_dir / "dependency_graph.json"),
+            ("triage", output_dir / "triage.json"),
+            ("triage_audit", output_dir / "triage_audit.json"),
+            ("archive_summary", summary_path),
+        ],
+        knowledge_sync=knowledge_sync,
+        graphrag_export=graphrag_export,
+        extra={
+            "mode": mode,
+            "graph_export_limit": int(graph_export_limit),
+            "files_processed": int(stats.files_processed),
+            "units_created": int(stats.units_created),
+        },
+    )
+    summary["provenance_path"] = provenance.get("path")
 
     validation = validate_output_dir(output_dir)
     summary["validation"] = validation

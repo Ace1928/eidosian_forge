@@ -3,6 +3,9 @@ from __future__ import annotations
 import functools
 import inspect
 import os
+import threading
+import time
+from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
 from mcp.server.fastmcp import FastMCP
@@ -120,7 +123,33 @@ def _infer_parameters(func) -> Dict[str, Any]:
     return schema
 
 
-import time
+
+_RATE_LIMIT_GLOBAL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_GLOBAL_PER_MIN", "600")))
+_RATE_LIMIT_PER_TOOL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_PER_TOOL_PER_MIN", "300")))
+_RATE_LIMIT_LOCK = threading.Lock()
+_RATE_LIMIT_GLOBAL_TS: deque[float] = deque()
+_RATE_LIMIT_TOOL_TS: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _enforce_rate_limit(tool_name: str) -> None:
+    if _RATE_LIMIT_GLOBAL_PER_MIN <= 0 and _RATE_LIMIT_PER_TOOL_PER_MIN <= 0:
+        return
+    now = time.time()
+    window_start = now - 60.0
+    with _RATE_LIMIT_LOCK:
+        while _RATE_LIMIT_GLOBAL_TS and _RATE_LIMIT_GLOBAL_TS[0] < window_start:
+            _RATE_LIMIT_GLOBAL_TS.popleft()
+        tool_bucket = _RATE_LIMIT_TOOL_TS[tool_name]
+        while tool_bucket and tool_bucket[0] < window_start:
+            tool_bucket.popleft()
+
+        if _RATE_LIMIT_GLOBAL_PER_MIN > 0 and len(_RATE_LIMIT_GLOBAL_TS) >= _RATE_LIMIT_GLOBAL_PER_MIN:
+            raise RuntimeError("MCP global rate limit exceeded (60s window)")
+        if _RATE_LIMIT_PER_TOOL_PER_MIN > 0 and len(tool_bucket) >= _RATE_LIMIT_PER_TOOL_PER_MIN:
+            raise RuntimeError(f"MCP tool rate limit exceeded for {tool_name} (60s window)")
+
+        _RATE_LIMIT_GLOBAL_TS.append(now)
+        tool_bucket.append(now)
 
 @eidosian()
 def tool(
@@ -153,6 +182,7 @@ def tool(
 
                 start = time.time()
                 try:
+                    _enforce_rate_limit(tool_name)
                     result = await func(*args, **kwargs)
                     log_tool_call(tool_name, log_args, result, start_time=start)
                     return result
@@ -173,6 +203,7 @@ def tool(
 
                 start = time.time()
                 try:
+                    _enforce_rate_limit(tool_name)
                     result = func(*args, **kwargs)
                     log_tool_call(tool_name, log_args, result, start_time=start)
                     return result

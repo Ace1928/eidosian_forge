@@ -1,6 +1,6 @@
 # Current State: Code Forge
 
-**Date**: 2026-02-19  
+**Date**: 2026-02-20  
 **Status**: Production active, archive-digester foundation implemented  
 **Version**: 1.0.x
 
@@ -28,12 +28,14 @@
   - `triage.csv`
   - `triage_report.md`
   - `drift_report.json`
+  - `provenance_links.json`
   - `history/*.json` snapshots
   - `archive_digester_summary.json`
 - Roundtrip/regeneration artifacts:
   - `reconstruction_manifest.json`
   - `parity_report.json`
   - `roundtrip_summary.json`
+  - `provenance_links.json`
   - transactional backup/apply reports under `Backups/code_forge_roundtrip/*`
 
 ## Validation
@@ -47,12 +49,13 @@
 - Ingestion remains idempotent via `file_records` and `ANALYSIS_VERSION` gates.
 - Living knowledge pipeline now emits richer code analysis outputs (language split, triage references).
 - Roundtrip CLI flow implemented (`reconstruct-project`, `parity-report`, `apply-reconstruction`, `roundtrip`).
-- Integration exports now scope to the active run and fall back to latest effective source-root run if no new units were produced.
+- Integration exports now support explicit policy (`run`, `effective_run`, `global`) with deterministic run scope recorded in summaries.
 - Apply flow is now managed-scope safe: prune/removals are restricted to reconstruction-managed paths.
+- Roundtrip contracts are validated via `validate-roundtrip` (including optional hash verification and apply-report enforcement).
 - Roundtrip validated on `audit_forge` and `sms_forge`; `sms_forge` source and reconstructed test suites both pass (`6/6`).
 
 ## Open Gaps
 
 - Signed/tamper-evident artifact manifests are not implemented yet.
 - Large-tree (>10k files) parallel parity hashing and regeneration stress baselines are pending.
-- Root-scoped export policy modes (`run` vs `effective_run` vs `global`) are not user-configurable yet.
+- MCP-level RBAC/rate-limiting controls for high-risk code-forge operations are not implemented yet.

@@ -39,10 +39,10 @@ venv.bak/
 
 # Project Specific
 logs/
-data/
 Backups/
 cache/
 output/
+tmp/
 .env
 settings.yaml
 .DS_Store
@@ -76,3 +76,29 @@ lib/lancedb_src/python/target/
 
 # Code Forge runtime workspaces (generated artifacts)
 data/code_forge/roundtrip/
+data/code_forge/digester/
+data/code_forge/graphrag_input/
+data/code_forge/ingestion_runs/
+data/code_forge/canonicalization/
+data/code_forge/library.sqlite
+data/code_forge/library.sqlite-*
+data/bench_workspaces/
+data/graphrag_test/
+data/consciousness/
+data/eidosian_lore.txt
+
+# Runtime data stores and caches
+data/**/cache/
+data/**/tmp/
+data/**/events/
+data/**/*.sqlite
+data/**/*.sqlite-shm
+data/**/*.sqlite-wal
+
+# Runtime state and report outputs
+state/
+reports/consciousness_benchmarks/
+reports/consciousness_trials/
+reports/consciousness_validation/
+reports/consciousness_preregister/
+reports/code_forge_benchmark_*.json

@@ -132,6 +132,43 @@ def test_apply_reconstruction_prune_only_managed_scope(tmp_path: Path) -> None:
     assert (target / "kept.txt").exists()
 
 
+def test_apply_reconstruction_dry_run_and_require_manifest(tmp_path: Path) -> None:
+    target = tmp_path / "target_dry"
+    target.mkdir()
+    (target / "a.py").write_text("VALUE = 1\n", encoding="utf-8")
+
+    reconstructed = tmp_path / "reconstructed_dry"
+    reconstructed.mkdir()
+    (reconstructed / "a.py").write_text("VALUE = 2\n", encoding="utf-8")
+
+    dry = apply_reconstruction(
+        reconstructed_root=reconstructed,
+        target_root=target,
+        backup_root=tmp_path / "backups",
+        parity_report={"pass": True},
+        require_parity_pass=True,
+        prune=True,
+        dry_run=True,
+    )
+    assert dry["dry_run"] is True
+    assert dry["changed_or_new_count"] == 1
+    assert (target / "a.py").read_text(encoding="utf-8") == "VALUE = 1\n"
+
+    try:
+        apply_reconstruction(
+            reconstructed_root=reconstructed,
+            target_root=target,
+            backup_root=tmp_path / "backups",
+            parity_report={"pass": True},
+            require_parity_pass=True,
+            prune=True,
+            require_manifest=True,
+        )
+        assert False, "expected require_manifest guard to fail without manifest/scoped paths"
+    except RuntimeError as exc:
+        assert "manifest paths required" in str(exc)
+
+
 def test_roundtrip_pipeline_end_to_end(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -157,6 +194,7 @@ def test_roundtrip_pipeline_end_to_end(tmp_path: Path) -> None:
     assert (workspace / "digester" / "archive_digester_summary.json").exists()
     assert (workspace / "reconstructed" / "reconstruction_manifest.json").exists()
     assert (workspace / "parity_report.json").exists()
+    assert (workspace / "provenance_links.json").exists()
 
 
 def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -> None:

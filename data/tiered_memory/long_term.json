@@ -239,5 +239,26 @@
       "roundtrip"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "f77f9e7e-eb5e-4d1c-9ba3-2380a6b1ec1d",
+    "content": "Implemented security/governance hardening: removed blanket data/ ignore, added scoped runtime ignores, introduced gitleaks pre-commit + CI workflow, and documented data governance policy for tracked data with secret protection.",
+    "created_at": "2026-02-20T10:19:18.365323",
+    "last_accessed": "2026-02-20T10:19:18.365337",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.95,
+    "ttl_seconds": null,
+    "tags": [
+      "data-governance",
+      "security",
+      "gitleaks",
+      "code_forge",
+      "eidos_mcp"
+    ],
+    "linked_memories": []
   }
 ]

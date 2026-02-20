@@ -1002,6 +1002,20 @@
         ]
       },
       "links": []
+    },
+    "dfe68229-a803-491c-af1b-e52b30ad3f0a": {
+      "id": "dfe68229-a803-491c-af1b-e52b30ad3f0a",
+      "content": "Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents.",
+      "metadata": {
+        "tags": [
+          "mcp",
+          "graphrag",
+          "code_forge",
+          "knowledge_forge",
+          "provenance"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

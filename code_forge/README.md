@@ -58,6 +58,11 @@ code-forge dependency-graph --output-dir data/code_forge/digester/latest
 # Validate artifact contracts
 code-forge validate-artifacts --output-dir data/code_forge/digester/latest
 
+# Validate roundtrip contracts (manifest/parity/summary/apply report)
+code-forge validate-roundtrip \
+  --workspace-dir data/code_forge/roundtrip/audit_forge \
+  --verify-hashes
+
 # Generate triage from existing intake artifacts
 code-forge triage-report --output-dir data/code_forge/digester/latest
 
@@ -65,7 +70,8 @@ code-forge triage-report --output-dir data/code_forge/digester/latest
 code-forge digest . \
   --output-dir data/code_forge/digester/latest \
   --sync-knowledge \
-  --export-graphrag
+  --export-graphrag \
+  --integration-policy effective_run
 
 # Generate drift report explicitly (uses latest history snapshot by default)
 code-forge drift-report --output-dir data/code_forge/digester/latest
@@ -99,6 +105,7 @@ code-forge roundtrip audit_forge \
   --workspace-dir data/code_forge/roundtrip/audit_forge \
   --sync-knowledge \
   --export-graphrag \
+  --integration-policy effective_run \
   --apply
 ```
 
@@ -154,6 +161,7 @@ Roundtrip artifacts:
 - `parity_report.json`: source vs reconstructed hash-level parity result
 - `roundtrip_summary.json`: end-to-end digest+integration+reconstruction+apply summary
 - `Backups/code_forge_roundtrip/<transaction_id>/apply_report.json`: transactional apply audit record
+- `provenance_links.json`: cross-forge provenance links (artifact checksums + knowledge/GraphRAG linkages)
 
 Canonicalization artifacts:
 - `migration_map.json`: source→canonical mapping with strategy labels
@@ -173,11 +181,15 @@ Canonicalization artifacts:
 - Roundtrip validation evidence (`sms_forge`): `code_forge/docs/ROUNDTRIP_SMS_FORGE_CYCLE_2026-02-19.md`
 - Next cycle implementation plan: `code_forge/docs/NEXT_CYCLE_PLAN_2026-02-19.md`
 - Next cycle implementation plan (Cycle 07): `code_forge/docs/NEXT_CYCLE_PLAN_2026-02-20.md`
+- Provenance schema/reference: `code_forge/docs/PROVENANCE_MODEL.md`
+- Operator tutorial: `code_forge/docs/TUTORIAL_ROUNDTRIP_SAMPLE.md`
 
 ## Engineering Notes
 
 - Designed for idempotent ingestion (`file_records` + `ANALYSIS_VERSION`).
 - Integration exports are scoped to the active ingestion run when possible; if no new units are created, exports fall back to the latest effective run for that source root.
+- Integration scope policy is configurable with `--integration-policy {run,effective_run,global}` on `digest` and `roundtrip`.
+- Apply supports `--require-manifest` and `--dry-run` for guarded promotion workflows.
 - Apply/replacement is managed-scope safe: prune/removal only applies to manifest-managed paths (or explicit scoped filters), preventing unmanaged file deletion.
 - FTS5 search is used when available; fallback lexical search remains active.
 - Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

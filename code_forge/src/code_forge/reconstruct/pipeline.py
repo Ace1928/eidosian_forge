@@ -10,6 +10,7 @@ from typing import Any, Iterable, Optional
 
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.digester.pipeline import run_archive_digester
+from code_forge.integration.provenance import write_provenance_links
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 
@@ -236,6 +237,8 @@ def apply_reconstruction(
     prune: bool = True,
     extensions: Optional[Iterable[str]] = None,
     managed_relative_paths: Optional[Iterable[str]] = None,
+    require_manifest: bool = False,
+    dry_run: bool = False,
 ) -> dict[str, Any]:
     reconstructed_root = Path(reconstructed_root).resolve()
     target_root = Path(target_root).resolve()
@@ -270,6 +273,9 @@ def apply_reconstruction(
             except Exception:
                 scoped_paths = []
 
+    if require_manifest and not scoped_paths:
+        raise RuntimeError("refusing apply: reconstruction manifest paths required but unavailable")
+
     if scoped_paths:
         target_hashes = _collect_selected_hashes(target_root, scoped_paths)
         reconstructed_hashes = _collect_selected_hashes(reconstructed_root, scoped_paths)
@@ -292,7 +298,7 @@ def apply_reconstruction(
     transaction_dir = backup_root / transaction_id
     backup_count = 0
 
-    if changed_or_new or removed:
+    if (changed_or_new or removed) and not dry_run:
         transaction_dir.mkdir(parents=True, exist_ok=True)
         for rel in changed_or_new:
             src = target_root / rel
@@ -309,23 +315,24 @@ def apply_reconstruction(
                 shutil.copy2(src, backup_path)
                 backup_count += 1
 
-    for rel in changed_or_new:
-        src = reconstructed_root / rel
-        dst = target_root / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+    if not dry_run:
+        for rel in changed_or_new:
+            src = reconstructed_root / rel
+            dst = target_root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
 
-    for rel in removed:
-        target = target_root / rel
-        if target.exists():
-            target.unlink()
-            parent = target.parent
-            while parent != target_root and parent.exists():
-                try:
-                    parent.rmdir()
-                except OSError:
-                    break
-                parent = parent.parent
+        for rel in removed:
+            target = target_root / rel
+            if target.exists():
+                target.unlink()
+                parent = target.parent
+                while parent != target_root and parent.exists():
+                    try:
+                        parent.rmdir()
+                    except OSError:
+                        break
+                    parent = parent.parent
 
     report = {
         "generated_at": _utc_now(),
@@ -337,6 +344,7 @@ def apply_reconstruction(
         "parity_pass": bool(parity_report.get("pass")),
         "require_parity_pass": bool(require_parity_pass),
         "prune": bool(prune),
+        "dry_run": bool(dry_run),
         "changed_or_new_count": len(changed_or_new),
         "removed_count": len(removed),
         "backup_count": backup_count,
@@ -363,6 +371,7 @@ def run_roundtrip_pipeline(
     sync_knowledge_path: Optional[Path] = None,
     graphrag_output_dir: Optional[Path] = None,
     graph_export_limit: int = 20000,
+    integration_policy: str = "effective_run",
     strict_validation: bool = True,
     apply: bool = False,
     backup_root: Optional[Path] = None,
@@ -390,6 +399,7 @@ def run_roundtrip_pipeline(
         sync_knowledge_path=sync_knowledge_path,
         graphrag_output_dir=graphrag_output_dir,
         graph_export_limit=graph_export_limit,
+        integration_policy=integration_policy,
         strict_validation=strict_validation,
     )
 
@@ -423,6 +433,7 @@ def run_roundtrip_pipeline(
                 for entry in reconstruction.get("entries", [])
                 if entry.get("relative_path")
             ],
+            require_manifest=True,
         )
 
     summary = {
@@ -430,6 +441,7 @@ def run_roundtrip_pipeline(
         "root_path": str(root_path),
         "workspace_dir": str(workspace_dir),
         "extensions": effective_extensions,
+        "integration_policy": str(integration_policy),
         "digester_summary_path": str(digester_dir / "archive_digester_summary.json"),
         "reconstruction_manifest_path": reconstruction.get("manifest_path"),
         "parity_report_path": str(parity_path),
@@ -439,6 +451,30 @@ def run_roundtrip_pipeline(
         "parity": parity,
         "apply": apply_report,
     }
+
+    _write_json(summary_path, summary)
+    provenance = write_provenance_links(
+        output_path=workspace_dir / "provenance_links.json",
+        stage="roundtrip",
+        root_path=root_path,
+        source_run_id=str((digest.get("ingestion_stats") or {}).get("run_id") or ""),
+        integration_policy=str(integration_policy),
+        integration_run_id=digest.get("integration_run_id"),
+        artifact_paths=[
+            ("digester_summary", digester_dir / "archive_digester_summary.json"),
+            ("reconstruction_manifest", reconstructed_dir / "reconstruction_manifest.json"),
+            ("parity_report", parity_path),
+            ("roundtrip_summary", summary_path),
+        ],
+        knowledge_sync=digest.get("knowledge_sync"),
+        graphrag_export=digest.get("graphrag_export"),
+        extra={
+            "parity_pass": bool(parity.get("pass")),
+            "apply_enabled": bool(apply),
+            "apply_noop": bool((apply_report or {}).get("noop")) if isinstance(apply_report, dict) else None,
+        },
+    )
+    summary["provenance_path"] = provenance.get("path")
     _write_json(summary_path, summary)
     summary["summary_path"] = str(summary_path)
     return summary

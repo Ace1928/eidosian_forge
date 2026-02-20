@@ -1,0 +1,14 @@
+title = "Eidosian Forge Gitleaks Config"
+
+[allowlist]
+description = "Allow obvious placeholder test strings"
+regexes = [
+  '''(?i)example(_|-)?(token|key|secret)''',
+  '''(?i)dummy(_|-)?(token|key|secret)''',
+  '''(?i)test(_|-)?(token|key|secret)''',
+  '''(?i)fake(_|-)?(token|key|secret)'''
+]
+paths = [
+  '''memory_forge/legacy_imports/''',
+  '''.git/'''
+]

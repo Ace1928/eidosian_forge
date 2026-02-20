@@ -9,25 +9,25 @@ Baseline: Roundtrip validated on `audit_forge` + `sms_forge` with managed-scope 
 3. Expand deterministic regeneration checks and benchmark/scalability telemetry.
 
 ## Phase 1: Roundtrip Contract Hardening
-- [ ] Add `validate-roundtrip` CLI command.
-- [ ] Validate:
+- [x] Add `validate-roundtrip` CLI command.
+- [x] Validate:
   - `reconstruction_manifest.json`
   - `parity_report.json`
   - `roundtrip_summary.json`
   - backup `apply_report.json` (when apply used)
-- [ ] Add schema file/module for roundtrip artifacts with machine-readable error output.
-- [ ] Fail apply if reconstruction manifest is missing and `--require-manifest` is set.
-- [ ] Add optional `--dry-run-apply` preview mode.
+- [x] Add schema file/module for roundtrip artifacts with machine-readable error output.
+- [x] Fail apply if reconstruction manifest is missing and `--require-manifest` is set.
+- [x] Add optional `--dry-run-apply` preview mode.
 
 ### Acceptance
 - `validate-roundtrip` returns pass/fail with actionable error list.
 - Invalid artifact structure fails CI test fixtures.
 
 ## Phase 2: Integration Policy Controls
-- [ ] Add CLI flag: `--integration-policy {run,effective_run,global}`.
-- [ ] Wire policy into digest + roundtrip command paths.
-- [ ] Ensure summaries explicitly record selected policy and resolved `integration_run_id`.
-- [ ] Add tests for each policy mode.
+- [x] Add CLI flag: `--integration-policy {run,effective_run,global}`.
+- [x] Wire policy into digest + roundtrip command paths.
+- [x] Ensure summaries explicitly record selected policy and resolved `integration_run_id`.
+- [x] Add tests for each policy mode.
 
 ### Acceptance
 - Policy behavior is deterministic and test-covered.
@@ -58,6 +58,16 @@ Baseline: Roundtrip validated on `audit_forge` + `sms_forge` with managed-scope 
 ### Acceptance
 - Promotion reports are auditable and reproducible.
 - No manual assumptions required for replacement decision.
+
+## Phase 5: Provenance + Governance
+- [x] Add provenance artifact linking digester/roundtrip outputs to knowledge and GraphRAG outputs.
+- [x] Add GraphRAG export manifest (`unit_id -> document`) for traceability.
+- [x] Add MCP query surface for provenance records.
+- [x] Add repository data-governance and secret-scan controls (pre-commit + CI).
+
+### Acceptance
+- Cross-forge lineage is queryable via deterministic JSON artifacts.
+- Secret scanning is enforced before commit and in CI.
 
 ## Risks and Controls
 - Risk: unmanaged file deletion during apply.

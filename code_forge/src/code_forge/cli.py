@@ -50,6 +50,7 @@ from code_forge import (
     compare_tree_parity,
     apply_reconstruction,
     run_roundtrip_pipeline,
+    validate_roundtrip_workspace,
 )
 
 # Default paths
@@ -414,6 +415,11 @@ class CodeForgeCLI(StandardCLI):
             default=5,
             help="Minimum token count to include (default: 5)",
         )
+        sync_kb_parser.add_argument(
+            "--run-id",
+            default=None,
+            help="Optional ingestion run_id scope (default: latest/global query path)",
+        )
         sync_kb_parser.set_defaults(func=self._cmd_sync_knowledge)
 
         export_grag_parser = subparsers.add_parser(
@@ -436,6 +442,11 @@ class CodeForgeCLI(StandardCLI):
             type=int,
             default=5,
             help="Minimum token count to include (default: 5)",
+        )
+        export_grag_parser.add_argument(
+            "--run-id",
+            default=None,
+            help="Optional ingestion run_id scope (default: latest/global query path)",
         )
         export_grag_parser.set_defaults(func=self._cmd_export_graphrag)
 
@@ -545,6 +556,12 @@ class CodeForgeCLI(StandardCLI):
             help="Maximum units for knowledge/GraphRAG export (default: 20000)",
         )
         digest_parser.add_argument(
+            "--integration-policy",
+            choices=["run", "effective_run", "global"],
+            default="effective_run",
+            help="Scope policy for integration exports",
+        )
+        digest_parser.add_argument(
             "--no-strict-validation",
             action="store_true",
             help="Disable strict artifact schema validation failure mode",
@@ -611,6 +628,27 @@ class CodeForgeCLI(StandardCLI):
             help="Digester artifact directory to validate",
         )
         validate_parser.set_defaults(func=self._cmd_validate_artifacts)
+
+        validate_roundtrip_parser = subparsers.add_parser(
+            "validate-roundtrip",
+            help="Validate roundtrip reconstruction/parity/apply artifacts in a workspace",
+        )
+        validate_roundtrip_parser.add_argument(
+            "--workspace-dir",
+            required=True,
+            help="Roundtrip workspace directory containing summary/manifest/parity artifacts",
+        )
+        validate_roundtrip_parser.add_argument(
+            "--require-apply-report",
+            action="store_true",
+            help="Fail if apply report is missing from transaction backup directory",
+        )
+        validate_roundtrip_parser.add_argument(
+            "--verify-hashes",
+            action="store_true",
+            help="Verify reconstructed file hashes against reconstruction manifest",
+        )
+        validate_roundtrip_parser.set_defaults(func=self._cmd_validate_roundtrip)
 
         drift_parser = subparsers.add_parser(
             "drift-report",
@@ -839,6 +877,16 @@ class CodeForgeCLI(StandardCLI):
             action="store_true",
             help="Do not remove files missing from reconstructed tree",
         )
+        apply_parser.add_argument(
+            "--require-manifest",
+            action="store_true",
+            help="Require reconstruction manifest-managed paths for apply safety",
+        )
+        apply_parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Compute apply plan without modifying files",
+        )
         apply_parser.set_defaults(func=self._cmd_apply_reconstruction)
 
         roundtrip_parser = subparsers.add_parser(
@@ -905,6 +953,12 @@ class CodeForgeCLI(StandardCLI):
             type=int,
             default=20000,
             help="Maximum units for Knowledge/GraphRAG exports",
+        )
+        roundtrip_parser.add_argument(
+            "--integration-policy",
+            choices=["run", "effective_run", "global"],
+            default="effective_run",
+            help="Scope policy for integration exports",
         )
         roundtrip_parser.add_argument(
             "--apply",
@@ -1366,6 +1420,9 @@ class CodeForgeCLI(StandardCLI):
                 kb_path=Path(args.kb_path),
                 limit=max(1, int(args.limit)),
                 min_token_count=max(0, int(args.min_tokens)),
+                run_id=str(args.run_id).strip() if args.run_id else None,
+                include_node_links=True,
+                node_links_limit=100,
             )
             result = CommandResult(
                 True,
@@ -1384,6 +1441,7 @@ class CodeForgeCLI(StandardCLI):
                 output_dir=Path(args.output_dir),
                 limit=max(1, int(args.limit)),
                 min_token_count=max(0, int(args.min_tokens)),
+                run_id=str(args.run_id).strip() if args.run_id else None,
             )
             result = CommandResult(
                 True,
@@ -1487,6 +1545,7 @@ class CodeForgeCLI(StandardCLI):
                     sync_knowledge_path=kb_path,
                     graphrag_output_dir=graphrag_out,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
+                    integration_policy=str(args.integration_policy),
                     strict_validation=not bool(args.no_strict_validation),
                     write_drift_report=not bool(args.no_drift_report),
                     write_history_snapshot=not bool(args.no_history_snapshot),
@@ -1547,6 +1606,23 @@ class CodeForgeCLI(StandardCLI):
                 )
         except Exception as e:
             result = CommandResult(False, f"Artifact validation error: {e}")
+        self._output(result, args)
+
+    def _cmd_validate_roundtrip(self, args) -> None:
+        """Validate roundtrip artifacts against strict contracts."""
+        try:
+            workspace_dir = Path(args.workspace_dir).resolve()
+            report = validate_roundtrip_workspace(
+                workspace_dir=workspace_dir,
+                require_apply_report=bool(args.require_apply_report),
+                verify_hashes=bool(args.verify_hashes),
+            )
+            if report.get("pass", False):
+                result = CommandResult(True, "Roundtrip validation passed", report)
+            else:
+                result = CommandResult(False, "Roundtrip validation failed", report)
+        except Exception as e:
+            result = CommandResult(False, f"Roundtrip validation error: {e}")
         self._output(result, args)
 
     def _cmd_drift_report(self, args) -> None:
@@ -1686,10 +1762,16 @@ class CodeForgeCLI(StandardCLI):
                 parity_report=parity_payload,
                 require_parity_pass=not bool(args.allow_non_parity),
                 prune=not bool(args.no_prune),
+                require_manifest=bool(args.require_manifest),
+                dry_run=bool(args.dry_run),
             )
             result = CommandResult(
                 True,
-                "Reconstruction applied" if not payload.get("noop") else "Reconstruction apply no-op (already in sync)",
+                (
+                    "Reconstruction apply dry-run complete"
+                    if payload.get("dry_run")
+                    else ("Reconstruction applied" if not payload.get("noop") else "Reconstruction apply no-op (already in sync)")
+                ),
                 payload,
             )
         except Exception as e:
@@ -1715,6 +1797,7 @@ class CodeForgeCLI(StandardCLI):
                     sync_knowledge_path=Path(args.kb_path).resolve() if args.sync_knowledge else None,
                     graphrag_output_dir=Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
+                    integration_policy=str(args.integration_policy),
                     strict_validation=not bool(args.no_strict_validation),
                     apply=bool(args.apply),
                     backup_root=Path(args.backup_root).resolve(),

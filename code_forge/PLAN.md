@@ -30,6 +30,8 @@ Build a production-grade archive digester and living code substrate that can:
 - [x] Knowledge Forge sync (`sync-knowledge`).
 - [x] GraphRAG export (`export-graphrag`).
 - [x] End-to-end digest command (`digest`) with optional integration exports.
+- [x] Integration scope policy (`run`, `effective_run`, `global`) for deterministic export behavior.
+- [x] Provenance links artifact (`provenance_links.json`) for cross-forge traceability.
 
 ### Stage E: Proof and Safety Gates
 - [x] Expanded tests for similarity, multi-language analysis, triage pipeline.
@@ -48,6 +50,8 @@ Build a production-grade archive digester and living code substrate that can:
 - [x] Add fallback integration scoping: when a run has zero new units, use latest effective run for source root.
 - [x] Scope apply/prune operations to reconstruction-managed paths to prevent unmanaged file deletion.
 - [x] Validate roundtrip on a second forge (`sms_forge`) with source/reconstructed test parity checks.
+- [x] Add roundtrip contract validator (`validate-roundtrip`) with hash verification mode.
+- [x] Add apply guardrails (`--require-manifest`, `--dry-run`) for safe promotions.
 - [ ] Add deterministic regeneration ordering checks for large mixed-language trees (>10k files).
 - [ ] Add signed artifact manifest option for tamper-evident promotion workflows.
 

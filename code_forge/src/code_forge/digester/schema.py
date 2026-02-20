@@ -15,6 +15,7 @@ REQUIRED_FILES = {
 
 OPTIONAL_FILES = {
     "drift_report.json": "drift_report",
+    "provenance_links.json": "provenance_links",
 }
 
 
@@ -163,6 +164,27 @@ def validate_drift_report(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_provenance_links(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(isinstance(payload.get("generated_at"), str), errors, "provenance.generated_at must be a string")
+    _require(isinstance(payload.get("stage"), str), errors, "provenance.stage must be a string")
+    _require(isinstance(payload.get("root_path"), str), errors, "provenance.root_path must be a string")
+    _require(
+        isinstance(payload.get("integration_policy"), str),
+        errors,
+        "provenance.integration_policy must be a string",
+    )
+    _require(
+        payload.get("integration_run_id") is None or isinstance(payload.get("integration_run_id"), str),
+        errors,
+        "provenance.integration_run_id must be string or null",
+    )
+    _require(isinstance(payload.get("artifacts"), list), errors, "provenance.artifacts must be a list")
+    _require(isinstance(payload.get("knowledge_links"), dict), errors, "provenance.knowledge_links must be object")
+    _require(isinstance(payload.get("graphrag_links"), dict), errors, "provenance.graphrag_links must be object")
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -187,6 +209,7 @@ def validate_output_dir(output_dir: Path) -> dict[str, Any]:
         "triage_audit": validate_triage_audit,
         "archive_summary": validate_archive_summary,
         "drift_report": validate_drift_report,
+        "provenance_links": validate_provenance_links,
     }
 
     for filename, key in REQUIRED_FILES.items():

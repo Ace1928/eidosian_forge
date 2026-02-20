@@ -16,6 +16,7 @@ from code_forge.digester.pipeline import (
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner, IngestionStats
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
+from code_forge.integration.provenance import read_provenance_links, write_provenance_links
 from code_forge.librarian.core import CodeLibrarian
 from code_forge.library.db import CodeLibraryDB, CodeUnit
 from code_forge.library.similarity import (
@@ -35,6 +36,7 @@ from code_forge.reconstruct.pipeline import (
     compare_tree_parity,
     run_roundtrip_pipeline,
 )
+from code_forge.reconstruct.schema import validate_roundtrip_workspace
 
 __all__ = [
     "CodeAnalyzer",
@@ -60,6 +62,8 @@ __all__ = [
     "IngestionStats",
     "export_units_for_graphrag",
     "sync_units_to_knowledge_forge",
+    "write_provenance_links",
+    "read_provenance_links",
     "build_fingerprint",
     "hamming_distance64",
     "normalize_code_text",
@@ -73,4 +77,5 @@ __all__ = [
     "compare_tree_parity",
     "apply_reconstruction",
     "run_roundtrip_pipeline",
+    "validate_roundtrip_workspace",
 ]

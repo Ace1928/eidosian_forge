@@ -1,4 +1,15 @@
 ## Unreleased
+- Added integration scope policy controls (`run`, `effective_run`, `global`) for `digest` and `roundtrip`.
+- Added roundtrip contract validator (`validate-roundtrip`) with optional hash verification.
+- Added apply safety controls:
+  - `--require-manifest` guard,
+  - `--dry-run` planning mode.
+- Added provenance model implementation:
+  - `integration/provenance.py`,
+  - `provenance_links.json` artifacts for digester and roundtrip runs,
+  - MCP query tool `code_forge_provenance`.
+- Added GraphRAG export manifest artifact (`graphrag_export_manifest.json`).
+- Added knowledge sync node-link capture (`unit_id -> node_id`) for cross-forge traceability.
 - Fixed roundtrip apply safety regression:
   - `apply_reconstruction` now scopes prune/removal to reconstruction-managed paths (or explicit scoped filters),
   - prevents unmanaged file deletion during project regeneration.

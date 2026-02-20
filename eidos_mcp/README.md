@@ -93,6 +93,8 @@ Key env vars (all default-safe):
   `mcp-session-id` headers and transparently establish a fresh session
 - `EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT` (`1`/`0`, default `1`) to coerce
   non-MCP transport error bodies into explicit JSON with `Content-Type`
+- `EIDOS_MCP_RATE_LIMIT_GLOBAL_PER_MIN` (default `600`) global tool-call ceiling per 60s window
+- `EIDOS_MCP_RATE_LIMIT_PER_TOOL_PER_MIN` (default `300`) per-tool call ceiling per 60s window
 - `EIDOS_MCP_ENFORCE_ORIGIN` (`1`/`0`, default `1`) to reject non-local browser origins
 - `EIDOS_MCP_ALLOWED_ORIGINS` (comma-separated origins, default local loopback origins)
 - `FASTMCP_HOST` / `FASTMCP_PORT`

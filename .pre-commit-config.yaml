@@ -118,6 +118,14 @@ repos:
             .*_test\.py
           )$
 
+  # Secret scanning: gitleaks
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+        name: 🔐 Secret scan with gitleaks
+        args: ["detect", "--source=.", "--redact", "--no-banner", "--config=.gitleaks.toml"]
+
   # Markdown: Linting
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.39.0
