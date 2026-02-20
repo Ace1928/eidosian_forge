@@ -346,7 +346,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           # Install testing tools directly
-          pip install pytest pytest-cov pytest-xdist hypothesis pytest-asyncio pytest-benchmark
+          pip install \
+            pytest \
+            pytest-cov \
+            pytest-xdist \
+            hypothesis \
+            pytest-asyncio \
+            pytest-benchmark \
+            numpy \
+            httpx \
+            pandas \
+            pyarrow \
+            psutil \
+            pyyaml \
+            huggingface_hub
 
       - name: 🔍 Run tests
         run: |
