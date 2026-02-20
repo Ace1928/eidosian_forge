@@ -733,7 +733,7 @@ class CellularAutomata:
                 inv_world_size = (1.0 / world_size[0], 1.0 / world_size[1])
 
         positions_cache, tree_cache, index_map_cache, _ = self._build_interaction_cache()
-        if any(index_map_cache):
+        if any(index_map is not None for index_map in index_map_cache):
             return None
 
         rows_list: List[IntArray] = []

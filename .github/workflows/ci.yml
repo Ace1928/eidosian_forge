@@ -358,11 +358,18 @@ jobs:
             httpx \
             requests \
             mcp \
+            openai \
+            fastapi \
             pandas \
             pyarrow \
             psutil \
             pyyaml \
             huggingface_hub \
+            chromadb \
+            nltk \
+            pyfiglet \
+            colorama \
+            tika \
             networkx \
             websockets \
             pillow \

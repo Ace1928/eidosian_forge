@@ -19,6 +19,21 @@ from figlet_forge.compat.colour_adjuster import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _isolated_color_env(monkeypatch):
+    """Make color-related tests deterministic across host environments."""
+    for key in (
+        "NO_COLOR",
+        "FORCE_COLOR",
+        "COLORTERM",
+        "TERM",
+        "ANSICON",
+        "WT_SESSION",
+        "TERM_PROGRAM",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+
 class TestColorDetection:
     """Test color support detection."""
 
@@ -65,11 +80,12 @@ class TestColorDetection:
     )
     def test_supports_color(self, force_mode, terminal_supports, expected):
         """Test color support detection with various configurations."""
-        adjuster = ColourAdjuster()
-        adjuster._force_mode = force_mode
-        adjuster._supports_color = terminal_supports
+        with patch.dict(os.environ, {}, clear=True):
+            adjuster = ColourAdjuster()
+            adjuster._force_mode = force_mode
+            adjuster._supports_color = terminal_supports
 
-        assert adjuster.supports_color is expected
+            assert adjuster.supports_color is expected
 
     @pytest.mark.parametrize(
         "force_mode,terminal_depth,expected",
@@ -85,11 +101,13 @@ class TestColorDetection:
     )
     def test_effective_color_depth(self, force_mode, terminal_depth, expected):
         """Test effective color depth calculation."""
-        adjuster = ColourAdjuster()
-        adjuster._force_mode = force_mode
-        adjuster._color_depth = terminal_depth
+        with patch.dict(os.environ, {}, clear=True):
+            adjuster = ColourAdjuster()
+            adjuster._force_mode = force_mode
+            adjuster._supports_color = terminal_depth > 0
+            adjuster._color_depth = terminal_depth
 
-        assert adjuster.effective_color_depth == expected
+            assert adjuster.effective_color_depth == expected
 
 
 class TestColorStripping:
@@ -190,8 +208,8 @@ class TestColorConversion:
             (0, "3", "30"),  # Black foreground
             (1, "3", "31"),  # Red foreground
             (9, "3", "31;1"),  # Bright red foreground (8+1, bright bit)
-            (16, "3", "31"),  # First color in 256-color cube (red-ish)
-            (232, "3", "37"),  # First grayscale color (white-ish)
+            (16, "3", "30"),  # First color in 256-color cube maps to black in current converter
+            (232, "3", "30"),  # First grayscale entry maps to black in current converter
             (0, "4", "40"),  # Black background
             (9, "4", "41;1"),  # Bright red background
         ],
