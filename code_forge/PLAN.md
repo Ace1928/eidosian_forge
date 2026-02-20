@@ -6,6 +6,7 @@ Build a production-grade archive digester and living code substrate that can:
 2. Detect redundancy and semantic overlap deterministically.
 3. Classify code into actionable triage buckets with explainable evidence.
 4. Export proven artifacts into Knowledge Forge and GraphRAG.
+4.1 Persist compact code-unit memory links into Memory Forge.
 5. Gate deletions/refactors on measurable tests and benchmarks.
 
 ## Stage Model (Archive Digester v1)
@@ -28,10 +29,11 @@ Build a production-grade archive digester and living code substrate that can:
 
 ### Stage D: Integration Outputs
 - [x] Knowledge Forge sync (`sync-knowledge`).
+- [x] Memory Forge sync (`sync-memory`).
 - [x] GraphRAG export (`export-graphrag`).
 - [x] End-to-end digest command (`digest`) with optional integration exports.
 - [x] Integration scope policy (`run`, `effective_run`, `global`) for deterministic export behavior.
-- [x] Provenance links artifact (`provenance_links.json`) for cross-forge traceability.
+- [x] Provenance links artifact (`provenance_links.json`) for cross-forge traceability (knowledge + memory + GraphRAG).
 
 ### Stage E: Proof and Safety Gates
 - [x] Expanded tests for similarity, multi-language analysis, triage pipeline.
@@ -69,5 +71,5 @@ A Code Forge change is done only when:
 1. New behavior is tested.
 2. Artifacts are deterministic for the same commit + config.
 3. CLI and docs are updated.
-4. Integration paths (Knowledge Forge/GraphRAG) remain functional.
+4. Integration paths (Knowledge Forge/Memory Forge/GraphRAG) remain functional.
 5. Regressions are measured with benchmarks, not guesses.

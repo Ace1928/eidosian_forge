@@ -365,6 +365,7 @@ def run_roundtrip_pipeline(
     max_files: Optional[int] = None,
     progress_every: int = 200,
     sync_knowledge_path: Optional[Path] = None,
+    sync_memory_path: Optional[Path] = None,
     graphrag_output_dir: Optional[Path] = None,
     graph_export_limit: int = 20000,
     integration_policy: str = "effective_run",
@@ -395,6 +396,7 @@ def run_roundtrip_pipeline(
         max_files=max_files,
         progress_every=progress_every,
         sync_knowledge_path=sync_knowledge_path,
+        sync_memory_path=sync_memory_path,
         graphrag_output_dir=graphrag_output_dir,
         graph_export_limit=graph_export_limit,
         integration_policy=integration_policy,
@@ -465,6 +467,7 @@ def run_roundtrip_pipeline(
             ("roundtrip_summary", summary_path),
         ],
         knowledge_sync=digest.get("knowledge_sync"),
+        memory_sync=digest.get("memory_sync"),
         graphrag_export=digest.get("graphrag_export"),
         extra={
             "parity_pass": bool(parity.get("pass")),

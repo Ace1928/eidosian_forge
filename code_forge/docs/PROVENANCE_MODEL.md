@@ -27,6 +27,9 @@ Top-level fields:
 - `knowledge_links`:
   - `count`
   - `links` (`unit_id`, `node_id`, `status`)
+- `memory_links`:
+  - `count`
+  - `links` (`unit_id`, `memory_id`, `status`)
 - `graphrag_links`:
   - `count`
   - `documents` (`unit_id`, `qualified_name`, `language`, `unit_type`, `source_file_path`, `document_path`)
@@ -36,8 +39,9 @@ Top-level fields:
 ## Query Patterns
 Example queries supported by this schema:
 1. Which extracted modules were synced to knowledge and where?
-2. Which GraphRAG documents were generated from a given ingestion run?
-3. Which stage artifacts contributed to a benchmark or drift report?
+2. Which extracted modules were synced to memory and which memory IDs were created?
+3. Which GraphRAG documents were generated from a given ingestion run?
+4. Which stage artifacts contributed to a benchmark or drift report?
 
 ## MCP Access
 Use `code_forge_provenance` via `eidos_mcp` to list/query available provenance records.

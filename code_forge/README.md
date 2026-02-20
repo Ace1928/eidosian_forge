@@ -29,6 +29,7 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Strict artifact schema validation (`validate-artifacts`) and strict digest failure mode.
 - Integration exports:
   - Knowledge Forge sync (`sync-knowledge`)
+  - Memory Forge sync (`sync-memory`)
   - GraphRAG corpus export (`export-graphrag`)
 
 ## Key Commands
@@ -70,6 +71,7 @@ code-forge triage-report --output-dir data/code_forge/digester/latest
 code-forge digest . \
   --output-dir data/code_forge/digester/latest \
   --sync-knowledge \
+  --sync-memory \
   --export-graphrag \
   --integration-policy effective_run
 
@@ -104,6 +106,7 @@ code-forge parity-report \
 code-forge roundtrip audit_forge \
   --workspace-dir data/code_forge/roundtrip/audit_forge \
   --sync-knowledge \
+  --sync-memory \
   --export-graphrag \
   --integration-policy effective_run \
   --apply
@@ -161,7 +164,7 @@ Roundtrip artifacts:
 - `parity_report.json`: source vs reconstructed hash-level parity result
 - `roundtrip_summary.json`: end-to-end digest+integration+reconstruction+apply summary
 - `Backups/code_forge_roundtrip/<transaction_id>/apply_report.json`: transactional apply audit record
-- `provenance_links.json`: cross-forge provenance links (artifact checksums + knowledge/GraphRAG linkages)
+- `provenance_links.json`: cross-forge provenance links (artifact checksums + knowledge/memory/GraphRAG linkages)
 
 Canonicalization artifacts:
 - `migration_map.json`: source→canonical mapping with strategy labels
@@ -172,6 +175,7 @@ Canonicalization artifacts:
 ## Integration Map
 
 - `knowledge_forge`: `sync_units_to_knowledge_forge`
+- `memory_forge`: `sync_units_to_memory_forge` (JSON episodic store)
 - `graphrag_forge`: `export_units_for_graphrag`
 - `scripts/living_knowledge_pipeline.py`: now includes Code Forge digester artifacts in code analysis report
 

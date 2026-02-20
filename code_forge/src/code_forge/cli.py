@@ -540,9 +540,19 @@ class CodeForgeCLI(StandardCLI):
             help="Sync digested code units into Knowledge Forge",
         )
         digest_parser.add_argument(
+            "--sync-memory",
+            action="store_true",
+            help="Sync digested code units into Memory Forge JSON episodic store",
+        )
+        digest_parser.add_argument(
             "--kb-path",
             default=str(FORGE_ROOT / "data" / "kb.json"),
             help="Knowledge graph path when --sync-knowledge is enabled",
+        )
+        digest_parser.add_argument(
+            "--memory-path",
+            default=str(FORGE_ROOT / "data" / "episodic_memory.json"),
+            help="Memory store path when --sync-memory is enabled",
         )
         digest_parser.add_argument(
             "--export-graphrag",
@@ -939,9 +949,19 @@ class CodeForgeCLI(StandardCLI):
             help="Sync digested code units into Knowledge Forge",
         )
         roundtrip_parser.add_argument(
+            "--sync-memory",
+            action="store_true",
+            help="Sync digested code units into Memory Forge JSON episodic store",
+        )
+        roundtrip_parser.add_argument(
             "--kb-path",
             default=str(FORGE_ROOT / "data" / "kb.json"),
             help="Knowledge graph persistence path",
+        )
+        roundtrip_parser.add_argument(
+            "--memory-path",
+            default=str(FORGE_ROOT / "data" / "episodic_memory.json"),
+            help="Memory store path when --sync-memory is enabled",
         )
         roundtrip_parser.add_argument(
             "--export-graphrag",
@@ -1531,6 +1551,7 @@ class CodeForgeCLI(StandardCLI):
             else:
                 output_dir = Path(args.output_dir).resolve()
                 kb_path = Path(args.kb_path).resolve() if args.sync_knowledge else None
+                memory_path = Path(args.memory_path).resolve() if args.sync_memory else None
                 graphrag_out = Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
                 payload = run_archive_digester(
                     root_path=root,
@@ -1542,6 +1563,7 @@ class CodeForgeCLI(StandardCLI):
                     max_files=args.max_files,
                     progress_every=max(1, int(args.progress_every)),
                     sync_knowledge_path=kb_path,
+                    sync_memory_path=memory_path,
                     graphrag_output_dir=graphrag_out,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
                     integration_policy=str(args.integration_policy),
@@ -1794,6 +1816,7 @@ class CodeForgeCLI(StandardCLI):
                     max_files=args.max_files,
                     progress_every=max(1, int(args.progress_every)),
                     sync_knowledge_path=Path(args.kb_path).resolve() if args.sync_knowledge else None,
+                    sync_memory_path=Path(args.memory_path).resolve() if args.sync_memory else None,
                     graphrag_output_dir=Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None,
                     graph_export_limit=max(1, int(args.graph_export_limit)),
                     integration_policy=str(args.integration_policy),

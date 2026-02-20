@@ -16,6 +16,7 @@
 - [x] Add root-scoped integration export policy toggles (`run`, `effective_run`, `global`).
 - [x] Add roundtrip contract validator (`validate-roundtrip`) with hash verification support.
 - [x] Add provenance links artifact tying digester/roundtrip outputs to Knowledge/GraphRAG records.
+- [x] Add Memory Forge sync and provenance linkage (`unit_id -> memory_id`) for digester/roundtrip.
 
 ## Medium Priority
 - [x] Add AST-structural clone detection and cluster reports.

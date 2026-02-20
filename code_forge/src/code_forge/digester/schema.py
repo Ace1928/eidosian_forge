@@ -185,6 +185,7 @@ def validate_provenance_links(payload: dict[str, Any]) -> list[str]:
     )
     _require(isinstance(payload.get("artifacts"), list), errors, "provenance.artifacts must be a list")
     _require(isinstance(payload.get("knowledge_links"), dict), errors, "provenance.knowledge_links must be object")
+    _require(isinstance(payload.get("memory_links"), dict), errors, "provenance.memory_links must be object")
     _require(isinstance(payload.get("graphrag_links"), dict), errors, "provenance.graphrag_links must be object")
     return errors
 

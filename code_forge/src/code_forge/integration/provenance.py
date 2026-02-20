@@ -55,6 +55,7 @@ def write_provenance_links(
     integration_run_id: str | None,
     artifact_paths: Iterable[tuple[str, Path]],
     knowledge_sync: dict[str, Any] | None,
+    memory_sync: dict[str, Any] | None,
     graphrag_export: dict[str, Any] | None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -74,6 +75,10 @@ def write_provenance_links(
     kb_links = []
     if isinstance(knowledge_sync, dict):
         kb_links = list(knowledge_sync.get("node_links") or [])
+
+    memory_links = []
+    if isinstance(memory_sync, dict):
+        memory_links = list(memory_sync.get("memory_links") or [])
 
     grag_docs = []
     if isinstance(graphrag_export, dict):
@@ -95,6 +100,10 @@ def write_provenance_links(
         "knowledge_links": {
             "count": len(kb_links),
             "links": kb_links,
+        },
+        "memory_links": {
+            "count": len(memory_links),
+            "links": memory_links,
         },
         "graphrag_links": {
             "count": len(grag_docs),

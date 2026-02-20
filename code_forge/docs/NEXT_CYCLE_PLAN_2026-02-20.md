@@ -65,6 +65,16 @@ Baseline: Roundtrip validated on `audit_forge` + `sms_forge` with managed-scope 
 - [x] Add MCP query surface for provenance records.
 - [x] Add repository data-governance and secret-scan controls (pre-commit + CI).
 
+## Phase 6: Memory/Knowledge Provenance Unification
+- [x] Add Memory Forge integration export path for digest/roundtrip runs (`--sync-memory`, `--memory-path`).
+- [x] Link `code_unit_id -> memory_id` in deterministic sync output.
+- [x] Extend provenance schema with `memory_links`.
+- [x] Extend MCP provenance query output with `memory_link_count`.
+- [ ] Add signed provenance manifest support (SLSA/in-toto style attestations).
+- [ ] Add RBAC/permissions policy for destructive Code Forge actions (archive delete/apply).
+- [ ] Add adversarial GraphRAG scoring sweeps and multilingual/domain query suites.
+- [ ] Publish architecture diagram for code<->memory<->knowledge<->graphrag lineage.
+
 ### Acceptance
 - Cross-forge lineage is queryable via deterministic JSON artifacts.
 - Secret scanning is enforced before commit and in CI.

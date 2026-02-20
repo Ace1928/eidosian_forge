@@ -12,6 +12,7 @@ from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
+from code_forge.integration.memory import sync_units_to_memory_forge
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
 from code_forge.integration.provenance import write_provenance_links
 from code_forge.library.db import CodeLibraryDB
@@ -565,6 +566,7 @@ def run_archive_digester(
     max_files: Optional[int] = None,
     progress_every: int = 200,
     sync_knowledge_path: Optional[Path] = None,
+    sync_memory_path: Optional[Path] = None,
     graphrag_output_dir: Optional[Path] = None,
     graph_export_limit: int = 20000,
     integration_policy: str = "effective_run",
@@ -596,7 +598,7 @@ def run_archive_digester(
     )
     duplication = build_duplication_index(db=db, output_dir=output_dir)
     dependency_graph = build_dependency_graph(db=db, output_dir=output_dir, limit_edges=graph_export_limit)
-    triage = build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
+    build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
 
     normalized_policy = str(integration_policy).strip().lower() or "effective_run"
     if normalized_policy not in {"run", "effective_run", "global"}:
@@ -626,6 +628,18 @@ def run_archive_digester(
             node_links_limit=100,
         )
 
+    memory_sync = None
+    if sync_memory_path is not None:
+        memory_sync = sync_units_to_memory_forge(
+            db=db,
+            memory_path=Path(sync_memory_path),
+            limit=max(1, int(graph_export_limit)),
+            min_token_count=8,
+            run_id=integration_run_id,
+            include_memory_links=True,
+            memory_links_limit=100,
+        )
+
     graphrag_export = None
     if graphrag_output_dir is not None:
         graphrag_export = export_units_for_graphrag(
@@ -648,6 +662,7 @@ def run_archive_digester(
         "triage_audit_path": str(output_dir / "triage_audit.json"),
         "triage_report_path": str(output_dir / "triage_report.md"),
         "knowledge_sync": knowledge_sync,
+        "memory_sync": memory_sync,
         "graphrag_export": graphrag_export,
         "relationship_counts": db.relationship_counts(),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
@@ -674,6 +689,7 @@ def run_archive_digester(
             ("archive_summary", summary_path),
         ],
         knowledge_sync=knowledge_sync,
+        memory_sync=memory_sync,
         graphrag_export=graphrag_export,
         extra={
             "mode": mode,

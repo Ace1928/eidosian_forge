@@ -27,8 +27,10 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Canonical migration map generation and compatibility shim staging.
 - `integration/pipeline.py`
   - Knowledge Forge sync and GraphRAG corpus export.
+- `integration/memory.py`
+  - Memory Forge sync (`code_unit_id -> memory_id`) for compact code memory traces.
 - `integration/provenance.py`
-  - Provenance linking between artifacts, knowledge node links, and GraphRAG document manifests.
+  - Provenance linking between artifacts, knowledge/memory links, and GraphRAG document manifests.
 - `reconstruct/pipeline.py`
   - Source tree reconstruction, parity validation, transactional apply, and roundtrip orchestration.
 - `reconstruct/schema.py`
@@ -83,6 +85,7 @@ Typed edges for structural and semantic traversal:
 
 ### Stage D: Integration
 - optional Knowledge Forge sync
+- optional Memory Forge sync
 - optional GraphRAG corpus export
 - dependency graph export (`dependency_graph.json`)
 - provenance link export (`provenance_links.json`)

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from code_forge.digester.pipeline import (
@@ -90,6 +91,7 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
     repo.mkdir()
     _make_repo(repo)
     kb = tmp_path / "kb.json"
+    memory = tmp_path / "episodic_memory.json"
 
     db = CodeLibraryDB(tmp_path / "library.sqlite")
     runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
@@ -103,6 +105,7 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
         extensions=[".py"],
         progress_every=1,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=tmp_path / "grag_first",
         graph_export_limit=200,
         integration_policy="effective_run",
@@ -118,6 +121,7 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
         extensions=[".py"],
         progress_every=1,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=tmp_path / "grag_run",
         graph_export_limit=200,
         integration_policy="run",
@@ -134,6 +138,7 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
         extensions=[".py"],
         progress_every=1,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=tmp_path / "grag_effective",
         graph_export_limit=200,
         integration_policy="effective_run",
@@ -151,10 +156,15 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
         extensions=[".py"],
         progress_every=1,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=tmp_path / "grag_global",
         graph_export_limit=200,
         integration_policy="global",
     )
     assert global_policy["integration_policy"] == "global"
     assert global_policy["integration_run_id"] is None
-    assert (tmp_path / "out_global" / "provenance_links.json").exists()
+    provenance_path = tmp_path / "out_global" / "provenance_links.json"
+    assert provenance_path.exists()
+    assert (global_policy.get("memory_sync") or {}).get("scanned_units", 0) > 0
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert isinstance(provenance.get("memory_links"), dict)

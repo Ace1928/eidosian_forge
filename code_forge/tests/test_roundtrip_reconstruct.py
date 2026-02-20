@@ -202,6 +202,7 @@ def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -
     repo.mkdir()
     _make_repo(repo)
     kb = tmp_path / "kb.json"
+    memory = tmp_path / "episodic_memory.json"
 
     db = CodeLibraryDB(tmp_path / "library.sqlite")
     runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
@@ -219,11 +220,13 @@ def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -
         strict_validation=True,
         apply=False,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=workspace_1 / "graphrag",
         graph_export_limit=200,
     )
     first_run_id = str((first["digest"]["ingestion_stats"] or {}).get("run_id"))
     assert first["digest"]["knowledge_sync"]["scanned_units"] > 0
+    assert first["digest"]["memory_sync"]["scanned_units"] > 0
     assert "exported" in first["digest"]["graphrag_export"]
 
     second = run_roundtrip_pipeline(
@@ -237,6 +240,7 @@ def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -
         strict_validation=True,
         apply=False,
         sync_knowledge_path=kb,
+        sync_memory_path=memory,
         graphrag_output_dir=workspace_2 / "graphrag",
         graph_export_limit=200,
     )
@@ -244,4 +248,5 @@ def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -
     assert second_stats["units_created"] == 0
     assert second["digest"]["integration_run_id"] == first_run_id
     assert second["digest"]["knowledge_sync"]["scanned_units"] > 0
+    assert second["digest"]["memory_sync"]["scanned_units"] > 0
     assert "exported" in second["digest"]["graphrag_export"]

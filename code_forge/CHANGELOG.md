@@ -1,4 +1,10 @@
 ## Unreleased
+- Added Memory Forge integration export path for digester/roundtrip:
+  - `--sync-memory`
+  - `--memory-path`
+- Added `sync_units_to_memory_forge` integration utility.
+- Extended `provenance_links.json` with `memory_links`.
+- Extended MCP `code_forge_provenance` response with `memory_link_count`.
 - Added integration scope policy controls (`run`, `effective_run`, `global`) for `digest` and `roundtrip`.
 - Added roundtrip contract validator (`validate-roundtrip`) with optional hash verification.
 - Added apply safety controls:

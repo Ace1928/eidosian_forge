@@ -20,7 +20,7 @@ from ..forge_loader import ensure_forge_import
 ensure_forge_import("code_forge")
 
 try:
-    from code_forge import CodeAnalyzer, CodeIndexer, index_forge_codebase
+    from code_forge import CodeAnalyzer, CodeIndexer
 
     CODE_FORGE_AVAILABLE = True
 except ImportError:
@@ -288,6 +288,7 @@ def code_forge_provenance(root_path: Optional[str] = None, stage: Optional[str] 
                 "integration_run_id": payload.get("integration_run_id"),
                 "artifact_count": len(payload.get("artifacts") or []),
                 "knowledge_link_count": int(((payload.get("knowledge_links") or {}).get("count")) or 0),
+                "memory_link_count": int(((payload.get("memory_links") or {}).get("count")) or 0),
                 "graphrag_link_count": int(((payload.get("graphrag_links") or {}).get("count")) or 0),
             }
         )
