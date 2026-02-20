@@ -19,11 +19,13 @@ def test_cli_list() -> None:
 
 
 def test_cli_module_list() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
     result = subprocess.run(
         [sys.executable, "-m", "moltbook_forge", "--list"],
         check=False,
         capture_output=True,
         text=True,
+        cwd=repo_root,
     )
     assert result.returncode == 0
     assert "available commands" in result.stdout.lower()

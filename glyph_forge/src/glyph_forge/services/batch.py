@@ -33,9 +33,15 @@ def _normalize_dir(path: str) -> str:
     return os.path.abspath(path.rstrip(os.sep))
 
 
-def _is_excluded_dir(path: str, exclude_dirs: Set[str]) -> bool:
+def _is_excluded_dir(path: str, exclude_dirs: object) -> bool:
     path = _normalize_dir(path)
-    for exc in exclude_dirs:
+    try:
+        iterator = iter(exclude_dirs)  # type: ignore[arg-type]
+    except TypeError:
+        return False
+    for exc in iterator:
+        if not isinstance(exc, str):
+            continue
         exc_norm = _normalize_dir(exc)
         if path == exc_norm or path.startswith(exc_norm + os.sep):
             return True
@@ -140,7 +146,16 @@ def process_videos(
     """Process a set of video files into glyph renders."""
     processed = 0
     failed = 0
-    for path in videos:
+    if isinstance(videos, (str, os.PathLike, Path)):
+        iterable: Iterable[Path | str] = [videos]
+    else:
+        try:
+            iter(videos)
+            iterable = videos
+        except TypeError:
+            return processed, failed
+
+    for path in iterable:
         path_str = str(path)
         if state and resume and path_str in state.processed:
             continue

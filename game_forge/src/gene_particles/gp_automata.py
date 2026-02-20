@@ -1444,27 +1444,29 @@ class CellularAutomata:
                         tree_j, max_dist, output_type="coo_matrix"
                     )
                     if sparse_matrix.nnz == 0:
-                        return
-                    indices_i = sparse_matrix.row.astype(np.int_, copy=False)
-                    indices_j = sparse_matrix.col.astype(np.int_, copy=False)
-                    dist = sparse_matrix.data
-                    valid_mask = dist > 0.0
-                    if not np.any(valid_mask):
-                        return
-                    indices_i = indices_i[valid_mask]
-                    indices_j = indices_j[valid_mask]
-                    dist = dist[valid_mask]
-                    dx = ct_i.x[indices_i] - ct_j.x[indices_j]
-                    dy = ct_i.y[indices_i] - ct_j.y[indices_j]
-                    if wrap_mode and inv_world_size is not None:
-                        dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
-                        dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
-                    if self.spatial_dimensions == 3:
-                        dz = ct_i.z[indices_i] - ct_j.z[indices_j]
-                        if wrap_mode and inv_world_size is not None:
-                            dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
-                    indices = (indices_i, indices_j)
-                    sparse_ready = True
+                        use_sparse = False
+                    else:
+                        indices_i = sparse_matrix.row.astype(np.int_, copy=False)
+                        indices_j = sparse_matrix.col.astype(np.int_, copy=False)
+                        dist = sparse_matrix.data
+                        valid_mask = dist > 0.0
+                        if not np.any(valid_mask):
+                            use_sparse = False
+                        else:
+                            indices_i = indices_i[valid_mask]
+                            indices_j = indices_j[valid_mask]
+                            dist = dist[valid_mask]
+                            dx = ct_i.x[indices_i] - ct_j.x[indices_j]
+                            dy = ct_i.y[indices_i] - ct_j.y[indices_j]
+                            if wrap_mode and inv_world_size is not None:
+                                dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
+                                dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
+                            if self.spatial_dimensions == 3:
+                                dz = ct_i.z[indices_i] - ct_j.z[indices_j]
+                                if wrap_mode and inv_world_size is not None:
+                                    dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
+                            indices = (indices_i, indices_j)
+                            sparse_ready = True
                 else:
                     raw_neighbors = tree_j.query_ball_point(positions_i, max_dist)
                     if self.config.boundary_mode == "wrap" and index_map_j is not None:
@@ -1491,40 +1493,42 @@ class CellularAutomata:
 
                     counts = np.fromiter((len(n) for n in neighbors_list), dtype=np.int_)
                     if counts.sum() == 0:
-                        return
-                    indices_i = np.repeat(
-                        np.arange(len(neighbors_list), dtype=np.int_), counts
-                    )
-                    indices_j = np.concatenate(
-                        [np.asarray(n, dtype=np.int_) for n in neighbors_list if n]
-                    )
-
-                    dx = ct_i.x[indices_i] - ct_j.x[indices_j]
-                    dy = ct_i.y[indices_i] - ct_j.y[indices_j]
-                    if wrap_mode and inv_world_size is not None:
-                        dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
-                        dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
-                    if self.spatial_dimensions == 3:
-                        dz = ct_i.z[indices_i] - ct_j.z[indices_j]
-                        if wrap_mode and inv_world_size is not None:
-                            dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
-                        dist_sq = dx * dx + dy * dy + dz * dz
+                        use_sparse = False
                     else:
-                        dist_sq = dx * dx + dy * dy
+                        indices_i = np.repeat(
+                            np.arange(len(neighbors_list), dtype=np.int_), counts
+                        )
+                        indices_j = np.concatenate(
+                            [np.asarray(n, dtype=np.int_) for n in neighbors_list if n]
+                        )
 
-                    within = dist_sq > 0.0
-                    if not np.any(within):
-                        return
-                    indices = (
-                        indices_i[within].astype(np.int_),
-                        indices_j[within].astype(np.int_),
-                    )
-                    dist = np.sqrt(dist_sq[within])
-                    dx = dx[within]
-                    dy = dy[within]
-                    if self.spatial_dimensions == 3:
-                        dz = dz[within]  # type: ignore[assignment]
-                    sparse_ready = True
+                        dx = ct_i.x[indices_i] - ct_j.x[indices_j]
+                        dy = ct_i.y[indices_i] - ct_j.y[indices_j]
+                        if wrap_mode and inv_world_size is not None:
+                            dx = wrap_deltas(dx, world_size[0], inv_world_size[0])
+                            dy = wrap_deltas(dy, world_size[1], inv_world_size[1])
+                        if self.spatial_dimensions == 3:
+                            dz = ct_i.z[indices_i] - ct_j.z[indices_j]
+                            if wrap_mode and inv_world_size is not None:
+                                dz = wrap_deltas(dz, world_size[2], inv_world_size[2])
+                            dist_sq = dx * dx + dy * dy + dz * dz
+                        else:
+                            dist_sq = dx * dx + dy * dy
+
+                        within = dist_sq > 0.0
+                        if not np.any(within):
+                            use_sparse = False
+                        else:
+                            indices = (
+                                indices_i[within].astype(np.int_),
+                                indices_j[within].astype(np.int_),
+                            )
+                            dist = np.sqrt(dist_sq[within])
+                            dx = dx[within]
+                            dy = dy[within]
+                            if self.spatial_dimensions == 3:
+                                dz = dz[within]  # type: ignore[assignment]
+                            sparse_ready = True
         if not sparse_ready:
             # Calculate pairwise distances using full matrix operations
             dx: FloatArray = ct_i.x[:, np.newaxis] - ct_j.x

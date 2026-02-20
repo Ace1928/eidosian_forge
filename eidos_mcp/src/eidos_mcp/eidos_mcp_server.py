@@ -21,9 +21,16 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from . import routers as _routers  # noqa: F401
+from . import state as _forge_state
 from .core import list_tool_metadata, mcp, resource
 from .plugins import init_plugins, list_plugins, list_tools
-from .state import FORGE_DIR, ROOT_DIR, agent, gis
+from .state import FORGE_DIR, ROOT_DIR
+
+# Backwards-compatible module-level exports expected by test and tooling.
+agent = _forge_state.agent
+gis = _forge_state.gis
+llm = _forge_state.llm
+refactor = _forge_state.refactor
 
 try:
     from google.auth.transport import requests as google_requests
