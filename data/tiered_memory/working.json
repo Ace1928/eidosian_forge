@@ -265,5 +265,25 @@
       "ci"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "df987e7e-987c-4763-a0d9-be99076229a8",
+    "content": "Directory Atlas Drift workflow failed because pytest was not installed in runner environment; added explicit dependency install step before atlas test execution.",
+    "created_at": "2026-02-20T13:38:10.382457",
+    "last_accessed": "2026-02-20T13:38:10.382468",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ci",
+      "pytest",
+      "workflow",
+      "atlas"
+    ],
+    "linked_memories": []
   }
 ]

@@ -1309,5 +1309,32 @@
       "termux"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "c1c69bf7-9320-4d8d-8dbe-56cb24f4218d",
+    "content": "LESSON: Workflow lint on GitHub can fail on shellcheck advisory noise from legacy workflow scripts; actionlint ignore filter for shellcheck findings keeps structural workflow validation blocking while preventing noisy false failures.\nCONTEXT: workflow-lint.yml hardening after CI run 22210107569",
+    "created_at": "2026-02-20T13:38:10.171421",
+    "last_accessed": "2026-02-20T13:38:10.171433",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Workflow lint on GitHub can fail on shellcheck advisory noise from legacy workflow scripts; actionlint ignore filter for shellcheck findings keeps structural workflow validation blocking while preventing noisy false failures.",
+      "context": "workflow-lint.yml hardening after CI run 22210107569",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "reliability",
+      "self-improvement",
+      "learning",
+      "workflow-lint",
+      "actionlint",
+      "github-actions",
+      "lesson"
+    ],
+    "linked_memories": []
   }
 ]

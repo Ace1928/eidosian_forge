@@ -41,6 +41,11 @@ jobs:
         run: |
           # Keep workflow syntax/action validation strict while avoiding non-blocking shellcheck
           # noise from legacy scripts and here-doc formatting across reusable workflows.
+          WORKFLOW_FILES="$(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) | tr '\n' ' ')"
+          if [ -z "$WORKFLOW_FILES" ]; then
+            echo "::notice::No workflow files found."
+            exit 0
+          fi
           "$(go env GOPATH)/bin/actionlint" -color -oneline \
             -ignore 'shellcheck reported issue' \
-            .github/workflows/*.yml .github/workflows/*.yaml
+            $WORKFLOW_FILES
