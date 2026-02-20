@@ -31,10 +31,13 @@ from typing import (
 try:
     from eidosian_core import eidosian
 except ImportError:
+
     def eidosian():
         """Fallback decorator when eidosian_core is not available."""
+
         def decorator(func):
             return func
+
         return decorator
 
 
@@ -157,9 +160,7 @@ class TracingContext:
 
 @eidosian()
 @contextmanager
-def measure_execution(
-    operation_name: str, context: Optional[Dict[str, Any]] = None
-) -> Iterator[ExecutionMetrics]:
+def measure_execution(operation_name: str, context: Optional[Dict[str, Any]] = None) -> Iterator[ExecutionMetrics]:
     """
     Context manager to measure execution time and resource usage.
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 from typing import Any, Iterable, Mapping
 
-
 _LINK_KEYS = (
     "corr_id",
     "parent_id",
@@ -59,9 +58,7 @@ def canonical_links(
         "corr_id": str(corr_id or links.get("corr_id") or ""),
         "parent_id": str(parent_id or links.get("parent_id") or ""),
         "memory_ids": merged_memory_ids,
-        "winner_candidate_id": str(
-            winner_candidate_id or links.get("winner_candidate_id") or ""
-        ),
+        "winner_candidate_id": str(winner_candidate_id or links.get("winner_candidate_id") or ""),
         "candidate_id": str(candidate_id or links.get("candidate_id") or ""),
     }
 
@@ -85,8 +82,6 @@ def payload_link_candidates(payload: Mapping[str, Any]) -> tuple[str, str]:
     if kind == "GW_WINNER":
         winner_candidate_id = winner_candidate_id or candidate_id
     if kind == "REPORT" and not winner_candidate_id:
-        summary = (
-            content.get("summary") if isinstance(content.get("summary"), Mapping) else {}
-        )
+        summary = content.get("summary") if isinstance(content.get("summary"), Mapping) else {}
         winner_candidate_id = str(summary.get("winner_candidate_id") or "")
     return candidate_id, winner_candidate_id

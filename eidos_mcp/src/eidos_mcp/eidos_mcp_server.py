@@ -1,33 +1,33 @@
 from __future__ import annotations
 
+import importlib
 import json
 import os
+import sys
 import time
 from pathlib import Path
-from typing import Iterable, Dict, Any, Optional, Sequence
+from typing import Any, Dict, Iterable, Optional, Sequence
 from urllib.parse import urlparse
 
-import importlib
-import sys
+from .logging_utils import log_debug, log_error, log_startup, setup_logging
 
-from .logging_utils import setup_logging, log_startup, log_error, log_debug
 setup_logging()
 
-from starlette.responses import JSONResponse
-from starlette.requests import Request
-from starlette.types import ASGIApp, Scope, Receive, Send
 import uvicorn
-
-from .core import mcp, resource, list_tool_metadata
-from .state import gis, llm, refactor, agent, ROOT_DIR, FORGE_DIR
-from . import routers as _routers  # noqa: F401
-from .plugins import init_plugins, list_plugins, list_tools, get_loader
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+from . import routers as _routers  # noqa: F401
+from .core import list_tool_metadata, mcp, resource
+from .plugins import init_plugins, list_plugins, list_tools
+from .state import FORGE_DIR, ROOT_DIR, agent, gis
 
 try:
-    from google.oauth2 import id_token
     from google.auth.transport import requests as google_requests
+    from google.oauth2 import id_token
 except Exception:  # pragma: no cover - optional dependency
     id_token = None
     google_requests = None
@@ -78,10 +78,10 @@ def _sync_agent_tools() -> None:
     if not agent:
         log_debug("Warning: AgentForge instance is None, cannot sync tools.")
         return
-    
+
     tools = list_tool_metadata()
     log_debug(f"Found {len(tools)} tools in registry.")
-    
+
     count = 0
     for t in tools:
         if t.get("func"):
@@ -89,7 +89,7 @@ def _sync_agent_tools() -> None:
             count += 1
         else:
             log_debug(f"Tool {t['name']} has no func!")
-    
+
     if count > 0:
         log_debug(f"Synced {count} tools to AgentForge.")
 
@@ -386,9 +386,9 @@ class MCPErrorResponseCompatibilityMiddleware:
                 headers = list(message.get("headers", []))
                 response_headers = _headers_to_dict(headers)
                 response_content_type = response_headers.get("content-type", "").lower().strip()
-                is_supported_type = response_content_type.startswith(_JSON_MEDIA_TYPE) or response_content_type.startswith(
-                    _SSE_MEDIA_TYPE
-                )
+                is_supported_type = response_content_type.startswith(
+                    _JSON_MEDIA_TYPE
+                ) or response_content_type.startswith(_SSE_MEDIA_TYPE)
                 should_rewrite = status >= 400 and not is_supported_type
                 if should_rewrite:
                     response_start = message
@@ -482,9 +482,7 @@ class MCPSessionRecoveryMiddleware:
 class MCPInvalidSessionCompatibilityMiddleware:
     """Reject stale MCP session ids with deterministic 400 compatibility responses."""
 
-    def __init__(
-        self, app: ASGIApp, mount_path: str, *, emit_json_error: bool
-    ) -> None:
+    def __init__(self, app: ASGIApp, mount_path: str, *, emit_json_error: bool) -> None:
         self.app = app
         self.mount_path = mount_path.rstrip("/") or "/"
         self.emit_json_error = bool(emit_json_error)
@@ -664,11 +662,7 @@ def _build_streamable_http_app(
     }
     raw_allowed_origins = os.environ.get("EIDOS_MCP_ALLOWED_ORIGINS", "")
     allowed_origins = (
-        {
-            value.strip().lower()
-            for value in raw_allowed_origins.split(",")
-            if value.strip()
-        }
+        {value.strip().lower() for value in raw_allowed_origins.split(",") if value.strip()}
         if raw_allowed_origins.strip()
         else default_allowed_origins
     )
@@ -707,12 +701,12 @@ def _run_streamable_http_server(mount_path: str) -> None:
     )
     log_level = os.environ.get("FASTMCP_LOG_LEVEL", "info").lower()
     reload = os.environ.get("FASTMCP_RELOAD", "false").lower() == "true"
-    
+
     if reload:
         uvicorn.run("eidos_mcp.eidos_mcp_server:app", host=host, port=port, log_level=log_level, reload=True)
     else:
         global app
-        if 'app' not in globals():
+        if "app" not in globals():
             app = _build_streamable_http_app(mount_path)
         uvicorn.run(app, host=host, port=port, log_level=log_level)
 

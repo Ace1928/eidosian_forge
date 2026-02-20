@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """System context utilities for glyph_stream."""
+
 from __future__ import annotations
 
 import os
@@ -7,6 +8,7 @@ import platform
 import sys
 from datetime import datetime
 from typing import Any, Dict
+
 from eidosian_core import eidosian
 
 
@@ -36,9 +38,7 @@ class SystemContext:
                     "terminal_width": os.get_terminal_size().columns,
                     "terminal_height": os.get_terminal_size().lines,
                     "is_interactive": sys.stdout.isatty(),
-                    "supports_unicode": sys.stdout.encoding.lower().startswith(
-                        ("utf", "latin")
-                    ),
+                    "supports_unicode": sys.stdout.encoding.lower().startswith(("utf", "latin")),
                     "supports_ansi_color": self._detect_color_support(attributes),
                 }
             )
@@ -90,9 +90,7 @@ class SystemContext:
 
             config_info = np.__config__.show()
             if isinstance(config_info, str):
-                acceleration["numpy_optimized"] = (
-                    "mkl" in config_info.lower() or "openblas" in config_info.lower()
-                )
+                acceleration["numpy_optimized"] = "mkl" in config_info.lower() or "openblas" in config_info.lower()
                 acceleration["has_mkl"] = "mkl" in config_info.lower()
         except (ImportError, AttributeError):
             pass
@@ -142,8 +140,7 @@ class SystemContext:
             "can_display_unicode": self.attributes.get("supports_unicode", True),
             "can_display_color": self.attributes.get("supports_ansi_color", True),
             "can_display_animations": (
-                self.attributes.get("is_interactive", False)
-                and self.attributes.get("supports_ansi_color", False)
+                self.attributes.get("is_interactive", False) and self.attributes.get("supports_ansi_color", False)
             ),
             "has_high_performance": self._estimate_performance_tier() >= 2,
             "has_network_access": self.attributes.get("network_connected", False),
@@ -212,14 +209,10 @@ class SystemContext:
             paths["animation_level"] = 0
         else:
             paths["default_edge_mode"] = "enhanced"
-            paths["animation_level"] = (
-                2 if self.capabilities.get("has_high_performance", False) else 1
-            )
+            paths["animation_level"] = 2 if self.capabilities.get("has_high_performance", False) else 1
 
         perf_tier = self.constraints.get("performance_tier", 1)
-        paths["ideal_scale_factor"] = min(
-            perf_tier + 1, self.constraints.get("max_scale_factor", 2)
-        )
+        paths["ideal_scale_factor"] = min(perf_tier + 1, self.constraints.get("max_scale_factor", 2))
 
         if not self.capabilities.get("can_display_color", True):
             paths["default_output_mode"] = "ascii"
@@ -241,17 +234,13 @@ class SystemContext:
         elif cpu_count <= 2:
             score -= 1
 
-        memory_gb = self.attributes.get("memory_available", 4 * 1024 * 1024 * 1024) / (
-            1024 * 1024 * 1024
-        )
+        memory_gb = self.attributes.get("memory_available", 4 * 1024 * 1024 * 1024) / (1024 * 1024 * 1024)
         if memory_gb >= 16:
             score += 1
         elif memory_gb <= 2:
             score -= 1
 
-        if self.attributes.get("has_cuda", False) or self.attributes.get(
-            "has_metal", False
-        ):
+        if self.attributes.get("has_cuda", False) or self.attributes.get("has_metal", False):
             score += 1
 
         return max(0, min(score, 3))
@@ -275,23 +264,11 @@ class SystemContext:
         return {
             "platform": self.attributes.get("platform", "Unknown"),
             "terminal_dimensions": f"{self.attributes.get('terminal_width', 80)}×{self.attributes.get('terminal_height', 24)}",
-            "color_support": (
-                "Yes" if self.capabilities.get("can_display_color", False) else "No"
-            ),
-            "unicode_support": (
-                "Yes" if self.capabilities.get("can_display_unicode", False) else "No"
-            ),
-            "animation_support": (
-                "Yes"
-                if self.capabilities.get("can_display_animations", False)
-                else "No"
-            ),
-            "performance_tier": ["Low", "Medium", "High", "Very High"][
-                self.constraints.get("performance_tier", 1)
-            ],
-            "network_access": (
-                "Yes" if self.capabilities.get("has_network_access", False) else "No"
-            ),
+            "color_support": ("Yes" if self.capabilities.get("can_display_color", False) else "No"),
+            "unicode_support": ("Yes" if self.capabilities.get("can_display_unicode", False) else "No"),
+            "animation_support": ("Yes" if self.capabilities.get("can_display_animations", False) else "No"),
+            "performance_tier": ["Low", "Medium", "High", "Very High"][self.constraints.get("performance_tier", 1)],
+            "network_access": ("Yes" if self.capabilities.get("has_network_access", False) else "No"),
             "optimization_level": self.optimization_paths.get("animation_level", 1),
         }
 

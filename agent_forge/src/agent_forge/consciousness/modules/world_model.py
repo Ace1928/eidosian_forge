@@ -90,7 +90,9 @@ class WorldModelModule:
                 next_type = max(dist.items(), key=lambda item: item[1])[0]
                 confidence = float(max(dist.values()) / max(sum(dist.values()), 1))
             else:
-                next_type = max(self._event_counts.items(), key=lambda item: item[1])[0] if self._event_counts else "unknown"
+                next_type = (
+                    max(self._event_counts.items(), key=lambda item: item[1])[0] if self._event_counts else "unknown"
+                )
                 confidence = 0.0
             out.append(
                 {
@@ -140,19 +142,11 @@ class WorldModelModule:
         if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
             return
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "clamp"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "clamp"]
             or [0.0]
         )
         scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
@@ -164,11 +158,7 @@ class WorldModelModule:
             self.name,
             defaults={"belief": {}, "last_prediction_error": None, "total_updates": 0},
         )
-        belief = {
-            str(k): float(v)
-            for k, v in dict(state.get("belief") or {}).items()
-            if isinstance(v, (int, float))
-        }
+        belief = {str(k): float(v) for k, v in dict(state.get("belief") or {}).items() if isinstance(v, (int, float))}
 
         processed = 0
         last_error: float | None = (

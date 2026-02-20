@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -107,9 +106,7 @@ def _compare_metrics(
 
         if abs(delta) >= min_abs_delta and abs(pct) >= warn_pct:
             direction = "increased" if delta > 0 else "decreased"
-            warnings.append(
-                f"{key} {direction} by {pct:.2f}% (current={cur:.4f}, previous={prev:.4f})"
-            )
+            warnings.append(f"{key} {direction} by {pct:.2f}% (current={cur:.4f}, previous={prev:.4f})")
 
     return {
         "compared_metric_count": len(comparisons),
@@ -212,18 +209,22 @@ def write_drift_report(
         previous_metrics = previous_snapshot.get("metrics") or {}
         previous_path = previous_snapshot.get("_path")
 
-    comparison = _compare_metrics(
-        current=current_metrics,
-        previous=previous_metrics,
-        warn_pct=float(warn_pct),
-        min_abs_delta=float(min_abs_delta),
-    ) if previous_metrics else {
-        "compared_metric_count": 0,
-        "warn_pct": float(warn_pct),
-        "min_abs_delta": float(min_abs_delta),
-        "comparisons": [],
-        "warnings": [],
-    }
+    comparison = (
+        _compare_metrics(
+            current=current_metrics,
+            previous=previous_metrics,
+            warn_pct=float(warn_pct),
+            min_abs_delta=float(min_abs_delta),
+        )
+        if previous_metrics
+        else {
+            "compared_metric_count": 0,
+            "warn_pct": float(warn_pct),
+            "min_abs_delta": float(min_abs_delta),
+            "comparisons": [],
+            "warnings": [],
+        }
+    )
 
     report = {
         "generated_at": _utc_now(),

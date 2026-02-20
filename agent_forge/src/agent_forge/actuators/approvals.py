@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Sequence
+
 from eidosian_core import eidosian
 
-_DEFAULT_ALLOW = ["uv","pytest","ruff","black","git","bash","sh","make","python","pip"]
-_DEFAULT_DENY_TOKENS = ["curl","wget","ssh","nc","iptables","docker"]
+_DEFAULT_ALLOW = ["uv", "pytest", "ruff", "black", "git", "bash", "sh", "make", "python", "pip"]
+_DEFAULT_DENY_TOKENS = ["curl", "wget", "ssh", "nc", "iptables", "docker"]
 
 try:
     import yaml
@@ -22,10 +24,11 @@ else:
 
 
 @eidosian()
-def allowed_cmd(cmd: Sequence[str], cwd: str, *, template: str | None = None,
-                allow_prefixes=None, deny_tokens=None) -> tuple[bool, str]:
+def allowed_cmd(
+    cmd: Sequence[str], cwd: str, *, template: str | None = None, allow_prefixes=None, deny_tokens=None
+) -> tuple[bool, str]:
     """Return (ok, reason). Enforces prefix allowlist and deny token scan.
-       CWD must be inside repo (no path escapes)."""
+    CWD must be inside repo (no path escapes)."""
     if not cmd:
         return False, "empty command"
     defaults = _CFG.get("defaults", {})

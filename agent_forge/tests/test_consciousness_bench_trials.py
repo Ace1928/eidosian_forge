@@ -60,14 +60,8 @@ def test_bench_runner_persists_required_artifacts(tmp_path: Path) -> None:
         if line.strip()
     ]
     assert window_events
-    assert (
-        str(window_events[0].get("event_id") or "")
-        == str(result.report.get("capture_start_event_id") or "")
-    )
-    assert (
-        str(window_events[-1].get("event_id") or "")
-        == str(result.report.get("capture_end_event_id") or "")
-    )
+    assert str(window_events[0].get("event_id") or "") == str(result.report.get("capture_start_event_id") or "")
+    assert str(window_events[-1].get("event_id") or "") == str(result.report.get("capture_end_event_id") or "")
 
 
 def test_trial_spec_hash_is_stable_and_no_persist_mode(tmp_path: Path) -> None:

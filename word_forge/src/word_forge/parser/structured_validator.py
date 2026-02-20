@@ -8,7 +8,6 @@ EIDOSIAN CODE POLISHING PROTOCOL v3.14.15 applied.
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import contextlib
 import json
@@ -16,7 +15,9 @@ import logging
 import random
 import re
 import time
-from typing import Any, Dict, Iterable, List, Literal, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Literal, Optional, Type, TypeVar
+
+from eidosian_core import eidosian
 from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 # Type for generic model binding
@@ -24,19 +25,21 @@ M = TypeVar("T", bound=BaseModel)
 
 LOGGER = logging.getLogger("word_forge.parser.validator")
 
+
 class EnrichmentSchema(BaseModel):
     """
     Strict schema for lexical and semantic enrichment.
-    
+
     Ensures that LLM outputs follow a predictable structure with
     properly typed and bounded data.
     """
+
     model_config = {"extra": "ignore"}
 
     word: str = Field(..., description="The target word being enriched.")
     definition: str = Field("", description="A concise definition of the word.")
     part_of_speech: str = Field("noun", description="The grammatical category.")
-    
+
     # Semantic Relationships
     synonyms: List[str] = Field(default_factory=list)
     antonyms: List[str] = Field(default_factory=list)
@@ -44,12 +47,12 @@ class EnrichmentSchema(BaseModel):
     hyponyms: List[str] = Field(default_factory=list, description="Specific types.")
     holonyms: List[str] = Field(default_factory=list, description="The 'whole' this belongs to.")
     meronyms: List[str] = Field(default_factory=list, description="Parts of this word.")
-    
+
     # Emotional Dimensions
     emotional_valence: float = Field(0.0, ge=-1.0, le=1.0)
     emotional_arousal: float = Field(0.0, ge=0.0, le=1.0)
     connotation: Literal["positive", "negative", "neutral"] = "neutral"
-    
+
     # Context & Examples
     usage_examples: List[str] = Field(default_factory=list)
     context_domain: str = Field("general", description="The primary domain of use (e.g., technical, medical).")
@@ -89,22 +92,23 @@ class EnrichmentSchema(BaseModel):
     def handle_missing_word(cls, data: Any) -> Any:
         """Ensure word key is present if we can infer it."""
         if isinstance(data, dict) and "word" not in data:
-            # If the LLM omitted the word but we have it in context, 
+            # If the LLM omitted the word but we have it in context,
             # this would be injected by the validator wrapper.
             pass
         return data
 
+
 class StructuredValidator:
     """
     Self-healing orchestrator for LLM outputs.
-    
+
     Features:
     - JSON extraction from markdown/text.
     - Syntax repair (basic).
     - Pydantic schema validation.
     - Coercion and default injection.
     """
-    
+
     def __init__(self, schema: Type[BaseModel] = EnrichmentSchema):
         self.schema = schema
         self.logger = LOGGER
@@ -141,7 +145,7 @@ class StructuredValidator:
                 if depth > 0:
                     depth -= 1
                     if depth == 0 and start is not None:
-                        blocks.append(text[start: idx + 1])
+                        blocks.append(text[start : idx + 1])
                         start = None
         return blocks
 
@@ -182,7 +186,7 @@ class StructuredValidator:
 
     def _quote_unquoted_keys(self, text: str) -> str:
         """Quote unquoted object keys."""
-        key_pattern = re.compile(r'([{,]\s*)([A-Za-z_][A-Za-z0-9_-]*)(\s*:)')
+        key_pattern = re.compile(r"([{,]\s*)([A-Za-z_][A-Za-z0-9_-]*)(\s*:)")
         return key_pattern.sub(r'\1"\2"\3', text)
 
     def _convert_single_quotes(self, text: str) -> str:
@@ -197,7 +201,7 @@ class StructuredValidator:
         """Apply heuristics to fix common LLM JSON errors."""
         base = self._normalize_text(json_str)
         if "{" in base and "}" in base:
-            base = base[base.find("{"): base.rfind("}") + 1]
+            base = base[base.find("{") : base.rfind("}") + 1]
 
         variants: List[str] = [base]
 
@@ -264,18 +268,12 @@ class StructuredValidator:
                 sanitized[key] = self._coerce_list(sanitized.get(key))
 
         if "usage_examples" in sanitized:
-            sanitized["usage_examples"] = self._coerce_list(
-                sanitized.get("usage_examples"), lower=False
-            )
+            sanitized["usage_examples"] = self._coerce_list(sanitized.get("usage_examples"), lower=False)
 
         if "emotional_valence" in sanitized:
-            sanitized["emotional_valence"] = self._coerce_float(
-                sanitized.get("emotional_valence"), 0.0, -1.0, 1.0
-            )
+            sanitized["emotional_valence"] = self._coerce_float(sanitized.get("emotional_valence"), 0.0, -1.0, 1.0)
         if "emotional_arousal" in sanitized:
-            sanitized["emotional_arousal"] = self._coerce_float(
-                sanitized.get("emotional_arousal"), 0.0, 0.0, 1.0
-            )
+            sanitized["emotional_arousal"] = self._coerce_float(sanitized.get("emotional_arousal"), 0.0, 0.0, 1.0)
 
         if "connotation" in sanitized:
             connotation = str(sanitized.get("connotation", "")).strip().lower()
@@ -327,15 +325,15 @@ class StructuredValidator:
     def validate(self, raw_text: str, context_word: Optional[str] = None) -> Result[Dict[str, Any]]:
         """
         Parse and validate raw text against the schema.
-        
+
         Args:
             raw_text: The string output from the LLM.
             context_word: Optional word to inject if missing from output.
-            
+
         Returns:
             Result object containing the validated dictionary or error details.
         """
-        from word_forge.queue.queue_manager import Result # Import here to avoid circularity if needed
+        from word_forge.queue.queue_manager import Result  # Import here to avoid circularity if needed
 
         candidates = self.extract_json_candidates(raw_text)
         if not candidates:
@@ -376,6 +374,7 @@ class StructuredValidator:
             f"Data does not match expected schema: {last_error}",
         )
 
+
 @eidosian()
 def validated_query(
     model_state: Any,
@@ -388,20 +387,20 @@ def validated_query(
 ) -> Result[Dict[str, Any]]:
     """
     Executes an LLM query with integrated validation and retry logic.
-    
+
     Self-healing cycle:
     1. Query LLM.
     2. Extract & Validate JSON.
     3. If fail, retry with error feedback in prompt.
     """
     from word_forge.queue.queue_manager import Result
-    
+
     if validator is None:
         validator = StructuredValidator()
-        
+
     current_prompt = prompt
     last_error = ""
-    
+
     for attempt in range(max_retries):
         if attempt > 0:
             LOGGER.info(f"Retry attempt {attempt+1}/{max_retries} for '{context_word}'")
@@ -417,10 +416,7 @@ def validated_query(
         temperature = 0.2 if attempt == 0 else 0.0
         max_tokens = 512
         with contextlib.suppress(Exception):
-            if (
-                hasattr(model_state, "get_model_name")
-                and str(model_state.get_model_name()).startswith("ollama:")
-            ):
+            if hasattr(model_state, "get_model_name") and str(model_state.get_model_name()).startswith("ollama:"):
                 max_tokens = 64
 
         response = model_state.generate_text(
@@ -431,16 +427,18 @@ def validated_query(
         )
         if not response:
             last_error = "Model returned empty response."
-            sleep_for = backoff_base * (2 ** attempt) + random.uniform(0, backoff_jitter)
+            sleep_for = backoff_base * (2**attempt) + random.uniform(0, backoff_jitter)
             time.sleep(sleep_for)
             continue
-            
+
         result = validator.validate(response, context_word=context_word)
         if result.is_success:
             return result
-        
+
         last_error = result.error.message if result.error else "Unknown validation error"
-        sleep_for = backoff_base * (2 ** attempt) + random.uniform(0, backoff_jitter)
+        sleep_for = backoff_base * (2**attempt) + random.uniform(0, backoff_jitter)
         time.sleep(sleep_for)
-        
-    return Result.failure("MAX_RETRIES_EXCEEDED", f"Failed to get valid output for '{context_word}' after {max_retries} attempts.")
+
+    return Result.failure(
+        "MAX_RETRIES_EXCEEDED", f"Failed to get valid output for '{context_word}' after {max_retries} attempts."
+    )

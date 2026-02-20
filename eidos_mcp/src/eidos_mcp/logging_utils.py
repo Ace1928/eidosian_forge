@@ -6,8 +6,8 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
-from eidosian_core import eidosian
 
+from eidosian_core import eidosian
 
 LOG_DIR = Path("~/.eidosian/mcp_logs").expanduser()
 LOG_FILE = LOG_DIR / "messages.jsonl"
@@ -23,7 +23,7 @@ def _ensure_log_dir() -> None:
 def setup_logging() -> None:
     """Configure logging for the MCP server."""
     _ensure_log_dir()
-    
+
     # Configure logging to file
     logging.basicConfig(
         filename=str(STDERR_LOG),
@@ -31,7 +31,7 @@ def setup_logging() -> None:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         force=True,
     )
-    
+
     # Suppress noisy library loggers
     for logger_name in ["httpx", "httpcore", "uvicorn", "anyio", "mcp"]:
         logging.getLogger(logger_name).setLevel(logging.WARNING)
@@ -72,11 +72,13 @@ def log_event(event: Dict[str, Any]) -> None:
 
 
 @eidosian()
-def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str | None = None, start_time: float | None = None) -> None:
+def log_tool_call(
+    name: str, arguments: Dict[str, Any], result: Any, error: str | None = None, start_time: float | None = None
+) -> None:
     duration = None
     if start_time:
         duration = time.time() - start_time
-    
+
     event = {
         "type": "tool",
         "name": name,
@@ -87,7 +89,7 @@ def log_tool_call(name: str, arguments: Dict[str, Any], result: Any, error: str 
     }
     if error:
         event["traceback"] = traceback.format_exc()
-        
+
     log_event(event)
 
 

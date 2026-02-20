@@ -11,6 +11,7 @@ This module provides practical examples of how to instantiate and use
 neural models, agents, tools, and other components from the smolagents
 package in a production-ready context.
 """
+
 import json
 import logging
 import os
@@ -83,9 +84,7 @@ def patch_json_parser() -> None:
 
         if not closing_braces:
             # No JSON structure found, generate a synthetic "final answer" response
-            logger.warning(
-                f"No JSON structure found in model output: '{json_blob[:50]}...'"
-            )
+            logger.warning(f"No JSON structure found in model output: '{json_blob[:50]}...'")
             return {
                 "tool_name": "FinalAnswer",
                 "tool_args": {"answer": json_blob.strip()},
@@ -99,18 +98,14 @@ def patch_json_parser() -> None:
             logger.warning(f"JSON parsing error: {e}")
             return {
                 "tool_name": "FinalAnswer",
-                "tool_args": {
-                    "answer": f"Error processing response: {json_blob[:100]}..."
-                },
+                "tool_args": {"answer": f"Error processing response: {json_blob[:100]}..."},
             }, ""
 
     # Perform the surgical transplant
     import smolagents.utils
 
     smolagents.utils.parse_json_blob = robust_parse_json_blob
-    logger.info(
-        "🔧 Enhanced JSON parser installed - now with 100% more error tolerance"
-    )
+    logger.info("🔧 Enhanced JSON parser installed - now with 100% more error tolerance")
 
 
 def setup_demo_files() -> Tuple[str, str]:
@@ -159,9 +154,7 @@ def initialize_model() -> TransformersModel:
     return model
 
 
-def create_agents(
-    model: TransformersModel, tools: List[Tool]
-) -> Tuple[CodeAgent, ToolCallingAgent, MultiStepAgent]:
+def create_agents(model: TransformersModel, tools: List[Tool]) -> Tuple[CodeAgent, ToolCallingAgent, MultiStepAgent]:
     """
     Create and configure different agent types with the specified model and tools.
 
@@ -184,18 +177,12 @@ def create_agents(
     )
     # Add identity attributes for debugging and orchestration
     code_agent.name = "CodeWizard"
-    code_agent.description = (
-        "Specialized agent for code generation and transformation tasks"
-    )
+    code_agent.description = "Specialized agent for code generation and transformation tasks"
 
-    tool_agent = ToolCallingAgent(
-        model=model, tools=tools, prompt_templates=EMPTY_PROMPT_TEMPLATES
-    )
+    tool_agent = ToolCallingAgent(model=model, tools=tools, prompt_templates=EMPTY_PROMPT_TEMPLATES)
     # Add identity attributes for debugging and orchestration
     tool_agent.name = "ToolMaster"
-    tool_agent.description = (
-        "Agent specialized in wielding tools with surgical precision"
-    )
+    tool_agent.description = "Agent specialized in wielding tools with surgical precision"
 
     multi_step_agent = MultiStepAgent(
         model=model,
@@ -206,16 +193,12 @@ def create_agents(
     )
     # Add identity attributes for debugging and orchestration
     multi_step_agent.name = "Orchestrator"
-    multi_step_agent.description = (
-        "Meta-agent that coordinates specialized agents for complex tasks"
-    )
+    multi_step_agent.description = "Meta-agent that coordinates specialized agents for complex tasks"
 
     return code_agent, tool_agent, multi_step_agent
 
 
-def demonstrate_specialized_agents(
-    code_agent: CodeAgent, tool_agent: ToolCallingAgent
-) -> None:
+def demonstrate_specialized_agents(code_agent: CodeAgent, tool_agent: ToolCallingAgent) -> None:
     """
     Demonstrate specialized agent capabilities with improved prompting and error handling.
 
@@ -242,9 +225,7 @@ def demonstrate_specialized_agents(
         # Try a fallback with even more explicit instructions if needed
         try:
             logger.info("Attempting fallback with simplified prompt...")
-            tool_agent.run(
-                "What's the weather in Paris? Use the Weather tool.", max_steps=2
-            )
+            tool_agent.run("What's the weather in Paris? Use the Weather tool.", max_steps=2)
         except Exception as e2:
             logger.error(f"Tool agent fallback error: {e2}")
 
@@ -309,9 +290,7 @@ def demonstrate_search_tools() -> Tuple[DuckDuckGoSearchTool, VisitWebpageTool]:
         and web tools used in the demonstration.
     """
     # DuckDuckGo search tool
-    search_tool = DuckDuckGoSearchTool(
-        name="DuckDuckGo", description="Search with DuckDuckGo", max_results=5
-    )
+    search_tool = DuckDuckGoSearchTool(name="DuckDuckGo", description="Search with DuckDuckGo", max_results=5)
     duck_results = search_tool.forward("Transformers in ML")
     logger.info(f"DuckDuckGo search results: {duck_results}")
 
@@ -325,9 +304,7 @@ def demonstrate_search_tools() -> Tuple[DuckDuckGoSearchTool, VisitWebpageTool]:
     return search_tool, web_tool
 
 
-def demonstrate_interactive_tools() -> (
-    Tuple[UserInputTool, PythonInterpreterTool, FinalAnswerTool]
-):
+def demonstrate_interactive_tools() -> Tuple[UserInputTool, PythonInterpreterTool, FinalAnswerTool]:
     """
     Demonstrate interactive and execution tools.
 
@@ -396,9 +373,7 @@ def demonstrate_execution_environments(tools: List[Tool]) -> None:
         )
 
         # Install additional packages into container
-        docker_executor.install_packages(
-            additional_imports=["scikit-learn", "tensorflow"]
-        )
+        docker_executor.install_packages(additional_imports=["scikit-learn", "tensorflow"])
 
         # Send tools to container - requires dictionary format
         docker_executor.send_tools(tools=tools_dict)
@@ -474,9 +449,7 @@ def demonstrate_media_handling(audio_path: str, image_path: str) -> None:
     logger.info(f"AgentText: {text_obj.to_string()}")
 
     # Speech to text
-    stt_tool = SpeechToTextTool(
-        name="Speech2Text", description="Converts speech to text"
-    )
+    stt_tool = SpeechToTextTool(name="Speech2Text", description="Converts speech to text")
     stt_tool.setup()
     speech_text = stt_tool.forward(audio_path)
     logger.info(f"Speech to text result: {speech_text}")
@@ -519,9 +492,7 @@ def demonstrate_utility_functions() -> Dict[str, str]:
     ]
 
     # Convert messages to format expected by get_clean_message_list
-    message_dicts = [
-        {"role": msg.role, "content": msg.content} for msg in sample_messages
-    ]
+    message_dicts = [{"role": msg.role, "content": msg.content} for msg in sample_messages]
 
     # Create properly typed role conversion dictionary
     # Using appropriate type casting for MessageRole
@@ -531,9 +502,7 @@ def demonstrate_utility_functions() -> Dict[str, str]:
         cast(MessageRole, "system"): cast(MessageRole, "system"),
     }
 
-    clean_list = get_clean_message_list(
-        message_dicts, role_conversions=role_conversions
-    )
+    clean_list = get_clean_message_list(message_dicts, role_conversions=role_conversions)
 
     results["message_processing"] = str(clean_list)
     logger.info(f"Processed messages: {clean_list}")
@@ -546,9 +515,7 @@ def demonstrate_utility_functions() -> Dict[str, str]:
     return results
 
 
-def demonstrate_gradio_integration(
-    tool_agent: ToolCallingAgent, loaded_tool: Optional[Tool] = None
-) -> None:
+def demonstrate_gradio_integration(tool_agent: ToolCallingAgent, loaded_tool: Optional[Tool] = None) -> None:
     """
     Demonstrate integration with Gradio for UI-based interaction.
 
@@ -633,9 +600,7 @@ def calendar_tool(date: str) -> str:
     return f"Calendar events for: {date}"
 
 
-def load_pretrained_model_and_tool() -> (
-    Tuple[Optional[TransformersModel], Optional[Tool]]
-):
+def load_pretrained_model_and_tool() -> Tuple[Optional[TransformersModel], Optional[Tool]]:
     """
     Load a pretrained model and tool from Hugging Face Hub.
 
@@ -704,8 +669,7 @@ def demo_smolagents_package() -> None:
         default_tool_objects = [
             getattr(default_tools, attr)
             for attr in dir(default_tools)
-            if not attr.startswith("_")
-            and isinstance(getattr(default_tools, attr, None), Tool)
+            if not attr.startswith("_") and isinstance(getattr(default_tools, attr, None), Tool)
         ]
         tools.extend(default_tool_objects)
 
@@ -724,9 +688,7 @@ def demo_smolagents_package() -> None:
 
             try:
                 result = demonstrate_multi_step_agent(multi_step_agent)
-                logger.info(
-                    f"MultiStepAgent demonstration completed with result: {result}"
-                )
+                logger.info(f"MultiStepAgent demonstration completed with result: {result}")
             except Exception as e:
                 logger.error(f"MultiStepAgent demonstration error: {e}")
 
@@ -755,9 +717,7 @@ def demo_smolagents_package() -> None:
             # Demonstrate utility functions
             try:
                 util_results = demonstrate_utility_functions()
-                logger.info(
-                    f"Utility functions demonstration completed: {util_results}"
-                )
+                logger.info(f"Utility functions demonstration completed: {util_results}")
             except Exception as e:
                 logger.error(f"Utility function demonstration error: {e}")
 
@@ -768,9 +728,7 @@ def demo_smolagents_package() -> None:
                     demonstrate_gradio_integration(tool_agent, loaded_tool)
                     logger.info("Gradio integration demonstration completed")
                 else:
-                    logger.warning(
-                        "Skipping Gradio tool integration due to missing tool"
-                    )
+                    logger.warning("Skipping Gradio tool integration due to missing tool")
                     demonstrate_gradio_integration(tool_agent)
             except Exception as e:
                 logger.error(f"Gradio integration demonstration error: {e}")

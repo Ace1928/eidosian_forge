@@ -1,8 +1,7 @@
 import json
 
-from starlette.testclient import TestClient
-
 from eidos_mcp.eidos_mcp_server import _build_streamable_http_app, _merge_accept_header, mcp
+from starlette.testclient import TestClient
 
 
 def _initialize_payload() -> dict:

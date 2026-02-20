@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Unified Model Configuration for Eidosian Forge.
 
@@ -24,14 +25,15 @@ Usage:
 """
 
 import json
-import httpx
-from pathlib import Path
-from typing import List, Optional, Dict, Any
-from dataclasses import dataclass, field
-from functools import lru_cache
 import os
-from .. import FORGE_ROOT
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import httpx
 from eidosian_core.ports import get_service_url
+
+from .. import FORGE_ROOT
 
 # Configuration paths
 CONFIG_DIR = Path(os.environ.get("EIDOS_MODEL_CONFIG_DIR", str(FORGE_ROOT / "data"))).resolve()
@@ -46,6 +48,7 @@ DEFAULT_OLLAMA_API_V1_URL = f"{DEFAULT_OLLAMA_BASE_URL}/v1"
 @dataclass
 class OllamaConfig:
     """Ollama server configuration."""
+
     base_url: str = DEFAULT_OLLAMA_BASE_URL
     api_v1_url: str = DEFAULT_OLLAMA_API_V1_URL
     timeout: float = 3600.0  # [EIDOS] 1 hour for slow local models
@@ -54,6 +57,7 @@ class OllamaConfig:
 @dataclass
 class InferenceConfig:
     """Inference model configuration."""
+
     model: str = "phi3:mini"
     max_tokens: int = 4096
     temperature: float = 0.7
@@ -62,6 +66,7 @@ class InferenceConfig:
 @dataclass
 class EmbeddingConfig:
     """Embedding model configuration."""
+
     model: str = "nomic-embed-text"
     dimensions: int = 768
     context_length: int = 8192
@@ -70,6 +75,7 @@ class EmbeddingConfig:
 @dataclass
 class FastEmbeddingConfig:
     """Fast/lightweight embedding configuration."""
+
     model: str = "all-minilm"
     dimensions: int = 384
     context_length: int = 512
@@ -78,39 +84,39 @@ class FastEmbeddingConfig:
 class ModelConfig:
     """
     Unified model configuration for the Eidosian Forge ecosystem.
-    
+
     This class provides:
     - Centralized model configuration
     - Embedding generation via Ollama
     - Text generation via Ollama
     - Caching for repeated embeddings
-    
+
     All forges should use this for model operations to ensure consistency.
     """
-    
+
     _instance: Optional["ModelConfig"] = None
-    
+
     def __new__(cls) -> "ModelConfig":
         """Singleton pattern for consistent configuration."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
-    
+
     def __init__(self):
         if self._initialized:
             return
-        
+
         self._initialized = True
         self._load_config()
         self._embedding_cache: Dict[str, List[float]] = {}
-    
+
     def _load_config(self):
         """Load configuration from JSON file or use defaults."""
         if CONFIG_FILE.exists():
             with open(CONFIG_FILE) as f:
                 data = json.load(f)
-            
+
             self.ollama = OllamaConfig(
                 base_url=data.get("ollama", {}).get("base_url", DEFAULT_OLLAMA_BASE_URL),
                 api_v1_url=data.get("ollama", {}).get("api_v1_url", DEFAULT_OLLAMA_API_V1_URL),
@@ -136,66 +142,66 @@ class ModelConfig:
             self.inference = InferenceConfig()
             self.embedding = EmbeddingConfig()
             self.fast_embedding = FastEmbeddingConfig()
-    
+
     @eidosian()
     def embed_text(self, text: str, model: Optional[str] = None, use_cache: bool = True) -> List[float]:
         """
         Generate embedding for a single text string.
-        
+
         Args:
             text: The text to embed
             model: Override model (default: nomic-embed-text)
             use_cache: Whether to use cached embeddings
-            
+
         Returns:
             List of floats representing the embedding vector
         """
         actual_model = model or self.embedding.model
         cache_key = f"{actual_model}:{text[:100]}"  # Truncate for cache key
-        
+
         if use_cache and cache_key in self._embedding_cache:
             return self._embedding_cache[cache_key]
-        
+
         url = f"{self.ollama.base_url}/api/embeddings"
         data = {"model": actual_model, "prompt": text}
-        
+
         with httpx.Client(timeout=self.ollama.timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
             embedding = resp.json()["embedding"]
-        
+
         if use_cache:
             self._embedding_cache[cache_key] = embedding
-        
+
         return embedding
-    
+
     @eidosian()
     def embed_batch(self, texts: List[str], model: Optional[str] = None) -> List[List[float]]:
         """
         Generate embeddings for multiple texts.
-        
+
         Args:
             texts: List of texts to embed
             model: Override model
-            
+
         Returns:
             List of embedding vectors
         """
         return [self.embed_text(t, model=model) for t in texts]
-    
+
     @eidosian()
     def generate(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         model: Optional[str] = None,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         system: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Generate text using the inference model.
-        
+
         Args:
             prompt: The prompt to generate from
             model: Override model (default: phi3:mini)
@@ -203,14 +209,14 @@ class ModelConfig:
             temperature: Override temperature
             system: System prompt
             **kwargs: Additional Ollama parameters
-            
+
         Returns:
             Generated text string
         """
         actual_model = model or self.inference.model
         actual_max_tokens = max_tokens or self.inference.max_tokens
         actual_temp = temperature if temperature is not None else self.inference.temperature
-        
+
         url = f"{self.ollama.base_url}/api/generate"
         data = {
             "model": actual_model,
@@ -220,50 +226,40 @@ class ModelConfig:
                 "num_predict": actual_max_tokens,
                 "temperature": actual_temp,
             },
-            **kwargs
+            **kwargs,
         }
-        
+
         if system:
             data["system"] = system
-        
+
         with httpx.Client(timeout=self.ollama.timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
             return resp.json()["response"]
-    
+
     @eidosian()
-    def chat(
-        self,
-        messages: List[Dict[str, str]],
-        model: Optional[str] = None,
-        **kwargs
-    ) -> str:
+    def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None, **kwargs) -> str:
         """
         Chat completion using the inference model.
-        
+
         Args:
             messages: List of {"role": "user/assistant/system", "content": "..."}
             model: Override model
             **kwargs: Additional parameters
-            
+
         Returns:
             Assistant's response text
         """
         actual_model = model or self.inference.model
-        
+
         url = f"{self.ollama.base_url}/api/chat"
-        data = {
-            "model": actual_model,
-            "messages": messages,
-            "stream": False,
-            **kwargs
-        }
-        
+        data = {"model": actual_model, "messages": messages, "stream": False, **kwargs}
+
         with httpx.Client(timeout=self.ollama.timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
             return resp.json()["message"]["content"]
-    
+
     @eidosian()
     def is_ollama_running(self) -> bool:
         """Check if Ollama server is running."""
@@ -273,7 +269,7 @@ class ModelConfig:
                 return resp.status_code == 200
         except Exception:
             return False
-    
+
     @eidosian()
     def list_models(self) -> List[str]:
         """List available models in Ollama."""
@@ -285,7 +281,7 @@ class ModelConfig:
         except Exception:
             pass
         return []
-    
+
     @eidosian()
     def get_config_dict(self) -> Dict[str, Any]:
         """Get configuration as dictionary."""
@@ -337,7 +333,7 @@ def chat(messages: List[Dict[str, str]], **kwargs) -> str:
 # Export all
 __all__ = [
     "ModelConfig",
-    "model_config", 
+    "model_config",
     "get_embedding",
     "generate",
     "chat",

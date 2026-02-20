@@ -1,4 +1,6 @@
-import sqlite3, subprocess, sys
+import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 
 from core import db as DB

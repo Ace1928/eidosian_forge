@@ -23,9 +23,9 @@ from agent_forge.core import workspace
 from .index import EventIndex, build_index
 from .linking import (
     canonical_links,
-    new_corr_id as generate_corr_id,
     payload_link_candidates,
 )
+from .linking import new_corr_id as generate_corr_id
 
 if TYPE_CHECKING:
     from .state_store import ModuleStateStore
@@ -288,17 +288,9 @@ def normalize_workspace_payload(
     links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
     content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
     inferred_candidate_id, inferred_winner_candidate_id = payload_link_candidates(payload)
-    candidate_id = str(
-        payload.get("candidate_id")
-        or links.get("candidate_id")
-        or inferred_candidate_id
-        or ""
-    )
+    candidate_id = str(payload.get("candidate_id") or links.get("candidate_id") or inferred_candidate_id or "")
     winner_candidate_id = str(
-        payload.get("winner_candidate_id")
-        or links.get("winner_candidate_id")
-        or inferred_winner_candidate_id
-        or ""
+        payload.get("winner_candidate_id") or links.get("winner_candidate_id") or inferred_winner_candidate_id or ""
     )
     normalized_links = canonical_links(
         links,
@@ -339,28 +331,17 @@ class TickContext:
     active_perturbations: Sequence[Mapping[str, Any]] = field(default_factory=list)
     now: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     emitted_events: list[Dict[str, Any]] = field(default_factory=list)
-    _event_type_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(
-        default=None, init=False, repr=False
-    )
-    _broadcast_kind_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(
-        default=None, init=False, repr=False
-    )
-    _broadcast_events: Optional[list[Dict[str, Any]]] = field(
-        default=None, init=False, repr=False
-    )
+    _event_type_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(default=None, init=False, repr=False)
+    _broadcast_kind_index: Optional[Dict[str, list[Dict[str, Any]]]] = field(default=None, init=False, repr=False)
+    _broadcast_events: Optional[list[Dict[str, Any]]] = field(default=None, init=False, repr=False)
     _event_index: Optional[EventIndex] = field(default=None, init=False, repr=False)
-    _ephemeral_module_state: Dict[str, Dict[str, Any]] = field(
-        default_factory=dict, init=False, repr=False
-    )
+    _ephemeral_module_state: Dict[str, Dict[str, Any]] = field(default_factory=dict, init=False, repr=False)
 
     def all_events(self) -> list[Dict[str, Any]]:
         return list(self.recent_events) + list(self.emitted_events)
 
     def _build_indexes(self) -> None:
-        if (
-            self._event_type_index is not None
-            and self._broadcast_kind_index is not None
-        ):
+        if self._event_type_index is not None and self._broadcast_kind_index is not None:
             return
         by_type: Dict[str, list[Dict[str, Any]]] = {}
         by_kind: Dict[str, list[Dict[str, Any]]] = {}
@@ -373,9 +354,7 @@ class TickContext:
                 continue
             broadcasts.append(evt)
             data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-            payload = (
-                data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
-            )
+            payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
             kind = str(payload.get("kind") or "")
             if kind:
                 by_kind.setdefault(kind, []).append(evt)
@@ -606,11 +585,7 @@ class TickContext:
     ) -> Dict[str, Any]:
         data_dict = dict(data or {})
         data_dict, payload_meta = self._sanitize_payload(data_dict)
-        links = (
-            data_dict.get("links")
-            if isinstance(data_dict.get("links"), Mapping)
-            else {}
-        )
+        links = data_dict.get("links") if isinstance(data_dict.get("links"), Mapping) else {}
         resolved_corr_id = str(corr_id or links.get("corr_id") or "") or self.new_corr_id(
             seed=f"{etype}:{self.beat_count}:{len(self.emitted_events)}"
         )
@@ -652,11 +627,7 @@ class TickContext:
             fallback_kind=fallback_kind,
             source_module=source,
         )
-        payload_links = (
-            normalized_payload.get("links")
-            if isinstance(normalized_payload.get("links"), Mapping)
-            else {}
-        )
+        payload_links = normalized_payload.get("links") if isinstance(normalized_payload.get("links"), Mapping) else {}
         candidate_id, winner_candidate_id = payload_link_candidates(normalized_payload)
         resolved_corr_id = str(corr_id or payload_links.get("corr_id") or "") or self.new_corr_id(
             seed=f"broadcast:{source}:{fallback_kind}:{self.beat_count}:{len(self.emitted_events)}"
@@ -666,8 +637,7 @@ class TickContext:
             parent_id=resolved_parent_id or None,
             corr_id=resolved_corr_id,
             candidate_id=candidate_id or str(payload_links.get("candidate_id") or ""),
-            winner_candidate_id=winner_candidate_id
-            or str(payload_links.get("winner_candidate_id") or ""),
+            winner_candidate_id=winner_candidate_id or str(payload_links.get("winner_candidate_id") or ""),
             memory_ids=list(payload_links.get("memory_ids") or []),
             raw_links=payload_links,
         )
@@ -692,7 +662,9 @@ class TickContext:
             parent_id=resolved_parent_id or None,
             corr_id=resolved_corr_id,
             candidate_id=str((safe_payload.get("links") or {}).get("candidate_id") or candidate_id or ""),
-            winner_candidate_id=str((safe_payload.get("links") or {}).get("winner_candidate_id") or winner_candidate_id or ""),
+            winner_candidate_id=str(
+                (safe_payload.get("links") or {}).get("winner_candidate_id") or winner_candidate_id or ""
+            ),
             memory_ids=list((safe_payload.get("links") or {}).get("memory_ids") or []),
             raw_links=(safe_payload.get("links") if isinstance(safe_payload.get("links"), Mapping) else {}),
         )

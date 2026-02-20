@@ -5,15 +5,13 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
+
 
 # Skip all tests in this module if vector dependencies are unavailable
 def _vector_available() -> bool:
-    if (
-        importlib.util.find_spec("chromadb") is None
-        or importlib.util.find_spec("sentence_transformers") is None
-    ):
+    if importlib.util.find_spec("chromadb") is None or importlib.util.find_spec("sentence_transformers") is None:
         return False
     try:
         import word_forge.vectorizer.vector_store as vector_store
@@ -35,7 +33,6 @@ from word_forge.vectorizer.vector_store import (
     SearchError,
     VectorStore,
 )
-
 
 TEST_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 

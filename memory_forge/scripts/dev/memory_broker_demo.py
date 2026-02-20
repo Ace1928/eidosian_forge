@@ -2,7 +2,9 @@
 """
 Memory Broker Demo - validate layered memory behavior.
 """
+
 from pathlib import Path
+
 from memory_forge import MemoryBroker
 
 

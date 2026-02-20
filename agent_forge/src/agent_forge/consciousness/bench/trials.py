@@ -29,7 +29,7 @@ from .reporting import (
     write_jsonl,
     write_summary,
 )
-from .scoring import compute_trial_deltas, composite_trial_score
+from .scoring import composite_trial_score, compute_trial_deltas
 from .tasks import apply_task_stage, resolve_task
 
 
@@ -215,10 +215,7 @@ class ConsciousnessBenchRunner:
     ) -> TrialRunResult:
         norm = spec.normalized()
         trial_hash = spec_hash(norm)
-        trial_id = (
-            f"trial_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_"
-            f"{str(norm['name'])}_{trial_hash[:8]}"
-        )
+        trial_id = f"trial_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_" f"{str(norm['name'])}_{trial_hash[:8]}"
         trial_corr = uuid.uuid4().hex
         kernel = kernel or ConsciousnessKernel(
             self.state_dir,
@@ -231,9 +228,7 @@ class ConsciousnessBenchRunner:
         before = self._snapshot(before_events[-800:])
 
         original_disable = list(kernel.config.get("disable_modules") or [])
-        original_runtime_overrides = copy.deepcopy(
-            getattr(kernel, "_runtime_overrides", {})
-        )
+        original_runtime_overrides = copy.deepcopy(getattr(kernel, "_runtime_overrides", {}))
         disabled = sorted({str(x) for x in original_disable} | set(norm["disable_modules"]))
         kernel.config["disable_modules"] = disabled
         if norm["overlay"]:
@@ -312,7 +307,9 @@ class ConsciousnessBenchRunner:
                     "kind": str(raw.get("kind") or "noise"),
                     "target": str(raw.get("target") or "attention"),
                     "magnitude": clamp01(raw.get("magnitude"), default=0.2),
-                    "duration_s": _safe_float(raw.get("duration_s"), default=float(norm["perturb_seconds"]), minimum=0.0),
+                    "duration_s": _safe_float(
+                        raw.get("duration_s"), default=float(norm["perturb_seconds"]), minimum=0.0
+                    ),
                     "meta": dict(raw.get("meta") or {}),
                     "ts": _now_iso(),
                 }
@@ -354,11 +351,7 @@ class ConsciousnessBenchRunner:
         threshold = float(kernel.config.get("competition_trace_strength_threshold", 0.45))
         index = build_index(analysis_window_events)
 
-        event_type_counts = {
-            etype: int(len(rows))
-            for etype, rows in index.by_type.items()
-            if str(etype)
-        }
+        event_type_counts = {etype: int(len(rows)) for etype, rows in index.by_type.items() if str(etype)}
         module_error_count = int(len(index.by_type.get("consciousness.module_error") or []))
         meta_events = index.by_type.get("meta.state_estimate") or []
         meta_total = int(len(meta_events))
@@ -378,9 +371,7 @@ class ConsciousnessBenchRunner:
                 trace_strength = 0.0
             if trace_strength < threshold:
                 ignitions_without_trace += 1
-        degraded_mode_ratio = (
-            round(float(degraded_count) / float(meta_total), 6) if meta_total > 0 else 0.0
-        )
+        degraded_mode_ratio = round(float(degraded_count) / float(meta_total), 6) if meta_total > 0 else 0.0
 
         deltas = compute_trial_deltas(before, after)
         score = composite_trial_score(deltas)
@@ -475,9 +466,7 @@ class ConsciousnessBenchRunner:
         report["capture_end_event_id"] = str(trial_end_event.get("event_id") or "")
         report["events_window_count"] = len(window_events)
         report["event_type_counts"] = {
-            etype: int(len(rows))
-            for etype, rows in build_index(window_events).by_type.items()
-            if str(etype)
+            etype: int(len(rows)) for etype, rows in build_index(window_events).by_type.items() if str(etype)
         }
         window_event_ids: list[str] = []
         event_id_present = 0
@@ -487,27 +476,17 @@ class ConsciousnessBenchRunner:
                 event_id_present += 1
                 window_event_ids.append(event_id)
             else:
-                window_event_ids.append(
-                    f"{str(evt.get('ts') or '')}|{str(evt.get('type') or '')}"
-                )
-        window_digest = hashlib.sha1(
-            ("\n".join(window_event_ids)).encode("utf-8", "replace")
-        ).hexdigest()
+                window_event_ids.append(f"{str(evt.get('ts') or '')}|{str(evt.get('type') or '')}")
+        window_digest = hashlib.sha1(("\n".join(window_event_ids)).encode("utf-8", "replace")).hexdigest()
         state_snapshot = kernel.state_store.snapshot()
-        state_modules = (
-            state_snapshot.get("modules")
-            if isinstance(state_snapshot.get("modules"), Mapping)
-            else {}
-        )
+        state_modules = state_snapshot.get("modules") if isinstance(state_snapshot.get("modules"), Mapping) else {}
         report["provenance"] = {
             "git_sha": git_revision(self.state_dir),
             "seed": int(norm["seed"]),
             "trial_corr_id": trial_corr,
             "capture_event_digest": window_digest,
             "capture_event_id_coverage": (
-                round(float(event_id_present) / float(len(window_events)), 6)
-                if window_events
-                else 0.0
+                round(float(event_id_present) / float(len(window_events)), 6) if window_events else 0.0
             ),
             "capture_start_ts": str(trial_start_event.get("ts") or ""),
             "capture_end_ts": str(trial_end_event.get("ts") or ""),
@@ -553,7 +532,7 @@ class ConsciousnessBenchRunner:
                     f"- recipe_expectations: `{expectation_eval.get('pass')}`",
                     f"- capture_method: `{report.get('capture_method')}`",
                     f"- capture_event_digest: `{window_digest}`",
-                    f"- artifacts: `spec.json`, `metrics.jsonl`, `events_window.jsonl`, `module_state_snapshot.json`, `replay_manifest.json`, `report.json`",
+                    "- artifacts: `spec.json`, `metrics.jsonl`, `events_window.jsonl`, `module_state_snapshot.json`, `replay_manifest.json`, `report.json`",
                 ],
             )
             report["output_dir"] = str(output_dir)

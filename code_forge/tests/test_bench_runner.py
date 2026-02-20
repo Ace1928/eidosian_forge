@@ -6,9 +6,7 @@ from code_forge.bench.runner import run_benchmark_suite
 def _make_repo(root: Path) -> None:
     (root / "src").mkdir(parents=True)
     (root / "src" / "a.py").write_text(
-        "import math\n"
-        "def calc(v):\n"
-        "    return math.floor(v)\n",
+        "import math\n" "def calc(v):\n" "    return math.floor(v)\n",
         encoding="utf-8",
     )
 

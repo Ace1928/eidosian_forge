@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 from typing import Any, Dict
+
+from eidosian_core import eidosian
 
 from ..core import tool
 from ..state import type_forge
 from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
-from pathlib import Path
-import os
-from eidosian_core import eidosian
-
 
 _TYPE_SNAPSHOT_PATH = Path(
     os.environ.get("EIDOS_TYPE_SNAPSHOT_PATH", "~/.eidosian/type_forge_snapshot.json")
@@ -21,9 +21,7 @@ def _ensure_type_persistence():
     if not type_forge:
         return
     _TYPE_SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _TYPE_SNAPSHOT_PATH.write_text(
-        json.dumps(type_forge.snapshot(), indent=2), encoding="utf-8"
-    )
+    _TYPE_SNAPSHOT_PATH.write_text(json.dumps(type_forge.snapshot(), indent=2), encoding="utf-8")
 
 
 @tool(
@@ -43,7 +41,7 @@ def type_register(name: str, schema: Dict[str, Any]) -> str:
     """Register or update a schema in Type Forge."""
     if not type_forge:
         return "Error: Type forge unavailable"
-    
+
     with begin_transaction("type_register", [_TYPE_SNAPSHOT_PATH]) as txn:
         changed = type_forge.register_schema(name, schema)
         if changed:

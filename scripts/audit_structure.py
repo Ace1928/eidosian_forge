@@ -1,29 +1,40 @@
+import importlib.util
 import os
 import sys
-import importlib.util
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 ROOT_DIR = Path("eidosian_forge").resolve()
 EXCLUDE_DIRS = {
-    "data", "docs", "requirements", "scripts", "audit_data", "__pycache__", ".git", ".vscode", "projects", "node_modules"
+    "data",
+    "docs",
+    "requirements",
+    "scripts",
+    "audit_data",
+    "__pycache__",
+    ".git",
+    ".vscode",
+    "projects",
+    "node_modules",
 }
+
 
 @eidosian()
 def get_forges():
     return [
-        d for d in os.listdir(ROOT_DIR)
-        if (ROOT_DIR / d).is_dir() and d not in EXCLUDE_DIRS and not d.startswith(".")
+        d for d in os.listdir(ROOT_DIR) if (ROOT_DIR / d).is_dir() and d not in EXCLUDE_DIRS and not d.startswith(".")
     ]
+
 
 @eidosian()
 def check_forge(forge_name):
     forge_path = ROOT_DIR / forge_name
     src_path = forge_path / "src"
     package_path = src_path / forge_name
-    
+
     issues = []
-    
+
     # 1. Structure Check
     if not src_path.exists():
         issues.append("Missing 'src' directory")
@@ -33,16 +44,16 @@ def check_forge(forge_name):
         # Let's check if *any* package exists in src
         subdirs = [d for d in os.listdir(src_path) if (src_path / d).is_dir() and not d.startswith(".")]
         if not subdirs:
-             issues.append(f"No package directory found in 'src'")
+            issues.append("No package directory found in 'src'")
         else:
-             # Just note if it doesn't match exactly, might be okay but worth noting
-             if forge_name not in subdirs and forge_name.replace("-", "_") not in subdirs:
-                 issues.append(f"Package name mismatch in src: found {subdirs}")
+            # Just note if it doesn't match exactly, might be okay but worth noting
+            if forge_name not in subdirs and forge_name.replace("-", "_") not in subdirs:
+                issues.append(f"Package name mismatch in src: found {subdirs}")
 
     # 2. Config Check
     has_pyproject = (forge_path / "pyproject.toml").exists()
     has_setup = (forge_path / "setup.py").exists()
-    
+
     if not (has_pyproject or has_setup):
         issues.append("Missing build config (pyproject.toml or setup.py)")
 
@@ -54,10 +65,10 @@ def check_forge(forge_name):
         if (src_path / import_name).exists():
             pass
         else:
-             # look for likely candidate
-             candidates = [d for d in os.listdir(src_path) if (src_path / d).is_dir()]
-             if candidates:
-                 import_name = candidates[0]
+            # look for likely candidate
+            candidates = [d for d in os.listdir(src_path) if (src_path / d).is_dir()]
+            if candidates:
+                import_name = candidates[0]
 
         try:
             # We don't want to actually import everything (might run code), just find spec
@@ -73,12 +84,13 @@ def check_forge(forge_name):
 
     return issues
 
+
 @eidosian()
 def audit_projects():
     projects_dir = ROOT_DIR / "projects" / "src"
     if not projects_dir.exists():
         return {"projects": ["Missing projects/src directory"]}
-    
+
     results = {}
     if not projects_dir.exists():
         return results
@@ -89,35 +101,40 @@ def audit_projects():
             issues = []
             # Projects might not follow the strict src/<name> pattern inside projects/src/<name>
             # The instruction was: eidosian_forge/projects/src/<project_name>
-            # So the project root IS <project_name>. Does it have source inside? 
-            # Usually projects have their own src or just files. 
+            # So the project root IS <project_name>. Does it have source inside?
+            # Usually projects have their own src or just files.
             # Let's just check if they look like python projects.
-            
+
             # Check for pyproject or setup
             has_config = (proj_path / "pyproject.toml").exists() or (proj_path / "setup.py").exists()
             if not has_config:
-                 issues.append("Missing build config")
-            
+                issues.append("Missing build config")
+
             # Check for some code structure (basic check)
-            if not any(proj_path.glob("*.py")) and not (proj_path / "src").exists() and not any(proj_path.glob("*/*.py")):
+            if (
+                not any(proj_path.glob("*.py"))
+                and not (proj_path / "src").exists()
+                and not any(proj_path.glob("*/*.py"))
+            ):
                 issues.append("No Python files or src dir found")
-                
+
             if issues:
                 results[f"project/{proj}"] = issues
     return results
+
 
 @eidosian()
 def main():
     print(f"Auditing forges in {ROOT_DIR}...")
     forges = get_forges()
     forges.sort()
-    
+
     results = {}
     for forge in forges:
         res = check_forge(forge)
         if res:
             results[forge] = res
-            
+
     proj_results = audit_projects()
     results.update(proj_results)
 
@@ -129,6 +146,7 @@ def main():
             print(f"\n[{forge}]")
             for issue in issues:
                 print(f"  - {issue}")
+
 
 if __name__ == "__main__":
     main()

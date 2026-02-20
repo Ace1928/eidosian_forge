@@ -1,9 +1,10 @@
 import json
-import subprocess
 import sqlite3
+import subprocess
 from pathlib import Path
-from core import state as S
+
 from core import scheduler as SCH
+from core import state as S
 
 
 def test_status_transitions(tmp_path: Path):

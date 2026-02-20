@@ -1,5 +1,4 @@
-from agent_forge.core import events
-from agent_forge.core import workspace
+from agent_forge.core import events, workspace
 
 
 def test_workspace_summary_detects_ignition(tmp_path):

@@ -8,9 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from word_forge.graph.graph_manager import GraphManager
 from word_forge.database.database_manager import DBManager
 from word_forge.emotion.emotion_manager import EmotionManager
+from word_forge.graph.graph_manager import GraphManager
 
 
 def test_build_graph_from_db(tmp_path):

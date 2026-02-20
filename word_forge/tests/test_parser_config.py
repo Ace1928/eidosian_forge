@@ -10,7 +10,6 @@ This module tests the ParserConfig class and related functionality including:
 from pathlib import Path
 
 import pytest
-
 from word_forge.parser.parser_config import ParserConfig, ResourceNotFoundError
 
 
@@ -104,9 +103,7 @@ class TestCustomModel:
     def test_with_custom_model_preserves_paths(self, tmp_path: Path):
         """Test that with_custom_model preserves resource paths."""
         custom_paths = {"custom": "custom.json"}
-        base_config = ParserConfig(
-            data_dir=str(tmp_path), resource_paths=custom_paths.copy()
-        )
+        base_config = ParserConfig(data_dir=str(tmp_path), resource_paths=custom_paths.copy())
         custom_config = base_config.with_custom_model("test-model")
 
         assert custom_config.data_dir == str(tmp_path)

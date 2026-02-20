@@ -45,12 +45,7 @@ def test_ingest_parent_relationships(tmp_path: Path) -> None:
     root = tmp_path / "proj"
     root.mkdir()
     file_path = root / "mod.py"
-    file_path.write_text(
-        "class A:\n"
-        "    def f(self):\n"
-        "        if True:\n"
-        "            return 1\n"
-    )
+    file_path.write_text("class A:\n" "    def f(self):\n" "        if True:\n" "            return 1\n")
 
     db = CodeLibraryDB(tmp_path / "library.sqlite")
     runs_dir = tmp_path / "runs"
@@ -66,11 +61,7 @@ def test_ingest_builds_import_call_use_edges(tmp_path: Path) -> None:
     root = tmp_path / "proj"
     root.mkdir()
     (root / "mod.py").write_text(
-        "import math\n"
-        "def helper(x):\n"
-        "    return math.floor(x)\n"
-        "def runner(v):\n"
-        "    return helper(v)\n",
+        "import math\n" "def helper(x):\n" "    return math.floor(x)\n" "def runner(v):\n" "    return helper(v)\n",
         encoding="utf-8",
     )
 

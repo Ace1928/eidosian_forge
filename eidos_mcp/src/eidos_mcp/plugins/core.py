@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Plugin Core Module - Tool Registration Support.
 
@@ -6,8 +7,8 @@ This module provides the registration mechanism for plugin tools
 to integrate with the main MCP server.
 """
 
-from typing import Any, Callable, Dict, List, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +26,10 @@ def register_tool_metadata(
 ) -> None:
     """
     Register metadata for a plugin tool.
-    
+
     This metadata is used by the MCP server to expose the tool
     to connected clients with proper documentation.
-    
+
     Args:
         name: Tool name (must be unique across all plugins)
         description: Human-readable description of what the tool does
@@ -38,7 +39,7 @@ def register_tool_metadata(
     """
     if name in _TOOL_METADATA:
         logger.warning(f"Tool {name} already registered, overwriting")
-    
+
     _TOOL_METADATA[name] = {
         "name": name,
         "description": description,
@@ -71,7 +72,7 @@ def get_all_tool_metadata() -> Dict[str, Dict[str, Any]]:
 def unregister_tool(name: str) -> bool:
     """
     Unregister a tool.
-    
+
     Returns:
         True if tool was unregistered, False if not found
     """
@@ -86,7 +87,7 @@ def unregister_tool(name: str) -> bool:
 def clear_all_tools() -> int:
     """
     Clear all registered tools.
-    
+
     Returns:
         Number of tools that were cleared
     """
@@ -97,7 +98,7 @@ def clear_all_tools() -> int:
 
 __all__ = [
     "register_tool_metadata",
-    "get_tool_metadata", 
+    "get_tool_metadata",
     "list_registered_tools",
     "get_all_tool_metadata",
     "unregister_tool",

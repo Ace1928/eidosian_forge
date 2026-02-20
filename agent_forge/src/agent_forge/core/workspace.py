@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
 from eidosian_core import eidosian
 
@@ -23,9 +23,7 @@ def _parse_ts(ts: str) -> datetime:
 
 def _event_source(evt: Mapping[str, Any]) -> str:
     data = evt.get("data") or {}
-    return str(
-        data.get("source") or data.get("module") or data.get("origin") or "unknown"
-    )
+    return str(data.get("source") or data.get("module") or data.get("origin") or "unknown")
 
 
 @eidosian()
@@ -61,9 +59,7 @@ def iter_broadcast(
     return [e for e in events if e.get("type") == "workspace.broadcast"]
 
 
-def _bucket_events(
-    events: Sequence[Mapping[str, Any]], window_seconds: float
-) -> Dict[int, List[Mapping[str, Any]]]:
+def _bucket_events(events: Sequence[Mapping[str, Any]], window_seconds: float) -> Dict[int, List[Mapping[str, Any]]]:
     buckets: Dict[int, List[Mapping[str, Any]]] = {}
     for evt in events:
         ts = _parse_ts(str(evt.get("ts", "")))
@@ -72,9 +68,7 @@ def _bucket_events(
     return buckets
 
 
-def _window_metrics(
-    events: Sequence[Mapping[str, Any]], window_seconds: float
-) -> List[Dict[str, Any]]:
+def _window_metrics(events: Sequence[Mapping[str, Any]], window_seconds: float) -> List[Dict[str, Any]]:
     buckets = _bucket_events(events, window_seconds)
     windows = []
     for bucket, items in sorted(buckets.items(), key=lambda x: x[0]):
@@ -133,9 +127,7 @@ def _gini(values: Sequence[int]) -> float:
     return round(float(g), 6)
 
 
-def _ignition_bursts(
-    windows: Sequence[Mapping[str, Any]], min_sources: int
-) -> Dict[str, Any]:
+def _ignition_bursts(windows: Sequence[Mapping[str, Any]], min_sources: int) -> Dict[str, Any]:
     bursts = 0
     max_burst = 0
     current = 0

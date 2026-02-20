@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Validates the integrity of the context/index.json and context/catalog.json files.
@@ -6,13 +7,13 @@ Uses Pydantic for strict schema validation and performs logical consistency chec
 """
 
 import json
-import sys
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Any
-from pydantic import BaseModel, Field, ValidationError
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel, ValidationError
 from tqdm import tqdm
 
 # Setup Paths
@@ -29,6 +30,7 @@ logger = logging.getLogger("context_validator")
 
 # --- Pydantic Models ---
 
+
 class FileStats(BaseModel):
     size_bytes: Optional[int]
     last_modified: str
@@ -37,11 +39,13 @@ class FileStats(BaseModel):
     owner: Optional[Any]
     group: Optional[Any]
 
+
 class ChildSummary(BaseModel):
     count: Optional[int]
     preview_limit: int
     preview: List[Dict[str, Any]]
     preview_truncated: bool
+
 
 class DirectoryEntry(BaseModel):
     name: str
@@ -57,12 +61,14 @@ class DirectoryEntry(BaseModel):
     git: Optional[Dict[str, str]] = None
     pyvenv_marker: Optional[str] = None
 
+
 class IndexMetadata(BaseModel):
     root: str
     user: str
     hostname: str
     python_version: str
     config: Dict[str, Any]
+
 
 class ContextIndex(BaseModel):
     generated_at: str
@@ -73,6 +79,7 @@ class ContextIndex(BaseModel):
     sections: List[Dict[str, Any]]
     directories: List[DirectoryEntry]
 
+
 class SummaryMeta(BaseModel):
     model: str
     duration_sec: float
@@ -80,6 +87,7 @@ class SummaryMeta(BaseModel):
     tokens: Optional[int]
     prompt_length: Optional[int] = None
     error: Optional[str] = None
+
 
 class CatalogEntry(BaseModel):
     name: str
@@ -91,7 +99,8 @@ class CatalogEntry(BaseModel):
     hash: Optional[str] = None
     summary: Optional[str] = None
     summary_meta: Optional[SummaryMeta] = None
-    children: Optional[List['CatalogEntry']] = None # Recursive
+    children: Optional[List["CatalogEntry"]] = None  # Recursive
+
 
 class ContextCatalog(BaseModel):
     generated_at: str
@@ -101,7 +110,9 @@ class ContextCatalog(BaseModel):
     summary_records: List[SummaryMeta]
     profiling: Dict[str, Any]
 
+
 # --- Validation Logic ---
+
 
 @eidosian()
 def validate_paths_exist(entries: List[Any], base_path: Path) -> List[str]:
@@ -113,12 +124,13 @@ def validate_paths_exist(entries: List[Any], base_path: Path) -> List[str]:
             p = Path(path_str)
             if not p.exists():
                 errors.append(f"Missing file/dir: {path_str}")
-        
+
         # Recurse if children exist (CatalogEntry)
         if hasattr(entry, "children") and entry.children:
             errors.extend(validate_paths_exist(entry.children, base_path))
-            
+
     return errors
+
 
 @eidosian()
 def flatten_catalog_entries(entries: List[CatalogEntry]) -> List[CatalogEntry]:
@@ -129,15 +141,16 @@ def flatten_catalog_entries(entries: List[CatalogEntry]) -> List[CatalogEntry]:
             flat.extend(flatten_catalog_entries(entry.children))
     return flat
 
+
 @eidosian()
 def run_validation():
     logger.info("🔍 Starting Deep Context Validation...")
     report_lines = [f"# Context Validation Report - {datetime.now().isoformat()}", ""]
-    
+
     # 1. Load Files
     index_raw = None
     catalog_raw = None
-    
+
     try:
         index_raw = json.loads(INDEX_PATH.read_text())
         logger.info(f"✅ Loaded index.json ({len(index_raw.get('directories', []))}" + " roots)")
@@ -152,7 +165,7 @@ def run_validation():
     except Exception as e:
         logger.error(f"❌ Failed to load catalog.json: {e}")
         report_lines.append(f"## ❌ Critical: catalog.json load failed\n{e}")
-        
+
     # 2. Schema Validation (Index)
     logger.info("Validating Index Schema...")
     try:
@@ -188,25 +201,28 @@ def run_validation():
     if catalog_model:
         all_catalog_items = flatten_catalog_entries(catalog_model.entries)
         missing_cat_paths = validate_paths_exist(all_catalog_items, ROOT_DIR)
-        
+
         # Check summary coverage
         summarized = [e for e in all_catalog_items if e.summary]
         summary_rate = len(summarized) / len(all_catalog_items) if all_catalog_items else 0
-        
+
         logger.info(f"Catalog Summary Coverage: {summary_rate:.1%} ({len(summarized)}/{len(all_catalog_items)})")
-        report_lines.append(f"## ℹ️ Catalog Stats\n- Total Items: {len(all_catalog_items)}\n- Summarized: {len(summarized)}\n- Coverage: {summary_rate:.1%}")
-        
+        report_lines.append(
+            f"## ℹ️ Catalog Stats\n- Total Items: {len(all_catalog_items)}\n- Summarized: {len(summarized)}\n- Coverage: {summary_rate:.1%}"
+        )
+
         if missing_cat_paths:
-             report_lines.append(f"## ⚠️ Catalog Path Integrity\n{len(missing_cat_paths)} paths missing.")
+            report_lines.append(f"## ⚠️ Catalog Path Integrity\n{len(missing_cat_paths)} paths missing.")
         else:
-             report_lines.append("## ✅ Catalog Path Integrity: Perfect")
+            report_lines.append("## ✅ Catalog Path Integrity: Perfect")
 
     # Save Report
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text("\n".join(report_lines), encoding="utf-8")
     logger.info(f"📝 Validation report saved to {REPORT_PATH}")
-    
+
     return True
+
 
 if __name__ == "__main__":
     try:

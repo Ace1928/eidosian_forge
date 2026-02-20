@@ -114,7 +114,9 @@ class SelfModelExtModule:
             return
 
         eff_data = _event_data(latest_efference)
-        predicted = eff_data.get("predicted_observation") if isinstance(eff_data.get("predicted_observation"), Mapping) else {}
+        predicted = (
+            eff_data.get("predicted_observation") if isinstance(eff_data.get("predicted_observation"), Mapping) else {}
+        )
         observed_sig = self._observed_signature(combined, predicted)
         predicted_sig = {
             "expected_event_type": str(predicted.get("expected_event_type") or ""),

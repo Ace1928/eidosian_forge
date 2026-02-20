@@ -6,15 +6,15 @@ various typed dictionaries, and layout/dimension types.
 
 from pathlib import Path
 
+from word_forge.configs.config_essentials import (
+    GraphColorScheme,
+    GraphLayoutAlgorithm,
+)
 from word_forge.graph.graph_config import (
     GraphConfig,
-    WordTupleDict,
-    RelationshipTupleDict,
     GraphInfoDict,
-)
-from word_forge.configs.config_essentials import (
-    GraphLayoutAlgorithm,
-    GraphColorScheme,
+    RelationshipTupleDict,
+    WordTupleDict,
 )
 
 

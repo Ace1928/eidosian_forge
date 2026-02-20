@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+
 # ANSI colors for terminal output
 class Colors:
     RESET = "\033[0m"
@@ -31,7 +32,7 @@ class Colors:
     BLUE = "\033[94m"
     MAGENTA = "\033[95m"
     CYAN = "\033[96m"
-    
+
     @classmethod
     def disable(cls):
         """Disable colors for non-TTY output."""
@@ -45,7 +46,7 @@ class CommandResult:
     success: bool
     message: str
     data: Optional[Any] = None
-    
+
     def to_json(self) -> str:
         return json.dumps({
             "success": self.success,
@@ -56,9 +57,9 @@ class CommandResult:
 
 class ForgeDetector:
     """Detects which forges are available for enhanced integration."""
-    
+
     _cache: Dict[str, bool] = {}
-    
+
     @classmethod
     def is_available(cls, forge_name: str) -> bool:
         """Check if a forge is importable."""
@@ -69,7 +70,7 @@ class ForgeDetector:
             except (ImportError, AttributeError, ValueError):
                 cls._cache[forge_name] = False
         return cls._cache[forge_name]
-    
+
     @classmethod
     def available_forges(cls) -> List[str]:
         """List all available forges."""
@@ -79,7 +80,7 @@ class ForgeDetector:
             "refactor_forge", "glyph_forge", "figlet_forge", "agent_forge",
         ]
         return [f for f in forge_names if cls.is_available(f)]
-    
+
     @classmethod
     def report(cls) -> str:
         """Generate availability report."""
@@ -110,12 +111,12 @@ class StandardCLI(ABC):
                 # Implement status command
                 ...
     """
-    
+
     # Override in subclasses
     name: str = "forge"
     description: str = "A forge CLI"
     version: str = "0.1.0"
-    
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             prog=self.name.replace("_", "-"),
@@ -130,7 +131,7 @@ class StandardCLI(ABC):
         )
         self._register_standard_commands()
         self.register_commands(self.subparsers)
-    
+
     def _setup_global_args(self) -> None:
         """Add global arguments available to all commands."""
         self.parser.add_argument(
@@ -153,7 +154,7 @@ class StandardCLI(ABC):
             action="store_true",
             help="Suppress non-essential output",
         )
-    
+
     def _register_standard_commands(self) -> None:
         """Register commands available in all forge CLIs."""
         # Status command
@@ -162,36 +163,36 @@ class StandardCLI(ABC):
             help="Show forge status and health",
         )
         status_parser.set_defaults(func=self._cmd_status_wrapper)
-        
+
         # Info command
         info_parser = self.subparsers.add_parser(
             "info",
             help="Show forge information and capabilities",
         )
         info_parser.set_defaults(func=self._cmd_info)
-        
+
         # Integrations command
         int_parser = self.subparsers.add_parser(
             "integrations",
             help="Show available forge integrations",
         )
         int_parser.set_defaults(func=self._cmd_integrations)
-    
+
     @abstractmethod
     def register_commands(self, subparsers) -> None:
         """Register forge-specific commands. Override in subclasses."""
         pass
-    
+
     @abstractmethod
     def cmd_status(self, args) -> CommandResult:
         """Return forge status. Override in subclasses."""
         pass
-    
+
     def _cmd_status_wrapper(self, args) -> None:
         """Wrapper for status command."""
         result = self.cmd_status(args)
         self._output(result, args)
-    
+
     def _cmd_info(self, args) -> None:
         """Show forge information."""
         info = {
@@ -202,26 +203,26 @@ class StandardCLI(ABC):
         }
         result = CommandResult(True, f"{self.name} v{self.version}", info)
         self._output(result, args)
-    
+
     def _cmd_integrations(self, args) -> None:
         """Show available integrations."""
         available = ForgeDetector.available_forges()
         enhanced = self.get_enhanced_capabilities(available)
-        
+
         result = CommandResult(
             True,
             f"Found {len(available)} forges",
             {"available_forges": available, "enhanced_capabilities": enhanced},
         )
         self._output(result, args)
-    
+
     def get_enhanced_capabilities(self, available_forges: List[str]) -> List[str]:
         """
         Return list of enhanced capabilities when other forges present.
         Override in subclasses to specify integration benefits.
         """
         return []
-    
+
     def _output(self, result: CommandResult, args) -> None:
         """Format and print command result."""
         if getattr(args, "json", False):
@@ -229,11 +230,11 @@ class StandardCLI(ABC):
         else:
             if getattr(args, "no_color", False):
                 Colors.disable()
-            
+
             if not getattr(args, "quiet", False):
                 color = Colors.GREEN if result.success else Colors.RED
                 print(f"{color}{result.message}{Colors.RESET}")
-            
+
             if result.data:
                 if isinstance(result.data, dict):
                     for key, value in result.data.items():
@@ -248,18 +249,18 @@ class StandardCLI(ABC):
                         print(f"  • {item}")
                 else:
                     print(result.data)
-    
+
     def run(self, argv: Optional[List[str]] = None) -> int:
         """Parse arguments and execute command."""
         args = self.parser.parse_args(argv)
-        
+
         if args.no_color:
             Colors.disable()
-        
+
         if not args.command:
             self.parser.print_help()
             return 0
-        
+
         if hasattr(args, "func"):
             try:
                 args.func(args)
@@ -271,12 +272,12 @@ class StandardCLI(ABC):
         else:
             self.parser.print_help()
             return 0
-    
+
     def generate_completion(self) -> str:
         """Generate bash completion script for this CLI."""
         prog = self.name.replace("_", "-")
         commands = list(self.subparsers.choices.keys())
-        
+
         script = f'''# Bash completion for {prog}
 # Add to ~/.bashrc: source <(path/to/{prog} --completion)
 

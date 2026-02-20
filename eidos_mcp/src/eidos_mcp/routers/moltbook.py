@@ -8,9 +8,8 @@ from typing import Any, Dict, Optional
 import httpx
 from eidosian_core import eidosian
 
-from ..core import tool
 from .. import FORGE_ROOT
-
+from ..core import tool
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 DEFAULT_BASE_URL = "https://www.moltbook.com/api/v1"

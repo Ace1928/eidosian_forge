@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of DBManager functionality.
 """

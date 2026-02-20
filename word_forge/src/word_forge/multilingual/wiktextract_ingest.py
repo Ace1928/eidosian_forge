@@ -91,9 +91,7 @@ def ingest_wiktextract_jsonl(
                 source="wiktextract",
             )
             if target_lang == base_lang:
-                manager.db.update_lexeme_base(
-                    lemma=lemma, lang=lang, base_term=target_term
-                )
+                manager.db.update_lexeme_base(lemma=lemma, lang=lang, base_term=target_term)
 
         count += 1
         if limit and count >= limit:
@@ -146,10 +144,7 @@ def ingest_kaikki_jsonl(
                     continue
                 target_lang = str(translation.get("lang") or "").strip()
                 target_term = str(
-                    translation.get("word")
-                    or translation.get("term")
-                    or translation.get("translation")
-                    or ""
+                    translation.get("word") or translation.get("term") or translation.get("translation") or ""
                 ).strip()
                 if not target_lang or not target_term:
                     continue
@@ -161,9 +156,7 @@ def ingest_kaikki_jsonl(
                     source="kaikki",
                 )
                 if target_lang == base_lang:
-                    manager.db.update_lexeme_base(
-                        lemma=lemma, lang=lang, base_term=target_term
-                    )
+                    manager.db.update_lexeme_base(lemma=lemma, lang=lang, base_term=target_term)
 
         count += 1
         if limit and count >= limit:

@@ -1,6 +1,6 @@
-from planners.registry import choose
-from planners.htn import materialize
 from core.contracts import Goal
+from planners.htn import materialize
+from planners.registry import choose
 
 
 def test_choose_and_materialize_lint():

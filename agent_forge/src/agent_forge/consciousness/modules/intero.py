@@ -4,8 +4,7 @@ from typing import Any, Mapping
 
 from agent_forge.core import workspace
 
-from ..types import TickContext
-from ..types import WorkspacePayload, clamp01, normalize_workspace_payload
+from ..types import TickContext, WorkspacePayload, clamp01, normalize_workspace_payload
 
 
 def _event_data(evt: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -31,28 +30,18 @@ class InteroModule:
 
     def tick(self, ctx: TickContext) -> None:
         alpha = clamp01(ctx.config.get("intero_drive_alpha"), default=0.22)
-        emit_threshold = clamp01(
-            ctx.config.get("intero_broadcast_threshold"), default=0.45
-        )
+        emit_threshold = clamp01(ctx.config.get("intero_broadcast_threshold"), default=0.45)
         perturbations = ctx.perturbations_for(self.name)
         if any(str(p.get("kind") or "") == "drop" for p in perturbations):
             return
         if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
             return
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "clamp"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "clamp"]
             or [0.0]
         )
 
@@ -71,20 +60,12 @@ class InteroModule:
         )
         drives = state.get("drives") if isinstance(state.get("drives"), Mapping) else {}
         prev = {str(k): clamp01(v, default=0.5) for k, v in drives.items()}
-        integral_map = (
-            state.get("integral") if isinstance(state.get("integral"), Mapping) else {}
-        )
-        integral = {
-            str(k): float(v)
-            for k, v in integral_map.items()
-            if isinstance(v, (int, float))
-        }
+        integral_map = state.get("integral") if isinstance(state.get("integral"), Mapping) else {}
+        integral = {str(k): float(v) for k, v in integral_map.items() if isinstance(v, (int, float))}
 
         events = ctx.all_events()
         recent = events[-260:]
-        ws = workspace.summary(
-            ctx.state_dir, limit=220, window_seconds=1.0, min_sources=3
-        )
+        ws = workspace.summary(ctx.state_dir, limit=220, window_seconds=1.0, min_sources=3)
         coherence = float(ws.get("coherence_ratio") or 0.0)
         ignition_count = float(ws.get("ignition_count") or 0.0)
         window_count = float(ws.get("window_count") or 1.0)
@@ -102,11 +83,7 @@ class InteroModule:
                     break
         pred_error = clamp01(pred_error, default=0.4)
 
-        module_errors = sum(
-            1
-            for evt in recent
-            if str(evt.get("type") or "") == "consciousness.module_error"
-        )
+        module_errors = sum(1 for evt in recent if str(evt.get("type") or "") == "consciousness.module_error")
         module_error_rate = clamp01(module_errors / max(len(recent), 1), default=0.0)
 
         sense_novelties: list[float] = []
@@ -115,33 +92,21 @@ class InteroModule:
                 continue
             data = _event_data(evt)
             sense_novelties.append(clamp01(data.get("novelty"), default=0.4))
-        avg_novelty = (
-            sum(sense_novelties[-24:]) / max(len(sense_novelties[-24:]), 1)
-            if sense_novelties
-            else 0.35
-        )
+        avg_novelty = sum(sense_novelties[-24:]) / max(len(sense_novelties[-24:]), 1) if sense_novelties else 0.35
 
         targets = {
-            "energy": clamp01(
-                1.0 - (0.65 * pred_error) - (0.8 * module_error_rate), default=0.5
-            ),
+            "energy": clamp01(1.0 - (0.65 * pred_error) - (0.8 * module_error_rate), default=0.5),
             "threat": clamp01(
-                (0.65 * pred_error)
-                + (0.9 * module_error_rate)
-                + (0.2 * (1.0 - coherence)),
+                (0.65 * pred_error) + (0.9 * module_error_rate) + (0.2 * (1.0 - coherence)),
                 default=0.2,
             ),
             "curiosity": clamp01(
-                (0.55 * pred_error)
-                + (0.35 * (1.0 - ignition_ratio))
-                + (0.2 * avg_novelty),
+                (0.55 * pred_error) + (0.35 * (1.0 - ignition_ratio)) + (0.2 * avg_novelty),
                 default=0.4,
             ),
             "coherence_hunger": clamp01(max(0.0, 0.55 - coherence) * 1.6, default=0.3),
             "novelty_hunger": clamp01(
-                (0.5 * avg_novelty)
-                + (0.35 * (1.0 - ignition_ratio))
-                + (0.2 * pred_error),
+                (0.5 * avg_novelty) + (0.35 * (1.0 - ignition_ratio)) + (0.2 * pred_error),
                 default=0.35,
             ),
         }
@@ -206,9 +171,7 @@ class InteroModule:
                         "memory_ids": [],
                     },
                 ).as_dict()
-                payload = normalize_workspace_payload(
-                    payload, fallback_kind="DRIVE", source_module=self.name
-                )
+                payload = normalize_workspace_payload(payload, fallback_kind="DRIVE", source_module=self.name)
                 ctx.broadcast(
                     self.name,
                     payload,

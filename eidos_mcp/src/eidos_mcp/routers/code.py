@@ -5,21 +5,23 @@ Provides tools for code analysis, indexing, and search.
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import json
 import os
 from pathlib import Path
 from typing import List, Optional
 
-from ..core import tool
+from eidosian_core import eidosian
+
 from .. import FORGE_ROOT
+from ..core import tool
 from ..forge_loader import ensure_forge_import
 
 ensure_forge_import("code_forge")
 
 try:
-    from code_forge import CodeIndexer, CodeAnalyzer, index_forge_codebase
+    from code_forge import CodeAnalyzer, CodeIndexer, index_forge_codebase
+
     CODE_FORGE_AVAILABLE = True
 except ImportError:
     CODE_FORGE_AVAILABLE = False
@@ -55,19 +57,13 @@ def _get_analyzer():
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Search query"
-            },
+            "query": {"type": "string", "description": "Search query"},
             "element_types": {
                 "type": "array",
                 "items": {"type": "string", "enum": ["function", "class", "method", "module"]},
-                "description": "Filter by element types (default: all)"
+                "description": "Filter by element types (default: all)",
             },
-            "limit": {
-                "type": "integer",
-                "description": "Maximum results (default: 10)"
-            },
+            "limit": {"type": "integer", "description": "Maximum results (default: 10)"},
         },
         "required": ["query"],
     },
@@ -82,12 +78,12 @@ def code_search(
     indexer = _get_indexer()
     if not indexer:
         return "Error: Code indexer not available"
-    
+
     results = indexer.search(query, element_types=element_types)
-    
+
     if not results:
         return f"No code elements found matching '{query}'"
-    
+
     output = []
     for elem in results[:limit]:
         item = {
@@ -103,7 +99,7 @@ def code_search(
         if elem.methods:
             item["methods"] = elem.methods[:5]  # First 5 methods
         output.append(item)
-    
+
     return json.dumps(output, indent=2)
 
 
@@ -113,10 +109,7 @@ def code_search(
     parameters={
         "type": "object",
         "properties": {
-            "file_path": {
-                "type": "string",
-                "description": "Path to the Python file to analyze"
-            },
+            "file_path": {"type": "string", "description": "Path to the Python file to analyze"},
         },
         "required": ["file_path"],
     },
@@ -127,16 +120,16 @@ def code_analyze_file(file_path: str) -> str:
     analyzer = _get_analyzer()
     if not analyzer:
         return "Error: Code analyzer not available"
-    
+
     path = Path(file_path)
     if not path.exists():
         return f"Error: File not found: {file_path}"
-    
+
     if not path.suffix == ".py":
         return "Error: Only Python files (.py) are supported"
-    
+
     analysis = analyzer.analyze_file(path)
-    
+
     # Format output
     output = {
         "file": str(path),
@@ -159,7 +152,7 @@ def code_analyze_file(file_path: str) -> str:
             for f in analysis.get("functions", [])
         ],
     }
-    
+
     return json.dumps(output, indent=2)
 
 
@@ -174,7 +167,7 @@ def code_index_stats() -> str:
     indexer = _get_indexer()
     if not indexer:
         return "Error: Code indexer not available"
-    
+
     stats = indexer.stats()
     return json.dumps(stats, indent=2)
 
@@ -185,14 +178,8 @@ def code_index_stats() -> str:
     parameters={
         "type": "object",
         "properties": {
-            "directory": {
-                "type": "string",
-                "description": "Directory path to index"
-            },
-            "recursive": {
-                "type": "boolean",
-                "description": "Search recursively (default: true)"
-            },
+            "directory": {"type": "string", "description": "Directory path to index"},
+            "recursive": {"type": "boolean", "description": "Search recursively (default: true)"},
         },
         "required": ["directory"],
     },
@@ -203,22 +190,25 @@ def code_index_directory(directory: str, recursive: bool = True) -> str:
     indexer = _get_indexer()
     if not indexer:
         return "Error: Code indexer not available"
-    
+
     path = Path(directory)
     if not path.exists():
         return f"Error: Directory not found: {directory}"
-    
+
     stats = indexer.index_directory(path, recursive=recursive)
-    
-    return json.dumps({
-        "directory": str(path),
-        "files_indexed": stats.get("files_indexed", 0),
-        "modules": stats.get("modules", 0),
-        "classes": stats.get("classs", 0),  # Note: typo in original
-        "functions": stats.get("functions", 0),
-        "methods": stats.get("methods", 0),
-        "errors": stats.get("errors", 0),
-    }, indent=2)
+
+    return json.dumps(
+        {
+            "directory": str(path),
+            "files_indexed": stats.get("files_indexed", 0),
+            "modules": stats.get("modules", 0),
+            "classes": stats.get("classs", 0),  # Note: typo in original
+            "functions": stats.get("functions", 0),
+            "methods": stats.get("methods", 0),
+            "errors": stats.get("errors", 0),
+        },
+        indent=2,
+    )
 
 
 @tool(
@@ -232,7 +222,7 @@ def code_sync_to_knowledge() -> str:
     indexer = _get_indexer()
     if not indexer:
         return "Error: Code indexer not available"
-    
+
     synced = indexer.sync_to_knowledge()
     return f"Synced {synced} code elements to knowledge forge"
 

@@ -1,6 +1,8 @@
-from typing import Any, Dict, Optional
 import json
+from typing import Any, Dict, Optional
+
 from eidosian_core import eidosian
+
 
 @eidosian()
 def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
@@ -21,7 +23,7 @@ def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
             # Fallback for generic code blocks
             json_str = text.split("```")[1].split("```")[0].strip()
         else:
-            json_str = text.strip() # Assume plain JSON
+            json_str = text.strip()  # Assume plain JSON
 
         return json.loads(json_str)
     except (json.JSONDecodeError, IndexError):

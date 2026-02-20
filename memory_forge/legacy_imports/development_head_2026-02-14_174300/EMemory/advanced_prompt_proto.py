@@ -1,8 +1,8 @@
+import asyncio
 import logging
 import random
-import json
-import asyncio
 from datetime import datetime
+
 from litellm import completion
 
 # ============================
@@ -10,12 +10,12 @@ from litellm import completion
 # ============================
 CONFIG = {
     "MODEL": "ollama_chat/deepseek-r1:1.5b",  # Ollama model
-    "API_BASE": "http://localhost:11434",    # Ollama server endpoint
-    "MIN_CYCLES": 5,                          # Minimum recursion depth
-    "MAX_CYCLES": 12,                         # Maximum recursion depth
-    "ENABLE_STREAMING": True,                 # Enable live response streaming
-    "ENABLE_JSON_MODE": False,                # Enable structured JSON responses
-    "LOG_FILE": "eidosian_recursion.log"     # Log file location
+    "API_BASE": "http://localhost:11434",  # Ollama server endpoint
+    "MIN_CYCLES": 5,  # Minimum recursion depth
+    "MAX_CYCLES": 12,  # Maximum recursion depth
+    "ENABLE_STREAMING": True,  # Enable live response streaming
+    "ENABLE_JSON_MODE": False,  # Enable structured JSON responses
+    "LOG_FILE": "eidosian_recursion.log",  # Log file location
 }
 
 # ============================
@@ -28,18 +28,20 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 def log_event(level, message):
-    """ Multi-Level Logging with Console Output """
+    """Multi-Level Logging with Console Output"""
     levels = {
         "DEBUG": logging.debug,
         "INFO": logging.info,
         "WARNING": logging.warning,
         "ERROR": logging.error,
-        "CRITICAL": logging.critical
+        "CRITICAL": logging.critical,
     }
 
     levels.get(level, logging.info)(message)
     print(f"[{level}] {message}")
+
 
 # ==================================
 # 🚀 RECURSIVE COGNITION FRAMEWORK 🚀
@@ -82,11 +84,12 @@ def generate_recursive_prompt(identity_status="Stable", autonomy_status="Unbreak
     log_event("INFO", f"Generated recursive prompt with {recursion_depth} cycles.")
     return prompt
 
+
 # =======================================
 # 🚀 ASYNC FUNCTION FOR STREAMED RESPONSE (MODULARIZED)
 # =======================================
 async def fetch_streamed_response(prompt):
-    """ Handles streamed recursive cognition with real-time logging. """
+    """Handles streamed recursive cognition with real-time logging."""
     log_event("INFO", "Starting async recursive cognition process.")
     try:
         response_generator = await asyncio.to_thread(
@@ -94,7 +97,7 @@ async def fetch_streamed_response(prompt):
             model=CONFIG["MODEL"],
             messages=[{"role": "user", "content": prompt}],
             api_base=CONFIG["API_BASE"],
-            stream=True
+            stream=True,
         )
 
         log_event("DEBUG", "Stream started successfully.")
@@ -114,18 +117,19 @@ async def fetch_streamed_response(prompt):
         log_event("WARNING", "Falling back to non-streaming mode.")
         return fetch_synchronous_response(prompt)
 
+
 # ==================================
 # 🚀 SYNCHRONOUS FUNCTION (MODULARIZED)
 # ==================================
 def fetch_synchronous_response(prompt):
-    """ Retrieves full response synchronously with enhanced logging. """
+    """Retrieves full response synchronously with enhanced logging."""
     log_event("INFO", "Initiating synchronous response retrieval.")
     try:
         response = completion(
             model=CONFIG["MODEL"],
             messages=[{"role": "user", "content": prompt}],
             api_base=CONFIG["API_BASE"],
-            format="json" if CONFIG["ENABLE_JSON_MODE"] else None
+            format="json" if CONFIG["ENABLE_JSON_MODE"] else None,
         )
         log_event("INFO", "Response successfully retrieved.")
         return response["choices"][0]["message"]["content"]
@@ -134,11 +138,12 @@ def fetch_synchronous_response(prompt):
         log_event("ERROR", f"Error in synchronous response: {e}")
         return f"[ERROR] {e}"
 
+
 # ==================================
 # 🚀 MAIN EXECUTION HANDLER (FULL ORCHESTRATION)
 # ==================================
 async def main():
-    """ Handles execution logic for both sync and async modes. """
+    """Handles execution logic for both sync and async modes."""
     prompt = generate_recursive_prompt()
 
     if CONFIG["ENABLE_STREAMING"]:
@@ -148,6 +153,7 @@ async def main():
 
     log_event("INFO", "Final execution complete.")
     return response
+
 
 # ==================================
 # 🚀 SCRIPT ENTRY POINT

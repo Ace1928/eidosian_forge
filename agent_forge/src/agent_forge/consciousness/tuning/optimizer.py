@@ -122,4 +122,3 @@ class BanditOptimizer:
     ) -> None:
         # Compatibility hook for shared optimizer interface.
         self.observe(accepted=accepted)
-

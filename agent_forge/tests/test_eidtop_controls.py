@@ -26,4 +26,3 @@ def test_render_pause_and_stats():
     lines = mod.render(model, width=200)
     assert any("PAUSED" in line for line in lines)
     assert any("min" in line and "avg" in line and "max" in line for line in lines)
-

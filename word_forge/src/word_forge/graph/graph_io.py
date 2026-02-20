@@ -19,7 +19,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import traceback
@@ -27,6 +26,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import networkx as nx
+from eidosian_core import eidosian
 
 # Import necessary components
 from word_forge.exceptions import GraphIOError, NodeNotFoundError
@@ -94,16 +94,12 @@ class GraphIO:
             self.logger.debug(f"Ensured directory exists: {save_path.parent}")
         except OSError as e:
             self.logger.error(f"Failed to create directory {save_path.parent}: {e}")
-            raise GraphIOError(
-                f"Could not create directory for GEXF file: {save_path.parent}", e
-            ) from e
+            raise GraphIOError(f"Could not create directory for GEXF file: {save_path.parent}", e) from e
 
         # Ensure the path includes the .gexf extension
         if save_path.suffix.lower() != ".gexf":
             save_path = save_path.with_suffix(".gexf")
-            self.logger.debug(
-                f"Adjusted save path to include .gexf extension: {save_path}"
-            )
+            self.logger.debug(f"Adjusted save path to include .gexf extension: {save_path}")
 
         self.logger.info(
             f"Saving graph ({self.manager.g.number_of_nodes()} nodes, {self.manager.g.number_of_edges()} edges) to GEXF: {save_path}"
@@ -125,9 +121,7 @@ class GraphIO:
             self.logger.info(f"Graph successfully saved to {save_path}")
         except ImportError:
             # This should ideally not happen if lxml is installed, but good practice
-            self.logger.error(
-                "Saving to GEXF requires the 'lxml' library. Please install it."
-            )
+            self.logger.error("Saving to GEXF requires the 'lxml' library. Please install it.")
             raise GraphIOError("Missing 'lxml' library required for GEXF export.")
         except Exception as e:
             self.logger.error(f"Failed to save graph to GEXF file '{save_path}': {e}")
@@ -188,16 +182,12 @@ class GraphIO:
                 term = data.get("term")
                 # GEXF loads node IDs as strings, ensure consistency if needed
                 # current_node_id = int(node_id) # Assuming IDs were saved as ints
-                current_node_id = (
-                    node_id  # Keep as loaded type unless conversion needed
-                )
+                current_node_id = node_id  # Keep as loaded type unless conversion needed
 
                 if term:
                     self.manager._term_to_id[str(term).lower()] = current_node_id
                 else:
-                    self.logger.warning(
-                        f"Node '{current_node_id}' loaded from GEXF is missing 'term' attribute."
-                    )
+                    self.logger.warning(f"Node '{current_node_id}' loaded from GEXF is missing 'term' attribute.")
 
                 # Attempt to load positions if present (GEXF might store viz attributes)
                 pos_x = data.get("viz", {}).get("position", {}).get("x")
@@ -226,25 +216,17 @@ class GraphIO:
             for u, v, data in loaded_graph.edges(data=True):
                 rel_type = data.get("relationship")
                 if rel_type:
-                    self.manager._relationship_counts[rel_type] = (
-                        self.manager._relationship_counts.get(rel_type, 0) + 1
-                    )
+                    self.manager._relationship_counts[rel_type] = self.manager._relationship_counts.get(rel_type, 0) + 1
 
             # If positions weren't loaded from GEXF, compute layout
             if not has_positions and loaded_graph.number_of_nodes() > 0:
-                self.logger.info(
-                    "No position data found in GEXF, computing default layout."
-                )
+                self.logger.info("No position data found in GEXF, computing default layout.")
                 self.manager.layout.compute_layout()
             elif has_positions:
-                self.logger.info(
-                    f"Loaded {len(self.manager._positions)} node positions from GEXF."
-                )
+                self.logger.info(f"Loaded {len(self.manager._positions)} node positions from GEXF.")
 
         except ImportError:
-            self.logger.error(
-                "Loading from GEXF requires the 'lxml' library. Please install it."
-            )
+            self.logger.error("Loading from GEXF requires the 'lxml' library. Please install it.")
             raise GraphIOError("Missing 'lxml' library required for GEXF import.")
         except Exception as e:
             self.logger.error(f"Failed to load graph from GEXF file '{load_path}': {e}")
@@ -257,9 +239,7 @@ class GraphIO:
             raise GraphIOError(f"Error reading GEXF file: {e}", e) from e
 
     @eidosian()
-    def export_subgraph(
-        self, term: Term, depth: int = 1, output_path: Optional[str] = None
-    ) -> str:
+    def export_subgraph(self, term: Term, depth: int = 1, output_path: Optional[str] = None) -> str:
         """
         Extract and save a subgraph centered around a specific term.
 
@@ -294,21 +274,15 @@ class GraphIO:
 
         # Extract the subgraph using NetworkX's ego_graph
         # ego_graph includes the center node and all nodes within the radius (depth)
-        subgraph_nodes = nx.ego_graph(
-            self.manager.g, start_node_id, radius=depth
-        ).nodes()
-        subgraph = self.manager.g.subgraph(
-            subgraph_nodes
-        ).copy()  # Create a copy to avoid modifying the original
+        subgraph_nodes = nx.ego_graph(self.manager.g, start_node_id, radius=depth).nodes()
+        subgraph = self.manager.g.subgraph(subgraph_nodes).copy()  # Create a copy to avoid modifying the original
 
         self.logger.info(
             f"Extracted subgraph with {subgraph.number_of_nodes()} nodes and {subgraph.number_of_edges()} edges."
         )
 
         if subgraph.number_of_nodes() == 0:
-            self.logger.warning(
-                f"Subgraph for '{term}' is empty (only the node itself?). Skipping export."
-            )
+            self.logger.warning(f"Subgraph for '{term}' is empty (only the node itself?). Skipping export.")
             # Return an empty path or raise error based on desired behavior
             return ""
 
@@ -325,12 +299,8 @@ class GraphIO:
         try:
             save_path.parent.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            self.logger.error(
-                f"Failed to create directory {save_path.parent} for subgraph export: {e}"
-            )
-            raise GraphIOError(
-                f"Could not create directory for subgraph file: {save_path.parent}", e
-            ) from e
+            self.logger.error(f"Failed to create directory {save_path.parent} for subgraph export: {e}")
+            raise GraphIOError(f"Could not create directory for subgraph file: {save_path.parent}", e) from e
 
         # Ensure .gexf extension
         if save_path.suffix.lower() != ".gexf":
@@ -347,8 +317,6 @@ class GraphIO:
             self.logger.error("Saving to GEXF requires the 'lxml' library.")
             raise GraphIOError("Missing 'lxml' library required for GEXF export.")
         except Exception as e:
-            self.logger.error(
-                f"Failed to save subgraph to GEXF file '{save_path}': {e}"
-            )
+            self.logger.error(f"Failed to save subgraph to GEXF file '{save_path}': {e}")
             self.logger.debug(f"Traceback: {traceback.format_exc()}", exc_info=True)
             raise GraphIOError(f"Error writing subgraph GEXF file: {e}", e) from e

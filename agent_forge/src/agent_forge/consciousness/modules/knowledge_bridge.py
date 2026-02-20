@@ -89,7 +89,9 @@ class KnowledgeBridgeModule:
                     "EIDOS_MEMORY_DIR",
                     str(root / "data" / "memory"),
                 )
-            ).expanduser().resolve()
+            )
+            .expanduser()
+            .resolve()
         )
         self.kb_path = (
             Path(kb_path).expanduser().resolve()
@@ -99,7 +101,9 @@ class KnowledgeBridgeModule:
                     "EIDOS_KNOWLEDGE_PATH",
                     str(root / "data" / "kb.json"),
                 )
-            ).expanduser().resolve()
+            )
+            .expanduser()
+            .resolve()
         )
 
     def _load_bridge(self) -> tuple[Any, str]:
@@ -197,15 +201,9 @@ class KnowledgeBridgeModule:
             ctx.config.get("knowledge_bridge_broadcast_threshold"),
             default=0.55,
         )
-        status_period = max(
-            1, int(ctx.config.get("knowledge_bridge_status_emit_period_beats", 20))
-        )
-        repeat_cooldown = max(
-            0, int(ctx.config.get("knowledge_bridge_repeat_cooldown_beats", 2))
-        )
-        query_tokens = max(
-            8, int(ctx.config.get("knowledge_bridge_query_max_tokens", 32))
-        )
+        status_period = max(1, int(ctx.config.get("knowledge_bridge_status_emit_period_beats", 20)))
+        repeat_cooldown = max(0, int(ctx.config.get("knowledge_bridge_repeat_cooldown_beats", 2)))
+        query_tokens = max(8, int(ctx.config.get("knowledge_bridge_query_max_tokens", 32)))
 
         state = ctx.module_state(
             self.name,
@@ -238,11 +236,7 @@ class KnowledgeBridgeModule:
             return
 
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_ceiling = 1.0
@@ -399,10 +393,6 @@ class KnowledgeBridgeModule:
                 query=query,
                 total_hits=total_hits,
                 stats=stats_payload
-                or (
-                    state.get("last_stats")
-                    if isinstance(state.get("last_stats"), Mapping)
-                    else {}
-                ),
+                or (state.get("last_stats") if isinstance(state.get("last_stats"), Mapping) else {}),
                 last_error=_to_text(state.get("last_error")),
             )

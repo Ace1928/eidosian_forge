@@ -6,6 +6,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -19,17 +20,13 @@ def load_index(path: Path):
         with path.open() as fh:
             return json.load(fh)
     except FileNotFoundError:
-        raise SystemExit(
-            f"Index file not found: {path}. Run python scripts/context_index.py first."
-        )
+        raise SystemExit(f"Index file not found: {path}. Run python scripts/context_index.py first.")
 
 
 @eidosian()
 def refresh_index(index_path: Path):
     print("Refreshing context index...")
-    result = subprocess.run(
-        [sys.executable, CONTEXT_SCRIPT, "--force", "--output", str(index_path)]
-    )
+    result = subprocess.run([sys.executable, CONTEXT_SCRIPT, "--force", "--output", str(index_path)])
     if result.returncode != 0:
         raise SystemExit("Failed to refresh the context index.")
 
@@ -59,9 +56,7 @@ def print_summary(data):
     print()
     print("Commands (type 'c' to list):")
     for entry in data.get("commands", [])[:5]:
-        print(
-            f"  {entry.get('name')}: {entry.get('cmd')} - {entry.get('description', '---')}"
-        )
+        print(f"  {entry.get('name')}: {entry.get('cmd')} - {entry.get('description', '---')}")
     print()
 
 
@@ -69,12 +64,8 @@ def print_summary(data):
 def print_directory_list(directories):
     print("Directories: (enter number to view details)")
     for idx, entry in enumerate(directories):
-        desc = entry.get("manual", {}).get(
-            "description", "No manual description provided."
-        )
-        print(
-            f"  [{idx:02d}] {entry.get('relative_path')} ({entry.get('type')}) - {desc}"
-        )
+        desc = entry.get("manual", {}).get("description", "No manual description provided.")
+        print(f"  [{idx:02d}] {entry.get('relative_path')} ({entry.get('type')}) - {desc}")
     print()
 
 
@@ -86,9 +77,7 @@ def print_storage(storage):
         f"Used: {storage.get('used_bytes')} / {storage.get('total_bytes')} bytes",
     ]
     if fs:
-        lines.append(
-            f"Filesystem details: {' | '.join(f'{k}={v}' for k, v in fs.items())}"
-        )
+        lines.append(f"Filesystem details: {' | '.join(f'{k}={v}' for k, v in fs.items())}")
     print("\n".join(lines))
     print()
 
@@ -111,13 +100,9 @@ def show_entry_detail(entry):
     if tags:
         print(f"  Tags: {', '.join(tags)}")
     stats = entry.get("statistics", {})
-    print(
-        f"  Size: {stats.get('size_bytes')} bytes | Modified: {stats.get('last_modified')}"
-    )
+    print(f"  Size: {stats.get('size_bytes')} bytes | Modified: {stats.get('last_modified')}")
     if entry.get("git"):
-        print(
-            f"  Git: {entry['git'].get('git_branch')} | {entry['git'].get('git_status')}"
-        )
+        print(f"  Git: {entry['git'].get('git_branch')} | {entry['git'].get('git_status')}")
     if entry.get("pyvenv_marker"):
         print(f"  Pyvenv: {entry.get('pyvenv_marker')}")
     child_summary = entry.get("child_summary", {})
@@ -181,9 +166,7 @@ def interactive_loop(data, index_path: Path):
 
 @eidosian()
 def main():
-    parser = argparse.ArgumentParser(
-        description="Command-line UI for the home context index."
-    )
+    parser = argparse.ArgumentParser(description="Command-line UI for the home context index.")
     parser.add_argument(
         "--index",
         "-i",

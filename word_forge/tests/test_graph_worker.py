@@ -32,9 +32,7 @@ def test_restart_returns_running_worker(tmp_path: Path) -> None:
 
     worker.start()
     try:
-        assert _wait_until(
-            lambda: worker.get_status()["update_count"] > 0, timeout=10.0
-        )
+        assert _wait_until(lambda: worker.get_status()["update_count"] > 0, timeout=10.0)
     finally:
         worker.stop()
         worker.join(timeout=5)

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Type definitions for conversation management structures.
 

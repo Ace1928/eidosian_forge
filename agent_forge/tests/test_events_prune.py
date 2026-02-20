@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 from core import events as E
 
@@ -16,4 +15,3 @@ def test_prune_old_days(tmp_path):
     assert deleted == 2
     remaining = sorted(p.name for p in events_dir.iterdir())
     assert len(remaining) == 3
-

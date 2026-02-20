@@ -21,6 +21,7 @@ Type Aliases:
 
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -28,7 +29,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TYPE_CHECKING,
     TypeAlias,
     TypeVar,
     Union,
@@ -87,9 +87,7 @@ FormatStr: TypeAlias = str
 LogFilePathStr: TypeAlias = Optional[str]
 
 # Function type for validation handlers
-ValidationFunction: TypeAlias = Callable[
-    [LoggingConfigDict, List[ValidationError]], None
-]
+ValidationFunction: TypeAlias = Callable[[LoggingConfigDict, List[ValidationError]], None]
 EnvVarType: TypeAlias = Union[str, int, float, bool, None]
 
 # Type alias for serialized configuration data
@@ -112,13 +110,34 @@ ConfigDict: TypeAlias = Dict[str, ConfigValue]
 
 __all__ = [
     # Type variables
-    "T", "T_contra", "R", "C", "K", "V", "E",
+    "T",
+    "T_contra",
+    "R",
+    "C",
+    "K",
+    "V",
+    "E",
     # Paths
-    "PROJECT_ROOT", "DATA_ROOT", "LOGS_ROOT",
+    "PROJECT_ROOT",
+    "DATA_ROOT",
+    "LOGS_ROOT",
     # JSON types
-    "JsonPrimitive", "JsonDict", "JsonList", "JsonValue",
+    "JsonPrimitive",
+    "JsonDict",
+    "JsonList",
+    "JsonValue",
     # Config types
-    "ConfigValue", "LoggingConfigDict", "ValidationError", "FormatStr",
-    "LogFilePathStr", "ValidationFunction", "EnvVarType", "SerializedConfig",
-    "PathLike", "EnvMapping", "ComponentName", "ComponentRegistry", "ConfigDict",
+    "ConfigValue",
+    "LoggingConfigDict",
+    "ValidationError",
+    "FormatStr",
+    "LogFilePathStr",
+    "ValidationFunction",
+    "EnvVarType",
+    "SerializedConfig",
+    "PathLike",
+    "EnvMapping",
+    "ComponentName",
+    "ComponentRegistry",
+    "ConfigDict",
 ]

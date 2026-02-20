@@ -21,7 +21,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import queue
@@ -31,6 +30,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from threading import Event, Lock, RLock, Thread
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union, cast, final
+
+from eidosian_core import eidosian
 
 from word_forge.conversation.conversation_manager import ConversationManager
 from word_forge.database.database_manager import DBManager
@@ -263,14 +264,10 @@ class ProcessingMetrics:
                     "timeout_count": self.timeout_count,
                     "deferred_count": self.deferred_count,
                     "invalid_count": self.invalid_count,
-                    "avg_processing_time_ms": (
-                        round(avg_time * 1000, 2) if avg_time is not None else None
-                    ),
+                    "avg_processing_time_ms": (round(avg_time * 1000, 2) if avg_time is not None else None),
                     "task_type_distribution": dict(self.task_types),
                     "error_type_distribution": dict(self.error_types),
-                    "success_rate": round(
-                        self.success_count / max(1, self.processed_count) * 100, 2
-                    ),
+                    "success_rate": round(self.success_count / max(1, self.processed_count) * 100, 2),
                 }
             finally:
                 self._lock.release()
@@ -399,17 +396,10 @@ class StateTracker:
     def recent_errors(self) -> List[str]:
         """Get list of recent error messages."""
         with self._lock:
-            return [
-                error
-                for _, error in sorted(
-                    self._recent_errors, key=lambda x: x[0], reverse=True
-                )
-            ]
+            return [error for _, error in sorted(self._recent_errors, key=lambda x: x[0], reverse=True)]
 
     @eidosian()
-    def to_dict(
-        self, queue_size: int, retry_queue_size: int, metrics: Dict[str, Any]
-    ) -> ConversationWorkerStatus:
+    def to_dict(self, queue_size: int, retry_queue_size: int, metrics: Dict[str, Any]) -> ConversationWorkerStatus:
         """
         Convert current state and metrics into a status dictionary.
 
@@ -426,15 +416,11 @@ class StateTracker:
             return ConversationWorkerStatus(
                 running=self.is_running,
                 state=str(self._state),
-                processed_count=metrics.get(
-                    "processed_count", 0
-                ),  # Use .get for safety
+                processed_count=metrics.get("processed_count", 0),  # Use .get for safety
                 success_count=metrics.get("success_count", 0),
                 error_count=metrics.get("error_count", 0),
                 last_update=self._last_update,
-                uptime=(
-                    round(uptime_val, 2) if uptime_val is not None else None
-                ),  # Round uptime
+                uptime=(round(uptime_val, 2) if uptime_val is not None else None),  # Round uptime
                 queue_size=queue_size,
                 retry_queue_size=retry_queue_size,  # Include retry queue size
                 recent_errors=self.recent_errors[:5],  # Limit recent errors shown
@@ -663,15 +649,11 @@ class ConversationWorker(Thread):
                     self.metrics.record_error(error_name)
 
                     if self.logger:
-                        self.logger.error(
-                            f"Error in conversation worker: {error_msg}", exc_info=True
-                        )
+                        self.logger.error(f"Error in conversation worker: {error_msg}", exc_info=True)
 
                     # Handle recovery
                     current_time = time.time()
-                    if (
-                        current_time - last_error_recovery > 60.0
-                    ):  # 1 minute between recoveries
+                    if current_time - last_error_recovery > 60.0:  # 1 minute between recoveries
                         self.state_tracker.recovery()
                         if self.logger:
                             self.logger.info("Entering recovery mode")
@@ -687,9 +669,7 @@ class ConversationWorker(Thread):
 
         except Exception as e:
             if self.logger:
-                self.logger.critical(
-                    f"Critical error in conversation worker: {str(e)}", exc_info=True
-                )
+                self.logger.critical(f"Critical error in conversation worker: {str(e)}", exc_info=True)
             self.state_tracker.error()
 
         finally:
@@ -717,9 +697,7 @@ class ConversationWorker(Thread):
             # Skip if we've reached max retries
             if attempts >= self.max_retries:
                 if self.logger:
-                    self.logger.warning(
-                        f"Task {task_id} exceeded maximum retry attempts ({self.max_retries})"
-                    )
+                    self.logger.warning(f"Task {task_id} exceeded maximum retry attempts ({self.max_retries})")
                 del self._retry_queue[task_id]
                 continue
 
@@ -765,8 +743,8 @@ class ConversationWorker(Thread):
         for _ in range(self.batch_size):
             try:
                 # Get a task result from the queue
-                dequeue_result: Result[Union[ConversationTask, str, Dict[str, Any]]] = (
-                    self.queue_manager.dequeue(block=False)
+                dequeue_result: Result[Union[ConversationTask, str, Dict[str, Any]]] = self.queue_manager.dequeue(
+                    block=False
                 )
 
                 if dequeue_result.is_success:
@@ -808,18 +786,14 @@ class ConversationWorker(Thread):
                     if error is not None and error.error_code != "EMPTY_QUEUE":
                         if self.logger:
                             self.logger.error(f"Error dequeuing task: {error.message}")
-                        self.state_tracker.record_error(
-                            f"Dequeue error: {error.message}"
-                        )
+                        self.state_tracker.record_error(f"Dequeue error: {error.message}")
 
             except queue.Empty:
                 # No more tasks in queue
                 break
             except Exception as e:
                 if self.logger:
-                    self.logger.error(
-                        f"Error processing queue batch: {e}", exc_info=True
-                    )
+                    self.logger.error(f"Error processing queue batch: {e}", exc_info=True)
                 self.state_tracker.record_error(str(e))
 
         return processed_count
@@ -881,15 +855,11 @@ class ConversationWorker(Thread):
                     )
                 conversation_id = start_result.unwrap()
                 if self.logger:
-                    self.logger.info(
-                        f"Task {task_id}: Started new conversation {conversation_id}"
-                    )
+                    self.logger.info(f"Task {task_id}: Started new conversation {conversation_id}")
 
             # Ensure conversation_id is valid before proceeding
             if conversation_id is None:
-                raise ConversationProcessingError(
-                    f"Task {task_id}: Missing conversation ID for processing."
-                )
+                raise ConversationProcessingError(f"Task {task_id}: Missing conversation ID for processing.")
 
             # Add message to conversation - response generation is handled by the manager now
             # if generate_response is True in the context.
@@ -939,9 +909,7 @@ class ConversationWorker(Thread):
 
             # Log error
             if self.logger:
-                self.logger.error(
-                    f"Error processing task {task_id}: {str(e)}", exc_info=True
-                )
+                self.logger.error(f"Error processing task {task_id}: {str(e)}", exc_info=True)
 
             # Clean up processing tracking
             if task_id in self._processing_times:
@@ -1027,15 +995,11 @@ class ConversationWorker(Thread):
             return result == TaskResult.SUCCESS
         except Exception as e:
             if self.logger:
-                self.logger.error(
-                    f"Error in synchronous task processing: {str(e)}", exc_info=True
-                )
+                self.logger.error(f"Error in synchronous task processing: {str(e)}", exc_info=True)
             return False
 
     @eidosian()
-    def submit_message(
-        self, conversation_id: Optional[int], message: str, speaker: str
-    ) -> Optional[str]:
+    def submit_message(self, conversation_id: Optional[int], message: str, speaker: str) -> Optional[str]:
         """
         Creates and enqueues a standard conversation task to add a message.
 

@@ -20,8 +20,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
-from eidosian_core.ports import get_service_url
 
 import json
 import logging
@@ -45,6 +43,9 @@ from typing import (
     overload,
 )
 
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
+
 _VECTOR_IMPORT_ERROR: Optional[Exception]
 try:  # Optional heavy dependencies
     import chromadb
@@ -58,9 +59,7 @@ else:
 
 try:  # Optional FAISS dependency for fallback persistence
     import faiss  # type: ignore
-except (
-    Exception
-) as faiss_error:  # pragma: no cover - allow running without faiss initially
+except Exception as faiss_error:  # pragma: no cover - allow running without faiss initially
     faiss = None  # type: ignore
     _FAISS_IMPORT_ERROR = faiss_error
 else:
@@ -69,22 +68,18 @@ else:
 import numpy as np
 from numpy.typing import NDArray
 
-OLLAMA_EMBEDDINGS_URL = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="/api/embeddings")
+OLLAMA_EMBEDDINGS_URL = get_service_url(
+    "ollama_http", default_port=11434, default_host="localhost", default_path="/api/embeddings"
+)
 
 from word_forge.config import config
 from word_forge.database.database_manager import DatabaseError, DBManager, WordEntryDict
 from word_forge.emotion.emotion_manager import EmotionManager
 
 # Type definitions for clarity and constraint
-VectorID: TypeAlias = Union[
-    int, str
-]  # Unique identifier for vectors (compatible with ChromaDB)
-SearchResultList: TypeAlias = List[
-    Tuple[VectorID, float]
-]  # (id, distance) pairs - Renamed from SearchResult
-ContentType: TypeAlias = Literal[
-    "word", "definition", "example", "message", "conversation"
-]
+VectorID: TypeAlias = Union[int, str]  # Unique identifier for vectors (compatible with ChromaDB)
+SearchResultList: TypeAlias = List[Tuple[VectorID, float]]  # (id, distance) pairs - Renamed from SearchResult
+ContentType: TypeAlias = Literal["word", "definition", "example", "message", "conversation"]
 EmbeddingList: TypeAlias = List[float]  # Type for ChromaDB's embedding format
 QueryType: TypeAlias = Literal["search", "definition", "similarity"]
 TemplateDict: TypeAlias = Dict[str, Optional[str]]
@@ -236,9 +231,7 @@ class ChromaClient(Protocol):
     """
 
     @eidosian()
-    def get_or_create_collection(
-        self, name: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> ChromaCollection:
+    def get_or_create_collection(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> ChromaCollection:
         """Get or create a collection with the given name."""
         ...
 
@@ -337,8 +330,7 @@ class SQLiteFAISSCollection:
             install_hint = 'pip install "word_forge[vector]"'
             missing = _FAISS_IMPORT_ERROR or RuntimeError("faiss unavailable")
             raise InitializationError(
-                "SQLite/FAISS persistence requires the faiss-cpu dependency. "
-                f"Install it via {install_hint}."
+                "SQLite/FAISS persistence requires the faiss-cpu dependency. " f"Install it via {install_hint}."
             ) from missing
 
         self.db_path = db_path
@@ -374,13 +366,9 @@ class SQLiteFAISSCollection:
             for idx, vec_id in enumerate(ids):
                 vector = np.asarray(embeddings[idx], dtype=np.float32)
                 if vector.shape[0] != self.dimension:
-                    raise DimensionMismatchError(
-                        f"Vector dimension {vector.shape[0]} does not match {self.dimension}"
-                    )
+                    raise DimensionMismatchError(f"Vector dimension {vector.shape[0]} does not match {self.dimension}")
 
-                metadata_blob = (
-                    json.dumps(metadata_list[idx]) if metadata_list[idx] else None
-                )
+                metadata_blob = json.dumps(metadata_list[idx]) if metadata_list[idx] else None
                 document_value = documents_list[idx]
                 payload = sqlite3.Binary(vector.tobytes())
 
@@ -411,14 +399,10 @@ class SQLiteFAISSCollection:
 
         query_vector = np.asarray(query_embeddings[0], dtype=np.float32)
         if query_vector.shape[0] != self.dimension:
-            raise DimensionMismatchError(
-                f"Query dimension {query_vector.shape[0]} does not match {self.dimension}"
-            )
+            raise DimensionMismatchError(f"Query dimension {query_vector.shape[0]} does not match {self.dimension}")
 
         with self._lock:
-            rows = self._conn.execute(
-                "SELECT id, embedding, metadata, document FROM vectors"
-            ).fetchall()
+            rows = self._conn.execute("SELECT id, embedding, metadata, document FROM vectors").fetchall()
 
         filtered_rows = self._filter_rows(rows, where)
         if not filtered_rows:
@@ -430,9 +414,7 @@ class SQLiteFAISSCollection:
             }
 
         dataset = np.vstack([self._row_to_vector(row) for row in filtered_rows])
-        metadatas = [
-            self._deserialize_metadata(row["metadata"]) for row in filtered_rows
-        ]
+        metadatas = [self._deserialize_metadata(row["metadata"]) for row in filtered_rows]
         documents = [row["document"] for row in filtered_rows]
         ids = [row["id"] for row in filtered_rows]
 
@@ -465,9 +447,7 @@ class SQLiteFAISSCollection:
     ) -> None:
         with self._lock:
             if ids:
-                self._conn.executemany(
-                    "DELETE FROM vectors WHERE id = ?", [(vec_id,) for vec_id in ids]
-                )
+                self._conn.executemany("DELETE FROM vectors WHERE id = ?", [(vec_id,) for vec_id in ids])
             elif where:
                 rows = self._conn.execute("SELECT id, metadata FROM vectors").fetchall()
                 filtered_ids = [row["id"] for row in self._filter_rows(rows, where)]
@@ -480,16 +460,14 @@ class SQLiteFAISSCollection:
 
     def _ensure_schema(self) -> None:
         with self._lock:
-            self._conn.execute(
-                """
+            self._conn.execute("""
                 CREATE TABLE IF NOT EXISTS vectors (
                     id TEXT PRIMARY KEY,
                     embedding BLOB NOT NULL,
                     metadata TEXT,
                     document TEXT
                 )
-                """
-            )
+                """)
             self._conn.commit()
 
     def _row_to_vector(self, row: sqlite3.Row) -> NDArray[np.float32]:
@@ -503,9 +481,7 @@ class SQLiteFAISSCollection:
         except json.JSONDecodeError:
             return None
 
-    def _filter_rows(
-        self, rows: List[sqlite3.Row], where: Optional[Dict[str, Any]]
-    ) -> List[sqlite3.Row]:
+    def _filter_rows(self, rows: List[sqlite3.Row], where: Optional[Dict[str, Any]]) -> List[sqlite3.Row]:
         if not where:
             return rows
 
@@ -545,9 +521,7 @@ class InMemoryCollection:
         for idx, vec_id in enumerate(ids):
             vector = np.asarray(embeddings[idx], dtype=np.float32)
             if vector.shape[0] != self.dimension:
-                raise DimensionMismatchError(
-                    f"Vector dimension {vector.shape[0]} does not match {self.dimension}"
-                )
+                raise DimensionMismatchError(f"Vector dimension {vector.shape[0]} does not match {self.dimension}")
             self._store[vec_id] = {
                 "embedding": vector,
                 "metadata": metadata_list[idx],
@@ -567,17 +541,14 @@ class InMemoryCollection:
 
         query_vector = np.asarray(query_embeddings[0], dtype=np.float32)
         if query_vector.shape[0] != self.dimension:
-            raise DimensionMismatchError(
-                f"Query dimension {query_vector.shape[0]} does not match {self.dimension}"
-            )
+            raise DimensionMismatchError(f"Query dimension {query_vector.shape[0]} does not match {self.dimension}")
 
         items = list(self._store.items())
         if where:
             items = [
                 (vec_id, payload)
                 for vec_id, payload in items
-                if payload.get("metadata")
-                and all(payload["metadata"].get(k) == v for k, v in where.items())
+                if payload.get("metadata") and all(payload["metadata"].get(k) == v for k, v in where.items())
             ]
 
         if not items:
@@ -607,12 +578,8 @@ class InMemoryCollection:
             if np.isnan(query_norm).any():
                 query_norm = np.zeros_like(query_norm)
             similarities = dataset_norm @ query_norm.reshape(-1, 1)
-            ordered_indices = (
-                np.argsort(similarities[:, 0])[::-1][:top_k] if top_k else np.array([])
-            )
-            ordered_distances = (
-                similarities[ordered_indices, 0].tolist() if top_k else []
-            )
+            ordered_indices = np.argsort(similarities[:, 0])[::-1][:top_k] if top_k else np.array([])
+            ordered_distances = similarities[ordered_indices, 0].tolist() if top_k else []
 
         ordered = [items[int(i)] for i in ordered_indices] if top_k else []
         ordered_ids = [vec_id for vec_id, _ in ordered]
@@ -641,8 +608,7 @@ class InMemoryCollection:
             to_delete = [
                 vec_id
                 for vec_id, payload in self._store.items()
-                if payload.get("metadata")
-                and all(payload["metadata"].get(k) == v for k, v in where.items())
+                if payload.get("metadata") and all(payload["metadata"].get(k) == v for k, v in where.items())
             ]
             for vec_id in to_delete:
                 self._store.pop(vec_id, None)
@@ -737,9 +703,7 @@ class VectorStore:
         self.emotion_manager = emotion_manager
         self.model_name = model_name or config.vectorizer.model_name
         self._use_ollama = self.model_name.startswith("ollama:")
-        self._ollama_model = (
-            self.model_name.split("ollama:", 1)[1].strip() if self._use_ollama else ""
-        )
+        self._ollama_model = self.model_name.split("ollama:", 1)[1].strip() if self._use_ollama else ""
 
         self.demo_mode = bool(demo_mode)
         if self.storage_type == StorageType.MEMORY and not self.demo_mode:
@@ -748,9 +712,7 @@ class VectorStore:
                 "Set demo_mode=True to acknowledge that vectors will not persist."
             )
         if self.storage_type != StorageType.MEMORY and self.demo_mode:
-            self.logger.warning(
-                "demo_mode flag was provided but persistent storage is enabled; ignoring demo mode"
-            )
+            self.logger.warning("demo_mode flag was provided but persistent storage is enabled; ignoring demo mode")
             self.demo_mode = False
 
         # Validate and create storage directory if needed
@@ -775,9 +737,7 @@ class VectorStore:
                 if not hasattr(self, "model"):
                     self.model = SentenceTransformer(self.model_name)  # type: ignore
             except Exception as e:
-                raise ModelLoadError(
-                    f"Failed to load embedding model '{self.model_name}': {str(e)}"
-                ) from e
+                raise ModelLoadError(f"Failed to load embedding model '{self.model_name}': {str(e)}") from e
 
         # Determine the vector dimension
         try:
@@ -800,23 +760,13 @@ class VectorStore:
                 else:
                     # Infer dimension from the loaded model
                     model_dimension = self.model.get_sentence_embedding_dimension()  # type: ignore
-                    if (
-                        model_dimension is None
-                        or not isinstance(model_dimension, int)
-                        or model_dimension <= 0
-                    ):
-                        raise ModelLoadError(
-                            f"Could not infer valid dimension from model '{self.model_name}'"
-                        )
+                    if model_dimension is None or not isinstance(model_dimension, int) or model_dimension <= 0:
+                        raise ModelLoadError(f"Could not infer valid dimension from model '{self.model_name}'")
                     self.dimension = model_dimension
-                    self.logger.info(
-                        f"Inferred dimension {self.dimension} from model '{self.model_name}'"
-                    )
+                    self.logger.info(f"Inferred dimension {self.dimension} from model '{self.model_name}'")
 
         except Exception as e:
-            raise ModelLoadError(
-                f"Failed to determine vector dimension: {str(e)}"
-            ) from e
+            raise ModelLoadError(f"Failed to determine vector dimension: {str(e)}") from e
 
         # Initialize storage backend after dimension is set
         self.backend_name = ""
@@ -831,9 +781,7 @@ class VectorStore:
             if chromadb is not None:
                 try:
                     self.client = self._create_client()
-                    collection_name = collection_name or (
-                        config.vectorizer.collection_name or "word_forge_vectors"
-                    )
+                    collection_name = collection_name or (config.vectorizer.collection_name or "word_forge_vectors")
                     self.collection = self._initialize_collection(collection_name)
                     self.backend_name = "chromadb"
                     chroma_ready = True
@@ -851,9 +799,7 @@ class VectorStore:
 
             if not self.backend_name:
                 combined_error = " | ".join(backend_errors)
-                raise InitializationError(
-                    "Failed to initialize persistent vector store. " + combined_error
-                )
+                raise InitializationError("Failed to initialize persistent vector store. " + combined_error)
 
         # Load instruction templates if available
         self.instruction_templates: Dict[str, InstructionTemplate] = {}
@@ -863,9 +809,7 @@ class VectorStore:
                 # Cast QueryType key to string
                 str_key = str(key)
                 # Convert TemplateDict to InstructionTemplate
-                self.instruction_templates[str_key] = cast(
-                    InstructionTemplate, template
-                )
+                self.instruction_templates[str_key] = cast(InstructionTemplate, template)
 
         self.logger.info(
             f"VectorStore initialized: model={self.model_name}, "
@@ -887,13 +831,9 @@ class VectorStore:
             if self.storage_type == StorageType.MEMORY:
                 return cast(ChromaClient, chromadb.Client())
             else:
-                return cast(
-                    ChromaClient, chromadb.PersistentClient(path=str(self.index_path))
-                )
+                return cast(ChromaClient, chromadb.PersistentClient(path=str(self.index_path)))
         except Exception as e:
-            raise InitializationError(
-                f"Failed to create ChromaDB client: {str(e)}"
-            ) from e
+            raise InitializationError(f"Failed to create ChromaDB client: {str(e)}") from e
 
     def _initialize_collection(self, collection_name: str) -> ChromaCollection:
         """
@@ -914,21 +854,13 @@ class VectorStore:
                 "dimension": self.dimension,
                 "model": self.model_name,
             }
-            collection = self.client.get_or_create_collection(
-                collection_name, metadata=metadata
-            )
-            self.logger.info(
-                f"Connected to collection '{collection_name}' with {collection.count()} vectors"
-            )
+            collection = self.client.get_or_create_collection(collection_name, metadata=metadata)
+            self.logger.info(f"Connected to collection '{collection_name}' with {collection.count()} vectors")
             return collection
         except Exception as e:
-            raise InitializationError(
-                f"Failed to initialize collection: {str(e)}"
-            ) from e
+            raise InitializationError(f"Failed to initialize collection: {str(e)}") from e
 
-    def _validate_vector_dimension(
-        self, vector: NDArray[np.float32], context: str = "Vector"
-    ) -> None:
+    def _validate_vector_dimension(self, vector: NDArray[np.float32], context: str = "Vector") -> None:
         """
         Validate that vector dimensions match expected dimensions.
 
@@ -945,13 +877,9 @@ class VectorStore:
             else (vector.shape[0] if len(getattr(vector, "shape")) > 0 else 0)
         )
         if length != self.dimension:
-            raise DimensionMismatchError(
-                f"{context} dimension {length} doesn't match expected {self.dimension}"
-            )
+            raise DimensionMismatchError(f"{context} dimension {length} doesn't match expected {self.dimension}")
 
-    def _normalize_vector_dimension(
-        self, vector: NDArray[np.float32], context: str
-    ) -> NDArray[np.float32]:
+    def _normalize_vector_dimension(self, vector: NDArray[np.float32], context: str) -> NDArray[np.float32]:
         """
         Coerce an embedding to the configured dimension by padding or truncating.
 
@@ -978,15 +906,11 @@ class VectorStore:
             return vector
 
         if length == 0:
-            raise DimensionMismatchError(
-                f"{context} is empty; expected {self.dimension}"
-            )
+            raise DimensionMismatchError(f"{context} is empty; expected {self.dimension}")
 
         if length > self.dimension:
             coerced = vector[: self.dimension]
-            self.logger.debug(
-                "%s truncated from dimension %s to %s", context, length, self.dimension
-            )
+            self.logger.debug("%s truncated from dimension %s to %s", context, length, self.dimension)
         else:
             pad_width = self.dimension - length
             coerced = np.pad(vector, (0, pad_width), mode="constant")
@@ -1005,9 +929,7 @@ class VectorStore:
         return coerced.astype(np.float32)
 
     @eidosian()
-    def format_with_instruction(
-        self, text: str, template_key: str = "search", is_query: bool = True
-    ) -> str:
+    def format_with_instruction(self, text: str, template_key: str = "search", is_query: bool = True) -> str:
         """
         Format text with instruction templates for embedding models.
 
@@ -1140,14 +1062,10 @@ class VectorStore:
         """Probe Ollama embedding dimension with a tiny request."""
         probe = self._embed_text_ollama("dimension probe")
         if probe.ndim != 1 or probe.shape[0] <= 0:
-            raise ModelLoadError(
-                f"Could not infer valid dimension from Ollama model '{self._ollama_model}'"
-            )
+            raise ModelLoadError(f"Could not infer valid dimension from Ollama model '{self._ollama_model}'")
         return int(probe.shape[0])
 
-    def _get_content_info(
-        self, content_id: int, content_type: ContentType
-    ) -> Dict[str, Any]:
+    def _get_content_info(self, content_id: int, content_type: ContentType) -> Dict[str, Any]:
         """
         Retrieve additional information about content for metadata.
 
@@ -1168,18 +1086,14 @@ class VectorStore:
         try:
             if content_type == "word":
                 # Get the word term from the ID
-                cursor = self.db_manager.connection.execute(
-                    SQL_GET_TERM_BY_ID, (content_id,)
-                )
+                cursor = self.db_manager.connection.execute(SQL_GET_TERM_BY_ID, (content_id,))
                 row = cursor.fetchone()
                 if row:
                     return {"term": row[0]}
 
             elif content_type == "message":
                 # Get message text and other metadata
-                cursor = self.db_manager.connection.execute(
-                    SQL_GET_MESSAGE_TEXT, (content_id,)
-                )
+                cursor = self.db_manager.connection.execute(SQL_GET_MESSAGE_TEXT, (content_id,))
                 row = cursor.fetchone()
                 if row:
                     return {
@@ -1191,9 +1105,7 @@ class VectorStore:
             return {}
 
         except Exception as e:
-            self.logger.warning(
-                f"Failed to get content info for {content_type} ID {content_id}: {e}"
-            )
+            self.logger.warning(f"Failed to get content info for {content_type} ID {content_id}: {e}")
             return {}
 
     def _get_emotion_info(self, item_id: int) -> Dict[str, Any]:
@@ -1316,9 +1228,7 @@ class VectorStore:
                 if not example.strip():
                     continue
 
-                example_embedding = self.embed_text(
-                    example, template_key="example", normalize=True, is_query=False
-                )
+                example_embedding = self.embed_text(example, template_key="example", normalize=True, is_query=False)
 
                 example_metadata: VectorMetadata = {
                     "original_id": int(word_id),
@@ -1341,9 +1251,7 @@ class VectorStore:
             return vector_items
 
         except Exception as e:
-            raise ContentProcessingError(
-                f"Failed to process word entry for '{term}': {str(e)}"
-            ) from e
+            raise ContentProcessingError(f"Failed to process word entry for '{term}': {str(e)}") from e
 
     def _parse_usage_examples(self, examples_string: str) -> List[str]:
         """
@@ -1405,9 +1313,7 @@ class VectorStore:
             return len(vector_items)
 
         except Exception as e:
-            raise ContentProcessingError(
-                f"Failed to store word '{entry.get('term', '')}': {str(e)}"
-            ) from e
+            raise ContentProcessingError(f"Failed to store word '{entry.get('term', '')}': {str(e)}") from e
 
     @eidosian()
     def delete_vectors_for_word(self, word_id: WordID) -> int:
@@ -1450,9 +1356,7 @@ class VectorStore:
                 self.logger.info(f"Deleted vectors for word {word_id} using filter")
 
             except Exception as inner_e:
-                self.logger.warning(
-                    f"Failed to delete vectors by filter for {word_id}: {inner_e}"
-                )
+                self.logger.warning(f"Failed to delete vectors by filter for {word_id}: {inner_e}")
 
                 # Fallback: Try explicit ID patterns
                 ids_to_delete = [
@@ -1467,23 +1371,15 @@ class VectorStore:
                 try:
                     self.collection.delete(ids=ids_to_delete)
                     deleted_count = len(ids_to_delete)
-                    self.logger.info(
-                        f"Deleted vectors for word {word_id} using explicit IDs"
-                    )
+                    self.logger.info(f"Deleted vectors for word {word_id} using explicit IDs")
                 except Exception as id_e:
-                    self.logger.error(
-                        f"Failed to delete vectors by ID for {word_id}: {id_e}"
-                    )
-                    raise VectorStoreError(
-                        "Neither ID nor filter-based deletion succeeded"
-                    )
+                    self.logger.error(f"Failed to delete vectors by ID for {word_id}: {id_e}")
+                    raise VectorStoreError("Neither ID nor filter-based deletion succeeded")
 
             return deleted_count
 
         except Exception as e:
-            raise VectorStoreError(
-                f"Failed to delete vectors for word {word_id}: {str(e)}"
-            ) from e
+            raise VectorStoreError(f"Failed to delete vectors for word {word_id}: {str(e)}") from e
 
     @eidosian()
     def upsert(
@@ -1539,9 +1435,7 @@ class VectorStore:
         except Exception as e:
             raise UpsertError(f"Failed to store vector: {str(e)}") from e
 
-    def _sanitize_metadata(
-        self, metadata: Dict[str, Any]
-    ) -> Dict[str, Union[str, int, float, bool]]:
+    def _sanitize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Union[str, int, float, bool]]:
         """
         Sanitize metadata to ensure compatibility with ChromaDB.
 
@@ -1628,9 +1522,7 @@ class VectorStore:
             >>> results = vector_store.search(query_vector=embedding)
         """
         if query_vector is None and query_text is None:
-            raise SearchError(
-                "Search requires either query_vector or query_text parameter"
-            )
+            raise SearchError("Search requires either query_vector or query_text parameter")
 
         if query_vector is not None and query_text is not None:
             raise SearchError("Provide either query_vector or query_text, not both")
@@ -1639,9 +1531,7 @@ class VectorStore:
         search_vector = self._prepare_search_vector(query_vector, query_text)
 
         # Execute the search
-        return self._execute_vector_search(
-            search_vector=search_vector, k=k, filter_metadata=filter_metadata
-        )
+        return self._execute_vector_search(search_vector=search_vector, k=k, filter_metadata=filter_metadata)
 
     def _prepare_search_vector(
         self, query_vector: Optional[NDArray[np.float32]], query_text: Optional[str]
@@ -1662,9 +1552,7 @@ class VectorStore:
         """
         # Case 1: Direct vector provided
         if query_vector is not None:
-            normalized = self._normalize_vector_dimension(
-                query_vector, context="Query vector"
-            )
+            normalized = self._normalize_vector_dimension(query_vector, context="Query vector")
             self._validate_vector_dimension(normalized, context="Query vector")
             return normalized
 
@@ -1672,12 +1560,8 @@ class VectorStore:
         assert query_text is not None, "Both query_vector and query_text cannot be None"
 
         try:
-            embedded_vector = self.embed_text(
-                query_text, template_key="search", is_query=True, normalize=True
-            )
-            normalized = self._normalize_vector_dimension(
-                embedded_vector, context="Embedded query"
-            )
+            embedded_vector = self.embed_text(query_text, template_key="search", is_query=True, normalize=True)
+            normalized = self._normalize_vector_dimension(embedded_vector, context="Embedded query")
             self._validate_vector_dimension(normalized, context="Embedded query")
             return normalized
 
@@ -1733,23 +1617,17 @@ class VectorStore:
 
             # Log search statistics
             self.logger.debug(
-                f"Vector search took {search_time:.2f}s for k={adjusted_k}, "
-                f"found {len(results)} results"
+                f"Vector search took {search_time:.2f}s for k={adjusted_k}, " f"found {len(results)} results"
             )
 
             return results
 
         except Exception as e:
             error_msg = f"Vector search failed: {str(e)}"
-            self.logger.error(
-                f"{error_msg} | Vector shape: {search_vector.shape} | "
-                f"Filter: {filter_metadata}"
-            )
+            self.logger.error(f"{error_msg} | Vector shape: {search_vector.shape} | " f"Filter: {filter_metadata}")
             raise SearchError(error_msg) from e
 
-    def _process_chromadb_results(
-        self, query_results: Dict[str, List[Any]]
-    ) -> List[SearchResultDict]:
+    def _process_chromadb_results(self, query_results: Dict[str, List[Any]]) -> List[SearchResultDict]:
         """
         Process raw ChromaDB query results into a standardized format.
 
@@ -1773,9 +1651,7 @@ class VectorStore:
             List[Optional[Dict[str, Any]]],
             query_results.get("metadatas", [[None] * len(ids)])[0],
         )
-        documents = cast(
-            List[Optional[str]], query_results.get("documents", [[None] * len(ids)])[0]
-        )
+        documents = cast(List[Optional[str]], query_results.get("documents", [[None] * len(ids)])[0])
 
         # Convert similarities to distances if needed
         if distances and min(distances) >= 0 and max(distances) <= 1:
@@ -1785,17 +1661,11 @@ class VectorStore:
         for i, result_id in enumerate(ids):
             try:
                 # Extract the original numeric ID if possible
-                original_id = (
-                    int(result_id.split("_")[1]) if "_" in result_id else int(result_id)
-                )
+                original_id = int(result_id.split("_")[1]) if "_" in result_id else int(result_id)
 
                 # Get metadata and text
                 # Cast metadata to the expected type
-                metadata = (
-                    cast(Optional[VectorMetadata], metadatas[i])
-                    if i < len(metadatas)
-                    else None
-                )
+                metadata = cast(Optional[VectorMetadata], metadatas[i]) if i < len(metadatas) else None
                 document = documents[i] if i < len(documents) else None
 
                 # Calculate distance (handle any missing values)
@@ -1843,9 +1713,7 @@ class VectorStore:
 
         return legacy_results
 
-    def _convert_similarities_to_distances(
-        self, similarities: List[float]
-    ) -> List[float]:
+    def _convert_similarities_to_distances(self, similarities: List[float]) -> List[float]:
         """
         Convert similarity scores (0-1, higher is better) to distances (lower is better).
 
@@ -1867,9 +1735,7 @@ class VectorStore:
             try:
                 self.client.persist()
             except Exception as e:
-                self.logger.warning(
-                    f"Failed to persist vector store to {self.index_path}: {str(e)}"
-                )
+                self.logger.warning(f"Failed to persist vector store to {self.index_path}: {str(e)}")
 
     def __del__(self) -> None:
         """

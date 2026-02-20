@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import sys
-import logging
 import argparse
+import logging
+import sys
+
+from eidosian_core import eidosian
 
 from .doc_forge import create_parser as create_doc_forge_parser
 from .doc_forge import main as doc_forge_main
-from eidosian_core import eidosian
+
 # Fixed import by using relative import and proper path structure
 # Importing from package root is problematic during development
 try:
@@ -15,15 +17,13 @@ try:
     from ..tests.test_command import add_test_subparsers
 except (ImportError, ValueError):
     # Fall back to absolute import (when running from source)
-     from tests.test_command import add_test_subparsers # type: ignore[import]
+    from tests.test_command import add_test_subparsers  # type: ignore[import]
 
 from .version import get_version_string
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)")
 logger = logging.getLogger("doc_forge")
+
 
 @eidosian()
 def main() -> int:
@@ -58,8 +58,10 @@ def main() -> int:
         logger.error(f"Command failed: {e}")
         if logging.getLogger().level <= logging.DEBUG:
             import traceback
+
             logger.debug(traceback.format_exc())
         return 1
+
 
 @eidosian()
 def create_main_parser() -> argparse.ArgumentParser:
@@ -68,11 +70,8 @@ def create_main_parser() -> argparse.ArgumentParser:
     Returns a fully configured argparse.ArgumentParser instance.
     """
     parser = argparse.ArgumentParser(
-        description=(
-            "Doc Forge - Transform code into interconnected documentation "
-            "under Eidosian principles."
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description=("Doc Forge - Transform code into interconnected documentation " "under Eidosian principles."),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument("--version", "-V", action="store_true", help="Show version info")
@@ -90,6 +89,7 @@ def create_main_parser() -> argparse.ArgumentParser:
     add_test_subparsers(test_subparsers)
 
     return parser
+
 
 if __name__ == "__main__":
     sys.exit(main())

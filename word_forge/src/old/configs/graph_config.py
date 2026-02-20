@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Graph visualization configuration system for Word Forge.
 
@@ -43,9 +44,7 @@ from word_forge.configs.config_types import EnvMapping, SQLTemplates
 # Relationship Dimension Types
 # ==========================================
 
-RelationshipDimension = Literal[
-    "lexical", "emotional", "affective", "connotative", "contextual"
-]
+RelationshipDimension = Literal["lexical", "emotional", "affective", "connotative", "contextual"]
 
 RelationshipStrength = float  # 0.0 to 1.0, representing connection strength
 
@@ -201,9 +200,7 @@ class GraphConfig:
     limit_edge_count: Optional[int] = 2000
 
     # Multidimensional relationship settings
-    active_dimensions: Set[RelationshipDimension] = field(
-        default_factory=lambda: {"lexical"}
-    )
+    active_dimensions: Set[RelationshipDimension] = field(default_factory=lambda: {"lexical"})
 
     dimension_weights: DimensionWeighting = field(
         default_factory=lambda: {
@@ -365,17 +362,11 @@ class GraphConfig:
             return self.relationship_colors[relationship_type]
 
         # Then check emotional relationships if active
-        if (
-            "emotional" in self.active_dimensions
-            and relationship_type in self.emotional_relationship_colors
-        ):
+        if "emotional" in self.active_dimensions and relationship_type in self.emotional_relationship_colors:
             return self.emotional_relationship_colors[relationship_type]
 
         # Then check affective relationships if active
-        if (
-            "affective" in self.active_dimensions
-            and relationship_type in self.affective_relationship_colors
-        ):
+        if "affective" in self.active_dimensions and relationship_type in self.affective_relationship_colors:
             return self.affective_relationship_colors[relationship_type]
 
         # Fall back to default color
@@ -613,9 +604,7 @@ class GraphConfig:
         if self.vis_width <= 0:
             errors.append(f"Visualization width must be positive, got {self.vis_width}")
         if self.vis_height <= 0:
-            errors.append(
-                f"Visualization height must be positive, got {self.vis_height}"
-            )
+            errors.append(f"Visualization height must be positive, got {self.vis_height}")
 
         # Validate node and edge limits
         if self.limit_node_count is not None and self.limit_node_count <= 0:
@@ -627,14 +616,10 @@ class GraphConfig:
         # Validate dimension weights
         for dimension, weight in self.dimension_weights.items():
             if weight < 0.0 or weight > 1.0:
-                errors.append(
-                    f"Dimension weight for '{dimension}' must be between 0.0 and 1.0, got {weight}"
-                )
+                errors.append(f"Dimension weight for '{dimension}' must be between 0.0 and 1.0, got {weight}")
 
         if errors:
-            raise GraphConfigError(
-                f"Configuration validation failed: {'; '.join(errors)}"
-            )
+            raise GraphConfigError(f"Configuration validation failed: {'; '.join(errors)}")
 
     # ==========================================
     # Private Helper Methods

@@ -19,10 +19,10 @@ class TestDatabaseGraphIntegration:
 
     def test_graph_manager_reads_from_database(self, tmp_path):
         """Test that GraphManager can read data from DBManager."""
-        from word_forge.database.database_manager import DBManager
-
         # Import the real GraphManager directly from its module
         import importlib
+
+        from word_forge.database.database_manager import DBManager
 
         graph_module = importlib.import_module("word_forge.graph.graph_manager")
         # Reload to get the real class, not a stub
@@ -34,9 +34,7 @@ class TestDatabaseGraphIntegration:
         db = DBManager(db_path=db_path)
 
         # Insert a word using the correct method
-        db.insert_or_update_word(
-            term="integration", definition="test definition", part_of_speech="noun"
-        )
+        db.insert_or_update_word(term="integration", definition="test definition", part_of_speech="noun")
 
         # Create graph manager with the real class
         graph = GraphManager(db_manager=db)
@@ -73,7 +71,7 @@ class TestEmotionVectorOperations:
 
     def test_emotion_vector_blend_chain(self):
         """Test chaining multiple emotion vector operations."""
-        from word_forge.emotion.emotion_types import EmotionVector, EmotionDimension
+        from word_forge.emotion.emotion_types import EmotionDimension, EmotionVector
 
         # Create two vectors
         happy = EmotionVector(
@@ -94,10 +92,7 @@ class TestEmotionVectorOperations:
         intensified = blended.intensify(factor=1.2)
 
         # Verify operations work correctly
-        assert (
-            intensified.dimensions[EmotionDimension.VALENCE]
-            > blended.dimensions[EmotionDimension.VALENCE]
-        )
+        assert intensified.dimensions[EmotionDimension.VALENCE] > blended.dimensions[EmotionDimension.VALENCE]
 
 
 class TestResultMonadChaining:
@@ -119,12 +114,7 @@ class TestResultMonadChaining:
             return Result.success(x + 10)
 
         # Chain operations
-        result = (
-            Result.success(5)
-            .flat_map(validate_positive)
-            .flat_map(double)
-            .flat_map(add_ten)
-        )
+        result = Result.success(5).flat_map(validate_positive).flat_map(double).flat_map(add_ten)
 
         assert result.is_success
         assert result.unwrap() == 20  # (5 * 2) + 10 = 20
@@ -160,14 +150,10 @@ class TestConfigurationPipeline:
         config = QueueConfig()
 
         # Apply high throughput profile
-        high_throughput = config.with_performance_profile(
-            QueuePerformanceProfile.HIGH_THROUGHPUT
-        )
+        high_throughput = config.with_performance_profile(QueuePerformanceProfile.HIGH_THROUGHPUT)
 
         # Apply low latency profile
-        low_latency = config.with_performance_profile(
-            QueuePerformanceProfile.LOW_LATENCY
-        )
+        low_latency = config.with_performance_profile(QueuePerformanceProfile.LOW_LATENCY)
 
         # High throughput should have larger batch size
         assert high_throughput.batch_size > low_latency.batch_size
@@ -192,9 +178,7 @@ class TestEmotionConfigMetrics:
 
         # Simulate many correct HAPPINESS detections
         for _ in range(20):
-            metrics.record_detection(
-                EmotionCategory.HAPPINESS, EmotionCategory.HAPPINESS
-            )
+            metrics.record_detection(EmotionCategory.HAPPINESS, EmotionCategory.HAPPINESS)
 
         # Simulate some incorrect SADNESS detections
         for _ in range(5):
@@ -214,9 +198,7 @@ class TestEmotionConfigMetrics:
         optimized = metrics.optimize_weights(config)
 
         # HAPPINESS weight should increase (high precision)
-        assert optimized[EmotionCategory.HAPPINESS] >= config.get_category_weight(
-            EmotionCategory.HAPPINESS
-        )
+        assert optimized[EmotionCategory.HAPPINESS] >= config.get_category_weight(EmotionCategory.HAPPINESS)
 
 
 class TestExceptionHierarchy:
@@ -225,9 +207,9 @@ class TestExceptionHierarchy:
     def test_exception_inheritance_chain(self):
         """Test that exception classes maintain proper inheritance."""
         from word_forge.exceptions import (
-            WordForgeError,
             GraphError,
             NodeNotFoundError,
+            WordForgeError,
         )
 
         # Create a node not found error
@@ -261,9 +243,9 @@ class TestRelationshipProcessing:
         """Test that relationship properties are consistent."""
         from word_forge.relationships import (
             RELATIONSHIP_TYPES,
+            get_relationship_color,
             get_relationship_properties,
             get_relationship_weight,
-            get_relationship_color,
             is_bidirectional,
         )
 
@@ -310,7 +292,7 @@ class TestEmotionVectorConversion:
 
     def test_emotion_vector_serialization_roundtrip(self):
         """Test that emotion vectors can be serialized and deserialized."""
-        from word_forge.emotion.emotion_types import EmotionVector, EmotionDimension
+        from word_forge.emotion.emotion_types import EmotionDimension, EmotionVector
 
         original = EmotionVector(
             dimensions={
@@ -339,8 +321,8 @@ class TestEmotionalContextIntegration:
         """Test applying emotional context to vector."""
         from word_forge.emotion.emotion_types import (
             EmotionalContext,
-            EmotionVector,
             EmotionDimension,
+            EmotionVector,
         )
 
         # Create vector and context
@@ -383,8 +365,8 @@ class TestProcessingStatsIntegration:
         """Test that processing stats accumulate correctly."""
         pytest.importorskip("nltk", reason="NLTK required for queue_worker")
         from word_forge.queue.queue_worker import (
-            ProcessingStats,
             ProcessingResult,
+            ProcessingStats,
             ProcessingStatus,
         )
 

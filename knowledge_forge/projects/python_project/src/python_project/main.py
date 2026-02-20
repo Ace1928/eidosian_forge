@@ -1,20 +1,18 @@
 """
 Main entry point for the Python project.
 """
-from typing import Dict, Any
+
+from typing import Any, Dict
 
 
 def run() -> Dict[str, Any]:
     """
     Run the main functionality of the project.
-    
+
     Returns:
         Dictionary with the results
     """
-    return {
-        "status": "success",
-        "message": "Hello from Python project!"
-    }
+    return {"status": "success", "message": "Hello from Python project!"}
 
 
 if __name__ == "__main__":

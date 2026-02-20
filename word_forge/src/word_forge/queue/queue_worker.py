@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Worker Processor Module
 
@@ -46,9 +47,7 @@ class ProcessingError(Exception):
         if self.cause:
             error_msg += f" | Cause: {str(self.cause)}"
         if self.processing_context:
-            context_str = ", ".join(
-                f"{k}={v}" for k, v in self.processing_context.items()
-            )
+            context_str = ", ".join(f"{k}={v}" for k, v in self.processing_context.items())
             error_msg += f" | Context: {{{context_str}}}"
         return error_msg
 
@@ -156,9 +155,7 @@ class ProcessingResult:
         )
 
     @classmethod
-    def error(
-        cls, term: str, status: ProcessingStatus, message: str
-    ) -> "ProcessingResult":
+    def error(cls, term: str, status: ProcessingStatus, message: str) -> "ProcessingResult":
         """Create a result for processing errors."""
         return cls(status=status, term=term, error_message=message)
 
@@ -315,9 +312,7 @@ class WordProcessor(QueueProcessor[str]):
             elif processing_result.is_duplicate:
                 self.logger.debug(f"Skipped duplicate term '{item}'")
             else:
-                self.logger.warning(
-                    f"Failed to process '{item}': {processing_result.error_message}"
-                )
+                self.logger.warning(f"Failed to process '{item}': {processing_result.error_message}")
 
             # Return success if processing succeeded or term was duplicate
             # Fix: Explicitly provide bool type parameter to Result.success
@@ -346,9 +341,7 @@ class WordProcessor(QueueProcessor[str]):
     def _process_term(self, term: str) -> ProcessingResult:
         # Basic validation
         if not term:
-            return ProcessingResult.error(
-                term, ProcessingStatus.VALIDATION_ERROR, "Empty term provided"
-            )
+            return ProcessingResult.error(term, ProcessingStatus.VALIDATION_ERROR, "Empty term provided")
 
         # Record processing start time
         start_time = time.time()
@@ -363,9 +356,7 @@ class WordProcessor(QueueProcessor[str]):
             self.parser_refiner.process_word(term)
 
             # Calculate new terms found (use property, not method call)
-            new_terms_count = (
-                self.parser_refiner.queue_manager.size - initial_queue_size
-            )
+            new_terms_count = self.parser_refiner.queue_manager.size - initial_queue_size
 
             # Get information about any relationships
             with contextlib.suppress(Exception):
@@ -409,9 +400,7 @@ class WordProcessor(QueueProcessor[str]):
                 )
 
             self.logger.warning(f"Failed to process '{term}': {str(e)}")
-            return ProcessingResult.error(
-                term, ProcessingStatus.GENERAL_ERROR, f"Error processing term: {str(e)}"
-            )
+            return ProcessingResult.error(term, ProcessingStatus.GENERAL_ERROR, f"Error processing term: {str(e)}")
 
     def _categorize_relationships(self, relationships: List[Any]) -> Dict[str, int]:
         """
@@ -564,9 +553,7 @@ class ParallelWordProcessor:
                 self._workers.append(worker)
                 worker.start()
 
-            self.logger.info(
-                f"Started parallel word processor with {self.config.worker_count} workers"
-            )
+            self.logger.info(f"Started parallel word processor with {self.config.worker_count} workers")
 
     @eidosian()
     def stop(self, wait: bool = True, timeout: float = 5.0) -> None:

@@ -10,23 +10,23 @@ from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 from agent_forge.core import events as bus
 from agent_forge.core import workspace
 
-from .modules.attention import AttentionModule
 from .modules.affect import AffectModule
+from .modules.attention import AttentionModule
 from .modules.autotune import AutotuneModule
 from .modules.experiment_designer import ExperimentDesignerModule
 from .modules.intero import InteroModule
 from .modules.knowledge_bridge import KnowledgeBridgeModule
 from .modules.memory_bridge import MemoryBridgeModule
 from .modules.meta import MetaModule
-from .modules.policy import PolicyModule
 from .modules.phenomenology_probe import PhenomenologyProbeModule
+from .modules.policy import PolicyModule
 from .modules.report import ReportModule
-from .modules.sense import SenseModule
 from .modules.self_model_ext import SelfModelExtModule
+from .modules.sense import SenseModule
 from .modules.simulation import SimulationModule
-from .modules.world_model import WorldModelModule
 from .modules.working_set import WorkingSetModule
 from .modules.workspace_competition import WorkspaceCompetitionModule
+from .modules.world_model import WorldModelModule
 from .state_store import ModuleStateStore
 from .tuning.overlay import load_tuned_overlay, resolve_config
 from .types import Module, TickContext, merged_config
@@ -60,9 +60,7 @@ class ConsciousnessKernel:
         self.rng = random.Random(seed)
         self.state_store = ModuleStateStore(
             self.state_dir,
-            autosave_interval_secs=float(
-                self._base_config.get("state_autosave_interval_secs", 2.0)
-            ),
+            autosave_interval_secs=float(self._base_config.get("state_autosave_interval_secs", 2.0)),
         )
         self._refresh_config()
         self.beat_count = int(self.state_store.get_meta("beat_count", 0) or 0)
@@ -328,12 +326,8 @@ class ConsciousnessKernel:
         quarantined = [row for row in rows if bool(row.get("quarantined"))]
         return {
             "enabled": bool(config.get("kernel_watchdog_enabled", True)),
-            "max_consecutive_errors": int(
-                config.get("kernel_watchdog_max_consecutive_errors", 3) or 3
-            ),
-            "quarantine_beats": int(
-                config.get("kernel_watchdog_quarantine_beats", 20) or 20
-            ),
+            "max_consecutive_errors": int(config.get("kernel_watchdog_max_consecutive_errors", 3) or 3),
+            "quarantine_beats": int(config.get("kernel_watchdog_quarantine_beats", 20) or 20),
             "beat_count": int(beat_count),
             "module_count": len(rows),
             "quarantined_modules": len(quarantined),
@@ -345,19 +339,11 @@ class ConsciousnessKernel:
     @staticmethod
     def _payload_safety_status_from_config(config: Mapping[str, Any]) -> dict[str, Any]:
         return {
-            "max_payload_bytes": int(
-                config.get("consciousness_max_payload_bytes", 16384) or 16384
-            ),
+            "max_payload_bytes": int(config.get("consciousness_max_payload_bytes", 16384) or 16384),
             "max_depth": int(config.get("consciousness_max_depth", 8) or 8),
-            "max_collection_items": int(
-                config.get("consciousness_max_collection_items", 64) or 64
-            ),
-            "max_string_chars": int(
-                config.get("consciousness_max_string_chars", 4096) or 4096
-            ),
-            "truncation_event_enabled": bool(
-                config.get("consciousness_payload_truncation_event", True)
-            ),
+            "max_collection_items": int(config.get("consciousness_max_collection_items", 64) or 64),
+            "max_string_chars": int(config.get("consciousness_max_string_chars", 4096) or 4096),
+            "truncation_event_enabled": bool(config.get("consciousness_payload_truncation_event", True)),
         }
 
     @classmethod
@@ -372,9 +358,7 @@ class ConsciousnessKernel:
         base_config = merged_config(config or {})
         store = ModuleStateStore(
             state_path,
-            autosave_interval_secs=float(
-                base_config.get("state_autosave_interval_secs", 2.0)
-            ),
+            autosave_interval_secs=float(base_config.get("state_autosave_interval_secs", 2.0)),
         )
         tuned_overlay: Mapping[str, Any] = {}
         if respect_tuned_overlay:
@@ -394,9 +378,7 @@ class ConsciousnessKernel:
                 config=resolved_config,
                 beat_count=beat_count,
             ),
-            "payload_safety": cls._payload_safety_status_from_config(
-                resolved_config
-            ),
+            "payload_safety": cls._payload_safety_status_from_config(resolved_config),
         }
 
     def watchdog_status(self) -> dict[str, Any]:

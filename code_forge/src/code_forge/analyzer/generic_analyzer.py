@@ -7,7 +7,6 @@ from typing import Any, Optional
 
 from eidosian_core import eidosian
 
-
 _LANGUAGE_BY_EXT = {
     ".py": "python",
     ".pyi": "python",
@@ -62,21 +61,15 @@ class GenericCodeAnalyzer:
             ("enum", re.compile(r"\benum\s+([A-Za-z_][A-Za-z0-9_]*)")),
             (
                 "function",
-                re.compile(
-                    r"\b(?:function|fn|func)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("
-                ),
+                re.compile(r"\b(?:function|fn|func)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("),
             ),
             (
                 "function",
-                re.compile(
-                    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>"
-                ),
+                re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>"),
             ),
             (
                 "function",
-                re.compile(
-                    r"\b([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\([^)]*\)\s*=>"
-                ),
+                re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\([^)]*\)\s*=>"),
             ),
             (
                 "method",

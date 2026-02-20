@@ -26,7 +26,6 @@ Key Components:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import sqlite3
@@ -36,10 +35,10 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 import networkx as nx
 import numpy as np
+from eidosian_core import eidosian
 
 # Import pyvis with a type ignore comment to fix the missing stub issue
 from pyvis.network import Network  # type: ignore
-
 from word_forge.database import database_manager as database_manager  # File/Module
 from word_forge.database.database_manager import DBManager  # Class/Instance
 from word_forge.exceptions import (
@@ -115,16 +114,12 @@ class GraphManager:
             db_manager: Database manager providing access to word data
         """
         self.db_manager = db_manager
-        self.g: nx.Graph = (
-            nx.Graph()
-        )  # Explicitly specify the type for proper type checking
+        self.g: nx.Graph = nx.Graph()  # Explicitly specify the type for proper type checking
         self._term_to_id: Dict[str, int] = {}
         self._dimensions: int = 2  # Default is 2D for backward compatibility
         self._positions: Dict[int, Tuple[float, ...]] = {}
         self._relationship_counts: Dict[str, int] = {}
-        self._emotional_contexts: Dict[str, Dict[str, float]] = (
-            {}
-        )  # Initialize contexts
+        self._emotional_contexts: Dict[str, Dict[str, float]] = {}  # Initialize contexts
 
         # Ensure the database parent directory exists
         db_path = Path(self.db_manager.db_path)
@@ -281,10 +276,7 @@ class GraphManager:
                 ]
             ):
                 dimension = "emotional"
-            elif any(
-                rel_type.startswith(prefix)
-                for prefix in ["positive_", "negative_", "high_", "low_"]
-            ):
+            elif any(rel_type.startswith(prefix) for prefix in ["positive_", "negative_", "high_", "low_"]):
                 dimension = "affective"
 
             # Add edge with rich attributes
@@ -302,9 +294,7 @@ class GraphManager:
             )
 
             # Track relationship counts for statistics
-            self._relationship_counts[rel_type] = (
-                self._relationship_counts.get(rel_type, 0) + 1
-            )
+            self._relationship_counts[rel_type] = self._relationship_counts.get(rel_type, 0) + 1
 
         # Generate layout positions
         self._compute_layout()
@@ -320,9 +310,7 @@ class GraphManager:
             Dictionary with weight, color, and bidirectional properties
         """
         # Ensure result is correctly typed
-        result: RelationshipProperties = RELATIONSHIP_TYPES.get(
-            rel_type, RELATIONSHIP_TYPES["default"]
-        )
+        result: RelationshipProperties = RELATIONSHIP_TYPES.get(rel_type, RELATIONSHIP_TYPES["default"])
         return result
 
     def _compute_layout(self, algorithm: Optional[LayoutAlgorithm] = None) -> None:
@@ -355,9 +343,7 @@ class GraphManager:
 
         try:
             # Choose layout algorithm based on dimensions
-            algorithm_to_use: LayoutAlgorithm = (
-                algorithm or config.default_layout
-            )  # Use config default
+            algorithm_to_use: LayoutAlgorithm = algorithm or config.default_layout  # Use config default
 
             pos: PositionDict = self._calculate_layout_positions(algorithm_to_use)
 
@@ -419,9 +405,7 @@ class GraphManager:
                         if n in self.g
                     }
                 except Exception as e:
-                    raise GraphError(
-                        f"Failed during 3D spectral layout calculation: {e}", e
-                    ) from e
+                    raise GraphError(f"Failed during 3D spectral layout calculation: {e}", e) from e
             else:  # Default to 3D spring layout if algorithm is unknown or not spectral
                 logging.warning(
                     f"Unknown or unsupported 3D layout algorithm '{algorithm}', defaulting to 'force_directed'."
@@ -436,9 +420,7 @@ class GraphManager:
             elif algorithm == "circular":
                 layout_func = nx.circular_layout
             else:
-                logging.warning(
-                    f"Unknown 2D layout algorithm '{algorithm}', defaulting to 'force_directed'."
-                )
+                logging.warning(f"Unknown 2D layout algorithm '{algorithm}', defaulting to 'force_directed'.")
                 layout_func = nx.spring_layout
 
         if layout_func:
@@ -449,14 +431,9 @@ class GraphManager:
                 # Ensure node IDs are correctly typed if necessary (NetworkX usually handles this)
                 positions_raw = layout_func(**kwargs)
                 # Ensure positions are tuples of floats
-                return {
-                    node: tuple(float(coord) for coord in pos)
-                    for node, pos in positions_raw.items()
-                }
+                return {node: tuple(float(coord) for coord in pos) for node, pos in positions_raw.items()}
             except Exception as e:
-                raise GraphError(
-                    f"Layout algorithm '{algorithm}' failed: {e}", e
-                ) from e
+                raise GraphError(f"Layout algorithm '{algorithm}' failed: {e}", e) from e
         else:
             # This case should ideally not be reached due to defaults, but added for safety
             raise GraphError(
@@ -559,9 +536,7 @@ class GraphManager:
             for node_id, attrs in self.g.nodes(data=True):
                 node_id_int = int(node_id)  # Ensure int key
                 try:
-                    if self._dimensions == 3 and all(
-                        k in attrs for k in ("x", "y", "z")
-                    ):
+                    if self._dimensions == 3 and all(k in attrs for k in ("x", "y", "z")):
                         self._positions[node_id_int] = (
                             float(attrs["x"]),
                             float(attrs["y"]),
@@ -573,9 +548,7 @@ class GraphManager:
                             float(attrs["y"]),
                         )
                 except (ValueError, TypeError) as pos_err:
-                    logging.warning(
-                        f"Could not parse position for node {node_id_int}: {pos_err}"
-                    )
+                    logging.warning(f"Could not parse position for node {node_id_int}: {pos_err}")
 
             # Rebuild relationship counts
             self._relationship_counts = {}
@@ -583,9 +556,7 @@ class GraphManager:
                 # Use 'relationship' key consistent with build_graph
                 rel_type = data.get("relationship", "default")
                 if isinstance(rel_type, str):  # Ensure rel_type is a string
-                    self._relationship_counts[rel_type] = (
-                        self._relationship_counts.get(rel_type, 0) + 1
-                    )
+                    self._relationship_counts[rel_type] = self._relationship_counts.get(rel_type, 0) + 1
             logging.info(f"Graph loaded successfully from {gexf_path}")
 
         except Exception as e:
@@ -628,11 +599,7 @@ class GraphManager:
         all_words, all_relationships = self._fetch_data()
 
         # Find words not yet in the graph
-        new_words = [
-            (word_id, term)
-            for word_id, term in all_words
-            if word_id not in current_ids and term
-        ]
+        new_words = [(word_id, term) for word_id, term in all_words if word_id not in current_ids and term]
         new_word_count = len(new_words)
 
         # Add new words to the graph
@@ -670,16 +637,12 @@ class GraphManager:
                     new_edges += 1
 
                     # Update relationship counts
-                    self._relationship_counts[rel_type] = (
-                        self._relationship_counts.get(rel_type, 0) + 1
-                    )
+                    self._relationship_counts[rel_type] = self._relationship_counts.get(rel_type, 0) + 1
 
         # Update layout only if we added new nodes/edges
         if new_word_count > 0 or new_edges > 0:
             self._update_layout_incrementally()
-            logging.info(
-                f"Updated graph: Added {new_word_count} nodes and {new_edges} edges."
-            )
+            logging.info(f"Updated graph: Added {new_word_count} nodes and {new_edges} edges.")
         else:
             logging.info("Graph update: No new nodes or edges added.")
 
@@ -702,10 +665,7 @@ class GraphManager:
             ]
         ):
             return "emotional"
-        elif any(
-            rel_type.startswith(prefix)
-            for prefix in ["positive_", "negative_", "high_", "low_"]
-        ):
+        elif any(rel_type.startswith(prefix) for prefix in ["positive_", "negative_", "high_", "low_"]):
             return "affective"
         else:
             return "lexical"
@@ -724,9 +684,7 @@ class GraphManager:
         """
         try:
             # Get nodes without positions (new nodes)
-            nodes_without_pos: List[int] = [
-                int(n) for n in self.g.nodes() if n not in self._positions
-            ]
+            nodes_without_pos: List[int] = [int(n) for n in self.g.nodes() if n not in self._positions]
 
             if not nodes_without_pos:
                 logging.info("Incremental layout update: No new nodes to position.")
@@ -738,16 +696,10 @@ class GraphManager:
             # Fine-tune positions with a few iterations of force-directed layout
             # but only move new nodes significantly
             # Use current positions as starting point
-            pos_start = {
-                nid: tuple(p) for nid, p in self._positions.items() if nid in self.g
-            }  # Ensure tuples
+            pos_start = {nid: tuple(p) for nid, p in self._positions.items() if nid in self.g}  # Ensure tuples
 
             # Identify nodes that already had positions
-            fixed_nodes = [
-                n
-                for n in self.g.nodes()
-                if n in pos_start and n not in nodes_without_pos
-            ]
+            fixed_nodes = [n for n in self.g.nodes() if n in pos_start and n not in nodes_without_pos]
 
             # Run spring layout, fixing old nodes, starting from current positions
             pos_updated = nx.spring_layout(
@@ -761,10 +713,7 @@ class GraphManager:
             )
 
             # Update positions - convert numpy arrays to tuples to match type annotation
-            self._positions = {
-                node: tuple(float(p) for p in position)
-                for node, position in pos_updated.items()
-            }
+            self._positions = {node: tuple(float(p) for p in position) for node, position in pos_updated.items()}
 
             # Update node attributes with new positions
             for node_id, position in self._positions.items():
@@ -777,9 +726,7 @@ class GraphManager:
                         self.g.nodes[node_id]["x"] = position[0]
                         self.g.nodes[node_id]["y"] = position[1]
 
-            logging.info(
-                f"Incrementally updated layout for {len(nodes_without_pos)} new nodes."
-            )
+            logging.info(f"Incrementally updated layout for {len(nodes_without_pos)} new nodes.")
 
         except Exception as e:
             error_msg = f"Failed to update graph layout incrementally: {e}"
@@ -800,9 +747,7 @@ class GraphManager:
                 continue  # Skip if node somehow isn't in graph
 
             # Explicitly type the neighbors list to satisfy type checker
-            neighbors: List[int] = list(
-                self.g.neighbors(node)
-            )  # Neighbors are node IDs (int)
+            neighbors: List[int] = list(self.g.neighbors(node))  # Neighbors are node IDs (int)
 
             # Get positions of neighbors that *already* have positions
             neighbor_positions = [
@@ -919,15 +864,11 @@ class GraphManager:
         try:
             words, _ = self._fetch_data()
             if words:
-                logging.info(
-                    "Database already contains data. Skipping sample data insertion."
-                )
+                logging.info("Database already contains data. Skipping sample data insertion.")
                 return False
         except GraphError as e:
             # If fetching fails (e.g., tables don't exist), proceed to add data
-            logging.warning(
-                f"Could not fetch initial data, attempting to add sample data: {e}"
-            )
+            logging.warning(f"Could not fetch initial data, attempting to add sample data: {e}")
 
         # Database is empty or tables missing, add sample data
         logging.info("Database appears empty. Attempting to add sample data.")
@@ -956,25 +897,19 @@ class GraphManager:
                                 inserted_word_ids[term.lower()] = inserted_id
                             else:
                                 # Fetch ID if lastrowid is not supported/returned
-                                cursor.execute(
-                                    "SELECT id FROM words WHERE term = ?", (term,)
-                                )
+                                cursor.execute("SELECT id FROM words WHERE term = ?", (term,))
                                 row = cursor.fetchone()
                                 if row:
                                     inserted_word_ids[term.lower()] = row[0]
                         except sqlite3.IntegrityError:
                             # Word might already exist, fetch its ID
-                            cursor.execute(
-                                "SELECT id FROM words WHERE term = ?", (term,)
-                            )
+                            cursor.execute("SELECT id FROM words WHERE term = ?", (term,))
                             row = cursor.fetchone()
                             if row:
                                 inserted_word_ids[term.lower()] = row[0]
                             logging.warning(f"Sample word '{term}' already exists.")
                         except sqlite3.Error as insert_err:
-                            logging.error(
-                                f"Error inserting sample word '{term}': {insert_err}"
-                            )
+                            logging.error(f"Error inserting sample word '{term}': {insert_err}")
 
                 # Add sample relationships from config
                 for rel_data in config.sample_relationships:  # Use sample_relationships
@@ -984,9 +919,7 @@ class GraphManager:
 
                     if term1 and term2 and rel_type:
                         id1 = inserted_word_ids.get(term1.lower())
-                        id2 = inserted_word_ids.get(
-                            term2.lower()
-                        )  # Need ID for term2 as well
+                        id2 = inserted_word_ids.get(term2.lower())  # Need ID for term2 as well
 
                         if id1 is not None and id2 is not None:
                             try:
@@ -1000,9 +933,7 @@ class GraphManager:
                                     ),  # Insert using word_id, related_term text
                                 )
                             except sqlite3.IntegrityError:
-                                logging.warning(
-                                    f"Sample relationship {term1}-{rel_type}-{term2} already exists."
-                                )
+                                logging.warning(f"Sample relationship {term1}-{rel_type}-{term2} already exists.")
                             except sqlite3.Error as rel_err:
                                 logging.error(
                                     f"Error inserting sample relationship {term1}-{rel_type}-{term2}: {rel_err}"
@@ -1051,29 +982,23 @@ class GraphManager:
                 # Fetchall returns list of Row objects, convert to tuples
                 words_raw = cursor.fetchall()
                 words = [
-                    (row["id"], row["term"])
-                    for row in words_raw
-                    if row["id"] is not None and row["term"] is not None
+                    (row["id"], row["term"]) for row in words_raw if row["id"] is not None and row["term"] is not None
                 ]
 
                 # Check if relationships table exists
                 cursor.execute(database_manager.SQL_CHECK_RELATIONSHIPS_TABLE)
                 if not cursor.fetchone():
-                    logging.warning(
-                        "Database table 'relationships' not found. Graph will have no edges."
-                    )
+                    logging.warning("Database table 'relationships' not found. Graph will have no edges.")
                     return (
                         words,
                         [],
                     )  # Return words without relationships if table missing
 
                 # Get relationships - ensure column names match the actual schema
-                cursor.execute(
-                    """
+                cursor.execute("""
                     SELECT word_id, related_term, relationship_type
                     FROM relationships
-                """
-                )
+                """)
                 relationships_raw = cursor.fetchall()
                 relationships = [
                     (row["word_id"], row["related_term"], row["relationship_type"])
@@ -1085,9 +1010,7 @@ class GraphManager:
 
                 return words, relationships
         except sqlite3.Error as db_err:
-            raise GraphError(
-                f"Failed to fetch graph data due to database error: {db_err}", db_err
-            ) from db_err
+            raise GraphError(f"Failed to fetch graph data due to database error: {db_err}", db_err) from db_err
         except Exception as e:
             # Ensure proper error propagation with cause parameter
             raise GraphError(f"Failed to fetch graph data: {e}", e) from e
@@ -1128,9 +1051,7 @@ class GraphManager:
 
         if term_id not in self.g:
             # This case should ideally not happen if _term_to_id is consistent with g
-            raise NodeNotFoundError(
-                f"Term ID {term_id} for '{term}' not found in graph nodes."
-            )
+            raise NodeNotFoundError(f"Term ID {term_id} for '{term}' not found in graph nodes.")
 
         for neighbor_id in self.g.neighbors(term_id):
             edge_data = self.g.get_edge_data(term_id, neighbor_id)
@@ -1148,9 +1069,7 @@ class GraphManager:
                     if neighbor_term:
                         related_terms.append(neighbor_term)
                 else:
-                    logging.warning(
-                        f"Neighbor ID {neighbor_id} found in edges but not in graph nodes."
-                    )
+                    logging.warning(f"Neighbor ID {neighbor_id} found in edges but not in graph nodes.")
 
         return related_terms
 
@@ -1245,9 +1164,7 @@ class GraphManager:
                 try:
                     node_id, attrs = next(node_iterator)
                     term = attrs.get("term", "Unknown")
-                    sample_nodes.append(
-                        {"id": int(node_id), "term": str(term)}
-                    )  # Ensure types
+                    sample_nodes.append({"id": int(node_id), "term": str(term)})  # Ensure types
                 except StopIteration:
                     break
 
@@ -1258,16 +1175,8 @@ class GraphManager:
                 try:
                     n1, n2, attrs = next(edge_iterator)
                     # Ensure nodes exist before accessing attributes
-                    term1 = (
-                        self.g.nodes[n1].get("term", "Unknown")
-                        if n1 in self.g
-                        else "Unknown"
-                    )
-                    term2 = (
-                        self.g.nodes[n2].get("term", "Unknown")
-                        if n2 in self.g
-                        else "Unknown"
-                    )
+                    term1 = self.g.nodes[n1].get("term", "Unknown") if n1 in self.g else "Unknown"
+                    term2 = self.g.nodes[n2].get("term", "Unknown") if n2 in self.g else "Unknown"
                     # Use 'relationship' key consistent with build_graph
                     rel_type = attrs.get("relationship", "related")
                     sample_relationships.append(
@@ -1438,9 +1347,7 @@ class GraphManager:
         self._add_edges_to_visualization(net, target_graph)
 
         # Determine output path and ensure directory exists
-        viz_path_str = output_path or str(
-            config.get_visualization_path() / "graph.html"
-        )
+        viz_path_str = output_path or str(config.get_visualization_path() / "graph.html")
         viz_path = Path(viz_path_str)
         viz_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1548,9 +1455,7 @@ class GraphManager:
 
         net.set_options(options)
 
-    def _add_nodes_to_visualization(
-        self, net: Network, graph_to_render: nx.Graph, use_3d: bool
-    ) -> None:
+    def _add_nodes_to_visualization(self, net: Network, graph_to_render: nx.Graph, use_3d: bool) -> None:
         """
         Add nodes from the target graph to the pyvis visualization network.
 
@@ -1580,9 +1485,7 @@ class GraphManager:
             title = f"Term: {term}<br>ID: {node_id}<br>Connections: {degree}"
 
             # Size node based on degree (connectivity) within the rendered graph
-            size = config.min_node_size + (
-                degree * (config.max_node_size - config.min_node_size) / max_degree
-            )
+            size = config.min_node_size + (degree * (config.max_node_size - config.min_node_size) / max_degree)
 
             # Position in 3D or 2D space if available from the original layout
             pos = self._positions.get(node_id)
@@ -1595,16 +1498,12 @@ class GraphManager:
                         x = float(pos[0]) * pos_scale
                         y = float(pos[1]) * pos_scale
                         z = float(pos[2]) * pos_scale
-                    elif (
-                        len(pos) >= 2
-                    ):  # Use 2D position if available or if not rendering 3D
+                    elif len(pos) >= 2:  # Use 2D position if available or if not rendering 3D
                         x = float(pos[0]) * pos_scale
                         y = float(pos[1]) * pos_scale
                         z = 0.0  # Set z to 0 for 2D rendering in pyvis
                 except (ValueError, TypeError, IndexError):
-                    logging.warning(
-                        f"Invalid position format for node {node_id}: {pos}. Using default."
-                    )
+                    logging.warning(f"Invalid position format for node {node_id}: {pos}. Using default.")
                     x, y, z = None, None, None  # Fallback if conversion fails
 
             # Add node to pyvis network
@@ -1620,9 +1519,7 @@ class GraphManager:
                 # color={"border": "#023047", "background": "#219ebc"},
             )
 
-    def _add_edges_to_visualization(
-        self, net: Network, graph_to_render: nx.Graph
-    ) -> None:
+    def _add_edges_to_visualization(self, net: Network, graph_to_render: nx.Graph) -> None:
         """
         Add edges from the target graph to the pyvis network visualization.
 
@@ -1645,9 +1542,7 @@ class GraphManager:
             color = data.get("color", config.default_edge_color)  # Use config default
             bidirectional = data.get("bidirectional", True)
             dimension = data.get("dimension", "lexical")
-            title = data.get(
-                "title", f"{rel_type}"
-            )  # Use pre-generated title or just type
+            title = data.get("title", f"{rel_type}")  # Use pre-generated title or just type
 
             # Set width based on weight (scaled according to config)
             # Ensure weight is float for calculation
@@ -1656,9 +1551,7 @@ class GraphManager:
             except (ValueError, TypeError):
                 edge_weight_float = 1.0  # Default weight if conversion fails
 
-            width = config.min_edge_width + (
-                edge_weight_float * (config.max_edge_width - config.min_edge_width)
-            )
+            width = config.min_edge_width + (edge_weight_float * (config.max_edge_width - config.min_edge_width))
             # Clamp width to min/max bounds
             width = max(config.min_edge_width, min(width, config.max_edge_width))
 
@@ -1729,9 +1622,7 @@ class GraphManager:
             except GraphError as e:
                 # Restore original dimensions before raising
                 self._dimensions = original_dimensions
-                raise GraphError(
-                    f"Failed to compute 3D layout for visualization: {e}", e
-                ) from e
+                raise GraphError(f"Failed to compute 3D layout for visualization: {e}", e) from e
 
         try:
             # Call the main visualization method with 3D flag forced
@@ -1788,30 +1679,22 @@ class GraphManager:
         center_id = self._term_to_id[term_lower]
 
         if center_id not in self.g:
-            raise NodeNotFoundError(
-                f"Center node ID {center_id} for term '{term}' not found in graph nodes."
-            )
+            raise NodeNotFoundError(f"Center node ID {center_id} for term '{term}' not found in graph nodes.")
 
         # Use NetworkX's ego_graph for efficient subgraph extraction by radius
         # It includes the center node and all nodes within the specified radius (depth)
         # and the edges between them.
         try:
             # ego_graph radius corresponds to depth (number of hops)
-            subgraph_nodes = nx.single_source_shortest_path_length(
-                self.g, center_id, cutoff=depth
-            ).keys()
+            subgraph_nodes = nx.single_source_shortest_path_length(self.g, center_id, cutoff=depth).keys()
             subgraph = self.g.subgraph(subgraph_nodes).copy()
             return subgraph
         except nx.NetworkXError as e:
             # Handle potential NetworkX errors during subgraph creation
-            raise GraphError(
-                f"Failed to extract subgraph for '{term}' with depth {depth}: {e}", e
-            ) from e
+            raise GraphError(f"Failed to extract subgraph for '{term}' with depth {depth}: {e}", e) from e
 
     @eidosian()
-    def export_subgraph(
-        self, term: str, depth: int = 1, output_path: Optional[str] = None
-    ) -> str:
+    def export_subgraph(self, term: str, depth: int = 1, output_path: Optional[str] = None) -> str:
         """
         Export a subgraph centered on a specific term to a GEXF file.
 
@@ -1856,9 +1739,7 @@ class GraphManager:
 
             # Save the subgraph to GEXF
             nx.write_gexf(subgraph, str(export_path))  # Pass path as string
-            logging.info(
-                f"Subgraph for '{term}' (depth {depth}) exported to {export_path}"
-            )
+            logging.info(f"Subgraph for '{term}' (depth {depth}) exported to {export_path}")
             return str(export_path.resolve())  # Return absolute path
         except Exception as e:
             error_msg = f"Failed to export subgraph to {export_path}: {e}"
@@ -1871,9 +1752,7 @@ class GraphManager:
         weight_emotional: float = 1.0,
         emotion_only: bool = False,
         resolution: float = 1.0,  # Added resolution parameter for Louvain
-    ) -> Dict[
-        int, List[Dict[str, Union[str, float, List[str], bool, None]]]
-    ]:  # Allow None for valence/arousal
+    ) -> Dict[int, List[Dict[str, Union[str, float, List[str], bool, None]]]]:  # Allow None for valence/arousal
         """
         Identify semantic and emotional clusters (communities) in the graph using Louvain.
 
@@ -1922,9 +1801,7 @@ class GraphManager:
 
         try:
             # --- Community Detection Function Selection ---
-            PartitionFunction = Callable[
-                [nx.Graph, Optional[str], float], Dict[Any, int]
-            ]
+            PartitionFunction = Callable[[nx.Graph, Optional[str], float], Dict[Any, int]]
             best_partition_func: Optional[PartitionFunction] = None
 
             try:
@@ -1934,9 +1811,7 @@ class GraphManager:
                 # Wrapper to match expected signature (graph, weight_key, resolution)
                 @eidosian()
                 def louvain_wrapper(graph, weight="weight", resolution=1.0):
-                    return community_louvain.best_partition(
-                        graph, weight=weight, resolution=resolution
-                    )
+                    return community_louvain.best_partition(graph, weight=weight, resolution=resolution)
 
                 best_partition_func = louvain_wrapper
                 logging.debug("Using 'python-louvain' for community detection.")
@@ -1949,9 +1824,7 @@ class GraphManager:
                         @eidosian()
                         def nx_louvain_wrapper(graph, weight="weight", resolution=1.0):
                             communities_list = list(
-                                nx.algorithms.community.louvain_communities(
-                                    graph, weight=weight, resolution=resolution
-                                )
+                                nx.algorithms.community.louvain_communities(graph, weight=weight, resolution=resolution)
                             )
                             partition_dict = {}
                             for i, community_set in enumerate(communities_list):
@@ -1960,13 +1833,9 @@ class GraphManager:
                             return partition_dict
 
                         best_partition_func = nx_louvain_wrapper
-                        logging.debug(
-                            "Using 'networkx.algorithms.community.louvain_communities'."
-                        )
+                        logging.debug("Using 'networkx.algorithms.community.louvain_communities'.")
                     else:
-                        raise AttributeError(
-                            "NetworkX version lacks louvain_communities function."
-                        )
+                        raise AttributeError("NetworkX version lacks louvain_communities function.")
                 except (ImportError, AttributeError) as nx_err:
                     logging.error(f"NetworkX community detection error: {nx_err}")
                     raise ImportError(
@@ -1976,9 +1845,7 @@ class GraphManager:
 
             if best_partition_func is None:
                 # Should not happen if import logic is correct, but safety check
-                raise GraphError(
-                    "Could not find a suitable Louvain community detection function."
-                )
+                raise GraphError("Could not find a suitable Louvain community detection function.")
 
             # --- Graph Preparation for Clustering ---
             # Create a graph copy to modify weights without affecting the original
@@ -1994,14 +1861,10 @@ class GraphManager:
                     if dimension != "emotional":
                         edges_to_remove.append((u, v))
                     else:  # Keep emotional edges, apply weight multiplier if needed
-                        graph_for_clustering[u][v]["weight"] = (
-                            current_weight * weight_emotional
-                        )
+                        graph_for_clustering[u][v]["weight"] = current_weight * weight_emotional
                 elif weight_emotional != 1.0 and dimension == "emotional":
                     # Apply weight multiplier only to emotional edges
-                    graph_for_clustering[u][v]["weight"] = (
-                        current_weight * weight_emotional
-                    )
+                    graph_for_clustering[u][v]["weight"] = current_weight * weight_emotional
                 else:
                     # Ensure weight attribute is float even if not modified
                     graph_for_clustering[u][v]["weight"] = current_weight
@@ -2009,19 +1872,12 @@ class GraphManager:
             graph_for_clustering.remove_edges_from(edges_to_remove)
 
             # Check if graph became empty after filtering
-            if (
-                graph_for_clustering.number_of_nodes() == 0
-                or graph_for_clustering.number_of_edges() == 0
-            ):
-                logging.warning(
-                    "Graph became empty after applying emotion filtering. No clusters found."
-                )
+            if graph_for_clustering.number_of_nodes() == 0 or graph_for_clustering.number_of_edges() == 0:
+                logging.warning("Graph became empty after applying emotion filtering. No clusters found.")
                 return {}
 
             # --- Community Detection Execution ---
-            partition = best_partition_func(
-                graph_for_clustering, weight="weight", resolution=resolution
-            )
+            partition = best_partition_func(graph_for_clustering, weight="weight", resolution=resolution)
 
             # --- Post-processing and Data Collection ---
             communities_raw: Dict[int, List[int]] = {}  # Group nodes by community ID
@@ -2032,13 +1888,9 @@ class GraphManager:
 
             # Calculate betweenness centrality on the graph used for clustering
             try:
-                centrality = nx.betweenness_centrality(
-                    graph_for_clustering, weight="weight", normalized=True
-                )
+                centrality = nx.betweenness_centrality(graph_for_clustering, weight="weight", normalized=True)
                 # Use median centrality as threshold for 'central' status
-                median_centrality = (
-                    np.median(list(centrality.values())) if centrality else 0.0
-                )
+                median_centrality = np.median(list(centrality.values())) if centrality else 0.0
             except Exception as cent_err:
                 logging.warning(
                     f"Could not calculate centrality for cluster analysis: {cent_err}. 'central' attribute will be False."
@@ -2047,9 +1899,7 @@ class GraphManager:
                 median_centrality = 0.0
 
             # Format results, gathering required data for each term
-            communities_result: Dict[
-                int, List[Dict[str, Union[str, float, List[str], bool, None]]]
-            ] = {}
+            communities_result: Dict[int, List[Dict[str, Union[str, float, List[str], bool, None]]]] = {}
             for community_id, node_ids in communities_raw.items():
                 if len(node_ids) < min_community_size:
                     continue  # Skip small communities
@@ -2095,12 +1945,8 @@ class GraphManager:
                             "valence": float(valence) if valence is not None else None,
                             "arousal": float(arousal) if arousal is not None else None,
                             "central": is_central,
-                            "related_dimensions": sorted(
-                                list(related_dimensions)
-                            ),  # Sort for consistency
-                            "meta_emotions": sorted(
-                                list(set(meta_emotions))
-                            ),  # Unique and sorted
+                            "related_dimensions": sorted(list(related_dimensions)),  # Sort for consistency
+                            "meta_emotions": sorted(list(set(meta_emotions))),  # Unique and sorted
                         }
                     )
 
@@ -2209,9 +2055,7 @@ class GraphManager:
             # Prepare attributes dictionary (copy edge data)
             attributes = data.copy()
 
-            results.append(
-                (str(source_term), str(target_term), str(edge_rel_type), attributes)
-            )
+            results.append((str(source_term), str(target_term), str(edge_rel_type), attributes))
 
         return results
 
@@ -2269,9 +2113,7 @@ class GraphManager:
 
         center_id = self._term_to_id[term_lower]
         if center_id not in self.g:
-            raise NodeNotFoundError(
-                f"Center node ID {center_id} for term '{term}' not found in graph nodes."
-            )
+            raise NodeNotFoundError(f"Center node ID {center_id} for term '{term}' not found in graph nodes.")
 
         # --- Node Selection (BFS on Emotional Edges) ---
         nodes_to_include: Set[int] = {center_id}
@@ -2306,9 +2148,7 @@ class GraphManager:
                     # Filter 3: Check minimum intensity/weight
                     # Use 'intensity' if present, otherwise 'weight'
                     weight = float(edge_data.get("weight", 0.0))
-                    intensity = float(
-                        edge_data.get("intensity", weight)
-                    )  # Fallback to weight
+                    intensity = float(edge_data.get("intensity", weight))  # Fallback to weight
                     if intensity < min_intensity:
                         continue
 
@@ -2323,9 +2163,7 @@ class GraphManager:
             # Create the subgraph based on selected nodes
             emotional_subgraph = self.g.subgraph(nodes_to_include).copy()
         except Exception as e:
-            raise GraphError(
-                f"Failed to create subgraph from selected nodes: {e}", e
-            ) from e
+            raise GraphError(f"Failed to create subgraph from selected nodes: {e}", e) from e
 
         # --- Context Application and Final Edge Filtering ---
         context_factors: Dict[str, float] = {}
@@ -2333,9 +2171,7 @@ class GraphManager:
             # Retrieve pre-defined context weights
             context_factors = self._emotional_contexts.get(context, {})
             if not context_factors:
-                logging.warning(
-                    f"Emotional context '{context}' not found. Proceeding without context weighting."
-                )
+                logging.warning(f"Emotional context '{context}' not found. Proceeding without context weighting.")
         elif isinstance(context, dict):
             context_factors = context
 
@@ -2365,11 +2201,7 @@ class GraphManager:
 
                 for factor, factor_weight in context_factors.items():
                     factor_lower = factor.lower()
-                    if (
-                        factor_lower in rel_type
-                        or factor_lower in term_u
-                        or factor_lower in term_v
-                    ):
+                    if factor_lower in rel_type or factor_lower in term_u or factor_lower in term_v:
                         # Use the highest weight found if multiple factors match
                         context_relevance = max(context_relevance, factor_weight)
 
@@ -2387,17 +2219,11 @@ class GraphManager:
         for node_id in emotional_subgraph.nodes():
             # Add emotional metadata (valence, arousal) if available in original graph
             original_node_data = self.g.nodes.get(node_id, {})
-            emotional_subgraph.nodes[node_id]["valence"] = original_node_data.get(
-                "valence"
-            )
-            emotional_subgraph.nodes[node_id]["arousal"] = original_node_data.get(
-                "arousal"
-            )
+            emotional_subgraph.nodes[node_id]["valence"] = original_node_data.get("valence")
+            emotional_subgraph.nodes[node_id]["arousal"] = original_node_data.get("arousal")
 
             # Add degree centrality within the emotional subgraph
-            emotional_subgraph.nodes[node_id]["emotional_centrality"] = (
-                subgraph_degrees.get(node_id, 0)
-            )
+            emotional_subgraph.nodes[node_id]["emotional_centrality"] = subgraph_degrees.get(node_id, 0)
 
         return emotional_subgraph
 
@@ -2462,9 +2288,7 @@ class GraphManager:
         # 2. Find multi-dimensional nodes, track valence, find meta-emotional sources
         nodes_with_multi_dimensions: Dict[str, Dict[str, Any]] = {}
         valence_values: List[float] = []
-        meta_emotional_sources: Dict[str, List[str]] = (
-            {}
-        )  # Map source term -> list of target terms
+        meta_emotional_sources: Dict[str, List[str]] = {}  # Map source term -> list of target terms
 
         meta_relationship_types = {
             "meta_emotion",
@@ -2480,9 +2304,7 @@ class GraphManager:
                 continue  # Skip nodes without valid terms
 
             node_dimensions: Set[str] = set()
-            emotional_neighbors_info: List[Tuple[str, str]] = (
-                []
-            )  # (neighbor_term, rel_type)
+            emotional_neighbors_info: List[Tuple[str, str]] = []  # (neighbor_term, rel_type)
 
             # Track valence
             valence = node_data.get("valence")
@@ -2516,14 +2338,10 @@ class GraphManager:
                 if rel_type in meta_relationship_types:
                     # Ensure both source and target are considered 'emotional' (e.g., have valence)
                     neighbor_valence = self.g.nodes[neighbor_id].get("valence")
-                    if (
-                        valence is not None and neighbor_valence is not None
-                    ):  # Both nodes should be emotional
+                    if valence is not None and neighbor_valence is not None:  # Both nodes should be emotional
                         if term not in meta_emotional_sources:
                             meta_emotional_sources[term] = []
-                        if (
-                            neighbor_term not in meta_emotional_sources[term]
-                        ):  # Avoid duplicates
+                        if neighbor_term not in meta_emotional_sources[term]:  # Avoid duplicates
                             meta_emotional_sources[term].append(neighbor_term)
 
             # Record nodes with multiple dimensions
@@ -2547,12 +2365,9 @@ class GraphManager:
                 "std": float(np.std(valence_values)),
                 "min": float(min(valence_values)),
                 "max": float(max(valence_values)),
-                "positive_ratio": sum(1 for v in valence_values if v > 0)
-                / len(valence_values),
-                "negative_ratio": sum(1 for v in valence_values if v < 0)
-                / len(valence_values),
-                "neutral_ratio": sum(1 for v in valence_values if v == 0)
-                / len(valence_values),
+                "positive_ratio": sum(1 for v in valence_values if v > 0) / len(valence_values),
+                "negative_ratio": sum(1 for v in valence_values if v < 0) / len(valence_values),
+                "neutral_ratio": sum(1 for v in valence_values if v == 0) / len(valence_values),
             }
         else:
             results["emotional_valence_distribution"] = {
@@ -2578,9 +2393,7 @@ class GraphManager:
             if dimension not in relationship_by_dimension:
                 relationship_by_dimension[dimension] = {}
 
-            relationship_by_dimension[dimension][rel_type] = (
-                relationship_by_dimension[dimension].get(rel_type, 0) + 1
-            )
+            relationship_by_dimension[dimension][rel_type] = relationship_by_dimension[dimension].get(rel_type, 0) + 1
 
         for dimension, counts in relationship_by_dimension.items():
             sorted_rels = sorted(counts.items(), key=lambda item: item[1], reverse=True)
@@ -2597,9 +2410,7 @@ class GraphManager:
             for i in range(len(dimensions_present)):
                 for j in range(i + 1, len(dimensions_present)):
                     # Sort pair alphabetically for consistent key
-                    dim_pair = tuple(
-                        sorted((dimensions_present[i], dimensions_present[j]))
-                    )
+                    dim_pair = tuple(sorted((dimensions_present[i], dimensions_present[j])))
                     key = f"{dim_pair[0]}_&_{dim_pair[1]}"
                     dimension_pairs[key] = dimension_pairs.get(key, 0) + 1
         results["co_occurrences"] = dimension_pairs
@@ -2610,13 +2421,10 @@ class GraphManager:
             emotional_clusters_raw = self.analyze_semantic_clusters(emotion_only=True)
             # Reformat slightly if needed, or use as is
             results["emotional_clusters"] = [
-                {"id": cid, "terms": terms, "size": len(terms)}
-                for cid, terms in emotional_clusters_raw.items()
+                {"id": cid, "terms": terms, "size": len(terms)} for cid, terms in emotional_clusters_raw.items()
             ]
         except ImportError:
-            logging.warning(
-                "Louvain community library not found. Skipping emotional cluster analysis."
-            )
+            logging.warning("Louvain community library not found. Skipping emotional cluster analysis.")
             results["emotional_clusters"] = []  # Ensure key exists
         except Exception as cluster_err:
             logging.error(f"Error during emotional cluster analysis: {cluster_err}")
@@ -2624,17 +2432,11 @@ class GraphManager:
 
         # 7. Identify common affective transitions based on valence change
         transitions: List[Tuple[str, str, float]] = []
-        emotional_node_ids = {
-            node_id
-            for node_id, data in self.g.nodes(data=True)
-            if data.get("valence") is not None
-        }
+        emotional_node_ids = {node_id for node_id, data in self.g.nodes(data=True) if data.get("valence") is not None}
 
         for source_id in emotional_node_ids:
             source_term = self.g.nodes[source_id].get("term", "")
-            source_valence = self.g.nodes[source_id].get(
-                "valence", 0.0
-            )  # Default to 0.0 if missing after check
+            source_valence = self.g.nodes[source_id].get("valence", 0.0)  # Default to 0.0 if missing after check
 
             for target_id in self.g.neighbors(source_id):
                 if target_id in emotional_node_ids:  # Target must also be emotional
@@ -2645,9 +2447,7 @@ class GraphManager:
 
                         # Consider transitions only if valence changes significantly (optional threshold)
                         valence_diff = target_valence - source_valence
-                        if (
-                            abs(valence_diff) > 0.01
-                        ):  # Avoid floating point noise for zero change
+                        if abs(valence_diff) > 0.01:  # Avoid floating point noise for zero change
                             # Calculate transition strength (e.g., edge weight * magnitude of change)
                             weight = float(edge_data.get("weight", 1.0))
                             transition_strength = weight * abs(valence_diff)
@@ -2661,9 +2461,7 @@ class GraphManager:
 
         # Sort transitions by strength and take top 10
         if transitions:
-            results["affective_transitions"] = sorted(
-                transitions, key=lambda x: x[2], reverse=True
-            )[:10]
+            results["affective_transitions"] = sorted(transitions, key=lambda x: x[2], reverse=True)[:10]
 
         return results
 
@@ -2704,9 +2502,7 @@ class GraphManager:
                 continue
 
             # Check if node has valence/arousal or is marked as emotional
-            has_emotional_attrs = (
-                attrs.get("valence") is not None or attrs.get("arousal") is not None
-            )
+            has_emotional_attrs = attrs.get("valence") is not None or attrs.get("arousal") is not None
 
             # Also check node's edges for emotional connections
             has_emotional_edges = any(
@@ -2818,17 +2614,12 @@ class GraphManager:
                 emotional_edges = [
                     self.g.get_edge_data(node, neighbor)
                     for neighbor in self.g.neighbors(node)
-                    if self.g.get_edge_data(node, neighbor).get("dimension")
-                    == dimension
+                    if self.g.get_edge_data(node, neighbor).get("dimension") == dimension
                 ]
 
                 if emotional_edges:
                     # Extract valence values, default to 0 if not specified
-                    edge_valences = [
-                        edge.get("valence", 0)
-                        for edge in emotional_edges
-                        if "valence" in edge
-                    ]
+                    edge_valences = [edge.get("valence", 0) for edge in emotional_edges if "valence" in edge]
 
                     if edge_valences:
                         valence = sum(edge_valences) / len(edge_valences)
@@ -2872,12 +2663,8 @@ class GraphManager:
 
         # Find top positive and negative terms
         sorted_terms = sorted(term_to_valence.items(), key=lambda x: x[1])
-        top_negative = sorted_terms[
-            : min(5, len(sorted_terms) // 5)
-        ]  # Bottom 20% up to 5 terms
-        top_positive = sorted_terms[
-            -min(5, len(sorted_terms) // 5) :
-        ]  # Top 20% up to 5 terms
+        top_negative = sorted_terms[: min(5, len(sorted_terms) // 5)]  # Bottom 20% up to 5 terms
+        top_positive = sorted_terms[-min(5, len(sorted_terms) // 5) :]  # Top 20% up to 5 terms
 
         # Group terms into clusters by valence range
         clusters = {
@@ -2916,15 +2703,11 @@ class GraphManager:
             "distribution": distribution,
             "top_positive": top_positive,
             "top_negative": top_negative,
-            "clusters": {
-                k: v for k, v in clusters.items() if v
-            },  # Only include non-empty clusters
+            "clusters": {k: v for k, v in clusters.items() if v},  # Only include non-empty clusters
         }
 
     @eidosian()
-    def integrate_emotional_context(
-        self, context_name: str, context_weights: Dict[str, float]
-    ) -> int:
+    def integrate_emotional_context(self, context_name: str, context_weights: Dict[str, float]) -> int:
         """
         Integrate an emotional context into the graph for contextual analysis.
 
@@ -2978,9 +2761,7 @@ class GraphManager:
         # Validate weights (should be between 0 and 1)
         for factor, weight in context_weights.items():
             if not 0 <= weight <= 1:
-                raise ValueError(
-                    f"Context weight for '{factor}' must be between 0 and 1"
-                )
+                raise ValueError(f"Context weight for '{factor}' must be between 0 and 1")
 
         # Store the context
         self._emotional_contexts[context_name] = context_weights

@@ -19,12 +19,12 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import networkx as nx
+from eidosian_core import eidosian
 
 # Import necessary components
 from word_forge.exceptions import NodeNotFoundError
@@ -80,9 +80,7 @@ class GraphQuery:
         return self.manager._term_to_id.get(term.lower())
 
     @eidosian()
-    def get_related_terms(
-        self, term: Term, rel_type: Optional[RelType] = None
-    ) -> List[Term]:
+    def get_related_terms(self, term: Term, rel_type: Optional[RelType] = None) -> List[Term]:
         """
         Find terms directly related to a given term in the graph.
 
@@ -113,21 +111,15 @@ class GraphQuery:
             current_rel_type = edge_data.get("relationship")
 
             # Apply relationship type filter if provided
-            if rel_type is None or (
-                current_rel_type and current_rel_type.lower() == rel_type.lower()
-            ):
+            if rel_type is None or (current_rel_type and current_rel_type.lower() == rel_type.lower()):
                 # Get the term attribute from the neighbor node
                 neighbor_term = self.manager.g.nodes[neighbor_id].get("term")
                 if neighbor_term:
                     related_terms_list.append(neighbor_term)
                 else:
-                    self.logger.warning(
-                        f"Neighbor node {neighbor_id} of '{term}' is missing 'term' attribute."
-                    )
+                    self.logger.warning(f"Neighbor node {neighbor_id} of '{term}' is missing 'term' attribute.")
 
-        self.logger.debug(
-            f"Found {len(related_terms_list)} related terms for '{term}' (filter: {rel_type})."
-        )
+        self.logger.debug(f"Found {len(related_terms_list)} related terms for '{term}' (filter: {rel_type}).")
         return related_terms_list
 
     @eidosian()
@@ -187,9 +179,7 @@ class GraphQuery:
         sample_nodes_data: List[WordTupleDict] = []
         for node_id in sample_node_ids:
             node_data = self.manager.g.nodes[node_id]
-            term = node_data.get(
-                "term", f"ID:{node_id}"
-            )  # Provide default if term missing
+            term = node_data.get("term", f"ID:{node_id}")  # Provide default if term missing
             sample_nodes_data.append({"id": node_id, "term": term})
 
         # Sample relationships (more complex to get terms efficiently)
@@ -201,9 +191,7 @@ class GraphQuery:
             term_u = self.manager.g.nodes[u].get("term", f"ID:{u}")
             term_v = self.manager.g.nodes[v].get("term", f"ID:{v}")
             rel_type = data.get("relationship", "unknown")
-            sample_relationships_data.append(
-                {"source": term_u, "target": term_v, "type": rel_type}
-            )
+            sample_relationships_data.append({"source": term_u, "target": term_v, "type": rel_type})
             edge_count += 1
 
         # Get unique relationship types from stored counts
@@ -275,9 +263,7 @@ class GraphQuery:
             raise NodeNotFoundError(f"Term '{term}' not found for subgraph extraction.")
 
         # Use ego_graph to find all nodes within the specified radius (depth)
-        subgraph_nodes = nx.ego_graph(
-            self.manager.g, start_node_id, radius=depth
-        ).nodes()
+        subgraph_nodes = nx.ego_graph(self.manager.g, start_node_id, radius=depth).nodes()
 
         # Create the subgraph from the identified nodes
         subgraph_view = self.manager.g.subgraph(subgraph_nodes)
@@ -364,7 +350,5 @@ class GraphQuery:
 
             filtered_relationships.append((term_u, term_v, edge_rel_type, data))
 
-        self.logger.debug(
-            f"Found {len(filtered_relationships)} relationships matching criteria."
-        )
+        self.logger.debug(f"Found {len(filtered_relationships)} relationships matching criteria.")
         return filtered_relationships

@@ -4,13 +4,13 @@ import json
 import sys
 import types
 
-import pytest
 import httpx
 
 
 def _install_mcp_stub() -> None:
     try:
         from mcp.server.fastmcp import FastMCP  # noqa: F401
+
         return
     except Exception:
         pass
@@ -28,6 +28,7 @@ def _install_mcp_stub() -> None:
         def tool(self, *args, **kwargs):
             def decorator(func):
                 return func
+
             return decorator
 
     fastmcp_module.FastMCP = _FastMCP

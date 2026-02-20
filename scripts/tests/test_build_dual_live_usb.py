@@ -1,7 +1,6 @@
 import subprocess
 from pathlib import Path
 
-
 SCRIPT = Path(__file__).resolve().parents[1] / "machine_clone" / "build_dual_live_usb.sh"
 VERIFY_SCRIPT = Path(__file__).resolve().parents[1] / "machine_clone" / "verify_dual_live_usb.sh"
 REPAIR_SCRIPT = Path(__file__).resolve().parents[1] / "machine_clone" / "repair_dual_live_usb.sh"

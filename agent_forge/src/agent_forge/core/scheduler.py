@@ -3,26 +3,25 @@
 
 from __future__ import annotations
 
-from eidosian_core import eidosian
-
+import json
 import random
 import signal
 import time
-import json
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable
+
+from eidosian_core import eidosian
+
+from agent_forge.actuators.shell_exec import run_step
 from agent_forge.core.state import (
     add_plan,
     add_step,
-    list_steps,
-    list_steps_for_goal,
     list_plans,
     list_runs,
 )
-from agent_forge.core.state import add_goal, list_goals
-from agent_forge.actuators.shell_exec import run_step
-from agent_forge.planners.registry import choose
 from agent_forge.planners.htn import materialize
+from agent_forge.planners.registry import choose
+
 from . import events as BUS
 
 STATE_DIR = "state"
@@ -100,12 +99,13 @@ def plan(ctx, goal):
     steps = materialize(meta["template"], goal.title, vars=meta.get("vars"))
     retries: dict[str, int] = {}
     for s in steps:
-        add_step(STATE_DIR, p.id, s["idx"], s["name"], json.dumps(s["cmd"]),
-                 s["budget_s"], "todo")
+        add_step(STATE_DIR, p.id, s["idx"], s["name"], json.dumps(s["cmd"]), s["budget_s"], "todo")
         retries[str(s["idx"])] = 1 if "test" in s["name"] else 0
     meta_with_retries = dict(meta)
     meta_with_retries["retries"] = retries
-    import sqlite3, pathlib
+    import pathlib
+    import sqlite3
+
     db = pathlib.Path(STATE_DIR) / "e3.sqlite"
     conn = sqlite3.connect(db)
     try:
@@ -126,7 +126,9 @@ def gate(ctx, step_row):
 @eidosian()
 def act(ctx, step_row):
     cmd = json.loads(step_row.cmd)
-    import sqlite3, pathlib
+    import pathlib
+    import sqlite3
+
     db = pathlib.Path(STATE_DIR) / "e3.sqlite"
     conn = sqlite3.connect(db)
     try:
@@ -143,7 +145,9 @@ def act(ctx, step_row):
 
 @eidosian()
 def verify(ctx, step_row, res):
-    import sqlite3, pathlib
+    import pathlib
+    import sqlite3
+
     db = pathlib.Path(STATE_DIR) / "e3.sqlite"
     conn = sqlite3.connect(db)
     try:

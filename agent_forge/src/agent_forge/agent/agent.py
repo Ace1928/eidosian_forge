@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Core Agent Implementation for Eidosian Forge.
 
@@ -14,11 +15,11 @@ from typing import Dict, List, Optional
 
 from ..core import MemorySystem, Sandbox
 from ..models import ModelConfig, Task, Thought, ThoughtType
-from ..utils import ConfigManager
-from .prompt_templates import AGENT_PLAN_TEMPLATE, AGENT_REFLECTION_TEMPLATE
 from ..systems.smol_agents import SmolAgentSystem
 from ..systems.task_manager import TaskManager
+from ..utils import ConfigManager
 from .base import BaseAgent
+from .prompt_templates import AGENT_PLAN_TEMPLATE, AGENT_REFLECTION_TEMPLATE
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +56,7 @@ class EidosianAgent(BaseAgent):
         self.config_manager = ConfigManager(config_path)
 
         # Set up memory system
-        memory_path_value = memory_path or self.config_manager.get(
-            "memory.git_repo_path", "./memory_repo"
-        )
+        memory_path_value = memory_path or self.config_manager.get("memory.git_repo_path", "./memory_repo")
         git_enabled = self.config_manager.get("memory.git_enabled", True)
         commit_interval = self.config_manager.get("memory.commit_interval_minutes", 30)
 
@@ -79,9 +78,7 @@ class EidosianAgent(BaseAgent):
         self.model_manager = create_model_manager(self.model_config)
 
         # Set up sandbox
-        workspace_path_value = workspace_path or self.config_manager.get(
-            "execution.workspace_path", "./workspace"
-        )
+        workspace_path_value = workspace_path or self.config_manager.get("execution.workspace_path", "./workspace")
         timeout_seconds = self.config_manager.get("execution.timeout_seconds", 60)
         max_memory_mb = self.config_manager.get("execution.max_memory_mb", 512)
         allow_network = self.config_manager.get("execution.internet_access", True)
@@ -132,9 +129,7 @@ class EidosianAgent(BaseAgent):
 
         try:
             if initial_goal:
-                self._add_thought(
-                    f"Received initial goal: {initial_goal}", ThoughtType.PLANNING
-                )
+                self._add_thought(f"Received initial goal: {initial_goal}", ThoughtType.PLANNING)
                 self.task_manager.add_task(description=initial_goal, priority=10)
 
             logger.info("Starting agent cognitive loop")
@@ -146,9 +141,7 @@ class EidosianAgent(BaseAgent):
 
         except Exception as e:
             logger.error(f"Error in agent cognitive loop: {e}", exc_info=True)
-            self._add_thought(
-                f"Encountered error in cognitive loop: {str(e)}", ThoughtType.ERROR
-            )
+            self._add_thought(f"Encountered error in cognitive loop: {str(e)}", ThoughtType.ERROR)
 
         finally:
             self.running = False
@@ -242,21 +235,15 @@ class EidosianAgent(BaseAgent):
                 # Handle potential missing method by dynamically attempting execution
                 try:
                     # Use getattr to safely access a potentially missing method
-                    execute_task_method = getattr(
-                        self.smol_agents, "execute_task", None
-                    )
+                    execute_task_method = getattr(self.smol_agents, "execute_task", None)
                     if execute_task_method and callable(execute_task_method):
                         result = execute_task_method(task)
                     else:
                         # Fallback to our own execution if method doesn't exist
-                        logger.warning(
-                            "SmolAgentSystem.execute_task method not found, executing directly"
-                        )
+                        logger.warning("SmolAgentSystem.execute_task method not found, executing directly")
                         result = self._execute_task(task, plan)
                 except Exception as e:
-                    logger.error(
-                        f"Error calling smol agent execution: {e}", exc_info=True
-                    )
+                    logger.error(f"Error calling smol agent execution: {e}", exc_info=True)
                     # Fallback to direct execution
                     result = self._execute_task(task, plan)
             else:
@@ -305,17 +292,13 @@ class EidosianAgent(BaseAgent):
         thought_context = "\n".join(f"- {t.content}" for t in recent_thoughts)
 
         # Format prompt with task and context
-        prompt = AGENT_PLAN_TEMPLATE.format(
-            task_description=task.description, thought_context=thought_context
-        )
+        prompt = AGENT_PLAN_TEMPLATE.format(task_description=task.description, thought_context=thought_context)
 
         # Generate plan
         plan = self.model_manager.generate(prompt=prompt, temperature=0.7)
 
         # Record planning thought
-        self._add_thought(
-            f"Plan for task '{task.description}':\n{plan}", ThoughtType.PLANNING
-        )
+        self._add_thought(f"Plan for task '{task.description}':\n{plan}", ThoughtType.PLANNING)
 
         return plan
 
@@ -417,9 +400,7 @@ class EidosianAgent(BaseAgent):
 
         try:
             # Use getattr for safe access to potentially missing method
-            get_capabilities_method = getattr(
-                self.smol_agents, "get_capabilities", None
-            )
+            get_capabilities_method = getattr(self.smol_agents, "get_capabilities", None)
 
             if get_capabilities_method and callable(get_capabilities_method):
                 # Apply explicit type casting to ensure type safety
@@ -429,9 +410,7 @@ class EidosianAgent(BaseAgent):
                     for capability, keywords in capabilities_result.items():
                         if isinstance(keywords, list):
                             # Filter to ensure we only have string keywords
-                            string_keywords = [
-                                k for k in keywords if isinstance(k, str)
-                            ]
+                            string_keywords = [k for k in keywords if isinstance(k, str)]
                             if string_keywords:  # Only add if we have valid keywords
                                 agent_capabilities[str(capability)] = string_keywords
             else:
@@ -601,22 +580,18 @@ class EidosianAgent(BaseAgent):
         # Get recent thoughts for context
         recent_thoughts = self.memory.get_recent_thoughts(n=10)
         thought_context = "\n".join(
-            f"- {t.timestamp.strftime('%H:%M:%S')}: {t.content[:100]}..."
-            for t in recent_thoughts
+            f"- {t.timestamp.strftime('%H:%M:%S')}: {t.content[:100]}..." for t in recent_thoughts
         )
 
         # Get recent tasks
         recent_tasks = self.task_manager.get_recent_tasks(n=5)
-        task_context = "\n".join(
-            f"- {t.description} ({t.status})" for t in recent_tasks
-        )
+        task_context = "\n".join(f"- {t.description} ({t.status})" for t in recent_tasks)
 
         # Format reflection prompt
         prompt = AGENT_REFLECTION_TEMPLATE.format(
             thought_context=thought_context,
             task_context=task_context,
-            session_duration=(datetime.now() - self.session_start).total_seconds()
-            // 60,
+            session_duration=(datetime.now() - self.session_start).total_seconds() // 60,
         )
 
         # Generate reflection
@@ -652,9 +627,7 @@ class EidosianAgent(BaseAgent):
 
         # Add goals as new tasks with moderate priority
         for goal in goals:
-            self.task_manager.add_task(
-                description=goal, priority=5  # Moderate priority
-            )
+            self.task_manager.add_task(description=goal, priority=5)  # Moderate priority
 
             # Record thought about new goal
             self._add_thought(f"Generated new goal: {goal}", ThoughtType.CURIOSITY)
@@ -703,11 +676,7 @@ class EidosianAgent(BaseAgent):
         self._add_thought(f"Received user input: {user_input}", ThoughtType.EXECUTION)
 
         # Determine if input resembles a task instruction based on linguistic patterns
-        is_task_request = (
-            user_input.startswith("Can you")
-            or user_input.startswith("Please")
-            or "?" not in user_input
-        )
+        is_task_request = user_input.startswith("Can you") or user_input.startswith("Please") or "?" not in user_input
 
         # If it looks like a task, add it to the task manager
         if is_task_request:
@@ -727,9 +696,7 @@ class EidosianAgent(BaseAgent):
             )
 
             # Generate acknowledgment
-            response = (
-                "I've added this task to my queue and will work on it right away."
-            )
+            response = "I've added this task to my queue and will work on it right away."
 
         else:
             # Otherwise, treat it as a direct question/conversation

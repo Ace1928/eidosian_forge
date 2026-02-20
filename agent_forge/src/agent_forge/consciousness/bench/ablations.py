@@ -11,7 +11,7 @@ from agent_forge.core import events
 
 from .golden import evaluate_variant_golden
 from .reporting import bench_report_root, write_json, write_summary
-from .trials import ConsciousnessBenchRunner, TrialRunResult, TrialSpec
+from .trials import ConsciousnessBenchRunner, TrialSpec
 
 
 @dataclass
@@ -44,23 +44,19 @@ def _comparison(full: Mapping[str, Any], variant: Mapping[str, Any]) -> dict[str
             6,
         ),
         "trace_strength_delta_vs_full": round(
-            _metric(variant, "after", "trace_strength")
-            - _metric(full, "after", "trace_strength"),
+            _metric(variant, "after", "trace_strength") - _metric(full, "after", "trace_strength"),
             6,
         ),
         "coherence_ratio_delta_vs_full": round(
-            _metric(variant, "after", "coherence_ratio")
-            - _metric(full, "after", "coherence_ratio"),
+            _metric(variant, "after", "coherence_ratio") - _metric(full, "after", "coherence_ratio"),
             6,
         ),
         "rci_v2_delta_vs_full": round(
-            _metric(variant, "after", "rci", "rci_v2")
-            - _metric(full, "after", "rci", "rci_v2"),
+            _metric(variant, "after", "rci", "rci_v2") - _metric(full, "after", "rci", "rci_v2"),
             6,
         ),
         "connectivity_density_delta_vs_full": round(
-            _metric(variant, "after", "connectivity", "density")
-            - _metric(full, "after", "connectivity", "density"),
+            _metric(variant, "after", "connectivity", "density") - _metric(full, "after", "connectivity", "density"),
             6,
         ),
         "self_stability_delta_vs_full": round(
@@ -120,8 +116,7 @@ class ConsciousnessAblationMatrix:
 
         for name, extra_disabled in variant_map.items():
             merged_disabled = sorted(
-                {str(m) for m in full_spec.disable_modules}
-                | {str(m) for m in list(extra_disabled or [])}
+                {str(m) for m in full_spec.disable_modules} | {str(m) for m in list(extra_disabled or [])}
             )
             v_spec = TrialSpec(
                 name=f"{base_norm['name']}_{name}",
@@ -159,9 +154,7 @@ class ConsciousnessAblationMatrix:
             {
                 "run_id": run_id,
                 "variant_count": len(matrix["variants"]),
-                "golden_pass_count": sum(
-                    1 for row in matrix["golden"].values() if row.get("pass")
-                ),
+                "golden_pass_count": sum(1 for row in matrix["golden"].values() if row.get("pass")),
                 "golden_total": len(matrix["golden"]),
             },
             tags=["consciousness", "bench", "ablation"],
@@ -179,9 +172,7 @@ class ConsciousnessAblationMatrix:
                 f"- golden_pass: `{sum(1 for row in matrix['golden'].values() if row.get('pass'))}/{len(matrix['golden'])}`",
             ]
             for name, row in matrix["golden"].items():
-                summary_lines.append(
-                    f"- {name}: `{'PASS' if row.get('pass') else 'FAIL'}`"
-                )
+                summary_lines.append(f"- {name}: `{'PASS' if row.get('pass') else 'FAIL'}`")
             write_summary(out_dir / "summary.md", summary_lines)
 
         return AblationResult(run_id=run_id, report_path=report_path, report=report)

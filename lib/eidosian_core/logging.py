@@ -5,17 +5,20 @@
 Advanced logging with structured output, rotation, and contextual enrichment.
 """
 from __future__ import annotations
-import logging
+
 import json
+import logging
 import sys
+import threading
 import traceback
+from contextlib import contextmanager
 from datetime import datetime
+from enum import Enum
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
-from enum import Enum
-from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
-from contextlib import contextmanager
-import threading
+
+
 class LogLevel(Enum):
     """Log levels."""
     DEBUG = logging.DEBUG
@@ -25,7 +28,7 @@ class LogLevel(Enum):
     CRITICAL = logging.CRITICAL
 class StructuredFormatter(logging.Formatter):
     """JSON structured log formatter."""
-    
+
     def __init__(self, include_traceback: bool = True):
         super().__init__()
         self.include_traceback = include_traceback
@@ -41,7 +44,7 @@ class StructuredFormatter(logging.Formatter):
             "thread": record.thread,
             "process": record.process,
         }
-        
+
         # Add extra fields
         for key, value in record.__dict__.items():
             if key not in logging.LogRecord.__dict__ and not key.startswith("_"):
@@ -50,7 +53,7 @@ class StructuredFormatter(logging.Formatter):
                     log_data[key] = value
                 except (TypeError, ValueError):
                     log_data[key] = str(value)
-        
+
         # Add exception info
         if record.exc_info and self.include_traceback:
             log_data["exception"] = {
@@ -58,11 +61,11 @@ class StructuredFormatter(logging.Formatter):
                 "message": str(record.exc_info[1]) if record.exc_info[1] else None,
                 "traceback": traceback.format_exception(*record.exc_info) if record.exc_info[2] else None,
             }
-        
+
         return json.dumps(log_data)
 class ColorFormatter(logging.Formatter):
     """Colored console log formatter."""
-    
+
     COLORS = {
         "DEBUG": "\033[36m",      # Cyan
         "INFO": "\033[32m",       # Green
@@ -72,7 +75,7 @@ class ColorFormatter(logging.Formatter):
     }
     RESET = "\033[0m"
     BOLD = "\033[1m"
-    
+
     def __init__(self, fmt: str, datefmt: str = None, use_colors: bool = True):
         super().__init__(fmt, datefmt)
         self.use_colors = use_colors and sys.stdout.isatty()
@@ -92,9 +95,9 @@ class EidosianLogger:
     - Performance tracking
     - Thread-safe context management
     """
-    
+
     _context = threading.local()
-    
+
     def __init__(
         self,
         name: str,
@@ -106,17 +109,17 @@ class EidosianLogger:
     ):
         self.name = name
         self._logger = logging.getLogger(name)
-        
+
         # Set level
         if isinstance(level, LogLevel):
             level = level.value
         elif isinstance(level, str):
             level = getattr(logging, level.upper(), logging.INFO)
         self._logger.setLevel(level)
-        
+
         # Clear existing handlers
         self._logger.handlers.clear()
-        
+
         # Console handler
         # Use stderr for diagnostic logs so stdout remains protocol-safe (e.g., MCP stdio JSON-RPC).
         console_handler = logging.StreamHandler(sys.stderr)
@@ -128,12 +131,12 @@ class EidosianLogger:
                 "%Y-%m-%d %H:%M:%S"
             ))
         self._logger.addHandler(console_handler)
-        
+
         # File handler
         if file_path:
             file_path = Path(file_path)
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             file_handler = RotatingFileHandler(
                 file_path,
                 maxBytes=max_bytes,
@@ -141,27 +144,27 @@ class EidosianLogger:
             )
             file_handler.setFormatter(StructuredFormatter())
             self._logger.addHandler(file_handler)
-        
+
         self._logger.propagate = False
-    
+
     @classmethod
     def get_context(cls) -> Dict[str, Any]:
         """Get current logging context."""
         if not hasattr(cls._context, "data"):
             cls._context.data = {}
         return cls._context.data
-    
+
     @classmethod
     def set_context(cls, **kwargs) -> None:
         """Add to logging context."""
         ctx = cls.get_context()
         ctx.update(kwargs)
-    
+
     @classmethod
     def clear_context(cls) -> None:
         """Clear logging context."""
         cls._context.data = {}
-    
+
     @classmethod
     @contextmanager
     def context(cls, **kwargs):
@@ -172,7 +175,7 @@ class EidosianLogger:
             yield
         finally:
             cls._context.data = old_context
-    
+
     def _log(self, level: int, msg: str, *args, exc_info=None, **kwargs):
         """Internal logging with context enrichment."""
         extra = {**self.get_context(), **kwargs.pop("extra", {})}
@@ -221,7 +224,7 @@ class EidosianLogger:
         """Log function error."""
         duration_str = f" [{duration_ms:.2f}ms]" if duration_ms else ""
         self.error(f"✗ {func_name} raised {type(error).__name__}: {error}{duration_str}", exc_info=True)
-    
+
     @staticmethod
     def _truncate(s: str, max_length: int) -> str:
         """Truncate string with ellipsis."""
@@ -239,10 +242,10 @@ def get_logger(
     """Get or create a logger."""
     if name is None:
         name = "eidosian"
-    
+
     if name not in _loggers:
         _loggers[name] = EidosianLogger(name, level=level, **kwargs)
-    
+
     return _loggers[name]
 
 def configure_logging(

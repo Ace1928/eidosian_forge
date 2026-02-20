@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 # 🌀 Eidosian Main Entry Point
 """
@@ -15,16 +16,18 @@ import sys
 from .run import main as run_main
 from .version import get_version_string
 
+
 @eidosian()
 def main() -> int:
     """
     Main entry point for Doc Forge.
-    
+
     Returns:
         Exit code (0 for success)
     """
     # Simply delegate to run_main which handles all commands
     return run_main()
+
 
 if __name__ == "__main__":
     # Display version for direct script execution

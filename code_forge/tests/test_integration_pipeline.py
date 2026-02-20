@@ -11,8 +11,7 @@ from code_forge.library.db import CodeLibraryDB
 def _make_repo(root: Path) -> None:
     (root / "src").mkdir(parents=True)
     (root / "src" / "m.py").write_text(
-        "def add(a, b):\n"
-        "    return a + b\n",
+        "def add(a, b):\n" "    return a + b\n",
         encoding="utf-8",
     )
 

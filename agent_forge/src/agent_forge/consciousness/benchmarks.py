@@ -192,9 +192,7 @@ class ConsciousnessBenchmarkSuite:
             "phenom_unity_index": _safe_float(phenom.get("unity_index"), default=0.0),
             "phenom_continuity_index": _safe_float(phenom.get("continuity_index"), default=0.0),
             "phenom_ownership_index": _safe_float(phenom.get("ownership_index"), default=0.0),
-            "phenom_perspective_coherence_index": _safe_float(
-                phenom.get("perspective_coherence_index"), default=0.0
-            ),
+            "phenom_perspective_coherence_index": _safe_float(phenom.get("perspective_coherence_index"), default=0.0),
             "phenom_dream_likeness_index": _safe_float(phenom.get("dream_likeness_index"), default=0.0),
             "memory_recalls": _latest_metric(recent, "consciousness.memory_bridge.recalls"),
             "knowledge_hits": _latest_metric(recent, "consciousness.knowledge_bridge.total_hits"),

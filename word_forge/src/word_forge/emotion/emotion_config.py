@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 This module provides a comprehensive configuration framework for emotion analysis operations
 in the Word Forge system. It centralizes parameters, constraints, and database schemas
@@ -82,9 +83,7 @@ from typing import (
 from word_forge.configs.config_essentials import EmotionRange, EnvMapping
 
 # Legacy type definition for backward compatibility
-EmotionCategoryLiteral = Literal[
-    "happiness", "sadness", "anger", "fear", "surprise", "disgust", "neutral"
-]
+EmotionCategoryLiteral = Literal["happiness", "sadness", "anger", "fear", "surprise", "disgust", "neutral"]
 
 
 # Modern Enum-based implementation
@@ -244,9 +243,7 @@ class VaderSentimentScores(TypedDict):
 # Exported at module level for backward compatibility
 
 #: SQL schema for word emotion table
-SQL_CREATE_WORD_EMOTION_TABLE: Final[
-    str
-] = """
+SQL_CREATE_WORD_EMOTION_TABLE: Final[str] = """
     CREATE TABLE IF NOT EXISTS word_emotion (
         word_id INTEGER PRIMARY KEY,
         valence REAL NOT NULL,
@@ -257,9 +254,7 @@ SQL_CREATE_WORD_EMOTION_TABLE: Final[
 """
 
 #: SQL schema for message emotion table
-SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[
-    str
-] = """
+SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[str] = """
     CREATE TABLE IF NOT EXISTS message_emotion (
         message_id INTEGER PRIMARY KEY,
         label TEXT NOT NULL,
@@ -269,36 +264,28 @@ SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[
 """
 
 #: SQL query for inserting word emotion data
-SQL_INSERT_WORD_EMOTION: Final[
-    str
-] = """
+SQL_INSERT_WORD_EMOTION: Final[str] = """
     INSERT OR REPLACE INTO word_emotion
     (word_id, valence, arousal, timestamp)
     VALUES (?, ?, ?, ?)
 """
 
 #: SQL query for retrieving word emotion data
-SQL_GET_WORD_EMOTION: Final[
-    str
-] = """
+SQL_GET_WORD_EMOTION: Final[str] = """
     SELECT word_id, valence, arousal, timestamp
     FROM word_emotion
     WHERE word_id = ?
 """
 
 #: SQL query for inserting message emotion data
-SQL_INSERT_MESSAGE_EMOTION: Final[
-    str
-] = """
+SQL_INSERT_MESSAGE_EMOTION: Final[str] = """
     INSERT OR REPLACE INTO message_emotion
     (message_id, label, confidence, timestamp)
     VALUES (?, ?, ?, ?)
 """
 
 #: SQL query for retrieving message emotion data
-SQL_GET_MESSAGE_EMOTION: Final[
-    str
-] = """
+SQL_GET_MESSAGE_EMOTION: Final[str] = """
     SELECT message_id, label, confidence, timestamp
     FROM message_emotion
     WHERE message_id = ?
@@ -394,9 +381,7 @@ class EmotionSQLTemplates:
             return template.replace("INTEGER PRIMARY KEY", "SERIAL PRIMARY KEY")
         elif self.dialect == SQLDialect.MYSQL:
             # Convert SQLite syntax to MySQL
-            return template.replace(
-                "INTEGER PRIMARY KEY", "INT AUTO_INCREMENT PRIMARY KEY"
-            )
+            return template.replace("INTEGER PRIMARY KEY", "INT AUTO_INCREMENT PRIMARY KEY")
         return template
 
 
@@ -500,19 +485,13 @@ class EmotionKeywordRegistry:
         return self._keywords.get(category, [])
 
     @overload
-    def register_keywords(
-        self, emotion: EmotionCategory, keywords: List[str]
-    ) -> None: ...
+    def register_keywords(self, emotion: EmotionCategory, keywords: List[str]) -> None: ...
 
     @overload
-    def register_keywords(
-        self, emotion: EmotionCategoryLiteral, keywords: List[str]
-    ) -> None: ...
+    def register_keywords(self, emotion: EmotionCategoryLiteral, keywords: List[str]) -> None: ...
 
     @eidosian()
-    def register_keywords(
-        self, emotion: EmotionCategoryType, keywords: List[str]
-    ) -> None:
+    def register_keywords(self, emotion: EmotionCategoryType, keywords: List[str]) -> None:
         """
         Register new keywords for an emotion category.
 
@@ -527,9 +506,7 @@ class EmotionKeywordRegistry:
         """
         category = normalize_emotion_category(emotion)
         if category in self._keywords:
-            self._keywords[category].extend(
-                [k for k in keywords if k not in self._keywords[category]]
-            )
+            self._keywords[category].extend([k for k in keywords if k not in self._keywords[category]])
         else:
             self._keywords[category] = keywords.copy()
 
@@ -579,30 +556,18 @@ class EmotionDetectionMetrics:
     """
 
     total_detections: int = 0
-    true_positives: Dict[EmotionCategory, int] = field(
-        default_factory=lambda: {e: 0 for e in EmotionCategory}
-    )
-    false_positives: Dict[EmotionCategory, int] = field(
-        default_factory=lambda: {e: 0 for e in EmotionCategory}
-    )
-    false_negatives: Dict[EmotionCategory, int] = field(
-        default_factory=lambda: {e: 0 for e in EmotionCategory}
-    )
+    true_positives: Dict[EmotionCategory, int] = field(default_factory=lambda: {e: 0 for e in EmotionCategory})
+    false_positives: Dict[EmotionCategory, int] = field(default_factory=lambda: {e: 0 for e in EmotionCategory})
+    false_negatives: Dict[EmotionCategory, int] = field(default_factory=lambda: {e: 0 for e in EmotionCategory})
 
     @overload
-    def record_detection(
-        self, predicted: EmotionCategory, actual: EmotionCategory
-    ) -> None: ...
+    def record_detection(self, predicted: EmotionCategory, actual: EmotionCategory) -> None: ...
 
     @overload
-    def record_detection(
-        self, predicted: EmotionCategoryLiteral, actual: EmotionCategoryLiteral
-    ) -> None: ...
+    def record_detection(self, predicted: EmotionCategoryLiteral, actual: EmotionCategoryLiteral) -> None: ...
 
     @eidosian()
-    def record_detection(
-        self, predicted: EmotionCategoryType, actual: EmotionCategoryType
-    ) -> None:
+    def record_detection(self, predicted: EmotionCategoryType, actual: EmotionCategoryType) -> None:
         """
         Record a detection result for optimization metrics.
 
@@ -626,16 +591,10 @@ class EmotionDetectionMetrics:
 
         self.total_detections += 1
         if pred_category == actual_category:
-            self.true_positives[pred_category] = (
-                self.true_positives.get(pred_category, 0) + 1
-            )
+            self.true_positives[pred_category] = self.true_positives.get(pred_category, 0) + 1
         else:
-            self.false_positives[pred_category] = (
-                self.false_positives.get(pred_category, 0) + 1
-            )
-            self.false_negatives[actual_category] = (
-                self.false_negatives.get(actual_category, 0) + 1
-            )
+            self.false_positives[pred_category] = self.false_positives.get(pred_category, 0) + 1
+            self.false_negatives[actual_category] = self.false_negatives.get(actual_category, 0) + 1
 
     @eidosian()
     def get_precision(self, category: EmotionCategoryType) -> float:
@@ -695,11 +654,7 @@ class EmotionDetectionMetrics:
         """
         precision = self.get_precision(category)
         recall = self.get_recall(category)
-        return (
-            2 * (precision * recall) / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
+        return 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
     @eidosian()
     def optimize_weights(self, config: "EmotionConfig") -> Dict[EmotionCategory, float]:
@@ -890,9 +845,7 @@ class EmotionConfig:
     # ==========================================
 
     #: Registry for dynamic emotion keyword management
-    keyword_registry: EmotionKeywordRegistry = field(
-        default_factory=EmotionKeywordRegistry
-    )
+    keyword_registry: EmotionKeywordRegistry = field(default_factory=EmotionKeywordRegistry)
 
     #: SQL dialect to use for database operations
     sql_dialect: SQLDialect = SQLDialect.SQLITE
@@ -985,17 +938,11 @@ class EmotionConfig:
         is_valid = min_val <= value <= max_val
 
         if is_valid:
-            message = (
-                f"Valence value {value} is within valid range ({min_val}, {max_val})"
-            )
+            message = f"Valence value {value} is within valid range ({min_val}, {max_val})"
         else:
-            message = (
-                f"Valence value {value} is outside valid range ({min_val}, {max_val})"
-            )
+            message = f"Valence value {value} is outside valid range ({min_val}, {max_val})"
 
-        return EmotionValidationResult(
-            is_valid=is_valid, message=message, value=value, range=self.valence_range
-        )
+        return EmotionValidationResult(is_valid=is_valid, message=message, value=value, range=self.valence_range)
 
     @eidosian()
     def is_valid_arousal(self, value: float) -> bool:
@@ -1053,17 +1000,11 @@ class EmotionConfig:
         is_valid = min_val <= value <= max_val
 
         if is_valid:
-            message = (
-                f"Arousal value {value} is within valid range ({min_val}, {max_val})"
-            )
+            message = f"Arousal value {value} is within valid range ({min_val}, {max_val})"
         else:
-            message = (
-                f"Arousal value {value} is outside valid range ({min_val}, {max_val})"
-            )
+            message = f"Arousal value {value} is outside valid range ({min_val}, {max_val})"
 
-        return EmotionValidationResult(
-            is_valid=is_valid, message=message, value=value, range=self.arousal_range
-        )
+        return EmotionValidationResult(is_valid=is_valid, message=message, value=value, range=self.arousal_range)
 
     @eidosian()
     def is_valid_confidence(self, value: float) -> bool:
@@ -1121,15 +1062,11 @@ class EmotionConfig:
         is_valid = min_val <= value <= max_val
 
         if is_valid:
-            message = (
-                f"Confidence value {value} is within valid range ({min_val}, {max_val})"
-            )
+            message = f"Confidence value {value} is within valid range ({min_val}, {max_val})"
         else:
             message = f"Confidence value {value} is outside valid range ({min_val}, {max_val})"
 
-        return EmotionValidationResult(
-            is_valid=is_valid, message=message, value=value, range=self.confidence_range
-        )
+        return EmotionValidationResult(is_valid=is_valid, message=message, value=value, range=self.confidence_range)
 
     @eidosian()
     def is_valid_emotion_category_string(self, category: str) -> bool:
@@ -1157,9 +1094,7 @@ class EmotionConfig:
     def get_keywords_for_emotion(self, emotion: EmotionCategory) -> List[str]: ...
 
     @overload
-    def get_keywords_for_emotion(
-        self, emotion: EmotionCategoryLiteral
-    ) -> List[str]: ...
+    def get_keywords_for_emotion(self, emotion: EmotionCategoryLiteral) -> List[str]: ...
 
     @eidosian()
     def get_keywords_for_emotion(self, emotion: EmotionCategoryType) -> List[str]:
@@ -1227,9 +1162,7 @@ class EmotionConfig:
         # Check weight normalization
         vader_tb_sum = self.vader_weight + self.textblob_weight
         if not isclose(vader_tb_sum, 1.0, abs_tol=0.01):
-            issues.append(
-                f"Vader and TextBlob weights should sum to 1.0, got {vader_tb_sum}"
-            )
+            issues.append(f"Vader and TextBlob weights should sum to 1.0, got {vader_tb_sum}")
 
         # Check range validations
         for name, range_val in [
@@ -1239,9 +1172,7 @@ class EmotionConfig:
         ]:
             min_val, max_val = range_val
             if min_val >= max_val:
-                issues.append(
-                    f"{name.capitalize()} range is invalid: {min_val} >= {max_val}"
-                )
+                issues.append(f"{name.capitalize()} range is invalid: {min_val} >= {max_val}")
 
         # Check per-category weights
         for category in EmotionCategory:
@@ -1249,9 +1180,7 @@ class EmotionConfig:
                 continue  # Using default weight is fine
             weight = self.per_category_weights[category]
             if not 0.0 <= weight <= 1.0:
-                issues.append(
-                    f"Invalid weight {weight} for {category.label}, must be between 0.0 and 1.0"
-                )
+                issues.append(f"Invalid weight {weight} for {category.label}, must be between 0.0 and 1.0")
 
         return issues
 

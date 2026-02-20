@@ -14,7 +14,7 @@ from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import yaml
 
@@ -24,9 +24,9 @@ for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT)
     if extra.exists() and extra_str not in sys.path:
         sys.path.insert(0, extra_str)
 
-from code_forge.ingest.runner import IngestionRunner
 from code_forge.digester.pipeline import build_duplication_index, build_repo_index, build_triage_report
 from code_forge.digester.schema import validate_output_dir
+from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
@@ -410,10 +410,7 @@ def run_code_analysis(
     by_type = db.count_units_by_type()
     by_language = db.count_units_by_language()
     module_samples = [u for u in db.iter_units(limit=2000) if u.get("unit_type") == "module"][:12]
-    traces = [
-        db.trace_contains(str(sample["id"]), max_depth=2, max_nodes=120)
-        for sample in module_samples
-    ]
+    traces = [db.trace_contains(str(sample["id"]), max_depth=2, max_nodes=120) for sample in module_samples]
     digester_dir = report_dir / "code_digester"
     repo_index = build_repo_index(repo_root, digester_dir, max_files=max_files)
     duplication_index = build_duplication_index(db, digester_dir, limit_groups=200, near_limit=200)
@@ -644,9 +641,7 @@ def compare_with_previous_run(run_root: Path, records: list[StagedRecord]) -> di
 
     added = sorted([k for k in current.keys() if k not in previous_manifest])
     removed = sorted([k for k in previous_manifest.keys() if k not in current])
-    changed = sorted(
-        [k for k in current.keys() if k in previous_manifest and previous_manifest[k] != current[k]]
-    )
+    changed = sorted([k for k in current.keys() if k in previous_manifest and previous_manifest[k] != current[k]])
     return {
         "previous_run": prior_runs[-1].name if prior_runs else None,
         "added_count": len(added),
@@ -757,12 +752,24 @@ def run_pipeline(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a living knowledge/code corpus and optional GraphRAG index.")
     parser.add_argument("--repo-root", default=str(FORGE_ROOT), help="Forge repository root.")
-    parser.add_argument("--output-root", default=str(FORGE_ROOT / "reports" / "living_knowledge"), help="Pipeline reports output root.")
-    parser.add_argument("--workspace-root", default=str(FORGE_ROOT / "data" / "living_knowledge" / "workspace"), help="GraphRAG workspace root.")
-    parser.add_argument("--max-file-bytes", type=int, default=2_000_000, help="Skip tracked files larger than this size.")
+    parser.add_argument(
+        "--output-root", default=str(FORGE_ROOT / "reports" / "living_knowledge"), help="Pipeline reports output root."
+    )
+    parser.add_argument(
+        "--workspace-root",
+        default=str(FORGE_ROOT / "data" / "living_knowledge" / "workspace"),
+        help="GraphRAG workspace root.",
+    )
+    parser.add_argument(
+        "--max-file-bytes", type=int, default=2_000_000, help="Skip tracked files larger than this size."
+    )
     parser.add_argument("--max-chars-per-doc", type=int, default=20_000, help="Max characters per staged document.")
-    parser.add_argument("--code-max-files", type=int, default=None, help="Optional max Python files for code analysis ingest.")
-    parser.add_argument("--run-graphrag", action="store_true", help="Run GraphRAG index and queries after staging corpus.")
+    parser.add_argument(
+        "--code-max-files", type=int, default=None, help="Optional max Python files for code analysis ingest."
+    )
+    parser.add_argument(
+        "--run-graphrag", action="store_true", help="Run GraphRAG index and queries after staging corpus."
+    )
     parser.add_argument("--query", action="append", default=[], help="GraphRAG global query (repeatable).")
     parser.add_argument("--method", choices=["fast", "standard"], default="fast", help="GraphRAG index method.")
     return parser.parse_args()

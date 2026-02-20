@@ -1,9 +1,9 @@
 import asyncio
-import sys
 import os
-from pathlib import Path
-import urllib.request
+import sys
 import urllib.error
+import urllib.request
+from pathlib import Path
 
 # Ensure local repo modules are available when not installed globally.
 FORGE_ROOT = Path(__file__).resolve().parent.parent
@@ -14,10 +14,9 @@ for extra_path in (FORGE_ROOT / "lib", FORGE_ROOT / "eidos_mcp" / "src", FORGE_R
 
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
-
+from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamable_http_client
-from mcp.client.session import ClientSession
 
 
 def _check_http_health(base_url: str) -> None:
@@ -28,6 +27,7 @@ def _check_http_health(base_url: str) -> None:
                 raise RuntimeError(f"Unexpected health status: {response.status}")
     except urllib.error.URLError as exc:
         raise RuntimeError(f"Health endpoint unavailable: {health_url}") from exc
+
 
 @eidosian()
 async def check_health():
@@ -43,7 +43,7 @@ async def check_health():
                 await session.initialize()
                 tools = await session.list_tools()
                 print(f"SUCCESS: Connected and retrieved {len(tools.tools)} tools.")
-                
+
                 # Check for specific critical tools
                 tool_names = [t.name for t in tools.tools]
                 required = ["agent_run_task", "run_shell_command", "memory_stats", "kb_search"]
@@ -52,10 +52,11 @@ async def check_health():
                         print(f"  [+] Found required tool: {r}")
                     else:
                         print(f"  [-] MISSING tool: {r}")
-                        
+
     except Exception as e:
         print(f"FAILURE: Could not connect to MCP server: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(check_health())

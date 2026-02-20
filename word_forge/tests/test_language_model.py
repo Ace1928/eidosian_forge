@@ -6,12 +6,10 @@ import importlib.util
 
 import pytest
 
+
 # Check if LLM dependencies are available
 def _llm_available() -> bool:
-    if (
-        importlib.util.find_spec("transformers") is None
-        or importlib.util.find_spec("torch") is None
-    ):
+    if importlib.util.find_spec("transformers") is None or importlib.util.find_spec("torch") is None:
         return False
     try:
         import word_forge.parser.language_model as language_model
@@ -31,9 +29,7 @@ from word_forge.parser.language_model import ModelState
 TEST_MODEL = "sshleifer/tiny-gpt2"
 
 
-@pytest.mark.skipif(
-    not _LLM_AVAILABLE, reason="LLM dependencies (transformers, torch) not installed"
-)
+@pytest.mark.skipif(not _LLM_AVAILABLE, reason="LLM dependencies (transformers, torch) not installed")
 def test_initialize_and_generate_text() -> None:
     state = ModelState(model_name=TEST_MODEL)
     assert state.initialize() is True
@@ -43,9 +39,7 @@ def test_initialize_and_generate_text() -> None:
     assert isinstance(output, str)
 
 
-@pytest.mark.skipif(
-    not _LLM_AVAILABLE, reason="LLM dependencies (transformers, torch) not installed"
-)
+@pytest.mark.skipif(not _LLM_AVAILABLE, reason="LLM dependencies (transformers, torch) not installed")
 def test_query_uses_model() -> None:
     state = ModelState(model_name=TEST_MODEL)
     assert state.initialize() is True

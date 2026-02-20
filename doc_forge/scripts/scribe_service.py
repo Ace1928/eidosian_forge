@@ -26,10 +26,10 @@ from pathlib import Path
 from typing import Any
 
 import requests
+import uvicorn
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
-import uvicorn
 
 try:
     from bs4 import BeautifulSoup
@@ -48,12 +48,59 @@ except Exception:  # pragma: no cover
 
 
 SUPPORTED_SUFFIXES = {
-    ".py", ".pyi", ".js", ".jsx", ".ts", ".tsx", ".java", ".kt", ".kts", ".go", ".rs", ".c", ".h", ".hpp", ".cc", ".cpp",
-    ".cs", ".swift", ".rb", ".php", ".lua", ".sh", ".bash", ".zsh", ".ps1", ".sql",
-    ".md", ".rst", ".txt", ".adoc", ".org", ".log",
-    ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf", ".xml", ".csv", ".tsv", ".env",
-    ".html", ".htm", ".xhtml", ".css", ".scss", ".less", ".svg",
-    ".pdf", ".docx",
+    ".py",
+    ".pyi",
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".java",
+    ".kt",
+    ".kts",
+    ".go",
+    ".rs",
+    ".c",
+    ".h",
+    ".hpp",
+    ".cc",
+    ".cpp",
+    ".cs",
+    ".swift",
+    ".rb",
+    ".php",
+    ".lua",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".ps1",
+    ".sql",
+    ".md",
+    ".rst",
+    ".txt",
+    ".adoc",
+    ".org",
+    ".log",
+    ".json",
+    ".jsonl",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".xml",
+    ".csv",
+    ".tsv",
+    ".env",
+    ".html",
+    ".htm",
+    ".xhtml",
+    ".css",
+    ".scss",
+    ".less",
+    ".svg",
+    ".pdf",
+    ".docx",
 }
 
 PLACEHOLDER_MARKERS = {
@@ -69,10 +116,78 @@ PLACEHOLDER_MARKERS = {
 }
 
 COMMON_STOPWORDS = {
-    "the", "and", "for", "that", "this", "with", "from", "into", "your", "file", "code", "data", "are", "was", "were", "has", "have", "had",
-    "will", "would", "should", "could", "can", "not", "but", "you", "our", "their", "its", "then", "than", "when", "where", "what", "which",
-    "there", "here", "about", "over", "under", "also", "while", "using", "used", "use", "each", "per", "all", "any", "may", "one", "two",
-    "three", "four", "five", "via", "out", "in", "on", "as", "at", "to", "of", "is", "it", "by", "an", "or", "be", "if", "do", "does",
+    "the",
+    "and",
+    "for",
+    "that",
+    "this",
+    "with",
+    "from",
+    "into",
+    "your",
+    "file",
+    "code",
+    "data",
+    "are",
+    "was",
+    "were",
+    "has",
+    "have",
+    "had",
+    "will",
+    "would",
+    "should",
+    "could",
+    "can",
+    "not",
+    "but",
+    "you",
+    "our",
+    "their",
+    "its",
+    "then",
+    "than",
+    "when",
+    "where",
+    "what",
+    "which",
+    "there",
+    "here",
+    "about",
+    "over",
+    "under",
+    "also",
+    "while",
+    "using",
+    "used",
+    "use",
+    "each",
+    "per",
+    "all",
+    "any",
+    "may",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "via",
+    "out",
+    "in",
+    "on",
+    "as",
+    "at",
+    "to",
+    "of",
+    "is",
+    "it",
+    "by",
+    "an",
+    "or",
+    "be",
+    "if",
+    "do",
+    "does",
 }
 
 REQUIRED_HEADINGS = [
@@ -243,9 +358,7 @@ class ProcessorConfig:
             f"http://127.0.0.1:{os.environ.get('EIDOS_DOC_FORGE_LLM_PORT', str(default_llm_port))}/completion",
         )
 
-        llama_server_bin = Path(
-            os.environ.get("EIDOS_DOC_FORGE_LLAMA_SERVER_BIN", "llama.cpp/build/bin/llama-server")
-        )
+        llama_server_bin = Path(os.environ.get("EIDOS_DOC_FORGE_LLAMA_SERVER_BIN", "llama.cpp/build/bin/llama-server"))
         if not llama_server_bin.is_absolute():
             llama_server_bin = forge_root / llama_server_bin
 
@@ -515,7 +628,11 @@ class FederatedJudge:
     def _judge_structure(self, markdown: str) -> dict[str, Any]:
         hits = sum(1 for h in REQUIRED_HEADINGS if h in markdown)
         score = hits / len(REQUIRED_HEADINGS)
-        return {"name": "structure_contract", "score": round(score, 4), "details": {"required_hits": hits, "required_total": len(REQUIRED_HEADINGS)}}
+        return {
+            "name": "structure_contract",
+            "score": round(score, 4),
+            "details": {"required_hits": hits, "required_total": len(REQUIRED_HEADINGS)},
+        }
 
     def _judge_safety(self, markdown: str) -> dict[str, Any]:
         lower = markdown.lower()
@@ -542,7 +659,11 @@ class FederatedJudge:
         lower = markdown.lower()
         hits = sum(1 for s in symbols if s.lower() in lower)
         score = hits / max(1, min(20, len(symbols)))
-        return {"name": "symbol_coverage", "score": round(min(1.0, score), 4), "details": {"symbols": len(symbols), "hits": hits}}
+        return {
+            "name": "symbol_coverage",
+            "score": round(min(1.0, score), 4),
+            "details": {"symbols": len(symbols), "hits": hits},
+        }
 
     def _judge_specificity(self, markdown: str) -> dict[str, Any]:
         lines = [line.strip() for line in markdown.splitlines() if line.strip()]
@@ -583,7 +704,15 @@ class DocProcessor:
             cfg.runtime_root.resolve(),
         ]
         self.excluded_segments = {
-            ".git", "__pycache__", ".pytest_cache", "node_modules", "archive_forge", "Backups", "runtime", "staging", "final_docs",
+            ".git",
+            "__pycache__",
+            ".pytest_cache",
+            "node_modules",
+            "archive_forge",
+            "Backups",
+            "runtime",
+            "staging",
+            "final_docs",
         }
 
         self.state = self._load_state()
@@ -783,13 +912,19 @@ class DocProcessor:
                     source_text, metadata = self.extractor.extract(path)
                     metadata["source_size_bytes"] = path.stat().st_size
                     metadata["doc_type"] = metadata.get("doc_type") or doc_type
-                    markdown = self.generator.generate(rel_key, source_text, metadata) if not self.cfg.dry_run else "\n".join(REQUIRED_HEADINGS)
+                    markdown = (
+                        self.generator.generate(rel_key, source_text, metadata)
+                        if not self.cfg.dry_run
+                        else "\n".join(REQUIRED_HEADINGS)
+                    )
 
                     stage_path.write_text(markdown, encoding="utf-8")
                     with self.lock:
                         self.state["last_staged"] = rel_key
 
-                    scorecard = self.judges.evaluate(markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata)
+                    scorecard = self.judges.evaluate(
+                        markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata
+                    )
                     _atomic_write_json(judgment_path, scorecard)
 
                     quality = float(scorecard.get("aggregate_score", 0.0))
@@ -841,7 +976,9 @@ class DocProcessor:
                             "updated_at": _now_iso(),
                             "staged_path": str(stage_path.relative_to(self.cfg.runtime_root)),
                             "final_path": str(final_path.relative_to(self.cfg.runtime_root)) if approved else None,
-                            "rejected_path": str(rejected_path.relative_to(self.cfg.runtime_root)) if not approved else None,
+                            "rejected_path": (
+                                str(rejected_path.relative_to(self.cfg.runtime_root)) if not approved else None
+                            ),
                             "judgment_path": str(judgment_path.relative_to(self.cfg.runtime_root)),
                             "duration_seconds": elapsed,
                             "tags": tags,
@@ -1162,8 +1299,12 @@ def main() -> int:
 
     forge_root = Path(args.forge_root).resolve()
     default_doc_port = _registry_port(forge_root, "doc_forge_dashboard", 8930)
-    effective_port = args.port if args.port is not None else int(os.environ.get("EIDOS_DOC_FORGE_PORT", str(default_doc_port)))
-    cfg = ProcessorConfig.from_env(forge_root=forge_root, host=args.host, port=effective_port, dry_run=bool(args.dry_run))
+    effective_port = (
+        args.port if args.port is not None else int(os.environ.get("EIDOS_DOC_FORGE_PORT", str(default_doc_port)))
+    )
+    cfg = ProcessorConfig.from_env(
+        forge_root=forge_root, host=args.host, port=effective_port, dry_run=bool(args.dry_run)
+    )
     processor = DocProcessor(cfg)
     app = create_app(processor)
 

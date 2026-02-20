@@ -15,4 +15,3 @@ def test_prune_metrics(tmp_path):
     counts = dict(conn.execute("SELECT key, count(*) FROM metrics GROUP BY key"))
     conn.close()
     assert counts == {"a": 1000, "b": 1000}
-

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Eidosian Standardization Script
@@ -14,11 +15,11 @@ Usage:
 """
 
 import argparse
-import sys
 import os
+import sys
 import textwrap
 from pathlib import Path
-from typing import List, Dict, Any, Iterable, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Add root to sys.path to import global_info
 root_dir = Path(__file__).resolve().parent.parent
@@ -121,6 +122,7 @@ def _infer_kind(path: Path) -> str:
         return "python"
     return "misc"
 
+
 @eidosian()
 def generate_readme(module_name: str, report: Dict[str, Any]) -> str:
     """Generate a standardized README content."""
@@ -150,6 +152,7 @@ def generate_readme(module_name: str, report: Dict[str, Any]) -> str:
 - Tests: `{module_name}/tests/` (if present)
 """
 
+
 @eidosian()
 def generate_current_state(module_name: str, report: Dict[str, Any]) -> str:
     """Generate CURRENT_STATE.md content."""
@@ -176,6 +179,7 @@ Status: {status}
 {gaps_text}
 """
 
+
 @eidosian()
 def generate_goals(module_name: str, report: Dict[str, Any]) -> str:
     """Generate GOALS.md content."""
@@ -198,6 +202,7 @@ def generate_goals(module_name: str, report: Dict[str, Any]) -> str:
 
 {goals_text}
 """
+
 
 @eidosian()
 def generate_todo(module_name: str, report: Dict[str, Any]) -> str:
@@ -252,12 +257,11 @@ def _build_report(path: Path) -> Dict[str, Any]:
         if not report["packaging"]["root_init"]:
             report["gaps"].append("Missing root __init__.py for import bridging.")
         if src_pkg and path.name not in src_names:
-            report["gaps"].append(
-                f"src package names do not include {path.name}."
-            )
+            report["gaps"].append(f"src package names do not include {path.name}.")
         if not report["packaging"]["tests_dir"]:
             report["gaps"].append("Missing tests/ directory.")
     return report
+
 
 def _write_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
@@ -315,7 +319,7 @@ if _nested.exists():
     if not report["packaging"]["pyproject"]:
         pyproject = module_path / "pyproject.toml"
         package_names = report["packaging"]["src_packages"] or [module_path.name]
-        packages_line = ", ".join([f"\"src/{name}\"" for name in package_names])
+        packages_line = ", ".join([f'"src/{name}"' for name in package_names])
         content = textwrap.dedent(f"""[build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -360,6 +364,7 @@ testpaths = ["tests"]
         _write_file(init_path, content)
         print("  ➕ Added src bridge package")
 
+
 @eidosian()
 def main():
     parser = argparse.ArgumentParser(description="Eidosian standardization tool")
@@ -392,6 +397,7 @@ def main():
         print(f"gapped={len(missing)}")
 
     print("\n✅ Standardization complete.")
+
 
 if __name__ == "__main__":
     main()

@@ -16,7 +16,6 @@ from code_forge.integration.pipeline import export_units_for_graphrag, sync_unit
 from code_forge.integration.provenance import write_provenance_links
 from code_forge.library.db import CodeLibraryDB
 
-
 TRIAGE_RULESET_VERSION = "code_forge_triage_ruleset_v2_2026_02_19"
 TRIAGE_THRESHOLDS = {
     "unit_count_min": 1,
@@ -273,9 +272,7 @@ def build_dependency_graph(
     output_dir.mkdir(parents=True, exist_ok=True)
     payload = db.module_dependency_graph(rel_types=rel_types, limit_edges=limit_edges)
     payload["generated_at"] = _utc_now()
-    (output_dir / "dependency_graph.json").write_text(
-        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
-    )
+    (output_dir / "dependency_graph.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
 
 
@@ -335,9 +332,7 @@ def _classify_file(metrics: dict[str, Any]) -> dict[str, Any]:
         max_complexity >= TRIAGE_THRESHOLDS["refactor_max_complexity"]
         or avg_complexity >= TRIAGE_THRESHOLDS["refactor_avg_complexity"]
     ):
-        reasons.append(
-            f"Complexity hotspot detected (avg={avg_complexity:.2f}, max={max_complexity:.2f})"
-        )
+        reasons.append(f"Complexity hotspot detected (avg={avg_complexity:.2f}, max={max_complexity:.2f})")
         reasons.append("Refactor for modularity and testability")
         overload = max(
             max_complexity - TRIAGE_THRESHOLDS["refactor_max_complexity"],
@@ -383,12 +378,8 @@ def build_triage_report(
     metric_by_path = {str(rec.get("file_path")): rec for rec in file_metrics}
 
     exact_hits = {str(k): int(v) for k, v in (duplication_index.get("exact_hits_by_file") or {}).items()}
-    normalized_hits = {
-        str(k): int(v) for k, v in (duplication_index.get("normalized_hits_by_file") or {}).items()
-    }
-    structural_hits = {
-        str(k): int(v) for k, v in (duplication_index.get("structural_hits_by_file") or {}).items()
-    }
+    normalized_hits = {str(k): int(v) for k, v in (duplication_index.get("normalized_hits_by_file") or {}).items()}
+    structural_hits = {str(k): int(v) for k, v in (duplication_index.get("structural_hits_by_file") or {}).items()}
     near_hits = {str(k): int(v) for k, v in (duplication_index.get("near_hits_by_file") or {}).items()}
 
     entries: list[dict[str, Any]] = []
@@ -665,9 +656,7 @@ def run_archive_digester(
         "provenance_path": None,
     }
     summary_path = output_dir / "archive_digester_summary.json"
-    summary_path.write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8"
-    )
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
     provenance = write_provenance_links(
         output_path=output_dir / "provenance_links.json",

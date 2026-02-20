@@ -10,10 +10,11 @@ or symlinked to their PATH. It follows Eidosian principles of minimal
 friction and universal access.
 """
 
-import sys
 import importlib.util
+import sys
 from pathlib import Path
 from typing import Callable, Optional
+
 
 def find_package_root() -> Path:
     """

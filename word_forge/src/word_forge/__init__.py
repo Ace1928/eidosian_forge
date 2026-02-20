@@ -5,22 +5,21 @@ Word Forge builds semantic/lexical graphs from natural language input,
 creating a living dictionary of terms, relationships, and affective meaning.
 """
 
-from word_forge.forge import __version__
-
 # Core imports
 from word_forge.config import Config
+from word_forge.forge import __version__
+from word_forge.graph.graph_builder import GraphBuilder
+
+# Graph components
+from word_forge.graph.graph_manager import GraphManager
+from word_forge.graph.graph_query import GraphQuery
 
 # Core functions
 from word_forge.parser.lexical_functions import (
     create_lexical_dataset,
-    get_wordnet_data,
     get_synsets,
+    get_wordnet_data,
 )
-
-# Graph components
-from word_forge.graph.graph_manager import GraphManager
-from word_forge.graph.graph_builder import GraphBuilder
-from word_forge.graph.graph_query import GraphQuery
 
 __all__ = [
     "__version__",

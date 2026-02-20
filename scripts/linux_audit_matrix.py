@@ -555,8 +555,16 @@ def main() -> int:
     report = run_matrix(
         root=root,
         python_bin=python_bin,
-        state_dir=(root / args.state_dir).resolve() if not Path(args.state_dir).is_absolute() else Path(args.state_dir).resolve(),
-        report_dir=(root / args.report_dir).resolve() if not Path(args.report_dir).is_absolute() else Path(args.report_dir).resolve(),
+        state_dir=(
+            (root / args.state_dir).resolve()
+            if not Path(args.state_dir).is_absolute()
+            else Path(args.state_dir).resolve()
+        ),
+        report_dir=(
+            (root / args.report_dir).resolve()
+            if not Path(args.report_dir).is_absolute()
+            else Path(args.report_dir).resolve()
+        ),
         timeout_s=max(10.0, float(args.timeout)),
         mcp_timeout_s=max(3.0, float(args.mcp_timeout)),
         quick=bool(args.quick),

@@ -1,7 +1,8 @@
-from pathlib import Path
 import subprocess
-from core.artifacts import write_run_artifacts, read_run_artifacts
+from pathlib import Path
+
 from actuators.shell_exec import run_step
+from core.artifacts import read_run_artifacts, write_run_artifacts
 
 
 def test_write_and_read_artifacts(tmp_path: Path):
@@ -17,9 +18,7 @@ def test_write_and_read_artifacts(tmp_path: Path):
 def test_runner_writes_artifacts_and_cli(tmp_path: Path):
     base = tmp_path / "state"
     base.mkdir(parents=True, exist_ok=True)
-    res = run_step(str(base), "step-1",
-                   ["bash", "-lc", "echo hi; echo oops 1>&2; exit 1"],
-                   cwd=".", budget_s=5.0)
+    res = run_step(str(base), "step-1", ["bash", "-lc", "echo hi; echo oops 1>&2; exit 1"], cwd=".", budget_s=5.0)
     assert res["status"] in ("ok", "timeout", "error", "denied") or res["status"] == "timeout"
     run_id = res.get("run_id")
     assert run_id, "runner should return a run_id"

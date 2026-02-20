@@ -1,6 +1,8 @@
 from __future__ import annotations
-from agent_forge.core.contracts import Goal
+
 from eidosian_core import eidosian
+
+from agent_forge.core.contracts import Goal
 
 
 @eidosian()

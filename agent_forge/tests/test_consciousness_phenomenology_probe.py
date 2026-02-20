@@ -92,7 +92,9 @@ def test_phenom_probe_emits_snapshot_metrics_and_broadcast(tmp_path: Path) -> No
         parent_id="p-ppx",
     )
     events.append(base, "sense.percept", {"novelty": 0.5}, corr_id="c-ppx", parent_id="p-ppx")
-    events.append(base, "meta.state_estimate", {"mode": "grounded", "confidence": 0.81}, corr_id="c-ppx", parent_id="p-ppx")
+    events.append(
+        base, "meta.state_estimate", {"mode": "grounded", "confidence": 0.81}, corr_id="c-ppx", parent_id="p-ppx"
+    )
 
     kernel = ConsciousnessKernel(
         base,
@@ -122,11 +124,7 @@ def test_phenom_probe_emits_snapshot_metrics_and_broadcast(tmp_path: Path) -> No
         value = float(latest[key])
         assert 0.0 <= value <= 1.0
 
-    metric_keys = {
-        (evt.get("data") or {}).get("key")
-        for evt in all_events
-        if evt.get("type") == "metrics.sample"
-    }
+    metric_keys = {(evt.get("data") or {}).get("key") for evt in all_events if evt.get("type") == "metrics.sample"}
     assert "consciousness.phenom.unity_index" in metric_keys
     assert "consciousness.phenom.continuity_index" in metric_keys
     assert "consciousness.phenom.ownership_index" in metric_keys

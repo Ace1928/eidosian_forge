@@ -1,18 +1,21 @@
 from eidosian_core import eidosian
+
 """
 Integration with GraphRAG.
 """
 import subprocess
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 
 class GraphRAGIntegration:
     """
     Bridge between KnowledgeForge and the external GraphRAG tool.
     """
+
     def __init__(self, graphrag_root: Path):
         self.root = graphrag_root
-        
+
     @eidosian()
     def run_incremental_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         """

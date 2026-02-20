@@ -13,43 +13,44 @@ Enhanced with other forges:
     - knowledge_forge: Semantic code understanding
     - llm_forge: AI-powered code analysis
 """
-from __future__ import annotations
-from eidosian_core import eidosian
 
+from __future__ import annotations
+
+import json
 import os
 import sys
-import json
 from pathlib import Path
 from typing import Optional
+
+from eidosian_core import eidosian
 
 # Add lib to path for CLI framework
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "lib"))
 
-from cli import StandardCLI, CommandResult, ForgeDetector
+from cli import CommandResult, ForgeDetector, StandardCLI
 
 from code_forge import (
     CodeAnalyzer,
-    GenericCodeAnalyzer,
     CodeIndexer,
     CodeLibrarian,
     CodeLibraryDB,
+    GenericCodeAnalyzer,
     IngestionRunner,
+    apply_reconstruction,
     build_canonical_migration_plan,
     build_dependency_graph,
     build_drift_report_from_output,
     build_duplication_index,
+    build_reconstruction_from_library,
     build_repo_index,
     build_triage_report,
+    compare_tree_parity,
     export_units_for_graphrag,
-    index_forge_codebase,
     run_archive_digester,
     run_benchmark_suite,
+    run_roundtrip_pipeline,
     sync_units_to_knowledge_forge,
     validate_output_dir,
-    build_reconstruction_from_library,
-    compare_tree_parity,
-    apply_reconstruction,
-    run_roundtrip_pipeline,
     validate_roundtrip_workspace,
 )
 
@@ -63,11 +64,11 @@ DEFAULT_RUNS_DIR = FORGE_ROOT / "data" / "code_forge" / "ingestion_runs"
 
 class CodeForgeCLI(StandardCLI):
     """CLI for Code Forge - code analysis and indexing."""
-    
+
     name = "code_forge"
     description = "AST-based code analysis, indexing, and library management"
     version = "1.0.0"
-    
+
     def __init__(self):
         super().__init__()
         self._analyzer: Optional[CodeAnalyzer] = None
@@ -75,21 +76,21 @@ class CodeForgeCLI(StandardCLI):
         self._librarian: Optional[CodeLibrarian] = None
         self._library_db: Optional[CodeLibraryDB] = None
         self._runner: Optional[IngestionRunner] = None
-    
+
     @property
     def analyzer(self) -> CodeAnalyzer:
         """Lazy-load code analyzer."""
         if self._analyzer is None:
             self._analyzer = CodeAnalyzer()
         return self._analyzer
-    
+
     @property
     def indexer(self) -> CodeIndexer:
         """Lazy-load code indexer."""
         if self._indexer is None:
             self._indexer = CodeIndexer(DEFAULT_INDEX_PATH)
         return self._indexer
-    
+
     @property
     def librarian(self) -> CodeLibrarian:
         """Lazy-load code librarian."""
@@ -108,11 +109,11 @@ class CodeForgeCLI(StandardCLI):
         if self._runner is None:
             self._runner = IngestionRunner(db=self.library_db, runs_dir=DEFAULT_RUNS_DIR)
         return self._runner
-    
+
     @eidosian()
     def register_commands(self, subparsers) -> None:
         """Register code-forge specific commands."""
-        
+
         # Analyze command
         analyze_parser = subparsers.add_parser(
             "analyze",
@@ -123,12 +124,13 @@ class CodeForgeCLI(StandardCLI):
             help="Path to Python file",
         )
         analyze_parser.add_argument(
-            "-v", "--verbose",
+            "-v",
+            "--verbose",
             action="store_true",
             help="Show detailed analysis",
         )
         analyze_parser.set_defaults(func=self._cmd_analyze)
-        
+
         # Index command
         index_parser = subparsers.add_parser(
             "index",
@@ -146,7 +148,7 @@ class CodeForgeCLI(StandardCLI):
             help="Force full reindex",
         )
         index_parser.set_defaults(func=self._cmd_index)
-        
+
         # Search command
         search_parser = subparsers.add_parser(
             "search",
@@ -157,18 +159,20 @@ class CodeForgeCLI(StandardCLI):
             help="Search query",
         )
         search_parser.add_argument(
-            "-t", "--type",
+            "-t",
+            "--type",
             choices=["function", "class", "method", "module"],
             help="Filter by element type",
         )
         search_parser.add_argument(
-            "-n", "--limit",
+            "-n",
+            "--limit",
             type=int,
             default=10,
             help="Maximum results (default: 10)",
         )
         search_parser.set_defaults(func=self._cmd_search)
-        
+
         # Ingest command
         ingest_parser = subparsers.add_parser(
             "ingest",
@@ -251,20 +255,21 @@ class CodeForgeCLI(StandardCLI):
         )
         ingest_status_parser.add_argument("run_id", help="Run ID to inspect")
         ingest_status_parser.set_defaults(func=self._cmd_ingest_status)
-        
+
         # Library command
         lib_parser = subparsers.add_parser(
             "library",
             help="List code library contents",
         )
         lib_parser.add_argument(
-            "-n", "--limit",
+            "-n",
+            "--limit",
             type=int,
             default=20,
             help="Maximum items (default: 20)",
         )
         lib_parser.set_defaults(func=self._cmd_library)
-        
+
         # Stats command
         stats_parser = subparsers.add_parser(
             "stats",
@@ -976,7 +981,7 @@ class CodeForgeCLI(StandardCLI):
             help="Disable strict schema/blob validation failure mode",
         )
         roundtrip_parser.set_defaults(func=self._cmd_roundtrip)
-    
+
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
         """Show code forge status."""
@@ -984,16 +989,16 @@ class CodeForgeCLI(StandardCLI):
             # Check index
             index_exists = DEFAULT_INDEX_PATH.exists()
             element_count = len(self.indexer.elements) if index_exists else 0
-            
+
             # Count by type
             type_counts = {}
             for elem in self.indexer.elements.values():
                 t = elem.element_type
                 type_counts[t] = type_counts.get(t, 0) + 1
-            
+
             # Check library
             lib_exists = DEFAULT_LIBRARY_PATH.exists()
-            
+
             integrations = []
             if ForgeDetector.is_available("knowledge_forge"):
                 integrations.append("knowledge_forge")
@@ -1008,7 +1013,7 @@ class CodeForgeCLI(StandardCLI):
             rel_counts = self.library_db.relationship_counts()
             digester_dir = FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"
             latest_runs = self.library_db.latest_runs(limit=5)
-            
+
             return CommandResult(
                 True,
                 f"Code Forge operational - {db_total} units in library",
@@ -1035,11 +1040,11 @@ class CodeForgeCLI(StandardCLI):
                         "drift_history_dir": str(digester_dir / "history"),
                     },
                     "integrations": integrations,
-                }
+                },
             )
         except Exception as e:
             return CommandResult(False, f"Error: {e}")
-    
+
     def _cmd_analyze(self, args) -> None:
         """Analyze a Python file."""
         try:
@@ -1050,13 +1055,9 @@ class CodeForgeCLI(StandardCLI):
                 result = CommandResult(False, "Path must be a file")
             else:
                 analysis = self.analyzer.analyze_file(path)
-                
+
                 if args.verbose:
-                    result = CommandResult(
-                        True,
-                        f"Analyzed {path.name}",
-                        analysis
-                    )
+                    result = CommandResult(True, f"Analyzed {path.name}", analysis)
                 else:
                     summary = {
                         "file": str(path),
@@ -1065,14 +1066,12 @@ class CodeForgeCLI(StandardCLI):
                         "imports": len(analysis.get("imports", [])),
                     }
                     result = CommandResult(
-                        True,
-                        f"{path.name}: {summary['functions']} functions, {summary['classes']} classes",
-                        summary
+                        True, f"{path.name}: {summary['functions']} functions, {summary['classes']} classes", summary
                     )
         except Exception as e:
             result = CommandResult(False, f"Analysis error: {e}")
         self._output(result, args)
-    
+
     def _cmd_index(self, args) -> None:
         """Index a codebase."""
         try:
@@ -1088,46 +1087,48 @@ class CodeForgeCLI(StandardCLI):
                         "path": str(path),
                         "elements_indexed": count,
                         "total_elements": len(self.indexer.elements),
-                    }
+                    },
                 )
         except Exception as e:
             result = CommandResult(False, f"Indexing error: {e}")
         self._output(result, args)
-    
+
     def _cmd_search(self, args) -> None:
         """Search code elements."""
         try:
             results = []
             query_lower = args.query.lower()
-            
+
             for elem in self.indexer.elements.values():
                 # Filter by type if specified
                 if args.type and elem.element_type != args.type:
                     continue
-                
+
                 # Match by name or docstring
-                if (query_lower in elem.name.lower() or 
-                    query_lower in elem.qualified_name.lower() or
-                    (elem.docstring and query_lower in elem.docstring.lower())):
-                    results.append({
-                        "name": elem.name,
-                        "type": elem.element_type,
-                        "qualified_name": elem.qualified_name,
-                        "file": elem.file_path,
-                        "line": elem.line_start,
-                    })
+                if (
+                    query_lower in elem.name.lower()
+                    or query_lower in elem.qualified_name.lower()
+                    or (elem.docstring and query_lower in elem.docstring.lower())
+                ):
+                    results.append(
+                        {
+                            "name": elem.name,
+                            "type": elem.element_type,
+                            "qualified_name": elem.qualified_name,
+                            "file": elem.file_path,
+                            "line": elem.line_start,
+                        }
+                    )
                     if len(results) >= args.limit:
                         break
-            
+
             result = CommandResult(
-                True,
-                f"Found {len(results)} matches for '{args.query}'",
-                {"results": results, "query": args.query}
+                True, f"Found {len(results)} matches for '{args.query}'", {"results": results, "query": args.query}
             )
         except Exception as e:
             result = CommandResult(False, f"Search error: {e}")
         self._output(result, args)
-    
+
     def _cmd_ingest(self, args) -> None:
         """Ingest file into code library."""
         try:
@@ -1137,33 +1138,33 @@ class CodeForgeCLI(StandardCLI):
             else:
                 analysis = self.analyzer.analyze_file(path)
                 content = path.read_text(encoding="utf-8")
-                
+
                 sid = self.librarian.add_snippet(content, metadata=analysis)
                 result = CommandResult(
-                    True,
-                    f"Ingested {path.name} as {sid[:8]}",
-                    {"snippet_id": sid, "file": str(path)}
+                    True, f"Ingested {path.name} as {sid[:8]}", {"snippet_id": sid, "file": str(path)}
                 )
         except Exception as e:
             result = CommandResult(False, f"Ingest error: {e}")
         self._output(result, args)
-    
+
     def _cmd_library(self, args) -> None:
         """List code library contents."""
         try:
-            snippets = list(self.librarian.snippets.items())[:args.limit]
-            
+            snippets = list(self.librarian.snippets.items())[: args.limit]
+
             items = []
             for sid, snippet in snippets:
-                items.append({
-                    "id": sid[:8],
-                    "preview": snippet.get("content", "")[:60] + "...",
-                })
-            
+                items.append(
+                    {
+                        "id": sid[:8],
+                        "preview": snippet.get("content", "")[:60] + "...",
+                    }
+                )
+
             result = CommandResult(
                 True,
                 f"Library contains {len(self.librarian.snippets)} snippets",
-                {"snippets": items, "total": len(self.librarian.snippets)}
+                {"snippets": items, "total": len(self.librarian.snippets)},
             )
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
@@ -1257,25 +1258,25 @@ class CodeForgeCLI(StandardCLI):
         except Exception as e:
             result = CommandResult(False, f"Status error: {e}")
         self._output(result, args)
-    
+
     def _cmd_stats(self, args) -> None:
         """Show detailed statistics."""
         try:
             # Element types
             type_counts = {}
             file_counts = {}
-            
+
             for elem in self.indexer.elements.values():
                 t = elem.element_type
                 type_counts[t] = type_counts.get(t, 0) + 1
-                
+
                 # Count files
                 f = Path(elem.file_path).name
                 file_counts[f] = file_counts.get(f, 0) + 1
-            
+
             # Top files
             top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-            
+
             data = {
                 "total_elements": len(self.indexer.elements),
                 "by_type": type_counts,
@@ -1283,11 +1284,11 @@ class CodeForgeCLI(StandardCLI):
                 "top_files": [{"file": f, "elements": c} for f, c in top_files],
                 "library_size": len(self.librarian.snippets),
             }
-            
+
             result = CommandResult(
                 True,
                 f"Stats: {data['total_elements']} elements, {data['unique_files']} files, {data['library_size']} snippets",
-                data
+                data,
             )
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
@@ -1530,9 +1531,7 @@ class CodeForgeCLI(StandardCLI):
             else:
                 output_dir = Path(args.output_dir).resolve()
                 kb_path = Path(args.kb_path).resolve() if args.sync_knowledge else None
-                graphrag_out = (
-                    Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
-                )
+                graphrag_out = Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
                 payload = run_archive_digester(
                     root_path=root,
                     db=self.library_db,
@@ -1549,9 +1548,7 @@ class CodeForgeCLI(StandardCLI):
                     strict_validation=not bool(args.no_strict_validation),
                     write_drift_report=not bool(args.no_drift_report),
                     write_history_snapshot=not bool(args.no_history_snapshot),
-                    previous_snapshot_path=(
-                        Path(args.previous_snapshot).resolve() if args.previous_snapshot else None
-                    ),
+                    previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
                     drift_warn_pct=float(args.drift_warn_pct),
                     drift_min_abs_delta=float(args.drift_min_abs_delta),
                 )
@@ -1631,9 +1628,7 @@ class CodeForgeCLI(StandardCLI):
             output_dir = Path(args.output_dir).resolve()
             report = build_drift_report_from_output(
                 output_dir=output_dir,
-                previous_snapshot_path=(
-                    Path(args.previous_snapshot).resolve() if args.previous_snapshot else None
-                ),
+                previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
                 history_dir=output_dir / "history",
                 write_history=not bool(args.no_history_snapshot),
                 warn_pct=float(args.drift_warn_pct),
@@ -1770,7 +1765,11 @@ class CodeForgeCLI(StandardCLI):
                 (
                     "Reconstruction apply dry-run complete"
                     if payload.get("dry_run")
-                    else ("Reconstruction applied" if not payload.get("noop") else "Reconstruction apply no-op (already in sync)")
+                    else (
+                        "Reconstruction applied"
+                        if not payload.get("noop")
+                        else "Reconstruction apply no-op (already in sync)"
+                    )
                 ),
                 payload,
             )

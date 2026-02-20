@@ -184,9 +184,7 @@ def _continuity_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[
     reentry_ratio = reentry_hits / unique_items
     thread_length_norm = max_streak / max(1, len(seq))
     continuity = clamp01(
-        (0.45 * _mean(overlaps))
-        + (0.35 * persistence_ratio)
-        + (0.20 * (1.0 - reentry_ratio)),
+        (0.45 * _mean(overlaps)) + (0.35 * persistence_ratio) + (0.20 * (1.0 - reentry_ratio)),
         default=0.0,
     )
     return (
@@ -262,9 +260,7 @@ def _ownership_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, dict[s
     response_score = _mean(responses) if perturb_ts else 0.5
 
     ownership = clamp01(
-        (0.50 * agency_mean)
-        + (0.30 * boundary_mean)
-        + (0.20 * response_score),
+        (0.50 * agency_mean) + (0.30 * boundary_mean) + (0.20 * response_score),
         default=0.0,
     )
     return (
@@ -348,18 +344,12 @@ def _dream_likeness_index(events: Sequence[Mapping[str, Any]]) -> tuple[float, d
 
     total = simulated + real
     sim_frac = (simulated / total) if total > 0 else 0.0
-    mode_sim_frac = (
-        sum(1 for mode in meta_modes if mode == "simulated") / len(meta_modes)
-        if meta_modes
-        else 0.0
-    )
+    mode_sim_frac = sum(1 for mode in meta_modes if mode == "simulated") / len(meta_modes) if meta_modes else 0.0
     ground_mean = _mean(groundedness_vals) if groundedness_vals else 0.5
     mode_support = min(sim_frac, mode_sim_frac)
 
     dream = clamp01(
-        (0.55 * sim_frac)
-        + (0.25 * mode_support)
-        + (0.20 * (1.0 - ground_mean)),
+        (0.55 * sim_frac) + (0.25 * mode_support) + (0.20 * (1.0 - ground_mean)),
         default=0.0,
     )
     return (
@@ -384,9 +374,7 @@ class PhenomenologyProbeModule:
         emit_delta = clamp01(ctx.config.get("phenom_emit_delta_threshold"), default=0.05)
         trace_threshold = clamp01(ctx.config.get("phenom_unity_trace_threshold"), default=0.45)
         broadcast_enable = bool(ctx.config.get("phenom_broadcast_enable", True))
-        broadcast_min_confidence = clamp01(
-            ctx.config.get("phenom_broadcast_min_confidence"), default=0.25
-        )
+        broadcast_min_confidence = clamp01(ctx.config.get("phenom_broadcast_min_confidence"), default=0.25)
 
         state = ctx.module_state(
             self.name,

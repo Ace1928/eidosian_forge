@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 DEFAULT_EXTS = [
@@ -291,11 +292,7 @@ def needs_index(path: Path, state: dict) -> bool:
         stat = path.stat()
     except (FileNotFoundError, PermissionError):
         return False
-    return (
-        entry is None
-        or entry.get("mtime") != stat.st_mtime
-        or entry.get("size") != stat.st_size
-    )
+    return entry is None or entry.get("mtime") != stat.st_mtime or entry.get("size") != stat.st_size
 
 
 @eidosian()
@@ -343,9 +340,7 @@ def main() -> int:
         if not scan_root.exists():
             print(f"Scan root missing, skipping: {scan_root}", file=sys.stderr)
             continue
-        candidates.extend(
-            iter_files(scan_root, exts, exclude_dirs, exclude_globs, args.max_bytes)
-        )
+        candidates.extend(iter_files(scan_root, exts, exclude_dirs, exclude_globs, args.max_bytes))
 
     pending: list[Path] = [path for path in candidates if needs_index(path, state)]
     if args.dry_run:

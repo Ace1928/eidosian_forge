@@ -64,9 +64,7 @@ class MultilingualManager:
         try:
             self.db.update_lexeme_base(lemma=lemma, lang=lang, base_term=english_term)
         except TermNotFoundError:
-            self.db.insert_or_update_lexeme(
-                lemma=lemma, lang=lang, base_term=english_term
-            )
+            self.db.insert_or_update_lexeme(lemma=lemma, lang=lang, base_term=english_term)
 
     def ingest_translation_batch(
         self,
@@ -90,4 +88,3 @@ class MultilingualManager:
                 relation=relation,
                 source=source,
             )
-

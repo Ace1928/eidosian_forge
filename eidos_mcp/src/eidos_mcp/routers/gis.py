@@ -4,10 +4,11 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from ..core import tool
-from ..state import gis, GIS_PATH, _is_valid_json
-from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
 from eidosian_core import eidosian
+
+from ..core import tool
+from ..state import GIS_PATH, _is_valid_json, gis
+from ..transactions import begin_transaction, find_latest_transaction_for_path, load_transaction
 
 
 @tool(

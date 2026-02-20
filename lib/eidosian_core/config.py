@@ -5,12 +5,15 @@
 Global configuration for the Eidosian decorator system.
 """
 from __future__ import annotations
+
 import json
 import os
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
-from typing import Any, Dict, Optional, Literal
+from dataclasses import asdict, dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+
 class LogLevel(Enum):
     """Log levels for Eidosian logging."""
     DEBUG = "DEBUG"
@@ -41,7 +44,7 @@ class ProfilingConfig:
     sort_by: str = "cumulative"
     include_builtins: bool = False
     save_stats: bool = False
-@dataclass  
+@dataclass
 class BenchmarkingConfig:
     """Benchmarking configuration."""
     enabled: bool = False
@@ -70,7 +73,7 @@ class EidosianConfig:
     profiling: ProfilingConfig = field(default_factory=ProfilingConfig)
     benchmarking: BenchmarkingConfig = field(default_factory=BenchmarkingConfig)
     tracing: TracingConfig = field(default_factory=TracingConfig)
-    
+
     # Global settings
     auto_revert_on_failure: bool = True
     fail_threshold: int = 3
@@ -86,7 +89,7 @@ class EidosianConfig:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.to_json())
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "EidosianConfig":
         """Create from dictionary."""
@@ -99,12 +102,12 @@ class EidosianConfig:
             fail_threshold=data.get("fail_threshold", 3),
             dry_run=data.get("dry_run", False),
         )
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> "EidosianConfig":
         """Create from JSON string."""
         return cls.from_dict(json.loads(json_str))
-    
+
     @classmethod
     def load(cls, path: Path) -> "EidosianConfig":
         """Load configuration from file."""
@@ -112,12 +115,12 @@ class EidosianConfig:
         if path.exists():
             return cls.from_json(path.read_text())
         return cls()
-    
+
     @classmethod
     def from_env(cls) -> "EidosianConfig":
         """Load configuration from environment variables."""
         config = cls()
-        
+
         # Logging
         if os.getenv("EIDOSIAN_LOG_ENABLED"):
             config.logging.enabled = os.getenv("EIDOSIAN_LOG_ENABLED", "true").lower() == "true"
@@ -127,23 +130,23 @@ class EidosianConfig:
             config.logging.file_path = os.getenv("EIDOSIAN_LOG_FILE")
         if os.getenv("EIDOSIAN_LOG_STRUCTURED"):
             config.logging.structured = os.getenv("EIDOSIAN_LOG_STRUCTURED", "false").lower() == "true"
-            
+
         # Profiling
         if os.getenv("EIDOSIAN_PROFILE_ENABLED"):
             config.profiling.enabled = os.getenv("EIDOSIAN_PROFILE_ENABLED", "false").lower() == "true"
         if os.getenv("EIDOSIAN_PROFILE_OUTPUT"):
             config.profiling.output_dir = os.getenv("EIDOSIAN_PROFILE_OUTPUT")
-            
-        # Benchmarking  
+
+        # Benchmarking
         if os.getenv("EIDOSIAN_BENCHMARK_ENABLED"):
             config.benchmarking.enabled = os.getenv("EIDOSIAN_BENCHMARK_ENABLED", "false").lower() == "true"
         if os.getenv("EIDOSIAN_BENCHMARK_THRESHOLD"):
             config.benchmarking.threshold_ms = float(os.getenv("EIDOSIAN_BENCHMARK_THRESHOLD", "0"))
-            
+
         # Tracing
         if os.getenv("EIDOSIAN_TRACE_ENABLED"):
             config.tracing.enabled = os.getenv("EIDOSIAN_TRACE_ENABLED", "false").lower() == "true"
-            
+
         return config
 # Global configuration instance
 _global_config: Optional[EidosianConfig] = None
@@ -158,15 +161,15 @@ def get_config() -> EidosianConfig:
             Path.cwd() / ".eidosian.json",
             Path.cwd() / "eidosian_config.json",
         ]
-        
+
         for path in config_paths:
             if path.exists():
                 _global_config = EidosianConfig.load(path)
                 break
-        
+
         if _global_config is None:
             _global_config = EidosianConfig.from_env()
-    
+
     return _global_config
 
 def set_config(config: EidosianConfig) -> None:

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Smol Agent System for Eidosian Forge.
 
@@ -13,27 +14,15 @@ each with distinct capabilities and personalities.
 import logging
 
 from agent_forge.agent.base import BaseAgent
-
-from agent_forge.agent.prompt_templates import (
-
-    EIDOSIAN_DEFAULT_SYSTEM_TEMPLATE as SYSTEM_PROMPT,
-
-)
-
+from agent_forge.agent.prompt_templates import EIDOSIAN_DEFAULT_SYSTEM_TEMPLATE as SYSTEM_PROMPT
 from agent_forge.models import Memory, Thought, ThoughtType
-
-
 
 # Setup logger
 
 logger = logging.getLogger(__name__)
 
 
-
-
-
 class SmolAgent:
-
     """
 
     Internal representation of a specialized agent with capabilities.
@@ -62,14 +51,7 @@ class SmolAgent:
 
     """
 
-
-
-    def __init__(
-
-        self, name: str, role: str, capabilities: List[str], description: str
-
-    ) -> None:
-
+    def __init__(self, name: str, role: str, capabilities: List[str], description: str) -> None:
         """
 
         Initialize a SmolAgent with its core attributes.
@@ -98,10 +80,7 @@ class SmolAgent:
 
         self.Agent = CodeAgent if name == "coder" else MultiStepAgent
 
-
-
     def __repr__(self) -> str:
-
         """
 
         Return a string representation of the SmolAgent.
@@ -116,11 +95,8 @@ class SmolAgent:
 
         return f"SmolAgent(name='{self.name}', role='{self.role}')"
 
-
-
     @eidosian()
     def get_capability_summary(self) -> str:
-
         """
 
         Generate a summary of this agent's capabilities.
@@ -136,11 +112,7 @@ class SmolAgent:
         return f"Agent '{self.name}' capabilities: {', '.join(self.capabilities)}"
 
 
-
-
-
 class TaskContext:
-
     """
 
     Context information for task execution by agents.
@@ -163,14 +135,7 @@ class TaskContext:
 
     """
 
-
-
-    def __init__(
-
-        self, task: str, context: str = "", state: Optional[Dict[str, Any]] = None
-
-    ) -> None:
-
+    def __init__(self, task: str, context: str = "", state: Optional[Dict[str, Any]] = None) -> None:
         """
 
         Initialize a TaskContext with task information.
@@ -194,11 +159,7 @@ class TaskContext:
         self.state = state or {}
 
 
-
-
-
 class SmolAgentSystem:
-
     """
 
     System for managing specialized mini-agents.
@@ -229,8 +190,6 @@ class SmolAgentSystem:
 
     """
 
-
-
     def __init__(self, agent: "BaseAgent") -> None:
         """
         Initialize the SmolAgentSystem with a parent agent.
@@ -240,9 +199,7 @@ class SmolAgentSystem:
         """
         self.eidosian_agent = agent
         self.agents: Dict[str, SmolAgent] = {}
-        self.agent_instances: Dict[
-            str, Union[CodeAgent, MultiStepAgent, ToolCallingAgent]
-        ] = {}
+        self.agent_instances: Dict[str, Union[CodeAgent, MultiStepAgent, ToolCallingAgent]] = {}
         self.memories: Dict[str, AgentMemory] = {}
         self.logger = self._create_logger()
         self.agent_system: Optional[Any] = None
@@ -260,9 +217,7 @@ class SmolAgentSystem:
             AgentLogger instance configured with appropriate log level
         """
         log_level = (
-            LogLevel.DEBUG
-            if getattr(self.eidosian_agent.model_manager.config, "debug", False)
-            else LogLevel.INFO
+            LogLevel.DEBUG if getattr(self.eidosian_agent.model_manager.config, "debug", False) else LogLevel.INFO
         )
         return AgentLogger(level=log_level)
 
@@ -567,11 +522,7 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
         # Fall back to check agent-specific memories
         for memory in self.memories.values():
             for step in memory.get_full_steps():
-                if (
-                    hasattr(step, "content")
-                    and isinstance(step.content, str)
-                    and key.lower() in step.content.lower()
-                ):
+                if hasattr(step, "content") and isinstance(step.content, str) and key.lower() in step.content.lower():
                     return step.content
 
         return None
@@ -602,15 +553,11 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
                             for i, r in enumerate(results)
                         ]
                     )
-                    search_result = (
-                        f"Search results for '{query}':\n\n{formatted_results}"
-                    )
+                    search_result = f"Search results for '{query}':\n\n{formatted_results}"
             except ImportError:
                 # Fall back to simulated search via the language model
                 prompt = f"Given the search query: '{query}', provide a summary of relevant information from your own knowledge stores, ensuring you confirm to the user the web search is inoperable at the moment."
-                search_result = self.eidosian_agent.model_manager.generate(
-                    prompt=prompt, temperature=0.7
-                )
+                search_result = self.eidosian_agent.model_manager.generate(prompt=prompt, temperature=0.7)
 
             return search_result
         except Exception as e:
@@ -629,9 +576,7 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
         """
         try:
             # Execute in the parent agent's sandbox
-            stdout, stderr, returncode = self.eidosian_agent.sandbox.execute_python(
-                code
-            )
+            stdout, stderr, returncode = self.eidosian_agent.sandbox.execute_python(code)
 
             if returncode == 0:
                 return f"Code executed successfully. Output:\n{stdout}"
@@ -640,9 +585,7 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
         except Exception as e:
             return f"Error executing code: {str(e)}"
 
-    def _tool_save_to_memory(
-        self, content: str, tags: Optional[List[str]] = None
-    ) -> str:
+    def _tool_save_to_memory(self, content: str, tags: Optional[List[str]] = None) -> str:
         """
         Tool for saving information to agent memory.
 
@@ -676,18 +619,13 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
                 memories = self.eidosian_agent.memory.search_memories(query)
             else:
                 # Fallback to get_memories if available
-                memories = getattr(
-                    self.eidosian_agent.memory, "get_memories", lambda _: []
-                )(query)
+                memories = getattr(self.eidosian_agent.memory, "get_memories", lambda _: [])(query)
 
             if not memories:
                 return "No relevant memories found."
 
             formatted_memories = "\n\n".join(
-                [
-                    f"**Memory {i+1}:**\n{memory.content}"
-                    for i, memory in enumerate(memories)
-                ]
+                [f"**Memory {i+1}:**\n{memory.content}" for i, memory in enumerate(memories)]
             )
             return f"Retrieved memories for query '{query}':\n\n{formatted_memories}"
         except Exception as e:
@@ -709,9 +647,7 @@ When in doubt, be witty, insightful, and precise - the Eidosian way."""
                 response = self.eidosian_agent.ask(question)
             else:
                 prompt = f"Question: {question}\n\nProvide a helpful, accurate, and concise answer."
-                response = self.eidosian_agent.model_manager.generate(
-                    prompt=prompt, temperature=0.7
-                )
+                response = self.eidosian_agent.model_manager.generate(prompt=prompt, temperature=0.7)
             return response
         except Exception as e:
             return f"Error asking Eidosian Intelligence: {str(e)}"
@@ -743,9 +679,7 @@ Please provide:
 3. Suggestions for optimization
 4. Code quality assessment"""
 
-                analysis = self.eidosian_agent.model_manager.generate(
-                    prompt=prompt, temperature=0.7
-                )
+                analysis = self.eidosian_agent.model_manager.generate(prompt=prompt, temperature=0.7)
             return analysis
         except Exception as e:
             return f"Error analyzing code: {str(e)}"
@@ -774,11 +708,7 @@ Please provide:
             try:
                 task_context = TaskContext(task=task, context=context, state={})
                 result = self.agent_instances[agent_name].execute(task_context)
-                return (
-                    result
-                    if isinstance(result, str)
-                    else cast(AgentType, result).to_string()
-                )
+                return result if isinstance(result, str) else cast(AgentType, result).to_string()
             except Exception as e:
                 logger.error(f"Error executing with smolagent '{agent_name}': {e}")
                 # Fall back to direct LLM approach
@@ -800,9 +730,7 @@ Please provide:
         prompt = f"{system_prompt}\n\nTASK: {task}\n\nCONTEXT: {context}\n\nProvide a detailed response focusing on your specialized capabilities."
 
         # Generate response
-        result = self.eidosian_agent.model_manager.generate(
-            prompt=prompt, temperature=0.7
-        )
+        result = self.eidosian_agent.model_manager.generate(prompt=prompt, temperature=0.7)
 
         # Record the result
         result_thought = Thought(
@@ -816,9 +744,7 @@ Please provide:
         return result
 
     @eidosian()
-    def execute_multi_agent(
-        self, task: str, context: str = "", agents: Optional[List[str]] = None
-    ) -> str:
+    def execute_multi_agent(self, task: str, context: str = "", agents: Optional[List[str]] = None) -> str:
         """
         Execute a task using multiple coordinated agents.
 
@@ -839,26 +765,16 @@ Please provide:
             available = ", ".join(self.agents.keys())
             return f"Agents not found: {', '.join(invalid_agents)}. Available agents: {available}"
 
-        logger.info(
-            f"Executing task with multiple agents ({', '.join(agents)}): {task}"
-        )
+        logger.info(f"Executing task with multiple agents ({', '.join(agents)}): {task}")
 
         if self.agent_system:
             # Use smolagents AgentSystem implementation
             try:
                 task_context = TaskContext(task=task, context=context, state={})
                 # Filter to only requested agents
-                selected_agents = [
-                    self.agent_instances[a] for a in agents if a in self.agent_instances
-                ]
-                result = self.agent_system.execute_with_agents(
-                    task_context, selected_agents
-                )
-                return (
-                    result
-                    if isinstance(result, str)
-                    else cast(AgentType, result).to_string()
-                )
+                selected_agents = [self.agent_instances[a] for a in agents if a in self.agent_instances]
+                result = self.agent_system.execute_with_agents(task_context, selected_agents)
+                return result if isinstance(result, str) else cast(AgentType, result).to_string()
             except Exception as e:
                 logger.error(f"Error executing with smolagents system: {e}")
                 # Fall back to sequential approach
@@ -884,9 +800,7 @@ Please provide:
             agent_prompt = f"{system_prompt}\n\nTASK: {task}\n\nCONTEXT: {evolved_context}\n\nProvide insights from your specialized perspective."
 
             # Generate response
-            agent_response = self.eidosian_agent.model_manager.generate(
-                prompt=agent_prompt, temperature=0.7
-            )
+            agent_response = self.eidosian_agent.model_manager.generate(prompt=agent_prompt, temperature=0.7)
             responses.append(f"## {agent.role}\n\n{agent_response}")
 
             # Add to evolved context for next agent
@@ -903,9 +817,7 @@ You have received input from multiple specialized agents. Synthesize their insig
 Provide a final synthesized answer that incorporates the best insights from each agent.
 """
 
-        synthesis = self.eidosian_agent.model_manager.generate(
-            prompt=synthesis_prompt, temperature=0.5
-        )
+        synthesis = self.eidosian_agent.model_manager.generate(prompt=synthesis_prompt, temperature=0.5)
 
         # Combine all responses
         final_result = "# Multi-Agent Analysis\n\n"

@@ -91,14 +91,9 @@ def build_remediation_plan(
         capped = sorted_items[: max(1, int(max_alerts_per_batch))]
         total = len(items)
         priority_score = (
-            int(severity_counts.get("critical", 0)) * 1000
-            + int(severity_counts.get("high", 0)) * 100
-            + int(total)
+            int(severity_counts.get("critical", 0)) * 1000 + int(severity_counts.get("high", 0)) * 100 + int(total)
         )
-        top_packages = [
-            {"name": name, "count": int(count)}
-            for name, count in package_counts.most_common(10)
-        ]
+        top_packages = [{"name": name, "count": int(count)} for name, count in package_counts.most_common(10)]
         alert_rows = [
             {
                 "number": _alert_number(x.get("number")),
@@ -131,9 +126,7 @@ def build_remediation_plan(
                 "overflow_alert_count": max(0, int(total - len(alert_rows))),
                 "priority_score": int(priority_score),
                 "suggested_branch": f"security/remediation/{branch_slug}",
-                "suggested_pr_title": (
-                    f"security: remediate {max_sev} deps in {manifest_path}"
-                ),
+                "suggested_pr_title": (f"security: remediate {max_sev} deps in {manifest_path}"),
             }
         )
 
@@ -231,9 +224,7 @@ def main() -> int:
     summary_path = Path(args.summary_json).expanduser().resolve()
     summary = _load_json(summary_path)
     include_severities = {
-        _severity(item)
-        for item in str(args.severity or "critical,high").split(",")
-        if str(item).strip()
+        _severity(item) for item in str(args.severity or "critical,high").split(",") if str(item).strip()
     }
     include_severities.discard("unknown")
     if not include_severities:

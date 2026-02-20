@@ -25,11 +25,15 @@ from typing import (
 try:
     from eidosian_core import eidosian
 except ImportError:
+
     def eidosian():
         """Fallback decorator when eidosian_core is not available."""
+
         def decorator(func):
             return func
+
         return decorator
+
 
 # Type variables for Result
 T = TypeVar("T")

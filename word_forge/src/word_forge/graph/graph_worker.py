@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Protocol, TypedDict, final
 
 from eidosian_core import eidosian
+
 from word_forge.config import config
 from word_forge.exceptions import (  # Import specific exceptions
     GraphDataError,
@@ -120,9 +121,7 @@ class GraphWorker(threading.Thread):
             visualization_path: Path where visualization will be saved (defaults to config).
             daemon: Whether thread should be daemonic (auto-terminate when main exits).
         """
-        super().__init__(
-            daemon=daemon, name="GraphWorkerThread"
-        )  # Give the thread a name
+        super().__init__(daemon=daemon, name="GraphWorkerThread")  # Give the thread a name
         self.graph_manager = graph_manager
         self.logger = logging.getLogger(__name__)
 
@@ -131,11 +130,7 @@ class GraphWorker(threading.Thread):
         self.poll_interval = (
             poll_interval
             if poll_interval is not None
-            else (
-                cfg.animation_duration_ms / 1000.0
-                if cfg.animation_duration_ms > 0
-                else 30.0
-            )
+            else (cfg.animation_duration_ms / 1000.0 if cfg.animation_duration_ms > 0 else 30.0)
         )
 
         # Ensure proper paths for output and visualization
@@ -147,11 +142,7 @@ class GraphWorker(threading.Thread):
         vis_path_str = visualization_path or cfg.visualization_path
         vis_path = Path(vis_path_str)
         if vis_path.suffix.lower() != ".html":  # Ensure HTML extension
-            vis_path = (
-                vis_path / "lexical_graph.html"
-                if vis_path.is_dir()
-                else vis_path.with_suffix(".html")
-            )
+            vis_path = vis_path / "lexical_graph.html" if vis_path.is_dir() else vis_path.with_suffix(".html")
         self.visualization_path = str(vis_path)
 
         # Internal state and control flags
@@ -182,9 +173,7 @@ class GraphWorker(threading.Thread):
             elif self._current_state == WorkerState.PAUSED:
                 self.logger.info("GraphWorker already paused")
             else:
-                self.logger.warning(
-                    f"Cannot pause worker in state: {self._current_state}"
-                )
+                self.logger.warning(f"Cannot pause worker in state: {self._current_state}")
 
     @eidosian()
     def resume(self) -> None:
@@ -197,9 +186,7 @@ class GraphWorker(threading.Thread):
             elif self._current_state == WorkerState.RUNNING:
                 self.logger.info("GraphWorker already running")
             else:
-                self.logger.warning(
-                    f"Cannot resume worker in state: {self._current_state}"
-                )
+                self.logger.warning(f"Cannot resume worker in state: {self._current_state}")
 
     @eidosian()
     def restart(self) -> "GraphWorker":
@@ -230,9 +217,7 @@ class GraphWorker(threading.Thread):
         while not self._stop_event.is_set():
             if self._pause_event.is_set():
                 # Wait efficiently while paused
-                self._stop_event.wait(
-                    1.0
-                )  # Check stop event periodically even when paused
+                self._stop_event.wait(1.0)  # Check stop event periodically even when paused
                 continue
 
             cycle_start_time = time.time()
@@ -256,9 +241,7 @@ class GraphWorker(threading.Thread):
             # Calculate remaining time and wait, checking stop event
             elapsed = time.time() - cycle_start_time
             wait_duration = max(0, self.poll_interval - elapsed)
-            self._stop_event.wait(
-                wait_duration
-            )  # Wait for the remaining interval or until stopped
+            self._stop_event.wait(wait_duration)  # Wait for the remaining interval or until stopped
 
         # --- Thread Termination ---
         with self._status_lock:
@@ -280,9 +263,7 @@ class GraphWorker(threading.Thread):
             self._ensure_output_directories()
         except Exception as e:
             # Wrap directory errors
-            raise GraphDirectoryError(
-                f"Failed to ensure output directories exist: {e}", e
-            ) from e
+            raise GraphDirectoryError(f"Failed to ensure output directories exist: {e}", e) from e
 
         # 2. Verify DB tables (optional, can be intensive)
         # Consider doing this less frequently if performance is an issue
@@ -296,9 +277,7 @@ class GraphWorker(threading.Thread):
         except (GraphDataError, GraphError) as e:
             raise GraphUpdateError(f"Graph update failed: {e}", e) from e
         except Exception as e:  # Catch unexpected errors during update
-            raise GraphUpdateError(
-                f"Unexpected error during graph update: {e}", e
-            ) from e
+            raise GraphUpdateError(f"Unexpected error during graph update: {e}", e) from e
 
         # 4. Save Graph
         try:
@@ -325,9 +304,7 @@ class GraphWorker(threading.Thread):
             self._last_update = time.time()
             self._update_count += 1
 
-        self.logger.debug(
-            f"Update cycle #{self._update_count} completed in {time.time() - start_ts:.3f}s."
-        )
+        self.logger.debug(f"Update cycle #{self._update_count} completed in {time.time() - start_ts:.3f}s.")
 
     def _verify_database_tables(self) -> bool:
         """Verify that required database tables exist."""
@@ -354,9 +331,7 @@ class GraphWorker(threading.Thread):
         """Increase the error backoff delay exponentially."""
         # Increase delay, add jitter, cap at a max value (e.g., 5 minutes)
         max_backoff = 300.0
-        self._error_backoff = min(
-            max_backoff, self._error_backoff * 1.5 + random.uniform(0, 2)
-        )
+        self._error_backoff = min(max_backoff, self._error_backoff * 1.5 + random.uniform(0, 2))
         self.logger.warning(f"Increasing error backoff to {self._error_backoff:.1f}s")
 
     def _handle_execution_error(self, error: Exception) -> None:
@@ -387,9 +362,7 @@ class GraphWorker(threading.Thread):
                     self.logger.debug(f"Created directory: {dir_path}")
                 except OSError as e:
                     # Raise a specific error if directory creation fails
-                    raise GraphDirectoryError(
-                        f"Failed to create directory {dir_path}: {e}", e
-                    ) from e
+                    raise GraphDirectoryError(f"Failed to create directory {dir_path}: {e}", e) from e
 
     def _update_graph(self) -> None:
         """Update the graph data structure using incremental refresh when possible."""
@@ -419,13 +392,9 @@ class GraphWorker(threading.Thread):
     def _generate_visualization(self) -> None:
         """Generate graph visualization HTML file."""
         if self.graph_manager.get_node_count() > 0:
-            self.logger.debug(
-                f"Generating visualization to {self.visualization_path}..."
-            )
+            self.logger.debug(f"Generating visualization to {self.visualization_path}...")
             # Use the manager's default visualize method (which chooses 2D/3D)
-            self.graph_manager.visualize(
-                output_path=self.visualization_path, open_in_browser=False
-            )
+            self.graph_manager.visualize(output_path=self.visualization_path, open_in_browser=False)
             self.logger.debug("Visualization generation complete.")
         else:
             self.logger.debug("Skipping visualization for empty graph.")
@@ -454,16 +423,13 @@ class GraphWorker(threading.Thread):
             state = self._current_state
             if is_running and self._pause_event.is_set():
                 state = WorkerState.PAUSED
-            elif (
-                is_running and state != WorkerState.ERROR
-            ):  # Don't overwrite ERROR state if running
+            elif is_running and state != WorkerState.ERROR:  # Don't overwrite ERROR state if running
                 state = WorkerState.RUNNING
             elif not is_running:
                 state = WorkerState.STOPPED
 
             status: WorkerStatus = {
-                "running": is_running
-                and state == WorkerState.RUNNING,  # True only if actively running
+                "running": is_running and state == WorkerState.RUNNING,  # True only if actively running
                 "update_count": self._update_count,
                 "error_count": self._error_count,
                 "last_update": self._last_update,
@@ -487,11 +453,7 @@ class GraphWorker(threading.Thread):
                 "error_count": self._error_count,
                 "last_update_timestamp": self._last_update,
                 "last_error_message": self._last_error,
-                "current_backoff_s": (
-                    self._error_backoff
-                    if self._current_state == WorkerState.ERROR
-                    else 0
-                ),
+                "current_backoff_s": (self._error_backoff if self._current_state == WorkerState.ERROR else 0),
                 "last_new_nodes": self._last_cycle_metrics.new_nodes,
                 "last_new_edges": self._last_cycle_metrics.new_edges,
                 "last_processed_words": self._last_cycle_metrics.processed_words,

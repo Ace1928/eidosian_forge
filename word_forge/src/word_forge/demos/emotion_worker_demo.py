@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of EmotionWorker functionality.
 """
@@ -103,9 +104,7 @@ def main() -> None:
         logger.info(f"Words processed: {status['processed_count']}")
         logger.info(f"Errors encountered: {status['error_count']}")
         if status["last_update"]:
-            last_update = time.strftime(
-                "%H:%M:%S", time.localtime(status["last_update"])
-            )
+            last_update = time.strftime("%H:%M:%S", time.localtime(status["last_update"]))
             logger.info(f"Last update: {last_update}")
         if status["uptime"]:
             logger.info(f"Uptime: {status['uptime']:.1f} seconds")
@@ -128,9 +127,7 @@ def main() -> None:
         if len(sys.argv) > 1:
             try:
                 run_seconds = int(sys.argv[1])
-                print(
-                    f"Will run for {run_seconds} seconds (from command line argument)"
-                )
+                print(f"Will run for {run_seconds} seconds (from command line argument)")
             except ValueError:
                 print(f"Invalid duration argument, using default: {run_seconds}s")
         else:
@@ -184,8 +181,7 @@ def main() -> None:
                     emotion_data = emotion_mgr.get_word_emotion(word_id)
                     if emotion_data:
                         print(
-                            f"{word}: valence={emotion_data['valence']:.2f}, "
-                            f"arousal={emotion_data['arousal']:.2f}"
+                            f"{word}: valence={emotion_data['valence']:.2f}, " f"arousal={emotion_data['arousal']:.2f}"
                         )
                     else:
                         print(f"{word}: No emotional data assigned")
@@ -198,17 +194,13 @@ def main() -> None:
             print("-" * 60)
             stats = worker.get_performance_stats()
             if "avg_process_time" in stats:
-                print(
-                    f"Average batch processing time: {stats['avg_process_time']:.2f}s"
-                )
+                print(f"Average batch processing time: {stats['avg_process_time']:.2f}s")
             if "avg_batch_size" in stats:
                 print(f"Average batch size: {stats['avg_batch_size']:.1f} words")
             if "words_per_second" in stats:
                 print(f"Processing rate: {stats['words_per_second']:.2f} words/second")
             if "estimated_completion" in stats:
-                print(
-                    f"Estimated time to process backlog: {stats['estimated_completion']:.1f}s"
-                )
+                print(f"Estimated time to process backlog: {stats['estimated_completion']:.1f}s")
             if stats["error_summary"]:
                 print("Error distribution:")
                 for error_type, count in stats["error_summary"].items():

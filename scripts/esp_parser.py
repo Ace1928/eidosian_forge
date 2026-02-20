@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Eidosian Source Parser (ESP)
@@ -11,7 +12,8 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
+
 
 class ESPParser:
     def __init__(self, audit_root: Path):
@@ -41,19 +43,13 @@ class ESPParser:
             tree = ast.parse(path.read_text())
             for node in ast.walk(tree):
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    symbols.append({
-                        "type": "function",
-                        "name": node.name,
-                        "line": node.lineno,
-                        "end_line": node.end_lineno
-                    })
+                    symbols.append(
+                        {"type": "function", "name": node.name, "line": node.lineno, "end_line": node.end_lineno}
+                    )
                 elif isinstance(node, ast.ClassDef):
-                    symbols.append({
-                        "type": "class",
-                        "name": node.name,
-                        "line": node.lineno,
-                        "end_line": node.end_lineno
-                    })
+                    symbols.append(
+                        {"type": "class", "name": node.name, "line": node.lineno, "end_line": node.end_lineno}
+                    )
         except Exception as e:
             symbols.append({"type": "error", "name": f"Parse Error: {e}", "line": 0})
         return sorted(symbols, key=lambda x: x["line"])
@@ -66,7 +62,7 @@ class ESPParser:
         audit_file = self.audit_root / f"{str(rel_path).replace('/', '_')}.audit.md"
 
         if not force and self.state.get(str(source_path)) == file_hash and audit_file.exists():
-            return # Idempotent
+            return  # Idempotent
 
         symbols = []
         if source_path.suffix == ".py":
@@ -79,7 +75,7 @@ class ESPParser:
             f"# Audit Coverage: {source_path.name}",
             f"**Source**: `{source_path}`",
             f"**Hash**: `{file_hash}`",
-            "\n## Symbols Checklist\n"
+            "\n## Symbols Checklist\n",
         ]
 
         for s in symbols:
@@ -90,6 +86,7 @@ class ESPParser:
         self.state[str(source_path)] = file_hash
         self._save_state()
         print(f"Generated checklist: {audit_file}")
+
 
 @eidosian()
 def main():
@@ -108,6 +105,7 @@ def main():
             for f in files:
                 if f.endswith((".py", ".sh", ".toml", ".yaml", ".json", ".md")):
                     parser.generate_checklist(Path(root) / f)
+
 
 if __name__ == "__main__":
     main()

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from eidosian_core import eidosian
+
 from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
 from ..transactions import (
@@ -28,7 +29,6 @@ from file_forge.core import FileForge
 
 from ..core import tool
 
-
 diag = DiagnosticsForge(service_name="mcp_system")
 file_forge = FileForge()
 
@@ -39,9 +39,7 @@ _DEFAULT_ALLOWED = [
     FORGE_DIR,
 ]
 _ALLOWED_ROOTS = [
-    Path(p.strip()).expanduser().resolve()
-    for p in os.environ.get("EIDOS_ALLOWED_PATHS", "").split(",")
-    if p.strip()
+    Path(p.strip()).expanduser().resolve() for p in os.environ.get("EIDOS_ALLOWED_PATHS", "").split(",") if p.strip()
 ] or [p.resolve() for p in _DEFAULT_ALLOWED]
 
 MAX_READ_BYTES = int(os.environ.get("EIDOS_MAX_READ_BYTES", str(5 * 1024 * 1024)))
@@ -85,10 +83,7 @@ def _is_allowed(path: Path) -> bool:
 
 def _is_read_only_command(command: str) -> bool:
     stripped = command.strip()
-    return any(
-        stripped == prefix or stripped.startswith(f"{prefix} ")
-        for prefix in _READ_ONLY_PREFIXES
-    )
+    return any(stripped == prefix or stripped.startswith(f"{prefix} ") for prefix in _READ_ONLY_PREFIXES)
 
 
 def _run_verify_command(command: Optional[str], cwd: Optional[Path]) -> Optional[str]:
@@ -172,7 +167,7 @@ def file_write(file_path: str, content: str, overwrite: bool = True) -> str:
         existing = path.read_text(encoding="utf-8")
         if existing == content:
             return "No-op: Content unchanged"
-    
+
     with begin_transaction("file_write", [path]) as txn:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
@@ -198,7 +193,7 @@ def file_create(file_path: str) -> str:
         return "Error: Path not allowed"
     if path.exists():
         return "No-op: Path already exists"
-    
+
     with begin_transaction("file_create", [path]) as txn:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch(exist_ok=True)
@@ -224,7 +219,7 @@ def file_delete(file_path: str) -> str:
         return "Error: Path not allowed"
     if not path.exists():
         return "No-op: Path not found"
-    
+
     with begin_transaction("file_delete", [path]) as txn:
         if path.is_dir():
             if any(path.iterdir()):
@@ -233,7 +228,7 @@ def file_delete(file_path: str) -> str:
             path.rmdir()
         else:
             path.unlink()
-            
+
         if path.exists():
             txn.rollback("verification_failed: path_still_exists")
             return f"Error: Verification failed; rolled back ({txn.id})"
@@ -304,7 +299,7 @@ def run_shell_command(
             if not _is_allowed(resolved):
                 return json.dumps({"error": "Path not allowed", "path": str(resolved)})
             targets.append(resolved)
-    
+
     if safe_mode and not _is_read_only_command(command) and not targets:
         return json.dumps(
             {
@@ -312,7 +307,7 @@ def run_shell_command(
                 "command": command,
             }
         )
-    
+
     if targets and idempotency_key:
         target_state = hash_paths(targets)
         if check_idempotency(idempotency_key, command, target_state):
@@ -531,9 +526,7 @@ def file_search(pattern: str, root_path: Optional[str] = None, max_results: int 
     description="Find duplicate files by content hash.",
 )
 @eidosian()
-def file_find_duplicates(
-    root_path: Optional[str] = None, max_groups: int = 50
-) -> str:
+def file_find_duplicates(root_path: Optional[str] = None, max_groups: int = 50) -> str:
     """Find duplicate files by content hash."""
     root = _resolve_path(root_path) if root_path else FORGE_DIR
     if not _is_allowed(root):

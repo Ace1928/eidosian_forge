@@ -13,14 +13,15 @@ Public API:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
+
 import json
-import os
 import shutil
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping
+from typing import Any, Dict, List, Mapping
+
+from eidosian_core import eidosian
 
 __all__ = ["append", "iter_events", "files_count", "prune_old_days"]
 
@@ -50,12 +51,7 @@ def append(
 
     latest = events_dir / "latest"
     current: Path | None = latest.resolve() if latest.is_symlink() else None
-    if (
-        current is None
-        or not current.exists()
-        or current.stat().st_size >= max_bytes
-        or current.parent != day_dir
-    ):
+    if current is None or not current.exists() or current.stat().st_size >= max_bytes or current.parent != day_dir:
         # need a new file
         idx = 0
         while True:
@@ -159,6 +155,7 @@ def prune_old_days(base: str | Path, *, keep_days: int = 7) -> int:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 if __name__ == "__main__":  # pragma: no cover
     append("state", "smoke", {"msg": "hi"})

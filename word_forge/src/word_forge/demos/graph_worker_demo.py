@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of GraphWorker functionality.
 """
@@ -85,10 +86,7 @@ def main() -> None:
 
         final_status = worker.get_status()
         logger.info(f"Final worker status: {final_status}")
-        logger.info(
-            f"Graph saved to {worker.output_path}, "
-            f"visualization available at {worker.visualization_path}"
-        )
+        logger.info(f"Graph saved to {worker.output_path}, " f"visualization available at {worker.visualization_path}")
 
     except Exception as e:
         logger.error(f"Error in demonstration: {e}")

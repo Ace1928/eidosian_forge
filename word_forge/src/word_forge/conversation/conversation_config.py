@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Conversation configuration system for Word Forge.
 
@@ -112,21 +113,15 @@ class ConversationConfig:
     default_status: ConversationStatusValue = "active"
 
     # --- Metadata Schema ---
-    required_metadata: Set[str] = field(
-        default_factory=lambda: {"conversation_id", "created_at", "user_id"}
-    )
-    optional_metadata: Set[str] = field(
-        default_factory=lambda: {"title", "tags", "source", "language", "summary"}
-    )
+    required_metadata: Set[str] = field(default_factory=lambda: {"conversation_id", "created_at", "user_id"})
+    optional_metadata: Set[str] = field(default_factory=lambda: {"title", "tags", "source", "language", "summary"})
 
     # --- History Management ---
     max_history_length: int = 100
     default_title_length: int = 50
 
     # --- Retention Settings ---
-    default_retention_policy: ConversationRetentionPolicy = (
-        ConversationRetentionPolicy.KEEP_FOREVER
-    )
+    default_retention_policy: ConversationRetentionPolicy = ConversationRetentionPolicy.KEEP_FOREVER
 
     # --- Export Settings ---
     export_formats: List[ConversationExportFormat] = field(
@@ -247,9 +242,7 @@ class ConversationConfig:
         return default_meta
 
     @eidosian()
-    def with_retention_policy(
-        self, policy: ConversationRetentionPolicy
-    ) -> "ConversationConfig":
+    def with_retention_policy(self, policy: ConversationRetentionPolicy) -> "ConversationConfig":
         """
         Creates a new `ConversationConfig` instance with an updated retention policy.
 

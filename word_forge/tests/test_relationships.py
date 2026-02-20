@@ -6,10 +6,10 @@ used throughout the Word Forge lexical network.
 
 from word_forge.relationships import (
     RELATIONSHIP_TYPES,
-    get_relationship_properties,
-    is_bidirectional,
-    get_relationship_weight,
     get_relationship_color,
+    get_relationship_properties,
+    get_relationship_weight,
+    is_bidirectional,
 )
 
 
@@ -87,9 +87,7 @@ class TestRelationshipPropertyValues:
     def test_bidirectional_is_boolean(self):
         """Test that all bidirectional values are booleans."""
         for rel_type, props in RELATIONSHIP_TYPES.items():
-            assert isinstance(
-                props["bidirectional"], bool
-            ), f"{rel_type} bidirectional is not bool"
+            assert isinstance(props["bidirectional"], bool), f"{rel_type} bidirectional is not bool"
 
     def test_synonym_is_bidirectional(self):
         """Test that synonyms are bidirectional."""

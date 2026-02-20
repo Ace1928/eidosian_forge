@@ -12,10 +12,7 @@ def _winner_payload(evt: Mapping[str, Any]) -> tuple[str, str, str, str]:
     links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
     content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
     winner_candidate_id = str(
-        links.get("winner_candidate_id")
-        or content.get("winner_candidate_id")
-        or content.get("candidate_id")
-        or ""
+        links.get("winner_candidate_id") or content.get("winner_candidate_id") or content.get("candidate_id") or ""
     )
     winner_corr_id = str(links.get("corr_id") or evt.get("corr_id") or "")
     winner_parent_id = str(links.get("parent_id") or evt.get("parent_id") or "")
@@ -165,9 +162,7 @@ def effective_connectivity(
     mean_in = (sum(in_vals) / len(in_vals)) if in_vals else 0.0
 
     workspace_out = out_degree.get("workspace_competition", 0)
-    workspace_centrality = (
-        float(workspace_out / max(node_count - 1, 1)) if node_count > 1 else 0.0
-    )
+    workspace_centrality = float(workspace_out / max(node_count - 1, 1)) if node_count > 1 else 0.0
 
     return {
         "node_count": node_count,
@@ -182,10 +177,7 @@ def effective_connectivity(
         "largest_scc": int(largest_scc),
         "workspace_centrality": round(workspace_centrality, 6),
         "edges": sorted(
-            [
-                {"src": src, "dst": dst, "weight": edges_weighted[(src, dst)]}
-                for (src, dst) in edge_set
-            ],
+            [{"src": src, "dst": dst, "weight": edges_weighted[(src, dst)]} for (src, dst) in edge_set],
             key=lambda row: (row["src"], row["dst"]),
         ),
     }

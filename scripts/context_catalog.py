@@ -1,22 +1,22 @@
 import concurrent.futures
 import fnmatch
+import grp
 import hashlib
 import json
 import logging
+import pwd
 import stat
-import time
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-import grp
-import pwd
+from eidosian_core import eidosian
 from tqdm import tqdm
 
-from .context_summarizer import Summarizer, SummarizationError
+from .context_summarizer import SummarizationError, Summarizer
 from .context_utils import CONTEXT_DIR
-from eidosian_core import eidosian
 
 HOME = Path.home().resolve()
 
@@ -29,13 +29,11 @@ class CatalogBuilder:
         summary_cfg = self.catalog_cfg.get("summary", {})
         cache_path = summary_cfg.get("cache_path")
         self.summarizer = Summarizer(
-            model=summary_cfg.get("model", "qwen2.5:1.5b-Instruct"), # Updated default model
+            model=summary_cfg.get("model", "qwen2.5:1.5b-Instruct"),  # Updated default model
             max_chars=summary_cfg.get("max_chars", 3200),
             min_chars=summary_cfg.get("min_chars", 512),
             timeout_seconds=summary_cfg.get("timeout_seconds", 60),
-            cache_path=(
-                Path(cache_path) if cache_path else CONTEXT_DIR / "summary_cache.json"
-            ),
+            cache_path=(Path(cache_path) if cache_path else CONTEXT_DIR / "summary_cache.json"),
             logger=logger,
             use_codex=use_codex,
         )
@@ -120,9 +118,7 @@ class CatalogBuilder:
         entry["statistics"].update(
             {
                 "size_bytes": stats.st_size,
-                "last_modified": datetime.fromtimestamp(
-                    stats.st_mtime, tz=timezone.utc
-                ).isoformat(),
+                "last_modified": datetime.fromtimestamp(stats.st_mtime, tz=timezone.utc).isoformat(),
                 "mode": oct(stats.st_mode & 0o777),
                 "is_symlink": stat.S_ISLNK(stats.st_mode),
                 "owner": None,
@@ -175,10 +171,10 @@ class CatalogBuilder:
         if not self.tasks:
             return
         self.profile["summary_tasks"] = len(self.tasks)
-        
+
         # tqdm progress bar
         pbar = tqdm(total=len(self.tasks), desc="Summarizing", unit="file")
-        
+
         try:
             with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
                 future_to_entry = {
@@ -198,12 +194,12 @@ class CatalogBuilder:
                         self.logger.error("Unexpected error for %s: %s", path, exc)
                         pbar.update(1)
                         continue
-                        
+
                     entry["summary"] = result["summary"]
                     entry["summary_meta"] = result["meta"]
                     self.profile["summary_duration"] += result["meta"]["duration_sec"]
                     pbar.update(1)
-                    
+
                     # Incremental save (optional, but good for safety)
                     if pbar.n % 10 == 0:
                         self.summarizer.save_cache()
@@ -235,7 +231,7 @@ class CatalogBuilder:
                 continue
             entries.append(self._describe(path, 0, max_files))
         self._summarize_tasks()
-        
+
         self.profile["total_duration_sec"] = time.perf_counter() - self.profile["start"]
         payload = {
             "generated_at": datetime.now(timezone.utc).isoformat(),

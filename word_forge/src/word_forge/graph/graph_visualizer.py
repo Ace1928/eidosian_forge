@@ -20,7 +20,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import json
 import logging
@@ -30,6 +29,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Final, List, Optional
 
 import networkx as nx
+from eidosian_core import eidosian
 
 # Optional dependencies for visualization
 try:
@@ -101,9 +101,7 @@ class GraphVisualizer:
     def visualize(
         self,
         output_path: Optional[str] = None,
-        height: Optional[
-            str
-        ] = None,  # Pyvis expects string height/width (e.g., "800px")
+        height: Optional[str] = None,  # Pyvis expects string height/width (e.g., "800px")
         width: Optional[str] = None,
         use_3d: Optional[bool] = None,  # Explicitly choose 2D/3D
         dimensions_filter: Optional[List[RelationshipDimension]] = None,
@@ -135,9 +133,7 @@ class GraphVisualizer:
         if is_3d:
             self.visualize_3d(output_path, dimensions_filter, open_in_browser)
         else:
-            self.visualize_2d(
-                output_path, height, width, dimensions_filter, open_in_browser
-            )
+            self.visualize_2d(output_path, height, width, dimensions_filter, open_in_browser)
 
     @eidosian()
     def visualize_2d(
@@ -165,9 +161,7 @@ class GraphVisualizer:
         """
         if not _pyvis_available:
             self.logger.error("Pyvis library is required for 2D visualization.")
-            self.logger.error(
-                f"Install with the visualization extras: {_VISUALIZATION_INSTALL_HINT}"
-            )
+            self.logger.error(f"Install with the visualization extras: {_VISUALIZATION_INSTALL_HINT}")
             raise GraphVisualizationError(
                 "Missing 'pyvis' library. Install the visualization extras to enable 2D graph rendering."
             )
@@ -177,9 +171,7 @@ class GraphVisualizer:
 
         node_positions = self.manager.get_positions()
         if not node_positions:
-            self.logger.warning(
-                "Node positions not computed. Computing default layout for 2D visualization."
-            )
+            self.logger.warning("Node positions not computed. Computing default layout for 2D visualization.")
             try:
                 original_dims = self.manager.dimensions
                 if original_dims != 2:
@@ -189,15 +181,11 @@ class GraphVisualizer:
                 if original_dims != 2:
                     self.manager.dimensions = original_dims
             except Exception as e:
-                raise GraphVisualizationError(
-                    "Failed to compute layout for visualization.", e
-                ) from e
+                raise GraphVisualizationError("Failed to compute layout for visualization.", e) from e
 
         sample_pos: Optional[Position] = next(iter(node_positions.values()), None)
         if sample_pos is not None and len(sample_pos) != 2:
-            self.logger.warning(
-                "Graph positions are 3D, but 2D visualization requested. Using only X, Y coordinates."
-            )
+            self.logger.warning("Graph positions are 3D, but 2D visualization requested. Using only X, Y coordinates.")
 
         vis_height = height or f"{self._config.vis_height}px"
         vis_width = width or f"{self._config.vis_width}px"
@@ -207,9 +195,7 @@ class GraphVisualizer:
         if save_path.is_dir() or save_path.suffix.lower() != ".html":
             default_filename = "graph_2d.html"
             save_path = (
-                save_path / default_filename
-                if save_path.is_dir()
-                else save_path.with_name(save_path.stem + "_2d.html")
+                save_path / default_filename if save_path.is_dir() else save_path.with_name(save_path.stem + "_2d.html")
             )
             self.logger.debug(f"Adjusted 2D visualization save path to: {save_path}")
 
@@ -218,9 +204,7 @@ class GraphVisualizer:
         try:
             save_path.parent.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise GraphVisualizationError(
-                f"Could not create directory for visualization: {save_path.parent}", e
-            ) from e
+            raise GraphVisualizationError(f"Could not create directory for visualization: {save_path.parent}", e) from e
 
         net = PyvisNetwork(
             height=vis_height,
@@ -244,16 +228,12 @@ class GraphVisualizer:
                 try:
                     webbrowser.open(f"file://{str(save_path.resolve())}")
                 except Exception as wb_err:
-                    self.logger.warning(
-                        f"Could not automatically open visualization in browser: {wb_err}"
-                    )
+                    self.logger.warning(f"Could not automatically open visualization in browser: {wb_err}")
 
         except Exception as e:
             self.logger.error(f"Failed to generate or save Pyvis visualization: {e}")
             self.logger.debug(f"Traceback: {traceback.format_exc()}", exc_info=True)
-            raise GraphVisualizationError(
-                f"Error generating 2D visualization: {e}", e
-            ) from e
+            raise GraphVisualizationError(f"Error generating 2D visualization: {e}", e) from e
 
     @eidosian()
     def visualize_3d(
@@ -277,9 +257,7 @@ class GraphVisualizer:
         """
         if not _plotly_available:
             self.logger.error("Plotly library is required for 3D visualization.")
-            self.logger.error(
-                f"Install with the visualization extras: {_VISUALIZATION_INSTALL_HINT}"
-            )
+            self.logger.error(f"Install with the visualization extras: {_VISUALIZATION_INSTALL_HINT}")
             raise GraphVisualizationError(
                 "Missing 'plotly' library. Install the visualization extras to enable 3D graph rendering."
             )
@@ -289,9 +267,7 @@ class GraphVisualizer:
 
         node_positions = self.manager.get_positions()
         if not node_positions:
-            self.logger.warning(
-                "Node positions not computed. Computing default 3D layout."
-            )
+            self.logger.warning("Node positions not computed. Computing default 3D layout.")
             try:
                 original_dims = self.manager.dimensions
                 if original_dims != 3:
@@ -301,23 +277,17 @@ class GraphVisualizer:
                 if original_dims != 3:
                     self.manager.dimensions = original_dims
             except Exception as e:
-                raise GraphVisualizationError(
-                    "Failed to compute 3D layout for visualization.", e
-                ) from e
+                raise GraphVisualizationError("Failed to compute 3D layout for visualization.", e) from e
 
         sample_pos: Optional[Position] = next(iter(node_positions.values()), None)
         if sample_pos is not None and len(sample_pos) != 3:
-            self.logger.warning(
-                "Graph positions are 2D, but 3D visualization requested. Computing 3D layout."
-            )
+            self.logger.warning("Graph positions are 2D, but 3D visualization requested. Computing 3D layout.")
             try:
                 self.manager.dimensions = 3
                 self.manager.layout.compute_layout()
                 node_positions = self.manager.get_positions()  # Re-fetch
             except Exception as e:
-                raise GraphVisualizationError(
-                    "Failed to compute 3D layout for visualization.", e
-                ) from e
+                raise GraphVisualizationError("Failed to compute 3D layout for visualization.", e) from e
 
         save_path_str = output_path or self._config.visualization_path
         save_path = Path(save_path_str)
@@ -325,9 +295,7 @@ class GraphVisualizer:
         if save_path.is_dir() or save_path.suffix.lower() != ".html":
             default_filename = "graph_3d.html"
             save_path = (
-                save_path / default_filename
-                if save_path.is_dir()
-                else save_path.with_name(save_path.stem + "_3d.html")
+                save_path / default_filename if save_path.is_dir() else save_path.with_name(save_path.stem + "_3d.html")
             )
             self.logger.debug(f"Adjusted 3D visualization save path to: {save_path}")
 
@@ -336,9 +304,7 @@ class GraphVisualizer:
         try:
             save_path.parent.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise GraphVisualizationError(
-                f"Could not create directory for visualization: {save_path.parent}", e
-            ) from e
+            raise GraphVisualizationError(f"Could not create directory for visualization: {save_path.parent}", e) from e
 
         graph_to_visualize = self._filter_graph_by_dimensions(dimensions_filter)
 
@@ -353,20 +319,14 @@ class GraphVisualizer:
                 try:
                     webbrowser.open(f"file://{str(save_path.resolve())}")
                 except Exception as wb_err:
-                    self.logger.warning(
-                        f"Could not automatically open visualization in browser: {wb_err}"
-                    )
+                    self.logger.warning(f"Could not automatically open visualization in browser: {wb_err}")
 
         except Exception as e:
             self.logger.error(f"Failed to generate or save Plotly visualization: {e}")
             self.logger.debug(f"Traceback: {traceback.format_exc()}", exc_info=True)
-            raise GraphVisualizationError(
-                f"Error generating 3D visualization: {e}", e
-            ) from e
+            raise GraphVisualizationError(f"Error generating 3D visualization: {e}", e) from e
 
-    def _filter_graph_by_dimensions(
-        self, dimensions_filter: Optional[List[RelationshipDimension]]
-    ) -> nx.Graph:
+    def _filter_graph_by_dimensions(self, dimensions_filter: Optional[List[RelationshipDimension]]) -> nx.Graph:
         """
         Create a subgraph containing only edges matching the dimension filter.
 
@@ -382,9 +342,7 @@ class GraphVisualizer:
         self.logger.debug(f"Filtering graph for dimensions: {active_dimensions}")
 
         if not active_dimensions:
-            self.logger.warning(
-                "Dimension filter is empty. Visualization might be empty."
-            )
+            self.logger.warning("Dimension filter is empty. Visualization might be empty.")
             return type(self.manager.g)()
 
         @eidosian()
@@ -400,10 +358,7 @@ class GraphVisualizer:
                 return False
             else:
                 edge_data = self.manager.g.get_edge_data(u, v)
-                return (
-                    edge_data is not None
-                    and edge_data.get("dimension") in active_dimensions
-                )
+                return edge_data is not None and edge_data.get("dimension") in active_dimensions
 
         filtered_view = nx.subgraph_view(self.manager.g, filter_edge=edge_filter)
         filtered_graph = type(self.manager.g)()
@@ -411,9 +366,7 @@ class GraphVisualizer:
         filtered_graph.add_edges_from(filtered_view.edges(data=True))
         return filtered_graph
 
-    def _configure_pyvis_network(
-        self, net: PyvisNetwork, graph: nx.Graph, node_positions: PositionDict
-    ) -> None:
+    def _configure_pyvis_network(self, net: PyvisNetwork, graph: nx.Graph, node_positions: PositionDict) -> None:
         """
         Configure Pyvis network object with nodes, edges, and styling.
 
@@ -544,9 +497,7 @@ class GraphVisualizer:
 
         self.logger.debug("Pyvis network configuration complete.")
 
-    def _configure_plotly_figure(
-        self, graph: nx.Graph, node_positions: PositionDict
-    ) -> go.Figure:
+    def _configure_plotly_figure(self, graph: nx.Graph, node_positions: PositionDict) -> go.Figure:
         """
         Configure Plotly figure object for 3D visualization.
 
@@ -577,12 +528,7 @@ class GraphVisualizer:
             pos_v = node_positions.get(v)
 
             # Explicitly check if positions are not None and have length 3
-            if (
-                pos_u is not None
-                and pos_v is not None
-                and len(pos_u) == 3
-                and len(pos_v) == 3
-            ):
+            if pos_u is not None and pos_v is not None and len(pos_u) == 3 and len(pos_v) == 3:
                 edge_x.extend([pos_u[0], pos_v[0], None])
                 edge_y.extend([pos_u[1], pos_v[1], None])
                 edge_z.extend([pos_u[2], pos_v[2], None])
@@ -639,20 +585,12 @@ class GraphVisualizer:
                 )
 
         if not valid_node_ids:
-            self.logger.error(
-                "No nodes with valid 3D positions found. Cannot generate 3D plot."
-            )
-            raise GraphVisualizationError(
-                "No nodes with valid 3D positions found for Plotly."
-            )
+            self.logger.error("No nodes with valid 3D positions found. Cannot generate 3D plot.")
+            raise GraphVisualizationError("No nodes with valid 3D positions found for Plotly.")
 
         # Calculate sizeref based on valid node sizes
         valid_node_sizes = [s for s in node_sizes if s is not None]
-        sizeref_value = (
-            (max(valid_node_sizes) / (self._config.max_node_size * 1.5))
-            if valid_node_sizes
-            else 1
-        )
+        sizeref_value = (max(valid_node_sizes) / (self._config.max_node_size * 1.5)) if valid_node_sizes else 1
 
         node_trace = go.Scatter3d(
             x=node_x,
@@ -670,9 +608,7 @@ class GraphVisualizer:
                 sizemin=self._config.min_node_size / 1.5,
                 line_width=0.5,
             ),
-            textfont=(
-                dict(size=10, color="#CCCCCC") if self._config.enable_labels else None
-            ),
+            textfont=(dict(size=10, color="#CCCCCC") if self._config.enable_labels else None),
             textposition="top center",
         )
 
@@ -690,15 +626,9 @@ class GraphVisualizer:
                 hovermode="closest",
                 margin=dict(b=20, l=5, r=5, t=40),
                 scene=dict(
-                    xaxis=dict(
-                        showgrid=False, zeroline=False, showticklabels=False, title=""
-                    ),
-                    yaxis=dict(
-                        showgrid=False, zeroline=False, showticklabels=False, title=""
-                    ),
-                    zaxis=dict(
-                        showgrid=False, zeroline=False, showticklabels=False, title=""
-                    ),
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=""),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=""),
+                    zaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=""),
                     bgcolor="#111111",
                 ),
                 paper_bgcolor="#1e1e1e",
@@ -736,9 +666,7 @@ class GraphVisualizer:
                 size = min_size + (max_size - min_size) * (degree / max(1, max_degree))
                 return max(min_size, min(size, max_size))
             elif strategy == "centrality":
-                self.logger.warning(
-                    "Node size strategy 'centrality' not fully implemented, using 'degree'."
-                )
+                self.logger.warning("Node size strategy 'centrality' not fully implemented, using 'degree'.")
                 if node_id not in graph:
                     return default_size
                 degree = graph.degree(node_id)
@@ -786,20 +714,14 @@ class GraphVisualizer:
         valence = node_attributes.get("valence")
         if isinstance(valence, (int, float)):
             if valence > 0.5:
-                return self._config.affective_relationship_colors.get(
-                    "positive_valence", "#00cc66"
-                )
+                return self._config.affective_relationship_colors.get("positive_valence", "#00cc66")
             if valence < -0.5:
-                return self._config.affective_relationship_colors.get(
-                    "negative_valence", "#cc3300"
-                )
+                return self._config.affective_relationship_colors.get("negative_valence", "#cc3300")
             if valence > 0.1:
                 return "#90EE90"
             if valence < -0.1:
                 return "#FFA07A"
-            return self._config.affective_relationship_colors.get(
-                "valence_neutral", "#cccccc"
-            )
+            return self._config.affective_relationship_colors.get("valence_neutral", "#cccccc")
 
         lang_count = node_attributes.get("lang_count")
         if isinstance(lang_count, int) and lang_count > 0:
@@ -858,29 +780,19 @@ class GraphVisualizer:
             valence = attrs.get("valence")
             if isinstance(valence, (int, float)):
                 if valence > VALENCE_HIGH_THRESHOLD:
-                    return self._config.affective_relationship_colors.get(
-                        "positive_valence", "#00cc66"
-                    )
+                    return self._config.affective_relationship_colors.get("positive_valence", "#00cc66")
                 elif valence < VALENCE_LOW_THRESHOLD:
-                    return self._config.affective_relationship_colors.get(
-                        "negative_valence", "#cc3300"
-                    )
+                    return self._config.affective_relationship_colors.get("negative_valence", "#cc3300")
                 else:
-                    return self._config.affective_relationship_colors.get(
-                        "valence_neutral", "#cccccc"
-                    )
+                    return self._config.affective_relationship_colors.get("valence_neutral", "#cccccc")
 
             # Color by arousal if valence not available
             arousal = attrs.get("arousal")
             if isinstance(arousal, (int, float)):
                 if arousal > AROUSAL_HIGH_THRESHOLD:
-                    return self._config.affective_relationship_colors.get(
-                        "high_arousal", "#ff9900"
-                    )
+                    return self._config.affective_relationship_colors.get("high_arousal", "#ff9900")
                 else:
-                    return self._config.affective_relationship_colors.get(
-                        "low_arousal", "#3366cc"
-                    )
+                    return self._config.affective_relationship_colors.get("low_arousal", "#3366cc")
 
         # Dimension-based default colors
         dimension_colors = {

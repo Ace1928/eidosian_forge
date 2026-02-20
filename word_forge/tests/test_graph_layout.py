@@ -3,15 +3,14 @@
 This module tests the GraphManager's layout system using the real networkx library.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import numpy as np
-
-from word_forge.graph.graph_manager import GraphManager
 from word_forge.database.database_manager import DBManager
+from word_forge.graph.graph_manager import GraphManager
 
 
 def create_manager(tmp_path):

@@ -5,17 +5,19 @@
 Execution tracing with call stack tracking and detailed introspection.
 """
 from __future__ import annotations
+
 import inspect
-import time
-import threading
 import json
+import threading
+import time
+import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
-from contextlib import contextmanager
-import traceback
-import uuid
+from typing import Any, Dict, List, Optional
+
+
 @dataclass
 class TraceSpan:
     """
@@ -27,25 +29,25 @@ class TraceSpan:
     start_time: float
     end_time: Optional[float] = None
     duration_ms: Optional[float] = None
-    
+
     # Call info
     args: Optional[tuple] = None
     kwargs: Optional[dict] = None
     result: Optional[Any] = None
     error: Optional[str] = None
-    
+
     # Context
     filename: Optional[str] = None
     line_number: Optional[int] = None
     locals_snapshot: Optional[Dict[str, Any]] = None
-    
+
     # Children
     children: List["TraceSpan"] = field(default_factory=list)
     def finish(self, result: Any = None, error: Exception = None):
         """Complete the span."""
         self.end_time = time.perf_counter()
         self.duration_ms = (self.end_time - self.start_time) * 1000
-        
+
         if error:
             self.error = f"{type(error).__name__}: {error}"
         else:
@@ -65,7 +67,7 @@ class TraceSpan:
             "line_number": self.line_number,
             "children": [c.to_dict() for c in self.children],
         }
-    
+
     @staticmethod
     def _safe_repr(obj: Any, max_length: int = 200) -> Any:
         """Safe string representation."""
@@ -81,18 +83,18 @@ class TraceSpan:
     def to_string(self, indent: int = 0) -> str:
         """Human-readable string with tree structure."""
         prefix = "  " * indent
-        
+
         status = "✓" if not self.error else "✗"
         duration = f"{self.duration_ms:.2f}ms" if self.duration_ms else "..."
-        
+
         lines = [f"{prefix}{status} {self.name} [{duration}]"]
-        
+
         if self.error:
             lines.append(f"{prefix}  ERROR: {self.error}")
-        
+
         for child in self.children:
             lines.append(child.to_string(indent + 1))
-        
+
         return "\n".join(lines)
 class Tracer:
     """
@@ -104,9 +106,9 @@ class Tracer:
     - Optional locals snapshot
     - Thread-safe
     """
-    
+
     _local = threading.local()
-    
+
     def __init__(
         self,
         capture_args: bool = True,
@@ -120,22 +122,22 @@ class Tracer:
         self.capture_locals = capture_locals
         self.max_depth = max_depth
         self.output_file = Path(output_file) if output_file else None
-        
+
         self.root_spans: List[TraceSpan] = []
-    
+
     @property
     def _stack(self) -> List[TraceSpan]:
         """Get thread-local span stack."""
         if not hasattr(self._local, "stack"):
             self._local.stack = []
         return self._local.stack
-    
+
     @property
     def current_span(self) -> Optional[TraceSpan]:
         """Get current span."""
         stack = self._stack
         return stack[-1] if stack else None
-    
+
     @property
     def depth(self) -> int:
         """Current trace depth."""
@@ -151,9 +153,9 @@ class Tracer:
         """Start a new trace span."""
         if self.depth >= self.max_depth:
             raise RuntimeError(f"Max trace depth ({self.max_depth}) exceeded")
-        
+
         parent = self.current_span
-        
+
         span = TraceSpan(
             id=str(uuid.uuid4())[:8],
             parent_id=parent.id if parent else None,
@@ -164,34 +166,34 @@ class Tracer:
             filename=filename,
             line_number=line_number,
         )
-        
+
         if parent:
             parent.children.append(span)
         else:
             self.root_spans.append(span)
-        
+
         self._stack.append(span)
         return span
     def end_span(self, result: Any = None, error: Exception = None) -> Optional[TraceSpan]:
         """End current span."""
         if not self._stack:
             return None
-        
+
         span = self._stack.pop()
-        
+
         if self.capture_result:
             span.finish(result=result, error=error)
         else:
             span.finish(error=error)
-        
+
         # Capture locals if enabled
         if self.capture_locals and not error:
             frame = inspect.currentframe()
             if frame and frame.f_back:
                 span.locals_snapshot = self._safe_locals(frame.f_back.f_locals)
-        
+
         return span
-    
+
     def _safe_locals(self, locals_dict: dict) -> Dict[str, Any]:
         """Safely capture local variables."""
         safe = {}
@@ -278,9 +280,9 @@ def trace_context(
         capture_args=capture_args,
         capture_result=capture_result,
     )
-    
+
     with tracer.span(name):
         yield tracer
-    
+
     if print_result:
         print(tracer.to_string())

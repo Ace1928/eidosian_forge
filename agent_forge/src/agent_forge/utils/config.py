@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Configuration management for Eidosian Forge.
 
@@ -47,20 +48,14 @@ class ConfigManager:
         """
         try:
             with open(self.config_path, "r") as f:
-                if self.config_path.endswith(".yaml") or self.config_path.endswith(
-                    ".yml"
-                ):
+                if self.config_path.endswith(".yaml") or self.config_path.endswith(".yml"):
                     return yaml.safe_load(f)
                 elif self.config_path.endswith(".json"):
                     return json.load(f)
                 else:
-                    raise ValueError(
-                        f"Unsupported config file format: {self.config_path}"
-                    )
+                    raise ValueError(f"Unsupported config file format: {self.config_path}")
         except FileNotFoundError:
-            logger.warning(
-                f"Config file not found at {self.config_path}, creating default"
-            )
+            logger.warning(f"Config file not found at {self.config_path}, creating default")
             self._create_default_config()
             return self._load_config()
 

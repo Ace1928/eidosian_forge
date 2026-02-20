@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
+
+from eidosian_core import eidosian
 
 from . import eidos_mcp_server  # noqa: F401
-from .core import list_tool_metadata, list_resource_metadata
-from eidosian_core import eidosian
+from .core import list_resource_metadata, list_tool_metadata
 
 
 def _build_parser() -> argparse.ArgumentParser:

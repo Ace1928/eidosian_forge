@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
-from code_forge.library.similarity import hamming_distance64, tokenize_code_text, token_jaccard
+from code_forge.library.similarity import hamming_distance64, token_jaccard, tokenize_code_text
 
 ISO_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -63,8 +63,7 @@ class CodeLibraryDB:
 
     def _init_schema(self) -> None:
         with self._connect() as conn:
-            conn.executescript(
-                """
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS code_text (
                     content_hash TEXT PRIMARY KEY,
                     content TEXT NOT NULL
@@ -155,27 +154,22 @@ class CodeLibraryDB:
                     ON relationships(child_id, rel_type);
                 CREATE INDEX IF NOT EXISTS idx_relationships_type
                     ON relationships(rel_type);
-                """
-            )
+                """)
 
             self._ensure_column(conn, "code_units", "complexity", "REAL")
             self._ensure_column(conn, "code_units", "language", "TEXT")
 
             self._ensure_column(conn, "code_fingerprints", "structural_hash", "TEXT")
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_code_fp_struct_hash
                     ON code_fingerprints(structural_hash)
-                """
-            )
+                """)
 
             try:
-                conn.execute(
-                    """
+                conn.execute("""
                     CREATE VIRTUAL TABLE IF NOT EXISTS code_units_fts
                     USING fts5(unit_id UNINDEXED, text)
-                    """
-                )
+                    """)
                 self._fts_enabled = True
             except sqlite3.OperationalError:
                 # SQLite build may not include FTS5; code_search table remains usable.
@@ -194,9 +188,7 @@ class CodeLibraryDB:
         config: Optional[Dict[str, Any]] = None,
         run_id: Optional[str] = None,
     ) -> str:
-        run_id = run_id or hashlib.sha256(
-            f"{root_path}|{mode}|{_utc_now()}".encode("utf-8")
-        ).hexdigest()[:16]
+        run_id = run_id or hashlib.sha256(f"{root_path}|{mode}|{_utc_now()}".encode("utf-8")).hexdigest()[:16]
         payload = json.dumps(config or {}, sort_keys=True)
         with self._connect() as conn:
             conn.execute(
@@ -445,14 +437,12 @@ class CodeLibraryDB:
 
     def relationship_counts(self) -> Dict[str, int]:
         with self._connect() as conn:
-            rows = conn.execute(
-                """
+            rows = conn.execute("""
                 SELECT rel_type, COUNT(*) AS c
                 FROM relationships
                 GROUP BY rel_type
                 ORDER BY c DESC
-                """
-            ).fetchall()
+                """).fetchall()
         return {str(r["rel_type"]): int(r["c"]) for r in rows}
 
     def list_relationships(
@@ -1054,26 +1044,22 @@ class CodeLibraryDB:
 
     def count_units_by_type(self) -> Dict[str, int]:
         with self._connect() as conn:
-            rows = conn.execute(
-                """
+            rows = conn.execute("""
                 SELECT unit_type, COUNT(*) AS c
                 FROM code_units
                 GROUP BY unit_type
                 ORDER BY c DESC
-                """
-            ).fetchall()
+                """).fetchall()
         return {str(r["unit_type"]): int(r["c"]) for r in rows}
 
     def count_units_by_language(self) -> Dict[str, int]:
         with self._connect() as conn:
-            rows = conn.execute(
-                """
+            rows = conn.execute("""
                 SELECT language, COUNT(*) AS c
                 FROM code_units
                 GROUP BY language
                 ORDER BY c DESC
-                """
-            ).fetchall()
+                """).fetchall()
         return {str(r["language"]): int(r["c"]) for r in rows}
 
     def latest_runs(self, limit: int = 10) -> list[Dict[str, Any]]:

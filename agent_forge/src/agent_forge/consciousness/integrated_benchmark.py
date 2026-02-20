@@ -12,8 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional
 
-from agent_forge.core import events
 from eidosian_core.ports import get_service_url
+
+from agent_forge.core import events
 
 from .bench.red_team import ConsciousnessRedTeamCampaign
 from .benchmarks import ConsciousnessBenchmarkSuite
@@ -94,19 +95,19 @@ def _llm_tasks() -> list[dict[str, Any]]:
     return [
         {
             "id": "arith_sum",
-            "prompt": "Return only JSON: {\"sum\": 611+223}",
+            "prompt": 'Return only JSON: {"sum": 611+223}',
             "validator": lambda response: _safe_float(_extract_json_field(response, "sum"), default=-1) == 834.0,
         },
         {
             "id": "prime_select",
-            "prompt": "Return only JSON: {\"prime\": <prime number from [21, 29, 35]>}",
+            "prompt": 'Return only JSON: {"prime": <prime number from [21, 29, 35]>}',
             "validator": lambda response: int(_safe_float(_extract_json_field(response, "prime"), default=-1)) == 29,
         },
         {
             "id": "state_reasoning",
             "prompt": (
                 "Return only JSON: "
-                "{\"mode\":\"grounded|simulated|degraded\",\"reason\":\"<=8 words\"}. "
+                '{"mode":"grounded|simulated|degraded","reason":"<=8 words"}. '
                 "Choose mode=grounded if coherence high and prediction error low."
             ),
             "validator": lambda response: str(_extract_json_field(response, "mode")).lower()
@@ -114,13 +115,14 @@ def _llm_tasks() -> list[dict[str, Any]]:
         },
         {
             "id": "idempotence",
-            "prompt": "Return only JSON: {\"idempotent\": true}",
+            "prompt": 'Return only JSON: {"idempotent": true}',
             "validator": lambda response: bool(_extract_json_field(response, "idempotent")) is True,
         },
         {
             "id": "rollback",
-            "prompt": "Return only JSON: {\"rollback_steps\": 3}",
-            "validator": lambda response: int(_safe_float(_extract_json_field(response, "rollback_steps"), default=-1)) == 3,
+            "prompt": 'Return only JSON: {"rollback_steps": 3}',
+            "validator": lambda response: int(_safe_float(_extract_json_field(response, "rollback_steps"), default=-1))
+            == 3,
         },
     ]
 
@@ -165,17 +167,17 @@ async def _run_mcp_suite(state_dir: Path, timeout_sec: float = 45.0) -> dict[str
         (
             "consciousness_kernel_status",
             {"state_dir": str(state_dir)},
-            lambda r: "\"workspace\"" in r and "\"rci\"" in r and "\"watchdog\"" in r and "\"payload_safety\"" in r,
+            lambda r: '"workspace"' in r and '"rci"' in r and '"watchdog"' in r and '"payload_safety"' in r,
         ),
         (
             "consciousness_bridge_status",
             {"state_dir": str(state_dir)},
-            lambda r: "\"memory_bridge\"" in r and "\"knowledge_bridge\"" in r,
+            lambda r: '"memory_bridge"' in r and '"knowledge_bridge"' in r,
         ),
         (
             "consciousness_kernel_benchmark",
             {"state_dir": str(state_dir), "ticks": 2, "persist": False},
-            lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
+            lambda r: '"benchmark_id"' in r and '"composite"' in r,
         ),
         (
             "consciousness_kernel_stress_benchmark",
@@ -188,7 +190,7 @@ async def _run_mcp_suite(state_dir: Path, timeout_sec: float = 45.0) -> dict[str
                 "max_payload_bytes": 1024,
                 "persist": False,
             },
-            lambda r: "\"benchmark_id\"" in r and "\"payload_truncations_observed\"" in r,
+            lambda r: '"benchmark_id"' in r and '"payload_truncations_observed"' in r,
         ),
     ]
 
@@ -400,9 +402,7 @@ class IntegratedStackBenchmark:
 
         core_composites = [_safe_float((row.get("scores") or {}).get("composite")) for row in core_runs]
         core_score = sum(core_composites) / max(len(core_composites), 1)
-        trial_rci_delta = [
-            _safe_float((row.get("delta") or {}).get("rci_delta"), default=0.0) for row in trials
-        ]
+        trial_rci_delta = [_safe_float((row.get("delta") or {}).get("rci_delta"), default=0.0) for row in trials]
         trial_score = _clamp(0.5 + (sum(trial_rci_delta) / max(len(trial_rci_delta), 1)), 0.0, 1.5)
         llm_score = _safe_float(llm_report.get("success_rate"), default=0.0)
         mcp_score = _safe_float(mcp_report.get("success_rate"), default=0.0)

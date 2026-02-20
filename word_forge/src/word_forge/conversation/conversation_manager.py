@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """Conversation Manager Module.
 
 This module provides the conversation management functionality for Word Forge,
@@ -56,9 +57,9 @@ from word_forge.conversation.conversation_types import (
 from word_forge.database.database_manager import DatabaseError, DBManager
 from word_forge.emotion.emotion_manager import EmotionManager
 from word_forge.graph.graph_manager import GraphManager
-from word_forge.vectorizer.vector_store import VectorStore
-from word_forge.queue.queue_manager import QueueManager
 from word_forge.parser.parser_refiner import TermExtractor
+from word_forge.queue.queue_manager import QueueManager
+from word_forge.vectorizer.vector_store import VectorStore
 
 
 # --- Custom Exceptions ---
@@ -354,9 +355,7 @@ class ConversationManager:
                 severity=ErrorSeverity.ERROR,
                 context={"sql_operation": "start_conversation"},
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except ConversationError as e:
             error = Error.create(
                 message=f"Database connection error starting conversation: {e}",
@@ -365,9 +364,7 @@ class ConversationManager:
                 severity=ErrorSeverity.ERROR,
                 context={"sql_operation": "start_conversation"},
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except Exception as e:
             error = Error.create(
                 message=f"Unexpected error starting conversation: {e}",
@@ -379,9 +376,7 @@ class ConversationManager:
                     "exception_type": type(e).__name__,
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
 
     @eidosian()
     def end_conversation(self, conversation_id: int) -> Result[None]:
@@ -432,9 +427,7 @@ class ConversationManager:
                     "conversation_id": str(conversation_id),
                 },
             )
-            return Result[None].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[None].failure(error.code, error.message, error.context, error.category, error.severity)
         except ConversationError as e:
             error = Error.create(
                 message=f"Database connection error ending conversation: {e}",
@@ -446,9 +439,7 @@ class ConversationManager:
                     "conversation_id": str(conversation_id),
                 },
             )
-            return Result[None].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[None].failure(error.code, error.message, error.context, error.category, error.severity)
         except Exception as e:
             error = Error.create(
                 message=f"Unexpected error ending conversation {conversation_id}: {e}",
@@ -461,9 +452,7 @@ class ConversationManager:
                     "exception_type": type(e).__name__,
                 },
             )
-            return Result[None].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[None].failure(error.code, error.message, error.context, error.category, error.severity)
 
     @eidosian()
     def add_message(
@@ -531,9 +520,7 @@ class ConversationManager:
                         error.severity,
                     )
 
-                print(
-                    f"Added message {message_id} from {speaker} to conversation {conversation_id}"
-                )
+                print(f"Added message {message_id} from {speaker} to conversation {conversation_id}")
 
                 try:
                     self.emotion_manager.process_message(message_id, text)
@@ -547,12 +534,8 @@ class ConversationManager:
                     self._queue_terms_from_text(text)
 
             if generate_response and speaker.lower() != "assistant":
-                print(
-                    f"Triggering response generation for conversation {conversation_id}..."
-                )
-                response_result: Result[int] = self.generate_and_add_response(
-                    conversation_id, text, speaker
-                )
+                print(f"Triggering response generation for conversation {conversation_id}...")
+                response_result: Result[int] = self.generate_and_add_response(conversation_id, text, speaker)
                 if response_result.is_failure:
                     error_details = "Unknown error"
                     error_code = "RESPONSE_GENERATION_FAILED"
@@ -584,9 +567,7 @@ class ConversationManager:
                         failure_error.severity,
                     )
                 else:
-                    print(
-                        f"Successfully generated and added response (ID: {response_result.unwrap()})"
-                    )
+                    print(f"Successfully generated and added response (ID: {response_result.unwrap()})")
                     return Result[int].success(message_id)
             else:
                 return Result[int].success(message_id)
@@ -603,9 +584,7 @@ class ConversationManager:
                     "speaker": speaker,
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except ConversationError as e:
             error = Error.create(
                 message=f"Database connection error adding message: {e}",
@@ -617,9 +596,7 @@ class ConversationManager:
                     "conversation_id": str(conversation_id),
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except Exception as e:
             error = Error.create(
                 message=f"Unexpected error adding message or generating response for conversation {conversation_id}: {e}",
@@ -633,9 +610,7 @@ class ConversationManager:
                     "traceback": traceback.format_exc(),
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
 
     @eidosian()
     def generate_and_add_response(
@@ -692,9 +667,7 @@ class ConversationManager:
             "identity_state": None,
             "additional_data": {},
         }
-        print(
-            f"[{conversation_id}] Context prepared with {len(limited_history)} messages."
-        )
+        print(f"[{conversation_id}] Context prepared with {len(limited_history)} messages.")
 
         try:
             print(f"[{conversation_id}] Calling Reflexive Model...")
@@ -708,9 +681,7 @@ class ConversationManager:
                     reflex_error_code = reflexive_result.error.code
                     reflex_error_context = reflexive_result.error.context
 
-                print(
-                    f"[{conversation_id}] Warning: Reflexive model failed: {reflex_error_msg}. Proceeding."
-                )
+                print(f"[{conversation_id}] Warning: Reflexive model failed: {reflex_error_msg}. Proceeding.")
                 context["additional_data"]["reflexive_error"] = {
                     "message": reflex_error_msg,
                     "code": reflex_error_code,
@@ -780,18 +751,12 @@ class ConversationManager:
                     failure_error.severity,
                 )
             final_response_text = identity_result.unwrap()
-            print(
-                f"[{conversation_id}] Identity Model produced final: '{final_response_text[:50]}...'"
-            )
+            print(f"[{conversation_id}] Identity Model produced final: '{final_response_text[:50]}...'")
 
             print(f"[{conversation_id}] Adding final assistant response to DB...")
-            add_assistant_result = self._add_assistant_message_internal(
-                conversation_id, final_response_text
-            )
+            add_assistant_result = self._add_assistant_message_internal(conversation_id, final_response_text)
             if add_assistant_result.is_failure:
-                print(
-                    f"[{conversation_id}] Error: Failed to add assistant message to DB."
-                )
+                print(f"[{conversation_id}] Error: Failed to add assistant message to DB.")
                 failure_error = add_assistant_result.error or Error.create(
                     message="Failed to add assistant message internally without specific error.",
                     code="ADD_ASSISTANT_INTERNAL_FAILURE",
@@ -807,15 +772,11 @@ class ConversationManager:
                 )
 
             assistant_message_id = add_assistant_result.unwrap()
-            print(
-                f"[{conversation_id}] Assistant message {assistant_message_id} added."
-            )
+            print(f"[{conversation_id}] Assistant message {assistant_message_id} added.")
             return Result[int].success(assistant_message_id)
 
         except Exception as e:
-            print(
-                f"[{conversation_id}] Unexpected error during response generation pipeline: {type(e).__name__} - {e}"
-            )
+            print(f"[{conversation_id}] Unexpected error during response generation pipeline: {type(e).__name__} - {e}")
             error = Error.create(
                 message=f"Unexpected error in response pipeline: {e}",
                 code="RESPONSE_PIPELINE_UNEXPECTED_ERROR",
@@ -827,13 +788,9 @@ class ConversationManager:
                     "traceback": traceback.format_exc(),
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
 
-    def _add_assistant_message_internal(
-        self, conversation_id: int, text: str
-    ) -> Result[int]:
+    def _add_assistant_message_internal(self, conversation_id: int, text: str) -> Result[int]:
         """
         Internal helper to add an 'Assistant' message using the Result pattern.
 
@@ -893,9 +850,7 @@ class ConversationManager:
                     "conversation_id": str(conversation_id),
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except ConversationError as e:
             error = Error.create(
                 message=f"Database connection error adding assistant message: {e}",
@@ -907,9 +862,7 @@ class ConversationManager:
                     "conversation_id": str(conversation_id),
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
         except Exception as e:
             error = Error.create(
                 message=f"Unexpected error adding assistant message: {e}",
@@ -922,9 +875,7 @@ class ConversationManager:
                     "exception_type": type(e).__name__,
                 },
             )
-            return Result[int].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[int].failure(error.code, error.message, error.context, error.category, error.severity)
 
     @eidosian()
     def get_conversation(self, conversation_id: int) -> Result[ConversationDict]:
@@ -1034,9 +985,7 @@ class ConversationManager:
             )
 
     @eidosian()
-    def get_conversation_if_exists(
-        self, conversation_id: int
-    ) -> Result[Optional[ConversationDict]]:
+    def get_conversation_if_exists(self, conversation_id: int) -> Result[Optional[ConversationDict]]:
         """
         Retrieves conversation details only if the conversation exists.
 
@@ -1158,9 +1107,7 @@ class ConversationManager:
             )
 
     @eidosian()
-    def get_messages(
-        self, conversation_id: int, limit: int = 50
-    ) -> Result[List[MessageDict]]:
+    def get_messages(self, conversation_id: int, limit: int = 50) -> Result[List[MessageDict]]:
         """
         Get messages from a specific conversation.
 

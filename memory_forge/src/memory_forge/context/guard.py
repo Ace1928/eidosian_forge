@@ -10,8 +10,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Optional
-
+from typing import List, Optional
 
 REDACTION_RULES = [
     ("moltbook_api_key", re.compile(r"\bmoltbook_sk_[A-Za-z0-9]{6,}\b")),

@@ -11,4 +11,3 @@ def test_metrics_index(tmp_path):
     conn.close()
     names = [row[1] for row in idxs]
     assert "idx_metrics_key_ts" in names
-

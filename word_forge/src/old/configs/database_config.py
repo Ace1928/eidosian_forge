@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Database configuration system for Word Forge.
 
@@ -207,9 +208,7 @@ class DatabaseConfig:
         if self.dialect == DatabaseDialect.SQLITE:
             parent_dir = path.parent
             if not parent_dir.exists():
-                raise DatabaseConfigError(
-                    f"Database parent directory does not exist: {parent_dir}"
-                )
+                raise DatabaseConfigError(f"Database parent directory does not exist: {parent_dir}")
 
         return path
 
@@ -274,9 +273,7 @@ class DatabaseConfig:
             ```
         """
         if self.dialect != DatabaseDialect.SQLITE:
-            raise DatabaseConfigError(
-                f"Connection URI for {self.dialect.name} is not implemented"
-            )
+            raise DatabaseConfigError(f"Connection URI for {self.dialect.name} is not implemented")
 
         params = "&".join(f"{k}={v}" for k, v in self.effective_pragmas.items())
         return f"file:{self.db_path}?{params}"
@@ -447,18 +444,14 @@ class DatabaseConfig:
 
             # Validate pool settings
             if self.pool_size <= 0 and self.pool_mode != "none":
-                errors.append(
-                    f"Pool size must be positive when mode is {self.pool_mode}, got {self.pool_size}"
-                )
+                errors.append(f"Pool size must be positive when mode is {self.pool_mode}, got {self.pool_size}")
 
             # Validate timeout
             if self.pool_timeout <= 0:
                 errors.append(f"Pool timeout must be positive, got {self.pool_timeout}")
 
         if errors:
-            raise DatabaseConfigError(
-                f"Configuration validation failed: {'; '.join(errors)}"
-            )
+            raise DatabaseConfigError(f"Configuration validation failed: {'; '.join(errors)}")
 
     # ==========================================
     # Private Helper Methods

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
-import json
-import time
 import sys
+import time
 from pathlib import Path
-from typing import Optional
 
-from ..core import tool
-from .. import FORGE_ROOT
-from ..state import agent
 from eidosian_core import eidosian
+
+from .. import FORGE_ROOT
+from ..core import tool
+from ..state import agent
 
 
 @tool(
@@ -21,7 +21,7 @@ from eidosian_core import eidosian
         "type": "object",
         "properties": {
             "objective": {"type": "string"},
-            "execute": {"type": "boolean", "description": "If true, execute the plan immediately."}
+            "execute": {"type": "boolean", "description": "If true, execute the plan immediately."},
         },
         "required": ["objective"],
     },
@@ -40,44 +40,33 @@ def agent_run_task(objective: str, execute: bool = False) -> str:
             },
             indent=2,
         )
-    
+
     goal = agent.create_goal(objective, plan=True)
-    
+
     execution_results = []
     if execute:
         for t in goal.tasks:
             success = agent.execute_task(t)
-            execution_results.append({
-                "task": t.description,
-                "tool": t.tool,
-                "status": t.status,
-                "result": str(t.result)[:200] + "..." if t.result and len(str(t.result)) > 200 else t.result
-            })
-            if not success and t.priority > 0: # Stop on critical failure
-                 break
-                 
-        return json.dumps({
-            "objective": objective,
-            "status": "executed",
-            "results": execution_results
-        }, indent=2)
+            execution_results.append(
+                {
+                    "task": t.description,
+                    "tool": t.tool,
+                    "status": t.status,
+                    "result": str(t.result)[:200] + "..." if t.result and len(str(t.result)) > 200 else t.result,
+                }
+            )
+            if not success and t.priority > 0:  # Stop on critical failure
+                break
 
-    # We return the plan for inspection. 
+        return json.dumps({"objective": objective, "status": "executed", "results": execution_results}, indent=2)
+
+    # We return the plan for inspection.
     # In a full autonomous loop, we might execute it, but for MCP we prefer planning first.
     tasks = []
     for t in goal.tasks:
-        tasks.append({
-            "description": t.description,
-            "tool": t.tool,
-            "args": t.kwargs,
-            "status": t.status
-        })
-    
-    return json.dumps({
-        "objective": objective,
-        "plan_id": str(id(goal)),
-        "tasks": tasks
-    }, indent=2)
+        tasks.append({"description": t.description, "tool": t.tool, "args": t.kwargs, "status": t.status})
+
+    return json.dumps({"objective": objective, "plan_id": str(id(goal)), "tasks": tasks}, indent=2)
 
 
 @tool(
@@ -106,7 +95,7 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
         return "Error: A specific, measurable benefit must be provided for the upgrade."
 
     forge_dir = os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))
-    
+
     if run_tests:
         # Run tests in the forge directory
         try:
@@ -122,7 +111,7 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
                 cwd=forge_dir,
                 capture_output=True,
                 text=True,
-                timeout=300, # 5 minutes max for tests
+                timeout=300,  # 5 minutes max for tests
             )
             if result.returncode != 0:
                 return f"Error: Tests failed. Upgrade aborted.\n\nStdout:\n{result.stdout}\n\nStderr:\n{result.stderr}"
@@ -132,7 +121,7 @@ def mcp_self_upgrade(benefit: str, run_tests: bool = True) -> str:
     # If we got here, tests passed or were skipped. Restart the service.
     # Check if systemctl is available
     has_systemctl = subprocess.run(["command", "-v", "systemctl"], shell=True, capture_output=True).returncode == 0
-    
+
     if has_systemctl:
         # Use explicit user bus in case the MCP process runs without it in env.
         service_name = os.environ.get("EIDOS_MCP_SYSTEMD_SERVICE", "eidos-mcp.service")

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 
 This module provides a comprehensive configuration system for database connections,
@@ -270,9 +271,7 @@ class DatabaseConfig:
         if self.dialect == DatabaseDialect.SQLITE:
             parent_dir = path.parent
             if not parent_dir.exists():
-                raise DatabaseConfigError(
-                    f"Database parent directory does not exist: {parent_dir}"
-                )
+                raise DatabaseConfigError(f"Database parent directory does not exist: {parent_dir}")
 
         return path
 
@@ -341,9 +340,7 @@ class DatabaseConfig:
             ```
         """
         if self.dialect != DatabaseDialect.SQLITE:
-            raise DatabaseConfigError(
-                f"Connection URI for {self.dialect.name} is not implemented"
-            )
+            raise DatabaseConfigError(f"Connection URI for {self.dialect.name} is not implemented")
 
         params = "&".join(f"{k}={v}" for k, v in self.effective_pragmas.items())
         return f"file:{self.db_path}?{params}"
@@ -445,9 +442,7 @@ class DatabaseConfig:
 
             return self._create_modified_instance(
                 pragmas=cast(Dict[str, Any], read_pragmas),
-                pool_size=max(
-                    self.pool_size, 8
-                ),  # Larger pool for more concurrent reads
+                pool_size=max(self.pool_size, 8),  # Larger pool for more concurrent reads
                 isolation_level="READ_COMMITTED",  # Lower isolation level for better concurrency
                 enable_wal_mode=True,  # WAL is critical for read performance
                 cache_size=8000,  # Larger cache size
@@ -532,15 +527,11 @@ class DatabaseConfig:
 
                 # Validate pool settings
                 if self.pool_size <= 0 and self.pool_mode != "none":
-                    errors.append(
-                        f"Pool size must be positive when mode is {self.pool_mode}, got {self.pool_size}"
-                    )
+                    errors.append(f"Pool size must be positive when mode is {self.pool_mode}, got {self.pool_size}")
 
                 # Validate timeout
                 if self.pool_timeout <= 0:
-                    errors.append(
-                        f"Pool timeout must be positive, got {self.pool_timeout}"
-                    )
+                    errors.append(f"Pool timeout must be positive, got {self.pool_timeout}")
 
             if errors:
                 # Convert list to string representation for context
@@ -647,9 +638,7 @@ class DatabaseConfig:
         valid_attrs: Set[str] = set(f.name for f in fields(self))
         for attr in kwargs:
             if attr not in valid_attrs:
-                raise ValueError(
-                    f"Invalid attribute: {attr}. Valid attributes are: {', '.join(valid_attrs)}"
-                )
+                raise ValueError(f"Invalid attribute: {attr}. Valid attributes are: {', '.join(valid_attrs)}")
 
         # Type checking is handled by the replace() function and dataclass structure
         return replace(self, **kwargs)

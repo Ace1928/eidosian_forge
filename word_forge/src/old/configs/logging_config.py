@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Logging configuration system for Word Forge.
 
@@ -216,10 +217,7 @@ class LoggingConfig:
                 print(f"File logging enabled at: {config.get_log_path}")
             ```
         """
-        return (
-            self.destination in (LogDestination.FILE, LogDestination.BOTH)
-            and self.file_path is not None
-        )
+        return self.destination in (LogDestination.FILE, LogDestination.BOTH) and self.file_path is not None
 
     @cached_property
     def uses_console_logging(self) -> bool:
@@ -338,13 +336,8 @@ class LoggingConfig:
         config = self._create_modified_config(destination=destination)
 
         # Handle special case for FILE destination with no file path
-        if (
-            destination in (LogDestination.FILE, LogDestination.BOTH)
-            and not config.file_path
-        ):
-            config = self._create_modified_config(
-                destination=destination, file_path=str(LOGS_ROOT / "word_forge.log")
-            )
+        if destination in (LogDestination.FILE, LogDestination.BOTH) and not config.file_path:
+            config = self._create_modified_config(destination=destination, file_path=str(LOGS_ROOT / "word_forge.log"))
 
         return config
 
@@ -367,9 +360,7 @@ class LoggingConfig:
             ```
         """
         if not self.uses_file_logging:
-            return RotationConfigDict(
-                enabled=False, strategy=None, max_size_mb=None, max_files=None
-            )
+            return RotationConfigDict(enabled=False, strategy=None, max_size_mb=None, max_files=None)
 
         return RotationConfigDict(
             enabled=self.rotation_strategy != LogRotationStrategy.NONE,
@@ -407,9 +398,7 @@ class LoggingConfig:
         self._validate_rotation_settings(errors)
 
         if errors:
-            raise LoggingConfigError(
-                f"Configuration validation failed: {'; '.join(errors)}"
-            )
+            raise LoggingConfigError(f"Configuration validation failed: {'; '.join(errors)}")
 
     @eidosian()
     def get_python_logging_config(self) -> Dict[str, Any]:
@@ -535,10 +524,7 @@ class LoggingConfig:
             errors: List to accumulate validation errors
         """
         # Validate destination vs file_path consistency
-        if (
-            self.destination in (LogDestination.FILE, LogDestination.BOTH)
-            and not self.file_path
-        ):
+        if self.destination in (LogDestination.FILE, LogDestination.BOTH) and not self.file_path:
             errors.append("File logging enabled but no file path specified")
 
     def _validate_size_settings(self, errors: List[str]) -> None:
@@ -550,15 +536,11 @@ class LoggingConfig:
         """
         # Validate max file size
         if self.max_file_size_mb <= 0:
-            errors.append(
-                f"Maximum file size must be positive, got {self.max_file_size_mb}"
-            )
+            errors.append(f"Maximum file size must be positive, got {self.max_file_size_mb}")
 
         # Validate max files
         if self.max_files <= 0:
-            errors.append(
-                f"Maximum number of files must be positive, got {self.max_files}"
-            )
+            errors.append(f"Maximum number of files must be positive, got {self.max_files}")
 
     def _validate_rotation_settings(self, errors: List[str]) -> None:
         """
@@ -568,11 +550,7 @@ class LoggingConfig:
             errors: List to accumulate validation errors
         """
         # Validate rotation settings
-        if (
-            self.rotation_strategy == LogRotationStrategy.SIZE
-            and self.uses_file_logging
-            and self.max_file_size_mb <= 0
-        ):
+        if self.rotation_strategy == LogRotationStrategy.SIZE and self.uses_file_logging and self.max_file_size_mb <= 0:
             errors.append("Size-based rotation requires positive max_file_size_mb")
 
 

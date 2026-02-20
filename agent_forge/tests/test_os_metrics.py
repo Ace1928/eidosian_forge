@@ -19,9 +19,9 @@ def test_system_stats_keys():
 
 def test_cpu_percent(monkeypatch):
     vals = itertools.cycle([(1.0, 0.0), (1.5, 0.0)])
-    monkeypatch.setattr(OM, '_read_proc_stat', lambda: next(vals))
+    monkeypatch.setattr(OM, "_read_proc_stat", lambda: next(vals))
     times = iter([1.0, 2.0])
-    monkeypatch.setattr(OM.time, 'monotonic', lambda: next(times))
+    monkeypatch.setattr(OM.time, "monotonic", lambda: next(times))
     cp = OM.CpuPercent()
     assert cp.sample() is None
     pct = cp.sample()

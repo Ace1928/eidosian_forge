@@ -159,7 +159,7 @@ def simhash64(tokens: Sequence[str]) -> int:
     out = 0
     for bit, weight in enumerate(vector):
         if weight >= 0:
-            out |= (1 << bit)
+            out |= 1 << bit
     return out
 
 

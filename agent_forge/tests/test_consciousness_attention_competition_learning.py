@@ -23,11 +23,7 @@ def test_attention_adaptive_weights_update_from_trace_feedback(tmp_path: Path) -
     )
     kernel.tick()
 
-    candidates = [
-        evt
-        for evt in events.iter_events(base, limit=None)
-        if evt.get("type") == "attn.candidate"
-    ]
+    candidates = [evt for evt in events.iter_events(base, limit=None) if evt.get("type") == "attn.candidate"]
     assert candidates
     candidate_id = str((candidates[-1].get("data") or {}).get("candidate_id") or "")
     assert candidate_id
@@ -54,10 +50,7 @@ def test_attention_adaptive_weights_update_from_trace_feedback(tmp_path: Path) -
     weights = state.get("weights")
     assert isinstance(weights, dict)
     assert abs(sum(float(v) for v in weights.values()) - 1.0) < 1e-5
-    assert any(
-        evt.get("type") == "attn.weights_update"
-        for evt in events.iter_events(base, limit=None)
-    )
+    assert any(evt.get("type") == "attn.weights_update" for evt in events.iter_events(base, limit=None))
 
 
 def test_competition_adaptive_policy_updates_from_trace_events(tmp_path: Path) -> None:
@@ -87,4 +80,3 @@ def test_competition_adaptive_policy_updates_from_trace_events(tmp_path: Path) -
     adaptive = ws_state.get("adaptive")
     assert isinstance(adaptive, dict)
     assert float(adaptive.get("baseline_trace", 0.0)) > 0.45
-

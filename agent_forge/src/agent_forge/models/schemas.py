@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Data models for the Eidosian Forge agent.
 
@@ -364,9 +365,7 @@ class SmolAgent:
 
         Every great mind needs a place to store its musings.
         """
-        self.thoughts.append(
-            Thought(content=content, thought_type=thought_type, context=context)
-        )
+        self.thoughts.append(Thought(content=content, thought_type=thought_type, context=context))
 
     @eidosian()
     def update_state(self, key: str, value: Any) -> None:

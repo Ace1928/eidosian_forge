@@ -1,17 +1,21 @@
 from __future__ import annotations
-from typing import List, Optional
+
+from typing import Optional
+
 from ..forge_loader import ensure_forge_import
 
 # Ensure dependencies are in path
 ensure_forge_import("memory_forge")
 ensure_forge_import("sms_forge")
 
-from sms_forge.core import SmsForge
-from ..core import tool
 from eidosian_core import eidosian
+from sms_forge.core import SmsForge
+
+from ..core import tool
 
 # Initialize the forge
 sms = SmsForge()
+
 
 @tool(
     name="sms_send",
@@ -31,6 +35,7 @@ async def sms_send(recipient: str, body: str) -> str:
     success = await sms.send_message(recipient, body)
     return f"SMS Sent to {recipient} Successfully" if success else f"Failed to send SMS to {recipient}"
 
+
 @tool(
     name="sms_add_contact",
     description="Add a contact to the Eidosian directory.",
@@ -48,6 +53,7 @@ async def sms_add_contact(name: str, number: str) -> str:
     """Add a contact to the Eidosian directory."""
     sms.contacts.add_contact(name, number)
     return f"Contact '{name}' saved with number {number}."
+
 
 @tool(
     name="sms_list",
@@ -67,10 +73,10 @@ async def sms_list(limit: int = 5, contact_name: Optional[str] = None) -> str:
         msgs = await sms.get_messages_by_contact(contact_name, limit)
     else:
         msgs = await sms.get_latest_messages(limit)
-        
+
     if not msgs:
         return "No messages found."
-    
+
     out = []
     for m in msgs:
         direction = "INBOX" if m.received else "SENT"

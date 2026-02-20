@@ -1,9 +1,9 @@
-import os
 import json
 import shutil
 from pathlib import Path
 
 from core import config as C
+
 
 def make_tmp_cfg(tmp_path: Path):
     # copy from sample to avoid writing fixtures manually
@@ -11,6 +11,7 @@ def make_tmp_cfg(tmp_path: Path):
     dst = tmp_path / "cfg"
     shutil.copytree(src, dst)
     return dst
+
 
 def test_load_and_print(tmp_path, monkeypatch):
     cfg_dir = make_tmp_cfg(tmp_path)

@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Mapping, MutableMapping, Optional
 
-
 _STATE_VERSION = 1
 
 
@@ -23,9 +22,7 @@ class ModuleStateStore:
       <state_dir>/consciousness/module_state.json
     """
 
-    def __init__(
-        self, state_dir: str | Path, *, autosave_interval_secs: float = 2.0
-    ) -> None:
+    def __init__(self, state_dir: str | Path, *, autosave_interval_secs: float = 2.0) -> None:
         self.state_dir = Path(state_dir)
         self.path = self.state_dir / "consciousness" / "module_state.json"
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -66,9 +63,7 @@ class ModuleStateStore:
             "version": int(payload.get("version") or _STATE_VERSION),
             "updated_at": str(payload.get("updated_at") or _now_iso()),
             "meta": dict(meta),
-            "modules": {
-                str(k): dict(v) for k, v in modules.items() if isinstance(v, Mapping)
-            },
+            "modules": {str(k): dict(v) for k, v in modules.items() if isinstance(v, Mapping)},
         }
 
     def snapshot(self) -> Dict[str, Any]:

@@ -13,34 +13,31 @@ A production-grade background service implementing:
 This daemon runs indefinitely until manually stopped or task saturation.
 """
 
-import sys
-import time
-import logging
-import json
-import threading
 import contextlib
-import re
-import signal
-from pathlib import Path
-from typing import Dict, Any, Optional, List, Iterable, Tuple
+import json
+import logging
 import os
+import re
+import sys
+import threading
+import time
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 # Ensure path resolution
 sys.path.insert(0, str(Path(__file__).parents[1].resolve() / "src"))
 sys.path.insert(0, str(Path(__file__).parents[2].resolve() / "lib"))
 
-from word_forge.database.database_manager import DBManager
 from word_forge.database import TermNotFoundError
-from word_forge.queue.queue_manager import QueueManager, TaskPriority
+from word_forge.database.database_manager import DBManager
 from word_forge.graph.graph_manager import GraphManager
-from word_forge.vectorizer.vector_store import VectorStore
-from word_forge.parser.parser_refiner import ParserRefiner
-from word_forge.parser.lexical_functions import generate_comprehensive_enrichment, create_lexical_dataset
-from word_forge.queue.queue_worker import WordProcessor
-from word_forge.parser.language_model import ModelState
-from word_forge.multilingual import ingest_wiktextract_jsonl, ingest_kaikki_jsonl
+from word_forge.multilingual import ingest_kaikki_jsonl, ingest_wiktextract_jsonl
 from word_forge.multilingual.multilingual_manager import MultilingualManager
+from word_forge.parser.language_model import ModelState
+from word_forge.parser.lexical_functions import create_lexical_dataset, generate_comprehensive_enrichment
+from word_forge.queue.queue_manager import QueueManager, TaskPriority
+from word_forge.vectorizer.vector_store import VectorStore
 
 # Configuration
 LOG_FILE = "word_forge_daemon.log"
@@ -52,10 +49,7 @@ BATCH_SIZE = 100
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(LOG_FILE)
-    ]
+    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler(LOG_FILE)],
 )
 LOGGER = logging.getLogger("Daemon")
 
@@ -123,8 +117,11 @@ def _merge_entry_fields(
     )
     merged_examples = _merge_unique(existing_examples, new_examples)
     return " | ".join(merged_definitions), merged_examples
+
+
 class Monitor:
     """Manages health checks and status reporting."""
+
     def __init__(self, status_file: str):
         self.status_file = status_file
         self.start_time = time.time()
@@ -176,10 +173,11 @@ class Monitor:
             "queue_size": self.queue_size,
             "last_term": self.last_term,
             "last_heartbeat": datetime.now().isoformat(),
-            "model": "qwen/qwen2.5-1.5b-instruct"
+            "model": "qwen/qwen2.5-1.5b-instruct",
         }
         with open(self.status_file, "w") as f:
             json.dump(status_data, f, indent=2)
+
 
 class LexicalWorker(threading.Thread):
     """
@@ -558,8 +556,11 @@ class MultilingualWorker(threading.Thread):
 
     def stop(self):
         self._stop_event.set()
+
+
 class Scanner(threading.Thread):
     """Feeds the queue from DB or seeds."""
+
     def __init__(self, db: DBManager, queue: QueueManager):
         super().__init__(name="Scanner", daemon=True)
         self.db = db
@@ -574,7 +575,7 @@ class Scanner(threading.Thread):
                 seeds = ["consciousness", "entropy", "recursion", "harmony"]
                 for s in seeds:
                     self.queue.enqueue(s, priority=TaskPriority.NORMAL)
-            time.sleep(10) # Scan interval
+            time.sleep(10)  # Scan interval
 
     def stop(self):
         self._stop_event.set()
@@ -711,9 +712,10 @@ class LLMFillWorker(threading.Thread):
         except Exception as e:
             LOGGER.error(f"Visualization trigger failed: {e}")
 
+
 def main():
     LOGGER.info("Starting Word Forge Robust Daemon...")
-    
+
     # Init Components
     db = DBManager()
     db.create_tables()
@@ -729,7 +731,7 @@ def main():
         collection_name="word_forge_vectors_ollama_768",
     )
     monitor = Monitor(STATUS_FILE)
-    
+
     # Workers
     worker = LexicalWorker(qm, llm_qm, graph_qm, vector_qm, db, monitor)
     graph_worker = GraphUpdateWorker(graph_qm, db, gm, monitor)
@@ -743,7 +745,7 @@ def main():
         monitor,
     )
     scanner = Scanner(db, qm)
-    
+
     worker.start()
     graph_worker.start()
     vector_worker.start()
@@ -755,12 +757,10 @@ def main():
     if multilingual_dir:
         for path in Path(multilingual_dir).glob("*.jsonl"):
             source = "kaikki" if "kaikki" in path.name.lower() else "wiktextract"
-            multilingual_qm.enqueue(
-                {"path": str(path), "source": source, "base_lang": "en"}
-            )
-    
+            multilingual_qm.enqueue({"path": str(path), "source": source, "base_lang": "en"})
+
     LOGGER.info(f"Daemon running. Check {STATUS_FILE} for status.")
-    
+
     try:
         while True:
             time.sleep(1)
@@ -779,6 +779,7 @@ def main():
         multilingual_worker.join()
         scanner.join()
         LOGGER.info("Stopped.")
+
 
 if __name__ == "__main__":
     main()

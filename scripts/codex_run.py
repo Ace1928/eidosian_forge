@@ -6,6 +6,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 DEFAULT_QUERY = (

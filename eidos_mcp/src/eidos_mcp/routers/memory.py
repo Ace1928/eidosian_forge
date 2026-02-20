@@ -6,16 +6,17 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
-from .. import FORGE_ROOT
 from eidosian_core import eidosian
+
+from .. import FORGE_ROOT
 from ..core import tool
+from ..embeddings import SimpleEmbedder
+from ..forge_loader import ensure_forge_import
 from ..transactions import (
     begin_transaction,
     find_latest_transaction_for_path,
     load_transaction,
 )
-from ..forge_loader import ensure_forge_import
-from ..embeddings import SimpleEmbedder
 
 ensure_forge_import("memory_forge")
 
@@ -60,9 +61,7 @@ class _SimpleMemoryStore:
     def remember(self, content: str, metadata: Optional[dict] = None) -> str:
         item_id = str(uuid.uuid4())
         embedding = self.embedder.embed_text(content)
-        self.data.append(
-            {"id": item_id, "content": content, "embedding": embedding, "metadata": metadata or {}}
-        )
+        self.data.append({"id": item_id, "content": content, "embedding": embedding, "metadata": metadata or {}})
         self._save()
         return item_id
 
@@ -80,9 +79,7 @@ class _SimpleMemoryStore:
                 score = sum(a * b for a, b in zip(q_vec, d_vec)) / (q_norm * d_norm)
             scored.append((score, entry))
         scored.sort(key=lambda pair: pair[0], reverse=True)
-        return [
-            _SimpleMemoryItem(item_id=e["id"], content=e["content"]) for _, e in scored[:limit]
-        ]
+        return [_SimpleMemoryItem(item_id=e["id"], content=e["content"]) for _, e in scored[:limit]]
 
     @eidosian()
     def delete(self, item_id: str) -> bool:
@@ -105,9 +102,7 @@ class _SimpleMemoryStore:
 
 if MemoryForge and MemoryConfig:
     memory = MemoryForge(
-        config=MemoryConfig(
-            episodic={"connection_string": str(MEMORY_PATH), "type": "json"}
-        ),
+        config=MemoryConfig(episodic={"connection_string": str(MEMORY_PATH), "type": "json"}),
         embedder=_embedder,
     )
 else:
@@ -167,9 +162,7 @@ def memory_retrieve(query: str, limit: int = 5) -> str:
     """Search for relevant memories by query."""
     try:
         results = memory.recall(query, limit=limit)
-        payload = [
-            {"id": item.id, "content": item.content} for item in results
-        ]
+        payload = [{"id": item.id, "content": item.content} for item in results]
         return json.dumps(payload, indent=2)
     except Exception as exc:
         return f"Error retrieving memory: {exc}"

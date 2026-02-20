@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, MutableMapping
+from typing import Any, Mapping
 
 from ..perturb.library import recipe_from_name, to_payloads
 from ..types import TickContext, clamp01
@@ -196,4 +196,3 @@ class ExperimentDesignerModule:
             corr_id=corr_id or None,
             parent_id=parent_id or None,
         )
-

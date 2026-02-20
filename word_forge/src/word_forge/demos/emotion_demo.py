@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of EmotionManager functionality.
 """
@@ -118,9 +119,7 @@ def main() -> None:
         sample_indices = random.sample(range(word_count), sample_size)
         sample_words = [all_words[i] for i in sample_indices]
 
-        print(
-            f"\nDisplaying random sample of {sample_size} fully enriched word emotions:"
-        )
+        print(f"\nDisplaying random sample of {sample_size} fully enriched word emotions:")
         print("-" * 60)
 
         for i, word_data in enumerate(sample_words):
@@ -141,18 +140,14 @@ def main() -> None:
 
             # Display results
             print(f"Word {i+1}/{sample_size}: '{term}'")
-            print(
-                f"  - Word Emotion: Valence={stored_emotion['valence']:.2f}, Arousal={stored_emotion['arousal']:.2f}"
-            )
+            print(f"  - Word Emotion: Valence={stored_emotion['valence']:.2f}, Arousal={stored_emotion['arousal']:.2f}")
 
             if definition:
                 def_valence, def_arousal = emotion_mgr.analyze_text_emotion(definition)
                 def_emotion, def_confidence = emotion_mgr.classify_emotion(definition)
                 print(f"  - Definition: '{definition}'")
                 print(f"    Valence={def_valence:.2f}, Arousal={def_arousal:.2f}")
-                print(
-                    f"    Classified as: {def_emotion} (confidence: {def_confidence:.2f})"
-                )
+                print(f"    Classified as: {def_emotion} (confidence: {def_confidence:.2f})")
 
             # Analyze an example if available
             if usage_examples:
@@ -161,28 +156,20 @@ def main() -> None:
                 ex_emotion, ex_confidence = emotion_mgr.classify_emotion(example)
                 print(f"  - Example: '{example}'")
                 print(f"    Valence={ex_valence:.2f}, Arousal={ex_arousal:.2f}")
-                print(
-                    f"    Classified as: {ex_emotion} (confidence: {ex_confidence:.2f})"
-                )
+                print(f"    Classified as: {ex_emotion} (confidence: {ex_confidence:.2f})")
 
             # Show recursive emotion data if available
             try:
                 recursive_data = emotion_mgr.analyze_term_recursively(term)
                 print("  - Recursive Analysis:")
-                print(
-                    f"    Recursive depth: {recursive_data.get('recursive_depth', 'N/A')}"
-                )
+                print(f"    Recursive depth: {recursive_data.get('recursive_depth', 'N/A')}")
                 meta_emotions = recursive_data.get("meta_emotions", [])
                 if meta_emotions and len(meta_emotions) > 0:
-                    print(
-                        f"    Meta-emotions: {meta_emotions[0].get('label', 'unknown')}, ..."
-                    )
+                    print(f"    Meta-emotions: {meta_emotions[0].get('label', 'unknown')}, ...")
                 patterns = recursive_data.get("patterns", {})
                 if patterns and len(patterns) > 0:
                     pattern_keys = list(patterns.keys())
-                    print(
-                        f"    Patterns: {pattern_keys[0] if pattern_keys else 'none'}, ..."
-                    )
+                    print(f"    Patterns: {pattern_keys[0] if pattern_keys else 'none'}, ...")
             except Exception:
                 pass
 
@@ -240,9 +227,7 @@ def main() -> None:
 
         print(f'Message: "{text}"')
         print(f"Valence: {valence:.2f}, Arousal: {arousal:.2f}")
-        print(
-            f"Classified as: {emotion_data['emotion_label']} (confidence: {emotion_data['confidence']:.2f})"
-        )
+        print(f"Classified as: {emotion_data['emotion_label']} (confidence: {emotion_data['confidence']:.2f})")
         print(f"Stored data: {stored_emotion}")
         print(f"Ground truth: {ground_truth.label}")
         print("-" * 60)
@@ -264,9 +249,7 @@ def main() -> None:
         print(f"    Precision: {metrics['precision']:.2f}")
         print(f"    Recall: {metrics['recall']:.2f}")
         print(f"    F1 score: {metrics['f1']:.2f}")
-        print(
-            f"    TP/FP/FN: {metrics['true_positives']}/{metrics['false_positives']}/{metrics['false_negatives']}"
-        )
+        print(f"    TP/FP/FN: {metrics['true_positives']}/{metrics['false_positives']}/{metrics['false_negatives']}")
     print("-" * 60)
 
     # Demonstrate emotional relationships
@@ -283,9 +266,7 @@ def main() -> None:
 
     for term1, term2, rel_type in relationship_tests:
         try:
-            strength = emotion_mgr.analyze_emotional_relationship(
-                term1, term2, rel_type
-            )
+            strength = emotion_mgr.analyze_emotional_relationship(term1, term2, rel_type)
             print(f"'{term1}' {rel_type} '{term2}': {strength:.2f}")
         except Exception as e:
             print(f"Error analyzing {rel_type} between '{term1}' and '{term2}': {e}")

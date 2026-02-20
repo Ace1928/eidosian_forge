@@ -160,7 +160,6 @@ def test_memory_bridge_emits_recall_and_broadcast(tmp_path: Path) -> None:
     )
 
 
-
 def test_knowledge_bridge_emits_context_recall_and_broadcast(tmp_path: Path) -> None:
     base = tmp_path / "state"
     events.append(
@@ -193,7 +192,6 @@ def test_knowledge_bridge_emits_context_recall_and_broadcast(tmp_path: Path) -> 
     )
 
 
-
 def test_kernel_default_module_order_includes_bridges(tmp_path: Path) -> None:
     base = tmp_path / "state"
     kernel = ConsciousnessKernel(base, seed=5)
@@ -203,7 +201,6 @@ def test_kernel_default_module_order_includes_bridges(tmp_path: Path) -> None:
     assert "knowledge_bridge" in names
     assert names.index("memory_bridge") < names.index("attention")
     assert names.index("knowledge_bridge") < names.index("attention")
-
 
 
 def test_self_model_snapshot_includes_bridge_integration_fields(tmp_path: Path) -> None:

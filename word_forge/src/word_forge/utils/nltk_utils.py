@@ -34,9 +34,7 @@ _NLTK_RESOURCES: tuple[_NLTKResource, ...] = (
         "Named entity chunker",
     ),
     _NLTKResource("words", "corpora/words", "Word frequency lists"),
-    _NLTKResource(
-        "vader_lexicon", "sentiment/vader_lexicon", "VADER sentiment lexicon"
-    ),
+    _NLTKResource("vader_lexicon", "sentiment/vader_lexicon", "VADER sentiment lexicon"),
 )
 
 _initialized = False

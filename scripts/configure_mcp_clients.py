@@ -16,7 +16,6 @@ for extra in (FORGE_ROOT / "lib", FORGE_ROOT):
 
 from eidosian_core.ports import get_service_url
 
-
 MCP_URL = get_service_url("eidos_mcp", default_port=8928, default_path="/mcp")
 CODEX_SECTION = "[mcp_servers.eidosian_nexus]"
 CODEX_URL_LINE = f'url = "{MCP_URL}"'
@@ -41,7 +40,7 @@ def configure_codex(path: Path) -> None:
 
     if CODEX_SECTION in text:
         section_pattern = re.compile(
-            rf"(\[mcp_servers\.eidosian_nexus\][^\[]*)",
+            r"(\[mcp_servers\.eidosian_nexus\][^\[]*)",
             re.MULTILINE | re.DOTALL,
         )
         match = section_pattern.search(text)

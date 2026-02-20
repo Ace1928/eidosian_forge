@@ -42,9 +42,7 @@ def test_end_to_end_crawl_and_ingest(tmp_path: Path) -> None:
         model_name=LLM_MODEL,
     )
     processor = WordProcessor(db_manager=db_manager, parser_refiner=parser_refiner)
-    worker_pool = ParallelWordProcessor(
-        processor, config=WorkerPoolConfig(worker_count=1)
-    )
+    worker_pool = ParallelWordProcessor(processor, config=WorkerPoolConfig(worker_count=1))
 
     queue_manager.enqueue("happy")
     worker_pool.start()
@@ -92,9 +90,7 @@ def test_queue_running_state_allows_processing(tmp_path: Path) -> None:
         model_name=LLM_MODEL,
     )
     processor = WordProcessor(db_manager=db_manager, parser_refiner=parser_refiner)
-    worker_pool = ParallelWordProcessor(
-        processor, config=WorkerPoolConfig(worker_count=1)
-    )
+    worker_pool = ParallelWordProcessor(processor, config=WorkerPoolConfig(worker_count=1))
 
     queue_manager.enqueue("oxygen")
     worker_pool.start()

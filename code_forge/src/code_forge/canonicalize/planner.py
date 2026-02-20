@@ -77,11 +77,7 @@ def build_canonical_migration_plan(
     entries = triage_payload.get("entries", [])
     labels = {str(label) for label in include_labels}
 
-    selected = [
-        entry
-        for entry in entries
-        if isinstance(entry, dict) and str(entry.get("label")) in labels
-    ]
+    selected = [entry for entry in entries if isinstance(entry, dict) and str(entry.get("label")) in labels]
     selected = selected[: max(1, int(max_entries))]
 
     migration_entries: list[dict[str, Any]] = []
@@ -166,7 +162,5 @@ def build_canonical_migration_plan(
         "selected_count": len(migration_entries),
         "shims_generated": shims_written,
     }
-    (output_dir / "canonicalization_summary.json").write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8"
-    )
+    (output_dir / "canonicalization_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary

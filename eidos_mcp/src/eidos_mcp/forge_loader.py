@@ -5,9 +5,10 @@ import os
 import sys
 from pathlib import Path
 from typing import Iterable
-from . import FORGE_ROOT
+
 from eidosian_core import eidosian
 
+from . import FORGE_ROOT
 
 _FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
@@ -28,7 +29,7 @@ def ensure_forge_import(module_name: str) -> bool:
         importlib.import_module(module_name)
         # print(f"Loaded Forge: {module_name}", file=sys.stderr)
         return True
-    except Exception as e:
+    except Exception:
         # print(f"Failed to load Forge {module_name}: {e}", file=sys.stderr)
         try:
             importlib.import_module(module_name)

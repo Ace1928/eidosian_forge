@@ -1,19 +1,16 @@
-import os
-import sys
-from types import SimpleNamespace
-from pathlib import Path
+import builtins
 import importlib.machinery
 import importlib.util
-import builtins
+import sys
+from pathlib import Path
+from types import SimpleNamespace
 
 CTX_PATH = Path(__file__).resolve().parents[1] / "glyph_stream_context.py"
 
 
 def load_module(name="glyph_stream_context", fake_numpy=True):
     if fake_numpy:
-        sys.modules["numpy"] = SimpleNamespace(
-            __config__=SimpleNamespace(show=lambda: "mkl")
-        )
+        sys.modules["numpy"] = SimpleNamespace(__config__=SimpleNamespace(show=lambda: "mkl"))
     loader = importlib.machinery.SourceFileLoader(name, str(CTX_PATH))
     spec = importlib.util.spec_from_loader(name, loader)
     module = importlib.util.module_from_spec(spec)
@@ -49,17 +46,13 @@ def test_color_support_windows(monkeypatch):
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.delenv("COLORTERM", raising=False)
     monkeypatch.delenv("ANSICON", raising=False)
-    monkeypatch.setattr(
-        ctx_mod.sys, "getwindowsversion", lambda: DummyWin(), raising=False
-    )
+    monkeypatch.setattr(ctx_mod.sys, "getwindowsversion", lambda: DummyWin(), raising=False)
     assert ctx._detect_color_support({"platform": "Windows"}) is True
 
     class DummyWinOld:
         build = 10000
 
-    monkeypatch.setattr(
-        ctx_mod.sys, "getwindowsversion", lambda: DummyWinOld(), raising=False
-    )
+    monkeypatch.setattr(ctx_mod.sys, "getwindowsversion", lambda: DummyWinOld(), raising=False)
     monkeypatch.setenv("ANSICON", "1")
     assert ctx._detect_color_support({"platform": "Windows"}) is True
     monkeypatch.delenv("ANSICON", raising=False)
@@ -67,9 +60,7 @@ def test_color_support_windows(monkeypatch):
 
 def test_network_check(monkeypatch):
     ctx_mod = load_module("glyph_stream_context_net")
-    monkeypatch.setattr(
-        ctx_mod.SystemContext, "_check_network_connection", lambda self: True
-    )
+    monkeypatch.setattr(ctx_mod.SystemContext, "_check_network_connection", lambda self: True)
     ctx = ctx_mod.SystemContext(check_network=True)
     assert ctx.attributes.get("network_connected") is True
 
@@ -87,9 +78,7 @@ def test_hardware_accel_torch(monkeypatch):
 def test_hardware_accel_darwin():
     ctx_mod = load_module("glyph_stream_context_darwin")
     ctx = ctx_mod.SystemContext(check_network=False)
-    assert (
-        ctx._detect_hardware_acceleration({"platform": "Darwin"})["has_metal"] is True
-    )
+    assert ctx._detect_hardware_acceleration({"platform": "Darwin"})["has_metal"] is True
 
 
 def test_import_errors(monkeypatch):
@@ -136,9 +125,7 @@ def test_constraints_high_perf():
 
 def test_refresh(monkeypatch):
     ctx_mod = load_module("glyph_stream_context_refresh")
-    monkeypatch.setattr(
-        ctx_mod.SystemContext, "_check_network_connection", lambda self: False
-    )
+    monkeypatch.setattr(ctx_mod.SystemContext, "_check_network_connection", lambda self: False)
     ctx = ctx_mod.SystemContext(check_network=False)
     ctx.refresh(check_network=True)
     assert "optimization_level" in ctx.get_environment_summary()

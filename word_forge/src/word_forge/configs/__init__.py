@@ -20,12 +20,12 @@ Usage:
 
 # Re-export key types for convenience
 from .config_essentials import (
-    PROJECT_ROOT,
     DATA_ROOT,
     LOGS_ROOT,
+    PROJECT_ROOT,
+    ConfigError,
     Error,
     Result,
-    ConfigError,
     serialize_config,
     serialize_dataclass,
 )

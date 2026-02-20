@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from eidosian_core import eidosian
+
 from ..core import tool
 from ..forge_loader import ensure_forge_import
-from eidosian_core import eidosian
 
 ensure_forge_import("refactor_forge")
 
@@ -15,7 +16,8 @@ except Exception:  # pragma: no cover - optional dependency
     CodeAnalyzer = None
 
 
-from ..state import refactor, ROOT_DIR, FORGE_DIR
+from ..state import FORGE_DIR, ROOT_DIR, refactor
+
 
 @tool(
     name="refactor_analyze",
@@ -32,25 +34,25 @@ def refactor_analyze(path: str) -> str:
     if not refactor or not getattr(refactor, "CodeAnalyzer", None):
         # Fallback manual import if needed or check if CodeAnalyzer is available
         try:
-             from refactor_forge.analyzer import CodeAnalyzer
+            from refactor_forge.analyzer import CodeAnalyzer
         except ImportError:
-             return "Error: Refactor forge unavailable"
+            return "Error: Refactor forge unavailable"
     else:
         CodeAnalyzer = refactor.CodeAnalyzer
 
     # Intelligent path resolution
     candidates = [
         Path(path).expanduser().resolve(),  # Absolute or relative to CWD
-        ROOT_DIR / path,                    # Relative to system root
-        FORGE_DIR / path,                   # Relative to forge root
+        ROOT_DIR / path,  # Relative to system root
+        FORGE_DIR / path,  # Relative to forge root
     ]
-    
+
     source_path = None
     for candidate in candidates:
         if candidate.exists() and candidate.is_file():
             source_path = candidate
             break
-            
+
     if not source_path:
         return f"Error: File not found. Checked: {[str(c) for c in candidates]}"
 

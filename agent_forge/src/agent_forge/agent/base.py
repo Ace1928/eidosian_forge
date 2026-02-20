@@ -3,9 +3,9 @@ Base Agent Class for Eidosian Forge.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from agent_forge.models import Task, Thought, ThoughtType
+from agent_forge.models import ThoughtType
 
 
 class BaseAgent(ABC):

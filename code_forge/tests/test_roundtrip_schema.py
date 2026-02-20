@@ -12,8 +12,7 @@ from code_forge.reconstruct.schema import validate_roundtrip_workspace
 def _make_repo(root: Path) -> None:
     (root / "src").mkdir(parents=True)
     (root / "src" / "m.py").write_text(
-        "def f(v):\n"
-        "    return v + 1\n",
+        "def f(v):\n" "    return v + 1\n",
         encoding="utf-8",
     )
 

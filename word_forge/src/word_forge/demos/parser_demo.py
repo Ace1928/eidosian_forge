@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of ParserRefiner functionality.
 """
@@ -69,11 +70,7 @@ def run_demonstration() -> None:
                 print(f"  Part of speech: {entry['part_of_speech']}")
                 print(
                     f"  Usage examples ({len(entry['usage_examples'])}): "
-                    + (
-                        entry["usage_examples"][0]
-                        if entry["usage_examples"]
-                        else "None"
-                    )
+                    + (entry["usage_examples"][0] if entry["usage_examples"] else "None")
                 )
 
                 # Display relationships
@@ -94,25 +91,17 @@ def run_demonstration() -> None:
 
                 # Show queue growth from term
                 current_queue_size = parser.queue_manager.size
-                print(
-                    f"\n  [QUEUE] Discovered {current_queue_size} new candidate terms"
-                )
+                print(f"\n  [QUEUE] Discovered {current_queue_size} new candidate terms")
 
                 # Show sample of discovered terms
                 if current_queue_size > 0:
                     sample_result = parser.queue_manager.get_sample(5)
-                    sample = (
-                        sample_result.value if hasattr(sample_result, "value") else []
-                    )
+                    sample = sample_result.value if hasattr(sample_result, "value") else []
                     # Ensure sample is not None before joining
                     sample_list = sample if sample is not None else []
                     print(
                         f"  Sample terms: {', '.join(sample_list)}"
-                        + (
-                            f" and {current_queue_size-5} more..."
-                            if current_queue_size > 5
-                            else ""
-                        )
+                        + (f" and {current_queue_size-5} more..." if current_queue_size > 5 else "")
                     )
 
             except Exception as e:
@@ -142,9 +131,7 @@ def run_demonstration() -> None:
 
         if success:
             print("\n  [SEMANTIC NETWORK GROWTH]")
-            print(
-                "  This demonstrates how the lexical graph expands through relationship chaining"
-            )
+            print("  This demonstrates how the lexical graph expands through relationship chaining")
             try:
                 # Get all words to show how the database has grown
                 all_words = parser.db_manager.get_all_words()

@@ -2,7 +2,9 @@
 """
 Memory Retrieval Demo - validates suggestion pipeline.
 """
+
 from pathlib import Path
+
 from memory_forge import MemoryBroker, MemoryRetrievalEngine
 
 

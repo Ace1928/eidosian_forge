@@ -149,12 +149,8 @@ class ReportModule:
                 "winner_candidate_id": winner_candidate,
                 "prediction_error": prediction_error,
                 "simulation_active": simulation_active,
-                "simulated_percept_origin": simulated_data.get("origin")
-                if simulation_active
-                else None,
-                "simulated_percept_type": simulated_data.get("predicted_event_type")
-                if simulation_active
-                else None,
+                "simulated_percept_origin": simulated_data.get("origin") if simulation_active else None,
+                "simulated_percept_type": simulated_data.get("predicted_event_type") if simulation_active else None,
             },
             "confidence_breakdown": {
                 "candidate_match": candidate_match,

@@ -5,7 +5,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from ..types import TickContext, WorkspacePayload, clamp01, normalize_workspace_payload
 
@@ -148,7 +148,9 @@ class MemoryBridgeModule:
                     "EIDOS_MEMORY_DIR",
                     str(_forge_root() / "data" / "memory"),
                 )
-            ).expanduser().resolve()
+            )
+            .expanduser()
+            .resolve()
         )
 
     def _load_memory_system(self) -> tuple[Any, str]:
@@ -253,19 +255,11 @@ class MemoryBridgeModule:
 
     def tick(self, ctx: TickContext) -> None:
         recall_limit = max(1, int(ctx.config.get("memory_bridge_recall_limit", 4)))
-        broadcast_threshold = clamp01(
-            ctx.config.get("memory_bridge_broadcast_threshold"), default=0.58
-        )
-        status_period = max(
-            1, int(ctx.config.get("memory_bridge_status_emit_period_beats", 20))
-        )
-        stats_period = max(
-            1, int(ctx.config.get("memory_bridge_stats_period_beats", 36))
-        )
+        broadcast_threshold = clamp01(ctx.config.get("memory_bridge_broadcast_threshold"), default=0.58)
+        status_period = max(1, int(ctx.config.get("memory_bridge_status_emit_period_beats", 20)))
+        stats_period = max(1, int(ctx.config.get("memory_bridge_stats_period_beats", 36)))
         query_tokens = max(6, int(ctx.config.get("memory_bridge_query_max_tokens", 28)))
-        repeat_cooldown = max(
-            0, int(ctx.config.get("memory_bridge_repeat_cooldown_beats", 2))
-        )
+        repeat_cooldown = max(0, int(ctx.config.get("memory_bridge_repeat_cooldown_beats", 2)))
 
         state = ctx.module_state(
             self.name,
@@ -300,11 +294,7 @@ class MemoryBridgeModule:
             return
 
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_ceiling = 1.0
@@ -336,10 +326,14 @@ class MemoryBridgeModule:
                     },
                     tags=["consciousness", "memory_bridge", "introspection"],
                 )
-                if insights and max(
-                    (clamp01(item.get("confidence"), default=0.0) for item in insights),
-                    default=0.0,
-                ) >= 0.75:
+                if (
+                    insights
+                    and max(
+                        (clamp01(item.get("confidence"), default=0.0) for item in insights),
+                        default=0.0,
+                    )
+                    >= 0.75
+                ):
                     payload = WorkspacePayload(
                         kind="MEMORY_META",
                         source_module=self.name,
@@ -491,9 +485,5 @@ class MemoryBridgeModule:
                 recall_count=int(len(recall_rows)),
                 last_error=_to_text(state.get("last_error")),
                 stats=stats_payload
-                or (
-                    state.get("last_stats")
-                    if isinstance(state.get("last_stats"), Mapping)
-                    else {}
-                ),
+                or (state.get("last_stats") if isinstance(state.get("last_stats"), Mapping) else {}),
             )

@@ -56,12 +56,8 @@ def candidate_references(evt: Mapping[str, Any]) -> set[str]:
     data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
     payload = _payload(evt)
     links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
-    content = (
-        payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
-    )
-    summary = (
-        content.get("summary") if isinstance(content.get("summary"), Mapping) else {}
-    )
+    content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
+    summary = content.get("summary") if isinstance(content.get("summary"), Mapping) else {}
 
     for raw in (
         data.get("candidate_id"),
@@ -127,11 +123,7 @@ def winner_reaction_trace(
     winner_parent_id = str(winner_parent_id or "")
     window_secs = max(0.0, float(reaction_window_secs))
     winner_time = parse_iso_utc(winner_ts)
-    window_end = (
-        winner_time + timedelta(seconds=window_secs)
-        if winner_time is not None
-        else None
-    )
+    window_end = winner_time + timedelta(seconds=window_secs) if winner_time is not None else None
 
     filtered: list[Mapping[str, Any]] = []
     for evt in events:
@@ -166,21 +158,15 @@ def winner_reaction_trace(
     if winner_time is not None and filtered:
         first_ts = parse_iso_utc(filtered[0].get("ts"))
         if first_ts is not None:
-            first_latency_ms = round(
-                max(0.0, (first_ts - winner_time).total_seconds() * 1000.0), 6
-            )
+            first_latency_ms = round(max(0.0, (first_ts - winner_time).total_seconds() * 1000.0), 6)
 
     source_component = min(1.0, len(sources) / max(1, int(target_sources)))
     reaction_component = min(1.0, len(filtered) / max(1, int(target_reactions)))
     latency_component = 0.0
     if first_latency_ms is not None:
-        latency_component = 1.0 - min(
-            1.0, float(first_latency_ms) / max(1.0, float(max_latency_ms))
-        )
+        latency_component = 1.0 - min(1.0, float(first_latency_ms) / max(1.0, float(max_latency_ms)))
     trace_strength = _clamp01(
-        (0.5 * source_component)
-        + (0.3 * reaction_component)
-        + (0.2 * latency_component),
+        (0.5 * source_component) + (0.3 * reaction_component) + (0.2 * latency_component),
         default=0.0,
     )
     return {
@@ -197,4 +183,3 @@ def winner_reaction_trace(
         "latency_component": round(float(latency_component), 6),
         "trace_strength": round(float(trace_strength), 6),
     }
-

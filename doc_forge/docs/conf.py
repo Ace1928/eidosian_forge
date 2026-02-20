@@ -45,9 +45,7 @@ try:
         sys.path.insert(0, str(root_path))
         version = get_version_string()
         release = version
-    elif (
-        root_path / "src" / project.lower().replace(" ", "_") / "version.py"
-    ).exists():
+    elif (root_path / "src" / project.lower().replace(" ", "_") / "version.py").exists():
         version = get_version_string()
         release = version
     else:
@@ -110,9 +108,7 @@ if "sphinx_autoapi" in extensions:
     autoapi_type = "python"
     autoapi_outdir = str(docs_path / "auto_docs")
     autoapi_template_dir = (
-        str(docs_path / "_templates" / "autoapi")
-        if (docs_path / "_templates" / "autoapi").exists()
-        else None
+        str(docs_path / "_templates" / "autoapi") if (docs_path / "_templates" / "autoapi").exists() else None
     )
     autoapi_options = [
         "members",
@@ -235,14 +231,12 @@ except Exception:
 
 html_css_files = (
     ["css/custom.css"]
-    if (docs_path / "_static" / "css").mkdir(parents=True, exist_ok=True)
-    or (docs_path / "_static" / "css").exists()
+    if (docs_path / "_static" / "css").mkdir(parents=True, exist_ok=True) or (docs_path / "_static" / "css").exists()
     else []
 )
 html_js_files = (
     ["js/custom.js"]
-    if (docs_path / "_static" / "js").mkdir(parents=True, exist_ok=True)
-    or (docs_path / "_static" / "js").exists()
+    if (docs_path / "_static" / "js").mkdir(parents=True, exist_ok=True) or (docs_path / "_static" / "js").exists()
     else []
 )
 
@@ -252,8 +246,7 @@ try:
     custom_css = css_dir / "custom.css"
     if not custom_css.exists():
         with open(custom_css, "w") as f:
-            f.write(
-                """/* Custom CSS for documentation */
+            f.write("""/* Custom CSS for documentation */
 :root {
     --font-size-base: 16px;
     --line-height-base: 1.5;
@@ -266,8 +259,7 @@ try:
 .highlight {
     border-radius: 4px;
 }
-"""
-            )
+""")
 except Exception:
     pass
 
@@ -285,12 +277,8 @@ if html_theme == "sphinx_rtd_theme":
 
 html_title = f"{project} {version} Documentation"
 html_short_title = project
-html_favicon = (
-    "_static/favicon.ico" if (docs_path / "_static" / "favicon.ico").exists() else None
-)
-html_logo = (
-    "_static/logo.png" if (docs_path / "_static" / "logo.png").exists() else None
-)
+html_favicon = "_static/favicon.ico" if (docs_path / "_static" / "favicon.ico").exists() else None
+html_logo = "_static/logo.png" if (docs_path / "_static" / "logo.png").exists() else None
 
 html_show_sourcelink = True
 html_show_sphinx = True
@@ -384,9 +372,7 @@ if "sphinx.ext.autosectionlabel" in extensions:
 
 if "sphinxext.opengraph" in extensions:
     ogp_site_url = "https://doc-forge.readthedocs.io/"
-    ogp_image = (
-        "_static/logo.png" if (docs_path / "_static" / "logo.png").exists() else None
-    )
+    ogp_image = "_static/logo.png" if (docs_path / "_static" / "logo.png").exists() else None
     ogp_use_first_image = True
     ogp_description_length = 300
 
@@ -435,9 +421,7 @@ def setup(app: Any) -> Dict[str, Union[str, bool]]:
             all_files = []
             for ext in [".rst", ".md"]:
                 for file_path in docs_dir.glob(f"**/*{ext}"):
-                    if not any(
-                        pattern in str(file_path) for pattern in exclude_patterns
-                    ):
+                    if not any(pattern in str(file_path) for pattern in exclude_patterns):
                         rel_path = file_path.relative_to(docs_dir)
                         all_files.append(str(rel_path).replace("\\", "/"))
             return all_files

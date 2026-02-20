@@ -17,9 +17,7 @@ def load_module(name, path):
 
 
 pdf_check_text = load_module("pdf_check_text", ROOT / "pdf_check_text")
-pdf_check_encryption = load_module(
-    "pdf_check_encryption", ROOT / "pdf_check_encryption"
-)
+pdf_check_encryption = load_module("pdf_check_encryption", ROOT / "pdf_check_encryption")
 pdf_to_text = load_module("pdf_to_text", ROOT / "pdf_to_text")
 
 
@@ -90,30 +88,22 @@ def test_pdf_check_text_cli(monkeypatch, capsys):
     monkeypatch.setattr(pdf_check_text, "require_cmd", lambda _: None)
     monkeypatch.setattr(pdf_check_text, "check_pdf_text", lambda _: True)
     monkeypatch.setattr(pdf_check_text, "gui_main", lambda: 0)
-    monkeypatch.setattr(
-        pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf"]
-    )
+    monkeypatch.setattr(pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf"])
     assert pdf_check_text.cli_main() == 0
     assert "has_text" in capsys.readouterr().out
 
-    monkeypatch.setattr(
-        pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf", "--json"]
-    )
+    monkeypatch.setattr(pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf", "--json"])
     assert pdf_check_text.cli_main() == 0
 
     def raise_err(_):
         raise RuntimeError("fail")
 
     monkeypatch.setattr(pdf_check_text, "check_pdf_text", raise_err)
-    monkeypatch.setattr(
-        pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf", "--json"]
-    )
+    monkeypatch.setattr(pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf", "--json"])
     assert pdf_check_text.cli_main() == 1
 
     monkeypatch.setattr(pdf_check_text, "check_pdf_text", raise_err)
-    monkeypatch.setattr(
-        pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf"]
-    )
+    monkeypatch.setattr(pdf_check_text.sys, "argv", ["pdf_check_text", "--file", "file.pdf"])
     assert pdf_check_text.cli_main() == 1
 
     monkeypatch.setattr(pdf_check_text.sys, "argv", ["pdf_check_text"])
@@ -170,9 +160,7 @@ def test_is_encrypted(monkeypatch):
         stderr = "Password required"
 
     monkeypatch.setattr(pdf_check_encryption, "require_cmd", lambda _: None)
-    monkeypatch.setattr(
-        pdf_check_encryption.subprocess, "run", lambda *a, **k: Result()
-    )
+    monkeypatch.setattr(pdf_check_encryption.subprocess, "run", lambda *a, **k: Result())
     assert pdf_check_encryption.is_encrypted("file.pdf") is True
 
 
@@ -183,9 +171,7 @@ def test_is_not_encrypted(monkeypatch):
         stderr = ""
 
     monkeypatch.setattr(pdf_check_encryption, "require_cmd", lambda _: None)
-    monkeypatch.setattr(
-        pdf_check_encryption.subprocess, "run", lambda *a, **k: Result()
-    )
+    monkeypatch.setattr(pdf_check_encryption.subprocess, "run", lambda *a, **k: Result())
     assert pdf_check_encryption.is_encrypted("file.pdf") is False
 
 
@@ -193,9 +179,7 @@ def test_pdf_check_encryption_cli(monkeypatch):
     monkeypatch.setattr(pdf_check_encryption, "require_cmd", lambda _: None)
     monkeypatch.setattr(pdf_check_encryption, "is_encrypted", lambda _: False)
     monkeypatch.setattr(pdf_check_encryption, "gui_main", lambda: 0)
-    monkeypatch.setattr(
-        pdf_check_encryption.sys, "argv", ["pdf_check_encryption", "--file", "file.pdf"]
-    )
+    monkeypatch.setattr(pdf_check_encryption.sys, "argv", ["pdf_check_encryption", "--file", "file.pdf"])
     assert pdf_check_encryption.cli_main() == 0
 
     monkeypatch.setattr(
@@ -216,9 +200,7 @@ def test_pdf_check_encryption_cli(monkeypatch):
     )
     assert pdf_check_encryption.cli_main() == 1
 
-    monkeypatch.setattr(
-        pdf_check_encryption.sys, "argv", ["pdf_check_encryption", "--file", "file.pdf"]
-    )
+    monkeypatch.setattr(pdf_check_encryption.sys, "argv", ["pdf_check_encryption", "--file", "file.pdf"])
     assert pdf_check_encryption.cli_main() == 1
 
     monkeypatch.setattr(pdf_check_encryption.sys, "argv", ["pdf_check_encryption"])

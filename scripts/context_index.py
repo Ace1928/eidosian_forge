@@ -5,13 +5,14 @@ import argparse
 import grp
 import json
 import os
-import pwd
 import platform
+import pwd
 import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,19 +49,16 @@ def run_command(cmd):
         return ""
     return result.stdout.strip()
 
+
 @eidosian()
 def gather_system_performance():
     """Captures CPU load and RAM usage."""
     perf = {"cpu": {}, "memory": {}}
-    
+
     # CPU
     try:
         load = os.getloadavg()
-        perf["cpu"]["load_average"] = {
-            "1m": load[0],
-            "5m": load[1],
-            "15m": load[2]
-        }
+        perf["cpu"]["load_average"] = {"1m": load[0], "5m": load[1], "15m": load[2]}
         perf["cpu"]["count"] = os.cpu_count()
     except (OSError, AttributeError):
         pass
@@ -76,7 +74,7 @@ def gather_system_performance():
                 key = parts[0].strip()
                 value = parts[1].strip().split()[0]
                 mem_info[key] = int(value) * 1024  # Convert to bytes
-        
+
         if "MemTotal" in mem_info:
             total = mem_info["MemTotal"]
             free = mem_info.get("MemFree", 0) + mem_info.get("Buffers", 0) + mem_info.get("Cached", 0)
@@ -85,12 +83,13 @@ def gather_system_performance():
                 "total_bytes": total,
                 "used_bytes": used,
                 "free_bytes": free,
-                "used_percent": round((used / total) * 100, 1)
+                "used_percent": round((used / total) * 100, 1),
             }
     except (OSError, ValueError):
         pass
-        
+
     return perf
+
 
 @eidosian()
 def git_info(path: Path):
@@ -100,7 +99,7 @@ def git_info(path: Path):
             return {}
     except PermissionError:
         return {}
-    
+
     if shutil.which("git") is None:
         return {"error": "git command not found"}
 
@@ -109,6 +108,7 @@ def git_info(path: Path):
     if not branch and not status:
         return {}
     return {"git_branch": branch, "git_status": status}
+
 
 @eidosian()
 def describe_entry(path: Path, manual_note, section_names, preview_limit=6):
@@ -137,10 +137,7 @@ def describe_entry(path: Path, manual_note, section_names, preview_limit=6):
     entry["statistics"].update(
         {
             "size_bytes": stat_info.st_size,
-            "last_modified": datetime.fromtimestamp(
-                stat_info.st_mtime,
-                tz=timezone.utc
-            ).isoformat(),
+            "last_modified": datetime.fromtimestamp(stat_info.st_mtime, tz=timezone.utc).isoformat(),
             "mode": oct(stat_info.st_mode & 0o777),
             "is_symlink": path.is_symlink(),
         }
@@ -161,25 +158,17 @@ def describe_entry(path: Path, manual_note, section_names, preview_limit=6):
     preview_truncated = False
     if path.is_dir() and not path.is_symlink():
         try:
-            children = sorted(
-                path.iterdir(), key=lambda candidate: candidate.name.lower()
-            )
+            children = sorted(path.iterdir(), key=lambda candidate: candidate.name.lower())
             child_count = len(children)
             preview_truncated = child_count > preview_limit
             for child in children[:preview_limit]:
                 child_info = {
                     "name": child.name,
-                    "relative_path": (
-                        str(child.relative_to(HOME)) if child != HOME else "."
-                    ),
+                    "relative_path": (str(child.relative_to(HOME)) if child != HOME else "."),
                     "type": (
                         "directory"
                         if child.is_dir() and not child.is_symlink()
-                        else (
-                            "symlink"
-                            if child.is_symlink()
-                            else "file" if child.is_file() else "other"
-                        )
+                        else ("symlink" if child.is_symlink() else "file" if child.is_file() else "other")
                     ),
                 }
                 try:
@@ -239,9 +228,7 @@ def gather_directories(config, preview_limit=6):
         manual_key = str(entry.relative_to(HOME))
         manual = manual_notes.get(manual_key) or manual_notes.get(entry.name)
         categories = section_map.get(manual_key) or section_map.get(entry.name, [])
-        data.append(
-            describe_entry(entry, manual, categories, preview_limit=preview_limit)
-        )
+        data.append(describe_entry(entry, manual, categories, preview_limit=preview_limit))
     return data
 
 
@@ -261,9 +248,7 @@ def gather_storage_info():
         "total_bytes": usage.total,
         "used_bytes": usage.used,
         "free_bytes": usage.free,
-        "used_percent": (
-            round(usage.used / usage.total * 100, 1) if usage.total else None
-        ),
+        "used_percent": (round(usage.used / usage.total * 100, 1) if usage.total else None),
         "filesystem": filesystem,
     }
 
@@ -285,6 +270,7 @@ def gather_metadata(config):
         "config": config.get("index", {}),
     }
 
+
 @eidosian()
 def build_index(args):
     config = load_config()
@@ -293,7 +279,7 @@ def build_index(args):
 
     performance = gather_system_performance()
     structure = gather_directories(config, preview_limit=args.preview_limit)
-    
+
     # Pass use_codex flag to generate_catalog
     catalog_payload = generate_catalog(config, logger, DEFAULT_CATALOG_PATH, use_codex=args.codex)
 
@@ -325,11 +311,10 @@ def build_index(args):
         fh.write("\n")
     return payload
 
+
 @eidosian()
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Create a richly annotated context index for the home folder."
-    )
+    parser = argparse.ArgumentParser(description="Create a richly annotated context index for the home folder.")
     parser.add_argument(
         "--output",
         "-o",
@@ -354,6 +339,7 @@ def parse_args():
         help="Use Codex (ChatMock) as the primary LLM provider instead of local Ollama.",
     )
     return parser.parse_args()
+
 
 @eidosian()
 def main():

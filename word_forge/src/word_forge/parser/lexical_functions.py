@@ -11,9 +11,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Union
 
+from eidosian_core import eidosian
 from nltk.corpus import wordnet as wn  # type: ignore
 from nltk.corpus.reader.wordnet import Lemma, Synset  # type: ignore
-from eidosian_core import eidosian
 
 # Optional dependency for DBnary RDF processing
 try:
@@ -28,8 +28,6 @@ except ImportError:
     RdfLiteral = None  # type: ignore[assignment]
     ResultRow = None  # type: ignore[assignment]
 
-from word_forge.utils.nltk_utils import ensure_nltk_data
-
 from word_forge.configs.config_essentials import (
     DbnaryEntry,
     DictionaryEntry,
@@ -42,6 +40,7 @@ from word_forge.configs.config_essentials import (
 )
 from word_forge.parser.language_model import ModelState
 from word_forge.parser.structured_validator import validated_query
+from word_forge.utils.nltk_utils import ensure_nltk_data
 
 
 # ============================================================================
@@ -63,9 +62,7 @@ def file_exists(file_path: Union[str, Path]) -> bool:
 
 @eidosian()
 @contextmanager
-def safe_open(
-    file_path: Union[str, Path], mode: str = "r", encoding: str = "utf-8"
-) -> Iterator[Optional[IO[Any]]]:
+def safe_open(file_path: Union[str, Path], mode: str = "r", encoding: str = "utf-8") -> Iterator[Optional[IO[Any]]]:
     """
     Safely open a file, handling non-existent files and IO errors.
 
@@ -93,9 +90,7 @@ def safe_open(
 
 
 @eidosian()
-def read_json_file(
-    file_path: Union[str, Path], default_value: T = None
-) -> Union[JsonData, T]:
+def read_json_file(file_path: Union[str, Path], default_value: T = None) -> Union[JsonData, T]:
     """
     Read and parse a JSON file, returning a default value if the file doesn't exist or is invalid.
 
@@ -119,9 +114,7 @@ def read_json_file(
 
 
 @eidosian()
-def read_jsonl_file(
-    file_path: Union[str, Path], process_func: Callable[[Dict[str, Any]], Optional[T]]
-) -> List[T]:
+def read_jsonl_file(file_path: Union[str, Path], process_func: Callable[[Dict[str, Any]], Optional[T]]) -> List[T]:
     """
     Read and process a JSON Lines file line by line.
 
@@ -152,9 +145,7 @@ def read_jsonl_file(
                 if processed is not None:
                     results.append(processed)
         except Exception as e:
-            raise ResourceParsingError(
-                f"Error processing line {line_num} in {file_path}: {str(e)}"
-            )
+            raise ResourceParsingError(f"Error processing line {line_num} in {file_path}: {str(e)}")
 
     return results
 
@@ -205,15 +196,11 @@ def get_wordnet_data(word: str) -> List[WordnetEntry]:
 
         # Explicitly type with expected return types but handle variations
         # Cast the result to Optional[str] as nltk types might be incomplete
-        definition_result: Optional[str] = typing.cast(
-            Optional[str], synset.definition()
-        )
+        definition_result: Optional[str] = typing.cast(Optional[str], synset.definition())
         definition: str = definition_result if definition_result is not None else ""
 
         # Cast the result to Optional[List[str]]
-        examples_result: Optional[List[str]] = typing.cast(
-            Optional[List[str]], synset.examples()
-        )
+        examples_result: Optional[List[str]] = typing.cast(Optional[List[str]], synset.examples())
         examples: List[str] = examples_result if examples_result is not None else []
 
         # Cast the result to Optional[str]
@@ -282,11 +269,7 @@ def get_odict_data(word: str, odict_path: str) -> DictionaryEntry:
         "examples": [],
     }
     odict_data = read_json_file(odict_path, {})
-    entry = (
-        odict_data.get(word, default_entry)
-        if isinstance(odict_data, dict)
-        else default_entry
-    )
+    entry = odict_data.get(word, default_entry) if isinstance(odict_data, dict) else default_entry
     if isinstance(entry, dict) and "definition" in entry and "examples" in entry:
         examples_raw = entry.get("examples", [])
         if isinstance(examples_raw, list):
@@ -347,21 +330,11 @@ def get_dbnary_data(word: str, dbnary_path: str) -> List[DbnaryEntry]:
             translation_node = row.translation if hasattr(row, "translation") else None
 
             # Convert rdflib Nodes (Literal, URIRef) to string safely
-            definition = (
-                str(definition_node.value)
-                if isinstance(definition_node, RdfLiteral)
-                else ""
-            )
-            translation = (
-                str(translation_node.value)
-                if isinstance(translation_node, RdfLiteral)
-                else ""
-            )
+            definition = str(definition_node.value) if isinstance(definition_node, RdfLiteral) else ""
+            translation = str(translation_node.value) if isinstance(translation_node, RdfLiteral) else ""
 
             if definition or translation:
-                output.append(
-                    DbnaryEntry(definition=definition, translation=translation)
-                )
+                output.append(DbnaryEntry(definition=definition, translation=translation))
 
         return output
 
@@ -392,9 +365,7 @@ def get_opendictdata(word: str, opendict_path: str) -> DictionaryEntry:
         examples_raw = entry.get("examples", [])
         examples: List[str] = []
         if isinstance(examples_raw, list):
-            examples = [
-                str(ex) for ex in examples_raw if isinstance(ex, (str, int, float))
-            ]
+            examples = [str(ex) for ex in examples_raw if isinstance(ex, (str, int, float))]
         return DictionaryEntry(definition=str(entry["definition"]), examples=examples)
     return default_entry
 
@@ -499,16 +470,16 @@ def generate_comprehensive_enrichment(
 ) -> Dict[str, Any]:
     """
     Generate comprehensive lexical and semantic enrichment using the LLM.
-    
+
     Extracts holonyms, meronyms, hypernyms, hyponyms, and emotional dimensions.
     Utilizes validated_query for schema enforcement and retries.
-    
+
     Args:
         word: Target word
         definition: Known definition
         pos: Part of speech
         model_state: Language model state
-        
+
     Returns:
         Dictionary containing enriched data fields.
     """
@@ -516,35 +487,29 @@ def generate_comprehensive_enrichment(
         f"Analyze the word '{word}' ({pos}: {definition}).\n"
         "Provide a JSON object with the following schema:\n"
         "{\n"
-        "  \"word\": \"string\",\n"
-        "  \"definition\": \"string\",\n"
-        "  \"synonyms\": [\"list of strings\"],\n"
-        "  \"antonyms\": [\"list of strings\"],\n"
-        "  \"hypernyms\": [\"list of strings\"],\n"
-        "  \"hyponyms\": [\"list of strings\"],\n"
-        "  \"holonyms\": [\"list of strings\"],\n"
-        "  \"meronyms\": [\"list of strings\"],\n"
-        "  \"emotional_valence\": float (-1.0 to 1.0),\n"
-        "  \"emotional_arousal\": float (0.0 to 1.0),\n"
-        "  \"connotation\": \"positive|negative|neutral\",\n"
-        "  \"usage_examples\": [\"list of strings\"]\n"
+        '  "word": "string",\n'
+        '  "definition": "string",\n'
+        '  "synonyms": ["list of strings"],\n'
+        '  "antonyms": ["list of strings"],\n'
+        '  "hypernyms": ["list of strings"],\n'
+        '  "hyponyms": ["list of strings"],\n'
+        '  "holonyms": ["list of strings"],\n'
+        '  "meronyms": ["list of strings"],\n'
+        '  "emotional_valence": float (-1.0 to 1.0),\n'
+        '  "emotional_arousal": float (0.0 to 1.0),\n'
+        '  "connotation": "positive|negative|neutral",\n'
+        '  "usage_examples": ["list of strings"]\n'
         "}\n"
         "Return ONLY valid JSON."
     )
-    
-    result = validated_query(
-        model_state=model_state,
-        prompt=prompt,
-        context_word=word,
-        max_retries=2
-    )
-    
+
+    result = validated_query(model_state=model_state, prompt=prompt, context_word=word, max_retries=2)
+
     if result.is_success:
         return result.unwrap()
     else:
         # Fallback to empty if even validated_query fails
         return {}
-
 
 
 # ============================================================================

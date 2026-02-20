@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Modular emotion processing hooks for the Word Forge emotion system.
 
@@ -202,9 +203,7 @@ def add_temporal_sequence(concept: EmotionalConcept) -> None:
     end_dims = dict(end_emotion.dimensions)
     if EmotionDimension.VALENCE in end_dims:
         end_dims[EmotionDimension.VALENCE] *= 0.7  # Reduce valence intensity
-    timeline.append(
-        EmotionVector(dimensions=end_dims, confidence=end_emotion.confidence)
-    )
+    timeline.append(EmotionVector(dimensions=end_dims, confidence=end_emotion.confidence))
 
     concept.add_emotional_pattern("temporal_sequence", timeline)
 
@@ -242,18 +241,13 @@ def add_intensity_gradation(concept: EmotionalConcept) -> None:
 
     # High intensity
     high = EmotionVector(
-        dimensions={
-            dim: max(-1.0, min(1.0, val * 1.5))
-            for dim, val in primary.dimensions.items()
-        },
+        dimensions={dim: max(-1.0, min(1.0, val * 1.5)) for dim, val in primary.dimensions.items()},
         confidence=0.8,
     )
     gradation.append(high)
 
     # Extreme intensity (may have different qualities)
-    extreme_dims = {
-        dim: max(-1.0, min(1.0, val * 2.0)) for dim, val in primary.dimensions.items()
-    }
+    extreme_dims = {dim: max(-1.0, min(1.0, val * 2.0)) for dim, val in primary.dimensions.items()}
 
     # Extreme intensity often has different emotional qualities
     # Add some complexity/instability for extreme emotions
@@ -284,15 +278,9 @@ def add_contextual_variations(concept: EmotionalConcept) -> None:
 
     # Personal/intimate context
     personal_dims = dict(primary.dimensions)
-    personal_dims[EmotionDimension.INTENSITY] = min(
-        1.0, personal_dims.get(EmotionDimension.INTENSITY, 0) + 0.3
-    )
-    personal_dims[EmotionDimension.RELEVANCE] = min(
-        1.0, personal_dims.get(EmotionDimension.RELEVANCE, 0) + 0.4
-    )
-    personal_dims[EmotionDimension.SOCIAL] = min(
-        1.0, personal_dims.get(EmotionDimension.SOCIAL, 0) + 0.5
-    )
+    personal_dims[EmotionDimension.INTENSITY] = min(1.0, personal_dims.get(EmotionDimension.INTENSITY, 0) + 0.3)
+    personal_dims[EmotionDimension.RELEVANCE] = min(1.0, personal_dims.get(EmotionDimension.RELEVANCE, 0) + 0.4)
+    personal_dims[EmotionDimension.SOCIAL] = min(1.0, personal_dims.get(EmotionDimension.SOCIAL, 0) + 0.5)
     variations.append(EmotionVector(dimensions=personal_dims, confidence=0.7))
 
     # Professional context
@@ -300,39 +288,24 @@ def add_contextual_variations(concept: EmotionalConcept) -> None:
     professional_dims[EmotionDimension.INTENSITY] = max(
         -1.0, professional_dims.get(EmotionDimension.INTENSITY, 0) - 0.3
     )
-    professional_dims[EmotionDimension.DOMINANCE] = min(
-        1.0, professional_dims.get(EmotionDimension.DOMINANCE, 0) + 0.2
-    )
-    professional_dims[EmotionDimension.CERTAINTY] = min(
-        1.0, professional_dims.get(EmotionDimension.CERTAINTY, 0) + 0.3
-    )
+    professional_dims[EmotionDimension.DOMINANCE] = min(1.0, professional_dims.get(EmotionDimension.DOMINANCE, 0) + 0.2)
+    professional_dims[EmotionDimension.CERTAINTY] = min(1.0, professional_dims.get(EmotionDimension.CERTAINTY, 0) + 0.3)
     variations.append(EmotionVector(dimensions=professional_dims, confidence=0.7))
 
     # Social context
     social_dims = dict(primary.dimensions)
-    if (
-        EmotionDimension.VALENCE in social_dims
-        and social_dims[EmotionDimension.VALENCE] < 0
-    ):
+    if EmotionDimension.VALENCE in social_dims and social_dims[EmotionDimension.VALENCE] < 0:
         # Negative emotions often moderated in social contexts
         social_dims[EmotionDimension.VALENCE] *= 0.7
-        social_dims[EmotionDimension.INTENSITY] = max(
-            -1.0, social_dims.get(EmotionDimension.INTENSITY, 0) - 0.2
-        )
-    social_dims[EmotionDimension.SOCIAL] = min(
-        1.0, social_dims.get(EmotionDimension.SOCIAL, 0) + 0.6
-    )
+        social_dims[EmotionDimension.INTENSITY] = max(-1.0, social_dims.get(EmotionDimension.INTENSITY, 0) - 0.2)
+    social_dims[EmotionDimension.SOCIAL] = min(1.0, social_dims.get(EmotionDimension.SOCIAL, 0) + 0.6)
     variations.append(EmotionVector(dimensions=social_dims, confidence=0.7))
 
     # Cultural context
     cultural_dims = dict(primary.dimensions)
     # Cultural contexts often modify emotional display rules
-    cultural_dims[EmotionDimension.INTENSITY] = max(
-        -1.0, cultural_dims.get(EmotionDimension.INTENSITY, 0) - 0.2
-    )
-    cultural_dims[EmotionDimension.CERTAINTY] = max(
-        -1.0, cultural_dims.get(EmotionDimension.CERTAINTY, 0) - 0.3
-    )
+    cultural_dims[EmotionDimension.INTENSITY] = max(-1.0, cultural_dims.get(EmotionDimension.INTENSITY, 0) - 0.2)
+    cultural_dims[EmotionDimension.CERTAINTY] = max(-1.0, cultural_dims.get(EmotionDimension.CERTAINTY, 0) - 0.3)
     variations.append(EmotionVector(dimensions=cultural_dims, confidence=0.6))
 
     concept.add_emotional_pattern("contextual_variations", variations)
@@ -417,9 +390,9 @@ def add_relationship_context(
 
         elif rel_type in ("enables", "inhibits"):
             # One emotion affecting the likelihood of another
-            valence_product = primary.dimensions.get(
+            valence_product = primary.dimensions.get(EmotionDimension.VALENCE, 0) * related.dimensions.get(
                 EmotionDimension.VALENCE, 0
-            ) * related.dimensions.get(EmotionDimension.VALENCE, 0)
+            )
             strength = 0.5 + (valence_product * 0.5)
 
         if strength > 0.3:
@@ -432,22 +405,14 @@ def add_relationship_context(
 # ==========================================
 
 
-def _calculate_intensity_ratio(
-    emotion1: EmotionVector, emotion2: EmotionVector
-) -> float:
+def _calculate_intensity_ratio(emotion1: EmotionVector, emotion2: EmotionVector) -> float:
     """Calculate the intensity ratio between two emotions."""
-    intensity1 = sum(abs(v) for v in emotion1.dimensions.values()) / max(
-        1, len(emotion1.dimensions)
-    )
-    intensity2 = sum(abs(v) for v in emotion2.dimensions.values()) / max(
-        1, len(emotion2.dimensions)
-    )
+    intensity1 = sum(abs(v) for v in emotion1.dimensions.values()) / max(1, len(emotion1.dimensions))
+    intensity2 = sum(abs(v) for v in emotion2.dimensions.values()) / max(1, len(emotion2.dimensions))
     return intensity1 / max(0.0001, intensity2)  # Avoid division by zero
 
 
-def _calculate_temporal_relationship(
-    emotion1: EmotionVector, emotion2: EmotionVector
-) -> float:
+def _calculate_temporal_relationship(emotion1: EmotionVector, emotion2: EmotionVector) -> float:
     """Calculate likelihood of temporal relationship between emotions."""
     # Check for arousal pattern typical of emotional sequences
     arousal1 = emotion1.dimensions.get(EmotionDimension.AROUSAL, 0)

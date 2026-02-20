@@ -179,8 +179,7 @@ class BayesParetoOptimizer:
         var = max(1e-9, second - (mean * mean))
         uncertainty = math.sqrt(var)
         predicted_objectives = {
-            key: sum(w * v for w, v in zip(weights, vals)) / w_sum
-            for key, vals in objective_values.items()
+            key: sum(w * v for w, v in zip(weights, vals)) / w_sum for key, vals in objective_values.items()
         }
         return mean, uncertainty, predicted_objectives
 
@@ -190,11 +189,7 @@ class BayesParetoOptimizer:
         kappa = max(0.0, _safe_float(self.state.get("kappa"), 0.35))
 
         best_score_hist = max([_safe_float(row.get("score"), 0.0) for row in history] or [0.0])
-        seen_flats = [
-            row.get("flat_overlay")
-            for row in history
-            if isinstance(row.get("flat_overlay"), Mapping)
-        ]
+        seen_flats = [row.get("flat_overlay") for row in history if isinstance(row.get("flat_overlay"), Mapping)]
         frontier = pareto_front(
             [
                 _parse_objectives(row.get("objectives") if isinstance(row.get("objectives"), Mapping) else {})
@@ -213,7 +208,11 @@ class BayesParetoOptimizer:
             acq = mean + (kappa * uncertainty) + ei
 
             if seen_flats:
-                nearest = min(_distance(candidate_flat, flat, self.param_specs) for flat in seen_flats if isinstance(flat, Mapping))
+                nearest = min(
+                    _distance(candidate_flat, flat, self.param_specs)
+                    for flat in seen_flats
+                    if isinstance(flat, Mapping)
+                )
                 acq += 0.08 * nearest
 
             if frontier:
@@ -255,4 +254,3 @@ class BayesParetoOptimizer:
         }
         history.append(entry)
         self.state["history"] = history[-200:]
-

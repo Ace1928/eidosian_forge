@@ -1,18 +1,21 @@
 import json
 import uuid
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Union
 from collections import deque
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
+
 from eidosian_core import eidosian
+
 
 class KnowledgeNode:
     """A node in the knowledge graph with tags and bidirectional links."""
+
     def __init__(self, content: Any, metadata: Optional[Dict[str, Any]] = None):
         self.id = str(uuid.uuid4())
         self.content = content
         self.metadata = metadata or {}
         self.tags: Set[str] = set(self.metadata.get("tags", []))
-        self.links: Set[str] = set() 
+        self.links: Set[str] = set()
 
     @eidosian()
     def add_link(self, node_id: str):
@@ -24,36 +27,44 @@ class KnowledgeNode:
             "id": self.id,
             "content": self.content,
             "metadata": {**self.metadata, "tags": list(self.tags)},
-            "links": list(self.links)
+            "links": list(self.links),
         }
+
 
 class KnowledgeForge:
     """
     Manages a persistent graph of knowledge nodes.
     Supports concept mapping, tagging, and pathfinding.
     """
+
     def __init__(self, persistence_path: Optional[Union[str, Path]] = None):
         self.nodes: Dict[str, KnowledgeNode] = {}
         self.concept_map: Dict[str, List[str]] = {}
         self.persistence_path = Path(persistence_path) if persistence_path else None
-        
+
         if self.persistence_path and self.persistence_path.exists():
             self.load()
 
     @eidosian()
-    def add_knowledge(self, content: Any, concepts: Optional[List[str]] = None, tags: Optional[List[str]] = None, metadata: Optional[Dict[str, Any]] = None) -> KnowledgeNode:
+    def add_knowledge(
+        self,
+        content: Any,
+        concepts: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> KnowledgeNode:
         """Add a node, map concepts/tags, and persist."""
         node = KnowledgeNode(content, metadata)
         if tags:
             node.tags.update(tags)
         self.nodes[node.id] = node
-        
+
         if concepts:
             for concept in concepts:
                 if concept not in self.concept_map:
                     self.concept_map[concept] = []
                 self.concept_map[concept].append(node.id)
-        
+
         if self.persistence_path:
             self.save()
         return node
@@ -110,17 +121,17 @@ class KnowledgeForge:
         """BFS to find the shortest path between two nodes."""
         if start_id not in self.nodes or end_id not in self.nodes:
             return []
-        
+
         queue = deque([[start_id]])
         visited = {start_id}
-        
+
         while queue:
             path = queue.popleft()
             node_id = path[-1]
-            
+
             if node_id == end_id:
                 return path
-            
+
             for neighbor in self.nodes[node_id].links:
                 if neighbor not in visited:
                     visited.add(neighbor)
@@ -132,18 +143,15 @@ class KnowledgeForge:
     @eidosian()
     def save(self):
         """Persist graph to disk."""
-        data = {
-            "nodes": {nid: n.to_dict() for nid, n in self.nodes.items()},
-            "concept_map": self.concept_map
-        }
-        with open(self.persistence_path, 'w') as f:
+        data = {"nodes": {nid: n.to_dict() for nid, n in self.nodes.items()}, "concept_map": self.concept_map}
+        with open(self.persistence_path, "w") as f:
             json.dump(data, f, indent=2)
 
     @eidosian()
     def load(self):
         """Load graph from disk."""
         try:
-            with open(self.persistence_path, 'r') as f:
+            with open(self.persistence_path, "r") as f:
                 data = json.load(f)
                 for nid, n_data in data.get("nodes", {}).items():
                     node = KnowledgeNode(n_data["content"], n_data["metadata"])
@@ -154,7 +162,7 @@ class KnowledgeForge:
                 self.concept_map = data.get("concept_map", {})
         except Exception:
             pass
-            
+
     @eidosian()
     def search(self, query: str) -> List[KnowledgeNode]:
         results = []
@@ -162,12 +170,12 @@ class KnowledgeForge:
             if query.lower() in str(node.content).lower():
                 results.append(node)
         return results
-    
+
     @eidosian()
     def list_nodes(self, limit: int = 100) -> List[KnowledgeNode]:
         """List all nodes (up to limit)."""
         return list(self.nodes.values())[:limit]
-    
+
     @eidosian()
     def stats(self) -> Dict[str, Any]:
         """Return knowledge graph statistics."""

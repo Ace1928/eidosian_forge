@@ -183,9 +183,7 @@ def sync_remediation_issues(
     plan: dict[str, Any],
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    desired_batches = [
-        x for x in (plan.get("batches") or []) if isinstance(x, dict) and x.get("batch_key")
-    ]
+    desired_batches = [x for x in (plan.get("batches") or []) if isinstance(x, dict) and x.get("batch_key")]
     desired_by_key = {str(x.get("batch_key")): x for x in desired_batches}
 
     open_issues = _list_open_issues(repo, token)

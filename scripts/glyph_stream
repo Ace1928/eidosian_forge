@@ -38,33 +38,32 @@ AUTHOR_INFO = {
 """
 
 import argparse
-import sys
-import re
-import shutil
-import shlex
-import subprocess
-import random
-import traceback
-import uuid
-import tempfile
-import io
-import math
-import time
-import platform
-import os
-from pathlib import Path
-from typing import List, Tuple, Optional, Literal, Union, Dict, Any, cast
-from datetime import datetime
-
-import numpy as np
-from PIL import Image
-import pyfiglet
-import json
-import unicodedata
-import colorama
-
 import collections
+import io
+import json
+import math
+import os
+import platform
+import random
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import traceback
+import unicodedata
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
+
+import colorama
+import numpy as np
+import pyfiglet
 from glyph_stream_context import SYSTEM_CONTEXT, SYSTEM_INFO
+from PIL import Image
 
 # ╔══════════════════════════════════════════════════════════════╗
 # ║ 📦 Adaptive Dependency Management                           ║
@@ -87,15 +86,15 @@ except ImportError:
 # Rich for enhanced terminal output
 try:
     import rich
-    from rich.console import Console, Group
-    from rich.progress import Progress, SpinnerColumn, TextColumn
-    from rich.panel import Panel
-    from rich.table import Table
-    from rich.prompt import Prompt, Confirm
-    from rich.markdown import Markdown
-    from rich.text import Text
     from rich.align import Align
+    from rich.console import Console, Group
     from rich.layout import Layout
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+    from rich.prompt import Confirm, Prompt
+    from rich.table import Table
+    from rich.text import Text
     CONSOLE = Console()
     HAS_RICH = True
 except ImportError:
@@ -1131,6 +1130,7 @@ def generate_text_art(
         
     elif mode == "random":
         import random
+
         # Random font from any category
         selected_font = font or TEXT_ENGINE.get_random_font()
         border = random.choice([True, False])
@@ -4061,7 +4061,7 @@ def parse_command_args() -> Dict[str, Any]:
         Dictionary of parsed and validated command options
     """
     import argparse
-    
+
     # System-aware default parameters
     sys_params = SYSTEM_CONTEXT.get_optimized_parameters()
     

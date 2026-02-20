@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from eidosian_core import eidosian
 import datetime
 import enum
 import math
@@ -18,6 +17,8 @@ from typing import (
     TypedDict,
     TypeVar,
 )
+
+from eidosian_core import eidosian
 
 # Type variables for generic emotion processing
 E = TypeVar("E", bound="EmotionVector")  # Emotion type
@@ -214,12 +215,7 @@ class EmotionVector:
     def distance(self, other: "EmotionVector") -> float:
         """Calculate the n-dimensional Euclidean distance between emotion vectors."""
         all_dims = set(self.dimensions.keys()) | set(other.dimensions.keys())
-        return math.sqrt(
-            sum(
-                (self.dimensions.get(dim, 0.0) - other.dimensions.get(dim, 0.0)) ** 2
-                for dim in all_dims
-            )
-        )
+        return math.sqrt(sum((self.dimensions.get(dim, 0.0) - other.dimensions.get(dim, 0.0)) ** 2 for dim in all_dims))
 
     @eidosian()
     def blend(self, other: "EmotionVector", weight: float = 0.5) -> "EmotionVector":
@@ -237,8 +233,7 @@ class EmotionVector:
 
         # Create weighted combination of values
         new_dims = {
-            dim: self.dimensions.get(dim, 0.0) * (1 - weight)
-            + other.dimensions.get(dim, 0.0) * weight
+            dim: self.dimensions.get(dim, 0.0) * (1 - weight) + other.dimensions.get(dim, 0.0) * weight
             for dim in all_dims
         }
 
@@ -259,9 +254,7 @@ class EmotionVector:
         """
         return EmotionVector(
             dimensions={
-                dim: -val
-                for dim, val in self.dimensions.items()
-                if dim in EmotionDimension.primary_dimensions()
+                dim: -val for dim, val in self.dimensions.items() if dim in EmotionDimension.primary_dimensions()
             },
             confidence=self.confidence,
         )
@@ -344,14 +337,9 @@ class EmotionVector:
             Vector emphasizing dimensions where the two states differ most
         """
         all_dims = set(self.dimensions.keys()) | set(other.dimensions.keys())
-        contrast_dims = {
-            dim: self.dimensions.get(dim, 0.0) - other.dimensions.get(dim, 0.0)
-            for dim in all_dims
-        }
+        contrast_dims = {dim: self.dimensions.get(dim, 0.0) - other.dimensions.get(dim, 0.0) for dim in all_dims}
         # Filter out very small contrasts for clarity
-        significant_contrasts = {
-            dim: val for dim, val in contrast_dims.items() if abs(val) > 0.1
-        }
+        significant_contrasts = {dim: val for dim, val in contrast_dims.items() if abs(val) > 0.1}
         return EmotionVector(
             dimensions=significant_contrasts,
             confidence=min(self.confidence, other.confidence) * 0.9,
@@ -376,17 +364,11 @@ class EmotionVector:
             return 0.0
 
         # Calculate dot product of common dimensions
-        dot_product = sum(
-            self.dimensions[dim] * other.dimensions[dim] for dim in common_dims
-        )
+        dot_product = sum(self.dimensions[dim] * other.dimensions[dim] for dim in common_dims)
 
         # Calculate magnitudes for common dimensions only
-        self_magnitude = math.sqrt(
-            sum(self.dimensions[dim] ** 2 for dim in common_dims)
-        )
-        other_magnitude = math.sqrt(
-            sum(other.dimensions[dim] ** 2 for dim in common_dims)
-        )
+        self_magnitude = math.sqrt(sum(self.dimensions[dim] ** 2 for dim in common_dims))
+        other_magnitude = math.sqrt(sum(other.dimensions[dim] ** 2 for dim in common_dims))
 
         # Avoid division by zero
         if self_magnitude == 0 or other_magnitude == 0:
@@ -424,9 +406,7 @@ class EmotionVector:
         return raw_entropy / max_entropy if max_entropy > 0 else 0.0
 
     @eidosian()
-    def with_dimension(
-        self, dimension: EmotionDimension, value: float
-    ) -> "EmotionVector":
+    def with_dimension(self, dimension: EmotionDimension, value: float) -> "EmotionVector":
         """Create a new vector with an additional or updated dimension.
 
         Args:
@@ -445,9 +425,7 @@ class EmotionVector:
         return EmotionVector(dimensions=new_dimensions, confidence=self.confidence)
 
     @eidosian()
-    def filter_by_category(
-        self, category: Literal["primary", "extended", "meta"]
-    ) -> "EmotionVector":
+    def filter_by_category(self, category: Literal["primary", "extended", "meta"]) -> "EmotionVector":
         """Filter dimensions to include only those in the specified category.
 
         Args:
@@ -482,9 +460,7 @@ class EmotionVector:
         return {dim.value: val for dim, val in self.dimensions.items()}
 
     @classmethod
-    def from_dict(
-        cls, data: Dict[str, float], confidence: float = 1.0
-    ) -> "EmotionVector":
+    def from_dict(cls, data: Dict[str, float], confidence: float = 1.0) -> "EmotionVector":
         """Create an EmotionVector from a dictionary representation.
 
         Args:
@@ -563,9 +539,7 @@ class EmotionalContext:
             for factor_name, factor_value in factor_set.items():
                 try:
                     dim = EmotionDimension(factor_name)
-                    context_adjustment[dim] = (
-                        context_adjustment.get(dim, 0.0) + factor_value
-                    )
+                    context_adjustment[dim] = context_adjustment.get(dim, 0.0) + factor_value
                 except ValueError:
                     # Skip invalid dimension names
                     continue
@@ -583,9 +557,7 @@ class EmotionalContext:
         return vector.blend(adjustment_vector, weight=0.3)
 
     @eidosian()
-    def combine(
-        self, other: "EmotionalContext", weight: float = 0.5
-    ) -> "EmotionalContext":
+    def combine(self, other: "EmotionalContext", weight: float = 0.5) -> "EmotionalContext":
         """Combine two contexts with weighted blending.
 
         Creates a new context that represents a weighted combination of two
@@ -602,9 +574,7 @@ class EmotionalContext:
 
         # Combined dictionaries helper function
         @eidosian()
-        def combine_dicts(
-            dict1: Dict[str, float], dict2: Dict[str, float]
-        ) -> Dict[str, float]:
+        def combine_dicts(dict1: Dict[str, float], dict2: Dict[str, float]) -> Dict[str, float]:
             result = dict1.copy()
             for k, v in dict2.items():
                 if k in result:
@@ -614,21 +584,11 @@ class EmotionalContext:
             return result
 
         # Combine all factor dictionaries
-        result.cultural_factors = combine_dicts(
-            self.cultural_factors, other.cultural_factors
-        )
-        result.situational_factors = combine_dicts(
-            self.situational_factors, other.situational_factors
-        )
-        result.temporal_factors = combine_dicts(
-            self.temporal_factors, other.temporal_factors
-        )
-        result.domain_specific = combine_dicts(
-            self.domain_specific, other.domain_specific
-        )
-        result.relationship_factors = combine_dicts(
-            self.relationship_factors, other.relationship_factors
-        )
+        result.cultural_factors = combine_dicts(self.cultural_factors, other.cultural_factors)
+        result.situational_factors = combine_dicts(self.situational_factors, other.situational_factors)
+        result.temporal_factors = combine_dicts(self.temporal_factors, other.temporal_factors)
+        result.domain_specific = combine_dicts(self.domain_specific, other.domain_specific)
+        result.relationship_factors = combine_dicts(self.relationship_factors, other.relationship_factors)
 
         return result
 
@@ -714,9 +674,7 @@ class EmotionalConcept:
     secondary_emotions: List[Tuple[str, EmotionVector]] = field(default_factory=list)
     meta_emotions: List[Tuple[str, EmotionVector]] = field(default_factory=list)
     emotional_patterns: Dict[str, List[EmotionVector]] = field(default_factory=dict)
-    relationship_context: Dict[str, List[Tuple[str, float]]] = field(
-        default_factory=dict
-    )
+    relationship_context: Dict[str, List[Tuple[str, float]]] = field(default_factory=dict)
 
     @property
     def recursive_depth(self) -> int:
@@ -744,9 +702,7 @@ class EmotionalConcept:
         self.meta_emotions.append((label, emotion))
 
     @eidosian()
-    def add_emotional_pattern(
-        self, pattern_type: str, sequence: List[EmotionVector]
-    ) -> None:
+    def add_emotional_pattern(self, pattern_type: str, sequence: List[EmotionVector]) -> None:
         """Add a temporal or conditional pattern of emotions.
 
         Registers a sequence of emotional states that represent patterns
@@ -779,9 +735,7 @@ class EmotionalConcept:
         )
 
     @eidosian()
-    def add_related_context(
-        self, relationship_type: str, term: str, strength: float
-    ) -> None:
+    def add_related_context(self, relationship_type: str, term: str, strength: float) -> None:
         """Add a related term's contextual influence.
 
         Records how this concept emotionally relates to another term,
@@ -828,8 +782,7 @@ class EmotionalConcept:
             meta_vectors = [e for _, e in self.meta_emotions]
             # Meta-emotions should have appropriate meta dimensions
             meta_dimension_presence = any(
-                any(dim in EmotionDimension.meta_dimensions() for dim in e.dimensions)
-                for e in meta_vectors
+                any(dim in EmotionDimension.meta_dimensions() for dim in e.dimensions) for e in meta_vectors
             )
             meta_coherence = 0.7 + (0.3 * int(meta_dimension_presence))
 
@@ -888,8 +841,7 @@ class EmotionalConcept:
             ],
             "emotional_patterns": {
                 pattern_type: [
-                    {"dimensions": emotion.as_dict(), "confidence": emotion.confidence}
-                    for emotion in sequence
+                    {"dimensions": emotion.as_dict(), "confidence": emotion.confidence} for emotion in sequence
                 ]
                 for pattern_type, sequence in self.emotional_patterns.items()
             },
@@ -968,13 +920,9 @@ class EmotionProcessor(Protocol):
     modular, interchangeable emotional processing systems.
     """
 
-    def process_term(
-        self, term: str, context: Optional[EmotionalContext] = None
-    ) -> EmotionalConcept: ...
+    def process_term(self, term: str, context: Optional[EmotionalContext] = None) -> EmotionalConcept: ...
 
-    def analyze_relationship(
-        self, term1: str, term2: str, relationship_type: str
-    ) -> float: ...
+    def analyze_relationship(self, term1: str, term2: str, relationship_type: str) -> float: ...
 
     def get_emotion_vector(self, term: str) -> EmotionVector: ...
 
@@ -997,17 +945,11 @@ class EmotionFactory(Protocol):
     from various input types.
     """
 
-    def create_from_valence_arousal(
-        self, valence: float, arousal: float, confidence: float = 1.0
-    ) -> EmotionVector: ...
+    def create_from_valence_arousal(self, valence: float, arousal: float, confidence: float = 1.0) -> EmotionVector: ...
 
-    def create_from_text(
-        self, text: str, context: Optional[EmotionalContext] = None
-    ) -> EmotionVector: ...
+    def create_from_text(self, text: str, context: Optional[EmotionalContext] = None) -> EmotionVector: ...
 
-    def create_composite(
-        self, emotions: List[Tuple[EmotionVector, float]]
-    ) -> EmotionVector: ...
+    def create_composite(self, emotions: List[Tuple[EmotionVector, float]]) -> EmotionVector: ...
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

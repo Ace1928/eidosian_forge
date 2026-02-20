@@ -58,9 +58,7 @@ def test_red_team_campaign_latest_reads_persisted_report(tmp_path: Path) -> None
     assert latest.get("run_id") == run.run_id
 
 
-def test_red_team_campaign_applies_shared_overlay_and_disable_modules(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_red_team_campaign_applies_shared_overlay_and_disable_modules(monkeypatch, tmp_path: Path) -> None:
     base = tmp_path / "state"
     campaign = ConsciousnessRedTeamCampaign(base)
     captured_specs: list[dict[str, object]] = []

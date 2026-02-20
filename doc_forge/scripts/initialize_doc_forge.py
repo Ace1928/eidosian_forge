@@ -12,8 +12,8 @@ Following Eidosian principles of:
 - Self-Awareness: Understanding the project environment
 """
 
-import shutil
 import logging
+import shutil
 from pathlib import Path
 
 # Configure logging

@@ -11,9 +11,10 @@ from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-
 ROOT = Path(__file__).resolve().parents[2]
-VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
+VENV_PYTHON = str(
+    (ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable)
+)
 PYTHONPATH = f"{ROOT}/eidos_mcp/src:{ROOT}"
 
 
@@ -61,32 +62,57 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
     ("diagnostics_ping", {}, lambda r: r.strip() == "ok", "diagnostics_ping did not return ok"),
     ("diagnostics_metrics", {}, lambda r: r.strip().startswith("{"), "diagnostics_metrics did not return JSON"),
     ("memory_stats", {}, lambda r: "count" in r or "episodic_count" in r, "memory_stats missing count"),
-    ("transaction_list", {"limit": 3}, lambda r: "timestamp" in r or r.strip() in {"[]", ""}, "transaction_list unexpected shape"),
+    (
+        "transaction_list",
+        {"limit": 3},
+        lambda r: "timestamp" in r or r.strip() in {"[]", ""},
+        "transaction_list unexpected shape",
+    ),
     ("gis_snapshot", {}, lambda r: "Snapshot created" in r, "gis_snapshot failed"),
     ("type_snapshot", {}, lambda r: "Snapshot created" in r, "type_snapshot failed"),
     ("tiered_memory_stats", {}, lambda r: "tier" in r or "count" in r, "tiered_memory_stats missing expected fields"),
-    ("tika_cache_stats", {}, lambda r: "hits" in r or "entries" in r or "{" in r, "tika_cache_stats missing expected fields"),
-    ("moltbook_status", {}, lambda r: "\"success\"" in r or "\"ok\"" in r, "moltbook_status missing expected keys"),
-    ("moltbook_me", {}, lambda r: "\"agent\"" in r or "\"ok\"" in r, "moltbook_me missing expected keys"),
-    ("moltbook_feed", {"sort": "new", "limit": 3}, lambda r: "\"posts\"" in r or "\"ok\"" in r, "moltbook_feed missing expected keys"),
-    ("moltbook_posts", {"sort": "hot", "limit": 3}, lambda r: "\"posts\"" in r or "\"ok\"" in r, "moltbook_posts missing expected keys"),
-    ("moltbook_dm_check", {}, lambda r: "\"has_activity\"" in r or "\"ok\"" in r, "moltbook_dm_check missing expected keys"),
+    (
+        "tika_cache_stats",
+        {},
+        lambda r: "hits" in r or "entries" in r or "{" in r,
+        "tika_cache_stats missing expected fields",
+    ),
+    ("moltbook_status", {}, lambda r: '"success"' in r or '"ok"' in r, "moltbook_status missing expected keys"),
+    ("moltbook_me", {}, lambda r: '"agent"' in r or '"ok"' in r, "moltbook_me missing expected keys"),
+    (
+        "moltbook_feed",
+        {"sort": "new", "limit": 3},
+        lambda r: '"posts"' in r or '"ok"' in r,
+        "moltbook_feed missing expected keys",
+    ),
+    (
+        "moltbook_posts",
+        {"sort": "hot", "limit": 3},
+        lambda r: '"posts"' in r or '"ok"' in r,
+        "moltbook_posts missing expected keys",
+    ),
+    (
+        "moltbook_dm_check",
+        {},
+        lambda r: '"has_activity"' in r or '"ok"' in r,
+        "moltbook_dm_check missing expected keys",
+    ),
     (
         "consciousness_kernel_status",
         {},
-        lambda r: "\"workspace\"" in r and "\"rci\"" in r and "\"watchdog\"" in r and "\"payload_safety\"" in r,
+        lambda r: '"workspace"' in r and '"rci"' in r and '"watchdog"' in r and '"payload_safety"' in r,
         "consciousness_kernel_status missing expected keys",
     ),
     (
         "consciousness_bridge_status",
         {},
-        lambda r: "\"memory_bridge\"" in r and "\"knowledge_bridge\"" in r,
+        lambda r: '"memory_bridge"' in r and '"knowledge_bridge"' in r,
         "consciousness_bridge_status missing expected keys",
     ),
     (
         "consciousness_kernel_benchmark",
         {"ticks": 2, "persist": False},
-        lambda r: "\"benchmark_id\"" in r and "\"composite\"" in r,
+        lambda r: '"benchmark_id"' in r and '"composite"' in r,
         "consciousness_kernel_benchmark missing expected keys",
     ),
     (
@@ -99,13 +125,13 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
             "max_payload_bytes": 1024,
             "persist": False,
         },
-        lambda r: "\"benchmark_id\"" in r and "\"payload_truncations_observed\"" in r,
+        lambda r: '"benchmark_id"' in r and '"payload_truncations_observed"' in r,
         "consciousness_kernel_stress_benchmark missing expected keys",
     ),
     (
         "consciousness_kernel_red_team",
         {"persist": False, "max_scenarios": 1, "quick": True},
-        lambda r: "\"run_id\"" in r and "\"scenario_count\"" in r and "\"pass_ratio\"" in r,
+        lambda r: '"run_id"' in r and '"scenario_count"' in r and '"pass_ratio"' in r,
         "consciousness_kernel_red_team missing expected keys",
     ),
     (
@@ -119,7 +145,7 @@ TOOL_CASES: list[tuple[str, dict, ToolValidator, str]] = [
             "run_red_team": False,
             "persist": False,
         },
-        lambda r: "\"benchmark_id\"" in r and "\"integrated\"" in r,
+        lambda r: '"benchmark_id"' in r and '"integrated"' in r,
         "consciousness_kernel_full_benchmark missing expected keys",
     ),
 ]

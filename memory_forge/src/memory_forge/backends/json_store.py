@@ -1,12 +1,16 @@
 from eidosian_core import eidosian
+
 """
 Simple JSON Backend for testing and portability.
 """
 import json
 from pathlib import Path
-from typing import List, Optional, Dict
-from ..core.interfaces import StorageBackend, MemoryItem
+from typing import Dict, List, Optional
+
 import numpy as np
+
+from ..core.interfaces import MemoryItem, StorageBackend
+
 
 class JsonBackend(StorageBackend):
     def __init__(self, file_path: str):
@@ -38,7 +42,8 @@ class JsonBackend(StorageBackend):
     @eidosian()
     def get(self, item_id: str) -> Optional[MemoryItem]:
         d = self.data.get(item_id)
-        if not d: return None
+        if not d:
+            return None
         # Reconstruct (simplified)
         item = MemoryItem(content=d["content"], id=d["id"])
         # ... fill other fields ...
@@ -49,18 +54,19 @@ class JsonBackend(StorageBackend):
         # Naive cosine similarity
         results = []
         q_vec = np.array(query_embedding)
-        
+
         for mid, d in self.data.items():
-            if "embedding" not in d: continue
+            if "embedding" not in d:
+                continue
             d_vec = np.array(d["embedding"])
             score = np.dot(q_vec, d_vec) / (np.linalg.norm(q_vec) * np.linalg.norm(d_vec))
             results.append((score, d))
-            
+
         results.sort(key=lambda x: x[0], reverse=True)
-        
+
         items = []
         for score, d in results[:limit]:
-            items.append(MemoryItem(content=d["content"], id=d["id"])) # Simplified
+            items.append(MemoryItem(content=d["content"], id=d["id"]))  # Simplified
         return items
 
     @eidosian()

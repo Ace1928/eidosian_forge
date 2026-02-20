@@ -96,7 +96,8 @@ def test_meta_emits_grounded_mode_when_signals_are_stable(tmp_path: Path) -> Non
     assert meta_events[-1]["data"]["mode"] in {"grounded", "simulated"}
 
     meta_broadcasts = [
-        evt for evt in all_events
+        evt
+        for evt in all_events
         if evt.get("type") == "workspace.broadcast"
         and (((evt.get("data") or {}).get("payload") or {}).get("kind") == "META")
     ]
@@ -133,7 +134,8 @@ def test_report_emits_grounded_self_report(tmp_path: Path) -> None:
     assert groundedness >= 0.6
 
     groundedness_metrics = [
-        evt for evt in all_events
+        evt
+        for evt in all_events
         if evt.get("type") == "metrics.sample"
         and (evt.get("data") or {}).get("key") == "consciousness.report.groundedness"
     ]

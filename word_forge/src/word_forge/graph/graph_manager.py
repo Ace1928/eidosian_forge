@@ -37,7 +37,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import sqlite3
@@ -47,6 +46,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union, cast
 
 import networkx as nx
+from eidosian_core import eidosian
 
 # Core components
 from word_forge.config import config
@@ -161,9 +161,7 @@ class GraphManager:
                 yield conn  # Yield the actual connection obtained from the inner context
             except sqlite3.Error as db_err:
                 # Optional: Add specific error handling/logging here if needed
-                self.logger.error(
-                    f"Database operation failed within context: {db_err}", exc_info=True
-                )
+                self.logger.error(f"Database operation failed within context: {db_err}", exc_info=True)
                 raise  # Re-raise the original error
             # The 'finally' block for cleanup is handled by the 'with' statement
             # managing db_manager.get_connection()
@@ -255,9 +253,7 @@ class GraphManager:
         return self.builder.verify_database_tables()
 
     @eidosian()
-    def add_word_node(
-        self, term: Term, attributes: Optional[Dict[str, Any]] = None
-    ) -> WordId:
+    def add_word_node(self, term: Term, attributes: Optional[Dict[str, Any]] = None) -> WordId:
         """
         Add a single word node to the graph if it doesn't exist.
 
@@ -284,9 +280,7 @@ class GraphManager:
                 # Node exists, potentially update attributes
                 if attributes:
                     nx.set_node_attributes(self.g, {existing_id: attributes})
-                    self.logger.debug(
-                        f"Updated attributes for existing node '{term}' (ID: {existing_id})."
-                    )
+                    self.logger.debug(f"Updated attributes for existing node '{term}' (ID: {existing_id}).")
                 return existing_id
             else:
                 # Node doesn't exist, create new ID and add
@@ -362,9 +356,7 @@ class GraphManager:
                     # Option: Add node implicitly or raise error
                     # self.logger.warning(f"Source term '{source_term_or_id}' not found, adding implicitly.")
                     # source_id = self.add_word_node(source_term_or_id)  # add_word_node handles locking
-                    raise NodeNotFoundError(
-                        f"Source term '{source_term_or_id}' not found."
-                    )
+                    raise NodeNotFoundError(f"Source term '{source_term_or_id}' not found.")
             elif isinstance(source_term_or_id, int):
                 source_id = source_term_or_id
                 if source_id not in self.g.nodes():
@@ -379,9 +371,7 @@ class GraphManager:
                     # Option: Add node implicitly or raise error
                     # self.logger.warning(f"Target term '{target_term_or_id}' not found, adding implicitly.")
                     # target_id = self.add_word_node(target_term_or_id)  # add_word_node handles locking
-                    raise NodeNotFoundError(
-                        f"Target term '{target_term_or_id}' not found."
-                    )
+                    raise NodeNotFoundError(f"Target term '{target_term_or_id}' not found.")
             elif isinstance(target_term_or_id, int):
                 target_id = target_term_or_id
                 if target_id not in self.g.nodes():
@@ -391,23 +381,15 @@ class GraphManager:
 
             # Prevent self-loops
             if source_id == target_id:
-                self.logger.warning(
-                    f"Attempted to add self-loop for node {source_id}. Skipped."
-                )
+                self.logger.warning(f"Attempted to add self-loop for node {source_id}. Skipped.")
                 return False
 
             # --- Determine Edge Properties ---
             rel_props = self._get_relationship_properties(relationship)
             edge_dimension = dimension or self._determine_dimension(relationship)
             edge_weight = weight if weight is not None else rel_props.get("weight", 1.0)
-            edge_color = color or rel_props.get(
-                "color", self.config.get_relationship_color(relationship)
-            )
-            edge_bidirectional = (
-                bidirectional
-                if bidirectional is not None
-                else rel_props.get("bidirectional", False)
-            )
+            edge_color = color or rel_props.get("color", self.config.get_relationship_color(relationship))
+            edge_bidirectional = bidirectional if bidirectional is not None else rel_props.get("bidirectional", False)
 
             # --- Construct Edge Attributes ---
             source_term_text = self.query.get_term_by_id(source_id) or f"ID:{source_id}"
@@ -431,15 +413,11 @@ class GraphManager:
             )
             if has_edge:
                 nx.set_edge_attributes(self.g, {(source_id, target_id): edge_attrs})
-                self.logger.debug(
-                    f"Updated existing edge between {source_id} and {target_id}."
-                )
+                self.logger.debug(f"Updated existing edge between {source_id} and {target_id}.")
             else:
                 self.g.add_edge(source_id, target_id, **edge_attrs)
                 self._relationship_counts[relationship] += 1
-                self.logger.info(
-                    f"Added relationship '{relationship}' between {source_id} and {target_id}."
-                )
+                self.logger.info(f"Added relationship '{relationship}' between {source_id} and {target_id}.")
 
             return True
 
@@ -452,9 +430,7 @@ class GraphManager:
         return self.query.get_node_id(term)
 
     @eidosian()
-    def get_related_terms(
-        self, term: Term, rel_type: Optional[RelType] = None
-    ) -> List[Term]:
+    def get_related_terms(self, term: Term, rel_type: Optional[RelType] = None) -> List[Term]:
         """Find related terms. Delegates to GraphQuery."""
         return self.query.get_related_terms(term, rel_type)
 
@@ -496,9 +472,7 @@ class GraphManager:
         valence_range: Optional[Tuple[float, float]] = None,
     ) -> List[Tuple[Term, Term, RelType, Dict[str, Any]]]:
         """Get relationships filtered by dimension. Delegates to GraphQuery."""
-        return self.query.get_relationships_by_dimension(
-            dimension, rel_type, valence_range
-        )
+        return self.query.get_relationships_by_dimension(dimension, rel_type, valence_range)
 
     # ==========================================
     # Layout Methods (via Layout)
@@ -529,9 +503,7 @@ class GraphManager:
         """Generate graph visualization. Delegates to GraphVisualizer."""
         # Visualization reads graph structure and positions, lock ensures consistency
         with self._graph_lock:
-            self.visualizer.visualize(
-                output_path, height, width, use_3d, dimensions_filter, open_in_browser
-            )
+            self.visualizer.visualize(output_path, height, width, use_3d, dimensions_filter, open_in_browser)
 
     @eidosian()
     def visualize_2d(
@@ -544,9 +516,7 @@ class GraphManager:
     ) -> None:
         """Generate 2D graph visualization. Delegates to GraphVisualizer."""
         with self._graph_lock:
-            self.visualizer.visualize_2d(
-                output_path, height, width, dimensions_filter, open_in_browser
-            )
+            self.visualizer.visualize_2d(output_path, height, width, dimensions_filter, open_in_browser)
 
     @eidosian()
     def visualize_3d(
@@ -557,9 +527,7 @@ class GraphManager:
     ) -> None:
         """Generate 3D graph visualization. Delegates to GraphVisualizer."""
         with self._graph_lock:
-            self.visualizer.visualize_3d(
-                output_path, dimensions_filter, open_in_browser
-            )
+            self.visualizer.visualize_3d(output_path, dimensions_filter, open_in_browser)
 
     # ==========================================
     # IO Methods (via IO)
@@ -579,9 +547,7 @@ class GraphManager:
             self.io.load_from_gexf(path)
 
     @eidosian()
-    def export_subgraph(
-        self, term: Term, depth: int = 1, output_path: Optional[str] = None
-    ) -> str:
+    def export_subgraph(self, term: Term, depth: int = 1, output_path: Optional[str] = None) -> str:
         """Export subgraph to GEXF. Delegates to GraphIO."""
         # Reads graph structure, lock ensures consistency
         with self._graph_lock:
@@ -626,15 +592,11 @@ class GraphManager:
             return self.analysis.analyze_emotional_valence_distribution(dimension)
 
     @eidosian()
-    def integrate_emotional_context(
-        self, context_name: str, context_weights: Dict[str, float]
-    ) -> int:
+    def integrate_emotional_context(self, context_name: str, context_weights: Dict[str, float]) -> int:
         """Integrate emotional context. Delegates to GraphAnalysis."""
         # Potentially modifies graph state (_emotional_contexts), lock needed
         with self._graph_lock:
-            return self.analysis.integrate_emotional_context(
-                context_name, context_weights
-            )
+            return self.analysis.integrate_emotional_context(context_name, context_weights)
 
     @eidosian()
     def analyze_emotional_transitions(
@@ -642,9 +604,7 @@ class GraphManager:
     ) -> TransitionResult:
         """Analyze emotional transitions. Delegates to GraphAnalysis."""
         with self._graph_lock:
-            return self.analysis.analyze_emotional_transitions(
-                path_length, min_transition_strength
-            )
+            return self.analysis.analyze_emotional_transitions(path_length, min_transition_strength)
 
     @eidosian()
     def get_emotional_subgraph(
@@ -657,9 +617,7 @@ class GraphManager:
     ) -> nx.Graph:
         """Get emotional subgraph. Delegates to GraphAnalysis."""
         with self._graph_lock:
-            return self.analysis.get_emotional_subgraph(
-                term, depth, context, emotional_types, min_intensity
-            )
+            return self.analysis.get_emotional_subgraph(term, depth, context, emotional_types, min_intensity)
 
     # ==========================================
     # Internal Helper Methods
@@ -680,9 +638,7 @@ class GraphManager:
             {
                 "weight": props.get("weight", default_props["weight"]),
                 "color": props.get("color", default_props["color"]),
-                "bidirectional": props.get(
-                    "bidirectional", default_props["bidirectional"]
-                ),
+                "bidirectional": props.get("bidirectional", default_props["bidirectional"]),
             },
         )
 

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Maps .forgengine.json (legacy config) to the central GisCore registry.
@@ -6,8 +7,8 @@ Ensures legacy settings are available in the persistent global system.
 """
 
 import json
-import sys
 import logging
+import sys
 from pathlib import Path
 
 # Setup Logging
@@ -29,6 +30,7 @@ except ImportError as e:
     logger.error(f"Failed to import GisCore: {e}")
     sys.exit(1)
 
+
 @eidosian()
 def main():
     if not FORGENGINE_JSON.exists():
@@ -45,24 +47,25 @@ def main():
     # Initialize GIS (ensure persistence path is correct)
     # If gis_data.json doesn't exist, GisCore handles it gracefully if path is provided
     # But we want to ensure we are using the 'official' one.
-    # Assuming AgentForge/etc use a standard path. 
+    # Assuming AgentForge/etc use a standard path.
     # Let's check where GisCore is usually instantiated.
     # For now, we use the local one in gis_forge/
-    
+
     GIS_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     gis = GisCore(persistence_path=GIS_DATA_PATH)
-    
+
     logger.info(f"Mapping to GisCore at {GIS_DATA_PATH}")
-    
+
     # Map 'forgengine' key
     gis.set("forgengine", legacy_config)
-    
+
     # Verify
     mapped = gis.get("forgengine")
     if mapped == legacy_config:
         logger.info("✅ Successfully mapped .forgengine.json to GisCore.")
     else:
         logger.error("❌ Mapping verification failed.")
+
 
 if __name__ == "__main__":
     main()

@@ -1,16 +1,16 @@
 from eidosian_core import eidosian
+
 """
 Agent Forge - Tool-using autonomous system.
 Provides goal-directed behavior and task orchestration.
 """
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Union
 import uuid
-import json
-import os
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable, Dict, List, Optional, Union
 
-from eidos_mcp.transactions import begin_transaction, load_transaction, list_transactions
+from eidos_mcp.transactions import begin_transaction, load_transaction
+
 from agent_forge.utils.parsing import extract_json_from_text
 
 try:
@@ -19,6 +19,7 @@ except Exception:
     LLMForge = None
 
 from agent_forge.models.schemas import Task
+
 
 @dataclass
 class Goal:
@@ -29,25 +30,35 @@ class Goal:
     def add_task(self, task: Task) -> None:
         self.tasks.append(task)
 
+
 class AgentForge:
     """
     Orchestrates goals and tasks using registered tools and LLM reasoning.
     Safeguards file operations via TransactionManager.
     """
-    def __init__(self, llm: Optional['LLMForge'] = None, base_dir: Union[str, Path] = ".", require_approval: bool = True):
+
+    def __init__(
+        self, llm: Optional["LLMForge"] = None, base_dir: Union[str, Path] = ".", require_approval: bool = True
+    ):
         self.goals: List[Goal] = []
         self.current_goal: Optional[Goal] = None
         self._tools: Dict[str, Callable] = {}
         self.llm = llm
         self.require_approval = require_approval
-        
+
         # Transactional operations are managed directly by eidos_mcp.transactions functions
         # We don't instantiate a TransactionManager class here.
-        
+
         # Register default safe tools
         self.register_tool("write_file", self._safe_write_file, "Safely write/stage a file. Args: path, content")
-        self.register_tool("commit_transaction", self._commit_transaction_tool, "Commit staged changes to filesystem by transaction ID.")
-        self.register_tool("rollback_transaction", self._rollback_transaction_tool, "Rollback transaction by ID. Args: txn_id")
+        self.register_tool(
+            "commit_transaction",
+            self._commit_transaction_tool,
+            "Commit staged changes to filesystem by transaction ID.",
+        )
+        self.register_tool(
+            "rollback_transaction", self._rollback_transaction_tool, "Rollback transaction by ID. Args: txn_id"
+        )
 
     def _safe_write_file(self, path: str, content: str) -> str:
         """Internal safe write handler using eidos_mcp.transactions."""
@@ -91,19 +102,27 @@ class AgentForge:
     def think(self, objective: str) -> List[Task]:
         """Use LLM to generate a task list for a given objective."""
         if not self.llm:
-            return [Task(description=objective, task_id=str(uuid.uuid4()))] # Fallback to single task
+            return [Task(description=objective, task_id=str(uuid.uuid4()))]  # Fallback to single task
 
         tools_desc = "\n".join([f"- {n}: {t['description']}" for n, t in self._tools.items()])
         prompt = f"Objective: {objective}\n\nAvailable Tools:\n{tools_desc}\n\nGenerate a sequential list of tasks to achieve this objective. Each task must specify a tool, arguments for that tool, and a clear description. Format as JSON: {{'tasks': [{{'tool': 'tool_name', 'args': {{'arg_name': 'value'}}, 'description': '...'}}]}}"
-        
+
         res_obj = self.llm.generate(prompt, system="You are the Eidosian Reasoning Engine. Plan meticulously.")
-        
+
         # Assume res_obj is an LLMResponse object, which implies success if returned.
         # Extract JSON from the text, handling potential Markdown formatting.
         if res_obj.text:
             data = extract_json_from_text(res_obj.text)
             if data:
-                return [Task(description=t["description"], task_id=str(uuid.uuid4()), tool=t.get("tool"), kwargs=t.get("args", {})) for t in data.get("tasks", [])]
+                return [
+                    Task(
+                        description=t["description"],
+                        task_id=str(uuid.uuid4()),
+                        tool=t.get("tool"),
+                        kwargs=t.get("args", {}),
+                    )
+                    for t in data.get("tasks", [])
+                ]
         return [Task(description=objective, task_id=str(uuid.uuid4()))]
 
     @eidosian()
@@ -126,7 +145,7 @@ class AgentForge:
             task.status = "failed"
             task.result = "No tool specified for task."
             return False
-            
+
         if task.tool not in self._tools:
             task.status = "failed"
             task.result = f"Tool '{task.tool}' not found."

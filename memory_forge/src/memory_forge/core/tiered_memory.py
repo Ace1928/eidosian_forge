@@ -11,44 +11,48 @@ This module implements a multi-tiered memory architecture:
 The system enables automatic memory promotion/demotion based on
 relevance, importance, and access patterns.
 """
+
 from __future__ import annotations
-from eidosian_core import eidosian
-from eidosian_core.ports import get_service_url
 
 import json
-import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Set
 
-from .interfaces import MemoryItem, MemoryType
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
+
+from .interfaces import MemoryType
 
 
 class MemoryTier(str, Enum):
     """Memory tiers with different persistence characteristics."""
-    SHORT_TERM = "short_term"   # Session-specific, volatile
-    WORKING = "working"         # Task-relevant, currently active
-    LONG_TERM = "long_term"     # Persistent episodic/semantic
-    SELF = "self"               # EIDOS identity and lessons
-    USER = "user"               # User profiles and preferences
+
+    SHORT_TERM = "short_term"  # Session-specific, volatile
+    WORKING = "working"  # Task-relevant, currently active
+    LONG_TERM = "long_term"  # Persistent episodic/semantic
+    SELF = "self"  # EIDOS identity and lessons
+    USER = "user"  # User profiles and preferences
 
 
 class MemoryNamespace(str, Enum):
     """Namespaces for organizing memories by context."""
-    EIDOS = "eidos"             # EIDOS self-knowledge
-    USER = "user"               # User-specific memories
-    TASK = "task"               # Task/session memories
-    KNOWLEDGE = "knowledge"     # General knowledge
-    CODE = "code"               # Code-related memories
+
+    EIDOS = "eidos"  # EIDOS self-knowledge
+    USER = "user"  # User-specific memories
+    TASK = "task"  # Task/session memories
+    KNOWLEDGE = "knowledge"  # General knowledge
+    CODE = "code"  # Code-related memories
     CONVERSATION = "conversation"  # Dialogue memories
 
 
 @dataclass
 class TieredMemoryItem:
     """Extended memory item with tiering support."""
+
     content: str
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=datetime.now)
@@ -63,13 +67,13 @@ class TieredMemoryItem:
     ttl_seconds: Optional[int] = None  # Time-to-live for expiration
     tags: Set[str] = field(default_factory=set)
     linked_memories: Set[str] = field(default_factory=set)
-    
+
     @eidosian()
     def touch(self) -> None:
         """Update access timestamp and count."""
         self.last_accessed = datetime.now()
         self.access_count += 1
-    
+
     @eidosian()
     def is_expired(self) -> bool:
         """Check if memory has expired based on TTL."""
@@ -77,7 +81,7 @@ class TieredMemoryItem:
             return False
         age = (datetime.now() - self.created_at).total_seconds()
         return age > self.ttl_seconds
-    
+
     @eidosian()
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -96,7 +100,7 @@ class TieredMemoryItem:
             "tags": list(self.tags),
             "linked_memories": list(self.linked_memories),
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TieredMemoryItem":
         """Deserialize from dictionary."""
@@ -119,16 +123,17 @@ class TieredMemoryItem:
 
 class EmbeddingService(Protocol):
     """Protocol for embedding generation."""
+
     def embed_text(self, text: str) -> List[float]: ...
 
 
 class OllamaEmbedder:
     """
     Ollama-based embedding service using unified model configuration.
-    
+
     Uses nomic-embed-text by default (768 dimensions, 8192 context).
     """
-    
+
     def __init__(
         self,
         model: Optional[str] = None,
@@ -137,27 +142,29 @@ class OllamaEmbedder:
         # Try to get model from unified config
         try:
             from eidos_mcp.config.models import model_config
+
             self.model = model or model_config.embedding.model
         except ImportError:
             self.model = model or "nomic-embed-text"
         self.base_url = base_url
-    
+
     @eidosian()
     def embed_text(self, text: str) -> List[float]:
         """Generate embedding for text using Ollama."""
         import httpx
+
         url = f"{self.base_url}/api/embeddings"
         data = {"model": self.model, "prompt": text}
-        
+
         try:
             with httpx.Client(timeout=60.0) as client:
                 resp = client.post(url, json=data)
                 resp.raise_for_status()
                 return resp.json()["embedding"]
-        except Exception as e:
+        except Exception:
             # Return empty embedding on failure (graceful degradation)
             return []
-    
+
     @eidosian()
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for multiple texts."""
@@ -167,7 +174,7 @@ class OllamaEmbedder:
 class TieredMemorySystem:
     """
     Multi-tiered memory system for EIDOS.
-    
+
     Architecture:
     ┌─────────────────────────────────────────────────────┐
     │                 MEMORY ARCHITECTURE                  │
@@ -179,22 +186,22 @@ class TieredMemorySystem:
     │  USER (Lloyd)           → Preferences, patterns     │
     └─────────────────────────────────────────────────────┘
     """
-    
+
     # Default TTL for different tiers (in seconds)
     TIER_TTL = {
-        MemoryTier.SHORT_TERM: 3600,      # 1 hour
-        MemoryTier.WORKING: 86400,         # 24 hours
-        MemoryTier.LONG_TERM: None,        # Permanent
-        MemoryTier.SELF: None,             # Permanent
-        MemoryTier.USER: None,             # Permanent
+        MemoryTier.SHORT_TERM: 3600,  # 1 hour
+        MemoryTier.WORKING: 86400,  # 24 hours
+        MemoryTier.LONG_TERM: None,  # Permanent
+        MemoryTier.SELF: None,  # Permanent
+        MemoryTier.USER: None,  # Permanent
     }
-    
+
     # Importance thresholds for tier promotion
     PROMOTION_THRESHOLD = {
         MemoryTier.SHORT_TERM: 0.6,  # Promote to WORKING
-        MemoryTier.WORKING: 0.8,      # Promote to LONG_TERM
+        MemoryTier.WORKING: 0.8,  # Promote to LONG_TERM
     }
-    
+
     def __init__(
         self,
         persistence_dir: Optional[Path] = None,
@@ -208,15 +215,13 @@ class TieredMemorySystem:
             self.persistence_dir = persistence_dir
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
         self.embedder = embedder
-        
+
         # Initialize tier storage
-        self.tiers: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {
-            tier: {} for tier in MemoryTier
-        }
-        
+        self.tiers: Dict[MemoryTier, Dict[str, TieredMemoryItem]] = {tier: {} for tier in MemoryTier}
+
         # Load persisted memories
         self._load()
-    
+
     @eidosian()
     def remember(
         self,
@@ -235,7 +240,7 @@ class TieredMemorySystem:
                 embedding = self.embedder.embed_text(content)
             except Exception:
                 pass
-        
+
         item = TieredMemoryItem(
             content=content,
             tier=tier,
@@ -247,11 +252,11 @@ class TieredMemorySystem:
             tags=tags or set(),
             metadata=metadata or {},
         )
-        
+
         self.tiers[tier][item.id] = item
         self._persist_tier(tier)
         return item.id
-    
+
     @eidosian()
     def recall(
         self,
@@ -263,7 +268,7 @@ class TieredMemorySystem:
     ) -> List[TieredMemoryItem]:
         """Retrieve memories across tiers with semantic search."""
         tiers = tiers or list(MemoryTier)
-        
+
         # Collect all candidate memories
         candidates: List[TieredMemoryItem] = []
         for tier in tiers:
@@ -275,10 +280,10 @@ class TieredMemorySystem:
                 if namespaces and item.namespace not in namespaces:
                     continue
                 candidates.append(item)
-        
+
         if not candidates:
             return []
-        
+
         # If we have an embedder, do semantic search
         if self.embedder:
             query_vec = self.embedder.embed_text(query)
@@ -301,14 +306,14 @@ class TieredMemorySystem:
             scored.sort(key=lambda x: x[0], reverse=True)
             # Return items with non-zero score
             results = [item for score, item in scored[:limit] if score > 0]
-        
+
         # Update access counts
         for item in results:
             item.touch()
             self._check_promotion(item)
-        
+
         return results
-    
+
     @eidosian()
     def recall_self(self, query: str, limit: int = 5) -> List[TieredMemoryItem]:
         """Retrieve EIDOS self-memories."""
@@ -318,11 +323,9 @@ class TieredMemorySystem:
             tiers=[MemoryTier.SELF],
             namespaces=[MemoryNamespace.EIDOS],
         )
-    
+
     @eidosian()
-    def recall_user(
-        self, query: str, user_id: str = "lloyd", limit: int = 5
-    ) -> List[TieredMemoryItem]:
+    def recall_user(self, query: str, user_id: str = "lloyd", limit: int = 5) -> List[TieredMemoryItem]:
         """Retrieve user-specific memories."""
         results = self.recall(
             query,
@@ -331,11 +334,8 @@ class TieredMemorySystem:
             namespaces=[MemoryNamespace.USER],
         )
         # Filter by user_id in metadata
-        return [
-            r for r in results
-            if r.metadata.get("user_id") == user_id
-        ][:limit]
-    
+        return [r for r in results if r.metadata.get("user_id") == user_id][:limit]
+
     @eidosian()
     def remember_self(
         self,
@@ -354,7 +354,7 @@ class TieredMemorySystem:
             tags=tags or {"self", "eidos"},
             metadata=metadata or {},
         )
-    
+
     @eidosian()
     def remember_user(
         self,
@@ -375,7 +375,7 @@ class TieredMemorySystem:
             tags=tags or {"user", user_id},
             metadata=meta,
         )
-    
+
     @eidosian()
     def remember_lesson(
         self,
@@ -390,18 +390,18 @@ class TieredMemorySystem:
             content += f"\nCONTEXT: {context}"
         if outcome:
             content += f"\nOUTCOME: {outcome}"
-        
+
         all_tags = {"lesson", "learning", "self-improvement"}
         if tags:
             all_tags.update(tags)
-        
+
         return self.remember_self(
             content=content,
             memory_type=MemoryType.PROCEDURAL,
             tags=all_tags,
             metadata={"lesson": lesson, "context": context, "outcome": outcome},
         )
-    
+
     @eidosian()
     def promote(self, memory_id: str, target_tier: MemoryTier) -> bool:
         """Manually promote a memory to a higher tier."""
@@ -415,18 +415,18 @@ class TieredMemorySystem:
                 self._persist_tier(target_tier)
                 return True
         return False
-    
+
     @eidosian()
     def demote(self, memory_id: str, target_tier: MemoryTier) -> bool:
         """Demote a memory to a lower tier."""
         return self.promote(memory_id, target_tier)
-    
+
     @eidosian()
     def link_memories(self, memory_id_a: str, memory_id_b: str) -> bool:
         """Create bidirectional links between memories."""
         item_a = self._find_memory(memory_id_a)
         item_b = self._find_memory(memory_id_b)
-        
+
         if item_a and item_b:
             item_a.linked_memories.add(memory_id_b)
             item_b.linked_memories.add(memory_id_a)
@@ -434,37 +434,34 @@ class TieredMemorySystem:
             self._persist_tier(item_b.tier)
             return True
         return False
-    
+
     @eidosian()
     def get_related(self, memory_id: str) -> List[TieredMemoryItem]:
         """Get memories linked to the specified memory."""
         item = self._find_memory(memory_id)
         if not item:
             return []
-        
+
         related = []
         for linked_id in item.linked_memories:
             linked_item = self._find_memory(linked_id)
             if linked_item:
                 related.append(linked_item)
         return related
-    
+
     @eidosian()
     def cleanup_expired(self) -> int:
         """Remove expired memories. Returns count of removed items."""
         removed = 0
         for tier in MemoryTier:
-            expired_ids = [
-                mid for mid, item in self.tiers[tier].items()
-                if item.is_expired()
-            ]
+            expired_ids = [mid for mid, item in self.tiers[tier].items() if item.is_expired()]
             for mid in expired_ids:
                 del self.tiers[tier][mid]
                 removed += 1
             if expired_ids:
                 self._persist_tier(tier)
         return removed
-    
+
     @eidosian()
     def stats(self) -> Dict[str, Any]:
         """Return memory system statistics."""
@@ -474,12 +471,12 @@ class TieredMemorySystem:
             "by_namespace": {},
             "by_type": {},
         }
-        
+
         for tier in MemoryTier:
             count = len(self.tiers[tier])
             stats["by_tier"][tier.value] = count
             stats["total"] += count
-        
+
         # Count by namespace and type
         for tier in MemoryTier:
             for item in self.tiers[tier].values():
@@ -487,12 +484,12 @@ class TieredMemorySystem:
                 mt = item.memory_type.value
                 stats["by_namespace"][ns] = stats["by_namespace"].get(ns, 0) + 1
                 stats["by_type"][mt] = stats["by_type"].get(mt, 0) + 1
-        
+
         return stats
-    
+
     @eidosian()
     def list_all(
-        self, 
+        self,
         tiers: Optional[List[MemoryTier]] = None,
         namespaces: Optional[List[MemoryNamespace]] = None,
     ) -> List[TieredMemoryItem]:
@@ -506,7 +503,7 @@ class TieredMemorySystem:
                 if not item.is_expired():
                     results.append(item)
         return results
-    
+
     def _check_promotion(self, item: TieredMemoryItem) -> None:
         """Check if memory should be promoted based on access patterns."""
         if item.tier in self.PROMOTION_THRESHOLD:
@@ -519,14 +516,14 @@ class TieredMemorySystem:
                     self.promote(item.id, MemoryTier.WORKING)
                 elif item.tier == MemoryTier.WORKING:
                     self.promote(item.id, MemoryTier.LONG_TERM)
-    
+
     def _find_memory(self, memory_id: str) -> Optional[TieredMemoryItem]:
         """Find a memory across all tiers."""
         for tier in MemoryTier:
             if memory_id in self.tiers[tier]:
                 return self.tiers[tier][memory_id]
         return None
-    
+
     def _cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
         """Calculate cosine similarity between two vectors."""
         if not vec_a or not vec_b or len(vec_a) != len(vec_b):
@@ -537,43 +534,43 @@ class TieredMemorySystem:
         if norm_a == 0 or norm_b == 0:
             return 0.0
         return dot / (norm_a * norm_b)
-    
+
     def _keyword_score(self, query: str, item: TieredMemoryItem) -> float:
         """Calculate keyword match score for an item."""
         query_lower = query.lower()
         query_words = set(query_lower.split())
-        
+
         score = 0.0
         content_lower = item.content.lower()
-        
+
         # Exact phrase match
         if query_lower in content_lower:
             score += 2.0
-        
+
         # Word overlap
         content_words = set(content_lower.split())
         overlap = len(query_words & content_words)
         score += overlap * 0.5
-        
+
         # Tag match
         for tag in item.tags:
             if query_lower in tag.lower():
                 score += 1.0
-        
+
         # Metadata match (for key fields)
         for key, val in item.metadata.items():
             if isinstance(val, str) and query_lower in val.lower():
                 score += 0.5
-        
+
         return score
-    
+
     def _persist_tier(self, tier: MemoryTier) -> None:
         """Save a specific tier to disk."""
         path = self.persistence_dir / f"{tier.value}.json"
         data = [item.to_dict() for item in self.tiers[tier].values()]
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-    
+
     def _load(self) -> None:
         """Load all tiers from disk."""
         for tier in MemoryTier:
@@ -587,7 +584,7 @@ class TieredMemorySystem:
                         self.tiers[tier][item.id] = item
                 except Exception:
                     pass
-    
+
     @eidosian()
     def save_all(self) -> None:
         """Persist all tiers to disk."""

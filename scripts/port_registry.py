@@ -80,7 +80,9 @@ def cmd_dump(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read and query Eidosian Forge port registry.")
-    parser.add_argument("--registry", default="", help="Override registry path (default: auto-detect config/ports.json)")
+    parser.add_argument(
+        "--registry", default="", help="Override registry path (default: auto-detect config/ports.json)"
+    )
 
     sub = parser.add_subparsers(dest="command", required=True)
 

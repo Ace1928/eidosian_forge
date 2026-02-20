@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Eidosian Verification Script
@@ -8,20 +9,33 @@ Checks for existence of required files and basic content validity.
 """
 
 import sys
-import os
 from pathlib import Path
-from typing import List, Dict, Set
+from typing import Dict, List
 
 # Configuration
 SKIP_DIRS = {
-    "__pycache__", ".git", ".venv", ".vscode", "node_modules", 
-    "logs", "data", "docs", "scripts", "requirements", "lib",
-    "word_forge_BACKUP", ".pytest_cache", ".github", ".venv_tools",
-    "projects", "audit_data"
+    "__pycache__",
+    ".git",
+    ".venv",
+    ".vscode",
+    "node_modules",
+    "logs",
+    "data",
+    "docs",
+    "scripts",
+    "requirements",
+    "lib",
+    "word_forge_BACKUP",
+    ".pytest_cache",
+    ".github",
+    ".venv_tools",
+    "projects",
+    "audit_data",
 }
 
 REQUIRED_FILES = ["README.md", "CURRENT_STATE.md", "GOALS.md", "TODO.md"]
 OPTIONAL_FILES = ["pyproject.toml"]
+
 
 @eidosian()
 def get_forge_modules(root: Path) -> List[Path]:
@@ -32,11 +46,12 @@ def get_forge_modules(root: Path) -> List[Path]:
             modules.append(item)
     return sorted(modules)
 
+
 @eidosian()
 def check_module(module_path: Path) -> Dict[str, List[str]]:
     """Check a single module for compliance."""
     issues = []
-    
+
     # Check for required files
     for filename in REQUIRED_FILES:
         file_path = module_path / filename
@@ -46,7 +61,7 @@ def check_module(module_path: Path) -> Dict[str, List[str]]:
             # Basic content check
             if file_path.stat().st_size < 10:
                 issues.append(f"Empty/Too small {filename}")
-            
+
             # Check for placeholder text
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -63,30 +78,32 @@ def check_module(module_path: Path) -> Dict[str, List[str]]:
         has_src = (module_path / "src").exists()
         has_flat = (module_path / f"{module_path.name}.py").exists() or (module_path / "__init__.py").exists()
         # Some exceptions
-        if module_path.name == "eidos_brain": has_flat = True # core/
-        
+        if module_path.name == "eidos_brain":
+            has_flat = True  # core/
+
         # if not has_src and not has_flat:
-             # issues.append("Missing source structure (src/ or flat package)")
+        # issues.append("Missing source structure (src/ or flat package)")
         pass
 
     return {module_path.name: issues}
+
 
 @eidosian()
 def main():
     root_dir = Path(__file__).resolve().parent.parent
     print(f"🔍 Verifying Eidosian Forge at: {root_dir}")
-    
+
     modules = get_forge_modules(root_dir)
     all_issues = {}
-    
+
     print(f"Found {len(modules)} modules to check.")
     print("-" * 60)
-    
+
     for module in modules:
         result = check_module(module)
         name = list(result.keys())[0]
         issues = result[name]
-        
+
         if issues:
             print(f"❌ {name}:")
             for issue in issues:
@@ -94,7 +111,7 @@ def main():
             all_issues[name] = issues
         else:
             print(f"✅ {name}")
-            
+
     print("-" * 60)
     if all_issues:
         print(f"⚠️  Verification failed for {len(all_issues)} modules.")
@@ -102,6 +119,7 @@ def main():
     else:
         print("🚀 All modules verified successfully!")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

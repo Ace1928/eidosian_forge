@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from eidos_mcp.consciousness_protocol import ConsciousnessProtocol
 
 
@@ -50,9 +49,7 @@ def test_upsert_hypothesis_and_assessment(tmp_path: Path) -> None:
     assert report["report_id"]
     assert report["metrics"]["probe_success_rate"] == pytest.approx(0.5)
 
-    result = next(
-        item for item in report["hypothesis_results"] if item["id"] == hypothesis["id"]
-    )
+    result = next(item for item in report["hypothesis_results"] if item["id"] == hypothesis["id"])
     assert result["status"] == "supported"
     assert result["passed"] is True
 

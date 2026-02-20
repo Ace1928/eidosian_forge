@@ -16,9 +16,7 @@ def _ensure_paths(root: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Run operational consciousness assessment and emit JSON report."
-    )
+    parser = argparse.ArgumentParser(description="Run operational consciousness assessment and emit JSON report.")
     parser.add_argument("--trials", type=int, default=3, help="Trials per probe (default: 3)")
     parser.add_argument(
         "--no-persist",
@@ -40,4 +38,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

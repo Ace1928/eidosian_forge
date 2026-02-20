@@ -21,7 +21,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import datetime
 import logging
@@ -34,6 +33,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Tuple, TypedDict, Union, final
+
+from eidosian_core import eidosian
 
 from word_forge.config import config
 from word_forge.database.database_manager import DBManager
@@ -118,9 +119,7 @@ class DatabaseWorkerInterface(Protocol):
     def is_alive(self) -> bool: ...
     def run_maintenance(self, wait: bool = False) -> bool: ...
     def run_optimization(self, level: int = 1, wait: bool = False) -> bool: ...
-    def run_backup(
-        self, target_path: Optional[str] = None, wait: bool = False
-    ) -> bool: ...
+    def run_backup(self, target_path: Optional[str] = None, wait: bool = False) -> bool: ...
     def run_integrity_check(self, wait: bool = False) -> Tuple[bool, Optional[str]]: ...
     def get_metrics(self) -> Dict[str, Any]: ...
 
@@ -166,9 +165,7 @@ class OperationMetrics:
     error_types: Dict[str, int] = field(default_factory=dict)
 
     @eidosian()
-    def record_operation(
-        self, operation_type: str, duration_ms: float, success: bool = True
-    ) -> None:
+    def record_operation(self, operation_type: str, duration_ms: float, success: bool = True) -> None:
         """
         Record metrics for a completed operation.
 
@@ -188,9 +185,7 @@ class OperationMetrics:
 
             # Limit the size of recorded times to avoid unbounded growth
             if len(self.operation_times[operation_type]) > 100:
-                self.operation_times[operation_type] = self.operation_times[
-                    operation_type
-                ][-100:]
+                self.operation_times[operation_type] = self.operation_times[operation_type][-100:]
 
         # Record timestamp for specific operation types
         if operation_type == "maintenance":
@@ -240,13 +235,8 @@ class OperationMetrics:
         Returns:
             Average duration in milliseconds or None if no data
         """
-        if (
-            operation_type in self.operation_times
-            and self.operation_times[operation_type]
-        ):
-            return sum(self.operation_times[operation_type]) / len(
-                self.operation_times[operation_type]
-            )
+        if operation_type in self.operation_times and self.operation_times[operation_type]:
+            return sum(self.operation_times[operation_type]) / len(self.operation_times[operation_type])
         return None
 
     @eidosian()
@@ -272,9 +262,7 @@ class OperationMetrics:
         Returns:
             List of error type names sorted by frequency
         """
-        sorted_errors = sorted(
-            self.error_types.items(), key=lambda x: x[1], reverse=True
-        )
+        sorted_errors = sorted(self.error_types.items(), key=lambda x: x[1], reverse=True)
         return [error_type for error_type, _ in sorted_errors[:limit]]
 
 
@@ -332,15 +320,9 @@ class DatabaseWorker(threading.Thread):
         self.db_manager = db_manager
 
         # Configuration parameters with defaults from config
-        self.poll_interval = poll_interval or getattr(
-            config.database, "poll_interval", 3600.0
-        )
-        self.backup_interval = backup_interval or getattr(
-            config.database, "backup_interval", 86400.0
-        )
-        self.optimization_interval = optimization_interval or getattr(
-            config.database, "optimization_interval", 43200.0
-        )
+        self.poll_interval = poll_interval or getattr(config.database, "poll_interval", 3600.0)
+        self.backup_interval = backup_interval or getattr(config.database, "backup_interval", 86400.0)
+        self.optimization_interval = optimization_interval or getattr(config.database, "optimization_interval", 43200.0)
 
         # Set up backup path with fallback to config or default
         if backup_path:
@@ -360,9 +342,7 @@ class DatabaseWorker(threading.Thread):
         # Thread control flags
         self._stop_flag = False
         self._pause_flag = False
-        self._wake_event = (
-            threading.Event()
-        )  # For interruptible sleep (stop or new operation)
+        self._wake_event = threading.Event()  # For interruptible sleep (stop or new operation)
         self._status_lock = threading.RLock()
         self._operation_lock = threading.RLock()
         self._current_state = DBWorkerState.STOPPED
@@ -388,9 +368,7 @@ class DatabaseWorker(threading.Thread):
         self._integrity_status: Optional[str] = None
 
         # Operation queue for externally-requested operations
-        self._pending_operations: List[
-            Tuple[str, Dict[str, Any], Optional[threading.Event]]
-        ] = []
+        self._pending_operations: List[Tuple[str, Dict[str, Any], Optional[threading.Event]]] = []
 
         # Performance metrics
         self.metrics = OperationMetrics()
@@ -467,9 +445,7 @@ class DatabaseWorker(threading.Thread):
                     ]
                     if t is not None
                 )
-                sleep_time = max(
-                    0.1, min(next_op_time - time.time(), self.poll_interval)
-                )
+                sleep_time = max(0.1, min(next_op_time - time.time(), self.poll_interval))
                 # Use event.wait() for interruptible sleep
                 self._wake_event.wait(timeout=sleep_time)
 
@@ -643,9 +619,7 @@ class DatabaseWorker(threading.Thread):
             duration_ms = (time.time() - start_time) * 1000
             self.metrics.record_operation("optimization", duration_ms)
 
-            self.logger.info(
-                f"Database optimization (level {level}) completed in {duration_ms:.2f}ms"
-            )
+            self.logger.info(f"Database optimization (level {level}) completed in {duration_ms:.2f}ms")
             return True
 
         except Exception as e:
@@ -708,9 +682,7 @@ class DatabaseWorker(threading.Thread):
             duration_ms = (time.time() - start_time) * 1000
             self.metrics.record_operation("backup", duration_ms)
 
-            self.logger.info(
-                f"Database backup completed in {duration_ms:.2f}ms: {backup_file}"
-            )
+            self.logger.info(f"Database backup completed in {duration_ms:.2f}ms: {backup_file}")
             return True
 
         except Exception as e:
@@ -782,27 +754,19 @@ class DatabaseWorker(threading.Thread):
             # Check results
             if len(results) == 1 and results[0][0] == "ok" and not fk_results:
                 integrity_status = "ok"
-                self.logger.info(
-                    f"Database integrity check passed in {duration_ms:.2f}ms"
-                )
+                self.logger.info(f"Database integrity check passed in {duration_ms:.2f}ms")
             else:
                 # Combine all integrity errors
                 integrity_errors = [row[0] for row in results if row[0] != "ok"]
-                fk_errors = [
-                    f"Foreign key violation in table {row[0]}" for row in fk_results
-                ]
+                fk_errors = [f"Foreign key violation in table {row[0]}" for row in fk_results]
                 all_errors = integrity_errors + fk_errors
 
                 if all_errors:
                     integrity_status = f"Errors: {', '.join(all_errors)}"
-                    self.logger.warning(
-                        f"Database integrity check found issues: {integrity_status}"
-                    )
+                    self.logger.warning(f"Database integrity check found issues: {integrity_status}")
                 else:
                     integrity_status = "unknown"
-                    self.logger.warning(
-                        "Database integrity check returned unexpected results"
-                    )
+                    self.logger.warning("Database integrity check returned unexpected results")
 
             with self._status_lock:
                 self._integrity_status = integrity_status
@@ -834,9 +798,7 @@ class DatabaseWorker(threading.Thread):
             self._current_state = DBWorkerState.ERROR
 
             # Calculate exponential backoff with jitter
-            backoff_base = self._error_backoff_base * (
-                2 ** min(6, self._consecutive_errors - 1)
-            )
+            backoff_base = self._error_backoff_base * (2 ** min(6, self._consecutive_errors - 1))
             jitter = random.uniform(0, backoff_base * 0.1)
             self._backoff_time = min(300, backoff_base + jitter)  # Cap at 5 minutes
 
@@ -846,10 +808,7 @@ class DatabaseWorker(threading.Thread):
             self._recent_errors = self.metrics.get_recent_errors()
 
         # Log error message
-        self.logger.error(
-            f"Database worker error ({error_type}): {error}. "
-            f"Retrying in {self._backoff_time:.1f}s"
-        )
+        self.logger.error(f"Database worker error ({error_type}): {error}. " f"Retrying in {self._backoff_time:.1f}s")
 
         # Log detailed traceback at debug level
         self.logger.debug(f"Error traceback: {traceback.format_exc()}")
@@ -942,9 +901,7 @@ class DatabaseWorker(threading.Thread):
                 uptime = time.time() - self._start_time
 
             return {
-                "running": self.is_alive()
-                and not self._stop_flag
-                and not self._pause_flag,
+                "running": self.is_alive() and not self._stop_flag and not self._pause_flag,
                 "operation_count": self.metrics.operation_count,
                 "error_count": self.metrics.error_count,
                 "last_operation": self._last_operation,
@@ -1013,9 +970,7 @@ class DatabaseWorker(threading.Thread):
         completion_event = threading.Event() if wait else None
 
         with self._operation_lock:
-            self._pending_operations.append(
-                ("optimization", {"level": level}, completion_event)
-            )
+            self._pending_operations.append(("optimization", {"level": level}, completion_event))
 
         # Wake up the worker thread to process the operation immediately
         self._wake_event.set()
@@ -1047,9 +1002,7 @@ class DatabaseWorker(threading.Thread):
         completion_event = threading.Event() if wait else None
 
         with self._operation_lock:
-            self._pending_operations.append(
-                ("backup", {"target_path": target_path}, completion_event)
-            )
+            self._pending_operations.append(("backup", {"target_path": target_path}, completion_event))
 
         # Wake up the worker thread to process the operation immediately
         self._wake_event.set()

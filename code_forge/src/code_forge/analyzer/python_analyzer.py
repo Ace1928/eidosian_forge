@@ -1,16 +1,18 @@
 from eidosian_core import eidosian
+
 """
 Code Analyzer - AST-based source analysis.
 """
 import ast
-from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
-import hashlib
 import builtins
+import hashlib
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 
 class CodeAnalyzer:
     """Analyzes Python source code using the AST module."""
-    
+
     @eidosian()
     def analyze_file(self, file_path: Path) -> Dict[str, Any]:
         """Parse a file and return its structure."""

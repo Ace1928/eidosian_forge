@@ -23,17 +23,18 @@ Public API (stdlib only):
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
-import dataclasses as dc
+
 import json
 import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping
 
-from .contracts import Goal, Plan, Step, Run
+from eidosian_core import eidosian
+
+from .contracts import Goal, Plan, Run, Step
 
 __all__ = [
     "migrate",
@@ -61,6 +62,7 @@ SCHEMA_VERSION = 1
 
 # ---------- internal paths ----------
 
+
 def _p(base: Path) -> Dict[str, Path]:
     return {
         "base": base,
@@ -71,12 +73,15 @@ def _p(base: Path) -> Dict[str, Path]:
         "version": base / "meta" / "version.json",
     }
 
+
 def _ensure_dirs(base: Path) -> None:
     p = _p(base)
     p["events"].mkdir(parents=True, exist_ok=True)
     p["meta"].mkdir(parents=True, exist_ok=True)
 
+
 # ---------- migrations ----------
+
 
 @eidosian()
 def migrate(base: str | Path = "state") -> int:
@@ -98,7 +103,9 @@ def migrate(base: str | Path = "state") -> int:
         # if corrupted, do not overwrite silently; surface but return current
         raise RuntimeError(f"Corrupted version file: {vp}")
 
+
 # ---------- journal ----------
+
 
 @eidosian()
 def append_journal(
@@ -164,6 +171,7 @@ def iter_journal(
         out = out[-limit:]
     return out
 
+
 @eidosian()
 def rotate_journal(
     base: str | Path,
@@ -214,6 +222,7 @@ def diff_snapshots(a: Mapping[str, Any], b: Mapping[str, Any]) -> Dict[str, Any]
         "to": {"generated_at": b.get("generated_at"), "schema": b.get("schema")},
     }
 
+
 # ---------- entity DAL ----------
 
 
@@ -223,9 +232,7 @@ def _db(base: str | Path) -> Path:
     db_path = b / "e3.sqlite"
     conn = sqlite3.connect(db_path)
     try:
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS goals(id TEXT PRIMARY KEY, title TEXT, drive TEXT, created_at TEXT)"
-        )
+        conn.execute("CREATE TABLE IF NOT EXISTS goals(id TEXT PRIMARY KEY, title TEXT, drive TEXT, created_at TEXT)")
         conn.execute(
             "CREATE TABLE IF NOT EXISTS plans(id TEXT PRIMARY KEY, goal_id TEXT, kind TEXT, meta TEXT, created_at TEXT)"
         )
@@ -235,12 +242,8 @@ def _db(base: str | Path) -> Path:
         conn.execute(
             "CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, step_id TEXT, started_at TEXT, ended_at TEXT, rc INTEGER, bytes_out INTEGER, notes TEXT)"
         )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_steps_plan ON steps(plan_id, idx)"
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_runs_step ON runs(step_id, started_at)"
-        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_steps_plan ON steps(plan_id, idx)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_runs_step ON runs(step_id, started_at)")
         conn.commit()
     finally:
         conn.close()
@@ -313,9 +316,7 @@ def list_plans(base: str | Path, goal_id: str | None = None) -> List[Plan]:
                 (goal_id,),
             )
         else:
-            cur = conn.execute(
-                "SELECT id, goal_id, kind, meta, created_at FROM plans ORDER BY created_at"
-            )
+            cur = conn.execute("SELECT id, goal_id, kind, meta, created_at FROM plans ORDER BY created_at")
         return [Plan(row[0], row[1], row[2], json.loads(row[3] or "{}"), row[4]) for row in cur.fetchall()]
     finally:
         conn.close()
@@ -429,7 +430,9 @@ def list_runs(base: str | Path, step_id: str | None = None) -> List[Run]:
     finally:
         conn.close()
 
+
 # ---------- snapshot ----------
+
 
 @eidosian()
 def snapshot(base: str | Path = "state", *, last: int = 5) -> Dict[str, Any]:
@@ -504,20 +507,23 @@ def save_snapshot(
     os.replace(tmp, out)
     return out
 
+
 # ---------- helpers ----------
+
 
 def _file_count(d: Path) -> int:
     if not d.exists():
         return 0
     return sum(1 for _ in d.rglob("*") if _.is_file())
 
+
 def _now_iso() -> str:
     """Return UTC time in ISO-8601 with trailing 'Z'."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 if __name__ == "__main__":  # pragma: no cover
     # tiny manual smoke test
     migrate("state")
     append_journal("state", "hello world", etype="note", tags=["smoke"])
     print(json.dumps(snapshot("state"), indent=2))
-

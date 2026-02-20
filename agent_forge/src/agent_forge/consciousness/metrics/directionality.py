@@ -99,11 +99,7 @@ def directionality_asymmetry(
 
     pairs.sort(key=lambda row: row["abs_asymmetry"], reverse=True)
     limited = pairs[: max(0, int(max_pairs))]
-    mean_abs = (
-        sum(row["abs_asymmetry"] for row in limited) / len(limited)
-        if limited
-        else 0.0
-    )
+    mean_abs = sum(row["abs_asymmetry"] for row in limited) / len(limited) if limited else 0.0
     return {
         "window_count": len(keys),
         "pair_count": len(pairs),

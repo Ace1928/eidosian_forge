@@ -54,9 +54,7 @@ class WorkspaceCompetitionModule:
                 out.append(dict(row))
         return out
 
-    def _save_pending_winners(
-        self, ctx: TickContext, rows: list[dict[str, Any]]
-    ) -> None:
+    def _save_pending_winners(self, ctx: TickContext, rows: list[dict[str, Any]]) -> None:
         state = ctx.module_state(
             self.name,
             defaults={"recent_winner_signatures": [], "pending_winners": []},
@@ -160,10 +158,7 @@ class WorkspaceCompetitionModule:
             reaction_count = int(trace.get("reaction_count") or 0)
             source_count = int(trace.get("reaction_source_count") or 0)
             trace_strength = clamp01(trace.get("trace_strength"), default=0.0)
-            ready = (
-                elapsed >= max(0.0, trace_min_eval_secs)
-                and (reaction_count > 0 or elapsed >= reaction_window)
-            )
+            ready = elapsed >= max(0.0, trace_min_eval_secs) and (reaction_count > 0 or elapsed >= reaction_window)
             if not ready:
                 pending_next.append(row)
                 continue
@@ -219,13 +214,9 @@ class WorkspaceCompetitionModule:
         self._save_pending_winners(ctx, pending_next)
         return {"traces": traces, "ignitions": ignitions}
 
-    def _apply_cooldown_filter(
-        self, ctx: TickContext, ranked: list[Dict[str, Any]]
-    ) -> list[Dict[str, Any]]:
+    def _apply_cooldown_filter(self, ctx: TickContext, ranked: list[Dict[str, Any]]) -> list[Dict[str, Any]]:
         cooldown_s = max(0.0, float(ctx.config.get("competition_cooldown_secs", 2.5)))
-        override_score = clamp01(
-            ctx.config.get("competition_cooldown_override_score"), default=0.9
-        )
+        override_score = clamp01(ctx.config.get("competition_cooldown_override_score"), default=0.9)
         if cooldown_s <= 0.0:
             return ranked
 
@@ -249,9 +240,7 @@ class WorkspaceCompetitionModule:
         horizon = ctx.now - timedelta(seconds=max(30.0, cooldown_s * 4.0))
         for sig, ts in by_sig.items():
             if ts >= horizon:
-                kept_recent.append(
-                    {"signature": sig, "ts": ts.strftime("%Y-%m-%dT%H:%M:%SZ")}
-                )
+                kept_recent.append({"signature": sig, "ts": ts.strftime("%Y-%m-%dT%H:%M:%SZ")})
 
         for candidate in ranked:
             sig = _winner_signature(candidate)
@@ -262,9 +251,7 @@ class WorkspaceCompetitionModule:
                 if age < cooldown_s and score < override_score:
                     continue
             accepted.append(candidate)
-            kept_recent.append(
-                {"signature": sig, "ts": ctx.now.strftime("%Y-%m-%dT%H:%M:%SZ")}
-            )
+            kept_recent.append({"signature": sig, "ts": ctx.now.strftime("%Y-%m-%dT%H:%M:%SZ")})
 
         state["recent_winner_signatures"] = kept_recent[-200:]
         return accepted
@@ -307,11 +294,7 @@ class WorkspaceCompetitionModule:
 
         learning_rate = clamp01(ctx.config.get("competition_adaptive_lr"), default=0.08)
         seen_cap = max(80, int(ctx.config.get("competition_adaptive_seen_cap", 400)))
-        seen_keys = (
-            list(adaptive.get("seen_trace_keys"))
-            if isinstance(adaptive.get("seen_trace_keys"), list)
-            else []
-        )
+        seen_keys = list(adaptive.get("seen_trace_keys")) if isinstance(adaptive.get("seen_trace_keys"), list) else []
         seen_set = {str(x) for x in seen_keys}
         baseline_trace = float(adaptive.get("baseline_trace", 0.45) or 0.45)
         min_score_bias = float(adaptive.get("min_score_bias", 0.0) or 0.0)
@@ -389,41 +372,21 @@ class WorkspaceCompetitionModule:
     def tick(self, ctx: TickContext) -> None:
         top_k = int(ctx.config.get("competition_top_k", 2))
         min_score = float(ctx.config.get("competition_min_score", 0.15))
-        reaction_window = max(
-            0.0, float(ctx.config.get("competition_reaction_window_secs", 1.5))
-        )
-        reaction_min_sources = max(
-            0, int(ctx.config.get("competition_reaction_min_sources", 2))
-        )
-        reaction_min_count = max(
-            0, int(ctx.config.get("competition_reaction_min_count", 2))
-        )
-        trace_strength_threshold = float(
-            ctx.config.get("competition_trace_strength_threshold", 0.45)
-        )
-        trace_target_sources = max(
-            1, int(ctx.config.get("competition_trace_target_sources", 5))
-        )
-        trace_target_reactions = max(
-            1, int(ctx.config.get("competition_trace_target_reactions", 10))
-        )
-        trace_max_latency_ms = float(
-            ctx.config.get("competition_trace_max_latency_ms", 1500.0)
-        )
-        trace_min_eval_secs = max(
-            0.0, float(ctx.config.get("competition_trace_min_eval_secs", 0.0))
-        )
+        reaction_window = max(0.0, float(ctx.config.get("competition_reaction_window_secs", 1.5)))
+        reaction_min_sources = max(0, int(ctx.config.get("competition_reaction_min_sources", 2)))
+        reaction_min_count = max(0, int(ctx.config.get("competition_reaction_min_count", 2)))
+        trace_strength_threshold = float(ctx.config.get("competition_trace_strength_threshold", 0.45))
+        trace_target_sources = max(1, int(ctx.config.get("competition_trace_target_sources", 5)))
+        trace_target_reactions = max(1, int(ctx.config.get("competition_trace_target_reactions", 10)))
+        trace_max_latency_ms = float(ctx.config.get("competition_trace_max_latency_ms", 1500.0))
+        trace_min_eval_secs = max(0.0, float(ctx.config.get("competition_trace_min_eval_secs", 0.0)))
         drop_winners = bool(ctx.config.get("competition_drop_winners", False))
 
         perturbations = ctx.perturbations_for(self.name)
         if any(str(p.get("kind") or "") == "drop" for p in perturbations):
             drop_winners = True
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_floor = 0.0
@@ -468,9 +431,7 @@ class WorkspaceCompetitionModule:
 
         ranked = sorted(candidates, key=_candidate_score, reverse=True)
         ranked = self._apply_cooldown_filter(ctx, ranked)
-        winners = [
-            c for c in ranked if _candidate_score(c) >= max(min_score, clamp_floor)
-        ][:top_k]
+        winners = [c for c in ranked if _candidate_score(c) >= max(min_score, clamp_floor)][:top_k]
         winner_ids = [str(c.get("candidate_id")) for c in winners]
 
         ctx.emit_event(

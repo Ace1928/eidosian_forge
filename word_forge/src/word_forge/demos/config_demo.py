@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration and CLI tool for Word Forge configuration.
 """
@@ -103,9 +104,7 @@ def main() -> None:
                 return
 
             if not hasattr(component, attr_name):
-                print(
-                    f"❌ Attribute '{attr_name}' not found in component '{component_name}'"
-                )
+                print(f"❌ Attribute '{attr_name}' not found in component '{component_name}'")
                 return
 
             current_value = getattr(component, attr_name)
@@ -136,9 +135,7 @@ def main() -> None:
     # Validate if requested
     if args.validate:
         validation_results = config.validate_all()
-        invalid_components = {
-            comp: errors for comp, errors in validation_results.items() if errors
-        }
+        invalid_components = {comp: errors for comp, errors in validation_results.items() if errors}
 
         if invalid_components:
             print("❌ Configuration validation failed:")
@@ -167,15 +164,9 @@ def main() -> None:
             accessed = "✓" if status["accessed"] else "✗"
             errors = status["error_count"]
 
-            status_icon = (
-                "✅"
-                if validation == "valid"
-                else "⚠️" if validation.startswith("not") else "❌"
-            )
+            status_icon = "✅" if validation == "valid" else "⚠️" if validation.startswith("not") else "❌"
 
-            print(
-                f"{status_icon} {component_name}: Accessed={accessed}, Errors={errors}"
-            )
+            print(f"{status_icon} {component_name}: Accessed={accessed}, Errors={errors}")
 
             # Show dependencies if any
             if status["dependencies"]:
@@ -200,9 +191,7 @@ def main() -> None:
                     continue
 
                 try:
-                    value, source = config.get_value_with_source(
-                        component_name, attr_name
-                    )
+                    value, source = config.get_value_with_source(component_name, attr_name)
                     source_type = source.type.name
                     location = f" ({source.location})" if source.location else ""
 
@@ -227,9 +216,7 @@ def main() -> None:
             print("=" * (len(args.component) + 14))
 
             # Serialize and print component config
-            component_dict: ConfigValue = serialize_config(
-                component
-            )  # Use ConfigValue type hint
+            component_dict: ConfigValue = serialize_config(component)  # Use ConfigValue type hint
             # Ensure component_dict is a dictionary before passing to json.dumps
             if isinstance(component_dict, dict):
                 print(json.dumps(component_dict, indent=2))
@@ -261,9 +248,7 @@ def main() -> None:
         print("Word Forge Configuration")
         print("=======================")
         print(f"Version: {'.'.join(str(v) for v in config.version)}")
-        print(
-            f"Accessed components: {', '.join(sorted(config.get_accessed_components())) or 'None'}"
-        )
+        print(f"Accessed components: {', '.join(sorted(config.get_accessed_components())) or 'None'}")
         print("\nAvailable Components:")
         for component in sorted(config.get_available_components()):
             print(f"  • {component}")

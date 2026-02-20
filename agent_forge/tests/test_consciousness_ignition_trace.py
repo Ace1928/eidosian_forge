@@ -8,7 +8,7 @@ from agent_forge.consciousness.metrics.ignition_trace import winner_reaction_tra
 from agent_forge.consciousness.modules.workspace_competition import (
     WorkspaceCompetitionModule,
 )
-from agent_forge.core import events, workspace
+from agent_forge.core import events
 
 
 def _ts(base: datetime, delta_ms: int) -> str:

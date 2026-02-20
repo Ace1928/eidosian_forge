@@ -4,7 +4,6 @@ import importlib.machinery
 import importlib.util
 from pathlib import Path
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "sync_security_remediation_issues.py"
 
 
@@ -42,10 +41,7 @@ def test_extract_batch_key_and_render_body_marker() -> None:
 
 
 def test_sync_remediation_issues_dry_run_actions(monkeypatch) -> None:
-    existing_body = (
-        "<!-- eidos-security-remediation-batch:pip::requirements-txt -->\n"
-        "# Security Remediation Batch\n"
-    )
+    existing_body = "<!-- eidos-security-remediation-batch:pip::requirements-txt -->\n" "# Security Remediation Batch\n"
     existing = [
         {"number": 101, "title": "old title", "body": existing_body},
         {"number": 102, "title": "dup title", "body": existing_body},

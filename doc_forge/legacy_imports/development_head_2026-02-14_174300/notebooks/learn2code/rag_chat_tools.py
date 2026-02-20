@@ -8,23 +8,22 @@ with advanced tool use, analysis, vector storage, and retrieval-augmented genera
 Optimized for CPU performance and modular for extension.
 """
 
-import logging, json, re
-from typing import Any, Dict, Optional, Union, List, Tuple
+import json
+import logging
+import re
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    PreTrainedModel,
-    PretrainedConfig,
+    GenerationConfig,
     Olmo2Config,
     Olmo2ForCausalLM,
-    GenerationConfig,
-    TextStreamer
+    PretrainedConfig,
+    PreTrainedModel,
+    TextStreamer,
 )
-from sentence_transformers import SentenceTransformer
-import faiss
-import ragflow
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +33,7 @@ logger = logging.getLogger(__name__)
 torch.set_num_threads(torch.get_num_threads())
 
 # --- Model Wrapper and Analysis ---
+
 
 class ModelWrapper:
     def __init__(
@@ -139,12 +139,15 @@ class ModelWrapper:
         logger.debug(f"Forward pass outputs: {outputs}")
         return outputs
 
+
 class DummyVectorDB:
     def __init__(self):
         self.documents = []
+
     def add_documents(self, texts, embeddings, metadatas):
         for text, emb, meta in zip(texts, embeddings, metadatas):
             self.documents.append({"text": text, "embedding": emb, "metadata": meta})
+
 
 class EnhancedModelWrapper(ModelWrapper):
     def __init__(self, *args, **kwargs):
@@ -184,6 +187,7 @@ class EnhancedModelWrapper(ModelWrapper):
             self._vectorize_and_store(response, metadata)
         return responses
 
+
 # Tool parsing and functions
 def try_parse_tool_calls(content: str):
     tool_calls = []
@@ -203,17 +207,18 @@ def try_parse_tool_calls(content: str):
         return {"role": "assistant", "content": c, "tool_calls": tool_calls}
     return {"role": "assistant", "content": content.strip()}
 
+
 def get_current_temperature(location: str, unit: str = "celsius") -> Dict[str, Any]:
     return {"temperature": 26.1, "location": location, "unit": unit}
+
 
 def get_temperature_date(location: str, date: str, unit: str = "celsius") -> Dict[str, Any]:
     return {"temperature": 25.9, "location": location, "date": date, "unit": unit}
 
+
 def get_function_by_name(name: str):
-    return {
-        "get_current_temperature": get_current_temperature,
-        "get_temperature_date": get_temperature_date
-    }.get(name)
+    return {"get_current_temperature": get_current_temperature, "get_temperature_date": get_temperature_date}.get(name)
+
 
 def chat_interface(model, tokenizer, tools: List[Any]):
     streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
@@ -230,7 +235,7 @@ def chat_interface(model, tokenizer, tools: List[Any]):
         text = tokenizer.apply_chat_template(messages, tools=tools, add_generation_prompt=True, tokenize=False)
         inputs = tokenizer(text, return_tensors="pt").to(model.device)
         outputs = model.generate(**inputs, max_new_tokens=512)
-        output_text = tokenizer.batch_decode(outputs)[0][len(text):]
+        output_text = tokenizer.batch_decode(outputs)[0][len(text) :]
 
         parsed_message = try_parse_tool_calls(output_text)
         messages.append(parsed_message)
@@ -246,15 +251,13 @@ def chat_interface(model, tokenizer, tools: List[Any]):
 
         print("Assistant:", parsed_message.get("content"))
 
+
 if __name__ == "__main__":
     MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
     CONFIG_OVERRIDES = {}
     logger.info("Initializing Enhanced model wrapper on CPU with disk offloading...")
     enhanced_wrapper = EnhancedModelWrapper(
-        model_name=MODEL_NAME,
-        config_overrides=CONFIG_OVERRIDES,
-        device="cpu",
-        offload_folder="offload"
+        model_name=MODEL_NAME, config_overrides=CONFIG_OVERRIDES, device="cpu", offload_folder="offload"
     )
 
     # Example generation and analysis

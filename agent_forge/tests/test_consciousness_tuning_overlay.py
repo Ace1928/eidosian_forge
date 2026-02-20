@@ -55,4 +55,3 @@ def test_overlay_persistence_round_trip(tmp_path: Path) -> None:
     assert loaded["competition_min_score"] == 0.33
     assert loaded["module_tick_periods"]["report"] == 5
     assert store.get_meta("tuned_overlay_version") == 1
-

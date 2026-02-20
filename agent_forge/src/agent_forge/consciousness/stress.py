@@ -251,9 +251,7 @@ class ConsciousnessStressBenchmark:
             ),
             "latency_p95_under_200ms": bool(_safe_float(perf.get("tick_latency_ms_p95")) < 200.0),
             "module_error_free": bool(module_errors == 0),
-            "watchdog_no_quarantine": bool(
-                int(watchdog.get("quarantined_modules") or 0) == 0
-            ),
+            "watchdog_no_quarantine": bool(int(watchdog.get("quarantined_modules") or 0) == 0),
         }
 
         benchmark_id = f"stress_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}"

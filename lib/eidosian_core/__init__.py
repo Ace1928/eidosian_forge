@@ -15,39 +15,29 @@ Usage:
         return x + y
 """
 
-from .decorators import (
-    eidosian,
-    EidosianDecorator,
-    log_call,
-    profile_call,
-    benchmark_call,
-    trace_call,
-)
-from .logging import (
-    EidosianLogger,
-    configure_logging,
-    get_logger,
-    LogLevel,
-)
-from .profiling import (
-    Profiler,
-    ProfileReport,
-    profile_context,
-)
 from .benchmarking import (
     Benchmark,
     BenchmarkResult,
     benchmark_context,
 )
-from .tracing import (
-    Tracer,
-    TraceSpan,
-    trace_context,
-)
 from .config import (
     EidosianConfig,
     get_config,
     set_config,
+)
+from .decorators import (
+    EidosianDecorator,
+    benchmark_call,
+    eidosian,
+    log_call,
+    profile_call,
+    trace_call,
+)
+from .logging import (
+    EidosianLogger,
+    LogLevel,
+    configure_logging,
+    get_logger,
 )
 from .ports import (
     clear_port_registry_cache,
@@ -61,6 +51,16 @@ from .ports import (
     load_port_registry,
     should_use_registry_fallback,
 )
+from .profiling import (
+    Profiler,
+    ProfileReport,
+    profile_context,
+)
+from .tracing import (
+    Tracer,
+    TraceSpan,
+    trace_context,
+)
 
 __version__ = "0.1.0"
 __all__ = [
@@ -69,7 +69,7 @@ __all__ = [
     "EidosianDecorator",
     # Individual decorators
     "log_call",
-    "profile_call", 
+    "profile_call",
     "benchmark_call",
     "trace_call",
     # Logging

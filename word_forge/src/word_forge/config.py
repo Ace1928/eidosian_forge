@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Unified configuration system for Word Forge.
 
@@ -258,16 +259,12 @@ class Config:
     # This enables reflection, dependency tracking, and runtime validation
     _component_registry: Final[ComponentRegistry] = {
         "database": ConfigComponentInfo(name="database", class_type=DatabaseConfig),
-        "vectorizer": ConfigComponentInfo(
-            name="vectorizer", class_type=VectorizerConfig
-        ),
+        "vectorizer": ConfigComponentInfo(name="vectorizer", class_type=VectorizerConfig),
         "parser": ConfigComponentInfo(name="parser", class_type=ParserConfig),
         "emotion": ConfigComponentInfo(name="emotion", class_type=EmotionConfig),
         "graph": ConfigComponentInfo(name="graph", class_type=GraphConfig),
         "queue": ConfigComponentInfo(name="queue", class_type=QueueConfig),
-        "conversation": ConfigComponentInfo(
-            name="conversation", class_type=ConversationConfig
-        ),
+        "conversation": ConfigComponentInfo(name="conversation", class_type=ConversationConfig),
         "logging": ConfigComponentInfo(name="logging", class_type=LoggingConfig),
     }
 
@@ -313,9 +310,7 @@ class Config:
         self._hot_reload_enabled = False
         self._hot_reload_interval = 30.0  # seconds
         self._runtime_adaptive_mode = RuntimeAdaptiveMode.PASSIVE
-        self._error_counts: Dict[ComponentName, int] = {
-            name: 0 for name in self._component_registry
-        }
+        self._error_counts: Dict[ComponentName, int] = {name: 0 for name in self._component_registry}
 
         # Track which components have been accessed
         self._accessed_components: Set[ComponentName] = set()
@@ -362,9 +357,7 @@ class Config:
 
             for env_var, (attr_name, value_type) in env_vars.items():
                 if env_var in os.environ:
-                    self._set_from_env(
-                        env_var, component_name, config_obj, attr_name, value_type
-                    )
+                    self._set_from_env(env_var, component_name, config_obj, attr_name, value_type)
 
     def _get_config_objects(self) -> List[Tuple[ComponentName, ConfigComponent]]:
         """
@@ -417,9 +410,7 @@ class Config:
 
             # Ensure attribute exists before setting
             if not hasattr(config_obj, attr_name):
-                raise EnvVarError(
-                    f"Configuration attribute '{attr_name}' not found in {config_obj.__class__.__name__}"
-                )
+                raise EnvVarError(f"Configuration attribute '{attr_name}' not found in {config_obj.__class__.__name__}")
 
             # Get the old value for change notification
             old_value = getattr(config_obj, attr_name)
@@ -443,9 +434,7 @@ class Config:
         except (ValueError, TypeError) as e:
             raise EnvVarError(f"Invalid value '{value}' for {env_var}: {str(e)}") from e
         except AttributeError as e:
-            raise EnvVarError(
-                f"Failed to set '{attr_name}' from {env_var}: {str(e)}"
-            ) from e
+            raise EnvVarError(f"Failed to set '{attr_name}' from {env_var}: {str(e)}") from e
 
     def _ensure_directories(self) -> None:
         """
@@ -601,9 +590,7 @@ class Config:
             should_skip = False
             for dep_name in self._component_dependencies.get(component_name, set()):
                 if dep_name in results and results[dep_name]:
-                    results[component_name] = [
-                        f"Validation skipped due to errors in dependency '{dep_name}'"
-                    ]
+                    results[component_name] = [f"Validation skipped due to errors in dependency '{dep_name}'"]
                     should_skip = True
                     break
 
@@ -621,9 +608,7 @@ class Config:
                     # Increment error count for potential self-healing
                     self._error_counts[component_name] += 1
                 except Exception as e:
-                    results[component_name] = [
-                        f"Unexpected error during validation: {str(e)}"
-                    ]
+                    results[component_name] = [f"Unexpected error during validation: {str(e)}"]
                     self._error_counts[component_name] += 1
             else:
                 results[component_name] = []
@@ -778,9 +763,7 @@ class Config:
                 # Log but don't propagate observer errors
                 import logging
 
-                logging.getLogger(__name__).error(
-                    f"Error in configuration observer: {e}"
-                )
+                logging.getLogger(__name__).error(f"Error in configuration observer: {e}")
 
     def _invalidate_cache(self, component_name: ComponentName, attr_name: str) -> None:
         """
@@ -803,9 +786,7 @@ class Config:
                 self._value_cache.pop(key, None)
 
     @eidosian()
-    def get_value_with_source(
-        self, component_name: ComponentName, attr_name: str
-    ) -> Tuple[Any, ConfigSource]:
+    def get_value_with_source(self, component_name: ComponentName, attr_name: str) -> Tuple[Any, ConfigSource]:
         """
         Get a configuration value with information about its source.
 
@@ -826,24 +807,18 @@ class Config:
 
         # Get the attribute
         if not hasattr(component, attr_name):
-            raise AttributeError(
-                f"Attribute '{attr_name}' not found in component '{component_name}'"
-            )
+            raise AttributeError(f"Attribute '{attr_name}' not found in component '{component_name}'")
 
         value = getattr(component, attr_name)
 
         # Get the source (default if not recorded)
-        source = self._value_sources.get(
-            (component_name, attr_name), ConfigSource(ConfigSourceType.DEFAULT)
-        )
+        source = self._value_sources.get((component_name, attr_name), ConfigSource(ConfigSourceType.DEFAULT))
 
         return value, source
 
     @eidosian()
     @lru_cache(maxsize=128)
-    def get_cached_value(
-        self, component_name: ComponentName, attr_name: str, value_type: Type[T]
-    ) -> T:
+    def get_cached_value(self, component_name: ComponentName, attr_name: str, value_type: Type[T]) -> T:
         """
         Get a configuration value with caching for performance.
 
@@ -869,25 +844,18 @@ class Config:
 
         # Get the attribute
         if not hasattr(component, attr_name):
-            raise AttributeError(
-                f"Attribute '{attr_name}' not found in component '{component_name}'"
-            )
+            raise AttributeError(f"Attribute '{attr_name}' not found in component '{component_name}'")
 
         value = getattr(component, attr_name)
 
         # Type check the value
         if not isinstance(value, value_type):
-            raise TypeError(
-                f"Value for {component_name}.{attr_name} is {type(value)}, "
-                f"expected {value_type}"
-            )
+            raise TypeError(f"Value for {component_name}.{attr_name} is {type(value)}, " f"expected {value_type}")
 
         return value  # Value is already known to be of type T
 
     @eidosian()
-    def set_runtime_value(
-        self, component_name: ComponentName, attr_name: str, value: Any
-    ) -> None:
+    def set_runtime_value(self, component_name: ComponentName, attr_name: str, value: Any) -> None:
         """
         Set a configuration value at runtime.
 
@@ -910,9 +878,7 @@ class Config:
 
         # Check attribute exists and get old value
         if not hasattr(component, attr_name):
-            raise AttributeError(
-                f"Attribute '{attr_name}' not found in component '{component_name}'"
-            )
+            raise AttributeError(f"Attribute '{attr_name}' not found in component '{component_name}'")
 
         old_value = getattr(component, attr_name)
 
@@ -921,9 +887,7 @@ class Config:
             try:
                 setattr(component, attr_name, value)
             except (TypeError, ValueError) as e:
-                raise TypeError(
-                    f"Cannot set {component_name}.{attr_name} to {value!r}: {str(e)}"
-                ) from e
+                raise TypeError(f"Cannot set {component_name}.{attr_name} to {value!r}: {str(e)}") from e
 
             # Record the source
             self._value_sources[(component_name, attr_name)] = ConfigSource(
@@ -952,10 +916,7 @@ class Config:
         self._hot_reload_interval = interval
 
         # Start the monitoring thread if not already running
-        if (
-            not hasattr(self, "_hot_reload_thread")
-            or not self._hot_reload_thread.is_alive()
-        ):
+        if not hasattr(self, "_hot_reload_thread") or not self._hot_reload_thread.is_alive():
             self._hot_reload_thread = threading.Thread(
                 target=self._hot_reload_monitor,
                 daemon=True,
@@ -987,9 +948,7 @@ class Config:
                 # Log but continue monitoring
                 import logging
 
-                logging.getLogger(__name__).error(
-                    f"Error during configuration hot reload: {e}"
-                )
+                logging.getLogger(__name__).error(f"Error during configuration hot reload: {e}")
 
     def _refresh_from_environment(self) -> None:
         """Check for changes in environment variables and apply them."""
@@ -1015,14 +974,10 @@ class Config:
         # Log the change
         import logging
 
-        logging.getLogger(__name__).info(
-            f"Configuration adaptive mode changed from {old_mode} to {mode}"
-        )
+        logging.getLogger(__name__).info(f"Configuration adaptive mode changed from {old_mode} to {mode}")
 
     @eidosian()
-    def report_performance_metric(
-        self, component_name: ComponentName, metric_name: str, value: float
-    ) -> None:
+    def report_performance_metric(self, component_name: ComponentName, metric_name: str, value: float) -> None:
         """
         Report a performance metric that may trigger adaptive configuration.
 
@@ -1044,9 +999,7 @@ class Config:
         if self._runtime_adaptive_mode != RuntimeAdaptiveMode.PASSIVE:
             import logging
 
-            logging.getLogger(__name__).debug(
-                f"Performance metric: {component_name}.{metric_name} = {value}"
-            )
+            logging.getLogger(__name__).debug(f"Performance metric: {component_name}.{metric_name} = {value}")
 
     @eidosian()
     def apply_profile(self, profile_name: str) -> None:
@@ -1095,10 +1048,7 @@ class Config:
         }
 
         if profile_name not in profiles:
-            raise ValueError(
-                f"Unknown profile '{profile_name}'. "
-                f"Available profiles: {', '.join(profiles.keys())}"
-            )
+            raise ValueError(f"Unknown profile '{profile_name}'. " f"Available profiles: {', '.join(profiles.keys())}")
 
         # Apply the profile settings
         profile = profiles[profile_name]
@@ -1117,9 +1067,7 @@ class Config:
 
         import logging
 
-        logging.getLogger(__name__).info(
-            f"Applied configuration profile: {profile_name}"
-        )
+        logging.getLogger(__name__).info(f"Applied configuration profile: {profile_name}")
 
     @eidosian()
     def get_component_status(self, component_name: ComponentName) -> Dict[str, Any]:
@@ -1149,9 +1097,7 @@ class Config:
             "type": component.__class__.__name__,
             "error_count": self._error_counts.get(component_name, 0),
             "accessed": component_name in self._accessed_components,
-            "dependencies": list(
-                self._component_dependencies.get(component_name, set())
-            ),
+            "dependencies": list(self._component_dependencies.get(component_name, set())),
         }
 
         # Get validation status if available

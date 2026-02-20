@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Interactive demonstration of ConversationManager functionality with multi-model response generation.
 
@@ -56,13 +57,9 @@ def display_conversation(conversation: Optional[ConversationDict]) -> None:
             if isinstance(timestamp_val, int):
                 timestamp = float(timestamp_val)
             else:
-                print(
-                    f"Warning: Invalid timestamp type for message {msg.get('id')}: {type(timestamp_val)}"
-                )
+                print(f"Warning: Invalid timestamp type for message {msg.get('id')}: {type(timestamp_val)}")
 
-            timestamp_str = time.strftime(
-                "%Y-%m-%d %H:%M:%S", time.localtime(timestamp)
-            )
+            timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
             emotion_str = ""
             emotion_data = msg.get("emotion")
             if isinstance(emotion_data, dict):
@@ -72,9 +69,7 @@ def display_conversation(conversation: Optional[ConversationDict]) -> None:
                     confidence_float = float(confidence)
                     emotion_str = f" (Emotion: {label} [{confidence_float:.2f}])"
                 except (ValueError, TypeError):
-                    emotion_str = (
-                        f" (Emotion: {label} [Invalid Confidence: {confidence}])"
-                    )
+                    emotion_str = f" (Emotion: {label} [Invalid Confidence: {confidence}])"
             # Safely get speaker and text
             speaker = msg.get("speaker", "Unknown")
             text = msg.get("text", "")
@@ -127,9 +122,7 @@ def main() -> None:
             lightweight_model = LightweightLanguageModel(llm_state=llm_state)
             affective_model = AffectiveLexicalLanguageModel(llm_state=llm_state)
             identity_model = EidosianIdentityModel(llm_state=llm_state)
-            logger.info(
-                "Initialized conversation models (Reflexive, Lightweight, Affective, EidosianIdentity)."
-            )
+            logger.info("Initialized conversation models (Reflexive, Lightweight, Affective, EidosianIdentity).")
 
             # Initialize conversation manager with all models
             conversation_manager = ConversationManager(
@@ -176,15 +169,9 @@ def main() -> None:
                             conversation_id, "User", user_input, generate_response=True
                         )
                         message_id = message_id_result.value
-                        logger.info(
-                            f"User message {message_id} added and response triggered."
-                        )
+                        logger.info(f"User message {message_id} added and response triggered.")
 
-                        conversation_result = (
-                            conversation_manager.get_conversation_if_exists(
-                                conversation_id
-                            )
-                        )
+                        conversation_result = conversation_manager.get_conversation_if_exists(conversation_id)
                         conversation = conversation_result.value
                         display_conversation(conversation)
 
@@ -193,14 +180,8 @@ def main() -> None:
                             f"Error adding message or generating response: {add_msg_e}",
                             exc_info=True,
                         )
-                        print(
-                            f"Assistant: Sorry, I encountered an error processing that: {add_msg_e}"
-                        )
-                        conversation_result = (
-                            conversation_manager.get_conversation_if_exists(
-                                conversation_id
-                            )
-                        )
+                        print(f"Assistant: Sorry, I encountered an error processing that: {add_msg_e}")
+                        conversation_result = conversation_manager.get_conversation_if_exists(conversation_id)
                         conversation = conversation_result.value
                         display_conversation(conversation)
 
@@ -211,9 +192,7 @@ def main() -> None:
                     print("\nAssistant: Exiting conversation. Goodbye!")
                     break
                 except Exception as loop_e:
-                    logger.error(
-                        f"Error during interaction loop: {loop_e}", exc_info=True
-                    )
+                    logger.error(f"Error during interaction loop: {loop_e}", exc_info=True)
                     print(f"Assistant: An unexpected error occurred: {loop_e}")
 
             try:

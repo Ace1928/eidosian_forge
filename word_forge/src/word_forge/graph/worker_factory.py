@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 from eidosian_core import eidosian
 
 if TYPE_CHECKING:  # pragma: no cover - used only for type hints

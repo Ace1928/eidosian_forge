@@ -22,6 +22,7 @@ from typing import (
 )
 
 from eidosian_core import eidosian
+
 from word_forge.config import config
 from word_forge.database.database_manager import DBManager
 from word_forge.emotion.emotion_manager import EmotionManager
@@ -269,9 +270,7 @@ class ErrorTracker:
             self._last_error_time = time.time()
 
             # Calculate exponential backoff with a cap
-            backoff = min(
-                60.0, self._base_backoff * (2 ** min(10, self._consecutive_errors - 1))
-            )
+            backoff = min(60.0, self._base_backoff * (2 ** min(10, self._consecutive_errors - 1)))
             return backoff
 
     @eidosian()
@@ -290,9 +289,7 @@ class ErrorTracker:
     def get_recent_error_types(self, limit: int = 3) -> List[str]:
         """Get the most frequent recent error types."""
         with self._lock:
-            sorted_errors = sorted(
-                self._error_counts.items(), key=lambda x: x[1], reverse=True
-            )
+            sorted_errors = sorted(self._error_counts.items(), key=lambda x: x[1], reverse=True)
             return [error_type for error_type, _ in sorted_errors[:limit]]
 
     @property
@@ -353,22 +350,16 @@ class EmotionWorker(threading.Thread):
         self.emotion_manager = emotion_manager
 
         # Configuration
-        self.poll_interval = poll_interval or getattr(
-            config.emotion, "poll_interval", 5.0
-        )
+        self.poll_interval = poll_interval or getattr(config.emotion, "poll_interval", 5.0)
         self.batch_size = batch_size or getattr(config.queue, "batch_size", 20)
-        self.confidence_threshold = confidence_threshold or getattr(
-            config.emotion, "min_confidence", 0.0
-        )
+        self.confidence_threshold = confidence_threshold or getattr(config.emotion, "min_confidence", 0.0)
 
         # Set up logging
         self.enable_logging = enable_logging
         self.logger = logging.getLogger("EmotionWorker")
         if not self.logger.handlers and enable_logging:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
             self.logger.setLevel(getattr(config.emotion, "log_level", logging.INFO))
@@ -393,18 +384,14 @@ class EmotionWorker(threading.Thread):
             if self._strategy == EmotionAssignmentStrategy.RANDOM:
                 self._strategy = EmotionAssignmentStrategy.HYBRID
                 self._state.set_strategy(self._strategy)
-            self.log_info(
-                f"Using provided recursive processor with strategy: {self._strategy.value}"
-            )
+            self.log_info(f"Using provided recursive processor with strategy: {self._strategy.value}")
         elif RECURSIVE_PROCESSOR_AVAILABLE and self._strategy in (
             EmotionAssignmentStrategy.RECURSIVE,
             EmotionAssignmentStrategy.HYBRID,
         ):
             try:
                 self._processor = RecursiveEmotionProcessor(db, emotion_manager)
-                self.log_info(
-                    f"Created recursive processor with strategy: {self._strategy.value}"
-                )
+                self.log_info(f"Created recursive processor with strategy: {self._strategy.value}")
             except Exception as e:
                 self.log_error(f"Failed to initialize recursive processor: {e}")
                 # Fall back to random if processor initialization fails
@@ -418,9 +405,7 @@ class EmotionWorker(threading.Thread):
         self._observed_backlog: List[int] = []
 
         # Debug meta-emotion logging
-        self._debug_meta_emotions = getattr(
-            config.emotion, "debug_meta_emotions", False
-        )
+        self._debug_meta_emotions = getattr(config.emotion, "debug_meta_emotions", False)
 
     @eidosian()
     def run(self) -> None:
@@ -467,9 +452,7 @@ class EmotionWorker(threading.Thread):
                 if words_to_tag:
                     self._state.update_backlog(len(words_to_tag))
                     self._observed_backlog.append(len(words_to_tag))
-                    self.log_info(
-                        f"Processing {len(words_to_tag)} words (query: {query_time:.2f}s)"
-                    )
+                    self.log_info(f"Processing {len(words_to_tag)} words (query: {query_time:.2f}s)")
 
                     # Process the words with timing
                     process_start = time.time()
@@ -482,14 +465,9 @@ class EmotionWorker(threading.Thread):
                     consecutive_success += 1
 
                     # If we were in recovery mode and have enough success, exit recovery
-                    if (
-                        self._state.state == EmotionState.RECOVERY
-                        and consecutive_success >= recovery_threshold
-                    ):
+                    if self._state.state == EmotionState.RECOVERY and consecutive_success >= recovery_threshold:
                         with self._update_state("recovery"):
-                            self.log_info(
-                                "Exiting recovery mode after consistent success"
-                            )
+                            self.log_info("Exiting recovery mode after consistent success")
                 else:
                     self.log_info("No words to process, waiting...")
 
@@ -505,10 +483,7 @@ class EmotionWorker(threading.Thread):
                 self._handle_processing_error(e)
 
                 # If we hit error threshold, enter recovery mode
-                if (
-                    self._errors.needs_recovery
-                    and self._state.state != EmotionState.RECOVERY
-                ):
+                if self._errors.needs_recovery and self._state.state != EmotionState.RECOVERY:
                     with self._update_state("recovery"):
                         self.log_warning(
                             f"Entering recovery mode due to repeated errors: {self._errors.get_recent_error_types()}"
@@ -567,9 +542,7 @@ class EmotionWorker(threading.Thread):
 
             # If thread is still alive after timeout, warn but continue
             if self.is_alive():
-                self.log_warning(
-                    "Worker thread did not terminate cleanly, forcing restart"
-                )
+                self.log_warning("Worker thread did not terminate cleanly, forcing restart")
 
         # Reset internal state
         self._stop_flag = False
@@ -643,9 +616,7 @@ class EmotionWorker(threading.Thread):
                 stats["words_per_second"] = words_per_second
 
                 # Estimate completion time if we have a backlog
-                current_backlog = self._state.to_dict(self.is_alive(), self._stop_flag)[
-                    "backlog_estimate"
-                ]
+                current_backlog = self._state.to_dict(self.is_alive(), self._stop_flag)["backlog_estimate"]
                 if current_backlog > 0 and words_per_second > 0:
                     stats["estimated_completion"] = current_backlog / words_per_second
 
@@ -699,16 +670,10 @@ class EmotionWorker(threading.Thread):
         for word in words:
             try:
                 # Select strategy for emotion assignment
-                if (
-                    self._strategy == EmotionAssignmentStrategy.RECURSIVE
-                    and self._processor
-                ):
+                if self._strategy == EmotionAssignmentStrategy.RECURSIVE and self._processor:
                     # Use recursive processor for advanced analysis
                     self._assign_recursive_emotion(word)
-                elif (
-                    self._strategy == EmotionAssignmentStrategy.HYBRID
-                    and self._processor
-                ):
+                elif self._strategy == EmotionAssignmentStrategy.HYBRID and self._processor:
                     # Use processor with fallback to random
                     self._assign_hybrid_emotion(word)
                 else:
@@ -720,9 +685,7 @@ class EmotionWorker(threading.Thread):
 
                 # Log at appropriate level (debug for most, periodically at info)
                 if self._state.processed_count % 10 == 0:
-                    self.log_info(
-                        f"Processed {self._state.processed_count} words so far"
-                    )
+                    self.log_info(f"Processed {self._state.processed_count} words so far")
                 else:
                     self.log_debug(f"Tagged {word.term}")
 
@@ -749,9 +712,7 @@ class EmotionWorker(threading.Thread):
         # Store in database
         self.emotion_manager.set_word_emotion(word.word_id, valence, arousal)
 
-        self.log_debug(
-            f"Random emotion for {word.term}: valence={valence:.2f}, arousal={arousal:.2f}"
-        )
+        self.log_debug(f"Random emotion for {word.term}: valence={valence:.2f}, arousal={arousal:.2f}")
 
     def _assign_recursive_emotion(self, word: WordEmotion) -> None:
         """
@@ -771,12 +732,8 @@ class EmotionWorker(threading.Thread):
             concept = self._processor.process_term(word.term)
 
             # Extract primary emotion dimensions
-            valence = concept.primary_emotion.dimensions.get(
-                EmotionDimension.VALENCE, 0.0
-            )
-            arousal = concept.primary_emotion.dimensions.get(
-                EmotionDimension.AROUSAL, 0.0
-            )
+            valence = concept.primary_emotion.dimensions.get(EmotionDimension.VALENCE, 0.0)
+            arousal = concept.primary_emotion.dimensions.get(EmotionDimension.AROUSAL, 0.0)
 
             # Validate confidence
             if concept.primary_emotion.confidence < self.confidence_threshold:
@@ -791,8 +748,7 @@ class EmotionWorker(threading.Thread):
             # Log meta-emotions if debug is enabled
             if self._debug_meta_emotions and concept.meta_emotions:
                 self.log_debug(
-                    f"Meta-emotions for {word.term}: "
-                    f"{', '.join(label for label, _ in concept.meta_emotions)}"
+                    f"Meta-emotions for {word.term}: " f"{', '.join(label for label, _ in concept.meta_emotions)}"
                 )
 
             self.log_debug(

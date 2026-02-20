@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Model interface for Eidosian Forge.
 
@@ -147,16 +148,12 @@ class ModelManager:
 
                 if not spec:
                     # If module doesn't exist, use fallback implementation
-                    logger.warning(
-                        f"Model module {module_path} not found, using fallback implementation"
-                    )
+                    logger.warning(f"Model module {module_path} not found, using fallback implementation")
                     self.model = SimpleFallbackModel(self.config)
                 else:
                     # Import module and create model
                     model_module = importlib.import_module(module_path)
-                    model_class = getattr(
-                        model_module, f"{model_type.capitalize()}Model"
-                    )
+                    model_class = getattr(model_module, f"{model_type.capitalize()}Model")
                     self.model = model_class(self.config)
 
                 self.model_loaded = True
@@ -192,9 +189,7 @@ class ModelManager:
         return self.model.generate(
             prompt=prompt,
             max_tokens=max_tokens if max_tokens is not None else self.config.max_tokens,
-            temperature=(
-                temperature if temperature is not None else self.config.temperature
-            ),
+            temperature=(temperature if temperature is not None else self.config.temperature),
         )
 
     @eidosian()
@@ -221,9 +216,7 @@ class ModelManager:
         return self.model.generate_stream(
             prompt=prompt,
             max_tokens=max_tokens if max_tokens is not None else self.config.max_tokens,
-            temperature=(
-                temperature if temperature is not None else self.config.temperature
-            ),
+            temperature=(temperature if temperature is not None else self.config.temperature),
         )
 
     @eidosian()
@@ -284,9 +277,7 @@ class SimpleFallbackModel(ModelInterface):
             config: Model configuration (ignored but kept for interface)
         """
         self.config = config
-        logger.warning(
-            "Using fallback model - actual language models could not be loaded"
-        )
+        logger.warning("Using fallback model - actual language models could not be loaded")
 
     @eidosian()
     def generate(

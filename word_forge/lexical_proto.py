@@ -12,7 +12,6 @@ EIDOSIAN CODE POLISHING PROTOCOL v3.14.15 applied.
 
 import json
 import os
-import sys
 from os import PathLike as OSPathLike
 from pathlib import Path
 from typing import (
@@ -23,7 +22,6 @@ from typing import (
     List,
     Optional,
     Protocol,
-    Sequence,
     TextIO,
     Tuple,
     TypeVar,
@@ -93,9 +91,7 @@ WordnetResult = Dict[str, Union[str, List[str]]]
 DbnaryResult = Dict[str, str]
 ThesaurusResult = List[str]
 DictResult = Dict[str, Union[str, List[str]]]
-LexicalDataset = Dict[
-    str, Union[str, List[Any], WordnetResult, DictResult, ThesaurusResult]
-]
+LexicalDataset = Dict[str, Union[str, List[Any], WordnetResult, DictResult, ThesaurusResult]]
 
 
 # Type definition for data processor functions
@@ -106,9 +102,7 @@ class JSONProcessor(Protocol):
 
 
 # RDF result row type
-RDFQueryResult = Tuple[
-    Optional[Union[URIRef, Literal]], Optional[Union[URIRef, Literal]]
-]
+RDFQueryResult = Tuple[Optional[Union[URIRef, Literal]], Optional[Union[URIRef, Literal]]]
 GenerateOutput = Union[
     GenerateDecoderOnlyOutput,
     GenerateEncoderDecoderOutput,
@@ -162,9 +156,7 @@ def file_exists(file_path: PathLike) -> bool:
     return os.path.isfile(str(file_path))
 
 
-def safely_open_file(
-    file_path: PathLike, mode: str = "r", encoding: str = "utf-8"
-) -> FileHandle:
+def safely_open_file(file_path: PathLike, mode: str = "r", encoding: str = "utf-8") -> FileHandle:
     """
     Safely open a file with proper error handling.
 
@@ -223,8 +215,6 @@ def read_jsonl_file(file_path: PathLike, process_func: JSONProcessor) -> List[An
                 except json.JSONDecodeError:
                     continue
     except (IOError, OSError) as e:
-        raise LexicalResourceError(
-            f"Error reading JSONL file {file_path} at line {line_num}: {str(e)}"
-        )
+        raise LexicalResourceError(f"Error reading JSONL file {file_path} at line {line_num}: {str(e)}")
 
     return results

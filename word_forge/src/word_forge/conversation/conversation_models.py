@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Protocols and model implementations for the multi-model conversation system.
 """
@@ -47,9 +48,7 @@ class ReflexiveLanguageModel(ReflexiveModel):
             f"Input: {context.get('current_input', '')}\n"
             "Reflexive note:"
         )
-        output = self.llm_state.generate_text(
-            prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
-        )
+        output = self.llm_state.generate_text(prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature)
         if not output:
             error = Error.create(
                 message="Reflexive model failed to generate output.",
@@ -89,9 +88,7 @@ class LightweightLanguageModel(LightweightModel):
             f"Input: {context.get('current_input', '')}\n"
             "Routing decision:"
         )
-        output = self.llm_state.generate_text(
-            prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
-        )
+        output = self.llm_state.generate_text(prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature)
         if not output:
             error = Error.create(
                 message="Lightweight model failed to generate output.",
@@ -137,9 +134,7 @@ class AffectiveLexicalLanguageModel(AffectiveLexicalModel):
             f"Input: {context.get('current_input', '')}\n"
             "Response:"
         )
-        output = self.llm_state.generate_text(
-            prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature
-        )
+        output = self.llm_state.generate_text(prompt, max_new_tokens=self.max_new_tokens, temperature=self.temperature)
         if not output:
             error = Error.create(
                 message="Affective model failed to generate output.",
@@ -159,9 +154,7 @@ class AffectiveLexicalLanguageModel(AffectiveLexicalModel):
 
         emotion_manager = context.get("emotion_manager")
         if emotion_manager:
-            valence, arousal = emotion_manager.analyze_text_emotion(
-                context.get("current_input", "")
-            )
+            valence, arousal = emotion_manager.analyze_text_emotion(context.get("current_input", ""))
             context["affective_state"] = {
                 "valence": valence,
                 "arousal": arousal,
@@ -202,9 +195,7 @@ class MockLightweightModel(LightweightModel):  # Inherit from protocol
         time.sleep(self.delay)
         if "additional_data" not in context:
             context["additional_data"] = {}  # Ensure key exists
-        context["additional_data"]["routing_decision"] = random.choice(
-            ["standard", "escalated", "informational"]
-        )
+        context["additional_data"]["routing_decision"] = random.choice(["standard", "escalated", "informational"])
         return Result[ModelContext].success(context)
 
 
@@ -326,9 +317,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
         self.state = initial_state or EidosianIdentityState()
         self.llm_state = llm_state or ModelState()
         if not self.llm_state.initialize():
-            print(
-                "Warning: EidosianIdentityModel requires LLM, but initialization failed."
-            )
+            print("Warning: EidosianIdentityModel requires LLM, but initialization failed.")
             # Consider raising an error or setting a flag indicating degraded functionality
 
     @eidosian()
@@ -361,9 +350,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
                 severity=ErrorSeverity.ERROR,
                 context={"conversation_id": str(context.get("conversation_id"))},
             )
-            return Result[str].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[str].failure(error.code, error.message, error.context, error.category, error.severity)
 
         if not self.llm_state.is_initialized():
             error = Error.create(
@@ -373,9 +360,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
                 severity=ErrorSeverity.ERROR,
                 context={"model_name": self.llm_state.get_model_name()},
             )
-            return Result[str].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[str].failure(error.code, error.message, error.context, error.category, error.severity)
 
         try:
             # --- Refinement Pipeline ---
@@ -411,9 +396,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
             if update_result.is_failure:
                 error_details = "Unknown error"
                 if update_result.error:
-                    error_details = (
-                        f"{update_result.error.code}: {update_result.error.message}"
-                    )
+                    error_details = f"{update_result.error.code}: {update_result.error.message}"
                 print(f"Warning: Failed to update identity state: {error_details}")
 
             return Result[str].success(final_response)
@@ -429,13 +412,9 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
                     "error_type": type(e).__name__,
                 },
             )
-            return Result[str].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[str].failure(error.code, error.message, error.context, error.category, error.severity)
 
-    def _build_llm_prompt(
-        self, task_description: str, intermediate_response: str, context: ModelContext
-    ) -> str:
+    def _build_llm_prompt(self, task_description: str, intermediate_response: str, context: ModelContext) -> str:
         """Constructs a detailed prompt for the LLM based on Eidosian principles.
 
         This method assembles a comprehensive prompt including the current identity state,
@@ -453,15 +432,11 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
         history_limit = 5
         # Ensure history is a list before slicing
         history: List[MessageDict] = context.get("history", [])
-        history_summary = "\n".join(
-            [f"- {msg['speaker']}: {msg['text']}" for msg in history[-history_limit:]]
-        )
+        history_summary = "\n".join([f"- {msg['speaker']}: {msg['text']}" for msg in history[-history_limit:]])
         # Safely access nested affective state
         affective_state = context.get("affective_state", {})
         detected_emotion = (
-            affective_state.get(
-                "dominant_emotion", "neutral"
-            )  # Use dominant_emotion if available
+            affective_state.get("dominant_emotion", "neutral")  # Use dominant_emotion if available
             if isinstance(affective_state, dict)
             else "neutral"
         )
@@ -517,9 +492,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
 """
         return prompt.strip()  # Use strip() for cleaner prompts
 
-    def _call_llm(
-        self, prompt: str, max_tokens_factor: float = 1.2, temperature: float = 0.5
-    ) -> Result[str]:
+    def _call_llm(self, prompt: str, max_tokens_factor: float = 1.2, temperature: float = 0.5) -> Result[str]:
         """Helper method to call the LLM and handle potential errors."""
         if not self.llm_state.is_initialized():
             error = Error.create(
@@ -528,17 +501,13 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
                 category=ErrorCategory.RESOURCE,
                 severity=ErrorSeverity.ERROR,
             )
-            return Result[str].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[str].failure(error.code, error.message, error.context, error.category, error.severity)
 
         # Estimate max tokens based on prompt length
         estimated_max_tokens = int(len(prompt.split()) * max_tokens_factor) + 50
         final_max_tokens = max(50, estimated_max_tokens)
 
-        llm_result = self.llm_state.generate_text(
-            prompt, max_new_tokens=final_max_tokens, temperature=temperature
-        )
+        llm_result = self.llm_state.generate_text(prompt, max_new_tokens=final_max_tokens, temperature=temperature)
 
         if llm_result is not None:
             return Result[str].success(llm_result)
@@ -550,9 +519,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
                 severity=ErrorSeverity.ERROR,
                 context={"prompt_start": prompt[:200]},
             )
-            return Result[str].failure(
-                error.code, error.message, error.context, error.category, error.severity
-            )
+            return Result[str].failure(error.code, error.message, error.context, error.category, error.severity)
 
     def _reflect_on_response(self, response: str, context: ModelContext) -> Result[str]:
         """Uses LLM for recursive self-reflection on the response."""
@@ -566,9 +533,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
         prompt = self._build_llm_prompt(task, response, context)
         return self._call_llm(prompt, max_tokens_factor=1.1, temperature=0.3)
 
-    def _apply_eidosian_style(
-        self, response: str, context: ModelContext
-    ) -> Result[str]:
+    def _apply_eidosian_style(self, response: str, context: ModelContext) -> Result[str]:
         """Uses LLM to apply the 'Precision with Wit' style."""
         task = f"Refine the response to embody the Eidosian style: '{self.state.style_preference}'. Ensure mathematical rigor, clarity, conciseness, and inject calculated irreverence or wit where appropriate as a cognitive tool, not mere decoration. Add the prefix '[Eidos v{self.state.version}]: '. Output the stylized response."
         prompt = self._build_llm_prompt(task, response, context)
@@ -606,9 +571,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
         prompt = self._build_llm_prompt(task, response, context)
         return self._call_llm(prompt, max_tokens_factor=1.1, temperature=0.2)
 
-    def _update_identity_state(
-        self, context: ModelContext, final_response: str
-    ) -> Result[None]:
+    def _update_identity_state(self, context: ModelContext, final_response: str) -> Result[None]:
         """Uses LLM to reflect on the interaction and potentially update identity state."""
         self.state.interaction_count += 1
         update_frequency = 20
@@ -635,12 +598,7 @@ class EidosianIdentityModel(IdentityModel):  # Inherit from protocol
             try:
                 history_limit = 10
                 history: List[MessageDict] = context.get("history", [])
-                history_summary = "\n".join(
-                    [
-                        f"- {msg['speaker']}: {msg['text']}"
-                        for msg in history[-history_limit:]
-                    ]
-                )
+                history_summary = "\n".join([f"- {msg['speaker']}: {msg['text']}" for msg in history[-history_limit:]])
                 try:
                     principles_json = json.dumps(self.state.core_principles)
                 except TypeError:
@@ -687,9 +645,7 @@ Example:
 }}
 ```
 """
-                reflection_output_result = self._call_llm(
-                    reflection_prompt, max_tokens_factor=1.5, temperature=0.3
-                )
+                reflection_output_result = self._call_llm(reflection_prompt, max_tokens_factor=1.5, temperature=0.3)
 
                 if reflection_output_result.is_failure:
                     return (
@@ -731,26 +687,18 @@ Example:
                         "ethical_score_delta",
                     }
                     if not required_keys.issubset(reflection_data.keys()):
-                        raise ValueError(
-                            f"Missing required keys in reflection JSON. Found: {reflection_data.keys()}"
-                        )
+                        raise ValueError(f"Missing required keys in reflection JSON. Found: {reflection_data.keys()}")
 
                     delta_raw = reflection_data.get("ethical_score_delta", 0.0)
                     try:
                         delta = float(delta_raw)
                         delta = max(-0.05, min(0.05, delta))
                     except (ValueError, TypeError):
-                        print(
-                            f"Warning: Invalid ethical_score_delta '{delta_raw}', using 0.0."
-                        )
+                        print(f"Warning: Invalid ethical_score_delta '{delta_raw}', using 0.0.")
                         delta = 0.0
 
-                    self.state.ethical_alignment_score = max(
-                        0.5, min(1.0, self.state.ethical_alignment_score + delta)
-                    )
-                    self.state.recent_interaction_summary = str(
-                        reflection_data.get("learning_summary", "")
-                    )
+                    self.state.ethical_alignment_score = max(0.5, min(1.0, self.state.ethical_alignment_score + delta))
+                    self.state.recent_interaction_summary = str(reflection_data.get("learning_summary", ""))
                     self.state.last_reflection_time = time.time()
 
                     print(
@@ -793,9 +741,7 @@ Example:
                     error.severity,
                 )
         else:
-            self.state.recent_interaction_summary = (
-                f"Processed input: '{context.get('current_input', '')[:30]}...'"
-            )
+            self.state.recent_interaction_summary = f"Processed input: '{context.get('current_input', '')[:30]}...'"
             return Result[None].success(None)
 
 

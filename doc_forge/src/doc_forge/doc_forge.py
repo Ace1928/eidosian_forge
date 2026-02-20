@@ -1,5 +1,6 @@
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+
 #!/usr/bin/env python3
 # 🌀 Eidosian Documentation Command Center
 """
@@ -13,22 +14,22 @@ and elegant control.
 Each command is a precision instrument, each workflow a masterpiece of clarity.
 """
 
-import sys
-import time
 import argparse
 import logging
-import subprocess
 import shlex
+import subprocess
+import sys
+import time
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 # Import path utilities for perfect path handling
-from .utils.paths import get_repo_root, get_docs_dir, ensure_dir
+from .utils.paths import ensure_dir, get_docs_dir, get_repo_root
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger("doc_forge")
 
@@ -43,6 +44,7 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 logger.debug(f"🔍 REPO_ROOT set to: {REPO_ROOT}")
 logger.debug(f"🔍 DOCS_DIR set to: {DOCS_DIR}")
 logger.debug(f"🔍 BUILD_DIR set to: {BUILD_DIR}")
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 🎭 Command execution
@@ -62,7 +64,7 @@ def run_command(command: Union[List[str], str], cwd: Optional[Path] = None) -> T
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=False,
-            universal_newlines=True
+            universal_newlines=True,
         )
         stdout, stderr = process.communicate()
         execution_time = time.time() - start_time
@@ -77,6 +79,7 @@ def run_command(command: Union[List[str], str], cwd: Optional[Path] = None) -> T
     except Exception as e:
         logger.error(f"Command execution failed: {command}, Error: {e}")
         return 1, "", str(e)
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📋 Command implementations
@@ -124,11 +127,12 @@ def cmd_setup(args: argparse.Namespace) -> int:
     logger.info("✅ Documentation environment setup complete")
     return 0
 
+
 @eidosian()
 def cmd_build(args: argparse.Namespace) -> int:
-    formats = getattr(args, 'formats', None) or ["html"]
-    fix = getattr(args, 'fix', False)
-    open_after = getattr(args, 'open', False)
+    formats = getattr(args, "formats", None) or ["html"]
+    fix = getattr(args, "fix", False)
+    open_after = getattr(args, "open", False)
 
     if fix:
         logger.info("🔧 Fixing documentation issues")
@@ -189,6 +193,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     logger.info(f"📚 Documentation build complete. Output in: {BUILD_DIR}")
     return 0
 
+
 @eidosian()
 def cmd_clean(_: argparse.Namespace) -> int:
     logger.info("🧹 Cleaning documentation build artifacts")
@@ -215,6 +220,7 @@ def cmd_clean(_: argparse.Namespace) -> int:
         logger.error(f"❌ Clean operation failed: {e}")
         return 1
 
+
 @eidosian()
 def cmd_check(args: argparse.Namespace) -> int:
     logger.info("🔍 Checking documentation for issues")
@@ -224,18 +230,14 @@ def cmd_check(args: argparse.Namespace) -> int:
     logger.info(f"📊 Found {total_files} documentation files ({len(markdown_files)} Markdown, {len(rst_files)} RST)")
 
     logger.info("🔗 Checking for broken references")
-    code, _, err = run_command([
-        sys.executable, "-m", "sphinx.ext.intersphinx",
-        str(DOCS_DIR / "conf.py")
-    ])
+    code, _, err = run_command([sys.executable, "-m", "sphinx.ext.intersphinx", str(DOCS_DIR / "conf.py")])
     if code != 0:
         logger.warning(f"⚠️ Intersphinx check had issues: {err}")
 
     logger.info("🔍 Running link check")
-    code, _, err = run_command([
-        sys.executable, "-m", "sphinx", "-b", "linkcheck",
-        str(DOCS_DIR), str(BUILD_DIR / "linkcheck")
-    ])
+    code, _, err = run_command(
+        [sys.executable, "-m", "sphinx", "-b", "linkcheck", str(DOCS_DIR), str(BUILD_DIR / "linkcheck")]
+    )
     if "broken links found" in err:
         logger.warning("⚠️ Broken links detected")
         for line in err.splitlines():
@@ -243,10 +245,9 @@ def cmd_check(args: argparse.Namespace) -> int:
                 logger.warning(f"  {line}")
 
     logger.info("⚠️ Running test build with warnings-as-errors")
-    code, _, err = run_command([
-        sys.executable, "-m", "sphinx", "-b", "html", "-W",
-        str(DOCS_DIR), str(BUILD_DIR / "test")
-    ])
+    code, _, err = run_command(
+        [sys.executable, "-m", "sphinx", "-b", "html", "-W", str(DOCS_DIR), str(BUILD_DIR / "test")]
+    )
     if code != 0:
         logger.error("❌ Test build failed - documentation has warnings that would be errors")
         for line in err.splitlines():
@@ -259,6 +260,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     logger.info("✅ Documentation check completed")
     return 0
 
+
 @eidosian()
 def cmd_serve(args: argparse.Namespace) -> int:
     port = getattr(args, "port", None)
@@ -269,15 +271,12 @@ def cmd_serve(args: argparse.Namespace) -> int:
             env_keys=("EIDOS_DOC_FORGE_PORT",),
         )
 
-    code, _, err = run_command([
-        sys.executable, "-c",
-        "import sphinx_autobuild; print('sphinx-autobuild is available')"
-    ])
+    code, _, err = run_command(
+        [sys.executable, "-c", "import sphinx_autobuild; print('sphinx-autobuild is available')"]
+    )
     if code != 0:
         logger.error("❌ sphinx-autobuild is not available, trying to install it")
-        code, _, err = run_command([
-            sys.executable, "-m", "pip", "install", "sphinx-autobuild"
-        ])
+        code, _, err = run_command([sys.executable, "-m", "pip", "install", "sphinx-autobuild"])
         if code != 0:
             logger.error(f"❌ Failed to install sphinx-autobuild: {err}")
             return code
@@ -285,10 +284,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
     logger.info(f"🌐 Starting documentation server on port {port}")
     logger.info("📋 Press Ctrl+C to stop the server")
     cmd = [
-        sys.executable, "-m", "sphinx_autobuild",
-        str(DOCS_DIR), str(BUILD_DIR / "html"),
-        "--port", str(port),
-        "--open-browser"
+        sys.executable,
+        "-m",
+        "sphinx_autobuild",
+        str(DOCS_DIR),
+        str(BUILD_DIR / "html"),
+        "--port",
+        str(port),
+        "--open-browser",
     ]
     try:
         process = subprocess.Popen(cmd)
@@ -301,6 +304,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         logger.error(f"❌ Failed to start documentation server: {e}")
         return 1
 
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 📚 CLI infrastructure
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -308,27 +312,27 @@ def cmd_serve(args: argparse.Namespace) -> int:
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="🌀 Doc Forge - Universal Documentation Command System",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
-    subparsers.add_parser('setup', help='Set up documentation environment')
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+    subparsers.add_parser("setup", help="Set up documentation environment")
 
-    build_parser = subparsers.add_parser('build', help='Build documentation')
-    build_parser.add_argument('-f', '--formats', nargs='+', choices=['html', 'pdf', 'epub'],
-                              help='Output formats to build (default: html)')
-    build_parser.add_argument('--fix', action='store_true',
-                              help='Fix documentation issues before building')
-    build_parser.add_argument('--open', action='store_true',
-                              help='Open documentation after building')
+    build_parser = subparsers.add_parser("build", help="Build documentation")
+    build_parser.add_argument(
+        "-f", "--formats", nargs="+", choices=["html", "pdf", "epub"], help="Output formats to build (default: html)"
+    )
+    build_parser.add_argument("--fix", action="store_true", help="Fix documentation issues before building")
+    build_parser.add_argument("--open", action="store_true", help="Open documentation after building")
 
-    subparsers.add_parser('clean', help='Clean build artifacts')
-    subparsers.add_parser('check', help='Check documentation for issues')
+    subparsers.add_parser("clean", help="Clean build artifacts")
+    subparsers.add_parser("check", help="Check documentation for issues")
 
-    serve_parser = subparsers.add_parser('serve', help='Serve documentation with live reload')
-    serve_parser.add_argument('-p', '--port', type=int, default=None, help='Port to serve on')
+    serve_parser = subparsers.add_parser("serve", help="Serve documentation with live reload")
+    serve_parser.add_argument("-p", "--port", type=int, default=None, help="Port to serve on")
     return parser
+
 
 @eidosian()
 def main() -> int:
@@ -352,19 +356,20 @@ def main() -> int:
         logging.getLogger().setLevel(logging.DEBUG)
         logger.debug("Debug logging enabled")
 
-    if args.command == 'setup':
+    if args.command == "setup":
         return cmd_setup(args)
-    elif args.command == 'build':
+    elif args.command == "build":
         return cmd_build(args)
-    elif args.command == 'clean':
+    elif args.command == "clean":
         return cmd_clean(args)
-    elif args.command == 'check':
+    elif args.command == "check":
         return cmd_check(args)
-    elif args.command == 'serve':
+    elif args.command == "serve":
         return cmd_serve(args)
     else:
         parser.print_help()
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

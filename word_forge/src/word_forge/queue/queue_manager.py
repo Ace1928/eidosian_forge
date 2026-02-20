@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Queue Manager Module
 
@@ -187,9 +188,7 @@ class QueueMetrics:
         self.wait_times.append(wait_time_ms)
         if len(self.wait_times) > 100:  # Keep a rolling window
             self.wait_times.pop(0)
-        self.avg_wait_time_ms = (
-            sum(self.wait_times) / len(self.wait_times) if self.wait_times else 0.0
-        )
+        self.avg_wait_time_ms = sum(self.wait_times) / len(self.wait_times) if self.wait_times else 0.0
 
     @eidosian()
     def increment_by_priority(self, priority: TaskPriority) -> None:
@@ -288,15 +287,9 @@ class Result(Generic[T]):
         return cls(value=value)
 
     @classmethod
-    def failure(
-        cls, error_code: str, message: str, context: Optional[Dict[str, Any]] = None
-    ) -> "Result[T]":
+    def failure(cls, error_code: str, message: str, context: Optional[Dict[str, Any]] = None) -> "Result[T]":
         """Create a failed result with error information."""
-        return cls(
-            error=ErrorContext(
-                error_code=error_code, message=message, context=context or {}
-            )
-        )
+        return cls(error=ErrorContext(error_code=error_code, message=message, context=context or {}))
 
 
 class QueueProcessor(Protocol, Generic[T_contra]):
@@ -348,9 +341,7 @@ class QueueManager(Generic[T]):
             >>> # Limited queue with max 1000 items
             >>> limited_queue = QueueManager(size_limit=1000)
         """
-        self._queue: queue.PriorityQueue[PrioritizedItem[T]] = queue.PriorityQueue(
-            maxsize=size_limit
-        )
+        self._queue: queue.PriorityQueue[PrioritizedItem[T]] = queue.PriorityQueue(maxsize=size_limit)
         self._seen_items: Set[str] = set()
         self._lock = threading.RLock()
         self._state = QueueState.INITIALIZED
@@ -454,9 +445,7 @@ class QueueManager(Generic[T]):
         return str(item).strip().lower()
 
     @eidosian()
-    def enqueue(
-        self, item: T, priority: TaskPriority = TaskPriority.NORMAL
-    ) -> Result[bool]:
+    def enqueue(self, item: T, priority: TaskPriority = TaskPriority.NORMAL) -> Result[bool]:
         """
         Add an item to the queue if not already present.
 
@@ -493,9 +482,7 @@ class QueueManager(Generic[T]):
                     return Result[bool].success(False)
 
                 # Add to the queue with priority
-                prioritized = PrioritizedItem(
-                    priority=priority, timestamp=time.time(), item=item
-                )
+                prioritized = PrioritizedItem(priority=priority, timestamp=time.time(), item=item)
 
                 # Try to add to the queue
                 try:
@@ -526,9 +513,7 @@ class QueueManager(Generic[T]):
             )
 
     @eidosian()
-    def dequeue(
-        self, block: bool = False, timeout: Optional[float] = None
-    ) -> Result[T]:
+    def dequeue(self, block: bool = False, timeout: Optional[float] = None) -> Result[T]:
         """
         Get the next item from the queue based on priority.
 
@@ -559,9 +544,7 @@ class QueueManager(Generic[T]):
         try:
             try:
                 # Get the next item
-                prioritized: PrioritizedItem[T] = self._queue.get(
-                    block=block, timeout=timeout
-                )
+                prioritized: PrioritizedItem[T] = self._queue.get(block=block, timeout=timeout)
                 item = prioritized.item
 
                 # Update metrics
@@ -581,9 +564,7 @@ class QueueManager(Generic[T]):
                 return Result[T].success(item)
 
             except queue.Empty:
-                return Result[T].failure(
-                    "QUEUE_EMPTY", "Queue is empty, no items to dequeue", {}
-                )
+                return Result[T].failure("QUEUE_EMPTY", "Queue is empty, no items to dequeue", {})
 
         except Exception as e:
             self.metrics.error_count += 1
@@ -1023,9 +1004,7 @@ class WorkDistributor(Generic[T]):
             # Process the item
             try:
                 item = result.unwrap()
-                self.metrics["worker_states"][
-                    worker_id
-                ] = f"processing {str(item)[:20]}"
+                self.metrics["worker_states"][worker_id] = f"processing {str(item)[:20]}"
 
                 process_result = self.processor.process(item)
 

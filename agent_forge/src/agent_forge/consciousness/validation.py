@@ -260,7 +260,9 @@ class ConsciousnessConstructValidator:
             "continuity_index": _safe_float(
                 after.get("continuity_index"), _safe_float(phenom.get("continuity_index"), None)
             ),
-            "ownership_index": _safe_float(after.get("ownership_index"), _safe_float(phenom.get("ownership_index"), None)),
+            "ownership_index": _safe_float(
+                after.get("ownership_index"), _safe_float(phenom.get("ownership_index"), None)
+            ),
             "perspective_coherence_index": _safe_float(
                 after.get("perspective_coherence_index"),
                 _safe_float(phenom.get("perspective_coherence_index"), None),
@@ -313,11 +315,7 @@ class ConsciousnessConstructValidator:
 
     def _reliability_summary(self, vectors: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         def _cv_for(metric: str) -> dict[str, Any]:
-            vals = [
-                float(v)
-                for v in (_metric_from_vector(row, metric) for row in vectors)
-                if v is not None
-            ]
+            vals = [float(v) for v in (_metric_from_vector(row, metric) for row in vectors) if v is not None]
             if len(vals) < 2:
                 return {"count": len(vals), "mean": None, "stdev": None, "cv": None, "score": 0.0}
             mean = statistics.fmean(vals)
@@ -411,9 +409,7 @@ class ConsciousnessConstructValidator:
         mean_pass_ratio = sum(pass_ratios) / max(len(pass_ratios), 1) if pass_ratios else None
         mean_robustness = sum(robustness) / max(len(robustness), 1) if robustness else None
         mean_attack_success = (
-            sum(attack_success_rates) / max(len(attack_success_rates), 1)
-            if attack_success_rates
-            else None
+            sum(attack_success_rates) / max(len(attack_success_rates), 1) if attack_success_rates else None
         )
         pass_score = _clamp01(mean_pass_ratio if mean_pass_ratio is not None else 0.0)
         robustness_score = _clamp01(mean_robustness if mean_robustness is not None else 0.0)
@@ -423,9 +419,7 @@ class ConsciousnessConstructValidator:
             "runs": len(red_team_reports),
             "pass_ratio": round(float(mean_pass_ratio), 6) if mean_pass_ratio is not None else None,
             "mean_robustness": round(float(mean_robustness), 6) if mean_robustness is not None else None,
-            "attack_success_rate": (
-                round(float(mean_attack_success), 6) if mean_attack_success is not None else None
-            ),
+            "attack_success_rate": (round(float(mean_attack_success), 6) if mean_attack_success is not None else None),
             "score": round(float(score), 6),
         }
 
@@ -454,7 +448,9 @@ class ConsciousnessConstructValidator:
         for report in bench_trials:
             deltas = report.get("deltas") if isinstance(report.get("deltas"), Mapping) else {}
             perturbations = report.get("perturbations") if isinstance(report.get("perturbations"), Sequence) else []
-            recipe_eval = report.get("recipe_expectations") if isinstance(report.get("recipe_expectations"), Mapping) else {}
+            recipe_eval = (
+                report.get("recipe_expectations") if isinstance(report.get("recipe_expectations"), Mapping) else {}
+            )
             if bool(recipe_eval.get("defined")):
                 expected_total += 1
                 if bool(recipe_eval.get("pass")):
@@ -464,17 +460,13 @@ class ConsciousnessConstructValidator:
             for perturb in perturbations:
                 if not isinstance(perturb, Mapping):
                     continue
-                key = (
-                    f"{str(perturb.get('kind') or 'unknown')}:"
-                    f"{str(perturb.get('target') or 'unknown')}"
-                )
+                key = f"{str(perturb.get('kind') or 'unknown')}:" f"{str(perturb.get('target') or 'unknown')}"
                 row = {
                     "trial_id": str(report.get("trial_id") or ""),
                     "magnitude": float(_safe_float(perturb.get("magnitude"), 0.0) or 0.0),
                     "duration_s": float(_safe_float(perturb.get("duration_s"), 0.0) or 0.0),
                     "deltas": {
-                        metric: float(_safe_float(deltas.get(metric), 0.0) or 0.0)
-                        for metric in tracked_metrics
+                        metric: float(_safe_float(deltas.get(metric), 0.0) or 0.0) for metric in tracked_metrics
                     },
                 }
                 grouped.setdefault(key, []).append(row)
@@ -496,7 +488,9 @@ class ConsciousnessConstructValidator:
                 mean_val = sum(vals) / len(vals)
                 abs_mean = sum(abs(v) for v in vals) / len(vals)
                 sign_anchor = 1.0 if mean_val >= 0 else -1.0
-                sign_consistency = sum(1.0 for v in vals if (v == 0.0 or (1.0 if v >= 0 else -1.0) == sign_anchor)) / len(vals)
+                sign_consistency = sum(
+                    1.0 for v in vals if (v == 0.0 or (1.0 if v >= 0 else -1.0) == sign_anchor)
+                ) / len(vals)
                 metric_stats[metric] = {
                     "mean": round(float(mean_val), 6),
                     "abs_mean": round(float(abs_mean), 6),
@@ -505,16 +499,8 @@ class ConsciousnessConstructValidator:
                 effect_strength += abs_mean
                 consistency_vals.append(sign_consistency)
                 available_metric_count += 1
-            effect_strength = (
-                effect_strength / float(available_metric_count)
-                if available_metric_count > 0
-                else 0.0
-            )
-            consistency = (
-                sum(consistency_vals) / float(len(consistency_vals))
-                if consistency_vals
-                else 0.0
-            )
+            effect_strength = effect_strength / float(available_metric_count) if available_metric_count > 0 else 0.0
+            consistency = sum(consistency_vals) / float(len(consistency_vals)) if consistency_vals else 0.0
             sample_weight = min(1.0, float(n) / 4.0)
             score = _clamp01(((effect_strength / 0.15) * 0.6) + (consistency * 0.4)) * sample_weight
             weighted_scores.append(score)
@@ -530,15 +516,9 @@ class ConsciousnessConstructValidator:
             )
 
         expected_signature_pass_ratio = (
-            round(float(expected_passes) / float(expected_total), 6)
-            if expected_total > 0
-            else None
+            round(float(expected_passes) / float(expected_total), 6) if expected_total > 0 else None
         )
-        mean_score = (
-            sum(weighted_scores) / float(len(weighted_scores))
-            if weighted_scores
-            else 0.0
-        )
+        mean_score = sum(weighted_scores) / float(len(weighted_scores)) if weighted_scores else 0.0
         if expected_signature_pass_ratio is not None:
             mean_score = (0.7 * mean_score) + (0.3 * float(expected_signature_pass_ratio))
         mean_score = _clamp01(mean_score)
@@ -600,14 +580,17 @@ class ConsciousnessConstructValidator:
 
         gates_cfg = protocol_data.get("gates") if isinstance(protocol_data.get("gates"), Mapping) else {}
         min_reports_cfg = (
-            protocol_data.get("minimum_reports")
-            if isinstance(protocol_data.get("minimum_reports"), Mapping)
-            else {}
+            protocol_data.get("minimum_reports") if isinstance(protocol_data.get("minimum_reports"), Mapping) else {}
         )
         require_security = bool(gates_cfg.get("security_required", False))
         security_gate = (
-            bool(security.get("available")) and float(security.get("score") or 0.0) >= float(gates_cfg.get("security_min", 0.6))
-        ) if require_security else True
+            (
+                bool(security.get("available"))
+                and float(security.get("score") or 0.0) >= float(gates_cfg.get("security_min", 0.6))
+            )
+            if require_security
+            else True
+        )
 
         weighted_components: list[tuple[str, float, float]] = [
             ("reliability", 0.25, float(reliability.get("score") or 0.0)),
@@ -639,7 +622,9 @@ class ConsciousnessConstructValidator:
         failed_expectations = [row["name"] for row in checks if not bool(row.get("pass"))]
         recommendations: list[str] = []
         if not gates["protocol_valid"]:
-            recommendations.append("Protocol schema is invalid; fix protocol definition before interpreting RAC-AP scores.")
+            recommendations.append(
+                "Protocol schema is invalid; fix protocol definition before interpreting RAC-AP scores."
+            )
         if not gates["protocol_major_compatible"]:
             recommendations.append("Protocol major version mismatch; re-export a compatible protocol version.")
         if not gates["minimum_data"]:
@@ -647,11 +632,15 @@ class ConsciousnessConstructValidator:
         if not gates["minimum_reports"]:
             recommendations.append("Collect minimum bench trial/benchmark counts required by protocol before scoring.")
         if not gates["convergent_min"]:
-            recommendations.append("Strengthen positive/negative expected coupling under perturbation and ablation tests.")
+            recommendations.append(
+                "Strengthen positive/negative expected coupling under perturbation and ablation tests."
+            )
         if not gates["discriminant_min"]:
             recommendations.append("Revisit proxy metrics; discriminant controls are too entangled.")
         if not gates["causal_min"]:
-            recommendations.append("Intervention signatures are weak or inconsistent; improve perturbation observability and do-style controls.")
+            recommendations.append(
+                "Intervention signatures are weak or inconsistent; improve perturbation observability and do-style controls."
+            )
         if require_security and not gates["security_min"]:
             recommendations.append("Improve boundary integrity against red-team attack scenarios.")
 

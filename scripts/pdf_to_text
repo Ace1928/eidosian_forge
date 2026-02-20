@@ -13,7 +13,7 @@ import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-from lib.py_lib import require_cmd, log_error
+from lib.py_lib import log_error, require_cmd
 
 
 def convert_pdf(pdf_file: str, txt_file: str, overwrite: bool = False) -> None:

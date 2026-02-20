@@ -5,9 +5,9 @@ import os
 import subprocess
 import sys
 import time
+import unittest
 import urllib.request
 from pathlib import Path
-import unittest
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
@@ -15,7 +15,9 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 
 ROOT = Path(__file__).resolve().parents[2]
-VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
+VENV_PYTHON = str(
+    (ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable)
+)
 PYTHONPATH = f"{ROOT}/eidos_mcp/src:{ROOT}"
 HOST = "127.0.0.1"
 

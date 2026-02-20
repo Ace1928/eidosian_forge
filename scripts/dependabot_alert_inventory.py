@@ -27,9 +27,7 @@ def _load_alerts(repo: str, state: str) -> list[dict[str, Any]]:
         raise RuntimeError("gh CLI is required but not installed") from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr if isinstance(exc.stderr, str) else ""
-        raise RuntimeError(
-            f"gh api call failed (exit={exc.returncode}): {stderr.strip()}"
-        ) from exc
+        raise RuntimeError(f"gh api call failed (exit={exc.returncode}): {stderr.strip()}") from exc
 
     items: list[dict[str, Any]] = []
     text = out.strip()
@@ -114,9 +112,7 @@ def _summary(alerts: list[dict[str, Any]]) -> dict[str, Any]:
                 if str(row.get("state") or "") == "open"
                 and str(
                     (
-                        row.get("security_vulnerability")
-                        if isinstance(row.get("security_vulnerability"), dict)
-                        else {}
+                        row.get("security_vulnerability") if isinstance(row.get("security_vulnerability"), dict) else {}
                     ).get("severity")
                     or ""
                 ).lower()
@@ -148,7 +144,9 @@ def _print_human(summary: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Summarize Dependabot alerts for a GitHub repository")
     parser.add_argument("--repo", default="Ace1928/eidosian_forge", help="owner/repo")
-    parser.add_argument("--state", default="open", choices=["open", "fixed", "dismissed", "auto_dismissed", ""], help="filter state")
+    parser.add_argument(
+        "--state", default="open", choices=["open", "fixed", "dismissed", "auto_dismissed", ""], help="filter state"
+    )
     parser.add_argument("--json-out", default="", help="optional output path for JSON summary")
     args = parser.parse_args()
 

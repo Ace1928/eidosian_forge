@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -36,9 +37,7 @@ def strip_ansi(text: str) -> str:
 def setup_logging(config: dict):
     logging_config = config.get("logging", {})
     level_name = logging_config.get("level", "INFO")
-    log_format = logging_config.get(
-        "format", "%(asctime)s %(levelname)s %(name)s %(message)s"
-    )
+    log_format = logging_config.get("format", "%(asctime)s %(levelname)s %(name)s %(message)s")
     log_path = logging_config.get("path")
     logger = logging.getLogger("context")
     logger.setLevel(getattr(logging, level_name.upper(), logging.INFO))

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """Demonstration of Word Forge utility tools.
 
 This module showcases the various utility tools and helper functions

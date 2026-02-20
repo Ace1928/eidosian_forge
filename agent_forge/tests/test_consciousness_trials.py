@@ -35,7 +35,8 @@ def test_trial_runner_emits_perturb_events_and_rci_metric(tmp_path: Path) -> Non
     assert any(evt.get("type") == "perturb.response" for evt in all_events)
 
     rci_samples = [
-        evt for evt in all_events
+        evt
+        for evt in all_events
         if evt.get("type") == "metrics.sample" and (evt.get("data") or {}).get("key") == "consciousness.rci"
     ]
     assert rci_samples
@@ -82,9 +83,7 @@ def test_status_snapshot_is_side_effect_free(tmp_path: Path) -> None:
 def test_eidctl_consciousness_commands(tmp_path: Path) -> None:
     base = tmp_path / "state"
     env = dict(os.environ)
-    env["PYTHONPATH"] = (
-        f"{REPO_ROOT / 'lib'}:{REPO_ROOT / 'agent_forge' / 'src'}"
-    )
+    env["PYTHONPATH"] = f"{REPO_ROOT / 'lib'}:{REPO_ROOT / 'agent_forge' / 'src'}"
 
     status_cmd = [
         sys.executable,

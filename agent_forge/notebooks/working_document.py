@@ -107,14 +107,10 @@ UsageMap: TypeAlias = Dict[ExportName, UsageInfo]
 GroupedUsage: TypeAlias = Dict[str, List[Tuple[ExportName, UsageInfo]]]
 
 # System structure descriptors - environmental ontology
-SubstrateValue: TypeAlias = Union[
-    bool, VersionStr, List[DeviceName], Dict[PackageName, bool], int
-]
+SubstrateValue: TypeAlias = Union[bool, VersionStr, List[DeviceName], Dict[PackageName, bool], int]
 SubstrateMap: TypeAlias = Dict[str, SubstrateValue]
 MemoryInfo: TypeAlias = Dict[str, str]  # System memory metrics and capacity indicators
-SystemInfo: TypeAlias = Dict[
-    str, Union[str, MemoryInfo]
-]  # Full system specification hierarchy
+SystemInfo: TypeAlias = Dict[str, Union[str, MemoryInfo]]  # Full system specification hierarchy
 
 # Installation outcome taxonomy - materialization result classification
 PackageInstallResult: TypeAlias = Tuple[bool, Optional[VersionStr]]
@@ -123,9 +119,7 @@ PackageInstallResult: TypeAlias = Tuple[bool, Optional[VersionStr]]
 FunctionMetrics: TypeAlias = Dict[str, Union[int, float]]
 ClassMetrics: TypeAlias = Dict[str, Union[int, float]]
 SummaryMetrics: TypeAlias = Dict[str, Union[int, float]]
-ComplexityResult: TypeAlias = Dict[
-    str, Union[Dict[str, FunctionMetrics], Dict[str, ClassMetrics], SummaryMetrics]
-]
+ComplexityResult: TypeAlias = Dict[str, Union[Dict[str, FunctionMetrics], Dict[str, ClassMetrics], SummaryMetrics]]
 
 # ═══════════════════════════════════════════════════════════════════════════
 # COGNITIVE EMBLEM SYSTEM - Emotional Expression Framework
@@ -237,9 +231,7 @@ class InstallationStatus(Enum):
         return descriptions[self]
 
     @classmethod
-    def from_check_result(
-        cls, is_installed: bool, version: Optional[str]
-    ) -> "InstallationStatus":
+    def from_check_result(cls, is_installed: bool, version: Optional[str]) -> "InstallationStatus":
         """Determine installation status from check results.
 
         Transforms the raw check_installation() output tuple into the appropriate
@@ -253,9 +245,7 @@ class InstallationStatus(Enum):
             InstallationStatus: The corresponding installation status enum value
         """
         # Diagnostic output with formatted representation
-        print(
-            f"🔍 Interpreting installation status: installed={is_installed}, version={version}"
-        )
+        print(f"🔍 Interpreting installation status: installed={is_installed}, version={version}")
 
         # Determine and return the appropriate status based on input parameters
         if is_installed and version and version != "corrupted":
@@ -295,9 +285,7 @@ STATUS_ICONS: Dict[StatusType, str] = {
 }
 
 
-def format_text(
-    text: str, icon: Optional[str] = None, prefix: str = "", indent: int = 0
-) -> str:
+def format_text(text: str, icon: Optional[str] = None, prefix: str = "", indent: int = 0) -> str:
     """Format text with consistent styling including optional icon and indentation.
 
     Args:
@@ -322,9 +310,7 @@ def format_text(
     return result
 
 
-def eidosian_log(
-    message: str, level: LogLevel = "info", icon: Optional[str] = None
-) -> None:
+def eidosian_log(message: str, level: LogLevel = "info", icon: Optional[str] = None) -> None:
     """Log a formatted Eidosian message with appropriate styling.
 
     Materializes a log entry with contextual icon and consistent formatting,
@@ -374,9 +360,7 @@ def format_separator(style: SeparatorStyle = "full", width: int = 45) -> str:
         return "·" * width
 
 
-def format_banner(
-    message: str, width: int = 70, icon: str = "📚", style: BannerStyle = "single"
-) -> str:
+def format_banner(message: str, width: int = 70, icon: str = "📚", style: BannerStyle = "single") -> str:
     """Generate a decorative banner with customizable styling.
 
     Creates a visually distinct text block with borders and optional icon
@@ -406,22 +390,16 @@ def format_banner(
 
     # Generate banner based on selected style
     if style == "double":
-        return (
-            f"╔{'═' * width}╗\n" f"║{padded_message:<{width+1}}║\n" f"╚{'═' * width}╝"
-        )
+        return f"╔{'═' * width}╗\n" f"║{padded_message:<{width+1}}║\n" f"╚{'═' * width}╝"
     elif style == "section":
         return f"╰{'─' * (width - 2)}╯"
     elif style == "mini":
         return f"  {'─' * (width - 6)}"
     else:  # single (default)
-        return (
-            f"╭{'─' * width}╮\n" f"│{padded_message:<{width+1}}│\n" f"╰{'─' * width}╯"
-        )
+        return f"╭{'─' * width}╮\n" f"│{padded_message:<{width+1}}│\n" f"╰{'─' * width}╯"
 
 
-def format_centered_text(
-    message: str, width: int = 45, left_border: str = "│", right_border: str = "│"
-) -> str:
+def format_centered_text(message: str, width: int = 45, left_border: str = "│", right_border: str = "│") -> str:
     """Format text centered within borders with specified width.
 
     Args:
@@ -468,9 +446,7 @@ def print_status(message: str, status: StatusType = "info", indent: int = 0) -> 
     print(format_text(message, icon, indent=indent))
 
 
-def print_header(
-    title: str, icon: str = "🧠", style: Literal["double", "single"] = "double"
-) -> None:
+def print_header(title: str, icon: str = "🧠", style: Literal["double", "single"] = "double") -> None:
     """Print a stylized header with iconic representation and visual delineation.
 
     Creates a visually distinct section header for organizing console output
@@ -535,9 +511,7 @@ def print_separator(style: SeparatorStyle = "full") -> None:
     print(format_separator(style))
 
 
-def print_banner(
-    message: str, left_border: str = "│", right_border: str = "│", width: int = 45
-) -> None:
+def print_banner(message: str, left_border: str = "│", right_border: str = "│", width: int = 45) -> None:
     """Print a centered message with borders.
 
     Args:
@@ -759,9 +733,7 @@ def validate_mood(mood: str) -> EmblemMood:
     """
     if mood not in EIDOSIAN_EMBLEMS:
         default_mood: EmblemMood = "contemplative"
-        eidosian_log(
-            f"Unrecognized mood '{mood}', defaulting to {default_mood}", "warning"
-        )
+        eidosian_log(f"Unrecognized mood '{mood}', defaulting to {default_mood}", "warning")
         return default_mood
 
     eidosian_log(f"Mood '{mood}' validated successfully", "success", "🎨")
@@ -849,9 +821,7 @@ def display_all_emblems() -> None:
 
     # Create decorative section header
     print_separator("full")
-    print_banner(
-        "🌈 EIDOSIAN EMOTIONAL SPECTRUM VISUALIZATION", "│", "│", section_width
-    )
+    print_banner("🌈 EIDOSIAN EMOTIONAL SPECTRUM VISUALIZATION", "│", "│", section_width)
     print_separator("full")
 
     # Display emblems for each mood
@@ -960,9 +930,7 @@ def animate_emblem(
     print_separator("mini")
 
     # Announce animation parameters
-    eidosian_log(
-        f"Initiating animation sequence for mood: {validated_mood}", "info", "🎬"
-    )
+    eidosian_log(f"Initiating animation sequence for mood: {validated_mood}", "info", "🎬")
     eidosian_log(f"Animation parameters: {cycles} cycles with {delay}s delay", "debug")
 
     # Get animation frames for the specified mood
@@ -1026,14 +994,10 @@ def check_installation(package_name: str) -> Tuple[bool, Optional[VersionStr]]:
         )
         return True, pkg_version
     except (ImportError, ModuleNotFoundError):
-        eidosian_log(
-            f"Package '{package_name}' not found in cognitive substrate", "error", "❌"
-        )
+        eidosian_log(f"Package '{package_name}' not found in cognitive substrate", "error", "❌")
         return False, None
     except Exception as e:
-        eidosian_log(
-            f"Package '{package_name}' appears corrupted: {str(e)}", "warning", "⚠️"
-        )
+        eidosian_log(f"Package '{package_name}' appears corrupted: {str(e)}", "warning", "⚠️")
         return False, "corrupted"
 
 
@@ -1109,14 +1073,10 @@ def install_package(package_name: str, upgrade: bool = False) -> bool:
             cmd = f"%pip install {package_name}"
             if upgrade:
                 cmd += " --upgrade"
-            eidosian_log(
-                f"Executing notebook installation command: {cmd}", "info", "📜"
-            )
+            eidosian_log(f"Executing notebook installation command: {cmd}", "info", "📜")
             ipython = get_ipython()
             if ipython is not None:
-                ipython.run_line_magic(
-                    "pip", f"install {package_name}{' --upgrade' if upgrade else ''}"
-                )
+                ipython.run_line_magic("pip", f"install {package_name}{' --upgrade' if upgrade else ''}")
             else:
                 # Fallback if IPython is not available despite detection
                 subprocess.check_call(
@@ -1129,18 +1089,14 @@ def install_package(package_name: str, upgrade: bool = False) -> bool:
             if upgrade:
                 cmd.append("--upgrade")
             cmd.append(package_name)
-            eidosian_log(
-                f"Executing system installation command: {' '.join(cmd)}", "info", "🔧"
-            )
+            eidosian_log(f"Executing system installation command: {' '.join(cmd)}", "info", "🔧")
             subprocess.check_call(cmd)
 
         # Verification phase
         eidosian_log(f"Verifying installation of {package_name}...", "info", "🧪")
         try:
             __import__(package_name)
-            eidosian_log(
-                f"Package {package_name} successfully integrated", "success", "✅"
-            )
+            eidosian_log(f"Package {package_name} successfully integrated", "success", "✅")
             return True
         except (ImportError, ModuleNotFoundError):
             # If import fails after installation, try one more time with subprocess
@@ -1218,9 +1174,7 @@ def system_compatibility_check() -> SystemInfo:
     }
 
     eidosian_log("System compatibility analysis complete", "success", "✅")
-    print_section(
-        f"Python: v{system_info['python_version']} on {system_info['os_name']} {system_info['architecture']}"
-    )
+    print_section(f"Python: v{system_info['python_version']} on {system_info['os_name']} {system_info['architecture']}")
     print_section(f"Processor: {system_info['processor']}")
 
     return system_info
@@ -1254,9 +1208,7 @@ def _analyze_memory_dimensions() -> MemoryInfo:
             "💾",
         )
     except ImportError:
-        eidosian_log(
-            "Memory analysis tool 'psutil' not found in substrate", "warning", "⚠️"
-        )
+        eidosian_log("Memory analysis tool 'psutil' not found in substrate", "warning", "⚠️")
         memory_info = _attempt_psutil_installation()
 
     return memory_info
@@ -1279,9 +1231,7 @@ def _attempt_psutil_installation() -> MemoryInfo:
                 ipython.run_line_magic("pip", "install psutil")
             else:
                 # Fallback to subprocess if IPython is not available
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "psutil"]
-                )
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
             return _get_memory_metrics()
             "🔄",
         except Exception as e:
@@ -1289,9 +1239,7 @@ def _attempt_psutil_installation() -> MemoryInfo:
             return {"memory_status": "unquantifiable (psutil installation failed)"}
     else:
         # Try subprocess installation for non-notebook environments
-        eidosian_log(
-            "Attempting to materialize 'psutil' in system environment...", "info", "🔄"
-        )
+        eidosian_log("Attempting to materialize 'psutil' in system environment...", "info", "🔄")
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
             return _get_memory_metrics()
@@ -1318,9 +1266,7 @@ def _get_memory_metrics() -> MemoryInfo:
         eidosian_log("'psutil' materialized successfully", "success", "✅")
         return memory_info
     except Exception:
-        return {
-            "memory_status": "unquantifiable (psutil import failed after installation)"
-        }
+        return {"memory_status": "unquantifiable (psutil import failed after installation)"}
 
 
 def check_and_install_dependency(
@@ -1373,9 +1319,7 @@ def check_and_install_dependency(
 
     # Target identification
     print_status(f"📦 Target package: {package_name}")
-    print_status(
-        f"🔄 {'➕ Upgrade requested' if upgrade else '⬆️ Standard installation'}"
-    )
+    print_status(f"🔄 {'➕ Upgrade requested' if upgrade else '⬆️ Standard installation'}")
 
     # Phase I: Current state assessment
     _ritual_phase_header(1, "QUANTUM STATE DETERMINATION", "🔍")
@@ -1391,14 +1335,10 @@ def check_and_install_dependency(
         return True, version
 
     # Proceeding to installation path
-    return _execute_installation_ritual(
-        package_name, upgrade, retry_count, version == "corrupted"
-    )
+    return _execute_installation_ritual(package_name, upgrade, retry_count, version == "corrupted")
 
 
-def _silent_dependency_check(
-    package_name: str, upgrade: bool = False, retry_count: int = 2
-) -> PackageInstallResult:
+def _silent_dependency_check(package_name: str, upgrade: bool = False, retry_count: int = 2) -> PackageInstallResult:
     """Execute dependency check and installation without verbose output.
 
     Performs the same operations as check_and_install_dependency but without
@@ -1475,9 +1415,7 @@ def _execute_installation_ritual(
 
                 if new_version and new_version != "corrupted":
                     # Success celebration
-                    print_info(
-                        f"✨ Package {package_name} v{new_version} successfully anchored"
-                    )
+                    print_info(f"✨ Package {package_name} v{new_version} successfully anchored")
                     print_separator("section")
 
                     # Final success banner
@@ -1488,9 +1426,7 @@ def _execute_installation_ritual(
 
                     return True, new_version
                 else:
-                    print_info(
-                        "❓ Anomaly detected: Package appears present but verification failed"
-                    )
+                    print_info("❓ Anomaly detected: Package appears present but verification failed")
 
             # Retry logic with remaining attempts counter
             remaining = retry_count - attempt
@@ -1517,9 +1453,7 @@ def _execute_installation_ritual(
     return _process_installation_failure(package_name, retry_count, upgrade)
 
 
-def _process_installation_failure(
-    package_name: str, retry_count: int, upgrade: bool
-) -> PackageInstallResult:
+def _process_installation_failure(package_name: str, retry_count: int, upgrade: bool) -> PackageInstallResult:
     """Process and communicate dependency installation failure with diagnostic information.
 
     Materializes failure analysis with recommendations after exhausting all installation
@@ -1543,9 +1477,7 @@ def _process_installation_failure(
     _ritual_phase_header(4, "FAILURE ANALYSIS", "❌")
 
     # Communicate failure details with specific count information
-    print_info(
-        f"{package_name} could not be materialized after {retry_count + 1} attempts"
-    )
+    print_info(f"{package_name} could not be materialized after {retry_count + 1} attempts")
     print_info("🔍 RECOMMENDATION: Consider manual invocation:")
 
     # Generate manual installation command with conditional upgrade flag
@@ -1629,9 +1561,7 @@ def collect_module_exports(module_name: ModuleName) -> ModuleExports:
 
     try:
         # Attempt dimensional portal opening (module import)
-        print_status(
-            f"Initiating quantum entanglement with {module_name}...", "ritual", 2
-        )
+        print_status(f"Initiating quantum entanglement with {module_name}...", "ritual", 2)
         module = importlib.import_module(module_name)
 
         # Successful connection acknowledgment
@@ -1642,11 +1572,7 @@ def collect_module_exports(module_name: ModuleName) -> ModuleExports:
 
         # Extract non-private, non-dunder exports (visible dimensional entities)
         all_names: List[str] = dir(module)
-        exports: List[str] = [
-            name
-            for name in all_names
-            if not name.startswith("_") and not name.endswith("_")
-        ]
+        exports: List[str] = [name for name in all_names if not name.startswith("_") and not name.endswith("_")]
 
         # Report initial reconnaissance results
         export_count: int = len(exports)
@@ -1656,9 +1582,7 @@ def collect_module_exports(module_name: ModuleName) -> ModuleExports:
             print_status("Initiating taxonomic classification...", "process", 2)
 
             # Classify exports into appropriate categories with symbol counting
-            category_counts: Dict[str, int] = {
-                category: 0 for category in result.keys()
-            }
+            category_counts: Dict[str, int] = {category: 0 for category in result.keys()}
 
             for name in exports:
                 # Extract the entity for examination
@@ -1725,11 +1649,7 @@ def collect_module_exports(module_name: ModuleName) -> ModuleExports:
         result = {"error": [error_msg]}
 
     # Display dimensional analysis summary banner
-    print(
-        format_banner(
-            f"DIMENSIONAL ANALYSIS COMPLETE: {module_name}", style="single", icon="📊"
-        )
-    )
+    print(format_banner(f"DIMENSIONAL ANALYSIS COMPLETE: {module_name}", style="single", icon="📊"))
 
     return result
 
@@ -1967,9 +1887,7 @@ def map_module_usages(module_name: ModuleName) -> UsageMap:
         total_to_analyze: int = len(exports["functions"]) + sum(
             1
             for cls_name in exports["classes"]
-            for _, method in inspect.getmembers(
-                getattr(module, cls_name), inspect.isfunction
-            )
+            for _, method in inspect.getmembers(getattr(module, cls_name), inspect.isfunction)
             if not method.__name__.startswith("_")
         )
 
@@ -2004,9 +1922,7 @@ def map_module_usages(module_name: ModuleName) -> UsageMap:
             print_status(f"Analyzing class: {class_name}", "process", 2)
 
             # Get methods of the class
-            for method_name, method in inspect.getmembers(
-                cls, predicate=inspect.isfunction
-            ):
+            for method_name, method in inspect.getmembers(cls, predicate=inspect.isfunction):
                 if not method_name.startswith("_"):
                     method_full_name = f"{class_name}.{method_name}"
 
@@ -2029,9 +1945,7 @@ def map_module_usages(module_name: ModuleName) -> UsageMap:
                         print_status(f"Method: {method_name}()", "success", 4)
 
                     except Exception as e:
-                        print_status(
-                            f"Could not analyze {method_name}: {str(e)}", "warning", 4
-                        )
+                        print_status(f"Could not analyze {method_name}: {str(e)}", "warning", 4)
 
         # Report analysis completion
         print_status(
@@ -2129,11 +2043,7 @@ def display_usage_guide(usages: UsageMap, module_name: ModuleName) -> None:
             print()
 
     # Print guide footer
-    print(
-        format_banner(
-            f"EIDOSIAN USAGE GUIDE COMPLETE: {module_name}", width=70, icon="🧠"
-        )
-    )
+    print(format_banner(f"EIDOSIAN USAGE GUIDE COMPLETE: {module_name}", width=70, icon="🧠"))
 
 
 def _calculate_function_complexity(
@@ -2257,12 +2167,8 @@ def analyze_module_complexity(
         metrics["summary"]["total_classes"] = len(exports["classes"])
 
         if function_count > 0:
-            metrics["summary"]["avg_func_complexity"] = round(
-                total_complexity / function_count, 2
-            )
-            metrics["summary"]["avg_params_per_func"] = round(
-                total_params / function_count, 2
-            )
+            metrics["summary"]["avg_func_complexity"] = round(total_complexity / function_count, 2)
+            metrics["summary"]["avg_params_per_func"] = round(total_params / function_count, 2)
 
         print_status(f"Complexity analysis complete for {module_name}", "complete")
 
@@ -2272,9 +2178,7 @@ def analyze_module_complexity(
     return metrics
 
 
-def run_eidosian_analysis(
-    module_name: ModuleName = "smolagents", full_analysis: bool = True
-) -> Dict[
+def run_eidosian_analysis(module_name: ModuleName = "smolagents", full_analysis: bool = True) -> Dict[
     str,
     Union[
         ModuleExports,
@@ -2448,9 +2352,7 @@ def examine_cognitive_substrates() -> SubstrateMap:
 
     # Check for external neural interfaces (API keys)
     openai_key = os.environ.get("OPENAI_API_KEY", None)
-    hf_key = os.environ.get("HF_API_KEY", None) or os.environ.get(
-        "HUGGINGFACE_API_KEY", None
-    )
+    hf_key = os.environ.get("HF_API_KEY", None) or os.environ.get("HUGGINGFACE_API_KEY", None)
     substrate_map["openai_access"] = bool(openai_key)
     substrate_map["huggingface_access"] = bool(hf_key)
 
@@ -2468,9 +2370,7 @@ def examine_cognitive_substrates() -> SubstrateMap:
                 device_name = torch.cuda.get_device_name(i)
                 available_devices.append(f"CUDA:{i} ({device_name})")
             substrate_map["gpu_acceleration"] = available_devices
-            eidosian_log(
-                f"Detected {len(available_devices)} CUDA devices", "success", "🚀"
-            )
+            eidosian_log(f"Detected {len(available_devices)} CUDA devices", "success", "🚀")
         # Check for Apple Metal Performance Shaders
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             substrate_map["gpu_acceleration"] = ["Apple MPS"]
@@ -2482,17 +2382,13 @@ def examine_cognitive_substrates() -> SubstrateMap:
         substrate_map["torch_version"] = cast(VersionStr, torch.__version__)
     except ImportError:
         substrate_map["gpu_acceleration"] = "torch library not found"
-        eidosian_log(
-            "PyTorch not installed - acceleration capability unknown", "warning", "⚠️"
-        )
+        eidosian_log("PyTorch not installed - acceleration capability unknown", "warning", "⚠️")
 
     # Check for transformers library and model cache
     try:
         import transformers
 
-        substrate_map["transformers_version"] = cast(
-            VersionStr, transformers.__version__
-        )
+        substrate_map["transformers_version"] = cast(VersionStr, transformers.__version__)
         eidosian_log(
             f"Transformers library v{transformers.__version__} detected",
             "success",
@@ -2504,9 +2400,7 @@ def examine_cognitive_substrates() -> SubstrateMap:
             from huggingface_hub import scan_cache_dir
 
             cache_info = scan_cache_dir()
-            config_count = sum(
-                1 for repo in cache_info.repos if repo.repo_type == "model"
-            )
+            config_count = sum(1 for repo in cache_info.repos if repo.repo_type == "model")
             substrate_map["cached_models_count"] = config_count
             eidosian_log(f"Located {config_count} cached models", "info", "📚")
         except Exception:
@@ -2547,9 +2441,7 @@ def examine_cognitive_substrates() -> SubstrateMap:
     # Count installed tools for summary
     installed_tools = sum(1 for _, installed in tool_dependencies.items() if installed)
     total_tools = len(tool_dependencies)
-    eidosian_log(
-        f"Tool dependencies: {installed_tools}/{total_tools} available", "info", "🛠️"
-    )
+    eidosian_log(f"Tool dependencies: {installed_tools}/{total_tools} available", "info", "🛠️")
 
     print_separator("mini")
     eidosian_log("Cognitive substrate analysis complete", "success", "✅")
@@ -2599,9 +2491,7 @@ def find_local_models(max_results: int = 10) -> List[ModelIdentifier]:
 
             # Log successful detection
             if models:
-                eidosian_log(
-                    f"Located {len(models)} models via Hub API", "success", "🤗"
-                )
+                eidosian_log(f"Located {len(models)} models via Hub API", "success", "🤗")
         except Exception as e:
             # Fallback method: direct filesystem traversal for robustness
             eidosian_log(
@@ -2642,16 +2532,10 @@ def find_local_models(max_results: int = 10) -> List[ModelIdentifier]:
                         "📚",
                     )
             else:
-                eidosian_log(
-                    f"Cache directory not found at {cache_dir}", "warning", "❓"
-                )
+                eidosian_log(f"Cache directory not found at {cache_dir}", "warning", "❓")
     except ImportError:
-        eidosian_log(
-            "Transformers library not installed - cannot detect models", "error", "❌"
-        )
-        return cast(
-            List[ModelIdentifier], ["transformers or huggingface_hub not installed"]
-        )
+        eidosian_log("Transformers library not installed - cannot detect models", "error", "❌")
+        return cast(List[ModelIdentifier], ["transformers or huggingface_hub not installed"])
     except Exception as e:
         eidosian_log(f"Model discovery failed: {str(e)}", "error", "💥")
         return cast(List[ModelIdentifier], [f"Error scanning models: {str(e)}"])
@@ -2660,9 +2544,7 @@ def find_local_models(max_results: int = 10) -> List[ModelIdentifier]:
     scan_duration = time.time() - start_time
     if scan_duration > 1.0 and models:
         eidosian_log(f"Model scanning completed in {scan_duration:.2f}s", "debug", "⏱️")
-        models.append(
-            cast(ModelIdentifier, f"(Scan completed in {scan_duration:.2f}s)")
-        )
+        models.append(cast(ModelIdentifier, f"(Scan completed in {scan_duration:.2f}s)"))
 
     # Deduplicate models while preserving order
     unique_models: List[ModelIdentifier] = []
@@ -2716,14 +2598,10 @@ def display_capability_assessment(substrates: SubstrateMap) -> None:
     gpu_status = substrates.get("gpu_acceleration", False)
     if isinstance(gpu_status, list) and gpu_status:
         print_section(f"Neural acceleration: {', '.join(gpu_status)}")
-        print_section(
-            "Your tiny agents will think at relativistic velocities.", indent=4
-        )
+        print_section("Your tiny agents will think at relativistic velocities.", indent=4)
     elif gpu_status is False:
         print_section("Neural acceleration: ❌ CPU only")
-        print_section(
-            "Your agents will think with methodical CPU deliberation.", indent=4
-        )
+        print_section("Your agents will think with methodical CPU deliberation.", indent=4)
     else:
         print_section(f"Neural acceleration status: {gpu_status}")
 
@@ -2760,11 +2638,7 @@ def display_capability_assessment(substrates: SubstrateMap) -> None:
     print_section("Local transformer models:")
     local_models = find_local_models()
 
-    if (
-        local_models
-        and not local_models[0].startswith("transformers or")
-        and not local_models[0].startswith("Error")
-    ):
+    if local_models and not local_models[0].startswith("transformers or") and not local_models[0].startswith("Error"):
         # Extract timing info if present
         timing_info = next((m for m in local_models if m.startswith("(Scan")), None)
         display_models = [m for m in local_models if not m.startswith("(Scan")]
@@ -2781,9 +2655,7 @@ def display_capability_assessment(substrates: SubstrateMap) -> None:
         error_msg = local_models[0] if local_models else "No models found"
         print_section(error_msg, indent=4)
         print_section("Consider downloading a small model, e.g.:", indent=4)
-        print_section(
-            "Qwen/Qwen2.5-0.5B-Instruct or TinyLlama/TinyLlama-1.1B-Chat", indent=6
-        )
+        print_section("Qwen/Qwen2.5-0.5B-Instruct or TinyLlama/TinyLlama-1.1B-Chat", indent=6)
 
     print_banner("✅ CAPABILITY ASSESSMENT COMPLETE", "└", "┘", 60)
     print_separator("section")
@@ -2836,9 +2708,7 @@ def display_capabilities_overview() -> None:
     print_banner("💡 EIDOSIAN PRINCIPLE #61", "┌", "┐", 70)
     print_banner("'The mightiest rivers begin as tiny springs;", "│", "│", 70)
     print_banner("the most powerful agents as simple functions.'", "│", "│", 70)
-    print_banner(
-        "'Yet rivers require tributaries; agents require models,", "│", "│", 70
-    )
+    print_banner("'Yet rivers require tributaries; agents require models,", "│", "│", 70)
     print_banner("tools, and orchestration to achieve greatness.'", "└", "┘", 70)
     print_separator("mini")
 
@@ -2912,9 +2782,7 @@ def display_installation_capabilities() -> None:
     print_separator("section")
 
     # Installation status taxonomy
-    print_banner(
-        "✨ InstallationStatus: Taxonomy of package installation states", "┌", "┐", 70
-    )
+    print_banner("✨ InstallationStatus: Taxonomy of package installation states", "┌", "┐", 70)
     status_descriptions: List[Tuple[str, str]] = [
         ("PRESENT", "Package exists and functions correctly"),
         ("ABSENT", "Package is not installed"),
@@ -2940,9 +2808,7 @@ def display_installation_capabilities() -> None:
 
     print_separator("section")
     print_banner("💡 USAGE EXAMPLES", "┌", "┐", 70)
-    print_section(
-        "status = InstallationStatus.from_check_result(*check_installation('numpy'))"
-    )
+    print_section("status = InstallationStatus.from_check_result(*check_installation('numpy'))")
     print_section("Try: check_installation('pandas') or system_compatibility_check()")
     print_banner("", "└", "┘", 70)
     print_separator("full")
@@ -2995,9 +2861,7 @@ def initialize_eidosian_system() -> None:
 # ═══════════════════════════════════════════════════════════════════════════
 
 
-def display_eidosian_interface(
-    mood: Optional[EmblemMood] = None, verbosity: Literal[0, 1, 2, 3] = 2
-) -> Dict[
+def display_eidosian_interface(mood: Optional[EmblemMood] = None, verbosity: Literal[0, 1, 2, 3] = 2) -> Dict[
     str,
     Union[
         str,
@@ -3093,9 +2957,7 @@ def display_eidosian_interface(
     )
 
     # Display formatted system information
-    print_section(
-        f"Python: v{sys_info['python_version']} on {sys_info['os_name']} {sys_info['architecture']}"
-    )
+    print_section(f"Python: v{sys_info['python_version']} on {sys_info['os_name']} {sys_info['architecture']}")
     print_section(f"Processor: {sys_info['processor']}")
 
     # Handle memory information with robust error checking
@@ -3103,9 +2965,7 @@ def display_eidosian_interface(
         memory_info = sys_info["memory"]
         if isinstance(memory_info, dict):
             if "total_memory" in memory_info and "available_memory" in memory_info:
-                print_section(
-                    f"Memory: {memory_info['available_memory']} available of {memory_info['total_memory']}"
-                )
+                print_section(f"Memory: {memory_info['available_memory']} available of {memory_info['total_memory']}")
             elif "memory_status" in memory_info:
                 print_section(f"Memory: {memory_info['memory_status']}")
 
@@ -3122,9 +2982,7 @@ def display_eidosian_interface(
 
     # Check installation status with precise error handling
     try:
-        is_installed, version = check_and_install_dependency(
-            "smolagents", verbose=(verbosity >= 2)
-        )
+        is_installed, version = check_and_install_dependency("smolagents", verbose=(verbosity >= 2))
         result_data["installation_status"] = {
             "installed": is_installed,
             "version": version,
@@ -3152,16 +3010,10 @@ def display_eidosian_interface(
                     # Determine agent types from module exports
                     agent_types: List[str] = []
                     if "classes" in smolagent_exports:
-                        agent_types = [
-                            cls
-                            for cls in smolagent_exports["classes"]
-                            if cls.endswith("Agent")
-                        ]
+                        agent_types = [cls for cls in smolagent_exports["classes"] if cls.endswith("Agent")]
 
                     if agent_types:
-                        print(
-                            f"\n⚙️ Available agent archetypes: {', '.join(agent_types)}"
-                        )
+                        print(f"\n⚙️ Available agent archetypes: {', '.join(agent_types)}")
 
                     # Display module components with categorical organization
                     if verbosity >= 3:
@@ -3200,9 +3052,7 @@ def display_eidosian_interface(
                     }
 
                     # Select wisdom based on mood, with fallback
-                    default_wisdom: str = (
-                        "Discrete thought, unified purpose: the essence of cognitive architecture."
-                    )
+                    default_wisdom: str = "Discrete thought, unified purpose: the essence of cognitive architecture."
                     wisdom: str = wisdom_quotes.get(selected_mood, default_wisdom)
                     print(f'\n💫 Eidosian wisdom: "{wisdom}"')
         else:

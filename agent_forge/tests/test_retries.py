@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
-from core import state as S
+
 from core import scheduler as SCH
+from core import state as S
 
 
 def test_retries(tmp_path: Path):

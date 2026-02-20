@@ -6,7 +6,6 @@ This module tests the WorkerManager class which coordinates multiple workers.
 import threading
 import time
 
-
 from word_forge.queue.worker_manager import WorkerManager
 
 

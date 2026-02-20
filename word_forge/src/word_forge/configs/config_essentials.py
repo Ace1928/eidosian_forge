@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Configuration Essentials Module
 
@@ -128,9 +129,7 @@ FormatStr: TypeAlias = str
 LogFilePathStr: TypeAlias = Optional[str]
 
 # Function type for validation handlers
-ValidationFunction: TypeAlias = Callable[
-    [LoggingConfigDict, List[ValidationError]], None
-]  # Use LoggingConfigDict
+ValidationFunction: TypeAlias = Callable[[LoggingConfigDict, List[ValidationError]], None]  # Use LoggingConfigDict
 EnvVarType: TypeAlias = Union[str, int, float, bool, None]  # Define EnvVarType
 
 # Type alias for serialized configuration data
@@ -492,9 +491,7 @@ class TracingContext:
 
 @eidosian()
 @contextmanager
-def measure_execution(
-    operation_name: str, context: Optional[Dict[str, Any]] = None
-) -> Iterator[ExecutionMetrics]:
+def measure_execution(operation_name: str, context: Optional[Dict[str, Any]] = None) -> Iterator[ExecutionMetrics]:
     """
     Context manager to measure execution time and resource usage.
 
@@ -562,9 +559,7 @@ BatchingStrategy = Literal["fixed", "dynamic", "adaptive", "none"]
 # ==========================================
 
 # Valid status values for conversations
-ConversationStatusValue = Literal[
-    "active", "pending", "completed", "archived", "deleted"
-]
+ConversationStatusValue = Literal["active", "pending", "completed", "archived", "deleted"]
 
 # Mapping of internal status codes to human-readable descriptions
 ConversationStatusMap = Dict[ConversationStatusValue, str]
@@ -649,9 +644,7 @@ def get_log_level(level: Union[LogLevel, LogLevelLiteral, str]) -> LogLevel:
 
 
 # Database transaction isolation levels
-TransactionIsolationLevel = Literal[
-    "READ_UNCOMMITTED", "READ_COMMITTED", "REPEATABLE_READ", "SERIALIZABLE"
-]
+TransactionIsolationLevel = Literal["READ_UNCOMMITTED", "READ_COMMITTED", "REPEATABLE_READ", "SERIALIZABLE"]
 
 # Connection pool modes
 ConnectionPoolMode = Literal["fixed", "dynamic", "none"]
@@ -752,9 +745,7 @@ class WorkDistributor(Protocol):
     """
 
     @eidosian()
-    def submit(
-        self, task: Any, priority: TaskPriority = TaskPriority.NORMAL
-    ) -> Result[Any]:
+    def submit(self, task: Any, priority: TaskPriority = TaskPriority.NORMAL) -> Result[Any]:
         """
         Submit a task for processing with the specified priority.
 
@@ -1287,9 +1278,7 @@ class LogFormatTemplate(EnumWithRepr):
 
     SIMPLE = "%(message)s"
     STANDARD = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    DETAILED = (
-        "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
-    )
+    DETAILED = "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
     JSON = '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
 
 
@@ -1509,9 +1498,7 @@ def serialize_dataclass(obj: Any) -> Dict[str, Any]:
             try:
                 # Cast to Any to safely check for NamedTuple attributes
                 tuple_value = cast(Any, value)
-                if hasattr(tuple_value, "_fields") and callable(
-                    getattr(tuple_value, "_asdict", None)
-                ):
+                if hasattr(tuple_value, "_fields") and callable(getattr(tuple_value, "_asdict", None)):
                     result[key] = tuple_value._asdict()
                 else:
                     result[key] = value
@@ -1555,15 +1542,10 @@ def serialize_config(obj: Any) -> ConfigValue:
         return d
     elif isinstance(obj, (list, tuple)):
         # Return JsonList type
-        return cast(
-            JsonList, [serialize_config(item) for item in cast(Sequence[Any], obj)]
-        )
+        return cast(JsonList, [serialize_config(item) for item in cast(Sequence[Any], obj)])
     elif isinstance(obj, dict):
         # Return JsonDict type
-        return {
-            str(key): serialize_config(value)
-            for key, value in cast(Dict[Any, Any], obj).items()
-        }
+        return {str(key): serialize_config(value) for key, value in cast(Dict[Any, Any], obj).items()}
     elif isinstance(obj, Enum):
         # Return the enum's value, which should be a JsonPrimitive
         return cast(JsonPrimitive, obj.value)

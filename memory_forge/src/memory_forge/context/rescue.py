@@ -40,10 +40,7 @@ def build_templates(root: Path) -> List[RescueTemplate]:
         ),
         RescueTemplate(
             memory_dir / "index.json",
-            "{\n"
-            "  \"schema_version\": 1,\n"
-            "  \"entries\": []\n"
-            "}\n",
+            "{\n" '  "schema_version": 1,\n' '  "entries": []\n' "}\n",
         ),
         RescueTemplate(
             memory_dir / "last_session.md",

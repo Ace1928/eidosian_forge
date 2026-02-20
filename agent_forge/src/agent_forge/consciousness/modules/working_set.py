@@ -24,9 +24,7 @@ def _now_iso(now: datetime) -> str:
 
 
 def _item_key(payload: Mapping[str, Any]) -> str:
-    content = (
-        payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
-    )
+    content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
     for key in ("candidate_id", "report_id", "action_id"):
         value = str(content.get(key) or "")
         if value:
@@ -35,14 +33,8 @@ def _item_key(payload: Mapping[str, Any]) -> str:
 
 
 def _related_signature(payload: Mapping[str, Any]) -> str:
-    content = (
-        payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
-    )
-    return (
-        f"{content.get('source_module','')}|"
-        f"{content.get('source_event_type','')}|"
-        f"{payload.get('kind','')}"
-    )
+    content = payload.get("content") if isinstance(payload.get("content"), Mapping) else {}
+    return f"{content.get('source_module','')}|" f"{content.get('source_event_type','')}|" f"{payload.get('kind','')}"
 
 
 class WorkingSetModule:
@@ -50,13 +42,9 @@ class WorkingSetModule:
 
     def tick(self, ctx: TickContext) -> None:
         capacity = max(1, int(ctx.config.get("working_set_capacity", 7)))
-        half_life = max(
-            0.1, float(ctx.config.get("working_set_decay_half_life_secs", 8.0))
-        )
+        half_life = max(0.1, float(ctx.config.get("working_set_decay_half_life_secs", 8.0)))
         min_salience = clamp01(ctx.config.get("working_set_min_salience"), default=0.08)
-        emit_interval = max(
-            0.2, float(ctx.config.get("working_set_emit_interval_secs", 2.0))
-        )
+        emit_interval = max(0.2, float(ctx.config.get("working_set_emit_interval_secs", 2.0)))
         scan_limit = max(10, int(ctx.config.get("working_set_scan_broadcasts", 120)))
         perturbations = ctx.perturbations_for(self.name)
         if any(str(p.get("kind") or "") == "drop" for p in perturbations):
@@ -65,19 +53,11 @@ class WorkingSetModule:
         if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
             return
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_cap = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "clamp"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "clamp"]
             or [0.0]
         )
         scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
@@ -125,9 +105,7 @@ class WorkingSetModule:
         recent = ctx.latest_events("workspace.broadcast", k=scan_limit)
         for evt in recent:
             data = evt.get("data") if isinstance(evt.get("data"), Mapping) else {}
-            payload = (
-                data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
-            )
+            payload = data.get("payload") if isinstance(data.get("payload"), Mapping) else {}
             if not payload:
                 continue
             kind = str(payload.get("kind") or "")
@@ -141,11 +119,7 @@ class WorkingSetModule:
             if noise_mag > 0.0:
                 salience = clamp01(salience + ctx.rng.uniform(-noise_mag, noise_mag), default=salience)
             confidence = clamp01(payload.get("confidence"), default=0.5)
-            links = (
-                payload.get("links")
-                if isinstance(payload.get("links"), Mapping)
-                else {}
-            )
+            links = payload.get("links") if isinstance(payload.get("links"), Mapping) else {}
             existing = by_key.get(item_id)
             if existing:
                 old_salience = clamp01(existing.get("salience"), default=0.0)
@@ -165,9 +139,7 @@ class WorkingSetModule:
                 "links": dict(links),
                 "entered_ts": str(evt.get("ts") or _now_iso(ctx.now)),
                 "last_seen_ts": str(evt.get("ts") or _now_iso(ctx.now)),
-                "source": str(
-                    data.get("source") or payload.get("source_module") or "unknown"
-                ),
+                "source": str(data.get("source") or payload.get("source_module") or "unknown"),
             }
             changed = True
 
@@ -228,9 +200,7 @@ class WorkingSetModule:
                 "memory_ids": [],
             },
         ).as_dict()
-        payload = normalize_workspace_payload(
-            payload, fallback_kind="WM_STATE", source_module=self.name
-        )
+        payload = normalize_workspace_payload(payload, fallback_kind="WM_STATE", source_module=self.name)
         ctx.broadcast(
             self.name,
             payload,

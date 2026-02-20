@@ -5,22 +5,25 @@ This broker is intentionally lightweight and file-backed for portability.
 It integrates with MemoryForge for episodic/semantic storage and provides
 structured lookup for self/user memory categories.
 """
-from __future__ import annotations
-from eidosian_core import eidosian
 
+from __future__ import annotations
+
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-import json
+from typing import Any, Dict, List, Optional
 
+from eidosian_core import eidosian
+
+from .interfaces import MemoryItem, MemoryType
 from .main import MemoryForge
-from .interfaces import MemoryType, MemoryItem
 
 
 @dataclass
 class MemoryEnvelope:
     """Structured memory record for broker-managed layers."""
+
     id: str
     created_at: str
     type: str
@@ -33,6 +36,7 @@ class MemoryBroker:
     Broker for layered memory. Uses MemoryForge for episodic/semantic storage,
     and maintains local JSON stores for self/user/working/procedural.
     """
+
     def __init__(self, data_dir: Path, forge: Optional[MemoryForge] = None):
         self.data_dir = data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)

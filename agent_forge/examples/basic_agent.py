@@ -14,9 +14,7 @@ def main():
     agent = Agent(name="EidosTest", model=model, memory=memory)
 
     # Run a simple task
-    response = agent.run(
-        "Explain what Agent Forge is and tell a joke about AI frameworks"
-    )
+    response = agent.run("Explain what Agent Forge is and tell a joke about AI frameworks")
     print(f"Agent response: {response}")
 
 

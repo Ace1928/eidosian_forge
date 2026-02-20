@@ -21,7 +21,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import threading
@@ -31,6 +30,7 @@ from enum import Enum, auto
 from typing import Dict, List, Optional, Protocol, TypedDict, Union, cast, final
 
 import numpy as np
+from eidosian_core import eidosian
 
 try:  # Optional heavy dependency
     import torch
@@ -340,16 +340,13 @@ class VectorWorker(threading.Thread):
                 self.embedder = TransformerEmbedder(model_name=embedder)
                 if logger:
                     logger.info(
-                        f"Created TransformerEmbedder with model '{embedder}' "
-                        f"(dimension={self.embedder.dimension})"
+                        f"Created TransformerEmbedder with model '{embedder}' " f"(dimension={self.embedder.dimension})"
                     )
             except EmbeddingError:
                 # Re-raise EmbeddingError as-is since it already has detailed info
                 raise
             except Exception as exc:
-                raise EmbeddingError(
-                    f"Unexpected error initializing embedder with model '{embedder}': {exc}"
-                ) from exc
+                raise EmbeddingError(f"Unexpected error initializing embedder with model '{embedder}': {exc}") from exc
         else:
             self.embedder = embedder
 
@@ -530,14 +527,10 @@ class VectorWorker(threading.Thread):
                 if hasattr(self.vector_store, "embed_text"):
                     try:
                         # Use "definition" template for word processing (documents, not queries)
-                        vector = self.vector_store.embed_text(
-                            text, template_key="definition", is_query=False
-                        )
+                        vector = self.vector_store.embed_text(text, template_key="definition", is_query=False)
                     except Exception as embed_err:
                         # Fall back to worker's embedder if VectorStore embedding fails
-                        self.logger.debug(
-                            f"VectorStore embed_text failed, using worker embedder: {embed_err}"
-                        )
+                        self.logger.debug(f"VectorStore embed_text failed, using worker embedder: {embed_err}")
                         vector = self.embedder.embed(text)
                 else:
                     vector = self.embedder.embed(text)
@@ -552,9 +545,7 @@ class VectorWorker(threading.Thread):
                 self.stats.record_result(word.id, ProcessingResult.SUCCESS)
 
             except EmbeddingError as e:
-                self.logger.error(
-                    f"Embedding failed for word {word.term} (ID: {word.id}): {str(e)}"
-                )
+                self.logger.error(f"Embedding failed for word {word.term} (ID: {word.id}): {str(e)}")
                 self.stats.record_result(word.id, ProcessingResult.EMBEDDING_ERROR)
             except Exception as e:
                 error_msg = f"Vector storage failed for word {word.term} (ID: {word.id}): {str(e)}"
@@ -564,10 +555,7 @@ class VectorWorker(threading.Thread):
                     # Provide helpful guidance for dimension mismatches
                     embedder_dim = getattr(self.embedder, "dimension", "unknown")
                     store_dim = getattr(self.vector_store, "dimension", "unknown")
-                    error_msg += (
-                        f" (embedder dimension: {embedder_dim}, "
-                        f"store dimension: {store_dim})"
-                    )
+                    error_msg += f" (embedder dimension: {embedder_dim}, " f"store dimension: {store_dim})"
                 self.logger.error(error_msg)
                 self.stats.record_result(word.id, ProcessingResult.STORAGE_ERROR)
 
@@ -597,9 +585,7 @@ class VectorWorker(threading.Thread):
         )
 
         if self.stats.errors:
-            error_details = ", ".join(
-                f"{count} {error}" for error, count in self.stats.errors.items()
-            )
+            error_details = ", ".join(f"{count} {error}" for error, count in self.stats.errors.items())
             self.logger.info(f"Errors: {error_details}")
 
 
@@ -696,10 +682,7 @@ class TransformerEmbedder:
         except OSError as e:
             error_msg = str(e)
             # Check for common error patterns in HuggingFace error messages
-            if (
-                "not a local folder" in error_msg
-                or "not a valid model identifier" in error_msg
-            ):
+            if "not a local folder" in error_msg or "not a valid model identifier" in error_msg:
                 raise EmbeddingError(
                     f"Model not found: '{model_name}'.\n"
                     "This model name is not recognized by HuggingFace.\n\n"
@@ -722,9 +705,7 @@ class TransformerEmbedder:
                     "  3. Or choose a public model instead"
                 ) from e
             else:
-                raise EmbeddingError(
-                    f"Failed to load model '{model_name}': {error_msg}"
-                ) from e
+                raise EmbeddingError(f"Failed to load model '{model_name}': {error_msg}") from e
         except ConnectionError as e:
             raise EmbeddingError(
                 f"Network error while loading model '{model_name}'.\n"
@@ -735,24 +716,18 @@ class TransformerEmbedder:
                 "  3. If behind a proxy, configure HTTPS_PROXY environment variable"
             ) from e
         except Exception as e:
-            raise EmbeddingError(
-                f"Failed to initialize embedding model '{model_name}': {str(e)}"
-            ) from e
+            raise EmbeddingError(f"Failed to initialize embedding model '{model_name}': {str(e)}") from e
 
         # Get the actual dimension from the loaded model
         try:
             model_dim = self.model.get_sentence_embedding_dimension()  # type: ignore
             if model_dim is None or not isinstance(model_dim, int) or model_dim <= 0:
-                raise EmbeddingError(
-                    f"Model '{model_name}' returned invalid dimension: {model_dim}"
-                )
+                raise EmbeddingError(f"Model '{model_name}' returned invalid dimension: {model_dim}")
             self.dimension: int = model_dim
         except EmbeddingError:
             raise
         except Exception as e:
-            raise EmbeddingError(
-                f"Could not determine embedding dimension for model '{model_name}': {e}"
-            ) from e
+            raise EmbeddingError(f"Could not determine embedding dimension for model '{model_name}': {e}") from e
 
     @eidosian()
     def embed(self, text: str) -> NDArray[np.float32]:
@@ -773,9 +748,7 @@ class TransformerEmbedder:
 
         try:
             # Format with task instruction for retrieval optimization
-            task = (
-                "Given a definition and examples, retrieve related terms and concepts"
-            )
+            task = "Given a definition and examples, retrieve related terms and concepts"
             formatted_text = f"Instruct: {task}\nQuery: {text}"
 
             # Generate embedding and return as numpy array
@@ -787,9 +760,7 @@ class TransformerEmbedder:
                 show_progress_bar=True,  # Show Progress
                 output_value="sentence_embedding",  # Ensure correct output
                 precision="float32",  # Use float32 for consistency
-                device=(
-                    "cuda" if torch is not None and torch.cuda.is_available() else "cpu"
-                ),
+                device=("cuda" if torch is not None and torch.cuda.is_available() else "cpu"),
             )
             return cast(NDArray[np.float32], embedding)
         except Exception as e:

@@ -1,12 +1,16 @@
 from eidosian_core import eidosian
+
 """
 ChromaDB Backend for Vector Storage.
 """
 import os
-import chromadb
-from typing import List, Optional, Dict, Any
-from ..core.interfaces import StorageBackend, MemoryItem, MemoryType
 from datetime import datetime
+from typing import Dict, List, Optional
+
+import chromadb
+
+from ..core.interfaces import MemoryItem, MemoryType, StorageBackend
+
 
 class ChromaBackend(StorageBackend):
     def __init__(self, collection_name: str, persist_path: str):
@@ -26,19 +30,14 @@ class ChromaBackend(StorageBackend):
     def add(self, item: MemoryItem) -> bool:
         if not item.embedding:
             raise ValueError("ChromaBackend requires embeddings for items.")
-        
+
         # Flatten metadata for Chroma compatibility (no nested dicts)
         meta = {k: str(v) for k, v in item.metadata.items()}
         meta["created_at"] = item.created_at.isoformat()
         meta["type"] = item.type.value
         meta["importance"] = item.importance
 
-        self.collection.add(
-            documents=[item.content],
-            embeddings=[item.embedding],
-            metadatas=[meta],
-            ids=[item.id]
-        )
+        self.collection.add(documents=[item.content], embeddings=[item.embedding], metadatas=[meta], ids=[item.id])
         return True
 
     @eidosian()
@@ -46,22 +45,18 @@ class ChromaBackend(StorageBackend):
         res = self.collection.get(ids=[item_id], include=["metadatas", "documents", "embeddings"])
         if not res["ids"]:
             return None
-        
+
         return self._map_result_to_item(
             res["ids"][0],
             res["documents"][0],
             res["metadatas"][0],
-            res["embeddings"][0] if res["embeddings"] is not None else None
+            res["embeddings"][0] if res["embeddings"] is not None else None,
         )
 
     @eidosian()
     def search(self, query_embedding: List[float], limit: int = 10, filters: Optional[Dict] = None) -> List[MemoryItem]:
-        res = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=limit,
-            where=filters
-        )
-        
+        res = self.collection.query(query_embeddings=[query_embedding], n_results=limit, where=filters)
+
         items = []
         if res["ids"]:
             for i, doc_id in enumerate(res["ids"][0]):
@@ -69,7 +64,7 @@ class ChromaBackend(StorageBackend):
                     doc_id,
                     res["documents"][0][i],
                     res["metadatas"][0][i],
-                    None # Query doesn't return embeddings by default for speed
+                    None,  # Query doesn't return embeddings by default for speed
                 )
                 items.append(item)
         return items
@@ -98,5 +93,5 @@ class ChromaBackend(StorageBackend):
             type=MemoryType(meta.get("type", "episodic")),
             importance=float(meta.get("importance", 1.0)),
             metadata=meta,
-            embedding=emb
+            embedding=emb,
         )

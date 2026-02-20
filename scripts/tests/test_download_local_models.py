@@ -5,7 +5,6 @@ import json
 import sys
 from pathlib import Path
 
-
 MODULE_PATH = Path(__file__).resolve().parents[1] / "download_local_models.py"
 SPEC = importlib.util.spec_from_file_location("download_local_models", MODULE_PATH)
 assert SPEC and SPEC.loader

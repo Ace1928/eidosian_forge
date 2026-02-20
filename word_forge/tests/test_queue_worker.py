@@ -6,7 +6,6 @@ ProcessingResult, ProcessingStats, and related functionality.
 
 import time
 
-
 from word_forge.queue.queue_worker import (
     ProcessingError,
     ProcessingResult,

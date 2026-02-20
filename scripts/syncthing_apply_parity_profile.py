@@ -18,7 +18,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-
 PROFILE: list[dict[str, str]] = [
     {"id": "dot-eidosian", "label": ".eidosian", "path": "{home}/.eidosian"},
     {"id": "dot-ruff-cache", "label": ".ruff_cache", "path": "{home}/.ruff_cache"},
@@ -26,7 +25,11 @@ PROFILE: list[dict[str, str]] = [
     {"id": "dot-gnupg", "label": ".gnupg", "path": "{home}/.gnupg"},
     {"id": "dot-config", "label": ".config", "path": "{home}/.config"},
     {"id": "dot-codex", "label": ".codex", "path": "{home}/.codex"},
-    {"id": "dot-local-share-backgrounds", "label": ".local/share/backgrounds", "path": "{home}/.local/share/backgrounds"},
+    {
+        "id": "dot-local-share-backgrounds",
+        "label": ".local/share/backgrounds",
+        "path": "{home}/.local/share/backgrounds",
+    },
     {"id": "dot-local-share-wallpapers", "label": ".local/share/wallpapers", "path": "{home}/.local/share/wallpapers"},
     {"id": "dot-local-share-plasma", "label": ".local/share/plasma", "path": "{home}/.local/share/plasma"},
     {"id": "dot-local-share-icons", "label": ".local/share/icons", "path": "{home}/.local/share/icons"},

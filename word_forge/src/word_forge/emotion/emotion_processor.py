@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, final
 
 from eidosian_core import eidosian
+
 from word_forge.database.database_manager import DBManager
 from word_forge.emotion.emotion_manager import EmotionManager
 from word_forge.emotion.emotion_types import (
@@ -81,9 +82,7 @@ class RecursiveEmotionProcessor:
             # Use the smaller model for resource optimised semantic analysis
             self.nlp = spacy.load("en_core_web_sm")
         except (ImportError, OSError):
-            print(
-                "Warning: spaCy 'en_core_web_sm' model not available. Using fallback methods."
-            )
+            print("Warning: spaCy 'en_core_web_sm' model not available. Using fallback methods.")
             self.nlp = None
 
     @contextmanager
@@ -103,9 +102,7 @@ class RecursiveEmotionProcessor:
             self._processing_depth -= 1
 
     @eidosian()
-    def process_term(
-        self, term: str, context: Optional[EmotionalContext] = None
-    ) -> EmotionalConcept:
+    def process_term(self, term: str, context: Optional[EmotionalContext] = None) -> EmotionalConcept:
         """
         Process a term to extract its full emotional representation.
 
@@ -157,9 +154,7 @@ class RecursiveEmotionProcessor:
                     emotion_vector = context.apply_to_vector(emotion_vector)
 
                 # Create the emotional concept
-                concept = EmotionalConcept(
-                    term=term, word_id=word_id, primary_emotion=emotion_vector
-                )
+                concept = EmotionalConcept(term=term, word_id=word_id, primary_emotion=emotion_vector)
 
                 # Add secondary emotions based on relationships
                 self._add_secondary_emotions(concept)
@@ -178,9 +173,7 @@ class RecursiveEmotionProcessor:
                 self._processing_depth -= 1
 
     @eidosian()
-    def analyze_relationship(
-        self, term1: str, term2: str, relationship_type: str
-    ) -> float:
+    def analyze_relationship(self, term1: str, term2: str, relationship_type: str) -> float:
         """
         Analyze the emotional relationship between two terms.
 
@@ -247,10 +240,7 @@ class RecursiveEmotionProcessor:
         elif relationship_type == "meta_emotion":
             # Meta-emotions are about other emotions
             # See if term2 has meta-emotional qualities (certainty, complexity)
-            meta_dims = {
-                d: emotion2.dimensions.get(d, 0.0)
-                for d in EmotionDimension.meta_dimensions()
-            }
+            meta_dims = {d: emotion2.dimensions.get(d, 0.0) for d in EmotionDimension.meta_dimensions()}
             if not meta_dims:
                 return 0.0
 
@@ -475,22 +465,17 @@ class RecursiveEmotionProcessor:
             if dimension_weights:
                 # Normalize dimension-specific weights
                 dimension_weight_sum = sum(dimension_weights)
-                normalized_weights = [
-                    float(w) / dimension_weight_sum for w in dimension_weights
-                ]
+                normalized_weights = [float(w) / dimension_weight_sum for w in dimension_weights]
 
                 # Calculate weighted dimension value
                 merged_dimensions[dimension] = sum(
-                    float(v) * float(w)
-                    for v, w in zip(dimension_values, normalized_weights)
+                    float(v) * float(w) for v, w in zip(dimension_values, normalized_weights)
                 )
 
         # Calculate overall confidence as weighted average plus a synergy bonus
         # for having multiple sources agree
         base_confidence = sum(float(c) * float(w) for c, w in zip(confidences, weights))
-        source_count_bonus = 0.05 * (
-            len(emotions) - 1
-        )  # Slight bonus for multiple sources
+        source_count_bonus = 0.05 * (len(emotions) - 1)  # Slight bonus for multiple sources
         merged_confidence = min(0.95, base_confidence + source_count_bonus)
 
         return EmotionVector(dimensions=merged_dimensions, confidence=merged_confidence)
@@ -587,10 +572,7 @@ class RecursiveEmotionProcessor:
         """
         try:
             # Verify LLM availability in emotion manager
-            if (
-                not hasattr(self.emotion_manager, "llm_interface")
-                or self.emotion_manager.llm_interface is None
-            ):
+            if not hasattr(self.emotion_manager, "llm_interface") or self.emotion_manager.llm_interface is None:
                 return None
 
             # Construct a structured prompt for emotional analysis
@@ -634,12 +616,8 @@ class RecursiveEmotionProcessor:
                     pass
 
             # Fallback to regex parsing if JSON extraction fails
-            valence_match = re.search(
-                r"valence[:\s]+([-+]?\d*\.?\d+)", response, re.IGNORECASE
-            )
-            arousal_match = re.search(
-                r"arousal[:\s]+(\d*\.?\d+)", response, re.IGNORECASE
-            )
+            valence_match = re.search(r"valence[:\s]+([-+]?\d*\.?\d+)", response, re.IGNORECASE)
+            arousal_match = re.search(r"arousal[:\s]+(\d*\.?\d+)", response, re.IGNORECASE)
 
             if valence_match and arousal_match:
                 valence = max(-1.0, min(1.0, float(valence_match.group(1))))
@@ -662,12 +640,8 @@ class RecursiveEmotionProcessor:
         hash_val = int(hashlib.md5(term.encode()).hexdigest(), 16)
 
         # Basic valence: positive/negative sentiment heuristic
-        positive_patterns = (
-            r"happ|joy|love|good|great|nice|win|pleasant|delight|content"
-        )
-        negative_patterns = (
-            r"sad|anger|hate|bad|awful|terr|fear|anxi|depress|rage|grief"
-        )
+        positive_patterns = r"happ|joy|love|good|great|nice|win|pleasant|delight|content"
+        negative_patterns = r"sad|anger|hate|bad|awful|terr|fear|anxi|depress|rage|grief"
 
         valence = 0.0
         if re.search(positive_patterns, term.lower()):
@@ -692,12 +666,7 @@ class RecursiveEmotionProcessor:
         elif re.search(low_arousal, term.lower()):
             arousal_base = -0.5
 
-        arousal = (
-            arousal_base
-            + (consonant_ratio - 0.5)
-            + ((hash_val // 100) % 100) / 100
-            - 0.5
-        )
+        arousal = arousal_base + (consonant_ratio - 0.5) + ((hash_val // 100) % 100) / 100 - 0.5
 
         # Basic dominance
         high_dominance = r"power|control|domin|master|confiden|assert|strong"
@@ -782,9 +751,7 @@ class RecursiveEmotionProcessor:
                 elif rel_type == "diminishes":
                     weighted_emotion = concept.primary_emotion.diminish()
 
-                concept.secondary_emotions.append(
-                    (f"{rel_type}:{rel_term}", weighted_emotion)
-                )
+                concept.secondary_emotions.append((f"{rel_type}:{rel_term}", weighted_emotion))
 
                 # Record the relationship context
                 concept.add_related_context(rel_type, rel_term, rel_strength)
@@ -818,13 +785,9 @@ class RecursiveEmotionProcessor:
         if arousal > 0.7:  # High arousal
             # Meta-emotion about high activation
             meta_dimensions = {
-                EmotionDimension.VALENCE: (
-                    -0.2 if arousal > 0.9 else 0.2
-                ),  # Negative if extreme
+                EmotionDimension.VALENCE: (-0.2 if arousal > 0.9 else 0.2),  # Negative if extreme
                 EmotionDimension.AROUSAL: -0.5,  # Low arousal response to high arousal
-                EmotionDimension.DOMINANCE: (
-                    0.3 if arousal < 0.9 else -0.3
-                ),  # Control except at extremes
+                EmotionDimension.DOMINANCE: (0.3 if arousal < 0.9 else -0.3),  # Control except at extremes
                 EmotionDimension.META_STABILITY: -0.4,  # Recognition of instability
             }
             concept.add_meta_emotion(
@@ -888,9 +851,7 @@ class RecursiveEmotionProcessor:
         # Pattern: contextual variations
         self._add_contextual_variations(concept, primary)
 
-    def _add_temporal_sequence(
-        self, concept: EmotionalConcept, primary: EmotionVector
-    ) -> None:
+    def _add_temporal_sequence(self, concept: EmotionalConcept, primary: EmotionVector) -> None:
         """Add temporal sequence pattern (how the emotion evolves over time)."""
         timeline: List[EmotionVector] = []
 
@@ -907,15 +868,11 @@ class RecursiveEmotionProcessor:
         end_dims = dict(end_emotion.dimensions)
         if EmotionDimension.VALENCE in end_dims:
             end_dims[EmotionDimension.VALENCE] *= 0.8
-        timeline.append(
-            EmotionVector(dimensions=end_dims, confidence=end_emotion.confidence)
-        )
+        timeline.append(EmotionVector(dimensions=end_dims, confidence=end_emotion.confidence))
 
         concept.add_emotional_pattern("temporal_sequence", timeline)
 
-    def _add_intensity_gradation(
-        self, concept: EmotionalConcept, primary: EmotionVector
-    ) -> None:
+    def _add_intensity_gradation(self, concept: EmotionalConcept, primary: EmotionVector) -> None:
         """Add intensity gradation pattern (emotion at different intensity levels)."""
         gradation: List[EmotionVector] = []
 
@@ -938,19 +895,13 @@ class RecursiveEmotionProcessor:
 
         # High intensity
         high = EmotionVector(
-            dimensions={
-                dim: max(-1.0, min(1.0, val * 1.5))
-                for dim, val in primary.dimensions.items()
-            },
+            dimensions={dim: max(-1.0, min(1.0, val * 1.5)) for dim, val in primary.dimensions.items()},
             confidence=0.8,
         )
         gradation.append(high)
 
         # Extreme intensity (may have different qualities)
-        extreme_dims = {
-            dim: max(-1.0, min(1.0, val * 2.0))
-            for dim, val in primary.dimensions.items()
-        }
+        extreme_dims = {dim: max(-1.0, min(1.0, val * 2.0)) for dim, val in primary.dimensions.items()}
 
         # Extreme intensity often has different emotional qualities
         # Add some complexity/instability for extreme emotions
@@ -964,23 +915,15 @@ class RecursiveEmotionProcessor:
 
         concept.add_emotional_pattern("intensity_gradation", gradation)
 
-    def _add_contextual_variations(
-        self, concept: EmotionalConcept, primary: EmotionVector
-    ) -> None:
+    def _add_contextual_variations(self, concept: EmotionalConcept, primary: EmotionVector) -> None:
         """Add contextual variations pattern (emotion in different contexts)."""
         variations: List[EmotionVector] = []
 
         # Personal/intimate context
         personal_dims = dict(primary.dimensions)
-        personal_dims[EmotionDimension.INTENSITY] = min(
-            1.0, personal_dims.get(EmotionDimension.INTENSITY, 0) + 0.3
-        )
-        personal_dims[EmotionDimension.RELEVANCE] = min(
-            1.0, personal_dims.get(EmotionDimension.RELEVANCE, 0) + 0.4
-        )
-        personal_dims[EmotionDimension.SOCIAL] = min(
-            1.0, personal_dims.get(EmotionDimension.SOCIAL, 0) + 0.5
-        )
+        personal_dims[EmotionDimension.INTENSITY] = min(1.0, personal_dims.get(EmotionDimension.INTENSITY, 0) + 0.3)
+        personal_dims[EmotionDimension.RELEVANCE] = min(1.0, personal_dims.get(EmotionDimension.RELEVANCE, 0) + 0.4)
+        personal_dims[EmotionDimension.SOCIAL] = min(1.0, personal_dims.get(EmotionDimension.SOCIAL, 0) + 0.5)
         variations.append(EmotionVector(dimensions=personal_dims, confidence=0.7))
 
         # Professional context
@@ -998,28 +941,17 @@ class RecursiveEmotionProcessor:
 
         # Social context
         social_dims = dict(primary.dimensions)
-        if (
-            EmotionDimension.VALENCE in social_dims
-            and social_dims[EmotionDimension.VALENCE] < 0
-        ):
+        if EmotionDimension.VALENCE in social_dims and social_dims[EmotionDimension.VALENCE] < 0:
             # Negative emotions often muted in social contexts
-            social_dims[EmotionDimension.VALENCE] = (
-                social_dims[EmotionDimension.VALENCE] * 0.5
-            )
-        social_dims[EmotionDimension.SOCIAL] = min(
-            1.0, social_dims.get(EmotionDimension.SOCIAL, 0) + 0.6
-        )
+            social_dims[EmotionDimension.VALENCE] = social_dims[EmotionDimension.VALENCE] * 0.5
+        social_dims[EmotionDimension.SOCIAL] = min(1.0, social_dims.get(EmotionDimension.SOCIAL, 0) + 0.6)
         variations.append(EmotionVector(dimensions=social_dims, confidence=0.7))
 
         # Cultural context
         cultural_dims = dict(primary.dimensions)
         # Cultural contexts often modify emotional display rules
-        cultural_dims[EmotionDimension.INTENSITY] = max(
-            -1.0, cultural_dims.get(EmotionDimension.INTENSITY, 0) - 0.2
-        )
-        cultural_dims[EmotionDimension.CERTAINTY] = max(
-            -1.0, cultural_dims.get(EmotionDimension.CERTAINTY, 0) - 0.3
-        )
+        cultural_dims[EmotionDimension.INTENSITY] = max(-1.0, cultural_dims.get(EmotionDimension.INTENSITY, 0) - 0.2)
+        cultural_dims[EmotionDimension.CERTAINTY] = max(-1.0, cultural_dims.get(EmotionDimension.CERTAINTY, 0) - 0.3)
         variations.append(EmotionVector(dimensions=cultural_dims, confidence=0.6))
 
         concept.add_emotional_pattern("contextual_variations", variations)
@@ -1043,9 +975,7 @@ class RecursiveEmotionProcessor:
                 with self.db.create_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute(primary_query, (word_id,))
-                    results = [
-                        (row[0], row[1], float(row[2])) for row in cursor.fetchall()
-                    ]
+                    results = [(row[0], row[1], float(row[2])) for row in cursor.fetchall()]
                     if results:
                         return results
             except sqlite3.OperationalError:
@@ -1066,9 +996,7 @@ class RecursiveEmotionProcessor:
                 with self.db.create_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute(fallback_query, (word_id,))
-                    return [
-                        (row[0], row[1], float(row[2])) for row in cursor.fetchall()
-                    ]
+                    return [(row[0], row[1], float(row[2])) for row in cursor.fetchall()]
             except sqlite3.Error as e:
                 print(f"Database error fetching relationships: {e}")
 
@@ -1078,9 +1006,7 @@ class RecursiveEmotionProcessor:
         # Ultimate fallback uses wordnet and other heuristics
         return self._get_heuristic_related_terms(word_id)
 
-    def _get_heuristic_related_terms(
-        self, word_id: int
-    ) -> List[Tuple[str, str, float]]:
+    def _get_heuristic_related_terms(self, word_id: int) -> List[Tuple[str, str, float]]:
         """Fallback method to generate plausible related terms using NLP."""
         # Get the term for this word_id
         term = None
@@ -1120,12 +1046,7 @@ class RecursiveEmotionProcessor:
             # Get words from vocabulary that have vectors
             for word in self.nlp.vocab:
                 # Skip words without vectors, non-alphabetic words, and the term itself
-                if (
-                    word.has_vector
-                    and word.is_alpha
-                    and word.text.lower() != term.lower()
-                    and len(word.text) > 2
-                ):
+                if word.has_vector and word.is_alpha and word.text.lower() != term.lower() and len(word.text) > 2:
                     similarity = word.similarity(doc)
                     if similarity > 0.6:  # Only consider reasonably similar words
                         similar_terms.append((word.text, similarity))
@@ -1176,9 +1097,7 @@ class RecursiveEmotionProcessor:
 
         return result
 
-    def _calculate_evocative_strength(
-        self, emotion1: EmotionVector, emotion2: EmotionVector
-    ) -> float:
+    def _calculate_evocative_strength(self, emotion1: EmotionVector, emotion2: EmotionVector) -> float:
         """Calculate how strongly one emotion might evoke another."""
         # Check if dimensions correlate in expected ways for evocation
         valence1 = emotion1.dimensions.get(EmotionDimension.VALENCE, 0.0)
@@ -1209,9 +1128,7 @@ class RecursiveEmotionProcessor:
 
         return max(pattern_strengths + [0.2])  # Base connection as fallback
 
-    def _calculate_component_strength(
-        self, component: EmotionVector, composite: EmotionVector
-    ) -> float:
+    def _calculate_component_strength(self, component: EmotionVector, composite: EmotionVector) -> float:
         """Calculate how likely component is a part of composite emotion."""
         # Components have fewer strong dimensions than composites
         component_dims = sum(1 for v in component.dimensions.values() if abs(v) > 0.5)
@@ -1235,9 +1152,7 @@ class RecursiveEmotionProcessor:
         # Component should be largely contained within composite
         return min(1.0, matching_dims / max(1, component_dims) * 0.8)
 
-    def _normalize_dimensions(
-        self, dimensions: Dict[EmotionDimension, float]
-    ) -> Dict[EmotionDimension, float]:
+    def _normalize_dimensions(self, dimensions: Dict[EmotionDimension, float]) -> Dict[EmotionDimension, float]:
         """Normalize dimension values to ensure they remain in valid range.
 
         Args:
@@ -1248,9 +1163,7 @@ class RecursiveEmotionProcessor:
         """
         return {dim: max(-1.0, min(1.0, val)) for dim, val in dimensions.items()}
 
-    def _get_cache_key(
-        self, term: str, context: Optional[EmotionalContext] = None
-    ) -> str:
+    def _get_cache_key(self, term: str, context: Optional[EmotionalContext] = None) -> str:
         """Generate a cache key for a term and optional context.
 
         Args:
@@ -1266,30 +1179,13 @@ class RecursiveEmotionProcessor:
         # Create a hash of the context's dimension adjustments
         ctx_factors: List[Tuple[str, float]] = []
         if context.domain_specific:
-            ctx_factors.extend(
-                [(str(k), float(v)) for k, v in sorted(context.domain_specific.items())]
-            )
+            ctx_factors.extend([(str(k), float(v)) for k, v in sorted(context.domain_specific.items())])
         if context.cultural_factors:
-            ctx_factors.extend(
-                [
-                    (str(k), float(v))
-                    for k, v in sorted(context.cultural_factors.items())
-                ]
-            )
+            ctx_factors.extend([(str(k), float(v)) for k, v in sorted(context.cultural_factors.items())])
         if context.situational_factors:
-            ctx_factors.extend(
-                [
-                    (str(k), float(v))
-                    for k, v in sorted(context.situational_factors.items())
-                ]
-            )
+            ctx_factors.extend([(str(k), float(v)) for k, v in sorted(context.situational_factors.items())])
         if context.temporal_factors:
-            ctx_factors.extend(
-                [
-                    (str(k), float(v))
-                    for k, v in sorted(context.temporal_factors.items())
-                ]
-            )
+            ctx_factors.extend([(str(k), float(v)) for k, v in sorted(context.temporal_factors.items())])
 
         # Generate a deterministic hash of context factors
         ctx_hash = hashlib.md5(str(ctx_factors).encode()).hexdigest()[:8]
@@ -1321,9 +1217,7 @@ class RecursiveEmotionProcessor:
         return None
 
     @eidosian()
-    def register_meta_emotion_hook(
-        self, hook: Callable[[EmotionalConcept], None]
-    ) -> None:
+    def register_meta_emotion_hook(self, hook: Callable[[EmotionalConcept], None]) -> None:
         """Register a new meta-emotion generation hook.
 
         Args:
@@ -1363,8 +1257,6 @@ class RecursiveEmotionProcessor:
                 if rel_strength > 0.5:  # Only use strong relationships
                     related_concept = self.process_term(rel_term)
                     if related_concept:
-                        concept.add_secondary_emotion(
-                            f"{rel_type}_{rel_term}", related_concept.primary_emotion
-                        )
+                        concept.add_secondary_emotion(f"{rel_type}_{rel_term}", related_concept.primary_emotion)
 
         self.register_pattern_hook(secondary_emotions_with_db)

@@ -1,17 +1,20 @@
 from eidosian_core import eidosian
+
 """
 Librarian - Manages the Code Snippet Database.
 """
+import hashlib
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-import hashlib
+from typing import Any, Dict, List, Optional
+
 
 class CodeLibrarian:
     """
     Stores and retrieves code snippets.
     Uses a simple JSON store for now, intended to upgrade to Vector DB.
     """
+
     def __init__(self, storage_path: Path):
         self.storage_path = storage_path
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
@@ -32,12 +35,8 @@ class CodeLibrarian:
         """Add a snippet to the library."""
         # Create a deterministic ID based on content
         snippet_id = hashlib.sha256(code.encode("utf-8")).hexdigest()
-        
-        self.db["snippets"][snippet_id] = {
-            "code": code,
-            "metadata": metadata,
-            "tags": metadata.get("tags", [])
-        }
+
+        self.db["snippets"][snippet_id] = {"code": code, "metadata": metadata, "tags": metadata.get("tags", [])}
         self._save()
         return snippet_id
 

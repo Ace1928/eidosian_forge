@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 # 🌀 Eidosian Version System - Single Source of Truth
 """
@@ -12,7 +13,7 @@ precision, structure, and universal applicability.
 import os
 import re
 from pathlib import Path
-from typing import Dict, Tuple, Union, Optional
+from typing import Dict, Optional, Tuple, Union
 
 # Version components with Eidosian precision
 VERSION_MAJOR = 0
@@ -44,31 +45,34 @@ if VERSION_LABEL:
 VERSION = __version__
 PEP440_VERSION = __pep440_version__
 
+
 @eidosian()
 def get_version_string() -> str:
     """
     Get the full version string with Eidosian clarity.
-    
+
     Returns:
         Complete version string
     """
     return VERSION
 
+
 @eidosian()
 def get_version_tuple() -> Tuple[int, int, int, str, int]:
     """
     Get the version components as a tuple.
-    
+
     Returns:
         Tuple of (major, minor, patch, label, label_number)
     """
     return (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_LABEL, VERSION_LABEL_NUM)
 
+
 @eidosian()
 def get_version_info() -> Dict[str, Union[int, str]]:
     """
     Get complete version information as a dictionary.
-    
+
     Returns:
         Dictionary with version components
     """
@@ -79,39 +83,41 @@ def get_version_info() -> Dict[str, Union[int, str]]:
         "label": VERSION_LABEL,
         "label_num": VERSION_LABEL_NUM,
         "version": VERSION,
-        "pep440_version": PEP440_VERSION
+        "pep440_version": PEP440_VERSION,
     }
+
 
 @eidosian()
 def get_version_from_file() -> Optional[str]:
     """
     Get version from VERSION file if it exists.
-    
+
     Returns:
         Version string from file or None if file doesn't exist
     """
     # Try to find VERSION file in common locations
     version_file_paths = [
         Path(__file__).resolve().parent.parent.parent / "VERSION",  # /repo/VERSION
-        Path(__file__).resolve().parent.parent / "VERSION",         # /repo/src/VERSION
-        Path(__file__).resolve().parent / "VERSION",                # /repo/src/doc_forge/VERSION
+        Path(__file__).resolve().parent.parent / "VERSION",  # /repo/src/VERSION
+        Path(__file__).resolve().parent / "VERSION",  # /repo/src/doc_forge/VERSION
     ]
-    
+
     for version_file in version_file_paths:
         if version_file.exists():
             with open(version_file, "r", encoding="utf-8") as f:
                 return f.read().strip()
-    
+
     return None
+
 
 @eidosian()
 def update_version_from_env() -> None:
     """Update global version variables from environment variables."""
     global VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_LABEL, VERSION_LABEL_NUM, VERSION, PEP440_VERSION
-    
+
     if "DOC_FORGE_VERSION" in os.environ:
         version_str = os.environ["DOC_FORGE_VERSION"]
-        
+
         # Parse version string with regex
         match = re.match(r"(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z]+)\.?(\d+)?)?", version_str)
         if match:
@@ -121,14 +127,14 @@ def update_version_from_env() -> None:
             __version_patch__ = int(groups[2])
             __version_label__ = groups[3] or ""
             __version_label_num__ = int(groups[4]) if groups[4] else 0
-            
+
             # Update assembled versions
             __version__ = f"{__version_major__}.{__version_minor__}.{__version_patch__}"
             if __version_label__:
                 __version__ += f"-{__version_label__}"
                 if __version_label_num__ > 0:
                     __version__ += f".{__version_label_num__}"
-            
+
             # Update PEP440 version
             __pep440_version__ = f"{__version_major__}.{__version_minor__}.{__version_patch__}"
             if __version_label__:
@@ -139,7 +145,12 @@ def update_version_from_env() -> None:
                 elif __version_label__ == "rc":
                     __pep440_version__ += f"rc{__version_label_num__}" if __version_label_num__ > 0 else "rc0"
                 else:
-                    __pep440_version__ += f".{__version_label__}{__version_label_num__}" if __version_label_num__ > 0 else f".{__version_label__}"
+                    __pep440_version__ += (
+                        f".{__version_label__}{__version_label_num__}"
+                        if __version_label_num__ > 0
+                        else f".{__version_label__}"
+                    )
+
 
 # Check for version file or environment variable on module load
 file_version = get_version_from_file()

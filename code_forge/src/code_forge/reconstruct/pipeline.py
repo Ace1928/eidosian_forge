@@ -10,8 +10,8 @@ from typing import Any, Iterable, Optional
 
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.digester.pipeline import run_archive_digester
-from code_forge.integration.provenance import write_provenance_links
 from code_forge.ingest.runner import IngestionRunner
+from code_forge.integration.provenance import write_provenance_links
 from code_forge.library.db import CodeLibraryDB
 
 
@@ -287,11 +287,7 @@ def apply_reconstruction(
             exclude_relative_paths=roundtrip_meta,
         )
 
-    changed_or_new = sorted(
-        rel
-        for rel, digest in reconstructed_hashes.items()
-        if target_hashes.get(rel) != digest
-    )
+    changed_or_new = sorted(rel for rel, digest in reconstructed_hashes.items() if target_hashes.get(rel) != digest)
     removed = sorted(set(target_hashes.keys()) - set(reconstructed_hashes.keys())) if prune else []
 
     transaction_id = f"roundtrip_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}"
@@ -385,7 +381,9 @@ def run_roundtrip_pipeline(
     parity_path = workspace_dir / "parity_report.json"
     summary_path = workspace_dir / "roundtrip_summary.json"
 
-    effective_extensions = list(extensions) if extensions is not None else sorted(GenericCodeAnalyzer.supported_extensions())
+    effective_extensions = (
+        list(extensions) if extensions is not None else sorted(GenericCodeAnalyzer.supported_extensions())
+    )
 
     digest = run_archive_digester(
         root_path=root_path,

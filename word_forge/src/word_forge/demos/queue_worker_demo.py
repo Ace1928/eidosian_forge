@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of WordProcessor and ParallelWordProcessor functionality.
 """
@@ -126,9 +127,7 @@ def main() -> None:
         # Add terms to the queue
         for term in sample_terms:
             # Create sample database entries
-            db_manager.insert_or_update_word(
-                term, f"Definition of {term}", "noun", [f"Example usage of {term}."]
-            )
+            db_manager.insert_or_update_word(term, f"Definition of {term}", "noun", [f"Example usage of {term}."])
 
             # Enqueue for processing
             queue_manager.enqueue(term)
@@ -160,10 +159,7 @@ def main() -> None:
                 wait_start = time.time()  # Reset wait timer
 
             # All terms processed or timeout
-            if (
-                current_count >= len(sample_terms)
-                or time.time() - wait_start > max_wait
-            ):
+            if current_count >= len(sample_terms) or time.time() - wait_start > max_wait:
                 break
 
             time.sleep(0.1)
@@ -180,12 +176,8 @@ def main() -> None:
         logger.info(f"Successful: {final_stats['success_count']}")
         logger.info(f"Duplicates: {final_stats['duplicate_count']}")
         logger.info(f"Errors: {final_stats['error_count']}")
-        logger.info(
-            f"Average processing time: {final_stats['avg_processing_time_ms']:.2f}ms"
-        )
-        logger.info(
-            f"Processing rate: {final_stats['processing_rate_per_minute']:.2f} terms/min"
-        )
+        logger.info(f"Average processing time: {final_stats['avg_processing_time_ms']:.2f}ms")
+        logger.info(f"Processing rate: {final_stats['processing_rate_per_minute']:.2f} terms/min")
 
         if final_stats["relationship_counts"]:
             logger.info("\nRelationship Types Discovered:")

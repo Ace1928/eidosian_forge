@@ -6,9 +6,10 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+from eidosian_core import eidosian
+
 from .. import FORGE_ROOT
 from ..forge_loader import ensure_forge_import
-from eidosian_core import eidosian
 
 ensure_forge_import("knowledge_forge")
 ensure_forge_import("memory_forge")
@@ -18,13 +19,12 @@ from knowledge_forge.integrations.graphrag import GraphRAGIntegration
 from knowledge_forge.integrations.memory_ingest import MemoryIngestor
 
 from ..core import tool
+from ..embeddings import SimpleEmbedder
 from ..transactions import (
     begin_transaction,
     find_latest_transaction_for_path,
     load_transaction,
 )
-from ..embeddings import SimpleEmbedder
-
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 
@@ -111,7 +111,7 @@ def kb_add_fact(fact: str, tags: List[str]) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    
+
     with begin_transaction("kb_add", [persistence_path]) as txn:
         node = kb.add_knowledge(fact, tags=tags)
         return f"Added node: {node.id} ({txn.id})"
@@ -151,7 +151,7 @@ def kb_link(node_id_a: str, node_id_b: str) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    
+
     with begin_transaction("kb_link", [persistence_path]) as txn:
         kb.link_nodes(node_id_a, node_id_b)
         return f"Linked {node_id_a} <-> {node_id_b} ({txn.id})"
@@ -172,7 +172,7 @@ def kb_delete(node_id: str) -> str:
     persistence_path = getattr(kb, "persistence_path", None)
     if not isinstance(persistence_path, Path):
         persistence_path = None
-    
+
     with begin_transaction("kb_delete", [persistence_path]) as txn:
         deleted = kb.delete_node(node_id)
         if not deleted:
@@ -354,6 +354,7 @@ def _get_bridge():
     if _knowledge_memory_bridge is None:
         try:
             from knowledge_forge import KnowledgeMemoryBridge
+
             _knowledge_memory_bridge = KnowledgeMemoryBridge()
         except ImportError:
             pass
@@ -366,22 +367,10 @@ def _get_bridge():
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Search query"
-            },
-            "max_results": {
-                "type": "integer",
-                "description": "Maximum results to return (default: 5)"
-            },
-            "include_memory": {
-                "type": "boolean",
-                "description": "Include memory results (default: true)"
-            },
-            "include_knowledge": {
-                "type": "boolean",
-                "description": "Include knowledge results (default: true)"
-            },
+            "query": {"type": "string", "description": "Search query"},
+            "max_results": {"type": "integer", "description": "Maximum results to return (default: 5)"},
+            "include_memory": {"type": "boolean", "description": "Include memory results (default: true)"},
+            "include_knowledge": {"type": "boolean", "description": "Include knowledge results (default: true)"},
         },
         "required": ["query"],
     },
@@ -395,10 +384,11 @@ def unified_context_search(
 ) -> str:
     """Search across memory and knowledge for unified context."""
     import json
+
     bridge = _get_bridge()
     if not bridge:
         return "Error: Knowledge-memory bridge not available"
-    
+
     context = bridge.get_memory_knowledge_context(query, max_results=max_results)
     return json.dumps(context, indent=2)
 
@@ -409,19 +399,16 @@ def unified_context_search(
     parameters={
         "type": "object",
         "properties": {
-            "memory_id": {
-                "type": "string",
-                "description": "ID of the memory to promote"
-            },
+            "memory_id": {"type": "string", "description": "ID of the memory to promote"},
             "concepts": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Concepts to associate with the knowledge node"
+                "description": "Concepts to associate with the knowledge node",
             },
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Additional tags for the knowledge node"
+                "description": "Additional tags for the knowledge node",
             },
         },
         "required": ["memory_id"],
@@ -437,7 +424,7 @@ def promote_memory_to_knowledge(
     bridge = _get_bridge()
     if not bridge:
         return "Error: Knowledge-memory bridge not available"
-    
+
     node_id = bridge.promote_memory_to_knowledge(memory_id, concepts=concepts, tags=tags)
     if node_id:
         return f"Memory promoted to knowledge node: {node_id}"
@@ -453,10 +440,11 @@ def promote_memory_to_knowledge(
 def bridge_stats() -> str:
     """Get bridge statistics."""
     import json
+
     bridge = _get_bridge()
     if not bridge:
         return "Error: Knowledge-memory bridge not available"
-    
+
     return json.dumps(bridge.stats(), indent=2)
 
 

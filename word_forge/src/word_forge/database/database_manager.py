@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """Database Manager Module.
 
 This module provides a comprehensive interface for managing a SQLite database
@@ -447,13 +448,9 @@ SQL_CREATE_TRANSLATION_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_translations_lang ON translations(target_lang)
 """
 
-SQL_CHECK_WORDS_TABLE = (
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='words'"
-)
+SQL_CHECK_WORDS_TABLE = "SELECT name FROM sqlite_master WHERE type='table' AND name='words'"
 
-SQL_CHECK_LEXEMES_TABLE = (
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='lexemes'"
-)
+SQL_CHECK_LEXEMES_TABLE = "SELECT name FROM sqlite_master WHERE type='table' AND name='lexemes'"
 
 # SQL query constants for data operations
 SQL_INSERT_OR_UPDATE_WORD = """
@@ -614,9 +611,7 @@ class DBManager:
 
             return connection
         except sqlite3.Error as e:
-            raise ConnectionError(
-                f"Failed to connect to database at {self.db_path}", e, str(self.db_path)
-            )
+            raise ConnectionError(f"Failed to connect to database at {self.db_path}", e, str(self.db_path))
 
     @eidosian()
     def create_connection(self) -> sqlite3.Connection:
@@ -689,9 +684,7 @@ class DBManager:
                 conn = None  # Prevent closing outside
 
         except sqlite3.Error as e:
-            raise ConnectionError(
-                "Failed to get database connection", e, str(self.db_path)
-            )
+            raise ConnectionError("Failed to get database connection", e, str(self.db_path))
 
         finally:
             # Close connection if not returned to pool
@@ -742,14 +735,10 @@ class DBManager:
                 elif isinstance(e, sqlite3.Error):
                     raise QueryError("SQL error during transaction", e) from e
                 else:
-                    raise TransactionError(
-                        "Error during database transaction", e
-                    ) from e
+                    raise TransactionError("Error during database transaction", e) from e
 
     @eidosian()
-    def execute_query(
-        self, query: str, params: Optional[QueryParams] = None
-    ) -> List[Row]:
+    def execute_query(self, query: str, params: Optional[QueryParams] = None) -> List[Row]:
         """
         Execute a query and return all results.
 
@@ -1023,9 +1012,7 @@ class DBManager:
             return False
 
     @eidosian()
-    def insert_relationship(
-        self, base_term: str, related_term: str, relationship_type: str
-    ) -> bool:
+    def insert_relationship(self, base_term: str, related_term: str, relationship_type: str) -> bool:
         """
         Create a relationship between two terms.
 
@@ -1058,9 +1045,7 @@ class DBManager:
 
             # Insert the relationship
             with self.transaction() as conn:
-                cursor = conn.execute(
-                    SQL_INSERT_RELATIONSHIP, (word_id, related_term, relationship_type)
-                )
+                cursor = conn.execute(SQL_INSERT_RELATIONSHIP, (word_id, related_term, relationship_type))
                 # Return True if a new row was inserted
                 return cursor.rowcount > 0
         except (sqlite3.Error, TransactionError) as e:
@@ -1069,9 +1054,7 @@ class DBManager:
                 e,
             )
 
-    def _validate_relationship_params(
-        self, base_term: str, related_term: str, relationship_type: str
-    ) -> None:
+    def _validate_relationship_params(self, base_term: str, related_term: str, relationship_type: str) -> None:
         """
         Validate parameters for relationship creation.
 
@@ -1364,10 +1347,7 @@ class RelationshipTypeManager:
         normalized_type = relationship_type.lower().strip()
 
         # Valid if it's in the predefined types or follows naming convention
-        return (
-            normalized_type in self.get_all_relationship_types()
-            or self._follows_naming_convention(normalized_type)
-        )
+        return normalized_type in self.get_all_relationship_types() or self._follows_naming_convention(normalized_type)
 
     def _follows_naming_convention(self, relationship_type: str) -> bool:
         """
@@ -1400,11 +1380,7 @@ class RelationshipTypeManager:
             self._refresh_cache()
 
         # Flatten the dictionary of categories into a single list
-        return [
-            relationship_type
-            for category in self._cache.values()
-            for relationship_type in category
-        ]
+        return [relationship_type for category in self._cache.values() for relationship_type in category]
 
     def _refresh_cache(self) -> None:
         """
@@ -1412,13 +1388,9 @@ class RelationshipTypeManager:
         """
         try:
             # Query all distinct relationship types
-            rows = self.db_manager.execute_query(
-                "SELECT DISTINCT relationship_type FROM relationships"
-            )
+            rows = self.db_manager.execute_query("SELECT DISTINCT relationship_type FROM relationships")
             # Group by categories
-            self._cache = self._categorize_relationship_types(
-                [row["relationship_type"] for row in rows]
-            )
+            self._cache = self._categorize_relationship_types([row["relationship_type"] for row in rows])
         except (DatabaseError, sqlite3.Error):
             # Non-fatal error - continue with empty cache
             self._cache = {"other": []}

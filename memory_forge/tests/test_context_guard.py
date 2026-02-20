@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import time
+from pathlib import Path
 
 from memory_forge.context.guard import redact_sensitive, retention_cleanup
 
@@ -21,6 +21,7 @@ def test_retention_cleanup(tmp_path: Path) -> None:
     new_file.write_text("new", encoding="utf-8")
     past = time.time() - (10 * 86400)
     import os
+
     os.utime(old_file, (past, past))
     removed = retention_cleanup(tmp_path, retention_days=5, dry_run=False)
     assert str(old_file) in removed

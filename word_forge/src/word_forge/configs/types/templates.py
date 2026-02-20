@@ -343,9 +343,7 @@ BatchingStrategy = Literal["fixed", "dynamic", "adaptive", "none"]
 # ==========================================
 
 # Valid status values for conversations
-ConversationStatusValue = Literal[
-    "active", "pending", "completed", "archived", "deleted"
-]
+ConversationStatusValue = Literal["active", "pending", "completed", "archived", "deleted"]
 
 # Mapping of internal status codes to human-readable descriptions
 ConversationStatusMap = Dict[ConversationStatusValue, str]
@@ -384,9 +382,7 @@ GraphEdgeWeightStrategy = Literal["count", "similarity", "custom"]
 # ==========================================
 
 # Database transaction isolation levels
-TransactionIsolationLevel = Literal[
-    "READ_UNCOMMITTED", "READ_COMMITTED", "REPEATABLE_READ", "SERIALIZABLE"
-]
+TransactionIsolationLevel = Literal["READ_UNCOMMITTED", "READ_COMMITTED", "REPEATABLE_READ", "SERIALIZABLE"]
 
 # Connection pool modes
 ConnectionPoolMode = Literal["fixed", "dynamic", "none"]

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Emotional Configuration module for Word Forge.
 
@@ -25,9 +26,7 @@ from word_forge.configs.config_types import EnvMapping
 # Exported at module level for backward compatibility
 
 #: SQL schema for word emotion table
-SQL_CREATE_WORD_EMOTION_TABLE: Final[
-    str
-] = """
+SQL_CREATE_WORD_EMOTION_TABLE: Final[str] = """
     CREATE TABLE IF NOT EXISTS word_emotion (
         word_id INTEGER PRIMARY KEY,
         valence REAL NOT NULL,
@@ -38,9 +37,7 @@ SQL_CREATE_WORD_EMOTION_TABLE: Final[
 """
 
 #: SQL schema for message emotion table
-SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[
-    str
-] = """
+SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[str] = """
     CREATE TABLE IF NOT EXISTS message_emotion (
         message_id INTEGER PRIMARY KEY,
         label TEXT NOT NULL,
@@ -50,36 +47,28 @@ SQL_CREATE_MESSAGE_EMOTION_TABLE: Final[
 """
 
 #: SQL query for inserting word emotion data
-SQL_INSERT_WORD_EMOTION: Final[
-    str
-] = """
+SQL_INSERT_WORD_EMOTION: Final[str] = """
     INSERT OR REPLACE INTO word_emotion
     (word_id, valence, arousal, timestamp)
     VALUES (?, ?, ?, ?)
 """
 
 #: SQL query for retrieving word emotion data
-SQL_GET_WORD_EMOTION: Final[
-    str
-] = """
+SQL_GET_WORD_EMOTION: Final[str] = """
     SELECT word_id, valence, arousal, timestamp
     FROM word_emotion
     WHERE word_id = ?
 """
 
 #: SQL query for inserting message emotion data
-SQL_INSERT_MESSAGE_EMOTION: Final[
-    str
-] = """
+SQL_INSERT_MESSAGE_EMOTION: Final[str] = """
     INSERT OR REPLACE INTO message_emotion
     (message_id, label, confidence, timestamp)
     VALUES (?, ?, ?, ?)
 """
 
 #: SQL query for retrieving message emotion data
-SQL_GET_MESSAGE_EMOTION: Final[
-    str
-] = """
+SQL_GET_MESSAGE_EMOTION: Final[str] = """
     SELECT message_id, label, confidence, timestamp
     FROM message_emotion
     WHERE message_id = ?

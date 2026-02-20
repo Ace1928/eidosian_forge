@@ -198,9 +198,7 @@ class LogFormatTemplate(EnumWithRepr):
 
     SIMPLE = "%(message)s"
     STANDARD = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    DETAILED = (
-        "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
-    )
+    DETAILED = "%(asctime)s - %(name)s - %(levelname)s - %(pathname)s:%(lineno)d - %(message)s"
     JSON = '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
 
 

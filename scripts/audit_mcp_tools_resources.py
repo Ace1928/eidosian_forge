@@ -247,9 +247,7 @@ async def run_audit(root: Path, timeout_sec: float) -> dict[str, Any]:
                         )
                     )
                 except Exception as exc:
-                    resource_outcomes.append(
-                        CallOutcome(name=res.uri, status="hard_fail", message=str(exc))
-                    )
+                    resource_outcomes.append(CallOutcome(name=res.uri, status="hard_fail", message=str(exc)))
 
             tools = await session.list_tools()
             for tool in sorted(tools.tools, key=lambda t: t.name):
@@ -365,11 +363,7 @@ def main() -> int:
         "tools_total={tools_total} ok={tool_ok} soft_fail={tool_soft_fail} "
         "hard_fail={tool_hard_fail} skipped={tool_skipped}".format(**counts)
     )
-    print(
-        "resources_total={resources_total} ok={resource_ok} hard_fail={resource_hard_fail}".format(
-            **counts
-        )
-    )
+    print("resources_total={resources_total} ok={resource_ok} hard_fail={resource_hard_fail}".format(**counts))
 
     return 1 if counts["tool_hard_fail"] or counts["resource_hard_fail"] else 0
 

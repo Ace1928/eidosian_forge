@@ -225,9 +225,7 @@ def test_load_default_config_and_save(monkeypatch, tmp_path):
 
     assert mod.load_default_config() == {}
 
-    config = mod.ForgeConfig(
-        name="demo", core_folders=["src"], base_files=["README.md"]
-    )
+    config = mod.ForgeConfig(name="demo", core_folders=["src"], base_files=["README.md"])
     mod.save_as_default_config(config)
     saved = json.loads((tmp_path / ".eidosian" / "forge_config.json").read_text())
     assert saved["core_folders"] == ["src"]
@@ -480,9 +478,7 @@ def test_main_rich_and_non_rich(monkeypatch, tmp_path):
     assert captured["config"].name == "from_setup"
     assert captured["config"].modules
 
-    mod_nr = load_forge_builder(
-        with_rich=False, module_name="forge_builder_main_norich"
-    )
+    mod_nr = load_forge_builder(with_rich=False, module_name="forge_builder_main_norich")
     monkeypatch.setattr(mod_nr.Path, "home", lambda: tmp_path)
     monkeypatch.setattr(mod_nr, "create_structure", fake_create)
     monkeypatch.setattr(sys, "argv", ["forge_builder", "demo"])
@@ -500,13 +496,9 @@ def test_main_modes_and_config(monkeypatch, tmp_path):
         captured["config"] = config
 
     monkeypatch.setattr(mod, "create_structure", fake_create)
-    monkeypatch.setattr(
-        mod, "load_config_file", lambda _path: {"core_folders": ["src"]}
-    )
+    monkeypatch.setattr(mod, "load_config_file", lambda _path: {"core_folders": ["src"]})
 
-    monkeypatch.setattr(
-        sys, "argv", ["forge_builder", "--mode", "dry-run", "--config", "cfg.json"]
-    )
+    monkeypatch.setattr(sys, "argv", ["forge_builder", "--mode", "dry-run", "--config", "cfg.json"])
     mod.main()
     assert captured["config"].mode == mod.OperationMode.DRY_RUN
     assert captured["config"].core_folders == ["src"]

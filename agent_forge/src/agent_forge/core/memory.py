@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Memory system for Eidosian Forge.
 
@@ -70,9 +71,7 @@ class MemorySystem:
             ]
             for d in memory_dirs:
                 os.makedirs(self.memory_path / d, exist_ok=True)
-            logger.info(
-                f"Git integration disabled or unavailable, using directory-based storage at {memory_path}"
-            )
+            logger.info(f"Git integration disabled or unavailable, using directory-based storage at {memory_path}")
 
     @eidosian()
     def save_thought(self, thought: Thought) -> str:
@@ -85,9 +84,7 @@ class MemorySystem:
         Returns:
             ID of saved thought
         """
-        thought_id = (
-            f"{thought.timestamp.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
-        )
+        thought_id = f"{thought.timestamp.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
         if self.git_enabled and hasattr(self, "git"):
             self.git.save_memory("thoughts", thought_id, thought.to_dict())
@@ -114,9 +111,7 @@ class MemorySystem:
         Returns:
             ID of saved memory
         """
-        memory_id = (
-            f"{memory.timestamp.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
-        )
+        memory_id = f"{memory.timestamp.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}"
 
         if self.git_enabled and hasattr(self, "git"):
             self.git.save_memory("memories", memory_id, memory.to_dict())
@@ -181,11 +176,7 @@ class MemorySystem:
             # Convert back to Thought object
             thought_type_str = data.get("type")
             # Handle the case where thought_type might be None
-            thought_type = (
-                ThoughtType(thought_type_str)
-                if thought_type_str
-                else ThoughtType.UNKNOWN
-            )
+            thought_type = ThoughtType(thought_type_str) if thought_type_str else ThoughtType.UNKNOWN
 
             return Thought(
                 content=data["content"],
@@ -198,9 +189,7 @@ class MemorySystem:
         return None
 
     @eidosian()
-    def get_recent_thoughts(
-        self, n: int = 10, thought_type: Optional[str] = None
-    ) -> List[Thought]:
+    def get_recent_thoughts(self, n: int = 10, thought_type: Optional[str] = None) -> List[Thought]:
         """
         Get most recent thoughts.
 
@@ -217,11 +206,7 @@ class MemorySystem:
         else:
             thought_dir = self.memory_path / "thoughts"
             if thought_dir.exists():
-                thought_ids = [
-                    f.stem
-                    for f in thought_dir.glob("*.json")
-                    if f.is_file() and not f.name.startswith(".")
-                ]
+                thought_ids = [f.stem for f in thought_dir.glob("*.json") if f.is_file() and not f.name.startswith(".")]
 
         # Sort by timestamp (which is encoded in the ID)
         thought_ids.sort(reverse=True)
@@ -234,10 +219,7 @@ class MemorySystem:
             thought = self.get_thought(thought_id)
             if thought and (
                 not thought_type
-                or (
-                    hasattr(thought.thought_type, "value")
-                    and thought.thought_type.value == thought_type
-                )
+                or (hasattr(thought.thought_type, "value") and thought.thought_type.value == thought_type)
             ):
                 thoughts.append(thought)
 
@@ -302,11 +284,7 @@ class MemorySystem:
         else:
             thought_dir = self.memory_path / "thoughts"
             if thought_dir.exists():
-                thought_ids = [
-                    f.stem
-                    for f in thought_dir.glob("*.json")
-                    if f.is_file() and not f.name.startswith(".")
-                ]
+                thought_ids = [f.stem for f in thought_dir.glob("*.json") if f.is_file() and not f.name.startswith(".")]
 
         for thought_id in thought_ids:
             thought = self.get_thought(thought_id)

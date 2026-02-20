@@ -9,34 +9,39 @@ Usage examples:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
-from eidosian_core.ports import get_service_url
-import argparse, json, dataclasses as dc
+
+import argparse
+import dataclasses as dc
+import json
 import os
 
 # add repo root to sys.path so local 'core' can be imported without PYTHONPATH
 import sys
 from pathlib import Path as _P
 
+from eidosian_core import eidosian
+from eidosian_core.ports import get_service_url
+
+from agent_forge.core.artifacts import run_dir
 
 # local import; stdlib only
 from agent_forge.core.state import (  # type: ignore
-    migrate,
-    snapshot,
-    append_journal,
-    save_snapshot,
-    iter_journal,
-    rotate_journal,
-    load_snapshot,
-    diff_snapshots,
     add_goal,
+    append_journal,
+    diff_snapshots,
+    iter_journal,
     list_goals,
-    list_steps_for_goal,
     list_runs,
+    list_steps_for_goal,
+    load_snapshot,
+    migrate,
+    rotate_journal,
+    save_snapshot,
+    snapshot,
 )
-from agent_forge.core.artifacts import run_dir
 
 DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, default_path="")
+
 
 @eidosian()
 def main(argv: list[str] | None = None) -> int:
@@ -80,9 +85,7 @@ def main(argv: list[str] | None = None) -> int:
             default=5 * 1024 * 1024,
             help="rotate threshold in bytes (with --rotate)",
         )
-        p_journal.add_argument(
-            "--force", action="store_true", help="rotate even if under threshold"
-        )
+        p_journal.add_argument("--force", action="store_true", help="rotate even if under threshold")
 
         p_goals = sub.add_parser("goals", help="manage goals")
         gsub = p_goals.add_subparsers(dest="goals_cmd", required=True)
@@ -116,7 +119,9 @@ def main(argv: list[str] | None = None) -> int:
         p_workspace.add_argument("--window", type=float, default=1.0, help="window size in seconds")
         p_workspace.add_argument("--min-sources", type=int, default=3, help="sources per ignition")
         p_workspace.add_argument("--show-winners", action="store_true", help="show recent GW competition winners")
-        p_workspace.add_argument("--show-coherence", action="store_true", help="show coherence/ignition density details")
+        p_workspace.add_argument(
+            "--show-coherence", action="store_true", help="show coherence/ignition density details"
+        )
         p_workspace.add_argument("--show-rci", action="store_true", help="show latest response complexity metric")
         p_workspace.add_argument("--show-agency", action="store_true", help="show latest agency confidence metric")
         p_workspace.add_argument("--json", action="store_true", help="JSON output")
@@ -141,7 +146,9 @@ def main(argv: list[str] | None = None) -> int:
 
         ctrial = csub.add_parser("trial", help="run a perturbation trial and report deltas")
         ctrial.add_argument("--dir", default="state", help="state directory")
-        ctrial.add_argument("--kind", default="noise", choices=["noise", "drop", "zero", "jitter"], help="perturbation kind")
+        ctrial.add_argument(
+            "--kind", default="noise", choices=["noise", "drop", "zero", "jitter"], help="perturbation kind"
+        )
         ctrial.add_argument("--target", default="attention", help="perturbation target module")
         ctrial.add_argument("--magnitude", type=float, default=0.2, help="perturbation magnitude")
         ctrial.add_argument("--duration", type=float, default=1.0, help="perturbation duration seconds")
@@ -225,7 +232,9 @@ def main(argv: list[str] | None = None) -> int:
         cstress.add_argument("--no-persist", action="store_true", help="do not write stress benchmark report file")
         cstress.add_argument("--json", action="store_true", help="JSON output")
 
-        cstress_latest = csub.add_parser("latest-stress-benchmark", help="show latest persisted stress benchmark report")
+        cstress_latest = csub.add_parser(
+            "latest-stress-benchmark", help="show latest persisted stress benchmark report"
+        )
         cstress_latest.add_argument("--dir", default="state", help="state directory")
         cstress_latest.add_argument("--json", action="store_true", help="JSON output")
 
@@ -241,7 +250,9 @@ def main(argv: list[str] | None = None) -> int:
         cred_latest.add_argument("--dir", default="state", help="state directory")
         cred_latest.add_argument("--json", action="store_true", help="JSON output")
 
-        cfull = csub.add_parser("full-benchmark", help="run integrated stack benchmark (kernel + trials + MCP + local LLM)")
+        cfull = csub.add_parser(
+            "full-benchmark", help="run integrated stack benchmark (kernel + trials + MCP + local LLM)"
+        )
         cfull.add_argument("--dir", default="state", help="state directory")
         cfull.add_argument("--rounds", type=int, default=3, help="number of core benchmark rounds")
         cfull.add_argument("--bench-ticks", type=int, default=10, help="ticks per core benchmark round")
@@ -286,9 +297,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.cmd == "journal":
             if args.rotate:
-                rot = rotate_journal(
-                    args.dir, max_bytes=args.max_bytes, force=args.force
-                )
+                rot = rotate_journal(args.dir, max_bytes=args.max_bytes, force=args.force)
                 if rot:
                     print(f"[journal] rotated -> {rot}")
                 else:
@@ -307,7 +316,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(json.dumps(items, indent=2))
                 else:
                     for e in items:
-                        tags = f" [{', '.join(e.get('tags', []))}]" if e.get('tags') else ""
+                        tags = f" [{', '.join(e.get('tags', []))}]" if e.get("tags") else ""
                         print(f"{e.get('ts')}  {e.get('type')}: {e.get('text')}{tags}")
                 return 0
             if not args.add:
@@ -360,8 +369,8 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
 
         if args.cmd == "workspace":
-            from agent_forge.core import workspace as WS  # type: ignore
             from agent_forge.core import events as EV  # type: ignore
+            from agent_forge.core import workspace as WS  # type: ignore
 
             summary = WS.summary(
                 args.dir,
@@ -394,7 +403,9 @@ def main(argv: list[str] | None = None) -> int:
                         if summary.get("window_count")
                         else 0.0
                     )
-                    print(f"[workspace] coherence_ratio={summary.get('coherence_ratio')} ignition_density={density:.3f}")
+                    print(
+                        f"[workspace] coherence_ratio={summary.get('coherence_ratio')} ignition_density={density:.3f}"
+                    )
                 if args.show_winners:
                     print(f"[workspace] recent_winner_broadcasts={len(winners)}")
                     for item in winners[:5]:
@@ -444,10 +455,7 @@ def main(argv: list[str] | None = None) -> int:
                 winners = consciousness.get("recent_winners") or []
                 print(f"[self-model] ts={snap.get('timestamp')}")
                 print(f"[self-model] memory_total={memory.get('total_memories')}")
-                print(
-                    f"[self-model] workspace_events={ws.get('event_count')} "
-                    f"ignitions={ws.get('ignition_count')}"
-                )
+                print(f"[self-model] workspace_events={ws.get('event_count')} " f"ignitions={ws.get('ignition_count')}")
                 print(f"[self-model] agency={agency} boundary={boundary} winners={len(winners)}")
             return 0
 
@@ -902,6 +910,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
+
 def _pretty_print_state(snap: dict) -> None:
     print(f"[state] base: {snap.get('base')}")
     print(f"  schema: {snap.get('schema')}")
@@ -911,14 +920,12 @@ def _pretty_print_state(snap: dict) -> None:
     if last:
         print("  last:")
         for e in last:
-            tags = f" [{', '.join(e.get('tags', []))}]" if e.get('tags') else ""
+            tags = f" [{', '.join(e.get('tags', []))}]" if e.get("tags") else ""
             print(f"    - {e.get('ts')}  {e.get('type')}: {e.get('text')}{tags}")
     files = snap.get("files", {})
     print(
         "  files:  "
-        + ", ".join(
-            f"{k}={files.get(k,0)}" for k in ["events", "bus", "vector_store", "weights", "adapters", "snaps"]
-        )
+        + ", ".join(f"{k}={files.get(k,0)}" for k in ["events", "bus", "vector_store", "weights", "adapters", "snaps"])
     )
 
 
@@ -985,6 +992,7 @@ def _parse_kv_str(items: list[str]) -> dict[str, str]:
             continue
         out[key] = value.strip()
     return out
+
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

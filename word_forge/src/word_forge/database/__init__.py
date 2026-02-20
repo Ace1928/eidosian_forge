@@ -18,15 +18,18 @@ _lazy_imports = {
     "TransactionError": ".database_manager",
 }
 
+
 def __getattr__(name: str):
     """Lazy import handler to break circular dependencies."""
     if name in _lazy_imports:
         import importlib
+
         module = importlib.import_module(_lazy_imports[name], __package__)
         obj = getattr(module, name)
         globals()[name] = obj
         return obj
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "DBManager",

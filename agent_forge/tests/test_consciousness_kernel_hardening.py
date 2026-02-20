@@ -69,9 +69,7 @@ def test_kernel_watchdog_quarantines_and_recovers(tmp_path: Path) -> None:
 
     all_events = events.iter_events(base, limit=None)
     module_errors = [e for e in all_events if str(e.get("type")) == "consciousness.module_error"]
-    quarantined = [
-        e for e in all_events if str(e.get("type")) == "consciousness.module_quarantined"
-    ]
+    quarantined = [e for e in all_events if str(e.get("type")) == "consciousness.module_quarantined"]
     recovered = [e for e in all_events if str(e.get("type")) == "consciousness.module_recovered"]
     ok_events = [e for e in all_events if str(e.get("type")) == "flaky.ok"]
 
@@ -119,20 +117,20 @@ def test_payload_safety_truncates_event_and_broadcast_payloads(tmp_path: Path) -
         and isinstance((e.get("data") or {}).get("payload"), dict)
         and str(((e.get("data") or {}).get("payload") or {}).get("source_module")) == "large_payload_module"
     )
-    payload = (broadcast_evt.get("data") or {}).get("payload") if isinstance((broadcast_evt.get("data") or {}).get("payload"), dict) else {}
+    payload = (
+        (broadcast_evt.get("data") or {}).get("payload")
+        if isinstance((broadcast_evt.get("data") or {}).get("payload"), dict)
+        else {}
+    )
     content = payload.get("content") if isinstance(payload.get("content"), dict) else {}
     b_text = str(content.get("text") or "")
     b_items = content.get("items") if isinstance(content.get("items"), list) else []
     assert len(b_text) <= 96
     assert len(b_items) <= 17
 
-    trunc_events = [
-        e for e in all_events if str(e.get("type")) == "consciousness.payload_truncated"
-    ]
+    trunc_events = [e for e in all_events if str(e.get("type")) == "consciousness.payload_truncated"]
     assert len(trunc_events) >= 2
     source_types = {
-        str((e.get("data") or {}).get("source_type"))
-        for e in trunc_events
-        if isinstance(e.get("data"), dict)
+        str((e.get("data") or {}).get("source_type")) for e in trunc_events if isinstance(e.get("data"), dict)
     }
     assert {"event", "broadcast"}.issubset(source_types)

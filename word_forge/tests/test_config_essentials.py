@@ -4,23 +4,22 @@ This module tests the core configuration types and utilities including Error,
 Result, various enums, and utility functions.
 """
 
-import time
 import threading
+import time
 
 import pytest
-
 from word_forge.configs.config_essentials import (
+    CircuitBreakerConfig,
+    CircuitBreakerState,
     Error,
     ErrorCategory,
     ErrorSeverity,
-    Result,
-    TaskPriority,
-    WorkerState,
-    CircuitBreakerState,
-    CircuitBreakerConfig,
     ExecutionMetrics,
-    TracingContext,
+    Result,
     StorageType,
+    TaskPriority,
+    TracingContext,
+    WorkerState,
     measure_execution,
 )
 
@@ -414,12 +413,7 @@ class TestResultChaining:
 
     def test_chain_multiple_maps(self):
         """Test chaining multiple map operations."""
-        result = (
-            Result.success(5)
-            .map(lambda x: x + 1)
-            .map(lambda x: x * 2)
-            .map(lambda x: x - 2)
-        )
+        result = Result.success(5).map(lambda x: x + 1).map(lambda x: x * 2).map(lambda x: x - 2)
         assert result.unwrap() == 10
 
     def test_chain_stops_on_first_failure(self):

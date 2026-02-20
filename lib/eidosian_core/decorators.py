@@ -29,14 +29,15 @@ from __future__ import annotations
 import functools
 import inspect
 import time
-from typing import Any, Callable, Optional, TypeVar, Union, overload
 from dataclasses import dataclass
+from typing import Any, Callable, Optional, TypeVar, Union
 
-from .config import get_config, EidosianConfig
+from .benchmarking import BenchmarkResult
+from .config import EidosianConfig, get_config
 from .logging import EidosianLogger, get_logger
 from .profiling import Profiler, ProfileReport
-from .benchmarking import Benchmark, BenchmarkResult
-from .tracing import Tracer, TraceSpan
+from .tracing import Tracer
+
 F = TypeVar("F", bound=Callable[..., Any])
 @dataclass
 class DecoratorResult:
@@ -54,7 +55,7 @@ class EidosianDecorator:
     Provides configurable logging, profiling, benchmarking, and tracing
     for any function or method.
     """
-    
+
     def __init__(
         self,
         # Feature flags (None = use config)
@@ -62,79 +63,79 @@ class EidosianDecorator:
         profile: Optional[bool] = None,
         benchmark: Optional[bool] = None,
         trace: Optional[bool] = None,
-        
+
         # Logging options
         log_args: Optional[bool] = None,
         log_result: Optional[bool] = None,
         log_level: str = "DEBUG",
-        
+
         # Profiling options
         profile_top_n: int = 20,
         profile_sort_by: str = "cumulative",
         profile_save: bool = False,
-        
+
         # Benchmarking options
         benchmark_iterations: int = 1,
         benchmark_warmup: int = 0,
         benchmark_memory: bool = False,
         benchmark_threshold_ms: Optional[float] = None,
-        
+
         # Tracing options
         trace_args: Optional[bool] = None,
         trace_result: Optional[bool] = None,
         trace_locals: bool = False,
-        
+
         # General options
         name: Optional[str] = None,
         logger: Optional[EidosianLogger] = None,
         config: Optional[EidosianConfig] = None,
     ):
         self.config = config or get_config()
-        
+
         # Resolve feature flags from config if not explicitly set
         self.log = log if log is not None else self.config.logging.enabled
         self.profile = profile if profile is not None else self.config.profiling.enabled
         self.benchmark = benchmark if benchmark is not None else self.config.benchmarking.enabled
         self.trace = trace if trace is not None else self.config.tracing.enabled
-        
+
         # Logging options
         self.log_args = log_args if log_args is not None else self.config.logging.log_args
         self.log_result = log_result if log_result is not None else self.config.logging.log_result
         self.log_level = log_level
-        
+
         # Profiling options
         self.profile_top_n = profile_top_n
         self.profile_sort_by = profile_sort_by
         self.profile_save = profile_save
-        
+
         # Benchmarking options
         self.benchmark_iterations = benchmark_iterations
         self.benchmark_warmup = benchmark_warmup
         self.benchmark_memory = benchmark_memory
         self.benchmark_threshold_ms = benchmark_threshold_ms or self.config.benchmarking.threshold_ms
-        
+
         # Tracing options
         self.trace_args = trace_args if trace_args is not None else self.config.tracing.capture_args
         self.trace_result = trace_result if trace_result is not None else self.config.tracing.capture_result
         self.trace_locals = trace_locals
-        
+
         # General
         self.name = name
         self.logger = logger
-        
+
         # State
         self._profiler: Optional[Profiler] = None
         self._tracer: Optional[Tracer] = None
-    
+
     def __call__(self, func: F) -> F:
         """Decorate a function."""
         # Handle mocked functions gracefully
         func_name = self.name or getattr(func, '__name__', '<unknown>')
-        
+
         # Get or create logger
         func_module = getattr(func, '__module__', __name__)
         logger = self.logger or get_logger(func_module)
-        
+
         # Setup profiler if needed
         if self.profile:
             self._profiler = Profiler(
@@ -142,7 +143,7 @@ class EidosianDecorator:
                 sort_by=self.profile_sort_by,
                 save_stats=self.profile_save,
             )
-        
+
         # Setup tracer if needed
         if self.trace:
             self._tracer = Tracer(
@@ -163,7 +164,7 @@ class EidosianDecorator:
                 except (TypeError, OSError):
                     source_file = None
                     line_number = None
-            
+
             # Log entry
             if self.log:
                 if self.log_args:
@@ -175,7 +176,7 @@ class EidosianDecorator:
                     )
                 else:
                     logger.debug(f"→ {func_name}()")
-            
+
             # Start tracing
             if self.trace and self._tracer:
                 self._tracer.start_span(
@@ -185,43 +186,43 @@ class EidosianDecorator:
                     filename=source_file,
                     line_number=line_number,
                 )
-            
+
             # Start profiling
             if self.profile and self._profiler:
                 self._profiler.start()
-            
+
             # Time execution only when needed
             needs_timing = self.log or (self.benchmark_threshold_ms is not None)
             start_time = time.perf_counter() if needs_timing else None
             error: Optional[Exception] = None
             result = None
-            
+
             try:
                 result = func(*args, **kwargs)
                 return result
-                
+
             except Exception as e:
                 error = e
                 raise
-                
+
             finally:
                 duration_ms: float = 0.0
                 if start_time is not None:
                     end_time = time.perf_counter()
                     duration_ms = (end_time - start_time) * 1000
-                
+
                 # Stop profiling
                 if self.profile and self._profiler:
                     profile_report = self._profiler.stop(func_name)
                     if self.log:
                         logger.debug(f"Profile: {profile_report.to_string(top_n=5)}")
-                
+
                 # End tracing
                 if self.trace and self._tracer:
                     self._tracer.end_span(result=result, error=error)
                     if self.log and not error:
                         logger.debug(f"Trace:\n{self._tracer.to_string()}")
-                
+
                 # Log exit
                 if self.log:
                     if error:
@@ -235,7 +236,7 @@ class EidosianDecorator:
                         )
                     else:
                         logger.debug(f"← {func_name} [{duration_ms:.2f}ms]")
-                
+
                 # Check benchmark threshold
                 if (
                     self.benchmark_threshold_ms
@@ -246,7 +247,7 @@ class EidosianDecorator:
                         f"⚠ {func_name} exceeded threshold: "
                         f"{duration_ms:.2f}ms > {self.benchmark_threshold_ms}ms"
                     )
-        
+
         # Preserve function metadata
         wrapper.__eidosian_decorated__ = True
         wrapper.__eidosian_config__ = {
@@ -255,7 +256,7 @@ class EidosianDecorator:
             "benchmark": self.benchmark,
             "trace": self.trace,
         }
-        
+
         return wrapper  # type: ignore
 
 def eidosian(
@@ -321,11 +322,11 @@ def eidosian(
         config=config,
         **kwargs,
     )
-    
+
     if func is not None:
         # Called without parentheses: @eidosian
         return decorator(func)
-    
+
     # Called with parentheses: @eidosian(...)
     return decorator
 # Individual convenience decorators

@@ -19,12 +19,13 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from typing import ClassVar, Dict, Optional
+
+from eidosian_core import eidosian
 
 from word_forge.configs.config_essentials import DATA_ROOT, ConfigError, EnvMapping
 
@@ -152,10 +153,7 @@ class ParserConfig:
         Returns:
             Dict[str, Path]: Mapping of resource names to absolute paths
         """
-        return {
-            name: self.data_dir_path / path
-            for name, path in self.resource_paths.items()
-        }
+        return {name: self.data_dir_path / path for name, path in self.resource_paths.items()}
 
     @eidosian()
     def with_custom_model(self, model_name: str) -> ParserConfig:

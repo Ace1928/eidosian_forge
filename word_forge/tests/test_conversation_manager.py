@@ -7,12 +7,10 @@ from pathlib import Path
 
 import pytest
 
+
 # Skip all tests in this module if vector dependencies are unavailable
 def _vector_available() -> bool:
-    if (
-        importlib.util.find_spec("chromadb") is None
-        or importlib.util.find_spec("sentence_transformers") is None
-    ):
+    if importlib.util.find_spec("chromadb") is None or importlib.util.find_spec("sentence_transformers") is None:
         return False
     try:
         import word_forge.vectorizer.vector_store as vector_store
@@ -28,6 +26,7 @@ pytestmark = pytest.mark.skipif(
     reason="Vector dependencies (chromadb, sentence-transformers) not installed",
 )
 
+from word_forge.configs.config_essentials import StorageType
 from word_forge.conversation.conversation_manager import ConversationManager
 from word_forge.conversation.conversation_models import (
     AffectiveLexicalLanguageModel,
@@ -41,7 +40,6 @@ from word_forge.graph.graph_manager import GraphManager
 from word_forge.parser.language_model import ModelState
 from word_forge.queue.queue_manager import QueueManager
 from word_forge.vectorizer.vector_store import VectorStore
-from word_forge.configs.config_essentials import StorageType
 
 TEST_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 LLM_MODEL = "sshleifer/tiny-gpt2"

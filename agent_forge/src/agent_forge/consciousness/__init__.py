@@ -1,11 +1,11 @@
-from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
 from .bench import (
     ConsciousnessBenchRunner,
     ConsciousnessRedTeamCampaign,
-    TrialSpec as BenchTrialSpec,
 )
+from .bench import TrialSpec as BenchTrialSpec
 from .bench.ablations import AblationResult, ConsciousnessAblationMatrix
 from .bench.red_team import RedTeamResult, RedTeamScenario
+from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
 from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult

@@ -5,7 +5,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "linux_audit_matrix.py"
 
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import os
 import datetime
+import os
+
 
 def create_dir(path):
     os.makedirs(path, exist_ok=True)
     print(f"[DIR CREATED] {path}")
+
 
 def create_file(path, content=""):
     # Ensure the parent directory exists
@@ -14,19 +16,21 @@ def create_file(path, content=""):
         f.write(content)
     print(f"[FILE CREATED] {path}")
 
+
 def default_header(file_path):
     # Use the file name (without extension) as title
     base = os.path.basename(file_path)
     title = os.path.splitext(base)[0].replace("_", " ").capitalize()
     date = datetime.datetime.now().strftime("%Y-%m-%d")
-    header = f"---\ntitle: \"{title}\"\ndate: {date}\ndescription: \"Placeholder for {file_path}\"\n---\n\n"
+    header = f'---\ntitle: "{title}"\ndate: {date}\ndescription: "Placeholder for {file_path}"\n---\n\n'
     return header
+
 
 def main():
     print("Welcome to the Doc_Forge Hugo Documentation Setup Script!")
     language = input("Enter your language folder name (e.g. python): ").strip()
     locale = input("Enter your locale code (e.g. en): ").strip()
-    
+
     # List of directories to create (with <language> and <locale> replaced)
     directories = [
         "content/docs/manual/_common/project",
@@ -139,12 +143,12 @@ def main():
         "content/config/jsdoc",
         "content/hooks/pre-commit",
         "content/hooks/post-build",
-        "content/hooks/deployment"
+        "content/hooks/deployment",
     ]
-    
+
     for dir_path in directories:
         create_dir(dir_path)
-    
+
     # List of files to create with their default header (substitute <language> and <locale> appropriately)
     files = [
         "content/docs/manual/_common/project/overview.md",
@@ -185,14 +189,15 @@ def main():
         "content/_redirects",
         "content/robots.txt",
         "content/CONTRIBUTING.md",
-        "content/README.md"
+        "content/README.md",
     ]
-    
+
     for file_path in files:
         header = default_header(file_path)
         create_file(file_path, header)
-    
+
     print("\nUniversal documentation structure setup is complete!")
+
 
 if __name__ == "__main__":
     main()

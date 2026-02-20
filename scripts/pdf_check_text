@@ -11,10 +11,10 @@ import os
 import subprocess
 import sys
 import tkinter as tk
-from tkinter import filedialog, messagebox
 from pathlib import Path
+from tkinter import filedialog, messagebox
 
-from lib.py_lib import require_cmd, log_error
+from lib.py_lib import log_error, require_cmd
 
 
 def check_pdf_text(pdf_file: str) -> bool:

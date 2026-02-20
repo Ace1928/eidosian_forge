@@ -21,7 +21,6 @@ Architecture:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import logging
 import traceback
@@ -29,6 +28,7 @@ from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 import networkx as nx
+from eidosian_core import eidosian
 
 # Optional dependencies for specific analyses
 try:
@@ -123,13 +123,9 @@ class GraphAnalysis:
                                 'community' library is not installed.
         """
         if not _community_louvain_available:
-            self.logger.error(
-                "Community detection requires the 'python-louvain' library."
-            )
+            self.logger.error("Community detection requires the 'python-louvain' library.")
             self.logger.error("Install with: pip install python-louvain")
-            raise GraphAnalysisError(
-                "Missing 'python-louvain' library for cluster analysis."
-            )
+            raise GraphAnalysisError("Missing 'python-louvain' library for cluster analysis.")
 
         if self.manager.g.number_of_nodes() < min_community_size:
             self.logger.warning(
@@ -137,9 +133,7 @@ class GraphAnalysis:
             )
             return {}
 
-        self.logger.info(
-            f"Analyzing semantic clusters (min size: {min_community_size}, resolution: {resolution})."
-        )
+        self.logger.info(f"Analyzing semantic clusters (min size: {min_community_size}, resolution: {resolution}).")
 
         try:
             # Compute the best partition using the Louvain algorithm
@@ -173,21 +167,15 @@ class GraphAnalysis:
                         }
                         cluster_nodes_info.append(node_info)
                     # Sort nodes within cluster alphabetically by term for consistency
-                    clusters_final[cluster_id] = sorted(
-                        cluster_nodes_info, key=lambda x: x.get("term", "")
-                    )
+                    clusters_final[cluster_id] = sorted(cluster_nodes_info, key=lambda x: x.get("term", ""))
 
-            self.logger.info(
-                f"Found {len(clusters_final)} clusters meeting minimum size criteria."
-            )
+            self.logger.info(f"Found {len(clusters_final)} clusters meeting minimum size criteria.")
             return clusters_final
 
         except Exception as e:
             self.logger.error(f"Community detection failed: {e}")
             self.logger.debug(f"Traceback: {traceback.format_exc()}", exc_info=True)
-            raise GraphAnalysisError(
-                f"Failed to analyze semantic clusters: {e}", e
-            ) from e
+            raise GraphAnalysisError(f"Failed to analyze semantic clusters: {e}", e) from e
 
     @eidosian()
     def analyze_multidimensional_relationships(self) -> MultiDimResult:
@@ -208,9 +196,7 @@ class GraphAnalysis:
         self.logger.info("Analyzing multidimensional relationship patterns.")
         dimension_counts: Dict[RelationshipDimension, int] = defaultdict(int)
         node_dimensions: Dict[WordId, Set[RelationshipDimension]] = defaultdict(set)
-        type_counts_by_dimension: Dict[RelationshipDimension, Counter[RelType]] = (
-            defaultdict(Counter)
-        )
+        type_counts_by_dimension: Dict[RelationshipDimension, Counter[RelType]] = defaultdict(Counter)
 
         # Iterate through edges to gather dimension and type data
         for u, v, data in self.manager.g.edges(data=True):
@@ -300,9 +286,7 @@ class GraphAnalysis:
                         }
                     )
 
-        self.logger.info(
-            f"Found {len(meta_patterns)} source terms involved in meta-emotional patterns."
-        )
+        self.logger.info(f"Found {len(meta_patterns)} source terms involved in meta-emotional patterns.")
         return dict(meta_patterns)  # Convert back to dict for return type consistency
 
     @eidosian()
@@ -332,9 +316,7 @@ class GraphAnalysis:
             self.logger.error("Install with: pip install numpy")
             raise GraphAnalysisError("Missing 'numpy' library for valence analysis.")
 
-        self.logger.info(
-            f"Analyzing emotional valence distribution for nodes in dimension '{dimension}'."
-        )
+        self.logger.info(f"Analyzing emotional valence distribution for nodes in dimension '{dimension}'.")
         valences: List[float] = []
         node_valence_map: Dict[WordId, float] = {}
 
@@ -354,14 +336,10 @@ class GraphAnalysis:
                 valences.append(val)
                 node_valence_map[node_id] = val
             elif valence is not None:
-                self.logger.warning(
-                    f"Node {node_id} has non-numeric valence attribute '{valence}'. Skipping."
-                )
+                self.logger.warning(f"Node {node_id} has non-numeric valence attribute '{valence}'. Skipping.")
 
         if not valences:
-            self.logger.warning(
-                f"No numeric valence data found for nodes in dimension '{dimension}'."
-            )
+            self.logger.warning(f"No numeric valence data found for nodes in dimension '{dimension}'.")
             return {
                 "count": 0,
                 "mean": 0.0,
@@ -378,20 +356,12 @@ class GraphAnalysis:
         count = len(valences)
 
         # Find top positive and negative terms
-        sorted_nodes = sorted(
-            node_valence_map.items(), key=lambda item: item[1], reverse=True
-        )
+        sorted_nodes = sorted(node_valence_map.items(), key=lambda item: item[1], reverse=True)
         top_positive_nodes = sorted_nodes[:5]
         top_negative_nodes = sorted_nodes[-5:][::-1]  # Get last 5 and reverse
 
-        top_positive = [
-            (self.manager.query.get_term_by_id(nid) or f"ID:{nid}", val)
-            for nid, val in top_positive_nodes
-        ]
-        top_negative = [
-            (self.manager.query.get_term_by_id(nid) or f"ID:{nid}", val)
-            for nid, val in top_negative_nodes
-        ]
+        top_positive = [(self.manager.query.get_term_by_id(nid) or f"ID:{nid}", val) for nid, val in top_positive_nodes]
+        top_negative = [(self.manager.query.get_term_by_id(nid) or f"ID:{nid}", val) for nid, val in top_negative_nodes]
 
         results: ValenceDistResult = {
             "count": count,
@@ -407,9 +377,7 @@ class GraphAnalysis:
         return results
 
     @eidosian()
-    def integrate_emotional_context(
-        self, context_name: str, context_weights: Dict[str, float]
-    ) -> int:
+    def integrate_emotional_context(self, context_name: str, context_weights: Dict[str, float]) -> int:
         """
         Apply an emotional context to the graph, potentially modifying edge weights.
 
@@ -438,9 +406,7 @@ class GraphAnalysis:
             raise ValueError("context_name must be a non-empty string.")
 
         self.manager._emotional_contexts[context_name] = context_weights
-        self.logger.debug(
-            f"Stored context '{context_name}' with weights: {context_weights}"
-        )
+        self.logger.debug(f"Stored context '{context_name}' with weights: {context_weights}")
 
         # Placeholder: Actual graph modification logic would go here.
         # Example: Iterate edges, check if dimension is emotional,
@@ -457,9 +423,7 @@ class GraphAnalysis:
         #             affected_count += 1
 
         if affected_count > 0:
-            self.logger.info(
-                f"Applied context '{context_name}', modified {affected_count} emotional relationships."
-            )
+            self.logger.info(f"Applied context '{context_name}', modified {affected_count} emotional relationships.")
         else:
             self.logger.info(
                 f"Context '{context_name}' stored. No graph modifications applied in current implementation."
@@ -502,9 +466,7 @@ class GraphAnalysis:
                 emotional_nodes.add(v)
 
         if not emotional_nodes:
-            self.logger.warning(
-                "No nodes involved in emotional relationships found. Skipping transition analysis."
-            )
+            self.logger.warning("No nodes involved in emotional relationships found. Skipping transition analysis.")
             return []
 
         # Iterate through all pairs of emotional nodes as potential start/end points
@@ -513,8 +475,7 @@ class GraphAnalysis:
             # Create a subgraph view containing only emotional edges for pathfinding
             emotional_edge_view = nx.subgraph_view(
                 self.manager.g,
-                filter_edge=lambda u, v: self.manager.g[u][v].get("dimension")
-                == "emotional",
+                filter_edge=lambda u, v: self.manager.g[u][v].get("dimension") == "emotional",
             )
 
             # Find paths starting from start_node_id
@@ -556,30 +517,16 @@ class GraphAnalysis:
                             u, v = path_node_ids[i], path_node_ids[i + 1]
                             edge_data = self.manager.g.get_edge_data(u, v)
                             # Use default weight if missing
-                            path_strength *= edge_data.get(
-                                "weight", 0.1
-                            )  # Use small default if missing
+                            path_strength *= edge_data.get("weight", 0.1)  # Use small default if missing
 
                         # Check against minimum strength threshold
                         if path_strength >= min_transition_strength:
                             # Calculate valence shift
-                            start_valence = self.manager.g.nodes[start_node_id].get(
-                                "valence", 0.0
-                            )
-                            end_valence = self.manager.g.nodes[target_node_id].get(
-                                "valence", 0.0
-                            )
+                            start_valence = self.manager.g.nodes[start_node_id].get("valence", 0.0)
+                            end_valence = self.manager.g.nodes[target_node_id].get("valence", 0.0)
                             # Ensure valences are numeric, default to 0.0 if not
-                            start_valence = (
-                                float(start_valence)
-                                if isinstance(start_valence, (int, float))
-                                else 0.0
-                            )
-                            end_valence = (
-                                float(end_valence)
-                                if isinstance(end_valence, (int, float))
-                                else 0.0
-                            )
+                            start_valence = float(start_valence) if isinstance(start_valence, (int, float)) else 0.0
+                            end_valence = float(end_valence) if isinstance(end_valence, (int, float)) else 0.0
                             valence_shift = end_valence - start_valence
 
                             transitions.append(
@@ -599,17 +546,13 @@ class GraphAnalysis:
                     )
                     continue
                 except Exception as path_err:
-                    self.logger.error(
-                        f"Error finding paths between {start_node_id} and {target_node_id}: {path_err}"
-                    )
+                    self.logger.error(f"Error finding paths between {start_node_id} and {target_node_id}: {path_err}")
                     continue  # Continue to next pair
 
         # Sort transitions by strength (descending)
         transitions.sort(key=lambda x: x["strength"], reverse=True)
 
-        self.logger.info(
-            f"Found {len(transitions)} emotional transition pathways meeting criteria."
-        )
+        self.logger.info(f"Found {len(transitions)} emotional transition pathways meeting criteria.")
         # Limit the number of returned transitions if necessary for performance
         # return transitions[:max_results]
         return transitions
@@ -650,37 +593,27 @@ class GraphAnalysis:
 
         start_node_id = self.manager.query.get_node_id(term)
         if start_node_id is None:
-            raise NodeNotFoundError(
-                f"Term '{term}' not found for emotional subgraph extraction."
-            )
+            raise NodeNotFoundError(f"Term '{term}' not found for emotional subgraph extraction.")
 
         self.logger.info(
             f"Extracting emotional subgraph for '{term}' (depth: {depth}, types: {emotional_types}, min_intensity: {min_intensity}, context: {context})."
         )
 
         # 1. Get the initial neighborhood subgraph based on depth
-        neighborhood_nodes = nx.ego_graph(
-            self.manager.g, start_node_id, radius=depth
-        ).nodes()
+        neighborhood_nodes = nx.ego_graph(self.manager.g, start_node_id, radius=depth).nodes()
         base_subgraph = self.manager.g.subgraph(neighborhood_nodes)
 
         # 2. Filter edges based on emotional criteria
-        emotional_subgraph = (
-            nx.Graph()
-        )  # Create a new graph to add filtered nodes/edges
+        emotional_subgraph = nx.Graph()  # Create a new graph to add filtered nodes/edges
         for node, data in base_subgraph.nodes(data=True):
             emotional_subgraph.add_node(node, **data)  # Copy nodes
 
         context_weights_local: Optional[Dict[str, float]] = None
         if context:
             if isinstance(context, str):
-                context_weights_local = self.manager._emotional_contexts.get(
-                    context, {}
-                )
+                context_weights_local = self.manager._emotional_contexts.get(context, {})
                 if not context_weights_local:
-                    self.logger.warning(
-                        f"Context '{context}' not found. Proceeding without weights."
-                    )
+                    self.logger.warning(f"Context '{context}' not found. Proceeding without weights.")
             elif isinstance(context, dict):
                 context_weights_local = context
             else:
@@ -699,9 +632,7 @@ class GraphAnalysis:
             # Determine weight, possibly modified by context
             weight = data.get("weight", 0.0)
             if context_weights_local:
-                modifier = context_weights_local.get(
-                    rel_type, context_weights_local.get("default", 1.0)
-                )
+                modifier = context_weights_local.get(rel_type, context_weights_local.get("default", 1.0))
                 weight *= modifier
                 data = dict(data)
                 data["weight"] = weight
@@ -715,9 +646,7 @@ class GraphAnalysis:
 
         num_nodes = emotional_subgraph.number_of_nodes()
         num_edges = emotional_subgraph.number_of_edges()
-        self.logger.info(
-            f"Emotional subgraph extracted: {num_nodes} nodes, {num_edges} edges."
-        )
+        self.logger.info(f"Emotional subgraph extracted: {num_nodes} nodes, {num_edges} edges.")
 
         # Remove isolated nodes (nodes that were in the neighborhood but have no *emotional* edges left after filtering)
         isolated = [node for node, degree in emotional_subgraph.degree() if degree == 0]
@@ -733,9 +662,7 @@ class GraphAnalysis:
                     for (u, v), d in emotional_subgraph._edges.items()
                     if u not in isolated and v not in isolated
                 }
-            self.logger.debug(
-                f"Removed {len(isolated)} isolated nodes from emotional subgraph."
-            )
+            self.logger.debug(f"Removed {len(isolated)} isolated nodes from emotional subgraph.")
 
         # Ensure returned graph has iterable 'nodes' attribute for stubs
         if not isinstance(getattr(emotional_subgraph, "nodes"), list):

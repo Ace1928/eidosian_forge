@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Task Management System for Eidosian Forge.
 
@@ -10,8 +11,8 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from agent_forge.models import Task
 from agent_forge.agent.base import BaseAgent
+from agent_forge.models import Task
 
 logger = logging.getLogger(__name__)
 
@@ -225,9 +226,7 @@ class TaskManager:
         return blocked
 
     @eidosian()
-    def get_recent_tasks(
-        self, n: int = 10, include_completed: bool = True
-    ) -> List[Task]:
+    def get_recent_tasks(self, n: int = 10, include_completed: bool = True) -> List[Task]:
         """
         Get recently created/completed tasks.
 

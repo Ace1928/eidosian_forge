@@ -7,9 +7,9 @@ This script configures the Doc Forge package for distribution.
 It is designed to be compatible with both setuptools and pip install.
 """
 
-from setuptools import setup, find_packages
-import os
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read version from VERSION file if it exists, otherwise use default
 version_file = Path(__file__).parent / "VERSION"

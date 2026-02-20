@@ -52,4 +52,3 @@ def test_bayes_optimizer_proposes_and_tracks_history() -> None:
     assert isinstance(history, list)
     assert len(history) == 2
     assert history[0]["trial_id"] == "trial-1"
-

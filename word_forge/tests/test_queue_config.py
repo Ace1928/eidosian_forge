@@ -120,9 +120,7 @@ class TestWithPerformanceProfile:
 
     def test_balanced_profile(self):
         """Test BALANCED performance profile."""
-        config = QueueConfig().with_performance_profile(
-            QueuePerformanceProfile.BALANCED
-        )
+        config = QueueConfig().with_performance_profile(QueuePerformanceProfile.BALANCED)
         assert config.performance_profile == QueuePerformanceProfile.BALANCED
         # BALANCED uses defaults
         assert config.batch_size == 50
@@ -131,9 +129,7 @@ class TestWithPerformanceProfile:
 
     def test_low_latency_profile(self):
         """Test LOW_LATENCY performance profile."""
-        config = QueueConfig().with_performance_profile(
-            QueuePerformanceProfile.LOW_LATENCY
-        )
+        config = QueueConfig().with_performance_profile(QueuePerformanceProfile.LOW_LATENCY)
         assert config.performance_profile == QueuePerformanceProfile.LOW_LATENCY
         assert config.batch_size == 10
         assert config.throttle_seconds == 0.01
@@ -141,9 +137,7 @@ class TestWithPerformanceProfile:
 
     def test_high_throughput_profile(self):
         """Test HIGH_THROUGHPUT performance profile."""
-        config = QueueConfig().with_performance_profile(
-            QueuePerformanceProfile.HIGH_THROUGHPUT
-        )
+        config = QueueConfig().with_performance_profile(QueuePerformanceProfile.HIGH_THROUGHPUT)
         assert config.performance_profile == QueuePerformanceProfile.HIGH_THROUGHPUT
         assert config.batch_size == 200
         assert config.throttle_seconds == 0.5
@@ -151,9 +145,7 @@ class TestWithPerformanceProfile:
 
     def test_memory_efficient_profile(self):
         """Test MEMORY_EFFICIENT performance profile."""
-        config = QueueConfig().with_performance_profile(
-            QueuePerformanceProfile.MEMORY_EFFICIENT
-        )
+        config = QueueConfig().with_performance_profile(QueuePerformanceProfile.MEMORY_EFFICIENT)
         assert config.performance_profile == QueuePerformanceProfile.MEMORY_EFFICIENT
         assert config.batch_size == 25
         assert config.throttle_seconds == 0.3
@@ -183,17 +175,13 @@ class TestOptimizeForThreading:
 
     def test_enable_threading(self):
         """Test enabling threading optimizations."""
-        config = QueueConfig(
-            use_threading=False, lock_type="standard"
-        ).optimize_for_threading(True)
+        config = QueueConfig(use_threading=False, lock_type="standard").optimize_for_threading(True)
         assert config.use_threading is True
         assert config.lock_type == "reentrant"
 
     def test_disable_threading(self):
         """Test disabling threading optimizations."""
-        config = QueueConfig(batch_size=50, use_threading=True).optimize_for_threading(
-            False
-        )
+        config = QueueConfig(batch_size=50, use_threading=True).optimize_for_threading(False)
         assert config.use_threading is False
         # Batch size should increase (up to 500)
         assert config.batch_size == 100  # 50 * 2

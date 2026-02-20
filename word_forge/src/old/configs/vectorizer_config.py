@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Vectorization configuration system for Word Forge.
 
@@ -216,9 +217,7 @@ class VectorizerConfig:
             VectorConfigError: If dimension is invalid (not positive)
         """
         if self.dimension is not None and self.dimension <= 0:
-            raise VectorConfigError(
-                f"Vector dimension must be positive: {self.dimension}"
-            )
+            raise VectorConfigError(f"Vector dimension must be positive: {self.dimension}")
         return self.dimension
 
     @cached_property
@@ -318,9 +317,7 @@ class VectorizerConfig:
         return cast(T, self.__class__(**current_values))
 
     @eidosian()
-    def with_model(
-        self, model_name: str, dimension: Optional[int] = None
-    ) -> "VectorizerConfig":
+    def with_model(self, model_name: str, dimension: Optional[int] = None) -> "VectorizerConfig":
         """
         Create a new configuration with a different model.
 
@@ -390,9 +387,7 @@ class VectorizerConfig:
             "search_strategy": self.search_strategy,
             "distance_metric": self.distance_metric,
             "enable_compression": self.enable_compression,
-            "compression_ratio": (
-                self.compression_ratio if self.enable_compression else None
-            ),
+            "compression_ratio": (self.compression_ratio if self.enable_compression else None),
             "reserved_memory_mb": self.reserved_memory_mb,
             "enable_multi_dim": self.enable_multi_dim,
             "dim_separation": self.dim_separation if self.enable_multi_dim else None,
@@ -420,12 +415,8 @@ class VectorizerConfig:
             errors.append(f"Vector dimension must be positive: {self.dimension}")
 
         # Validate compression ratio
-        if self.enable_compression and (
-            self.compression_ratio <= 0 or self.compression_ratio >= 1
-        ):
-            errors.append(
-                f"Compression ratio must be between 0 and 1: {self.compression_ratio}"
-            )
+        if self.enable_compression and (self.compression_ratio <= 0 or self.compression_ratio >= 1):
+            errors.append(f"Compression ratio must be between 0 and 1: {self.compression_ratio}")
 
         # Validate batch size
         if self.batch_size <= 0:
@@ -433,9 +424,7 @@ class VectorizerConfig:
 
         # Validate multi-dimensional settings
         if self.enable_multi_dim and self.dim_separation <= 0:
-            errors.append(
-                f"Dimension separation must be positive: {self.dim_separation}"
-            )
+            errors.append(f"Dimension separation must be positive: {self.dim_separation}")
 
         # Validate templates
         for template_type, template in self.instruction_templates.items():
@@ -445,9 +434,7 @@ class VectorizerConfig:
                 errors.append(f"Template '{template_type}' missing query prefix")
 
         if errors:
-            raise VectorConfigError(
-                f"Configuration validation failed: {'; '.join(errors)}"
-            )
+            raise VectorConfigError(f"Configuration validation failed: {'; '.join(errors)}")
 
 
 # ==========================================

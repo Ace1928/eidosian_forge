@@ -10,26 +10,28 @@ Provides tools for interacting with the multi-tiered memory system:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import json
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
-from ..core import tool
+from eidosian_core import eidosian
+
 from .. import FORGE_ROOT
+from ..core import tool
 from ..forge_loader import ensure_forge_import
 
 ensure_forge_import("memory_forge")
 
 try:
     from memory_forge import (
-        TieredMemorySystem,
-        TieredMemoryItem,
-        MemoryTier,
         MemoryNamespace,
+        MemoryTier,
+        TieredMemoryItem,
+        TieredMemorySystem,
     )
+
     TIERED_AVAILABLE = True
 except ImportError:
     TIERED_AVAILABLE = False
@@ -39,9 +41,7 @@ except ImportError:
     MemoryNamespace = None
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
-TIERED_MEMORY_DIR = Path(
-    os.environ.get("EIDOS_TIERED_MEMORY_DIR", FORGE_DIR / "data" / "tiered_memory")
-)
+TIERED_MEMORY_DIR = Path(os.environ.get("EIDOS_TIERED_MEMORY_DIR", FORGE_DIR / "data" / "tiered_memory"))
 
 # Initialize the tiered memory system
 _tiered_memory: Optional[TieredMemorySystem] = None
@@ -66,14 +66,11 @@ def _get_tiered_memory() -> Optional[TieredMemorySystem]:
     parameters={
         "type": "object",
         "properties": {
-            "content": {
-                "type": "string",
-                "description": "The self-knowledge content to remember"
-            },
+            "content": {"type": "string", "description": "The self-knowledge content to remember"},
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Tags for categorizing this self-memory (e.g., 'identity', 'lesson', 'capability')"
+                "description": "Tags for categorizing this self-memory (e.g., 'identity', 'lesson', 'capability')",
             },
         },
         "required": ["content"],
@@ -88,7 +85,7 @@ def eidos_remember_self(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tag_set = set(tags) if tags else set()
     mid = mem.remember_self(content, tags=tag_set)
     return f"Self-memory stored: {mid}"
@@ -100,14 +97,8 @@ def eidos_remember_self(
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Query to search self-memories"
-            },
-            "limit": {
-                "type": "integer",
-                "description": "Maximum results to return (default 5)"
-            },
+            "query": {"type": "string", "description": "Query to search self-memories"},
+            "limit": {"type": "integer", "description": "Maximum results to return (default 5)"},
         },
         "required": ["query"],
     },
@@ -118,20 +109,22 @@ def eidos_recall_self(query: str, limit: int = 5) -> str:
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     results = mem.recall_self(query, limit=limit)
     if not results:
         return "No self-memories found matching query"
-    
+
     output = []
     for item in results:
-        output.append({
-            "id": item.id,
-            "content": item.content,
-            "tags": list(item.tags),
-            "importance": item.importance,
-            "access_count": item.access_count,
-        })
+        output.append(
+            {
+                "id": item.id,
+                "content": item.content,
+                "tags": list(item.tags),
+                "importance": item.importance,
+                "access_count": item.access_count,
+            }
+        )
     return json.dumps(output, indent=2)
 
 
@@ -141,19 +134,9 @@ def eidos_recall_self(query: str, limit: int = 5) -> str:
     parameters={
         "type": "object",
         "properties": {
-            "lesson": {
-                "type": "string",
-                "description": "The lesson learned"
-            },
-            "context": {
-                "type": "string",
-                "description": "Context in which the lesson was learned"
-            },
-            "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Additional categorization tags"
-            },
+            "lesson": {"type": "string", "description": "The lesson learned"},
+            "context": {"type": "string", "description": "Context in which the lesson was learned"},
+            "tags": {"type": "array", "items": {"type": "string"}, "description": "Additional categorization tags"},
         },
         "required": ["lesson"],
     },
@@ -168,7 +151,7 @@ def eidos_remember_lesson(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tag_set = set(tags) if tags else set()
     mid = mem.remember_lesson(lesson, context=context, tags=tag_set)
     return f"Lesson stored: {mid}"
@@ -185,18 +168,12 @@ def eidos_remember_lesson(
     parameters={
         "type": "object",
         "properties": {
-            "content": {
-                "type": "string",
-                "description": "Information about the user to remember"
-            },
-            "user_id": {
-                "type": "string",
-                "description": "User identifier (default: 'lloyd')"
-            },
+            "content": {"type": "string", "description": "Information about the user to remember"},
+            "user_id": {"type": "string", "description": "User identifier (default: 'lloyd')"},
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Tags for categorizing this user memory"
+                "description": "Tags for categorizing this user memory",
             },
         },
         "required": ["content"],
@@ -212,7 +189,7 @@ def eidos_remember_user(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tag_set = set(tags) if tags else set()
     mid = mem.remember_user(content, user_id=user_id, tags=tag_set)
     return f"User memory stored: {mid}"
@@ -224,18 +201,9 @@ def eidos_remember_user(
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Query to search user memories"
-            },
-            "user_id": {
-                "type": "string",
-                "description": "User identifier (default: 'lloyd')"
-            },
-            "limit": {
-                "type": "integer",
-                "description": "Maximum results (default 5)"
-            },
+            "query": {"type": "string", "description": "Query to search user memories"},
+            "user_id": {"type": "string", "description": "User identifier (default: 'lloyd')"},
+            "limit": {"type": "integer", "description": "Maximum results (default 5)"},
         },
         "required": ["query"],
     },
@@ -250,19 +218,21 @@ def eidos_recall_user(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     results = mem.recall_user(query, user_id=user_id, limit=limit)
     if not results:
         return f"No memories found for user '{user_id}' matching query"
-    
+
     output = []
     for item in results:
-        output.append({
-            "id": item.id,
-            "content": item.content,
-            "tags": list(item.tags),
-            "access_count": item.access_count,
-        })
+        output.append(
+            {
+                "id": item.id,
+                "content": item.content,
+                "tags": list(item.tags),
+                "access_count": item.access_count,
+            }
+        )
     return json.dumps(output, indent=2)
 
 
@@ -277,29 +247,19 @@ def eidos_recall_user(
     parameters={
         "type": "object",
         "properties": {
-            "content": {
-                "type": "string",
-                "description": "Content to remember"
-            },
+            "content": {"type": "string", "description": "Content to remember"},
             "tier": {
                 "type": "string",
                 "enum": ["short_term", "working", "long_term", "self", "user"],
-                "description": "Memory tier (default: working)"
+                "description": "Memory tier (default: working)",
             },
             "namespace": {
                 "type": "string",
                 "enum": ["eidos", "user", "task", "knowledge", "code", "conversation"],
-                "description": "Namespace (default: task)"
+                "description": "Namespace (default: task)",
             },
-            "tags": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Tags for categorization"
-            },
-            "importance": {
-                "type": "number",
-                "description": "Importance (0.0-1.0)"
-            },
+            "tags": {"type": "array", "items": {"type": "string"}, "description": "Tags for categorization"},
+            "importance": {"type": "number", "description": "Importance (0.0-1.0)"},
         },
         "required": ["content"],
     },
@@ -316,7 +276,7 @@ def tiered_remember(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tier_map = {
         "short_term": MemoryTier.SHORT_TERM,
         "working": MemoryTier.WORKING,
@@ -332,7 +292,7 @@ def tiered_remember(
         "code": MemoryNamespace.CODE,
         "conversation": MemoryNamespace.CONVERSATION,
     }
-    
+
     tag_set = set(tags) if tags else set()
     mid = mem.remember(
         content=content,
@@ -350,24 +310,18 @@ def tiered_remember(
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Search query"
-            },
+            "query": {"type": "string", "description": "Search query"},
             "tier": {
                 "type": "string",
                 "enum": ["short_term", "working", "long_term", "self", "user", "all"],
-                "description": "Filter by tier (default: all)"
+                "description": "Filter by tier (default: all)",
             },
             "namespace": {
                 "type": "string",
                 "enum": ["eidos", "user", "task", "knowledge", "code", "conversation", "all"],
-                "description": "Filter by namespace (default: all)"
+                "description": "Filter by namespace (default: all)",
             },
-            "limit": {
-                "type": "integer",
-                "description": "Maximum results (default 10)"
-            },
+            "limit": {"type": "integer", "description": "Maximum results (default 10)"},
         },
         "required": ["query"],
     },
@@ -383,7 +337,7 @@ def tiered_recall(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tier_map = {
         "short_term": MemoryTier.SHORT_TERM,
         "working": MemoryTier.WORKING,
@@ -399,31 +353,33 @@ def tiered_recall(
         "code": MemoryNamespace.CODE,
         "conversation": MemoryNamespace.CONVERSATION,
     }
-    
+
     filter_tier = [tier_map.get(tier)] if tier != "all" and tier in tier_map else None
     filter_namespace = [namespace_map.get(namespace)] if namespace != "all" and namespace in namespace_map else None
-    
+
     results = mem.recall(
         query=query,
         tiers=filter_tier,
         namespaces=filter_namespace,
         limit=limit,
     )
-    
+
     if not results:
         return "No memories found matching query"
-    
+
     output = []
     for item in results:
-        output.append({
-            "id": item.id,
-            "content": item.content,
-            "tier": item.tier.value,
-            "namespace": item.namespace.value,
-            "tags": list(item.tags),
-            "importance": item.importance,
-            "access_count": item.access_count,
-        })
+        output.append(
+            {
+                "id": item.id,
+                "content": item.content,
+                "tier": item.tier.value,
+                "namespace": item.namespace.value,
+                "tags": list(item.tags),
+                "importance": item.importance,
+                "access_count": item.access_count,
+            }
+        )
     return json.dumps(output, indent=2)
 
 
@@ -438,7 +394,7 @@ def tiered_memory_stats() -> str:
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     stats = mem.stats()
     return json.dumps(stats, indent=2)
 
@@ -481,15 +437,8 @@ def tiered_memory_cleanup() -> str:
     parameters={
         "type": "object",
         "properties": {
-            "memory_id": {
-                "type": "string",
-                "description": "ID of the memory to promote"
-            },
-            "target_tier": {
-                "type": "string",
-                "enum": ["working", "long_term"],
-                "description": "Target tier"
-            },
+            "memory_id": {"type": "string", "description": "ID of the memory to promote"},
+            "target_tier": {"type": "string", "enum": ["working", "long_term"], "description": "Target tier"},
         },
         "required": ["memory_id", "target_tier"],
     },
@@ -500,7 +449,7 @@ def tiered_promote_memory(memory_id: str, target_tier: str) -> str:
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     tier_map = {
         "working": MemoryTier.WORKING,
         "long_term": MemoryTier.LONG_TERM,
@@ -508,7 +457,7 @@ def tiered_promote_memory(memory_id: str, target_tier: str) -> str:
     target = tier_map.get(target_tier)
     if not target:
         return f"Error: Invalid target tier '{target_tier}'"
-    
+
     success = mem.promote(memory_id, target)
     if success:
         return f"Memory {memory_id} promoted to {target_tier}"
@@ -526,26 +475,11 @@ def tiered_promote_memory(memory_id: str, target_tier: str) -> str:
     parameters={
         "type": "object",
         "properties": {
-            "context": {
-                "type": "string",
-                "description": "Current activity, prompt, or context to match against"
-            },
-            "include_self": {
-                "type": "boolean",
-                "description": "Include EIDOS self-memories (default: true)"
-            },
-            "include_user": {
-                "type": "boolean",
-                "description": "Include user memories (default: true)"
-            },
-            "include_task": {
-                "type": "boolean",
-                "description": "Include task memories (default: true)"
-            },
-            "limit": {
-                "type": "integer",
-                "description": "Max results per category (default: 3)"
-            },
+            "context": {"type": "string", "description": "Current activity, prompt, or context to match against"},
+            "include_self": {"type": "boolean", "description": "Include EIDOS self-memories (default: true)"},
+            "include_user": {"type": "boolean", "description": "Include user memories (default: true)"},
+            "include_task": {"type": "boolean", "description": "Include task memories (default: true)"},
+            "limit": {"type": "integer", "description": "Max results per category (default: 3)"},
         },
         "required": ["context"],
     },
@@ -562,23 +496,19 @@ def eidos_context_suggest(
     mem = _get_tiered_memory()
     if not mem:
         return "Error: Tiered memory system not available"
-    
+
     suggestions = {"context": context, "suggestions": {}}
-    
+
     if include_self:
         self_results = mem.recall_self(context, limit=limit)
         if self_results:
-            suggestions["suggestions"]["self"] = [
-                {"content": r.content, "tags": list(r.tags)} for r in self_results
-            ]
-    
+            suggestions["suggestions"]["self"] = [{"content": r.content, "tags": list(r.tags)} for r in self_results]
+
     if include_user:
         user_results = mem.recall_user(context, user_id="lloyd", limit=limit)
         if user_results:
-            suggestions["suggestions"]["user"] = [
-                {"content": r.content, "tags": list(r.tags)} for r in user_results
-            ]
-    
+            suggestions["suggestions"]["user"] = [{"content": r.content, "tags": list(r.tags)} for r in user_results]
+
     if include_task:
         task_results = mem.recall(
             context,
@@ -586,13 +516,11 @@ def eidos_context_suggest(
             limit=limit,
         )
         if task_results:
-            suggestions["suggestions"]["task"] = [
-                {"content": r.content, "tags": list(r.tags)} for r in task_results
-            ]
-    
+            suggestions["suggestions"]["task"] = [{"content": r.content, "tags": list(r.tags)} for r in task_results]
+
     if not suggestions["suggestions"]:
         return "No relevant context found"
-    
+
     return json.dumps(suggestions, indent=2)
 
 
@@ -609,6 +537,7 @@ def _get_auto_context_engine():
     if _auto_context_engine is None and TIERED_AVAILABLE:
         try:
             from memory_forge import AutoContextEngine
+
             mem = _get_tiered_memory()
             if mem:
                 _auto_context_engine = AutoContextEngine(mem)
@@ -623,22 +552,13 @@ def _get_auto_context_engine():
     parameters={
         "type": "object",
         "properties": {
-            "query": {
-                "type": "string",
-                "description": "Query/prompt to find relevant context for"
-            },
-            "max_results": {
-                "type": "integer",
-                "description": "Maximum suggestions to return (default: 5)"
-            },
-            "min_score": {
-                "type": "number",
-                "description": "Minimum relevance score threshold (default: 0.3)"
-            },
+            "query": {"type": "string", "description": "Query/prompt to find relevant context for"},
+            "max_results": {"type": "integer", "description": "Maximum suggestions to return (default: 5)"},
+            "min_score": {"type": "number", "description": "Minimum relevance score threshold (default: 0.3)"},
             "format": {
                 "type": "string",
                 "enum": ["brief", "detailed", "json"],
-                "description": "Output format (default: brief)"
+                "description": "Output format (default: brief)",
             },
         },
         "required": ["query"],
@@ -655,12 +575,12 @@ def eidos_auto_context(
     engine = _get_auto_context_engine()
     if not engine:
         return "Error: Auto-context engine not available"
-    
+
     suggestions = engine.suggest_context(query, max_suggestions=max_results, min_score=min_score)
-    
+
     if not suggestions:
         return "No relevant context found for query"
-    
+
     return engine.format_suggestions(suggestions, format_type=format)
 
 
@@ -670,14 +590,11 @@ def eidos_auto_context(
     parameters={
         "type": "object",
         "properties": {
-            "content": {
-                "type": "string",
-                "description": "The content to record"
-            },
+            "content": {"type": "string", "description": "The content to record"},
             "content_type": {
                 "type": "string",
                 "enum": ["prompt", "command", "output"],
-                "description": "Type of content being ingested"
+                "description": "Type of content being ingested",
             },
         },
         "required": ["content", "content_type"],
@@ -689,7 +606,7 @@ def eidos_context_ingest(content: str, content_type: str) -> str:
     engine = _get_auto_context_engine()
     if not engine:
         return "Error: Auto-context engine not available"
-    
+
     if content_type == "prompt":
         engine.ingest_prompt(content)
     elif content_type == "command":
@@ -698,7 +615,7 @@ def eidos_context_ingest(content: str, content_type: str) -> str:
         engine.ingest_output(content)
     else:
         return f"Error: Unknown content type '{content_type}'"
-    
+
     return f"Context ingested: {content_type}"
 
 
@@ -715,6 +632,7 @@ def _get_introspector():
     if _memory_introspector is None:
         try:
             from memory_forge import MemoryIntrospector
+
             _memory_introspector = MemoryIntrospector()
         except ImportError:
             pass
@@ -732,7 +650,7 @@ def eidos_memory_introspect() -> str:
     introspector = _get_introspector()
     if not introspector:
         return "Error: Memory introspector not available"
-    
+
     return introspector.generate_summary()
 
 
@@ -745,20 +663,24 @@ def eidos_memory_introspect() -> str:
 def eidos_memory_stats_detailed() -> str:
     """Get detailed memory statistics."""
     import json
+
     introspector = _get_introspector()
     if not introspector:
         return "Error: Memory introspector not available"
-    
+
     stats = introspector.get_stats()
-    return json.dumps({
-        "total_memories": stats.total_memories,
-        "by_tier": stats.by_tier,
-        "by_namespace": stats.by_namespace,
-        "by_type": stats.by_type,
-        "top_tags": stats.top_tags,
-        "avg_importance": round(stats.avg_importance, 2),
-        "avg_access_count": round(stats.avg_access_count, 2),
-    }, indent=2)
+    return json.dumps(
+        {
+            "total_memories": stats.total_memories,
+            "by_tier": stats.by_tier,
+            "by_namespace": stats.by_namespace,
+            "by_type": stats.by_type,
+            "top_tags": stats.top_tags,
+            "avg_importance": round(stats.avg_importance, 2),
+            "avg_access_count": round(stats.avg_access_count, 2),
+        },
+        indent=2,
+    )
 
 
 @tool(
@@ -767,10 +689,7 @@ def eidos_memory_stats_detailed() -> str:
     parameters={
         "type": "object",
         "properties": {
-            "memory_id": {
-                "type": "string",
-                "description": "ID of the memory to analyze"
-            },
+            "memory_id": {"type": "string", "description": "ID of the memory to analyze"},
         },
         "required": ["memory_id"],
     },
@@ -779,12 +698,13 @@ def eidos_memory_stats_detailed() -> str:
 def eidos_suggest_tags(memory_id: str) -> str:
     """Get tag suggestions for a memory."""
     import json
+
     introspector = _get_introspector()
     if not introspector:
         return "Error: Memory introspector not available"
-    
+
     suggestions = introspector.suggest_tags(memory_id)
     if not suggestions:
         return "No additional tags suggested for this memory"
-    
+
     return json.dumps({"suggested_tags": suggestions})

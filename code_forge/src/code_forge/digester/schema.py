@@ -117,7 +117,11 @@ def validate_archive_summary(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     _require(isinstance(payload.get("generated_at"), str), errors, "archive_summary.generated_at must be a string")
     _require(isinstance(payload.get("ingestion_stats"), dict), errors, "archive_summary.ingestion_stats must be object")
-    _require(isinstance(payload.get("relationship_counts"), dict), errors, "archive_summary.relationship_counts must be object")
+    _require(
+        isinstance(payload.get("relationship_counts"), dict),
+        errors,
+        "archive_summary.relationship_counts must be object",
+    )
     for key in (
         "repo_index_path",
         "duplication_index_path",

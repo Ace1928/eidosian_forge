@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Logging Configuration System for Word Forge
 ===========================================
@@ -428,10 +429,7 @@ class LoggingConfig:
                 print(f"File logging enabled at: {config.get_log_path}")
             ```
         """
-        return (
-            self.destination in (LogDestination.FILE, LogDestination.BOTH)
-            and self.file_path is not None
-        )
+        return self.destination in (LogDestination.FILE, LogDestination.BOTH) and self.file_path is not None
 
     @cached_property
     def uses_console_logging(self) -> bool:
@@ -567,13 +565,8 @@ class LoggingConfig:
         config = self._create_modified_config(destination=destination)
 
         # Handle special case for FILE destination with no file path
-        if (
-            destination in (LogDestination.FILE, LogDestination.BOTH)
-            and not config.file_path
-        ):
-            config = self._create_modified_config(
-                destination=destination, file_path=str(LOGS_ROOT / "word_forge.log")
-            )
+        if destination in (LogDestination.FILE, LogDestination.BOTH) and not config.file_path:
+            config = self._create_modified_config(destination=destination, file_path=str(LOGS_ROOT / "word_forge.log"))
 
         return config
 
@@ -665,9 +658,7 @@ class LoggingConfig:
             ```
         """
         if not self.uses_file_logging:
-            return RotationConfigDict(
-                enabled=False, strategy=None, max_size_mb=None, max_files=None
-            )
+            return RotationConfigDict(enabled=False, strategy=None, max_size_mb=None, max_files=None)
 
         return RotationConfigDict(
             enabled=self.rotation_strategy != LogRotationStrategy.NONE,
@@ -917,9 +908,7 @@ class LoggingConfig:
                 "filename": self.file_path,
             }
 
-    def _validate_destination_settings(
-        self, instance: "LoggingConfig", errors: List[str]
-    ) -> None:
+    def _validate_destination_settings(self, instance: "LoggingConfig", errors: List[str]) -> None:
         """
         Validate settings related to logging destination.
 
@@ -928,10 +917,7 @@ class LoggingConfig:
             errors: List to accumulate validation errors
         """
         # Validate destination vs file_path consistency
-        if (
-            instance.destination in (LogDestination.FILE, LogDestination.BOTH)
-            and not instance.file_path
-        ):
+        if instance.destination in (LogDestination.FILE, LogDestination.BOTH) and not instance.file_path:
             errors.append("File logging enabled but no file path specified")
 
         # Validate file path is potentially writable if specified
@@ -941,18 +927,12 @@ class LoggingConfig:
                 parent_dir = path.parent
 
                 # Check if directory exists or can be created
-                if not parent_dir.exists() and not os.access(
-                    os.path.dirname(parent_dir), os.W_OK
-                ):
-                    errors.append(
-                        f"Parent directory for log file is not writable: {parent_dir}"
-                    )
+                if not parent_dir.exists() and not os.access(os.path.dirname(parent_dir), os.W_OK):
+                    errors.append(f"Parent directory for log file is not writable: {parent_dir}")
             except Exception as e:
                 errors.append(f"Invalid log file path: {str(e)}")
 
-    def _validate_size_settings(
-        self, instance: "LoggingConfig", errors: List[str]
-    ) -> None:
+    def _validate_size_settings(self, instance: "LoggingConfig", errors: List[str]) -> None:
         """
         Validate settings related to size limitations.
 
@@ -962,9 +942,7 @@ class LoggingConfig:
         """
         # Validate max file size
         if instance.max_file_size_mb <= 0:
-            errors.append(
-                f"Maximum file size must be positive, got {instance.max_file_size_mb}"
-            )
+            errors.append(f"Maximum file size must be positive, got {instance.max_file_size_mb}")
         elif instance.max_file_size_mb < MIN_FILE_SIZE_MB:
             errors.append(
                 f"Maximum file size should be at least {MIN_FILE_SIZE_MB}MB, got {instance.max_file_size_mb}MB"
@@ -972,17 +950,11 @@ class LoggingConfig:
 
         # Validate max files
         if instance.max_files <= 0:
-            errors.append(
-                f"Maximum number of files must be positive, got {instance.max_files}"
-            )
+            errors.append(f"Maximum number of files must be positive, got {instance.max_files}")
         elif instance.max_files < MIN_FILES:
-            errors.append(
-                f"Maximum number of files should be at least {MIN_FILES}, got {instance.max_files}"
-            )
+            errors.append(f"Maximum number of files should be at least {MIN_FILES}, got {instance.max_files}")
 
-    def _validate_rotation_settings(
-        self, instance: "LoggingConfig", errors: List[str]
-    ) -> None:
+    def _validate_rotation_settings(self, instance: "LoggingConfig", errors: List[str]) -> None:
         """
         Validate settings related to log rotation.
 
@@ -1006,9 +978,7 @@ class LoggingConfig:
         ):
             errors.append("Time-based rotation should keep at least 2 backup files")
 
-    def _validate_level_settings(
-        self, instance: "LoggingConfig", errors: List[str]
-    ) -> None:
+    def _validate_level_settings(self, instance: "LoggingConfig", errors: List[str]) -> None:
         """
         Validate settings related to logging level.
 

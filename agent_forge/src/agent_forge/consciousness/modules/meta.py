@@ -73,16 +73,12 @@ class MetaModule:
             conf = (0.45 + 0.42 * coherence) + (0.08 * min(1.0, ignition_burst / 2.0))
             return "grounded", max(0.0, min(1.0, conf)), disconfirmers
         if simulated_fraction > 0.5 and mean_prediction_error <= 0.8:
-            conf = (0.42 + 0.25 * min(1.0, simulated_fraction)) + (
-                0.15 * (1.0 - min(1.0, mean_prediction_error))
-            )
+            conf = (0.42 + 0.25 * min(1.0, simulated_fraction)) + (0.15 * (1.0 - min(1.0, mean_prediction_error)))
             return "simulated", max(0.0, min(1.0, conf)), disconfirmers
         if coherence >= 0.1 and mean_prediction_error <= 0.75:
             conf = (0.4 + 0.35 * coherence) + (0.08 * min(1.0, ignition_burst / 2.0))
             return "simulated", max(0.0, min(1.0, conf)), disconfirmers
-        confidence = max(
-            0.0, min(1.0, 0.35 + (1.0 - min(1.0, mean_prediction_error)) * 0.3)
-        )
+        confidence = max(0.0, min(1.0, 0.35 + (1.0 - min(1.0, mean_prediction_error)) * 0.3))
         return "degraded", confidence, disconfirmers
 
     def tick(self, ctx: TickContext) -> None:
@@ -90,15 +86,11 @@ class MetaModule:
         emit_delta = float(ctx.config.get("meta_emit_delta_threshold", 0.05))
 
         events = list(ctx.recent_events)[-lookback:] + list(ctx.emitted_events)
-        ws = workspace.summary(
-            ctx.state_dir, limit=350, window_seconds=1.0, min_sources=3
-        )
+        ws = workspace.summary(ctx.state_dir, limit=350, window_seconds=1.0, min_sources=3)
         coherence = float(ws.get("coherence_ratio") or 0.0)
         ignition_burst = float(ws.get("max_ignition_burst") or 0.0)
         source_gini = float(ws.get("source_gini") or 0.0)
-        report_groundedness = _latest_metric(
-            events, "consciousness.report.groundedness"
-        )
+        report_groundedness = _latest_metric(events, "consciousness.report.groundedness")
         if report_groundedness is None:
             report_groundedness = 0.0
 
@@ -193,9 +185,7 @@ class MetaModule:
                 "memory_ids": [],
             },
         ).as_dict()
-        payload = normalize_workspace_payload(
-            payload, fallback_kind="META", source_module="meta"
-        )
+        payload = normalize_workspace_payload(payload, fallback_kind="META", source_module="meta")
         ctx.broadcast(
             "meta",
             payload,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from pathlib import Path
-from typing import Mapping, Any
+from typing import Any, Mapping
 
 from agent_forge.consciousness.modules.autotune import AutotuneModule
 from agent_forge.consciousness.state_store import ModuleStateStore
@@ -10,9 +10,7 @@ from agent_forge.consciousness.types import TickContext, merged_config
 from agent_forge.core import events
 
 
-def _ctx(
-    state_dir: Path, store: ModuleStateStore, beat: int, cfg: Mapping[str, Any] | None = None
-) -> TickContext:
+def _ctx(state_dir: Path, store: ModuleStateStore, beat: int, cfg: Mapping[str, Any] | None = None) -> TickContext:
     merged = {
         "autotune_enabled": True,
         "autotune_interval_beats": 1,
@@ -205,7 +203,7 @@ def test_autotune_red_team_guard_blocks_commit(monkeypatch, tmp_path: Path) -> N
     all_events = events.iter_events(state_dir, limit=None)
     rollback = [evt for evt in all_events if evt.get("type") == "tune.rollback"]
     assert rollback
-    reasons = ((rollback[-1].get("data") or {}).get("reasons") or [])
+    reasons = (rollback[-1].get("data") or {}).get("reasons") or []
     assert "red_team_pass_ratio" in reasons
 
 

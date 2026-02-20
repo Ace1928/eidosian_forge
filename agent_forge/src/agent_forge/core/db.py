@@ -8,11 +8,12 @@ Tables:
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
+
 import sqlite3
-from pathlib import Path
-from typing import Any, Mapping
 from datetime import datetime, timezone
+from pathlib import Path
+
+from eidosian_core import eidosian
 
 __all__ = ["init_db", "insert_metric", "insert_journal", "prune_metrics"]
 
@@ -25,18 +26,10 @@ def init_db(base: str | Path = "state") -> Path:
     db_path = b / "e3.sqlite"
     conn = sqlite3.connect(db_path)
     try:
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS metrics(ts TEXT, key TEXT, value REAL)"
-        )
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS journal(ts TEXT, type TEXT, text TEXT)"
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_metrics_key_ts ON metrics(key, ts)"
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts)"
-        )
+        conn.execute("CREATE TABLE IF NOT EXISTS metrics(ts TEXT, key TEXT, value REAL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS journal(ts TEXT, type TEXT, text TEXT)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_metrics_key_ts ON metrics(key, ts)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_journal_ts ON journal(ts)")
         conn.commit()
     finally:
         conn.close()
@@ -76,7 +69,7 @@ def prune_metrics(base: str | Path, *, per_key_max: int = 10000) -> int:
     db = init_db(base)
     conn = sqlite3.connect(db)
     try:
-        keys = [r[0] for r in conn.execute("SELECT DISTINCT key FROM metrics")] 
+        keys = [r[0] for r in conn.execute("SELECT DISTINCT key FROM metrics")]
         deleted = 0
         for key in keys:
             cur = conn.execute(
@@ -94,6 +87,7 @@ def prune_metrics(base: str | Path, *, per_key_max: int = 10000) -> int:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 if __name__ == "__main__":  # pragma: no cover
     insert_metric("state", "smoke", 1.0)

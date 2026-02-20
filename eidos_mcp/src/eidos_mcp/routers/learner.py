@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
+from eidosian_core import eidosian
+
 from ..core import tool
 from ..state import FORGE_DIR
-from eidosian_core import eidosian
 
 _LEARNER_IMPORT_ERROR = None
 EidosianLearner = None
@@ -36,6 +39,7 @@ def _learner_unavailable_response() -> str:
         }
     )
 
+
 @tool(
     name="learner_run_mission",
     description="Task the Eidosian Learner with a recursive self-improvement mission.",
@@ -43,7 +47,7 @@ def _learner_unavailable_response() -> str:
         "type": "object",
         "properties": {
             "objective": {"type": "string", "description": "The learning goal."},
-            "max_steps": {"type": "integer", "default": 5}
+            "max_steps": {"type": "integer", "default": 5},
         },
         "required": ["objective"],
     },
@@ -55,14 +59,13 @@ async def learner_run_mission(objective: str, max_steps: int = 5) -> str:
         return _learner_unavailable_response()
     return await learner.run_mission(objective, max_steps)
 
+
 @tool(
     name="learner_reflect_docs",
     description="Ask the Eidosian Learner to critique a documentation file.",
     parameters={
         "type": "object",
-        "properties": {
-            "path": {"type": "string", "description": "Relative path to the .md file."}
-        },
+        "properties": {"path": {"type": "string", "description": "Relative path to the .md file."}},
         "required": ["path"],
     },
 )

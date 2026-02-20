@@ -13,6 +13,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+
 from eidosian_core import eidosian
 
 # Setup paths and imports
@@ -20,14 +21,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR / "eidosian_forge"))
 
 try:
-    from gis_forge import GisCore
     from diagnostics_forge import DiagnosticsForge
+    from gis_forge import GisCore
 except ImportError:
     # Try adding the specific forge paths if the above fails
     sys.path.append(str(BASE_DIR / "eidosian_forge" / "gis_forge"))
     sys.path.append(str(BASE_DIR / "eidosian_forge" / "diagnostics_forge"))
-    from gis_core import GisCore
     from diagnostics_core import DiagnosticsForge
+    from gis_core import GisCore
 
 # Import DEFAULT_QUERY from codex_run if available, else default
 try:
@@ -55,7 +56,7 @@ def queue_lock():
     # Ensure lock file exists
     if not LOCK_FILE.exists():
         LOCK_FILE.touch()
-        
+
     lock_file = open(LOCK_FILE, "a+")
     try:
         fcntl.flock(lock_file, fcntl.LOCK_EX)
@@ -103,6 +104,7 @@ def wait_for_turn(entry_id: str) -> None:
                 return
         time.sleep(POLL_INTERVAL)
 
+
 @eidosian()
 def cleanup_entry(entry_id: str) -> None:
     """Remove the completed entry from the queue so the next task can proceed."""
@@ -110,6 +112,7 @@ def cleanup_entry(entry_id: str) -> None:
         queue = load_queue()
         queue = [item for item in queue if item["id"] != entry_id]
         save_queue(queue)
+
 
 @eidosian()
 def ensure_runner() -> None:
@@ -122,6 +125,7 @@ def ensure_runner() -> None:
         error_msg = f"{RUNNER_SCRIPT} is missing; cannot launch the agent."
         diag.log_event("ERROR", error_msg)
         raise FileNotFoundError(error_msg)
+
 
 @eidosian()
 def launch_task(entry: dict) -> None:
@@ -141,11 +145,10 @@ def launch_task(entry: dict) -> None:
     finally:
         cleanup_entry(entry["id"])
 
+
 @eidosian()
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Queue and run codex agent queries one at a time."
-    )
+    parser = argparse.ArgumentParser(description="Queue and run codex agent queries one at a time.")
     parser.add_argument("query", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
@@ -161,8 +164,8 @@ def main() -> None:
 
     diag.log_event("INFO", f"Queued codex task {entry['id']}. Waiting for turn...")
     wait_for_turn(entry["id"])
-    
-    diag.log_event("INFO", f"Running codex task {entry['id']}", query=entry['query'])
+
+    diag.log_event("INFO", f"Running codex task {entry['id']}", query=entry["query"])
     launch_task(entry)
     diag.log_event("INFO", f"Codex task {entry['id']} completed.")
 

@@ -5,17 +5,19 @@
 Advanced profiling with cProfile integration and detailed reporting.
 """
 from __future__ import annotations
+
 import cProfile
-import pstats
 import io
-import os
+import json
+import pstats
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
-from contextlib import contextmanager
-import json
+from typing import Any, Dict, List, Optional
+
+
 @dataclass
 class ProfileStat:
     """Single profiling statistic entry."""
@@ -76,13 +78,13 @@ class ProfileReport:
             f"  {'Function':<50} {'Calls':>10} {'TotTime':>12} {'CumTime':>12}",
             f"  {'-'*50} {'-'*10} {'-'*12} {'-'*12}",
         ]
-        
+
         for stat in self.stats[:top_n]:
             func_name = stat.function[:47] + "..." if len(stat.function) > 50 else stat.function
             lines.append(
                 f"  {func_name:<50} {stat.ncalls:>10} {stat.tottime:>12.6f} {stat.cumtime:>12.6f}"
             )
-        
+
         return "\n".join(lines)
     def save(self, path: Path) -> None:
         """Save report to file."""
@@ -99,7 +101,7 @@ class Profiler:
     - File/JSON export
     - Filtering (builtins, modules)
     """
-    
+
     def __init__(
         self,
         output_dir: Optional[Path] = None,
@@ -113,7 +115,7 @@ class Profiler:
         self.sort_by = sort_by
         self.include_builtins = include_builtins
         self.save_stats = save_stats
-        
+
         self._profiler: Optional[cProfile.Profile] = None
         self._start_time: Optional[float] = None
     def start(self) -> None:
@@ -125,18 +127,18 @@ class Profiler:
         """Stop profiling and return report."""
         if self._profiler is None:
             raise RuntimeError("Profiler not started")
-        
+
         self._profiler.disable()
         total_time = time.perf_counter() - self._start_time
-        
+
         # Create stats
         string_io = io.StringIO()
         stats = pstats.Stats(self._profiler, stream=string_io)
         stats.sort_stats(self.sort_by)
-        
+
         # Parse stats into structured data
         parsed_stats = self._parse_stats(stats)
-        
+
         report = ProfileReport(
             function_name=function_name,
             timestamp=datetime.now(),
@@ -145,31 +147,31 @@ class Profiler:
             call_count=stats.total_calls,
             primitive_calls=stats.prim_calls,
         )
-        
+
         # Save if configured
         if self.output_dir and self.save_stats:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             safe_name = function_name.replace("/", "_").replace("\\", "_")
             report.save(self.output_dir / f"profile_{safe_name}_{timestamp}.json")
-            
+
             # Also save raw pstats
             stats.dump_stats(self.output_dir / f"profile_{safe_name}_{timestamp}.pstats")
-        
+
         self._profiler = None
         self._start_time = None
-        
+
         return report
-    
+
     def _parse_stats(self, stats: pstats.Stats) -> List[ProfileStat]:
         """Parse pstats into structured data."""
         parsed = []
-        
+
         for (filename, line_number, function), (cc, nc, tt, ct, callers) in stats.stats.items():
             # Filter builtins
             if not self.include_builtins:
                 if filename.startswith("<") or "site-packages" in filename:
                     continue
-            
+
             parsed.append(ProfileStat(
                 function=function,
                 filename=filename,
@@ -180,10 +182,10 @@ class Profiler:
                 percall_tot=tt / nc if nc > 0 else 0,
                 percall_cum=ct / nc if nc > 0 else 0,
             ))
-        
+
         # Sort by cumulative time
         parsed.sort(key=lambda x: x.cumtime, reverse=True)
-        
+
         return parsed[:self.top_n * 2]  # Keep extra for filtering
     @contextmanager
     def profile(self, function_name: str = "context"):
@@ -216,7 +218,7 @@ def profile_context(
         save_stats=output_dir is not None,
     )
     profiler.start()
-    
+
     try:
         yield profiler
     finally:

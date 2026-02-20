@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
-from typing import Dict, Any, Literal
+from typing import Any, Dict, Literal
+
 from eidosian_core import eidosian
 
 __all__ = ["run_dir", "write_blob", "write_run_artifacts", "read_run_artifacts"]
@@ -33,9 +35,9 @@ def write_blob(base: str | Path, run_id: str, name: Literal["stdout", "stderr"],
 
 
 @eidosian()
-def write_run_artifacts(base: str | Path, run_id: str,
-                        stdout_bytes: bytes, stderr_bytes: bytes,
-                        meta: Dict[str, Any]) -> Path:
+def write_run_artifacts(
+    base: str | Path, run_id: str, stdout_bytes: bytes, stderr_bytes: bytes, meta: Dict[str, Any]
+) -> Path:
     """
     Persist run artifacts under ``state/runs/<run_id>/``:
       - stdout.txt
@@ -67,4 +69,3 @@ def read_run_artifacts(base: str | Path, run_id: str) -> Dict[str, Any]:
     else:
         meta = {}
     return {"stdout": out, "stderr": err, "meta": meta}
-

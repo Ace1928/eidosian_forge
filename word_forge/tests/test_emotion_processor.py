@@ -29,9 +29,7 @@ def _create_dependencies(tmp_path: Path) -> Tuple[DBManager, EmotionManager]:
     return db_manager, emotion_manager
 
 
-def _create_processor(
-    db_manager: DBManager, emotion_manager: EmotionManager
-) -> RecursiveEmotionProcessor:
+def _create_processor(db_manager: DBManager, emotion_manager: EmotionManager) -> RecursiveEmotionProcessor:
     return RecursiveEmotionProcessor(db_manager, emotion_manager)
 
 
@@ -506,9 +504,7 @@ class TestIntegration:
     def test_full_processing_pipeline(self, tmp_path: Path) -> None:
         """Test full processing pipeline."""
         db_manager, emotion_manager = _create_dependencies(tmp_path)
-        db_manager.insert_or_update_word(
-            "euphoria", "intense feeling of happiness", "noun"
-        )
+        db_manager.insert_or_update_word("euphoria", "intense feeling of happiness", "noun")
         word_id = db_manager.get_word_id("euphoria")
         emotion_manager.set_word_emotion(word_id, 0.9, 0.8)
         processor = _create_processor(db_manager, emotion_manager)

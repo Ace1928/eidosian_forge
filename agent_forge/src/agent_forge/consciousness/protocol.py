@@ -178,15 +178,9 @@ def validate_rac_ap_protocol(protocol: Mapping[str, Any]) -> ProtocolValidationR
 
     expected_major = protocol_major(RAC_AP_PROTOCOL_VERSION)
     actual_major = protocol_major(str(normalized.get("version") or ""))
-    major_compatible = (
-        expected_major is None
-        or actual_major is None
-        or int(expected_major) == int(actual_major)
-    )
+    major_compatible = expected_major is None or actual_major is None or int(expected_major) == int(actual_major)
     if not major_compatible:
-        errors.append(
-            "Protocol major version is incompatible with runtime validator."
-        )
+        errors.append("Protocol major version is incompatible with runtime validator.")
 
     pillars = normalized.get("pillars")
     if not isinstance(pillars, list) or len(pillars) < 5:

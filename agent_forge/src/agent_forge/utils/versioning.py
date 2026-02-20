@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Git integration for Eidosian Forge.
 
@@ -63,9 +64,7 @@ class GitMemoryManager:
                 readme_path = self.repo_path / "README.md"
                 with open(readme_path, "w") as f:
                     f.write("# Eidosian Forge Memory Repository\n\n")
-                    f.write(
-                        "This repository contains the versioned memory of the Eidosian Forge AI system.\n"
-                    )
+                    f.write("This repository contains the versioned memory of the Eidosian Forge AI system.\n")
                     f.write(f"Created: {datetime.now().isoformat()}\n")
 
                 # Create directory structure
@@ -97,9 +96,7 @@ class GitMemoryManager:
 
     def _start_auto_commit_thread(self) -> None:
         """Start thread for automatic commits."""
-        self._auto_commit_thread = threading.Thread(
-            target=self._auto_commit_loop, daemon=True
-        )
+        self._auto_commit_thread = threading.Thread(target=self._auto_commit_loop, daemon=True)
         self._auto_commit_thread.start()
         logger.info(f"Started auto-commit thread (interval: {self.commit_interval}s)")
 
@@ -160,10 +157,7 @@ class GitMemoryManager:
             )
 
             # git commit returns exit code 1 if there's nothing to commit
-            if (
-                "nothing to commit" in result.stdout
-                or "nothing to commit" in result.stderr
-            ):
+            if "nothing to commit" in result.stdout or "nothing to commit" in result.stderr:
                 logger.debug("No changes to commit")
                 return False
 
@@ -179,9 +173,7 @@ class GitMemoryManager:
             return False
 
     @eidosian()
-    def save_memory(
-        self, memory_type: str, memory_id: str, content: Dict[str, Any]
-    ) -> bool:
+    def save_memory(self, memory_type: str, memory_id: str, content: Dict[str, Any]) -> bool:
         """
         Save memory content to the repository.
 
@@ -249,11 +241,7 @@ class GitMemoryManager:
         if not memory_dir.exists():
             return []
 
-        return [
-            f.stem
-            for f in memory_dir.glob("*.json")
-            if f.is_file() and not f.name.startswith(".")
-        ]
+        return [f.stem for f in memory_dir.glob("*.json") if f.is_file() and not f.name.startswith(".")]
 
     @eidosian()
     def get_history(self, path: str, max_entries: int = 10) -> List[Dict[str, str]]:
@@ -298,9 +286,7 @@ class GitMemoryManager:
                 if len(parts) != 3:
                     continue
 
-                history.append(
-                    {"hash": parts[0], "date": parts[1], "message": parts[2]}
-                )
+                history.append({"hash": parts[0], "date": parts[1], "message": parts[2]})
 
             return history
 

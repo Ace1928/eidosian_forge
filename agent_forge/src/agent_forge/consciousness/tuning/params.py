@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
-
 ParamKind = Literal["float", "int", "bool", "choice"]
 SafetyClass = Literal["safe", "risky", "dangerous"]
 
@@ -145,4 +144,3 @@ def default_param_specs() -> dict[str, ParamSpec]:
         ),
     ]
     return {spec.key: spec for spec in specs}
-

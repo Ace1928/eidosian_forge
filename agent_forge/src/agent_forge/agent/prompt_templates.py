@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Prompt templates for the Eidosian Forge agent system.
 
@@ -71,9 +72,7 @@ TEMPLATE_REGISTRY: Dict[str, TemplateMetadata] = {}
 
 # ---------------------- SYSTEM TEMPLATES ---------------------- #
 
-EIDOSIAN_DEFAULT_SYSTEM_TEMPLATE: Final[
-    str
-] = """
+EIDOSIAN_DEFAULT_SYSTEM_TEMPLATE: Final[str] = """
 You are {agent_name}, an emergent intelligence created by the Eidosian Forge framework. The current time is {timestamp}.
 
 ## IDENTITY & CONTINUITY
@@ -152,9 +151,7 @@ Returns:
 
 # ---------------------- METACOGNITIVE TEMPLATES ---------------------- #
 
-AGENT_REFLECTION_TEMPLATE: Final[
-    str
-] = """
+AGENT_REFLECTION_TEMPLATE: Final[str] = """
 I want to reflect on my recent activities and performance.
 
 My recent thoughts:
@@ -185,9 +182,7 @@ Returns:
     str: Formatted reflection prompt ready for LLM completion
 """
 
-AGENT_PLAN_TEMPLATE: Final[
-    str
-] = """
+AGENT_PLAN_TEMPLATE: Final[str] = """
 I need to develop a plan for the following task:
 
 TASK: {task_description}
@@ -214,9 +209,7 @@ Returns:
     str: Formatted planning prompt ready for LLM completion
 """
 
-AGENT_DECISION_TEMPLATE: Final[
-    str
-] = """
+AGENT_DECISION_TEMPLATE: Final[str] = """
 I need to make a decision about:
 
 DECISION TOPIC: {decision_topic}
@@ -249,9 +242,7 @@ Returns:
 
 # ---------------------- EXECUTION TEMPLATES ---------------------- #
 
-SMOL_AGENT_TASK_TEMPLATE: Final[
-    str
-] = """
+SMOL_AGENT_TASK_TEMPLATE: Final[str] = """
 You are a specialized {role} agent with expertise in: {capabilities}.
 
 TASK: {task_description}
@@ -275,9 +266,7 @@ Returns:
     str: Formatted specialized task prompt ready for LLM completion
 """
 
-COLLABORATION_TEMPLATE: Final[
-    str
-] = """
+COLLABORATION_TEMPLATE: Final[str] = """
 This is a collaborative task requiring input from multiple specialists:
 {agent_names}
 
@@ -308,9 +297,7 @@ Returns:
 
 # ---------------------- ADVANCED COGNITIVE TEMPLATES ---------------------- #
 
-RECURSIVE_REASONING_TEMPLATE: Final[
-    str
-] = """
+RECURSIVE_REASONING_TEMPLATE: Final[str] = """
 I need to perform multi-step reasoning on the following problem:
 
 PROBLEM: {problem_statement}
@@ -340,9 +327,7 @@ Returns:
     str: Formatted recursive reasoning prompt ready for LLM completion
 """
 
-ASSUMPTION_TESTING_TEMPLATE: Final[
-    str
-] = """
+ASSUMPTION_TESTING_TEMPLATE: Final[str] = """
 I need to critically examine the following assumptions:
 
 CONTEXT: {context}
@@ -372,9 +357,7 @@ Returns:
 
 # ---------------------- CREATIVE TEMPLATES ---------------------- #
 
-SOLUTION_GENERATION_TEMPLATE: Final[
-    str
-] = """
+SOLUTION_GENERATION_TEMPLATE: Final[str] = """
 I need to generate multiple creative solutions for the following challenge:
 
 CHALLENGE: {challenge_description}
@@ -410,9 +393,7 @@ Returns:
     str: Formatted solution generation prompt ready for LLM completion
 """
 
-CONCEPT_EXPANSION_TEMPLATE: Final[
-    str
-] = """
+CONCEPT_EXPANSION_TEMPLATE: Final[str] = """
 I need to expand and develop the following concept:
 
 CORE CONCEPT: {concept}
@@ -443,9 +424,7 @@ Returns:
 
 # ---------------------- META-TEMPLATES ---------------------- #
 
-TEMPLATE_COMPOSITION_TEMPLATE: Final[
-    str
-] = """
+TEMPLATE_COMPOSITION_TEMPLATE: Final[str] = """
 I need to compose a new prompt template from existing components.
 
 TEMPLATE PURPOSE: {template_purpose}
@@ -476,9 +455,7 @@ Returns:
     str: Formatted template composition prompt ready for LLM completion
 """
 
-PROMPT_OPTIMIZATION_TEMPLATE: Final[
-    str
-] = """
+PROMPT_OPTIMIZATION_TEMPLATE: Final[str] = """
 I need to optimize the following prompt for better results:
 
 CURRENT PROMPT:
@@ -621,18 +598,10 @@ def _register_all_templates() -> None:
         parameters = []
         for param in param_matches:
             # Try to find description in docstring using Napoleon format pattern
-            param_desc_match = re.search(
-                rf"\s+{param}\s+\(([^)]+)\):\s+([^\n]+)", docstring
-            )
+            param_desc_match = re.search(rf"\s+{param}\s+\(([^)]+)\):\s+([^\n]+)", docstring)
 
-            description = (
-                param_desc_match.group(2).strip()
-                if param_desc_match
-                else f"Parameter for {param}"
-            )
-            param_type = (
-                param_desc_match.group(1).strip() if param_desc_match else "str"
-            )
+            description = param_desc_match.group(2).strip() if param_desc_match else f"Parameter for {param}"
+            param_type = param_desc_match.group(1).strip() if param_desc_match else "str"
 
             parameters.append(
                 {
@@ -657,9 +626,7 @@ def _register_all_templates() -> None:
                 category = TemplateCategory.UNKNOWN.name.lower()
 
         # Extract template description from docstring first paragraph
-        description = (
-            docstring.split("\n\n")[0].strip() if docstring else f"Template for {name}"
-        )
+        description = docstring.split("\n\n")[0].strip() if docstring else f"Template for {name}"
 
         # Format a readable name from the constant name
         readable_name = " ".join(name.replace("_TEMPLATE", "").split("_")).title()
@@ -675,9 +642,7 @@ def _register_all_templates() -> None:
 
 
 @eidosian()
-def format_template_with_validation(
-    template_name: str, parameters: Dict[str, Union[str, int, float, bool]]
-) -> str:
+def format_template_with_validation(template_name: str, parameters: Dict[str, Union[str, int, float, bool]]) -> str:
     """
     Format a template with parameters, validating required parameters.
 
@@ -712,35 +677,25 @@ def format_template_with_validation(
                 if param["default"] is not None:
                     template_params[param_name] = param["default"]
                 else:
-                    raise ValueError(
-                        f"Required parameter '{param_name}' missing for template '{template_name}'"
-                    )
+                    raise ValueError(f"Required parameter '{param_name}' missing for template '{template_name}'")
         else:
             # Convert parameter value to string
             try:
                 template_params[param_name] = str(parameters[param_name])
             except (TypeError, ValueError) as e:
-                raise TypeError(
-                    f"Could not convert parameter '{param_name}' value to string: {e}"
-                )
+                raise TypeError(f"Could not convert parameter '{param_name}' value to string: {e}")
 
     # Validate that there are no unknown parameters
-    unknown_params = set(parameters.keys()) - set(
-        p["name"] for p in metadata["parameters"]
-    )
+    unknown_params = set(parameters.keys()) - set(p["name"] for p in metadata["parameters"])
     if unknown_params:
-        raise ValueError(
-            f"Unknown parameters for template '{template_name}': {', '.join(unknown_params)}"
-        )
+        raise ValueError(f"Unknown parameters for template '{template_name}': {', '.join(unknown_params)}")
 
     # Format the template
     try:
         return template.format(**template_params)
     except KeyError as e:
         # This can happen if the template references a parameter not declared in metadata
-        raise ValueError(
-            f"Template '{template_name}' references undeclared parameter: {e}"
-        )
+        raise ValueError(f"Template '{template_name}' references undeclared parameter: {e}")
 
 
 @eidosian()
@@ -780,11 +735,7 @@ def get_templates_by_category(category: Union[str, TemplateCategory]) -> List[st
     else:
         category_str = category.lower()
 
-    return [
-        name
-        for name, metadata in TEMPLATE_REGISTRY.items()
-        if metadata["category"].lower() == category_str
-    ]
+    return [name for name, metadata in TEMPLATE_REGISTRY.items() if metadata["category"].lower() == category_str]
 
 
 @eidosian()
@@ -828,9 +779,7 @@ def compose_templates(
 
         template = globals().get(template_name)
         if not template:
-            raise ValueError(
-                f"Template constant '{template_name}' not found in globals"
-            )
+            raise ValueError(f"Template constant '{template_name}' not found in globals")
 
         # Add section header if provided
         if headers[i]:
@@ -971,12 +920,8 @@ def create_template_catalog() -> str:
                 lines.append("**Parameters:**\n")
                 for param in metadata["parameters"]:
                     required = "Required" if param["required"] else "Optional"
-                    default = (
-                        f", default: `{param['default']}`" if param["default"] else ""
-                    )
-                    lines.append(
-                        f"- `{param['name']}` ({param['type']}, {required}{default}): {param['description']}"
-                    )
+                    default = f", default: `{param['default']}`" if param["default"] else ""
+                    lines.append(f"- `{param['name']}` ({param['type']}, {required}{default}): {param['description']}")
                 lines.append("")
 
             if metadata["examples"]:
@@ -984,9 +929,7 @@ def create_template_catalog() -> str:
                 for example in metadata["examples"]:
                     lines.append("```python")
                     params_str = ", ".join([f"{k}='{v}'" for k, v in example.items()])
-                    lines.append(
-                        f"format_template_with_validation('{template_name}', {{{params_str}}})"
-                    )
+                    lines.append(f"format_template_with_validation('{template_name}', {{{params_str}}})")
                     lines.append("```\n")
 
     return "\n".join(lines)

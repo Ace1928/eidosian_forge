@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
 from agent_forge.core import db as DB
-from agent_forge.core import events
-from agent_forge.core import workspace
+from agent_forge.core import events, workspace
 
 from .kernel import ConsciousnessKernel
 from .metrics import coherence_from_workspace_summary, response_complexity
@@ -62,9 +61,7 @@ def _metrics_snapshot(state_dir: Path, recent_events: list[dict[str, Any]]) -> d
     ws = workspace.summary(state_dir, limit=400, window_seconds=1.0, min_sources=3)
     coherence = coherence_from_workspace_summary(ws)
     rci = response_complexity(recent_events[-250:])
-    truncations = sum(
-        1 for evt in recent_events if str(evt.get("type") or "") == "consciousness.payload_truncated"
-    )
+    truncations = sum(1 for evt in recent_events if str(evt.get("type") or "") == "consciousness.payload_truncated")
     memory_status = _latest_event_data(recent_events, "memory_bridge.status") or {}
     knowledge_status = _latest_event_data(recent_events, "knowledge_bridge.status") or {}
     phenom = _latest_event_data(recent_events, "phenom.snapshot") or {}
@@ -132,7 +129,9 @@ def _apply_overrides(kernel: ConsciousnessKernel, perturbation: Perturbation) ->
     elif kind == "zero" and target in {"policy", "*"}:
         cfg["policy_max_actions_per_tick"] = 0
     elif kind == "jitter" and target in {"competition", "workspace_competition", "*"}:
-        cfg["competition_reaction_window_secs"] = float(cfg.get("competition_reaction_window_secs", 1.5)) + max(0.0, magnitude)
+        cfg["competition_reaction_window_secs"] = float(cfg.get("competition_reaction_window_secs", 1.5)) + max(
+            0.0, magnitude
+        )
 
     return old
 

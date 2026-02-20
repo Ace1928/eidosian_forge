@@ -36,10 +36,7 @@ PINNED_RE = re.compile(
 )
 
 GENERIC_REQ_RE = re.compile(
-    r"^(?P<prefix>\s*)"
-    r"(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)"
-    r"(?P<extras>\[[^\]]+\])?"
-    r"(?P<rest>.*)$"
+    r"^(?P<prefix>\s*)" r"(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)" r"(?P<extras>\[[^\]]+\])?" r"(?P<rest>.*)$"
 )
 
 
@@ -466,19 +463,11 @@ def main() -> int:
     allowed_states = {str(x).strip().lower() for x in str(args.state).split(",") if str(x).strip()}
     if not allowed_states:
         allowed_states = {"open"}
-    allowed_severities = {
-        _severity(x)
-        for x in str(args.severity).split(",")
-        if str(x).strip()
-    }
+    allowed_severities = {_severity(x) for x in str(args.severity).split(",") if str(x).strip()}
     allowed_severities.discard("unknown")
     if not allowed_severities:
         allowed_severities = {"critical", "high"}
-    allowed_ecosystems = {
-        str(x).strip().lower()
-        for x in str(args.ecosystem).split(",")
-        if str(x).strip()
-    }
+    allowed_ecosystems = {str(x).strip().lower() for x in str(args.ecosystem).split(",") if str(x).strip()}
     if not allowed_ecosystems:
         allowed_ecosystems = {"pip"}
     manifest_allowlist = {str(x).strip() for x in args.manifest if str(x).strip()} or None

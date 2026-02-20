@@ -1,6 +1,6 @@
+import importlib
 import importlib.machinery
 import importlib.util
-import importlib
 import os
 import shutil
 import subprocess
@@ -12,9 +12,7 @@ SMART_PUBLISH_PATH = Path(__file__).resolve().parents[1] / "smart_publish"
 
 
 def load_smart_publish():
-    loader = importlib.machinery.SourceFileLoader(
-        "smart_publish", str(SMART_PUBLISH_PATH)
-    )
+    loader = importlib.machinery.SourceFileLoader("smart_publish", str(SMART_PUBLISH_PATH))
     spec = importlib.util.spec_from_loader("smart_publish", loader)
     module = importlib.util.module_from_spec(spec)
     loader.exec_module(module)
@@ -31,22 +29,10 @@ def test_parse_version():
 
 
 def test_increment_version():
-    assert (
-        smart_publish.increment_version("1.2.3", smart_publish.VersionBump.PATCH)
-        == "1.2.4"
-    )
-    assert (
-        smart_publish.increment_version("1.2.3", smart_publish.VersionBump.MINOR)
-        == "1.3.0"
-    )
-    assert (
-        smart_publish.increment_version("1.2.3", smart_publish.VersionBump.MAJOR)
-        == "2.0.0"
-    )
-    assert (
-        smart_publish.increment_version("1.2.3", smart_publish.VersionBump.NONE)
-        == "1.2.3"
-    )
+    assert smart_publish.increment_version("1.2.3", smart_publish.VersionBump.PATCH) == "1.2.4"
+    assert smart_publish.increment_version("1.2.3", smart_publish.VersionBump.MINOR) == "1.3.0"
+    assert smart_publish.increment_version("1.2.3", smart_publish.VersionBump.MAJOR) == "2.0.0"
+    assert smart_publish.increment_version("1.2.3", smart_publish.VersionBump.NONE) == "1.2.3"
 
 
 def test_find_package_root(tmp_path):
@@ -75,9 +61,7 @@ def test_find_package_root(tmp_path):
 
     try:
         os.chdir(empty)
-        assert (
-            smart_publish.find_package_root("pkg", [search_base]) == search_base / "pkg"
-        )
+        assert smart_publish.find_package_root("pkg", [search_base]) == search_base / "pkg"
         assert smart_publish.find_package_root("missing", [tmp_path / "nope"]) is None
     finally:
         os.chdir(cwd)
@@ -178,30 +162,20 @@ def test_build_multi_platform_wheels(monkeypatch, tmp_path):
     dist.mkdir()
     (dist / "file.whl").write_text("x")
 
-    monkeypatch.setattr(
-        smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 0
-    )
+    monkeypatch.setattr(smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 0)
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
     assert smart_publish.build_multi_platform_wheels(tmp_path, ["all"]) is True
     assert smart_publish.build_multi_platform_wheels(tmp_path, ["unknown"]) is True
 
-    monkeypatch.setattr(
-        smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 1
-    )
-    assert (
-        smart_publish.build_multi_platform_wheels(tmp_path, ["linux-x86_64"]) is False
-    )
+    monkeypatch.setattr(smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 1)
+    assert smart_publish.build_multi_platform_wheels(tmp_path, ["linux-x86_64"]) is False
 
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 1)
-    assert (
-        smart_publish.build_multi_platform_wheels(tmp_path, ["linux-x86_64"]) is False
-    )
+    assert smart_publish.build_multi_platform_wheels(tmp_path, ["linux-x86_64"]) is False
 
 
 def test_build_multi_platform_wheels_no_dist(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 0
-    )
+    monkeypatch.setattr(smart_publish, "build_wheel_for_platform", lambda *args, **kwargs: 0)
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
     assert smart_publish.build_multi_platform_wheels(tmp_path, ["linux-x86_64"]) is True
 
@@ -214,23 +188,12 @@ def test_run_publish_command_with_publish_script(monkeypatch, tmp_path):
 
 
 def test_run_publish_command_with_platforms(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        smart_publish, "build_multi_platform_wheels", lambda *args, **kwargs: True
-    )
+    monkeypatch.setattr(smart_publish, "build_multi_platform_wheels", lambda *args, **kwargs: True)
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
-    assert (
-        smart_publish.run_publish_command(
-            tmp_path, ["--skip-existing"], platforms=["linux-x86_64"]
-        )
-        == 0
-    )
+    assert smart_publish.run_publish_command(tmp_path, ["--skip-existing"], platforms=["linux-x86_64"]) == 0
 
-    monkeypatch.setattr(
-        smart_publish, "build_multi_platform_wheels", lambda *args, **kwargs: False
-    )
-    assert (
-        smart_publish.run_publish_command(tmp_path, [], platforms=["linux-x86_64"]) == 1
-    )
+    monkeypatch.setattr(smart_publish, "build_multi_platform_wheels", lambda *args, **kwargs: False)
+    assert smart_publish.run_publish_command(tmp_path, [], platforms=["linux-x86_64"]) == 1
 
 
 def test_run_publish_command_build_fail(monkeypatch, tmp_path):
@@ -290,46 +253,32 @@ def test_validate_version():
 
 
 def test_main_errors(monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: None)
     monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "missing"])
     assert smart_publish.main() == 1
 
 
 def test_main_no_version(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
-    monkeypatch.setattr(
-        smart_publish, "get_current_version", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
+    monkeypatch.setattr(smart_publish, "get_current_version", lambda *args, **kwargs: None)
     monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg"])
     assert smart_publish.main() == 1
 
 
 def test_main_invalid_version(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
-    monkeypatch.setattr(
-        smart_publish, "get_current_version", lambda *args, **kwargs: "1.2.3"
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
+    monkeypatch.setattr(smart_publish, "get_current_version", lambda *args, **kwargs: "1.2.3")
     monkeypatch.setattr(
         smart_publish,
         "validate_version",
         lambda v: (_ for _ in ()).throw(ValueError("bad")),
     )
-    monkeypatch.setattr(
-        smart_publish.sys, "argv", ["smart_publish", "pkg", "--version", "bad"]
-    )
+    monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg", "--version", "bad"])
     assert smart_publish.main() == 1
 
 
 def test_main_dry_run_no_change(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
     monkeypatch.setattr(
         smart_publish.sys,
@@ -340,9 +289,7 @@ def test_main_dry_run_no_change(tmp_path, monkeypatch):
 
 
 def test_main_success_dry_run(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
     monkeypatch.setattr(
         smart_publish.sys,
@@ -353,9 +300,7 @@ def test_main_success_dry_run(tmp_path, monkeypatch):
 
 
 def test_main_flags(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
     monkeypatch.setattr(smart_publish, "run_publish_command", lambda *args, **kwargs: 0)
@@ -377,51 +322,33 @@ def test_main_flags(tmp_path, monkeypatch):
 
 
 def test_main_update_version(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
-    monkeypatch.setattr(
-        smart_publish, "update_package_version", lambda *args, **kwargs: 1
-    )
+    monkeypatch.setattr(smart_publish, "update_package_version", lambda *args, **kwargs: 1)
     monkeypatch.setattr(smart_publish, "run_publish_command", lambda *args, **kwargs: 0)
-    monkeypatch.setattr(
-        smart_publish.sys, "argv", ["smart_publish", "pkg", "--bump", "patch"]
-    )
+    monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg", "--bump", "patch"])
     assert smart_publish.main() == 0
 
 
 def test_main_no_upload(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
     monkeypatch.setattr(smart_publish, "build_distributions", lambda *args, **kwargs: 0)
-    monkeypatch.setattr(
-        smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-upload"]
-    )
+    monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-upload"])
     assert smart_publish.main() == 0
 
 
 def test_main_no_upload_no_build(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
-    monkeypatch.setattr(
-        smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-upload", "--no-build"]
-    )
+    monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-upload", "--no-build"])
     assert smart_publish.main() == 0
 
 
 def test_main_upload_only(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path
-    )
+    monkeypatch.setattr(smart_publish, "find_package_root", lambda *args, **kwargs: tmp_path)
     (tmp_path / "setup.cfg").write_text("version = 1.2.3\n")
     monkeypatch.setattr(subprocess, "call", lambda *args, **kwargs: 0)
-    monkeypatch.setattr(
-        smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-build"]
-    )
+    monkeypatch.setattr(smart_publish.sys, "argv", ["smart_publish", "pkg", "--no-build"])
     assert smart_publish.main() == 0

@@ -6,15 +6,16 @@ using Apache Tika, with caching and knowledge forge integration.
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import json
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
-from ..core import tool
+from eidosian_core import eidosian
+
 from .. import FORGE_ROOT
+from ..core import tool
 from ..forge_loader import ensure_forge_import
 
 TIKA_AVAILABLE: bool | None = None
@@ -27,9 +28,7 @@ except ImportError:
     KnowledgeForge = None
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
-TIKA_CACHE_DIR = Path(
-    os.environ.get("EIDOS_TIKA_CACHE_DIR", Path.home() / ".eidosian" / "tika_cache")
-)
+TIKA_CACHE_DIR = Path(os.environ.get("EIDOS_TIKA_CACHE_DIR", Path.home() / ".eidosian" / "tika_cache"))
 KB_PATH = FORGE_DIR / "data" / "kb.json"
 
 # Initialize components
@@ -69,7 +68,8 @@ def _load_tika() -> bool:
     ensure_forge_import("crawl_forge")
     ensure_forge_import("knowledge_forge")
     try:
-        from crawl_forge import TikaExtractor as _TikaExtractor, TikaKnowledgeIngester as _TikaKnowledgeIngester
+        from crawl_forge import TikaExtractor as _TikaExtractor
+        from crawl_forge import TikaKnowledgeIngester as _TikaKnowledgeIngester
     except ImportError:
         TIKA_AVAILABLE = False
         return False
@@ -90,14 +90,8 @@ def _load_tika() -> bool:
     parameters={
         "type": "object",
         "properties": {
-            "file_path": {
-                "type": "string",
-                "description": "Path to the file to extract"
-            },
-            "use_cache": {
-                "type": "boolean",
-                "description": "Whether to use cached results (default: true)"
-            },
+            "file_path": {"type": "string", "description": "Path to the file to extract"},
+            "use_cache": {"type": "boolean", "description": "Whether to use cached results (default: true)"},
         },
         "required": ["file_path"],
     },
@@ -108,13 +102,13 @@ def tika_extract_file(file_path: str, use_cache: bool = True) -> str:
     tika = _get_tika()
     if not tika:
         return "Error: Tika not available. Install with: pip install tika"
-    
+
     result = tika.extract_from_file(Path(file_path), use_cache=use_cache)
-    
+
     # Truncate content for display if very long
     if result.get("content") and len(result["content"]) > 5000:
         result["content"] = result["content"][:5000] + "\n... [truncated, use tika_ingest_file for full processing]"
-    
+
     return json.dumps(result, indent=2, default=str)
 
 
@@ -124,14 +118,8 @@ def tika_extract_file(file_path: str, use_cache: bool = True) -> str:
     parameters={
         "type": "object",
         "properties": {
-            "url": {
-                "type": "string",
-                "description": "URL to extract content from"
-            },
-            "use_cache": {
-                "type": "boolean",
-                "description": "Whether to use cached results (default: true)"
-            },
+            "url": {"type": "string", "description": "URL to extract content from"},
+            "use_cache": {"type": "boolean", "description": "Whether to use cached results (default: true)"},
         },
         "required": ["url"],
     },
@@ -142,13 +130,13 @@ def tika_extract_url(url: str, use_cache: bool = True) -> str:
     tika = _get_tika()
     if not tika:
         return "Error: Tika not available. Install with: pip install tika"
-    
+
     result = tika.extract_from_url(url, use_cache=use_cache)
-    
+
     # Truncate content for display if very long
     if result.get("content") and len(result["content"]) > 5000:
         result["content"] = result["content"][:5000] + "\n... [truncated, use tika_ingest_url for full processing]"
-    
+
     return json.dumps(result, indent=2, default=str)
 
 
@@ -158,10 +146,7 @@ def tika_extract_url(url: str, use_cache: bool = True) -> str:
     parameters={
         "type": "object",
         "properties": {
-            "file_path": {
-                "type": "string",
-                "description": "Path to the file"
-            },
+            "file_path": {"type": "string", "description": "Path to the file"},
         },
         "required": ["file_path"],
     },
@@ -172,7 +157,7 @@ def tika_get_metadata(file_path: str) -> str:
     tika = _get_tika()
     if not tika:
         return "Error: Tika not available"
-    
+
     metadata = tika.get_metadata_only(Path(file_path))
     return json.dumps(metadata, indent=2, default=str)
 
@@ -188,19 +173,13 @@ def tika_get_metadata(file_path: str) -> str:
     parameters={
         "type": "object",
         "properties": {
-            "file_path": {
-                "type": "string",
-                "description": "Path to the file to ingest"
-            },
+            "file_path": {"type": "string", "description": "Path to the file to ingest"},
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Tags to apply to the knowledge nodes"
+                "description": "Tags to apply to the knowledge nodes",
             },
-            "chunk_size": {
-                "type": "integer",
-                "description": "Maximum characters per chunk (default: 2000)"
-            },
+            "chunk_size": {"type": "integer", "description": "Maximum characters per chunk (default: 2000)"},
         },
         "required": ["file_path"],
     },
@@ -215,7 +194,7 @@ def tika_ingest_file(
     ingester = _get_ingester()
     if not ingester:
         return "Error: Knowledge ingester not available"
-    
+
     result = ingester.ingest_file(
         Path(file_path),
         tags=tags or [],
@@ -230,19 +209,13 @@ def tika_ingest_file(
     parameters={
         "type": "object",
         "properties": {
-            "url": {
-                "type": "string",
-                "description": "URL to ingest"
-            },
+            "url": {"type": "string", "description": "URL to ingest"},
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Tags to apply to the knowledge nodes"
+                "description": "Tags to apply to the knowledge nodes",
             },
-            "chunk_size": {
-                "type": "integer",
-                "description": "Maximum characters per chunk (default: 2000)"
-            },
+            "chunk_size": {"type": "integer", "description": "Maximum characters per chunk (default: 2000)"},
         },
         "required": ["url"],
     },
@@ -257,7 +230,7 @@ def tika_ingest_url(
     ingester = _get_ingester()
     if not ingester:
         return "Error: Knowledge ingester not available"
-    
+
     result = ingester.ingest_url(
         url,
         tags=tags or [],
@@ -272,24 +245,18 @@ def tika_ingest_url(
     parameters={
         "type": "object",
         "properties": {
-            "directory": {
-                "type": "string",
-                "description": "Directory path to scan"
-            },
+            "directory": {"type": "string", "description": "Directory path to scan"},
             "extensions": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "File extensions to include (e.g., ['pdf', 'docx'])"
+                "description": "File extensions to include (e.g., ['pdf', 'docx'])",
             },
             "tags": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Tags to apply to all ingested nodes"
+                "description": "Tags to apply to all ingested nodes",
             },
-            "recursive": {
-                "type": "boolean",
-                "description": "Whether to scan subdirectories (default: true)"
-            },
+            "recursive": {"type": "boolean", "description": "Whether to scan subdirectories (default: true)"},
         },
         "required": ["directory"],
     },
@@ -305,18 +272,18 @@ def tika_ingest_directory(
     ingester = _get_ingester()
     if not ingester:
         return "Error: Knowledge ingester not available"
-    
+
     dir_path = Path(directory)
     if not dir_path.exists():
         return f"Error: Directory not found: {directory}"
-    
+
     # Default to common document types
     if not extensions:
         extensions = ["pdf", "doc", "docx", "txt", "md", "html", "htm", "rtf", "odt"]
-    
+
     # Normalize extensions
-    extensions = [ext.lower().lstrip('.') for ext in extensions]
-    
+    extensions = [ext.lower().lstrip(".") for ext in extensions]
+
     # Find files
     results = {
         "directory": str(dir_path),
@@ -325,26 +292,28 @@ def tika_ingest_directory(
         "nodes_created": 0,
         "errors": [],
     }
-    
+
     pattern = "**/*" if recursive else "*"
     for file_path in dir_path.glob(pattern):
-        if file_path.is_file() and file_path.suffix.lstrip('.').lower() in extensions:
+        if file_path.is_file() and file_path.suffix.lstrip(".").lower() in extensions:
             results["files_found"] += 1
-            
+
             file_result = ingester.ingest_file(
                 file_path,
                 tags=tags or [],
             )
-            
+
             if file_result.get("status") == "success":
                 results["files_processed"] += 1
                 results["nodes_created"] += file_result.get("nodes_created", 0)
             elif file_result.get("status") == "error":
-                results["errors"].append({
-                    "file": str(file_path),
-                    "error": file_result.get("error"),
-                })
-    
+                results["errors"].append(
+                    {
+                        "file": str(file_path),
+                        "error": file_result.get("error"),
+                    }
+                )
+
     return json.dumps(results, indent=2, default=str)
 
 
@@ -364,7 +333,7 @@ def tika_cache_stats() -> str:
     tika = _get_tika()
     if not tika:
         return "Error: Tika not available"
-    
+
     stats = tika.cache_stats()
     return json.dumps(stats, indent=2)
 
@@ -375,10 +344,7 @@ def tika_cache_stats() -> str:
     parameters={
         "type": "object",
         "properties": {
-            "source": {
-                "type": "string",
-                "description": "Specific source URL/path to clear, or omit for all"
-            },
+            "source": {"type": "string", "description": "Specific source URL/path to clear, or omit for all"},
         },
     },
 )
@@ -388,7 +354,7 @@ def tika_cache_clear(source: Optional[str] = None) -> str:
     tika = _get_tika()
     if not tika:
         return "Error: Tika not available"
-    
+
     count = tika.clear_cache(source)
     if source:
         return f"Cleared cache for: {source}" if count else f"No cache entry for: {source}"

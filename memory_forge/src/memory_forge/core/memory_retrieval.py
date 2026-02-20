@@ -1,14 +1,16 @@
 """
 Memory Retrieval Engine: generate ranked memory suggestions based on inputs.
 """
+
 from __future__ import annotations
-from eidosian_core import eidosian
 
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import Dict, List
 
-from .memory_broker import MemoryBroker
+from eidosian_core import eidosian
+
 from .interfaces import MemoryItem
+from .memory_broker import MemoryBroker
 
 
 @dataclass

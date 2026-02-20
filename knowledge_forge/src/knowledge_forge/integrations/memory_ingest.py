@@ -1,14 +1,14 @@
 """
 Memory -> Knowledge ingestion bridge.
 """
+
 from __future__ import annotations
 
-from eidosian_core import eidosian
-
-from pathlib import Path
-from typing import Dict, Any, List
 import json
+from pathlib import Path
+from typing import Any, Dict, List
 
+from eidosian_core import eidosian
 from knowledge_forge.core.graph import KnowledgeForge
 
 
@@ -17,6 +17,7 @@ class MemoryIngestor:
     Ingest memory artifacts into KnowledgeForge.
     Supports the memory_data.json format used by EIDOS.
     """
+
     def __init__(self, knowledge_path: Path):
         self.knowledge = KnowledgeForge(persistence_path=knowledge_path)
 

@@ -1,12 +1,15 @@
 from eidosian_core import eidosian
+
 """
 Agent Capabilities (Tools).
 Integration with other Forges.
 """
-from typing import Dict, Any, Callable
+from pathlib import Path
+from typing import Any, Callable, Dict
+
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
 from code_forge.librarian.core import CodeLibrarian
-from pathlib import Path
+
 
 class Capabilities:
     def __init__(self):
@@ -26,7 +29,4 @@ class Capabilities:
 
     @eidosian()
     def get_tool_map(self) -> Dict[str, Callable]:
-        return {
-            "analyze_code": self.analyze_code,
-            "search_code": self.search_code
-        }
+        return {"analyze_code": self.analyze_code, "search_code": self.search_code}

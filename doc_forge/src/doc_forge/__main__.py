@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 # 🌀 Eidosian Module Entry Point
 """
@@ -27,21 +28,21 @@ Examples:
         $ python -m doc_forge build --clean
 """
 
-import sys
-import os
 import logging
+import os
+import sys
 
 # Configure logging - the sentient nervous system of our architecture
 logging.basicConfig(
     level=logging.INFO if not os.environ.get("DOC_FORGE_DEBUG") else logging.DEBUG,
-    format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+    format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)",
 )
 logger = logging.getLogger("doc_forge.__main__")
 
 try:
     # Import version info first - our temporal anchor
     from .version import get_version_string
-    
+
     # Then try to import our main runner - the heart of our operation
     try:
         from .main import main
@@ -52,24 +53,26 @@ try:
         except ImportError:
             # Ultimate fallback - the final sanctuary
             from .__init__ import main as run_cli
+
             main = run_cli
-            
+
     logger.debug(f"🌀 Doc Forge v{get_version_string()} module entry point activated")
-    
+
 except ImportError as e:
     # Even in failure, maintain elegance and wisdom
     print(f"🌋 Critical initialization error: {str(e)}")
     print("💠 Ensure Doc Forge is properly installed or run from source directory.")
     sys.exit(1)
 
+
 @eidosian()
 def module_entry_point() -> int:
     """
     Dedicated function for the module entry point with pristine error handling.
-    
+
     This serves as a guardian of execution, catching exceptions with grace
     and providing insightful feedback even in failure.
-    
+
     Returns:
         int: Exit code (0 for success, non-zero for failure)
     """
@@ -85,6 +88,7 @@ def module_entry_point() -> int:
         print("📜 Check logs for details or run with DOC_FORGE_DEBUG=1 for verbose output")
         return 1
 
+
 if __name__ == "__main__":
     # Display version banner - our herald announcing our presence!
     try:
@@ -93,6 +97,6 @@ if __name__ == "__main__":
     except NameError:
         # Even without version info, we maintain composure
         print("🌀 Doc Forge - Eidosian Documentation System")
-    
+
     # Pass control to our entry point with elegant error capture
     sys.exit(module_entry_point())

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from ..types import TickContext
-from ..types import WorkspacePayload, clamp01, normalize_workspace_payload
+from ..types import TickContext, WorkspacePayload, clamp01, normalize_workspace_payload
 
 
 class SenseModule:
@@ -45,19 +44,11 @@ class SenseModule:
         if any(str(p.get("kind") or "") == "delay" for p in perturbations) and (ctx.beat_count % 2 == 1):
             return
         noise_mag = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "noise"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "noise"]
             or [0.0]
         )
         clamp_floor = max(
-            [
-                clamp01(p.get("magnitude"), default=0.0)
-                for p in perturbations
-                if str(p.get("kind") or "") == "clamp"
-            ]
+            [clamp01(p.get("magnitude"), default=0.0) for p in perturbations if str(p.get("kind") or "") == "clamp"]
             or [0.0]
         )
         scramble = any(str(p.get("kind") or "") == "scramble" for p in perturbations)
@@ -70,14 +61,8 @@ class SenseModule:
             },
         )
         seen = set(str(x) for x in list(state.get("seen_signatures") or []))
-        counts = (
-            state.get("event_type_counts")
-            if isinstance(state.get("event_type_counts"), Mapping)
-            else {}
-        )
-        counts_map = {
-            str(k): int(v) for k, v in counts.items() if isinstance(v, (int, float))
-        }
+        counts = state.get("event_type_counts") if isinstance(state.get("event_type_counts"), Mapping) else {}
+        counts_map = {str(k): int(v) for k, v in counts.items() if isinstance(v, (int, float))}
 
         created = 0
         candidates = list(reversed(ctx.all_events()[-scan_events:]))
@@ -109,9 +94,7 @@ class SenseModule:
                     "source_module": source,
                     "novelty": round(novelty, 6),
                     "uncertainty": round(uncertainty, 6),
-                    "strength": round(
-                        clamp01(0.55 * novelty + 0.45 * uncertainty, default=0.5), 6
-                    ),
+                    "strength": round(clamp01(0.55 * novelty + 0.45 * uncertainty, default=0.5), 6),
                     "raw": dict((evt.get("data") or {})),
                 },
                 tags=["consciousness", "sense", "percept"],
@@ -136,9 +119,7 @@ class SenseModule:
                         "memory_ids": [],
                     },
                 ).as_dict()
-                payload = normalize_workspace_payload(
-                    payload, fallback_kind="PERCEPT", source_module=self.name
-                )
+                payload = normalize_workspace_payload(payload, fallback_kind="PERCEPT", source_module=self.name)
                 ctx.broadcast(
                     self.name,
                     payload,

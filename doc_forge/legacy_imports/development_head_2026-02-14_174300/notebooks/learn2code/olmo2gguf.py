@@ -20,18 +20,17 @@ Date: 2023-XX-XX
 """
 
 import logging
-from typing import Any, Dict, Optional, Union, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from transformers import (
-    PreTrainedModel,
-    PretrainedConfig,
     AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
-    PreTrainedTokenizer,
     GenerationConfig,
-    AutoConfig
+    PretrainedConfig,
+    PreTrainedModel,
+    PreTrainedTokenizer,
 )
 
 # Configure logging for detailed tracing
@@ -40,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 # CPU-specific optimizations: set number of threads for PyTorch operations
 torch.set_num_threads(torch.get_num_threads())
+
 
 class ModelWrapper:
     """
@@ -125,7 +125,7 @@ class ModelWrapper:
                     skip_keys=None,
                     preload_module_classes=None,
                     force_hooks=False,
-                    strict=False
+                    strict=False,
                 )
                 logger.info("Successfully loaded model using accelerate")
                 return
@@ -270,10 +270,7 @@ if __name__ == "__main__":
     model_name = "allenai/OLMo-2-1124-7B-Instruct"  # Update to the appropriate model name or path
     logger.info("Initializing Olmo2 model wrapper on CPU with advanced disk offloading for minimal RAM usage...")
     olmo2_wrapper = ModelWrapper(
-        model_name=model_name,
-        config_overrides=CONFIG_OVERRIDES,
-        device="cpu",
-        offload_folder="offload"
+        model_name=model_name, config_overrides=CONFIG_OVERRIDES, device="cpu", offload_folder="offload"
     )
 
     prompt_text = "Hey, are you conscious? Can you talk to me?"

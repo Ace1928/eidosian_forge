@@ -7,10 +7,10 @@ import sys
 from pathlib import Path
 from typing import Any, Optional, Type
 
-from . import FORGE_ROOT
-from .forge_loader import ensure_forge_import
 from eidosian_core import eidosian
 
+from . import FORGE_ROOT
+from .forge_loader import ensure_forge_import
 
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 ROOT_DIR = Path(os.environ.get("EIDOS_ROOT_DIR", str(FORGE_DIR.parent))).resolve()

@@ -8,11 +8,11 @@ import time
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
-from mcp.server.fastmcp import FastMCP
-from .logging_utils import log_tool_call, log_resource_read
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from mcp.server.fastmcp import FastMCP
 
+from .logging_utils import log_resource_read, log_tool_call
 
 _FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
 _FASTMCP_PORT = get_service_port(
@@ -123,7 +123,6 @@ def _infer_parameters(func) -> Dict[str, Any]:
     return schema
 
 
-
 _RATE_LIMIT_GLOBAL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_GLOBAL_PER_MIN", "600")))
 _RATE_LIMIT_PER_TOOL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_PER_TOOL_PER_MIN", "300")))
 _RATE_LIMIT_LOCK = threading.Lock()
@@ -151,6 +150,7 @@ def _enforce_rate_limit(tool_name: str) -> None:
         _RATE_LIMIT_GLOBAL_TS.append(now)
         tool_bucket.append(now)
 
+
 @eidosian()
 def tool(
     name: Optional[str] = None,
@@ -158,9 +158,10 @@ def tool(
     parameters: Optional[Dict[str, Any]] = None,
 ):
     """
-    Eidosian tool decorator. 
+    Eidosian tool decorator.
     Registers tool metadata and wraps with logging/tracing.
     """
+
     @eidosian()
     def decorator(func):
         tool_name = name or func.__name__
@@ -169,6 +170,7 @@ def tool(
         register_tool_metadata(tool_name, desc, params, func=func)
 
         if inspect.iscoroutinefunction(func):
+
             @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -189,7 +191,9 @@ def tool(
                 except Exception as e:
                     log_tool_call(tool_name, log_args, None, error=str(e), start_time=start)
                     raise
+
         else:
+
             @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
@@ -231,6 +235,7 @@ def resource(uri: str, description: Optional[str] = None):
         register_resource_metadata(uri, desc)
 
         if inspect.iscoroutinefunction(func):
+
             @eidosian()
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -242,7 +247,9 @@ def resource(uri: str, description: Optional[str] = None):
                 except Exception as e:
                     log_resource_read(uri, None, error=str(e), start_time=start)
                     raise
+
         else:
+
             @eidosian()
             @functools.wraps(func)
             def wrapper(*args, **kwargs):

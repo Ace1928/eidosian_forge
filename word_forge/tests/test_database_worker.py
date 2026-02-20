@@ -10,7 +10,6 @@ import sys
 import time
 from pathlib import Path
 
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from word_forge.database.database_manager import DBManager
@@ -640,9 +639,7 @@ class TestDatabaseWorkerIntegration:
         db_manager.insert_or_update_word("word1", "def1", "noun")
 
         backup_dir = tmp_path / "backups"
-        worker = DatabaseWorker(
-            db_manager, backup_path=backup_dir, poll_interval=3600.0
-        )
+        worker = DatabaseWorker(db_manager, backup_path=backup_dir, poll_interval=3600.0)
         worker.start()
         time.sleep(0.2)
 

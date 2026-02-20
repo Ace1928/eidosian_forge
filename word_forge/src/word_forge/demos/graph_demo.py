@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of GraphManager functionality, adhering to Eidosian principles.
 Ensures clarity, precision, and comprehensive testing of graph capabilities.
@@ -93,9 +94,7 @@ def graph_demo() -> None:
         # Display graph information
         nodes_count = graph_manager.get_node_count()
         edges_count = graph_manager.get_edge_count()
-        logger.info(
-            f"Graph built with {nodes_count} nodes and {edges_count} relationships."
-        )
+        logger.info(f"Graph built with {nodes_count} nodes and {edges_count} relationships.")
 
         if nodes_count == 0:
             logger.error("Graph is empty after build. Cannot proceed with demo.")
@@ -120,17 +119,11 @@ def graph_demo() -> None:
             # Get other relationship types if available
             for rel_type in ["antonym", "hypernym", "hyponym", "domain", "function"]:
                 try:
-                    terms = graph_manager.get_related_terms(
-                        example_term, rel_type=rel_type
-                    )
+                    terms = graph_manager.get_related_terms(example_term, rel_type=rel_type)
                     if terms:
-                        logger.info(
-                            f"{rel_type.capitalize()}s of '{example_term}': {terms}"
-                        )
+                        logger.info(f"{rel_type.capitalize()}s of '{example_term}': {terms}")
                 except Exception as e:
-                    logger.debug(
-                        f"Could not get {rel_type} for '{example_term}': {e}"
-                    )  # Log as debug
+                    logger.debug(f"Could not get {rel_type} for '{example_term}': {e}")  # Log as debug
 
         except NodeNotFoundError as e:
             logger.warning(f"{e}. Attempting alternative terms.")
@@ -140,18 +133,14 @@ def graph_demo() -> None:
             for alt_term in alternative_terms:
                 try:
                     related_terms = graph_manager.get_related_terms(alt_term)
-                    logger.info(
-                        f"Using alternative term '{alt_term}'. Related: {related_terms}"
-                    )
+                    logger.info(f"Using alternative term '{alt_term}'. Related: {related_terms}")
                     example_term = alt_term  # Update for later use
                     found_alternative = True
                     break
                 except NodeNotFoundError:
                     continue
             if not found_alternative:
-                logger.error(
-                    "Could not find any suitable example terms in the graph. Aborting phase."
-                )
+                logger.error("Could not find any suitable example terms in the graph. Aborting phase.")
                 # Decide whether to continue demo or stop
                 # return
 
@@ -186,9 +175,7 @@ def graph_demo() -> None:
             logger.info("Most common relationship types per dimension:")
             for dimension, types in most_common.items():
                 if types:  # types is List[Tuple[RelType, int]]
-                    logger.info(
-                        f"  - {dimension}: {types[0][0]} ({types[0][1]} occurrences)"
-                    )
+                    logger.info(f"  - {dimension}: {types[0][0]} ({types[0][1]} occurrences)")
         else:
             logger.info("  Could not determine most common relationship types.")
 
@@ -220,12 +207,8 @@ def graph_demo() -> None:
                 tgt_val,
             ) in sample_emotional_relations:
                 try:
-                    source_id = graph_manager.add_word_node(
-                        source, attributes={"valence": src_val}
-                    )
-                    target_id = graph_manager.add_word_node(
-                        target, attributes={"valence": tgt_val}
-                    )
+                    source_id = graph_manager.add_word_node(source, attributes={"valence": src_val})
+                    target_id = graph_manager.add_word_node(target, attributes={"valence": tgt_val})
                     graph_manager.add_relationship(
                         source_id,
                         target_id,
@@ -236,9 +219,7 @@ def graph_demo() -> None:
                     )
                     added_emotion = True
                 except Exception as add_err:
-                    logger.warning(
-                        f"Could not add sample emotional relation {source}-{target}: {add_err}"
-                    )
+                    logger.warning(f"Could not add sample emotional relation {source}-{target}: {add_err}")
             if added_emotion:
                 logger.info("Added sample emotional relationships.")
 
@@ -248,9 +229,7 @@ def graph_demo() -> None:
             # Explicitly cast for type safety based on defined alias
             valence_analysis: ValenceAnalysisResult = cast(
                 ValenceAnalysisResult,
-                graph_manager.analyze_emotional_valence_distribution(
-                    dimension="emotional"
-                ),
+                graph_manager.analyze_emotional_valence_distribution(dimension="emotional"),
             )
 
             # Check count robustly
@@ -259,47 +238,34 @@ def graph_demo() -> None:
                 mean_valence = cast(float, valence_analysis.get("mean", 0.0))
                 # Ensure range is a tuple/list of floats
                 valence_range_raw = valence_analysis.get("range", (0.0, 0.0))
-                if (
-                    isinstance(valence_range_raw, (tuple, list))
-                    and len(valence_range_raw) == 2
-                ):
+                if isinstance(valence_range_raw, (tuple, list)) and len(valence_range_raw) == 2:
                     valence_range = cast(Tuple[float, float], tuple(valence_range_raw))
                 else:
                     valence_range = (0.0, 0.0)  # Default fallback
 
-                logger.info(
-                    f"Found {count_val} terms with emotional valence in 'emotional' dimension."
-                )
+                logger.info(f"Found {count_val} terms with emotional valence in 'emotional' dimension.")
                 logger.info(
                     f"  Average valence: {mean_valence:.2f} (Range: [{valence_range[0]:.2f}, {valence_range[1]:.2f}])"
                 )
 
-                top_positive = cast(
-                    List[Tuple[str, float]], valence_analysis.get("top_positive", [])
-                )
+                top_positive = cast(List[Tuple[str, float]], valence_analysis.get("top_positive", []))
                 if top_positive:
                     logger.info("  Most positive terms:")
                     for term, val in top_positive:
                         logger.info(f"    - {term}: {val:.2f}")
 
-                top_negative = cast(
-                    List[Tuple[str, float]], valence_analysis.get("top_negative", [])
-                )
+                top_negative = cast(List[Tuple[str, float]], valence_analysis.get("top_negative", []))
                 if top_negative:
                     logger.info("  Most negative terms:")
                     for term, val in top_negative:
                         logger.info(f"    - {term}: {val:.2f}")
             else:
-                logger.info(
-                    "No significant emotional valence data found in 'emotional' dimension."
-                )
+                logger.info("No significant emotional valence data found in 'emotional' dimension.")
 
         except GraphError as ge:  # Catch specific graph errors like missing numpy
             logger.warning(f"Valence analysis skipped: {ge}")
         except Exception as e:
-            logger.error(
-                f"Unexpected error during valence analysis: {e}", exc_info=True
-            )
+            logger.error(f"Unexpected error during valence analysis: {e}", exc_info=True)
 
         # --- Phase 4: Meta-Emotional Patterns ---
         logger.info("--- PHASE 4: META-EMOTIONAL PATTERNS ---")
@@ -315,12 +281,8 @@ def graph_demo() -> None:
             ]
             for source, target, rel_type, weight in sample_meta_relations:
                 try:
-                    source_id = graph_manager.add_word_node(
-                        source, attributes={"valence": -0.7}
-                    )
-                    target_id = graph_manager.add_word_node(
-                        target, attributes={"valence": -0.8}
-                    )
+                    source_id = graph_manager.add_word_node(source, attributes={"valence": -0.7})
+                    target_id = graph_manager.add_word_node(target, attributes={"valence": -0.8})
                     graph_manager.add_relationship(
                         source_id,
                         target_id,
@@ -331,22 +293,16 @@ def graph_demo() -> None:
                     )
                     added_meta = True
                 except Exception as add_err:
-                    logger.warning(
-                        f"Could not add sample meta-emotional relation {source}-{target}: {add_err}"
-                    )
+                    logger.warning(f"Could not add sample meta-emotional relation {source}-{target}: {add_err}")
             if added_meta:
                 logger.info("Added sample meta-emotional relationships.")
 
         meta_patterns = graph_manager.extract_meta_emotional_patterns()
         if meta_patterns:
-            logger.info(
-                f"Found {len(meta_patterns)} source terms in meta-emotional patterns."
-            )
+            logger.info(f"Found {len(meta_patterns)} source terms in meta-emotional patterns.")
             logger.info("Sample meta-emotional patterns:")
             for source, targets in list(meta_patterns.items())[:3]:  # Show first 3
-                target_str = ", ".join(
-                    [f"{t['term']} ({t['relationship']})" for t in targets[:2]]
-                )
+                target_str = ", ".join([f"{t['term']} ({t['relationship']})" for t in targets[:2]])
                 logger.info(f"  - {source} → {target_str}...")
         else:
             logger.info("No meta-emotional patterns found.")
@@ -363,13 +319,9 @@ def graph_demo() -> None:
                 for t in transitions[:3]:  # Show top 3
                     path_str = " → ".join(t["path"])
                     logger.info(f"  - Path: {path_str}")
-                    logger.info(
-                        f"    Strength: {t['strength']:.3f}, Valence Shift: {t['valence_shift']:.2f}"
-                    )
+                    logger.info(f"    Strength: {t['strength']:.3f}, Valence Shift: {t['valence_shift']:.2f}")
             else:
-                logger.info(
-                    "No significant emotional transitions found meeting criteria."
-                )
+                logger.info("No significant emotional transitions found meeting criteria.")
         except Exception as e:
             logger.error(f"Error analyzing emotional transitions: {e}", exc_info=True)
 
@@ -383,18 +335,12 @@ def graph_demo() -> None:
             if clusters:
                 logger.info(f"Found {len(clusters)} semantic clusters.")
                 logger.info("Sample clusters:")
-                for cluster_id, nodes_info in list(clusters.items())[
-                    :3
-                ]:  # Show first 3 clusters
+                for cluster_id, nodes_info in list(clusters.items())[:3]:  # Show first 3 clusters
                     logger.info(f"  Cluster {cluster_id}:")
                     for node_info in nodes_info[:3]:  # Show first 3 terms per cluster
                         term = node_info["term"]
                         valence = node_info.get("valence")
-                        valence_str = (
-                            f", valence: {valence:.2f}"
-                            if isinstance(valence, float)
-                            else ""
-                        )
+                        valence_str = f", valence: {valence:.2f}" if isinstance(valence, float) else ""
                         logger.info(f"    - {term}{valence_str}")
             else:
                 logger.info("No significant semantic clusters found (min size 2).")
@@ -411,24 +357,14 @@ def graph_demo() -> None:
         literary_context = {"anger": 1.5, "joy": 1.2, "sadness": 1.1}
 
         try:
-            updated_clinical = graph_manager.integrate_emotional_context(
-                "clinical", clinical_context
-            )
-            updated_literary = graph_manager.integrate_emotional_context(
-                "literary", literary_context
-            )
-            logger.info(
-                f"Stored 'clinical' context (affected {updated_clinical} elements - placeholder)."
-            )
-            logger.info(
-                f"Stored 'literary' context (affected {updated_literary} elements - placeholder)."
-            )
+            updated_clinical = graph_manager.integrate_emotional_context("clinical", clinical_context)
+            updated_literary = graph_manager.integrate_emotional_context("literary", literary_context)
+            logger.info(f"Stored 'clinical' context (affected {updated_clinical} elements - placeholder).")
+            logger.info(f"Stored 'literary' context (affected {updated_literary} elements - placeholder).")
 
             # Demonstrate getting emotional subgraph (even without context application)
             context_term = "fear"  # Term likely involved in emotional edges
-            logger.info(
-                f"Extracting emotional subgraph around '{context_term}' (depth 1)..."
-            )
+            logger.info(f"Extracting emotional subgraph around '{context_term}' (depth 1)...")
             emotional_subgraph: nx.Graph = graph_manager.get_emotional_subgraph(
                 context_term, depth=1, min_intensity=0.1  # Use a threshold
             )
@@ -437,9 +373,7 @@ def graph_demo() -> None:
             )
 
         except NodeNotFoundError as nnf:
-            logger.warning(
-                f"Could not extract emotional subgraph for '{context_term}': {nnf}"
-            )
+            logger.warning(f"Could not extract emotional subgraph for '{context_term}': {nnf}")
         except Exception as e:
             logger.error(f"Error during context integration phase: {e}", exc_info=True)
 
@@ -453,25 +387,15 @@ def graph_demo() -> None:
         }
 
         try:
-            logger.info(
-                "Generating 2D interactive visualization (default dimensions)..."
-            )
-            graph_manager.visualize_2d(
-                output_path=str(vis_paths["2d"]), open_in_browser=False
-            )  # Specify 2D
+            logger.info("Generating 2D interactive visualization (default dimensions)...")
+            graph_manager.visualize_2d(output_path=str(vis_paths["2d"]), open_in_browser=False)  # Specify 2D
 
-            logger.info(
-                "Generating 3D interactive visualization (default dimensions)..."
-            )
-            graph_manager.visualize_3d(
-                output_path=str(vis_paths["3d"]), open_in_browser=False
-            )  # Specify 3D
+            logger.info("Generating 3D interactive visualization (default dimensions)...")
+            graph_manager.visualize_3d(output_path=str(vis_paths["3d"]), open_in_browser=False)  # Specify 3D
 
             # Visualize specific dimensions if they exist
             if "emotional" in dimensions_data:
-                logger.info(
-                    "Generating visualization for 'emotional' dimension only..."
-                )
+                logger.info("Generating visualization for 'emotional' dimension only...")
                 graph_manager.visualize(  # Use default (likely 2D)
                     output_path=str(vis_paths["emotional"]),
                     dimensions_filter=["emotional"],
@@ -525,9 +449,7 @@ def graph_demo() -> None:
                     f"Subgraph export for '{example_term}' resulted in an empty path (likely empty subgraph)."
                 )
         except NodeNotFoundError:
-            logger.warning(
-                f"Could not extract subgraph for '{example_term}' (term not found)."
-            )
+            logger.warning(f"Could not extract subgraph for '{example_term}' (term not found).")
         except GraphError as ge:
             logger.error(f"Failed to export subgraph: {ge}")
         except Exception as e:
@@ -543,9 +465,7 @@ def graph_demo() -> None:
         logger.error(f"Required node not found: {e}", exc_info=True)
         print(f"\nDemo aborted due to NodeNotFoundError: {e}")
     except Exception as e:
-        logger.error(
-            f"An unexpected error occurred during the demo: {e}", exc_info=True
-        )
+        logger.error(f"An unexpected error occurred during the demo: {e}", exc_info=True)
         print(f"\nDemo aborted due to unexpected error: {e}")
         traceback.print_exc()
     finally:

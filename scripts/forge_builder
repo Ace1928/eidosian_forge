@@ -5,31 +5,31 @@ Eidosian Forge Builder - A powerful tool for creating project structures with st
 This script creates standardized project directory structures with a rich
 interactive interface, comprehensive logging, and flexible execution modes.
 """
-import os
-import sys
-import shutil
 import argparse
-import logging
-import time
-import json
-import random
-from enum import Enum
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import List, Dict, Optional, Union, Tuple, Set, Callable, Any, Iterator
 import concurrent.futures
+import json
+import logging
+import os
+import random
+import shutil
+import sys
+import time
+from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 # Third-party imports (with graceful fallbacks)
 try:
     from rich import print as rprint
     from rich.console import Console
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
-    from rich.prompt import Confirm, Prompt
-    from rich.tree import Tree
-    from rich.panel import Panel
-    from rich.table import Table
     from rich.logging import RichHandler
+    from rich.panel import Panel
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+    from rich.prompt import Confirm, Prompt
+    from rich.table import Table
+    from rich.tree import Tree
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False

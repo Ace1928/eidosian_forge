@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -180,9 +181,7 @@ class ErrorCategory(Enum):
     """Categorizes errors based on their origin or nature."""
 
     VALIDATION = auto()  # Input data or configuration is invalid.
-    RESOURCE = (
-        auto()
-    )  # Issue accessing or using a required resource (file, network, model).
+    RESOURCE = auto()  # Issue accessing or using a required resource (file, network, model).
     EXTERNAL = auto()  # Failure in an external dependency (FFmpeg, Whisper).
     UNEXPECTED = auto()  # An unforeseen error occurred (bug).
     DEPENDENCY = auto()  # A required library or tool is missing.
@@ -238,11 +237,7 @@ class Error:
         """
         trace_str: Optional[str] = None
         if exception:
-            trace_str = "".join(
-                traceback.format_exception(
-                    type(exception), exception, exception.__traceback__
-                )
-            )
+            trace_str = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
         elif severity in (ErrorSeverity.FATAL, ErrorSeverity.ERROR):
             # Capture traceback for severe errors even without explicit exception
             try:
@@ -543,9 +538,7 @@ metrics_registry = MetricsRegistry()
 
 @eidosian()
 @contextmanager
-def measure_execution(
-    operation: str, context: Optional[Dict[str, Any]] = None
-) -> Iterator[ExecutionMetrics]:
+def measure_execution(operation: str, context: Optional[Dict[str, Any]] = None) -> Iterator[ExecutionMetrics]:
     """
     Context manager to measure the execution time of a block of code.
 
@@ -645,9 +638,7 @@ class WorkDistributor:
         """
         resolved_workers = max(1, max_workers or cpu_count())
         # Use a more descriptive thread name prefix
-        self._executor = ThreadPoolExecutor(
-            max_workers=resolved_workers, thread_name_prefix="TranscriptionWorker"
-        )
+        self._executor = ThreadPoolExecutor(max_workers=resolved_workers, thread_name_prefix="TranscriptionWorker")
         # Store mapping from Future to Task for context retrieval on completion/error
         self._futures: Dict[Future[Any], Task[Any, Result[Any]]] = {}
         self._lock = threading.RLock()
@@ -673,16 +664,12 @@ class WorkDistributor:
                 raise RuntimeError("WorkDistributor has been shut down.")
 
             # Submit the wrapper function which handles metrics and error catching
-            future: Future[TaskResultType] = self._executor.submit(
-                self._execute_task_with_wrapper, task
-            )
+            future: Future[TaskResultType] = self._executor.submit(self._execute_task_with_wrapper, task)
             # Store the original task associated with the future
             self._futures[future] = task
             return future
 
-    def _execute_task_with_wrapper(
-        self, task: Task[TaskParams, TaskResultType]
-    ) -> TaskResultType:
+    def _execute_task_with_wrapper(self, task: Task[TaskParams, TaskResultType]) -> TaskResultType:
         """
         Internal wrapper: executes task, measures, handles unexpected errors.
 
@@ -789,16 +776,12 @@ class WorkDistributor:
                 # Add minimal context, avoid large objects
                 task_context.setdefault("item_repr", repr(params)[:100])
 
-                task = Task(
-                    priority=priority, func=func, params=params, context=task_context
-                )
+                task = Task(priority=priority, func=func, params=params, context=task_context)
                 try:
                     future = self.submit(task)
                     futures_map[future] = params
                 except RuntimeError:
-                    logging.warning(
-                        "WorkDistributor shut down during task submission in map."
-                    )
+                    logging.warning("WorkDistributor shut down during task submission in map.")
                     break  # Stop submitting if shutdown occurs mid-loop
 
         submitted_count = len(futures_map)
@@ -813,9 +796,7 @@ class WorkDistributor:
                     # Retrieve the result (which should be a Result object)
                     result: TaskResultType = future.result()
                     completed_count += 1
-                    logging.debug(
-                        f"Task completed ({completed_count}/{submitted_count}). Params: {repr(params)[:100]}"
-                    )
+                    logging.debug(f"Task completed ({completed_count}/{submitted_count}). Params: {repr(params)[:100]}")
                     yield params, result
                 except Exception as e:
                     # This catches exceptions *retrieving* the result from the future
@@ -848,9 +829,7 @@ class WorkDistributor:
             self.shutdown(wait=False, cancel_futures=True)
             raise  # Re-raise interrupt to signal termination
 
-        logging.debug(
-            f"WorkDistributor.map finished processing {completed_count} tasks."
-        )
+        logging.debug(f"WorkDistributor.map finished processing {completed_count} tasks.")
 
     @eidosian()
     def shutdown(self, wait: bool = True, cancel_futures: bool = False) -> None:
@@ -871,9 +850,7 @@ class WorkDistributor:
                 logging.debug("WorkDistributor already shut down.")
                 return
             self._shutdown = True
-            logging.info(
-                f"Shutting down WorkDistributor (wait={wait}, cancel={should_cancel})..."
-            )
+            logging.info(f"Shutting down WorkDistributor (wait={wait}, cancel={should_cancel})...")
 
             # Attempt cancellation first if requested
             if should_cancel:
@@ -944,9 +921,7 @@ def check_dependencies() -> Result[None]:
             encoding="utf-8",
             errors="replace",  # Handle potential decoding errors
         )
-        logging.debug(
-            f"FFmpeg version check successful: {process.stdout.splitlines()[0]}"
-        )
+        logging.debug(f"FFmpeg version check successful: {process.stdout.splitlines()[0]}")
     except FileNotFoundError:
         return Result.failure(
             Error.create(
@@ -1032,9 +1007,7 @@ def validate_model_size(model_size: str) -> Result[ModelSize]:
 
 
 @eidosian()
-def extract_audio(
-    input_path: str, output_path: str, sample_rate: int = 16000
-) -> Result[str]:
+def extract_audio(input_path: str, output_path: str, sample_rate: int = 16000) -> Result[str]:
     """
     Extracts audio from a media file to WAV format using FFmpeg.
 
@@ -1092,11 +1065,7 @@ def extract_audio(
 
         except ffmpeg.Error as e:
             # Handle errors reported by ffmpeg-python
-            stderr_msg = (
-                e.stderr.decode("utf-8", errors="replace").strip()
-                if e.stderr
-                else "No stderr captured"
-            )
+            stderr_msg = e.stderr.decode("utf-8", errors="replace").strip() if e.stderr else "No stderr captured"
             logging.error(f"FFmpeg audio extraction failed: {stderr_msg}")
             return Result.failure(
                 Error.create(
@@ -1114,9 +1083,7 @@ def extract_audio(
             )
         except Exception as e:
             # Catch any other unexpected errors during the process
-            logging.exception(
-                f"Unexpected error during audio extraction for {input_path}"
-            )
+            logging.exception(f"Unexpected error during audio extraction for {input_path}")
             return Result.failure(
                 Error.create(
                     message=f"Unexpected audio extraction error: {e}",
@@ -1143,9 +1110,7 @@ def format_timestamp(seconds: float) -> str:
         A string representation in `H:MM:SS` format (e.g., "0:01:10", "1:01:01").
     """
     if seconds < 0:
-        logging.warning(
-            f"Received negative timestamp ({seconds}), formatting as 0:00:00."
-        )
+        logging.warning(f"Received negative timestamp ({seconds}), formatting as 0:00:00.")
         seconds = 0
     # Use timedelta for robust formatting, converting to int first
     delta = timedelta(seconds=int(seconds))
@@ -1154,9 +1119,7 @@ def format_timestamp(seconds: float) -> str:
 
 
 @eidosian()
-def transcribe_audio(
-    audio_path: str, model_size: ModelSize
-) -> Result[TranscriptionResult]:
+def transcribe_audio(audio_path: str, model_size: ModelSize) -> Result[TranscriptionResult]:
     """
     Transcribes an audio file using the specified Whisper model on the CPU.
 
@@ -1187,17 +1150,13 @@ def transcribe_audio(
             # Force CPU usage via device="cpu"
             logging.info(f"Loading Whisper model '{model_size}' (forced CPU)...")
             model: Whisper = whisper.load_model(model_size, device="cpu")
-            logging.info(
-                f"Model '{model_size}' loaded. Starting transcription for '{audio_path}'..."
-            )
+            logging.info(f"Model '{model_size}' loaded. Starting transcription for '{audio_path}'...")
 
             # Perform transcription
             # fp16=False is essential for CPU execution.
             # language=None enables auto-detection.
             # word_timestamps=False by default, can be enabled if needed.
-            result_raw: Dict[str, Any] = model.transcribe(
-                audio_path, fp16=False, language=None, word_timestamps=False
-            )
+            result_raw: Dict[str, Any] = model.transcribe(audio_path, fp16=False, language=None, word_timestamps=False)
 
             logging.info(f"Transcription complete for '{audio_path}'.")
 
@@ -1225,11 +1184,7 @@ def transcribe_audio(
                             "audio_path": audio_path,
                             "model": model_size,
                             "result_type": str(type(result_raw)),
-                            "result_keys": (
-                                list(result_raw.keys())
-                                if isinstance(result_raw, dict)
-                                else None
-                            ),
+                            "result_keys": (list(result_raw.keys()) if isinstance(result_raw, dict) else None),
                         },
                     )
                 )
@@ -1271,9 +1226,7 @@ def generate_formatted_transcript(result: TranscriptionResult) -> str:
             # Fallback if segments list is empty or missing
             full_text = result.get("text", "").strip()
             if full_text:
-                logging.warning(
-                    "Transcription segments missing or empty, using full text without timestamps."
-                )
+                logging.warning("Transcription segments missing or empty, using full text without timestamps.")
                 # Return just the text if no segments are available
                 return full_text
             else:
@@ -1295,18 +1248,14 @@ def generate_formatted_transcript(result: TranscriptionResult) -> str:
                     timestamp_str = format_timestamp(start_time)
                     transcript_lines.append(f"[{timestamp_str}] {text}")
             else:
-                logging.warning(
-                    f"Skipping invalid segment at index {i}: {repr(seg)[:100]}"
-                )
+                logging.warning(f"Skipping invalid segment at index {i}: {repr(seg)[:100]}")
 
         # Join lines with double newline for readability between segments
         return "\n\n".join(transcript_lines)
 
 
 @eidosian()
-def save_transcript(
-    transcript_text: str, output_path: str, encoding: str = "utf-8"
-) -> Result[str]:
+def save_transcript(transcript_text: str, output_path: str, encoding: str = "utf-8") -> Result[str]:
     """
     Saves the formatted transcript text to a specified file path.
 
@@ -1409,11 +1358,7 @@ def prepare_audio_for_transcription(input_path: str) -> Result[PreparedAudio]:
             return Result.success(PreparedAudio(path=input_path, is_temporary=False))
 
         elif ext_lower in AUDIO_EXTENSIONS | VIDEO_EXTENSIONS:
-            action = (
-                "Converting"
-                if ext_lower in AUDIO_EXTENSIONS
-                else "Extracting audio from"
-            )
+            action = "Converting" if ext_lower in AUDIO_EXTENSIONS else "Extracting audio from"
             logging.info(f"{action} '{input_path}' to temporary WAV file...")
             temp_file_result = _create_temp_wav_file(input_path)
 
@@ -1552,9 +1497,7 @@ def process_single_file(params: ProcessFileParams) -> Result[str]:
             )
 
         # --- Pipeline Execution ---
-        prepared_audio_container: List[Optional[PreparedAudio]] = [
-            None
-        ]  # Use list for mutable closure
+        prepared_audio_container: List[Optional[PreparedAudio]] = [None]  # Use list for mutable closure
 
         try:
             # Chain operations using flat_map for cleaner error propagation
@@ -1575,26 +1518,18 @@ def process_single_file(params: ProcessFileParams) -> Result[str]:
 
             # Log final outcome based on the result
             if final_result.is_success:
-                logging.info(
-                    f"Successfully processed '{params.input_path}' -> '{final_result.unwrap()}'"
-                )
+                logging.info(f"Successfully processed '{params.input_path}' -> '{final_result.unwrap()}'")
             else:
                 # Error should already be logged by the failing step, but log summary here
                 error = final_result.error
                 # Check error is not None before accessing attributes
                 if error:
-                    logging.error(
-                        f"Failed to process '{params.input_path}': [{error.code}] {error.message}"
-                    )
+                    logging.error(f"Failed to process '{params.input_path}': [{error.code}] {error.message}")
                     # Optionally log traceback for detailed debugging if available and level allows
                     if error.trace and logging.getLogger().isEnabledFor(logging.DEBUG):
-                        logging.debug(
-                            f"Traceback for {params.input_path}:\n{error.trace}"
-                        )
+                        logging.debug(f"Traceback for {params.input_path}:\n{error.trace}")
                 else:
-                    logging.error(
-                        f"Failed to process '{params.input_path}' with unknown error."
-                    )
+                    logging.error(f"Failed to process '{params.input_path}' with unknown error.")
 
             return final_result
 
@@ -1636,9 +1571,7 @@ def find_media_files(input_dir: str, recursive: bool = False) -> Iterator[str]:
     Yields:
         Absolute paths to found media files as strings.
     """
-    with measure_execution(
-        "find_media_files", {"dir": input_dir, "recursive": recursive}
-    ):
+    with measure_execution("find_media_files", {"dir": input_dir, "recursive": recursive}):
         base_path = Path(input_dir)
         if not base_path.is_dir():
             logging.warning(f"Input path is not a directory: {input_dir}")
@@ -1660,9 +1593,7 @@ def find_media_files(input_dir: str, recursive: bool = False) -> Iterator[str]:
 
 
 @eidosian()
-def generate_output_path(
-    input_file_path: str, input_base_dir: str, output_base_dir: str
-) -> str:
+def generate_output_path(input_file_path: str, input_base_dir: str, output_base_dir: str) -> str:
     """
     Calculates the output transcript path, preserving relative directory structure.
 
@@ -1689,9 +1620,7 @@ def generate_output_path(
         relative_path = input_file.relative_to(input_base)
     except ValueError:
         # Should not happen if input_file_path is within input_base_dir, but handle defensively
-        logging.warning(
-            f"Input file '{input_file}' not relative to base '{input_base}'. Using filename only."
-        )
+        logging.warning(f"Input file '{input_file}' not relative to base '{input_base}'. Using filename only.")
         relative_path = Path(input_file.name)
 
     # Change the suffix to .txt
@@ -1770,26 +1699,20 @@ def process_directory(params: ProcessDirectoryParams) -> Result[List[str]]:
 
         # --- Find Files ---
         # Collect all files first to get a total count for progress reporting
-        media_files_to_process = list(
-            find_media_files(params.input_dir, params.recursive)
-        )
+        media_files_to_process = list(find_media_files(params.input_dir, params.recursive))
         total_files = len(media_files_to_process)
 
         if total_files == 0:
             logging.warning(f"No supported media files found in '{params.input_dir}'.")
             return Result.success([])  # Success, but nothing processed
 
-        logging.info(
-            f"Found {total_files} media files to process in '{params.input_dir}'."
-        )
+        logging.info(f"Found {total_files} media files to process in '{params.input_dir}'.")
 
         # --- Prepare Task Parameters ---
         tasks_params: List[ProcessFileParams] = []
         for input_file in media_files_to_process:
             try:
-                output_file = generate_output_path(
-                    input_file, params.input_dir, params.output_dir
-                )
+                output_file = generate_output_path(input_file, params.input_dir, params.output_dir)
                 tasks_params.append(
                     ProcessFileParams(
                         input_path=input_file,
@@ -1816,9 +1739,7 @@ def process_directory(params: ProcessDirectoryParams) -> Result[List[str]]:
 
         actual_tasks_count = len(tasks_params)
         if actual_tasks_count < total_files:
-            logging.warning(
-                f"Skipped {total_files - actual_tasks_count} files due to errors during task preparation."
-            )
+            logging.warning(f"Skipped {total_files - actual_tasks_count} files due to errors during task preparation.")
 
         # --- Execute Concurrently ---
         distributor = WorkDistributor(max_workers=params.worker_count)
@@ -1849,12 +1770,8 @@ def process_directory(params: ProcessDirectoryParams) -> Result[List[str]]:
                             f"({processed_count}/{actual_tasks_count} - {progress_percent:.1f}%) FAILURE: '{task_p.input_path}' - [{result.error.code}] {result.error.message}"
                         )
                         # Optionally log traceback for debugging
-                        if result.error.trace and logging.getLogger().isEnabledFor(
-                            logging.DEBUG
-                        ):
-                            logging.debug(
-                                f"Traceback for {task_p.input_path}:\n{result.error.trace}"
-                            )
+                        if result.error.trace and logging.getLogger().isEnabledFor(logging.DEBUG):
+                            logging.debug(f"Traceback for {task_p.input_path}:\n{result.error.trace}")
                     else:
                         # This case should be rare due to Result structure
                         logging.error(
@@ -1882,9 +1799,7 @@ def process_directory(params: ProcessDirectoryParams) -> Result[List[str]]:
             )
         except Exception as e:
             # Catch unexpected errors during the mapping/distribution process
-            logging.exception(
-                "Unexpected error during directory processing orchestration."
-            )
+            logging.exception("Unexpected error during directory processing orchestration.")
             distributor.shutdown(wait=False, cancel_futures=True)  # Attempt cleanup
             return Result.failure(
                 Error.create(
@@ -1908,9 +1823,7 @@ def process_directory(params: ProcessDirectoryParams) -> Result[List[str]]:
 
         if failure_count > 0:
             # Return failure if any file failed
-            summary_message = (
-                f"{failure_count}/{actual_tasks_count} files failed to process."
-            )
+            summary_message = f"{failure_count}/{actual_tasks_count} files failed to process."
             first_error = aggregated_errors[0]  # Get the first error for context
 
             return Result.failure(
@@ -2046,9 +1959,7 @@ def configure_logging(level: str = "INFO") -> None:
 
 
 @eidosian()
-def prompt_user(
-    prompt_text: str, validation_func: Optional[Callable[[str], bool]] = None
-) -> str:
+def prompt_user(prompt_text: str, validation_func: Optional[Callable[[str], bool]] = None) -> str:
     """
     Helper function to prompt the user for input and optionally validate it.
 
@@ -2105,8 +2016,7 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
     input_path = prompt_user(
         "Enter path to input file or directory",
         lambda p: Path(p).exists()
-        or print(f"❌ Error: Path '{p}' does not exist.")
-        is None,  # Use print in lambda for inline error
+        or print(f"❌ Error: Path '{p}' does not exist.") is None,  # Use print in lambda for inline error
     )
     input_path_abs = str(Path(input_path).resolve())  # Store absolute path
     is_input_dir = Path(input_path_abs).is_dir()
@@ -2116,8 +2026,7 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
     if is_input_dir:
         recursive_choice = prompt_user(
             "Process directory recursively? (y/n)",
-            lambda c: c.lower() in ["y", "yes", "n", "no"]
-            or print("❌ Enter 'y' or 'n'.") is None,
+            lambda c: c.lower() in ["y", "yes", "n", "no"] or print("❌ Enter 'y' or 'n'.") is None,
         )
         recursive = recursive_choice.lower().startswith("y")
 
@@ -2131,9 +2040,7 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
     output_path_abs = str(Path(output_path).resolve())  # Store absolute path
 
     # Basic validation/warning for output based on input type
-    output_is_dir = Path(
-        output_path_abs
-    ).is_dir()  # Check if it *currently* exists as dir
+    output_is_dir = Path(output_path_abs).is_dir()  # Check if it *currently* exists as dir
     output_looks_like_file = Path(output_path_abs).suffix != ""
 
     if is_input_dir and output_looks_like_file and not output_is_dir:
@@ -2152,9 +2059,7 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
     if is_input_dir:
         worker_input = prompt_user(
             f"Number of worker threads [{worker_count}]",
-            lambda w: w == ""
-            or (w.isdigit() and int(w) >= 1)
-            or print("❌ Must be a positive integer.") is None,
+            lambda w: w == "" or (w.isdigit() and int(w) >= 1) or print("❌ Must be a positive integer.") is None,
         )
         worker_count = int(worker_input) if worker_input else worker_count
 
@@ -2169,20 +2074,14 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
         or (c.isdigit() and 1 <= int(c) <= len(model_options))
         or print(f"❌ Enter a number between 1 and {len(model_options)}.") is None,
     )
-    model_index = (
-        int(model_choice_input) - 1
-        if model_choice_input
-        else model_options.index(_DEFAULT_MODEL_SIZE)
-    )
+    model_index = int(model_choice_input) - 1 if model_choice_input else model_options.index(_DEFAULT_MODEL_SIZE)
     model_size_str = model_options[model_index]
 
     # Validate the chosen model size (should always succeed here)
     model_size_validated_result = validate_model_size(model_size_str)
     if model_size_validated_result.is_failure:
         # This indicates an internal logic error
-        logging.error(
-            f"Internal error validating model size: {model_size_validated_result.error}"
-        )
+        logging.error(f"Internal error validating model size: {model_size_validated_result.error}")
         print("❌ Internal error selecting model size. Exiting.")
         sys.exit(1)
     model_size_validated = model_size_validated_result.unwrap()
@@ -2199,8 +2098,7 @@ def interactive_mode() -> Tuple[str, str, ModelSize, bool, int]:
 
     confirm = prompt_user(
         "Proceed with this configuration? (y/n)",
-        lambda c: c.lower() in ["y", "yes", "n", "no"]
-        or print("❌ Enter 'y' or 'n'.") is None,
+        lambda c: c.lower() in ["y", "yes", "n", "no"] or print("❌ Enter 'y' or 'n'.") is None,
     )
     if not confirm.lower().startswith("y"):
         print("🚫 Operation cancelled by user.")
@@ -2233,9 +2131,7 @@ def display_statistics() -> None:
             print(f"  ├─ Min Duration:    {op_stats['min_duration_ms']:>9.2f} ms")
             print(f"  ├─ Max Duration:    {op_stats['max_duration_ms']:>9.2f} ms")
             print(f"  ├─ Average Duration:{op_stats['avg_duration_ms']:>9.2f} ms")
-            print(
-                f"  └─ Total Duration:  {op_stats.get('total_duration_ms', 0.0):>9.2f} ms"
-            )
+            print(f"  └─ Total Duration:  {op_stats.get('total_duration_ms', 0.0):>9.2f} ms")
         else:
             # Should not happen if get_all_statistics filters empty ops, but handle defensively
             print(f"\n Operation: {operation} (No data recorded)")
@@ -2372,9 +2268,7 @@ def main() -> int:
         # --- Dependency Check ---
         dep_check_result = check_dependencies()
         if dep_check_result.is_failure:
-            error = dep_check_result.expect(
-                "Dependency check failed unexpectedly"
-            )  # Should always have error
+            error = dep_check_result.expect("Dependency check failed unexpectedly")  # Should always have error
             logging.critical(f"Dependency Error: {error.message} (Code: {error.code})")
             if error.trace and logging.getLogger().isEnabledFor(logging.DEBUG):
                 logging.debug(f"Traceback:\n{error.trace}")
@@ -2399,18 +2293,14 @@ def main() -> int:
             except SystemExit as e:
                 # Catch exit from interactive mode cancellation
                 logging.info("Interactive mode cancelled by user.")
-                return (
-                    int(e.code) if e.code is not None else 0
-                )  # Return exit code (0 for clean cancel)
+                return int(e.code) if e.code is not None else 0  # Return exit code (0 for clean cancel)
         else:
             # Validate model size from CLI args
             model_val_result = validate_model_size(args.model)
             if model_val_result.is_failure:
                 # Error object should exist
                 error = model_val_result.error
-                logging.error(
-                    f"Configuration Error: {error.message if error else 'Unknown model validation error'}"
-                )
+                logging.error(f"Configuration Error: {error.message if error else 'Unknown model validation error'}")
                 return 1
 
             # Resolve paths to absolute paths
@@ -2445,9 +2335,7 @@ def main() -> int:
         # --- Report Outcome ---
         exit_code = 0
         if pipeline_result.is_success:
-            logging.info(
-                f"✅ Transcription pipeline completed successfully in {total_duration:.2f} seconds."
-            )
+            logging.info(f"✅ Transcription pipeline completed successfully in {total_duration:.2f} seconds.")
             output_val = pipeline_result.unwrap()
             if isinstance(output_val, list):
                 logging.info(f"Produced {len(output_val)} transcript file(s).")

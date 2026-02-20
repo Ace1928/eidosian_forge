@@ -42,8 +42,7 @@ def test_simulation_module_emits_simulated_percepts_and_broadcast(tmp_path: Path
     sim_broadcasts = [
         evt
         for evt in all_events
-        if evt.get("type") == "workspace.broadcast"
-        and (((evt.get("data") or {}).get("source") or "") == "simulation")
+        if evt.get("type") == "workspace.broadcast" and (((evt.get("data") or {}).get("source") or "") == "simulation")
     ]
     assert sim_broadcasts
 

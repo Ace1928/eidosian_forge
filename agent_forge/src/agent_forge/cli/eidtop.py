@@ -2,17 +2,16 @@
 """Tiny curses TUI showing recent daemon beats and metrics."""
 
 from __future__ import annotations
+
 import argparse
 import curses
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import sys
-
+from eidosian_core import eidosian
 
 from agent_forge.core import events as E  # type: ignore
-from eidosian_core import eidosian
 
 METRIC_NAMES = [
     "process.rss_bytes",
@@ -90,9 +89,7 @@ def render(model: Dict[str, object], *, width: int = 80) -> List[str]:
     for e in events[-20:]:
         d = e.get("data", {})
         ts = str(e.get("ts", ""))[-8:]
-        left.append(
-            f"{ts} cpu {d.get('cpu_pct')} rss {_human_bytes(d.get('rss_bytes'))}"
-        )
+        left.append(f"{ts} cpu {d.get('cpu_pct')} rss {_human_bytes(d.get('rss_bytes'))}")
 
     focus = model.get("focus", METRIC_NAMES[0])
     metrics: Dict[str, List[Tuple[str, float]]] = model.get("metrics", {})  # type: ignore

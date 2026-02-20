@@ -1,6 +1,8 @@
 import unittest
 from pathlib import Path
+
 from knowledge_forge import KnowledgeForge
+
 
 class TestKnowledgeForge(unittest.TestCase):
     def setUp(self):
@@ -16,7 +18,7 @@ class TestKnowledgeForge(unittest.TestCase):
     def test_persistence(self):
         node = self.kb.add_knowledge("Permanent fact")
         self.assertTrue(self.persistence_file.exists())
-        
+
         # Load in new instance
         new_kb = KnowledgeForge(persistence_path=self.persistence_file)
         self.assertIn(node.id, new_kb.nodes)
@@ -30,10 +32,10 @@ class TestKnowledgeForge(unittest.TestCase):
         a = self.kb.add_knowledge("A")
         b = self.kb.add_knowledge("B")
         c = self.kb.add_knowledge("C")
-        
+
         self.kb.link_nodes(a.id, b.id)
         self.kb.link_nodes(b.id, c.id)
-        
+
         path = self.kb.find_path(a.id, c.id)
         self.assertEqual(path, [a.id, b.id, c.id])
 
@@ -46,7 +48,7 @@ class TestKnowledgeForge(unittest.TestCase):
         node_a = self.kb.add_knowledge("A")
         node_b = self.kb.add_knowledge("B")
         self.kb.link_nodes(node_a.id, node_b.id)
-        
+
         related = self.kb.get_related_nodes(node_a.id)
         self.assertEqual(len(related), 1)
         self.assertEqual(related[0].id, node_b.id)
@@ -54,10 +56,11 @@ class TestKnowledgeForge(unittest.TestCase):
     def test_search(self):
         self.kb.add_knowledge("The sky is blue")
         self.kb.add_knowledge("The grass is green")
-        
+
         results = self.kb.search("sky")
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].content, "The sky is blue")
+
 
 if __name__ == "__main__":
     unittest.main()

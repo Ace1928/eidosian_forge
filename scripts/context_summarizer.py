@@ -3,9 +3,9 @@ import json
 import logging
 import threading
 import time
-import sys
 from pathlib import Path
 from typing import Dict, Optional
+
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
 
@@ -42,12 +42,14 @@ class Summarizer:
         self.cache_path = cache_path.expanduser() if cache_path else None
         self.cache_lock = threading.Lock()
         self._cache: Dict[str, Dict] = {}
-        
+
         # Initialize LLMForge if available
         self.llm_forge = None
         if LLMForge:
             try:
-                default_ollama_url = get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path="")
+                default_ollama_url = get_service_url(
+                    "ollama_http", default_port=11434, default_host="localhost", default_path=""
+                )
                 if use_codex:
                     # Use ChatMock as primary
                     self.llm_forge = LLMForge(base_url="http://127.0.0.1:8000", use_codex=True)
@@ -100,7 +102,7 @@ class Summarizer:
 
         prompt = self._build_prompt(snippet, path)
         start = time.perf_counter()
-        
+
         summary_text = ""
         tokens = None
         error_msg = None
@@ -109,16 +111,11 @@ class Summarizer:
             try:
                 # LLMForge handles retry and fallback logic internally
                 options = {"timeout": self.timeout_seconds}
-                result = self.llm_forge.generate(
-                    prompt=prompt,
-                    model=self.model,
-                    json_mode=True,
-                    options=options
-                )
-                
+                result = self.llm_forge.generate(prompt=prompt, model=self.model, json_mode=True, options=options)
+
                 if result.get("success"):
                     raw_response = result.get("response", "")
-                    
+
                     # Try parsing if it looks like JSON or if json_mode was requested
                     try:
                         if isinstance(raw_response, dict):
@@ -126,26 +123,28 @@ class Summarizer:
                         else:
                             # Attempt to find JSON structure in text if mixed
                             cleaned = strip_ansi(raw_response).strip()
-                            if cleaned.startswith('{') and cleaned.endswith('}'):
+                            if cleaned.startswith("{") and cleaned.endswith("}"):
                                 payload = json.loads(cleaned)
                             else:
                                 payload = {"response": cleaned}
-                                
-                        summary_text = payload.get("content") or payload.get("response") or payload.get("summary") or str(payload)
+
+                        summary_text = (
+                            payload.get("content") or payload.get("response") or payload.get("summary") or str(payload)
+                        )
                         tokens = result.get("metadata", {}).get("eval_count")
                     except (json.JSONDecodeError, TypeError):
                         summary_text = strip_ansi(str(raw_response))
-                        
+
                 else:
                     error_msg = result.get("error", "Unknown LLMForge error")
-                    
+
             except Exception as e:
                 error_msg = str(e)
         else:
             error_msg = "LLMForge not available"
 
         elapsed = time.perf_counter() - start
-        
+
         if error_msg:
             # We treat LLM failure as a reason to return empty summary but continue cataloging
             self.logger.error("Summarizer failed for %s: %s", path, error_msg)

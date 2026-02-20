@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Word relationship type definitions for the Word Forge lexical network.
 
@@ -87,19 +88,13 @@ EMOTIONAL_INTENSITY_RELATIONSHIPS = Literal["intensifies", "diminishes"]
 EMOTIONAL_CAUSALITY_RELATIONSHIPS = Literal["evokes", "responds_to"]
 
 #: Relationships connecting words along specific emotional dimensions
-EMOTIONAL_DIMENSION_RELATIONSHIPS = Literal[
-    "valence_related", "arousal_related", "dominance_related"
-]
+EMOTIONAL_DIMENSION_RELATIONSHIPS = Literal["valence_related", "arousal_related", "dominance_related"]
 
 #: Relationships describing compositional aspects of complex emotions
-EMOTIONAL_COMPLEXITY_RELATIONSHIPS = Literal[
-    "emotional_component", "emotional_composite", "emotional_sequence"
-]
+EMOTIONAL_COMPLEXITY_RELATIONSHIPS = Literal["emotional_component", "emotional_composite", "emotional_sequence"]
 
 #: Relationships defining how emotions relate to different contexts
-CONTEXTUAL_EMOTIONAL_RELATIONSHIPS = Literal[
-    "cultural_context", "situational_context", "temporal_context"
-]
+CONTEXTUAL_EMOTIONAL_RELATIONSHIPS = Literal["cultural_context", "situational_context", "temporal_context"]
 
 #: Relationships describing higher-order emotional processing
 META_EMOTIONAL_RELATIONSHIPS = Literal["meta_emotion", "emotional_regulation"]

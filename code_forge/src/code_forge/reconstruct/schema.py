@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-
 ROUNDTRIP_REQUIRED_FILES = {
     "reconstruction_manifest": "reconstructed/reconstruction_manifest.json",
     "parity_report": "parity_report.json",

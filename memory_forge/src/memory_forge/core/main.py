@@ -1,11 +1,15 @@
 from eidosian_core import eidosian
+
 """
 Central Memory Controller.
 """
-from typing import Optional, List, Protocol, Union
-from .interfaces import MemoryItem, MemoryType, StorageBackend
+from typing import List, Optional, Protocol, Union
+
+from .interfaces import MemoryItem, MemoryType
+
 try:
     from ..backends.chroma_store import ChromaBackend
+
     _CHROMA_IMPORT_ERROR: Optional[Exception] = None
 except ModuleNotFoundError as exc:
     ChromaBackend = None
@@ -13,21 +17,21 @@ except ModuleNotFoundError as exc:
 from ..backends.json_store import JsonBackend
 from .config import MemoryConfig
 
+
 # Protocol for Embedding Provider
 class EmbeddingService(Protocol):
     def embed_text(self, text: str) -> List[float]: ...
+
 
 class MemoryForge:
     def __init__(self, config: Optional[MemoryConfig] = None, embedder: Optional[EmbeddingService] = None):
         self.config = config or MemoryConfig()
         self.embedder = embedder
-        
+
         # Initialize Episodic Backend
         if self.config.episodic.type == "chroma":
             if ChromaBackend is None:
-                raise RuntimeError(
-                    "Chroma backend requested but chromadb is not installed."
-                ) from _CHROMA_IMPORT_ERROR
+                raise RuntimeError("Chroma backend requested but chromadb is not installed.") from _CHROMA_IMPORT_ERROR
             self.episodic = ChromaBackend(
                 self.config.episodic.collection_name,
                 self.config.episodic.connection_string,
@@ -48,15 +52,10 @@ class MemoryForge:
                 # However, some backends (like JSON) might accept None embedding.
                 # Chroma requires it.
                 if self.config.episodic.type == "chroma":
-                     raise ValueError("No embedding provided and no embedder configured for ChromaDB.")
-                embedding = None # JSON backend handles None
+                    raise ValueError("No embedding provided and no embedder configured for ChromaDB.")
+                embedding = None  # JSON backend handles None
 
-        item = MemoryItem(
-            content=content, 
-            embedding=embedding, 
-            metadata=metadata or {},
-            type=MemoryType.EPISODIC
-        )
+        item = MemoryItem(content=content, embedding=embedding, metadata=metadata or {}, type=MemoryType.EPISODIC)
         self.episodic.add(item)
         return item.id
 
@@ -71,14 +70,12 @@ class MemoryForge:
             query_vec = query
 
         if query_vec is None and self.config.episodic.type == "json":
-             # Fallback for JSON store without embeddings? Not really supported by 'search' interface which expects vec.
-             # JSON store search expects list[float].
-             return []
+            # Fallback for JSON store without embeddings? Not really supported by 'search' interface which expects vec.
+            # JSON store search expects list[float].
+            return []
 
         return self.episodic.search(query_vec, limit=limit, filters=filter_metadata)
 
     @eidosian()
     def stats(self) -> dict:
-        return {
-            "episodic_count": self.episodic.count()
-        }
+        return {"episodic_count": self.episodic.count()}

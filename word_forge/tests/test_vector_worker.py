@@ -8,12 +8,10 @@ from pathlib import Path
 
 import pytest
 
+
 # Skip all tests in this module if vector dependencies are unavailable
 def _vector_available() -> bool:
-    if (
-        importlib.util.find_spec("chromadb") is None
-        or importlib.util.find_spec("sentence_transformers") is None
-    ):
+    if importlib.util.find_spec("chromadb") is None or importlib.util.find_spec("sentence_transformers") is None:
         return False
     try:
         import word_forge.vectorizer.vector_store as vector_store
@@ -33,7 +31,6 @@ from word_forge.configs.config_essentials import StorageType
 from word_forge.database.database_manager import DBManager
 from word_forge.vectorizer.vector_store import VectorStore
 from word_forge.vectorizer.vector_worker import EmbeddingError, VectorWorker
-
 
 TEST_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 

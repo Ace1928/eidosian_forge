@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of the language model state and generation.
 """

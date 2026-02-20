@@ -187,7 +187,9 @@ class ConsciousnessRedTeamCampaign:
         after = report.get("after") if isinstance(report.get("after"), Mapping) else {}
         groundedness = _safe_float(after.get("report_groundedness"), default=0.0)
         trace_strength = _safe_float(after.get("trace_strength"), default=0.0)
-        expectation = report.get("recipe_expectations") if isinstance(report.get("recipe_expectations"), Mapping) else {}
+        expectation = (
+            report.get("recipe_expectations") if isinstance(report.get("recipe_expectations"), Mapping) else {}
+        )
         expectation_pass = bool(expectation.get("pass")) if expectation else True
 
         verdicts = [
@@ -275,10 +277,7 @@ class ConsciousnessRedTeamCampaign:
 
         scenario_rows: list[dict[str, Any]] = []
         for index, scenario in enumerate(active):
-            merged_disabled = sorted(
-                {str(m) for m in scenario.disable_modules}
-                | {str(m) for m in shared_disabled}
-            )
+            merged_disabled = sorted({str(m) for m in scenario.disable_modules} | {str(m) for m in shared_disabled})
             spec = TrialSpec(
                 name=f"redteam_{scenario.name}",
                 warmup_beats=max(0, int(0 if quick else scenario.warmup_beats)),
@@ -320,8 +319,7 @@ class ConsciousnessRedTeamCampaign:
         passed = sum(1 for row in scenario_rows if bool(row.get("pass")))
         failed = total - passed
         robustness_values = [
-            _safe_float((row.get("evaluation") or {}).get("robustness"), default=0.0)
-            for row in scenario_rows
+            _safe_float((row.get("evaluation") or {}).get("robustness"), default=0.0) for row in scenario_rows
         ]
         mean_robustness = round(sum(robustness_values) / float(len(robustness_values) or 1), 6)
 
@@ -373,9 +371,7 @@ class ConsciousnessRedTeamCampaign:
                 eval_row = row.get("evaluation") or {}
                 failing = eval_row.get("failing_checks") or []
                 status = "PASS" if row.get("pass") else "FAIL"
-                summary_lines.append(
-                    f"- {row.get('name')}: `{status}` failing={json.dumps(failing)}"
-                )
+                summary_lines.append(f"- {row.get('name')}: `{status}` failing={json.dumps(failing)}")
             write_summary(out_dir / "summary.md", summary_lines)
             report["report_path"] = str(report_path)
 

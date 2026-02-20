@@ -272,7 +272,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Generate repository directory atlas markdown")
     parser.add_argument("--repo-root", default=".", help="Repository root (default: current directory)")
     parser.add_argument("--atlas-output", default="docs/DIRECTORY_ATLAS.md", help="Atlas markdown path")
-    parser.add_argument("--full-output", default="docs/DIRECTORY_INDEX_FULL.txt", help="Full recursive directory index path")
+    parser.add_argument(
+        "--full-output", default="docs/DIRECTORY_INDEX_FULL.txt", help="Full recursive directory index path"
+    )
     parser.add_argument("--max-depth", type=int, default=2, help="Max directory depth for atlas inventory")
     parser.add_argument(
         "--scope",

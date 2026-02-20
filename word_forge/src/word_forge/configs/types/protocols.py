@@ -28,11 +28,15 @@ from typing import (
 try:
     from eidosian_core import eidosian
 except ImportError:
+
     def eidosian():
         """Fallback decorator when eidosian_core is not available."""
+
         def decorator(func):
             return func
+
         return decorator
+
 
 # Import from siblings
 from .errors import Result
@@ -134,9 +138,7 @@ class WorkDistributor(Protocol):
     """
 
     @eidosian()
-    def submit(
-        self, task: Any, priority: TaskPriority = TaskPriority.NORMAL
-    ) -> Result[Any]:
+    def submit(self, task: Any, priority: TaskPriority = TaskPriority.NORMAL) -> Result[Any]:
         """
         Submit a task for processing with the specified priority.
 

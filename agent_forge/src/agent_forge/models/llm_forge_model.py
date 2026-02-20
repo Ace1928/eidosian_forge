@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import asyncio
 from typing import Iterator, List, Optional
+
+from eidosian_core import eidosian
+from llm_forge.engine.local_cli import EngineConfig, LocalCLIEngine
+
 from ..core.model import ModelInterface
 from ..models import ModelConfig
-from llm_forge.engine.local_cli import LocalCLIEngine, EngineConfig
-from eidosian_core import eidosian
+
 
 class LlmForgeModel(ModelInterface):
     """Adapter for llm_forge engines within agent_forge."""
@@ -16,7 +20,7 @@ class LlmForgeModel(ModelInterface):
             model_path=config.model_name,
             ctx_size=config.max_context,
             temp=config.temperature,
-            n_predict=config.max_tokens
+            n_predict=config.max_tokens,
         )
         self.engine = LocalCLIEngine(self.engine_config)
 
@@ -33,10 +37,8 @@ class LlmForgeModel(ModelInterface):
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            
-        return loop.run_until_complete(
-            self.engine.generate(prompt, n_predict=max_tokens or self.config.max_tokens)
-        )
+
+        return loop.run_until_complete(self.engine.generate(prompt, n_predict=max_tokens or self.config.max_tokens))
 
     @eidosian()
     def generate_stream(
@@ -51,7 +53,7 @@ class LlmForgeModel(ModelInterface):
 
     @eidosian()
     def tokenize(self, text: str) -> List[int]:
-        return [ord(c) for c in text] # Fallback until llm_forge exposes tokenizer
+        return [ord(c) for c in text]  # Fallback until llm_forge exposes tokenizer
 
     @eidosian()
     def num_tokens(self, text: str) -> int:

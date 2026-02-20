@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Vector Embedding Demonstration for Word Forge.
 
@@ -76,9 +77,7 @@ class SearchResult:
         or leaves short text unchanged.
         """
         if self.text:
-            self.text_preview = (
-                f"{self.text[:80]}..." if len(self.text) > 80 else self.text
-            )
+            self.text_preview = f"{self.text[:80]}..." if len(self.text) > 80 else self.text
 
 
 class DatabaseSetupError(Exception):
@@ -210,16 +209,12 @@ class VectorDemo:
         try:
             self.embedder = self._initialize_embedder(use_transformer)
         except Exception as e:
-            raise EmbedderInitializationError(
-                f"Failed to initialize embedder: {str(e)}"
-            ) from e
+            raise EmbedderInitializationError(f"Failed to initialize embedder: {str(e)}") from e
 
         try:
             self.vector_store = self._initialize_vector_store(storage_type)
         except Exception as e:
-            raise VectorStoreInitializationError(
-                f"Failed to initialize vector store: {str(e)}"
-            ) from e
+            raise VectorStoreInitializationError(f"Failed to initialize vector store: {str(e)}") from e
 
         # Keep track of added words
         self.words: Dict[WordID, WordEntryDict] = {}
@@ -245,8 +240,7 @@ class VectorDemo:
             cursor = conn.cursor()
 
             # Create words table with AUTOINCREMENT
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS words (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     term TEXT NOT NULL,
@@ -254,15 +248,12 @@ class VectorDemo:
                     usage_examples TEXT,
                     language TEXT
                 )
-                """
-            )
+                """)
 
             # Create index on term for faster lookups
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_words_term ON words(term)
-                """
-            )
+                """)
 
             conn.commit()
             logger.info(f"Database initialized at {self.db_path}")
@@ -286,18 +277,14 @@ class VectorDemo:
         """
         try:
             with self.db_manager.transaction() as conn:
-                cursor = conn.execute(
-                    "SELECT id, term, definition, usage_examples, language FROM words"
-                )
+                cursor = conn.execute("SELECT id, term, definition, usage_examples, language FROM words")
                 rows = cursor.fetchall()
 
             for row in rows:
                 word_id, term, definition, usage_examples_str, language = row
 
                 # Convert string to list for usage examples
-                usage_examples: List[str] = (
-                    usage_examples_str.split("; ") if usage_examples_str else []
-                )
+                usage_examples: List[str] = usage_examples_str.split("; ") if usage_examples_str else []
 
                 # Create word entry dict
                 self.words[word_id] = {
@@ -337,9 +324,7 @@ class VectorDemo:
         if use_transformer:
             try:
                 embedder = TransformerEmbedder()
-                logger.info(
-                    f"Using TransformerEmbedder with dimension {embedder.dimension}"
-                )
+                logger.info(f"Using TransformerEmbedder with dimension {embedder.dimension}")
                 return embedder
             except Exception as e:
                 logger.warning(f"Failed to initialize transformer embedder: {e}")
@@ -418,12 +403,8 @@ class VectorDemo:
         existing_id = self._check_for_duplicate_term(term, language)
         if existing_id is not None:
             if handle_duplicates:
-                logger.info(
-                    f"Word '{term}' already exists with ID {existing_id}, updating definition"
-                )
-                return self._update_existing_word(
-                    existing_id, term, definition, examples_str, language
-                )
+                logger.info(f"Word '{term}' already exists with ID {existing_id}, updating definition")
+                return self._update_existing_word(existing_id, term, definition, examples_str, language)
             else:
                 raise DuplicateWordError(
                     f"Word '{term}' already exists with ID {existing_id}",
@@ -433,9 +414,7 @@ class VectorDemo:
 
         try:
             # Store in database and get new ID
-            word_id = self._insert_word_in_database(
-                term, definition, examples_str, language
-            )
+            word_id = self._insert_word_in_database(term, definition, examples_str, language)
 
             # Create word entry with explicit string ID
             word: WordEntryDict = {
@@ -456,17 +435,13 @@ class VectorDemo:
             # Keep track of added word
             self.words[word_id] = word
 
-            logger.info(
-                f"Added word '{term}' (ID: {word_id}, Language: {language}) with {vectors_added} vectors"
-            )
+            logger.info(f"Added word '{term}' (ID: {word_id}, Language: {language}) with {vectors_added} vectors")
             return word_id
 
         except Exception as e:
             raise WordStorageError(f"Failed to store word '{term}': {str(e)}") from e
 
-    def _check_for_duplicate_term(
-        self, term: str, language: Language
-    ) -> Optional[WordID]:
+    def _check_for_duplicate_term(self, term: str, language: Language) -> Optional[WordID]:
         """
         Check if a term already exists in the database.
 
@@ -494,9 +469,7 @@ class VectorDemo:
             logger.warning(f"Error checking for duplicate term: {e}")
             return None
 
-    def _insert_word_in_database(
-        self, term: str, definition: str, examples_str: str, language: str
-    ) -> WordID:
+    def _insert_word_in_database(self, term: str, definition: str, examples_str: str, language: str) -> WordID:
         """
         Insert a new word into the database.
 
@@ -574,9 +547,7 @@ class VectorDemo:
             self.vector_store.delete_vectors_for_word(word_id)
             vectors_added = self.vector_store.store_word(word)
 
-            logger.info(
-                f"Updated word '{term}' (ID: {word_id}, Language: {language}) with {vectors_added} vectors"
-            )
+            logger.info(f"Updated word '{term}' (ID: {word_id}, Language: {language}) with {vectors_added} vectors")
             return word_id
 
         except Exception as e:
@@ -695,14 +666,10 @@ class VectorDemo:
                     logger.error(f"Failed to add word: {str(e)}")
                     error_count += 1
 
-        logger.info(
-            f"Added {success_count} words ({duplicate_count} duplicates handled, {error_count} errors)"
-        )
+        logger.info(f"Added {success_count} words ({duplicate_count} duplicates handled, {error_count} errors)")
 
     @eidosian()
-    def search_similar(
-        self, query: str, k: int = 3, filter_language: Optional[Language] = None
-    ) -> List[SearchResult]:
+    def search_similar(self, query: str, k: int = 3, filter_language: Optional[Language] = None) -> List[SearchResult]:
         """
         Search for words similar to the query and display results.
 
@@ -726,9 +693,7 @@ class VectorDemo:
             >>> # Search only in Chinese
             >>> zh_results = demo.search_similar("recursive technique", k=5, filter_language="zh")
         """
-        logger.info(
-            f"Searching for: '{query}'{' in ' + filter_language if filter_language else ''}"
-        )
+        logger.info(f"Searching for: '{query}'{' in ' + filter_language if filter_language else ''}")
         raw_results = self.vector_store.search(
             query_text=query,
             k=k,
@@ -743,9 +708,7 @@ class VectorDemo:
 
         return results
 
-    def _format_search_results(
-        self, raw_results: List[SearchResultDict]
-    ) -> List[SearchResult]:
+    def _format_search_results(self, raw_results: List[SearchResultDict]) -> List[SearchResult]:
         """
         Convert raw search results into formatted search results.
 
@@ -845,9 +808,7 @@ class VectorDemo:
                     "id_int": word_id,  # Original integer ID
                     "term": term,
                     "definition": definition,
-                    "usage_examples": (
-                        usage_examples_str.split("; ") if usage_examples_str else []
-                    ),
+                    "usage_examples": (usage_examples_str.split("; ") if usage_examples_str else []),
                     "language": language,
                     "part_of_speech": "",  # Required by WordEntryDict
                     "last_refreshed": 0.0,  # Required by WordEntryDict
@@ -885,9 +846,7 @@ def main() -> None:
         # Perform sample searches
         demo.search_similar("algorithm for solving problems")
         demo.search_similar("递归技术", k=5)  # "recursive technique" in Chinese
-        demo.search_similar(
-            "procédure étape par étape"
-        )  # "step by step procedure" in French
+        demo.search_similar("procédure étape par étape")  # "step by step procedure" in French
 
         # Demonstrate language filtering
         demo.search_similar("algorithm", filter_language="zh")

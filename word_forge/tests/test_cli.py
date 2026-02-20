@@ -6,8 +6,8 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-
 from word_forge.utils.nltk_utils import ensure_nltk_data
+
 
 # Check if vector dependencies are available
 def _package_available(name: str) -> bool:
@@ -19,10 +19,7 @@ def _package_available(name: str) -> bool:
 
 
 def _vector_available() -> bool:
-    if (
-        importlib.util.find_spec("chromadb") is None
-        or importlib.util.find_spec("sentence_transformers") is None
-    ):
+    if importlib.util.find_spec("chromadb") is None or importlib.util.find_spec("sentence_transformers") is None:
         return False
     try:
         import word_forge.vectorizer.vector_store as vector_store
@@ -81,9 +78,7 @@ def test_cli_start_command(tmp_path: Path) -> None:
 def test_cli_graph_build_command() -> None:
     from word_forge import forge
 
-    assert (
-        forge.main(["graph", "build", "--timeout", "10", "--poll-interval", "0.5"]) == 0
-    )
+    assert forge.main(["graph", "build", "--timeout", "10", "--poll-interval", "0.5"]) == 0
 
 
 @pytest.mark.skipif(

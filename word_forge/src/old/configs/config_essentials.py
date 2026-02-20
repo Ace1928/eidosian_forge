@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 This module defines all essential types and constants used throughout the
 configuration system, providing a consistent way to handle various
@@ -137,9 +138,7 @@ def serialize_dataclass(obj: Any) -> Dict[str, Any]:
             try:
                 # Cast to Any to safely check for NamedTuple attributes
                 tuple_value = cast(Any, value)
-                if hasattr(tuple_value, "_fields") and callable(
-                    getattr(tuple_value, "_asdict", None)
-                ):
+                if hasattr(tuple_value, "_fields") and callable(getattr(tuple_value, "_asdict", None)):
                     result[key] = tuple_value._asdict()
                 else:
                     result[key] = value
@@ -183,10 +182,7 @@ def serialize_config(obj: Any) -> ConfigValue:
     elif isinstance(obj, (list, tuple)):
         return [serialize_config(item) for item in cast(Sequence[Any], obj)]
     elif isinstance(obj, dict):
-        return {
-            key: serialize_config(value)
-            for key, value in cast(Dict[Any, Any], obj).items()
-        }
+        return {key: serialize_config(value) for key, value in cast(Dict[Any, Any], obj).items()}
     elif isinstance(obj, Enum):
         return obj.value
     elif isinstance(obj, (int, float, str, bool, type(None))):

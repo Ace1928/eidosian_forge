@@ -181,4 +181,3 @@ def persist_tuned_overlay(
     state_store.set_meta("tuned_overlay_history", history[-60:])
     state_store.mark_dirty()
     return {"overlay": cleaned, "invalid_keys": invalid, "version": version}
-

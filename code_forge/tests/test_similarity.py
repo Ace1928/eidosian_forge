@@ -21,7 +21,7 @@ def test_identifier_split_and_tokenize() -> None:
 
 def test_normalization_is_comment_and_literal_stable() -> None:
     left = "x = 1  # comment\nname = 'alice'\n"
-    right = "x=99\nname = \"bob\" // another comment\n"
+    right = 'x=99\nname = "bob" // another comment\n'
 
     assert normalize_code_text(left) == normalize_code_text(right)
     assert normalized_hash(left) == normalized_hash(right)

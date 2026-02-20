@@ -8,13 +8,12 @@ import statistics
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Optional
 
 from eidosian_core import eidosian
 
 from . import FORGE_ROOT
 from .core import list_resource_metadata, list_tool_metadata
-
 
 DEFAULT_HYPOTHESES: list[dict[str, Any]] = [
     {
@@ -140,9 +139,7 @@ class ConsciousnessProtocol:
         min_tool_count: int = 80,
         min_resource_count: int = 4,
     ) -> None:
-        self.root_dir = Path(
-            root_dir or os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))
-        ).resolve()
+        self.root_dir = Path(root_dir or os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
         self.data_dir = Path(
             os.environ.get(
                 "EIDOS_CONSCIOUSNESS_DATA_DIR",
@@ -156,12 +153,8 @@ class ConsciousnessProtocol:
             )
         ).resolve()
         self.hypothesis_path = self.data_dir / "hypotheses.json"
-        self.min_tool_count = int(
-            os.environ.get("EIDOS_CONSCIOUSNESS_MIN_TOOLS", str(min_tool_count))
-        )
-        self.min_resource_count = int(
-            os.environ.get("EIDOS_CONSCIOUSNESS_MIN_RESOURCES", str(min_resource_count))
-        )
+        self.min_tool_count = int(os.environ.get("EIDOS_CONSCIOUSNESS_MIN_TOOLS", str(min_tool_count)))
+        self.min_resource_count = int(os.environ.get("EIDOS_CONSCIOUSNESS_MIN_RESOURCES", str(min_resource_count)))
 
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.reports_dir.mkdir(parents=True, exist_ok=True)
@@ -292,9 +285,7 @@ class ConsciousnessProtocol:
                 if isinstance(rate, (int, float)):
                     per_probe.setdefault(probe_name, []).append(float(rate))
         return {
-            probe_name: max(0.05, min(0.95, statistics.mean(rates)))
-            for probe_name, rates in per_probe.items()
-            if rates
+            probe_name: max(0.05, min(0.95, statistics.mean(rates))) for probe_name, rates in per_probe.items() if rates
         }
 
     def _evaluate_hypotheses(self, metrics: dict[str, float]) -> list[dict[str, Any]]:
@@ -358,8 +349,8 @@ class ConsciousnessProtocol:
 
     def _probe_tool_registry_integrity(self) -> tuple[bool, dict[str, Any]]:
         # Ensure router modules are imported so tool/resource registries are populated.
-        from . import routers as _routers  # noqa: F401
         from . import eidos_mcp_server as _server  # noqa: F401
+        from . import routers as _routers  # noqa: F401
 
         tools = list_tool_metadata()
         names = {tool.get("name") for tool in tools}
@@ -371,8 +362,8 @@ class ConsciousnessProtocol:
 
     def _probe_resource_registry_integrity(self) -> tuple[bool, dict[str, Any]]:
         # Ensure router modules are imported so tool/resource registries are populated.
-        from . import routers as _routers  # noqa: F401
         from . import eidos_mcp_server as _server  # noqa: F401
+        from . import routers as _routers  # noqa: F401
 
         resources = list_resource_metadata()
         uris = {resource.get("uri") for resource in resources}
@@ -498,31 +489,21 @@ class ConsciousnessProtocol:
             }
 
         reversible_rates = [
-            probe_summaries[name]["success_rate"]
-            for name in self.reversible_probe_names
-            if name in probe_summaries
+            probe_summaries[name]["success_rate"] for name in self.reversible_probe_names if name in probe_summaries
         ]
-        reversible_success_rate = (
-            statistics.mean(reversible_rates) if reversible_rates else 0.0
-        )
+        reversible_success_rate = statistics.mean(reversible_rates) if reversible_rates else 0.0
 
         tool_count = len(list_tool_metadata())
         resource_count = len(list_resource_metadata())
         tool_coverage = min(1.0, tool_count / float(max(1, self.min_tool_count)))
-        resource_coverage = min(
-            1.0, resource_count / float(max(1, self.min_resource_count))
-        )
+        resource_coverage = min(1.0, resource_count / float(max(1, self.min_resource_count)))
         registry_coverage = (0.8 * tool_coverage) + (0.2 * resource_coverage)
 
         metrics: dict[str, float] = {
             "probe_success_rate": statistics.mean(outcomes) if outcomes else 0.0,
             "reversible_probe_success_rate": reversible_success_rate,
             "median_latency_ms": statistics.median(latencies) if latencies else 0.0,
-            "p95_latency_ms": (
-                sorted(latencies)[max(0, int(len(latencies) * 0.95) - 1)]
-                if latencies
-                else 0.0
-            ),
+            "p95_latency_ms": (sorted(latencies)[max(0, int(len(latencies) * 0.95) - 1)] if latencies else 0.0),
             "brier_score_mean": statistics.mean([row["brier"] for row in rows]) if rows else 0.0,
             "tool_count": float(tool_count),
             "resource_count": float(resource_count),

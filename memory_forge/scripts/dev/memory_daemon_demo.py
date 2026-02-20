@@ -2,9 +2,10 @@
 """
 Memory Daemon Demo - writes suggestions for a mock log file.
 """
+
 from pathlib import Path
-import time
-from memory_forge import MemoryRetrievalDaemon, DaemonConfig, MemoryBroker
+
+from memory_forge import DaemonConfig, MemoryBroker, MemoryRetrievalDaemon
 
 
 def main() -> None:

@@ -27,4 +27,3 @@ def objectives_from_trial_report(report: Mapping[str, Any]) -> dict[str, float]:
         "anti_trace_violation": -trace_violations,
         "anti_module_error": -module_errors,
     }
-

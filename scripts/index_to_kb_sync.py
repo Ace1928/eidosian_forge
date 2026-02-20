@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Syncs context/index.json entries to the KnowledgeForge graph.
@@ -7,10 +8,10 @@ Uses strict typing and robust error handling.
 """
 
 import json
-import sys
 import logging
+import sys
 from pathlib import Path
-from typing import Dict, List, Set, Any
+from typing import Any, Dict
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -19,7 +20,7 @@ logger = logging.getLogger("index_to_kb_sync")
 # Paths
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CONTEXT_INDEX_PATH = ROOT_DIR / "context" / "index.json"
-KB_DATA_PATH = ROOT_DIR / "eidosian_forge" / "kb_data.json" # Default persistence
+KB_DATA_PATH = ROOT_DIR / "eidosian_forge" / "kb_data.json"  # Default persistence
 
 # Inject eidosian_forge into sys.path
 EIDOSIAN_FORGE_DIR = ROOT_DIR / "eidosian_forge"
@@ -42,6 +43,7 @@ except ImportError as e:
         logger.critical(f"Critical Import Error: {e2}")
         sys.exit(1)
 
+
 @eidosian()
 def load_index() -> Dict[str, Any]:
     if not CONTEXT_INDEX_PATH.exists():
@@ -53,18 +55,19 @@ def load_index() -> Dict[str, Any]:
         logger.error(f"Invalid JSON in index: {e}")
         sys.exit(1)
 
+
 @eidosian()
 def sync_index_to_kb():
     logger.info(f"Loading Knowledge Graph from {KB_DATA_PATH}...")
     # Ensure parent dir exists
     KB_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
+
     kb = KnowledgeForge(persistence_path=KB_DATA_PATH)
     logger.info(f"Loaded {len(kb.nodes)} existing nodes.")
 
     index_data = load_index()
     directories = index_data.get("directories", [])
-    
+
     if not directories:
         logger.warning("No directories found in index.")
         return
@@ -83,16 +86,16 @@ def sync_index_to_kb():
         path = entry.get("absolute_path")
         if not path:
             continue
-            
+
         is_new = path not in path_to_nid
-        
+
         # Tags
         tags = set(entry.get("section_names", []))
         tags.add("filesystem")
         tags.add(entry.get("type", "other"))
         if entry.get("manual", {}).get("tags"):
             tags.update(entry.get("manual", {}).get("tags"))
-            
+
         # Metadata
         metadata = {
             "name": entry.get("name"),
@@ -100,19 +103,14 @@ def sync_index_to_kb():
             "source": "context_index_sync",
             "last_seen": index_data.get("generated_at"),
             "size_bytes": entry.get("statistics", {}).get("size_bytes"),
-            "last_modified": entry.get("statistics", {}).get("last_modified")
+            "last_modified": entry.get("statistics", {}).get("last_modified"),
         }
-        
+
         # Concepts (naive extraction from path)
-        concepts = [p for p in Path(path).parts if p not in ('/', 'home', 'lloyd', '.', '..')]
-        
+        concepts = [p for p in Path(path).parts if p not in ("/", "home", "lloyd", ".", "..")]
+
         if is_new:
-            node = kb.add_knowledge(
-                content=path,
-                tags=list(tags),
-                concepts=concepts,
-                metadata=metadata
-            )
+            node = kb.add_knowledge(content=path, tags=list(tags), concepts=concepts, metadata=metadata)
             path_to_nid[path] = node.id
             stats["new"] += 1
         else:
@@ -134,8 +132,8 @@ def sync_index_to_kb():
             parent_path = str(Path(path).parent)
             if parent_path in path_to_nid and parent_path != path:
                 parent_nid = path_to_nid[parent_path]
-                
-                # Check if already linked (KnowledgeForge doesn't expose strict check easily, 
+
+                # Check if already linked (KnowledgeForge doesn't expose strict check easily,
                 # but link_nodes handles it via set)
                 # We assume parent 'contains' child
                 kb.link_nodes(parent_nid, nid)
@@ -147,6 +145,7 @@ def sync_index_to_kb():
     kb.save()
     logger.info(f"Sync Complete. Stats: {stats}")
     logger.info(f"Total Nodes: {len(kb.nodes)}")
+
 
 if __name__ == "__main__":
     sync_index_to_kb()

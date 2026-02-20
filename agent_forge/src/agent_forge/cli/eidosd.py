@@ -2,14 +2,15 @@
 """eidosd — daemon shim with heartbeat loop."""
 
 from __future__ import annotations
+
 import argparse
-import os
-import random
-import sys
-from pathlib import Path as _P
-from datetime import datetime, timezone
 import sqlite3
+import sys
+from datetime import datetime, timezone
+from pathlib import Path as _P
+
 from eidosian_core import eidosian
+
 try:
     import yaml
 except Exception:
@@ -18,12 +19,12 @@ except Exception:
 # add repo root to sys.path for local imports
 
 
-from agent_forge.core import state as S  # type: ignore
+from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
+from agent_forge.core import db as DB  # type: ignore
 from agent_forge.core import events as E  # type: ignore
-from agent_forge.core import db as DB    # type: ignore
 from agent_forge.core import os_metrics as OM  # type: ignore
 from agent_forge.core import scheduler as SCH  # type: ignore
-from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
+from agent_forge.core import state as S  # type: ignore
 
 
 @eidosian()

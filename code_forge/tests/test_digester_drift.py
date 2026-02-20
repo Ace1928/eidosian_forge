@@ -10,15 +10,12 @@ from code_forge.library.db import CodeLibraryDB
 def _make_repo(root: Path, *, include_extra: bool = False) -> None:
     (root / "src").mkdir(parents=True, exist_ok=True)
     (root / "src" / "m.py").write_text(
-        "def score(values):\n"
-        "    return sum(values)\n",
+        "def score(values):\n" "    return sum(values)\n",
         encoding="utf-8",
     )
     if include_extra:
         (root / "src" / "n.py").write_text(
-            "def score(values):\n"
-            "    total = sum(values)\n"
-            "    return total\n",
+            "def score(values):\n" "    total = sum(values)\n" "    return total\n",
             encoding="utf-8",
         )
 

@@ -4,22 +4,19 @@ import functools
 import json
 import os
 import shutil
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import uuid
+
 from eidosian_core import eidosian
 
 # Define a base directory for storing transaction snapshots
-EIDOS_TXN_DIR = Path(
-    os.environ.get("EIDOS_TXN_DIR", "~/.eidosian/transactions")
-).expanduser()
+EIDOS_TXN_DIR = Path(os.environ.get("EIDOS_TXN_DIR", "~/.eidosian/transactions")).expanduser()
 EIDOS_TXN_DIR.mkdir(parents=True, exist_ok=True)
 
 # Define a base directory for storing idempotency records
-EIDOS_IDEMPOTENCY_DIR = Path(
-    os.environ.get("EIDOS_IDEMPOTENCY_DIR", "~/.eidosian/idempotency")
-).expanduser()
+EIDOS_IDEMPOTENCY_DIR = Path(os.environ.get("EIDOS_IDEMPOTENCY_DIR", "~/.eidosian/idempotency")).expanduser()
 EIDOS_IDEMPOTENCY_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -34,17 +31,17 @@ class Transaction:
         self.action = action
         self.timestamp = datetime.now().isoformat()
         self.paths = [p.resolve() if p else None for p in paths if p]
-        self.paths = [p for p in self.paths if p] # Filter out None
+        self.paths = [p for p in self.paths if p]  # Filter out None
         self.snapshots: Dict[Path, Optional[Path]] = {}  # original_path: snapshot_path
         self.status = "PENDING"  # PENDING, COMMITTED, ROLLED_BACK, FAILED
         self.error_reason: Optional[str] = None
-        
+
         if create_snapshot:
             # Save pending state immediately so we track the attempt
             _save_transaction(self)
             try:
                 self._create_snapshot()
-                _save_transaction(self) # Update with snapshot info
+                _save_transaction(self)  # Update with snapshot info
             except Exception as e:
                 self.status = "FAILED"
                 self.error_reason = f"Snapshot failed: {e}"
@@ -97,7 +94,7 @@ class Transaction:
                         shutil.copytree(snapshot_path, original_path)
             except Exception as e:
                 rollback_errors.append(f"{original_path}: {e}")
-        
+
         self.status = "ROLLED_BACK"
         if rollback_errors:
             self.status = "PARTIAL_ROLLBACK"
@@ -140,10 +137,7 @@ def load_transaction(txn_id: str) -> Optional[Transaction]:
     data = json.loads(txn_file.read_text())
     txn = Transaction(data["id"], data["action"], [Path(p) for p in data.get("paths", [])], create_snapshot=False)
     txn.timestamp = data.get("timestamp", txn.timestamp)
-    txn.snapshots = {
-        Path(orig): Path(snap) if snap else None
-        for orig, snap in data.get("snapshots", {}).items()
-    }
+    txn.snapshots = {Path(orig): Path(snap) if snap else None for orig, snap in data.get("snapshots", {}).items()}
     txn.status = data.get("status", txn.status)
     txn.error_reason = data.get("error_reason")
     return txn
@@ -245,6 +239,7 @@ def transactional(action_name: str, get_paths_func: Any):
     Decorator for tools to automatically wrap them in a transaction.
     get_paths_func should take the same arguments as the tool and return List[Path].
     """
+
     @eidosian()
     def decorator(func):
         @eidosian()
@@ -254,8 +249,10 @@ def transactional(action_name: str, get_paths_func: Any):
                 paths = get_paths_func(*args, **kwargs)
             except Exception:
                 paths = []
-                
+
             with begin_transaction(action_name, paths) as txn:
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator

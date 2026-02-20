@@ -1,6 +1,9 @@
+import json
+import time
 from pathlib import Path
-import json, time
+
 from core import state as S
+
 
 def test_migrate_and_snapshot(tmp_path: Path):
     base = tmp_path / "state"
@@ -10,6 +13,7 @@ def test_migrate_and_snapshot(tmp_path: Path):
     assert snap["schema"] == v
     assert snap["totals"]["note"] == 0
     assert snap["files"]["events"] >= 1  # at least version/journal files
+
 
 def test_journal_counts(tmp_path: Path):
     base = tmp_path / "state"
@@ -87,7 +91,7 @@ def test_migrate_idempotent(tmp_path: Path):
 def test_snapshot_ignores_bad_journal_lines(tmp_path: Path):
     base = tmp_path / "state"
     S.migrate(base)
-    jp = (base / "events" / "journal.jsonl")
+    jp = base / "events" / "journal.jsonl"
     jp.write_text('{"type":"note","text":"ok"}\nTHIS IS NOT JSON\n', encoding="utf-8")
     snap = S.snapshot(base)
     assert snap["totals"]["note"] == 1
@@ -118,4 +122,3 @@ def test_rotate_and_diff(tmp_path: Path):
     b = S.snapshot(base)
     d = S.diff_snapshots(a, b)
     assert d["delta_totals"]["note"] == 1
-

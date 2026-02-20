@@ -1,4 +1,5 @@
 """Fetch MCP resources via stdio or HTTP."""
+
 from __future__ import annotations
 
 import argparse
@@ -13,20 +14,18 @@ try:
 except Exception:  # pragma: no cover - optional runtime dependency
     httpx = None
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from . import FORGE_ROOT
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
+from . import FORGE_ROOT
 
 MCP_URL = get_service_url("eidos_mcp", default_port=8928, default_host="localhost", default_path="/mcp")
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    default_python = os.environ.get(
-        "EIDOS_PYTHON_BIN", str(FORGE_ROOT / "eidosian_venv" / "bin" / "python3")
-    )
+    default_python = os.environ.get("EIDOS_PYTHON_BIN", str(FORGE_ROOT / "eidosian_venv" / "bin" / "python3"))
     if not Path(default_python).exists():
         default_python = sys.executable
 

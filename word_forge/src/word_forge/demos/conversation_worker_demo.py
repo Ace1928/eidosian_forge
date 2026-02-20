@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of ConversationWorker functionality.
 
@@ -54,9 +55,7 @@ logging.basicConfig(
 logger = logging.getLogger("conversation_worker_demo")
 
 
-def _create_conversation_task(
-    conversation_id: int, speaker: str, message: str, priority: int = 1
-) -> ConversationTask:
+def _create_conversation_task(conversation_id: int, speaker: str, message: str, priority: int = 1) -> ConversationTask:
     """
     Creates a standardized ConversationTask dictionary.
 
@@ -162,9 +161,7 @@ def main() -> None:
         # Queue Managers
         queue_manager_for_parser = QueueManager[str]()
         # Use the explicit type expected by ConversationWorker
-        queue_manager_for_worker = QueueManager[
-            ConversationTask | str | Dict[str, Any]
-        ]()
+        queue_manager_for_worker = QueueManager[ConversationTask | str | Dict[str, Any]]()
 
         # Parser Refiner
         parser_refiner = ParserRefiner(db_manager, queue_manager_for_parser)
@@ -210,9 +207,7 @@ def main() -> None:
                 for speaker, message in conversation_data:
                     task = _create_conversation_task(conversation_id, speaker, message)
                     queue_manager_for_worker.enqueue(task)
-                    logger.info(
-                        f"Enqueued task {task['task_id']} for conv {conversation_id}: '{message}'"
-                    )
+                    logger.info(f"Enqueued task {task['task_id']} for conv {conversation_id}: '{message}'")
                     time.sleep(0.1)
             else:
                 logger.error(f"Failed to start conversation: {result.unwrap_err()}")

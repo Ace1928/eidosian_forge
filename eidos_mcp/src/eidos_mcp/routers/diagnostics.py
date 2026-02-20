@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import json
+
+from eidosian_core import eidosian
+
 from ..core import tool
 from ..forge_loader import ensure_forge_import
-from eidosian_core import eidosian
 
 ensure_forge_import("diagnostics_forge")
 
@@ -13,6 +16,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 # Initialize diagnostics
 diag = DiagnosticsForge(service_name="eidos_mcp") if DiagnosticsForge else None
+
 
 @tool(
     name="diagnostics_ping",
@@ -25,9 +29,10 @@ def diagnostics_ping() -> str:
     if not diag:
         return "Error: Diagnostics forge unavailable"
     # log_event exists in some versions of DiagnosticsForge
-    if hasattr(diag, 'log_event'):
+    if hasattr(diag, "log_event"):
         diag.log_event("INFO", "diagnostics_ping")
     return "ok"
+
 
 @tool(
     name="diagnostics_metrics",
@@ -42,14 +47,15 @@ def diagnostics_metrics(name: str | None = None) -> str:
     """Return diagnostics metrics summary."""
     if not diag:
         return "Error: Diagnostics forge unavailable"
-    if not hasattr(diag, 'metrics'):
+    if not hasattr(diag, "metrics"):
         return json.dumps({"status": "no_metrics_tracking"})
-        
+
     if name:
         summary = diag.get_metrics_summary(name)
     else:
         summary = {k: diag.get_metrics_summary(k) for k in diag.metrics}
     return json.dumps(summary, indent=2)
+
 
 @tool(
     name="diagnostics_pulse",
@@ -62,6 +68,7 @@ def diagnostics_pulse() -> str:
         return "Error: Diagnostics forge unavailable"
     pulse = diag.get_system_pulse()
     return json.dumps(pulse, indent=2)
+
 
 @tool(
     name="diagnostics_processes",

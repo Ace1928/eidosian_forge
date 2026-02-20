@@ -169,9 +169,7 @@ def response_complexity(events: Sequence[Mapping[str, Any]]) -> dict[str, float]
             "rci_v2": 0.0,
         }
 
-    raw = "\n".join(json.dumps(e, sort_keys=True, default=str) for e in events).encode(
-        "utf-8"
-    )
+    raw = "\n".join(json.dumps(e, sort_keys=True, default=str) for e in events).encode("utf-8")
     compressed = zlib.compress(raw, level=9)
     compression_ratio = len(compressed) / max(len(raw), 1)
 

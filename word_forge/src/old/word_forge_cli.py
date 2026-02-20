@@ -10,6 +10,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from eidosian_core import eidosian
 from word_forge.database.database_manager import DBManager, WordEntryDict
 from word_forge.emotion.emotion_manager import EmotionManager
 from word_forge.parser.parser_refiner import ParserRefiner
@@ -20,8 +21,6 @@ from word_forge.worker.worker_thread import (
     create_progress_bar,
     print_table,
 )
-
-from eidosian_core import eidosian
 
 # This module provides a command-line interface (CLI) for the WordForge application,
 
@@ -128,9 +127,7 @@ class WordForgeCLI:
         # Add console handler if none exists
         if not self.logger.handlers:
             handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
 
@@ -178,9 +175,7 @@ class WordForgeCLI:
             self._error_count >= self._error_threshold
             and current_time - self._last_error_time < self._error_reset_interval
         ):
-            self.logger.error(
-                f"{Fore.RED}Too many errors occurred. Waiting before retry.{Style.RESET_ALL}"
-            )
+            self.logger.error(f"{Fore.RED}Too many errors occurred. Waiting before retry.{Style.RESET_ALL}")
             return
 
         self.logger.info(f"{Fore.GREEN}Starting WordForge worker...{Style.RESET_ALL}")
@@ -200,9 +195,7 @@ class WordForgeCLI:
             self.worker_started = True
             self.start_time = time.time()
             self.state = CLIState.RUNNING
-            self.logger.info(
-                f"{Fore.GREEN}Worker started successfully.{Style.RESET_ALL}"
-            )
+            self.logger.info(f"{Fore.GREEN}Worker started successfully.{Style.RESET_ALL}")
 
             # Reset error count on successful start
             self._error_count = 0
@@ -215,9 +208,7 @@ class WordForgeCLI:
         except Exception as e:
             self._error_count += 1
             self._last_error_time = time.time()
-            self.logger.error(
-                f"{Fore.RED}Failed to start worker: {str(e)}{Style.RESET_ALL}"
-            )
+            self.logger.error(f"{Fore.RED}Failed to start worker: {str(e)}{Style.RESET_ALL}")
             self.state = CLIState.ERROR
 
     def _on_word_processed(self, result: ProcessingResult) -> None:
@@ -267,9 +258,7 @@ class WordForgeCLI:
     def stop_worker(self) -> None:
         """Stop the worker thread if running and wait for it to finish."""
         if not self.worker_started or self.worker is None:
-            self.logger.info(
-                f"{Fore.YELLOW}Worker thread is not running.{Style.RESET_ALL}"
-            )
+            self.logger.info(f"{Fore.YELLOW}Worker thread is not running.{Style.RESET_ALL}")
             return
 
         self.logger.info(f"{Fore.GREEN}Stopping worker thread...{Style.RESET_ALL}")
@@ -283,21 +272,15 @@ class WordForgeCLI:
             formatted_runtime = str(datetime.timedelta(seconds=int(runtime)))
             stats: StatDict = self.worker.get_statistics()
 
-            self.logger.info(
-                f"\n{Fore.CYAN}=== Processing Summary ==={Style.RESET_ALL}"
-            )
+            self.logger.info(f"\n{Fore.CYAN}=== Processing Summary ==={Style.RESET_ALL}")
             self.logger.info(f"Runtime: {formatted_runtime}")
-            self.logger.info(
-                f"Words processed: {safe_int(stats.get('processed_count', 0))}"
-            )
+            self.logger.info(f"Words processed: {safe_int(stats.get('processed_count', 0))}")
 
             processing_rate = safe_float(stats.get("processing_rate_per_minute", 0.0))
             self.logger.info(f"Processing rate: {processing_rate:.2f} words/minute")
 
             self.logger.info(f"Words in queue: {safe_int(stats.get('queue_size', 0))}")
-            self.logger.info(
-                f"Unique words seen: {safe_int(stats.get('total_unique_words', 0))}"
-            )
+            self.logger.info(f"Unique words seen: {safe_int(stats.get('total_unique_words', 0))}")
             self.logger.info(f"Error count: {safe_int(stats.get('error_count', 0))}")
 
     @eidosian()
@@ -319,9 +302,7 @@ class WordForgeCLI:
         self._create_demo_files(Path(demo_data_dir))
 
         # Reinitialize with demo data
-        self._init_components(
-            os.path.join(temp_dir, "word_forge_demo.sqlite"), demo_data_dir
-        )
+        self._init_components(os.path.join(temp_dir, "word_forge_demo.sqlite"), demo_data_dir)
 
         # Seed the queue with initial words
         seed_words = [
@@ -366,9 +347,7 @@ class WordForgeCLI:
 
                 elapsed = time.time() - start_time
                 # Convert to integers to satisfy create_progress_bar's type requirements
-                self.logger.info(
-                    f"Progress: {create_progress_bar(int(elapsed), int(run_seconds))}"
-                )
+                self.logger.info(f"Progress: {create_progress_bar(int(elapsed), int(run_seconds))}")
 
         except KeyboardInterrupt:
             self.logger.info("Interrupted by user. Stopping gracefully...")
@@ -393,25 +372,19 @@ class WordForgeCLI:
                     "term": "algorithm",
                     "definition": "A step-by-step procedure for solving a problem",
                     "part_of_speech": "noun",
-                    "usage_examples": [
-                        "The sorting algorithm arranges elements in order."
-                    ],
+                    "usage_examples": ["The sorting algorithm arranges elements in order."],
                 },
                 {
                     "term": "recursion",
                     "definition": "A method where the solution depends on solutions to smaller instances of the same problem",
                     "part_of_speech": "noun",
-                    "usage_examples": [
-                        "The function uses recursion to traverse the tree."
-                    ],
+                    "usage_examples": ["The function uses recursion to traverse the tree."],
                 },
                 {
                     "term": "function",
                     "definition": "A named section of a program that performs a specific task",
                     "part_of_speech": "noun",
-                    "usage_examples": [
-                        "This function calculates the average of a list of numbers."
-                    ],
+                    "usage_examples": ["This function calculates the average of a list of numbers."],
                 },
             ]
         }
@@ -455,9 +428,7 @@ class WordForgeCLI:
                 for item in sample_result.value:
                     self.logger.info(f"  - {item}")
             else:
-                self.logger.warning(
-                    f"Failed to get queue sample: {getattr(sample_result, 'error', 'Unknown error')}"
-                )
+                self.logger.warning(f"Failed to get queue sample: {getattr(sample_result, 'error', 'Unknown error')}")
 
     @eidosian()
     def shutdown(self) -> None:
@@ -500,13 +471,9 @@ class WordForgeCLI:
         """
         enqueued = self.queue_manager.enqueue(term)
         if enqueued:
-            self.logger.info(
-                f"{Fore.GREEN}Enqueued '{term}' for processing.{Style.RESET_ALL}"
-            )
+            self.logger.info(f"{Fore.GREEN}Enqueued '{term}' for processing.{Style.RESET_ALL}")
         else:
-            self.logger.info(
-                f"{Fore.YELLOW}'{term}' is already queued or processed.{Style.RESET_ALL}"
-            )
+            self.logger.info(f"{Fore.YELLOW}'{term}' is already queued or processed.{Style.RESET_ALL}")
         return enqueued
 
     @eidosian()
@@ -551,9 +518,7 @@ class WordForgeCLI:
         try:
             entry = self.db_manager.get_word_entry(term.lower())
             if not entry:
-                self.logger.info(
-                    f"{Fore.RED}No entry found for '{term}'.{Style.RESET_ALL}"
-                )
+                self.logger.info(f"{Fore.RED}No entry found for '{term}'.{Style.RESET_ALL}")
                 return None
 
             # Display the entry in a user-friendly manner
@@ -565,9 +530,7 @@ class WordForgeCLI:
                 self.logger.info(f"  - {example}")
             self.logger.info("Relationships:")
             for rel in entry["relationships"]:
-                self.logger.info(
-                    f"  - {rel['relationship_type']}: {rel['related_term']}"
-                )
+                self.logger.info(f"  - {rel['relationship_type']}: {rel['related_term']}")
 
             return entry
 
@@ -579,9 +542,7 @@ class WordForgeCLI:
     def display_statistics(self) -> None:
         """Display detailed statistics about the worker and database."""
         if not self.worker_started or self.worker is None:
-            self.logger.info(
-                f"{Fore.YELLOW}Worker not running. No statistics available.{Style.RESET_ALL}"
-            )
+            self.logger.info(f"{Fore.YELLOW}Worker not running. No statistics available.{Style.RESET_ALL}")
             return
 
         stats: StatDict = self.worker.get_statistics()
@@ -633,8 +594,7 @@ class WordForgeCLI:
             ["Words Processed", format_stat("processed_count", "0", "int")],
             [
                 "Processing Rate",
-                format_stat("processing_rate_per_minute", "0.0", "float2")
-                + " words/min",
+                format_stat("processing_rate_per_minute", "0.0", "float2") + " words/min",
             ],
             ["Avg Processing Time", format_stat("avg_processing_time", "0.0", "ms")],
             ["Queue Size", format_stat("queue_size", "0", "int")],
@@ -678,9 +638,7 @@ class WordForgeCLI:
 
                 # Safe timestamp conversion
                 if isinstance(event_time_raw, (int, float)):
-                    event_time = datetime.datetime.fromtimestamp(
-                        event_time_raw
-                    ).strftime("%H:%M:%S")
+                    event_time = datetime.datetime.fromtimestamp(event_time_raw).strftime("%H:%M:%S")
                 else:
                     event_time = "??:??:??"
 
@@ -694,9 +652,7 @@ class WordForgeCLI:
                         details: Dict[str, Any] = details_value
                         old_state = str(details.get("old_state", "?"))
                         new_state = str(details.get("new_state", "?"))
-                        self.logger.info(
-                            f"  {event_time} - State changed: {old_state} → {new_state}"
-                        )
+                        self.logger.info(f"  {event_time} - State changed: {old_state} → {new_state}")
 
     @eidosian()
     def interactive_shell(self) -> None:
@@ -713,9 +669,7 @@ class WordForgeCLI:
           exit       - stop worker & quit
         """
         self.state = CLIState.INTERACTIVE
-        print(
-            f"{Fore.GREEN}Entering WordForge Interactive Mode. Type 'help' for commands.{Style.RESET_ALL}"
-        )
+        print(f"{Fore.GREEN}Entering WordForge Interactive Mode. Type 'help' for commands.{Style.RESET_ALL}")
         self.start_worker()  # Start worker by default in interactive mode
 
         while True:
@@ -772,9 +726,7 @@ def main() -> None:
     The main entry point for the WordForge CLI. Provides subcommands
     for an all-in-one lexical database solution.
     """
-    parser = argparse.ArgumentParser(
-        description="WordForge: A Living, Self-Refining Lexical Database."
-    )
+    parser = argparse.ArgumentParser(description="WordForge: A Living, Self-Refining Lexical Database.")
     parser.add_argument(
         "--db-path",
         default="word_forge.sqlite",
@@ -792,14 +744,10 @@ def main() -> None:
         help="Logging level.",
     )
 
-    subparsers = parser.add_subparsers(
-        title="Commands", description="Available operations", dest="command"
-    )
+    subparsers = parser.add_subparsers(title="Commands", description="Available operations", dest="command")
 
     # Subcommand: start (starts the background worker)
-    start_parser = subparsers.add_parser(
-        "start", help="Start the worker in background."
-    )
+    start_parser = subparsers.add_parser("start", help="Start the worker in background.")
     start_parser.add_argument(
         "--minutes",
         type=float,
@@ -811,15 +759,11 @@ def main() -> None:
     subparsers.add_parser("stop", help="Stop the background worker.")
 
     # Subcommand: add-word
-    add_parser = subparsers.add_parser(
-        "add-word", help="Enqueue a word for processing."
-    )
+    add_parser = subparsers.add_parser("add-word", help="Enqueue a word for processing.")
     add_parser.add_argument("word", help="The word to enqueue.")
 
     # Subcommand: batch
-    batch_parser = subparsers.add_parser(
-        "batch", help="Add multiple words from a file."
-    )
+    batch_parser = subparsers.add_parser("batch", help="Add multiple words from a file.")
     batch_parser.add_argument("file", help="Path to file with words (one per line).")
 
     # Subcommand: search
@@ -836,20 +780,14 @@ def main() -> None:
     subparsers.add_parser("interactive", help="Enter interactive mode.")
 
     # Subcommand: demo
-    demo_parser = subparsers.add_parser(
-        "demo", help="Run a demonstration with sample data."
-    )
-    demo_parser.add_argument(
-        "--minutes", type=float, default=1.0, help="Duration of the demo in minutes."
-    )
+    demo_parser = subparsers.add_parser("demo", help="Run a demonstration with sample data.")
+    demo_parser.add_argument("--minutes", type=float, default=1.0, help="Duration of the demo in minutes.")
 
     if has_argcompletion and argcomplete is not None:
         argcomplete.autocomplete(parser)
 
     args = parser.parse_args()
-    cli = WordForgeCLI(
-        db_path=args.db_path, data_dir=args.data_dir, log_level=args.log_level
-    )
+    cli = WordForgeCLI(db_path=args.db_path, data_dir=args.data_dir, log_level=args.log_level)
 
     # If no subcommand provided, show help
     if not args.command:

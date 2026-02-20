@@ -1,10 +1,18 @@
 from __future__ import annotations
-import subprocess, os, signal, resource, tempfile, math
+
+import math
+import os
+import resource
+import signal
+import subprocess
 from pathlib import Path
 from typing import Sequence
+
 from eidosian_core import eidosian
 
+
 class SandboxError(RuntimeError): ...
+
 
 def _limits(cpu_s: float, mem_mb: int):
     def preexec():
@@ -17,11 +25,14 @@ def _limits(cpu_s: float, mem_mb: int):
             mem = int(mem_mb) * 1024 * 1024
             resource.setrlimit(resource.RLIMIT_AS, (mem, mem))
         resource.setrlimit(resource.RLIMIT_NOFILE, (256, 256))
+
     return preexec
 
+
 @eidosian()
-def run_sandboxed(cmd: Sequence[str], *, cwd: str, timeout_s: float,
-                  cpu_quota_s: float = 60, mem_mb: int = 1024) -> tuple[int, bytes, bytes]:
+def run_sandboxed(
+    cmd: Sequence[str], *, cwd: str, timeout_s: float, cpu_quota_s: float = 60, mem_mb: int = 1024
+) -> tuple[int, bytes, bytes]:
     """Execute safely with rlimits. Returns (rc, stdout, stderr)."""
     cwdp = Path(cwd)
     cwdp.mkdir(parents=True, exist_ok=True)
@@ -34,7 +45,7 @@ def run_sandboxed(cmd: Sequence[str], *, cwd: str, timeout_s: float,
             preexec_fn=_limits(cpu_quota_s, mem_mb),
             start_new_session=True,
             text=False,
-            env={**os.environ, "LC_ALL":"C.UTF-8"}
+            env={**os.environ, "LC_ALL": "C.UTF-8"},
         )
         # allow a small grace period beyond the requested timeout to
         # accommodate process start-up overhead in constrained environments

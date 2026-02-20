@@ -19,7 +19,6 @@ using the underlying classes directly.
 """
 
 from __future__ import annotations
-from eidosian_core import eidosian
 
 import argparse
 import logging
@@ -27,6 +26,8 @@ import os
 import sys
 import time
 from typing import TYPE_CHECKING, Callable, Iterable, List, Optional
+
+from eidosian_core import eidosian
 
 if TYPE_CHECKING:  # pragma: no cover - imported for typing only
     from word_forge.database.database_manager import DBManager
@@ -67,7 +68,7 @@ def _get_version() -> str:
         Version string in format 'word_forge VERSION'
     """
     try:
-        from importlib.metadata import version, PackageNotFoundError
+        from importlib.metadata import PackageNotFoundError, version
 
         return f"word_forge {version('word_forge')}"
     except (ImportError, PackageNotFoundError):
@@ -77,9 +78,7 @@ def _get_version() -> str:
 def _setup_logging(level: str = "INFO") -> None:
     """Configure basic console logging."""
     numeric_level = getattr(logging, level.upper(), logging.INFO)
-    logging.basicConfig(
-        level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=numeric_level, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 @eidosian()
@@ -110,7 +109,10 @@ def start(
         Optional override for the language model used to generate example sentences.
     """
 
+    from word_forge.configs.config_essentials import measure_execution
     from word_forge.database.database_manager import DBManager
+    from word_forge.graph.graph_manager import GraphManager
+    from word_forge.graph.graph_worker import GraphWorker
     from word_forge.parser.parser_refiner import ParserRefiner
     from word_forge.queue.queue_manager import QueueManager
     from word_forge.queue.queue_worker import (
@@ -119,11 +121,8 @@ def start(
         WorkerPoolConfig,
     )
     from word_forge.queue.worker_manager import WorkerManager
-    from word_forge.graph.graph_manager import GraphManager
-    from word_forge.graph.graph_worker import GraphWorker
     from word_forge.vectorizer.vector_store import VectorStore
     from word_forge.vectorizer.vector_worker import VectorWorker
-    from word_forge.configs.config_essentials import measure_execution
 
     _setup_logging()
     LOGGER.info("Starting Word Forge")
@@ -136,9 +135,7 @@ def start(
         queue_manager=queue_manager,
         model_name=llm_model,
     )
-    processor = WordProcessor(
-        db_manager=db_manager, parser_refiner=parser_refiner, logger=LOGGER
-    )
+    processor = WordProcessor(db_manager=db_manager, parser_refiner=parser_refiner, logger=LOGGER)
     pool_config = WorkerPoolConfig(worker_count=worker_count)
     worker_pool = ParallelWordProcessor(processor, config=pool_config, logger=LOGGER)
 
@@ -157,11 +154,7 @@ def start(
     manager.register(graph_worker)
     manager.register(vector_worker)
 
-    seeds = (
-        list(seed_words)
-        if seed_words is not None
-        else ["language", "knowledge", "system"]
-    )
+    seeds = list(seed_words) if seed_words is not None else ["language", "knowledge", "system"]
     for term in seeds:
         queue_manager.enqueue(term)
 
@@ -188,9 +181,7 @@ def start(
                     status.get("queue_size", 0),
                 )
                 graph_status = graph_worker.get_status()
-                if graph_status.get("last_new_nodes") or graph_status.get(
-                    "last_new_edges"
-                ):
+                if graph_status.get("last_new_nodes") or graph_status.get("last_new_edges"):
                     LOGGER.info(
                         "Graph updates - nodes:+%d edges:+%d state:%s",
                         graph_status.get("last_new_nodes", 0),
@@ -198,16 +189,9 @@ def start(
                         graph_status.get("state", "unknown"),
                     )
                 last_report = time.time()
-            if (
-                run_minutes is not None
-                and (time.time() - start_time) > run_minutes * 60
-            ):
+            if run_minutes is not None and (time.time() - start_time) > run_minutes * 60:
                 break
-            if (
-                run_minutes is None
-                and queue_manager.is_empty
-                and not manager.any_alive()
-            ):
+            if run_minutes is None and queue_manager.is_empty and not manager.any_alive():
                 break
     except KeyboardInterrupt:
         LOGGER.info("Interrupted by user")
@@ -305,9 +289,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     graph_parser = subparsers.add_parser("graph", help="Graph management commands")
     graph_sub = graph_parser.add_subparsers(dest="graph_command")
 
-    graph_build = graph_sub.add_parser(
-        "build", help="Run the graph worker until a build cycle completes"
-    )
+    graph_build = graph_sub.add_parser("build", help="Run the graph worker until a build cycle completes")
     graph_build.add_argument(
         "--timeout",
         type=float,
@@ -321,9 +303,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Seconds between graph worker polling cycles",
     )
 
-    graph_visualize = graph_sub.add_parser(
-        "visualize", help="Generate a graph visualization"
-    )
+    graph_visualize = graph_sub.add_parser("visualize", help="Generate a graph visualization")
     graph_visualize.add_argument(
         "--3d",
         dest="use_3d",
@@ -342,13 +322,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Override the default visualization output path",
     )
 
-    vector_parser = subparsers.add_parser(
-        "vector", help="Vector index management commands"
-    )
+    vector_parser = subparsers.add_parser("vector", help="Vector index management commands")
     vector_sub = vector_parser.add_subparsers(dest="vector_command")
-    vector_index = vector_sub.add_parser(
-        "index", help="Run the vector worker until one cycle completes"
-    )
+    vector_index = vector_sub.add_parser("index", help="Run the vector worker until one cycle completes")
     vector_index.add_argument(
         "--embedder",
         default="sentence-transformers/all-MiniLM-L6-v2",
@@ -368,9 +344,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     # Vector search command
-    vector_search = vector_sub.add_parser(
-        "search", help="Search the vector index for similar terms"
-    )
+    vector_search = vector_sub.add_parser("search", help="Search the vector index for similar terms")
     vector_search.add_argument(
         "query",
         nargs="+",
@@ -391,14 +365,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     # Conversation commands
-    conversation_parser = subparsers.add_parser(
-        "conversation", help="Conversation management commands"
-    )
+    conversation_parser = subparsers.add_parser("conversation", help="Conversation management commands")
     conversation_sub = conversation_parser.add_subparsers(dest="conversation_command")
 
-    conversation_start = conversation_sub.add_parser(
-        "start", help="Start a new conversation"
-    )
+    conversation_start = conversation_sub.add_parser("start", help="Start a new conversation")
     conversation_start.add_argument(
         "--title",
         type=str,
@@ -406,9 +376,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Optional title for the conversation",
     )
 
-    conversation_list = conversation_sub.add_parser(
-        "list", help="List all conversations"
-    )
+    conversation_list = conversation_sub.add_parser("list", help="List all conversations")
     conversation_list.add_argument(
         "--limit",
         type=int,
@@ -416,9 +384,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Maximum number of conversations to list (default: 10)",
     )
 
-    conversation_show = conversation_sub.add_parser(
-        "show", help="Show messages in a conversation"
-    )
+    conversation_show = conversation_sub.add_parser("show", help="Show messages in a conversation")
     conversation_show.add_argument(
         "conversation_id",
         type=int,
@@ -431,13 +397,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Maximum number of messages to show (default: 20)",
     )
 
-    emotion_parser = subparsers.add_parser(
-        "emotion", help="Emotion annotation utilities"
-    )
+    emotion_parser = subparsers.add_parser("emotion", help="Emotion annotation utilities")
     emotion_sub = emotion_parser.add_subparsers(dest="emotion_command")
-    emotion_annotate = emotion_sub.add_parser(
-        "annotate", help="Run the emotion worker until all words are tagged"
-    )
+    emotion_annotate = emotion_sub.add_parser("annotate", help="Run the emotion worker until all words are tagged")
     emotion_annotate.add_argument(
         "--strategy",
         default="random",
@@ -525,13 +487,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
     elif args.command == "graph":
         if args.graph_command == "build":
-            exit_code = (
-                0
-                if run_graph_build(
-                    poll_interval=args.poll_interval, timeout=args.timeout
-                )
-                else 1
-            )
+            exit_code = 0 if run_graph_build(poll_interval=args.poll_interval, timeout=args.timeout) else 1
         elif args.graph_command == "visualize":
             exit_code = (
                 0
@@ -577,13 +533,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         elif args.conversation_command == "list":
             exit_code = 0 if run_conversation_list(limit=args.limit) else 1
         elif args.conversation_command == "show":
-            exit_code = (
-                0
-                if run_conversation_show(
-                    conversation_id=args.conversation_id, limit=args.limit
-                )
-                else 1
-            )
+            exit_code = 0 if run_conversation_show(conversation_id=args.conversation_id, limit=args.limit) else 1
         else:
             conversation_parser.print_help()
             exit_code = 1
@@ -669,9 +619,7 @@ def run_graph_build(
     else:
         db_manager = graph_manager.db_manager
 
-    worker = GraphWorker(
-        graph_manager=graph_manager, poll_interval=poll_interval, daemon=False
-    )
+    worker = GraphWorker(graph_manager=graph_manager, poll_interval=poll_interval, daemon=False)
     manager = WorkerManager(logger=LOGGER)
     manager.register(worker)
     LOGGER.info("Starting graph build worker")
@@ -860,12 +808,8 @@ def run_demo_full(
         graph_manager = GraphManager(db_manager=db_manager)
         graph_manager.ensure_sample_data()
 
-        vector_ok = run_vector_index(
-            db_manager=db_manager, poll_interval=0.25, timeout=timeout
-        )
-        graph_ok = run_graph_build(
-            graph_manager=graph_manager, poll_interval=0.25, timeout=timeout
-        )
+        vector_ok = run_vector_index(db_manager=db_manager, poll_interval=0.25, timeout=timeout)
+        graph_ok = run_graph_build(graph_manager=graph_manager, poll_interval=0.25, timeout=timeout)
         viz_ok = run_graph_visualization(
             graph_manager=graph_manager,
             use_3d=use_3d,
@@ -978,18 +922,15 @@ def run_conversation_start(*, title: Optional[str] = None) -> bool:
         # Create conversation tables if they don't exist
         with db_manager.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                """
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS conversations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     status TEXT DEFAULT 'ACTIVE' NOT NULL,
                     created_at REAL DEFAULT (strftime('%s','now')) NOT NULL,
                     updated_at REAL DEFAULT (strftime('%s','now')) NOT NULL
                 );
-                """
-            )
-            cursor.execute(
-                """
+                """)
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS conversation_messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     conversation_id INTEGER NOT NULL,
@@ -998,8 +939,7 @@ def run_conversation_start(*, title: Optional[str] = None) -> bool:
                     timestamp REAL DEFAULT (strftime('%s','now')) NOT NULL,
                     FOREIGN KEY(conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
                 );
-                """
-            )
+                """)
 
             cursor.execute("INSERT INTO conversations (status) VALUES ('ACTIVE');")
             conv_id = cursor.lastrowid
@@ -1068,9 +1008,7 @@ def run_conversation_list(*, limit: int = 10) -> bool:
             print(f"\nConversations (showing up to {limit}):")
             print("-" * 60)
             for row in rows:
-                print(
-                    f"  ID: {row['id']} | Messages: {row['message_count']} | Created: {row['created_at']}"
-                )
+                print(f"  ID: {row['id']} | Messages: {row['message_count']} | Created: {row['created_at']}")
             print("-" * 60)
             return True
 
@@ -1112,9 +1050,7 @@ def run_conversation_show(*, conversation_id: int, limit: int = 20) -> bool:
             cursor = conn.cursor()
 
             # First verify conversation exists
-            cursor.execute(
-                "SELECT id FROM conversations WHERE id = ?;", (conversation_id,)
-            )
+            cursor.execute("SELECT id FROM conversations WHERE id = ?;", (conversation_id,))
             if cursor.fetchone() is None:
                 print(f"Conversation {conversation_id} not found.")
                 return False

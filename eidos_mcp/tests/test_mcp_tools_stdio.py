@@ -1,19 +1,18 @@
 import asyncio
-import json
 import os
 import re
 import shutil
 import subprocess
 import sys
 import time
+import unittest
 import urllib.request
 from pathlib import Path
-import unittest
-import pytest
 
+import pytest
 from mcp import ClientSession, StdioServerParameters
-from mcp.client.streamable_http import streamable_http_client
 from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamable_http_client
 
 ROOT = Path(__file__).resolve().parents[2]
 HOME = Path.home()
@@ -25,7 +24,9 @@ MEMORY_PATH = ROOT / "memory_data.json"
 SEMANTIC_MEMORY_PATH = ROOT / "data" / "semantic_memory.json"
 TIERED_SELF_PATH = ROOT / "data" / "tiered_memory" / "self.json"
 TIERED_USER_PATH = ROOT / "data" / "tiered_memory" / "user.json"
-VENV_PYTHON = str((ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable))
+VENV_PYTHON = str(
+    (ROOT / "eidosian_venv/bin/python3") if (ROOT / "eidosian_venv/bin/python3").exists() else Path(sys.executable)
+)
 MCP_HOST = "127.0.0.1"
 MCP_PORT = int(os.environ.get("EIDOS_TEST_MCP_PORT", "18928"))
 
@@ -66,10 +67,7 @@ def _wait_for_health(proc: subprocess.Popen, timeout: float = 10.0) -> None:
             time.sleep(0.3)
     stdout = proc.stdout.read() if proc.stdout else ""
     stderr = proc.stderr.read() if proc.stderr else ""
-    raise RuntimeError(
-        "MCP HTTP server did not become healthy in time"
-        f"\nstdout:\n{stdout}\nstderr:\n{stderr}"
-    )
+    raise RuntimeError("MCP HTTP server did not become healthy in time" f"\nstdout:\n{stdout}\nstderr:\n{stderr}")
 
 
 def _extract_txn_id(text: str | None) -> str | None:
@@ -161,9 +159,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         sandbox_file_2 = SANDBOX / "sample_copy.txt"
 
         create_result = await _call_tool(session, "file_create", {"file_path": str(sandbox_file)})
-        self.assertTrue(
-            create_result.startswith("Committed") or create_result == "No-op: Path already exists"
-        )
+        self.assertTrue(create_result.startswith("Committed") or create_result == "No-op: Path already exists")
         write_result = await _call_tool(
             session,
             "file_write",
@@ -172,9 +168,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Committed", write_result)
         read_result = await _call_tool(session, "file_read", {"file_path": str(sandbox_file)})
         self.assertEqual("Eidosian MCP sandbox", read_result)
-        search_result = await _call_tool(
-            session, "file_search", {"pattern": "Eidosian", "root_path": str(SANDBOX)}
-        )
+        search_result = await _call_tool(session, "file_search", {"pattern": "Eidosian", "root_path": str(SANDBOX)})
         self.assertIn(str(sandbox_file), search_result)
         await _call_tool(
             session,
@@ -199,7 +193,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
                 "safe_mode": True,
             },
         )
-        self.assertIn("\"exit_code\": 0", allowed)
+        self.assertIn('"exit_code": 0', allowed)
 
         delete_result = await _call_tool(session, "file_delete", {"file_path": str(sandbox_file)})
         self.assertIn("Committed file_delete", delete_result)
@@ -216,9 +210,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         gis_get = await _call_tool(session, "gis_get", {"key": "mcp.test.key"})
         self.assertIn("ok", gis_get)
         gis_txn = _extract_txn_id(gis_snapshot)
-        gis_restore = await _call_tool(
-            session, "gis_restore", {"transaction_id": gis_txn} if gis_txn else {}
-        )
+        gis_restore = await _call_tool(session, "gis_restore", {"transaction_id": gis_txn} if gis_txn else {})
         self.assertIn("GIS restored", gis_restore)
 
         type_snapshot = await _call_tool(session, "type_snapshot")
@@ -228,12 +220,8 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
             "type_register",
             {"name": "mcp_test", "schema": {"type": "object", "properties": {"x": {"type": "string"}}}},
         )
-        self.assertTrue(
-            type_register.startswith("Updated") or type_register == "No-op: Schema unchanged"
-        )
-        type_validate = await _call_tool(
-            session, "type_validate", {"name": "mcp_test", "data": {"x": "ok"}}
-        )
+        self.assertTrue(type_register.startswith("Updated") or type_register == "No-op: Schema unchanged")
+        type_validate = await _call_tool(session, "type_validate", {"name": "mcp_test", "data": {"x": "ok"}})
         self.assertEqual("valid", type_validate)
         type_txn = _extract_txn_id(type_snapshot)
         type_restore = await _call_tool(
@@ -253,9 +241,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         mem_stats = await _call_tool(session, "memory_stats")
         self.assertIn("count", mem_stats)
         mem_txn = _extract_txn_id(mem_snapshot)
-        mem_restore = await _call_tool(
-            session, "memory_restore", {"transaction_id": mem_txn} if mem_txn else {}
-        )
+        mem_restore = await _call_tool(session, "memory_restore", {"transaction_id": mem_txn} if mem_txn else {})
         self.assertIn("Memory restored", mem_restore)
 
         sem_snapshot = await _call_tool(session, "memory_snapshot_semantic")
@@ -273,12 +259,8 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIn("Semantic memory restored", sem_restore)
 
-        kb_add_1 = await _call_tool(
-            session, "kb_add", {"fact": "MCP test fact A", "tags": ["mcp", "test"]}
-        )
-        kb_add_2 = await _call_tool(
-            session, "kb_add", {"fact": "MCP test fact B", "tags": ["mcp", "test"]}
-        )
+        kb_add_1 = await _call_tool(session, "kb_add", {"fact": "MCP test fact A", "tags": ["mcp", "test"]})
+        kb_add_2 = await _call_tool(session, "kb_add", {"fact": "MCP test fact B", "tags": ["mcp", "test"]})
         self.assertIn("Added node", kb_add_1)
         node_a = _extract_node_id(kb_add_1)
         node_b = _extract_node_id(kb_add_2)
@@ -287,9 +269,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
         kb_tag = await _call_tool(session, "kb_get_by_tag", {"tag": "mcp"})
         self.assertIn("MCP test fact B", kb_tag)
         if node_a and node_b:
-            kb_link = await _call_tool(
-                session, "kb_link", {"node_id_a": node_a, "node_id_b": node_b}
-            )
+            kb_link = await _call_tool(session, "kb_link", {"node_id_a": node_a, "node_id_b": node_b})
             self.assertIn("Linked", kb_link)
             kb_delete = await _call_tool(session, "kb_delete", {"node_id": node_a})
             self.assertIn("Deleted node", kb_delete)
@@ -318,9 +298,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
             "audit_add_todo",
             {"section": "MCP Validation", "task_text": "Sandbox audit test"},
         )
-        self.assertTrue(
-            audit_add.startswith("Added") or audit_add == "No-op: Task already exists"
-        )
+        self.assertTrue(audit_add.startswith("Added") or audit_add == "No-op: Task already exists")
         audit_review = await _call_tool(
             session,
             "audit_mark_reviewed",

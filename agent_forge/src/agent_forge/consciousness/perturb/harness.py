@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Mapping, Sequence
+from typing import Any, Dict, Sequence
 
 from .library import Perturbation, PerturbationRecipe, to_payload
 

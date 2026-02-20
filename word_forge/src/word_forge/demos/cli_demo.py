@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """Demonstration of Word Forge CLI capabilities.
 
 This module provides interactive demonstrations of the Word Forge

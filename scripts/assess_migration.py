@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 """
 Migration Assessment Tool.
@@ -8,8 +9,8 @@ integration into eidosian_forge.
 """
 
 import sys
-import os
 from pathlib import Path
+
 
 @eidosian()
 def assess_directory(path_str):
@@ -25,12 +26,12 @@ def assess_directory(path_str):
     if (path / ".git").exists():
         score += 2
         reasons.append("Is a git repository (+2)")
-    
+
     # Criteria 2: Python Project
     if (path / "requirements.txt").exists() or (path / "pyproject.toml").exists() or (path / "setup.py").exists():
         score += 3
         reasons.append("Is a Python project (+3)")
-    
+
     # Criteria 3: Documentation
     if (path / "README.md").exists():
         score += 1
@@ -55,9 +56,10 @@ def assess_directory(path_str):
     else:
         print("RECOMMENDATION: Low priority or unstructured data.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python3 assess_migration.py <path_to_directory>")
         sys.exit(1)
-    
+
     assess_directory(sys.argv[1])

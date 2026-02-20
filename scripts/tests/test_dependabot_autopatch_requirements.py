@@ -5,7 +5,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "dependabot_autopatch_requirements.py"
 
 
@@ -96,9 +95,7 @@ def test_collect_patch_targets_uses_highest_patched_version() -> None:
 def test_patch_requirements_file_updates_pinned_and_tracks_unresolved(tmp_path: Path) -> None:
     req = tmp_path / "requirements.txt"
     req.write_text(
-        "requests==2.30.0\n"
-        "urllib3>=1.26.0\n"
-        "Jinja2==3.1.0 ; python_version >= '3.10'  # keep me\n",
+        "requests==2.30.0\n" "urllib3>=1.26.0\n" "Jinja2==3.1.0 ; python_version >= '3.10'  # keep me\n",
         encoding="utf-8",
     )
     targets = {

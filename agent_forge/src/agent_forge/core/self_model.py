@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from eidosian_core import eidosian
 
-from . import events
+from . import events, workspace
 from . import state as state_core
-from . import workspace
 
 __all__ = ["snapshot", "emit_snapshot"]
 

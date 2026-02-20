@@ -122,9 +122,7 @@ def test_competition_emits_reaction_trace_and_ignite(tmp_path: Path) -> None:
     )
 
     kernel.tick()
-    events.append(
-        base, "policy.action", {"action_id": "a-rx"}, corr_id="c-rx", parent_id="p-rx"
-    )
+    events.append(base, "policy.action", {"action_id": "a-rx"}, corr_id="c-rx", parent_id="p-rx")
     kernel.tick()
 
     all_events = events.iter_events(base, limit=None)

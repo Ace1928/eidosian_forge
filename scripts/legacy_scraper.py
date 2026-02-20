@@ -1,11 +1,12 @@
-import os
-import json
 import hashlib
+import json
 import logging
-import requests
+import os
+from typing import Any, Dict, List, Set, Union
 from urllib.parse import urljoin, urlparse
+
+import requests
 from bs4 import BeautifulSoup  # type: ignore[import]
-from typing import Set, List, Dict, Any, Union
 from eidosian_core import eidosian
 
 # Setup detailed logging configuration for robust debugging
@@ -99,27 +100,19 @@ class TikaClient:
         try:
             response = requests.get(url, stream=True, timeout=10)
             response.raise_for_status()
-            content_type = response.headers.get(
-                "Content-Type", "application/octet-stream"
-            )
-            logger.info(
-                f"Fetching content from {url} with Content-Type: {content_type}"
-            )
+            content_type = response.headers.get("Content-Type", "application/octet-stream")
+            logger.info(f"Fetching content from {url} with Content-Type: {content_type}")
 
             headers = {"Content-type": content_type, "Accept": "application/json"}
             tika_endpoint = f"{self.tika_url}/rmeta"
-            tika_response = requests.put(
-                tika_endpoint, headers=headers, data=response.content, timeout=20
-            )
+            tika_response = requests.put(tika_endpoint, headers=headers, data=response.content, timeout=20)
             tika_response.raise_for_status()
             logger.info(f"Tika extraction successful for URL: {url}")
             return json.loads(tika_response.text)
         except requests.RequestException as re:
             logger.error(f"HTTP error during Tika extraction for URL {url}: {re}")
         except Exception as e:
-            logger.error(
-                f"Unexpected error extracting content with Tika for URL {url}: {e}"
-            )
+            logger.error(f"Unexpected error extracting content with Tika for URL {url}: {e}")
         return []
 
 
@@ -136,9 +129,7 @@ class DocumentStore:
         os.makedirs(self.base_dir, exist_ok=True)
 
     @eidosian()
-    def save_document_parts(
-        self, url: str, content_parts: List[Dict[str, Any]], metadata: Dict[str, Any]
-    ) -> None:
+    def save_document_parts(self, url: str, content_parts: List[Dict[str, Any]], metadata: Dict[str, Any]) -> None:
         """
         Saves each document/attachment part in its own JSON file within a subfolder
         named after the MD5 hash of the original URL.
@@ -167,9 +158,7 @@ class DocumentStore:
                         indent=2,
                     )
                 logger.debug(f"Saved document part {i} for URL: {url}")
-            logger.info(
-                f"Successfully saved {len(content_parts)} document part(s) for {url}."
-            )
+            logger.info(f"Successfully saved {len(content_parts)} document part(s) for {url}.")
         except Exception as e:
             logger.error(f"Error saving document parts for {url}: {e}")
 
@@ -209,13 +198,9 @@ class SearxngSearcher:
         }
         params.update(kwargs)
         try:
-            response = requests.get(
-                urljoin(self.searxng_url, "/search"), params=params, timeout=10
-            )
+            response = requests.get(urljoin(self.searxng_url, "/search"), params=params, timeout=10)
             response.raise_for_status()
-            logger.info(
-                f"Search successful for query: '{query}' with {num_results} results."
-            )
+            logger.info(f"Search successful for query: '{query}' with {num_results} results.")
             return response.json()
         except requests.RequestException as e:
             logger.error(f"Search request failed for query '{query}': {e}")
@@ -262,9 +247,7 @@ class Crawler:
         self.document_store = document_store
         self.processed_store = processed_store
 
-    def _fetch_content(
-        self, url: str, timeout: int = 10
-    ) -> Union[requests.Response, None]:
+    def _fetch_content(self, url: str, timeout: int = 10) -> Union[requests.Response, None]:
         """
         Helper method to fetch content from a URL.
         """
@@ -303,9 +286,7 @@ class Crawler:
             # Extract document parts using Tika
             content_parts = self.tika_client.extract(start_url)
             if content_parts:
-                self.document_store.save_document_parts(
-                    start_url, content_parts, {"depth": depth}
-                )
+                self.document_store.save_document_parts(start_url, content_parts, {"depth": depth})
                 self.processed_store.mark_as_processed(start_url)
             else:
                 logger.warning(f"No content parts extracted for URL: {start_url}")
@@ -341,14 +322,10 @@ class ScraperCrawler:
         self.tika_client = TikaClient(tika_url=tika_url)
         self.document_store = DocumentStore(base_dir=document_store_dir)
         self.searcher = SearxngSearcher(searxng_url=searxng_url)
-        self.crawler = Crawler(
-            self.tika_client, self.document_store, self.processed_store
-        )
+        self.crawler = Crawler(self.tika_client, self.document_store, self.processed_store)
 
     @eidosian()
-    def search_and_crawl(
-        self, query: str, num_results: int = 10, depth: int = 2, **kwargs
-    ) -> Dict[str, Any]:
+    def search_and_crawl(self, query: str, num_results: int = 10, depth: int = 2, **kwargs) -> Dict[str, Any]:
         """
         Performs a SearxNG search and crawls the returned URLs to extract and save content.
 

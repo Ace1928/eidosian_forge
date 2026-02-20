@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """Migrate existing documentation to the new structure with Eidosian precision."""
+
+import argparse
 import logging
 import shutil
-import argparse
 from pathlib import Path
-from typing import Tuple, List, Dict, Set
+from typing import Dict, List, Set, Tuple
+
 from eidosian_core import eidosian
 
 # Configure logging for self-awareness
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+
 @eidosian()
-def collect_documents(
-    docs_dir: Path,
-    handle_auto: bool,
-    recursive: bool
-) -> List[Path]:
+def collect_documents(docs_dir: Path, handle_auto: bool, recursive: bool) -> List[Path]:
     """
     Gathers markdown documents from docs_dir (optionally recursively).
 
@@ -29,12 +28,13 @@ def collect_documents(
     """
     matched_files: List[Path] = []
     pattern = "**/*.md" if recursive else "*.md"
-    
+
     for path_item in docs_dir.glob(pattern):
         if path_item.is_file() and is_recognized_doc(path_item, handle_auto):
             matched_files.append(path_item)
-            
+
     return matched_files
+
 
 @eidosian()
 def is_recognized_doc(path_item: Path, handle_auto: bool) -> bool:
@@ -50,12 +50,13 @@ def is_recognized_doc(path_item: Path, handle_auto: bool) -> bool:
     # Only process .md files and explicitly exclude requirements.txt
     if path_item.suffix.lower() != ".md" or path_item.name.lower() == "requirements.txt":
         return False
-    
+
     # Exclude auto-generated docs unless specified
     if not handle_auto and "auto" in path_item.name.lower():
         return False
-        
+
     return True
+
 
 @eidosian()
 def ensure_directories(docs_dir: Path, universal_dirs: List[str]) -> None:
@@ -73,6 +74,7 @@ def ensure_directories(docs_dir: Path, universal_dirs: List[str]) -> None:
             logger.info(f"Ensured directory exists: {full_dir}")
         except Exception as e:
             logger.error(f"Failed to create directory {full_dir}: {e}")
+
 
 @eidosian()
 def copy_file(src_path: Path, dest_path: Path, skip_existing: bool) -> bool:
@@ -100,6 +102,7 @@ def copy_file(src_path: Path, dest_path: Path, skip_existing: bool) -> bool:
         logger.error(f"Failed to copy {src_path.name} to {dest_path.parent}: {e}")
         return False
 
+
 @eidosian()
 def ensure_reference_files(docs_dir: Path, reference_files: Dict[str, str]) -> Set[str]:
     """
@@ -112,28 +115,29 @@ def ensure_reference_files(docs_dir: Path, reference_files: Dict[str, str]) -> S
         Set of created file names for tracking
     """
     created_files: Set[str] = set()
-    
+
     for filename, target_dir in reference_files.items():
         source_path = docs_dir / filename
         target_path = docs_dir / target_dir / filename
-        
+
         # Check if the file exists either in source or target location
         if not source_path.exists() and not target_path.exists():
             try:
                 # Ensure target directory exists
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                
+
                 # Create empty file with minimal template content
-                with open(target_path, 'w') as f:
-                    title = filename.replace('.md', '').replace('_', ' ').title()
+                with open(target_path, "w") as f:
+                    title = filename.replace(".md", "").replace("_", " ").title()
                     f.write(f"# {title}\n\n*This is an auto-generated reference document.*\n")
-                
+
                 logger.info(f"Created empty reference file: {target_path}")
                 created_files.add(filename)
             except Exception as e:
                 logger.error(f"Failed to create reference file {target_path}: {e}")
-    
+
     return created_files
+
 
 @eidosian()
 def migrate_docs(
@@ -141,7 +145,7 @@ def migrate_docs(
     handle_auto: bool = False,
     skip_existing: bool = False,
     config_mapping: Dict[str, str] = {},
-    recursive: bool = False
+    recursive: bool = False,
 ) -> Tuple[int, int, int]:
     """
     Migrate markdown documentation to a new directory structure with Eidosian precision.
@@ -156,14 +160,14 @@ def migrate_docs(
         Tuple of (files_migrated, files_skipped, files_created) for migration statistics
     """
     default_content_mapping = {
-        "installation.md":       "source/getting_started/",
-        "quickstart.md":         "source/getting_started/",
-        "README.md":             "source/getting_started/",
-        "examples.md":           "source/examples/",
-        "advanced_usage.md":     "source/guides/",
-        "conventions.md":        "source/concepts/",
-        "contributing.md":       "source/guides/",
-        "api_reference.md":      "source/reference/",
+        "installation.md": "source/getting_started/",
+        "quickstart.md": "source/getting_started/",
+        "README.md": "source/getting_started/",
+        "examples.md": "source/examples/",
+        "advanced_usage.md": "source/guides/",
+        "conventions.md": "source/concepts/",
+        "contributing.md": "source/guides/",
+        "api_reference.md": "source/reference/",
     }
 
     if not config_mapping:
@@ -185,7 +189,7 @@ def migrate_docs(
         return 0, 0, 0
 
     ensure_directories(docs_dir, universal_dirs)
-    
+
     # Ensure reference files exist before migration starts
     files_created = ensure_reference_files(docs_dir, default_content_mapping)
 
@@ -217,7 +221,7 @@ def migrate_docs(
                 logger.info(f"Skipped requirements file: {doc.name}")
                 files_skipped += 1
                 continue
-                
+
             dest_dir = docs_dir / "source/reference"
             dest_path = dest_dir / doc.name
             if copy_file(doc, dest_path, skip_existing):
@@ -225,8 +229,11 @@ def migrate_docs(
             else:
                 files_skipped += 1
 
-    logger.info(f"Migration complete: {files_migrated} files migrated, {files_skipped} files skipped, {len(files_created)} files created")
+    logger.info(
+        f"Migration complete: {files_migrated} files migrated, {files_skipped} files skipped, {len(files_created)} files created"
+    )
     return files_migrated, files_skipped, len(files_created)
+
 
 if __name__ == "__main__":
     """
@@ -244,5 +251,5 @@ if __name__ == "__main__":
         docs_dir=Path(args.docs_dir),
         handle_auto=args.move_auto,
         skip_existing=args.skip_existing,
-        recursive=args.recursive
+        recursive=args.recursive,
     )

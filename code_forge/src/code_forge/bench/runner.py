@@ -175,31 +175,17 @@ def _run_regression_gate(
     base_units = float(((baseline.get("ingestion") or {}).get("units_per_s") or {}).get("mean") or 0.0)
     cur_units = float(((current.get("ingestion") or {}).get("units_per_s") or {}).get("mean") or 0.0)
     if base_units > 0 and cur_units < (base_units * loss_factor):
-        violations.append(
-            f"Ingestion units/s regressed: baseline={base_units:.4f}, current={cur_units:.4f}"
-        )
+        violations.append(f"Ingestion units/s regressed: baseline={base_units:.4f}, current={cur_units:.4f}")
 
     base_search = float(((baseline.get("search") or {}).get("latency_ms") or {}).get("p95") or 0.0)
     cur_search = float(((current.get("search") or {}).get("latency_ms") or {}).get("p95") or 0.0)
-    if (
-        base_search > 0
-        and cur_search > (base_search * gain_factor)
-        and (cur_search - base_search) > 20.0
-    ):
-        violations.append(
-            f"Search latency p95 regressed: baseline={base_search:.4f}ms, current={cur_search:.4f}ms"
-        )
+    if base_search > 0 and cur_search > (base_search * gain_factor) and (cur_search - base_search) > 20.0:
+        violations.append(f"Search latency p95 regressed: baseline={base_search:.4f}ms, current={cur_search:.4f}ms")
 
     base_graph = float(((baseline.get("graph") or {}).get("build_ms") or 0.0))
     cur_graph = float(((current.get("graph") or {}).get("build_ms") or 0.0))
-    if (
-        base_graph > 0
-        and cur_graph > (base_graph * gain_factor)
-        and (cur_graph - base_graph) > 50.0
-    ):
-        violations.append(
-            f"Dependency graph build regressed: baseline={base_graph:.4f}ms, current={cur_graph:.4f}ms"
-        )
+    if base_graph > 0 and cur_graph > (base_graph * gain_factor) and (cur_graph - base_graph) > 50.0:
+        violations.append(f"Dependency graph build regressed: baseline={base_graph:.4f}ms, current={cur_graph:.4f}ms")
 
     return {
         "pass": len(violations) == 0,

@@ -104,8 +104,7 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
     stress_eps = [_safe_float((row[1].get("performance") or {}).get("events_per_second")) for row in stress_rows]
     stress_p95 = [_safe_float((row[1].get("performance") or {}).get("tick_latency_ms_p95")) for row in stress_rows]
     stress_trunc_rate = [
-        _safe_float((row[1].get("pressure") or {}).get("truncation_rate_per_emitted_event"))
-        for row in stress_rows
+        _safe_float((row[1].get("pressure") or {}).get("truncation_rate_per_emitted_event")) for row in stress_rows
     ]
     linux_audit_fail_counts = [_safe_int((row[1].get("counts") or {}).get("checks_fail")) for row in linux_audit_rows]
     linux_audit_check_totals = [_safe_int((row[1].get("counts") or {}).get("checks_total")) for row in linux_audit_rows]
@@ -166,7 +165,9 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         },
         "core_benchmark": {
             "mean_composite": _mean(core_scores),
-            "latest_composite": _safe_float((latest_core[1].get("scores") or {}).get("composite")) if latest_core else None,
+            "latest_composite": (
+                _safe_float((latest_core[1].get("scores") or {}).get("composite")) if latest_core else None
+            ),
             "latest_id": latest_core[1].get("benchmark_id") if latest_core else None,
             "gate_pass_rate": core_gate_pass,
         },
@@ -181,14 +182,24 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
             "pass_rate": linux_audit_pass_rate,
             "mean_fail_count": _mean(linux_audit_fail_counts),
             "mean_checks_total": _mean(linux_audit_check_totals),
-            "latest_fail_count": _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_fail")) if latest_linux_audit else None,
-            "latest_checks_total": _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_total")) if latest_linux_audit else None,
+            "latest_fail_count": (
+                _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_fail"))
+                if latest_linux_audit
+                else None
+            ),
+            "latest_checks_total": (
+                _safe_int((latest_linux_audit[1].get("counts") or {}).get("checks_total"))
+                if latest_linux_audit
+                else None
+            ),
             "latest_id": latest_linux_audit[1].get("run_id") if latest_linux_audit else None,
             "latest_report": str(latest_linux_audit[2]) if latest_linux_audit else None,
         },
         "integrated_benchmark": {
             "mean_integrated": _mean(full_scores),
-            "latest_integrated": _safe_float((latest_full[1].get("scores") or {}).get("integrated")) if latest_full else None,
+            "latest_integrated": (
+                _safe_float((latest_full[1].get("scores") or {}).get("integrated")) if latest_full else None
+            ),
             "latest_delta": _safe_float((latest_full[1].get("scores") or {}).get("delta")) if latest_full else None,
             "latest_id": latest_full[1].get("benchmark_id") if latest_full else None,
             "gate_pass_rate": full_gate_pass,
@@ -200,8 +211,12 @@ def build_trend_report(reports_root: Path, window_days: int = 30) -> dict[str, A
         },
         "mcp_audit": {
             "hard_fail_free_rate": audit_pass_rate,
-            "latest_tool_hard_fail": _safe_int((latest_audit[1].get("counts") or {}).get("tool_hard_fail")) if latest_audit else None,
-            "latest_resource_hard_fail": _safe_int((latest_audit[1].get("counts") or {}).get("resource_hard_fail")) if latest_audit else None,
+            "latest_tool_hard_fail": (
+                _safe_int((latest_audit[1].get("counts") or {}).get("tool_hard_fail")) if latest_audit else None
+            ),
+            "latest_resource_hard_fail": (
+                _safe_int((latest_audit[1].get("counts") or {}).get("resource_hard_fail")) if latest_audit else None
+            ),
             "latest_report": str(latest_audit[2]) if latest_audit else None,
         },
     }

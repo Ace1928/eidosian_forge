@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Literal, Optional, Dict, Any
+from typing import Any, Dict, Literal, Optional
 
 Id = str  # ULIDs later
 

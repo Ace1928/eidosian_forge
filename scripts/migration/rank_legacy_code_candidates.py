@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -75,12 +75,7 @@ def compute_candidate(path: Path) -> Candidate | None:
         return None
 
     # Heuristic score: reward structure density and medium-sized files.
-    score = (
-        functions * 2
-        + classes * 3
-        + min(loc // 80, 10)
-        + min(imports // 5, 6)
-    )
+    score = functions * 2 + classes * 3 + min(loc // 80, 10) + min(imports // 5, 6)
     suggested_forge, rationale = suggest_forge(path)
     return Candidate(
         path=str(path),

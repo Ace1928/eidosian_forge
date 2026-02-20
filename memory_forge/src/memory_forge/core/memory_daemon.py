@@ -4,19 +4,21 @@ Memory Retrieval Daemon: monitors prompts/commands/output logs and suggests memo
 This is a lightweight, file-based daemon intended to be run in the background.
 It watches a log file and writes ranked memory suggestions to a sidecar JSON file.
 """
-from __future__ import annotations
-from eidosian_core import eidosian
 
+from __future__ import annotations
+
+import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-import time
-import json
+from typing import List
 
+from eidosian_core import eidosian
+
+from .config import MemoryConfig
+from .main import MemoryForge
 from .memory_broker import MemoryBroker
 from .memory_retrieval import MemoryRetrievalEngine, RetrievalResult
-from .main import MemoryForge
-from .config import MemoryConfig
 
 
 @dataclass

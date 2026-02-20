@@ -1,8 +1,10 @@
 from __future__ import annotations
-import yaml
+
 import shlex
 from pathlib import Path
-from typing import List, Dict, Any, Mapping
+from typing import Any, Dict, List, Mapping
+
+import yaml
 from eidosian_core import eidosian
 
 
@@ -31,10 +33,12 @@ def materialize(template_name: str, goal_title: str, vars: Mapping[str, str] | N
     steps = []
     for i, s in enumerate(data.get("steps", [])):
         cmd = _subst(s.get("cmd", []))
-        steps.append({
-            "idx": i,
-            "name": s["name"],
-            "cmd": cmd,
-            "budget_s": float(s.get("budget_s", 60)),
-        })
+        steps.append(
+            {
+                "idx": i,
+                "name": s["name"],
+                "cmd": cmd,
+                "budget_s": float(s.get("budget_s", 60)),
+            }
+        )
     return steps

@@ -155,7 +155,11 @@ def _write_manifest(results: list[DownloadResult], output_path: Path, catalog_pa
 def main() -> int:
     parser = argparse.ArgumentParser(description="Download curated local models from config/model_catalog.json")
     parser.add_argument("--catalog", default=str(DEFAULT_CATALOG), help="Catalog JSON path")
-    parser.add_argument("--profile", default=DEFAULT_PROFILE, help="Catalog profile to download (core, toolcalling, multimodal, graphrag, extended, all)")
+    parser.add_argument(
+        "--profile",
+        default=DEFAULT_PROFILE,
+        help="Catalog profile to download (core, toolcalling, multimodal, graphrag, extended, all)",
+    )
     parser.add_argument("--model-id", action="append", default=[], help="Specific model id to download (repeatable)")
     parser.add_argument("--models-dir", default=str(DEFAULT_MODELS_DIR), help="Target model directory")
     parser.add_argument("--force", action="store_true", help="Force re-download even if local artifact exists")

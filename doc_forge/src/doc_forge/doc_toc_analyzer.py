@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 #!/usr/bin/env python3
 # 🌀 Eidosian TOC Analysis System
 """
@@ -9,35 +10,32 @@ navigation flow and hierarchical organization of documentation.
 It follows Eidosian principles of structure, flow, and precision.
 """
 
-import re
-import sys
-import logging
 import json
+import logging
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional, Any
+from typing import Any, Dict, List, Optional
+
+from .source_discovery import DocumentationDiscovery
 
 # Import project-wide utilities
-from .utils.paths import get_repo_root, get_docs_dir
-from .source_discovery import DocumentationDiscovery, discover_documentation
+from .utils.paths import get_docs_dir
 
 # 📊 Self-aware logging system
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)")
 logger = logging.getLogger("doc_forge.toc_analyzer")
+
 
 class TocAnalyzer:
     """
     Table of Contents Analyzer with Eidosian precision and insight.
-    
+
     Analyzes documentation structure to provide metrics and recommendations.
     """
-    
+
     def __init__(self, docs_dir: Path):
         """
         Initialize the TOC analyzer.
-        
+
         Args:
             docs_dir: Documentation directory
         """
@@ -47,33 +45,33 @@ class TocAnalyzer:
         self.toc_structure = self.discovery.generate_toc_structure(self.documents)
         self.metrics: Dict[str, Any] = {}
         self.recommendations: List[str] = []
-        
+
     @eidosian()
     def analyze_toc_structure(self) -> Dict[str, Any]:
         """
         Analyze the TOC structure with Eidosian precision.
-        
+
         Returns:
             Analysis results with metrics and recommendations
         """
         logger.info(f"🔍 Analyzing TOC structure for {self.docs_dir}")
-        
+
         # Calculate metrics
         self._calculate_metrics()
-        
+
         # Generate recommendations
         self._generate_recommendations()
-        
+
         # Combine metrics and recommendations into a complete analysis
         analysis = {
             "metrics": self.metrics,
             "recommendations": self.recommendations,
-            "structure_quality": self._evaluate_structure_quality()
+            "structure_quality": self._evaluate_structure_quality(),
         }
-        
-        logger.info(f"✅ TOC structure analysis complete")
+
+        logger.info("✅ TOC structure analysis complete")
         return analysis
-    
+
     def _calculate_metrics(self) -> None:
         """Calculate metrics for the TOC structure."""
         # Initialize metrics
@@ -84,91 +82,101 @@ class TocAnalyzer:
             "section_depths": {},
             "orphaned_documents": len(self.discovery.orphaned_documents),
             "balance_score": 0.0,
-            "coverage_score": 0.0
+            "coverage_score": 0.0,
         }
-        
+
         # Calculate section-specific metrics
         section_sizes = {}
         section_proportions = {}
         max_size = 0
-        
+
         for section_name, section_data in self.toc_structure.items():
             section_size = len(section_data["items"])
             section_sizes[section_name] = section_size
             metrics["total_documents"] += section_size
-            
+
             if section_size > max_size:
                 max_size = section_size
-        
+
         # Calculate balance score (how evenly distributed content is)
         if metrics["total_sections"] > 0 and max_size > 0:
             ideal_size = metrics["total_documents"] / metrics["total_sections"]
             variance = sum((size - ideal_size) ** 2 for size in section_sizes.values()) / metrics["total_sections"]
-            metrics["balance_score"] = 100 * (1 - (variance / (ideal_size ** 2 + 1)))  # +1 to avoid division by zero
+            metrics["balance_score"] = 100 * (1 - (variance / (ideal_size**2 + 1)))  # +1 to avoid division by zero
             metrics["balance_score"] = max(0, min(100, metrics["balance_score"]))  # Clamp to 0-100
-        
+
         # Calculate coverage score (percentage of documents in TOC vs. all discovered)
         all_discovered = sum(len(docs) for docs in self.documents.values())
         if all_discovered > 0:
             metrics["coverage_score"] = 100 * metrics["total_documents"] / all_discovered
-        
+
         # Store metrics
         metrics["section_sizes"] = section_sizes
         self.metrics = metrics
-    
+
     def _generate_recommendations(self) -> None:
         """Generate recommendations for TOC improvement."""
         recommendations = []
-        
+
         # Check balance between sections
         unbalanced_threshold = 30  # Sections more than 30% larger than ideal
         ideal_size = self.metrics["total_documents"] / max(1, self.metrics["total_sections"])
-        
+
         for section, size in self.metrics["section_sizes"].items():
             if size > (ideal_size * 1.3) and size > 5:  # Section is 30% larger than ideal and has >5 items
-                recommendations.append(f"Consider splitting '{section}' section as it contains {size} items (ideal: {ideal_size:.1f})")
+                recommendations.append(
+                    f"Consider splitting '{section}' section as it contains {size} items (ideal: {ideal_size:.1f})"
+                )
             elif size == 0:
                 recommendations.append(f"Section '{section}' is empty - consider removing it or adding content")
-                
+
         # Check for orphaned documents
         if self.metrics["orphaned_documents"] > 0:
-            recommendations.append(f"Found {self.metrics['orphaned_documents']} orphaned documents - consider adding them to the TOC")
-        
+            recommendations.append(
+                f"Found {self.metrics['orphaned_documents']} orphaned documents - consider adding them to the TOC"
+            )
+
         # Balance score recommendations
         if self.metrics["balance_score"] < 70:
-            recommendations.append("TOC structure is significantly unbalanced - consider redistributing content more evenly")
-        
+            recommendations.append(
+                "TOC structure is significantly unbalanced - consider redistributing content more evenly"
+            )
+
         # Check for missing essential sections
         essential_sections = {"getting_started", "reference"}
         existing_sections = set(self.toc_structure.keys())
         missing = essential_sections - existing_sections
         if missing:
             recommendations.append(f"Missing essential section(s): {', '.join(missing)}")
-        
+
         self.recommendations = recommendations
-    
+
     def _evaluate_structure_quality(self) -> Dict[str, Any]:
         """Evaluate the overall quality of the TOC structure."""
         # Calculate an overall quality score based on metrics
         balance_weight = 0.4  # Balance between sections: 40%
         coverage_weight = 0.4  # Coverage of documents: 40%
-        orphan_weight = 0.2    # Orphaned documents penalty: 20%
-        
+        orphan_weight = 0.2  # Orphaned documents penalty: 20%
+
         # Balance score is already calculated
         balance_score = self.metrics["balance_score"]
-        
+
         # Coverage score is already calculated
         coverage_score = self.metrics["coverage_score"]
-        
+
         # Orphan penalty
         orphan_score = 100
         if self.metrics["total_documents"] > 0:
-            orphan_ratio = self.metrics["orphaned_documents"] / (self.metrics["total_documents"] + self.metrics["orphaned_documents"])
+            orphan_ratio = self.metrics["orphaned_documents"] / (
+                self.metrics["total_documents"] + self.metrics["orphaned_documents"]
+            )
             orphan_score = 100 * (1 - orphan_ratio)
-        
+
         # Calculate overall score
-        overall_score = (balance_score * balance_weight) + (coverage_score * coverage_weight) + (orphan_score * orphan_weight)
-        
+        overall_score = (
+            (balance_score * balance_weight) + (coverage_score * coverage_weight) + (orphan_score * orphan_weight)
+        )
+
         # Determine quality rating
         quality_rating = "Excellent"
         if overall_score < 60:
@@ -179,79 +187,66 @@ class TocAnalyzer:
             quality_rating = "Good"
         elif overall_score < 95:
             quality_rating = "Very Good"
-            
+
         return {
             "overall_score": overall_score,
             "quality_rating": quality_rating,
             "component_scores": {
                 "balance_score": balance_score,
                 "coverage_score": coverage_score,
-                "orphan_score": orphan_score
-            }
+                "orphan_score": orphan_score,
+            },
         }
-    
+
     @eidosian()
     def visualize_structure(self, output_path: Optional[Path] = None) -> Path:
         """
         Generate a visual representation of the TOC structure.
-        
+
         Args:
             output_path: Path to save the visualization (defaults to docs_dir/toc_visualization.html)
-            
+
         Returns:
             Path to the generated visualization
         """
         if output_path is None:
             output_path = self.docs_dir / "toc_visualization.html"
-        
+
         # Convert TOC structure to a format suitable for visualization
-        visualization_data = {
-            "name": "Documentation",
-            "children": []
-        }
-        
+        visualization_data = {"name": "Documentation", "children": []}
+
         for section_name, section_data in self.toc_structure.items():
-            section_node = {
-                "name": section_data["title"],
-                "children": []
-            }
-            
+            section_node = {"name": section_data["title"], "children": []}
+
             for item in section_data["items"]:
-                section_node["children"].append({
-                    "name": item["title"],
-                    "url": item["url"],
-                    "value": 1  # Each document has equal weight
-                })
-            
+                section_node["children"].append(
+                    {"name": item["title"], "url": item["url"], "value": 1}  # Each document has equal weight
+                )
+
             visualization_data["children"].append(section_node)
-        
+
         # Add orphaned documents if any
         if self.discovery.orphaned_documents:
-            orphan_node = {
-                "name": "Orphaned Documents",
-                "children": []
-            }
-            
+            orphan_node = {"name": "Orphaned Documents", "children": []}
+
             for orphan in self.discovery.orphaned_documents:
-                orphan_node["children"].append({
-                    "name": orphan.stem,
-                    "url": str(orphan.relative_to(self.docs_dir)),
-                    "value": 1
-                })
-            
+                orphan_node["children"].append(
+                    {"name": orphan.stem, "url": str(orphan.relative_to(self.docs_dir)), "value": 1}
+                )
+
             visualization_data["children"].append(orphan_node)
-        
+
         # Create HTML with D3.js visualization
         html_content = self._generate_visualization_html(visualization_data)
-        
+
         # Write to file
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-            
+
         logger.info(f"📊 TOC visualization saved to {output_path}")
         return output_path
-    
+
     def _generate_visualization_html(self, data: Dict[str, Any]) -> str:
         """Generate HTML content for visualization."""
         return f"""<!DOCTYPE html>
@@ -470,13 +465,13 @@ class TocAnalyzer:
 def analyze_toc(docs_dir: Optional[Path] = None) -> Dict[str, Any]:
     """
     Analyze the TOC structure of documentation with Eidosian precision.
-    
+
     This function serves as the universal interface to the TOC analysis system,
     providing insights into the documentation structure quality and balance.
-    
+
     Args:
         docs_dir: Documentation directory (auto-detected if None)
-        
+
     Returns:
         Analysis results with metrics, recommendations and quality assessment
     """
@@ -487,44 +482,46 @@ def analyze_toc(docs_dir: Optional[Path] = None) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"❌ Failed to auto-detect docs directory: {e}")
             return {"error": str(e)}
-    
+
     docs_dir = Path(docs_dir)
-    
+
     if not docs_dir.is_dir():
         logger.error(f"❌ Documentation directory not found or not a directory: {docs_dir}")
         return {"error": f"Documentation directory not found: {docs_dir}"}
-    
+
     try:
         # Create analyzer and run analysis
         analyzer = TocAnalyzer(docs_dir)
         results = analyzer.analyze_toc_structure()
-        
+
         # Generate visualization
         visualization_path = analyzer.visualize_structure()
         results["visualization"] = str(visualization_path)
-        
+
         logger.info(f"✅ TOC analysis complete. Quality: {results['structure_quality']['quality_rating']}")
         return results
     except Exception as e:
         logger.error(f"❌ TOC analysis failed: {e}")
         import traceback
+
         logger.debug(traceback.format_exc())
         return {"error": str(e)}
 
+
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Analyze documentation TOC structure.")
     parser.add_argument("docs_dir", nargs="?", type=Path, help="Documentation directory")
     parser.add_argument("--output", "-o", type=Path, help="Output file for analysis results")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
     args = parser.parse_args()
-    
+
     results = analyze_toc(args.docs_dir)
-    
+
     if args.json or args.output:
         output_data = json.dumps(results, indent=2)
-        
+
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(output_data)
@@ -535,21 +532,21 @@ if __name__ == "__main__":
         print("\n📊 TOC Structure Analysis Results:")
         print(f"Quality Rating: {results['structure_quality']['quality_rating']}")
         print(f"Overall Score: {results['structure_quality']['overall_score']:.2f}/100")
-        
+
         print("\n📏 Metrics:")
         for key, value in results["metrics"].items():
             if key != "section_sizes":
                 print(f"  {key}: {value}")
-        
+
         print("\nSection Sizes:")
         for section, size in results["metrics"]["section_sizes"].items():
             print(f"  {section}: {size}")
-        
+
         print("\n💡 Recommendations:")
         if results["recommendations"]:
             for rec in results["recommendations"]:
                 print(f"  • {rec}")
         else:
             print("  No recommendations - structure looks good!")
-        
+
         print(f"\n🎨 Visualization saved to: {results['visualization']}")

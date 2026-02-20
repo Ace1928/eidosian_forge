@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Demonstration of DatabaseWorker functionality.
 """
@@ -154,21 +155,15 @@ def main() -> None:
         logger.info(f"Average duration: {metrics['avg_duration_ms']:.2f}ms")
 
         if metrics["maintenance"]["last_run"]:
-            logger.info(
-                f"Last maintenance: {time.ctime(metrics['maintenance']['last_run'])}"
-            )
+            logger.info(f"Last maintenance: {time.ctime(metrics['maintenance']['last_run'])}")
 
         if metrics["backup"]["last_run"]:
             logger.info(f"Last backup: {time.ctime(metrics['backup']['last_run'])}")
             logger.info(f"Backup location: {metrics['backup']['backup_path']}")
 
         if metrics["optimization"]["last_run"]:
-            logger.info(
-                f"Last optimization: {time.ctime(metrics['optimization']['last_run'])}"
-            )
-            logger.info(
-                f"Optimization level: {metrics['optimization']['current_level']}"
-            )
+            logger.info(f"Last optimization: {time.ctime(metrics['optimization']['last_run'])}")
+            logger.info(f"Optimization level: {metrics['optimization']['current_level']}")
 
         logger.info("-" * 60)
 

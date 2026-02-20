@@ -4,7 +4,6 @@ import importlib.machinery
 import importlib.util
 from pathlib import Path
 
-
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "audit_workflow_action_pins.py"
 
 

@@ -6,7 +6,6 @@ functionality.
 """
 
 import pytest
-
 from word_forge.emotion.emotion_config import (
     EmotionCategory,
     EmotionConfig,
@@ -472,9 +471,7 @@ class TestEmotionDetectionMetricsOptimization:
         config = EmotionConfig()
         # Record 15 perfect predictions
         for _ in range(15):
-            metrics.record_detection(
-                EmotionCategory.HAPPINESS, EmotionCategory.HAPPINESS
-            )
+            metrics.record_detection(EmotionCategory.HAPPINESS, EmotionCategory.HAPPINESS)
         weights = metrics.optimize_weights(config)
         # High precision should increase weight
         assert EmotionCategory.HAPPINESS in weights

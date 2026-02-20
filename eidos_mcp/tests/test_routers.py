@@ -1,5 +1,6 @@
-import pytest
+
 from eidos_mcp.routers import knowledge, memory
+
 
 def test_memory_tools():
     memory_id = None
@@ -21,6 +22,7 @@ def test_memory_tools():
             memory.memory_delete(memory_id)
         if semantic_id:
             knowledge.memory_delete_semantic(semantic_id)
+
 
 def test_kb_tools():
     node_id = None

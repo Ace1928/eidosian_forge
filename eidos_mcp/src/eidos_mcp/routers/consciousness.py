@@ -4,15 +4,15 @@ import json
 import os
 import shutil
 import tempfile
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_url
 
 from .. import FORGE_ROOT
-from ..consciousness_protocol import ConsciousnessProtocol, DEFAULT_REFERENCES
+from ..consciousness_protocol import DEFAULT_REFERENCES, ConsciousnessProtocol
 from ..core import resource, tool
 from ..forge_loader import ensure_forge_import
 
@@ -48,9 +48,7 @@ def _protocol() -> ConsciousnessProtocol:
 def _state_dir(state_dir: Optional[str] = None) -> Path:
     if state_dir:
         return Path(state_dir).expanduser().resolve()
-    return Path(
-        os.environ.get("EIDOS_CONSCIOUSNESS_STATE_DIR", str(FORGE_ROOT / "state"))
-    ).resolve()
+    return Path(os.environ.get("EIDOS_CONSCIOUSNESS_STATE_DIR", str(FORGE_ROOT / "state"))).resolve()
 
 
 def _runner(state_dir: Optional[str] = None) -> Optional[ConsciousnessTrialRunner]:

@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Secure execution sandbox for Eidosian Forge.
 
@@ -90,9 +91,7 @@ class Sandbox:
         self._processes: List[subprocess.Popen] = []
 
     @eidosian()
-    def execute_python(
-        self, code: str, filename: Optional[str] = None
-    ) -> Tuple[str, str, int]:
+    def execute_python(self, code: str, filename: Optional[str] = None) -> Tuple[str, str, int]:
         """
         Execute Python code in the sandbox.
 
@@ -133,8 +132,7 @@ class Sandbox:
             # Block network access with a fake socket module
             socket_blocker = self.bin_dir / "socket.py"
             with open(socket_blocker, "w") as f:
-                f.write(
-                    """
+                f.write("""
 def error(*args, **kwargs):
     raise RuntimeError("Network access is disabled in the sandbox")
 
@@ -145,8 +143,7 @@ def warning(*args, **kwargs):
 def __getattr__(name):
     warning(f"Attempted to access socket.{name}")
     raise RuntimeError(f"Network access is disabled in the sandbox")
-"""
-                )
+""")
 
         # Create command
         cmd = [sys.executable, str(filepath)]
@@ -177,9 +174,7 @@ def __getattr__(name):
             except subprocess.TimeoutExpired:
                 process.kill()
                 stdout, stderr = process.communicate()
-                raise ExecutionTimeoutError(
-                    f"Execution timed out after {self.timeout_seconds} seconds"
-                )
+                raise ExecutionTimeoutError(f"Execution timed out after {self.timeout_seconds} seconds")
 
         except OSError as e:
             stderr = f"Failed to execute process: {e}"
@@ -340,9 +335,7 @@ def __getattr__(name):
             except subprocess.TimeoutExpired:
                 process.kill()
                 stdout, stderr = process.communicate()
-                raise ExecutionTimeoutError(
-                    f"Execution timed out after {self.timeout_seconds} seconds"
-                )
+                raise ExecutionTimeoutError(f"Execution timed out after {self.timeout_seconds} seconds")
 
         except OSError as e:
             stderr = f"Failed to execute command: {e}"
@@ -357,9 +350,7 @@ def __getattr__(name):
     def close(self) -> None:
         """Clean up resources."""
         # Terminate any running processes
-        for process in self._processes[
-            :
-        ]:  # Make a copy since we'll modify during iteration
+        for process in self._processes[:]:  # Make a copy since we'll modify during iteration
             try:
                 process.terminate()
                 try:
@@ -379,9 +370,7 @@ def __getattr__(name):
 
 # Convenience function for executing code with a temporary sandbox
 @eidosian()
-def run_in_sandbox(
-    code: str, timeout_seconds: int = 30, max_memory_mb: int = 128
-) -> Tuple[str, str, int]:
+def run_in_sandbox(code: str, timeout_seconds: int = 30, max_memory_mb: int = 128) -> Tuple[str, str, int]:
     """
     Run code in a temporary sandbox.
 

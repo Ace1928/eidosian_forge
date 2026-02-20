@@ -4,8 +4,9 @@ from pathlib import Path
 
 # Configuration
 ROOT_DIR = Path.cwd()
-FINAL_DOCS_DIR = ROOT_DIR / 'doc_forge' / 'final_docs'
-INDEX_FILE = ROOT_DIR / 'index.html'
+FINAL_DOCS_DIR = ROOT_DIR / "doc_forge" / "final_docs"
+INDEX_FILE = ROOT_DIR / "index.html"
+
 
 def get_tree(base_path):
     tree = {}
@@ -14,13 +15,14 @@ def get_tree(base_path):
         node = tree
         for part in rel_root.parts:
             node = node.setdefault(part, {})
-        
+
         for file in files:
-            if file.endswith('.md'):
+            if file.endswith(".md"):
                 node[file] = str(rel_root / file)
     return tree
 
-def build_html_list(tree, base_url='doc_forge/final_docs'):
+
+def build_html_list(tree, base_url="doc_forge/final_docs"):
     html = "<ul>"
     for key in sorted(tree.keys()):
         val = tree[key]
@@ -32,13 +34,14 @@ def build_html_list(tree, base_url='doc_forge/final_docs'):
     html += "</ul>"
     return html
 
+
 def main():
     if not FINAL_DOCS_DIR.exists():
         print("Final documentation directory not found.")
         return
-        
+
     tree = get_tree(FINAL_DOCS_DIR)
-    
+
     html_content = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -75,10 +78,11 @@ def main():
 </body>
 </html>
 """
-    
-    with open(INDEX_FILE, 'w') as f:
+
+    with open(INDEX_FILE, "w") as f:
         f.write(html_content)
     print(f"Index successfully generated at {INDEX_FILE}")
+
 
 if __name__ == "__main__":
     main()

@@ -102,31 +102,17 @@ class AutotuneModule:
         key = str(mode or "bandit").strip().lower().replace("-", "_")
         state["optimizer_kind"] = key
         if key in {"bayes", "bayes_pareto", "bayesian"}:
-            state["candidate_pool"] = int(
-                config.get("autotune_bayes_candidate_pool", state.get("candidate_pool", 14))
-            )
-            state["kernel_gamma"] = float(
-                config.get("autotune_bayes_kernel_gamma", state.get("kernel_gamma", 3.5))
-            )
-            state["kappa"] = float(
-                config.get("autotune_bayes_kappa", state.get("kappa", 0.35))
-            )
-            state["exploration"] = float(
-                config.get("autotune_bayes_exploration", state.get("exploration", 0.12))
-            )
+            state["candidate_pool"] = int(config.get("autotune_bayes_candidate_pool", state.get("candidate_pool", 14)))
+            state["kernel_gamma"] = float(config.get("autotune_bayes_kernel_gamma", state.get("kernel_gamma", 3.5)))
+            state["kappa"] = float(config.get("autotune_bayes_kappa", state.get("kappa", 0.35)))
+            state["exploration"] = float(config.get("autotune_bayes_exploration", state.get("exploration", 0.12)))
             return BayesParetoOptimizer(param_specs=specs, state=state, rng=rng)
-        state["step_scale"] = float(
-            config.get("autotune_bandit_step_scale", state.get("step_scale", 0.2))
-        )
+        state["step_scale"] = float(config.get("autotune_bandit_step_scale", state.get("step_scale", 0.2)))
         return BanditOptimizer(param_specs=specs, state=state, rng=rng)
 
-    def _guardrails(
-        self, ctx: TickContext, report: Mapping[str, Any]
-    ) -> tuple[bool, list[str]]:
+    def _guardrails(self, ctx: TickContext, report: Mapping[str, Any]) -> tuple[bool, list[str]]:
         reasons: list[str] = []
-        if int(report.get("module_error_count") or 0) > int(
-            ctx.config.get("autotune_guardrail_max_module_errors", 0)
-        ):
+        if int(report.get("module_error_count") or 0) > int(ctx.config.get("autotune_guardrail_max_module_errors", 0)):
             reasons.append("module_errors")
 
         if _safe_float(report.get("degraded_mode_ratio"), default=0.0) > _safe_float(
@@ -134,9 +120,7 @@ class AutotuneModule:
         ):
             reasons.append("degraded_ratio")
 
-        if int(report.get("winner_count") or 0) > int(
-            ctx.config.get("autotune_guardrail_max_winner_count", 120)
-        ):
+        if int(report.get("winner_count") or 0) > int(ctx.config.get("autotune_guardrail_max_winner_count", 120)):
             reasons.append("winner_flood")
 
         if int(report.get("ignitions_without_trace") or 0) > int(
@@ -160,19 +144,11 @@ class AutotuneModule:
         quick = bool(ctx.config.get("autotune_red_team_quick", True))
         max_scenarios = max(0, int(ctx.config.get("autotune_red_team_max_scenarios", 1)))
         persist = bool(ctx.config.get("autotune_red_team_persist", False))
-        min_pass_ratio = _safe_float(
-            ctx.config.get("autotune_red_team_min_pass_ratio"), default=0.75
-        )
-        min_robustness = _safe_float(
-            ctx.config.get("autotune_red_team_min_robustness"), default=0.70
-        )
-        require_available = bool(
-            ctx.config.get("autotune_red_team_require_available", True)
-        )
+        min_pass_ratio = _safe_float(ctx.config.get("autotune_red_team_min_pass_ratio"), default=0.75)
+        min_robustness = _safe_float(ctx.config.get("autotune_red_team_min_robustness"), default=0.70)
+        require_available = bool(ctx.config.get("autotune_red_team_require_available", True))
         configured_disable = [
-            str(name)
-            for name in list(ctx.config.get("autotune_red_team_disable_modules") or [])
-            if str(name)
+            str(name) for name in list(ctx.config.get("autotune_red_team_disable_modules") or []) if str(name)
         ]
         merged_disable = sorted({self.name, *configured_disable})
 
@@ -339,9 +315,7 @@ class AutotuneModule:
         score = _safe_float(trial_report.get("composite_score"), default=0.0)
         objectives = objectives_from_trial_report(trial_report)
         guard_ok, guard_reasons = self._guardrails(ctx, trial_report)
-        red_team_seed = int(ctx.config.get("autotune_red_team_seed_offset", 2_000_000)) + int(
-            ctx.beat_count
-        )
+        red_team_seed = int(ctx.config.get("autotune_red_team_seed_offset", 2_000_000)) + int(ctx.beat_count)
 
         best_score = _safe_float(state.get("best_score"), default=_safe_float(baseline_score, default=0.0))
         min_improvement = _safe_float(ctx.config.get("autotune_min_improvement"), default=0.03)
@@ -410,9 +384,7 @@ class AutotuneModule:
                         "available": bool(red_team_report.get("available", False)),
                         "run_id": str(red_team_report.get("run_id") or ""),
                         "pass_ratio": _safe_float(red_team_report.get("pass_ratio"), default=0.0),
-                        "mean_robustness": _safe_float(
-                            red_team_report.get("mean_robustness"), default=0.0
-                        ),
+                        "mean_robustness": _safe_float(red_team_report.get("mean_robustness"), default=0.0),
                     },
                 },
                 tags=["consciousness", "autotune", "commit"],
@@ -449,9 +421,7 @@ class AutotuneModule:
                         "available": bool(red_team_report.get("available", False)),
                         "run_id": str(red_team_report.get("run_id") or ""),
                         "pass_ratio": _safe_float(red_team_report.get("pass_ratio"), default=0.0),
-                        "mean_robustness": _safe_float(
-                            red_team_report.get("mean_robustness"), default=0.0
-                        ),
+                        "mean_robustness": _safe_float(red_team_report.get("mean_robustness"), default=0.0),
                     },
                 },
                 tags=["consciousness", "autotune", "rollback"],

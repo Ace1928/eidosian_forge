@@ -12,11 +12,11 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, TypedDict, Union, cast
 
+from eidosian_core import eidosian
 from word_forge.database.database_manager import DBManager
 from word_forge.graph.graph_manager import GraphManager
 from word_forge.parser.parser_refiner import ParserRefiner
 from word_forge.queue.queue_manager import EmptyQueueError, QueueManager
-from eidosian_core import eidosian
 
 
 class WorkerState(Enum):
@@ -210,9 +210,7 @@ class WordForgeWorker(threading.Thread):
         self._stop_requested = threading.Event()
         self._recent_errors = []
         self._processed_terms = set()
-        self._initial_queue_size = (
-            queue_manager.size if queue_manager.size else queue_manager.size == 0
-        )
+        self._initial_queue_size = queue_manager.size if queue_manager.size else queue_manager.size == 0
         self._productivity_metric = 1.0
         self.base_sleep_interval = sleep_interval
 
@@ -243,9 +241,7 @@ class WordForgeWorker(threading.Thread):
         with self._state_lock:
             old_state = self._state
             self._state = new_state
-            self.logger.info(
-                f"Worker state changed: {old_state.name} -> {new_state.name}"
-            )
+            self.logger.info(f"Worker state changed: {old_state.name} -> {new_state.name}")
 
     @eidosian()
     def get_statistics(
@@ -266,9 +262,7 @@ class WordForgeWorker(threading.Thread):
             words_processed = self.stats.processing_count
             queue_growth = max(0, queue_size - self._initial_queue_size)
             if words_processed > 0:
-                self._productivity_metric = words_processed / (
-                    words_processed + queue_growth
-                )
+                self._productivity_metric = words_processed / (words_processed + queue_growth)
 
         # Create a snapshot of current statistics
         stats = {
@@ -344,9 +338,7 @@ class WordForgeWorker(threading.Thread):
 
         except Exception as e:
             self.state = WorkerState.ERROR
-            self.logger.error(
-                f"Fatal error in worker thread: {e}\n{traceback.format_exc()}"
-            )
+            self.logger.error(f"Fatal error in worker thread: {e}\n{traceback.format_exc()}")
             self.stats.last_error = str(e)
 
         finally:
@@ -380,13 +372,9 @@ class WordForgeWorker(threading.Thread):
 
             # Calculate processing depth based on term and system state
             current_queue_depth = (
-                self.queue_manager.size
-                if isinstance(self.queue_manager.size, int)
-                else self.queue_manager.size()
+                self.queue_manager.size if isinstance(self.queue_manager.size, int) else self.queue_manager.size()
             )
-            processing_depth = self._calculate_processing_depth(
-                term, current_queue_depth
-            )
+            processing_depth = self._calculate_processing_depth(term, current_queue_depth)
 
             # Start timing
             start_time = time.time()
@@ -409,9 +397,7 @@ class WordForgeWorker(threading.Thread):
                     word_entry = self.db_manager.get_word_if_exists(term)
                     if word_entry:
                         relationships = word_entry.get("relationships", [])
-                        relationship_counts = self._categorize_relationships(
-                            relationships
-                        )
+                        relationship_counts = self._categorize_relationships(relationships)
 
             # Create result object
             result = {
@@ -490,9 +476,7 @@ class WordForgeWorker(threading.Thread):
             if event.get("event_type") == "processed" and event.get("term") is not None
         ]
 
-    def _categorize_relationships(
-        self, relationships: List[Dict[str, Any]]
-    ) -> Dict[str, int]:
+    def _categorize_relationships(self, relationships: List[Dict[str, Any]]) -> Dict[str, int]:
         """Categorize relationship types for semantic analysis."""
         type_counts: Dict[str, int] = {}
         for rel in relationships:
@@ -502,9 +486,7 @@ class WordForgeWorker(threading.Thread):
             type_counts[rel_type] += 1
         return type_counts
 
-    def _handle_successful_processing(
-        self, term: str, result: Dict[str, Any], duration: float
-    ) -> None:
+    def _handle_successful_processing(self, term: str, result: Dict[str, Any], duration: float) -> None:
         """Process and record successful term processing."""
         self.stats.processing_count += 1
         self.stats.last_processed = term
@@ -547,9 +529,7 @@ class WordForgeWorker(threading.Thread):
                 "details": {"duration": result.get("duration", 0)},
             }
         )
-        self.logger.warning(
-            f"Failed to process term '{term}': {result.get('error', 'Unknown error')}"
-        )
+        self.logger.warning(f"Failed to process term '{term}': {result.get('error', 'Unknown error')}")
 
     def _record_term_relationships(self, term: str, new_terms_count: int) -> None:
         """Track term relationships for dependency analysis."""
@@ -567,20 +547,14 @@ class WordForgeWorker(threading.Thread):
                 }
             )
 
-    def _reorder_queue_if_needed(
-        self, term: str, relationship_types: Dict[str, int]
-    ) -> None:
+    def _reorder_queue_if_needed(self, term: str, relationship_types: Dict[str, int]) -> None:
         """
         Intelligently reorder the queue based on processing insights.
         For example, prioritize terms with strong synonym relationships.
         """
         # If this is a rich semantic term (many synonyms), process related terms next
-        if relationship_types.get("synonym", 0) > 5 and hasattr(
-            self.queue_manager, "prioritize"
-        ):
-            self.logger.debug(
-                f"Prioritizing terms related to '{term}' due to high synonym count"
-            )
+        if relationship_types.get("synonym", 0) > 5 and hasattr(self.queue_manager, "prioritize"):
+            self.logger.debug(f"Prioritizing terms related to '{term}' due to high synonym count")
             # Extract related terms and prioritize them
             related_terms = self._get_related_terms(term)
             for related_term in related_terms:
@@ -644,12 +618,8 @@ class WordForgeWorker(threading.Thread):
 
     def _trigger_error_backoff(self) -> None:
         """Apply exponential backoff when error rate is too high."""
-        self._current_backoff = min(
-            self._current_backoff * self.error_backoff_factor, 30.0
-        )
-        self.logger.warning(
-            f"Error threshold exceeded. Backing off for {self._current_backoff:.2f} seconds"
-        )
+        self._current_backoff = min(self._current_backoff * self.error_backoff_factor, 30.0)
+        self.logger.warning(f"Error threshold exceeded. Backing off for {self._current_backoff:.2f} seconds")
         self.stats.add_event(
             {
                 "event_type": "backoff",
@@ -719,9 +689,7 @@ class WordForgeWorker(threading.Thread):
             # Import only if we need it to avoid unnecessary dependencies
             from word_forge.graph.graph_worker import GraphWorker
 
-            graph_worker = GraphWorker(
-                graph_manager=GraphManager(db_manager=self.db_manager)
-            )
+            graph_worker = GraphWorker(graph_manager=GraphManager(db_manager=self.db_manager))
             graph_worker.daemon = True
             graph_worker.start()
 
@@ -731,9 +699,7 @@ class WordForgeWorker(threading.Thread):
         except (ImportError, AttributeError) as e:
             self.logger.debug(f"Could not start graph worker: {e}")
 
-    def _try_start_emotion_worker(
-        self, launched_workers: List[threading.Thread]
-    ) -> None:
+    def _try_start_emotion_worker(self, launched_workers: List[threading.Thread]) -> None:
         """Try to start an emotion analysis worker if dependencies are available."""
         try:
             # Import only if we need it to avoid unnecessary dependencies
@@ -742,9 +708,7 @@ class WordForgeWorker(threading.Thread):
 
             emotion_worker = EmotionWorker(
                 db_manager=self.db_manager if self.db_manager is not None else None,
-                analyzer=EmotionAnalyzer(
-                    db=self.db_manager if self.db_manager is not None else None
-                ),
+                analyzer=EmotionAnalyzer(db=self.db_manager if self.db_manager is not None else None),
                 sleep_interval=5.0,
             )
             emotion_worker.daemon = True
@@ -756,9 +720,7 @@ class WordForgeWorker(threading.Thread):
         except (ImportError, AttributeError) as e:
             self.logger.debug(f"Could not start emotion worker: {e}")
 
-    def _try_start_vector_worker(
-        self, launched_workers: List[threading.Thread]
-    ) -> None:
+    def _try_start_vector_worker(self, launched_workers: List[threading.Thread]) -> None:
         """Try to start a vector embedding worker if dependencies are available."""
         try:
             # Import only if we need it
@@ -801,24 +763,16 @@ class WordForgeWorker(threading.Thread):
             if worker.is_alive():
                 worker.join(timeout=2.0)
                 if worker.is_alive():
-                    self.logger.warning(
-                        f"Worker {worker.__class__.__name__} did not stop in time"
-                    )
+                    self.logger.warning(f"Worker {worker.__class__.__name__} did not stop in time")
                     remaining_workers.append(worker)
                 else:
-                    self.logger.debug(
-                        f"Worker {worker.__class__.__name__} stopped successfully"
-                    )
+                    self.logger.debug(f"Worker {worker.__class__.__name__} stopped successfully")
             else:
-                self.logger.debug(
-                    f"Worker {worker.__class__.__name__} was already stopped"
-                )
+                self.logger.debug(f"Worker {worker.__class__.__name__} was already stopped")
 
         self.auxiliary_workers = remaining_workers
         if len(self.auxiliary_workers) > 0:
-            self.logger.warning(
-                f"{len(self.auxiliary_workers)} workers could not be stopped gracefully"
-            )
+            self.logger.warning(f"{len(self.auxiliary_workers)} workers could not be stopped gracefully")
 
 
 @eidosian()
@@ -885,9 +839,7 @@ def create_progress_bar(current: int, total: int, width: int = 40) -> str:
 
 
 @eidosian()
-def print_table(
-    headers: List[str], rows: List[List[str]], title: Optional[str] = None
-) -> None:
+def print_table(headers: List[str], rows: List[List[str]], title: Optional[str] = None) -> None:
     """
     Print a formatted table to the console.
 
@@ -996,9 +948,7 @@ def main() -> None:
         if result["success"]:
             logger.info(f"Processed '{result['term']}' in {result['duration']:.3f}s")
         else:
-            logger.warning(
-                f"Failed to process '{result['term']}': {result.get('error', 'Unknown error')}"
-            )
+            logger.warning(f"Failed to process '{result['term']}': {result.get('error', 'Unknown error')}")
 
     logger.info(f"Seeding queue with {len(seed_words)} initial words...")
     for word in seed_words:
@@ -1054,10 +1004,7 @@ def main() -> None:
             )
 
             # Check for processing milestones
-            if (
-                next_milestone_idx < len(milestones)
-                and processed >= milestones[next_milestone_idx]
-            ):
+            if next_milestone_idx < len(milestones) and processed >= milestones[next_milestone_idx]:
                 milestone = milestones[next_milestone_idx]
                 logger.info(f"🏆 Milestone reached: {milestone} words processed!")
                 next_milestone_idx += 1

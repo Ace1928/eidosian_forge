@@ -10,9 +10,7 @@ from code_forge.library.db import CodeLibraryDB
 def _make_repo(root: Path) -> None:
     (root / "src").mkdir(parents=True)
     (root / "src" / "m.py").write_text(
-        "import math\n"
-        "def helper(v):\n"
-        "    return math.floor(v)\n",
+        "import math\n" "def helper(v):\n" "    return math.floor(v)\n",
         encoding="utf-8",
     )
 

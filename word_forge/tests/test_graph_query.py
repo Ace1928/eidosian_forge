@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from word_forge.exceptions import NodeNotFoundError
 
 

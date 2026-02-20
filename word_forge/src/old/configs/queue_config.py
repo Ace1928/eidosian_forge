@@ -1,4 +1,5 @@
 from eidosian_core import eidosian
+
 """
 Queue configuration for Word Forge asynchronous processing.
 
@@ -139,9 +140,7 @@ class QueueConfig:
         )
 
     @eidosian()
-    def with_performance_profile(
-        self, profile: QueuePerformanceProfile
-    ) -> "QueueConfig":
+    def with_performance_profile(self, profile: QueuePerformanceProfile) -> "QueueConfig":
         """
         Apply a predefined performance profile to the configuration.
 
@@ -213,9 +212,7 @@ class QueueConfig:
             config.lock_type = "reentrant"
         else:
             # No locking needed without threading
-            config.batch_size = min(
-                config.batch_size * 2, 500
-            )  # Can process more at once
+            config.batch_size = min(config.batch_size * 2, 500)  # Can process more at once
 
         return config
 
