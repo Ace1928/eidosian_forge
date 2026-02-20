@@ -37,7 +37,7 @@ except ImportError:
 
 
 def _parse_cookies_from_browser_spec(spec: Optional[str]) -> Optional[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
-    if not spec:
+    if not spec or not isinstance(spec, str):
         return None
     keyring: Optional[str] = None
     browser_part = spec
@@ -51,7 +51,7 @@ def _parse_cookies_from_browser_spec(spec: Optional[str]) -> Optional[Tuple[str,
 
 
 def _parse_player_client_spec(spec: Optional[str]) -> Optional[list[str]]:
-    if not spec:
+    if not spec or not isinstance(spec, str):
         return None
     clients = [item.strip() for item in spec.split(",") if item.strip()]
     return clients or None
