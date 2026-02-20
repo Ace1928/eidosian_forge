@@ -2,7 +2,7 @@
 
 Generated: deterministic (timestamp omitted)
 Scope: tracked
-Directory count: 2960
+Directory count: 3045
 
 .eidos_chrome_profile
 .eidos_chrome_profile/ActorSafetyLists
@@ -359,6 +359,8 @@ Directory count: 2960
 .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/js/index-dir
 .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/wasm/index-dir
 .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Shared Dictionary/cache/index-dir
+.gemini
+.gemini/tmp
 .github
 .github/prompts_old
 .github/workflows
@@ -374,6 +376,7 @@ agent_forge/bin
 agent_forge/cfg
 agent_forge/cfg.sample
 agent_forge/completions
+agent_forge/docs
 agent_forge/examples
 agent_forge/managed_agents
 agent_forge/notebooks
@@ -381,7 +384,9 @@ agent_forge/scripts
 agent_forge/src
 agent_forge/state
 agent_forge/tests
+agent_forge/docs/consciousness
 agent_forge/managed_agents/CodeWizard
+agent_forge/managed_agents/learner
 agent_forge/src/agent_forge
 agent_forge/state/adapters
 agent_forge/state/events
@@ -484,20 +489,29 @@ audit_forge/completions
 audit_forge/src
 audit_forge/tests
 audit_forge/src/audit_forge
+benchmarks
+benchmarks/schemas
+benchmarks/tests
 bin
 code_forge
 code_forge/.github
 code_forge/.vscode
 code_forge/completions
+code_forge/docs
 code_forge/src
 code_forge/tests
 code_forge/.github/prompts
 code_forge/.github/workflows
 code_forge/src/code_forge
 code_forge/src/code_forge/analyzer
+code_forge/src/code_forge/bench
+code_forge/src/code_forge/canonicalize
+code_forge/src/code_forge/digester
 code_forge/src/code_forge/ingest
+code_forge/src/code_forge/integration
 code_forge/src/code_forge/librarian
 code_forge/src/code_forge/library
+code_forge/src/code_forge/reconstruct
 computer_control_forge
 computer_control_forge/demos
 computer_control_forge/docs
@@ -510,6 +524,7 @@ computer_control_forge/src/computer_control_forge/automation
 computer_control_forge/src/computer_control_forge/cli
 computer_control_forge/src/computer_control_forge/daemon
 computer_control_forge/src/computer_control_forge/perception
+config
 crawl_forge
 crawl_forge/.vscode
 crawl_forge/completions
@@ -538,6 +553,7 @@ doc_forge/benchmarks
 doc_forge/bin
 doc_forge/completions
 doc_forge/docs
+doc_forge/final_docs
 doc_forge/legacy_imports
 doc_forge/libs
 doc_forge/scripts
@@ -560,6 +576,11 @@ doc_forge/docs/_templates
 doc_forge/docs/assets
 doc_forge/docs/auto_docs
 doc_forge/docs/user_docs
+doc_forge/final_docs/agent_forge
+doc_forge/final_docs/article_forge
+doc_forge/final_docs/audit_forge
+doc_forge/final_docs/code_forge
+doc_forge/final_docs/computer_control_forge
 doc_forge/legacy_imports/development_head_2026-02-14_174300
 doc_forge/scripts/ci
 doc_forge/scripts/database
@@ -601,6 +622,26 @@ doc_forge/docs/user_docs/guides
 doc_forge/docs/user_docs/reference
 doc_forge/docs/user_docs/security
 doc_forge/docs/user_docs/troubleshooting
+doc_forge/final_docs/agent_forge/cfg
+doc_forge/final_docs/agent_forge/cfg.sample
+doc_forge/final_docs/agent_forge/examples
+doc_forge/final_docs/agent_forge/managed_agents
+doc_forge/final_docs/agent_forge/notebooks
+doc_forge/final_docs/agent_forge/scripts
+doc_forge/final_docs/agent_forge/src
+doc_forge/final_docs/agent_forge/tests
+doc_forge/final_docs/article_forge/medium_articles
+doc_forge/final_docs/article_forge/scripts
+doc_forge/final_docs/article_forge/src
+doc_forge/final_docs/article_forge/tests
+doc_forge/final_docs/audit_forge/src
+doc_forge/final_docs/audit_forge/tests
+doc_forge/final_docs/code_forge/src
+doc_forge/final_docs/code_forge/tests
+doc_forge/final_docs/computer_control_forge/demos
+doc_forge/final_docs/computer_control_forge/docs
+doc_forge/final_docs/computer_control_forge/scripts
+doc_forge/final_docs/computer_control_forge/src
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks
 doc_forge/legacy_imports/development_head_2026-02-14_174300/papers
 doc_forge/src/doc_forge/api
@@ -624,8 +665,38 @@ doc_forge/src/tests/performance
 doc_forge/src/tests/security
 doc_forge/src/tests/unit
 doc_forge/src/tests/utils
+doc_forge/final_docs/agent_forge/managed_agents/CodeWizard
+doc_forge/final_docs/agent_forge/src/agent_forge
+doc_forge/final_docs/article_forge/medium_articles/autobiography
+doc_forge/final_docs/article_forge/src/article_forge
+doc_forge/final_docs/audit_forge/src/audit_forge
+doc_forge/final_docs/code_forge/src/code_forge
+doc_forge/final_docs/computer_control_forge/src/computer_control_forge
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/learn2code
 doc_forge/legacy_imports/development_head_2026-02-14_174300/notebooks/vim_wiki
+doc_forge/final_docs/agent_forge/managed_agents/CodeWizard/tools
+doc_forge/final_docs/agent_forge/src/agent_forge/actuators
+doc_forge/final_docs/agent_forge/src/agent_forge/agent
+doc_forge/final_docs/agent_forge/src/agent_forge/cli
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness
+doc_forge/final_docs/agent_forge/src/agent_forge/core
+doc_forge/final_docs/agent_forge/src/agent_forge/planners
+doc_forge/final_docs/agent_forge/src/agent_forge/systems
+doc_forge/final_docs/agent_forge/src/agent_forge/utils
+doc_forge/final_docs/article_forge/medium_articles/autobiography/overview
+doc_forge/final_docs/article_forge/medium_articles/autobiography/part_one
+doc_forge/final_docs/article_forge/src/article_forge/cli
+doc_forge/final_docs/code_forge/src/code_forge/analyzer
+doc_forge/final_docs/code_forge/src/code_forge/ingest
+doc_forge/final_docs/code_forge/src/code_forge/librarian
+doc_forge/final_docs/code_forge/src/code_forge/library
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness/bench
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness/metrics
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness/modules
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness/perturb
+doc_forge/final_docs/agent_forge/src/agent_forge/consciousness/tuning
+doc_forge/final_docs/agent_forge/src/agent_forge/planners/templates
+doc_forge/final_docs/article_forge/medium_articles/autobiography/part_one/1993
 docs
 docs/consciousness_fcl
 docs/legacy
@@ -645,12 +716,26 @@ eidos_mcp/src/eidos_mcp/plugins/computer_control
 eidos_mcp/src/eidos_mcp/plugins/self_exploration
 eidos_mcp/src/eidos_mcp/plugins/task_automation
 eidos_mcp/src/eidos_mcp/plugins/web_tools
+eidos_mcp_backup_20260218
+eidos_mcp_backup_20260218/scripts
+eidos_mcp_backup_20260218/src
+eidos_mcp_backup_20260218/systemd
+eidos_mcp_backup_20260218/tests
+eidos_mcp_backup_20260218/src/eidos_mcp
+eidos_mcp_backup_20260218/src/eidos_mcp/config
+eidos_mcp_backup_20260218/src/eidos_mcp/plugins
+eidos_mcp_backup_20260218/src/eidos_mcp/routers
+eidos_mcp_backup_20260218/src/eidos_mcp/plugins/computer_control
+eidos_mcp_backup_20260218/src/eidos_mcp/plugins/self_exploration
+eidos_mcp_backup_20260218/src/eidos_mcp/plugins/task_automation
+eidos_mcp_backup_20260218/src/eidos_mcp/plugins/web_tools
 eidosian_venv
 eidosian_venv/bin
 erais_forge
 erais_forge/planning
 erais_forge/src
 erais_forge/tests
+erais_forge/tools
 erais_forge/src/erais_forge
 erais_forge/src/erais_forge/cli
 figlet_forge
@@ -1278,15 +1363,19 @@ llm_forge/.vscode
 llm_forge/completions
 llm_forge/docs
 llm_forge/legacy_imports
+llm_forge/scripts
 llm_forge/src
 llm_forge/tests
+llm_forge/vendor
 llm_forge/legacy_imports/development_head_2026-02-14_174300
 llm_forge/src/llm_forge
 llm_forge/legacy_imports/development_head_2026-02-14_174300/eidos_framework
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main
 llm_forge/legacy_imports/development_head_2026-02-14_174300/python_repository
+llm_forge/src/llm_forge/benchmarking
 llm_forge/src/llm_forge/caching
 llm_forge/src/llm_forge/core
+llm_forge/src/llm_forge/engine
 llm_forge/src/llm_forge/providers
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/configs
 llm_forge/legacy_imports/development_head_2026-02-14_174300/oumi-main/docs
@@ -1975,14 +2064,6 @@ metadata_forge/eidosian_monorepo/projects/rust_project/src/rust_project/src/bin
 metadata_forge/eidosian_monorepo/projects/rust_project/src/rust_project/src/config
 metadata_forge/eidosian_monorepo/projects/rust_project/src/rust_project/src/models
 metadata_forge/eidosian_monorepo/projects/rust_project/src/rust_project/src/utils
-mkey_forge
-mkey_forge/.vscode
-mkey_forge/src
-mkey_forge/tests
-mkey_forge/src/mkey_forge
-mkey_forge/src/mkey_forge/cli
-mkey_forge/src/mkey_forge/source
-mkey_forge/src/mkey_forge/source/polarssl
 moltbook_forge
 moltbook_forge/data
 moltbook_forge/skill_sources
@@ -2296,6 +2377,8 @@ reports/consciousness_benchmarks
 reports/consciousness_integrated_benchmarks
 reports/consciousness_trends
 reports/consciousness_trials
+reports/forges
+reports/graphrag
 requirements
 scripts
 scripts/docs
@@ -2317,6 +2400,8 @@ sms_forge/.github/prompts
 sms_forge/.github/workflows
 sms_forge/src/sms_forge
 sms_forge/src/sms_forge/cli
+sms_forge/src/sms_forge/providers
+sms_forge/src/sms_forge/utils
 terminal_forge
 terminal_forge/.github
 terminal_forge/.vscode

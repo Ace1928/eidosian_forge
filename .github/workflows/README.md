@@ -320,6 +320,12 @@ The `.pre-commit-config.yaml` includes:
 
 ## 🎯 Quick Commands
 
+### Workflow Stack (local preflight)
+
+```bash
+scripts/validate_workflows_local.sh
+```
+
 ### Python
 
 ```bash
@@ -536,4 +542,4 @@ When modifying workflows:
 ---
 
 **Maintained by:** Eidosian Forge Team  
-**Last Updated:** 2026-01-24
+**Last Updated:** 2026-02-20

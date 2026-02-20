@@ -223,5 +223,26 @@
       "agent_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "175a2586-9f3c-476d-b91b-02cd3b2da6c8",
+    "content": "Local workflow validation now reproducible via scripts/validate_workflows_local.sh; includes actionlint, pin-lock enforcement, workflow support pytest suite, scoped gitleaks sanity, and atlas determinism check.",
+    "created_at": "2026-02-20T10:57:28.776654",
+    "last_accessed": "2026-02-20T10:57:28.776681",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.91,
+    "ttl_seconds": 86400,
+    "tags": [
+      "security",
+      "validation",
+      "workflows",
+      "eidosian_forge",
+      "ci"
+    ],
+    "linked_memories": []
   }
 ]

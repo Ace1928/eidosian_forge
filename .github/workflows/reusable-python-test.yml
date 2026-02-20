@@ -133,7 +133,13 @@ jobs:
             echo "### 📊 Coverage: $COVERAGE_PCT%" >> $GITHUB_STEP_SUMMARY
             
             # Check against threshold
-            if (( $(echo "$COVERAGE_PCT < ${{ inputs.coverage-threshold }}" | bc -l) )); then
+            BELOW_THRESHOLD=$(python - <<PY
+            cov = float("${COVERAGE_PCT}" or 0)
+            threshold = float("${{ inputs.coverage-threshold }}" or 0)
+            print("1" if cov < threshold else "0")
+            PY
+            )
+            if [ "$BELOW_THRESHOLD" = "1" ]; then
               echo "::error::Coverage $COVERAGE_PCT% is below threshold ${{ inputs.coverage-threshold }}%"
               exit 1
             else

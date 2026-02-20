@@ -1016,6 +1016,20 @@
         ]
       },
       "links": []
+    },
+    "a4f9287c-cb1d-4861-8f6b-a1165046478e": {
+      "id": "a4f9287c-cb1d-4861-8f6b-a1165046478e",
+      "content": "GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs.",
+      "metadata": {
+        "tags": [
+          "security",
+          "workflow-lock",
+          "github-actions",
+          "gitleaks",
+          "ci"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
