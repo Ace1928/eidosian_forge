@@ -4,39 +4,64 @@
       "id": "e60805ea-e88b-440a-815b-3bd37c34d7d1",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["7d5e762c-13f5-426b-a9eb-1c78b26a1147"]
+      "links": [
+        "7d5e762c-13f5-426b-a9eb-1c78b26a1147"
+      ]
     },
     "7d5e762c-13f5-426b-a9eb-1c78b26a1147": {
       "id": "7d5e762c-13f5-426b-a9eb-1c78b26a1147",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["e60805ea-e88b-440a-815b-3bd37c34d7d1"]
+      "links": [
+        "e60805ea-e88b-440a-815b-3bd37c34d7d1"
+      ]
     },
     "3fdbb2cb-af88-4b28-924f-5751870c080c": {
       "id": "3fdbb2cb-af88-4b28-924f-5751870c080c",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["fc89cb87-66de-420e-b89b-d251db91ae73"]
+      "links": [
+        "fc89cb87-66de-420e-b89b-d251db91ae73"
+      ]
     },
     "fc89cb87-66de-420e-b89b-d251db91ae73": {
       "id": "fc89cb87-66de-420e-b89b-d251db91ae73",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["3fdbb2cb-af88-4b28-924f-5751870c080c"]
+      "links": [
+        "3fdbb2cb-af88-4b28-924f-5751870c080c"
+      ]
     },
     "a9d5fc54-ce04-4836-ba41-0746c58b1b11": {
       "id": "a9d5fc54-ce04-4836-ba41-0746c58b1b11",
       "content": "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config.",
       "metadata": {
-        "tags": ["autotune", "mcp", "termux", "consciousness"]
+        "tags": [
+          "autotune",
+          "mcp",
+          "termux",
+          "consciousness"
+        ]
       },
       "links": []
     },
@@ -44,7 +69,12 @@
       "id": "5c084c80-f363-428a-84e7-10bc05ae4c2a",
       "content": "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics.",
       "metadata": {
-        "tags": ["autotune", "mcp", "termux", "consciousness"]
+        "tags": [
+          "autotune",
+          "mcp",
+          "termux",
+          "consciousness"
+        ]
       },
       "links": []
     },
@@ -52,7 +82,12 @@
       "id": "e8c8f867-3cec-4085-bb16-567b864f173d",
       "content": "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled.",
       "metadata": {
-        "tags": ["autotune", "mcp", "termux", "consciousness"]
+        "tags": [
+          "autotune",
+          "mcp",
+          "termux",
+          "consciousness"
+        ]
       },
       "links": []
     },
@@ -60,71 +95,115 @@
       "id": "c858723b-99c1-43ec-af65-622897c32658",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["04ee5920-e96b-44fa-8021-9e920e098aa3"]
+      "links": [
+        "04ee5920-e96b-44fa-8021-9e920e098aa3"
+      ]
     },
     "04ee5920-e96b-44fa-8021-9e920e098aa3": {
       "id": "04ee5920-e96b-44fa-8021-9e920e098aa3",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["c858723b-99c1-43ec-af65-622897c32658"]
+      "links": [
+        "c858723b-99c1-43ec-af65-622897c32658"
+      ]
     },
     "857a29cb-6423-49c1-8592-e72aa88f6d12": {
       "id": "857a29cb-6423-49c1-8592-e72aa88f6d12",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["bd8583fb-002a-44bf-8c64-a0986dd5205e"]
+      "links": [
+        "bd8583fb-002a-44bf-8c64-a0986dd5205e"
+      ]
     },
     "bd8583fb-002a-44bf-8c64-a0986dd5205e": {
       "id": "bd8583fb-002a-44bf-8c64-a0986dd5205e",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["857a29cb-6423-49c1-8592-e72aa88f6d12"]
+      "links": [
+        "857a29cb-6423-49c1-8592-e72aa88f6d12"
+      ]
     },
     "d1278c29-9cc7-4a70-a96f-bd1a65bf747e": {
       "id": "d1278c29-9cc7-4a70-a96f-bd1a65bf747e",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["5ceb54de-de71-41d6-bc69-1be2339b5711"]
+      "links": [
+        "5ceb54de-de71-41d6-bc69-1be2339b5711"
+      ]
     },
     "5ceb54de-de71-41d6-bc69-1be2339b5711": {
       "id": "5ceb54de-de71-41d6-bc69-1be2339b5711",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["d1278c29-9cc7-4a70-a96f-bd1a65bf747e"]
+      "links": [
+        "d1278c29-9cc7-4a70-a96f-bd1a65bf747e"
+      ]
     },
     "c048672f-221c-45ef-8e4c-ac80e8af24af": {
       "id": "c048672f-221c-45ef-8e4c-ac80e8af24af",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["b14edcc3-2cad-4804-90f7-3bc1cb1268d1"]
+      "links": [
+        "b14edcc3-2cad-4804-90f7-3bc1cb1268d1"
+      ]
     },
     "b14edcc3-2cad-4804-90f7-3bc1cb1268d1": {
       "id": "b14edcc3-2cad-4804-90f7-3bc1cb1268d1",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["c048672f-221c-45ef-8e4c-ac80e8af24af"]
+      "links": [
+        "c048672f-221c-45ef-8e4c-ac80e8af24af"
+      ]
     },
     "34cd2c39-0300-4f31-b20e-24fcc74af243": {
       "id": "34cd2c39-0300-4f31-b20e-24fcc74af243",
       "content": "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence.",
       "metadata": {
-        "tags": ["autotune", "consciousness", "optimization"]
+        "tags": [
+          "autotune",
+          "consciousness",
+          "optimization"
+        ]
       },
       "links": []
     },
@@ -132,7 +211,12 @@
       "id": "b3fa722c-4274-4cb9-8dfa-df0388602254",
       "content": "Attention and workspace competition now adapt online from gw.reaction_trace reward signals.",
       "metadata": {
-        "tags": ["learning", "attention", "consciousness", "competition"]
+        "tags": [
+          "learning",
+          "attention",
+          "consciousness",
+          "competition"
+        ]
       },
       "links": []
     },
@@ -140,7 +224,11 @@
       "id": "dc41bde2-2666-4eee-92f8-a02833d0ce54",
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
-        "tags": ["termux", "operations", "validation"]
+        "tags": [
+          "termux",
+          "operations",
+          "validation"
+        ]
       },
       "links": []
     },
@@ -148,39 +236,64 @@
       "id": "3540c15c-e2db-482c-897f-5afd5dff7bdd",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["98d12879-712b-4cce-8e31-59758888fbf2"]
+      "links": [
+        "98d12879-712b-4cce-8e31-59758888fbf2"
+      ]
     },
     "98d12879-712b-4cce-8e31-59758888fbf2": {
       "id": "98d12879-712b-4cce-8e31-59758888fbf2",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["3540c15c-e2db-482c-897f-5afd5dff7bdd"]
+      "links": [
+        "3540c15c-e2db-482c-897f-5afd5dff7bdd"
+      ]
     },
     "0ca1ff67-30de-40dd-b183-ea6ffab2d787": {
       "id": "0ca1ff67-30de-40dd-b183-ea6ffab2d787",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["890e39ba-be5d-4e3e-8827-37e67d06760a"]
+      "links": [
+        "890e39ba-be5d-4e3e-8827-37e67d06760a"
+      ]
     },
     "890e39ba-be5d-4e3e-8827-37e67d06760a": {
       "id": "890e39ba-be5d-4e3e-8827-37e67d06760a",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["0ca1ff67-30de-40dd-b183-ea6ffab2d787"]
+      "links": [
+        "0ca1ff67-30de-40dd-b183-ea6ffab2d787"
+      ]
     },
     "e3859000-11f4-4c71-b86e-8ede0a5dbc23": {
       "id": "e3859000-11f4-4c71-b86e-8ede0a5dbc23",
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
-        "tags": ["mcp", "cli", "consciousness", "red-team"]
+        "tags": [
+          "mcp",
+          "cli",
+          "consciousness",
+          "red-team"
+        ]
       },
       "links": []
     },
@@ -188,7 +301,12 @@
       "id": "c50325d0-db49-4112-8582-2b4318c49774",
       "content": "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes.",
       "metadata": {
-        "tags": ["tasks", "bench", "consciousness", "validation"]
+        "tags": [
+          "tasks",
+          "bench",
+          "consciousness",
+          "validation"
+        ]
       },
       "links": []
     },
@@ -196,39 +314,65 @@
       "id": "985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["0aba4907-8d2c-4af8-b1af-1d1ece25ae6f"]
+      "links": [
+        "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f"
+      ]
     },
     "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f": {
       "id": "0aba4907-8d2c-4af8-b1af-1d1ece25ae6f",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97"]
+      "links": [
+        "985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97"
+      ]
     },
     "b786c236-5444-4d09-8db8-3be9f6fb43fa": {
       "id": "b786c236-5444-4d09-8db8-3be9f6fb43fa",
       "content": "MCP test fact A",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["018416b4-3a6f-48a5-8947-8276bc692653"]
+      "links": [
+        "018416b4-3a6f-48a5-8947-8276bc692653"
+      ]
     },
     "018416b4-3a6f-48a5-8947-8276bc692653": {
       "id": "018416b4-3a6f-48a5-8947-8276bc692653",
       "content": "MCP test fact B",
       "metadata": {
-        "tags": ["mcp", "test"]
+        "tags": [
+          "mcp",
+          "test"
+        ]
       },
-      "links": ["b786c236-5444-4d09-8db8-3be9f6fb43fa"]
+      "links": [
+        "b786c236-5444-4d09-8db8-3be9f6fb43fa"
+      ]
     },
     "e74103f7-9d97-4b79-adc0-277e3b64929d": {
       "id": "e74103f7-9d97-4b79-adc0-277e3b64929d",
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
-        "tags": ["mcp", "consciousness", "red-team", "cli", "benchmark"]
+        "tags": [
+          "mcp",
+          "consciousness",
+          "red-team",
+          "cli",
+          "benchmark"
+        ]
       },
       "links": []
     },
@@ -236,7 +380,12 @@
       "id": "82292ab8-0f74-4b88-ac59-4e949259a765",
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
-        "tags": ["schema", "consciousness", "benchmark", "gates"]
+        "tags": [
+          "schema",
+          "consciousness",
+          "benchmark",
+          "gates"
+        ]
       },
       "links": []
     },
@@ -244,7 +393,12 @@
       "id": "7040c0c1-071c-45d8-9062-934add61992a",
       "content": "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns.",
       "metadata": {
-        "tags": ["mcp", "operations", "testing", "hardening"]
+        "tags": [
+          "mcp",
+          "operations",
+          "testing",
+          "hardening"
+        ]
       },
       "links": []
     },
@@ -252,7 +406,12 @@
       "id": "f0dcdfbf-9ba4-4b31-9580-20a0b954c152",
       "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
       "metadata": {
-        "tags": ["autotune", "termux", "consciousness", "red-team"]
+        "tags": [
+          "autotune",
+          "termux",
+          "consciousness",
+          "red-team"
+        ]
       },
       "links": []
     },
@@ -260,7 +419,12 @@
       "id": "ba793301-b7c2-4940-8614-c4deebb3c4d6",
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
-        "tags": ["termux", "consciousness", "benchmark", "index"]
+        "tags": [
+          "termux",
+          "consciousness",
+          "benchmark",
+          "index"
+        ]
       },
       "links": []
     },
@@ -268,7 +432,11 @@
       "id": "59ede79a-5ee1-46a5-a0fa-6ac0060811e5",
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
-        "tags": ["dependabot", "workflow", "security"]
+        "tags": [
+          "dependabot",
+          "workflow",
+          "security"
+        ]
       },
       "links": []
     },
@@ -276,7 +444,12 @@
       "id": "41815211-75ea-4242-9db3-cce8687ff33f",
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
-        "tags": ["dependabot", "workflow", "security", "issues"]
+        "tags": [
+          "dependabot",
+          "workflow",
+          "security",
+          "issues"
+        ]
       },
       "links": []
     },
@@ -284,7 +457,12 @@
       "id": "792397c3-1ee8-4a99-bcd3-6375e20c109f",
       "content": "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs.",
       "metadata": {
-        "tags": ["lock", "actions", "workflow", "security"]
+        "tags": [
+          "lock",
+          "actions",
+          "workflow",
+          "security"
+        ]
       },
       "links": []
     },
@@ -292,7 +470,12 @@
       "id": "96e3a8ed-7eab-4a59-8efe-6308699d4e60",
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
-        "tags": ["dependabot", "workflow", "security", "remediation"]
+        "tags": [
+          "dependabot",
+          "workflow",
+          "security",
+          "remediation"
+        ]
       },
       "links": []
     },
@@ -317,7 +500,13 @@
       "id": "3029ab9a-4a26-4596-bb1d-e62bc9398982",
       "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
       "metadata": {
-        "tags": ["advisory", "mitigation", "security", "no-fix", "phase17"],
+        "tags": [
+          "advisory",
+          "mitigation",
+          "security",
+          "no-fix",
+          "phase17"
+        ],
         "source": "phase17_iteration2_no_fix_mitigation",
         "updated_at": "2026-02-16T23:10:55Z"
       },
@@ -327,7 +516,13 @@
       "id": "a145bade-f093-46f6-9f75-aa2001d30b2e",
       "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
       "metadata": {
-        "tags": ["closure", "security", "automation", "dependabot", "phase17"],
+        "tags": [
+          "closure",
+          "security",
+          "automation",
+          "dependabot",
+          "phase17"
+        ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
       },
@@ -469,7 +664,13 @@
       "id": "90941e5b-422a-48dd-a948-86bec8955b6f",
       "content": "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow.",
       "metadata": {
-        "tags": ["determinism", "operations", "documentation", "ci", "phase24"]
+        "tags": [
+          "determinism",
+          "operations",
+          "documentation",
+          "ci",
+          "phase24"
+        ]
       },
       "links": []
     },
@@ -477,7 +678,10 @@
       "id": "6fb13215-06d7-4399-9797-274ce01ac435",
       "content": "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal.",
       "metadata": {
-        "tags": ["code-intelligence", "refactor"]
+        "tags": [
+          "code-intelligence",
+          "refactor"
+        ]
       },
       "links": []
     },
@@ -485,7 +689,13 @@
       "id": "75bb5880-a002-4470-92fb-5f55d453316f",
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
-        "tags": ["schema", "graphrag", "benchmark", "quality", "assessment"]
+        "tags": [
+          "schema",
+          "graphrag",
+          "benchmark",
+          "quality",
+          "assessment"
+        ]
       },
       "links": []
     },
@@ -493,7 +703,12 @@
       "id": "94f4fb6f-496f-4b81-8080-8b3c720b09b3",
       "content": "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection.",
       "metadata": {
-        "tags": ["graphrag", "termux", "benchmark", "quality-gate"]
+        "tags": [
+          "graphrag",
+          "termux",
+          "benchmark",
+          "quality-gate"
+        ]
       },
       "links": []
     },
@@ -501,7 +716,12 @@
       "id": "fcccca30-873c-433a-b1e1-95ce0005d5e9",
       "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
       "metadata": {
-        "tags": ["stability", "termux", "eidos_mcp", "transport"]
+        "tags": [
+          "stability",
+          "termux",
+          "eidos_mcp",
+          "transport"
+        ]
       },
       "links": []
     },
@@ -523,7 +743,12 @@
       "id": "06127ffa-a6d6-4cbd-92b9-cd49f71ff46e",
       "content": "Eidosian Forge now has a canonical local service registry at config/ports.json, with fallback behavior implemented in launch scripts and runtime modules when env vars are unset or empty.",
       "metadata": {
-        "tags": ["config", "ports", "operations", "termux"]
+        "tags": [
+          "config",
+          "ports",
+          "operations",
+          "termux"
+        ]
       },
       "links": []
     },
@@ -531,7 +756,12 @@
       "id": "8069094c-4798-4f9f-9361-5bfe620e5508",
       "content": "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A).",
       "metadata": {
-        "tags": ["quality-gate", "model-selection", "benchmark", "graphrag"]
+        "tags": [
+          "quality-gate",
+          "model-selection",
+          "benchmark",
+          "graphrag"
+        ]
       },
       "links": []
     },
@@ -539,7 +769,12 @@
       "id": "454d6328-5e95-49f8-9560-6ad0019783f6",
       "content": "Living knowledge pipeline scaffold added at scripts/living_knowledge_pipeline.py with strict run artifacts (manifest, records, dedup, drift, code analysis) and optional GraphRAG indexing/query execution.",
       "metadata": {
-        "tags": ["living-knowledge", "code-forge", "pipeline", "graphrag"]
+        "tags": [
+          "living-knowledge",
+          "code-forge",
+          "pipeline",
+          "graphrag"
+        ]
       },
       "links": []
     },
@@ -547,7 +782,12 @@
       "id": "2c0101c6-e1d1-4adc-83fd-ce4466ac6d4e",
       "content": "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected.",
       "metadata": {
-        "tags": ["robustness", "quality", "evaluation", "graphrag"]
+        "tags": [
+          "robustness",
+          "quality",
+          "evaluation",
+          "graphrag"
+        ]
       },
       "links": []
     },
@@ -555,7 +795,13 @@
       "id": "cc0bc34f-7801-4df5-a57e-f5e8ed95ec12",
       "content": "Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models.",
       "metadata": {
-        "tags": ["graphrag", "models", "multimodal", "termux", "catalog"]
+        "tags": [
+          "graphrag",
+          "models",
+          "multimodal",
+          "termux",
+          "catalog"
+        ]
       },
       "links": []
     },
@@ -563,7 +809,12 @@
       "id": "9c73bbdf-d09f-4c43-bc50-152885496535",
       "content": "GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled.",
       "metadata": {
-        "tags": ["quality-gates", "model-selection", "termux", "graphrag"]
+        "tags": [
+          "quality-gates",
+          "model-selection",
+          "termux",
+          "graphrag"
+        ]
       },
       "links": []
     },
@@ -671,7 +922,12 @@
       "id": "a8ab33be-0878-436e-856e-b4011466dcf8",
       "content": "Code Forge now has a drift intelligence stage with immutable history snapshots and a CLI command for run-over-run metric drift reporting.",
       "metadata": {
-        "tags": ["digester", "code_forge", "drift", "artifact-validation"]
+        "tags": [
+          "digester",
+          "code_forge",
+          "drift",
+          "artifact-validation"
+        ]
       },
       "links": []
     },
@@ -708,7 +964,13 @@
       "id": "d1da8688-f43a-42d8-839c-df8ae090e575",
       "content": "Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa).",
       "metadata": {
-        "tags": ["consciousness", "validation", "rac-ap", "git", "agent_forge"]
+        "tags": [
+          "consciousness",
+          "validation",
+          "rac-ap",
+          "git",
+          "agent_forge"
+        ]
       },
       "links": []
     },
@@ -787,7 +1049,26 @@
       "id": "4af8e708-1457-477c-a7f3-c40317e3d270",
       "content": "Current upstream vulnerability banner reports 10 Dependabot alerts (3 critical, 6 moderate, 1 low) after latest push; remediation should continue beyond pypdf pin update.",
       "metadata": {
-        "tags": ["dependabot", "security", "backlog", "triage"]
+        "tags": [
+          "dependabot",
+          "security",
+          "backlog",
+          "triage"
+        ]
+      },
+      "links": []
+    },
+    "ad1de6f5-ed35-4499-b9d7-c1b9a8e6548f": {
+      "id": "ad1de6f5-ed35-4499-b9d7-c1b9a8e6548f",
+      "content": "Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end.",
+      "metadata": {
+        "tags": [
+          "validation",
+          "memory_forge",
+          "chroma",
+          "hnswlib",
+          "termux"
+        ]
       },
       "links": []
     }

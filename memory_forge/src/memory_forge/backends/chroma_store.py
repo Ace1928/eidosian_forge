@@ -2,6 +2,7 @@ from eidosian_core import eidosian
 """
 ChromaDB Backend for Vector Storage.
 """
+import os
 import chromadb
 from typing import List, Optional, Dict, Any
 from ..core.interfaces import StorageBackend, MemoryItem, MemoryType
@@ -9,8 +10,17 @@ from datetime import datetime
 
 class ChromaBackend(StorageBackend):
     def __init__(self, collection_name: str, persist_path: str):
-        self.client = chromadb.PersistentClient(path=persist_path)
-        self.collection = self.client.get_or_create_collection(name=collection_name)
+        try:
+            self.client = chromadb.PersistentClient(path=persist_path)
+            self.collection = self.client.get_or_create_collection(name=collection_name)
+        except Exception as exc:
+            if os.environ.get("PREFIX", "").startswith("/data/data/com.termux"):
+                raise RuntimeError(
+                    "Failed to initialize Chroma on Termux. "
+                    "If you see illegal-instruction errors, rebuild hnsw wheels with "
+                    "HNSWLIB_NO_NATIVE=1 in eidosian_venv."
+                ) from exc
+            raise
 
     @eidosian()
     def add(self, item: MemoryItem) -> bool:

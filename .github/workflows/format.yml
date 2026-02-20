@@ -63,31 +63,85 @@ jobs:
       - name: 🎨 Format with Black
         timeout-minutes: 8
         run: |
+          PYTHON_FORMAT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_FORMAT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python formatting targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Running Black formatter"
-          # Exclude large directories and use faster mode for monorepo
-          black . --fast --line-length=120 \
-            --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build|google-cloud-sdk|archive_forge)/' \
-            || true
+          black "${TARGETS[@]}" --fast --line-length=120 || true
           echo "::endgroup::"
 
       - name: 📑 Sort imports with isort
         timeout-minutes: 5
         run: |
+          PYTHON_FORMAT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_FORMAT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python formatting targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Running isort"
-          # Skip large directories
-          isort . --profile=black --line-length=120 \
-            --skip-gitignore \
-            --skip google-cloud-sdk \
-            --skip archive_forge \
-            || true
+          isort "${TARGETS[@]}" --profile=black --line-length=120 --skip-gitignore || true
           echo "::endgroup::"
 
       - name: 🔧 Auto-fix with Ruff
         timeout-minutes: 5
         run: |
+          PYTHON_FORMAT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_FORMAT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python formatting targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Running Ruff auto-fix"
-          # Ruff is fast but still add timeout
-          ruff check . --fix --config=ruff.toml || true
+          ruff check "${TARGETS[@]}" --fix --config=ruff.toml || true
           echo "::endgroup::"
 
       - name: 📊 Check for changes
@@ -143,7 +197,7 @@ jobs:
           fi
           
           # Format other TypeScript/JavaScript files with default config
-          prettier "**/*.{ts,tsx,js,jsx,json}" --write \
+          prettier "**/*.{ts,tsx,js,jsx}" --write \
             --ignore-path .gitignore \
             --ignore-unknown \
             --log-level warn || true

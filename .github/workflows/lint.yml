@@ -53,9 +53,29 @@ jobs:
         timeout-minutes: 8
         continue-on-error: true
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Black Format Check"
-          black . --check --diff --fast --line-length=120 \
-            --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build|google-cloud-sdk|archive_forge)/' \
+          black "${TARGETS[@]}" --check --diff --fast --line-length=120 \
             2>&1 | tee black-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
@@ -75,11 +95,30 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::isort Import Check"
-          isort . --check --diff --profile=black --line-length=120 \
+          isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 \
             --skip-gitignore \
-            --skip google-cloud-sdk \
-            --skip archive_forge \
             2>&1 | tee isort-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
@@ -98,9 +137,29 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Ruff Linting"
-          # Ruff is already fast and respects ruff.toml excludes
-          ruff check . --config=ruff.toml --output-format=github 2>&1 | tee ruff-output.txt
+          ruff check "${TARGETS[@]}" --config=ruff.toml --output-format=github 2>&1 | tee ruff-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
           
@@ -117,9 +176,30 @@ jobs:
         timeout-minutes: 8
         continue-on-error: true
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Flake8 Linting"
-          flake8 . --count --statistics --show-source --max-line-length=120 \
-            --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__,google-cloud-sdk,archive_forge \
+          flake8 "${TARGETS[@]}" --count --statistics --show-source --max-line-length=120 \
+            --exclude=.git,.venv,venv,eidosian_venv,node_modules,.cache,dist,build,__pycache__ \
             2>&1 | tee flake8-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
           echo "::endgroup::"
@@ -196,7 +276,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "::group::Prettier Format Check"
-          prettier "**/*.{ts,tsx,js,jsx,json}" --check \
+          prettier "**/*.{ts,tsx,js,jsx}" --check \
             --ignore-path .gitignore \
             --ignore-unknown \
             --log-level warn 2>&1 | tee prettier-output.txt

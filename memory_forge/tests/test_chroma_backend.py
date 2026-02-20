@@ -1,5 +1,4 @@
 import pytest
-import chromadb
 from memory_forge.backends.chroma_store import ChromaBackend
 from memory_forge.core.interfaces import MemoryItem
 

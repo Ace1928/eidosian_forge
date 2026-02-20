@@ -63,3 +63,14 @@ Configuration is managed via `GIS` or `env`:
 - `MEMORY_BACKEND`: `chromadb` (default) or `json`.
 - `CHROMA_PERSIST_DIRECTORY`: Path to vector store.
 - `EMBEDDING_MODEL`: Default `all-MiniLM-L6-v2`.
+
+## 📱 Termux Chroma Notes
+
+On some ARM Android devices, default `hnswlib` wheels can crash with `Illegal instruction` during vector queries.
+
+If this happens in `eidosian_venv`, rebuild HNSW wheels from source without `-march=native`:
+
+```bash
+cd eidosian_forge
+HNSWLIB_NO_NATIVE=1 ./eidosian_venv/bin/pip install --force-reinstall --no-binary=chroma-hnswlib,hnswlib chroma-hnswlib==0.7.6 hnswlib==0.8.0
+```

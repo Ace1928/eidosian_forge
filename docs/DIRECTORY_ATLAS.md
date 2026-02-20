@@ -4,7 +4,7 @@
 
 - Generated: `deterministic (timestamp omitted)`
 - Scope: `tracked`
-- Tracked files: `732234`
+- Tracked files: `732235`
 - Full directory count (scope): `3045`
 - Atlas directory count (depth <= 2): `394`
 - Full recursive index: [`docs/DIRECTORY_INDEX_FULL.txt`](./DIRECTORY_INDEX_FULL.txt)
@@ -120,7 +120,7 @@
 | [`repo_forge`](../repo_forge) | Forge module root | 92 | 8 | [`repo_forge/README.md`](../repo_forge/README.md) |
 | [`reports`](../reports) | Benchmark/audit reports | 62 | 6 | [`reports/README.md`](../reports/README.md) |
 | [`requirements`](../requirements) | Dependency manifests | 4 | 0 | - |
-| [`scripts`](../scripts) | Automation scripts | 162 | 5 | [`scripts/README.md`](../scripts/README.md) |
+| [`scripts`](../scripts) | Automation scripts | 163 | 5 | [`scripts/README.md`](../scripts/README.md) |
 | [`skills`](../skills) | Project directory | 8 | 1 | [`skills/README.md`](../skills/README.md) |
 | [`sms_forge`](../sms_forge) | Forge module root | 35 | 4 | [`sms_forge/README.md`](../sms_forge/README.md) |
 | [`terminal_forge`](../terminal_forge) | Forge module root | 544 | 18 | [`terminal_forge/README.md`](../terminal_forge/README.md) |
@@ -703,7 +703,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`scripts`](../scripts) | Automation scripts | 162 | 5 | [`scripts/README.md`](../scripts/README.md) |
+| [`scripts`](../scripts) | Automation scripts | 163 | 5 | [`scripts/README.md`](../scripts/README.md) |
 | [`scripts/docs`](../scripts/docs) | Automation scripts | 1 | 1 | - |
 | [`scripts/machine_clone`](../scripts/machine_clone) | Automation scripts | 14 | 0 | [`scripts/machine_clone/README.md`](../scripts/machine_clone/README.md) |
 | [`scripts/migration`](../scripts/migration) | Automation scripts | 4 | 0 | - |

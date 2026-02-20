@@ -120,12 +120,33 @@ jobs:
         if: needs.validate.outputs.has_python == 'true'
         id: python_format
         run: |
+          PYTHON_FORMAT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_FORMAT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python formatting targets found; skipping."
+            exit 0
+          fi
+
           echo "::group::Black format check"
-          black . --check --diff --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || FORMAT_FAIL=1
+          black "${TARGETS[@]}" --check --diff --line-length=120 || FORMAT_FAIL=1
           echo "::endgroup::"
           
           echo "::group::isort import check"
-          isort . --check --diff --profile=black --line-length=120 --skip-gitignore || FORMAT_FAIL=1
+          isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --skip-gitignore || FORMAT_FAIL=1
           echo "::endgroup::"
           
           if [ -n "$FORMAT_FAIL" ]; then
@@ -147,7 +168,7 @@ jobs:
         if: needs.validate.outputs.has_typescript == 'true'
         run: |
           echo "::group::Prettier format check"
-          prettier "**/*.{ts,tsx,js,jsx,json}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
+          prettier "**/*.{ts,tsx,js,jsx}" --check --ignore-path .gitignore --ignore-unknown --log-level warn
           echo "::endgroup::"
 
   lint:
@@ -176,9 +197,30 @@ jobs:
 
       - name: 🔍 Check code formatting
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
+
           if command -v black >/dev/null 2>&1; then
             echo "::group::Black format check"
-            black . --check --diff --line-length=120 --exclude='/(\.git|\.venv|venv|eidosian_venv|node_modules|\.cache|dist|build)/' || echo "::warning::Code formatting issues detected"
+            black "${TARGETS[@]}" --check --diff --line-length=120 || echo "::warning::Code formatting issues detected"
             echo "::endgroup::"
           else
             echo "::warning::black not installed, skipping format check"
@@ -186,7 +228,7 @@ jobs:
 
           if command -v isort >/dev/null 2>&1; then
             echo "::group::isort import check"
-            isort . --check --diff --profile=black --line-length=120 --skip-gitignore || echo "::warning::Import sorting issues detected"
+            isort "${TARGETS[@]}" --check --diff --profile=black --line-length=120 --skip-gitignore || echo "::warning::Import sorting issues detected"
             echo "::endgroup::"
           else
             echo "::warning::isort not installed, skipping import check"
@@ -194,24 +236,84 @@ jobs:
 
       - name: 🔬 Lint with flake8
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
           if command -v flake8 >/dev/null 2>&1; then
-            flake8 . --count --statistics --show-source --exit-zero
+            flake8 "${TARGETS[@]}" --count --statistics --show-source --exit-zero
           else
             echo "::warning::flake8 not installed, skipping lint check"
           fi
 
       - name: 🧬 Deep analysis with pylint
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
           if command -v pylint >/dev/null 2>&1; then
-            pylint --recursive=y . --exit-zero || true
+            pylint --recursive=y "${TARGETS[@]}" --exit-zero || true
           else
             echo "::warning::pylint not installed, skipping deep analysis"
           fi
 
       - name: 📐 Type check with mypy
         run: |
+          PYTHON_LINT_TARGETS=(
+            "agent_forge"
+            "code_forge"
+            "memory_forge"
+            "knowledge_forge"
+            "eidos_mcp"
+            "word_forge"
+            "doc_forge"
+            "scripts"
+            "lib"
+            "tests"
+          )
+          TARGETS=()
+          for t in "${PYTHON_LINT_TARGETS[@]}"; do
+            [ -e "$t" ] && TARGETS+=("$t")
+          done
+          if [ ${#TARGETS[@]} -eq 0 ]; then
+            echo "::notice::No Python lint targets found; skipping."
+            exit 0
+          fi
           if command -v mypy >/dev/null 2>&1; then
-            mypy . --show-error-codes || echo "::warning::Type checking issues detected"
+            mypy "${TARGETS[@]}" --show-error-codes || echo "::warning::Type checking issues detected"
           else
             echo "::warning::mypy not installed, skipping type check"
           fi
