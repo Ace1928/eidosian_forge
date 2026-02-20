@@ -24,7 +24,7 @@ FORGE_ROOT = Path(
 def _memory_stats(memory_dir: Path) -> tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
     try:
         from memory_forge.core.introspection import MemoryIntrospector
-    except ImportError:
+    except Exception:
         return None, []
 
     introspector = MemoryIntrospector(memory_dir)

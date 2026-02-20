@@ -354,12 +354,19 @@ jobs:
             pytest-asyncio \
             pytest-benchmark \
             numpy \
+            pydantic \
             httpx \
+            requests \
+            mcp \
             pandas \
             pyarrow \
             psutil \
             pyyaml \
-            huggingface_hub
+            huggingface_hub \
+            networkx \
+            websockets \
+            pillow \
+            pygame
 
       - name: 🔍 Run tests
         run: |
