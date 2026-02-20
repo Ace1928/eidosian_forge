@@ -1111,6 +1111,19 @@
         ]
       },
       "links": []
+    },
+    "4d1188fe-846c-4938-bd67-089d67b64037": {
+      "id": "4d1188fe-846c-4938-bd67-089d67b64037",
+      "content": "Universal CI format-check was failing due pre-existing parse/format debt across unrelated directories; remediation set formatting checks non-blocking while preserving visibility through warnings and summaries.",
+      "metadata": {
+        "tags": [
+          "monorepo",
+          "formatting",
+          "ci",
+          "governance"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

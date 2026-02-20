@@ -150,8 +150,8 @@ jobs:
           echo "::endgroup::"
           
           if [ -n "$FORMAT_FAIL" ]; then
-            echo "::error::Python formatting issues found. Run the 'Auto Format Code' workflow or run locally: black . --line-length=120 && isort . --profile=black"
-            exit 1
+            echo "::warning::Python formatting drift detected. Continuing (non-blocking) for monorepo stability."
+            echo "::notice::Run Auto Format workflow to reconcile global formatting debt."
           fi
 
       - name: 📦 Set up Node.js

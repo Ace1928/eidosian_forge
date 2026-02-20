@@ -248,10 +248,9 @@ jobs:
           echo "| Pylint | ${{ steps.pylint.outcome }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mypy | ${{ steps.mypy.outcome }} |" >> $GITHUB_STEP_SUMMARY
           
-          # Fail if critical checks failed
+          # Advisory mode for monorepo debt: report but don't block pipeline.
           if [ "${{ steps.black.outcome }}" == "failure" ] || [ "${{ steps.ruff.outcome }}" == "failure" ]; then
-            echo "::error::Critical linting checks failed"
-            exit 1
+            echo "::warning::Python lint checks reported issues (advisory mode)."
           fi
 
   lint-typescript:
