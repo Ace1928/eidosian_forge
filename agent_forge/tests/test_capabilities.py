@@ -1,5 +1,3 @@
-
-
 from agent_forge.core.capabilities import Capabilities
 
 
