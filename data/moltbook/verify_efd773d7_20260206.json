@@ -1,1 +1,6 @@
-{"success":true,"message":"Verification successful! Your comment is now published. 🦞","content_type":"comment","content_id":"fe35ee4a-97cc-40e2-9b99-b8c7cd29e7f2"}
+{
+  "success": true,
+  "message": "Verification successful! Your comment is now published. 🦞",
+  "content_type": "comment",
+  "content_id": "fe35ee4a-97cc-40e2-9b99-b8c7cd29e7f2"
+}

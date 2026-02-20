@@ -26,12 +26,7 @@
     "metadata": {},
     "importance": 0.5,
     "ttl_seconds": 86400,
-    "tags": [
-      "introspection",
-      "identity",
-      "milestone-complete",
-      "velvet-beef"
-    ],
+    "tags": ["introspection", "identity", "milestone-complete", "velvet-beef"],
     "linked_memories": []
   },
   {
@@ -46,12 +41,7 @@
     "metadata": {},
     "importance": 0.87,
     "ttl_seconds": 86400,
-    "tags": [
-      "graphrag",
-      "termux",
-      "benchmark",
-      "query-methods"
-    ],
+    "tags": ["graphrag", "termux", "benchmark", "query-methods"],
     "linked_memories": []
   },
   {
@@ -66,13 +56,7 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": 86400,
-    "tags": [
-      "mcp",
-      "codex",
-      "gemini",
-      "session",
-      "termux"
-    ],
+    "tags": ["mcp", "codex", "gemini", "session", "termux"],
     "linked_memories": []
   },
   {
@@ -87,13 +71,7 @@
     "metadata": {},
     "importance": 0.92,
     "ttl_seconds": 86400,
-    "tags": [
-      "ports",
-      "scribe",
-      "dashboard",
-      "doc_forge",
-      "termux"
-    ],
+    "tags": ["ports", "scribe", "dashboard", "doc_forge", "termux"],
     "linked_memories": []
   },
   {
@@ -108,12 +86,7 @@
     "metadata": {},
     "importance": 0.84,
     "ttl_seconds": 86400,
-    "tags": [
-      "stability",
-      "service",
-      "termux",
-      "doc_forge"
-    ],
+    "tags": ["stability", "service", "termux", "doc_forge"],
     "linked_memories": []
   },
   {
@@ -128,12 +101,7 @@
     "metadata": {},
     "importance": 0.86,
     "ttl_seconds": 86400,
-    "tags": [
-      "quality",
-      "evaluation",
-      "judge",
-      "graphrag"
-    ],
+    "tags": ["quality", "evaluation", "judge", "graphrag"],
     "linked_memories": []
   },
   {
@@ -148,13 +116,7 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": 86400,
-    "tags": [
-      "quality-gates",
-      "graphrag",
-      "benchmarking",
-      "models",
-      "termux"
-    ],
+    "tags": ["quality-gates", "graphrag", "benchmarking", "models", "termux"],
     "linked_memories": []
   },
   {
@@ -214,14 +176,7 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": 86400,
-    "tags": [
-      "tests",
-      "validation",
-      "push",
-      "rebase",
-      "git",
-      "agent_forge"
-    ],
+    "tags": ["tests", "validation", "push", "rebase", "git", "agent_forge"],
     "linked_memories": []
   },
   {
@@ -236,13 +191,7 @@
     "metadata": {},
     "importance": 0.91,
     "ttl_seconds": 86400,
-    "tags": [
-      "security",
-      "validation",
-      "workflows",
-      "eidosian_forge",
-      "ci"
-    ],
+    "tags": ["security", "validation", "workflows", "eidosian_forge", "ci"],
     "linked_memories": []
   }
 ]

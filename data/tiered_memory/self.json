@@ -231,13 +231,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "consciousness",
-      "ppx",
-      "phenomenology",
-      "metrics",
-      "milestone_h"
-    ],
+    "tags": ["consciousness", "ppx", "phenomenology", "metrics", "milestone_h"],
     "linked_memories": []
   },
   {
@@ -847,13 +841,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "side-effect-free",
-      "watchdog",
-      "lesson",
-      "status",
-      "phase18"
-    ],
+    "tags": ["side-effect-free", "watchdog", "lesson", "status", "phase18"],
     "linked_memories": []
   },
   {
@@ -872,14 +860,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "mcp",
-      "audit-matrix",
-      "lesson",
-      "linux-parity",
-      "phase19",
-      "ci"
-    ],
+    "tags": ["mcp", "audit-matrix", "lesson", "linux-parity", "phase19", "ci"],
     "linked_memories": []
   },
   {
@@ -898,13 +879,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "linux-audit",
-      "lesson",
-      "observability",
-      "ci-gate",
-      "phase20"
-    ],
+    "tags": ["linux-audit", "lesson", "observability", "ci-gate", "phase20"],
     "linked_memories": []
   },
   {
@@ -923,13 +898,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "mcp",
-      "kb",
-      "lesson",
-      "memory-hygiene",
-      "phase20"
-    ],
+    "tags": ["mcp", "kb", "lesson", "memory-hygiene", "phase20"],
     "linked_memories": []
   },
   {
@@ -973,13 +942,7 @@
     },
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "bench",
-      "replay-manifest",
-      "lesson",
-      "provenance",
-      "phase22"
-    ],
+    "tags": ["bench", "replay-manifest", "lesson", "provenance", "phase22"],
     "linked_memories": []
   },
   {
@@ -1123,12 +1086,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "strategy-shift",
-      "introspection",
-      "identity",
-      "velvet-beef"
-    ],
+    "tags": ["strategy-shift", "introspection", "identity", "velvet-beef"],
     "linked_memories": []
   },
   {
@@ -1246,12 +1204,7 @@
     "metadata": {},
     "importance": 1.5,
     "ttl_seconds": null,
-    "tags": [
-      "reliability",
-      "ports",
-      "validation",
-      "doc_forge"
-    ],
+    "tags": ["reliability", "ports", "validation", "doc_forge"],
     "linked_memories": []
   },
   {

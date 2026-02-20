@@ -56,12 +56,7 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": null,
-    "tags": [
-      "graphrag",
-      "assessment",
-      "benchmark",
-      "quality"
-    ],
+    "tags": ["graphrag", "assessment", "benchmark", "quality"],
     "linked_memories": []
   },
   {
@@ -76,13 +71,7 @@
     "metadata": {},
     "importance": 0.86,
     "ttl_seconds": null,
-    "tags": [
-      "models",
-      "multimodal",
-      "judges",
-      "benchmark",
-      "tool-calling"
-    ],
+    "tags": ["models", "multimodal", "judges", "benchmark", "tool-calling"],
     "linked_memories": []
   },
   {
@@ -118,12 +107,7 @@
     "metadata": {},
     "importance": 0.88,
     "ttl_seconds": null,
-    "tags": [
-      "code_forge",
-      "drift",
-      "benchmark",
-      "termux"
-    ],
+    "tags": ["code_forge", "drift", "benchmark", "termux"],
     "linked_memories": []
   },
   {
