@@ -768,6 +768,20 @@
         ]
       },
       "links": []
+    },
+    "4978c492-3065-4119-8b1c-61a2671b8494": {
+      "id": "4978c492-3065-4119-8b1c-61a2671b8494",
+      "content": "Security remediation applied: requirements/eidos_venv_reqs.txt now pins pypdf==6.7.1 per Dependabot autopatch for open moderate alerts.",
+      "metadata": {
+        "tags": [
+          "security",
+          "remediation",
+          "pypdf",
+          "requirements",
+          "dependabot"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
