@@ -1071,6 +1071,33 @@
         ]
       },
       "links": []
+    },
+    "dba9002e-897a-4980-b19d-74bceaa6541f": {
+      "id": "dba9002e-897a-4980-b19d-74bceaa6541f",
+      "content": "CI/Lint/Format workflows now scope Python checks to active forge directories and TypeScript Prettier checks to ts/tsx/js/jsx files, reducing monorepo timeout and LFS-json parse failures.",
+      "metadata": {
+        "tags": [
+          "reliability",
+          "format",
+          "workflows",
+          "lint",
+          "ci"
+        ]
+      },
+      "links": []
+    },
+    "6e4fac6f-950a-41de-b9df-e7b14f99d6b6": {
+      "id": "6e4fac6f-950a-41de-b9df-e7b14f99d6b6",
+      "content": "Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners.",
+      "metadata": {
+        "tags": [
+          "workflow",
+          "pytest",
+          "ci",
+          "atlas"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

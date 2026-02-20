@@ -56,7 +56,12 @@
     "metadata": {},
     "importance": 0.9,
     "ttl_seconds": null,
-    "tags": ["graphrag", "assessment", "benchmark", "quality"],
+    "tags": [
+      "graphrag",
+      "assessment",
+      "benchmark",
+      "quality"
+    ],
     "linked_memories": []
   },
   {
@@ -71,7 +76,13 @@
     "metadata": {},
     "importance": 0.86,
     "ttl_seconds": null,
-    "tags": ["models", "multimodal", "judges", "benchmark", "tool-calling"],
+    "tags": [
+      "models",
+      "multimodal",
+      "judges",
+      "benchmark",
+      "tool-calling"
+    ],
     "linked_memories": []
   },
   {
@@ -107,7 +118,12 @@
     "metadata": {},
     "importance": 0.88,
     "ttl_seconds": null,
-    "tags": ["code_forge", "drift", "benchmark", "termux"],
+    "tags": [
+      "code_forge",
+      "drift",
+      "benchmark",
+      "termux"
+    ],
     "linked_memories": []
   },
   {
@@ -242,6 +258,27 @@
       "gitleaks",
       "code_forge",
       "eidos_mcp"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "9b522651-89e3-475a-8659-63ed877ad066",
+    "content": "Pushed commit 80c1b00fa7 on main with workflow hardening and Chroma backend stabilization for Termux. Awaiting GitHub workflow completion for regression confirmation.",
+    "created_at": "2026-02-20T13:30:23.956609",
+    "last_accessed": "2026-02-20T13:30:23.956624",
+    "access_count": 0,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.95,
+    "ttl_seconds": null,
+    "tags": [
+      "commit",
+      "chroma",
+      "git",
+      "termux",
+      "ci"
     ],
     "linked_memories": []
   }

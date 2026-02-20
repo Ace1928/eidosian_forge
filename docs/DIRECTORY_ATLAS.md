@@ -4,9 +4,9 @@
 
 - Generated: `deterministic (timestamp omitted)`
 - Scope: `tracked`
-- Tracked files: `732235`
-- Full directory count (scope): `3045`
-- Atlas directory count (depth <= 2): `394`
+- Tracked files: `732241`
+- Full directory count (scope): `3046`
+- Atlas directory count (depth <= 2): `395`
 - Full recursive index: [`docs/DIRECTORY_INDEX_FULL.txt`](./DIRECTORY_INDEX_FULL.txt)
 
 ## Jump Table
@@ -118,7 +118,7 @@
 | [`prompt_forge`](../prompt_forge) | Forge module root | 23 | 3 | [`prompt_forge/README.md`](../prompt_forge/README.md) |
 | [`refactor_forge`](../refactor_forge) | Forge module root | 43 | 6 | [`refactor_forge/README.md`](../refactor_forge/README.md) |
 | [`repo_forge`](../repo_forge) | Forge module root | 92 | 8 | [`repo_forge/README.md`](../repo_forge/README.md) |
-| [`reports`](../reports) | Benchmark/audit reports | 62 | 6 | [`reports/README.md`](../reports/README.md) |
+| [`reports`](../reports) | Benchmark/audit reports | 68 | 7 | [`reports/README.md`](../reports/README.md) |
 | [`requirements`](../requirements) | Dependency manifests | 4 | 0 | - |
 | [`scripts`](../scripts) | Automation scripts | 163 | 5 | [`scripts/README.md`](../scripts/README.md) |
 | [`skills`](../skills) | Project directory | 8 | 1 | [`skills/README.md`](../skills/README.md) |
@@ -685,13 +685,14 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`reports`](../reports) | Benchmark/audit reports | 62 | 6 | [`reports/README.md`](../reports/README.md) |
+| [`reports`](../reports) | Benchmark/audit reports | 68 | 7 | [`reports/README.md`](../reports/README.md) |
 | [`reports/consciousness_benchmarks`](../reports/consciousness_benchmarks) | Benchmark/audit reports | 2 | 0 | - |
 | [`reports/consciousness_integrated_benchmarks`](../reports/consciousness_integrated_benchmarks) | Benchmark/audit reports | 1 | 0 | - |
 | [`reports/consciousness_trends`](../reports/consciousness_trends) | Benchmark/audit reports | 2 | 0 | - |
 | [`reports/consciousness_trials`](../reports/consciousness_trials) | Benchmark/audit reports | 4 | 0 | - |
 | [`reports/forges`](../reports/forges) | Benchmark/audit reports | 34 | 0 | - |
 | [`reports/graphrag`](../reports/graphrag) | Benchmark/audit reports | 10 | 0 | - |
+| [`reports/security`](../reports/security) | Benchmark/audit reports | 6 | 0 | - |
 
 ### `requirements`
 

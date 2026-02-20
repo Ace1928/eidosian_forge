@@ -811,5 +811,34 @@
       0.33725490196078434,
       0.5137254901960784
     ]
+  },
+  "f086e99a-a174-4a02-bf54-bfe15527977b": {
+    "id": "f086e99a-a174-4a02-bf54-bfe15527977b",
+    "content": "Committed and pushed main@80c1b00fa7: Termux Chroma enabled and validated, memory_forge chroma tests active on Termux, CI/lint/format workflows scoped to active forge directories, Prettier restricted to TS/JS to avoid LFS JSON parse failures.",
+    "created_at": "2026-02-20T13:30:23.740739",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "commit_80c1b00_termux_chroma_ci_scope"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.11764705882352941,
+      0.6352941176470588,
+      0.6431372549019608,
+      0.24705882352941178,
+      0.6235294117647059,
+      0.011764705882352941,
+      0.7137254901960784,
+      0.19215686274509805,
+      0.10196078431372549,
+      0.00392156862745098,
+      0.36470588235294116,
+      0.03529411764705882,
+      0.7725490196078432,
+      0.8313725490196079,
+      0.25882352941176473,
+      0.12156862745098039
+    ]
   }
 }

@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
       - name: Run atlas unit tests
         run: python -m pytest -q scripts/tests/test_generate_directory_atlas.py
 

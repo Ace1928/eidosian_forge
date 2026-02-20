@@ -2,7 +2,7 @@
 
 Generated: deterministic (timestamp omitted)
 Scope: tracked
-Directory count: 3045
+Directory count: 3046
 
 .eidos_chrome_profile
 .eidos_chrome_profile/ActorSafetyLists
@@ -2379,6 +2379,7 @@ reports/consciousness_trends
 reports/consciousness_trials
 reports/forges
 reports/graphrag
+reports/security
 requirements
 scripts
 scripts/docs
