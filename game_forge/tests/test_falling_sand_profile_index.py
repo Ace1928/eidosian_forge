@@ -17,10 +17,11 @@ def test_falling_sand_profile_index_output(tmp_path: Path) -> None:
     _write_file(tests_root / "test_pkg.py", "def test_demo():\n    assert True\n")
 
     output = tmp_path / "profile.pstats"
+    script_path = Path(__file__).resolve().parents[1] / "src" / "falling_sand" / "scripts" / "profile_index.py"
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/src/falling_sand/scripts/profile_index.py",
+            str(script_path),
             "--source-root",
             str(source_root),
             "--tests-root",

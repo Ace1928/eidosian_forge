@@ -1,0 +1,76 @@
+targets:37
+=== agent_forge ===
+PASS agent_forge
+=== article_forge ===
+PASS article_forge
+=== audit_forge ===
+PASS audit_forge
+=== benchmarks ===
+PASS benchmarks
+=== code_forge ===
+PASS code_forge
+=== computer_control_forge ===
+PASS computer_control_forge
+=== crawl_forge ===
+PASS crawl_forge
+=== diagnostics_forge ===
+PASS diagnostics_forge
+=== doc_forge ===
+PASS doc_forge
+=== eidos_mcp ===
+PASS eidos_mcp
+=== erais_forge ===
+PASS erais_forge
+=== figlet_forge ===
+FAIL figlet_forge
+=== file_forge ===
+PASS file_forge
+=== game_forge ===
+FAIL game_forge
+=== gis_forge ===
+PASS gis_forge
+=== glyph_forge ===
+FAIL glyph_forge
+=== knowledge_forge ===
+PASS knowledge_forge
+=== lib ===
+PASS lib
+=== llm_forge ===
+PASS llm_forge
+=== lyrics_forge ===
+PASS lyrics_forge
+=== memory_forge ===
+PASS memory_forge
+=== metadata_forge ===
+PASS metadata_forge
+=== moltbook_forge ===
+FAIL moltbook_forge
+=== narrative_forge ===
+PASS narrative_forge
+=== ollama_forge ===
+PASS ollama_forge
+=== prompt_forge ===
+PASS prompt_forge
+=== refactor_forge ===
+PASS refactor_forge
+=== repo_forge ===
+PASS repo_forge
+=== scripts ===
+PASS scripts
+=== sms_forge ===
+PASS sms_forge
+=== terminal_forge ===
+PASS terminal_forge
+=== test_forge ===
+PASS test_forge
+=== type_forge ===
+PASS type_forge
+=== version_forge ===
+PASS version_forge
+=== viz_forge ===
+PASS viz_forge
+=== web_interface_forge ===
+PASS web_interface_forge
+=== word_forge ===
+PASS word_forge
+FAILURES:figlet_forge game_forge glyph_forge moltbook_forge

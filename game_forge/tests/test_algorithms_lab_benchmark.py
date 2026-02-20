@@ -8,10 +8,11 @@ from pathlib import Path
 
 def test_algorithms_lab_benchmark_output(tmp_path: Path) -> None:
     output = tmp_path / "algorithms_lab.json"
+    script = Path(__file__).resolve().parents[1] / "tools" / "algorithms_lab" / "benchmark.py"
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/tools/algorithms_lab/benchmark.py",
+            str(script),
             "--algorithms",
             "grid",
             "--particles",

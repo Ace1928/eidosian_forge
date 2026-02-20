@@ -1,6 +1,7 @@
 import importlib.util
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -640,11 +641,11 @@ def test_add_components_bulk_defaults_for_z():
 
 
 def test_kdtree_stub_import(monkeypatch):
-    module_path = "game_forge/src/gene_particles/gp_types.py"
+    module_path = Path(__file__).resolve().parents[1] / "src" / "gene_particles" / "gp_types.py"
     dummy = types.ModuleType("scipy")
     monkeypatch.setitem(sys.modules, "scipy", dummy)
     monkeypatch.setitem(sys.modules, "scipy.spatial", None)
-    spec = importlib.util.spec_from_file_location("gp_types_stub", module_path)
+    spec = importlib.util.spec_from_file_location("gp_types_stub", str(module_path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)

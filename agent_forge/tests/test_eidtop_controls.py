@@ -3,7 +3,8 @@ from pathlib import Path
 
 
 def _load():
-    loader = importlib.machinery.SourceFileLoader("eidtop", str(Path("bin/eidtop")))
+    eidtop_path = Path(__file__).resolve().parents[1] / "bin" / "eidtop"
+    loader = importlib.machinery.SourceFileLoader("eidtop", str(eidtop_path))
     spec = importlib.util.spec_from_loader("eidtop", loader)
     mod = importlib.util.module_from_spec(spec)
     loader.exec_module(mod)

@@ -1,0 +1,522 @@
+[ci-local] targets=37
+[ci-local] START agent_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 56%]
+........................................................                 [100%]
+128 passed, 1 warning in 339.05s (0:05:39)
+[ci-local] PASS agent_forge
+[ci-local] START article_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.                                                                        [100%]
+[ci-local] PASS article_forge
+[ci-local] START audit_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.....                                                                    [100%]
+[ci-local] PASS audit_forge
+[ci-local] START benchmarks
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 17 items
+
+tests/test_graphrag_model_sweep.py ..                                    [ 11%]
+tests/test_graphrag_qualitative_assessor.py ......                       [ 47%]
+tests/test_model_domain_suite.py ......                                  [ 82%]
+tests/test_run_graphrag_bench.py ...                                     [100%]
+
+============================== 17 passed in 2.50s ==============================
+[ci-local] PASS benchmarks
+[ci-local] START code_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...........................................                              [100%]
+[ci-local] PASS code_forge
+[ci-local] START computer_control_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge/computer_control_forge
+configfile: pyproject.toml
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 4 items
+
+tests/test_safety.py ....                                                [100%]
+
+============================== 4 passed in 0.23s ===============================
+[ci-local] PASS computer_control_forge
+[ci-local] START crawl_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 6 items
+
+tests/test_crawl.py ..                                                   [ 33%]
+tests/test_tika_extractor_fallback.py ....                               [100%]
+
+============================== 6 passed in 0.23s ===============================
+[ci-local] PASS crawl_forge
+[ci-local] START diagnostics_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.......                                                                  [100%]
+[ci-local] PASS diagnostics_forge
+[ci-local] START doc_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+..                                                                       [100%]
+[ci-local] PASS doc_forge
+[ci-local] START eidos_mcp
+....................................s................                    [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_mcp_tools_stdio.py:318: Set EIDOS_RUN_FULL_INTEGRATION=1 to run full MCP integration flow
+[ci-local] PASS eidos_mcp
+[ci-local] START erais_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 6 items
+
+tests/test_erais.py ....                                                 [ 66%]
+tests/test_gym.py ..                                                     [100%]
+
+============================== 6 passed in 1.18s ===============================
+[ci-local] PASS erais_forge
+[ci-local] START figlet_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+......................................................s................. [ 12%]
+........................................................................ [ 25%]
+........................................................................ [ 38%]
+........................................................................ [ 51%]
+........................................................................ [ 63%]
+........................................................................ [ 76%]
+........................................................................ [ 89%]
+...........................................................              [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/compat/test_cross_platform.py:29: Windows-only test
+[ci-local] PASS figlet_forge
+[ci-local] START file_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.                                                                        [100%]
+[ci-local] PASS file_forge
+[ci-local] START game_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 218 items / 2 skipped
+
+tests/test_agentic_chess_benchmark.py .                                  [  0%]
+tests/test_agentic_chess_cli.py ..                                       [  1%]
+tests/test_agentic_chess_engine.py ...                                   [  2%]
+tests/test_algorithms_lab_benchmark.py .                                 [  3%]
+tests/test_algorithms_lab_core.py ...                                    [  4%]
+tests/test_algorithms_lab_fluids.py ..                                   [  5%]
+tests/test_algorithms_lab_fmm_multilevel.py .                            [  5%]
+tests/test_algorithms_lab_force_kernels.py ssss                          [  7%]
+tests/test_algorithms_lab_forces.py .ss                                  [  9%]
+tests/test_algorithms_lab_gpu.py ss                                      [ 10%]
+tests/test_algorithms_lab_graph.py ..                                    [ 11%]
+tests/test_algorithms_lab_grid.py ..                                     [ 11%]
+tests/test_algorithms_lab_kdtree.py .                                    [ 12%]
+tests/test_algorithms_lab_morton.py ..                                   [ 13%]
+tests/test_algorithms_lab_nbody.py ..                                    [ 14%]
+tests/test_algorithms_lab_profiler.py .                                  [ 14%]
+tests/test_algorithms_lab_registry.py ...                                [ 16%]
+tests/test_algorithms_lab_spatial_utils.py ......ss                      [ 19%]
+tests/test_algorithms_lab_xpbd.py .                                      [ 20%]
+tests/test_benchmark_suite.py ...                                        [ 21%]
+tests/test_ecosmos_config.py ...                                         [ 22%]
+tests/test_ecosmos_data_structures.py ...........                        [ 27%]
+tests/test_ecosmos_state_manager.py ..                                   [ 28%]
+tests/test_eidosian_universe.py ..                                       [ 29%]
+tests/test_falling_sand_benchmark_index.py .                             [ 30%]
+tests/test_falling_sand_profile_index.py .                               [ 30%]
+tests/test_gene_particles_automata.py ...s.............................. [ 46%]
+..                                                                       [ 47%]
+tests/test_gene_particles_config.py ...............                      [ 54%]
+tests/test_gene_particles_genes.py ..................................... [ 71%]
+....                                                                     [ 72%]
+tests/test_gene_particles_interpreter.py ....                            [ 74%]
+tests/test_gene_particles_main.py ....                                   [ 76%]
+tests/test_gene_particles_manager.py .....                               [ 78%]
+tests/test_gene_particles_performance_tools.py ...                       [ 80%]
+tests/test_gene_particles_renderer.py ...                                [ 81%]
+tests/test_gene_particles_rules.py ...                                   [ 83%]
+tests/test_gene_particles_types.py ...................                   [ 91%]
+tests/test_gene_particles_ui.py ..                                       [ 92%]
+tests/test_gene_particles_utility.py ........                            [ 96%]
+tests/test_launcher.py .                                                 [ 96%]
+tests/test_module_entrypoints.py .....                                   [ 99%]
+tests/test_pyparticles_benchmarks_cli.py ..                              [100%]
+
+================= 207 passed, 13 skipped, 1 warning in 52.79s ==================
+[ci-local] PASS game_forge
+[ci-local] START gis_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+......s..                                                                [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_gis.py:73: FileLockStore not implemented yet
+[ci-local] PASS gis_forge
+[ci-local] START glyph_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+........................................................................ [ 22%]
+....................................................s................... [ 44%]
+......s................................................................. [ 66%]
+........................................................................ [ 89%]
+...................................                                      [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/benchmarks/test_benchmark_functions.py:17: pytest-benchmark not installed
+SKIPPED [1] tests/test_tui.py:10: textual not installed
+SKIPPED [1] tests/test_tui_targets.py:6: textual not installed
+SKIPPED [1] tests/test_cli_targets.py:9: textual not installed
+SKIPPED [1] tests/test_core_streaming.py:385: Requires OpenCV video writer
+[ci-local] PASS glyph_forge
+[ci-local] START knowledge_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.s.......                                                                [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_kb.py:19: Integration test requiring graphrag CLI setup
+[ci-local] PASS knowledge_forge
+[ci-local] START lib
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 12 items
+
+tests/test_eidosian_core.py ........                                     [ 66%]
+tests/test_ports.py ....                                                 [100%]
+
+============================== 12 passed in 2.00s ==============================
+[ci-local] PASS lib
+[ci-local] START llm_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+......ss..                                                               [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_ollama_real.py:11: Ollama server unavailable: [Errno 111] Connection refused
+SKIPPED [1] tests/test_ollama_real.py:26: Ollama server unavailable: [Errno 111] Connection refused
+[ci-local] PASS llm_forge
+[ci-local] START lyrics_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 4 items
+
+tests/test_lyrics.py ....                                                [100%]
+
+============================== 4 passed in 0.65s ===============================
+[ci-local] PASS lyrics_forge
+[ci-local] START memory_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+................                                                         [100%]
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.12-final-0 _______________
+
+Name                                         Stmts   Miss  Cover   Missing
+--------------------------------------------------------------------------
+src/memory_forge/__init__.py                    10      0   100%
+src/memory_forge/backends/chroma_store.py       55      5    91%   20-27, 47
+src/memory_forge/backends/json_store.py         66      3    95%   60, 86-87
+src/memory_forge/cli.py                        137    137     0%   19-412
+src/memory_forge/compression/__init__.py         2      0   100%
+src/memory_forge/compression/compressor.py      15      0   100%
+src/memory_forge/context/__init__.py             3      0   100%
+src/memory_forge/context/guard.py               53      7    87%   40, 61-62, 67, 78-79, 89
+src/memory_forge/context/rescue.py              25      0   100%
+src/memory_forge/core/auto_context.py          202    140    31%   59, 82-84, 89-91, 96-98, 103-108, 144-147, 152, 161-162, 167, 172, 192-227, 231-262, 276-326, 330-344, 348-368, 372-379, 394-422, 440-443
+src/memory_forge/core/config.py                 18      3    83%   17-19
+src/memory_forge/core/interfaces.py             27      0   100%
+src/memory_forge/core/introspection.py         178    132    26%   65-66, 71-78, 83-138, 143-228, 233-264, 269-284, 289-329, 336-337
+src/memory_forge/core/main.py                   48     11    77%   14-16, 33-35, 42, 49, 55, 68, 75
+src/memory_forge/core/memory_broker.py          71      2    97%   58-59
+src/memory_forge/core/memory_daemon.py          47      8    83%   44, 47, 67-72
+src/memory_forge/core/memory_retrieval.py       29      2    93%   37-38
+src/memory_forge/core/tiered_memory.py         300    205    32%   74-75, 80-83, 88, 107, 143-149, 154-166, 171, 210-223, 237-258, 270-315, 320, 330-337, 348, 367-369, 388-398, 408-417, 422, 427-436, 441-450, 455-463, 468-488, 497-505, 509-518, 522-525, 529-536, 540-565, 569-572, 576-586, 591-592
+--------------------------------------------------------------------------
+TOTAL                                         1286    655    49%
+[ci-local] PASS memory_forge
+[ci-local] START metadata_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+....                                                                     [100%]
+[ci-local] PASS metadata_forge
+[ci-local] START moltbook_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 46 items
+
+tests/test_client.py .                                                   [  2%]
+tests/test_evidence_resolver.py ..                                       [  6%]
+tests/test_integration.py s                                              [  8%]
+tests/test_live_scan.py ..                                               [ 13%]
+tests/test_moltbook_bootstrap.py ..                                      [ 17%]
+tests/test_moltbook_cli.py ...                                           [ 23%]
+tests/test_moltbook_quarantine.py ..                                     [ 28%]
+tests/test_moltbook_sanitize.py .......                                  [ 43%]
+tests/test_moltbook_screen.py ...                                        [ 50%]
+tests/test_moltbook_skill_review.py ......                               [ 63%]
+tests/test_moltbook_skill_script.py .                                    [ 65%]
+tests/test_moltbook_validate.py ..                                       [ 69%]
+tests/test_nightly_policy.py ..                                          [ 73%]
+tests/test_pipeline.py .                                                 [ 76%]
+tests/test_receipts.py .                                                 [ 78%]
+tests/test_ui.py .....                                                   [ 89%]
+tests/test_ui_navigation.py ..                                           [ 93%]
+tests/test_ui_security.py ..                                             [ 97%]
+tests/test_viewmodel.py .                                                [100%]
+
+======================== 45 passed, 1 skipped in 30.38s ========================
+[ci-local] PASS moltbook_forge
+[ci-local] START narrative_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+s                                                                        [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_engine.py:11: Ollama server unavailable: [Errno 111] Connection refused
+[ci-local] PASS narrative_forge
+[ci-local] START ollama_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.................ss...............                                       [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_client.py:300: Ollama server not available
+SKIPPED [1] tests/test_client.py:290: Ollama server not available
+[ci-local] PASS ollama_forge
+[ci-local] START prompt_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...                                                                      [100%]
+[ci-local] PASS prompt_forge
+[ci-local] START refactor_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+..                                                                       [100%]
+[ci-local] PASS refactor_forge
+[ci-local] START repo_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...                                                                      [100%]
+[ci-local] PASS repo_forge
+[ci-local] START scripts
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 150 items
+
+tests/test_audit_workflow_action_pins.py ..                              [  1%]
+tests/test_build_dual_live_usb.py .......                                [  6%]
+tests/test_consciousness_benchmark_trend.py ..                           [  7%]
+tests/test_dependabot_autopatch_requirements.py ...                      [  9%]
+tests/test_dependabot_remediation_plan.py ..                             [ 10%]
+tests/test_download_local_models.py ....                                 [ 13%]
+tests/test_forge_builder.py .....................                        [ 27%]
+tests/test_generate_directory_atlas.py .....                             [ 30%]
+tests/test_glyph_stream_context.py ................                      [ 41%]
+tests/test_image_to_ascii.py .....                                       [ 44%]
+tests/test_linux_audit_matrix.py ......                                  [ 48%]
+tests/test_living_knowledge_pipeline.py ...                              [ 50%]
+tests/test_pdf_tools.py .......................                          [ 66%]
+tests/test_pdf_tools_menu.py .....                                       [ 69%]
+tests/test_py_lib.py ..........                                          [ 76%]
+tests/test_smart_publish.py ..................................           [ 98%]
+tests/test_sync_security_remediation_issues.py ..                        [100%]
+
+======================= 150 passed in 125.36s (0:02:05) ========================
+[ci-local] PASS scripts
+[ci-local] START sms_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 6 items
+
+tests/test_sms.py ...                                                    [ 50%]
+tests/test_sms_core.py ...                                               [100%]
+
+============================== 6 passed in 3.76s ===============================
+[ci-local] PASS sms_forge
+[ci-local] START terminal_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.....................................ss............................      [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/unit/test_colors_impl.py:194: TerminalCapability not exported - feature planned
+SKIPPED [1] tests/unit/test_colors_impl.py:199: TerminalCapability not exported - feature planned
+[ci-local] PASS terminal_forge
+[ci-local] START test_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+......                                                                   [100%]
+[ci-local] PASS test_forge
+[ci-local] START type_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...................                                                      [100%]
+[ci-local] PASS type_forge
+[ci-local] START version_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+.......                                                                  [100%]
+[ci-local] PASS version_forge
+[ci-local] START viz_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+...                                                                      [100%]
+[ci-local] PASS viz_forge
+[ci-local] START web_interface_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: asyncio-1.3.0, cov-7.0.0, anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 7 items
+
+tests/test_web_interface.py ..sss..                                      [100%]
+
+========================= 4 passed, 3 skipped in 0.57s =========================
+[ci-local] PASS web_interface_forge
+[ci-local] START word_forge
+/data/data/com.termux/files/home/eidosian_forge/eidosian_venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:247: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+..s.s............................................ssss................... [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 36%]
+........................................................................ [ 48%]
+........................................................................ [ 60%]
+............................................................s.....ss.... [ 72%]
+........................................................................ [ 84%]
+........................................................................ [ 96%]
+........sssssssss....                                                    [100%]
+579 passed, 18 skipped, 3 warnings in 58.37s
+[ci-local] PASS word_forge
+[ci-local] all_pass

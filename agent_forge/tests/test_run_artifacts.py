@@ -4,6 +4,8 @@ from pathlib import Path
 from actuators.shell_exec import run_step
 from core.artifacts import read_run_artifacts, write_run_artifacts
 
+EIDCTL_BIN = Path(__file__).resolve().parents[1] / "bin" / "eidctl"
+
 
 def test_write_and_read_artifacts(tmp_path: Path):
     base = tmp_path / "state"
@@ -27,10 +29,21 @@ def test_runner_writes_artifacts_and_cli(tmp_path: Path):
     assert (d / "stderr.txt").exists()
 
     # CLI interaction
-    cmd_ls = ["python", "bin/eidctl", "runs", "ls", "--dir", str(base)]
+    cmd_ls = ["python", str(EIDCTL_BIN), "runs", "ls", "--dir", str(base)]
     out = subprocess.check_output(cmd_ls, text=True)
     assert run_id in out
 
-    cmd_show = ["python", "bin/eidctl", "runs", "show", "--dir", str(base), "--run", run_id, "--head", "10"]
+    cmd_show = [
+        "python",
+        str(EIDCTL_BIN),
+        "runs",
+        "show",
+        "--dir",
+        str(base),
+        "--run",
+        run_id,
+        "--head",
+        "10",
+    ]
     out_show = subprocess.check_output(cmd_show, text=True)
     assert "hi" in out_show

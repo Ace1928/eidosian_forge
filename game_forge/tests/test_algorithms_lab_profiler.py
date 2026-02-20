@@ -7,10 +7,11 @@ from pathlib import Path
 
 def test_algorithms_lab_profiler_output(tmp_path: Path) -> None:
     output = tmp_path / "algorithms_lab.prof"
+    script = Path(__file__).resolve().parents[1] / "tools" / "algorithms_lab" / "profiler.py"
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/tools/algorithms_lab/profiler.py",
+            str(script),
             "--algorithm",
             "grid",
             "--particles",

@@ -1,0 +1,1135 @@
+targets:38
+=== agent_forge ===
+.......F................................................................ [ 56%]
+................FF....FF............F...............F...                 [100%]
+=================================== FAILURES ===================================
+_________________________ test_missing_config_fallback _________________________
+
+src = 'cfg/approvals.yaml'
+dst = '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_missing_config_fallback0/approvals.yaml'
+copy_function = <function copy2 at 0x7483bac860>
+
+    def move(src, dst, copy_function=copy2):
+        """Recursively move a file or directory to another location. This is
+        similar to the Unix "mv" command. Return the file or directory's
+        destination.
+    
+        If dst is an existing directory or a symlink to a directory, then src is
+        moved inside that directory. The destination path in that directory must
+        not already exist.
+    
+        If dst already exists but is not a directory, it may be overwritten
+        depending on os.rename() semantics.
+    
+        If the destination is on our current filesystem, then rename() is used.
+        Otherwise, src is copied to the destination and then removed. Symlinks are
+        recreated under the new name if os.rename() fails because of cross
+        filesystem renames.
+    
+        The optional `copy_function` argument is a callable that will be used
+        to copy the source or it will be delegated to `copytree`.
+        By default, copy2() is used, but any function that supports the same
+        signature (like copy()) can be used.
+    
+        A lot more could be done here...  A look at a mv.c shows a lot of
+        the issues this implementation glosses over.
+    
+        """
+        sys.audit("shutil.move", src, dst)
+        real_dst = dst
+        if os.path.isdir(dst):
+            if _samefile(src, dst) and not os.path.islink(src):
+                # We might be on a case insensitive filesystem,
+                # perform the rename anyway.
+                os.rename(src, dst)
+                return
+    
+            # Using _basename instead of os.path.basename is important, as we must
+            # ignore any trailing slash to avoid the basename returning ''
+            real_dst = os.path.join(dst, _basename(src))
+    
+            if os.path.exists(real_dst):
+                raise Error("Destination path '%s' already exists" % real_dst)
+        try:
+>           os.rename(src, real_dst)
+E           FileNotFoundError: [Errno 2] No such file or directory: 'cfg/approvals.yaml' -> '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_missing_config_fallback0/approvals.yaml'
+
+../../usr/lib/python3.12/shutil.py:847: FileNotFoundError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_missing_config_fallback0')
+
+    def test_missing_config_fallback(tmp_path):
+        cfg = Path("cfg/approvals.yaml")
+        backup = tmp_path / "approvals.yaml"
+        # Use shutil.move for cross-device compatibility
+>       shutil.move(str(cfg), str(backup))
+
+agent_forge/tests/test_approvals_config.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../usr/lib/python3.12/shutil.py:867: in move
+    copy_function(src, real_dst)
+../../usr/lib/python3.12/shutil.py:475: in copy2
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+src = 'cfg/approvals.yaml'
+dst = '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_missing_config_fallback0/approvals.yaml'
+
+    def copyfile(src, dst, *, follow_symlinks=True):
+        """Copy data from src to dst in the most efficient way possible.
+    
+        If follow_symlinks is not set and src is a symbolic link, a new
+        symlink will be created instead of copying the file it points to.
+    
+        """
+        sys.audit("shutil.copyfile", src, dst)
+    
+        if _samefile(src, dst):
+            raise SameFileError("{!r} and {!r} are the same file".format(src, dst))
+    
+        file_size = 0
+        for i, fn in enumerate([src, dst]):
+            try:
+                st = _stat(fn)
+            except OSError:
+                # File most likely does not exist
+                pass
+            else:
+                # XXX What about other special files? (sockets, devices...)
+                if stat.S_ISFIFO(st.st_mode):
+                    fn = fn.path if isinstance(fn, os.DirEntry) else fn
+                    raise SpecialFileError("`%s` is a named pipe" % fn)
+                if _WINDOWS and i == 0:
+                    file_size = st.st_size
+    
+        if not follow_symlinks and _islink(src):
+            os.symlink(os.readlink(src), dst)
+        else:
+>           with open(src, 'rb') as fsrc:
+E           FileNotFoundError: [Errno 2] No such file or directory: 'cfg/approvals.yaml'
+
+../../usr/lib/python3.12/shutil.py:260: FileNotFoundError
+_____________________________ test_load_and_print ______________________________
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_load_and_print0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7463bba1e0>
+
+    def test_load_and_print(tmp_path, monkeypatch):
+>       cfg_dir = make_tmp_cfg(tmp_path)
+
+agent_forge/tests/test_core_config.py:17: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+agent_forge/tests/test_core_config.py:12: in make_tmp_cfg
+    shutil.copytree(src, dst)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+src = PosixPath('cfg.sample')
+dst = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_load_and_print0/cfg')
+symlinks = False, ignore = None
+copy_function = <function copy2 at 0x7483bac860>
+ignore_dangling_symlinks = False, dirs_exist_ok = False
+
+    def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
+                 ignore_dangling_symlinks=False, dirs_exist_ok=False):
+        """Recursively copy a directory tree and return the destination directory.
+    
+        If exception(s) occur, an Error is raised with a list of reasons.
+    
+        If the optional symlinks flag is true, symbolic links in the
+        source tree result in symbolic links in the destination tree; if
+        it is false, the contents of the files pointed to by symbolic
+        links are copied. If the file pointed to by the symlink doesn't
+        exist, an exception will be added in the list of errors raised in
+        an Error exception at the end of the copy process.
+    
+        You can set the optional ignore_dangling_symlinks flag to true if you
+        want to silence this exception. Notice that this has no effect on
+        platforms that don't support os.symlink.
+    
+        The optional ignore argument is a callable. If given, it
+        is called with the `src` parameter, which is the directory
+        being visited by copytree(), and `names` which is the list of
+        `src` contents, as returned by os.listdir():
+    
+            callable(src, names) -> ignored_names
+    
+        Since copytree() is called recursively, the callable will be
+        called once for each directory that is copied. It returns a
+        list of names relative to the `src` directory that should
+        not be copied.
+    
+        The optional copy_function argument is a callable that will be used
+        to copy each file. It will be called with the source path and the
+        destination path as arguments. By default, copy2() is used, but any
+        function that supports the same signature (like copy()) can be used.
+    
+        If dirs_exist_ok is false (the default) and `dst` already exists, a
+        `FileExistsError` is raised. If `dirs_exist_ok` is true, the copying
+        operation will continue if it encounters existing directories, and files
+        within the `dst` tree will be overwritten by corresponding files from the
+        `src` tree.
+        """
+        sys.audit("shutil.copytree", src, dst)
+>       with os.scandir(src) as itr:
+E       FileNotFoundError: [Errno 2] No such file or directory: 'cfg.sample'
+
+../../usr/lib/python3.12/shutil.py:598: FileNotFoundError
+________________________ test_validation_error_on_type _________________________
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_validation_error_on_type0')
+
+    def test_validation_error_on_type(tmp_path):
+>       cfg_dir = make_tmp_cfg(tmp_path)
+
+agent_forge/tests/test_core_config.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+agent_forge/tests/test_core_config.py:12: in make_tmp_cfg
+    shutil.copytree(src, dst)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+src = PosixPath('cfg.sample')
+dst = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_validation_error_on_type0/cfg')
+symlinks = False, ignore = None
+copy_function = <function copy2 at 0x7483bac860>
+ignore_dangling_symlinks = False, dirs_exist_ok = False
+
+    def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
+                 ignore_dangling_symlinks=False, dirs_exist_ok=False):
+        """Recursively copy a directory tree and return the destination directory.
+    
+        If exception(s) occur, an Error is raised with a list of reasons.
+    
+        If the optional symlinks flag is true, symbolic links in the
+        source tree result in symbolic links in the destination tree; if
+        it is false, the contents of the files pointed to by symbolic
+        links are copied. If the file pointed to by the symlink doesn't
+        exist, an exception will be added in the list of errors raised in
+        an Error exception at the end of the copy process.
+    
+        You can set the optional ignore_dangling_symlinks flag to true if you
+        want to silence this exception. Notice that this has no effect on
+        platforms that don't support os.symlink.
+    
+        The optional ignore argument is a callable. If given, it
+        is called with the `src` parameter, which is the directory
+        being visited by copytree(), and `names` which is the list of
+        `src` contents, as returned by os.listdir():
+    
+            callable(src, names) -> ignored_names
+    
+        Since copytree() is called recursively, the callable will be
+        called once for each directory that is copied. It returns a
+        list of names relative to the `src` directory that should
+        not be copied.
+    
+        The optional copy_function argument is a callable that will be used
+        to copy each file. It will be called with the source path and the
+        destination path as arguments. By default, copy2() is used, but any
+        function that supports the same signature (like copy()) can be used.
+    
+        If dirs_exist_ok is false (the default) and `dst` already exists, a
+        `FileExistsError` is raised. If `dirs_exist_ok` is true, the copying
+        operation will continue if it encounters existing directories, and files
+        within the `dst` tree will be overwritten by corresponding files from the
+        `src` tree.
+        """
+        sys.audit("shutil.copytree", src, dst)
+>       with os.scandir(src) as itr:
+E       FileNotFoundError: [Errno 2] No such file or directory: 'cfg.sample'
+
+../../usr/lib/python3.12/shutil.py:598: FileNotFoundError
+_________________________ test_render_pause_and_stats __________________________
+
+    def test_render_pause_and_stats():
+>       mod = _load()
+
+agent_forge/tests/test_eidtop_controls.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+agent_forge/tests/test_eidtop_controls.py:9: in _load
+    loader.exec_module(mod)
+<frozen importlib._bootstrap_external>:995: in exec_module
+    ???
+<frozen importlib._bootstrap_external>:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <_frozen_importlib_external.SourceFileLoader object at 0x745de87ef0>
+path = 'bin/eidtop'
+
+>   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: 'bin/eidtop'
+
+<frozen importlib._bootstrap_external>:1190: FileNotFoundError
+_______________________________ test_hygiene_e2e _______________________________
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_hygiene_e2e0')
+
+    def test_hygiene_e2e(tmp_path: Path):
+        base = tmp_path / "state"
+        base.mkdir(parents=True, exist_ok=True)
+        # bootstrap goal
+    
+        g = add_goal(base, "Hygiene: format & smoke", "integrity")
+        # run daemon once to plan
+>       subprocess.check_call(["bin/eidosd", "--once", "--dir", str(base)])
+
+agent_forge/tests/test_end_to_end_demo.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../usr/lib/python3.12/subprocess.py:408: in check_call
+    retcode = call(*popenargs, **kwargs)
+../../usr/lib/python3.12/subprocess.py:389: in call
+    with Popen(*popenargs, **kwargs) as p:
+../../usr/lib/python3.12/subprocess.py:1026: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: 255 args: ['bin/eidosd', '--once', '--dir', '/data/data/...>
+args = ['bin/eidosd', '--once', '--dir', '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_hygiene_e2e0/state']
+executable = b'bin/eidosd', preexec_fn = None, close_fds = True, pass_fds = ()
+cwd = None, env = None, startupinfo = None, creationflags = 0, shell = False
+p2cread = -1, p2cwrite = -1, c2pread = -1, c2pwrite = -1, errread = -1
+errwrite = -1, restore_signals = True, gid = None, gids = None, uid = None
+umask = -1, start_new_session = False, process_group = -1
+
+    def _execute_child(self, args, executable, preexec_fn, close_fds,
+                       pass_fds, cwd, env,
+                       startupinfo, creationflags, shell,
+                       p2cread, p2cwrite,
+                       c2pread, c2pwrite,
+                       errread, errwrite,
+                       restore_signals,
+                       gid, gids, uid, umask,
+                       start_new_session, process_group):
+        """Execute program (POSIX version)"""
+    
+        if isinstance(args, (str, bytes)):
+            args = [args]
+        elif isinstance(args, os.PathLike):
+            if shell:
+                raise TypeError('path-like args is not allowed when '
+                                'shell is true')
+            args = [args]
+        else:
+            args = list(args)
+    
+        if shell:
+            unix_shell = ('/data/data/com.termux/files/usr/bin/sh')
+            args = [unix_shell, "-c"] + args
+            if executable:
+                args[0] = executable
+    
+        if executable is None:
+            executable = args[0]
+    
+        sys.audit("subprocess.Popen", executable, args, cwd, env)
+    
+        if (_USE_POSIX_SPAWN
+                and os.path.dirname(executable)
+                and preexec_fn is None
+                and not close_fds
+                and not pass_fds
+                and cwd is None
+                and (p2cread == -1 or p2cread > 2)
+                and (c2pwrite == -1 or c2pwrite > 2)
+                and (errwrite == -1 or errwrite > 2)
+                and not start_new_session
+                and process_group == -1
+                and gid is None
+                and gids is None
+                and uid is None
+                and umask < 0):
+            self._posix_spawn(args, executable, env, restore_signals,
+                              p2cread, p2cwrite,
+                              c2pread, c2pwrite,
+                              errread, errwrite)
+            return
+    
+        orig_executable = executable
+    
+        # For transferring possible exec failure from child to parent.
+        # Data format: "exception name:hex errno:description"
+        # Pickle is not used; it is complex and involves memory allocation.
+        errpipe_read, errpipe_write = os.pipe()
+        # errpipe_write must not be in the standard io 0, 1, or 2 fd range.
+        low_fds_to_close = []
+        while errpipe_write < 3:
+            low_fds_to_close.append(errpipe_write)
+            errpipe_write = os.dup(errpipe_write)
+        for low_fd in low_fds_to_close:
+            os.close(low_fd)
+        try:
+            try:
+                # We must avoid complex work that could involve
+                # malloc or free in the child process to avoid
+                # potential deadlocks, thus we do all this here.
+                # and pass it to fork_exec()
+    
+                if env is not None:
+                    env_list = []
+                    for k, v in env.items():
+                        k = os.fsencode(k)
+                        if b'=' in k:
+                            raise ValueError("illegal environment variable name")
+                        env_list.append(k + b'=' + os.fsencode(v))
+                else:
+                    env_list = None  # Use execv instead of execve.
+                executable = os.fsencode(executable)
+                if os.path.dirname(executable):
+                    executable_list = (executable,)
+                else:
+                    # This matches the behavior of os._execvpe().
+                    executable_list = tuple(
+                        os.path.join(os.fsencode(dir), executable)
+                        for dir in os.get_exec_path(env))
+                fds_to_keep = set(pass_fds)
+                fds_to_keep.add(errpipe_write)
+                self.pid = _fork_exec(
+                        args, executable_list,
+                        close_fds, tuple(sorted(map(int, fds_to_keep))),
+                        cwd, env_list,
+                        p2cread, p2cwrite, c2pread, c2pwrite,
+                        errread, errwrite,
+                        errpipe_read, errpipe_write,
+                        restore_signals, start_new_session,
+                        process_group, gid, gids, uid, umask,
+                        preexec_fn, _USE_VFORK)
+                self._child_created = True
+            finally:
+                # be sure the FD is closed no matter what
+                os.close(errpipe_write)
+    
+            self._close_pipe_fds(p2cread, p2cwrite,
+                                 c2pread, c2pwrite,
+                                 errread, errwrite)
+    
+            # Wait for exec to fail or succeed; possibly raising an
+            # exception (limited in size)
+            errpipe_data = bytearray()
+            while True:
+                part = os.read(errpipe_read, 50000)
+                errpipe_data += part
+                if not part or len(errpipe_data) > 50000:
+                    break
+        finally:
+            # be sure the FD is closed no matter what
+            os.close(errpipe_read)
+    
+        if errpipe_data:
+            try:
+                pid, sts = os.waitpid(self.pid, 0)
+                if pid == self.pid:
+                    self._handle_exitstatus(sts)
+                else:
+                    self.returncode = sys.maxsize
+            except ChildProcessError:
+                pass
+    
+            try:
+                exception_name, hex_errno, err_msg = (
+                        errpipe_data.split(b':', 2))
+                # The encoding here should match the encoding
+                # written in by the subprocess implementations
+                # like _posixsubprocess
+                err_msg = err_msg.decode()
+            except ValueError:
+                exception_name = b'SubprocessError'
+                hex_errno = b'0'
+                err_msg = 'Bad exception data from child: {!r}'.format(
+                              bytes(errpipe_data))
+            child_exception_type = getattr(
+                    builtins, exception_name.decode('ascii'),
+                    SubprocessError)
+            if issubclass(child_exception_type, OSError) and hex_errno:
+                errno_num = int(hex_errno, 16)
+                if err_msg == "noexec:chdir":
+                    err_msg = ""
+                    # The error must be from chdir(cwd).
+                    err_filename = cwd
+                elif err_msg == "noexec":
+                    err_msg = ""
+                    err_filename = None
+                else:
+                    err_filename = orig_executable
+                if errno_num != 0:
+                    err_msg = os.strerror(errno_num)
+                if err_filename is not None:
+>                   raise child_exception_type(errno_num, err_msg, err_filename)
+E                   FileNotFoundError: [Errno 2] No such file or directory: 'bin/eidosd'
+
+../../usr/lib/python3.12/subprocess.py:1953: FileNotFoundError
+_____________________ test_runner_writes_artifacts_and_cli _____________________
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_runner_writes_artifacts_a0')
+
+    def test_runner_writes_artifacts_and_cli(tmp_path: Path):
+        base = tmp_path / "state"
+        base.mkdir(parents=True, exist_ok=True)
+        res = run_step(str(base), "step-1", ["bash", "-lc", "echo hi; echo oops 1>&2; exit 1"], cwd=".", budget_s=5.0)
+        assert res["status"] in ("ok", "timeout", "error", "denied") or res["status"] == "timeout"
+        run_id = res.get("run_id")
+        assert run_id, "runner should return a run_id"
+        d = base / "runs" / run_id
+        assert (d / "stdout.txt").exists()
+        assert (d / "stderr.txt").exists()
+    
+        # CLI interaction
+        cmd_ls = ["python", "bin/eidctl", "runs", "ls", "--dir", str(base)]
+>       out = subprocess.check_output(cmd_ls, text=True)
+
+agent_forge/tests/test_run_artifacts.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../usr/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['python', 'bin/eidctl', 'runs', 'ls', '--dir', '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_runner_writes_artifacts_a0/state'],)
+kwargs = {'stdout': -1, 'text': True}
+process = <Popen: returncode: 2 args: ['python', 'bin/eidctl', 'runs', 'ls', '--dir', ...>
+stdout = '', stderr = None, retcode = 2
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['python', 'bin/eidctl', 'runs', 'ls', '--dir', '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_runner_writes_artifacts_a0/state']' returned non-zero exit status 2.
+
+../../usr/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+python: can't open file '/data/data/com.termux/files/home/eidosian_forge/bin/eidctl': [Errno 2] No such file or directory
+___________________________ test_status_transitions ____________________________
+
+tmp_path = PosixPath('/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_status_transitions0')
+
+    def test_status_transitions(tmp_path: Path):
+        base = tmp_path / "state"
+        S.migrate(base)
+        SCH.STATE_DIR = str(base)
+        g = S.add_goal(base, "G", "d")
+        p = S.add_plan(base, g.id, "htn", {"template": "hygiene"})
+        S.add_step(base, p.id, 0, "echo", json.dumps(["bash", "-lc", "exit 0"]), 1.0, "todo")
+        step = S.list_steps(base)[0]
+    
+        res = SCH.act({}, step)
+        step_running = S.list_steps(base)[0]
+        assert step_running.status == "running"
+    
+        SCH.verify({}, step_running, res)
+        step_done = S.list_steps(base)[0]
+        assert step_done.status in ("ok", "fail")
+    
+        # simulate stale running
+        db = base / "e3.sqlite"
+        runs = S.list_runs(base, step.id)
+        last_id = runs[-1].id
+        conn = sqlite3.connect(db)
+        try:
+            conn.execute("UPDATE steps SET status=? WHERE id=?", ("running", step.id))
+            conn.execute(
+                "UPDATE runs SET started_at=?, ended_at=? WHERE id=?",
+                ("2000-01-01T00:00:00Z", "2000-01-01T00:00:01Z", last_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    
+>       subprocess.run(["python", "bin/eidosd", "--once", "--dir", str(base)], check=True)
+
+agent_forge/tests/test_status_machine.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['python', 'bin/eidosd', '--once', '--dir', '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_status_transitions0/state'],)
+kwargs = {}
+process = <Popen: returncode: 2 args: ['python', 'bin/eidosd', '--once', '--dir', '/da...>
+stdout = None, stderr = None, retcode = 2
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['python', 'bin/eidosd', '--once', '--dir', '/data/data/com.termux/files/usr/tmp/pytest-of-u0_a414/pytest-166/test_status_transitions0/state']' returned non-zero exit status 2.
+
+../../usr/lib/python3.12/subprocess.py:571: CalledProcessError
+----------------------------- Captured stderr call -----------------------------
+python: can't open file '/data/data/com.termux/files/home/eidosian_forge/bin/eidosd': [Errno 2] No such file or directory
+=============================== warnings summary ===============================
+tests/test_os_metrics.py::test_system_stats_keys
+  /data/data/com.termux/files/usr/lib/python3.12/site-packages/psutil/__init__.py:2067: RuntimeWarning: 'sin' and 'sout' swap memory stats couldn't be determined and were set to 0 ([Errno 13] Permission denied: '/proc/vmstat')
+    return _psplatform.swap_memory()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED agent_forge/tests/test_approvals_config.py::test_missing_config_fallback
+FAILED agent_forge/tests/test_core_config.py::test_load_and_print - FileNotFo...
+FAILED agent_forge/tests/test_core_config.py::test_validation_error_on_type
+FAILED agent_forge/tests/test_eidtop_controls.py::test_render_pause_and_stats
+FAILED agent_forge/tests/test_end_to_end_demo.py::test_hygiene_e2e - FileNotF...
+FAILED agent_forge/tests/test_run_artifacts.py::test_runner_writes_artifacts_and_cli
+FAILED agent_forge/tests/test_status_machine.py::test_status_transitions - su...
+7 failed, 121 passed, 1 warning in 245.60s (0:04:05)
+FAIL agent_forge
+=== article_forge ===
+.                                                                        [100%]
+PASS article_forge
+=== audit_forge ===
+.....                                                                    [100%]
+PASS audit_forge
+=== benchmarks ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 17 items
+
+benchmarks/tests/test_graphrag_model_sweep.py ..                         [ 11%]
+benchmarks/tests/test_graphrag_qualitative_assessor.py ......            [ 47%]
+benchmarks/tests/test_model_domain_suite.py ......                       [ 82%]
+benchmarks/tests/test_run_graphrag_bench.py ...                          [100%]
+
+============================== 17 passed in 3.04s ==============================
+PASS benchmarks
+=== code_forge ===
+...........................................                              [100%]
+PASS code_forge
+=== computer_control_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge/computer_control_forge
+configfile: pyproject.toml
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 4 items
+
+computer_control_forge/tests/test_safety.py ....                         [100%]
+
+============================== 4 passed in 0.33s ===============================
+PASS computer_control_forge
+=== crawl_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 6 items
+
+crawl_forge/tests/test_crawl.py ..                                       [ 33%]
+crawl_forge/tests/test_tika_extractor_fallback.py ....                   [100%]
+
+============================== 6 passed in 0.28s ===============================
+PASS crawl_forge
+=== diagnostics_forge ===
+.......                                                                  [100%]
+PASS diagnostics_forge
+=== doc_forge ===
+..                                                                       [100%]
+PASS doc_forge
+=== eidos_mcp ===
+....................................s................                    [100%]
+=============================== warnings summary ===============================
+../../usr/lib/python3.12/site-packages/_pytest/config/__init__.py:1441
+  /data/data/com.termux/files/usr/lib/python3.12/site-packages/_pytest/config/__init__.py:1441: PytestConfigWarning: Unknown config option: asyncio_default_fixture_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] eidos_mcp/tests/test_mcp_tools_stdio.py:318: Set EIDOS_RUN_FULL_INTEGRATION=1 to run full MCP integration flow
+PASS eidos_mcp
+=== eidos_mcp_backup_20260218 ===
+....................................s....F.........                      [100%]
+=================================== FAILURES ===================================
+______________________________ test_memory_tools _______________________________
+
+    def test_memory_tools():
+        memory_id = None
+        try:
+            res = memory.memory_add("Eidos MCP test memory")
+            assert "Memory added with ID" in res
+            memory_id = res.split("Memory added with ID: ", 1)[1].split(" ", 1)[0]
+            retrieved = memory.memory_retrieve("Eidos MCP test memory", limit=5)
+            assert "Eidos MCP test memory" in retrieved
+        finally:
+            if memory_id:
+                memory.memory_delete(memory_id)
+        res = knowledge.memory_search("Semantic MCP test")
+>       assert "Semantic MCP test" in res  # Allow other memories to coexist
+E       AssertionError: assert 'Semantic MCP test' in '- Commit 8338941faa pushed to main: adds RAC-AP protocol module, protocol/preregister CLI commands, protocol compatibility checks, interventional validity gate in validator, docs updates, and validation test expansion.'
+
+eidos_mcp_backup_20260218/tests/test_routers.py:16: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] eidos_mcp_backup_20260218/tests/test_mcp_tools_stdio.py:340: Set EIDOS_RUN_FULL_INTEGRATION=1 to run full MCP integration flow
+FAILED eidos_mcp_backup_20260218/tests/test_routers.py::test_memory_tools - A...
+FAIL eidos_mcp_backup_20260218
+=== erais_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 6 items
+
+erais_forge/tests/test_erais.py ....                                     [ 66%]
+erais_forge/tests/test_gym.py ss                                         [100%]
+
+=============================== warnings summary ===============================
+erais_forge/tests/test_gym.py:6
+  /data/data/com.termux/files/home/eidosian_forge/erais_forge/tests/test_gym.py:6: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+erais_forge/tests/test_gym.py:20
+  /data/data/com.termux/files/home/eidosian_forge/erais_forge/tests/test_gym.py:20: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+erais_forge/tests/test_gym.py::test_gym_evaluation_interface
+erais_forge/tests/test_gym.py::test_gym_chess_evaluation
+  /data/data/com.termux/files/usr/lib/python3.12/site-packages/_pytest/python.py:148: PytestUnhandledCoroutineWarning: async def functions are not natively supported and have been skipped.
+  You need to install a suitable plugin for your async framework, for example:
+    - anyio
+    - pytest-asyncio
+    - pytest-tornasync
+    - pytest-trio
+    - pytest-twisted
+    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 4 passed, 2 skipped, 4 warnings in 10.81s ===================
+PASS erais_forge
+=== figlet_forge ===
+......................................................s................. [ 12%]
+........................................................................ [ 25%]
+........................................................................ [ 38%]
+........................................................................ [ 51%]
+........................................................................ [ 63%]
+........................................................................ [ 76%]
+........................................................................ [ 89%]
+...........................................................              [100%]
+=========================== short test summary info ============================
+SKIPPED [1] figlet_forge/tests/compat/test_cross_platform.py:29: Windows-only test
+PASS figlet_forge
+=== file_forge ===
+.                                                                        [100%]
+PASS file_forge
+=== game_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 218 items / 2 skipped
+
+game_forge/tests/test_agentic_chess_benchmark.py .                       [  0%]
+game_forge/tests/test_agentic_chess_cli.py ..                            [  1%]
+game_forge/tests/test_agentic_chess_engine.py ...                        [  2%]
+game_forge/tests/test_algorithms_lab_benchmark.py .                      [  3%]
+game_forge/tests/test_algorithms_lab_core.py ...                         [  4%]
+game_forge/tests/test_algorithms_lab_fluids.py ..                        [  5%]
+game_forge/tests/test_algorithms_lab_fmm_multilevel.py .                 [  5%]
+game_forge/tests/test_algorithms_lab_force_kernels.py ssss               [  7%]
+game_forge/tests/test_algorithms_lab_forces.py .ss                       [  9%]
+game_forge/tests/test_algorithms_lab_gpu.py ss                           [ 10%]
+game_forge/tests/test_algorithms_lab_graph.py ..                         [ 11%]
+game_forge/tests/test_algorithms_lab_grid.py ..                          [ 11%]
+game_forge/tests/test_algorithms_lab_kdtree.py .                         [ 12%]
+game_forge/tests/test_algorithms_lab_morton.py ..                        [ 13%]
+game_forge/tests/test_algorithms_lab_nbody.py ..                         [ 14%]
+game_forge/tests/test_algorithms_lab_profiler.py .                       [ 14%]
+game_forge/tests/test_algorithms_lab_registry.py ...                     [ 16%]
+game_forge/tests/test_algorithms_lab_spatial_utils.py ......ss           [ 19%]
+game_forge/tests/test_algorithms_lab_xpbd.py .                           [ 20%]
+game_forge/tests/test_benchmark_suite.py ...                             [ 21%]
+game_forge/tests/test_ecosmos_config.py ...                              [ 22%]
+game_forge/tests/test_ecosmos_data_structures.py ...........             [ 27%]
+game_forge/tests/test_ecosmos_state_manager.py ..                        [ 28%]
+game_forge/tests/test_eidosian_universe.py ..                            [ 29%]
+game_forge/tests/test_falling_sand_benchmark_index.py .                  [ 30%]
+game_forge/tests/test_falling_sand_profile_index.py .                    [ 30%]
+game_forge/tests/test_gene_particles_automata.py ...s................... [ 41%]
+.............                                                            [ 47%]
+game_forge/tests/test_gene_particles_config.py ...............           [ 54%]
+game_forge/tests/test_gene_particles_genes.py .......................... [ 66%]
+...............                                                          [ 72%]
+game_forge/tests/test_gene_particles_interpreter.py ....                 [ 74%]
+game_forge/tests/test_gene_particles_main.py ....                        [ 76%]
+game_forge/tests/test_gene_particles_manager.py .....                    [ 78%]
+game_forge/tests/test_gene_particles_performance_tools.py ...            [ 80%]
+game_forge/tests/test_gene_particles_renderer.py ...                     [ 81%]
+game_forge/tests/test_gene_particles_rules.py ...                        [ 83%]
+game_forge/tests/test_gene_particles_types.py ...................        [ 91%]
+game_forge/tests/test_gene_particles_ui.py ..                            [ 92%]
+game_forge/tests/test_gene_particles_utility.py ........                 [ 96%]
+game_forge/tests/test_launcher.py .                                      [ 96%]
+game_forge/tests/test_module_entrypoints.py .....                        [ 99%]
+game_forge/tests/test_pyparticles_benchmarks_cli.py ..                   [100%]
+
+=============================== warnings summary ===============================
+../../usr/lib/python3.12/site-packages/pygame/pkgdata.py:25
+  /data/data/com.termux/files/usr/lib/python3.12/site-packages/pygame/pkgdata.py:25: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    from pkg_resources import resource_stream, resource_exists
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 207 passed, 13 skipped, 1 warning in 55.21s ==================
+PASS game_forge
+=== gis_forge ===
+......s..                                                                [100%]
+=========================== short test summary info ============================
+SKIPPED [1] gis_forge/tests/test_gis.py:73: FileLockStore not implemented yet
+PASS gis_forge
+=== glyph_forge ===
+........................................................................ [ 22%]
+....................................................s................... [ 44%]
+......s................................................................. [ 66%]
+........................................................................ [ 89%]
+...................................                                      [100%]
+=========================== short test summary info ============================
+SKIPPED [1] glyph_forge/tests/benchmarks/test_benchmark_functions.py:17: pytest-benchmark not installed
+SKIPPED [1] glyph_forge/tests/test_tui.py:10: textual not installed
+SKIPPED [1] glyph_forge/tests/test_tui_targets.py:6: textual not installed
+SKIPPED [1] glyph_forge/tests/test_cli_targets.py:9: textual not installed
+SKIPPED [1] glyph_forge/tests/test_core_streaming.py:385: Requires OpenCV video writer
+PASS glyph_forge
+=== knowledge_forge ===
+.s.......                                                                [100%]
+=========================== short test summary info ============================
+SKIPPED [1] knowledge_forge/tests/test_kb.py:19: Integration test requiring graphrag CLI setup
+PASS knowledge_forge
+=== lib ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 12 items
+
+lib/tests/test_eidosian_core.py ........                                 [ 66%]
+lib/tests/test_ports.py ....                                             [100%]
+
+============================== 12 passed in 2.98s ==============================
+PASS lib
+=== llm_forge ===
+......ss..                                                               [100%]
+=========================== short test summary info ============================
+SKIPPED [1] llm_forge/tests/test_ollama_real.py:11: Ollama server unavailable: [Errno 111] Connection refused
+SKIPPED [1] llm_forge/tests/test_ollama_real.py:26: Ollama server unavailable: [Errno 111] Connection refused
+PASS llm_forge
+=== lyrics_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 4 items
+
+lyrics_forge/tests/test_lyrics.py ....                                   [100%]
+
+============================== 4 passed in 0.31s ===============================
+PASS lyrics_forge
+=== memory_forge ===
+ERROR: usage: pytest [options] [file_or_dir] [file_or_dir] [...]
+pytest: error: unrecognized arguments: --cov=memory_forge --cov-report=term-missing
+  inifile: /data/data/com.termux/files/home/eidosian_forge/memory_forge/pyproject.toml
+  rootdir: /data/data/com.termux/files/home/eidosian_forge/memory_forge
+
+FAIL memory_forge
+=== metadata_forge ===
+....                                                                     [100%]
+PASS metadata_forge
+=== moltbook_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 46 items
+
+moltbook_forge/tests/test_client.py .                                    [  2%]
+moltbook_forge/tests/test_evidence_resolver.py ..                        [  6%]
+moltbook_forge/tests/test_integration.py s                               [  8%]
+moltbook_forge/tests/test_live_scan.py ..                                [ 13%]
+moltbook_forge/tests/test_moltbook_bootstrap.py ..                       [ 17%]
+moltbook_forge/tests/test_moltbook_cli.py ...                            [ 23%]
+moltbook_forge/tests/test_moltbook_quarantine.py ..                      [ 28%]
+moltbook_forge/tests/test_moltbook_sanitize.py .......                   [ 43%]
+moltbook_forge/tests/test_moltbook_screen.py ...                         [ 50%]
+moltbook_forge/tests/test_moltbook_skill_review.py ......                [ 63%]
+moltbook_forge/tests/test_moltbook_skill_script.py .                     [ 65%]
+moltbook_forge/tests/test_moltbook_validate.py ..                        [ 69%]
+moltbook_forge/tests/test_nightly_policy.py ..                           [ 73%]
+moltbook_forge/tests/test_pipeline.py .                                  [ 76%]
+moltbook_forge/tests/test_receipts.py .                                  [ 78%]
+moltbook_forge/tests/test_ui.py .....                                    [ 89%]
+moltbook_forge/tests/test_ui_navigation.py ..                            [ 93%]
+moltbook_forge/tests/test_ui_security.py ..                              [ 97%]
+moltbook_forge/tests/test_viewmodel.py .                                 [100%]
+
+=============================== warnings summary ===============================
+moltbook_forge/tests/test_integration.py:15
+  /data/data/com.termux/files/home/eidosian_forge/moltbook_forge/tests/test_integration.py:15: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 45 passed, 1 skipped, 1 warning in 29.89s ===================
+PASS moltbook_forge
+=== narrative_forge ===
+s                                                                        [100%]
+=========================== short test summary info ============================
+SKIPPED [1] narrative_forge/tests/test_engine.py:11: Ollama server unavailable: [Errno 111] Connection refused
+PASS narrative_forge
+=== ollama_forge ===
+.................ss...............                                       [100%]
+=============================== warnings summary ===============================
+ollama_forge/tests/test_client.py:282
+  /data/data/com.termux/files/home/eidosian_forge/ollama_forge/tests/test_client.py:282: PytestUnknownMarkWarning: Unknown pytest.mark.integration - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.integration
+
+ollama_forge/tests/test_client.py:292
+  /data/data/com.termux/files/home/eidosian_forge/ollama_forge/tests/test_client.py:292: PytestUnknownMarkWarning: Unknown pytest.mark.integration - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.integration
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] ollama_forge/tests/test_client.py:300: Ollama server not available
+SKIPPED [1] ollama_forge/tests/test_client.py:290: Ollama server not available
+PASS ollama_forge
+=== prompt_forge ===
+...                                                                      [100%]
+PASS prompt_forge
+=== refactor_forge ===
+..                                                                       [100%]
+PASS refactor_forge
+=== repo_forge ===
+...                                                                      [100%]
+PASS repo_forge
+=== scripts ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 150 items
+
+scripts/tests/test_audit_workflow_action_pins.py ..                      [  1%]
+scripts/tests/test_build_dual_live_usb.py .......                        [  6%]
+scripts/tests/test_consciousness_benchmark_trend.py ..                   [  7%]
+scripts/tests/test_dependabot_autopatch_requirements.py ...              [  9%]
+scripts/tests/test_dependabot_remediation_plan.py ..                     [ 10%]
+scripts/tests/test_download_local_models.py ....                         [ 13%]
+scripts/tests/test_forge_builder.py .....................                [ 27%]
+scripts/tests/test_generate_directory_atlas.py .....                     [ 30%]
+scripts/tests/test_glyph_stream_context.py ................              [ 41%]
+scripts/tests/test_image_to_ascii.py .....                               [ 44%]
+scripts/tests/test_linux_audit_matrix.py ......                          [ 48%]
+scripts/tests/test_living_knowledge_pipeline.py ...                      [ 50%]
+scripts/tests/test_pdf_tools.py .......................                  [ 66%]
+scripts/tests/test_pdf_tools_menu.py .....                               [ 69%]
+scripts/tests/test_py_lib.py ..........                                  [ 76%]
+scripts/tests/test_smart_publish.py ..................................   [ 98%]
+scripts/tests/test_sync_security_remediation_issues.py ..                [100%]
+
+======================= 150 passed in 251.87s (0:04:11) ========================
+PASS scripts
+=== sms_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 6 items
+
+sms_forge/tests/test_sms.py ...                                          [ 50%]
+sms_forge/tests/test_sms_core.py .ss                                     [100%]
+
+=============================== warnings summary ===============================
+sms_forge/tests/test_sms_core.py:13
+  /data/data/com.termux/files/home/eidosian_forge/sms_forge/tests/test_sms_core.py:13: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+sms_forge/tests/test_sms_core.py:19
+  /data/data/com.termux/files/home/eidosian_forge/sms_forge/tests/test_sms_core.py:19: PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.asyncio
+
+sms_forge/tests/test_sms_core.py::test_sms_forge_auto_detection
+sms_forge/tests/test_sms_core.py::test_termux_send_mock
+  /data/data/com.termux/files/usr/lib/python3.12/site-packages/_pytest/python.py:148: PytestUnhandledCoroutineWarning: async def functions are not natively supported and have been skipped.
+  You need to install a suitable plugin for your async framework, for example:
+    - anyio
+    - pytest-asyncio
+    - pytest-tornasync
+    - pytest-trio
+    - pytest-twisted
+    warnings.warn(PytestUnhandledCoroutineWarning(msg.format(nodeid)))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================== 4 passed, 2 skipped, 4 warnings in 4.18s ===================
+PASS sms_forge
+=== terminal_forge ===
+.....................................ss............................      [100%]
+=========================== short test summary info ============================
+SKIPPED [1] terminal_forge/tests/unit/test_colors_impl.py:194: TerminalCapability not exported - feature planned
+SKIPPED [1] terminal_forge/tests/unit/test_colors_impl.py:199: TerminalCapability not exported - feature planned
+PASS terminal_forge
+=== test_forge ===
+......                                                                   [100%]
+PASS test_forge
+=== type_forge ===
+...................                                                      [100%]
+PASS type_forge
+=== version_forge ===
+.......                                                                  [100%]
+PASS version_forge
+=== viz_forge ===
+...                                                                      [100%]
+PASS viz_forge
+=== web_interface_forge ===
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-8.3.4, pluggy-1.5.0
+rootdir: /data/data/com.termux/files/home/eidosian_forge
+configfile: pytest.ini
+plugins: anyio-4.10.0, typeguard-4.4.1, time-machine-2.16.0, docker-3.1.1, devtools-0.12.2, langsmith-0.3.3, logfire-3.4.0
+collected 7 items
+
+web_interface_forge/tests/test_web_interface.py ..sss..                  [100%]
+
+========================= 4 passed, 3 skipped in 0.37s =========================
+PASS web_interface_forge
+=== word_forge ===
+..s.s............................................ssss................... [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 36%]
+........................................................................ [ 48%]
+........................................................................ [ 60%]
+............................................................s.....ss.... [ 72%]
+........................................................................ [ 84%]
+........................................................................ [ 96%]
+........sssssssss....                                                    [100%]
+579 passed, 18 skipped in 40.08s
+PASS word_forge
+FAILURES: agent_forge eidos_mcp_backup_20260218 memory_forge

@@ -1,6 +1,7 @@
 import importlib.util
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 
@@ -825,11 +826,11 @@ def test_generate_offspring_traits_and_add_offspring():
 
 
 def test_kdtree_fallback_import(monkeypatch):
-    module_path = "game_forge/src/gene_particles/gp_genes.py"
+    module_path = Path(__file__).resolve().parents[1] / "src" / "gene_particles" / "gp_genes.py"
     dummy = types.ModuleType("scipy")
     monkeypatch.setitem(sys.modules, "scipy", dummy)
     monkeypatch.setitem(sys.modules, "scipy.spatial", None)
-    spec = importlib.util.spec_from_file_location("gp_genes_stub", module_path)
+    spec = importlib.util.spec_from_file_location("gp_genes_stub", str(module_path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)

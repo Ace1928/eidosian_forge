@@ -11,6 +11,7 @@ import re
 import time
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from urllib.parse import quote_plus, unquote
 
 from fastapi import FastAPI, Request
@@ -89,7 +90,8 @@ allowed_hosts = [host.strip() for host in allowed_hosts_raw.split(",") if host.s
 if allowed_hosts:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
-templates = Jinja2Templates(directory="moltbook_forge/ui/templates")
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.filters["urlencode"] = quote_plus
 
 

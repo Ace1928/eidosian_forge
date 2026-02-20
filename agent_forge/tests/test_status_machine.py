@@ -6,6 +6,8 @@ from pathlib import Path
 from core import scheduler as SCH
 from core import state as S
 
+EIDOSD_BIN = Path(__file__).resolve().parents[1] / "bin" / "eidosd"
+
 
 def test_status_transitions(tmp_path: Path):
     base = tmp_path / "state"
@@ -39,6 +41,6 @@ def test_status_transitions(tmp_path: Path):
     finally:
         conn.close()
 
-    subprocess.run(["python", "bin/eidosd", "--once", "--dir", str(base)], check=True)
+    subprocess.run(["python", str(EIDOSD_BIN), "--once", "--dir", str(base)], check=True)
     step_fail = S.list_steps(base)[0]
     assert step_fail.status == "fail"

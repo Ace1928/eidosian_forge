@@ -5,13 +5,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+BENCHMARK_DIR = Path(__file__).resolve().parents[1] / "pyparticles" / "benchmarks"
+
 
 def test_pyparticles_engine_benchmark_output(tmp_path: Path) -> None:
     output = tmp_path / "pyparticles_engine.json"
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/pyparticles/benchmarks/benchmark.py",
+            str(BENCHMARK_DIR / "benchmark.py"),
             "--particles",
             "64",
             "--steps",
@@ -39,7 +41,7 @@ def test_pyparticles_sim_benchmark_output(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/pyparticles/benchmarks/benchmark_sim.py",
+            str(BENCHMARK_DIR / "benchmark_sim.py"),
             "--particles",
             "64",
             "--steps",

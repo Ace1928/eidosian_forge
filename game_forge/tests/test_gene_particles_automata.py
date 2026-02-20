@@ -1,6 +1,7 @@
 import importlib.util
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 import pygame
@@ -422,11 +423,11 @@ def test_screen_size_default_path():
 
 
 def test_kdtree_fallback(monkeypatch):
-    module_path = "game_forge/src/gene_particles/gp_automata.py"
+    module_path = Path(__file__).resolve().parents[1] / "src" / "gene_particles" / "gp_automata.py"
     dummy = types.ModuleType("scipy")
     monkeypatch.setitem(sys.modules, "scipy", dummy)
     monkeypatch.setitem(sys.modules, "scipy.spatial", None)
-    spec = importlib.util.spec_from_file_location("gp_automata_stub", module_path)
+    spec = importlib.util.spec_from_file_location("gp_automata_stub", str(module_path))
     module = importlib.util.module_from_spec(spec)
     assert spec and spec.loader
     spec.loader.exec_module(module)

@@ -2,10 +2,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+TOOLS_DIR = Path(__file__).resolve().parents[1] / "tools"
+
 
 def test_gene_particles_benchmark_help():
     result = subprocess.run(
-        [sys.executable, "game_forge/tools/gene_particles_benchmark.py", "--help"],
+        [sys.executable, str(TOOLS_DIR / "gene_particles_benchmark.py"), "--help"],
         capture_output=True,
         text=True,
         check=True,
@@ -15,7 +17,7 @@ def test_gene_particles_benchmark_help():
 
 def test_gene_particles_profile_help():
     result = subprocess.run(
-        [sys.executable, "game_forge/tools/gene_particles_profile.py", "--help"],
+        [sys.executable, str(TOOLS_DIR / "gene_particles_profile.py"), "--help"],
         capture_output=True,
         text=True,
         check=True,
@@ -28,7 +30,7 @@ def test_gene_particles_profile_output(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "game_forge/tools/gene_particles_profile.py",
+            str(TOOLS_DIR / "gene_particles_profile.py"),
             "--steps",
             "1",
             "--top",

@@ -7,7 +7,7 @@ from core import config as C
 
 def make_tmp_cfg(tmp_path: Path):
     # copy from sample to avoid writing fixtures manually
-    src = Path("cfg.sample")
+    src = Path(__file__).resolve().parents[1] / "cfg.sample"
     dst = tmp_path / "cfg"
     shutil.copytree(src, dst)
     return dst

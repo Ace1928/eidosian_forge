@@ -14,7 +14,7 @@ def test_template_config_allows_and_denies(tmp_path):
 
 
 def test_missing_config_fallback(tmp_path):
-    cfg = Path("cfg/approvals.yaml")
+    cfg = Path(__file__).resolve().parents[1] / "cfg" / "approvals.yaml"
     backup = tmp_path / "approvals.yaml"
     # Use shutil.move for cross-device compatibility
     shutil.move(str(cfg), str(backup))
