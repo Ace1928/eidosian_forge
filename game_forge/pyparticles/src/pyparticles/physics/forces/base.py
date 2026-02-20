@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Callable, Optional
 import numpy as np
-from numba import njit
+from pyparticles._numba_compat import njit
 
 
 class DropoffType(IntEnum):

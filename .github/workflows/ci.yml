@@ -360,6 +360,7 @@ jobs:
             mcp \
             openai \
             fastapi \
+            jinja2 \
             pandas \
             pyarrow \
             psutil \

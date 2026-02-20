@@ -233,9 +233,14 @@ def _render_ansi_image(content: str, path: Path, fmt: str) -> None:
     import tempfile
     import uuid
     temp_path = Path(tempfile.gettempdir()) / f"glyph_render_{uuid.uuid4().hex}.mp4"
-    recorder = GlyphRecorder(RecorderConfig(output_path=temp_path))
-    frame = recorder.render_to_image(content)
-    img = Image.fromarray(frame[:, :, ::-1])  # BGR -> RGB
+    try:
+        recorder = GlyphRecorder(RecorderConfig(output_path=temp_path))
+        frame = recorder.render_to_image(content)
+        img = Image.fromarray(frame[:, :, ::-1])  # BGR -> RGB
+    except Exception:
+        # Keep share export functional when optional video backends are unavailable.
+        _render_text_image(content, path, fmt)
+        return
     if fmt == "png":
         img.save(path, format="PNG")
     elif fmt == "gif":
@@ -317,10 +322,12 @@ def _ansi_frame_to_image(content: str):
     import tempfile
     import uuid
     temp_path = Path(tempfile.gettempdir()) / f"glyph_render_{uuid.uuid4().hex}.mp4"
-    recorder = GlyphRecorder(RecorderConfig(output_path=temp_path))
-    frame = recorder.render_to_image(content)
-    img = Image.fromarray(frame[:, :, ::-1])  # BGR -> RGB
-    return img
+    try:
+        recorder = GlyphRecorder(RecorderConfig(output_path=temp_path))
+        frame = recorder.render_to_image(content)
+        return Image.fromarray(frame[:, :, ::-1])  # BGR -> RGB
+    except Exception:
+        return _text_frame_to_image(content)
 
 
 def _ffmpeg_extract_frame(video_path: Path, output_path: Path) -> bool:

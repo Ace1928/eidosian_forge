@@ -161,21 +161,5 @@ def figlet_format(
         return fig.renderText(text)
 
 
-@eidosian()
-def renderText(
-    text: str, font: str = "standard", justify: str = "auto", width: int = 80, **kwargs
-) -> str:
-    """
-    Legacy function to render text in figlet format.
-
-    Args:
-        text: The text to render
-        font: The font to use
-        justify: The justification ('auto', 'left', 'center', 'right')
-        width: The maximum width
-        **kwargs: Additional keywords for backward compatibility
-
-    Returns:
-        The rendered ASCII art text
-    """
-    return figlet_format(text, font=font, justify=justify, width=width, **kwargs)
+# Legacy pyfiglet alias used by compatibility tests and integrations.
+renderText = figlet_format

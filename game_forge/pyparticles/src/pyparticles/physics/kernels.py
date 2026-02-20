@@ -7,7 +7,7 @@ Supports: Velocity Verlet integration, multiple force types, wave mechanics,
 """
 
 import numpy as np
-from numba import njit, prange
+from pyparticles._numba_compat import njit, prange
 
 # ============================================================================
 # SPATIAL HASHING

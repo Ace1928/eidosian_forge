@@ -8,7 +8,7 @@ High-performance spatial indexing for O(N) neighbor queries:
 """
 
 import numpy as np
-from numba import njit, prange
+from pyparticles._numba_compat import njit, prange
 from dataclasses import dataclass
 from typing import Tuple
 

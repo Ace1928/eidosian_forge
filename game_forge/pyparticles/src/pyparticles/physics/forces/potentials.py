@@ -6,7 +6,7 @@ All functions are JIT-compiled for maximum performance.
 """
 
 import numpy as np
-from numba import njit
+from pyparticles._numba_compat import njit
 
 
 @njit(fastmath=True, cache=True)

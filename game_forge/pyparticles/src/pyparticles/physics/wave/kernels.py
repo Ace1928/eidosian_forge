@@ -5,7 +5,7 @@ Numba-compiled kernels for wave physics calculations.
 """
 
 import numpy as np
-from numba import njit, prange
+from pyparticles._numba_compat import njit, prange
 
 
 @njit(fastmath=True, cache=True, inline='always')
