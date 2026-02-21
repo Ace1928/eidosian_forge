@@ -9,6 +9,7 @@ Classes:
     StreamExtractionError: Extraction failure exception
     DependencyError: Missing dependency exception
 """
+
 from __future__ import annotations
 
 import os
@@ -25,18 +26,24 @@ from dataclasses import dataclass
 
 try:
     import yt_dlp
+
     HAS_YT_DLP = True
 except ImportError:
+    yt_dlp = None
     HAS_YT_DLP = False
 
 try:
     import cv2
+
     HAS_OPENCV = True
 except ImportError:
+    cv2 = None
     HAS_OPENCV = False
 
 
-def _parse_cookies_from_browser_spec(spec: Optional[str]) -> Optional[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
+def _parse_cookies_from_browser_spec(
+    spec: Optional[str],
+) -> Optional[Tuple[str, Optional[str], Optional[str], Optional[str]]]:
     if not spec or not isinstance(spec, str):
         return None
     keyring: Optional[str] = None
@@ -61,13 +68,14 @@ def _parse_player_client_spec(spec: Optional[str]) -> Optional[list[str]]:
 # Exceptions
 # ═══════════════════════════════════════════════════════════════
 
+
 class StreamExtractionError(Exception):
     """Stream extraction error with rich diagnostic context.
-    
+
     Provides categorized error information with original exception tracking
     for intelligent recovery strategies and detailed error reporting.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -78,7 +86,7 @@ class StreamExtractionError(Exception):
         self.original = original
         self.category = category
         self.timestamp = datetime.now()
-    
+
     def get_diagnostic_info(self) -> Dict[str, Any]:
         """Get comprehensive diagnostic information."""
         return {
@@ -92,7 +100,7 @@ class StreamExtractionError(Exception):
 
 class DependencyError(Exception):
     """Missing dependency error with actionable installation guidance."""
-    
+
     def __init__(
         self,
         package: str,
@@ -104,7 +112,7 @@ class DependencyError(Exception):
         self.package = package
         self.install_cmd = install_cmd
         self.required_for = required_for
-    
+
     def get_installation_instructions(self) -> str:
         """Get user-friendly installation instructions."""
         return f"Install {self.package}: {self.install_cmd}"
@@ -114,9 +122,11 @@ class DependencyError(Exception):
 # Extraction Result Types
 # ═══════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ExtractionResult:
     """Result of stream extraction with metadata."""
+
     video_url: Optional[str] = None
     audio_url: Optional[str] = None
     title: str = "Unknown"
@@ -126,11 +136,11 @@ class ExtractionResult:
     height: Optional[int] = None
     format: str = "unknown"
     is_live: bool = False
-    
+
     @property
     def has_video(self) -> bool:
         return self.video_url is not None
-    
+
     @property
     def has_audio(self) -> bool:
         return self.audio_url is not None
@@ -140,31 +150,32 @@ class ExtractionResult:
 # YouTube Extractor
 # ═══════════════════════════════════════════════════════════════
 
+
 class YouTubeExtractor:
     """High-performance YouTube stream extractor with caching.
-    
+
     Extracts video and audio streams from YouTube URLs with intelligent
     caching, format selection, and error recovery.
     """
-    
+
     _cache: Dict[str, Tuple[ExtractionResult, float]] = {}
     _cache_ttl: int = 3600  # 1 hour
     _cache_max_size: int = 100
-    
+
     # YouTube URL patterns
     YOUTUBE_PATTERNS = [
-        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})',
-        r'(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/v/([a-zA-Z0-9_-]{11})',
-        r'(?:https?://)?(?:www\.)?youtube\.com/shorts/([a-zA-Z0-9_-]{11})',
+        r"(?:https?://)?(?:www\.)?youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})",
+        r"(?:https?://)?(?:www\.)?youtu\.be/([a-zA-Z0-9_-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/embed/([a-zA-Z0-9_-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/v/([a-zA-Z0-9_-]{11})",
+        r"(?:https?://)?(?:www\.)?youtube\.com/shorts/([a-zA-Z0-9_-]{11})",
     ]
-    
+
     @classmethod
     def is_youtube_url(cls, url: str) -> bool:
         """Check if URL is a valid YouTube URL."""
         return any(re.match(pattern, url) for pattern in cls.YOUTUBE_PATTERNS)
-    
+
     @classmethod
     def extract_video_id(cls, url: str) -> Optional[str]:
         """Extract video ID from YouTube URL."""
@@ -173,7 +184,7 @@ class YouTubeExtractor:
             if match:
                 return match.group(1)
         return None
-    
+
     @classmethod
     def extract(
         cls,
@@ -188,15 +199,15 @@ class YouTubeExtractor:
         yt_player_client: Optional[str] = None,
     ) -> ExtractionResult:
         """Extract video and audio streams from YouTube URL.
-        
+
         Args:
             url: YouTube URL or video ID
             resolution: Preferred vertical resolution (None=auto)
             include_audio: Whether to extract audio stream
-            
+
         Returns:
             ExtractionResult: Extracted stream information
-            
+
         Raises:
             DependencyError: If yt-dlp is not available
             StreamExtractionError: If extraction fails
@@ -207,76 +218,78 @@ class YouTubeExtractor:
                 "pip install yt-dlp",
                 "YouTube streaming",
             )
-        
+
         # Check cache
         cache_key = f"{url}:{resolution}:{include_audio}"
         current_time = time.time()
         cls._prune_cache(current_time)
-        
+
         if cache_key in cls._cache:
             result, timestamp = cls._cache[cache_key]
             if current_time - timestamp < cls._cache_ttl:
                 return result
-        
+
         # Determine optimal resolution
         actual_resolution = resolution or cls._determine_optimal_resolution()
-        
+
         # Video format: prefer direct https MP4 for OpenCV compatibility
         video_format = (
-            f'best[height<={actual_resolution}][protocol=https][ext=mp4]/'
-            f'best[height<={actual_resolution}][protocol=https]/'
-            f'best[protocol=https]'
+            f"best[height<={actual_resolution}][protocol=https][ext=mp4]/"
+            f"best[height<={actual_resolution}][protocol=https]/"
+            f"best[protocol=https]"
         )
-        
+
         # Audio format: prefer best audio quality
-        audio_format = 'bestaudio[ext=m4a]/bestaudio'
-        
+        audio_format = "bestaudio[ext=m4a]/bestaudio"
+
         result = ExtractionResult()
-        
+
         # Extract video stream
         cookies_from_browser = _parse_cookies_from_browser_spec(yt_cookies_from_browser)
         player_clients = _parse_player_client_spec(yt_player_client)
         video_opts: Dict[str, Any] = {
-            'format': video_format,
-            'quiet': True,
-            'skip_download': True,
-            'no_warnings': True,
-            'socket_timeout': 15,
+            "format": video_format,
+            "quiet": True,
+            "skip_download": True,
+            "no_warnings": True,
+            "socket_timeout": 15,
         }
         if yt_cookies:
             video_opts["cookiefile"] = yt_cookies
         if cookies_from_browser:
             video_opts["cookiesfrombrowser"] = cookies_from_browser
         if player_clients:
-            video_opts["extractor_args"] = {"youtube": {"player_client": player_clients}}
+            video_opts["extractor_args"] = {
+                "youtube": {"player_client": player_clients}
+            }
         if yt_user_agent:
             video_opts["user_agent"] = yt_user_agent
         if yt_proxy:
             video_opts["proxy"] = yt_proxy
-        
+
         for retry in range(3):
             try:
                 with yt_dlp.YoutubeDL(video_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
-                    
+
                     if info:
-                        result.video_url = info.get('url')
-                        result.title = info.get('title', 'Unknown')
-                        result.duration = info.get('duration')
-                        result.fps = info.get('fps')
-                        result.width = info.get('width')
-                        result.height = info.get('height')
-                        result.format = info.get('format', 'unknown')
-                        result.is_live = info.get('is_live', False)
+                        result.video_url = info.get("url")
+                        result.title = info.get("title", "Unknown")
+                        result.duration = info.get("duration")
+                        result.fps = info.get("fps")
+                        result.width = info.get("width")
+                        result.height = info.get("height")
+                        result.format = info.get("format", "unknown")
+                        result.is_live = info.get("is_live", False)
                         break
-                        
+
             except Exception as e:
                 if retry < 2:
-                    time.sleep(1 * (2 ** retry))
+                    time.sleep(1 * (2**retry))
                     # Fallback to lower quality
-                    video_opts['format'] = (
-                        'best[height<=360][protocol=https]/'
-                        'worst[protocol=https]/worst'
+                    video_opts["format"] = (
+                        "best[height<=360][protocol=https]/"
+                        "worst[protocol=https]/worst"
                     )
                 else:
                     raise StreamExtractionError(
@@ -284,59 +297,60 @@ class YouTubeExtractor:
                         original=e,
                         category=cls._categorize_error(e),
                     )
-        
+
         # Extract audio stream separately if requested
         if include_audio and not result.is_live:
             audio_opts: Dict[str, Any] = {
-                'format': audio_format,
-                'quiet': True,
-                'skip_download': True,
-                'no_warnings': True,
-                'socket_timeout': 15,
+                "format": audio_format,
+                "quiet": True,
+                "skip_download": True,
+                "no_warnings": True,
+                "socket_timeout": 15,
             }
             if yt_cookies:
                 audio_opts["cookiefile"] = yt_cookies
             if cookies_from_browser:
                 audio_opts["cookiesfrombrowser"] = cookies_from_browser
             if player_clients:
-                audio_opts["extractor_args"] = {"youtube": {"player_client": player_clients}}
+                audio_opts["extractor_args"] = {
+                    "youtube": {"player_client": player_clients}
+                }
             if yt_user_agent:
                 audio_opts["user_agent"] = yt_user_agent
             if yt_proxy:
                 audio_opts["proxy"] = yt_proxy
-            
+
             try:
                 with yt_dlp.YoutubeDL(audio_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
                     if info:
-                        result.audio_url = info.get('url')
+                        result.audio_url = info.get("url")
             except Exception:
                 # Audio extraction failure is non-fatal
                 pass
-        
+
         # Cache successful result
         cls._cache[cache_key] = (result, current_time)
-        
+
         return result
-    
+
     @classmethod
     def _prune_cache(cls, current_time: float) -> None:
         """Remove expired and excess cache entries."""
         expired = [
-            k for k, (_, ts) in cls._cache.items()
-            if current_time - ts > cls._cache_ttl
+            k for k, (_, ts) in cls._cache.items() if current_time - ts > cls._cache_ttl
         ]
         for key in expired:
             cls._cache.pop(key, None)
-        
+
         if len(cls._cache) > cls._cache_max_size:
             sorted_items = sorted(
                 cls._cache.items(),
                 key=lambda item: item[1][1],
                 reverse=True,
             )
-            cls._cache = dict(sorted_items[:cls._cache_max_size])
-    
+            cls._cache = dict(sorted_items[: cls._cache_max_size])
+
     @staticmethod
     def _determine_optimal_resolution() -> int:
         """Determine optimal resolution based on terminal size."""
@@ -350,12 +364,12 @@ class YouTubeExtractor:
                 return 360
         except Exception:
             return 480
-    
+
     @staticmethod
     def _categorize_error(error: Exception) -> str:
         """Categorize extraction errors for retry strategies."""
         error_str = str(error).lower()
-        
+
         if "429" in error_str:
             return "rate_limited"
         elif "404" in error_str or "not found" in error_str:
@@ -376,13 +390,14 @@ class YouTubeExtractor:
 # Unified Video Source Extractor
 # ═══════════════════════════════════════════════════════════════
 
+
 class VideoSourceExtractor:
     """Unified interface for extracting video from any source.
-    
+
     Handles YouTube URLs, local files, webcams, and network streams
     with automatic source type detection and appropriate extraction.
     """
-    
+
     @classmethod
     def extract(
         cls,
@@ -400,21 +415,21 @@ class VideoSourceExtractor:
         yt_player_client: Optional[str] = None,
     ) -> ExtractionResult:
         """Extract video/audio from any supported source.
-        
+
         Args:
             source: Video source (URL, file path, webcam index)
             resolution: Preferred resolution for streaming sources
             include_audio: Whether to extract audio
-            
+
         Returns:
             ExtractionResult: Extracted stream information
         """
         # Handle webcam
         if isinstance(source, int):
             return cls._extract_webcam(source)
-        
+
         source_str = str(source)
-        
+
         # Handle YouTube
         if YouTubeExtractor.is_youtube_url(source_str):
             if "list=" in source_str:
@@ -443,24 +458,24 @@ class VideoSourceExtractor:
                 yt_skip_authcheck=yt_skip_authcheck,
                 yt_player_client=yt_player_client,
             )
-        
+
         # Handle local file
         if os.path.isfile(source_str):
             return cls._extract_local_file(source_str, include_audio)
-        
+
         # Handle network stream (RTSP, HTTP, etc.)
-        if source_str.startswith(('rtsp://', 'http://', 'https://')):
+        if source_str.startswith(("rtsp://", "http://", "https://")):
             return ExtractionResult(
                 video_url=source_str,
                 title=os.path.basename(source_str),
                 format="network_stream",
             )
-        
+
         raise StreamExtractionError(
             f"Unsupported source type: {source}",
             category="unsupported",
         )
-    
+
     @classmethod
     def _extract_webcam(cls, index: int) -> ExtractionResult:
         """Extract webcam stream info."""
@@ -470,7 +485,7 @@ class VideoSourceExtractor:
                 "pip install opencv-python",
                 "webcam capture",
             )
-        
+
         # Probe webcam for capabilities
         cap = cv2.VideoCapture(index)
         try:
@@ -479,7 +494,7 @@ class VideoSourceExtractor:
                     f"Cannot open webcam {index}",
                     category="device_error",
                 )
-            
+
             return ExtractionResult(
                 video_url=str(index),
                 title=f"Webcam {index}",
@@ -491,7 +506,7 @@ class VideoSourceExtractor:
             )
         finally:
             cap.release()
-    
+
     @classmethod
     def _extract_local_file(
         cls,
@@ -505,7 +520,7 @@ class VideoSourceExtractor:
                 "pip install opencv-python",
                 "video playback",
             )
-        
+
         cap = cv2.VideoCapture(path)
         try:
             if not cap.isOpened():
@@ -513,11 +528,11 @@ class VideoSourceExtractor:
                     f"Cannot open video file: {path}",
                     category="file_error",
                 )
-            
+
             fps = cap.get(cv2.CAP_PROP_FPS)
             frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
             duration = frame_count / fps if fps > 0 else None
-            
+
             result = ExtractionResult(
                 video_url=path,
                 title=os.path.basename(path),
@@ -527,11 +542,11 @@ class VideoSourceExtractor:
                 height=int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) or None,
                 format="local_file",
             )
-            
+
             # Audio URL is same as video for local files (ffmpeg will extract)
             if include_audio:
                 result.audio_url = path
-            
+
             return result
         finally:
             cap.release()
@@ -567,7 +582,9 @@ class VideoSourceExtractor:
             )
         playlist_title = None
         try:
-            cookies_from_browser = _parse_cookies_from_browser_spec(yt_cookies_from_browser)
+            cookies_from_browser = _parse_cookies_from_browser_spec(
+                yt_cookies_from_browser
+            )
             player_clients = _parse_player_client_spec(yt_player_client)
             info_opts: Dict[str, Any] = {
                 "quiet": True,
@@ -606,16 +623,21 @@ class VideoSourceExtractor:
             playlist_id = "playlist"
         playlist_id = re.sub(r"[^a-zA-Z0-9_-]+", "", playlist_id) or "playlist"
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        temp_dir = Path(tempfile.gettempdir()) / f"glyph_forge_playlist_{playlist_id}_{stamp}"
+        temp_dir = (
+            Path(tempfile.gettempdir()) / f"glyph_forge_playlist_{playlist_id}_{stamp}"
+        )
         temp_dir.mkdir(parents=True, exist_ok=True)
         output_pattern = str(temp_dir / "%(playlist_index)03d_%(id)s.%(ext)s")
 
         cmd = [
             "yt-dlp",
-            "-f", "bestvideo*+bestaudio/best",
-            "--merge-output-format", "mp4",
+            "-f",
+            "bestvideo*+bestaudio/best",
+            "--merge-output-format",
+            "mp4",
             "--no-part",
-            "-o", output_pattern,
+            "-o",
+            output_pattern,
             "--yes-playlist",
             "--no-playlist-reverse",
             url,
@@ -662,33 +684,46 @@ class VideoSourceExtractor:
         def _run_ffmpeg(cmd: list[str], category: str) -> None:
             proc = subprocess.run(cmd, capture_output=True, text=True)
             if proc.returncode != 0:
-                raise StreamExtractionError(proc.stderr.strip() or "ffmpeg failed", category=category)
+                raise StreamExtractionError(
+                    proc.stderr.strip() or "ffmpeg failed", category=category
+                )
 
         audio_files: list[Path] = []
         for video in files:
             audio_path = video.with_suffix(".m4a")
             cmd = [
-                "ffmpeg", "-y",
-                "-i", str(video),
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(video),
                 "-vn",
-                "-c:a", "copy",
-                "-loglevel", "error",
+                "-c:a",
+                "copy",
+                "-loglevel",
+                "error",
                 str(audio_path),
             ]
             proc = subprocess.run(cmd, capture_output=True, text=True)
             if proc.returncode != 0:
                 cmd = [
-                    "ffmpeg", "-y",
-                    "-i", str(video),
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(video),
                     "-vn",
-                    "-c:a", "aac",
-                    "-b:a", "192k",
-                    "-loglevel", "error",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "192k",
+                    "-loglevel",
+                    "error",
                     str(audio_path),
                 ]
                 _run_ffmpeg(cmd, "audio_extract")
             if not audio_path.exists():
-                raise StreamExtractionError("Audio extraction failed", category="audio_extract")
+                raise StreamExtractionError(
+                    "Audio extraction failed", category="audio_extract"
+                )
             audio_files.append(audio_path)
 
         video_concat = temp_dir / "video_concat.txt"
@@ -698,28 +733,45 @@ class VideoSourceExtractor:
 
         stitched_video = temp_dir / "playlist_video.mp4"
         cmd = [
-            "ffmpeg", "-y",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", str(video_concat),
-            "-map", "0:v:0",
-            "-c", "copy",
-            "-loglevel", "error",
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(video_concat),
+            "-map",
+            "0:v:0",
+            "-c",
+            "copy",
+            "-loglevel",
+            "error",
             str(stitched_video),
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
             cmd = [
-                "ffmpeg", "-y",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", str(video_concat),
-                "-map", "0:v:0",
-                "-c:v", "libx264",
-                "-preset", "slow",
-                "-crf", "18",
-                "-pix_fmt", "yuv420p",
-                "-loglevel", "error",
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(video_concat),
+                "-map",
+                "0:v:0",
+                "-c:v",
+                "libx264",
+                "-preset",
+                "slow",
+                "-crf",
+                "18",
+                "-pix_fmt",
+                "yuv420p",
+                "-loglevel",
+                "error",
                 str(stitched_video),
             ]
             _run_ffmpeg(cmd, "video_concat")
@@ -730,37 +782,56 @@ class VideoSourceExtractor:
             for audio in audio_files:
                 f.write(f"file '{audio.as_posix()}'\n")
         cmd = [
-            "ffmpeg", "-y",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", str(audio_concat_list),
-            "-c", "copy",
-            "-loglevel", "error",
+            "ffmpeg",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            str(audio_concat_list),
+            "-c",
+            "copy",
+            "-loglevel",
+            "error",
             str(audio_concat),
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
             cmd = [
-                "ffmpeg", "-y",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", str(audio_concat_list),
-                "-c:a", "aac",
-                "-b:a", "192k",
-                "-loglevel", "error",
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(audio_concat_list),
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-loglevel",
+                "error",
                 str(audio_concat),
             ]
             _run_ffmpeg(cmd, "audio_concat")
 
         stitched = temp_dir / "playlist_merged.mp4"
         cmd = [
-            "ffmpeg", "-y",
-            "-i", str(stitched_video),
-            "-i", str(audio_concat),
-            "-c:v", "copy",
-            "-c:a", "aac",
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(stitched_video),
+            "-i",
+            str(audio_concat),
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
             "-shortest",
-            "-loglevel", "error",
+            "-loglevel",
+            "error",
             str(stitched),
         ]
         _run_ffmpeg(cmd, "mux")
@@ -778,26 +849,27 @@ class VideoSourceExtractor:
 # Audio Extractor
 # ═══════════════════════════════════════════════════════════════
 
+
 class AudioExtractor:
     """Extract and download audio for synchronized playback.
-    
+
     Uses ffmpeg to extract audio streams to temporary files for
     synchronized playback with video rendering.
     """
-    
+
     @staticmethod
     def has_ffmpeg() -> bool:
         """Check if ffmpeg is available."""
         try:
             subprocess.run(
-                ['ffmpeg', '-version'],
+                ["ffmpeg", "-version"],
                 capture_output=True,
                 check=True,
             )
             return True
         except Exception:
             return False
-    
+
     @classmethod
     def extract_to_file(
         cls,
@@ -806,42 +878,47 @@ class AudioExtractor:
         start_time: float = 0,
     ) -> Optional[str]:
         """Extract audio to a temporary file.
-        
+
         Args:
             source: Audio source URL or path
             output_path: Output path (None=auto temp file)
             start_time: Start time offset in seconds
-            
+
         Returns:
             str: Path to extracted audio file, or None on failure
         """
         if not cls.has_ffmpeg():
             return None
-        
+
         if output_path is None:
-            fd, output_path = tempfile.mkstemp(suffix='.wav')
+            fd, output_path = tempfile.mkstemp(suffix=".wav")
             os.close(fd)
-        
+
         try:
             cmd = [
-                'ffmpeg',
-                '-y',  # Overwrite
-                '-ss', str(start_time),
-                '-i', source,
-                '-vn',  # No video
-                '-acodec', 'pcm_s16le',
-                '-ar', '44100',
-                '-ac', '2',
+                "ffmpeg",
+                "-y",  # Overwrite
+                "-ss",
+                str(start_time),
+                "-i",
+                source,
+                "-vn",  # No video
+                "-acodec",
+                "pcm_s16le",
+                "-ar",
+                "44100",
+                "-ac",
+                "2",
                 output_path,
             ]
-            
+
             subprocess.run(
                 cmd,
                 capture_output=True,
                 check=True,
                 timeout=60,
             )
-            
+
             return output_path
         except Exception:
             if os.path.exists(output_path):

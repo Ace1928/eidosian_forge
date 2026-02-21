@@ -13,8 +13,13 @@ def test_retries(tmp_path: Path):
     p = S.add_plan(base, g.id, "htn", {"template": "hygiene", "retries": {"0": 1}})
     # step fails first then passes
     done_path = base / "done"
-    cmd = ["bash", "-lc", f"if [ -f {done_path} ]; then exit 0; else touch {done_path}; exit 1; fi"]
-    S.add_step(base, p.id, 0, "flaky", json.dumps(cmd), 1.0, "todo")
+    cmd = [
+        "bash",
+        "-lc",
+        f"if [ -f {done_path} ]; then exit 0; else touch {done_path}; exit 1; fi",
+    ]
+    # CI runners can be transiently slow; keep timeout above process spin-up jitter.
+    S.add_step(base, p.id, 0, "flaky", json.dumps(cmd), 5.0, "todo")
     step = S.list_steps(base)[0]
 
     res1 = SCH.act({}, step)
@@ -30,7 +35,7 @@ def test_retries(tmp_path: Path):
     # step with retries=0 fails immediately
     p2 = S.add_plan(base, g.id, "htn", {"template": "hygiene", "retries": {"0": 0}})
     cmd_fail = ["bash", "-lc", "exit 1"]
-    S.add_step(base, p2.id, 0, "bad", json.dumps(cmd_fail), 1.0, "todo")
+    S.add_step(base, p2.id, 0, "bad", json.dumps(cmd_fail), 5.0, "todo")
     s2 = [s for s in S.list_steps(base) if s.plan_id == p2.id][0]
     r = SCH.act({}, s2)
     SCH.verify({}, s2, r)
