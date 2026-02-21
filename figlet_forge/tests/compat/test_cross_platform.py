@@ -7,7 +7,8 @@ across different operating systems, terminal types, and environments.
 
 import os
 import platform
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -42,7 +43,7 @@ class TestWindowsCompatibility:
     @patch("sys.getwindowsversion", create=True)
     def test_windows_10_detection(self, mock_version, _):
         """Test detection of Windows 10 capabilities."""
-        mock_version.return_value = MagicMock(major=10)
+        mock_version.return_value = SimpleNamespace(major=10, build=19041)
 
         with patch("sys.stdout.isatty", return_value=True):
             adjuster = TerminalAdjuster()
@@ -53,7 +54,7 @@ class TestWindowsCompatibility:
     @patch.dict(os.environ, {"WT_SESSION": "1"}, clear=True)
     def test_windows_terminal_detection(self, mock_version, _):
         """Test detection of Windows Terminal capabilities."""
-        mock_version.return_value = MagicMock(major=10)
+        mock_version.return_value = SimpleNamespace(major=10, build=19041)
 
         adjuster = TerminalAdjuster()
         assert isinstance(adjuster.supports_unicode, bool)
