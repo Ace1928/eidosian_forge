@@ -4,6 +4,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 Global configuration for the Eidosian decorator system.
 """
+
 from __future__ import annotations
 
 import json
@@ -16,14 +17,18 @@ from typing import Any, Dict, Optional
 
 class LogLevel(Enum):
     """Log levels for Eidosian logging."""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
 @dataclass
 class LoggingConfig:
     """Logging configuration."""
+
     enabled: bool = True
     level: str = "INFO"
     format: str = "[%(asctime)s] %(levelname)s [%(name)s:%(funcName)s:%(lineno)d] %(message)s"
@@ -35,40 +40,52 @@ class LoggingConfig:
     file_path: Optional[str] = None
     max_arg_length: int = 200
     max_result_length: int = 500
+
+
 @dataclass
 class ProfilingConfig:
     """Profiling configuration."""
+
     enabled: bool = False
     output_dir: Optional[str] = None
     top_n: int = 20
     sort_by: str = "cumulative"
     include_builtins: bool = False
     save_stats: bool = False
+
+
 @dataclass
 class BenchmarkingConfig:
     """Benchmarking configuration."""
+
     enabled: bool = False
     iterations: int = 1
     warmup: int = 0
     output_file: Optional[str] = None
     record_memory: bool = False
     threshold_ms: Optional[float] = None  # Alert if exceeds
+
+
 @dataclass
 class TracingConfig:
     """Tracing configuration."""
+
     enabled: bool = False
     capture_args: bool = True
     capture_result: bool = True
     capture_locals: bool = False
     max_depth: int = 10
     output_file: Optional[str] = None
+
+
 @dataclass
 class EidosianConfig:
     """
     Master configuration for all Eidosian decorator features.
-    
+
     Can be loaded from environment variables, JSON files, or set programmatically.
     """
+
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     profiling: ProfilingConfig = field(default_factory=ProfilingConfig)
     benchmarking: BenchmarkingConfig = field(default_factory=BenchmarkingConfig)
@@ -78,12 +95,15 @@ class EidosianConfig:
     auto_revert_on_failure: bool = True
     fail_threshold: int = 3
     dry_run: bool = False
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
+
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
+
     def save(self, path: Path) -> None:
         """Save configuration to file."""
         path = Path(path)
@@ -155,8 +175,11 @@ class EidosianConfig:
             config.tracing.enabled = os.getenv("EIDOSIAN_TRACE_ENABLED", "false").lower() == "true"
 
         return config
+
+
 # Global configuration instance
 _global_config: Optional[EidosianConfig] = None
+
 
 def get_config() -> EidosianConfig:
     """Get the global Eidosian configuration."""
@@ -179,10 +202,12 @@ def get_config() -> EidosianConfig:
 
     return _global_config
 
+
 def set_config(config: EidosianConfig) -> None:
     """Set the global Eidosian configuration."""
     global _global_config
     _global_config = config
+
 
 def reset_config() -> None:
     """Reset configuration to defaults."""

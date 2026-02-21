@@ -4,6 +4,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 Precise benchmarking with statistical analysis and memory tracking.
 """
+
 from __future__ import annotations
 
 import gc
@@ -19,15 +20,19 @@ from typing import Any, Callable, Dict, List, Optional, TypeVar
 # Optional memory profiling
 try:
     import tracemalloc
+
     HAS_TRACEMALLOC = True
 except ImportError:
     HAS_TRACEMALLOC = False
 T = TypeVar("T")
+
+
 @dataclass
 class BenchmarkResult:
     """
     Result of a benchmark run with statistical analysis.
     """
+
     name: str
     timestamp: datetime
     iterations: int
@@ -48,6 +53,7 @@ class BenchmarkResult:
     # Result
     result: Any = None
     error: Optional[str] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -63,15 +69,21 @@ class BenchmarkResult:
                 "std_dev_ms": self.std_dev * 1000,
                 "all_times_ms": [t * 1000 for t in self.times],
             },
-            "memory": {
-                "peak_bytes": self.memory_peak,
-                "allocated_bytes": self.memory_allocated,
-            } if self.memory_peak is not None else None,
+            "memory": (
+                {
+                    "peak_bytes": self.memory_peak,
+                    "allocated_bytes": self.memory_allocated,
+                }
+                if self.memory_peak is not None
+                else None
+            ),
             "error": self.error,
         }
+
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
+
     def to_string(self) -> str:
         """Human-readable summary."""
         lines = [
@@ -88,12 +100,14 @@ class BenchmarkResult:
         ]
 
         if self.memory_peak is not None:
-            lines.extend([
-                "",
-                "  Memory:",
-                f"    Peak:      {self._format_bytes(self.memory_peak)}",
-                f"    Allocated: {self._format_bytes(self.memory_allocated)}",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "  Memory:",
+                    f"    Peak:      {self._format_bytes(self.memory_peak)}",
+                    f"    Allocated: {self._format_bytes(self.memory_allocated)}",
+                ]
+            )
 
         if self.error:
             lines.extend(["", f"  Error: {self.error}"])
@@ -108,15 +122,18 @@ class BenchmarkResult:
                 return f"{n:>10.2f} {unit}"
             n /= 1024.0
         return f"{n:>10.2f} TB"
+
     def save(self, path: Path) -> None:
         """Save result to file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.to_json())
+
+
 class Benchmark:
     """
     High-precision benchmarking with memory tracking.
-    
+
     Features:
     - Multiple iterations with warmup
     - Statistical analysis
@@ -139,6 +156,7 @@ class Benchmark:
         self.gc_collect = gc_collect
         self.output_file = Path(output_file) if output_file else None
         self.threshold_ms = threshold_ms
+
     def run(
         self,
         func: Callable[..., T],
@@ -214,6 +232,7 @@ class Benchmark:
             result.save(self.output_file)
 
         return result
+
     def compare(
         self,
         funcs: Dict[str, Callable],
@@ -226,6 +245,7 @@ class Benchmark:
             results[name] = self.run(func, *args, name=name, **kwargs)
         return results
 
+
 @contextmanager
 def benchmark_context(
     name: str = "block",
@@ -235,7 +255,7 @@ def benchmark_context(
 ):
     """
     Context manager for quick benchmarking.
-    
+
     Usage:
         with benchmark_context("my_operation") as bm:
             # code to benchmark

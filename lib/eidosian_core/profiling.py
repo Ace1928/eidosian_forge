@@ -4,6 +4,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 Advanced profiling with cProfile integration and detailed reporting.
 """
+
 from __future__ import annotations
 
 import cProfile
@@ -21,6 +22,7 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class ProfileStat:
     """Single profiling statistic entry."""
+
     function: str
     filename: str
     line_number: int
@@ -29,17 +31,21 @@ class ProfileStat:
     cumtime: float  # Cumulative time including subfunctions
     percall_tot: float  # tottime / ncalls
     percall_cum: float  # cumtime / ncalls
+
+
 @dataclass
 class ProfileReport:
     """
     Profiling report with detailed statistics.
     """
+
     function_name: str
     timestamp: datetime
     total_time: float
     stats: List[ProfileStat] = field(default_factory=list)
     call_count: int = 0
     primitive_calls: int = 0
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -62,9 +68,11 @@ class ProfileReport:
                 for s in self.stats
             ],
         }
+
     def to_json(self, indent: int = 2) -> str:
         """Convert to JSON string."""
         return json.dumps(self.to_dict(), indent=indent)
+
     def to_string(self, top_n: int = 20) -> str:
         """Convert to human-readable string."""
         lines = [
@@ -81,20 +89,21 @@ class ProfileReport:
 
         for stat in self.stats[:top_n]:
             func_name = stat.function[:47] + "..." if len(stat.function) > 50 else stat.function
-            lines.append(
-                f"  {func_name:<50} {stat.ncalls:>10} {stat.tottime:>12.6f} {stat.cumtime:>12.6f}"
-            )
+            lines.append(f"  {func_name:<50} {stat.ncalls:>10} {stat.tottime:>12.6f} {stat.cumtime:>12.6f}")
 
         return "\n".join(lines)
+
     def save(self, path: Path) -> None:
         """Save report to file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(self.to_json())
+
+
 class Profiler:
     """
     Production-quality profiler with detailed analysis.
-    
+
     Features:
     - cProfile-based profiling
     - Statistical analysis
@@ -118,11 +127,13 @@ class Profiler:
 
         self._profiler: Optional[cProfile.Profile] = None
         self._start_time: Optional[float] = None
+
     def start(self) -> None:
         """Start profiling."""
         self._profiler = cProfile.Profile()
         self._start_time = time.perf_counter()
         self._profiler.enable()
+
     def stop(self, function_name: str = "unknown") -> ProfileReport:
         """Stop profiling and return report."""
         if self._profiler is None:
@@ -172,21 +183,24 @@ class Profiler:
                 if filename.startswith("<") or "site-packages" in filename:
                     continue
 
-            parsed.append(ProfileStat(
-                function=function,
-                filename=filename,
-                line_number=line_number,
-                ncalls=nc,
-                tottime=tt,
-                cumtime=ct,
-                percall_tot=tt / nc if nc > 0 else 0,
-                percall_cum=ct / nc if nc > 0 else 0,
-            ))
+            parsed.append(
+                ProfileStat(
+                    function=function,
+                    filename=filename,
+                    line_number=line_number,
+                    ncalls=nc,
+                    tottime=tt,
+                    cumtime=ct,
+                    percall_tot=tt / nc if nc > 0 else 0,
+                    percall_cum=ct / nc if nc > 0 else 0,
+                )
+            )
 
         # Sort by cumulative time
         parsed.sort(key=lambda x: x.cumtime, reverse=True)
 
-        return parsed[:self.top_n * 2]  # Keep extra for filtering
+        return parsed[: self.top_n * 2]  # Keep extra for filtering
+
     @contextmanager
     def profile(self, function_name: str = "context"):
         """Context manager for profiling a block."""
@@ -195,6 +209,7 @@ class Profiler:
             yield self
         finally:
             self.stop(function_name)
+
 
 @contextmanager
 def profile_context(
@@ -206,7 +221,7 @@ def profile_context(
 ):
     """
     Convenience context manager for profiling.
-    
+
     Usage:
         with profile_context("my_operation") as profiler:
             # code to profile

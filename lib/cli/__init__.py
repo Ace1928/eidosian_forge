@@ -11,6 +11,7 @@ Provides:
 Every forge can operate standalone. When other forges are present,
 enhanced capabilities are automatically enabled.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,16 +44,21 @@ class Colors:
 @dataclass
 class CommandResult:
     """Result of a CLI command execution."""
+
     success: bool
     message: str
     data: Optional[Any] = None
 
     def to_json(self) -> str:
-        return json.dumps({
-            "success": self.success,
-            "message": self.message,
-            "data": self.data,
-        }, indent=2, default=str)
+        return json.dumps(
+            {
+                "success": self.success,
+                "message": self.message,
+                "data": self.data,
+            },
+            indent=2,
+            default=str,
+        )
 
 
 class ForgeDetector:
@@ -66,6 +72,7 @@ class ForgeDetector:
         if forge_name not in cls._cache:
             try:
                 import importlib.util
+
                 cls._cache[forge_name] = importlib.util.find_spec(forge_name) is not None
             except (ImportError, AttributeError, ValueError):
                 cls._cache[forge_name] = False
@@ -75,9 +82,18 @@ class ForgeDetector:
     def available_forges(cls) -> List[str]:
         """List all available forges."""
         forge_names = [
-            "memory_forge", "knowledge_forge", "llm_forge", "code_forge",
-            "word_forge", "crawl_forge", "doc_forge", "audit_forge",
-            "refactor_forge", "glyph_forge", "figlet_forge", "agent_forge",
+            "memory_forge",
+            "knowledge_forge",
+            "llm_forge",
+            "code_forge",
+            "word_forge",
+            "crawl_forge",
+            "doc_forge",
+            "audit_forge",
+            "refactor_forge",
+            "glyph_forge",
+            "figlet_forge",
+            "agent_forge",
         ]
         return [f for f in forge_names if cls.is_available(f)]
 
@@ -93,20 +109,20 @@ class ForgeDetector:
 class StandardCLI(ABC):
     """
     Base class for all forge CLIs.
-    
+
     Provides standard argument parsing, output formatting,
     and integration detection.
-    
+
     Usage:
         class MemoryForgeCLI(StandardCLI):
             name = "memory_forge"
             description = "Tiered memory system for EIDOS"
             version = "1.0.0"
-            
+
             def register_commands(self, subparsers):
                 # Add forge-specific commands
                 ...
-            
+
             def cmd_status(self, args):
                 # Implement status command
                 ...
@@ -135,7 +151,8 @@ class StandardCLI(ABC):
     def _setup_global_args(self) -> None:
         """Add global arguments available to all commands."""
         self.parser.add_argument(
-            "-v", "--version",
+            "-v",
+            "--version",
             action="version",
             version=f"%(prog)s {self.version}",
         )
@@ -150,7 +167,8 @@ class StandardCLI(ABC):
             help="Disable colored output",
         )
         self.parser.add_argument(
-            "--quiet", "-q",
+            "--quiet",
+            "-q",
             action="store_true",
             help="Suppress non-essential output",
         )
@@ -278,7 +296,7 @@ class StandardCLI(ABC):
         prog = self.name.replace("_", "-")
         commands = list(self.subparsers.choices.keys())
 
-        script = f'''# Bash completion for {prog}
+        script = f"""# Bash completion for {prog}
 # Add to ~/.bashrc: source <(path/to/{prog} --completion)
 
 _{prog.replace("-", "_")}_completions() {{
@@ -299,13 +317,15 @@ _{prog.replace("-", "_")}_completions() {{
 }}
 
 complete -F _{prog.replace("-", "_")}_completions {prog}
-'''
+"""
         return script
 
 
 def create_cli_entry_point(cli_class: type) -> Callable:
     """Create a main() function for a CLI class."""
+
     def main():
         cli = cli_class()
         sys.exit(cli.run())
+
     return main

@@ -11,11 +11,11 @@ Usage:
     @eidosian(log=True, profile=True, benchmark=True, trace=True)
     def my_function(x, y):
         return x + y
-    
+
     # Simple usage with defaults from config
     def my_function(x, y):
         return x + y
-    
+
     # Individual decorators
     @log_call
     @profile_call
@@ -39,19 +39,24 @@ from .profiling import Profiler, ProfileReport
 from .tracing import Tracer
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
 @dataclass
 class DecoratorResult:
     """Result from decorated function execution."""
+
     result: Any
     duration_ms: float
     profile_report: Optional[ProfileReport] = None
     benchmark_result: Optional[BenchmarkResult] = None
     trace_spans: Optional[list] = None
     error: Optional[Exception] = None
+
+
 class EidosianDecorator:
     """
     The universal Eidosian decorator class.
-    
+
     Provides configurable logging, profiling, benchmarking, and tracing
     for any function or method.
     """
@@ -63,28 +68,23 @@ class EidosianDecorator:
         profile: Optional[bool] = None,
         benchmark: Optional[bool] = None,
         trace: Optional[bool] = None,
-
         # Logging options
         log_args: Optional[bool] = None,
         log_result: Optional[bool] = None,
         log_level: str = "DEBUG",
-
         # Profiling options
         profile_top_n: int = 20,
         profile_sort_by: str = "cumulative",
         profile_save: bool = False,
-
         # Benchmarking options
         benchmark_iterations: int = 1,
         benchmark_warmup: int = 0,
         benchmark_memory: bool = False,
         benchmark_threshold_ms: Optional[float] = None,
-
         # Tracing options
         trace_args: Optional[bool] = None,
         trace_result: Optional[bool] = None,
         trace_locals: bool = False,
-
         # General options
         name: Optional[str] = None,
         logger: Optional[EidosianLogger] = None,
@@ -130,10 +130,10 @@ class EidosianDecorator:
     def __call__(self, func: F) -> F:
         """Decorate a function."""
         # Handle mocked functions gracefully
-        func_name = self.name or getattr(func, '__name__', '<unknown>')
+        func_name = self.name or getattr(func, "__name__", "<unknown>")
 
         # Get or create logger
-        func_module = getattr(func, '__module__', __name__)
+        func_module = getattr(func, "__module__", __name__)
         logger = self.logger or get_logger(func_module)
 
         # Setup profiler if needed
@@ -151,6 +151,7 @@ class EidosianDecorator:
                 capture_result=self.trace_result,
                 capture_locals=self.trace_locals,
             )
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
             # Get source info only when tracing requires it
@@ -238,14 +239,9 @@ class EidosianDecorator:
                         logger.debug(f"← {func_name} [{duration_ms:.2f}ms]")
 
                 # Check benchmark threshold
-                if (
-                    self.benchmark_threshold_ms
-                    and start_time is not None
-                    and duration_ms > self.benchmark_threshold_ms
-                ):
+                if self.benchmark_threshold_ms and start_time is not None and duration_ms > self.benchmark_threshold_ms:
                     logger.warning(
-                        f"⚠ {func_name} exceeded threshold: "
-                        f"{duration_ms:.2f}ms > {self.benchmark_threshold_ms}ms"
+                        f"⚠ {func_name} exceeded threshold: " f"{duration_ms:.2f}ms > {self.benchmark_threshold_ms}ms"
                     )
 
         # Preserve function metadata
@@ -259,6 +255,7 @@ class EidosianDecorator:
 
         return wrapper  # type: ignore
 
+
 def eidosian(
     func: Optional[F] = None,
     *,
@@ -270,22 +267,22 @@ def eidosian(
 ) -> Union[F, Callable[[F], F]]:
     """
     Universal Eidosian decorator.
-    
+
     Can be used with or without parentheses:
-    
+
         @eidosian
         def my_func(): ...
-        
+
         @eidosian(log=True, profile=True)
         def my_func(): ...
-    
+
     Args:
         log: Enable logging (default: from config)
         profile: Enable profiling (default: from config)
         benchmark: Enable benchmarking (default: from config)
         trace: Enable tracing (default: from config)
         **kwargs: Additional options passed to EidosianDecorator
-    
+
     Returns:
         Decorated function
     """
@@ -329,6 +326,8 @@ def eidosian(
 
     # Called with parentheses: @eidosian(...)
     return decorator
+
+
 # Individual convenience decorators
 def log_call(
     func: Optional[F] = None,
@@ -339,11 +338,11 @@ def log_call(
 ) -> Union[F, Callable[[F], F]]:
     """
     Decorator for logging function calls.
-    
+
     Usage:
         @log_call
         def my_func(): ...
-        
+
         @log_call(log_args=False)
         def my_func(): ...
     """
@@ -358,6 +357,7 @@ def log_call(
         log_level=level,
     )
 
+
 def profile_call(
     func: Optional[F] = None,
     *,
@@ -367,11 +367,11 @@ def profile_call(
 ) -> Union[F, Callable[[F], F]]:
     """
     Decorator for profiling function calls.
-    
+
     Usage:
         @profile_call
         def my_func(): ...
-        
+
         @profile_call(top_n=10, save=True)
         def my_func(): ...
     """
@@ -386,6 +386,7 @@ def profile_call(
         profile_save=save,
     )
 
+
 def benchmark_call(
     func: Optional[F] = None,
     *,
@@ -396,11 +397,11 @@ def benchmark_call(
 ) -> Union[F, Callable[[F], F]]:
     """
     Decorator for benchmarking function calls.
-    
+
     Usage:
         @benchmark_call
         def my_func(): ...
-        
+
         @benchmark_call(iterations=10, memory=True)
         def my_func(): ...
     """
@@ -416,6 +417,7 @@ def benchmark_call(
         benchmark_threshold_ms=threshold_ms,
     )
 
+
 def trace_call(
     func: Optional[F] = None,
     *,
@@ -425,11 +427,11 @@ def trace_call(
 ) -> Union[F, Callable[[F], F]]:
     """
     Decorator for tracing function calls.
-    
+
     Usage:
         @trace_call
         def my_func(): ...
-        
+
         @trace_call(capture_locals=True)
         def my_func(): ...
     """
@@ -443,11 +445,15 @@ def trace_call(
         trace_result=capture_result,
         trace_locals=capture_locals,
     )
+
+
 # Check if function is already decorated
+
 
 def is_eidosian_decorated(func: Callable) -> bool:
     """Check if a function is already decorated with @eidosian."""
     return getattr(func, "__eidosian_decorated__", False)
+
 
 def get_eidosian_config(func: Callable) -> Optional[dict]:
     """Get the Eidosian configuration for a decorated function."""

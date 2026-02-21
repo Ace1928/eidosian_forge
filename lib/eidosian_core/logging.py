@@ -4,6 +4,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 Advanced logging with structured output, rotation, and contextual enrichment.
 """
+
 from __future__ import annotations
 
 import json
@@ -21,17 +22,21 @@ from typing import Any, Dict, Optional, Union
 
 class LogLevel(Enum):
     """Log levels."""
+
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
+
+
 class StructuredFormatter(logging.Formatter):
     """JSON structured log formatter."""
 
     def __init__(self, include_traceback: bool = True):
         super().__init__()
         self.include_traceback = include_traceback
+
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -63,15 +68,17 @@ class StructuredFormatter(logging.Formatter):
             }
 
         return json.dumps(log_data)
+
+
 class ColorFormatter(logging.Formatter):
     """Colored console log formatter."""
 
     COLORS = {
-        "DEBUG": "\033[36m",      # Cyan
-        "INFO": "\033[32m",       # Green
-        "WARNING": "\033[33m",    # Yellow
-        "ERROR": "\033[31m",      # Red
-        "CRITICAL": "\033[35m",   # Magenta
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
     }
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -79,15 +86,18 @@ class ColorFormatter(logging.Formatter):
     def __init__(self, fmt: str, datefmt: str = None, use_colors: bool = True):
         super().__init__(fmt, datefmt)
         self.use_colors = use_colors and sys.stdout.isatty()
+
     def format(self, record: logging.LogRecord) -> str:
         if self.use_colors:
             color = self.COLORS.get(record.levelname, "")
             record.levelname = f"{color}{self.BOLD}{record.levelname}{self.RESET}"
         return super().format(record)
+
+
 class EidosianLogger:
     """
     Enhanced logger with context tracking and structured output.
-    
+
     Features:
     - Automatic context enrichment
     - Structured JSON output option
@@ -126,10 +136,11 @@ class EidosianLogger:
         if structured:
             console_handler.setFormatter(StructuredFormatter())
         else:
-            console_handler.setFormatter(ColorFormatter(
-                "[%(asctime)s] %(levelname)s [%(name)s:%(funcName)s:%(lineno)d] %(message)s",
-                "%Y-%m-%d %H:%M:%S"
-            ))
+            console_handler.setFormatter(
+                ColorFormatter(
+                    "[%(asctime)s] %(levelname)s [%(name)s:%(funcName)s:%(lineno)d] %(message)s", "%Y-%m-%d %H:%M:%S"
+                )
+            )
         self._logger.addHandler(console_handler)
 
         # File handler
@@ -180,18 +191,25 @@ class EidosianLogger:
         """Internal logging with context enrichment."""
         extra = {**self.get_context(), **kwargs.pop("extra", {})}
         self._logger.log(level, msg, *args, exc_info=exc_info, extra=extra, **kwargs)
+
     def debug(self, msg: str, *args, **kwargs):
         self._log(logging.DEBUG, msg, *args, **kwargs)
+
     def info(self, msg: str, *args, **kwargs):
         self._log(logging.INFO, msg, *args, **kwargs)
+
     def warning(self, msg: str, *args, **kwargs):
         self._log(logging.WARNING, msg, *args, **kwargs)
+
     def error(self, msg: str, *args, exc_info: bool = False, **kwargs):
         self._log(logging.ERROR, msg, *args, exc_info=exc_info, **kwargs)
+
     def critical(self, msg: str, *args, exc_info: bool = True, **kwargs):
         self._log(logging.CRITICAL, msg, *args, exc_info=exc_info, **kwargs)
+
     def exception(self, msg: str, *args, **kwargs):
         self._log(logging.ERROR, msg, *args, exc_info=True, **kwargs)
+
     def function_entry(
         self,
         func_name: str,
@@ -204,6 +222,7 @@ class EidosianLogger:
         args_str = self._truncate(str(args), max_length)
         kwargs_str = self._truncate(str(kwargs), max_length)
         self.debug(f"→ {func_name}(args={args_str}, kwargs={kwargs_str})")
+
     def function_exit(
         self,
         func_name: str,
@@ -215,6 +234,7 @@ class EidosianLogger:
         result_str = self._truncate(str(result), max_length)
         duration_str = f" [{duration_ms:.2f}ms]" if duration_ms else ""
         self.debug(f"← {func_name} returned {result_str}{duration_str}")
+
     def function_error(
         self,
         func_name: str,
@@ -230,15 +250,14 @@ class EidosianLogger:
         """Truncate string with ellipsis."""
         if len(s) <= max_length:
             return s
-        return s[:max_length - 3] + "..."
+        return s[: max_length - 3] + "..."
+
+
 # Module-level convenience functions
 _loggers: Dict[str, EidosianLogger] = {}
 
-def get_logger(
-    name: str = None,
-    level: Union[str, int, LogLevel] = LogLevel.INFO,
-    **kwargs
-) -> EidosianLogger:
+
+def get_logger(name: str = None, level: Union[str, int, LogLevel] = LogLevel.INFO, **kwargs) -> EidosianLogger:
     """Get or create a logger."""
     if name is None:
         name = "eidosian"
@@ -247,6 +266,7 @@ def get_logger(
         _loggers[name] = EidosianLogger(name, level=level, **kwargs)
 
     return _loggers[name]
+
 
 def configure_logging(
     level: Union[str, int, LogLevel] = LogLevel.INFO,
