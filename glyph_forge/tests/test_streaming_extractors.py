@@ -75,6 +75,7 @@ def test_extract_playlist_arguments(monkeypatch) -> None:
 
 def test_extract_playlist_stitches_audio(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(extractors, "HAS_YT_DLP", True)
+    monkeypatch.setattr(extractors.shutil, "which", lambda binary: "/usr/bin/ffmpeg" if binary == "ffmpeg" else None)
     monkeypatch.setattr(extractors.tempfile, "gettempdir", lambda: str(tmp_path))
 
     class DummyYDL:
