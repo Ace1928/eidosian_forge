@@ -7,4 +7,4 @@
 - [x] **Upgrade**: Implemented Pydantic dynamic model compilation (`core.py`).
 
 ## 🟢 Low Priority
-- [ ] **Schema Registry**: Persist registered schemas to disk using `gis_forge`.
+- [x] ~~**Schema Registry**: Persist registered schemas to disk using `gis_forge`.~~ (`TypeCore` now supports GIS-backed persistence via `registry_backend`; wired in `eidos_mcp.state`)

@@ -17,6 +17,7 @@ from typing import Optional, List, Dict, Any, Union
 
 from . import __version__
 from .analyzer import analyze_code
+from .diff_viewer import load_and_diff
 from .reporter import print_analysis_report
 
 # ╭──────────────────────────────────────────────────────╮
@@ -62,6 +63,11 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Show what would be done without making any changes"
+    )
+
+    parser.add_argument(
+        "--preview-diff-against",
+        help="Path to a proposed refactored file to diff against source before applying",
     )
     
     parser.add_argument(
@@ -109,6 +115,7 @@ def main(args: Optional[List[str]] = None) -> int:
             dry_run=parsed_args.dry_run,
             verbose=parsed_args.verbose,
             clean=parsed_args.clean,
+            preview_diff_against=parsed_args.preview_diff_against,
         )
         return 0 if result["success"] else 1
         
@@ -128,6 +135,7 @@ def execute_refactoring(
     dry_run: bool = False,
     verbose: bool = False,
     clean: bool = False,
+    preview_diff_against: Optional[Union[str, Path]] = None,
 ) -> Dict[str, Any]:
     """Execute the refactoring process based on given options.
     
@@ -147,6 +155,17 @@ def execute_refactoring(
     
     print(f"🔍 Analyzing {source_path}...")
     analysis_results = analyze_code(source_path)
+
+    if preview_diff_against is not None:
+        proposed_path = Path(preview_diff_against)
+        if not proposed_path.exists():
+            raise FileNotFoundError(f"Proposed diff target not found: {proposed_path}")
+        diff_text = load_and_diff(source_path, proposed_path)
+        if diff_text:
+            print("🧾 Preview diff")
+            print(diff_text)
+        else:
+            print("🧾 Preview diff: no changes detected")
     
     if analyze_only or dry_run or verbose:
         print_analysis_report(analysis_results)
@@ -167,6 +186,7 @@ def refactor(
     dry_run: bool = False,
     verbose: bool = False,
     clean: bool = False,
+    preview_diff_against: Optional[Union[str, Path]] = None,
 ) -> Dict[str, Any]:
     """High-level API for programmatic refactoring - maintains full compatibility.
     
@@ -191,6 +211,7 @@ def refactor(
         dry_run=dry_run,
         verbose=verbose,
         clean=clean,
+        preview_diff_against=preview_diff_against,
     )
 
 

@@ -11,14 +11,25 @@
 It implements a lightweight schema engine (similar to JSON Schema) for validating dynamic data structures passed between agents.
 
 ## 🏗️ Architecture
-- `type_core.py`: Main validation engine.
+- `src/type_forge/core.py`: Main validation engine.
 
 ## 🚀 Usage
 
 ```python
-from type_forge.type_core import TypeCore
+from type_forge import TypeCore
 
 tc = TypeCore()
 schema = {"type": "string", "minLength": 5}
-tc.check_schema(schema, "Hello World") # True
+tc.check_schema(schema, "Hello World")  # True
+```
+
+## GIS-backed Schema Registry
+
+`TypeCore` can persist registered schemas via a GIS-compatible backend:
+
+```python
+from type_forge import TypeCore
+
+tc = TypeCore(registry_backend=gis_core, registry_key="type_forge.schemas")
+tc.register_schema("person", {"type": "object", "properties": {"name": {"type": "string"}}})
 ```

@@ -5,4 +5,4 @@
 - [x] **Widgets**: Create standard Eidosian widgets (Basic TUI wrapper).
 
 ## 🟢 Low Priority
-- [ ] **Theme**: Create an Eidosian color theme for `rich`.
+- [x] ~~**Theme**: Create an Eidosian color theme for `rich`.~~ (Implemented in `terminal_forge.rich_theme` with test coverage)

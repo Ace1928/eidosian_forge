@@ -13,3 +13,10 @@
 1.  Draft content in Markdown.
 2.  Use `llm_forge` to edit/refine.
 3.  Publish.
+
+## Publishing Automation
+- Convert markdown to HTML:
+  - `python -m article_forge.cli publish path/to/draft.md --html-out path/to/draft.html`
+- Convert markdown to HTML and PDF:
+  - `python -m article_forge.cli publish path/to/draft.md --html-out path/to/draft.html --pdf-out path/to/draft.pdf`
+- PDF export uses `weasyprint` when installed in `eidosian_venv`.

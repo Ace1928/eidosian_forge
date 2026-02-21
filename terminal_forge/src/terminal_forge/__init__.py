@@ -10,3 +10,6 @@ This module should embody core Terminal Forge architectural patterns while maint
 crystal-clear intent and optimal performance characteristics.
 """
 
+from .rich_theme import EidosianPalette, build_eidosian_rich_theme, get_eidosian_palette
+
+__all__ = ["EidosianPalette", "build_eidosian_rich_theme", "get_eidosian_palette"]

@@ -43,5 +43,6 @@ print(transformed_code)
 ### CLI
 
 ```bash
-python -m refactor_forge.cli analyze src/
+python -m refactor_forge.cli path/to/source.py --analyze-only
+python -m refactor_forge.cli path/to/source.py --dry-run --preview-diff-against path/to/proposed.py
 ```

@@ -88,7 +88,13 @@ audit = AuditForge(FORGE_DIR / "audit_data") if AuditForge else None
 
 ensure_forge_import("type_forge")
 TypeCore = _import_symbol("type_forge.core", "TypeCore")
-type_forge = TypeCore() if TypeCore else None
+if TypeCore:
+    try:
+        type_forge = TypeCore(registry_backend=gis)
+    except TypeError:
+        type_forge = TypeCore()
+else:
+    type_forge = None
 
 ensure_forge_import("llm_forge")
 ModelManager = _import_symbol("llm_forge.core.manager", "ModelManager")

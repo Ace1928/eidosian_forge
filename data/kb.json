@@ -1444,6 +1444,20 @@
         ]
       },
       "links": []
+    },
+    "8c316c0b-9cc9-43d4-8a95-f93db9dce0bd": {
+      "id": "8c316c0b-9cc9-43d4-8a95-f93db9dce0bd",
+      "content": "TypeForge now supports GIS-backed schema registry persistence through a backend contract; eidos_mcp initializes TypeCore with GIS backend when available.",
+      "metadata": {
+        "tags": [
+          "eidos_mcp",
+          "schema-registry",
+          "persistence",
+          "gis_forge",
+          "type_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -3,13 +3,23 @@ from eidosian_core import eidosian
 Type Forge - Schema registry and validation.
 Standardizes communication between Eidosian components.
 """
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, Optional, Protocol, Type
 import re
-from pydantic import create_model, Field, ValidationError as PydanticValidationError, BaseModel
+from pydantic import BaseModel, ValidationError as PydanticValidationError, create_model
+
+
+class RegistryBackend(Protocol):
+    """Minimal persistence backend contract."""
+
+    def get(self, key: str, default: Any = None, use_env: bool = True) -> Any: ...
+
+    def set(self, key: str, value: Any, notify: bool = True, persist: bool = True) -> None: ...
+
 
 class ValidationError(Exception):
     """Raised when validation fails."""
     pass
+
 
 class TypeCore:
     """
@@ -18,9 +28,35 @@ class TypeCore:
     Now supports Pydantic dynamic models.
     """
     
-    def __init__(self):
+    def __init__(
+        self,
+        registry_backend: RegistryBackend | None = None,
+        registry_key: str = "type_forge.schemas",
+    ):
         self._schemas: Dict[str, Dict[str, Any]] = {}
         self._models: Dict[str, Type[BaseModel]] = {}
+        self._registry_backend = registry_backend
+        self._registry_key = registry_key
+        self._load_from_backend()
+
+    def _load_from_backend(self) -> None:
+        if self._registry_backend is None:
+            return
+        try:
+            snapshot = self._registry_backend.get(self._registry_key, default={})
+            if isinstance(snapshot, dict):
+                self.restore(snapshot)
+        except Exception:
+            # Backend connectivity should never prevent core operation.
+            return
+
+    def _persist_to_backend(self) -> None:
+        if self._registry_backend is None:
+            return
+        try:
+            self._registry_backend.set(self._registry_key, self.snapshot())
+        except Exception:
+            return
 
     @eidosian()
     def register_schema(self, name: str, schema: Dict[str, Any]) -> bool:
@@ -33,6 +69,7 @@ class TypeCore:
             self._models[name] = self._compile_to_pydantic(name, schema)
         except Exception:
             self._models.pop(name, None)
+        self._persist_to_backend()
         return True
 
     @eidosian()
@@ -42,6 +79,7 @@ class TypeCore:
             return False
         del self._schemas[name]
         self._models.pop(name, None)
+        self._persist_to_backend()
         return True
 
     @eidosian()
@@ -64,6 +102,7 @@ class TypeCore:
                 self._models[name] = self._compile_to_pydantic(name, schema)
             except Exception:
                 continue
+        self._persist_to_backend()
 
     @eidosian()
     def validate(self, name: str, data: Any) -> bool:

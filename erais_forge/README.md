@@ -22,6 +22,15 @@
 - **Archive Forge**: Stores successful mutations as "Canonical Entities".
 - **Game Forge**: Provides the "Gym" for evolution and benchmarking.
 
+## `eidos_brain` vs `erais`
+
+| Component | Responsibility | Runtime Profile |
+| --- | --- | --- |
+| `eidos_brain` | Primary production cognition stack for live tool use, memory use, and user-facing execution loops. | Always-on operational runtime with strict reliability gates. |
+| `erais_forge` | Experimental recursive self-improvement and evolutionary search engine that proposes upgrades and candidate policies. | Controlled research runtime with explicit benchmark gates before promotion. |
+
+Promotion path: ideas validated in `erais_forge` are benchmarked, audited, and only then promoted into production stacks (`agent_forge` / `eidos_brain` pathways).
+
 ## 🚀 Status
 
 **Concept Phase**. Core algorithms are being modeled in `planning/` and `planning/meta_learning.ipynb`.

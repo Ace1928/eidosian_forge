@@ -16,6 +16,9 @@ It leverages `rich` for formatting and `textual` for interactive applications.
 ## 🚀 Usage
 
 ```python
-from terminal_forge import App
-App.run()
+from rich.console import Console
+from terminal_forge import build_eidosian_rich_theme
+
+console = Console(theme=build_eidosian_rich_theme("dark"))
+console.print("Eidosian terminal theme active", style="panel.title")
 ```

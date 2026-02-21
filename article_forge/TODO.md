@@ -1,4 +1,4 @@
 # TODO: article_forge
 
 ## 🟢 Low Priority
-- [ ] **Automation**: Create a script to convert Markdown to HTML/PDF for publishing.
+- [x] ~~**Automation**: Create a script to convert Markdown to HTML/PDF for publishing.~~ (Implemented in `article_forge.publish` + CLI `publish` command)
