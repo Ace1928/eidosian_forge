@@ -631,5 +631,26 @@
       "tracked-scope"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "92f855d5-b5df-481b-9a51-d8376704ddd4",
+    "content": "Universal CI and atlas drift workflows are both green after deterministic tracked-scope README handling update.",
+    "created_at": "2026-02-22T09:31:13.970548",
+    "last_accessed": "2026-02-22T09:31:13.970561",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.86,
+    "ttl_seconds": 86400,
+    "tags": [
+      "green",
+      "determinism",
+      "workflow",
+      "atlas",
+      "ci"
+    ],
+    "linked_memories": []
   }
 ]

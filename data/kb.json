@@ -1429,6 +1429,21 @@
         ]
       },
       "links": []
+    },
+    "cb7a6618-c25b-4f67-b0b2-9599af30dbed": {
+      "id": "cb7a6618-c25b-4f67-b0b2-9599af30dbed",
+      "content": "CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners.",
+      "metadata": {
+        "tags": [
+          "docs",
+          "determinism",
+          "atlas",
+          "ci",
+          "termux",
+          "github-actions"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
