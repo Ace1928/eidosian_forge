@@ -61,6 +61,7 @@ jobs:
             mcp \
             fastapi \
             uvicorn \
+            psutil \
             python-dotenv \
             pyyaml \
             rich \
