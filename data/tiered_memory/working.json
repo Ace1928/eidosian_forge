@@ -502,5 +502,28 @@
       "tests"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "37b8855c-ed5a-45de-a986-2b81206be2f3",
+    "content": "Resolved live replay usability issue by adding --replay-store support. Verified record->replay success with 4/4 replay hits and 1.0 success rate when replay store is shared across output roots.",
+    "created_at": "2026-02-21T19:55:23.584460",
+    "last_accessed": "2026-02-21T19:55:23.584471",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.95,
+    "ttl_seconds": 86400,
+    "tags": [
+      "observability",
+      "code_forge",
+      "replay",
+      "eval_os",
+      "termux",
+      "tests",
+      "staleness"
+    ],
+    "linked_memories": []
   }
 ]

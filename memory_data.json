@@ -1101,5 +1101,34 @@
       0.4470588235294118,
       0.9058823529411765
     ]
+  },
+  "e76c08ec-78ae-4362-a6f1-d9c99d453961": {
+    "id": "e76c08ec-78ae-4362-a6f1-d9c99d453961",
+    "content": "Completed Code Forge eval/observability OS implementation and stabilization: taskbank/config schemas, replayable trace artifacts, deterministic replay store, staleness metrics, CLI surfaces, docs, tests, and architecture coverage. Added replay-store override for cross-output replay and validated in eidosian_venv.",
+    "created_at": "2026-02-21T19:55:15.427552",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_eval_os_cycle_20260221"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.24313725490196078,
+      0.48627450980392156,
+      0.7137254901960784,
+      0.8705882352941177,
+      0.9254901960784314,
+      0.14901960784313725,
+      0.050980392156862744,
+      0.1607843137254902,
+      0.8823529411764706,
+      0.2235294117647059,
+      0.2549019607843137,
+      0.43529411764705883,
+      0.7176470588235294,
+      0.3137254901960784,
+      0.4235294117647059,
+      0.047058823529411764
+    ]
   }
 }
