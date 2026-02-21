@@ -1275,5 +1275,34 @@
       0.5568627450980392,
       0.592156862745098
     ]
+  },
+  "07e35db3-d813-43b2-b056-eae787c9d874": {
+    "id": "07e35db3-d813-43b2-b056-eae787c9d874",
+    "content": "Consciousness Linux Parity workflow now passes after CI dependency curation and audit-gate hardening; key fixes included psutil/networkx/openai deps, venv_run fallback assertion, and explicit failed_detail logging in linux_audit_matrix.",
+    "created_at": "2026-02-22T08:16:57.350791",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "consciousness_parity_ci_green_20260221"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.2627450980392157,
+      0.6196078431372549,
+      0.2784313725490196,
+      0.9607843137254902,
+      0.6235294117647059,
+      0.592156862745098,
+      0.8745098039215686,
+      0.8196078431372549,
+      0.2901960784313726,
+      0.21176470588235294,
+      1.0,
+      0.0196078431372549,
+      0.20784313725490197,
+      0.8588235294117647,
+      0.7215686274509804,
+      0.49411764705882355
+    ]
   }
 }

@@ -568,5 +568,26 @@
       "audit"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "72961e89-77bc-456b-8f6f-6242e486193f",
+    "content": "CI hardening lesson: for parity workflows use curated deps plus explicit optional-forge allowlist, and print failed_detail lines from audit scripts to keep triage deterministic.",
+    "created_at": "2026-02-22T08:16:57.486898",
+    "last_accessed": "2026-02-22T08:16:57.486907",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ci",
+      "parity",
+      "lessons",
+      "mcp",
+      "audit"
+    ],
+    "linked_memories": []
   }
 ]

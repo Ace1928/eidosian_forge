@@ -26,3 +26,7 @@
 - [x] ~~Stabilize full MCP stdio integration test startup/tool timings (`eidos_mcp/tests/test_mcp_tools_stdio.py`: free-port server launch, extended GraphRAG call windows, optional `agent_run_task` fallback acceptance, monotonic health checks).~~
 - [x] ~~Harden Linux audit matrix quick probe for Termux runtime variance (`scripts/linux_audit_matrix.py`: optional-forge allowlist with default `mkey`, MCP initialize timeout floor, per-call timeout floor).~~
 - [x] ~~Re-run full `scripts/linux_parity_smoke.sh` and verify end-to-end PASS (`73 passed` + `checks_total=5 ok=5 fail=0`, report `reports/linux_audit_20260221_202336_b23ae47d.json`).~~
+- [x] ~~Stabilize `Consciousness Linux Parity` workflow dependency profile (`.github/workflows/consciousness-parity.yml`): replace root `requirements.txt` install with curated MCP/consciousness toolchain and add required runtime deps (`psutil`, `networkx`, `openai`).~~
+- [x] ~~Harden CI portability in MCP full integration tests (`eidos_mcp/tests/test_mcp_tools_stdio.py`): accept missing-repo-venv fallback from `venv_run` while still asserting valid execution/error contract.~~
+- [x] ~~Expose failing audit detail lines from `scripts/linux_audit_matrix.py` (`failed_detail[...]`) to remove opaque CI gate failures.~~
+- [x] ~~Align CI audit optional-forge policy for parity smoke (`EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word`) and verify `Consciousness Linux Parity` is green (`https://github.com/Ace1928/eidosian_forge/actions/runs/22265310795`).~~
