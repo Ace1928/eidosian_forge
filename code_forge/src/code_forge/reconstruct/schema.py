@@ -11,6 +11,11 @@ ROUNDTRIP_REQUIRED_FILES = {
     "roundtrip_summary": "roundtrip_summary.json",
 }
 
+ROUNDTRIP_OPTIONAL_FILES = {
+    "provenance_links": "provenance_links.json",
+    "provenance_registry": "provenance_registry.json",
+}
+
 
 def _require(condition: bool, errors: list[str], message: str) -> None:
     if not condition:
@@ -125,8 +130,36 @@ def validate_roundtrip_summary(payload: dict[str, Any]) -> list[str]:
     _require(isinstance(payload.get("digest"), dict), errors, "summary.digest must be object")
     _require(isinstance(payload.get("reconstruction"), dict), errors, "summary.reconstruction must be object")
     _require(isinstance(payload.get("parity"), dict), errors, "summary.parity must be object")
+    if payload.get("provenance_path") is not None:
+        _require(isinstance(payload.get("provenance_path"), str), errors, "summary.provenance_path must be string")
+    if payload.get("provenance_registry_path") is not None:
+        _require(
+            isinstance(payload.get("provenance_registry_path"), str),
+            errors,
+            "summary.provenance_registry_path must be string",
+        )
     if payload.get("apply") is not None:
         _require(isinstance(payload.get("apply"), dict), errors, "summary.apply must be object when present")
+    return errors
+
+
+def validate_provenance_links(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(isinstance(payload.get("generated_at"), str), errors, "provenance.generated_at must be string")
+    _require(isinstance(payload.get("stage"), str), errors, "provenance.stage must be string")
+    _require(isinstance(payload.get("root_path"), str), errors, "provenance.root_path must be string")
+    _require(isinstance(payload.get("provenance_id"), str), errors, "provenance.provenance_id must be string")
+    _require(isinstance(payload.get("artifacts"), list), errors, "provenance.artifacts must be list")
+    return errors
+
+
+def validate_provenance_registry(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(isinstance(payload.get("schema_version"), str), errors, "provenance_registry.schema_version must be string")
+    _require(isinstance(payload.get("generated_at"), str), errors, "provenance_registry.generated_at must be string")
+    _require(isinstance(payload.get("registry_id"), str), errors, "provenance_registry.registry_id must be string")
+    _require(isinstance(payload.get("root_path"), str), errors, "provenance_registry.root_path must be string")
+    _require(isinstance(payload.get("links"), dict), errors, "provenance_registry.links must be object")
     return errors
 
 
@@ -166,6 +199,31 @@ def validate_roundtrip_workspace(
         try:
             payload = _load_json(path)
             loaded[key] = payload
+            errs = validator(payload)
+            if errs:
+                file_report["errors"].extend(errs)
+                report["errors"].extend([f"{report_key}: {e}" for e in errs])
+                report["pass"] = False
+        except Exception as exc:
+            msg = f"failed to load/validate JSON: {exc}"
+            file_report["errors"].append(msg)
+            report["errors"].append(f"{report_key}: {msg}")
+            report["pass"] = False
+
+    optional_validators = {
+        "provenance_links": validate_provenance_links,
+        "provenance_registry": validate_provenance_registry,
+    }
+    for key, relative_path in ROUNDTRIP_OPTIONAL_FILES.items():
+        validator = optional_validators[key]
+        path = workspace_dir / relative_path
+        report_key = Path(relative_path).name
+        if not path.exists():
+            continue
+        file_report = {"path": str(path), "exists": True, "errors": []}
+        report["files"][report_key] = file_report
+        try:
+            payload = _load_json(path)
             errs = validator(payload)
             if errs:
                 file_report["errors"].extend(errs)

@@ -45,3 +45,21 @@ def test_validate_output_dir_pass_and_fail(tmp_path: Path) -> None:
     bad = validate_output_dir(out)
     assert not bad["pass"]
     assert any("triage.json" in err for err in bad["errors"])
+
+    # Restore triage and break provenance registry to ensure optional schema validation is enforced.
+    run_archive_digester(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        output_dir=out,
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+    )
+    registry_path = out / "provenance_registry.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry["links"] = []  # invalid shape; must be object
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    bad_registry = validate_output_dir(out)
+    assert bad_registry["pass"] is False
+    assert any("provenance_registry.json" in err for err in bad_registry["errors"])

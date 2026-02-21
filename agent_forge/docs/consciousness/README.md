@@ -4,6 +4,11 @@ This directory contains machine-readable RAC-AP protocol artifacts used by the `
 
 ## Files
 - `rac_ap_protocol_v1_2026_02_19.json`: default RAC-AP protocol schema and gating thresholds.
+  - Includes explicit falsification criteria.
+  - Includes perturbation-suite requirements (PCI-A + intervention coverage).
+  - Includes external benchmark requirements (AgentBench/WebArena/OSWorld families with deterministic seed policy).
+  - Includes security-evaluation requirements (prompt-injection and residual-risk framing).
+  - Includes construct-validity requirements (convergent/discriminant + negative controls).
 
 ## CLI Usage
 Validate built-in protocol:
@@ -37,6 +42,13 @@ Create a pre-registration manifest:
   --owner eidos \
   --json
 ```
+
+The preregistration manifest captures:
+- falsification criteria
+- perturbation suite requirements
+- external benchmark requirements
+- security evaluation requirements
+- construct-validity requirements
 
 ## Research Anchors
 - Global workspace architecture: https://pubmed.ncbi.nlm.nih.gov/17998071/

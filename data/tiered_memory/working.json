@@ -27,10 +27,10 @@
     "importance": 0.5,
     "ttl_seconds": 86400,
     "tags": [
-      "introspection",
-      "identity",
       "milestone-complete",
-      "velvet-beef"
+      "introspection",
+      "velvet-beef",
+      "identity"
     ],
     "linked_memories": []
   },
@@ -47,10 +47,10 @@
     "importance": 0.87,
     "ttl_seconds": 86400,
     "tags": [
-      "graphrag",
+      "query-methods",
       "termux",
       "benchmark",
-      "query-methods"
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -67,11 +67,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "mcp",
       "codex",
+      "mcp",
       "gemini",
-      "session",
-      "termux"
+      "termux",
+      "session"
     ],
     "linked_memories": []
   },
@@ -89,10 +89,10 @@
     "ttl_seconds": 86400,
     "tags": [
       "ports",
+      "termux",
       "scribe",
-      "dashboard",
       "doc_forge",
-      "termux"
+      "dashboard"
     ],
     "linked_memories": []
   },
@@ -109,10 +109,10 @@
     "importance": 0.84,
     "ttl_seconds": 86400,
     "tags": [
+      "doc_forge",
       "stability",
-      "service",
       "termux",
-      "doc_forge"
+      "service"
     ],
     "linked_memories": []
   },
@@ -129,9 +129,9 @@
     "importance": 0.86,
     "ttl_seconds": 86400,
     "tags": [
-      "quality",
-      "evaluation",
       "judge",
+      "evaluation",
+      "quality",
       "graphrag"
     ],
     "linked_memories": []
@@ -149,11 +149,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "quality-gates",
-      "graphrag",
-      "benchmarking",
       "models",
-      "termux"
+      "graphrag",
+      "quality-gates",
+      "termux",
+      "benchmarking"
     ],
     "linked_memories": []
   },
@@ -170,12 +170,12 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "eidctl",
-      "consciousness",
+      "agent_forge",
       "validation",
-      "rac_ap",
+      "consciousness",
       "termux",
-      "agent_forge"
+      "eidctl",
+      "rac_ap"
     ],
     "linked_memories": []
   },
@@ -192,12 +192,12 @@
     "importance": 0.93,
     "ttl_seconds": 86400,
     "tags": [
-      "consciousness",
-      "validation",
-      "causal",
-      "intervention",
-      "rac-ap",
       "agent_forge",
+      "validation",
+      "consciousness",
+      "intervention",
+      "causal",
+      "rac-ap",
       "protocol"
     ],
     "linked_memories": []
@@ -215,12 +215,12 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "tests",
+      "agent_forge",
+      "git",
       "validation",
       "push",
       "rebase",
-      "git",
-      "agent_forge"
+      "tests"
     ],
     "linked_memories": []
   },
@@ -237,10 +237,10 @@
     "importance": 0.91,
     "ttl_seconds": 86400,
     "tags": [
-      "security",
-      "validation",
-      "workflows",
       "eidosian_forge",
+      "validation",
+      "security",
+      "workflows",
       "ci"
     ],
     "linked_memories": []
@@ -258,11 +258,11 @@
     "importance": 0.93,
     "ttl_seconds": 86400,
     "tags": [
-      "prettier",
-      "workflow",
       "lint",
       "termux",
-      "ci"
+      "ci",
+      "prettier",
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -279,10 +279,10 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
+      "atlas",
       "ci",
       "pytest",
-      "workflow",
-      "atlas"
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -299,10 +299,224 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "monorepo",
-      "pytest",
       "ci",
-      "stabilization"
+      "pytest",
+      "stabilization",
+      "monorepo"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "310c4222-5845-438c-bc7c-e0b0bbd223c5",
+    "content": "Validated ChromaDB on Termux in eidosian_venv using PersistentClient add/query with explicit embeddings; retrieval returned expected nearest neighbor and remained stable during regression pass.",
+    "created_at": "2026-02-20T21:14:14.045261",
+    "last_accessed": "2026-02-20T21:14:14.045274",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.88,
+    "ttl_seconds": 86400,
+    "tags": [
+      "memory_forge",
+      "termux",
+      "chroma",
+      "validation"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "7dd49144-fb18-4418-995f-3c81eab4432d",
+    "content": "Validated end-to-end digest with --sync-memory + --sync-knowledge + --export-graphrag on a synthetic repo; provenance_links.json now reports memory_links and knowledge_links counts consistently.",
+    "created_at": "2026-02-20T22:07:34.953090",
+    "last_accessed": "2026-02-20T22:07:34.953098",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.89,
+    "ttl_seconds": 86400,
+    "tags": [
+      "memory_forge",
+      "validation",
+      "code_forge",
+      "knowledge_forge",
+      "provenance"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "69a0f3be-6ee5-495d-b014-58d65c7fe426",
+    "content": "CI reliability fix in progress: identified latest Eidosian Universal CI failure root causes on commit 7960bcda2e as missing tracked module lib/eidosian_core/ports.py and missing test-time dependencies (numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub) in workflow test install step. Applied workflow dependency install expansion and staged ports module + tests.",
+    "created_at": "2026-02-20T22:41:13.360289",
+    "last_accessed": "2026-02-20T22:41:13.360301",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.88,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ports",
+      "github-actions",
+      "ci",
+      "dependencies",
+      "workflow"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "d8cfb16d-75dd-4743-ba07-42969c519c91",
+    "content": "Follow-up CI hardening commit 844548c8a9 added missing script helper modules (lib/py_lib.py and scripts/lib/py_lib.py) and broadened CI test dependency install set (pydantic, requests, mcp, networkx, websockets, pillow, pygame). Also hardened self_model memory introspection import path to fail-open on import exceptions.",
+    "created_at": "2026-02-20T23:00:05.646131",
+    "last_accessed": "2026-02-20T23:00:05.646140",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "agent_forge",
+      "dependency-management",
+      "ci",
+      "scripts",
+      "workflow"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "98dc99fc-4e25-419d-ad48-8e7719af5416",
+    "content": "CI stabilization pass completed on 2026-02-20: fixed remaining failing test groups (eidos_mcp llm export compatibility, figlet renderText alias compatibility, game_forge pyparticles numba-compat imports, glyph_forge ANSI rendering fallback when cv2 backend unavailable, CI install adds jinja2 for moltbook UI templates). Commit cdbf0d08af pushed to main.",
+    "created_at": "2026-02-21T00:00:46.140303",
+    "last_accessed": "2026-02-21T00:00:46.140329",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "game_forge",
+      "figlet_forge",
+      "eidos_mcp",
+      "glyph_forge",
+      "stability",
+      "tests",
+      "moltbook_forge",
+      "workflows",
+      "ci"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e894c567-b1e2-4f5a-93db-e13f4e3c6bb9",
+    "content": "CI hardening cycle on 2026-02-20/21 produced commit 6346d73611: restored stable MCP compatibility exports via forge_state bindings, hardened sparse->dense fallback in gene_particles interactions, hardened glyph batch iterable handling, fixed moltbook CLI subprocess cwd semantics, and made figlet compat assertion environment-robust. Added docs/security/ci_regression_guards_2026-02-21.md.",
+    "created_at": "2026-02-21T09:11:00.035409",
+    "last_accessed": "2026-02-21T09:11:00.035439",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "documentation",
+      "stability",
+      "tests",
+      "regression",
+      "ci",
+      "workflow"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "e7eeafb6-759c-4a6b-893d-ffde04636fbb",
+    "content": "Started full per-forge local test audit loop with pytest --maxfail=1 under eidosian_venv; tracking failures via reports/local_test_audit/*.log and summary.json for triage.",
+    "created_at": "2026-02-21T09:44:48.801903",
+    "last_accessed": "2026-02-21T09:44:48.801915",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.82,
+    "ttl_seconds": 86400,
+    "tags": [
+      "audit",
+      "ci",
+      "forge-wide",
+      "tests"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1dd06855-bba1-4a20-afcd-a2a49a9ce463",
+    "content": "Forge-wide local audit result (non-agent forges): all passed except figlet timeout at 240s and memory_forge failure from invoking system pytest. Using eidosian_venv with `python -m pytest` resolves memory_forge and yields stable runs.",
+    "created_at": "2026-02-21T10:31:25.014640",
+    "last_accessed": "2026-02-21T10:31:25.014651",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.86,
+    "ttl_seconds": 86400,
+    "tags": [
+      "audit",
+      "pytest",
+      "termux",
+      "ci",
+      "venv"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "5a5241f2-d616-4104-9f98-f358f05c0ec7",
+    "content": "Validated full suites for figlet_forge, game_forge, and glyph_forge via eidosian_venv python -m pytest --maxfail=1; all passed locally after hardening patch.",
+    "created_at": "2026-02-21T11:06:58.059499",
+    "last_accessed": "2026-02-21T11:06:58.059509",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "glyph",
+      "figlet",
+      "game",
+      "validation",
+      "ci"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "f9fc5719-1900-41a2-b87d-5fd95fc9ca5b",
+    "content": "RAC-AP protocol schema expanded with explicit falsification criteria, perturbation-suite requirements (PCI-A/intervention coverage), external benchmark requirements, security evaluation thresholds, and construct-validity controls.",
+    "created_at": "2026-02-21T11:30:44.757093",
+    "last_accessed": "2026-02-21T11:30:44.757102",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "validation",
+      "benchmark",
+      "consciousness",
+      "security",
+      "rac-ap",
+      "protocol"
     ],
     "linked_memories": []
   }

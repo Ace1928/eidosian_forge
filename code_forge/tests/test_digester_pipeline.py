@@ -81,6 +81,10 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert (out / "dependency_graph.json").exists()
     assert (out / "triage.json").exists()
     assert (out / "drift_report.json").exists()
+    assert (out / "provenance_links.json").exists()
+    assert (out / "provenance_registry.json").exists()
+    assert payload.get("provenance_path")
+    assert payload.get("provenance_registry_path")
     assert payload.get("drift", {}).get("drift_report_json_path")
     validation = validate_output_dir(out)
     assert validation["pass"]
@@ -164,7 +168,13 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
     assert global_policy["integration_policy"] == "global"
     assert global_policy["integration_run_id"] is None
     provenance_path = tmp_path / "out_global" / "provenance_links.json"
+    registry_path = tmp_path / "out_global" / "provenance_registry.json"
     assert provenance_path.exists()
+    assert registry_path.exists()
     assert (global_policy.get("memory_sync") or {}).get("scanned_units", 0) > 0
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
     assert isinstance(provenance.get("memory_links"), dict)
+    assert registry.get("schema_version")
+    unit_links = ((registry.get("links") or {}).get("unit_links")) or []
+    assert isinstance(unit_links, list)

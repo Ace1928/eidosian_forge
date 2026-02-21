@@ -195,6 +195,9 @@ def test_roundtrip_pipeline_end_to_end(tmp_path: Path) -> None:
     assert (workspace / "reconstructed" / "reconstruction_manifest.json").exists()
     assert (workspace / "parity_report.json").exists()
     assert (workspace / "provenance_links.json").exists()
+    assert (workspace / "provenance_registry.json").exists()
+    assert summary.get("provenance_path")
+    assert summary.get("provenance_registry_path")
 
 
 def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -> None:

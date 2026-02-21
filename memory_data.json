@@ -898,5 +898,150 @@
       0.9882352941176471,
       0.6666666666666666
     ]
+  },
+  "cfca1e50-b841-41a4-a926-9409bfa76147": {
+    "id": "cfca1e50-b841-41a4-a926-9409bfa76147",
+    "content": "Termux CI-hardening cycle completed: fixed path-dependent tests across agent_forge, game_forge, and moltbook_forge so pytest runs correctly from forge-local working directories. Validated full CI-style test sweep across all discovered forge test suites with all passing.",
+    "created_at": "2026-02-20T21:13:46.272396",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "termux_ci_hardening_paths_20260220"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.4235294117647059,
+      0.9176470588235294,
+      0.0392156862745098,
+      0.3137254901960784,
+      0.8509803921568627,
+      0.08235294117647059,
+      0.9372549019607843,
+      0.23529411764705882,
+      0.0392156862745098,
+      0.5372549019607843,
+      0.47058823529411764,
+      0.1450980392156863,
+      0.30980392156862746,
+      0.47843137254901963,
+      0.7058823529411765,
+      0.9294117647058824
+    ]
+  },
+  "81818843-63b4-48a2-8fcc-a5c35360c0f4": {
+    "id": "81818843-63b4-48a2-8fcc-a5c35360c0f4",
+    "content": "Implemented Code Forge memory-provenance unification: added sync_units_to_memory_forge integration, added --sync-memory/--memory-path to digest and roundtrip, extended provenance_links.json with memory_links, and extended MCP code_forge_provenance output with memory_link_count.",
+    "created_at": "2026-02-20T22:07:28.504715",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_memory_provenance_unification_20260220"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.8627450980392157,
+      0.3568627450980392,
+      0.043137254901960784,
+      0.19607843137254902,
+      0.8117647058823529,
+      0.4235294117647059,
+      0.9137254901960784,
+      0.7411764705882353,
+      0.1843137254901961,
+      0.7764705882352941,
+      0.8313725490196079,
+      0.2,
+      0.9568627450980393,
+      0.7137254901960784,
+      0.9411764705882353,
+      0.9882352941176471
+    ]
+  },
+  "adb92056-d5c0-41bb-a325-07dc74791773": {
+    "id": "adb92056-d5c0-41bb-a325-07dc74791773",
+    "content": "Committed and pushed CI stabilization patch d1f6bad4a4 on main: figlet cross-platform tests now use create=True for sys.getwindowsversion and resilient assertions; glyph extractor parser guards now reject non-string specs to prevent TypeError in auto-function coverage.",
+    "created_at": "2026-02-21T09:44:43.385712",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_stabilization_d1f6bad4a4"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.5254901960784314,
+      0.615686274509804,
+      0.21568627450980393,
+      0.7529411764705882,
+      0.807843137254902,
+      0.22745098039215686,
+      0.2549019607843137,
+      0.7137254901960784,
+      0.8980392156862745,
+      0.6078431372549019,
+      0.07058823529411765,
+      0.20392156862745098,
+      0.4588235294117647,
+      0.5294117647058824,
+      0.24705882352941178,
+      0.6235294117647059
+    ]
+  },
+  "ed9c2695-35ae-4235-af2a-014f8bc4fba2": {
+    "id": "ed9c2695-35ae-4235-af2a-014f8bc4fba2",
+    "content": "Resolved latest Universal CI failure by fixing figlet Windows mock payload shape: tests now mock sys.getwindowsversion() with SimpleNamespace(major=10, build=19041), eliminating MagicMock/int comparison TypeError in terminal capability checks. Commit 3485f59550 pushed to main.",
+    "created_at": "2026-02-21T10:31:24.967141",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_fix_figlet_windowsversion_3485f59550"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.9764705882352941,
+      0.9098039215686274,
+      0.6509803921568628,
+      0.21568627450980393,
+      0.1450980392156863,
+      0.0196078431372549,
+      0.4666666666666667,
+      0.49411764705882355,
+      0.20784313725490197,
+      0.6666666666666666,
+      0.09411764705882353,
+      0.23921568627450981,
+      0.6549019607843137,
+      0.8352941176470589,
+      0.36470588235294116,
+      0.6313725490196078
+    ]
+  },
+  "ab3a3eac-349b-49fd-9cab-6ade76ccbd75": {
+    "id": "ab3a3eac-349b-49fd-9cab-6ade76ccbd75",
+    "content": "Committed and pushed CI hardening commit f1f0df0bea with cross-forge fixes: figlet EncodingAdjuster compatibility properties/restored methods, deterministic game sexual reproduction test pairing, glyph CLI ffmpeg availability monkeypatch, DummyPopen context-manager compatibility, safer virtual display startup fallback, tempdir-safe Netflix output defaults, and new scripts/run_forge_test_audit.sh documented in README.",
+    "created_at": "2026-02-21T11:06:57.970261",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_hardening_f1f0df0bea"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.1803921568627451,
+      0.7647058823529411,
+      0.3607843137254902,
+      0.29411764705882354,
+      0.34509803921568627,
+      0.5137254901960784,
+      0.42745098039215684,
+      0.5176470588235295,
+      0.6784313725490196,
+      0.6235294117647059,
+      0.054901960784313725,
+      0.8235294117647058,
+      0.30196078431372547,
+      0.30980392156862746,
+      0.592156862745098,
+      0.1411764705882353
+    ]
   }
 }

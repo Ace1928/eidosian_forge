@@ -40,6 +40,8 @@ def test_validate_roundtrip_workspace_pass(tmp_path: Path) -> None:
 
     report = validate_roundtrip_workspace(workspace, verify_hashes=True)
     assert report["pass"] is True
+    assert "provenance_links.json" in report["files"]
+    assert "provenance_registry.json" in report["files"]
 
 
 def test_validate_roundtrip_workspace_fail_on_mutated_manifest(tmp_path: Path) -> None:

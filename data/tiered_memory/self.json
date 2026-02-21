@@ -16,13 +16,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "ignition-trace",
+      "self-improvement",
       "learning",
       "consciousness",
-      "ignition-trace",
-      "stage-h",
       "lesson",
-      "self-improvement",
-      "termux"
+      "termux",
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -43,14 +43,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "bench",
-      "consciousness",
-      "stage-h",
-      "lesson",
-      "self-improvement",
       "trial-runner",
-      "termux"
+      "self-improvement",
+      "bench",
+      "learning",
+      "consciousness",
+      "lesson",
+      "termux",
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -71,15 +71,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "consciousness",
-      "stage-h",
-      "lesson",
-      "rci-v2",
-      "directionality",
       "self-improvement",
       "metrics",
-      "termux"
+      "directionality",
+      "rci-v2",
+      "learning",
+      "consciousness",
+      "lesson",
+      "termux",
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -100,15 +100,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "ablation",
+      "self-improvement",
       "learning",
       "consciousness",
-      "golden",
-      "ablation",
-      "stage-h",
       "lesson",
-      "self-improvement",
+      "termux",
       "regression",
-      "termux"
+      "golden",
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -129,15 +129,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "consciousness",
-      "stage-h",
-      "lesson",
-      "predictive-coding",
       "self-improvement",
+      "learning",
       "rollout",
+      "consciousness",
+      "lesson",
       "termux",
-      "world-model"
+      "predictive-coding",
+      "world-model",
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -158,15 +158,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "simulation",
-      "consciousness",
-      "learning",
-      "stage-h",
-      "meta",
-      "lesson",
       "self-improvement",
+      "meta",
+      "learning",
+      "simulation",
+      "report",
+      "consciousness",
+      "lesson",
       "termux",
-      "report"
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -183,11 +183,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "integration",
       "simulation",
-      "consciousness",
       "milestone_h",
-      "termux",
-      "integration"
+      "consciousness",
+      "termux"
     ],
     "linked_memories": []
   },
@@ -195,8 +195,8 @@
     "id": "08d39215-5a16-479e-8b3c-e18f39e1507a",
     "content": "LESSON: Run MCP stdio heavy tests serially when validating large consciousness suites; parallel runs can trigger intermittent BrokenResourceError despite no functional regression.\nCONTEXT: PR-H7 validation and MCP benchmark tool test behavior in Termux",
     "created_at": "2026-02-16T21:17:02.750442",
-    "last_accessed": "2026-02-20T08:10:05.710223",
-    "access_count": 7,
+    "last_accessed": "2026-02-21T11:30:27.633596",
+    "access_count": 9,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -208,12 +208,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
       "reliability",
-      "learning",
       "testing",
-      "lesson",
       "self-improvement",
+      "mcp",
+      "learning",
+      "lesson",
       "termux",
       "ci"
     ],
@@ -232,11 +232,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "consciousness",
       "ppx",
       "phenomenology",
       "metrics",
-      "milestone_h"
+      "milestone_h",
+      "consciousness"
     ],
     "linked_memories": []
   },
@@ -257,13 +257,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "telemetry",
-      "learning",
-      "benchmarking",
-      "lesson",
       "self-improvement",
+      "learning",
+      "lesson",
+      "telemetry",
       "falsifiability",
-      "methodology"
+      "methodology",
+      "benchmarking"
     ],
     "linked_memories": []
   },
@@ -280,11 +280,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "consciousness",
       "bench",
-      "perturbation",
+      "milestone_h",
       "recipes",
-      "milestone_h"
+      "consciousness",
+      "perturbation"
     ],
     "linked_memories": []
   },
@@ -292,8 +292,8 @@
     "id": "58c31522-7488-42a9-9724-e1367c5ab3cc",
     "content": "LESSON: Benchmark tool timeouts under large event logs are mitigated by routing non-persistent runs to transient scratch state dirs; this keeps MCP stdio calls deterministic under strict 30s test timeouts.\nCONTEXT: PR-H8/H9 reliability hardening in Termux",
     "created_at": "2026-02-16T21:57:54.189350",
-    "last_accessed": "2026-02-19T14:34:25.574885",
-    "access_count": 4,
+    "last_accessed": "2026-02-21T11:30:27.633708",
+    "access_count": 6,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -305,13 +305,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
       "reliability",
-      "timeouts",
-      "learning",
-      "lesson",
       "self-improvement",
+      "mcp",
       "benchmark",
+      "learning",
+      "timeouts",
+      "lesson",
       "termux"
     ],
     "linked_memories": []
@@ -333,13 +333,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "consciousness",
-      "learning",
-      "autotune",
-      "bayes",
-      "lesson",
+      "optimization",
       "self-improvement",
-      "optimization"
+      "autotune",
+      "learning",
+      "consciousness",
+      "lesson",
+      "bayes"
     ],
     "linked_memories": []
   },
@@ -360,12 +360,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "consciousness",
-      "attention",
-      "lesson",
       "self-improvement",
-      "competition"
+      "attention",
+      "learning",
+      "competition",
+      "consciousness",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -373,8 +373,8 @@
     "id": "53d014a2-7190-4282-bc8a-cd8578ca1ba9",
     "content": "LESSON: 2026-02-16T13:35:39Z LESSON: Validation baseline for this environment now enforces eidosian_venv execution for consciousness + MCP suites, including full stdio integration path.\nCONTEXT: Termux operational discipline",
     "created_at": "2026-02-16T23:35:39.862190",
-    "last_accessed": "2026-02-20T08:10:05.710300",
-    "access_count": 5,
+    "last_accessed": "2026-02-21T11:30:27.633800",
+    "access_count": 7,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -386,13 +386,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
-      "learning",
-      "validation",
-      "lesson",
       "self-improvement",
+      "validation",
+      "learning",
+      "lesson",
       "termux",
-      "venv"
+      "venv",
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -413,12 +413,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "self-improvement",
       "learning",
       "consciousness",
       "lesson",
       "phase_i6",
       "red_team",
-      "self-improvement",
       "experiment_designer"
     ],
     "linked_memories": []
@@ -427,8 +427,8 @@
     "id": "7114dc3a-76b9-49cb-ae71-7755b81d3101",
     "content": "LESSON: MCP red-team runtime path requires quick/max_scenarios controls for deterministic tool latency under stdio integration timeout budgets.\nCONTEXT: Termux MCP integration reliability",
     "created_at": "2026-02-17T00:19:31.847093",
-    "last_accessed": "2026-02-19T14:34:25.574996",
-    "access_count": 2,
+    "last_accessed": "2026-02-21T11:30:27.633843",
+    "access_count": 4,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -440,13 +440,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
       "reliability",
+      "self-improvement",
+      "mcp",
       "learning",
       "lesson",
-      "red_team",
-      "self-improvement",
-      "termux"
+      "termux",
+      "red_team"
     ],
     "linked_memories": []
   },
@@ -467,14 +467,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "consciousness",
-      "learning",
-      "gates",
-      "lesson",
-      "red_team",
       "self-improvement",
       "benchmark",
-      "phase_i7"
+      "learning",
+      "consciousness",
+      "lesson",
+      "phase_i7",
+      "gates",
+      "red_team"
     ],
     "linked_memories": []
   },
@@ -495,14 +495,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "self-improvement",
+      "scoring",
+      "benchmark",
       "learning",
       "consciousness",
-      "scoring",
       "lesson",
-      "normalization",
-      "self-improvement",
-      "benchmark",
-      "phase_i7"
+      "phase_i7",
+      "normalization"
     ],
     "linked_memories": []
   },
@@ -523,13 +523,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "testing",
+      "self-improvement",
       "mcp",
       "learning",
-      "hardening",
-      "testing",
       "lesson",
-      "self-improvement",
-      "idempotence"
+      "idempotence",
+      "hardening"
     ],
     "linked_memories": []
   },
@@ -550,14 +550,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "red-team",
-      "consciousness",
-      "autotune",
-      "stage-i",
-      "lesson",
       "self-improvement",
-      "termux"
+      "autotune",
+      "learning",
+      "consciousness",
+      "lesson",
+      "termux",
+      "red-team",
+      "stage-i"
     ],
     "linked_memories": []
   },
@@ -578,14 +578,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "self-improvement",
+      "index",
+      "benchmark",
       "learning",
       "consciousness",
-      "stage-h",
       "lesson",
-      "self-improvement",
-      "benchmark",
       "termux",
-      "index"
+      "stage-h"
     ],
     "linked_memories": []
   },
@@ -606,14 +606,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
-      "security",
-      "learning",
-      "phase-15",
-      "lesson",
       "self-improvement",
+      "learning",
       "dependabot",
-      "termux"
+      "security",
+      "lesson",
+      "termux",
+      "phase-15",
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -634,14 +634,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
-      "security",
+      "self-improvement",
       "learning",
+      "dependabot",
+      "security",
+      "lesson",
       "phase-15",
       "remediation",
-      "lesson",
-      "self-improvement",
-      "dependabot"
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -662,13 +662,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
+      "action-pins",
+      "self-improvement",
       "learning",
       "security",
-      "phase-15",
       "lesson",
-      "self-improvement",
-      "action-pins"
+      "phase-15",
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -689,14 +689,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "workflow",
-      "security",
-      "learning",
-      "remediation",
       "phase-16",
-      "lesson",
       "self-improvement",
-      "dependabot"
+      "learning",
+      "dependabot",
+      "security",
+      "lesson",
+      "remediation",
+      "workflow"
     ],
     "linked_memories": []
   },
@@ -718,12 +718,12 @@
     "ttl_seconds": null,
     "tags": [
       "idempotent",
-      "security",
-      "stage-l",
-      "lesson",
       "dependabot",
+      "security",
+      "lesson",
       "termux",
-      "supply-chain"
+      "supply-chain",
+      "stage-l"
     ],
     "linked_memories": []
   },
@@ -744,12 +744,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "security",
-      "stage-l",
-      "hardening",
-      "lesson",
+      "phase17",
       "dependabot",
-      "phase17"
+      "security",
+      "lesson",
+      "stage-l",
+      "hardening"
     ],
     "linked_memories": []
   },
@@ -770,12 +770,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "security",
-      "closure",
-      "stage-l",
-      "lesson",
+      "phase17",
       "dependabot",
-      "phase17"
+      "security",
+      "lesson",
+      "closure",
+      "stage-l"
     ],
     "linked_memories": []
   },
@@ -796,12 +796,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "hardening",
+      "payload-safety",
+      "phase18",
       "watchdog",
       "lesson",
-      "phase18",
       "termux",
-      "payload-safety"
+      "hardening"
     ],
     "linked_memories": []
   },
@@ -823,11 +823,11 @@
     "ttl_seconds": null,
     "tags": [
       "stress-benchmark",
+      "payload-safety",
+      "phase18",
       "watchdog",
       "lesson",
-      "phase18",
-      "ci",
-      "payload-safety"
+      "ci"
     ],
     "linked_memories": []
   },
@@ -848,11 +848,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "side-effect-free",
+      "phase18",
+      "status",
       "watchdog",
       "lesson",
-      "status",
-      "phase18"
+      "side-effect-free"
     ],
     "linked_memories": []
   },
@@ -860,8 +860,8 @@
     "id": "7c1f6f3f-497e-4f46-9cad-a0d6642c0506",
     "content": "LESSON: Linux parity reliability improves when CI and local smoke runs share a single deterministic audit matrix that validates forge status, MCP runtime health, and consciousness benchmark/stress gates with structured report artifacts.\\nCONTEXT: Phase 19 Linux audit matrix parity closure.",
     "created_at": "2026-02-17T01:44:44+00:00",
-    "last_accessed": "2026-02-20T07:37:16.060331",
-    "access_count": 1,
+    "last_accessed": "2026-02-21T11:30:27.633757",
+    "access_count": 2,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -873,11 +873,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
-      "audit-matrix",
-      "lesson",
       "linux-parity",
       "phase19",
+      "mcp",
+      "lesson",
+      "audit-matrix",
       "ci"
     ],
     "linked_memories": []
@@ -899,11 +899,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "linux-audit",
-      "lesson",
+      "phase20",
       "observability",
-      "ci-gate",
-      "phase20"
+      "lesson",
+      "linux-audit",
+      "ci-gate"
     ],
     "linked_memories": []
   },
@@ -924,11 +924,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "phase20",
       "mcp",
-      "kb",
       "lesson",
-      "memory-hygiene",
-      "phase20"
+      "kb",
+      "memory-hygiene"
     ],
     "linked_memories": []
   },
@@ -949,11 +949,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "causal-trace",
-      "lesson",
+      "phase21",
       "event-fabric",
+      "lesson",
       "trial-capture",
-      "phase21"
+      "causal-trace"
     ],
     "linked_memories": []
   },
@@ -974,11 +974,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "phase22",
       "bench",
       "replay-manifest",
       "lesson",
-      "provenance",
-      "phase22"
+      "provenance"
     ],
     "linked_memories": []
   },
@@ -999,11 +999,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
-      "directory-atlas",
-      "test-coverage",
+      "phase23",
       "documentation",
-      "phase23"
+      "directory-atlas",
+      "lesson",
+      "test-coverage"
     ],
     "linked_memories": []
   },
@@ -1024,13 +1024,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "docs",
-      "determinism",
-      "self-improvement",
       "atlas",
+      "docs",
+      "phase24",
+      "self-improvement",
+      "determinism",
       "termux",
-      "ci",
-      "phase24"
+      "ci"
     ],
     "linked_memories": []
   },
@@ -1051,12 +1051,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "ast",
-      "lesson",
       "self-improvement",
+      "learning",
+      "lesson",
       "refactor",
-      "lessons-learned"
+      "lessons-learned",
+      "ast"
     ],
     "linked_memories": []
   },
@@ -1077,11 +1077,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "prompt-engineering",
+      "self-improvement",
       "learning",
-      "architecture",
+      "prompt-engineering",
       "lesson",
-      "self-improvement"
+      "architecture"
     ],
     "linked_memories": []
   },
@@ -1102,12 +1102,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "future-directions",
+      "self-improvement",
       "learning",
       "lesson",
       "agency",
-      "self-improvement",
-      "strategy"
+      "strategy",
+      "future-directions"
     ],
     "linked_memories": []
   },
@@ -1124,10 +1124,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "strategy-shift",
       "introspection",
-      "identity",
-      "velvet-beef"
+      "velvet-beef",
+      "strategy-shift",
+      "identity"
     ],
     "linked_memories": []
   },
@@ -1148,11 +1148,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "lesson",
-      "self-improvement",
       "philosophy",
-      "recursive-improvement"
+      "recursive-improvement",
+      "self-improvement",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1173,10 +1173,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "sms-forge",
-      "lesson",
       "self-improvement",
+      "sms-forge",
+      "learning",
+      "lesson",
       "eidosian-core"
     ],
     "linked_memories": []
@@ -1198,12 +1198,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "fastmcp",
+      "self-improvement",
       "mcp",
       "learning",
-      "fastmcp",
       "async-python",
-      "lesson",
-      "self-improvement"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1211,8 +1211,8 @@
     "id": "df1e53b5-90e5-4ae3-b90f-f0b69f0b40c2",
     "content": "LESSON: When MCP launch scripts run with set -u, environment bootstrap files must use ${VAR:-} for optional vars (e.g., PYTHONPATH) to avoid startup aborts in strict shells.\nCONTEXT: Termux Codex/Gemini MCP startup stabilization",
     "created_at": "2026-02-19T14:49:28.458133",
-    "last_accessed": "2026-02-19T14:49:28.458164",
-    "access_count": 0,
+    "last_accessed": "2026-02-21T10:38:09.544761",
+    "access_count": 1,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -1225,11 +1225,11 @@
     "ttl_seconds": null,
     "tags": [
       "reliability",
+      "strict-shell",
+      "self-improvement",
       "mcp",
       "learning",
       "lesson",
-      "self-improvement",
-      "strict-shell",
       "termux"
     ],
     "linked_memories": []
@@ -1247,10 +1247,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "doc_forge",
       "reliability",
-      "ports",
       "validation",
-      "doc_forge"
+      "ports"
     ],
     "linked_memories": []
   },
@@ -1271,13 +1271,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "consciousness",
-      "causal",
-      "validation",
-      "security",
-      "lesson",
       "self-improvement",
+      "validation",
+      "learning",
+      "security",
+      "consciousness",
+      "lesson",
+      "causal",
       "methodology"
     ],
     "linked_memories": []
@@ -1299,14 +1299,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "learning",
-      "lesson",
-      "stability",
       "chroma",
       "self-improvement",
+      "learning",
       "ops",
-      "hnswlib",
-      "termux"
+      "stability",
+      "lesson",
+      "termux",
+      "hnswlib"
     ],
     "linked_memories": []
   },
@@ -1328,11 +1328,11 @@
     "ttl_seconds": null,
     "tags": [
       "reliability",
-      "self-improvement",
-      "learning",
       "workflow-lint",
-      "actionlint",
+      "self-improvement",
       "github-actions",
+      "learning",
+      "actionlint",
       "lesson"
     ],
     "linked_memories": []
@@ -1354,12 +1354,63 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "heredoc",
       "self-improvement",
-      "learning",
-      "workflow",
       "github-actions",
-      "lesson"
+      "heredoc",
+      "learning",
+      "lesson",
+      "workflow"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "75310367-0882-48fa-be29-d2dd9f278ee9",
+    "content": "LESSON: In Termux CI/local sweeps, use `eidosian_venv/bin/python -m pytest` instead of the `pytest` shim to avoid plugin/path drift and false failures (notably memory_forge coverage args).\nCONTEXT: Forge-wide non-agent audit and CI stabilization cycle 2026-02-21",
+    "created_at": "2026-02-21T10:38:27.549337",
+    "last_accessed": "2026-02-21T10:38:27.549346",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "In Termux CI/local sweeps, use `eidosian_venv/bin/python -m pytest` instead of the `pytest` shim to avoid plugin/path drift and false failures (notably memory_forge coverage args).",
+      "context": "Forge-wide non-agent audit and CI stabilization cycle 2026-02-21",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "reliability",
+      "self-improvement",
+      "pytest",
+      "learning",
+      "lesson",
+      "termux",
+      "ci",
+      "venv"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "56401a63-73eb-4ad7-9a15-456e69761924",
+    "content": "LESSON: Unified Code Forge provenance registry now merges unit-level links across knowledge, memory, and GraphRAG artifacts and exposes benchmark/drift context; this enables deterministic MCP queries for lineage and quality evidence without scanning raw artifact sets.\nCONTEXT: Cycle: provenance hardening + MCP router upgrade in Termux using eidosian_venv targeted test matrix",
+    "created_at": "2026-02-21T11:30:33.420003",
+    "last_accessed": "2026-02-21T11:30:33.420015",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Unified Code Forge provenance registry now merges unit-level links across knowledge, memory, and GraphRAG artifacts and exposes benchmark/drift context; this enables deterministic MCP queries for lineage and quality evidence without scanning raw artifact sets.",
+      "context": "Cycle: provenance hardening + MCP router upgrade in Termux using eidosian_venv targeted test matrix",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "lesson",
+      "self-improvement",
+      "learning"
     ],
     "linked_memories": []
   }

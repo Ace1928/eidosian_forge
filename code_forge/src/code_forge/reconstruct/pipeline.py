@@ -12,6 +12,10 @@ from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.digester.pipeline import run_archive_digester
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.integration.provenance import write_provenance_links
+from code_forge.integration.provenance_registry import (
+    load_latest_benchmark_for_root,
+    write_provenance_registry,
+)
 from code_forge.library.db import CodeLibraryDB
 
 
@@ -476,6 +480,18 @@ def run_roundtrip_pipeline(
         },
     )
     summary["provenance_path"] = provenance.get("path")
+    benchmark_payload = load_latest_benchmark_for_root(
+        root_path=root_path,
+        search_roots=[workspace_dir, workspace_dir.parent, root_path, root_path / "reports"],
+    )
+    registry = write_provenance_registry(
+        output_path=workspace_dir / "provenance_registry.json",
+        provenance_payload=provenance,
+        stage_summary_payload=summary,
+        drift_payload=digest.get("drift") if isinstance(digest.get("drift"), dict) else None,
+        benchmark_payload=benchmark_payload,
+    )
+    summary["provenance_registry_path"] = registry.get("path")
     _write_json(summary_path, summary)
     summary["summary_path"] = str(summary_path)
     return summary

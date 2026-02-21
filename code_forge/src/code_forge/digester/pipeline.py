@@ -15,6 +15,10 @@ from code_forge.ingest.runner import IngestionRunner
 from code_forge.integration.memory import sync_units_to_memory_forge
 from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
 from code_forge.integration.provenance import write_provenance_links
+from code_forge.integration.provenance_registry import (
+    load_latest_benchmark_for_root,
+    write_provenance_registry,
+)
 from code_forge.library.db import CodeLibraryDB
 
 TRIAGE_RULESET_VERSION = "code_forge_triage_ruleset_v2_2026_02_19"
@@ -650,7 +654,7 @@ def run_archive_digester(
             run_id=integration_run_id,
         )
 
-    summary = {
+    summary: dict[str, Any] = {
         "generated_at": _utc_now(),
         "root_path": str(Path(root_path).resolve()),
         "output_dir": str(output_dir),
@@ -669,6 +673,7 @@ def run_archive_digester(
         "integration_policy": normalized_policy,
         "integration_run_id": integration_run_id,
         "provenance_path": None,
+        "provenance_registry_path": None,
     }
     summary_path = output_dir / "archive_digester_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -714,6 +719,19 @@ def run_archive_digester(
             min_abs_delta=float(drift_min_abs_delta),
         )
         summary["drift"] = drift
+
+    benchmark_payload = load_latest_benchmark_for_root(
+        root_path=Path(root_path),
+        search_roots=[output_dir, output_dir.parent, Path(root_path), Path(root_path) / "reports"],
+    )
+    registry = write_provenance_registry(
+        output_path=output_dir / "provenance_registry.json",
+        provenance_payload=provenance,
+        stage_summary_payload=summary,
+        drift_payload=summary.get("drift") if isinstance(summary.get("drift"), dict) else None,
+        benchmark_payload=benchmark_payload,
+    )
+    summary["provenance_registry_path"] = registry.get("path")
 
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     if strict_validation and not bool(validation.get("pass")):

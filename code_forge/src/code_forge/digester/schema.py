@@ -16,6 +16,7 @@ REQUIRED_FILES = {
 OPTIONAL_FILES = {
     "drift_report.json": "drift_report",
     "provenance_links.json": "provenance_links",
+    "provenance_registry.json": "provenance_registry",
 }
 
 
@@ -135,6 +136,12 @@ def validate_archive_summary(payload: dict[str, Any]) -> list[str]:
         _require(isinstance(validation, dict), errors, "archive_summary.validation must be object")
         if isinstance(validation, dict):
             _require(isinstance(validation.get("pass"), bool), errors, "archive_summary.validation.pass must be bool")
+    if payload.get("provenance_registry_path") is not None:
+        _require(
+            isinstance(payload.get("provenance_registry_path"), str),
+            errors,
+            "archive_summary.provenance_registry_path must be a string when present",
+        )
     return errors
 
 
@@ -190,6 +197,33 @@ def validate_provenance_links(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_provenance_registry(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(isinstance(payload.get("schema_version"), str), errors, "provenance_registry.schema_version must be string")
+    _require(isinstance(payload.get("generated_at"), str), errors, "provenance_registry.generated_at must be string")
+    _require(isinstance(payload.get("registry_id"), str), errors, "provenance_registry.registry_id must be string")
+    _require(isinstance(payload.get("provenance_id"), str), errors, "provenance_registry.provenance_id must be string")
+    _require(isinstance(payload.get("stage"), str), errors, "provenance_registry.stage must be string")
+    _require(isinstance(payload.get("root_path"), str), errors, "provenance_registry.root_path must be string")
+    _require(isinstance(payload.get("links"), dict), errors, "provenance_registry.links must be object")
+    _require(isinstance(payload.get("drift"), dict), errors, "provenance_registry.drift must be object")
+    if payload.get("benchmark") is not None:
+        _require(isinstance(payload.get("benchmark"), dict), errors, "provenance_registry.benchmark must be object")
+    links = payload.get("links") if isinstance(payload.get("links"), dict) else {}
+    _require(
+        isinstance(links.get("unit_links"), list),
+        errors,
+        "provenance_registry.links.unit_links must be list",
+    )
+    for idx, row in enumerate((links.get("unit_links") or [])[:100]):
+        prefix = f"provenance_registry.links.unit_links[{idx}]"
+        _require(isinstance(row, dict), errors, f"{prefix} must be object")
+        if not isinstance(row, dict):
+            continue
+        _require(isinstance(row.get("unit_id"), str), errors, f"{prefix}.unit_id must be string")
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -215,6 +249,7 @@ def validate_output_dir(output_dir: Path) -> dict[str, Any]:
         "archive_summary": validate_archive_summary,
         "drift_report": validate_drift_report,
         "provenance_links": validate_provenance_links,
+        "provenance_registry": validate_provenance_registry,
     }
 
     for filename, key in REQUIRED_FILES.items():
