@@ -61,9 +61,7 @@ from code_forge import (
 )
 
 # Default paths
-FORGE_ROOT = Path(
-    os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))
-).resolve()
+FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
 DEFAULT_INDEX_PATH = FORGE_ROOT / "data" / "code_index.json"
 DEFAULT_LIBRARY_PATH = FORGE_ROOT / "data" / "code_library.json"
 DEFAULT_DB_PATH = FORGE_ROOT / "data" / "code_forge" / "library.sqlite"
@@ -115,9 +113,7 @@ class CodeForgeCLI(StandardCLI):
     @property
     def runner(self) -> IngestionRunner:
         if self._runner is None:
-            self._runner = IngestionRunner(
-                db=self.library_db, runs_dir=DEFAULT_RUNS_DIR
-            )
+            self._runner = IngestionRunner(db=self.library_db, runs_dir=DEFAULT_RUNS_DIR)
         return self._runner
 
     @eidosian()
@@ -878,21 +874,12 @@ class CodeForgeCLI(StandardCLI):
         )
         canonical_parser.add_argument(
             "--triage-path",
-            default=str(
-                FORGE_ROOT
-                / "data"
-                / "code_forge"
-                / "digester"
-                / "latest"
-                / "triage.json"
-            ),
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest" / "triage.json"),
             help="Path to triage.json artifact",
         )
         canonical_parser.add_argument(
             "--output-dir",
-            default=str(
-                FORGE_ROOT / "data" / "code_forge" / "canonicalization" / "latest"
-            ),
+            default=str(FORGE_ROOT / "data" / "code_forge" / "canonicalization" / "latest"),
             help="Output directory for migration map and plan artifacts",
         )
         canonical_parser.add_argument(
@@ -1164,15 +1151,11 @@ class CodeForgeCLI(StandardCLI):
                     "db_units_by_language": db_by_language,
                     "db_relationship_counts": rel_counts,
                     "latest_ingestion_runs": latest_runs,
-                    "supported_extensions": sorted(
-                        GenericCodeAnalyzer.supported_extensions()
-                    ),
+                    "supported_extensions": sorted(GenericCodeAnalyzer.supported_extensions()),
                     "digester_artifacts": {
                         "output_dir": str(digester_dir),
                         "repo_index": str(digester_dir / "repo_index.json"),
-                        "duplication_index": str(
-                            digester_dir / "duplication_index.json"
-                        ),
+                        "duplication_index": str(digester_dir / "duplication_index.json"),
                         "dependency_graph": str(digester_dir / "dependency_graph.json"),
                         "triage": str(digester_dir / "triage.json"),
                         "triage_audit": str(digester_dir / "triage_audit.json"),
@@ -1375,9 +1358,7 @@ class CodeForgeCLI(StandardCLI):
                     cmd.extend(["--max-files", str(args.max_files)])
 
                 env = dict(**os.environ)
-                env["PYTHONPATH"] = (
-                    f"{FORGE_ROOT / 'code_forge' / 'src'}:{FORGE_ROOT / 'lib'}"
-                )
+                env["PYTHONPATH"] = f"{FORGE_ROOT / 'code_forge' / 'src'}:{FORGE_ROOT / 'lib'}"
                 subprocess.Popen(cmd, env=env)
 
                 result = CommandResult(
@@ -1423,9 +1404,7 @@ class CodeForgeCLI(StandardCLI):
                 file_counts[f] = file_counts.get(f, 0) + 1
 
             # Top files
-            top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[
-                :10
-            ]
+            top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[:10]
 
             data = {
                 "total_elements": len(self.indexer.elements),
@@ -1617,9 +1596,7 @@ class CodeForgeCLI(StandardCLI):
                     extensions=args.ext,
                     max_files=args.max_files,
                 )
-                duplication = build_duplication_index(
-                    db=self.library_db, output_dir=output_dir
-                )
+                duplication = build_duplication_index(db=self.library_db, output_dir=output_dir)
                 result = CommandResult(
                     True,
                     f"Catalog complete for {repo_index.get('files_total', 0)} files",
@@ -1627,9 +1604,7 @@ class CodeForgeCLI(StandardCLI):
                         "root_path": str(root),
                         "output_dir": str(output_dir),
                         "repo_index_path": str(output_dir / "repo_index.json"),
-                        "duplication_index_path": str(
-                            output_dir / "duplication_index.json"
-                        ),
+                        "duplication_index_path": str(output_dir / "duplication_index.json"),
                         "repo_index_summary": {
                             "files_total": repo_index.get("files_total", 0),
                             "by_language": repo_index.get("by_language", {}),
@@ -1649,13 +1624,9 @@ class CodeForgeCLI(StandardCLI):
             duplication_path = output_dir / "duplication_index.json"
 
             if not repo_index_path.exists():
-                result = CommandResult(
-                    False, f"Missing intake artifact: {repo_index_path}"
-                )
+                result = CommandResult(False, f"Missing intake artifact: {repo_index_path}")
             elif not duplication_path.exists():
-                result = CommandResult(
-                    False, f"Missing intake artifact: {duplication_path}"
-                )
+                result = CommandResult(False, f"Missing intake artifact: {duplication_path}")
             else:
                 repo_index = json.loads(repo_index_path.read_text(encoding="utf-8"))
                 duplication = json.loads(duplication_path.read_text(encoding="utf-8"))
@@ -1689,14 +1660,8 @@ class CodeForgeCLI(StandardCLI):
             else:
                 output_dir = Path(args.output_dir).resolve()
                 kb_path = Path(args.kb_path).resolve() if args.sync_knowledge else None
-                memory_path = (
-                    Path(args.memory_path).resolve() if args.sync_memory else None
-                )
-                graphrag_out = (
-                    Path(args.graphrag_output_dir).resolve()
-                    if args.export_graphrag
-                    else None
-                )
+                memory_path = Path(args.memory_path).resolve() if args.sync_memory else None
+                graphrag_out = Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
                 payload = run_archive_digester(
                     root_path=root,
                     db=self.library_db,
@@ -1714,11 +1679,7 @@ class CodeForgeCLI(StandardCLI):
                     strict_validation=not bool(args.no_strict_validation),
                     write_drift_report=not bool(args.no_drift_report),
                     write_history_snapshot=not bool(args.no_history_snapshot),
-                    previous_snapshot_path=(
-                        Path(args.previous_snapshot).resolve()
-                        if args.previous_snapshot
-                        else None
-                    ),
+                    previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
                     drift_warn_pct=float(args.drift_warn_pct),
                     drift_min_abs_delta=float(args.drift_min_abs_delta),
                 )
@@ -1798,11 +1759,7 @@ class CodeForgeCLI(StandardCLI):
             output_dir = Path(args.output_dir).resolve()
             report = build_drift_report_from_output(
                 output_dir=output_dir,
-                previous_snapshot_path=(
-                    Path(args.previous_snapshot).resolve()
-                    if args.previous_snapshot
-                    else None
-                ),
+                previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
                 history_dir=output_dir / "history",
                 write_history=not bool(args.no_history_snapshot),
                 warn_pct=float(args.drift_warn_pct),
@@ -1904,12 +1861,8 @@ class CodeForgeCLI(StandardCLI):
                 replay_mode=str(args.replay_mode),
                 max_parallel=max(1, int(args.max_parallel)),
                 default_timeout_sec=max(1, int(args.default_timeout_sec)),
-                staleness_log_path=(
-                    Path(args.staleness_log).resolve() if args.staleness_log else None
-                ),
-                replay_store_path=(
-                    Path(args.replay_store).resolve() if args.replay_store else None
-                ),
+                staleness_log_path=(Path(args.staleness_log).resolve() if args.staleness_log else None),
+                replay_store_path=(Path(args.replay_store).resolve() if args.replay_store else None),
             )
             payload = run_eval_suite(options)
             run_stats = payload.get("run_stats", {})
@@ -1939,9 +1892,7 @@ class CodeForgeCLI(StandardCLI):
             if args.output:
                 output_path = Path(args.output).resolve()
                 output_path.parent.mkdir(parents=True, exist_ok=True)
-                output_path.write_text(
-                    json.dumps(payload, indent=2) + "\n", encoding="utf-8"
-                )
+                output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
                 payload = dict(payload)
                 payload["output_path"] = str(output_path)
 
@@ -2017,9 +1968,7 @@ class CodeForgeCLI(StandardCLI):
         try:
             parity_payload = None
             if args.parity_report:
-                parity_payload = json.loads(
-                    Path(args.parity_report).resolve().read_text(encoding="utf-8")
-                )
+                parity_payload = json.loads(Path(args.parity_report).resolve().read_text(encoding="utf-8"))
             payload = apply_reconstruction(
                 reconstructed_root=Path(args.reconstructed_root).resolve(),
                 target_root=Path(args.target_root).resolve(),
@@ -2063,17 +2012,9 @@ class CodeForgeCLI(StandardCLI):
                     extensions=args.ext,
                     max_files=args.max_files,
                     progress_every=max(1, int(args.progress_every)),
-                    sync_knowledge_path=(
-                        Path(args.kb_path).resolve() if args.sync_knowledge else None
-                    ),
-                    sync_memory_path=(
-                        Path(args.memory_path).resolve() if args.sync_memory else None
-                    ),
-                    graphrag_output_dir=(
-                        Path(args.graphrag_output_dir).resolve()
-                        if args.export_graphrag
-                        else None
-                    ),
+                    sync_knowledge_path=(Path(args.kb_path).resolve() if args.sync_knowledge else None),
+                    sync_memory_path=(Path(args.memory_path).resolve() if args.sync_memory else None),
+                    graphrag_output_dir=(Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None),
                     graph_export_limit=max(1, int(args.graph_export_limit)),
                     integration_policy=str(args.integration_policy),
                     strict_validation=not bool(args.no_strict_validation),
