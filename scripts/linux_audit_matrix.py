@@ -84,9 +84,7 @@ def _run_cmd(
 
 def evaluate_forge_status(payload: Mapping[str, Any]) -> tuple[bool, str]:
     optional_forges = {
-        name.strip()
-        for name in os.environ.get("EIDOS_AUDIT_OPTIONAL_FORGES", "mkey").split(",")
-        if name.strip()
+        name.strip() for name in os.environ.get("EIDOS_AUDIT_OPTIONAL_FORGES", "mkey").split(",") if name.strip()
     }
     forges = payload.get("forges")
     if not isinstance(forges, Mapping):

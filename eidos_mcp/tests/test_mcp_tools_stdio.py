@@ -312,8 +312,7 @@ class TestMcpToolsStdio(unittest.IsolatedAsyncioTestCase):
 
         agent = await _call_tool(session, "agent_run_task", {"objective": "List available tools"})
         self.assertTrue(
-            "objective" in (agent or "")
-            or "Error executing tool agent_run_task" in (agent or ""),
+            "objective" in (agent or "") or "Error executing tool agent_run_task" in (agent or ""),
             f"Unexpected agent_run_task response: {agent}",
         )
 
