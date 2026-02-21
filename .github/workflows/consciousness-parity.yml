@@ -44,7 +44,29 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          # Do not install the root requirements lock here (contains host-specific/system packages
+          # like Brlapi that are unavailable on GitHub runners). Install the parity test toolchain
+          # and runtime dependencies explicitly.
+          pip install \
+            -e ./lib \
+            pytest \
+            pytest-asyncio \
+            pytest-cov \
+            pytest-xdist \
+            hypothesis \
+            numpy \
+            pydantic \
+            httpx \
+            requests \
+            mcp \
+            fastapi \
+            uvicorn \
+            python-dotenv \
+            pyyaml \
+            rich \
+            typer \
+            websockets \
+            tika
 
       - name: Run Linux Parity Smoke
         env:
