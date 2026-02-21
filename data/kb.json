@@ -1358,6 +1358,20 @@
         ]
       },
       "links": []
+    },
+    "7abda254-f0eb-48b5-b21d-d20b90036563": {
+      "id": "7abda254-f0eb-48b5-b21d-d20b90036563",
+      "content": "Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift.",
+      "metadata": {
+        "tags": [
+          "stability",
+          "ci",
+          "glyph_forge",
+          "pytest",
+          "agent_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
