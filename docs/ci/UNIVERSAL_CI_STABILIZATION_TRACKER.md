@@ -22,3 +22,7 @@
 - [x] ~~Re-run `Eidosian Universal CI` after the `ffmpeg`-discovery test patch and capture the final pass/fail status + run URL (`https://github.com/Ace1928/eidosian_forge/actions/runs/22257241042`, result: success).~~
 - [x] ~~Triage non-universal workflow status (`workflow-lint`, `security-audit`, `secret-scan`): latest runs are green (`workflow-lint` `22226763756`, `security-audit` `22250091775`, `secret-scan` `22257866159`).~~
 - [x] ~~Normalize `pytest_asyncio` loop scope config in repo test configuration to remove recurring warning noise in CI logs (set `asyncio_default_fixture_loop_scope=function` in `pytest.ini` and `agent_forge/pytest.ini`).~~
+- [x] ~~Harden MCP diagnostics transport tests to avoid subprocess pipe backpressure and clock-skew timeout flakes (`eidos_mcp/tests/test_diagnostics_transport_matrix.py`: `DEVNULL` subprocess streams + `time.monotonic()` health deadlines).~~
+- [x] ~~Stabilize full MCP stdio integration test startup/tool timings (`eidos_mcp/tests/test_mcp_tools_stdio.py`: free-port server launch, extended GraphRAG call windows, optional `agent_run_task` fallback acceptance, monotonic health checks).~~
+- [x] ~~Harden Linux audit matrix quick probe for Termux runtime variance (`scripts/linux_audit_matrix.py`: optional-forge allowlist with default `mkey`, MCP initialize timeout floor, per-call timeout floor).~~
+- [x] ~~Re-run full `scripts/linux_parity_smoke.sh` and verify end-to-end PASS (`73 passed` + `checks_total=5 ok=5 fail=0`, report `reports/linux_audit_20260221_202336_b23ae47d.json`).~~

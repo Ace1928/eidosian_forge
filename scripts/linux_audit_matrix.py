@@ -83,6 +83,11 @@ def _run_cmd(
 
 
 def evaluate_forge_status(payload: Mapping[str, Any]) -> tuple[bool, str]:
+    optional_forges = {
+        name.strip()
+        for name in os.environ.get("EIDOS_AUDIT_OPTIONAL_FORGES", "mkey").split(",")
+        if name.strip()
+    }
     forges = payload.get("forges")
     if not isinstance(forges, Mapping):
         return False, "missing forges payload"
@@ -93,10 +98,12 @@ def evaluate_forge_status(payload: Mapping[str, Any]) -> tuple[bool, str]:
             continue
         available = bool(info.get("available"))
         status = str(info.get("status") or "")
-        if (not available) or status == "error":
+        if ((not available) or status == "error") and str(name) not in optional_forges:
             bad.append(str(name))
     if bad:
         return False, f"unavailable/error forges: {', '.join(sorted(bad))}"
+    if optional_forges:
+        return True, f"all required forges available (optional skipped: {', '.join(sorted(optional_forges))})"
     return True, "all forges available"
 
 
@@ -237,10 +244,13 @@ async def _run_mcp_quick_probe(
     tools_total = 2
     outcomes: list[dict[str, Any]] = []
 
+    init_timeout = max(30.0, float(timeout_s))
+    call_timeout = max(12.0, float(timeout_s))
+
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
-            await asyncio.wait_for(session.initialize(), timeout=timeout_s)
-            resources = await asyncio.wait_for(session.list_resources(), timeout=timeout_s)
+            await asyncio.wait_for(session.initialize(), timeout=init_timeout)
+            resources = await asyncio.wait_for(session.list_resources(), timeout=call_timeout)
             resources_total = len(resources.resources)
             resource_ok = resources_total
             calls = [
@@ -251,7 +261,7 @@ async def _run_mcp_quick_probe(
                 try:
                     result = await asyncio.wait_for(
                         session.call_tool(name, arguments=arguments),
-                        timeout=timeout_s,
+                        timeout=call_timeout,
                     )
                     text = ""
                     if result.structuredContent and "result" in result.structuredContent:

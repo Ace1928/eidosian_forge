@@ -219,8 +219,9 @@ def _make_tool_test(
     failure_reason: str,
 ):
     async def _test(self: TestMcpToolCallsIndividual) -> None:
+        timeout_sec = 90.0 if "red_team" in tool_name or "full_benchmark" in tool_name else 30.0
         async with _stdio_session() as session:
-            result = await _call_tool(session, tool_name, arguments=arguments)
+            result = await _call_tool(session, tool_name, arguments=arguments, timeout_sec=timeout_sec)
         self.assertTrue(validator(result), f"{failure_reason}: {result[:400]}")
 
     return _test

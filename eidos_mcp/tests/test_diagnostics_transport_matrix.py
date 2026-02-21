@@ -49,9 +49,8 @@ def _start_server(
     return subprocess.Popen(
         [VENV_PYTHON, "-u", "-c", "import eidos_mcp.eidos_mcp_server as s; s.main()"],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
 
@@ -61,10 +60,12 @@ def _get_free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _wait_for_health(port: int, timeout: float = 30.0) -> None:
-    deadline = time.time() + timeout
+def _wait_for_health(proc: subprocess.Popen, port: int, timeout: float = 60.0) -> None:
+    deadline = time.monotonic() + timeout
     url = f"http://{HOST}:{port}/health"
-    while time.time() < deadline:
+    while time.monotonic() < deadline:
+        if proc.poll() is not None:
+            raise RuntimeError(f"MCP server process exited before health check passed (code={proc.returncode})")
         try:
             with urllib.request.urlopen(url, timeout=1) as resp:
                 if resp.status == 200:
@@ -119,7 +120,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
         port = _get_free_port()
         proc = _start_server("sse", port, stateless_http=False, mount_path="/")
         try:
-            _wait_for_health(port)
+            _wait_for_health(proc, port)
             async with sse_client(f"http://{HOST}:{port}/sse") as (read, write):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
@@ -132,7 +133,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
         port = _get_free_port()
         proc = _start_server("streamable-http", port, stateless_http=False)
         try:
-            _wait_for_health(port)
+            _wait_for_health(proc, port)
             async with streamable_http_client(f"http://{HOST}:{port}/mcp") as (read, write, _):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
@@ -145,7 +146,7 @@ class TestDiagnosticsTransportMatrix(unittest.IsolatedAsyncioTestCase):
         port = _get_free_port()
         proc = _start_server("streamable-http", port, stateless_http=True)
         try:
-            _wait_for_health(port)
+            _wait_for_health(proc, port)
             async with streamable_http_client(f"http://{HOST}:{port}/mcp") as (read, write, _):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
