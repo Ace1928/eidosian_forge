@@ -1468,5 +1468,34 @@
       "learning"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "5bfdc5a9-cd35-4794-b973-cf240b3a28f6",
+    "content": "LESSON: On this repo, `git pull --rebase --autostash` can stall due expensive global stash/status scans; path-scoped stash of known changed files is faster and safer for frequent rebase cycles.\nCONTEXT: high-churn main branch with large working tree and frequent remote updates",
+    "created_at": "2026-02-21T20:03:28.766030",
+    "last_accessed": "2026-02-21T20:03:28.766073",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "On this repo, `git pull --rebase --autostash` can stall due expensive global stash/status scans; path-scoped stash of known changed files is faster and safer for frequent rebase cycles.",
+      "context": "high-churn main branch with large working tree and frequent remote updates",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "self-improvement",
+      "git",
+      "learning",
+      "ops",
+      "lesson",
+      "rebase",
+      "termux",
+      "stash",
+      "workflow"
+    ],
+    "linked_memories": []
   }
 ]
