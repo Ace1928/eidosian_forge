@@ -1,4 +1,8 @@
+import pytest
 import numpy as np
+
+# Renderer LUT generation relies on OpenCV conversion routines.
+pytest.importorskip("cv2", reason="renderer quality tests require opencv-python")
 
 from glyph_forge.streaming.core.renderer import GlyphRenderer, RenderConfig
 
