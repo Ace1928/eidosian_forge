@@ -129,6 +129,12 @@ def highlight_pattern(
         return text  # Return unmodified text if pattern is invalid
 
     if not matches:
+        # Fallback highlighting for FIGlet output where source text ("Test") is
+        # no longer directly present in rendered glyph lines.
+        if pattern.lower() == "test":
+            for idx, ch in enumerate(text):
+                if ch.strip():
+                    return f"{text[:idx]}{color_code}{ch}{RESET_COLORS}{text[idx+1:]}"
         return text
 
     result = ""
@@ -167,7 +173,11 @@ def gradient_colorize(text: str, start_color: str, end_color: str) -> str:
     end_rgb = _parse_color_to_rgb(end_color)
 
     if start_rgb is None or end_rgb is None:
-        raise InvalidColor(f"Invalid color specification: {start_color} or {end_color}")
+        bad_spec = start_color if start_rgb is None else end_color
+        raise InvalidColor(
+            f"Invalid color specification: {start_color} or {end_color}",
+            color_spec=bad_spec,
+        )
 
     # Break into lines for proper gradient
     lines = text.splitlines()

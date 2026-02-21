@@ -15,6 +15,7 @@ from ..core.exceptions import (
     FontNotFound,
     InvalidColor,
 )
+from ..version import __version__
 from .colour_adjuster import (
     ColourAdjuster,
     adapt_colors_to_terminal,
@@ -43,6 +44,7 @@ DEFAULT_FONT = "standard"
 DEFAULT_DIRECTION = "auto"
 DEFAULT_JUSTIFY = "auto"
 DEFAULT_WIDTH = 80
+VERSION = __version__
 
 __all__ = [
     # Figlet compatibility
@@ -53,6 +55,7 @@ __all__ = [
     "DEFAULT_DIRECTION",
     "DEFAULT_JUSTIFY",
     "DEFAULT_WIDTH",
+    "VERSION",
     # Exceptions for backward compatibility
     "FigletError",
     "FontNotFound",

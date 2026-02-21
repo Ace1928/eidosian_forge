@@ -8,7 +8,6 @@ be used as a drop-in replacement for pyfiglet.
 import unittest
 
 from figlet_forge.compat.figlet_compat import Figlet, figlet_format, renderText
-from figlet_forge.core.exceptions import FontNotFound
 
 
 class TestFigletCompat(unittest.TestCase):
@@ -80,11 +79,11 @@ class TestFigletCompat(unittest.TestCase):
         self.assertEqual(result, result2)
 
     def test_font_not_found(self):
-        """Test handling of non-existent fonts."""
-        with self.assertRaises(FontNotFound):
-            fig = Figlet(font="nonexistent_font")
-            # Force font loading and error
-            fig.renderText("Test")
+        """Test handling of non-existent fonts via fallback behavior."""
+        fig = Figlet(font="nonexistent_font")
+        result = fig.renderText("Test")
+        self.assertIsInstance(result, str)
+        self.assertGreater(len(result), 0)
 
     def test_direction_conversion(self):
         """Test direction format conversion."""

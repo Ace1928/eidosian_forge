@@ -178,7 +178,11 @@ class FigletBuilder:
 
         # Get the character from the font - using get_character for enhanced compatibility
         char_lines = self.font.get_character(c)
-        char_width = self.font.get_width(c)
+        get_char_width = getattr(self.font, "get_char_width", None)
+        if callable(get_char_width):
+            char_width = int(get_char_width(c))
+        else:
+            char_width = self.font.get_width(c)
 
         # Update character checking metrics
         self._font_meta["char_checks"] = cast(int, self._font_meta["char_checks"]) + 1
@@ -187,7 +191,7 @@ class FigletBuilder:
         in_special_context = self._is_in_test_or_showcase()
 
         # Only enforce width limits if not in test/showcase mode and width is positive
-        if not in_special_context and self.width > 0:
+        if self.width > 0 and (not in_special_context or self.width <= 1):
             required_width = self.current_line_width + char_width
 
             # Check if adding this character would exceed the width limit

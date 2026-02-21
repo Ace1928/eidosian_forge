@@ -7,11 +7,13 @@ to ensure robust handling of all possible user inputs.
 
 import io
 import os
+import unittest
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from figlet_forge.cli.main import main
+from figlet_forge.core.exceptions import FontNotFound
 
 
 class TestOptionCombinations:

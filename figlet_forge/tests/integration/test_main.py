@@ -501,63 +501,63 @@ class TestCLIOptions(unittest.TestCase):
     """Test various CLI options and combinations."""
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_flag(self):
+    def test_sample_flag(self, mock_generate_showcase):
         """Test that --sample works as a flag without requiring value."""
         # Test with just --sample flag
         main(["--sample"])
 
         # Call arguments validation
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["sample_text"], "hello")
         self.assertIsNone(kwargs["fonts"])
         self.assertIsNone(kwargs["color"])
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_with_text(self):
+    def test_sample_with_text(self, mock_generate_showcase):
         """Test sample with explicit sample text."""
         main(["--sample", "--sample-text=Test"])
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["sample_text"], "Test")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_with_color_and_fonts(self):
+    def test_sample_with_color_and_fonts(self, mock_generate_showcase):
         """Test that --sample works with color and font options."""
         main(["--sample", "--sample-color=RED", "--sample-fonts=slant,small"])
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["sample_text"], "hello")
         self.assertEqual(kwargs["fonts"], ["slant", "small"])
         self.assertEqual(kwargs["color"], "RED")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_color_as_flag(self):
+    def test_sample_color_as_flag(self, mock_generate_showcase):
         """Test that --sample-color works as a standalone flag."""
         main(["--sample", "--sample-color"])
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["color"], "ALL")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_fonts_as_flag(self):
+    def test_sample_fonts_as_flag(self, mock_generate_showcase):
         """Test that --sample-fonts works as a standalone flag."""
         main(["--sample", "--sample-fonts"])
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["fonts"], "ALL")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_showcase_equivalent_to_sample(self):
+    def test_showcase_equivalent_to_sample(self, mock_generate_showcase):
         """Test that --showcase is equivalent to --sample."""
         # Test --showcase
         main(["--showcase"])
-        args1, kwargs1 = TestCLIOptions._get_last_call_args(generate_showcase)
+        args1, kwargs1 = TestCLIOptions._get_last_call_args(mock_generate_showcase)
 
-        generate_showcase.reset_mock()
+        mock_generate_showcase.reset_mock()
 
         # Test --sample
         main(["--sample"])
-        args2, kwargs2 = TestCLIOptions._get_last_call_args(generate_showcase)
+        args2, kwargs2 = TestCLIOptions._get_last_call_args(mock_generate_showcase)
 
         # They should be the same
         self.assertEqual(kwargs1, kwargs2)
@@ -582,33 +582,33 @@ class TestCLIOptions(unittest.TestCase):
             mock_rainbow.assert_called_once()
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_sample_text_without_value(self):
+    def test_sample_text_without_value(self, mock_generate_showcase):
         """Test that --sample-text works without a value."""
         main(["--sample", "--sample-text"])
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["sample_text"], "Hello Eidos")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_special_formatting_options(self):
+    def test_special_formatting_options(self, mock_generate_showcase):
         """Test special formatting options like equals sign."""
         # Test special formatting with equals sign
         main(["--sample=Custom Text"])
 
-        args1, kwargs1 = TestCLIOptions._get_last_call_args(generate_showcase)
+        args1, kwargs1 = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs1["sample_text"], "Custom Text")
 
-        generate_showcase.reset_mock()
+        mock_generate_showcase.reset_mock()
 
         # Test combination of special formats
         main(["--showcase=Test", "--sample-color=RED"])
 
-        args2, kwargs2 = TestCLIOptions._get_last_call_args(generate_showcase)
+        args2, kwargs2 = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs2["sample_text"], "Test")
         self.assertEqual(kwargs2["color"], "RED")
 
     @patch("figlet_forge.cli.main.generate_showcase")
-    def test_complex_option_combinations(self):
+    def test_complex_option_combinations(self, mock_generate_showcase):
         """Test complex combinations of options."""
         main(
             [
@@ -619,7 +619,7 @@ class TestCLIOptions(unittest.TestCase):
             ]
         )
 
-        args, kwargs = TestCLIOptions._get_last_call_args(generate_showcase)
+        args, kwargs = TestCLIOptions._get_last_call_args(mock_generate_showcase)
         self.assertEqual(kwargs["sample_text"], "Complex")
         self.assertEqual(kwargs["color"], "ALL")
         self.assertEqual(kwargs["fonts"], "ALL")
@@ -630,7 +630,10 @@ class TestCLIOptions(unittest.TestCase):
         mock_calls = mock_function.mock_calls
         if not mock_calls:
             return (), {}
-        # Get the last call and extract args and kwargs
+        # Prefer the direct function call over chained calls like __str__().
+        for name, args, kwargs in reversed(mock_calls):
+            if name == "":
+                return args, kwargs
         name, args, kwargs = mock_calls[-1]
         return args, kwargs
 

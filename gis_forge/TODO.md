@@ -10,3 +10,6 @@
 
 ## 🟢 Low Priority
 - [ ] **Etcd/Consul**: Support distributed key-value stores for multi-node deployments.
+
+## ci-hardening
+- [ ] Normalize figlet_forge compat/encoding_adjuster.py structure (currently duplicate module-level helper definitions) after CI stabilization to reduce maintenance drift and line-number ambiguity in failure triage.

@@ -49,7 +49,12 @@ def test_mock_client_data():
     # Updated mock client uses EidosianForge or CipherSTW
     assert posts[0].author in ["EidosianForge", "CipherSTW"]
 
-def test_dashboard_benchmark(benchmark, client):
-    """Benchmark the dashboard endpoint."""
-    result = benchmark(client.get, "/")
+def test_dashboard_benchmark(client):
+    """Benchmark-smoke the dashboard endpoint without pytest-benchmark plugin."""
+    import time
+
+    start = time.perf_counter()
+    result = client.get("/")
+    elapsed = time.perf_counter() - start
     assert result.status_code == 200
+    assert elapsed < 5.0

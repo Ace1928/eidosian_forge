@@ -308,9 +308,20 @@ class CharNotPrinted(FigletError):  # noqa: N818
             "required_width": required_width,
         }
 
-        self.context: Dict[str, DetailValueT] = context_dict
+        extra_context = kwargs.pop("context", None)
+        merged_context: Dict[str, DetailValueT] = dict(context_dict)
+        if isinstance(extra_context, Mapping):
+            merged_context.update(cast(Mapping[str, DetailValueT], extra_context))
+
+        self.context = merged_context
 
         super().__init__(enhanced_message, suggestion, details, self.context, **kwargs)
+
+    def __str__(self) -> str:
+        base = super().__str__()
+        if self.char:
+            return f"{base}\nCharacter: {self.char}"
+        return base
 
 
 class InvalidColor(FigletError):  # noqa: N818 - Keeping name for backward compatibility

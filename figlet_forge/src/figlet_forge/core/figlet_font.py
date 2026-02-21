@@ -21,7 +21,7 @@ from typing import (
     Union,
 )
 
-from ..core.exceptions import FontNotFound
+from ..core.exceptions import FontError, FontNotFound
 
 # Configure logger for the font module
 logger = logging.getLogger(__name__)
@@ -54,8 +54,14 @@ class FigletFont:
     representations and metadata.
     """
 
-    def __init__(self) -> None:
-        """Initialize an empty FIGlet font."""
+    def __init__(self, font: Optional[Union[str, Path]] = None) -> None:
+        """
+        Initialize a FIGlet font.
+
+        Args:
+            font: Optional font name or font file path. If omitted, the default
+                ``standard`` font is loaded for backwards compatibility.
+        """
         self.comment = ""
         self.chars: CharacterMap = {}
         self.width: WidthMap = {}
@@ -68,6 +74,7 @@ class FigletFont:
         self.full_width = 0
         self.code_tags_depth = 0
         self.hard_blank = ""
+        self.comment_count = 0
 
         # Additional metadata for enhanced font tracking
         self.loaded_from: Optional[str] = None
@@ -79,11 +86,39 @@ class FigletFont:
         self.info: str = ""
         self.info_dict: Dict[str, str] = {}
 
+        self._initialize_font(font)
+
+    def _initialize_font(self, font: Optional[Union[str, Path]]) -> None:
+        """
+        Load the requested font during initialization.
+
+        This preserves legacy behavior expected by compatibility tests where
+        ``FigletFont()`` auto-loads the default font.
+        """
+        # No explicit font provided: load the default font.
+        if font is None:
+            if not self.load_font(font_name="standard"):
+                raise FontNotFound("Default font 'standard' could not be loaded")
+            return
+
+        font_str = str(font)
+
+        # If the caller passed a real path, load from file.
+        if os.path.exists(font_str):
+            if not self.load_font(font_path=font_str):
+                raise FontError(f"Failed to load font from path: {font_str}")
+            return
+
+        # Otherwise treat the argument as a named font.
+        if not self.load_font(font_name=font_str):
+            raise FontNotFound(f"Font not found: {font_str}")
+
     @eidosian()
     def load_font(
         self,
         font_path: Optional[Union[str, Path]] = None,
         font_name: Optional[str] = None,
+        allow_fallback: bool = True,
     ) -> bool:
         """
         Load a font from file or embedded resources.
@@ -91,6 +126,8 @@ class FigletFont:
         Args:
             font_path: Path to the font file, if None uses font_name
             font_name: Name of the embedded font to load
+            allow_fallback: Whether to fallback to ``standard`` when the target
+                font cannot be loaded.
 
         Returns:
             True if font was loaded successfully, False otherwise
@@ -161,11 +198,16 @@ class FigletFont:
             success = self._find_font_in_paths(font_name)
 
         # If everything failed, try to load the default "standard" font
-        if not success and font_name != "standard":
+        if (
+            allow_fallback
+            and not success
+            and font_name is not None
+            and font_name != "standard"
+        ):
             logger.info(
                 f"Failed to load font '{font_name}', falling back to 'standard'"
             )
-            return self.load_font(None, "standard")
+            return self.load_font(None, "standard", allow_fallback=False)
 
         return success
 
@@ -193,32 +235,32 @@ class FigletFont:
         search_paths.append(os.path.dirname(os.path.abspath(__file__)))
         search_paths.append(os.getcwd())
 
-        # Search for the font file
-        for path in search_paths:
-            if not os.path.exists(path):
-                continue
-
-            # Find all font files in directory
-            found_files: List[str] = []
-            for root, _, files in os.walk(path):
-                for file in files:
-                    if file.startswith(f"{font_name}.") or file == font_name:
-                        found_files.append(os.path.join(root, file))
-
-            # Try loading each candidate font file
-            for file_path in found_files:
-                try:
-                    with open(file_path, "rb") as font_file:
-                        data = font_file.read().decode("latin-1", errors="replace")
-                        if self.parse_font(data):
-                            self.loaded_from = file_path
-                            self.font_name = font_name
-                            return True
-                except (OSError, UnicodeDecodeError) as e:
-                    # Log and try next file
-                    logger.debug(f"Error trying font file {file_path}: {e}")
+        file_path = self.search_font(font_name)
+        if file_path:
+            try:
+                with open(file_path, "rb") as font_file:
+                    data = font_file.read().decode("latin-1", errors="replace")
+                    if self.parse_font(data):
+                        self.loaded_from = file_path
+                        self.font_name = font_name
+                        return True
+            except (OSError, UnicodeDecodeError) as e:
+                logger.debug(f"Error trying font file {file_path}: {e}")
 
         return False
+
+    def _iter_search_paths(self) -> List[str]:
+        """Return platform search paths for font lookup."""
+        return [
+            "/usr/share/figlet",
+            "/usr/local/share/figlet",
+            "/usr/share/figlet/fonts",
+            "/usr/local/lib/figlet/fonts",
+            os.path.expanduser("~/.figlet/fonts"),
+            os.path.expanduser("~/figlet/fonts"),
+            os.path.dirname(os.path.abspath(__file__)),
+            os.getcwd(),
+        ]
 
     @eidosian()
     def parse_font(self, data: str) -> bool:
@@ -259,11 +301,13 @@ class FigletFont:
 
             if len(header) > 5:
                 comment_lines = int(header[5])
+                self.comment_count = comment_lines
                 self.comment = "\n".join(lines[1 : comment_lines + 1])
                 # Extract metadata from comment
                 self._extract_metadata_from_comment()
                 current_line = comment_lines + 1
             else:
+                self.comment_count = 0
                 current_line = 1
         except (ValueError, IndexError) as e:
             raise RuntimeError(f"Error parsing font header: {e}") from e
@@ -862,6 +906,28 @@ class FigletFont:
     @eidosian()
     def getWidth(self, char: str) -> int:  # noqa: N802
         """Backward compatibility method for get_width."""
+        return self.get_width(char)
+
+    @eidosian()
+    def search_font(self, font_name: str) -> Optional[str]:
+        """
+        Locate a named font on disk and return its path.
+
+        Returns:
+            Absolute path to the first matching font file, else ``None``.
+        """
+        for path in self._iter_search_paths():
+            if not os.path.exists(path):
+                continue
+            for root, _, files in os.walk(path):
+                for file in files:
+                    if file.startswith(f"{font_name}.") or file == font_name:
+                        return os.path.join(root, file)
+        return None
+
+    @eidosian()
+    def get_char_width(self, char: str) -> int:
+        """Backward compatibility alias for get_width."""
         return self.get_width(char)
 
     @classmethod

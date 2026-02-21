@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from moltbook_forge.tools.live_scan import summarize_posts
 
 
@@ -14,7 +16,7 @@ def test_summarize_posts() -> None:
     assert summary.top_posts[0]["id"] == "1"
 
 
-def test_summarize_posts_benchmark(benchmark) -> None:
+def test_summarize_posts_benchmark() -> None:
     posts = []
     for i in range(200):
         posts.append(
@@ -29,5 +31,8 @@ def test_summarize_posts_benchmark(benchmark) -> None:
                 "keywords": ["forge", "agent"],
             }
         )
-    result = benchmark(summarize_posts, posts, 5)
+    start = time.perf_counter()
+    result = summarize_posts(posts, 5)
+    duration = time.perf_counter() - start
     assert result.total == 200
+    assert duration < 1.0

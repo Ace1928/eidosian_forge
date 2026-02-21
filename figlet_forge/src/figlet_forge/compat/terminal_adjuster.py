@@ -56,9 +56,10 @@ class TerminalAdjuster:
         self._capabilities = None
         self._dimensions = None
         self._term_type = self._detect_terminal_type()
-        # Must detect capabilities before color depth
-        self.capabilities  # This calls the property which sets _capabilities
+        # Must detect capabilities before color depth.
+        self._capabilities = self._detect_capabilities()
         self._color_depth = self._detect_color_depth()
+        self._size = self._get_terminal_size()
 
     def _detect_terminal_type(self) -> int:
         """
@@ -331,6 +332,11 @@ class TerminalAdjuster:
             self._dimensions = (80, 24)
 
         return self._dimensions
+
+    @eidosian()
+    def _get_terminal_size(self) -> Tuple[int, int]:
+        """Compatibility helper retained for legacy tests/callers."""
+        return self.dimensions
 
     @property
     def terminal_width(self) -> int:
@@ -639,18 +645,26 @@ def _get_unix_terminal_size() -> Tuple[int, int]:
     try:
         # Try using get_terminal_size for modern Python
         size = shutil.get_terminal_size()
-        return (size.columns, size.lines)
+        if hasattr(size, "columns") and hasattr(size, "lines"):
+            return (int(size.columns), int(size.lines))
+        if isinstance(size, tuple) and len(size) >= 2:
+            return (int(size[0]), int(size[1]))
     except (AttributeError, OSError):
-        try:
-            # Fallback using ioctl
-            import fcntl
-            import termios
+        pass
 
-            with open(os.ctermid(), "rb") as fd:
-                size = struct.unpack("hh", fcntl.ioctl(fd, termios.TIOCGWINSZ, "1234"))
-                return (size[1], size[0])
-        except (OSError, ImportError):
-            pass
+    try:
+        # Fallback using ioctl
+        import fcntl
+        import termios
+
+        ctermid = getattr(os, "ctermid", None)
+        if not callable(ctermid):
+            return (80, 24)
+        with open(ctermid(), "rb") as fd:
+            size = struct.unpack("hh", fcntl.ioctl(fd, termios.TIOCGWINSZ, "1234"))
+            return (size[1], size[0])
+    except (OSError, ImportError, AttributeError, ValueError, TypeError):
+        pass
 
     return (80, 24)  # Default fallback
 

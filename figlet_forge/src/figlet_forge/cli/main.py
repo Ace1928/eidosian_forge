@@ -7,11 +7,13 @@ This module provides the CLI entry point and command processing
 functionality for the Figlet Forge package.
 """
 import argparse
+import re
 import sys
 import textwrap
 from typing import List, Optional
 
-from ..color import colored_format, get_coloring_functions
+from ..color.figlet_color import COLOR_CODES, colored_format, get_coloring_functions
+from ..color import color_formats
 from ..core.exceptions import FigletError, FontNotFound
 from ..core.utils import get_terminal_size
 from ..figlet import Figlet
@@ -158,7 +160,59 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
         "--version", "-v", action="store_true", help="Show version information"
     )
 
-    parsed_args = parser.parse_args(args)
+    effective_args = list(args) if args is not None else None
+    if effective_args is not None:
+        known_color_tokens = {k.lower() for k in COLOR_CODES.keys()} | {
+            "rainbow",
+            "random",
+            "all",
+            "list",
+            "red_to_blue",
+            "yellow_to_green",
+            "magenta_to_cyan",
+            "white_to_blue",
+            "green_on_black",
+            "red_on_black",
+            "yellow_on_blue",
+            "white_on_red",
+            "black_on_white",
+            "cyan_on_black",
+        }
+
+        def _looks_like_color(token: str) -> bool:
+            t = token.strip()
+            tl = t.lower()
+            if tl in known_color_tokens:
+                return True
+            if ":" in t or "_to_" in tl or "_on_" in tl:
+                return True
+            return re.fullmatch(r"\d{1,3};\d{1,3};\d{1,3}", t) is not None
+
+        normalized: List[str] = []
+        i = 0
+        while i < len(effective_args):
+            tok = effective_args[i]
+            if tok == "--color":
+                # Preserve "--color" flag semantics even when followed by text.
+                nxt = effective_args[i + 1] if i + 1 < len(effective_args) else None
+                if nxt and not nxt.startswith("-"):
+                    if _looks_like_color(nxt):
+                        normalized.append(tok)
+                        normalized.append(nxt)
+                        i += 2
+                        continue
+                    normalized.append("--color=RAINBOW")
+                    normalized.append(nxt)
+                    i += 2
+                    continue
+            normalized.append(tok)
+            i += 1
+        effective_args = normalized
+
+    parsed_args = parser.parse_args(effective_args)
+    if isinstance(parsed_args.showcase, str):
+        parsed_args.sample_text = parsed_args.showcase
+        parsed_args.showcase = True
     return parsed_args
 
 
@@ -181,6 +235,16 @@ def read_input() -> str:
 @eidosian()
 def list_colors() -> None:
     """Display a list of available colors."""
+    print("Available color names:")
+    print("---------------------")
+    for color_name in sorted(COLOR_CODES.keys()):
+        print(f"  {color_name}")
+    print()
+    print("\nSpecial color formats:")
+    for name, desc in color_formats.items():
+        print(f"  {name}: {desc}")
+    print()
+
     categories = ColorShowcase.get_color_categories()
 
     print("Available colors:")
@@ -205,6 +269,9 @@ def list_colors() -> None:
     print("  NAME:NAME       - e.g., WHITE:BLUE (foreground:background)")
     print("  N;N;N          - e.g., 255;0;0 (RGB values)")
     print("  gradient_name   - e.g., red_to_blue, yellow_to_green")
+    print("\nUsage examples:")
+    print("  figlet_forge --color=RED 'Hello'")
+    print("  figlet_forge --color=rainbow 'Hello'")
 
 
 @eidosian()
@@ -223,14 +290,15 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # Show version if requested
         if args.version:
-            print(f"Figlet Forge v{__version__}")
+            print(f"Figlet Forge version {__version__}")
             return 0
 
         # List fonts if requested
         if args.list_fonts:
             figlet = Figlet()
             fonts = figlet.get_fonts()
-            print(f"Available fonts ({len(fonts)}):")
+            print("Available fonts:")
+            print(f"Count: {len(fonts)}")
             for i, font in enumerate(sorted(fonts)):
                 print(f"{font.ljust(20)}", end=" " if (i + 1) % 4 != 0 else "\n")
             if len(fonts) % 4 != 0:
@@ -254,6 +322,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                 sample_text=args.sample_text, font=args.font or "small"
             )
             return 0
+
+        # Treat sample option family as implicit showcase mode for backward
+        # compatibility with integration tests and legacy CLI usage.
+        if not args.showcase:
+            if args.sample_color is not None or args.sample_fonts is not None:
+                args.showcase = True
+            elif args.sample_text != "hello":
+                args.showcase = True
 
         # Show regular showcase if requested (handles all showcase cases including color showcase)
         if args.showcase:
@@ -375,34 +451,59 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # Apply color if specified
         if args.color:
-            color_name = args.color.lower()
+            color_name = str(args.color).strip().lower()
             coloring_funcs = get_coloring_functions()
-            
-            # Handle special color effects
+
             if color_name == "rainbow":
-                color_func = coloring_funcs.get("rainbow")
+                if callable(coloring_funcs):
+                    result = coloring_funcs(str(result))
+                    color_func = None
+                elif isinstance(coloring_funcs, dict):
+                    color_func = coloring_funcs.get("rainbow")
+                else:
+                    color_func = None
                 if color_func:
-                    result = color_func(result)
+                    result = color_func(str(result))
+                elif not callable(coloring_funcs):
+                    print("Error: Rainbow color effect unavailable", file=sys.stderr)
+                    return 1
             elif "_to_" in color_name:
-                # Gradient: X_to_Y format
                 parts = color_name.split("_to_")
                 if len(parts) == 2:
-                    gradient_func = coloring_funcs.get("gradient")
-                    if gradient_func:
-                        result = gradient_func(result, parts[0], parts[1])
+                    gradient_func = (
+                        coloring_funcs.get("gradient")
+                        if isinstance(coloring_funcs, dict)
+                        else None
+                    )
+                    if not gradient_func:
+                        print("Error: Gradient effect unavailable", file=sys.stderr)
+                        return 1
+                    result = gradient_func(str(result), parts[0], parts[1])
+                else:
+                    print(
+                        f"Error: Invalid gradient specification '{color_name}'",
+                        file=sys.stderr,
+                    )
+                    return 1
             else:
-                # Simple solid color
-                result = colored_format(result, color_name)
+                colored = colored_format(str(result), color_name)
+                if colored == str(result):
+                    print(
+                        f"Error: Invalid color specification '{color_name}'",
+                        file=sys.stderr,
+                    )
+                    return 1
+                result = colored
 
         # Handle output formatting
         if args.html:
             from ..render.figlet_engine import RenderEngine
 
-            result = RenderEngine.to_html(result)
+            result = RenderEngine.to_html(str(result))
         elif args.svg:
             from ..render.figlet_engine import RenderEngine
 
-            result = RenderEngine.to_svg(result)
+            result = RenderEngine.to_svg(str(result))
 
         # Output to file or stdout
         if args.output:
@@ -414,6 +515,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         return 0
 
+    except SystemExit as e:
+        # argparse uses SystemExit for parse failures; return the exit code so
+        # callers (including tests) can assert on error handling.
+        code = e.code if isinstance(e.code, int) else 2
+        return code
     except FontNotFound as e:
         # Get just the font name from the exception
         font_name = str(e).split(" - ")[0] if " - " in str(e) else str(e)

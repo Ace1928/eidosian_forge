@@ -2,7 +2,7 @@
 
 Generated: deterministic (timestamp omitted)
 Scope: tracked
-Directory count: 3045
+Directory count: 3048
 
 .eidos_chrome_profile
 .eidos_chrome_profile/ActorSafetyLists
@@ -360,6 +360,7 @@ Directory count: 3045
 .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Code Cache/wasm/index-dir
 .eidos_chrome_profile/Default/Storage/ext/nmmhkkegccagdldgiimedpiccmgmieda/def/Shared Dictionary/cache/index-dir
 .gemini
+.gemini/tmp
 .github
 .github/prompts_old
 .github/workflows
@@ -2372,6 +2373,7 @@ repo_forge/src/repo_forge/constants
 repo_forge/src/repo_forge/core
 repo_forge/src/repo_forge/generators
 reports
+reports/ci
 reports/consciousness_benchmarks
 reports/consciousness_integrated_benchmarks
 reports/consciousness_trends
@@ -2382,6 +2384,7 @@ reports/security
 requirements
 scripts
 scripts/docs
+scripts/lib
 scripts/machine_clone
 scripts/migration
 scripts/profiling

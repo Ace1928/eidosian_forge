@@ -10,7 +10,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -34,6 +33,7 @@ venv.bak/
 # IDEs
 .vscode/
 .idea/
+.gemini/
 *.swp
 *.swo
 
@@ -102,3 +102,25 @@ reports/consciousness_trials/
 reports/consciousness_validation/
 reports/consciousness_preregister/
 reports/code_forge_benchmark_*.json
+game_forge/pyparticles_haskell_source/
+
+# Keep forge-managed Python library source tracked.
+!lib/eidosian_core/
+!lib/eidosian_core/*.py
+!lib/cli/
+!lib/cli/*.py
+!lib/tests/
+!lib/tests/*.py
+!lib/py_lib.py
+
+# Ignore local/vendor-heavy subtrees under lib unless explicitly tracked.
+lib/**/__pycache__/
+lib/eidosian_core.egg-info/
+lib/graphrag/
+lib/lancedb_src/
+
+# Local test/debug artifacts
+.coverage
+.tmp_test/
+reports/ci/*.log
+reports/local_test_audit/

@@ -7,7 +7,7 @@ different locales, operating systems, and terminal environments.
 
 import locale
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -22,6 +22,10 @@ from figlet_forge.compat.encoding_adjuster import (
 
 class TestEncodingDetection:
     """Test encoding detection capabilities."""
+
+    @staticmethod
+    def _norm_encoding(name: str) -> str:
+        return "".join(ch for ch in name.lower() if ch.isalnum())
 
     def test_default_init(self):
         """Test default initialization of EncodingAdjuster."""
@@ -46,7 +50,7 @@ class TestEncodingDetection:
 
             adjuster = EncodingAdjuster()
             # Case insensitive comparison since system might return different casing
-            assert adjuster.encoding.lower() == expected_encoding.lower()
+            assert self._norm_encoding(adjuster.encoding) == self._norm_encoding(expected_encoding)
 
     @pytest.mark.parametrize(
         "env_vars,expected_encoding",
@@ -64,7 +68,7 @@ class TestEncodingDetection:
             "locale.getpreferredencoding", side_effect=locale.Error
         ):
             adjuster = EncodingAdjuster()
-            assert adjuster.encoding.lower() == expected_encoding.lower()
+            assert self._norm_encoding(adjuster.encoding) == self._norm_encoding(expected_encoding)
 
     def test_stdout_encoding_fallback(self):
         """Test fallback to stdout encoding."""
@@ -152,9 +156,7 @@ class TestUTF8Detection:
             assert result is True
 
         # Test with incompatible encoding
-        with patch.object(adjuster, "_encoding", "ascii"), patch(
-            "builtins.bytes.decode", side_effect=UnicodeError
-        ):
+        with patch.object(adjuster, "_encoding", "ascii"):
             result = adjuster._check_utf8_support()
             assert result is False
 
@@ -163,16 +165,18 @@ class TestUTF8Detection:
         adjuster = EncodingAdjuster()
 
         # Test with TTY and UTF-8 encoding
-        with patch("sys.stdout.isatty", return_value=True), patch(
-            "sys.stdout.encoding", "utf-8"
-        ):
+        stdout_mock = MagicMock()
+        stdout_mock.isatty.return_value = True
+        stdout_mock.encoding = "utf-8"
+        with patch("sys.stdout", stdout_mock), patch.dict(os.environ, {}, clear=True):
             result = adjuster._check_utf8_output()
             assert result is True
 
         # Test with TTY and non-UTF-8 encoding
-        with patch("sys.stdout.isatty", return_value=True), patch(
-            "sys.stdout.encoding", "ascii"
-        ):
+        stdout_mock = MagicMock()
+        stdout_mock.isatty.return_value = True
+        stdout_mock.encoding = "ascii"
+        with patch("sys.stdout", stdout_mock), patch.dict(os.environ, {}, clear=True):
             result = adjuster._check_utf8_output()
             assert result is False
 
@@ -182,9 +186,10 @@ class TestUTF8Detection:
             assert result is True  # Assume redirected output can handle UTF-8
 
         # Test with UTF-8 environment variable
-        with patch("sys.stdout.isatty", return_value=True), patch(
-            "sys.stdout.encoding", "ascii"
-        ), patch.dict(os.environ, {"LANG": "en_US.UTF-8"}, clear=True):
+        stdout_mock = MagicMock()
+        stdout_mock.isatty.return_value = True
+        stdout_mock.encoding = "ascii"
+        with patch("sys.stdout", stdout_mock), patch.dict(os.environ, {"LANG": "en_US.UTF-8"}, clear=True):
             result = adjuster._check_utf8_output()
             assert result is True
 

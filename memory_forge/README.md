@@ -74,3 +74,6 @@ If this happens in `eidosian_venv`, rebuild HNSW wheels from source without `-ma
 cd eidosian_forge
 HNSWLIB_NO_NATIVE=1 ./eidosian_venv/bin/pip install --force-reinstall --no-binary=chroma-hnswlib,hnswlib chroma-hnswlib==0.7.6 hnswlib==0.8.0
 ```
+
+Also prefer explicit embeddings (`add(..., embeddings=[...])` + `query_embeddings=[...]`) in Termux workflows.
+`query_texts=[...]` triggers Chroma's default ONNX embedding path (`all-MiniLM-L6-v2`) which may segfault on some Termux builds.
