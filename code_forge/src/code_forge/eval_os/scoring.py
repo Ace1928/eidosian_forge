@@ -28,17 +28,12 @@ def score_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
     success_values = [1.0 if bool(r.get("success")) else 0.0 for r in runs]
     latency_values = [float(r.get("duration_ms") or 0.0) for r in runs]
     regression_values = [1.0 if bool(r.get("regression")) else 0.0 for r in runs]
-    stale_error_values = [
-        float(((r.get("staleness") or {}).get("staleness_caused_error_rate") or 0.0))
-        for r in runs
-    ]
+    stale_error_values = [float(((r.get("staleness") or {}).get("staleness_caused_error_rate") or 0.0)) for r in runs]
 
     success_rate = statistics.mean(success_values)
     latency_mean = statistics.mean(latency_values) if latency_values else 0.0
     regression_rate = statistics.mean(regression_values) if regression_values else 0.0
-    stale_error_rate = (
-        statistics.mean(stale_error_values) if stale_error_values else 0.0
-    )
+    stale_error_rate = statistics.mean(stale_error_values) if stale_error_values else 0.0
 
     # Weighted objective with explicit trade-offs.
     # 1. reward task success strongly
@@ -46,10 +41,7 @@ def score_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
     # 3. mildly penalize latency inflation
     latency_penalty = min(1.0, latency_mean / 600_000.0)
     enterprise_score = (
-        (0.70 * success_rate)
-        - (0.15 * regression_rate)
-        - (0.10 * stale_error_rate)
-        - (0.05 * latency_penalty)
+        (0.70 * success_rate) - (0.15 * regression_rate) - (0.10 * stale_error_rate) - (0.05 * latency_penalty)
     )
     enterprise_score = max(0.0, min(1.0, enterprise_score))
 
@@ -62,12 +54,8 @@ def score_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "p95": _percentile(latency_values, 95),
         },
         "variance": {
-            "success_stddev": (
-                statistics.pstdev(success_values) if len(success_values) > 1 else 0.0
-            ),
-            "latency_stddev": (
-                statistics.pstdev(latency_values) if len(latency_values) > 1 else 0.0
-            ),
+            "success_stddev": (statistics.pstdev(success_values) if len(success_values) > 1 else 0.0),
+            "latency_stddev": (statistics.pstdev(latency_values) if len(latency_values) > 1 else 0.0),
         },
         "quality_gate": {
             "regression_rate": regression_rate,

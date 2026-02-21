@@ -1,8 +1,8 @@
 """Evaluation + observability operating system for Code Forge."""
 
 from code_forge.eval_os.contracts import (
-    ArtifactContract,
     TASKBANK_SCHEMA_VERSION,
+    ArtifactContract,
     EvalConfig,
     EvalConfigMatrix,
     TaskSpec,

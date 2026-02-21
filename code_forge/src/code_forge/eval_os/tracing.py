@@ -96,9 +96,7 @@ class TraceRecorder:
         err_repr = None
         try:
             yield span_id
-        except (
-            Exception
-        ) as exc:  # pragma: no cover - exercised through caller integration paths
+        except Exception as exc:  # pragma: no cover - exercised through caller integration paths
             status = "error"
             err_repr = f"{type(exc).__name__}: {exc}"
             raise

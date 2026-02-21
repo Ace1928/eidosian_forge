@@ -260,9 +260,7 @@ def _execute_single_run(
             },
         )
 
-    (run_dir / "result.json").write_text(
-        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
-    )
+    (run_dir / "result.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     recorder.emit(
         event_type="run.end",
         span_id=None,
@@ -290,11 +288,7 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
         replay_mode=str(options.replay_mode).strip().lower(),
         max_parallel=max(1, int(options.max_parallel)),
         default_timeout_sec=max(1, int(options.default_timeout_sec)),
-        staleness_log_path=(
-            Path(options.staleness_log_path).resolve()
-            if options.staleness_log_path
-            else None
-        ),
+        staleness_log_path=(Path(options.staleness_log_path).resolve() if options.staleness_log_path else None),
     )
     if options.replay_mode not in {"off", "record", "replay"}:
         raise ValueError("replay_mode must be one of: off, record, replay")
@@ -352,9 +346,7 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
 
     config_scores: dict[str, dict[str, Any]] = {}
     for config in matrix.configs:
-        selected = [
-            row for row in run_results if row.get("config_id") == config.config_id
-        ]
+        selected = [row for row in run_results if row.get("config_id") == config.config_id]
         config_scores[config.config_id] = {
             "config_name": config.name,
             "score": score_runs(selected),

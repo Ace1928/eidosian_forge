@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from code_forge.eval_os.contracts import (
     EvalConfig,
     TaskSpec,

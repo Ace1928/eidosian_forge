@@ -60,11 +60,7 @@ class FreshnessRecord:
             source_last_modified=str(payload["source_last_modified"]),
             derived_at=str(payload["derived_at"]),
             served_at=str(payload["served_at"]),
-            revalidated_at=(
-                str(payload["revalidated_at"])
-                if payload.get("revalidated_at")
-                else None
-            ),
+            revalidated_at=(str(payload["revalidated_at"]) if payload.get("revalidated_at") else None),
             stale_error=bool(payload.get("stale_error", False)),
             metadata=dict(payload.get("metadata") or {}),
         )
@@ -97,9 +93,7 @@ def load_freshness_records(path: Path) -> list[FreshnessRecord]:
         elif isinstance(payload, list):
             rows = payload
         else:
-            raise ValueError(
-                f"unsupported freshness payload type: {type(payload).__name__}"
-            )
+            raise ValueError(f"unsupported freshness payload type: {type(payload).__name__}")
     return [FreshnessRecord.from_dict(row) for row in rows]
 
 

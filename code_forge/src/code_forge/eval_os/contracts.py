@@ -31,15 +31,9 @@ class ArtifactContract:
         return cls(
             require_zero_exit=bool(payload.get("require_zero_exit", True)),
             required_paths=tuple(str(v) for v in (payload.get("required_paths") or [])),
-            forbidden_paths=tuple(
-                str(v) for v in (payload.get("forbidden_paths") or [])
-            ),
-            stdout_must_contain=tuple(
-                str(v) for v in (payload.get("stdout_must_contain") or [])
-            ),
-            stderr_must_not_contain=tuple(
-                str(v) for v in (payload.get("stderr_must_not_contain") or [])
-            ),
+            forbidden_paths=tuple(str(v) for v in (payload.get("forbidden_paths") or [])),
+            stdout_must_contain=tuple(str(v) for v in (payload.get("stdout_must_contain") or [])),
+            stderr_must_not_contain=tuple(str(v) for v in (payload.get("stderr_must_not_contain") or [])),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -190,9 +184,7 @@ class EvalConfigMatrix:
                 f"invalid config matrix schema_version={schema_version!r}; "
                 f"expected {CONFIG_MATRIX_SCHEMA_VERSION!r}"
             )
-        configs = tuple(
-            EvalConfig.from_dict(item) for item in (payload.get("configs") or [])
-        )
+        configs = tuple(EvalConfig.from_dict(item) for item in (payload.get("configs") or []))
         if not configs:
             raise ValueError("config matrix must include at least one config")
         seen: set[str] = set()
@@ -218,9 +210,7 @@ def load_taskbank(path: Path) -> tuple[str, list[TaskSpec], dict[str, Any]]:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     schema_version = str(payload.get("schema_version") or "")
     if schema_version != TASKBANK_SCHEMA_VERSION:
-        raise ValueError(
-            f"invalid taskbank schema_version={schema_version!r}; expected {TASKBANK_SCHEMA_VERSION!r}"
-        )
+        raise ValueError(f"invalid taskbank schema_version={schema_version!r}; expected {TASKBANK_SCHEMA_VERSION!r}")
     tasks = [TaskSpec.from_dict(item) for item in (payload.get("tasks") or [])]
     if not tasks:
         raise ValueError("taskbank contains no tasks")
@@ -233,9 +223,7 @@ def load_taskbank(path: Path) -> tuple[str, list[TaskSpec], dict[str, Any]]:
     return schema_version, tasks, metadata
 
 
-def write_taskbank(
-    path: Path, tasks: list[TaskSpec], metadata: dict[str, Any] | None = None
-) -> dict[str, Any]:
+def write_taskbank(path: Path, tasks: list[TaskSpec], metadata: dict[str, Any] | None = None) -> dict[str, Any]:
     if not tasks:
         raise ValueError("cannot write empty taskbank")
     payload = {
