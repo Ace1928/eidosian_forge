@@ -1316,6 +1316,34 @@
         ]
       },
       "links": []
+    },
+    "7f1ba695-cb3c-495d-a296-fe17e54e74cc": {
+      "id": "7f1ba695-cb3c-495d-a296-fe17e54e74cc",
+      "content": "Code Forge now includes eval OS modules (contracts/tracing/replay/runner/staleness/scoring) with CLI entrypoints and schema versioning for reproducible ablation runs.",
+      "metadata": {
+        "tags": [
+          "observability",
+          "schema",
+          "evaluation",
+          "code_forge",
+          "cli"
+        ]
+      },
+      "links": []
+    },
+    "5da84aa1-6c27-4823-8808-255a3e8c3a58": {
+      "id": "5da84aa1-6c27-4823-8808-255a3e8c3a58",
+      "content": "Code Forge eval harness now supports deterministic replay across separate output directories via configurable replay_store_path (CLI: --replay-store), with run summary including replay_store_path metadata.",
+      "metadata": {
+        "tags": [
+          "observability",
+          "schema",
+          "code_forge",
+          "eval_os",
+          "replay"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

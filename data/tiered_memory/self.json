@@ -1441,5 +1441,32 @@
       "timeout"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "7922b525-1c32-464c-a569-e1a338772804",
+    "content": "LESSON: Eval harness reliability improves when replay mode is strict (miss = explicit failure) and sample contracts avoid brittle output token checks for commands that can vary by runner/plugin output.\nCONTEXT: code_forge eval_os phase implementation",
+    "created_at": "2026-02-21T18:58:41.152806",
+    "last_accessed": "2026-02-21T18:58:41.152817",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Eval harness reliability improves when replay mode is strict (miss = explicit failure) and sample contracts avoid brittle output token checks for commands that can vary by runner/plugin output.",
+      "context": "code_forge eval_os phase implementation",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "reliability",
+      "lesson",
+      "self-improvement",
+      "contracts",
+      "evaluation",
+      "replay",
+      "learning"
+    ],
+    "linked_memories": []
   }
 ]
