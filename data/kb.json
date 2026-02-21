@@ -1372,6 +1372,20 @@
         ]
       },
       "links": []
+    },
+    "48749281-de23-4868-9062-ea6cae3f0872": {
+      "id": "48749281-de23-4868-9062-ea6cae3f0872",
+      "content": "linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux.",
+      "metadata": {
+        "tags": [
+          "stability",
+          "linux_audit",
+          "ci",
+          "termux",
+          "mcp"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

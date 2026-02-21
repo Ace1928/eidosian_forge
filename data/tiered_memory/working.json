@@ -546,5 +546,27 @@
       "glyph_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "197ceab1-d8e7-44f1-a7ee-5ed1b7949a6d",
+    "content": "Linux parity smoke now passes fully after MCP test hardening and linux_audit_matrix quick-probe timeout floor updates; report: reports/linux_audit_20260221_202336_b23ae47d.json.",
+    "created_at": "2026-02-22T06:30:57.571532",
+    "last_accessed": "2026-02-22T06:30:57.571543",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ci",
+      "parity",
+      "termux",
+      "linux",
+      "mcp",
+      "audit"
+    ],
+    "linked_memories": []
   }
 ]
