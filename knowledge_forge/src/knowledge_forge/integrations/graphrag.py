@@ -3,9 +3,9 @@ from eidosian_core import eidosian
 """
 Integration with GraphRAG.
 """
+import os
 import subprocess
 import sys
-import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -101,8 +101,7 @@ class GraphRAGIntegration:
 
         return {
             "command": used_cmd,
-            "attempted_commands": [primary_cmd]
-            + ([legacy_cmd] if fallback_used and legacy_cmd is not None else []),
+            "attempted_commands": [primary_cmd] + ([legacy_cmd] if fallback_used and legacy_cmd is not None else []),
             "fallback_used": fallback_used,
             "success": res.returncode == 0,
             "stdout": res.stdout,
@@ -123,13 +122,9 @@ class GraphRAGIntegration:
     @eidosian()
     def global_query(self, query: str) -> Dict[str, Any]:
         """Run a global query against the index."""
-        return self._run_graphrag(
-            "query", "--root", str(self.root), "--method", "global", query
-        )
+        return self._run_graphrag("query", "--root", str(self.root), "--method", "global", query)
 
     @eidosian()
     def local_query(self, query: str) -> Dict[str, Any]:
         """Run a local query against the index."""
-        return self._run_graphrag(
-            "query", "--root", str(self.root), "--method", "local", query
-        )
+        return self._run_graphrag("query", "--root", str(self.root), "--method", "local", query)
