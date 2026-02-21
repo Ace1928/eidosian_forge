@@ -74,7 +74,7 @@ jobs:
       - name: Run Linux Parity Smoke
         env:
           PYTHONUNBUFFERED: "1"
-          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais"
+          EIDOS_AUDIT_OPTIONAL_FORGES: "mkey,llm,erais,glyph,word"
         run: |
           bash scripts/linux_parity_smoke.sh
 
