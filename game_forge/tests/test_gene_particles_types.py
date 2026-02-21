@@ -66,15 +66,39 @@ def test_cellular_type_lifecycle_and_filters():
 
 def test_trait_definition_validation_errors():
     with pytest.raises(ValueError):
-        TraitDefinition(name="", type=TraitType.MOVEMENT, range=(0.0, 1.0), description="x", default=0.5)
+        TraitDefinition(
+            name="",
+            type=TraitType.MOVEMENT,
+            range=(0.0, 1.0),
+            description="x",
+            default=0.5,
+        )
     with pytest.raises(ValueError):
         TraitDefinition(name="a", type=TraitType.MOVEMENT, range=(1.0,), description="x", default=0.5)  # type: ignore[arg-type]
     with pytest.raises(ValueError):
-        TraitDefinition(name="a", type=TraitType.MOVEMENT, range=(1.0, 0.0), description="x", default=0.5)
+        TraitDefinition(
+            name="a",
+            type=TraitType.MOVEMENT,
+            range=(1.0, 0.0),
+            description="x",
+            default=0.5,
+        )
     with pytest.raises(ValueError):
-        TraitDefinition(name="a", type=TraitType.MOVEMENT, range=(0.0, 1.0), description="", default=0.5)
+        TraitDefinition(
+            name="a",
+            type=TraitType.MOVEMENT,
+            range=(0.0, 1.0),
+            description="",
+            default=0.5,
+        )
     with pytest.raises(ValueError):
-        TraitDefinition(name="a", type=TraitType.MOVEMENT, range=(0.0, 1.0), description="x", default=2.0)
+        TraitDefinition(
+            name="a",
+            type=TraitType.MOVEMENT,
+            range=(0.0, 1.0),
+            description="x",
+            default=2.0,
+        )
 
 
 def test_add_component_and_bulk():
@@ -641,7 +665,9 @@ def test_add_components_bulk_defaults_for_z():
 
 
 def test_kdtree_stub_import(monkeypatch):
-    module_path = Path(__file__).resolve().parents[1] / "src" / "gene_particles" / "gp_types.py"
+    module_path = (
+        Path(__file__).resolve().parents[1] / "src" / "gene_particles" / "gp_types.py"
+    )
     dummy = types.ModuleType("scipy")
     monkeypatch.setitem(sys.modules, "scipy", dummy)
     monkeypatch.setitem(sys.modules, "scipy.spatial", None)
@@ -653,3 +679,6 @@ def test_kdtree_stub_import(monkeypatch):
     distances, neighbors = tree.query(np.zeros((1, 2)))
     assert isinstance(distances, np.ndarray)
     assert isinstance(neighbors, np.ndarray)
+    neighbor_groups = tree.query_ball_point(np.zeros((3, 2)), 1.0)
+    assert isinstance(neighbor_groups, list)
+    assert neighbor_groups == [[], [], []]

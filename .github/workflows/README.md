@@ -4,6 +4,11 @@
 
 This directory contains comprehensive GitHub Actions workflows for the Eidosian Forge repository. The workflows are designed to be robust, flexible, reusable, and provide detailed feedback for debugging and improvement.
 
+## 🧾 Stabilization Tracker
+
+- CI hardening checklist and completion ledger:
+  - `docs/ci/UNIVERSAL_CI_STABILIZATION_TRACKER.md`
+
 ## 📋 Workflow Architecture
 
 ```
@@ -60,15 +65,14 @@ This directory contains comprehensive GitHub Actions workflows for the Eidosian 
 1. **Validate** - Determines what needs to run (Python/TypeScript detection)
 2. **Format Check** - Ensures code is properly formatted
 3. **Lint** - Comprehensive code quality checks
-4. **Test** - Runs test suites for Python (3.10, 3.11, 3.12) and TypeScript
+4. **Test** - Runs test suites for Python (3.12 matrix) and TypeScript
 5. **Docs** - Builds documentation
 6. **Build** - Creates distributable packages
 7. **Integration** - Tests installed packages
 8. **Pipeline** - Reports overall status
 
 **Key Features:**
-- Multi-version Python testing (3.10, 3.11, 3.12)
-- Cross-platform testing (Ubuntu + Windows)
+- Python testing matrix (currently `3.12` on `ubuntu-latest`)
 - Automatic language detection (runs only what changed)
 - Detailed job summaries with tables and metrics
 - Codecov integration for coverage tracking

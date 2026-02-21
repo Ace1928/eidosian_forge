@@ -37,7 +37,11 @@ try:
 except ImportError:
     # Fallback for type checking
     class KDTree:
-        """Type stub for SciPy's KDTree class when imports fail."""
+        """Type stub for SciPy's KDTree class when imports fail.
+
+        Provides enough behavior for headless CI where scipy is intentionally
+        absent from the base dependency set.
+        """
 
         def __init__(self, data: NDArray[np.float64], leafsize: int = 10):
             pass
@@ -54,6 +58,18 @@ except ImportError:
         ) -> Tuple[Any, Any]:
             """Stub for query method."""
             return np.array([]), np.array([])
+
+        @eidosian()
+        def query_ball_point(
+            self, x: Any, r: float, p: float = 2.0, eps: float = 0.0
+        ) -> List[List[int]]:
+            """Return empty neighbor lists with shape compatible to scipy."""
+            _ = r, p, eps
+            try:
+                count = len(x)
+            except Exception:
+                count = 1
+            return [[] for _ in range(max(1, int(count)))]
 
 
 # Use TYPE_CHECKING to break circular import
@@ -798,7 +814,11 @@ class CellularTypeData:
                     self.z[alive_indices],
                 )
             )
-            world_size = (float(self.window_width), float(self.window_height), float(self.window_depth or 1))
+            world_size = (
+                float(self.window_width),
+                float(self.window_height),
+                float(self.window_depth or 1),
+            )
         else:
             alive_positions = np.column_stack(
                 (self.x[alive_indices], self.y[alive_indices])
@@ -811,10 +831,16 @@ class CellularTypeData:
             index_map = None
             try:
                 alive_positions = alive_positions.copy()
-                alive_positions[:, 0] = wrap_positions(alive_positions[:, 0], 0.0, world_size[0])
-                alive_positions[:, 1] = wrap_positions(alive_positions[:, 1], 0.0, world_size[1])
+                alive_positions[:, 0] = wrap_positions(
+                    alive_positions[:, 0], 0.0, world_size[0]
+                )
+                alive_positions[:, 1] = wrap_positions(
+                    alive_positions[:, 1], 0.0, world_size[1]
+                )
                 if self.spatial_dimensions == 3:
-                    alive_positions[:, 2] = wrap_positions(alive_positions[:, 2], 0.0, world_size[2])
+                    alive_positions[:, 2] = wrap_positions(
+                        alive_positions[:, 2], 0.0, world_size[2]
+                    )
                 tree = KDTree(alive_positions, boxsize=world_size)
             except TypeError:
                 tiled_positions, index_map = tile_positions_for_wrap(
@@ -846,10 +872,16 @@ class CellularTypeData:
 
             if config.boundary_mode == "wrap" and index_map is None:
                 dead_positions = dead_positions.copy()
-                dead_positions[:, 0] = wrap_positions(dead_positions[:, 0], 0.0, world_size[0])
-                dead_positions[:, 1] = wrap_positions(dead_positions[:, 1], 0.0, world_size[1])
+                dead_positions[:, 0] = wrap_positions(
+                    dead_positions[:, 0], 0.0, world_size[0]
+                )
+                dead_positions[:, 1] = wrap_positions(
+                    dead_positions[:, 1], 0.0, world_size[1]
+                )
                 if self.spatial_dimensions == 3:
-                    dead_positions[:, 2] = wrap_positions(dead_positions[:, 2], 0.0, world_size[2])
+                    dead_positions[:, 2] = wrap_positions(
+                        dead_positions[:, 2], 0.0, world_size[2]
+                    )
                 neighbor_lists = tree.query_ball_point(
                     dead_positions, config.predation_range
                 )
@@ -860,7 +892,9 @@ class CellularTypeData:
             else:
                 distances, neighbors = tree.query(
                     dead_positions,
-                    k=min(3, alive_indices.size),  # Don't request more neighbors than exist
+                    k=min(
+                        3, alive_indices.size
+                    ),  # Don't request more neighbors than exist
                     distance_upper_bound=config.predation_range,
                 )
                 neighbor_lists = [neighbors[j] for j in range(len(batch_indices))]
@@ -1008,7 +1042,9 @@ class CellularTypeData:
                 self.synergy_connections = np.zeros((0, 0), dtype=bool)
             else:
                 max_index = self.synergy_connections.shape[0]
-                alive_indices_array = alive_indices_array[alive_indices_array < max_index]
+                alive_indices_array = alive_indices_array[
+                    alive_indices_array < max_index
+                ]
                 self.synergy_connections = self.synergy_connections[
                     np.ix_(alive_indices_array, alive_indices_array)
                 ]
@@ -1262,13 +1298,17 @@ class CellularTypeData:
         self.energy = np.concatenate((self.energy, energy_arr))
         self.alive = np.concatenate((self.alive, np.ones(count, dtype=bool)))
         self.age = np.concatenate((self.age, np.zeros(count, dtype=np.float64)))
-        self.energy_efficiency = np.concatenate((self.energy_efficiency, energy_eff_arr))
+        self.energy_efficiency = np.concatenate(
+            (self.energy_efficiency, energy_eff_arr)
+        )
         self.speed_factor = np.concatenate((self.speed_factor, speed_arr))
         self.interaction_strength = np.concatenate(
             (self.interaction_strength, interaction_arr)
         )
         self.perception_range = np.concatenate((self.perception_range, perception_arr))
-        self.reproduction_rate = np.concatenate((self.reproduction_rate, reproduction_arr))
+        self.reproduction_rate = np.concatenate(
+            (self.reproduction_rate, reproduction_arr)
+        )
         self.synergy_affinity = np.concatenate((self.synergy_affinity, synergy_arr))
         self.colony_factor = np.concatenate((self.colony_factor, colony_arr))
         self.drift_sensitivity = np.concatenate((self.drift_sensitivity, drift_arr))
@@ -1281,7 +1321,10 @@ class CellularTypeData:
         if cooldown is None:
             cooldown = np.zeros(count, dtype=np.float64)
         self.predation_efficiency = np.concatenate(
-            (self.predation_efficiency, np.asarray(predation_efficiency, dtype=np.float64))
+            (
+                self.predation_efficiency,
+                np.asarray(predation_efficiency, dtype=np.float64),
+            )
         )
         self.cooldown = np.concatenate(
             (self.cooldown, np.asarray(cooldown, dtype=np.float64))
@@ -1315,9 +1358,15 @@ class CellularTypeData:
         self.synergy_connections = new_connections
 
         # Colony and fitness metadata
-        self.colony_role = np.concatenate((self.colony_role, np.zeros(count, dtype=np.int_)))
-        self.colony_id = np.concatenate((self.colony_id, np.full(count, -1, dtype=np.int_)))
-        self.fitness_score = np.concatenate((self.fitness_score, np.zeros(count, dtype=np.float64)))
+        self.colony_role = np.concatenate(
+            (self.colony_role, np.zeros(count, dtype=np.int_))
+        )
+        self.colony_id = np.concatenate(
+            (self.colony_id, np.full(count, -1, dtype=np.int_))
+        )
+        self.fitness_score = np.concatenate(
+            (self.fitness_score, np.zeros(count, dtype=np.float64))
+        )
 
         # Generation tracking
         parent_gen = np.zeros(count, dtype=np.int_)
