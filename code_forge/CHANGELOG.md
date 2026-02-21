@@ -2,6 +2,7 @@
 - Added eval/observability operating system:
   - TaskBank + config-matrix contract schemas,
   - `eval-init`, `eval-run`, `eval-staleness` CLI commands,
+  - optional shared replay store path (`--replay-store`) for deterministic replay across output roots,
   - replayable run artifacts (`trace.jsonl`, stdout/stderr hashes, repo snapshot metadata),
   - deterministic record/replay store for command outputs,
   - staleness/freshness metric computation.

@@ -82,14 +82,6 @@ def test_run_eval_suite_record_and_replay(tmp_path: Path) -> None:
     assert payload_record["run_stats"]["replay_hits"] == 0
 
     output_replay = tmp_path / "replay"
-    # Copy replay store from record run to replay run.
-    (output_replay / "replay_store").mkdir(parents=True, exist_ok=True)
-    source_store = output_record / "replay_store"
-    for src in source_store.rglob("*.json"):
-        dest = output_replay / "replay_store" / src.relative_to(source_store)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(src.read_bytes())
-
     payload_replay = run_eval_suite(
         EvalRunOptions(
             taskbank_path=taskbank,
@@ -99,6 +91,7 @@ def test_run_eval_suite_record_and_replay(tmp_path: Path) -> None:
             repeats=1,
             replay_mode="replay",
             max_parallel=1,
+            replay_store_path=output_record / "replay_store",
         )
     )
     assert payload_replay["run_stats"]["run_count"] == 4

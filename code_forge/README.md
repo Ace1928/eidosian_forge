@@ -107,6 +107,14 @@ code-forge eval-run \
   --max-parallel 2 \
   --replay-mode record
 
+# Replay from a prior record run using a shared replay store path
+code-forge eval-run \
+  --taskbank config/eval/taskbank.json \
+  --matrix config/eval/config_matrix.json \
+  --output-dir reports/code_forge_eval_replay \
+  --replay-mode replay \
+  --replay-store reports/code_forge_eval/replay_store
+
 # Compute staleness metrics from provenance/freshness logs
 code-forge eval-staleness \
   --input reports/code_forge_eval/freshness.jsonl \

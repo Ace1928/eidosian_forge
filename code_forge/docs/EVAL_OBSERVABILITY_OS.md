@@ -85,6 +85,9 @@ Modes:
 - `record`: live execution + store deterministic replay payload
 - `replay`: replay payload required; replay miss is explicit failure
 
+When replaying into a new output directory, provide `--replay-store` so the run points at a
+previous record store instead of `<output-dir>/replay_store`.
+
 ## Staleness Metrics
 
 Input can be JSON list or JSONL of records with:
@@ -117,6 +120,14 @@ code-forge eval-run \
   --repeats 2 \
   --max-parallel 2 \
   --replay-mode record
+
+# replay against the captured store from a prior run
+code-forge eval-run \
+  --taskbank config/eval/taskbank.json \
+  --matrix config/eval/config_matrix.json \
+  --output-dir reports/code_forge_eval_replay \
+  --replay-mode replay \
+  --replay-store reports/code_forge_eval/replay_store
 
 # compute staleness metrics from freshness records
 code-forge eval-staleness \
