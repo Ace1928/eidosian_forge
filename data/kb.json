@@ -1415,6 +1415,20 @@
         ]
       },
       "links": []
+    },
+    "2ae8ec9b-bfc8-4675-bd4e-cc4f13843a1f": {
+      "id": "2ae8ec9b-bfc8-4675-bd4e-cc4f13843a1f",
+      "content": "Directory atlas generation in tracked mode must filter README links against tracked file set, otherwise local runtime files cause CI drift false positives.",
+      "metadata": {
+        "tags": [
+          "docs",
+          "determinism",
+          "atlas",
+          "ci",
+          "git-tracked"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

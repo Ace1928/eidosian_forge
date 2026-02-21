@@ -1333,5 +1333,34 @@
       0.7686274509803922,
       0.15294117647058825
     ]
+  },
+  "479b8699-44ab-413e-af68-b396248a3555": {
+    "id": "479b8699-44ab-413e-af68-b396248a3555",
+    "content": "Fixed atlas drift guard regression after commit 0946cdbf01: generate_directory_atlas now only advertises README links that are tracked when scope=tracked, preventing local eidosian_venv README from causing CI-only diffs.",
+    "created_at": "2026-02-22T09:03:56.875382",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "atlas_tracked_scope_readme_fix_20260221"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.6078431372549019,
+      0.18823529411764706,
+      0.8156862745098039,
+      0.7647058823529411,
+      0.047058823529411764,
+      0.7529411764705882,
+      0.40784313725490196,
+      0.9137254901960784,
+      0.9803921568627451,
+      0.7215686274509804,
+      0.4666666666666667,
+      0.8313725490196079,
+      0.12941176470588237,
+      0.058823529411764705,
+      0.6745098039215687,
+      0.592156862745098
+    ]
   }
 }

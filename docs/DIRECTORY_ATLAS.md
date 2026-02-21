@@ -95,7 +95,7 @@
 | [`docs`](../docs) | Documentation | 198 | 4 | [`docs/README.md`](../docs/README.md) |
 | [`eidos_mcp`](../eidos_mcp) | Project directory | 71 | 4 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
 | [`eidos_mcp_backup_20260218`](../eidos_mcp_backup_20260218) | Project directory | 68 | 4 | [`eidos_mcp_backup_20260218/README.md`](../eidos_mcp_backup_20260218/README.md) |
-| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | [`eidosian_venv/README.md`](../eidosian_venv/README.md) |
+| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | - |
 | [`erais_forge`](../erais_forge) | Forge module root | 23 | 4 | [`erais_forge/README.md`](../erais_forge/README.md) |
 | [`figlet_forge`](../figlet_forge) | Forge module root | 789 | 8 | [`figlet_forge/README.md`](../figlet_forge/README.md) |
 | [`file_forge`](../file_forge) | Forge module root | 180 | 6 | [`file_forge/README.md`](../file_forge/README.md) |
@@ -389,7 +389,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | [`eidosian_venv/README.md`](../eidosian_venv/README.md) |
+| [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | - |
 | [`eidosian_venv/bin`](../eidosian_venv/bin) | Local virtual environment | 11 | 0 | - |
 
 ### `erais_forge`

@@ -610,5 +610,26 @@
       "opencv"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "a2d1b8ed-aa70-4cab-9edd-efc5517d0e76",
+    "content": "Directory atlas drift guard failed because tracked-scope README detection used filesystem existence. Patch now filters README candidates by git-tracked file set in tracked mode; regression test added.",
+    "created_at": "2026-02-22T09:04:03.631746",
+    "last_accessed": "2026-02-22T09:04:03.631761",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.88,
+    "ttl_seconds": 86400,
+    "tags": [
+      "determinism",
+      "atlas",
+      "ci",
+      "regression",
+      "tracked-scope"
+    ],
+    "linked_memories": []
   }
 ]

@@ -78,12 +78,15 @@ def _runtime_top_level_dirs(root: Path, *, include_hidden_top: bool) -> list[str
     return out
 
 
-def _readme_for_dir(root: Path, rel_dir: str) -> str:
+def _readme_for_dir(root: Path, rel_dir: str, tracked_files: set[str] | None = None) -> str:
     base = root / rel_dir
     for name in README_CANDIDATES:
         candidate = base / name
+        rel_path = f"{rel_dir}/{name}" if rel_dir else name
+        if tracked_files is not None and rel_path not in tracked_files:
+            continue
         if candidate.exists() and candidate.is_file():
-            return f"{rel_dir}/{name}" if rel_dir else name
+            return rel_path
     return ""
 
 
@@ -174,6 +177,7 @@ def build_atlas(
     generated_at: str | None,
 ) -> str:
     visible_dirs = [d for d in all_dirs if (d.count("/") + 1) <= max_depth]
+    tracked_file_set = set(tracked_files) if scope == "tracked" else None
 
     tracked_file_count: dict[str, int] = defaultdict(int)
     for file_path in tracked_files:
@@ -216,7 +220,7 @@ def build_atlas(
     lines.append("| Directory | Category | Tracked files | Direct subdirs | README |")
     lines.append("| --- | --- | ---: | ---: | --- |")
     for top in top_levels:
-        readme = _readme_for_dir(repo_root, top)
+        readme = _readme_for_dir(repo_root, top, tracked_file_set)
         readme_cell = _md_link(readme, readme) if readme else "-"
         lines.append(
             "| "
@@ -236,7 +240,7 @@ def build_atlas(
         lines.append("| Path | Category | Tracked files | Direct subdirs | README |")
         lines.append("| --- | --- | ---: | ---: | --- |")
         for d in group:
-            readme = _readme_for_dir(repo_root, d)
+            readme = _readme_for_dir(repo_root, d, tracked_file_set)
             readme_cell = _md_link(readme, readme) if readme else "-"
             lines.append(
                 "| "

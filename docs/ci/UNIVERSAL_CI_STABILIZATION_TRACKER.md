@@ -37,3 +37,10 @@
 - [x] ~~Harden universal test job dependency profile with `opencv-python-headless` so OpenCV-gated glyph tests can execute on Linux CI without manual dependency drift.~~
 - [x] ~~Add per-forge pytest timeout contract in `.github/workflows/ci.yml` (`EIDOS_TEST_TIMEOUT_SEC`, default `900s`) to prevent indefinite hangs and surface timeout failures with explicit exit-code diagnostics.~~
 - [x] ~~Run local workflow validation suite (`scripts/validate_workflows_local.sh`) and confirm clean pass (`20 passed`, action pin audit clean, secret scan clean, atlas regeneration deterministic).~~
+
+## Cycle 2026-02-21 (Post-Push Drift Fix)
+
+- [x] ~~Investigate `Directory Atlas Drift Guard` failure run `https://github.com/Ace1928/eidosian_forge/actions/runs/22265838675` and isolate root cause (`scripts/generate_directory_atlas.py` counted local-only `eidosian_venv/README.md` in tracked scope).~~
+- [x] ~~Harden README detection for tracked scope by filtering atlas README links against `git ls-files` set to prevent local-runtime-only files from contaminating deterministic docs outputs.~~
+- [x] ~~Add regression test (`scripts/tests/test_generate_directory_atlas.py::test_readme_detection_respects_tracked_scope`) validating tracked-vs-filesystem README behavior.~~
+- [x] ~~Regenerate `docs/DIRECTORY_ATLAS.md` with tracked scope and verify output now matches CI runner behavior for `eidosian_venv` README field.~~

@@ -87,6 +87,18 @@ def test_generated_at_resolution() -> None:
     assert now_value.endswith("Z")
 
 
+def test_readme_detection_respects_tracked_scope(tmp_path: Path) -> None:
+    mod = _load_module()
+    (tmp_path / "eidosian_venv").mkdir()
+    (tmp_path / "eidosian_venv" / "README.md").write_text("local readme", encoding="utf-8")
+
+    # With tracked scope, local-only README should not be emitted.
+    assert mod._readme_for_dir(tmp_path, "eidosian_venv", tracked_files=set()) == ""
+
+    # Filesystem scope still reports README when present.
+    assert mod._readme_for_dir(tmp_path, "eidosian_venv", tracked_files=None) == "eidosian_venv/README.md"
+
+
 def test_full_index_writer_deterministic_shape(tmp_path: Path) -> None:
     mod = _load_module()
     out = tmp_path / "DIRECTORY_INDEX_FULL.txt"
