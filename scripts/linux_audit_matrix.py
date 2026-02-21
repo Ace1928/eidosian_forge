@@ -591,6 +591,10 @@ def main() -> int:
     failed = report.get("failed_checks") or []
     if failed:
         print(f"failed_checks={', '.join(str(x) for x in failed)}")
+        checks = {str(item.get("name")): str(item.get("details")) for item in (report.get("checks") or [])}
+        for name in failed:
+            detail = checks.get(str(name), "")
+            print(f"failed_detail[{name}]={detail}")
     if args.stdout_json:
         print(json.dumps(report, indent=2))
     return 1 if failed else 0
