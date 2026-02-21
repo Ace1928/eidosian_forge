@@ -99,6 +99,8 @@ Key env vars (all default-safe):
 - `EIDOS_MCP_ALLOWED_ORIGINS` (comma-separated origins, default local loopback origins)
 - `FASTMCP_HOST` / `FASTMCP_PORT`
 - `EIDOS_FORGE_DIR`
+- `EIDOS_GRAPHRAG_ROOT` (optional GraphRAG workspace override; default `graphrag_workspace`, fallback `graphrag`)
+- `EIDOS_GRAPHRAG_TIMEOUT_SEC` (GraphRAG subprocess timeout used by knowledge router; default `900`)
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
 
 `run_server.sh` defaults `EIDOS_MCP_STATELESS_HTTP=1` for Codex/Gemini compatibility.

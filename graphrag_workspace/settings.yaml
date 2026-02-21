@@ -1,64 +1,92 @@
-models:
-  default_chat_model:
-    type: openai_chat
-    model: phi3:mini
-    api_base: http://localhost:11434/v1
-    api_key: ollama
-    max_tokens: 4096
-    temperature: 0
-    encoding_model: cl100k_base
-    
-  default_embedding_model:
-    type: openai_embedding
-    model: nomic-embed-text:latest
-    api_base: http://localhost:11434/v1
-    api_key: ollama
-    encoding_model: cl100k_base
-    
-storage:
-  type: file
-  base_dir: ./output
+async_mode: asyncio
+concurrent_requests: 1
+
+chunking:
+  type: tokens
+  size: 800
+  overlap: 100
+  encoding_model: o200k_base
 
 input:
-  type: file
-  base_dir: ./input
-  file_pattern: ".*\\.txt"
+  type: text
+  encoding: utf-8
+  file_pattern: ".*\\.txt$$"
 
-cache:
+input_storage:
   type: file
-  base_dir: ./cache
+  base_dir: input
+
+output_storage:
+  type: file
+  base_dir: output
+
+update_output_storage:
+  type: file
+  base_dir: update_output
 
 reporting:
   type: file
-  base_dir: ./reports
+  base_dir: logs
 
-chunks:
-  size: 1200
-  overlap: 100
+cache:
+  type: json
+  storage:
+    type: file
+    base_dir: cache
 
-entity_extraction:
+completion_models:
+  default_completion_model:
+    type: litellm
+    model_provider: openai
+    model: qwen2.5:1.5b
+    auth_method: api_key
+    api_key: ollama
+    api_base: http://127.0.0.1:11434/v1
+    call_args:
+      temperature: 0.0
+      max_tokens: 384
+      max_completion_tokens: 384
+      timeout: 120
+
+embedding_models:
+  default_embedding_model:
+    type: litellm
+    model_provider: openai
+    model: nomic-embed-text:latest
+    auth_method: api_key
+    api_key: ollama
+    api_base: http://127.0.0.1:11434/v1
+    call_args:
+      encoding_format: float
+      user: graphrag
+      timeout: 120
+
+embed_text:
+  embedding_model_id: default_embedding_model
+
+extract_graph:
+  completion_model_id: default_completion_model
   max_gleanings: 1
 
 summarize_descriptions:
+  completion_model_id: default_completion_model
   max_length: 500
 
-claim_extraction:
+extract_claims:
   enabled: false
 
 community_reports:
+  completion_model_id: default_completion_model
   max_length: 2000
   max_input_length: 8000
 
-local_search:
-  text_unit_prop: 0.5
-  community_prop: 0.1
-  conversation_history_max_turns: 5
-  top_k_entities: 10
-  top_k_relationships: 10
-
 global_search:
-  max_tokens: 12000
-  data_max_tokens: 12000
-  map_max_tokens: 1000
-  reduce_max_tokens: 2000
-  concurrency: 32
+  completion_model_id: default_completion_model
+  data_max_tokens: 4096
+  map_max_length: 600
+  reduce_max_length: 1200
+
+local_search:
+  completion_model_id: default_completion_model
+  embedding_model_id: default_embedding_model
+  max_context_tokens: 4096

@@ -1,45 +1,58 @@
-# 🦉 Knowledge Forge
+# Knowledge Forge
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+`knowledge_forge` provides the persistent knowledge graph layer used by MCP, Code Forge integrations, and memory/knowledge bridge workflows.
 
-**The Semantic Backbone of Eidos.**
+## Core Modules
 
-> _"Data is noise. Information is structure. Knowledge is the graph."_
+- `knowledge_forge/src/knowledge_forge/core/graph.py`
+  - `KnowledgeForge`
+  - `KnowledgeNode`
+  - graph CRUD (`add_knowledge`, `search`, `get_by_tag`, `get_by_concept`, `link_nodes`, `stats`)
+- `knowledge_forge/src/knowledge_forge/core/bridge.py`
+  - `KnowledgeMemoryBridge`
+  - unified memory+knowledge search and memory→knowledge promotion
+- `knowledge_forge/src/knowledge_forge/integrations/graphrag.py`
+  - GraphRAG index/query integration
+  - compatibility runner for both:
+    - `python -m graphrag <subcommand> ...` (current)
+    - `python -m graphrag.<subcommand> ...` (legacy fallback)
+- `knowledge_forge/src/knowledge_forge/integrations/memory_ingest.py`
+  - ingest memory artifacts into graph nodes
 
-## 🧠 Overview
+## Integration Points
 
-`knowledge_forge` constructs and manages the Eidosian Knowledge Graph. It transforms raw information into a structured ontology of concepts and relationships, enabling higher-order reasoning.
+- MCP router: `eidos_mcp/src/eidos_mcp/routers/knowledge.py`
+  - `kb_*`, `memory_*_semantic`, `grag_*`, `unified_context_search`, `promote_memory_to_knowledge`
+- Code Forge:
+  - `code_forge` sync pipeline writes knowledge links and provenance registry records.
+- Living knowledge pipeline:
+  - `scripts/living_knowledge_pipeline.py` stages KB + memory + code/doc corpus for GraphRAG.
 
-It serves as the bridge between unstructured text and structured memory.
+## GraphRAG Root Resolution
 
-## 🏗️ Architecture
+MCP knowledge router uses this precedence:
 
-- **Ontology Core (`knowledge_core.py`)**: Defines the fundamental units (`Concept`, `Relationship`, `Event`).
-- **GraphRAG Connector (`graph_integration.py`)**: Synchronizes knowledge with the GraphRAG indexing engine for advanced retrieval.
-- **Reasoning Engine**: (Planned) Inferential logic over the graph.
+1. `EIDOS_GRAPHRAG_ROOT` (if set)
+2. `<forge>/graphrag_workspace` (default)
+3. `<forge>/graphrag` (legacy fallback)
 
-## 🔗 System Integration
+GraphRAG subprocess timeout is controlled by:
 
-- **Eidos MCP**: Exposes knowledge tools (`kb_insert`, `kb_query`) to the LLM.
-- **Memory Forge**: Provides the semantic storage layer.
-- **GraphRAG**: The underlying engine for graph traversal.
+- `EIDOS_GRAPHRAG_TIMEOUT_SEC` (default: `900`, minimum: `30`)
 
-## 🚀 Usage
+## CLI
 
-```python
-from knowledge_forge.knowledge_core import KnowledgeForge
-
-# Initialize the forge
-kf = KnowledgeForge(persistence_path="./kg.json")
-
-# Add a concept node
-node = kf.add_knowledge(
-    "Eidos is a recursive AI system.",
-    concepts=["AI", "Identity", "Recursion"],
-    relationships=[("Eidos", "implements", "Recursion")]
-)
-
-# Persist
-kf.save()
+```bash
+./eidosian_venv/bin/knowledge-forge status
+./eidosian_venv/bin/knowledge-forge search "workspace competition"
+./eidosian_venv/bin/knowledge-forge unified "memory bridge"
 ```
+
+## Test
+
+```bash
+./eidosian_venv/bin/python -m pytest -q knowledge_forge/tests
+```
+
+Current suite status in this environment:
+- passing tests with one intentional skip (`test_graphrag_integration`, requires fully provisioned GraphRAG runtime).

@@ -47,7 +47,13 @@ if MemoryForge and MemoryConfig:
         embedder=_embedder,
     )
 kb = KnowledgeForge(persistence_path=FORGE_DIR / "data" / "kb.json")
-grag = GraphRAGIntegration(graphrag_root=FORGE_DIR / "graphrag")
+_default_graphrag_root = FORGE_DIR / "graphrag_workspace"
+if not _default_graphrag_root.exists():
+    _default_graphrag_root = FORGE_DIR / "graphrag"
+GRAPHRAG_ROOT = Path(
+    os.environ.get("EIDOS_GRAPHRAG_ROOT", str(_default_graphrag_root))
+).resolve()
+grag = GraphRAGIntegration(graphrag_root=GRAPHRAG_ROOT)
 memory_ingestor = MemoryIngestor(knowledge_path=FORGE_DIR / "data" / "kb.json")
 SEMANTIC_MEMORY_PATH = FORGE_DIR / "data" / "semantic_memory.json"
 
@@ -368,9 +374,18 @@ def _get_bridge():
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search query"},
-            "max_results": {"type": "integer", "description": "Maximum results to return (default: 5)"},
-            "include_memory": {"type": "boolean", "description": "Include memory results (default: true)"},
-            "include_knowledge": {"type": "boolean", "description": "Include knowledge results (default: true)"},
+            "max_results": {
+                "type": "integer",
+                "description": "Maximum results to return (default: 5)",
+            },
+            "include_memory": {
+                "type": "boolean",
+                "description": "Include memory results (default: true)",
+            },
+            "include_knowledge": {
+                "type": "boolean",
+                "description": "Include knowledge results (default: true)",
+            },
         },
         "required": ["query"],
     },
@@ -399,7 +414,10 @@ def unified_context_search(
     parameters={
         "type": "object",
         "properties": {
-            "memory_id": {"type": "string", "description": "ID of the memory to promote"},
+            "memory_id": {
+                "type": "string",
+                "description": "ID of the memory to promote",
+            },
             "concepts": {
                 "type": "array",
                 "items": {"type": "string"},
@@ -425,7 +443,9 @@ def promote_memory_to_knowledge(
     if not bridge:
         return "Error: Knowledge-memory bridge not available"
 
-    node_id = bridge.promote_memory_to_knowledge(memory_id, concepts=concepts, tags=tags)
+    node_id = bridge.promote_memory_to_knowledge(
+        memory_id, concepts=concepts, tags=tags
+    )
     if node_id:
         return f"Memory promoted to knowledge node: {node_id}"
     return f"Error: Could not promote memory {memory_id}"
@@ -498,7 +518,9 @@ def living_knowledge_pipeline_run(
     for query in queries or []:
         cmd.extend(["--query", query])
 
-    proc = subprocess.run(cmd, text=True, capture_output=True, check=False, cwd=FORGE_DIR)
+    proc = subprocess.run(
+        cmd, text=True, capture_output=True, check=False, cwd=FORGE_DIR
+    )
     if proc.returncode != 0:
         stderr = (proc.stderr or "").strip()
         stdout = (proc.stdout or "").strip()
@@ -511,7 +533,9 @@ def living_knowledge_pipeline_run(
         payload = {"raw_stdout": (proc.stdout or "").strip()}
 
     run_id = payload.get("run_id")
-    run_root = FORGE_DIR / "reports" / "living_knowledge" / str(run_id) if run_id else None
+    run_root = (
+        FORGE_DIR / "reports" / "living_knowledge" / str(run_id) if run_id else None
+    )
     manifest_path = run_root / "manifest.json" if run_root else None
     manifest = {}
     if manifest_path and manifest_path.exists():

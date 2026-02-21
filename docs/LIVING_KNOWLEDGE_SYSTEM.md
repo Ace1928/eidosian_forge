@@ -88,12 +88,36 @@ Default completion model is selected from latest sweep winner when available (`r
   --query "What duplicated logic patterns recur across forges?"
 ```
 
+### Interop Validation (Knowledge/Memory/Code/Word + GraphRAG)
+
+Use this validation matrix for production checks:
+
+```bash
+./eidosian_venv/bin/python -m pytest -q code_forge/tests
+./eidosian_venv/bin/python -m pytest -q knowledge_forge/tests
+./eidosian_venv/bin/python -m pytest -q memory_forge/tests
+./eidosian_venv/bin/python -m pytest -q word_forge/tests
+./eidosian_venv/bin/python -m pytest -q scripts/tests/test_living_knowledge_pipeline.py
+```
+
+Code Forge benchmark (scoped baseline):
+
+```bash
+./eidosian_venv/bin/code-forge benchmark \
+  --root /path/to/interop-repo \
+  --output reports/code_forge_benchmark_interop.json \
+  --baseline reports/code_forge_benchmark_interop_baseline.json \
+  --write-baseline
+```
+
 ## Operational Notes
 
 - Idempotent by design: each run writes to a timestamped run directory.
 - Drift detection is deterministic and uses source-path + hash comparison.
 - Binary files and oversized text files are skipped explicitly.
 - All outputs are additive; no destructive rewrite of source repository files.
+- For very large repositories with huge tracked non-source assets, run the pipeline on a scoped repo root (or curated mirror) to avoid multi-hour staging cycles.
+- GraphRAG tooling uses `EIDOS_GRAPHRAG_ROOT` for workspace override and `EIDOS_GRAPHRAG_TIMEOUT_SEC` to prevent long-hanging query/index subprocess calls.
 
 ## External References
 

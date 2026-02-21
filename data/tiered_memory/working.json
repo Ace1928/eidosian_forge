@@ -415,28 +415,6 @@
     "linked_memories": []
   },
   {
-    "id": "e894c567-b1e2-4f5a-93db-e13f4e3c6bb9",
-    "content": "CI hardening cycle on 2026-02-20/21 produced commit 6346d73611: restored stable MCP compatibility exports via forge_state bindings, hardened sparse->dense fallback in gene_particles interactions, hardened glyph batch iterable handling, fixed moltbook CLI subprocess cwd semantics, and made figlet compat assertion environment-robust. Added docs/security/ci_regression_guards_2026-02-21.md.",
-    "created_at": "2026-02-21T09:11:00.035409",
-    "last_accessed": "2026-02-21T09:11:00.035439",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.92,
-    "ttl_seconds": 86400,
-    "tags": [
-      "documentation",
-      "stability",
-      "tests",
-      "regression",
-      "ci",
-      "workflow"
-    ],
-    "linked_memories": []
-  },
-  {
     "id": "e7eeafb6-759c-4a6b-893d-ffde04636fbb",
     "content": "Started full per-forge local test audit loop with pytest --maxfail=1 under eidosian_venv; tracking failures via reports/local_test_audit/*.log and summary.json for triage.",
     "created_at": "2026-02-21T09:44:48.801903",
@@ -453,27 +431,6 @@
       "ci",
       "forge-wide",
       "tests"
-    ],
-    "linked_memories": []
-  },
-  {
-    "id": "1dd06855-bba1-4a20-afcd-a2a49a9ce463",
-    "content": "Forge-wide local audit result (non-agent forges): all passed except figlet timeout at 240s and memory_forge failure from invoking system pytest. Using eidosian_venv with `python -m pytest` resolves memory_forge and yields stable runs.",
-    "created_at": "2026-02-21T10:31:25.014640",
-    "last_accessed": "2026-02-21T10:31:25.014651",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.86,
-    "ttl_seconds": 86400,
-    "tags": [
-      "audit",
-      "pytest",
-      "termux",
-      "ci",
-      "venv"
     ],
     "linked_memories": []
   },
