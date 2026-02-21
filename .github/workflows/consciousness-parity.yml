@@ -59,6 +59,7 @@ jobs:
             httpx \
             requests \
             networkx \
+            openai \
             mcp \
             fastapi \
             uvicorn \
