@@ -374,6 +374,7 @@ jobs:
             networkx \
             websockets \
             pillow \
+            opencv-python-headless \
             pygame
 
       - name: 🔍 Run tests
@@ -391,15 +392,23 @@ jobs:
             exit 0
           fi
 
+          TEST_TIMEOUT_SEC="${EIDOS_TEST_TIMEOUT_SEC:-900}"
+          echo "::notice::Per-forge pytest timeout: ${TEST_TIMEOUT_SEC}s"
+
           FAILURES=()
           for target in "${TEST_TARGETS[@]}"; do
             proj="${target%/tests}"
             echo "::group::pytest ${target}"
-            if (cd "$proj" && python -m pytest -q tests --maxfail=1 --disable-warnings); then
+            if (cd "$proj" && timeout "${TEST_TIMEOUT_SEC}" python -m pytest -q tests --maxfail=1 --disable-warnings); then
               echo "::notice::${proj} tests passed"
             else
-              FAILURES+=("${proj}")
-              echo "::error::${proj} tests failed"
+              code=$?
+              if [ "$code" -eq 124 ]; then
+                echo "::error::${proj} tests timed out after ${TEST_TIMEOUT_SEC}s"
+              else
+                echo "::error::${proj} tests failed (exit=${code})"
+              fi
+              FAILURES+=("${proj}:exit=${code}")
             fi
             echo "::endgroup::"
           done

@@ -1400,6 +1400,21 @@
         ]
       },
       "links": []
+    },
+    "9ba989ba-cd55-4300-9bab-8890fc1c8fa2": {
+      "id": "9ba989ba-cd55-4300-9bab-8890fc1c8fa2",
+      "content": "Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs.",
+      "metadata": {
+        "tags": [
+          "stability",
+          "workflow",
+          "universal",
+          "ci",
+          "opencv",
+          "pytest"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

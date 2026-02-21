@@ -4,8 +4,8 @@
 
 - Generated: `deterministic (timestamp omitted)`
 - Scope: `tracked`
-- Tracked files: `732259`
-- Full directory count (scope): `3048`
+- Tracked files: `732271`
+- Full directory count (scope): `3049`
 - Atlas directory count (depth <= 2): `397`
 - Full recursive index: [`docs/DIRECTORY_INDEX_FULL.txt`](./DIRECTORY_INDEX_FULL.txt)
 
@@ -74,7 +74,7 @@
 | Directory | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
 | [`.eidos_chrome_profile`](../.eidos_chrome_profile) | Project directory | 1020 | 32 | - |
-| [`.gemini`](../.gemini) | Project directory | 2 | 1 | - |
+| [`.gemini`](../.gemini) | Project directory | 1 | 0 | - |
 | [`.github`](../.github) | CI/CD automation | 22 | 2 | - |
 | [`.graphrag_index`](../.graphrag_index) | Project directory | 110 | 1 | - |
 | [`.vscode`](../.vscode) | Project directory | 1 | 0 | - |
@@ -85,21 +85,21 @@
 | [`audit_forge`](../audit_forge) | Forge module root | 19 | 3 | [`audit_forge/README.md`](../audit_forge/README.md) |
 | [`benchmarks`](../benchmarks) | Benchmarks | 10 | 2 | [`benchmarks/README.md`](../benchmarks/README.md) |
 | [`bin`](../bin) | Top-level CLI entrypoints | 3 | 0 | [`bin/README.md`](../bin/README.md) |
-| [`code_forge`](../code_forge) | Forge module root | 88 | 6 | [`code_forge/README.md`](../code_forge/README.md) |
+| [`code_forge`](../code_forge) | Forge module root | 100 | 6 | [`code_forge/README.md`](../code_forge/README.md) |
 | [`computer_control_forge`](../computer_control_forge) | Forge module root | 82 | 6 | [`computer_control_forge/README.md`](../computer_control_forge/README.md) |
 | [`config`](../config) | Configuration | 2 | 0 | - |
 | [`crawl_forge`](../crawl_forge) | Forge module root | 19 | 4 | [`crawl_forge/README.md`](../crawl_forge/README.md) |
 | [`data`](../data) | Data and memory artifacts | 173 | 7 | [`data/README.md`](../data/README.md) |
 | [`diagnostics_forge`](../diagnostics_forge) | Forge module root | 19 | 3 | [`diagnostics_forge/README.md`](../diagnostics_forge/README.md) |
 | [`doc_forge`](../doc_forge) | Forge module root | 509 | 15 | [`doc_forge/README.md`](../doc_forge/README.md) |
-| [`docs`](../docs) | Documentation | 196 | 3 | [`docs/README.md`](../docs/README.md) |
+| [`docs`](../docs) | Documentation | 198 | 4 | [`docs/README.md`](../docs/README.md) |
 | [`eidos_mcp`](../eidos_mcp) | Project directory | 71 | 4 | [`eidos_mcp/README.md`](../eidos_mcp/README.md) |
 | [`eidos_mcp_backup_20260218`](../eidos_mcp_backup_20260218) | Project directory | 68 | 4 | [`eidos_mcp_backup_20260218/README.md`](../eidos_mcp_backup_20260218/README.md) |
 | [`eidosian_venv`](../eidosian_venv) | Local virtual environment | 13 | 1 | [`eidosian_venv/README.md`](../eidosian_venv/README.md) |
 | [`erais_forge`](../erais_forge) | Forge module root | 23 | 4 | [`erais_forge/README.md`](../erais_forge/README.md) |
 | [`figlet_forge`](../figlet_forge) | Forge module root | 789 | 8 | [`figlet_forge/README.md`](../figlet_forge/README.md) |
 | [`file_forge`](../file_forge) | Forge module root | 180 | 6 | [`file_forge/README.md`](../file_forge/README.md) |
-| [`game_forge`](../game_forge) | Forge module root | 644 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
+| [`game_forge`](../game_forge) | Forge module root | 643 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
 | [`gis_forge`](../gis_forge) | Forge module root | 31 | 4 | [`gis_forge/README.md`](../gis_forge/README.md) |
 | [`glyph_forge`](../glyph_forge) | Forge module root | 1082 | 17 | [`glyph_forge/README.md`](../glyph_forge/README.md) |
 | [`graphrag_workspace`](../graphrag_workspace) | Project directory | 9 | 3 | [`graphrag_workspace/README.md`](../graphrag_workspace/README.md) |
@@ -175,8 +175,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`.gemini`](../.gemini) | Project directory | 2 | 1 | - |
-| [`.gemini/tmp`](../.gemini/tmp) | Project directory | 1 | 0 | - |
+| [`.gemini`](../.gemini) | Project directory | 1 | 0 | - |
 
 ### `.github`
 
@@ -277,13 +276,13 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`code_forge`](../code_forge) | Forge module root | 88 | 6 | [`code_forge/README.md`](../code_forge/README.md) |
+| [`code_forge`](../code_forge) | Forge module root | 100 | 6 | [`code_forge/README.md`](../code_forge/README.md) |
 | [`code_forge/.github`](../code_forge/.github) | Project directory | 11 | 2 | - |
 | [`code_forge/.vscode`](../code_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`code_forge/completions`](../code_forge/completions) | Shell completions | 1 | 0 | - |
-| [`code_forge/docs`](../code_forge/docs) | Module docs | 7 | 0 | - |
-| [`code_forge/src`](../code_forge/src) | Source code | 30 | 1 | - |
-| [`code_forge/tests`](../code_forge/tests) | Test suite | 17 | 0 | - |
+| [`code_forge/docs`](../code_forge/docs) | Module docs | 8 | 0 | - |
+| [`code_forge/src`](../code_forge/src) | Source code | 38 | 1 | - |
+| [`code_forge/tests`](../code_forge/tests) | Test suite | 20 | 0 | - |
 
 ### `computer_control_forge`
 
@@ -360,7 +359,8 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`docs`](../docs) | Documentation | 196 | 3 | [`docs/README.md`](../docs/README.md) |
+| [`docs`](../docs) | Documentation | 198 | 4 | [`docs/README.md`](../docs/README.md) |
+| [`docs/ci`](../docs/ci) | Documentation | 1 | 0 | - |
 | [`docs/consciousness_fcl`](../docs/consciousness_fcl) | Documentation | 54 | 0 | [`docs/consciousness_fcl/README.md`](../docs/consciousness_fcl/README.md) |
 | [`docs/legacy`](../docs/legacy) | Documentation | 109 | 2 | - |
 | [`docs/security`](../docs/security) | Documentation | 3 | 0 | - |
@@ -432,7 +432,7 @@
 
 | Path | Category | Tracked files | Direct subdirs | README |
 | --- | --- | ---: | ---: | --- |
-| [`game_forge`](../game_forge) | Forge module root | 644 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
+| [`game_forge`](../game_forge) | Forge module root | 643 | 7 | [`game_forge/README.md`](../game_forge/README.md) |
 | [`game_forge/.vscode`](../game_forge/.vscode) | Project directory | 1 | 0 | - |
 | [`game_forge/algorithms_lab`](../game_forge/algorithms_lab) | Project directory | 18 | 2 | - |
 | [`game_forge/gene_particles`](../game_forge/gene_particles) | Project directory | 2 | 1 | - |

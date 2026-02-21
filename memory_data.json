@@ -1304,5 +1304,34 @@
       0.7215686274509804,
       0.49411764705882355
     ]
+  },
+  "2fd9a3ff-b03f-4042-8451-8b30c29f70fe": {
+    "id": "2fd9a3ff-b03f-4042-8451-8b30c29f70fe",
+    "content": "CI late-pass hardening: universal workflow now installs opencv-python-headless in test dependencies and enforces per-forge pytest timeout (EIDOS_TEST_TIMEOUT_SEC default 900s) with explicit timeout diagnostics; latest run 22265467004 completed success.",
+    "created_at": "2026-02-22T08:44:06.141405",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_universal_opencv_timeout_20260221"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.5294117647058824,
+      0.6078431372549019,
+      0.5647058823529412,
+      0.07058823529411765,
+      0.4392156862745098,
+      0.5529411764705883,
+      0.5764705882352941,
+      0.5490196078431373,
+      0.9294117647058824,
+      0.17254901960784313,
+      0.21568627450980393,
+      0.26666666666666666,
+      1.0,
+      0.10588235294117647,
+      0.7686274509803922,
+      0.15294117647058825
+    ]
   }
 }

@@ -30,3 +30,10 @@
 - [x] ~~Harden CI portability in MCP full integration tests (`eidos_mcp/tests/test_mcp_tools_stdio.py`): accept missing-repo-venv fallback from `venv_run` while still asserting valid execution/error contract.~~
 - [x] ~~Expose failing audit detail lines from `scripts/linux_audit_matrix.py` (`failed_detail[...]`) to remove opaque CI gate failures.~~
 - [x] ~~Align CI audit optional-forge policy for parity smoke (`EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word`) and verify `Consciousness Linux Parity` is green (`https://github.com/Ace1928/eidosian_forge/actions/runs/22265310795`).~~
+
+## Cycle 2026-02-21 (Late Pass)
+
+- [x] ~~Verify latest `Eidosian Universal CI` run status for `47da1548e3` and confirm full green pipeline (`https://github.com/Ace1928/eidosian_forge/actions/runs/22265467004`, result: success).~~
+- [x] ~~Harden universal test job dependency profile with `opencv-python-headless` so OpenCV-gated glyph tests can execute on Linux CI without manual dependency drift.~~
+- [x] ~~Add per-forge pytest timeout contract in `.github/workflows/ci.yml` (`EIDOS_TEST_TIMEOUT_SEC`, default `900s`) to prevent indefinite hangs and surface timeout failures with explicit exit-code diagnostics.~~
+- [x] ~~Run local workflow validation suite (`scripts/validate_workflows_local.sh`) and confirm clean pass (`20 passed`, action pin audit clean, secret scan clean, atlas regeneration deterministic).~~

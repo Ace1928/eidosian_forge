@@ -589,5 +589,26 @@
       "audit"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "f866f870-963c-4630-9617-708f2fd395a0",
+    "content": "Universal CI stabilization cycle now includes OpenCV dependency parity and anti-hang timeout contracts per forge test group, validated by local workflow suite and green GH run.",
+    "created_at": "2026-02-22T08:44:16.486270",
+    "last_accessed": "2026-02-22T08:44:16.486284",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "stability",
+      "workflow",
+      "ci",
+      "pytest-timeout",
+      "opencv"
+    ],
+    "linked_memories": []
   }
 ]
