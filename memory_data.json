@@ -1217,5 +1217,34 @@
       0.28627450980392155,
       0.24705882352941178
     ]
+  },
+  "c616f12f-5b69-4023-a17d-8b2710b76fb7": {
+    "id": "c616f12f-5b69-4023-a17d-8b2710b76fb7",
+    "content": "Removed orphan gitlink entries (.gemini/tmp/glyph_forge_remote and game_forge/pyparticles_haskell_source) from eidosian_forge index; this eliminated recurring GitHub Actions checkout post-job git 128/submodule warnings. Kept llm_forge/vendor/llama.cpp as the only tracked submodule defined in .gitmodules.",
+    "created_at": "2026-02-22T03:20:47.098739",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_orphan_gitlinks_removed_20260221"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.8666666666666667,
+      0.03137254901960784,
+      0.9294117647058824,
+      0.6666666666666666,
+      0.3568627450980392,
+      0.8431372549019608,
+      0.7254901960784313,
+      0.8705882352941177,
+      0.7058823529411765,
+      0.6705882352941176,
+      0.9725490196078431,
+      0.35294117647058826,
+      0.30196078431372547,
+      0.7647058823529411,
+      0.6588235294117647,
+      0.8588235294117647
+    ]
   }
 }
