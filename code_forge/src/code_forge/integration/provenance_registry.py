@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any, Iterable, Mapping
 
 SCHEMA_VERSION = "code_forge_provenance_registry_v1"
 
@@ -79,7 +79,9 @@ def _build_unit_link_index(provenance: Mapping[str, Any]) -> list[dict[str, Any]
         rec["unit_type"] = str(doc.get("unit_type") or "") or None
         rec["source_file_path"] = str(doc.get("source_file_path") or "") or None
 
-    return sorted(by_unit.values(), key=lambda row: (str(row.get("qualified_name") or ""), str(row.get("unit_id") or "")))
+    return sorted(
+        by_unit.values(), key=lambda row: (str(row.get("qualified_name") or ""), str(row.get("unit_id") or ""))
+    )
 
 
 def _extract_drift_highlights(drift_payload: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -182,7 +184,9 @@ def build_provenance_registry(
         },
         "drift": drift_summary,
         "benchmark": benchmark_summary,
-        "stage_summary_path": stage_summary.get("summary_path") or stage_summary.get("roundtrip_summary_path") or stage_summary.get("provenance_path"),
+        "stage_summary_path": stage_summary.get("summary_path")
+        or stage_summary.get("roundtrip_summary_path")
+        or stage_summary.get("provenance_path"),
         "stage_summary": {
             "validation_pass": _safe_dict(stage_summary.get("validation")).get("pass"),
             "files_processed": _safe_dict(stage_summary.get("ingestion_stats")).get("files_processed"),

@@ -328,7 +328,9 @@ def code_forge_provenance(
             unit_links = []
         filtered_unit_links = unit_links
         if unit_filter:
-            filtered_unit_links = [row for row in unit_links if isinstance(row, dict) and str(row.get("unit_id")) == unit_filter]
+            filtered_unit_links = [
+                row for row in unit_links if isinstance(row, dict) and str(row.get("unit_id")) == unit_filter
+            ]
             if not filtered_unit_links:
                 continue
 
@@ -343,9 +345,21 @@ def code_forge_provenance(
             "integration_policy": payload.get("integration_policy"),
             "integration_run_id": payload.get("integration_run_id"),
             "artifact_count": len(payload.get("artifacts") or []),
-            "knowledge_link_count": int(((payload.get("links") or {}).get("knowledge_count")) or ((payload.get("knowledge_links") or {}).get("count")) or 0),
-            "memory_link_count": int(((payload.get("links") or {}).get("memory_count")) or ((payload.get("memory_links") or {}).get("count")) or 0),
-            "graphrag_link_count": int(((payload.get("links") or {}).get("graphrag_count")) or ((payload.get("graphrag_links") or {}).get("count")) or 0),
+            "knowledge_link_count": int(
+                ((payload.get("links") or {}).get("knowledge_count"))
+                or ((payload.get("knowledge_links") or {}).get("count"))
+                or 0
+            ),
+            "memory_link_count": int(
+                ((payload.get("links") or {}).get("memory_count"))
+                or ((payload.get("memory_links") or {}).get("count"))
+                or 0
+            ),
+            "graphrag_link_count": int(
+                ((payload.get("links") or {}).get("graphrag_count"))
+                or ((payload.get("graphrag_links") or {}).get("count"))
+                or 0
+            ),
             "unit_link_count": len(unit_links),
             "schema_version": payload.get("schema_version"),
             "registry_id": payload.get("registry_id"),

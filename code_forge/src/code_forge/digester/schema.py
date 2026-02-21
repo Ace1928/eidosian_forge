@@ -199,7 +199,9 @@ def validate_provenance_links(payload: dict[str, Any]) -> list[str]:
 
 def validate_provenance_registry(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    _require(isinstance(payload.get("schema_version"), str), errors, "provenance_registry.schema_version must be string")
+    _require(
+        isinstance(payload.get("schema_version"), str), errors, "provenance_registry.schema_version must be string"
+    )
     _require(isinstance(payload.get("generated_at"), str), errors, "provenance_registry.generated_at must be string")
     _require(isinstance(payload.get("registry_id"), str), errors, "provenance_registry.registry_id must be string")
     _require(isinstance(payload.get("provenance_id"), str), errors, "provenance_registry.provenance_id must be string")
