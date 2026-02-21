@@ -15,6 +15,7 @@
 - [x] ~~Harden optional dependency stubs in `glyph_forge/src/glyph_forge/streaming/extractors.py` and stabilize retry timeout sensitivity in `agent_forge/tests/test_retries.py` (`d1e2795517`).~~
 - [x] ~~Re-run `Eidosian Universal CI` after `d1e2795517` and capture failure run `https://github.com/Ace1928/eidosian_forge/actions/runs/22256896857` (remaining failure: `glyph_forge/tests/test_streaming_extractors.py::test_extract_playlist_stitches_audio` requiring host `ffmpeg`).~~
 - [x] ~~Patch playlist stitching test to mock `ffmpeg` binary discovery with `shutil.which` so the test remains environment-independent (`glyph_forge/tests/test_streaming_extractors.py`).~~
+- [x] ~~Remove orphan gitlink entries (`.gemini/tmp/glyph_forge_remote`, `game_forge/pyparticles_haskell_source`) that were not declared in `.gitmodules` and caused recurring checkout git-128 warnings in Actions.~~
 
 ## Next Cycle Queue
 
