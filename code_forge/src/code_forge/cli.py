@@ -50,12 +50,20 @@ from code_forge import (
     run_benchmark_suite,
     run_roundtrip_pipeline,
     sync_units_to_knowledge_forge,
+    compute_staleness_metrics,
+    create_sample_config_matrix,
+    create_sample_taskbank,
+    load_freshness_records,
+    run_eval_suite,
+    EvalRunOptions,
     validate_output_dir,
     validate_roundtrip_workspace,
 )
 
 # Default paths
-FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
+FORGE_ROOT = Path(
+    os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))
+).resolve()
 DEFAULT_INDEX_PATH = FORGE_ROOT / "data" / "code_index.json"
 DEFAULT_LIBRARY_PATH = FORGE_ROOT / "data" / "code_library.json"
 DEFAULT_DB_PATH = FORGE_ROOT / "data" / "code_forge" / "library.sqlite"
@@ -107,7 +115,9 @@ class CodeForgeCLI(StandardCLI):
     @property
     def runner(self) -> IngestionRunner:
         if self._runner is None:
-            self._runner = IngestionRunner(db=self.library_db, runs_dir=DEFAULT_RUNS_DIR)
+            self._runner = IngestionRunner(
+                db=self.library_db, runs_dir=DEFAULT_RUNS_DIR
+            )
         return self._runner
 
     @eidosian()
@@ -765,18 +775,119 @@ class CodeForgeCLI(StandardCLI):
         )
         benchmark_parser.set_defaults(func=self._cmd_benchmark)
 
+        eval_init_parser = subparsers.add_parser(
+            "eval-init",
+            help="Create sample TaskBank and config-matrix files for eval/observability runs",
+        )
+        eval_init_parser.add_argument(
+            "--taskbank",
+            default=str(FORGE_ROOT / "config" / "eval" / "taskbank.json"),
+            help="Output path for taskbank JSON",
+        )
+        eval_init_parser.add_argument(
+            "--matrix",
+            default=str(FORGE_ROOT / "config" / "eval" / "config_matrix.json"),
+            help="Output path for config matrix JSON",
+        )
+        eval_init_parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Overwrite existing files if present",
+        )
+        eval_init_parser.set_defaults(func=self._cmd_eval_init)
+
+        eval_run_parser = subparsers.add_parser(
+            "eval-run",
+            help="Run taskbank x config-matrix evaluation with full trace/replay artifacts",
+        )
+        eval_run_parser.add_argument(
+            "--taskbank",
+            default=str(FORGE_ROOT / "config" / "eval" / "taskbank.json"),
+            help="TaskBank JSON path",
+        )
+        eval_run_parser.add_argument(
+            "--matrix",
+            default=str(FORGE_ROOT / "config" / "eval" / "config_matrix.json"),
+            help="Config-matrix JSON path",
+        )
+        eval_run_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "reports" / "code_forge_eval"),
+            help="Output directory for run traces and summary.json",
+        )
+        eval_run_parser.add_argument(
+            "--repo-root",
+            default=str(FORGE_ROOT),
+            help="Repository root used for snapshot metadata and task workdir resolution",
+        )
+        eval_run_parser.add_argument(
+            "--repeats",
+            type=int,
+            default=1,
+            help="Repeat count per (task, config) pair",
+        )
+        eval_run_parser.add_argument(
+            "--max-parallel",
+            type=int,
+            default=1,
+            help="Maximum parallel runs",
+        )
+        eval_run_parser.add_argument(
+            "--replay-mode",
+            choices=["off", "record", "replay"],
+            default="off",
+            help="Replay behavior: off, record live outputs, or replay only",
+        )
+        eval_run_parser.add_argument(
+            "--default-timeout-sec",
+            type=int,
+            default=1200,
+            help="Fallback timeout when task timeout is not specified",
+        )
+        eval_run_parser.add_argument(
+            "--staleness-log",
+            default=None,
+            help="Optional freshness/staleness log (json or jsonl) to include in summary",
+        )
+        eval_run_parser.set_defaults(func=self._cmd_eval_run)
+
+        eval_staleness_parser = subparsers.add_parser(
+            "eval-staleness",
+            help="Compute staleness metrics from a freshness log payload",
+        )
+        eval_staleness_parser.add_argument(
+            "--input",
+            required=True,
+            help="Freshness log path (.json or .jsonl)",
+        )
+        eval_staleness_parser.add_argument(
+            "--output",
+            default=None,
+            help="Optional output JSON path for computed metrics",
+        )
+        eval_staleness_parser.set_defaults(func=self._cmd_eval_staleness)
+
         canonical_parser = subparsers.add_parser(
             "canonical-plan",
             help="Build canonical migration map and compatibility shim staging from triage artifacts",
         )
         canonical_parser.add_argument(
             "--triage-path",
-            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest" / "triage.json"),
+            default=str(
+                FORGE_ROOT
+                / "data"
+                / "code_forge"
+                / "digester"
+                / "latest"
+                / "triage.json"
+            ),
             help="Path to triage.json artifact",
         )
         canonical_parser.add_argument(
             "--output-dir",
-            default=str(FORGE_ROOT / "data" / "code_forge" / "canonicalization" / "latest"),
+            default=str(
+                FORGE_ROOT / "data" / "code_forge" / "canonicalization" / "latest"
+            ),
             help="Output directory for migration map and plan artifacts",
         )
         canonical_parser.add_argument(
@@ -1048,11 +1159,15 @@ class CodeForgeCLI(StandardCLI):
                     "db_units_by_language": db_by_language,
                     "db_relationship_counts": rel_counts,
                     "latest_ingestion_runs": latest_runs,
-                    "supported_extensions": sorted(GenericCodeAnalyzer.supported_extensions()),
+                    "supported_extensions": sorted(
+                        GenericCodeAnalyzer.supported_extensions()
+                    ),
                     "digester_artifacts": {
                         "output_dir": str(digester_dir),
                         "repo_index": str(digester_dir / "repo_index.json"),
-                        "duplication_index": str(digester_dir / "duplication_index.json"),
+                        "duplication_index": str(
+                            digester_dir / "duplication_index.json"
+                        ),
                         "dependency_graph": str(digester_dir / "dependency_graph.json"),
                         "triage": str(digester_dir / "triage.json"),
                         "triage_audit": str(digester_dir / "triage_audit.json"),
@@ -1086,7 +1201,9 @@ class CodeForgeCLI(StandardCLI):
                         "imports": len(analysis.get("imports", [])),
                     }
                     result = CommandResult(
-                        True, f"{path.name}: {summary['functions']} functions, {summary['classes']} classes", summary
+                        True,
+                        f"{path.name}: {summary['functions']} functions, {summary['classes']} classes",
+                        summary,
                     )
         except Exception as e:
             result = CommandResult(False, f"Analysis error: {e}")
@@ -1143,7 +1260,9 @@ class CodeForgeCLI(StandardCLI):
                         break
 
             result = CommandResult(
-                True, f"Found {len(results)} matches for '{args.query}'", {"results": results, "query": args.query}
+                True,
+                f"Found {len(results)} matches for '{args.query}'",
+                {"results": results, "query": args.query},
             )
         except Exception as e:
             result = CommandResult(False, f"Search error: {e}")
@@ -1161,7 +1280,9 @@ class CodeForgeCLI(StandardCLI):
 
                 sid = self.librarian.add_snippet(content, metadata=analysis)
                 result = CommandResult(
-                    True, f"Ingested {path.name} as {sid[:8]}", {"snippet_id": sid, "file": str(path)}
+                    True,
+                    f"Ingested {path.name} as {sid[:8]}",
+                    {"snippet_id": sid, "file": str(path)},
                 )
         except Exception as e:
             result = CommandResult(False, f"Ingest error: {e}")
@@ -1249,7 +1370,9 @@ class CodeForgeCLI(StandardCLI):
                     cmd.extend(["--max-files", str(args.max_files)])
 
                 env = dict(**os.environ)
-                env["PYTHONPATH"] = f"{FORGE_ROOT / 'code_forge' / 'src'}:{FORGE_ROOT / 'lib'}"
+                env["PYTHONPATH"] = (
+                    f"{FORGE_ROOT / 'code_forge' / 'src'}:{FORGE_ROOT / 'lib'}"
+                )
                 subprocess.Popen(cmd, env=env)
 
                 result = CommandResult(
@@ -1295,7 +1418,9 @@ class CodeForgeCLI(StandardCLI):
                 file_counts[f] = file_counts.get(f, 0) + 1
 
             # Top files
-            top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+            top_files = sorted(file_counts.items(), key=lambda x: x[1], reverse=True)[
+                :10
+            ]
 
             data = {
                 "total_elements": len(self.indexer.elements),
@@ -1487,7 +1612,9 @@ class CodeForgeCLI(StandardCLI):
                     extensions=args.ext,
                     max_files=args.max_files,
                 )
-                duplication = build_duplication_index(db=self.library_db, output_dir=output_dir)
+                duplication = build_duplication_index(
+                    db=self.library_db, output_dir=output_dir
+                )
                 result = CommandResult(
                     True,
                     f"Catalog complete for {repo_index.get('files_total', 0)} files",
@@ -1495,7 +1622,9 @@ class CodeForgeCLI(StandardCLI):
                         "root_path": str(root),
                         "output_dir": str(output_dir),
                         "repo_index_path": str(output_dir / "repo_index.json"),
-                        "duplication_index_path": str(output_dir / "duplication_index.json"),
+                        "duplication_index_path": str(
+                            output_dir / "duplication_index.json"
+                        ),
                         "repo_index_summary": {
                             "files_total": repo_index.get("files_total", 0),
                             "by_language": repo_index.get("by_language", {}),
@@ -1515,9 +1644,13 @@ class CodeForgeCLI(StandardCLI):
             duplication_path = output_dir / "duplication_index.json"
 
             if not repo_index_path.exists():
-                result = CommandResult(False, f"Missing intake artifact: {repo_index_path}")
+                result = CommandResult(
+                    False, f"Missing intake artifact: {repo_index_path}"
+                )
             elif not duplication_path.exists():
-                result = CommandResult(False, f"Missing intake artifact: {duplication_path}")
+                result = CommandResult(
+                    False, f"Missing intake artifact: {duplication_path}"
+                )
             else:
                 repo_index = json.loads(repo_index_path.read_text(encoding="utf-8"))
                 duplication = json.loads(duplication_path.read_text(encoding="utf-8"))
@@ -1551,8 +1684,14 @@ class CodeForgeCLI(StandardCLI):
             else:
                 output_dir = Path(args.output_dir).resolve()
                 kb_path = Path(args.kb_path).resolve() if args.sync_knowledge else None
-                memory_path = Path(args.memory_path).resolve() if args.sync_memory else None
-                graphrag_out = Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None
+                memory_path = (
+                    Path(args.memory_path).resolve() if args.sync_memory else None
+                )
+                graphrag_out = (
+                    Path(args.graphrag_output_dir).resolve()
+                    if args.export_graphrag
+                    else None
+                )
                 payload = run_archive_digester(
                     root_path=root,
                     db=self.library_db,
@@ -1570,7 +1709,11 @@ class CodeForgeCLI(StandardCLI):
                     strict_validation=not bool(args.no_strict_validation),
                     write_drift_report=not bool(args.no_drift_report),
                     write_history_snapshot=not bool(args.no_history_snapshot),
-                    previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
+                    previous_snapshot_path=(
+                        Path(args.previous_snapshot).resolve()
+                        if args.previous_snapshot
+                        else None
+                    ),
                     drift_warn_pct=float(args.drift_warn_pct),
                     drift_min_abs_delta=float(args.drift_min_abs_delta),
                 )
@@ -1650,7 +1793,11 @@ class CodeForgeCLI(StandardCLI):
             output_dir = Path(args.output_dir).resolve()
             report = build_drift_report_from_output(
                 output_dir=output_dir,
-                previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
+                previous_snapshot_path=(
+                    Path(args.previous_snapshot).resolve()
+                    if args.previous_snapshot
+                    else None
+                ),
                 history_dir=output_dir / "history",
                 write_history=not bool(args.no_history_snapshot),
                 warn_pct=float(args.drift_warn_pct),
@@ -1706,6 +1853,97 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Benchmark error: {e}")
+        self._output(result, args)
+
+    def _cmd_eval_init(self, args) -> None:
+        """Create sample eval taskbank and config matrix files."""
+        try:
+            taskbank_path = Path(args.taskbank).resolve()
+            matrix_path = Path(args.matrix).resolve()
+            if not args.force:
+                existing = [p for p in (taskbank_path, matrix_path) if p.exists()]
+                if existing:
+                    result = CommandResult(
+                        False,
+                        "Refusing to overwrite existing eval files without --force",
+                        {"existing": [str(p) for p in existing]},
+                    )
+                    self._output(result, args)
+                    return
+
+            taskbank = create_sample_taskbank(taskbank_path)
+            matrix = create_sample_config_matrix(matrix_path)
+            result = CommandResult(
+                True,
+                "Eval sample configuration files created",
+                {
+                    "taskbank_path": str(taskbank_path),
+                    "matrix_path": str(matrix_path),
+                    "task_count": len(taskbank.get("tasks") or []),
+                    "config_count": len(matrix.get("configs") or []),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Eval init error: {e}")
+        self._output(result, args)
+
+    def _cmd_eval_run(self, args) -> None:
+        """Execute taskbank x config matrix evaluation runs."""
+        try:
+            options = EvalRunOptions(
+                taskbank_path=Path(args.taskbank).resolve(),
+                config_matrix_path=Path(args.matrix).resolve(),
+                output_dir=Path(args.output_dir).resolve(),
+                repo_root=Path(args.repo_root).resolve(),
+                repeats=max(1, int(args.repeats)),
+                replay_mode=str(args.replay_mode),
+                max_parallel=max(1, int(args.max_parallel)),
+                default_timeout_sec=max(1, int(args.default_timeout_sec)),
+                staleness_log_path=(
+                    Path(args.staleness_log).resolve() if args.staleness_log else None
+                ),
+            )
+            payload = run_eval_suite(options)
+            run_stats = payload.get("run_stats", {})
+            result = CommandResult(
+                True,
+                "Eval suite complete",
+                {
+                    "output_dir": str(options.output_dir),
+                    "summary_path": str(options.output_dir / "summary.json"),
+                    "run_count": run_stats.get("run_count", 0),
+                    "success_rate": run_stats.get("success_rate", 0.0),
+                    "replay_hits": run_stats.get("replay_hits", 0),
+                    "replay_misses": run_stats.get("replay_misses", 0),
+                    "config_scores": payload.get("config_scores", {}),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Eval run error: {e}")
+        self._output(result, args)
+
+    def _cmd_eval_staleness(self, args) -> None:
+        """Compute staleness/freshness metrics from a log payload."""
+        try:
+            input_path = Path(args.input).resolve()
+            records = load_freshness_records(input_path)
+            payload = compute_staleness_metrics(records)
+            if args.output:
+                output_path = Path(args.output).resolve()
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(
+                    json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+                )
+                payload = dict(payload)
+                payload["output_path"] = str(output_path)
+
+            result = CommandResult(
+                True,
+                "Staleness metrics computed",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Eval staleness error: {e}")
         self._output(result, args)
 
     def _cmd_canonical_plan(self, args) -> None:
@@ -1771,7 +2009,9 @@ class CodeForgeCLI(StandardCLI):
         try:
             parity_payload = None
             if args.parity_report:
-                parity_payload = json.loads(Path(args.parity_report).resolve().read_text(encoding="utf-8"))
+                parity_payload = json.loads(
+                    Path(args.parity_report).resolve().read_text(encoding="utf-8")
+                )
             payload = apply_reconstruction(
                 reconstructed_root=Path(args.reconstructed_root).resolve(),
                 target_root=Path(args.target_root).resolve(),
@@ -1815,9 +2055,17 @@ class CodeForgeCLI(StandardCLI):
                     extensions=args.ext,
                     max_files=args.max_files,
                     progress_every=max(1, int(args.progress_every)),
-                    sync_knowledge_path=Path(args.kb_path).resolve() if args.sync_knowledge else None,
-                    sync_memory_path=Path(args.memory_path).resolve() if args.sync_memory else None,
-                    graphrag_output_dir=Path(args.graphrag_output_dir).resolve() if args.export_graphrag else None,
+                    sync_knowledge_path=(
+                        Path(args.kb_path).resolve() if args.sync_knowledge else None
+                    ),
+                    sync_memory_path=(
+                        Path(args.memory_path).resolve() if args.sync_memory else None
+                    ),
+                    graphrag_output_dir=(
+                        Path(args.graphrag_output_dir).resolve()
+                        if args.export_graphrag
+                        else None
+                    ),
                     graph_export_limit=max(1, int(args.graph_export_limit)),
                     integration_policy=str(args.integration_policy),
                     strict_validation=not bool(args.no_strict_validation),

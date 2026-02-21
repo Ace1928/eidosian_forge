@@ -5,6 +5,7 @@
 - [ ] Add coverage report target enforcement for `code_forge/src/code_forge`.
 - [x] Implement canonical extraction generator + migration map artifact.
 - [ ] Add signed manifests for roundtrip reconstruction/apply artifacts.
+- [ ] Add OTLP trace exporter wiring from eval-run traces into external observability backends.
 
 ## High Priority
 - [x] Add call/import/reference edge extraction to relationship graph.
@@ -17,6 +18,7 @@
 - [x] Add roundtrip contract validator (`validate-roundtrip`) with hash verification support.
 - [x] Add provenance links artifact tying digester/roundtrip outputs to Knowledge/GraphRAG records.
 - [x] Add Memory Forge sync and provenance linkage (`unit_id -> memory_id`) for digester/roundtrip.
+- [x] Add eval operating system contracts + run matrix + replayable traces (`eval-init`, `eval-run`, `eval-staleness`).
 
 ## Medium Priority
 - [x] Add AST-structural clone detection and cluster reports.

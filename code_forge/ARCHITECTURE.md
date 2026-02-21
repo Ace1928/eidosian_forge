@@ -23,6 +23,16 @@ Code Forge is the code substrate for Eidosian Forge: it turns heterogeneous sour
   - Run-over-run drift snapshots and regression warning reports.
 - `bench/runner.py`
   - Repeatable ingestion/search/graph benchmark suite with regression gates.
+- `eval_os/contracts.py`
+  - TaskBank + config-matrix contract schemas for reproducible eval/ablation runs.
+- `eval_os/runner.py`
+  - Matrix execution harness with replayable run artifacts and repo snapshot metadata.
+- `eval_os/tracing.py`
+  - Append-only run/span trace recorder (`trace_id`, `span_id`, `run_id` lineage).
+- `eval_os/replay.py`
+  - Deterministic record/replay store keyed by task/config/command/toggle hash.
+- `eval_os/staleness.py`
+  - Freshness/staleness metric computation for memory-backed workflows.
 - `canonicalize/planner.py`
   - Canonical migration map generation and compatibility shim staging.
 - `integration/pipeline.py`
@@ -106,6 +116,13 @@ Typed edges for structural and semantic traversal:
 - apply reconstructed tree with transactional backups and audit report (`apply_report.json`)
 - emit end-to-end `roundtrip_summary.json` for traceability
 
+### Stage H: Eval + Observability OS
+- declare artifact contracts in TaskBank (`code_forge_taskbank_v1`)
+- execute TaskBank x config-matrix runs with repeat counts and optional replay mode
+- emit replayable run artifacts (`trace.jsonl`, `stdout.txt`, `stderr.txt`, `result.json`)
+- persist top-level eval report (`summary.json`) with per-config score vectors
+- compute freshness/staleness metrics (`freshness_lag`, `stale_serve_rate`, `revalidation_latency`)
+
 ## Benchmark and Regression Gates
 
 `bench/runner.py` produces measurable artifacts for:
@@ -114,6 +131,12 @@ Typed edges for structural and semantic traversal:
 - dependency graph build latency
 
 When a baseline exists, gate checks fail on configured regressions.
+
+`eval_os/scoring.py` provides a separate run-matrix score vector focused on:
+- success rate
+- latency distribution
+- regression/staleness penalties
+- bounded enterprise score for configuration comparisons.
 
 ## Safety and Idempotency
 

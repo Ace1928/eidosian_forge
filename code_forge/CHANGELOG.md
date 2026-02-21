@@ -1,4 +1,10 @@
 ## Unreleased
+- Added eval/observability operating system:
+  - TaskBank + config-matrix contract schemas,
+  - `eval-init`, `eval-run`, `eval-staleness` CLI commands,
+  - replayable run artifacts (`trace.jsonl`, stdout/stderr hashes, repo snapshot metadata),
+  - deterministic record/replay store for command outputs,
+  - staleness/freshness metric computation.
 - Added Memory Forge integration export path for digester/roundtrip:
   - `--sync-memory`
   - `--memory-path`

@@ -14,6 +14,11 @@
 - Structural clone clustering and triage audit confidence/rule trace outputs.
 - Strict digester artifact schema validation and validation CLI.
 - Drift report generation (`drift_report.json/.md`) and persisted run history snapshots.
+- Eval/observability operating system:
+  - TaskBank + config matrix contracts,
+  - replayable run trace artifacts,
+  - record/replay execution store,
+  - staleness metric computation and reporting.
 
 ### In Progress
 - High-confidence canonical extraction workflow (old -> new module migration maps).

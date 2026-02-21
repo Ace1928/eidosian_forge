@@ -21,6 +21,11 @@ and produces explainable triage outputs for archive reduction and canonical extr
 - Stage D: dependency graph export (`dependency_graph.json`)
 - Stage E: drift intelligence (`drift_report.json`, `history/*.json`) for run-over-run regression visibility
 - Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
+- Eval/observability operating system:
+  - declarative TaskBank contracts,
+  - ablation config matrix execution,
+  - replayable run artifacts (trace JSONL + stdout/stderr hashes + repo snapshot),
+  - staleness/freshness metrics for memory-backed workflows.
 - Canonical extraction planning with migration map and compatibility shim staging.
 - Roundtrip reconstruction pipeline:
   - reconstruct source trees from library file records/blobs,
@@ -87,6 +92,25 @@ code-forge benchmark \
   --root . \
   --output reports/code_forge_benchmark_latest.json \
   --baseline reports/code_forge_benchmark_baseline.json
+
+# Create sample eval contracts and run matrix
+code-forge eval-init \
+  --taskbank config/eval/taskbank.json \
+  --matrix config/eval/config_matrix.json
+
+# Run eval matrix with trace + replay artifacts
+code-forge eval-run \
+  --taskbank config/eval/taskbank.json \
+  --matrix config/eval/config_matrix.json \
+  --output-dir reports/code_forge_eval \
+  --repeats 2 \
+  --max-parallel 2 \
+  --replay-mode record
+
+# Compute staleness metrics from provenance/freshness logs
+code-forge eval-staleness \
+  --input reports/code_forge_eval/freshness.jsonl \
+  --output reports/code_forge_eval/staleness_metrics.json
 
 # Canonical migration map and shim staging artifacts
 code-forge canonical-plan \
@@ -171,6 +195,12 @@ Canonicalization artifacts:
 - `canonicalization_plan.md`: actionable migration plan
 - `canonicalization_summary.json`: plan summary metadata
 - `shims/**`: staged compatibility shim files (optional)
+
+Eval/observability artifacts:
+- `reports/code_forge_eval/summary.json`: top-level report (success rate, config scores, replay stats)
+- `reports/code_forge_eval/runs/<run_id>/trace.jsonl`: append-only span/event trace
+- `reports/code_forge_eval/runs/<run_id>/stdout.txt` and `stderr.txt`: artifact-backed command outputs
+- `reports/code_forge_eval/replay_store/**`: deterministic record/replay command outputs keyed by task+config+command hash
 
 ## Integration Map
 

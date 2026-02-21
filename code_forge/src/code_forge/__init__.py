@@ -1,9 +1,17 @@
 """Code Forge - static analysis, indexing, and reusable code library tooling."""
 
-from code_forge.analyzer.code_indexer import CodeElement, CodeIndexer, index_forge_codebase
+from code_forge.analyzer.code_indexer import (
+    CodeElement,
+    CodeIndexer,
+    index_forge_codebase,
+)
 from code_forge.analyzer.generic_analyzer import GenericCodeAnalyzer
 from code_forge.analyzer.python_analyzer import CodeAnalyzer
-from code_forge.bench.runner import BenchmarkConfig, BenchmarkResult, run_benchmark_suite
+from code_forge.bench.runner import (
+    BenchmarkConfig,
+    BenchmarkResult,
+    run_benchmark_suite,
+)
 from code_forge.canonicalize.planner import build_canonical_migration_plan
 from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.pipeline import (
@@ -14,10 +22,33 @@ from code_forge.digester.pipeline import (
     run_archive_digester,
 )
 from code_forge.digester.schema import validate_output_dir
+from code_forge.eval_os import (
+    ArtifactContract,
+    EvalConfig,
+    EvalConfigMatrix,
+    EvalRunOptions,
+    FreshnessRecord,
+    TaskSpec,
+    compute_staleness_metrics,
+    create_sample_config_matrix,
+    create_sample_taskbank,
+    load_eval_config_matrix,
+    load_freshness_records,
+    load_taskbank,
+    run_eval_suite,
+    write_eval_config_matrix,
+    write_taskbank,
+)
 from code_forge.ingest.runner import IngestionRunner, IngestionStats
 from code_forge.integration.memory import sync_units_to_memory_forge
-from code_forge.integration.pipeline import export_units_for_graphrag, sync_units_to_knowledge_forge
-from code_forge.integration.provenance import read_provenance_links, write_provenance_links
+from code_forge.integration.pipeline import (
+    export_units_for_graphrag,
+    sync_units_to_knowledge_forge,
+)
+from code_forge.integration.provenance import (
+    read_provenance_links,
+    write_provenance_links,
+)
 from code_forge.integration.provenance_registry import (
     build_provenance_registry,
     load_latest_benchmark_for_root,
@@ -65,6 +96,21 @@ __all__ = [
     "build_triage_report",
     "run_archive_digester",
     "validate_output_dir",
+    "ArtifactContract",
+    "EvalConfig",
+    "EvalConfigMatrix",
+    "EvalRunOptions",
+    "FreshnessRecord",
+    "TaskSpec",
+    "compute_staleness_metrics",
+    "create_sample_config_matrix",
+    "create_sample_taskbank",
+    "load_eval_config_matrix",
+    "load_freshness_records",
+    "load_taskbank",
+    "run_eval_suite",
+    "write_eval_config_matrix",
+    "write_taskbank",
     "IngestionRunner",
     "IngestionStats",
     "export_units_for_graphrag",

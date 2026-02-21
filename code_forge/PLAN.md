@@ -44,6 +44,15 @@ Build a production-grade archive digester and living code substrate that can:
 - [ ] Coverage target >= 90% for `code_forge/src/code_forge`.
 - [ ] Enforce deletion gate requiring tests + benchmark parity + migration map approvals.
 
+### Stage G: Eval + Observability OS
+- [x] TaskBank contract schema (`code_forge_taskbank_v1`) for SWE/docs/hybrid task classes.
+- [x] Config matrix schema (`code_forge_eval_config_matrix_v1`) for reproducible ablation toggles.
+- [x] Replayable run artifact bundle (trace JSONL, stdout/stderr hashes, repo snapshot, config/task hashes).
+- [x] Record/replay store keyed by task+config+command+toggle hash.
+- [x] Staleness metrics subsystem (freshness lag, stale serve rate, revalidation latency, stale-error rate).
+- [x] CLI surfaces: `eval-init`, `eval-run`, `eval-staleness`.
+- [ ] Optional OpenTelemetry OTLP exporter for external APM backends.
+
 ### Stage F: Roundtrip Reconstruction and Auditability
 - [x] Reconstruct source trees from `file_records` + `code_text` deterministically.
 - [x] Generate parity report with file-level SHA256 checks.
