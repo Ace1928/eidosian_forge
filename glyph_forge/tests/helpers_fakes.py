@@ -21,7 +21,25 @@ class DummyPopen:
         self.kwargs = kwargs
         self.pid = 12345
         self.stdin = io.BytesIO()
+        self.stdout = io.BytesIO()
+        self.stderr = io.BytesIO()
         self._returncode = None
+
+    @property
+    def returncode(self):
+        return self._returncode
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def communicate(self, input: Optional[bytes] = None, timeout: Optional[float] = None):
+        if input is not None:
+            self.stdin.write(input)
+        self._returncode = 0
+        return self.stdout.getvalue(), self.stderr.getvalue()
 
     def poll(self):
         return self._returncode

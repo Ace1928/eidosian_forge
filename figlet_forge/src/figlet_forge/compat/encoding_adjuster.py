@@ -179,6 +179,23 @@ class EncodingAdjuster:
     def __init__(self):
         """Initialize encoding detector with system capabilities."""
         self._encoding_info = self._detect_encoding()
+        self._encoding = self.encoding
+        self._can_encode_utf8 = self.supports_utf8
+
+    @property
+    def encoding(self) -> str:
+        """Primary detected encoding."""
+        value = (
+            self._encoding_info.get("locale_encoding")
+            or self._encoding_info.get("stdout_encoding")
+            or self._encoding_info.get("system_encoding")
+        )
+        return str(value) if value else "utf-8"
+
+    @property
+    def supports_utf8(self) -> bool:
+        """Whether UTF-8 output is considered supported."""
+        return bool(self._encoding_info.get("supports_utf8", False))
 
     def _detect_encoding(self) -> Dict[str, any]:
         """
@@ -187,13 +204,32 @@ class EncodingAdjuster:
         Returns:
             Dictionary of encoding information
         """
+        try:
+            locale_encoding = locale.getpreferredencoding(False)
+        except Exception:
+            locale_encoding = None
+
+        if not locale_encoding:
+            for env_key in ("LC_ALL", "LC_CTYPE", "LANG"):
+                raw = os.environ.get(env_key, "")
+                if "." in raw:
+                    locale_encoding = raw.split(".", 1)[1]
+                    break
+            if not locale_encoding:
+                locale_encoding = self._get_stdout_encoding() or sys.getdefaultencoding() or "utf-8"
+
+        try:
+            locale_info = locale.getlocale()
+        except Exception:
+            locale_info = (None, None)
+
         info = {
             "system_encoding": sys.getdefaultencoding(),
-            "locale_encoding": locale.getpreferredencoding(False),
+            "locale_encoding": locale_encoding,
             "stdout_encoding": self._get_stdout_encoding(),
             "supports_utf8": self._supports_utf8(),
             "normalize_needed": platform.system() == "Windows",
-            "locale_info": locale.getlocale(),
+            "locale_info": locale_info,
         }
 
         return info
@@ -245,6 +281,55 @@ class EncodingAdjuster:
                 pass
 
         return False
+
+    @eidosian()
+    def decode(self, data: Union[bytes, str], encodings: Optional[List[str]] = None) -> str:
+        """Compatibility wrapper for legacy decode API."""
+        return self.decode_bytes(data, encodings=encodings)
+
+    @eidosian()
+    def encode(self, text: str, encoding_name: Optional[str] = None) -> bytes:
+        """Compatibility wrapper for legacy encode API."""
+        target = encoding_name or getattr(self, "_encoding", self.encoding)
+        try:
+            return text.encode(target)
+        except Exception:
+            try:
+                return text.encode(target, errors="replace")
+            except Exception:
+                return text.encode("utf-8", errors="replace")
+
+    @eidosian()
+    def ensure_unicode(self, text: str) -> str:
+        """Return UTF-safe text for terminal rendering."""
+        if getattr(self, "_can_encode_utf8", self.supports_utf8):
+            return text
+        return text.encode("ascii", errors="replace").decode("ascii")
+
+    @eidosian()
+    def _check_utf8_support(self) -> bool:
+        """Check whether configured encoding can represent UTF-8 characters."""
+        try:
+            "✓".encode(getattr(self, "_encoding", self.encoding))
+            return True
+        except Exception:
+            return False
+
+    @eidosian()
+    def _check_utf8_output(self) -> bool:
+        """Check whether current output channel likely supports UTF-8."""
+        try:
+            if not sys.stdout.isatty():
+                return True
+            stdout_enc = (sys.stdout.encoding or "").lower()
+            if "utf" in stdout_enc:
+                return True
+            for env_var in ("LC_ALL", "LC_CTYPE", "LANG"):
+                if "utf" in os.environ.get(env_var, "").lower():
+                    return True
+            return False
+        except Exception:
+            return False
 
     @eidosian()
     def adjust_for_output(self, text: str) -> str:

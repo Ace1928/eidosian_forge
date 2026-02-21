@@ -132,7 +132,7 @@ def test_reproduction_mass_based_offspring():
     assert ct.x.size > initial_size
 
 
-def test_apply_reproduction_gene_sexual_offspring():
+def test_apply_reproduction_gene_sexual_offspring(monkeypatch):
     np.random.seed(3)
     env = SimulationConfig()
     env.asexual_reproduction_enabled = False
@@ -148,6 +148,14 @@ def test_apply_reproduction_gene_sexual_offspring():
     ct.x[:] = np.array([10.0, 11.0, 12.0])
     ct.y[:] = np.array([10.0, 11.0, 12.0])
     ct.species_id[:] = np.array([0, 1, 1])
+    monkeypatch.setattr(
+        gp_genes,
+        "_select_mating_pairs",
+        lambda *_args, **_kwargs: (
+            np.array([0], dtype=np.int_),
+            np.array([1], dtype=np.int_),
+        ),
+    )
     initial_energy = ct.energy.copy()
     initial_size = ct.x.size
     apply_reproduction_gene(ct, [], [150.0, 50.0, 25.0, 10.0, 1.0, 1.0, 1.0], env)

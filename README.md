@@ -118,6 +118,9 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
 # MCP tool call regression
 PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src \
 ./eidosian_venv/bin/python -m pytest -q eidos_mcp/tests/test_mcp_tool_calls_individual.py
+
+# Forge-wide smoke audit (per-forge pytest --maxfail=1 with timeout controls)
+./scripts/run_forge_test_audit.sh
 ```
 
 ## Major Top-Level Areas

@@ -44,6 +44,7 @@ def test_cli_stream_screen_capture(monkeypatch):
 
     monkeypatch.setattr(cli, "FFmpegCapture", DummyFFmpeg, raising=False)
     monkeypatch.setattr(cli, "FirefoxController", DummyFirefox, raising=False)
+    monkeypatch.setattr(cli.shutil, "which", lambda *_args, **_kwargs: "/usr/bin/ffmpeg")
 
     # Make time advance in a controlled way to exercise the loop once
     times = iter([0.0, 0.0, 0.6, 1.2])

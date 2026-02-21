@@ -17,6 +17,7 @@ import threading
 import signal
 import os
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Generator, Tuple
@@ -36,7 +37,7 @@ class NetflixConfig:
     height: int = 1080
     fps: float = 30.0
     audio_device: str = 'default'  # PulseAudio device
-    output_dir: Path = Path('/tmp/glyph_netflix')
+    output_dir: Path = Path(tempfile.gettempdir()) / 'glyph_netflix'
     fullscreen: bool = True
     wait_for_load: float = 10.0  # Seconds to wait for Netflix to load
 
@@ -62,7 +63,7 @@ class FFmpegCapture:
         self.audio_device = audio_device
         # Ensure output_path is a Path object
         if output_path is None:
-            self.output_path = Path('/tmp/glyph_capture.mp4')
+            self.output_path = Path(tempfile.gettempdir()) / 'glyph_capture.mp4'
         elif isinstance(output_path, str):
             self.output_path = Path(output_path)
         else:
