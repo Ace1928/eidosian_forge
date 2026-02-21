@@ -1,7 +1,12 @@
 """Targeted tests for unified streaming engine paths."""
+
 from __future__ import annotations
 
+import pytest
 from types import SimpleNamespace
+
+# Unified engine setup path constructs streaming renderer tables requiring cv2.
+pytest.importorskip("cv2", reason="streaming engine tests require opencv-python")
 
 
 def test_engine_setup_pipeline(monkeypatch, tmp_path):
