@@ -3,7 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from code_forge.eval_os.contracts import ArtifactContract, EvalConfig, TaskSpec, write_eval_config_matrix, write_taskbank
+from code_forge.eval_os.contracts import (
+    ArtifactContract,
+    EvalConfig,
+    TaskSpec,
+    write_eval_config_matrix,
+    write_taskbank,
+)
 from code_forge.eval_os.runner import EvalRunOptions, run_eval_suite
 from code_forge.eval_os.tracing import export_trace_jsonl_to_otlp
 
