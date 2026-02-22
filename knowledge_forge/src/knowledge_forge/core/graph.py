@@ -193,7 +193,7 @@ class KnowledgeForge:
         Requires `rdflib` optional dependency.
         """
         try:
-            from rdflib import Graph, Literal, Namespace, RDF, URIRef
+            from rdflib import RDF, Graph, Literal, Namespace, URIRef
         except Exception as exc:
             raise RuntimeError("RDF export requires rdflib. Install knowledge_forge[rdf].") from exc
 
@@ -233,14 +233,16 @@ class KnowledgeForge:
         }
 
     @eidosian()
-    def import_rdf(self, input_path: Union[str, Path], format: Optional[str] = None, merge: bool = False) -> Dict[str, Any]:
+    def import_rdf(
+        self, input_path: Union[str, Path], format: Optional[str] = None, merge: bool = False
+    ) -> Dict[str, Any]:
         """
         Import knowledge graph from RDF using rdflib.
 
         Requires `rdflib` optional dependency.
         """
         try:
-            from rdflib import Graph, Namespace, RDF
+            from rdflib import RDF, Graph, Namespace
         except Exception as exc:
             raise RuntimeError("RDF import requires rdflib. Install knowledge_forge[rdf].") from exc
 

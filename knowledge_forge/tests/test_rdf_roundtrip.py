@@ -6,6 +6,7 @@ from knowledge_forge import KnowledgeForge
 
 pytest.importorskip("rdflib", reason="rdflib required for RDF tests")
 
+
 def test_rdf_export_import_roundtrip(tmp_path):
     source_path = tmp_path / "kb_source.json"
     rdf_path = tmp_path / "kb.ttl"
