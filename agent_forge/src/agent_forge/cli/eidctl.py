@@ -210,6 +210,16 @@ def main(argv: list[str] | None = None) -> int:
         cvalidate_latest.add_argument("--dir", default="state", help="state directory")
         cvalidate_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cdrift = csub.add_parser("drift-review", help="compare protocol thresholds between latest validation runs")
+        cdrift.add_argument("--dir", default="state", help="state directory")
+        cdrift.add_argument(
+            "--threshold",
+            type=float,
+            default=0.05,
+            help="minimum absolute threshold delta to flag drift (default: 0.05)",
+        )
+        cdrift.add_argument("--json", action="store_true", help="JSON output")
+
         cprotocol = csub.add_parser("protocol", help="show or validate RAC-AP protocol schema")
         cprotocol.add_argument("--dir", default="state", help="state directory")
         cprotocol.add_argument("--path", help="optional protocol JSON file to validate")
@@ -656,6 +666,25 @@ def main(argv: list[str] | None = None) -> int:
                             f"[consciousness] latest_validation={latest.get('validation_id')} "
                             f"rac_ap_index={score} "
                             f"pass={latest.get('pass')}"
+                        )
+                return 0
+
+            if args.conscious_cmd == "drift-review":
+                payload = validator.protocol_drift_review(threshold=max(0.0, float(args.threshold)))
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    if payload.get("error"):
+                        print(f"[consciousness] {payload['error']}")
+                    else:
+                        summary = payload.get("summary") or {}
+                        comparison = payload.get("comparison") or {}
+                        print(
+                            f"[consciousness] drift_review "
+                            f"current={comparison.get('current_validation_id')} "
+                            f"baseline={comparison.get('baseline_validation_id')} "
+                            f"flagged={summary.get('flagged_count')} "
+                            f"total={summary.get('total_keys')}"
                         )
                 return 0
 

@@ -13,6 +13,9 @@ class _FakeValidator:
     def latest_validation(self):
         return {"validation_id": "latest_1", "pass": True}
 
+    def protocol_drift_review(self, **kwargs):
+        return {"summary": {"flagged_count": 1}, "kwargs": kwargs}
+
 
 def test_consciousness_construct_validate(monkeypatch):
     monkeypatch.setattr(consciousness, "_construct_validator", lambda state_dir=None: _FakeValidator())
@@ -41,3 +44,10 @@ def test_consciousness_construct_latest_resource(monkeypatch):
     monkeypatch.setattr(consciousness, "_construct_validator", lambda state_dir=None: _FakeValidator())
     payload = json.loads(consciousness.consciousness_construct_latest_resource())
     assert payload["validation_id"] == "latest_1"
+
+
+def test_consciousness_construct_drift_review(monkeypatch):
+    monkeypatch.setattr(consciousness, "_construct_validator", lambda state_dir=None: _FakeValidator())
+    payload = json.loads(consciousness.consciousness_construct_drift_review(threshold=0.2))
+    assert payload["summary"]["flagged_count"] == 1
+    assert payload["kwargs"]["threshold"] == 0.2

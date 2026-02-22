@@ -734,3 +734,117 @@ class ConsciousnessConstructValidator:
             return None
         latest = max(files, key=lambda p: p.stat().st_mtime_ns)
         return _load_json(latest)
+
+    def _validation_reports(self, limit: int = 2) -> list[dict[str, Any]]:
+        return _sorted_json_reports(self._validation_dir().glob("validation_*.json"), limit)
+
+    def _protocol_threshold_map(self, protocol: Mapping[str, Any]) -> dict[str, float]:
+        out: dict[str, float] = {}
+
+        minimum_pairs = _safe_float(protocol.get("minimum_pairs"), None)
+        if minimum_pairs is not None:
+            out["minimum_pairs"] = float(minimum_pairs)
+
+        gates = protocol.get("gates")
+        if isinstance(gates, Mapping):
+            for key, value in gates.items():
+                if isinstance(value, bool):
+                    continue
+                parsed = _safe_float(value, None)
+                if parsed is not None:
+                    out[f"gates.{key}"] = float(parsed)
+
+        minimum_reports = protocol.get("minimum_reports")
+        if isinstance(minimum_reports, Mapping):
+            for key, value in minimum_reports.items():
+                parsed = _safe_float(value, None)
+                if parsed is not None:
+                    out[f"minimum_reports.{key}"] = float(parsed)
+
+        expectations = protocol.get("expectations")
+        if isinstance(expectations, Sequence):
+            for idx, row in enumerate(expectations):
+                if not isinstance(row, Mapping):
+                    continue
+                name = str(row.get("name") or f"expectation_{idx}")
+                threshold = _safe_float(row.get("threshold"), None)
+                if threshold is None:
+                    continue
+                out[f"expectations.{name}.threshold"] = float(threshold)
+
+        return out
+
+    def protocol_drift_review(
+        self,
+        *,
+        threshold: float = 0.05,
+        current_protocol: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        reports = self._validation_reports(limit=2)
+        if not reports:
+            return {"error": "No validation reports found"}
+
+        current_report = reports[0]
+        baseline_report = reports[1] if len(reports) > 1 else None
+        protocol_now = dict(current_protocol) if current_protocol is not None else (
+            current_report.get("protocol") if isinstance(current_report.get("protocol"), Mapping) else {}
+        )
+        protocol_before = (
+            baseline_report.get("protocol")
+            if baseline_report and isinstance(baseline_report.get("protocol"), Mapping)
+            else {}
+        )
+
+        now_map = self._protocol_threshold_map(protocol_now)
+        before_map = self._protocol_threshold_map(protocol_before)
+        keys = sorted(set(now_map.keys()) | set(before_map.keys()))
+
+        rows: list[dict[str, Any]] = []
+        flagged = 0
+        for key in keys:
+            new_val = now_map.get(key)
+            old_val = before_map.get(key)
+            status = "unchanged"
+            delta = None
+            drift_flag = False
+            if old_val is None and new_val is not None:
+                status = "added"
+                drift_flag = True
+            elif new_val is None and old_val is not None:
+                status = "removed"
+                drift_flag = True
+            elif old_val is not None and new_val is not None:
+                delta = float(new_val - old_val)
+                if abs(delta) >= max(0.0, float(threshold)):
+                    status = "changed"
+                    drift_flag = True
+                elif abs(delta) > 0:
+                    status = "changed_minor"
+            if drift_flag:
+                flagged += 1
+            rows.append(
+                {
+                    "key": key,
+                    "status": status,
+                    "baseline": old_val,
+                    "current": new_val,
+                    "delta": round(delta, 6) if delta is not None else None,
+                    "drift_flag": drift_flag,
+                }
+            )
+
+        return {
+            "timestamp": _now_iso(),
+            "threshold": float(threshold),
+            "comparison": {
+                "current_validation_id": current_report.get("validation_id"),
+                "baseline_validation_id": baseline_report.get("validation_id") if baseline_report else None,
+                "reports_compared": 2 if baseline_report else 1,
+            },
+            "summary": {
+                "total_keys": len(keys),
+                "flagged_count": flagged,
+                "has_drift": bool(flagged > 0),
+            },
+            "changes": rows,
+        }

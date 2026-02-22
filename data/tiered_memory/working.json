@@ -817,5 +817,26 @@
       "rac-ap"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d0320ae6-420f-420a-a43f-b9fa735c3fcc",
+    "content": "Agent forge high-priority and medium-priority drift TODO items completed: protocol drift checker and eidctl drift-review are now in place with tests.",
+    "created_at": "2026-02-22T18:47:41.055331",
+    "last_accessed": "2026-02-22T18:47:41.055347",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "tests",
+      "agent_forge",
+      "rac-ap",
+      "drift-review",
+      "mcp"
+    ],
+    "linked_memories": []
   }
 ]

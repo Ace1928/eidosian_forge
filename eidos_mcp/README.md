@@ -57,6 +57,7 @@ The Nexus integrates deeply with the Eidosian ecosystem:
 RAC-AP construct validation outputs from `agent_forge` are exposed via:
 - `consciousness_construct_validate` (run validator and return report)
 - `consciousness_construct_latest` (latest persisted validator report)
+- `consciousness_construct_drift_review` (protocol threshold drift delta between latest runs)
 - `eidos://consciousness/construct-latest` (resource snapshot)
 
 ## 🚀 Usage

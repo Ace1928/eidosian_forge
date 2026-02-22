@@ -1550,6 +1550,20 @@
         ]
       },
       "links": []
+    },
+    "7da7c7cb-d182-4446-b1ca-9765a7719f79": {
+      "id": "7da7c7cb-d182-4446-b1ca-9765a7719f79",
+      "content": "Consciousness construct validation now includes protocol threshold drift analysis over latest validation reports with configurable delta threshold.",
+      "metadata": {
+        "tags": [
+          "validation",
+          "agent_forge",
+          "drift",
+          "consciousness",
+          "protocol"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

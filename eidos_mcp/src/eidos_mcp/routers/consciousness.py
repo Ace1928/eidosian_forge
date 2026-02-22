@@ -682,6 +682,26 @@ def consciousness_construct_latest(state_dir: Optional[str] = None) -> str:
     return json.dumps(latest, indent=2)
 
 
+@tool(
+    name="consciousness_construct_drift_review",
+    description="Compare protocol thresholds between latest RAC-AP construct validation runs.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+            "threshold": {"type": "number"},
+        },
+    },
+)
+@eidosian()
+def consciousness_construct_drift_review(state_dir: Optional[str] = None, threshold: float = 0.05) -> str:
+    validator = _construct_validator(state_dir)
+    if validator is None:
+        return json.dumps({"error": "agent_forge construct validation unavailable"}, indent=2)
+    payload = validator.protocol_drift_review(threshold=max(0.0, float(threshold)))
+    return json.dumps(payload, indent=2)
+
+
 @resource(
     uri="eidos://consciousness/hypotheses",
     description="Configured falsifiable hypotheses for the consciousness assessment protocol.",

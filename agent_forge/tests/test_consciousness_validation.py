@@ -215,6 +215,22 @@ def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     latest_payload = json.loads(latest_res.stdout)
     assert latest_payload.get("validation_id") == validate_payload.get("validation_id")
 
+    drift_cmd = [
+        sys.executable,
+        str(EIDCTL),
+        "consciousness",
+        "drift-review",
+        "--dir",
+        str(base),
+        "--threshold",
+        "0.01",
+        "--json",
+    ]
+    drift_res = subprocess.run(drift_cmd, capture_output=True, text=True, env=env, cwd=str(REPO_ROOT))
+    assert drift_res.returncode == 0, drift_res.stderr
+    drift_payload = json.loads(drift_res.stdout)
+    assert "summary" in drift_payload
+
 
 def test_eidctl_consciousness_protocol_and_preregister(tmp_path: Path) -> None:
     protocol_path = tmp_path / "protocol.json"
