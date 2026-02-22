@@ -93,6 +93,12 @@ code-forge benchmark \
   --output reports/code_forge_benchmark_latest.json \
   --baseline reports/code_forge_benchmark_baseline.json
 
+# Coverage gate for code_forge/src/code_forge (CI uses same threshold)
+./eidosian_venv/bin/python -m pytest code_forge/tests \
+  --cov=code_forge/src/code_forge \
+  --cov-report=term-missing \
+  --cov-fail-under=70 -q
+
 # Create sample eval contracts and run matrix
 code-forge eval-init \
   --taskbank config/eval/taskbank.json \

@@ -2,7 +2,7 @@
 
 ## Critical
 - [x] Add ingestion/query benchmarks with reproducible fixtures and JSON outputs.
-- [ ] Add coverage report target enforcement for `code_forge/src/code_forge`.
+- [x] ~~Add coverage report target enforcement for `code_forge/src/code_forge`.~~
 - [x] Implement canonical extraction generator + migration map artifact.
 - [ ] Add signed manifests for roundtrip reconstruction/apply artifacts.
 - [ ] Add OTLP trace exporter wiring from eval-run traces into external observability backends.

@@ -27,6 +27,7 @@ env:
   PYTHONUNBUFFERED: 1
   FORCE_COLOR: 1
   POETRY_VIRTUALENVS_CREATE: false
+  CODE_FORGE_COVERAGE_MIN: "70"
 
 jobs:
   validate:
@@ -124,7 +125,12 @@ jobs:
 
       - name: 🔍 Run tests
         run: |
-          pytest --cov=. --cov-report=xml --cov-report=term-missing -v -n auto
+          pytest tests \
+            --cov=src/code_forge \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=${CODE_FORGE_COVERAGE_MIN} \
+            -v -n auto
 
       - name: 📊 Upload coverage
         uses: codecov/codecov-action@v3

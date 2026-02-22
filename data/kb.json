@@ -1632,6 +1632,20 @@
         ]
       },
       "links": []
+    },
+    "1f6e7bc5-698d-41e8-9270-9338e0b88f53": {
+      "id": "1f6e7bc5-698d-41e8-9270-9338e0b88f53",
+      "content": "Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command.",
+      "metadata": {
+        "tags": [
+          "ci",
+          "todo",
+          "documentation",
+          "code_forge",
+          "coverage"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -1826,5 +1826,34 @@
       0.8196078431372549,
       0.37254901960784315
     ]
+  },
+  "521addd6-c204-4d23-bcda-4ca3811094f5": {
+    "id": "521addd6-c204-4d23-bcda-4ca3811094f5",
+    "content": "Code Forge cycle: implemented coverage gate enforcement for `src/code_forge` in both forge workflows (`ci.yml`, `python-package.yml`) with threshold 70 and verified via local coverage-gated pytest run.",
+    "created_at": "2026-02-22T20:09:37.864422",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_coverage_gate_enforcement_20260222"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.4392156862745098,
+      0.5568627450980392,
+      0.6823529411764706,
+      0.2784313725490196,
+      0.49411764705882355,
+      0.6980392156862745,
+      0.24313725490196078,
+      0.5450980392156862,
+      0.6274509803921569,
+      0.6274509803921569,
+      0.9921568627450981,
+      0.7176470588235294,
+      0.5843137254901961,
+      0.2627450980392157,
+      0.3843137254901961,
+      0.9803921568627451
+    ]
   }
 }

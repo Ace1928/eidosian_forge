@@ -944,5 +944,26 @@
       "rebase"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "ac37e27d-1350-468b-97c4-c0aef8378000",
+    "content": "Coverage target enforcement for code_forge now uses explicit source-scoped coverage and fail-under threshold in CI workflows, with local command documented in README.",
+    "created_at": "2026-02-22T20:09:37.984246",
+    "last_accessed": "2026-02-22T20:09:37.984252",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.84,
+    "ttl_seconds": 86400,
+    "tags": [
+      "workflow",
+      "ci",
+      "quality-gate",
+      "code_forge",
+      "coverage"
+    ],
+    "linked_memories": []
   }
 ]
