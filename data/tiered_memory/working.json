@@ -715,5 +715,26 @@
       "search"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "47228dfc-bbbd-4a93-a27a-3a6d9a059e0b",
+    "content": "Cycle result: eidos_mcp now resolves transport/mount/origin/rate-limit/oauth/runtime host-port settings from GIS namespace mcp.* with env overrides; defaults remain stable for Termux and Linux.",
+    "created_at": "2026-02-22T13:26:27.457671",
+    "last_accessed": "2026-02-22T13:26:27.457687",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "tests",
+      "eidos_mcp",
+      "config",
+      "gis",
+      "termux"
+    ],
+    "linked_memories": []
   }
 ]

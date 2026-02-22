@@ -81,7 +81,8 @@ python -m eidos_mcp.eidos_mcp_server
 ```
 
 ## 🛠️ Configuration
-Configuration is loaded from the **GIS** (Global Info System) or `config.json`.
+Configuration is loaded from the **GIS** (Global Info System) first, with environment
+variables overriding GIS values at runtime.
 Key env vars (all default-safe):
 - `EIDOS_MCP_TRANSPORT` (`stdio`|`sse`|`streamable-http`)
 - `EIDOS_MCP_MOUNT_PATH` (default `/mcp`, StreamableHTTP endpoint path)
@@ -102,6 +103,13 @@ Key env vars (all default-safe):
 - `EIDOS_GRAPHRAG_ROOT` (optional GraphRAG workspace override; default `graphrag_workspace`, fallback `graphrag`)
 - `EIDOS_GRAPHRAG_TIMEOUT_SEC` (GraphRAG subprocess timeout used by knowledge router; default `900`)
 - `EIDOS_OAUTH2_PROVIDER` (`google`|empty), `EIDOS_OAUTH2_AUDIENCE`, `EIDOS_OAUTH2_STATIC_BEARER`
+
+GIS keys mirror these settings under the `mcp.*` namespace, for example:
+- `mcp.transport`, `mcp.mount_path`, `mcp.stateless_http`
+- `mcp.host`, `mcp.port`, `mcp.log_level`, `mcp.reload`
+- `mcp.allowed_origins`, `mcp.enable_compat_headers`, `mcp.enable_session_recovery`
+- `mcp.rate_limit_global_per_min`, `mcp.rate_limit_per_tool_per_min`
+- `mcp.oauth.provider`, `mcp.oauth.audience`, `mcp.oauth.static_bearer`
 
 `run_server.sh` defaults `EIDOS_MCP_STATELESS_HTTP=1` for Codex/Gemini compatibility.
 If `FASTMCP_PORT`/`EIDOS_MCP_PORT` are unset or empty, the server falls back to

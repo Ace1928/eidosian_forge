@@ -1484,6 +1484,19 @@
         ]
       },
       "links": []
+    },
+    "9e993517-4f30-409d-b1a2-25a0ef8dad35": {
+      "id": "9e993517-4f30-409d-b1a2-25a0ef8dad35",
+      "content": "eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence.",
+      "metadata": {
+        "tags": [
+          "runtime",
+          "configuration",
+          "eidos_mcp",
+          "gis"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -15,6 +15,7 @@ from .models import (
     get_embedding,
     model_config,
 )
+from .runtime import DEFAULT_ALLOWED_ORIGINS, RuntimeConfig, load_runtime_config
 
 __all__ = [
     "ModelConfig",
@@ -26,4 +27,7 @@ __all__ = [
     "InferenceConfig",
     "EmbeddingConfig",
     "FastEmbeddingConfig",
+    "RuntimeConfig",
+    "DEFAULT_ALLOWED_ORIGINS",
+    "load_runtime_config",
 ]

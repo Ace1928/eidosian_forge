@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -15,12 +14,12 @@ setup_logging()
 
 import uvicorn
 from eidosian_core import eidosian
-from eidosian_core.ports import get_service_port
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from . import routers as _routers  # noqa: F401
+from .config.runtime import RuntimeConfig, load_runtime_config
 from . import state as _forge_state
 from .core import list_tool_metadata, mcp, resource
 from .plugins import init_plugins, list_plugins, list_tools
@@ -143,10 +142,8 @@ def _persona_payload() -> str:
     return body
 
 
-def _is_truthy(value: Optional[str], default: bool = False) -> bool:
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+def _runtime_config() -> RuntimeConfig:
+    return load_runtime_config(gis=gis)
 
 
 def _merge_accept_header(current: str, required_types: Sequence[str]) -> str:
@@ -265,10 +262,11 @@ class MCPHealthMiddleware:
             method = (scope.get("method") or "").upper()
             path = scope.get("path") or ""
             if method == "GET" and path in {"/health", "/healthz"}:
+                cfg = _runtime_config()
                 response = JSONResponse(
                     {
                         "status": "ok",
-                        "transport": os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http"),
+                        "transport": cfg.transport,
                         "streamable_http_path": mcp.settings.streamable_http_path,
                         "stateless_http": mcp.settings.stateless_http,
                         "tool_count": len(list_tool_metadata()),
@@ -627,7 +625,9 @@ def _build_streamable_http_app(
     enable_session_recovery: Optional[bool] = None,
     enable_error_response_compat: Optional[bool] = None,
     enforce_origin: Optional[bool] = None,
+    runtime_config: Optional[RuntimeConfig] = None,
 ) -> ASGIApp:
+    cfg = runtime_config or _runtime_config()
     if mcp.settings.streamable_http_path != mount_path:
         mcp.settings.streamable_http_path = mount_path
         mcp._session_manager = None  # type: ignore[attr-defined]
@@ -636,43 +636,15 @@ def _build_streamable_http_app(
     app = MCPHealthMiddleware(app)
 
     if enable_compat_headers is None:
-        enable_compat_headers = _is_truthy(
-            os.environ.get("EIDOS_MCP_ENABLE_COMPAT_HEADERS"),
-            default=True,
-        )
+        enable_compat_headers = cfg.enable_compat_headers
     if enable_error_response_compat is None:
-        enable_error_response_compat = _is_truthy(
-            os.environ.get("EIDOS_MCP_ENABLE_ERROR_RESPONSE_COMPAT"),
-            default=True,
-        )
+        enable_error_response_compat = cfg.enable_error_response_compat
     if enable_session_recovery is None:
-        enable_session_recovery = _is_truthy(
-            os.environ.get("EIDOS_MCP_ENABLE_SESSION_RECOVERY"),
-            default=True,
-        )
+        enable_session_recovery = cfg.enable_session_recovery
     if enforce_origin is None:
-        enforce_origin = _is_truthy(
-            os.environ.get("EIDOS_MCP_ENFORCE_ORIGIN"),
-            default=True,
-        )
-    enable_transport_audit = _is_truthy(
-        os.environ.get("EIDOS_MCP_AUDIT_TRANSPORT"),
-        default=True,
-    )
-    default_allowed_origins = {
-        "http://127.0.0.1",
-        "http://localhost",
-        "http://[::1]",
-        "https://127.0.0.1",
-        "https://localhost",
-        "https://[::1]",
-    }
-    raw_allowed_origins = os.environ.get("EIDOS_MCP_ALLOWED_ORIGINS", "")
-    allowed_origins = (
-        {value.strip().lower() for value in raw_allowed_origins.split(",") if value.strip()}
-        if raw_allowed_origins.strip()
-        else default_allowed_origins
-    )
+        enforce_origin = cfg.enforce_origin
+    enable_transport_audit = cfg.audit_transport
+    allowed_origins = set(cfg.allowed_origins)
 
     if enable_compat_headers:
         app = MCPHeaderCompatibilityMiddleware(app, mount_path)
@@ -695,19 +667,17 @@ def _build_streamable_http_app(
 
 
 # Define app globally for uvicorn reload support
-mount_path = os.environ.get("EIDOS_MCP_MOUNT_PATH", "/mcp")
-app = _build_streamable_http_app(mount_path)
+_RUNTIME_CONFIG = _runtime_config()
+mount_path = _RUNTIME_CONFIG.mount_path
+app = _build_streamable_http_app(mount_path, runtime_config=_RUNTIME_CONFIG)
 
 
 def _run_streamable_http_server(mount_path: str) -> None:
-    host = os.environ.get("FASTMCP_HOST", "127.0.0.1")
-    port = get_service_port(
-        "eidos_mcp",
-        default=8928,
-        env_keys=("FASTMCP_PORT", "EIDOS_MCP_PORT"),
-    )
-    log_level = os.environ.get("FASTMCP_LOG_LEVEL", "info").lower()
-    reload = os.environ.get("FASTMCP_RELOAD", "false").lower() == "true"
+    cfg = _runtime_config()
+    host = cfg.host
+    port = cfg.port
+    log_level = cfg.log_level
+    reload = cfg.reload
 
     if reload:
         uvicorn.run("eidos_mcp.eidos_mcp_server:app", host=host, port=port, log_level=log_level, reload=True)
@@ -760,10 +730,11 @@ def resource_todo() -> str:
 @eidosian()
 @mcp.custom_route("/health", methods=["GET"])
 async def health_check(_request):
+    cfg = _runtime_config()
     return JSONResponse(
         {
             "status": "ok",
-            "transport": os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http"),
+            "transport": cfg.transport,
             "streamable_http_path": mcp.settings.streamable_http_path,
             "stateless_http": mcp.settings.stateless_http,
             "tool_count": len(list_tool_metadata()),
@@ -783,15 +754,16 @@ def _extract_bearer(header_value: Optional[str]) -> Optional[str]:
 
 
 def _verify_static_token(token: str) -> Optional[Dict[str, Any]]:
-    expected = os.environ.get("EIDOS_OAUTH2_STATIC_BEARER")
+    expected = _runtime_config().oauth_static_bearer
     if expected and token == expected:
         return {"sub": "static", "provider": "static", "scope": "full"}
     return None
 
 
 def _verify_google_token(token: str) -> Optional[Dict[str, Any]]:
-    provider = os.environ.get("EIDOS_OAUTH2_PROVIDER", "").lower()
-    audience = os.environ.get("EIDOS_OAUTH2_AUDIENCE")
+    cfg = _runtime_config()
+    provider = cfg.oauth_provider
+    audience = cfg.oauth_audience
     if provider != "google" or not audience:
         return None
     if not (id_token and google_requests):
@@ -821,8 +793,9 @@ async def auth_verify(request: Request):
 @eidosian()
 def main() -> None:
     """Run the Eidosian MCP server (streamable-http)."""
-    transport = os.environ.get("EIDOS_MCP_TRANSPORT", "streamable-http")
-    mount_path = os.environ.get("EIDOS_MCP_MOUNT_PATH", "/mcp")
+    cfg = _runtime_config()
+    transport = cfg.transport
+    mount_path = cfg.mount_path
     log_debug(f"Starting Eidosian MCP Server (Transport: {transport}, Mount: {mount_path})...")
     log_startup(transport)
     try:

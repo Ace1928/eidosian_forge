@@ -2,41 +2,29 @@ from __future__ import annotations
 
 import functools
 import inspect
-import os
 import threading
 import time
 from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional, Union, get_args, get_origin
 
 from eidosian_core import eidosian
-from eidosian_core.ports import get_service_port
 from mcp.server.fastmcp import FastMCP
 
+from .config.runtime import load_runtime_config
 from .logging_utils import log_resource_read, log_tool_call
 
-_FASTMCP_HOST = os.environ.get("FASTMCP_HOST", "127.0.0.1")
-_FASTMCP_PORT = get_service_port(
-    "eidos_mcp",
-    default=8928,
-    env_keys=("FASTMCP_PORT", "EIDOS_MCP_PORT"),
-)
-_FASTMCP_STREAMABLE_HTTP_PATH = os.environ.get("FASTMCP_STREAMABLE_HTTP_PATH", "/mcp")
+try:
+    from .state import gis as _gis
+except Exception:  # pragma: no cover - defensive import fallback
+    _gis = None
 
-
-def _env_truthy(key: str, default: bool = False) -> bool:
-    value = os.environ.get(key)
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-_FASTMCP_STATELESS_HTTP = _env_truthy("EIDOS_MCP_STATELESS_HTTP", default=False)
+_RUNTIME_CONFIG = load_runtime_config(gis=_gis)
 mcp = FastMCP(
     "Eidosian Nexus",
-    host=_FASTMCP_HOST,
-    port=_FASTMCP_PORT,
-    streamable_http_path=_FASTMCP_STREAMABLE_HTTP_PATH,
-    stateless_http=_FASTMCP_STATELESS_HTTP,
+    host=_RUNTIME_CONFIG.host,
+    port=_RUNTIME_CONFIG.port,
+    streamable_http_path=_RUNTIME_CONFIG.mount_path,
+    stateless_http=_RUNTIME_CONFIG.stateless_http,
 )
 
 _TOOL_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -123,8 +111,8 @@ def _infer_parameters(func) -> Dict[str, Any]:
     return schema
 
 
-_RATE_LIMIT_GLOBAL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_GLOBAL_PER_MIN", "600")))
-_RATE_LIMIT_PER_TOOL_PER_MIN = max(0, int(os.environ.get("EIDOS_MCP_RATE_LIMIT_PER_TOOL_PER_MIN", "300")))
+_RATE_LIMIT_GLOBAL_PER_MIN = _RUNTIME_CONFIG.rate_limit_global_per_min
+_RATE_LIMIT_PER_TOOL_PER_MIN = _RUNTIME_CONFIG.rate_limit_per_tool_per_min
 _RATE_LIMIT_LOCK = threading.Lock()
 _RATE_LIMIT_GLOBAL_TS: deque[float] = deque()
 _RATE_LIMIT_TOOL_TS: dict[str, deque[float]] = defaultdict(deque)

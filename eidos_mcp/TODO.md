@@ -6,8 +6,7 @@
 
 ## 🟡 Medium Priority
 - [x] **Testing**: Mock the other Forges to test the MCP server in isolation.
-- [ ] **Configuration**: Unify config loading completely via `gis_forge`.
+- [x] ~~**Configuration**: Unify config loading completely via `gis_forge`.~~
 
 ## 🟢 Low Priority
 - [ ] **ChatMock**: Evaluate if `ChatMock` should be its own Forge or stay in `projects/`.
-
