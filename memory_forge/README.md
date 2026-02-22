@@ -55,6 +55,12 @@ for r in results:
 ```bash
 # Search memory via CLI shim
 python -m memory_forge.cli search "project status"
+
+# Preview semantic compression opportunities for old memories
+python -m memory_forge.cli compress --older-than-days 30 --dry-run
+
+# Apply non-destructive semantic compression (marks source memories and writes summary memories)
+python -m memory_forge.cli compress --older-than-days 30 --similarity-threshold 0.55
 ```
 
 ## 🛠️ Configuration

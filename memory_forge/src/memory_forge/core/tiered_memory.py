@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Set
@@ -463,6 +463,140 @@ class TieredMemorySystem:
         return removed
 
     @eidosian()
+    def semantic_compress_old_memories(
+        self,
+        older_than_days: int = 30,
+        similarity_threshold: float = 0.55,
+        min_cluster_size: int = 3,
+        max_clusters: int = 50,
+        dry_run: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Semantically compress older memories into long-term summary memories.
+
+        The operation is idempotent and non-destructive:
+        - source memories are retained
+        - compressed sources are tagged with `compressed_into`
+        - generated summaries are marked with `is_compressed`
+        """
+        older_than_days = max(0, int(older_than_days))
+        min_cluster_size = max(2, int(min_cluster_size))
+        max_clusters = max(1, int(max_clusters))
+
+        cutoff = datetime.now() - timedelta(days=older_than_days)
+        candidates: List[TieredMemoryItem] = []
+        for tier in (MemoryTier.WORKING, MemoryTier.LONG_TERM):
+            for item in self.tiers[tier].values():
+                if item.created_at > cutoff:
+                    continue
+                if item.metadata.get("is_compressed"):
+                    continue
+                if item.metadata.get("compressed_into"):
+                    continue
+                if item.memory_type not in (MemoryType.EPISODIC, MemoryType.SEMANTIC):
+                    continue
+                candidates.append(item)
+
+        if len(candidates) < min_cluster_size:
+            return {
+                "eligible_memories": len(candidates),
+                "potential_clusters": 0,
+                "clusters_created": 0,
+                "summaries_created": 0,
+                "source_marked": 0,
+                "dry_run": dry_run,
+            }
+
+        sorted_candidates = sorted(candidates, key=lambda item: item.created_at)
+        pending = {item.id for item in sorted_candidates}
+        by_id = {item.id: item for item in sorted_candidates}
+        clusters: List[List[TieredMemoryItem]] = []
+
+        for item in sorted_candidates:
+            if item.id not in pending:
+                continue
+            pending.remove(item.id)
+            cluster = [item]
+            for other in sorted_candidates:
+                if other.id not in pending:
+                    continue
+                if self._memory_similarity(item, other) >= similarity_threshold:
+                    cluster.append(other)
+                    pending.remove(other.id)
+            if len(cluster) >= min_cluster_size:
+                clusters.append(cluster)
+                if len(clusters) >= max_clusters:
+                    break
+            else:
+                # Keep non-clustered memories available as future anchors.
+                for member in cluster[1:]:
+                    pending.add(member.id)
+
+        if dry_run:
+            return {
+                "eligible_memories": len(candidates),
+                "potential_clusters": len(clusters),
+                "clusters_created": 0,
+                "summaries_created": 0,
+                "source_marked": 0,
+                "dry_run": True,
+            }
+
+        summaries_created = 0
+        source_marked = 0
+        touched_tiers: Set[MemoryTier] = set()
+
+        for cluster in clusters:
+            source_ids = [member.id for member in cluster]
+            summary_content = self._semantic_cluster_summary(cluster)
+            summary_tags: Set[str] = {"compressed", "semantic-summary", "auto-compressed"}
+            for member in cluster:
+                summary_tags.update({tag for tag in member.tags if tag})
+
+            summary_id = self.remember(
+                content=summary_content,
+                tier=MemoryTier.LONG_TERM,
+                namespace=MemoryNamespace.KNOWLEDGE,
+                memory_type=MemoryType.SEMANTIC,
+                importance=max(member.importance for member in cluster),
+                tags=summary_tags,
+                metadata={
+                    "is_compressed": True,
+                    "compression_schema": "semantic_v1",
+                    "source_ids": source_ids,
+                    "cluster_size": len(cluster),
+                    "older_than_days": older_than_days,
+                    "similarity_threshold": similarity_threshold,
+                    "compressed_at": datetime.now().isoformat(),
+                },
+            )
+            summaries_created += 1
+
+            for source_id in source_ids:
+                source_item = by_id.get(source_id)
+                if source_item is None:
+                    source_item = self._find_memory(source_id)
+                if source_item is None:
+                    continue
+                source_item.metadata["compressed_into"] = summary_id
+                source_item.metadata["compressed_at"] = datetime.now().isoformat()
+                source_item.tags.add("compressed_source")
+                touched_tiers.add(source_item.tier)
+                source_marked += 1
+
+        for tier in touched_tiers:
+            self._persist_tier(tier)
+
+        return {
+            "eligible_memories": len(candidates),
+            "potential_clusters": len(clusters),
+            "clusters_created": len(clusters),
+            "summaries_created": summaries_created,
+            "source_marked": source_marked,
+            "dry_run": False,
+        }
+
+    @eidosian()
     def stats(self) -> Dict[str, Any]:
         """Return memory system statistics."""
         stats = {
@@ -563,6 +697,34 @@ class TieredMemorySystem:
                 score += 0.5
 
         return score
+
+    def _memory_similarity(self, item_a: TieredMemoryItem, item_b: TieredMemoryItem) -> float:
+        """Similarity for compression clustering (embedding-first, lexical fallback)."""
+        if item_a.embedding and item_b.embedding and len(item_a.embedding) == len(item_b.embedding):
+            return self._cosine_similarity(item_a.embedding, item_b.embedding)
+        tokens_a = self._tokenize(item_a.content)
+        tokens_b = self._tokenize(item_b.content)
+        if not tokens_a or not tokens_b:
+            return 0.0
+        overlap = len(tokens_a & tokens_b)
+        union = len(tokens_a | tokens_b)
+        if union == 0:
+            return 0.0
+        return overlap / union
+
+    def _semantic_cluster_summary(self, cluster: List[TieredMemoryItem]) -> str:
+        """Build deterministic summary text for a semantic compression cluster."""
+        ordered = sorted(cluster, key=lambda item: item.created_at)
+        preview = [item.content.strip().replace("\n", " ")[:220] for item in ordered[:12]]
+        return "\n".join(
+            [
+                f"Semantic compression summary for {len(cluster)} related memories:",
+                *[f"- {line}" for line in preview if line],
+            ]
+        )
+
+    def _tokenize(self, text: str) -> Set[str]:
+        return {token.strip(".,:;!?()[]{}\"'").lower() for token in text.split() if token.strip()}
 
     def _persist_tier(self, tier: MemoryTier) -> None:
         """Save a specific tier to disk."""

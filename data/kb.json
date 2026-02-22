@@ -1497,6 +1497,19 @@
         ]
       },
       "links": []
+    },
+    "93db8a5b-9665-452c-8c08-63c9dcdf52b9": {
+      "id": "93db8a5b-9665-452c-8c08-63c9dcdf52b9",
+      "content": "memory_forge now supports CLI semantic compression command with dry-run and clustering controls for old memory consolidation.",
+      "metadata": {
+        "tags": [
+          "compression",
+          "memory_forge",
+          "tiered_memory",
+          "cli"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

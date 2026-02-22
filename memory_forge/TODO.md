@@ -10,4 +10,4 @@
 
 ## 🟢 Low Priority
 - [x] **Benchmarks**: Use `benchmarks/` folder to measure read/write latency.
-- [ ] **Compression**: Implement semantic compression for old memories.
+- [x] ~~**Compression**: Implement semantic compression for old memories.~~

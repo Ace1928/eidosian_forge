@@ -203,6 +203,42 @@ class MemoryForgeCLI(StandardCLI):
         )
         cleanup_parser.set_defaults(func=self._cmd_cleanup)
 
+        # Semantic compression command
+        compress_parser = subparsers.add_parser(
+            "compress",
+            help="Semantic compression for old memories (non-destructive)",
+        )
+        compress_parser.add_argument(
+            "--older-than-days",
+            type=int,
+            default=30,
+            help="Only consider memories older than N days (default: 30)",
+        )
+        compress_parser.add_argument(
+            "--similarity-threshold",
+            type=float,
+            default=0.55,
+            help="Cluster similarity threshold 0-1 (default: 0.55)",
+        )
+        compress_parser.add_argument(
+            "--min-cluster-size",
+            type=int,
+            default=3,
+            help="Minimum cluster size to compress (default: 3)",
+        )
+        compress_parser.add_argument(
+            "--max-clusters",
+            type=int,
+            default=50,
+            help="Maximum clusters per run (default: 50)",
+        )
+        compress_parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Preview clusters without writing changes",
+        )
+        compress_parser.set_defaults(func=self._cmd_compress)
+
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
         """Check memory system status."""
@@ -389,6 +425,24 @@ class MemoryForgeCLI(StandardCLI):
             True,
             f"Cleanup complete - removed {removed} expired memories",
             {"before": before, "after": after, "removed": removed},
+        )
+        self._output(result, args)
+
+    def _cmd_compress(self, args) -> None:
+        """Run semantic compression for old memories."""
+        report = self.memory.semantic_compress_old_memories(
+            older_than_days=args.older_than_days,
+            similarity_threshold=args.similarity_threshold,
+            min_cluster_size=args.min_cluster_size,
+            max_clusters=args.max_clusters,
+            dry_run=args.dry_run,
+        )
+        if not args.dry_run:
+            self.memory.save_all()
+        result = CommandResult(
+            True,
+            "Semantic compression completed" if not args.dry_run else "Semantic compression dry run completed",
+            report,
         )
         self._output(result, args)
 
