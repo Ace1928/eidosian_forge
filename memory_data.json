@@ -1565,5 +1565,34 @@
       0.792156862745098,
       0.5764705882352941
     ]
+  },
+  "1fefe9d6-5b5e-4c25-acf3-21c01dada14c": {
+    "id": "1fefe9d6-5b5e-4c25-acf3-21c01dada14c",
+    "content": "Completed knowledge_forge RDF export/import implementation cycle: added class methods for RDF roundtrip, CLI commands export-rdf/import-rdf, tests, README, and TODO update.",
+    "created_at": "2026-02-22T18:06:09.951257",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "knowledge_forge_rdf_roundtrip_2026-02-22"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.6784313725490196,
+      0.20784313725490197,
+      0.25098039215686274,
+      0.8117647058823529,
+      0.9882352941176471,
+      0.6352941176470588,
+      0.5607843137254902,
+      0.2784313725490196,
+      0.4196078431372549,
+      0.9137254901960784,
+      0.16470588235294117,
+      0.8980392156862745,
+      0.9764705882352941,
+      0.6980392156862745,
+      1.0,
+      0.6549019607843137
+    ]
   }
 }

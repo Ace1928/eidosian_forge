@@ -5,7 +5,7 @@
 - [x] **Integration**: Created `GraphRAGIntegration` bridge.
 
 ## 🟡 Medium Priority
-- [ ] **Standards**: Implement RDFLib export/import.
+- [x] ~~**Standards**: Implement RDFLib export/import.~~
 - [ ] **Visualization**: Add `pyvis` support for interactive graph exploration.
 
 ## 🟢 Low Priority

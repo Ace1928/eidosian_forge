@@ -184,3 +184,124 @@ class KnowledgeForge:
             "concept_count": len(self.concept_map),
             "concepts": list(self.concept_map.keys()),
         }
+
+    @eidosian()
+    def export_rdf(self, output_path: Union[str, Path], format: str = "turtle") -> Dict[str, Any]:
+        """
+        Export knowledge graph as RDF using rdflib.
+
+        Requires `rdflib` optional dependency.
+        """
+        try:
+            from rdflib import Graph, Literal, Namespace, RDF, URIRef
+        except Exception as exc:
+            raise RuntimeError("RDF export requires rdflib. Install knowledge_forge[rdf].") from exc
+
+        graph = Graph()
+        eidos_ns = Namespace("https://eidosian.dev/knowledge#")
+        graph.bind("eidos", eidos_ns)
+
+        concept_index: Dict[str, Set[str]] = {}
+        for concept, node_ids in self.concept_map.items():
+            concept_index[concept] = set(node_ids)
+
+        def node_uri(node_id: str):
+            return URIRef(f"urn:eidos:knowledge:node:{node_id}")
+
+        for node in self.nodes.values():
+            subject = node_uri(node.id)
+            graph.add((subject, RDF.type, eidos_ns.KnowledgeNode))
+            graph.add((subject, eidos_ns.content, Literal(str(node.content))))
+            if node.metadata:
+                graph.add((subject, eidos_ns.metadataJson, Literal(json.dumps(node.metadata, sort_keys=True))))
+            for tag in sorted(node.tags):
+                graph.add((subject, eidos_ns.tag, Literal(tag)))
+            for concept, node_ids in concept_index.items():
+                if node.id in node_ids:
+                    graph.add((subject, eidos_ns.hasConcept, Literal(concept)))
+            for linked_id in sorted(node.links):
+                graph.add((subject, eidos_ns.linkedTo, node_uri(linked_id)))
+
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        graph.serialize(destination=str(output), format=format)
+        return {
+            "path": str(output),
+            "format": format,
+            "node_count": len(self.nodes),
+            "triple_count": len(graph),
+        }
+
+    @eidosian()
+    def import_rdf(self, input_path: Union[str, Path], format: Optional[str] = None, merge: bool = False) -> Dict[str, Any]:
+        """
+        Import knowledge graph from RDF using rdflib.
+
+        Requires `rdflib` optional dependency.
+        """
+        try:
+            from rdflib import Graph, Namespace, RDF
+        except Exception as exc:
+            raise RuntimeError("RDF import requires rdflib. Install knowledge_forge[rdf].") from exc
+
+        graph = Graph()
+        graph.parse(str(input_path), format=format)
+        eidos_ns = Namespace("https://eidosian.dev/knowledge#")
+
+        if not merge:
+            self.nodes = {}
+            self.concept_map = {}
+
+        def extract_node_id(subject: Any) -> str:
+            text = str(subject)
+            marker = "urn:eidos:knowledge:node:"
+            if marker in text:
+                return text.split(marker, 1)[1]
+            return text.rsplit(":", 1)[-1]
+
+        subjects = set(graph.subjects(RDF.type, eidos_ns.KnowledgeNode))
+        subjects.update(graph.subjects(eidos_ns.content, None))
+
+        imported = 0
+        for subject in subjects:
+            node_id = extract_node_id(subject)
+            content_literal = next(iter(graph.objects(subject, eidos_ns.content)), None)
+            if content_literal is None:
+                continue
+            metadata: Dict[str, Any] = {}
+            metadata_literal = next(iter(graph.objects(subject, eidos_ns.metadataJson)), None)
+            if metadata_literal is not None:
+                try:
+                    metadata = json.loads(str(metadata_literal))
+                except Exception:
+                    metadata = {}
+
+            node = KnowledgeNode(str(content_literal), metadata)
+            node.id = node_id
+            node.tags = {str(tag) for tag in graph.objects(subject, eidos_ns.tag)}
+            self.nodes[node.id] = node
+            imported += 1
+
+        self.concept_map = {}
+        for subject in subjects:
+            source_id = extract_node_id(subject)
+            if source_id not in self.nodes:
+                continue
+            source = self.nodes[source_id]
+            for concept in graph.objects(subject, eidos_ns.hasConcept):
+                concept_name = str(concept)
+                self.concept_map.setdefault(concept_name, []).append(source_id)
+            for target in graph.objects(subject, eidos_ns.linkedTo):
+                target_id = extract_node_id(target)
+                if target_id in self.nodes:
+                    source.links.add(target_id)
+
+        if self.persistence_path:
+            self.save()
+
+        return {
+            "path": str(input_path),
+            "format": format or "auto",
+            "imported_nodes": imported,
+            "concept_count": len(self.concept_map),
+        }

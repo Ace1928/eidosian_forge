@@ -220,6 +220,43 @@ class KnowledgeForgeCLI(StandardCLI):
         )
         delete_parser.set_defaults(func=self._cmd_delete)
 
+        # RDF export command
+        export_rdf_parser = subparsers.add_parser(
+            "export-rdf",
+            help="Export knowledge graph to RDF (requires rdflib)",
+        )
+        export_rdf_parser.add_argument(
+            "path",
+            help="Output RDF file path",
+        )
+        export_rdf_parser.add_argument(
+            "--format",
+            default="turtle",
+            help="RDF serialization format (default: turtle)",
+        )
+        export_rdf_parser.set_defaults(func=self._cmd_export_rdf)
+
+        # RDF import command
+        import_rdf_parser = subparsers.add_parser(
+            "import-rdf",
+            help="Import knowledge graph from RDF (requires rdflib)",
+        )
+        import_rdf_parser.add_argument(
+            "path",
+            help="Input RDF file path",
+        )
+        import_rdf_parser.add_argument(
+            "--format",
+            default=None,
+            help="Optional RDF format override (default: auto-detect)",
+        )
+        import_rdf_parser.add_argument(
+            "--merge",
+            action="store_true",
+            help="Merge into existing graph instead of replacing current nodes",
+        )
+        import_rdf_parser.set_defaults(func=self._cmd_import_rdf)
+
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
         """Show knowledge graph status."""
@@ -450,6 +487,24 @@ class KnowledgeForgeCLI(StandardCLI):
                     result = CommandResult(False, "Delete failed")
         except Exception as e:
             result = CommandResult(False, f"Error: {e}")
+        self._output(result, args)
+
+    def _cmd_export_rdf(self, args) -> None:
+        """Export graph to RDF."""
+        try:
+            report = self.kb.export_rdf(args.path, format=args.format)
+            result = CommandResult(True, "RDF export complete", report)
+        except Exception as e:
+            result = CommandResult(False, f"RDF export error: {e}")
+        self._output(result, args)
+
+    def _cmd_import_rdf(self, args) -> None:
+        """Import graph from RDF."""
+        try:
+            report = self.kb.import_rdf(args.path, format=args.format, merge=args.merge)
+            result = CommandResult(True, "RDF import complete", report)
+        except Exception as e:
+            result = CommandResult(False, f"RDF import error: {e}")
         self._output(result, args)
 
     def _find_node_by_prefix(self, prefix: str) -> Optional[str]:

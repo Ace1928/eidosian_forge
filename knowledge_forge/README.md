@@ -46,6 +46,10 @@ GraphRAG subprocess timeout is controlled by:
 ./eidosian_venv/bin/knowledge-forge status
 ./eidosian_venv/bin/knowledge-forge search "workspace competition"
 ./eidosian_venv/bin/knowledge-forge unified "memory bridge"
+
+# RDF import/export (requires `knowledge_forge[rdf]`)
+./eidosian_venv/bin/knowledge-forge export-rdf ./data/kb.ttl --format turtle
+./eidosian_venv/bin/knowledge-forge import-rdf ./data/kb.ttl --format turtle
 ```
 
 ## Test
