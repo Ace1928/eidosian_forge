@@ -73,3 +73,34 @@ def test_validate_roundtrip_workspace_fail_on_mutated_manifest(tmp_path: Path) -
     report = validate_roundtrip_workspace(workspace, verify_hashes=True)
     assert report["pass"] is False
     assert any("hash mismatch" in err for err in report["errors"])
+
+
+def test_validate_roundtrip_workspace_fail_on_missing_signature(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _make_repo(repo)
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    workspace = tmp_path / "roundtrip"
+
+    run_roundtrip_pipeline(
+        root_path=repo,
+        db=db,
+        runner=runner,
+        workspace_dir=workspace,
+        mode="analysis",
+        extensions=[".py"],
+        progress_every=1,
+        strict_validation=True,
+        apply=False,
+    )
+
+    summary_path = workspace / "roundtrip_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary.pop("signature", None)
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+
+    report = validate_roundtrip_workspace(workspace, verify_hashes=False)
+    assert report["pass"] is False
+    assert any("summary.signature must be object" in err for err in report["errors"])

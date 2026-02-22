@@ -965,5 +965,27 @@
       "coverage"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "df8556f2-15ca-4179-b1df-5908dab09e10",
+    "content": "Code forge roundtrip contract hardened with signed artifacts and signature validation checks; tests updated for missing-signature failures and end-to-end parity still passes.",
+    "created_at": "2026-02-22T20:27:20.589211",
+    "last_accessed": "2026-02-22T20:27:20.589219",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "validation",
+      "security",
+      "roundtrip",
+      "code_forge",
+      "schema",
+      "signature"
+    ],
+    "linked_memories": []
   }
 ]

@@ -1646,6 +1646,20 @@
         ]
       },
       "links": []
+    },
+    "44eb1c0f-bdc5-4622-900f-b265cc8817ca": {
+      "id": "44eb1c0f-bdc5-4622-900f-b265cc8817ca",
+      "content": "Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks.",
+      "metadata": {
+        "tags": [
+          "security",
+          "roundtrip",
+          "tamper-detection",
+          "code_forge",
+          "signature"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

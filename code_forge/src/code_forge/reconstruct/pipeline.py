@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
 import shutil
 import time
 import uuid
@@ -77,6 +79,34 @@ def _write_json(path: Path, payload: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return path
+
+
+def _canonical_payload_bytes(payload: dict[str, Any]) -> bytes:
+    # Signature is computed over canonical JSON without the signature envelope.
+    unsigned = dict(payload)
+    unsigned.pop("signature", None)
+    return json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _attach_artifact_signature(payload: dict[str, Any]) -> dict[str, Any]:
+    canonical = _canonical_payload_bytes(payload)
+    payload_sha256 = _sha256_bytes(canonical)
+    signing_key = os.environ.get("EIDOS_CODE_FORGE_SIGNING_KEY")
+    key_id = os.environ.get("EIDOS_CODE_FORGE_SIGNING_KEY_ID")
+    algorithm = "sha256"
+    digest = payload_sha256
+    if signing_key:
+        algorithm = "hmac-sha256"
+        digest = hmac.new(signing_key.encode("utf-8"), canonical, hashlib.sha256).hexdigest()
+    signed = dict(payload)
+    signed["signature"] = {
+        "algorithm": algorithm,
+        "digest": digest,
+        "payload_sha256": payload_sha256,
+        "key_id": key_id if key_id else None,
+        "signed_at": _utc_now(),
+    }
+    return signed
 
 
 def build_reconstruction_from_library(
@@ -169,6 +199,7 @@ def build_reconstruction_from_library(
         "skipped": skipped,
     }
 
+    manifest = _attach_artifact_signature(manifest)
     manifest_path = output_dir / "reconstruction_manifest.json"
     _write_json(manifest_path, manifest)
     manifest["manifest_path"] = str(manifest_path)
@@ -224,6 +255,7 @@ def compare_tree_parity(
         "hash_mismatches": mismatched,
         "pass": not missing_in_reconstruction and not extra_in_reconstruction and not mismatched,
     }
+    parity = _attach_artifact_signature(parity)
     if report_path is not None:
         report_path = Path(report_path).resolve()
         _write_json(report_path, parity)
@@ -353,6 +385,7 @@ def apply_reconstruction(
         "noop": not changed_or_new and not removed,
     }
 
+    report = _attach_artifact_signature(report)
     if transaction_dir.exists():
         _write_json(transaction_dir / "apply_report.json", report)
     return report
@@ -456,7 +489,6 @@ def run_roundtrip_pipeline(
         "apply": apply_report,
     }
 
-    _write_json(summary_path, summary)
     provenance = write_provenance_links(
         output_path=workspace_dir / "provenance_links.json",
         stage="roundtrip",
@@ -492,6 +524,7 @@ def run_roundtrip_pipeline(
         benchmark_payload=benchmark_payload,
     )
     summary["provenance_registry_path"] = registry.get("path")
+    summary = _attach_artifact_signature(summary)
     _write_json(summary_path, summary)
     summary["summary_path"] = str(summary_path)
     return summary

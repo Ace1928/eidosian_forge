@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
+import os
+import re
 from pathlib import Path
 from typing import Any, Optional
 
@@ -37,6 +40,50 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _canonical_payload_bytes(payload: dict[str, Any]) -> bytes:
+    unsigned = dict(payload)
+    unsigned.pop("signature", None)
+    return json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _validate_signature(payload: dict[str, Any], errors: list[str], prefix: str) -> None:
+    signature = payload.get("signature")
+    _require(isinstance(signature, dict), errors, f"{prefix}.signature must be object")
+    if not isinstance(signature, dict):
+        return
+
+    algorithm = signature.get("algorithm")
+    digest = signature.get("digest")
+    payload_sha256 = signature.get("payload_sha256")
+    _require(isinstance(algorithm, str), errors, f"{prefix}.signature.algorithm must be string")
+    _require(isinstance(digest, str), errors, f"{prefix}.signature.digest must be string")
+    _require(isinstance(payload_sha256, str), errors, f"{prefix}.signature.payload_sha256 must be string")
+    if not (isinstance(algorithm, str) and isinstance(digest, str) and isinstance(payload_sha256, str)):
+        return
+    _require(bool(_HEX64.match(payload_sha256)), errors, f"{prefix}.signature.payload_sha256 must be 64-char hex")
+    _require(bool(_HEX64.match(digest)), errors, f"{prefix}.signature.digest must be 64-char hex")
+
+    canonical = _canonical_payload_bytes(payload)
+    expected_sha = hashlib.sha256(canonical).hexdigest()
+    if payload_sha256 != expected_sha:
+        errors.append(f"{prefix}.signature.payload_sha256 mismatch")
+
+    if algorithm == "sha256":
+        if digest != expected_sha:
+            errors.append(f"{prefix}.signature.digest mismatch for sha256")
+    elif algorithm == "hmac-sha256":
+        key = os.environ.get("EIDOS_CODE_FORGE_SIGNING_KEY")
+        if key:
+            expected_hmac = hmac.new(key.encode("utf-8"), canonical, hashlib.sha256).hexdigest()
+            if digest != expected_hmac:
+                errors.append(f"{prefix}.signature.digest mismatch for hmac-sha256")
+    else:
+        errors.append(f"{prefix}.signature.algorithm unsupported: {algorithm}")
+
+
 def validate_reconstruction_manifest(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     _require(isinstance(payload.get("generated_at"), str), errors, "manifest.generated_at must be string")
@@ -57,6 +104,7 @@ def validate_reconstruction_manifest(payload: dict[str, Any]) -> list[str]:
         _require(isinstance(entry.get("content_hash"), str), errors, f"{prefix}.content_hash must be string")
         _require(isinstance(entry.get("written_hash"), str), errors, f"{prefix}.written_hash must be string")
         _require(isinstance(entry.get("bytes"), int), errors, f"{prefix}.bytes must be int")
+    _validate_signature(payload, errors, "manifest")
     return errors
 
 
@@ -87,6 +135,7 @@ def validate_parity_report(payload: dict[str, Any]) -> list[str]:
     )
     _require(isinstance(payload.get("hash_mismatches"), list), errors, "parity.hash_mismatches must be list")
     _require(isinstance(payload.get("pass"), bool), errors, "parity.pass must be bool")
+    _validate_signature(payload, errors, "parity")
     return errors
 
 
@@ -117,6 +166,7 @@ def validate_apply_report(payload: dict[str, Any]) -> list[str]:
     _require(isinstance(payload.get("changed_or_new"), list), errors, "apply.changed_or_new must be list")
     _require(isinstance(payload.get("removed"), list), errors, "apply.removed must be list")
     _require(isinstance(payload.get("noop"), bool), errors, "apply.noop must be bool")
+    _validate_signature(payload, errors, "apply")
     return errors
 
 
@@ -140,6 +190,7 @@ def validate_roundtrip_summary(payload: dict[str, Any]) -> list[str]:
         )
     if payload.get("apply") is not None:
         _require(isinstance(payload.get("apply"), dict), errors, "summary.apply must be object when present")
+    _validate_signature(payload, errors, "summary")
     return errors
 
 
@@ -275,7 +326,7 @@ def validate_roundtrip_workspace(
                 report["errors"].append(f"apply_report.json: {msg}")
                 report["pass"] = False
 
-    if verify_hashes and report["pass"]:
+    if verify_hashes:
         manifest = loaded.get("reconstruction_manifest") or {}
         reconstructed_root = workspace_dir / "reconstructed"
         for idx, entry in enumerate((manifest.get("entries") or [])[:2000]):

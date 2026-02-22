@@ -49,6 +49,7 @@ def test_file_record_prefix_and_reconstruction_parity(tmp_path: Path) -> None:
         strict=True,
     )
     assert manifest["files_written"] == len(records_a)
+    assert (manifest.get("signature") or {}).get("algorithm") in {"sha256", "hmac-sha256"}
     assert Path(manifest["manifest_path"]).exists()
 
     parity = compare_tree_parity(
@@ -57,6 +58,7 @@ def test_file_record_prefix_and_reconstruction_parity(tmp_path: Path) -> None:
         report_path=tmp_path / "parity.json",
     )
     assert parity["pass"] is True
+    assert (parity.get("signature") or {}).get("algorithm") in {"sha256", "hmac-sha256"}
     assert Path(parity["report_path"]).exists()
 
 
@@ -86,6 +88,7 @@ def test_apply_reconstruction_transactional_backup(tmp_path: Path) -> None:
     assert report["changed_or_new_count"] == 2
     assert report["removed_count"] == 1
     assert report["backup_count"] == 2
+    assert (report.get("signature") or {}).get("algorithm") in {"sha256", "hmac-sha256"}
     tx_dir = Path(report["backup_transaction_dir"])
     assert tx_dir.exists()
     assert (tx_dir / "apply_report.json").exists()
@@ -190,6 +193,7 @@ def test_roundtrip_pipeline_end_to_end(tmp_path: Path) -> None:
         apply=False,
     )
     assert summary["parity_pass"] is True
+    assert (summary.get("signature") or {}).get("algorithm") in {"sha256", "hmac-sha256"}
     assert Path(summary["summary_path"]).exists()
     assert (workspace / "digester" / "archive_digester_summary.json").exists()
     assert (workspace / "reconstructed" / "reconstruction_manifest.json").exists()

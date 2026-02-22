@@ -202,6 +202,7 @@ Roundtrip artifacts:
 - `parity_report.json`: source vs reconstructed hash-level parity result
 - `roundtrip_summary.json`: end-to-end digest+integration+reconstruction+apply summary
 - `Backups/code_forge_roundtrip/<transaction_id>/apply_report.json`: transactional apply audit record
+- `signature` envelope on roundtrip JSON artifacts: deterministic payload hash (`payload_sha256`) plus artifact digest (`sha256` or `hmac-sha256` when `EIDOS_CODE_FORGE_SIGNING_KEY` is set)
 - `provenance_links.json`: cross-forge provenance links (artifact checksums + knowledge/memory/GraphRAG linkages)
 
 Canonicalization artifacts:

@@ -1855,5 +1855,34 @@
       0.3843137254901961,
       0.9803921568627451
     ]
+  },
+  "da92844e-9938-46f5-a440-6825619ba456": {
+    "id": "da92844e-9938-46f5-a440-6825619ba456",
+    "content": "Implemented signed roundtrip artifacts in code_forge: reconstruction manifest, parity report, apply report, and roundtrip summary now include deterministic signature envelopes (`sha256` default or `hmac-sha256` with EIDOS_CODE_FORGE_SIGNING_KEY). Schema validators now enforce signature contract and optional HMAC verification.",
+    "created_at": "2026-02-22T20:27:20.452891",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_signed_roundtrip_manifests_20260222"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.10196078431372549,
+      0.9647058823529412,
+      0.09803921568627451,
+      0.45098039215686275,
+      0.792156862745098,
+      0.9921568627450981,
+      0.792156862745098,
+      0.7529411764705882,
+      0.5254901960784314,
+      0.3058823529411765,
+      0.17647058823529413,
+      0.4549019607843137,
+      0.1803921568627451,
+      0.8862745098039215,
+      0.1607843137254902,
+      0.23529411764705882
+    ]
   }
 }
