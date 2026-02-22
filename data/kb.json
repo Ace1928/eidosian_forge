@@ -1577,6 +1577,19 @@
         ]
       },
       "links": []
+    },
+    "ed872013-b60e-48fa-a094-42e471d46c6f": {
+      "id": "ed872013-b60e-48fa-a094-42e471d46c6f",
+      "content": "ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met.",
+      "metadata": {
+        "tags": [
+          "chatmock",
+          "architecture-decision",
+          "governance",
+          "eidos_mcp"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

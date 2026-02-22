@@ -9,4 +9,4 @@
 - [x] ~~**Configuration**: Unify config loading completely via `gis_forge`.~~
 
 ## 🟢 Low Priority
-- [ ] **ChatMock**: Evaluate if `ChatMock` should be its own Forge or stay in `projects/`.
+- [x] ~~**ChatMock**: Evaluate if `ChatMock` should be its own Forge or stay in `projects/`.~~

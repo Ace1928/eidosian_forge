@@ -60,6 +60,12 @@ RAC-AP construct validation outputs from `agent_forge` are exposed via:
 - `consciousness_construct_drift_review` (protocol threshold drift delta between latest runs)
 - `eidos://consciousness/construct-latest` (resource snapshot)
 
+## 🧭 ChatMock Placement
+
+ChatMock placement has been evaluated and remains in `projects/src/chatmock` until
+Forge promotion criteria are met. Decision record:
+`eidos_mcp/docs/CHATMOCK_PLACEMENT_DECISION_2026-02-22.md`.
+
 ## 🚀 Usage
 
 **Recommended:** Use the portable launcher script.

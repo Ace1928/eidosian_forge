@@ -858,5 +858,25 @@
       "todo-progress"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d61effbf-717f-4632-b5ce-679eaa072418",
+    "content": "eidos_mcp low-priority ChatMock TODO resolved with explicit architecture decision document and criteria-based promotion gate.",
+    "created_at": "2026-02-22T19:06:36.364683",
+    "last_accessed": "2026-02-22T19:06:36.364693",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.8,
+    "ttl_seconds": 86400,
+    "tags": [
+      "chatmock",
+      "todo-progress",
+      "decision",
+      "eidos_mcp"
+    ],
+    "linked_memories": []
   }
 ]
