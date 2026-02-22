@@ -1458,6 +1458,19 @@
         ]
       },
       "links": []
+    },
+    "28f22ed7-8c3b-41f1-b085-2f3436f4cfef": {
+      "id": "28f22ed7-8c3b-41f1-b085-2f3436f4cfef",
+      "content": "Diagnostics Forge CLI now supports a dashboard subcommand that renders metrics JSON summaries in a sortable terminal table and supports raw JSON output.",
+      "metadata": {
+        "tags": [
+          "diagnostics_forge",
+          "observability",
+          "cli",
+          "todo-completion"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

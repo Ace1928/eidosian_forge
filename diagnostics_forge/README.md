@@ -42,6 +42,16 @@ for proc in diag.get_process_metrics():
     print(f"[{proc['pid']}] {proc['name']}: {proc['cpu']}% CPU")
 ```
 
+### CLI Dashboard
+
+```bash
+# Render human-readable metrics dashboard
+python -m diagnostics_forge.cli dashboard --metrics-file logs/core_metrics.json
+
+# Emit raw JSON payload
+python -m diagnostics_forge.cli --json dashboard --metrics-file logs/core_metrics.json
+```
+
 ## 🛠️ Configuration
 
 - **Environment Detection**: Automatically switches logic based on `PATH` inspection (Termux vs Linux).

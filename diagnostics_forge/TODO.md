@@ -6,11 +6,7 @@
 
 ## 🟡 Medium Priority
 - [x] **Format**: Added JSON logging option.
-- [ ] **Dashboard**: Create a simple CLI dashboard to view metrics json.
-
-## 🟢 Low Priority
-- [ ] **Prometheus**: Add an exporter endpoint.
-
+- [x] ~~**Dashboard**: Create a simple CLI dashboard to view metrics json.~~ (Implemented `diagnostics-forge dashboard --metrics-file ...`)
 
 ## 🟢 Low Priority
 - [ ] **Prometheus**: Add an exporter endpoint.
