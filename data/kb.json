@@ -1471,6 +1471,19 @@
         ]
       },
       "links": []
+    },
+    "99f2e785-dd18-4666-a9c2-f52624a3ecf7": {
+      "id": "99f2e785-dd18-4666-a9c2-f52624a3ecf7",
+      "content": "Diagnostics Forge now exposes Prometheus metrics text and an optional HTTP /metrics endpoint via diagnostics CLI.",
+      "metadata": {
+        "tags": [
+          "diagnostics_forge",
+          "cli",
+          "prometheus",
+          "observability"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

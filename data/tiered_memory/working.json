@@ -694,5 +694,26 @@
       "tests"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "aff57020-d187-43c2-868e-56dd70b3f341",
+    "content": "file_forge search path now prefers rg for fixed-string content discovery and falls back safely to Python scanning when rg is unavailable or errors.",
+    "created_at": "2026-02-22T13:00:57.114319",
+    "last_accessed": "2026-02-22T13:00:57.114346",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.84,
+    "ttl_seconds": 86400,
+    "tags": [
+      "todo",
+      "performance",
+      "file_forge",
+      "ripgrep",
+      "search"
+    ],
+    "linked_memories": []
   }
 ]

@@ -9,4 +9,4 @@
 - [x] ~~**Dashboard**: Create a simple CLI dashboard to view metrics json.~~ (Implemented `diagnostics-forge dashboard --metrics-file ...`)
 
 ## 🟢 Low Priority
-- [ ] **Prometheus**: Add an exporter endpoint.
+- [x] ~~**Prometheus**: Add an exporter endpoint.~~ (`diagnostics-forge prometheus` + `--serve` endpoint on `/metrics`)

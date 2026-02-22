@@ -6,6 +6,7 @@ import time
 import psutil
 import subprocess
 import re
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from logging.handlers import RotatingFileHandler
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -216,3 +217,86 @@ class DiagnosticsForge:
                 continue
         
         return sorted(eidos_procs, key=lambda x: x['cpu'], reverse=True)
+
+    @eidosian()
+    def get_prometheus_metrics(self) -> str:
+        """Render current diagnostics data in Prometheus exposition format."""
+        pulse = self.get_system_pulse()
+        lines: list[str] = []
+
+        def add_help_type(metric: str, help_text: str, mtype: str = "gauge") -> None:
+            lines.append(f"# HELP {metric} {help_text}")
+            lines.append(f"# TYPE {metric} {mtype}")
+
+        service_label = f'service="{self.service_name}"'
+        add_help_type("eidos_cpu_percent", "CPU usage percent")
+        lines.append(f"eidos_cpu_percent{{{service_label}}} {pulse['cpu']['percent']}")
+        add_help_type("eidos_cpu_count", "CPU core count")
+        lines.append(f"eidos_cpu_count{{{service_label}}} {pulse['cpu']['count']}")
+
+        load_avg = pulse["cpu"].get("load_avg", [0.0, 0.0, 0.0])
+        add_help_type("eidos_load_average", "System load average")
+        for idx, val in enumerate(load_avg, start=1):
+            lines.append(f'eidos_load_average{{{service_label},window="{idx}m"}} {val}')
+
+        mem = pulse.get("memory", {})
+        if "error" not in mem:
+            add_help_type("eidos_memory_percent", "Memory used percentage")
+            lines.append(f"eidos_memory_percent{{{service_label}}} {mem.get('percent', 0.0)}")
+            add_help_type("eidos_memory_total_gb", "Total memory in GB")
+            lines.append(f"eidos_memory_total_gb{{{service_label}}} {mem.get('total_gb', 0.0)}")
+            add_help_type("eidos_memory_available_gb", "Available memory in GB")
+            lines.append(f"eidos_memory_available_gb{{{service_label}}} {mem.get('available_gb', 0.0)}")
+
+        disk = pulse.get("disk", {})
+        if "error" not in disk:
+            add_help_type("eidos_disk_percent", "Disk usage percentage")
+            lines.append(f"eidos_disk_percent{{{service_label}}} {disk.get('percent', 0.0)}")
+            add_help_type("eidos_disk_total_gb", "Total disk in GB")
+            lines.append(f"eidos_disk_total_gb{{{service_label}}} {disk.get('total_gb', 0.0)}")
+            add_help_type("eidos_disk_used_gb", "Used disk in GB")
+            lines.append(f"eidos_disk_used_gb{{{service_label}}} {disk.get('used_gb', 0.0)}")
+
+        add_help_type("eidos_uptime_seconds", "Diagnostics service uptime in seconds")
+        lines.append(f"eidos_uptime_seconds{{{service_label}}} {pulse['uptime_seconds']}")
+
+        if self._metrics:
+            add_help_type("eidos_metric_count", "Recorded timer count for a metric")
+            add_help_type("eidos_metric_avg_seconds", "Average timer duration in seconds")
+            add_help_type("eidos_metric_min_seconds", "Minimum timer duration in seconds")
+            add_help_type("eidos_metric_max_seconds", "Maximum timer duration in seconds")
+            for name in sorted(self._metrics):
+                summary = self.get_metrics_summary(name)
+                metric_label = f'{service_label},metric="{name}"'
+                lines.append(f"eidos_metric_count{{{metric_label}}} {summary['count']}")
+                lines.append(f"eidos_metric_avg_seconds{{{metric_label}}} {summary['avg']}")
+                lines.append(f"eidos_metric_min_seconds{{{metric_label}}} {summary['min']}")
+                lines.append(f"eidos_metric_max_seconds{{{metric_label}}} {summary['max']}")
+
+        return "\n".join(lines) + "\n"
+
+    @eidosian()
+    def serve_prometheus(self, host: str = "127.0.0.1", port: int = 9108) -> None:
+        """Serve Prometheus metrics on /metrics."""
+
+        diagnostics = self
+
+        class _MetricsHandler(BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802
+                if self.path not in {"/metrics", "/metrics/"}:
+                    self.send_response(404)
+                    self.end_headers()
+                    return
+                payload = diagnostics.get_prometheus_metrics().encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def log_message(self, format: str, *args: Any) -> None:  # noqa: A003
+                return
+
+        server = ThreadingHTTPServer((host, port), _MetricsHandler)
+        self.log_event("INFO", "Prometheus endpoint started", host=host, port=port)
+        server.serve_forever()

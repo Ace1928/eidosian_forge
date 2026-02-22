@@ -8,8 +8,4 @@
 - [x] **Feature**: Add fuzzy file finding (glob via `find_files`).
 
 ## 🟢 Low Priority
-- [ ] **Optimization**: Use `ripgrep` (via subprocess) for faster searching.
-
-
-## 🟢 Low Priority
-- [ ] **Optimization**: Use `ripgrep` (via subprocess) for faster searching.
+- [x] ~~**Optimization**: Use `ripgrep` (via subprocess) for faster searching.~~ (`search_content` now uses `rg` when available with Python fallback)

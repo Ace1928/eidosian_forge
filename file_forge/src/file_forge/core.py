@@ -8,6 +8,7 @@ import shutil
 import logging
 import hashlib
 import fnmatch
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 
@@ -72,7 +73,24 @@ class FileForge:
     def search_content(self, pattern: str, directory: Optional[Path] = None) -> List[Path]:
         """Search for files containing a specific string pattern."""
         search_dir = directory or self.base_path
-        matches = []
+        rg_binary = shutil.which("rg")
+        if rg_binary:
+            try:
+                proc = subprocess.run(
+                    [rg_binary, "-l", "--fixed-strings", "--no-messages", pattern, str(search_dir)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                # rg: 0=match found, 1=no matches, >1 error
+                if proc.returncode in (0, 1):
+                    paths = [Path(line.strip()) for line in proc.stdout.splitlines() if line.strip()]
+                    return sorted(paths)
+            except Exception:
+                # Fall back to Python scan when rg execution fails.
+                pass
+
+        matches: List[Path] = []
         for root, _, files in os.walk(search_dir):
             for file in files:
                 file_path = Path(root) / file
@@ -81,7 +99,7 @@ class FileForge:
                         matches.append(file_path)
                 except Exception:
                     pass
-        return matches
+        return sorted(matches)
 
     @eidosian()
     def find_files(self, pattern: str, directory: Optional[Path] = None) -> List[Path]:

@@ -18,6 +18,7 @@
 - **Synchronization**: One-way directory mirroring (`sync_directories`).
 - **Structuring**: Enforcing directory layouts via schema (`ensure_structure`).
 - **Search**: Content and pattern-based discovery (`search_content`, `find_files`).
+  - `search_content` uses `ripgrep` automatically when available for faster scans, with a safe Python fallback.
 
 ## 🔗 System Integration
 

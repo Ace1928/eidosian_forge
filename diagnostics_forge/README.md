@@ -52,6 +52,16 @@ python -m diagnostics_forge.cli dashboard --metrics-file logs/core_metrics.json
 python -m diagnostics_forge.cli --json dashboard --metrics-file logs/core_metrics.json
 ```
 
+### Prometheus Export
+
+```bash
+# Print Prometheus exposition text once
+python -m diagnostics_forge.cli prometheus
+
+# Run /metrics endpoint
+python -m diagnostics_forge.cli prometheus --serve --host 127.0.0.1 --port 9108
+```
+
 ## 🛠️ Configuration
 
 - **Environment Detection**: Automatically switches logic based on `PATH` inspection (Termux vs Linux).
