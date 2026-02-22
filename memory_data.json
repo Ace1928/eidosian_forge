@@ -1739,5 +1739,34 @@
       0.023529411764705882,
       0.9019607843137255
     ]
+  },
+  "4f36b3f2-c0d9-49e3-9edc-8a4feff48649": {
+    "id": "4f36b3f2-c0d9-49e3-9edc-8a4feff48649",
+    "content": "Implemented external benchmark import adapters in agent_forge: added ExternalBenchmarkImporter, wired `eidctl consciousness import-benchmark`, standardized suite mapping (swe-bench/webarena/osworld/agentbench/generic), and added targeted tests with passing validation.",
+    "created_at": "2026-02-22T19:25:25.244155",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "agent_forge_external_benchmark_import_20260222"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.8549019607843137,
+      0.3568627450980392,
+      0.9529411764705882,
+      0.13725490196078433,
+      0.6549019607843137,
+      0.8549019607843137,
+      0.3137254901960784,
+      0.054901960784313725,
+      0.12156862745098039,
+      0.0392156862745098,
+      0.9725490196078431,
+      0.6588235294117647,
+      0.796078431372549,
+      0.12549019607843137,
+      0.40784313725490196,
+      0.14901960784313725
+    ]
   }
 }

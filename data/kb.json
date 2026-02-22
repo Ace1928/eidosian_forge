@@ -1590,6 +1590,20 @@
         ]
       },
       "links": []
+    },
+    "f4411614-61e6-45ba-a314-c32e7d6a616e": {
+      "id": "f4411614-61e6-45ba-a314-c32e7d6a616e",
+      "content": "Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter.",
+      "metadata": {
+        "tags": [
+          "cli",
+          "benchmark",
+          "agent_forge",
+          "consciousness",
+          "adapter"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
