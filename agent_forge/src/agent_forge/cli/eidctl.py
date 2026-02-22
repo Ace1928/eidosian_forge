@@ -182,6 +182,23 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
+        cimport = csub.add_parser(
+            "import-benchmark",
+            help="import external benchmark JSON into standardized consciousness benchmark artifact",
+        )
+        cimport.add_argument("--dir", default="state", help="state directory")
+        cimport.add_argument("--path", required=True, help="path to external benchmark JSON payload")
+        cimport.add_argument(
+            "--suite",
+            default="generic",
+            choices=["swe-bench", "webarena", "osworld", "agentbench", "generic"],
+            help="external benchmark suite label",
+        )
+        cimport.add_argument("--name", help="optional benchmark name override")
+        cimport.add_argument("--source-url", help="optional source URL for provenance")
+        cimport.add_argument("--no-persist", action="store_true", help="do not write imported report file")
+        cimport.add_argument("--json", action="store_true", help="JSON output")
+
         cvalidate = csub.add_parser(
             "validate",
             help="run RAC-AP construct validation on benchmark/trial/red-team artifacts",
@@ -492,6 +509,7 @@ def main(argv: list[str] | None = None) -> int:
                 validate_rac_ap_protocol,
                 write_protocol_file,
             )
+            from agent_forge.consciousness.external_adapters import ExternalBenchmarkImporter  # type: ignore
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
@@ -499,6 +517,7 @@ def main(argv: list[str] | None = None) -> int:
             stress = ConsciousnessStressBenchmark(args.dir)
             red_team = ConsciousnessRedTeamCampaign(args.dir)
             full = IntegratedStackBenchmark(args.dir)
+            importer = ExternalBenchmarkImporter(args.dir)
 
             if args.conscious_cmd == "status":
                 from agent_forge.core import events as EV  # type: ignore
@@ -610,6 +629,28 @@ def main(argv: list[str] | None = None) -> int:
                             f"composite={scores.get('composite')} "
                             f"delta={scores.get('delta_composite')}"
                         )
+                return 0
+
+            if args.conscious_cmd == "import-benchmark":
+                imported = importer.import_file(
+                    path=args.path,
+                    suite=args.suite,
+                    name=args.name,
+                    source_url=args.source_url,
+                    persist=not args.no_persist,
+                )
+                payload = imported.report
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    scores = payload.get("scores") or {}
+                    print(
+                        f"[consciousness] imported_benchmark={payload.get('benchmark_id')} "
+                        f"suite={payload.get('suite')} "
+                        f"composite={scores.get('composite')}"
+                    )
+                    if payload.get("report_path"):
+                        print(f"[consciousness] report_path={payload.get('report_path')}")
                 return 0
 
             if args.conscious_cmd == "validate":

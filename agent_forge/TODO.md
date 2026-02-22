@@ -7,7 +7,7 @@
 - [x] ~~Add protocol drift checker (diff protocol JSON against previous validation run and flag threshold drift).~~
 
 ## Medium Priority
-- [ ] Add benchmark import adapters for external agent-eval suites.
+- [x] ~~Add benchmark import adapters for external agent-eval suites.~~
 - [x] ~~Add periodic drift review command for validation reports.~~
 - [x] ~~Increase end-to-end reproducibility docs (seed/SHA/event-digest workflows).~~
 

@@ -33,6 +33,7 @@ python agent_forge/bin/eidctl consciousness trial --dir state --kind noise --tar
 
 # Benchmark suite
 python agent_forge/bin/eidctl consciousness benchmark --dir state --ticks 12 --json
+python agent_forge/bin/eidctl consciousness import-benchmark --dir state --path reports/external/swe_bench_verified.json --suite swe-bench --source-url https://www.swebench.com --json
 
 # RAC-AP construct validation
 python agent_forge/bin/eidctl consciousness validate --dir state --limit 64 --min-pairs 6 --json

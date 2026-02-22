@@ -6,6 +6,7 @@ from .bench import TrialSpec as BenchTrialSpec
 from .bench.ablations import AblationResult, ConsciousnessAblationMatrix
 from .bench.red_team import RedTeamResult, RedTeamScenario
 from .benchmarks import BenchmarkResult, ConsciousnessBenchmarkSuite
+from .external_adapters import ExternalBenchmarkImporter, ImportedExternalBenchmark
 from .index import EventIndex, build_index
 from .integrated_benchmark import IntegratedBenchmarkResult, IntegratedStackBenchmark
 from .kernel import ConsciousnessKernel, KernelResult
@@ -39,8 +40,10 @@ __all__ = [
     "ConsciousnessRedTeamCampaign",
     "ConsciousnessTrialRunner",
     "EventIndex",
+    "ExternalBenchmarkImporter",
     "IntegratedBenchmarkResult",
     "IntegratedStackBenchmark",
+    "ImportedExternalBenchmark",
     "KernelResult",
     "ConsciousnessStressBenchmark",
     "StressBenchmarkResult",
