@@ -1604,6 +1604,20 @@
         ]
       },
       "links": []
+    },
+    "ce7abe60-10a4-400e-b90e-c527116b8b59": {
+      "id": "ce7abe60-10a4-400e-b90e-c527116b8b59",
+      "content": "Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`.",
+      "metadata": {
+        "tags": [
+          "cli",
+          "validation",
+          "agent_forge",
+          "dashboard",
+          "consciousness"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

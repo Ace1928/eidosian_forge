@@ -39,6 +39,7 @@ python agent_forge/bin/eidctl consciousness import-benchmark --dir state --path 
 python agent_forge/bin/eidctl consciousness validate --dir state --limit 64 --min-pairs 6 --json
 python agent_forge/bin/eidctl consciousness validate --dir state --security-required --json
 python agent_forge/bin/eidctl consciousness drift-review --dir state --threshold 0.05 --json
+python agent_forge/bin/eidctl consciousness validation-trends --dir state --limit 30 --out reports/consciousness_validation/dashboard.html --json
 
 # RAC-AP protocol schema checks / template export
 python agent_forge/bin/eidctl consciousness protocol --json

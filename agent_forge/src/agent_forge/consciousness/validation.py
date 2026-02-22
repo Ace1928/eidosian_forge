@@ -850,3 +850,168 @@ class ConsciousnessConstructValidator:
             },
             "changes": rows,
         }
+
+    def _validation_point(self, report: Mapping[str, Any]) -> dict[str, Any]:
+        scores = report.get("scores") if isinstance(report.get("scores"), Mapping) else {}
+        reliability = report.get("reliability") if isinstance(report.get("reliability"), Mapping) else {}
+        convergent = report.get("convergent_validity") if isinstance(report.get("convergent_validity"), Mapping) else {}
+        discriminant = (
+            report.get("discriminant_validity") if isinstance(report.get("discriminant_validity"), Mapping) else {}
+        )
+        interventional = (
+            report.get("interventional_validity") if isinstance(report.get("interventional_validity"), Mapping) else {}
+        )
+        security = report.get("security_boundary") if isinstance(report.get("security_boundary"), Mapping) else {}
+        ts = report.get("timestamp")
+        if not ts:
+            ts = _now_iso()
+        return {
+            "validation_id": str(report.get("validation_id") or ""),
+            "timestamp": str(ts),
+            "pass": bool(report.get("pass")),
+            "rac_ap_index": _safe_float(scores.get("rac_ap_index"), None),
+            "reliability": _safe_float(reliability.get("score"), None),
+            "convergent": _safe_float(convergent.get("score"), None),
+            "discriminant": _safe_float(discriminant.get("score"), None),
+            "interventional": _safe_float(interventional.get("score"), None),
+            "security": _safe_float(security.get("score"), None),
+        }
+
+    def _render_validation_dashboard_html(self, payload: Mapping[str, Any]) -> str:
+        rows = payload.get("points") if isinstance(payload.get("points"), Sequence) else []
+        data_json = json.dumps(list(rows), default=str)
+        summary = payload.get("summary") if isinstance(payload.get("summary"), Mapping) else {}
+        return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAC-AP Validation Trends</title>
+  <style>
+    body {{ font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #0b1020; color: #e6ecff; }}
+    .wrap {{ max-width: 1100px; margin: 0 auto; padding: 20px; }}
+    .top {{ display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 18px; }}
+    .card {{ background: #121a32; border: 1px solid #26345f; border-radius: 10px; padding: 12px; }}
+    .label {{ color: #8da2db; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
+    .value {{ margin-top: 6px; font-size: 20px; font-weight: 700; }}
+    .panel {{ background: #121a32; border: 1px solid #26345f; border-radius: 10px; padding: 14px; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }}
+    th, td {{ padding: 8px 10px; border-bottom: 1px solid #243359; text-align: left; }}
+    th {{ color: #9fb4f0; }}
+    canvas {{ width: 100%; height: 320px; }}
+    .pass {{ color: #4fd182; }}
+    .fail {{ color: #ff7a86; }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="card"><div class="label">Points</div><div class="value">{summary.get("count")}</div></div>
+      <div class="card"><div class="label">Pass Rate</div><div class="value">{summary.get("pass_rate")}</div></div>
+      <div class="card"><div class="label">Latest RAC-AP</div><div class="value">{summary.get("latest_rac_ap_index")}</div></div>
+      <div class="card"><div class="label">Delta</div><div class="value">{summary.get("delta_from_first")}</div></div>
+    </div>
+    <div class="panel">
+      <canvas id="trend"></canvas>
+      <table>
+        <thead>
+          <tr><th>Timestamp</th><th>Validation</th><th>RAC-AP</th><th>Reliability</th><th>Interventional</th><th>Security</th><th>Pass</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    const points = {data_json};
+    const canvas = document.getElementById('trend');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth || 1000;
+    const H = canvas.clientHeight || 320;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#121a32';
+    ctx.fillRect(0, 0, W, H);
+    const vals = points.map(p => Number(p.rac_ap_index ?? NaN)).filter(v => Number.isFinite(v));
+    const minV = vals.length ? Math.min(...vals, 0) : 0;
+    const maxV = vals.length ? Math.max(...vals, 1) : 1;
+    const span = Math.max(0.001, maxV - minV);
+    const xFor = i => 28 + (i * (W - 56)) / Math.max(points.length - 1, 1);
+    const yFor = v => H - 26 - ((v - minV) * (H - 52)) / span;
+    ctx.strokeStyle = '#2a3a66';
+    ctx.lineWidth = 1;
+    for (let g = 0; g < 5; g++) {{
+      const y = 20 + (g * (H - 40)) / 4;
+      ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(W - 20, y); ctx.stroke();
+    }}
+    ctx.strokeStyle = '#57b0ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    points.forEach((p, i) => {{
+      const v = Number(p.rac_ap_index ?? NaN);
+      if (!Number.isFinite(v)) return;
+      const x = xFor(i), y = yFor(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }});
+    ctx.stroke();
+    ctx.fillStyle = '#57b0ff';
+    points.forEach((p, i) => {{
+      const v = Number(p.rac_ap_index ?? NaN);
+      if (!Number.isFinite(v)) return;
+      const x = xFor(i), y = yFor(v);
+      ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+    }});
+    const rows = document.getElementById('rows');
+    points.forEach((p) => {{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${{p.timestamp}}</td>
+        <td>${{p.validation_id}}</td>
+        <td>${{p.rac_ap_index ?? ''}}</td>
+        <td>${{p.reliability ?? ''}}</td>
+        <td>${{p.interventional ?? ''}}</td>
+        <td>${{p.security ?? ''}}</td>
+        <td class="${{p.pass ? 'pass' : 'fail'}}">${{p.pass ? 'pass' : 'fail'}}</td>
+      `;
+      rows.appendChild(tr);
+    }});
+  </script>
+</body>
+</html>
+"""
+
+    def validation_trends(
+        self,
+        *,
+        limit: int = 30,
+        out_path: str | Path | None = None,
+    ) -> dict[str, Any]:
+        reports = _sorted_json_reports(self._validation_dir().glob("validation_*.json"), max(1, int(limit)))
+        points = [self._validation_point(rep) for rep in reversed(reports)]
+        rac_vals = [float(row["rac_ap_index"]) for row in points if row.get("rac_ap_index") is not None]
+        pass_count = sum(1 for row in points if bool(row.get("pass")))
+        latest_score = rac_vals[-1] if rac_vals else None
+        first_score = rac_vals[0] if rac_vals else None
+        delta = (latest_score - first_score) if (latest_score is not None and first_score is not None) else None
+        moving_window = rac_vals[-5:] if len(rac_vals) >= 1 else []
+        moving_avg = (sum(moving_window) / len(moving_window)) if moving_window else None
+        payload: dict[str, Any] = {
+            "timestamp": _now_iso(),
+            "limit": max(1, int(limit)),
+            "points": points,
+            "summary": {
+                "count": len(points),
+                "pass_count": pass_count,
+                "pass_rate": round(float(pass_count) / float(len(points)), 6) if points else None,
+                "latest_rac_ap_index": round(float(latest_score), 6) if latest_score is not None else None,
+                "delta_from_first": round(float(delta), 6) if delta is not None else None,
+                "moving_avg_5": round(float(moving_avg), 6) if moving_avg is not None else None,
+            },
+        }
+        if out_path is not None:
+            target = Path(out_path).expanduser().resolve()
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(self._render_validation_dashboard_html(payload), encoding="utf-8")
+            payload["dashboard_path"] = str(target)
+        return payload

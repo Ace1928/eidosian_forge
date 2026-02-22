@@ -167,6 +167,24 @@ def test_construct_validator_security_required_gate(tmp_path: Path, monkeypatch)
     assert result.report.get("pass") is False
 
 
+def test_construct_validator_validation_trends(tmp_path: Path, monkeypatch) -> None:
+    base = tmp_path / "state"
+    bench_root, bench_reports, validation_reports = _seed_validation_artifacts(tmp_path)
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_BENCH_DIR", str(bench_root))
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_BENCHMARK_DIR", str(bench_reports))
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_VALIDATION_DIR", str(validation_reports))
+    validator = ConsciousnessConstructValidator(base)
+
+    validator.run(limit=16, min_pairs=6, persist=True)
+    validator.run(limit=16, min_pairs=6, persist=True)
+
+    dashboard = tmp_path / "validation_dashboard.html"
+    payload = validator.validation_trends(limit=10, out_path=dashboard)
+    assert (payload.get("summary") or {}).get("count", 0) >= 2
+    assert dashboard.exists()
+    assert payload.get("dashboard_path") == str(dashboard.resolve())
+
+
 def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     base = tmp_path / "state"
     bench_root, bench_reports, validation_reports = _seed_validation_artifacts(tmp_path)
@@ -230,6 +248,26 @@ def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     assert drift_res.returncode == 0, drift_res.stderr
     drift_payload = json.loads(drift_res.stdout)
     assert "summary" in drift_payload
+
+    trends_out = tmp_path / "validation_trends.html"
+    trends_cmd = [
+        sys.executable,
+        str(EIDCTL),
+        "consciousness",
+        "validation-trends",
+        "--dir",
+        str(base),
+        "--limit",
+        "10",
+        "--out",
+        str(trends_out),
+        "--json",
+    ]
+    trends_res = subprocess.run(trends_cmd, capture_output=True, text=True, env=env, cwd=str(REPO_ROOT))
+    assert trends_res.returncode == 0, trends_res.stderr
+    trends_payload = json.loads(trends_res.stdout)
+    assert (trends_payload.get("summary") or {}).get("count", 0) >= 1
+    assert trends_out.exists()
 
 
 def test_eidctl_consciousness_protocol_and_preregister(tmp_path: Path) -> None:

@@ -12,4 +12,4 @@
 - [x] ~~Increase end-to-end reproducibility docs (seed/SHA/event-digest workflows).~~
 
 ## Low Priority
-- [ ] Add dashboard-style visualization for validation trend lines.
+- [x] ~~Add dashboard-style visualization for validation trend lines.~~

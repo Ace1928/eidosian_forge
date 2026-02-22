@@ -244,6 +244,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         cdrift.add_argument("--json", action="store_true", help="JSON output")
 
+        ctrends = csub.add_parser("validation-trends", help="show RAC-AP validation trend lines and optional dashboard")
+        ctrends.add_argument("--dir", default="state", help="state directory")
+        ctrends.add_argument("--limit", type=int, default=30, help="max validation reports to include")
+        ctrends.add_argument("--out", help="optional HTML dashboard output path")
+        ctrends.add_argument("--json", action="store_true", help="JSON output")
+
         cprotocol = csub.add_parser("protocol", help="show or validate RAC-AP protocol schema")
         cprotocol.add_argument("--dir", default="state", help="state directory")
         cprotocol.add_argument("--path", help="optional protocol JSON file to validate")
@@ -734,6 +740,23 @@ def main(argv: list[str] | None = None) -> int:
                             f"flagged={summary.get('flagged_count')} "
                             f"total={summary.get('total_keys')}"
                         )
+                return 0
+
+            if args.conscious_cmd == "validation-trends":
+                payload = validator.validation_trends(limit=max(1, int(args.limit)), out_path=args.out)
+                if args.json:
+                    print(json.dumps(payload, indent=2))
+                else:
+                    summary = payload.get("summary") or {}
+                    print(
+                        f"[consciousness] validation_trends "
+                        f"count={summary.get('count')} "
+                        f"pass_rate={summary.get('pass_rate')} "
+                        f"latest={summary.get('latest_rac_ap_index')} "
+                        f"delta={summary.get('delta_from_first')}"
+                    )
+                    if payload.get("dashboard_path"):
+                        print(f"[consciousness] dashboard_path={payload.get('dashboard_path')}")
                 return 0
 
             if args.conscious_cmd == "protocol":
