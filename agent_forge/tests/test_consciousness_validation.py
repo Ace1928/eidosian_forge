@@ -144,6 +144,29 @@ def test_construct_validator_runs_and_persists(tmp_path: Path, monkeypatch) -> N
     assert latest.get("validation_id") == result.validation_id
 
 
+def test_construct_validator_security_required_gate(tmp_path: Path, monkeypatch) -> None:
+    base = tmp_path / "state"
+    bench_root, bench_reports, validation_reports = _seed_validation_artifacts(tmp_path)
+
+    # Remove red-team artifact to force missing security evidence.
+    red_team_dir = bench_root / "red_team_20260219_000001"
+    for path in red_team_dir.rglob("*"):
+        if path.is_file():
+            path.unlink()
+    if red_team_dir.exists():
+        red_team_dir.rmdir()
+
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_BENCH_DIR", str(bench_root))
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_BENCHMARK_DIR", str(bench_reports))
+    monkeypatch.setenv("EIDOS_CONSCIOUSNESS_VALIDATION_DIR", str(validation_reports))
+
+    validator = ConsciousnessConstructValidator(base)
+    result = validator.run(limit=32, min_pairs=6, persist=False, security_required=True)
+    gates = result.report.get("gates") or {}
+    assert gates.get("security_min") is False
+    assert result.report.get("pass") is False
+
+
 def test_eidctl_consciousness_validate_commands(tmp_path: Path) -> None:
     base = tmp_path / "state"
     bench_root, bench_reports, validation_reports = _seed_validation_artifacts(tmp_path)

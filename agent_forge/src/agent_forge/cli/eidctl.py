@@ -198,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
             "--protocol",
             help="optional RAC-AP protocol JSON path for compatibility/threshold overrides",
         )
+        cvalidate.add_argument(
+            "--security-required",
+            action="store_true",
+            help="hard-fail RAC-AP gates when security evidence is missing or weak",
+        )
         cvalidate.add_argument("--no-persist", action="store_true", help="do not persist validation report file")
         cvalidate.add_argument("--json", action="store_true", help="JSON output")
 
@@ -606,6 +611,7 @@ def main(argv: list[str] | None = None) -> int:
                     min_pairs=max(3, int(args.min_pairs)),
                     persist=not args.no_persist,
                     protocol=protocol_payload,
+                    security_required=bool(args.security_required),
                 )
                 payload = result.report
                 if args.json:

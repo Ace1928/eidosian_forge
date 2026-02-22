@@ -538,10 +538,17 @@ class ConsciousnessConstructValidator:
         persist: bool = True,
         min_pairs: int | None = None,
         protocol: Mapping[str, Any] | None = None,
+        security_required: bool | None = None,
     ) -> ValidationResult:
         protocol_input = dict(protocol or default_rac_ap_protocol())
         protocol_check = validate_rac_ap_protocol(protocol_input)
         protocol_data = protocol_check.normalized
+        if isinstance(security_required, bool):
+            gates = protocol_data.get("gates")
+            if isinstance(gates, Mapping):
+                mutable_gates = dict(gates)
+                mutable_gates["security_required"] = bool(security_required)
+                protocol_data["gates"] = mutable_gates
         protocol_expectations = _expectations_from_protocol(protocol_data)
 
         min_pairs = int(min_pairs or protocol_data.get("minimum_pairs") or 6)

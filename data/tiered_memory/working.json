@@ -796,5 +796,26 @@
       "eidos_mcp"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "d97f9ec8-acec-4814-92f1-226ba065a0e2",
+    "content": "Agent forge TODO high-priority security-required gate mode completed; tests verify failure when red-team evidence is missing with security_required=True.",
+    "created_at": "2026-02-22T18:41:50.180731",
+    "last_accessed": "2026-02-22T18:41:50.180742",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.91,
+    "ttl_seconds": 86400,
+    "tags": [
+      "todo-progress",
+      "tests",
+      "agent_forge",
+      "security",
+      "rac-ap"
+    ],
+    "linked_memories": []
   }
 ]

@@ -16,11 +16,19 @@ class _FakeValidator:
 
 def test_consciousness_construct_validate(monkeypatch):
     monkeypatch.setattr(consciousness, "_construct_validator", lambda state_dir=None: _FakeValidator())
-    payload = json.loads(consciousness.consciousness_construct_validate(limit=7, persist=False, min_pairs=5))
+    payload = json.loads(
+        consciousness.consciousness_construct_validate(
+            limit=7,
+            persist=False,
+            min_pairs=5,
+            security_required=True,
+        )
+    )
     assert payload["validation_id"] == "val_1"
     assert payload["kwargs"]["limit"] == 7
     assert payload["kwargs"]["persist"] is False
     assert payload["kwargs"]["min_pairs"] == 5
+    assert payload["kwargs"]["security_required"] is True
 
 
 def test_consciousness_construct_latest(monkeypatch):

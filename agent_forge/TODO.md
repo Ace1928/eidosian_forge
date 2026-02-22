@@ -3,7 +3,7 @@
 ## High Priority
 - [x] ~~Add machine-readable RAC-AP protocol schema file and validation against schema.~~
 - [x] ~~Integrate `ConsciousnessConstructValidator` outputs into MCP consciousness tools/resources.~~
-- [ ] Add security-required mode to RAC-AP gates for hard fail on missing/weak red-team evidence.
+- [x] ~~Add security-required mode to RAC-AP gates for hard fail on missing/weak red-team evidence.~~
 - [ ] Add protocol drift checker (diff protocol JSON against previous validation run and flag threshold drift).
 
 ## Medium Priority

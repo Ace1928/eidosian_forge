@@ -1537,6 +1537,19 @@
         ]
       },
       "links": []
+    },
+    "34ec451c-581c-4210-b11c-cb1db6aefc64": {
+      "id": "34ec451c-581c-4210-b11c-cb1db6aefc64",
+      "content": "RAC-AP validator supports explicit security_required mode, enabling hard gate failure when security boundary evidence is absent or weak.",
+      "metadata": {
+        "tags": [
+          "validation",
+          "agent_forge",
+          "consciousness",
+          "security-gates"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

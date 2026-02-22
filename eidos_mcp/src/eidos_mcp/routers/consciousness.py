@@ -651,16 +651,12 @@ def consciousness_construct_validate(
         except Exception as exc:
             return json.dumps({"error": f"Failed to parse protocol JSON: {exc}"}, indent=2)
 
-    if protocol_payload is not None and isinstance(security_required, bool):
-        gates = protocol_payload.get("gates")
-        if isinstance(gates, dict):
-            gates["security_required"] = bool(security_required)
-
     result = validator.run(
         limit=max(1, int(limit)),
         persist=bool(persist),
         min_pairs=max(3, int(min_pairs)),
         protocol=protocol_payload,
+        security_required=security_required if isinstance(security_required, bool) else None,
     )
     return json.dumps(result.report, indent=2)
 
