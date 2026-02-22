@@ -60,9 +60,15 @@ def test_semantic_compress_old_memories_creates_summary_and_marks_sources(tmp_pa
 def test_semantic_compress_old_memories_dry_run_does_not_mutate(tmp_path) -> None:
     memory = TieredMemorySystem(persistence_dir=tmp_path)
     ids = [
-        memory.remember("Kernel perturbation trial remained stable with low boundary error.", tier=MemoryTier.LONG_TERM),
-        memory.remember("Boundary error stayed low during kernel perturbation benchmark trial.", tier=MemoryTier.LONG_TERM),
-        memory.remember("Perturbation benchmark showed stable kernel behavior and low boundary drift.", tier=MemoryTier.LONG_TERM),
+        memory.remember(
+            "Kernel perturbation trial remained stable with low boundary error.", tier=MemoryTier.LONG_TERM
+        ),
+        memory.remember(
+            "Boundary error stayed low during kernel perturbation benchmark trial.", tier=MemoryTier.LONG_TERM
+        ),
+        memory.remember(
+            "Perturbation benchmark showed stable kernel behavior and low boundary drift.", tier=MemoryTier.LONG_TERM
+        ),
     ]
     for memory_id in ids:
         _age_item(memory, memory_id, days=120)
