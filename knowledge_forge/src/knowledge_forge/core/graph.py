@@ -307,3 +307,59 @@ class KnowledgeForge:
             "imported_nodes": imported,
             "concept_count": len(self.concept_map),
         }
+
+    @eidosian()
+    def visualize_pyvis(
+        self,
+        output_path: Union[str, Path],
+        max_nodes: int = 200,
+        height: str = "800px",
+        width: str = "100%",
+    ) -> Dict[str, Any]:
+        """
+        Export an interactive graph visualization using pyvis.
+
+        Requires `pyvis` optional dependency.
+        """
+        try:
+            from pyvis.network import Network
+        except Exception as exc:
+            raise RuntimeError("Pyvis visualization requires pyvis. Install knowledge_forge[viz].") from exc
+
+        node_items = list(self.nodes.values())[: max(1, int(max_nodes))]
+        included_ids = {node.id for node in node_items}
+        network = Network(height=height, width=width, directed=False, notebook=False)
+        network.barnes_hut()
+
+        for node in node_items:
+            title = str(node.content)
+            tags = ", ".join(sorted(node.tags)) if node.tags else "none"
+            network.add_node(
+                node.id,
+                label=node.id[:8],
+                title=f"{title}\n\nTags: {tags}",
+                group=(sorted(node.tags)[0] if node.tags else "untagged"),
+            )
+
+        edge_count = 0
+        seen_edges: Set[tuple[str, str]] = set()
+        for node in node_items:
+            for link in node.links:
+                if link not in included_ids:
+                    continue
+                edge = tuple(sorted((node.id, link)))
+                if edge in seen_edges:
+                    continue
+                seen_edges.add(edge)
+                network.add_edge(node.id, link)
+                edge_count += 1
+
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        network.write_html(str(output))
+        return {
+            "path": str(output),
+            "node_count": len(node_items),
+            "edge_count": edge_count,
+            "max_nodes": int(max_nodes),
+        }

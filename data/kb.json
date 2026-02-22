@@ -1564,6 +1564,19 @@
         ]
       },
       "links": []
+    },
+    "0f4781b3-214f-4880-82d3-2d2cfa625f88": {
+      "id": "0f4781b3-214f-4880-82d3-2d2cfa625f88",
+      "content": "knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`.",
+      "metadata": {
+        "tags": [
+          "knowledge_forge",
+          "cli",
+          "pyvis",
+          "graph-visualization"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

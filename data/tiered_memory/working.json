@@ -838,5 +838,25 @@
       "mcp"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "6889a810-31b8-4d2e-bc6a-9890f3654b1a",
+    "content": "Knowledge forge medium-priority visualization TODO is complete; visualization exports HTML graph with node tags and deduplicated edges.",
+    "created_at": "2026-02-22T18:53:42.444244",
+    "last_accessed": "2026-02-22T18:53:42.444253",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.86,
+    "ttl_seconds": 86400,
+    "tags": [
+      "knowledge_forge",
+      "visualization",
+      "pyvis",
+      "todo-progress"
+    ],
+    "linked_memories": []
   }
 ]

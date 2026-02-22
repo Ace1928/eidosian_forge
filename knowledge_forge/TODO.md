@@ -6,7 +6,7 @@
 
 ## 🟡 Medium Priority
 - [x] ~~**Standards**: Implement RDFLib export/import.~~
-- [ ] **Visualization**: Add `pyvis` support for interactive graph exploration.
+- [x] ~~**Visualization**: Add `pyvis` support for interactive graph exploration.~~
 
 ## 🟢 Low Priority
 - [ ] **Reasoning**: Experiment with OWL reasoners.

@@ -257,6 +257,33 @@ class KnowledgeForgeCLI(StandardCLI):
         )
         import_rdf_parser.set_defaults(func=self._cmd_import_rdf)
 
+        # Visualization command
+        viz_parser = subparsers.add_parser(
+            "visualize",
+            help="Export interactive graph visualization (pyvis)",
+        )
+        viz_parser.add_argument(
+            "path",
+            help="Output HTML path",
+        )
+        viz_parser.add_argument(
+            "--max-nodes",
+            type=int,
+            default=200,
+            help="Maximum nodes to render (default: 200)",
+        )
+        viz_parser.add_argument(
+            "--height",
+            default="800px",
+            help="Visualization height (default: 800px)",
+        )
+        viz_parser.add_argument(
+            "--width",
+            default="100%",
+            help="Visualization width (default: 100%)",
+        )
+        viz_parser.set_defaults(func=self._cmd_visualize)
+
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
         """Show knowledge graph status."""
@@ -505,6 +532,20 @@ class KnowledgeForgeCLI(StandardCLI):
             result = CommandResult(True, "RDF import complete", report)
         except Exception as e:
             result = CommandResult(False, f"RDF import error: {e}")
+        self._output(result, args)
+
+    def _cmd_visualize(self, args) -> None:
+        """Export graph visualization."""
+        try:
+            report = self.kb.visualize_pyvis(
+                args.path,
+                max_nodes=max(1, int(args.max_nodes)),
+                height=args.height,
+                width=args.width,
+            )
+            result = CommandResult(True, "Visualization export complete", report)
+        except Exception as e:
+            result = CommandResult(False, f"Visualization export error: {e}")
         self._output(result, args)
 
     def _find_node_by_prefix(self, prefix: str) -> Optional[str]:
