@@ -786,8 +786,10 @@ class ConsciousnessConstructValidator:
 
         current_report = reports[0]
         baseline_report = reports[1] if len(reports) > 1 else None
-        protocol_now = dict(current_protocol) if current_protocol is not None else (
-            current_report.get("protocol") if isinstance(current_report.get("protocol"), Mapping) else {}
+        protocol_now = (
+            dict(current_protocol)
+            if current_protocol is not None
+            else (current_report.get("protocol") if isinstance(current_report.get("protocol"), Mapping) else {})
         )
         protocol_before = (
             baseline_report.get("protocol")
