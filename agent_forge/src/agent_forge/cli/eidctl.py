@@ -182,10 +182,17 @@ def main(argv: list[str] | None = None) -> int:
         cbench_latest.add_argument("--dir", default="state", help="state directory")
         cbench_latest.add_argument("--json", action="store_true", help="JSON output")
 
-        cimport = csub.add_parser(
-            "import-benchmark",
-            help="import external benchmark JSON into standardized consciousness benchmark artifact",
-        )
+        cimport "import-benchmark"
+        cimport =
+        cimport artifact"
+        cimport benchmark
+        cimport consciousness
+        cimport csub.add_parser
+        cimport external
+        cimport help="import
+        cimport into
+        cimport JSON
+        cimport standardized
         cimport.add_argument("--dir", default="state", help="state directory")
         cimport.add_argument("--path", required=True, help="path to external benchmark JSON payload")
         cimport.add_argument(
@@ -501,6 +508,7 @@ def main(argv: list[str] | None = None) -> int:
                 ConsciousnessTrialRunner,
                 IntegratedStackBenchmark,
             )
+            from agent_forge.consciousness.external_adapters import ExternalBenchmarkImporter  # type: ignore
             from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise  # type: ignore
             from agent_forge.consciousness.protocol import (  # type: ignore
                 default_preregistration,
@@ -509,7 +517,6 @@ def main(argv: list[str] | None = None) -> int:
                 validate_rac_ap_protocol,
                 write_protocol_file,
             )
-            from agent_forge.consciousness.external_adapters import ExternalBenchmarkImporter  # type: ignore
 
             runner = ConsciousnessTrialRunner(args.dir)
             bench = ConsciousnessBenchmarkSuite(args.dir)
