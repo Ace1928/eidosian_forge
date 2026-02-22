@@ -113,6 +113,15 @@ code-forge eval-run \
   --max-parallel 2 \
   --replay-mode record
 
+# Optional OTLP export wiring (trace spans to external observability backend)
+code-forge eval-run \
+  --taskbank config/eval/taskbank.json \
+  --matrix config/eval/config_matrix.json \
+  --output-dir reports/code_forge_eval \
+  --otlp-endpoint http://127.0.0.1:4318 \
+  --otlp-service-name code_forge_eval \
+  --otlp-header Authorization=Bearer-token
+
 # Replay from a prior record run using a shared replay store path
 code-forge eval-run \
   --taskbank config/eval/taskbank.json \

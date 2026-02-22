@@ -5,7 +5,7 @@
 - [x] ~~Add coverage report target enforcement for `code_forge/src/code_forge`.~~
 - [x] Implement canonical extraction generator + migration map artifact.
 - [x] ~~Add signed manifests for roundtrip reconstruction/apply artifacts.~~
-- [ ] Add OTLP trace exporter wiring from eval-run traces into external observability backends.
+- [x] ~~Add OTLP trace exporter wiring from eval-run traces into external observability backends.~~
 
 ## High Priority
 - [x] Add call/import/reference edge extraction to relationship graph.

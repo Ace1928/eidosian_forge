@@ -1660,6 +1660,20 @@
         ]
       },
       "links": []
+    },
+    "4bc7ac71-7083-4d57-a704-0fe7055bd5d4": {
+      "id": "4bc7ac71-7083-4d57-a704-0fe7055bd5d4",
+      "content": "Code Forge eval OS exports traces to OTLP backends via configurable endpoint/service/headers and records exporter status in run artifacts and summary stats.",
+      "metadata": {
+        "tags": [
+          "observability",
+          "otlp",
+          "traces",
+          "eval",
+          "code_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -66,7 +66,23 @@ Top-level:
 
 - repo snapshot (`git_head`, dirty state, lockfile hashes)
 - run stats (`success_rate`, p50/p95 duration, replay hits/misses)
+- OTLP export stats (`attempted`, `ok`, `failed`) when `--otlp-endpoint` is configured
 - per-config score vector (`success`, latency distribution, regression/staleness penalties)
+
+## OTLP Export Wiring
+
+`eval-run` can push per-run trace spans from `trace.jsonl` to an OTLP HTTP endpoint:
+
+- `--otlp-endpoint http://127.0.0.1:4318`
+- `--otlp-service-name code_forge_eval`
+- `--otlp-timeout-sec 10`
+- `--otlp-header KEY=VALUE` (repeatable)
+
+Behavior:
+
+- Export is best-effort and non-blocking for run success (contract pass/fail is unchanged).
+- Export result is persisted under each run result (`result.json -> otlp_export`).
+- Summary aggregates export outcomes under `run_stats.otlp`.
 
 ## Replay Semantics
 

@@ -23,7 +23,12 @@ from code_forge.eval_os.staleness import (
     compute_staleness_metrics,
     load_freshness_records,
 )
-from code_forge.eval_os.tracing import TraceMeta, TraceRecorder, new_trace_id
+from code_forge.eval_os.tracing import (
+    TraceMeta,
+    TraceRecorder,
+    export_trace_jsonl_to_otlp,
+    new_trace_id,
+)
 
 
 def _utc_now() -> str:
@@ -109,6 +114,10 @@ class EvalRunOptions:
     default_timeout_sec: int = 1200
     staleness_log_path: Path | None = None
     replay_store_path: Path | None = None
+    otlp_endpoint: str | None = None
+    otlp_service_name: str = "code_forge_eval"
+    otlp_timeout_sec: int = 10
+    otlp_headers: dict[str, str] | None = None
 
 
 def _execute_single_run(
@@ -249,6 +258,21 @@ def _execute_single_run(
         "toggle_env": toggle_env,
     }
 
+    if options.otlp_endpoint:
+        otlp_result = export_trace_jsonl_to_otlp(
+            trace_path=trace_path,
+            endpoint=options.otlp_endpoint,
+            service_name=options.otlp_service_name,
+            timeout_sec=options.otlp_timeout_sec,
+            headers=options.otlp_headers,
+            resource_attributes={
+                "code_forge.run_id": run_id,
+                "code_forge.task_id": task.task_id,
+                "code_forge.config_id": config.config_id,
+            },
+        )
+        payload["otlp_export"] = otlp_result
+
     if options.replay_mode == "record":
         replay_store.save(
             replay_key,
@@ -291,6 +315,10 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
         default_timeout_sec=max(1, int(options.default_timeout_sec)),
         staleness_log_path=(Path(options.staleness_log_path).resolve() if options.staleness_log_path else None),
         replay_store_path=(Path(options.replay_store_path).resolve() if options.replay_store_path else None),
+        otlp_endpoint=(str(options.otlp_endpoint).strip() if options.otlp_endpoint else None),
+        otlp_service_name=str(options.otlp_service_name or "code_forge_eval"),
+        otlp_timeout_sec=max(1, int(options.otlp_timeout_sec)),
+        otlp_headers=dict(options.otlp_headers or {}),
     )
     if options.replay_mode not in {"off", "record", "replay"}:
         raise ValueError("replay_mode must be one of: off, record, replay")
@@ -361,6 +389,8 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
     success_count = sum(1 for row in run_results if bool(row.get("success")))
     replay_hits = sum(1 for row in run_results if bool(row.get("replay_used")))
     replay_misses = sum(1 for row in run_results if bool(row.get("replay_miss")))
+    otlp_attempted = sum(1 for row in run_results if isinstance(row.get("otlp_export"), dict))
+    otlp_ok = sum(1 for row in run_results if bool((row.get("otlp_export") or {}).get("ok")))
 
     staleness_payload = None
     if options.staleness_log_path is not None and options.staleness_log_path.exists():
@@ -388,6 +418,9 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
             "max_parallel": options.max_parallel,
             "default_timeout_sec": options.default_timeout_sec,
             "replay_store_path": str(replay_store_root),
+            "otlp_endpoint": options.otlp_endpoint,
+            "otlp_service_name": options.otlp_service_name,
+            "otlp_timeout_sec": options.otlp_timeout_sec,
         },
         "repo_snapshot": repo_snapshot,
         "run_stats": {
@@ -401,6 +434,12 @@ def run_eval_suite(options: EvalRunOptions) -> dict[str, Any]:
             },
             "replay_hits": replay_hits,
             "replay_misses": replay_misses,
+            "otlp": {
+                "enabled": bool(options.otlp_endpoint),
+                "attempted": otlp_attempted,
+                "ok": otlp_ok,
+                "failed": max(0, otlp_attempted - otlp_ok),
+            },
         },
         "config_scores": config_scores,
         "staleness": staleness_payload,

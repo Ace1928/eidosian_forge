@@ -987,5 +987,27 @@
       "signature"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "e46fb51d-5b45-4f89-a813-a3f0818d67e3",
+    "content": "Code forge eval-run now supports best-effort OTLP export to external observability backends with deterministic per-run telemetry and non-blocking failure behavior.",
+    "created_at": "2026-02-22T20:37:36.543479",
+    "last_accessed": "2026-02-22T20:37:36.543487",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.89,
+    "ttl_seconds": 86400,
+    "tags": [
+      "observability",
+      "otlp",
+      "ci",
+      "tracing",
+      "eval_os",
+      "code_forge"
+    ],
+    "linked_memories": []
   }
 ]

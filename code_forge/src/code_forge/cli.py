@@ -850,6 +850,28 @@ class CodeForgeCLI(StandardCLI):
             default=None,
             help="Optional freshness/staleness log (json or jsonl) to include in summary",
         )
+        eval_run_parser.add_argument(
+            "--otlp-endpoint",
+            default=None,
+            help="Optional OTLP HTTP endpoint for exporting eval trace spans (example: http://127.0.0.1:4318)",
+        )
+        eval_run_parser.add_argument(
+            "--otlp-service-name",
+            default="code_forge_eval",
+            help="service.name value used for OTLP export resources",
+        )
+        eval_run_parser.add_argument(
+            "--otlp-timeout-sec",
+            type=int,
+            default=10,
+            help="HTTP timeout for OTLP export requests",
+        )
+        eval_run_parser.add_argument(
+            "--otlp-header",
+            action="append",
+            default=[],
+            help="Optional OTLP request header in KEY=VALUE format (repeatable)",
+        )
         eval_run_parser.set_defaults(func=self._cmd_eval_run)
 
         eval_staleness_parser = subparsers.add_parser(
@@ -1852,6 +1874,16 @@ class CodeForgeCLI(StandardCLI):
     def _cmd_eval_run(self, args) -> None:
         """Execute taskbank x config matrix evaluation runs."""
         try:
+            otlp_headers: dict[str, str] = {}
+            for raw in list(args.otlp_header or []):
+                text = str(raw or "").strip()
+                if not text or "=" not in text:
+                    continue
+                key, value = text.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+                if key:
+                    otlp_headers[key] = value
             options = EvalRunOptions(
                 taskbank_path=Path(args.taskbank).resolve(),
                 config_matrix_path=Path(args.matrix).resolve(),
@@ -1863,9 +1895,14 @@ class CodeForgeCLI(StandardCLI):
                 default_timeout_sec=max(1, int(args.default_timeout_sec)),
                 staleness_log_path=(Path(args.staleness_log).resolve() if args.staleness_log else None),
                 replay_store_path=(Path(args.replay_store).resolve() if args.replay_store else None),
+                otlp_endpoint=(str(args.otlp_endpoint).strip() if args.otlp_endpoint else None),
+                otlp_service_name=str(args.otlp_service_name or "code_forge_eval"),
+                otlp_timeout_sec=max(1, int(args.otlp_timeout_sec)),
+                otlp_headers=otlp_headers,
             )
             payload = run_eval_suite(options)
             run_stats = payload.get("run_stats", {})
+            otlp = run_stats.get("otlp") or {}
             result = CommandResult(
                 True,
                 "Eval suite complete",
@@ -1876,6 +1913,10 @@ class CodeForgeCLI(StandardCLI):
                     "success_rate": run_stats.get("success_rate", 0.0),
                     "replay_hits": run_stats.get("replay_hits", 0),
                     "replay_misses": run_stats.get("replay_misses", 0),
+                    "otlp_enabled": otlp.get("enabled", False),
+                    "otlp_attempted": otlp.get("attempted", 0),
+                    "otlp_ok": otlp.get("ok", 0),
+                    "otlp_failed": otlp.get("failed", 0),
                     "config_scores": payload.get("config_scores", {}),
                 },
             )
