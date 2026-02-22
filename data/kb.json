@@ -1523,6 +1523,20 @@
         ]
       },
       "links": []
+    },
+    "43bb575a-f5cd-4b72-bd46-5898c7c7533c": {
+      "id": "43bb575a-f5cd-4b72-bd46-5898c7c7533c",
+      "content": "eidos_mcp exposes RAC-AP construct validation via consciousness_construct_validate, consciousness_construct_latest, and eidos://consciousness/construct-latest.",
+      "metadata": {
+        "tags": [
+          "tooling",
+          "validation",
+          "rac-ap",
+          "eidos_mcp",
+          "consciousness"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

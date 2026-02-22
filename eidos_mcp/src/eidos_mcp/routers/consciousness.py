@@ -22,6 +22,7 @@ DEFAULT_OLLAMA_ENDPOINT = get_service_url("ollama_http", default_port=11434, def
 try:
     from agent_forge.consciousness import (
         ConsciousnessBenchmarkSuite,
+        ConsciousnessConstructValidator,
         ConsciousnessKernel,
         ConsciousnessRedTeamCampaign,
         ConsciousnessStressBenchmark,
@@ -31,6 +32,7 @@ try:
     from agent_forge.consciousness.perturb import Perturbation, make_drop, make_noise
 except Exception:  # pragma: no cover - defensive for partial installs
     ConsciousnessBenchmarkSuite = None
+    ConsciousnessConstructValidator = None
     ConsciousnessKernel = None
     ConsciousnessRedTeamCampaign = None
     ConsciousnessStressBenchmark = None
@@ -79,6 +81,12 @@ def _stress_bench(state_dir: Optional[str] = None) -> Optional[ConsciousnessStre
     if ConsciousnessStressBenchmark is None:
         return None
     return ConsciousnessStressBenchmark(_state_dir(state_dir))
+
+
+def _construct_validator(state_dir: Optional[str] = None) -> Optional[ConsciousnessConstructValidator]:
+    if ConsciousnessConstructValidator is None:
+        return None
+    return ConsciousnessConstructValidator(_state_dir(state_dir))
 
 
 @contextmanager
@@ -605,6 +613,79 @@ def consciousness_kernel_latest_full_benchmark(state_dir: Optional[str] = None) 
     return json.dumps(latest, indent=2)
 
 
+@tool(
+    name="consciousness_construct_validate",
+    description="Run RAC-AP construct validation over benchmark/trial/red-team artifacts and return report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+            "limit": {"type": "integer"},
+            "persist": {"type": "boolean"},
+            "min_pairs": {"type": "integer"},
+            "protocol_path": {"type": "string"},
+            "security_required": {"type": "boolean"},
+        },
+    },
+)
+@eidosian()
+def consciousness_construct_validate(
+    state_dir: Optional[str] = None,
+    limit: int = 64,
+    persist: bool = True,
+    min_pairs: int = 6,
+    protocol_path: Optional[str] = None,
+    security_required: Optional[bool] = None,
+) -> str:
+    validator = _construct_validator(state_dir)
+    if validator is None:
+        return json.dumps({"error": "agent_forge construct validation unavailable"}, indent=2)
+
+    protocol_payload = None
+    if protocol_path:
+        path = Path(protocol_path).expanduser().resolve()
+        if not path.exists():
+            return json.dumps({"error": f"Protocol path does not exist: {path}"}, indent=2)
+        try:
+            protocol_payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            return json.dumps({"error": f"Failed to parse protocol JSON: {exc}"}, indent=2)
+
+    if protocol_payload is not None and isinstance(security_required, bool):
+        gates = protocol_payload.get("gates")
+        if isinstance(gates, dict):
+            gates["security_required"] = bool(security_required)
+
+    result = validator.run(
+        limit=max(1, int(limit)),
+        persist=bool(persist),
+        min_pairs=max(3, int(min_pairs)),
+        protocol=protocol_payload,
+    )
+    return json.dumps(result.report, indent=2)
+
+
+@tool(
+    name="consciousness_construct_latest",
+    description="Return latest persisted RAC-AP construct validation report.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "state_dir": {"type": "string"},
+        },
+    },
+)
+@eidosian()
+def consciousness_construct_latest(state_dir: Optional[str] = None) -> str:
+    validator = _construct_validator(state_dir)
+    if validator is None:
+        return json.dumps({"error": "agent_forge construct validation unavailable"}, indent=2)
+    latest = validator.latest_validation()
+    if latest is None:
+        return json.dumps({"error": "No construct validation report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
 @resource(
     uri="eidos://consciousness/hypotheses",
     description="Configured falsifiable hypotheses for the consciousness assessment protocol.",
@@ -721,4 +802,19 @@ def consciousness_runtime_latest_full_benchmark_resource() -> str:
     latest = full.latest()
     if latest is None:
         return json.dumps({"error": "No integrated benchmark report found"}, indent=2)
+    return json.dumps(latest, indent=2)
+
+
+@resource(
+    uri="eidos://consciousness/construct-latest",
+    description="Latest RAC-AP construct validation report from agent_forge validator.",
+)
+@eidosian()
+def consciousness_construct_latest_resource() -> str:
+    validator = _construct_validator()
+    if validator is None:
+        return json.dumps({"error": "agent_forge construct validation unavailable"}, indent=2)
+    latest = validator.latest_validation()
+    if latest is None:
+        return json.dumps({"error": "No construct validation report found"}, indent=2)
     return json.dumps(latest, indent=2)

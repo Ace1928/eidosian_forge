@@ -1594,5 +1594,34 @@
       1.0,
       0.6549019607843137
     ]
+  },
+  "21727c78-7530-4cb8-8cb8-0ffc70467bbd": {
+    "id": "21727c78-7530-4cb8-8cb8-0ffc70467bbd",
+    "content": "Integrated ConsciousnessConstructValidator into eidos_mcp consciousness router with new tool endpoints and resource endpoint; validated with full eidos_mcp test suite.",
+    "created_at": "2026-02-22T18:23:31.123157",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "mcp_construct_validator_integration_2026-02-22"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.023529411764705882,
+      0.5450980392156862,
+      0.27058823529411763,
+      0.06274509803921569,
+      0.3058823529411765,
+      0.5725490196078431,
+      0.9490196078431372,
+      0.4470588235294118,
+      0.2,
+      0.4196078431372549,
+      0.34901960784313724,
+      0.054901960784313725,
+      0.30196078431372547,
+      0.3568627450980392,
+      0.803921568627451,
+      0.06274509803921569
+    ]
   }
 }

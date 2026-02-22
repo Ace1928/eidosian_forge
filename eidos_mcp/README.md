@@ -52,6 +52,13 @@ The Nexus integrates deeply with the Eidosian ecosystem:
 - **computer_control** (15 tools): Mouse, keyboard, screenshot, OCR
 - **web_tools** (8 tools): Web fetch, parse, cache
 
+## ✅ Consciousness Validation Tools
+
+RAC-AP construct validation outputs from `agent_forge` are exposed via:
+- `consciousness_construct_validate` (run validator and return report)
+- `consciousness_construct_latest` (latest persisted validator report)
+- `eidos://consciousness/construct-latest` (resource snapshot)
+
 ## 🚀 Usage
 
 **Recommended:** Use the portable launcher script.
