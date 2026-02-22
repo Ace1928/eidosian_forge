@@ -922,5 +922,27 @@
       "termux"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "957685a9-c5a3-4154-a994-8f58aa6dc084",
+    "content": "Workflow lesson reinforced: after rebase always run targeted CLI command tests because parser/table blocks can be silently corrupted by conflict resolution.",
+    "created_at": "2026-02-22T19:51:24.878680",
+    "last_accessed": "2026-02-22T19:51:24.878688",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.85,
+    "ttl_seconds": 86400,
+    "tags": [
+      "cli",
+      "quality",
+      "workflow",
+      "agent_forge",
+      "testing",
+      "rebase"
+    ],
+    "linked_memories": []
   }
 ]

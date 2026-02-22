@@ -1618,6 +1618,20 @@
         ]
       },
       "links": []
+    },
+    "b5d38c9a-795f-47cd-87e6-2c0320ecc66e": {
+      "id": "b5d38c9a-795f-47cd-87e6-2c0320ecc66e",
+      "content": "`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests.",
+      "metadata": {
+        "tags": [
+          "bugfix",
+          "cli",
+          "rebase",
+          "agent_forge",
+          "consciousness"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

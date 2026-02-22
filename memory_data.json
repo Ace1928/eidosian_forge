@@ -1797,5 +1797,34 @@
       0.28627450980392155,
       0.6196078431372549
     ]
+  },
+  "85aaa5e6-ba7d-4b6e-be1c-f58424340a68": {
+    "id": "85aaa5e6-ba7d-4b6e-be1c-f58424340a68",
+    "content": "Post-rebase hardening: repaired malformed `eidctl` parser block for `import-benchmark` (string corruption), reran consciousness validation + adapter tests, and pushed fix commit 493a4394b1.",
+    "created_at": "2026-02-22T19:51:24.742104",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "agent_forge_rebase_parser_fix_20260222"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.5882352941176471,
+      0.6823529411764706,
+      0.49019607843137253,
+      0.39215686274509803,
+      0.3607843137254902,
+      0.3254901960784314,
+      0.2627450980392157,
+      0.17254901960784313,
+      0.12941176470588237,
+      0.7725490196078432,
+      0.2,
+      0.36470588235294116,
+      0.25882352941176473,
+      0.8235294117647058,
+      0.8196078431372549,
+      0.37254901960784315
+    ]
   }
 }
