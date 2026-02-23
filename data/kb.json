@@ -1701,6 +1701,19 @@
         ]
       },
       "links": []
+    },
+    "7e799ffc-ef86-4e2c-a629-60522a3a16ef": {
+      "id": "7e799ffc-ef86-4e2c-a629-60522a3a16ef",
+      "content": "Code Forge digest and triage-report CLI now accept --profile-trace, enabling runtime hot-path aware triage classification and reporting.",
+      "metadata": {
+        "tags": [
+          "triage",
+          "code_forge",
+          "profiling",
+          "cli"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
