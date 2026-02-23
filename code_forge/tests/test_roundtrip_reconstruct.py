@@ -5,13 +5,13 @@ from pathlib import Path
 
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
+from code_forge.reconstruct import pipeline as reconstruct_pipeline
 from code_forge.reconstruct.pipeline import (
     apply_reconstruction,
     build_reconstruction_from_library,
     compare_tree_parity,
     run_roundtrip_pipeline,
 )
-from code_forge.reconstruct import pipeline as reconstruct_pipeline
 
 
 def _make_repo(root: Path) -> None:
