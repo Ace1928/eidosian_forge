@@ -8,7 +8,6 @@ rdflib = pytest.importorskip("rdflib", reason="rdflib required for reasoning tes
 pytest.importorskip("owlrl", reason="owlrl required for reasoning tests")
 
 
-
 def test_reason_rdf_graph_rdfs_infers_superclass_type() -> None:
     graph = rdflib.Graph()
     ex = rdflib.Namespace("urn:test:")
@@ -21,7 +20,6 @@ def test_reason_rdf_graph_rdfs_infers_superclass_type() -> None:
     assert report["profile"] == "rdfs"
     assert report["triple_count_after"] >= report["triple_count_before"]
     assert (ex.instance, rdflib.RDF.type, ex.Parent) in graph
-
 
 
 def test_reason_owl_can_export_and_apply(tmp_path: Path) -> None:
