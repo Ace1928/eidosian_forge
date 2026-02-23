@@ -25,16 +25,31 @@ class CrawlForge:
     """
     Manages ethical web crawling and data extraction.
     """
-    def __init__(self, user_agent: str = "EidosianCrawler/0.1.0"):
+    def __init__(
+        self,
+        user_agent: str = "EidosianCrawler/0.1.0",
+        *,
+        enable_http_cache: bool = True,
+        http_cache_ttl_seconds: float = 120.0,
+        robots_cache_ttl_seconds: float = 1800.0,
+    ):
         self.user_agent = user_agent
         self.rate_limit = 1.0 # Seconds between requests
         self._last_request_time = 0.0
         self._robot_parsers: Dict[str, RobotFileParser] = {}
+        self._robot_parser_ts: Dict[str, float] = {}
+        self.enable_http_cache = bool(enable_http_cache)
+        self.http_cache_ttl_seconds = max(0.0, float(http_cache_ttl_seconds))
+        self.robots_cache_ttl_seconds = max(0.0, float(robots_cache_ttl_seconds))
+        self._page_cache: Dict[str, Dict[str, Any]] = {}
 
     def _get_robot_parser(self, url: str) -> RobotFileParser:
         parsed_url = urlparse(url)
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        if base_url not in self._robot_parsers:
+        now = time.time()
+        last = float(self._robot_parser_ts.get(base_url) or 0.0)
+        stale = (now - last) > self.robots_cache_ttl_seconds
+        if base_url not in self._robot_parsers or stale:
             rp = RobotFileParser()
             rp.set_url(f"{base_url}/robots.txt")
             try:
@@ -42,6 +57,7 @@ class CrawlForge:
             except Exception:
                 pass
             self._robot_parsers[base_url] = rp
+            self._robot_parser_ts[base_url] = now
         return self._robot_parsers[base_url]
 
     @eidosian()
@@ -53,6 +69,13 @@ class CrawlForge:
     @eidosian()
     def fetch_page(self, url: str) -> Optional[str]:
         """Fetch a page with respect to rate limits and robots.txt."""
+        if self.enable_http_cache:
+            cached = self._page_cache.get(url)
+            if cached:
+                age = time.time() - float(cached.get("fetched_at") or 0.0)
+                if age <= self.http_cache_ttl_seconds:
+                    return str(cached.get("content") or "")
+
         if not self.can_fetch(url):
             logging.warning(f"Robots.txt forbids fetching: {url}")
             return None
@@ -66,10 +89,27 @@ class CrawlForge:
             response = requests.get(url, headers={"User-Agent": self.user_agent}, timeout=10)
             self._last_request_time = time.time()
             response.raise_for_status()
-            return response.text
+            text = response.text
+            if self.enable_http_cache:
+                self._page_cache[url] = {
+                    "content": text,
+                    "fetched_at": self._last_request_time,
+                }
+            return text
         except Exception as e:
             logging.error(f"Error fetching {url}: {e}")
             return None
+
+    @eidosian()
+    def cache_stats(self) -> Dict[str, Any]:
+        """Return crawl cache status and simple counters."""
+        return {
+            "http_cache_enabled": self.enable_http_cache,
+            "http_cache_items": len(self._page_cache),
+            "http_cache_ttl_seconds": self.http_cache_ttl_seconds,
+            "robots_cache_items": len(self._robot_parsers),
+            "robots_cache_ttl_seconds": self.robots_cache_ttl_seconds,
+        }
 
     @eidosian()
     def extract_structured_data(self, html: str) -> Dict[str, Any]:

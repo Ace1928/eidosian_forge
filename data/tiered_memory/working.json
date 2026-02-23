@@ -880,50 +880,6 @@
     "linked_memories": []
   },
   {
-    "id": "5fd1f1e5-31a1-453c-a8bc-daa51f8e1b50",
-    "content": "Cycle completed: external benchmark adapters integrated and tested in Termux using eidosian_venv. Added CLI import command and report normalization for consciousness benchmark artifacts with provenance fields.",
-    "created_at": "2026-02-22T19:25:34.499138",
-    "last_accessed": "2026-02-22T19:25:34.499162",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.87,
-    "ttl_seconds": 86400,
-    "tags": [
-      "cli",
-      "termux",
-      "benchmark",
-      "consciousness",
-      "adapter",
-      "agent_forge"
-    ],
-    "linked_memories": []
-  },
-  {
-    "id": "0fe3e82e-b9e9-459e-9596-8813d96b6c0d",
-    "content": "Completed agent_forge TODO closure cycle: external benchmark adapters and validation trend dashboard features implemented with passing targeted tests in eidosian_venv.",
-    "created_at": "2026-02-22T19:31:15.687926",
-    "last_accessed": "2026-02-22T19:31:15.687934",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.88,
-    "ttl_seconds": 86400,
-    "tags": [
-      "todo",
-      "termux",
-      "benchmark",
-      "dashboard",
-      "validation",
-      "agent_forge"
-    ],
-    "linked_memories": []
-  },
-  {
     "id": "957685a9-c5a3-4154-a994-8f58aa6dc084",
     "content": "Workflow lesson reinforced: after rebase always run targeted CLI command tests because parser/table blocks can be silently corrupted by conflict resolution.",
     "created_at": "2026-02-22T19:51:24.878680",
@@ -942,27 +898,6 @@
       "workflow",
       "rebase",
       "agent_forge"
-    ],
-    "linked_memories": []
-  },
-  {
-    "id": "ac37e27d-1350-468b-97c4-c0aef8378000",
-    "content": "Coverage target enforcement for code_forge now uses explicit source-scoped coverage and fail-under threshold in CI workflows, with local command documented in README.",
-    "created_at": "2026-02-22T20:09:37.984246",
-    "last_accessed": "2026-02-22T20:09:37.984252",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.84,
-    "ttl_seconds": 86400,
-    "tags": [
-      "ci",
-      "quality-gate",
-      "workflow",
-      "code_forge",
-      "coverage"
     ],
     "linked_memories": []
   },
@@ -1033,42 +968,23 @@
     "linked_memories": []
   },
   {
-    "id": "8608dbec-d6c9-47cb-8936-b8f79237ee42",
-    "content": "Completed TODO cycle: implemented code_forge profile-hotpath triage integration and crawl_forge BeautifulSoup extraction upgrade, with targeted tests passing.",
-    "created_at": "2026-02-23T11:34:25.773289",
-    "last_accessed": "2026-02-23T11:34:25.773318",
+    "id": "f8ab3f3b-8c67-4e22-ac60-05d5d385be4c",
+    "content": "Second TODO pass complete: implemented parser adapter framework with optional tree-sitter support in code_forge and in-memory TTL caches for crawl_forge robots/page fetches, with passing tests.",
+    "created_at": "2026-02-23T12:06:46.152237",
+    "last_accessed": "2026-02-23T12:06:46.152245",
     "access_count": 0,
     "tier": "working",
     "namespace": "task",
     "memory_type": "episodic",
     "metadata": {},
-    "importance": 0.92,
+    "importance": 0.93,
     "ttl_seconds": 86400,
     "tags": [
+      "parsers",
+      "todo",
       "code_forge",
       "crawl_forge",
-      "todo",
-      "tests"
-    ],
-    "linked_memories": []
-  },
-  {
-    "id": "740185af-4f33-40a2-b7b7-9c5b41db640b",
-    "content": "Safe flow completed: autostash rebase over origin/main, push succeeded, and targeted regression tests passed after rebase for code_forge and crawl_forge changes.",
-    "created_at": "2026-02-23T11:55:54.124789",
-    "last_accessed": "2026-02-23T11:55:54.124799",
-    "access_count": 0,
-    "tier": "working",
-    "namespace": "task",
-    "memory_type": "episodic",
-    "metadata": {},
-    "importance": 0.94,
-    "ttl_seconds": 86400,
-    "tags": [
-      "termux",
-      "rebase",
-      "validation",
-      "git"
+      "cache"
     ],
     "linked_memories": []
   }

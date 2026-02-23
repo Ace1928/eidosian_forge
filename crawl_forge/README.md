@@ -1,36 +1,52 @@
-# 🕷️ Crawl Forge
+# Crawl Forge
 
-[![Python: 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](../global_info.py)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+`crawl_forge` provides ethical web fetching and structured extraction with cache-aware behavior for Termux/Linux runs.
 
-**The Eyes of Eidos (External).**
+## Capabilities
 
-## 🕷️ Overview
+- `CrawlForge.can_fetch(url)`: checks `robots.txt` policy.
+- `CrawlForge.fetch_page(url)`: rate-limited fetch with HTTP response cache.
+- `CrawlForge.extract_structured_data(html)`: HTML metadata extraction via BeautifulSoup.
+- `CrawlForge.cache_stats()`: runtime cache visibility for page and robots caches.
+- `TikaExtractor` / `TikaKnowledgeIngester`: optional deep document extraction and ingestion (when `tika` extras are installed).
 
-`crawl_forge` provides tools for gathering information from the external web. It is designed to be ethical, safe, and structured.
+## Runtime Caching
 
-## 🏗️ Architecture
+- `robots.txt` parser cache with TTL (`robots_cache_ttl_seconds`).
+- HTTP content cache with TTL (`http_cache_ttl_seconds`).
+- Both caches are in-memory and safe to disable (`enable_http_cache=False`).
 
-- **Fetcher (`fetcher.py`)**: Handles HTTP requests with retries, user-agent rotation, and timeout management.
-- **Parser (`parser.py`)**: Extracts clean text, metadata, and links using `BeautifulSoup` or `readability`.
-- **Policy (`policy.py`)**: Enforces `robots.txt` compliance and rate limiting per domain.
+## CLI
 
-## 🔗 System Integration
+```bash
+crawl-forge status
+crawl-forge fetch https://example.com
+crawl-forge extract https://example.com
+crawl-forge robots https://example.com
+crawl-forge tika /path/to/document.pdf
+```
 
-- **Eidos MCP**: Exposes `web_fetch` and `web_search` capabilities.
-- **Memory Forge**: Stores crawled content for semantic indexing.
+`crawl-forge status` reports cache and Tika availability in addition to crawler settings.
 
-## 🚀 Usage
+## Python Usage
 
 ```python
-from crawl_forge.core import CrawlForge
+from crawl_forge import CrawlForge
 
-crawler = CrawlForge()
+crawler = CrawlForge(
+    enable_http_cache=True,
+    http_cache_ttl_seconds=120.0,
+    robots_cache_ttl_seconds=1800.0,
+)
 
-# Check permissions
 if crawler.can_fetch("https://example.com"):
-    # Fetch and parse
-    result = crawler.fetch("https://example.com")
-    print(result.title)
-    print(result.clean_text)
+    html = crawler.fetch_page("https://example.com")
+    if html:
+        data = crawler.extract_structured_data(html)
+        print(data["title"], len(data["links"]))
 ```
+
+## Notes
+
+- This forge intentionally enforces crawler politeness before fetching.
+- For JS-heavy pages, headless browser support remains a planned TODO item.

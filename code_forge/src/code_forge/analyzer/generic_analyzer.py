@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 from pathlib import Path
 from typing import Any, Optional
 
 from eidosian_core import eidosian
+
+from code_forge.analyzer.parser_adapters import ParserAdapter, build_default_parser_adapters
 
 _LANGUAGE_BY_EXT = {
     ".py": "python",
@@ -53,7 +56,7 @@ _LANGUAGE_BY_EXT = {
 class GenericCodeAnalyzer:
     """Regex-oriented analyzer for non-Python source files."""
 
-    def __init__(self) -> None:
+    def __init__(self, adapters: Optional[list[ParserAdapter]] = None) -> None:
         self._patterns: list[tuple[str, re.Pattern[str]]] = [
             ("class", re.compile(r"\bclass\s+([A-Za-z_][A-Za-z0-9_]*)")),
             ("interface", re.compile(r"\binterface\s+([A-Za-z_][A-Za-z0-9_]*)")),
@@ -76,6 +79,17 @@ class GenericCodeAnalyzer:
                 re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)\s*\{"),
             ),
         ]
+        if adapters is not None:
+            self._adapters = list(adapters)
+        elif os.environ.get("EIDOS_CODE_FORGE_DISABLE_TREE_SITTER", "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
+            self._adapters = []
+        else:
+            self._adapters = build_default_parser_adapters()
 
     @staticmethod
     def detect_language(file_path: Path) -> str:
@@ -105,6 +119,16 @@ class GenericCodeAnalyzer:
         lines = source.splitlines()
         module_name = file_path.stem
         language = self.detect_language(file_path)
+
+        for adapter in self._adapters:
+            try:
+                if adapter.supports_language(language):
+                    adapted = adapter.analyze_file(file_path=file_path, source=source, language=language)
+                    if isinstance(adapted, dict) and adapted:
+                        adapted.setdefault("language", language)
+                        return adapted
+            except Exception:
+                continue
 
         nodes: list[dict[str, Any]] = []
         classes: list[dict[str, Any]] = []

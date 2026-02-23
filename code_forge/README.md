@@ -7,6 +7,7 @@ and produces explainable triage outputs for archive reduction and canonical extr
 ## What It Does
 
 - Multi-language ingestion into a normalized SQLite library (`code_units`, `code_text`, `relationships`, fingerprints, search index).
+- Optional tree-sitter parser adapter path for non-Python files (auto-detects installed tree-sitter runtimes and falls back safely to regex analysis).
 - Exact duplicate detection, normalized duplicate detection, and near-duplicate detection via SimHash.
 - Structural clone clustering using identifier-abstracted structural hashes.
 - Hybrid semantic search (FTS when available + lexical scoring fallback).
@@ -254,5 +255,6 @@ Eval/observability artifacts:
 - Apply supports `--require-manifest` and `--dry-run` for guarded promotion workflows.
 - Apply/replacement is managed-scope safe: prune/removal only applies to manifest-managed paths (or explicit scoped filters), preventing unmanaged file deletion.
 - Roundtrip parity hashing can run in parallel for larger trees; tune with `EIDOS_CODE_FORGE_HASH_WORKERS` (defaults to auto-scaling for large file sets).
+- Set `EIDOS_CODE_FORGE_DISABLE_TREE_SITTER=1` to force regex-only non-Python analysis.
 - FTS5 search is used when available; fallback lexical search remains active.
 - Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

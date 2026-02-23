@@ -5,7 +5,7 @@
 
 ## 🟡 Medium Priority
 - [ ] **Feature**: Add support for headless browser (Playwright/Selenium) for JS-heavy sites.
-- [ ] **Cache**: Implement caching of `robots.txt` and fetched pages.
+- [x] ~~**Cache**: Implement caching of `robots.txt` and fetched pages.~~
 
 ## 🟢 Low Priority
 - [ ] **Async**: Move to `aiohttp` for parallel crawling.

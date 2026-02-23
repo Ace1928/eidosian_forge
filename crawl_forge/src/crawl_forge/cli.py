@@ -154,6 +154,7 @@ class CrawlForgeCLI(StandardCLI):
                     "tika_server": tika_server,
                     "user_agent": self.crawler.user_agent,
                     "rate_limit": self.crawler.rate_limit,
+                    "cache": self.crawler.cache_stats(),
                     "integrations": integrations,
                 }
             )

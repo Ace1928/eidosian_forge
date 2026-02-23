@@ -1714,6 +1714,20 @@
         ]
       },
       "links": []
+    },
+    "1f6934ab-f465-4739-8cb5-3418be877cd1": {
+      "id": "1f6934ab-f465-4739-8cb5-3418be877cd1",
+      "content": "Crawl Forge now includes TTL-based robots and HTTP page caching plus cache_stats telemetry in status output.",
+      "metadata": {
+        "tags": [
+          "termux",
+          "reliability",
+          "robots",
+          "crawl_forge",
+          "cache"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
