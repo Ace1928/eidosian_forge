@@ -1796,6 +1796,20 @@
         ]
       },
       "links": []
+    },
+    "5c4a8974-63dc-4781-8bd7-9b601a923572": {
+      "id": "5c4a8974-63dc-4781-8bd7-9b601a923572",
+      "content": "Knowledge Forge now includes optional OWL/RDFS reasoning via reason_owl + reason_rdf_graph and CLI command `reason-owl`, with tests in knowledge_forge/tests/test_owl_reasoning.py.",
+      "metadata": {
+        "tags": [
+          "knowledge_forge",
+          "cli",
+          "tests",
+          "owl",
+          "reasoning"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
