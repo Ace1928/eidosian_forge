@@ -1755,6 +1755,20 @@
         ]
       },
       "links": []
+    },
+    "a1a23b49-25e9-42ab-8d79-c69b2a2702f9": {
+      "id": "a1a23b49-25e9-42ab-8d79-c69b2a2702f9",
+      "content": "Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels.",
+      "metadata": {
+        "tags": [
+          "planning",
+          "triage",
+          "artifacts",
+          "code_forge",
+          "archive"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
