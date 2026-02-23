@@ -2203,5 +2203,34 @@
       0.4117647058823529,
       0.00392156862745098
     ]
+  },
+  "1a1c2b94-6b0d-4908-9937-71938a605da5": {
+    "id": "1a1c2b94-6b0d-4908-9937-71938a605da5",
+    "content": "Completed Eidos MCP diagnostics hardening cycle: check_mcp now supports component verification (mcp version/imports/env checks), strict mode, and server smoke-build checks; tests and README preflight docs added; related TODO entries crossed off.",
+    "created_at": "2026-02-23T16:40:01.894202",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "eidos_mcp_check_mcp_hardening_20260223"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.7294117647058823,
+      0.3411764705882353,
+      0.21176470588235294,
+      0.4,
+      0.6666666666666666,
+      0.807843137254902,
+      0.07058823529411765,
+      0.7725490196078432,
+      0.043137254901960784,
+      0.06666666666666667,
+      0.7098039215686275,
+      0.6588235294117647,
+      0.7333333333333333,
+      0.2823529411764706,
+      0.592156862745098,
+      0.596078431372549
+    ]
   }
 }
