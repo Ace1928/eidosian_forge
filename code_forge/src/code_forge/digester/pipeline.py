@@ -915,3 +915,114 @@ def run_archive_digester(
     if strict_validation and not bool(validation.get("pass")):
         raise RuntimeError(f"Artifact validation failed: {validation.get('errors')}")
     return summary
+
+
+def build_archive_reduction_plan(
+    output_dir: Path,
+    *,
+    max_delete_candidates: int = 400,
+    max_extract_candidates: int = 400,
+    max_refactor_candidates: int = 400,
+    max_quarantine_candidates: int = 200,
+) -> dict[str, Any]:
+    """
+    Build candidate archive reduction plan artifacts from triage outputs.
+
+    Outputs:
+    - archive_reduction_plan.json
+    - archive_reduction_plan.md
+    """
+    output_dir = Path(output_dir).resolve()
+    triage_path = output_dir / "triage.json"
+    if not triage_path.exists():
+        raise FileNotFoundError(f"missing triage artifact: {triage_path}")
+
+    triage = json.loads(triage_path.read_text(encoding="utf-8"))
+    entries = list(triage.get("entries") or [])
+
+    def _sorted_by_dup_then_conf(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return sorted(
+            rows,
+            key=lambda rec: (
+                -float((rec.get("metrics") or {}).get("duplicate_pressure") or 0.0),
+                -float(rec.get("confidence") or 0.0),
+                str(rec.get("file_path") or ""),
+            ),
+        )
+
+    delete_candidates = _sorted_by_dup_then_conf([rec for rec in entries if rec.get("label") == "delete_candidate"])[
+        : max(1, int(max_delete_candidates))
+    ]
+    extract_candidates = _sorted_by_dup_then_conf([rec for rec in entries if rec.get("label") == "extract"])[
+        : max(1, int(max_extract_candidates))
+    ]
+    refactor_candidates = sorted(
+        [rec for rec in entries if rec.get("label") == "refactor"],
+        key=lambda rec: (
+            -float((rec.get("metrics") or {}).get("max_complexity") or 0.0),
+            -float(rec.get("confidence") or 0.0),
+            str(rec.get("file_path") or ""),
+        ),
+    )[: max(1, int(max_refactor_candidates))]
+    quarantine_candidates = sorted(
+        [rec for rec in entries if rec.get("label") == "quarantine"],
+        key=lambda rec: (-float(rec.get("confidence") or 0.0), str(rec.get("file_path") or "")),
+    )[: max(1, int(max_quarantine_candidates))]
+
+    payload = {
+        "generated_at": _utc_now(),
+        "output_dir": str(output_dir),
+        "source_triage_path": str(triage_path),
+        "ruleset_version": triage.get("ruleset_version"),
+        "counts": {
+            "entries_total": len(entries),
+            "delete_candidates": len(delete_candidates),
+            "extract_candidates": len(extract_candidates),
+            "refactor_candidates": len(refactor_candidates),
+            "quarantine_candidates": len(quarantine_candidates),
+        },
+        "delete_candidates": delete_candidates,
+        "extract_candidates": extract_candidates,
+        "refactor_candidates": refactor_candidates,
+        "quarantine_candidates": quarantine_candidates,
+    }
+
+    json_path = output_dir / "archive_reduction_plan.json"
+    json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    lines = [
+        "# Archive Reduction Plan",
+        "",
+        f"Generated: {payload['generated_at']}",
+        f"Source triage: `{triage_path}`",
+        "",
+        "## Summary",
+        "",
+    ]
+    for key, value in payload["counts"].items():
+        lines.append(f"- `{key}`: {value}")
+
+    def _section(title: str, rows: list[dict[str, Any]], score_key: str, metric_key: str) -> None:
+        lines.append("")
+        lines.append(f"## {title}")
+        lines.append("")
+        if not rows:
+            lines.append("- (none)")
+            return
+        for rec in rows:
+            metrics = rec.get("metrics") or {}
+            lines.append(
+                f"- `{rec.get('file_path')}` | label=`{rec.get('label')}` | {score_key}={float(rec.get('confidence') or 0.0):.2f} | {metric_key}={float(metrics.get(metric_key) or 0.0):.2f} | rule=`{rec.get('rule_id')}`"
+            )
+
+    _section("Delete Candidates", delete_candidates, "confidence", "duplicate_pressure")
+    _section("Extract Candidates", extract_candidates, "confidence", "duplicate_pressure")
+    _section("Refactor Candidates", refactor_candidates, "confidence", "max_complexity")
+    _section("Quarantine Candidates", quarantine_candidates, "confidence", "duplicate_pressure")
+
+    md_path = output_dir / "archive_reduction_plan.md"
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    payload["json_path"] = str(json_path)
+    payload["markdown_path"] = str(md_path)
+    return payload

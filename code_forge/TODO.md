@@ -29,4 +29,4 @@
 ## Low Priority
 - [ ] Add web dashboard for triage and duplicate clusters.
 - [ ] Add optional vector index backend for semantic retrieval experiments.
-- [ ] Add archive reduction assistant output (candidate deletion PR plan).
+- [x] ~~Add archive reduction assistant output (candidate deletion PR plan).~~

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from code_forge.digester.pipeline import (
+    build_archive_reduction_plan,
     build_duplication_index,
     build_repo_index,
     build_triage_report,
@@ -88,6 +89,11 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert payload.get("drift", {}).get("drift_report_json_path")
     validation = validate_output_dir(out)
     assert validation["pass"]
+
+    reduction = build_archive_reduction_plan(out, max_delete_candidates=10, max_extract_candidates=10)
+    assert reduction["counts"]["entries_total"] >= 1
+    assert (out / "archive_reduction_plan.json").exists()
+    assert (out / "archive_reduction_plan.md").exists()
 
 
 def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:

@@ -15,6 +15,7 @@ from code_forge.bench.runner import (
 from code_forge.canonicalize.planner import build_canonical_migration_plan
 from code_forge.digester.drift import build_drift_report_from_output
 from code_forge.digester.pipeline import (
+    build_archive_reduction_plan,
     build_dependency_graph,
     build_duplication_index,
     build_repo_index,
@@ -90,6 +91,7 @@ __all__ = [
     "CodeLibraryDB",
     "CodeUnit",
     "build_dependency_graph",
+    "build_archive_reduction_plan",
     "build_drift_report_from_output",
     "build_duplication_index",
     "build_repo_index",

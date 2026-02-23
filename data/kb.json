@@ -1742,6 +1742,19 @@
         ]
       },
       "links": []
+    },
+    "a7db1800-132e-4cce-8dba-7603498849a0": {
+      "id": "a7db1800-132e-4cce-8dba-7603498849a0",
+      "content": "Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks.",
+      "metadata": {
+        "tags": [
+          "schema",
+          "code_forge",
+          "validation",
+          "artifacts"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

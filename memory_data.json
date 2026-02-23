@@ -2058,5 +2058,34 @@
       0.09019607843137255,
       0.8784313725490196
     ]
+  },
+  "696eddaa-0a01-438c-bad7-1df57dfb3fd1": {
+    "id": "696eddaa-0a01-438c-bad7-1df57dfb3fd1",
+    "content": "Implemented code_forge archive-reduction-plan command, producing archive_reduction_plan.json and .md from triage outputs with candidate buckets for delete/extract/refactor/quarantine.",
+    "created_at": "2026-02-23T12:33:22.414204",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_archive_reduction_plan_cli_2026_02_23"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.9607843137254902,
+      0.7568627450980392,
+      0.611764705882353,
+      0.4117647058823529,
+      0.2901960784313726,
+      0.1843137254901961,
+      0.5254901960784314,
+      0.9333333333333333,
+      0.39215686274509803,
+      0.8627450980392157,
+      0.23529411764705882,
+      0.1843137254901961,
+      0.6196078431372549,
+      0.9294117647058824,
+      0.8235294117647058,
+      0.8
+    ]
   }
 }

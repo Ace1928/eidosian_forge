@@ -1008,5 +1008,25 @@
       "crawl_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "89894c05-71d3-41df-adc5-0cb147790e67",
+    "content": "Validated new archive-reduction-plan command manually against data/code_forge/digester/latest; generated counts and plan artifacts successfully.",
+    "created_at": "2026-02-23T12:33:22.556335",
+    "last_accessed": "2026-02-23T12:33:22.556348",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "code_forge",
+      "validation",
+      "cli",
+      "archive_reduction"
+    ],
+    "linked_memories": []
   }
 ]

@@ -17,6 +17,7 @@ OPTIONAL_FILES = {
     "drift_report.json": "drift_report",
     "provenance_links.json": "provenance_links",
     "provenance_registry.json": "provenance_registry",
+    "archive_reduction_plan.json": "archive_reduction_plan",
 }
 
 
@@ -226,6 +227,28 @@ def validate_provenance_registry(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_archive_reduction_plan(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    _require(
+        isinstance(payload.get("generated_at"), str),
+        errors,
+        "archive_reduction_plan.generated_at must be a string",
+    )
+    _require(
+        isinstance(payload.get("source_triage_path"), str),
+        errors,
+        "archive_reduction_plan.source_triage_path must be a string",
+    )
+    _require(isinstance(payload.get("counts"), dict), errors, "archive_reduction_plan.counts must be an object")
+    for key in ("delete_candidates", "extract_candidates", "refactor_candidates", "quarantine_candidates"):
+        _require(
+            isinstance(payload.get(key), list),
+            errors,
+            f"archive_reduction_plan.{key} must be a list",
+        )
+    return errors
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -252,6 +275,7 @@ def validate_output_dir(output_dir: Path) -> dict[str, Any]:
         "drift_report": validate_drift_report,
         "provenance_links": validate_provenance_links,
         "provenance_registry": validate_provenance_registry,
+        "archive_reduction_plan": validate_archive_reduction_plan,
     }
 
     for filename, key in REQUIRED_FILES.items():

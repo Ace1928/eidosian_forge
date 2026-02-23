@@ -76,6 +76,11 @@ code-forge triage-report \
   --output-dir data/code_forge/digester/latest \
   --profile-trace reports/code_forge_profile_hotspots.json
 
+# Build reduction candidate plan from triage labels
+code-forge archive-reduction-plan \
+  --output-dir data/code_forge/digester/latest \
+  --max-delete-candidates 300
+
 # Full archive-digester run
 code-forge digest . \
   --output-dir data/code_forge/digester/latest \
@@ -207,6 +212,7 @@ Primary digester artifacts:
 - `triage.csv`: tabular triage export
 - `triage_report.md`: human review report
 - `archive_digester_summary.json`: full run summary
+- `archive_reduction_plan.json` + `archive_reduction_plan.md`: deletion/extraction/refactor candidate plan derived from triage labels
 - `drift_report.json`: run-over-run metric comparison and warning set
 - `drift_report.md`: human-readable drift summary
 - `history/*.json`: immutable per-run metric snapshots used for drift comparison

@@ -38,6 +38,7 @@ from code_forge import (
     GenericCodeAnalyzer,
     IngestionRunner,
     apply_reconstruction,
+    build_archive_reduction_plan,
     build_canonical_migration_plan,
     build_dependency_graph,
     build_drift_report_from_output,
@@ -506,6 +507,41 @@ class CodeForgeCLI(StandardCLI):
             help="Optional profile trace JSON for hot-path triage preservation",
         )
         triage_parser.set_defaults(func=self._cmd_triage_report)
+
+        reduction_plan_parser = subparsers.add_parser(
+            "archive-reduction-plan",
+            help="Generate deletion/extraction/refactor candidate plan from triage artifacts",
+        )
+        reduction_plan_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Directory containing triage.json",
+        )
+        reduction_plan_parser.add_argument(
+            "--max-delete-candidates",
+            type=int,
+            default=400,
+            help="Maximum delete-candidate rows (default: 400)",
+        )
+        reduction_plan_parser.add_argument(
+            "--max-extract-candidates",
+            type=int,
+            default=400,
+            help="Maximum extract-candidate rows (default: 400)",
+        )
+        reduction_plan_parser.add_argument(
+            "--max-refactor-candidates",
+            type=int,
+            default=400,
+            help="Maximum refactor-candidate rows (default: 400)",
+        )
+        reduction_plan_parser.add_argument(
+            "--max-quarantine-candidates",
+            type=int,
+            default=200,
+            help="Maximum quarantine-candidate rows (default: 200)",
+        )
+        reduction_plan_parser.set_defaults(func=self._cmd_archive_reduction_plan)
 
         digest_parser = subparsers.add_parser(
             "digest",
@@ -1688,6 +1724,31 @@ class CodeForgeCLI(StandardCLI):
                 )
         except Exception as e:
             result = CommandResult(False, f"Triage error: {e}")
+        self._output(result, args)
+
+    def _cmd_archive_reduction_plan(self, args) -> None:
+        """Build archive reduction candidate plan from triage outputs."""
+        try:
+            output_dir = Path(args.output_dir).resolve()
+            payload = build_archive_reduction_plan(
+                output_dir=output_dir,
+                max_delete_candidates=max(1, int(args.max_delete_candidates)),
+                max_extract_candidates=max(1, int(args.max_extract_candidates)),
+                max_refactor_candidates=max(1, int(args.max_refactor_candidates)),
+                max_quarantine_candidates=max(1, int(args.max_quarantine_candidates)),
+            )
+            result = CommandResult(
+                True,
+                "Archive reduction plan generated",
+                {
+                    "output_dir": str(output_dir),
+                    "json_path": payload.get("json_path"),
+                    "markdown_path": payload.get("markdown_path"),
+                    "counts": payload.get("counts", {}),
+                },
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Archive reduction plan error: {e}")
         self._output(result, args)
 
     def _cmd_digest(self, args) -> None:
