@@ -24,7 +24,7 @@
 - [x] Add AST-structural clone detection and cluster reports.
 - [ ] Add per-language parser adapters (tree-sitter path) for deeper non-Python fidelity.
 - [ ] Integrate profile traces into triage decisions (hot path preservation).
-- [ ] Add parallelized parity hashing for large tree roundtrips.
+- [x] ~~Add parallelized parity hashing for large tree roundtrips.~~
 
 ## Low Priority
 - [ ] Add web dashboard for triage and duplicate clusters.

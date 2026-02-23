@@ -7,6 +7,7 @@ import os
 import shutil
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
@@ -39,6 +40,32 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _hash_workers(file_count: int) -> int:
+    env_value = os.environ.get("EIDOS_CODE_FORGE_HASH_WORKERS")
+    if env_value:
+        try:
+            parsed = int(env_value)
+            if parsed >= 1:
+                return parsed
+        except ValueError:
+            pass
+    if file_count < 64:
+        return 1
+    cpu = os.cpu_count() or 2
+    return max(1, min(8, cpu))
+
+
+def _hash_file_items(items: list[tuple[str, Path]]) -> dict[str, str]:
+    workers = _hash_workers(len(items))
+    if workers <= 1 or len(items) <= 1:
+        return {rel: _sha256_file(path) for rel, path in items}
+    out: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for rel, digest in pool.map(lambda pair: (pair[0], _sha256_file(pair[1])), items):
+            out[rel] = digest
+    return out
+
+
 def _collect_tree_hashes(
     root: Path,
     *,
@@ -47,7 +74,7 @@ def _collect_tree_hashes(
 ) -> dict[str, str]:
     root = Path(root).resolve()
     ext_set = {str(ext).lower() for ext in extensions} if extensions else None
-    out: dict[str, str] = {}
+    candidates: list[tuple[str, Path]] = []
     for file_path in root.rglob("*"):
         if not file_path.is_file():
             continue
@@ -57,13 +84,13 @@ def _collect_tree_hashes(
         suffix = file_path.suffix.lower()
         if ext_set is not None and suffix not in ext_set:
             continue
-        out[rel] = _sha256_file(file_path)
-    return out
+        candidates.append((rel, file_path))
+    return _hash_file_items(candidates)
 
 
 def _collect_selected_hashes(root: Path, relative_paths: Iterable[str]) -> dict[str, str]:
     root = Path(root).resolve()
-    out: dict[str, str] = {}
+    candidates: list[tuple[str, Path]] = []
     for rel in sorted(set(str(p) for p in relative_paths if str(p))):
         candidate = (root / rel).resolve()
         try:
@@ -71,8 +98,8 @@ def _collect_selected_hashes(root: Path, relative_paths: Iterable[str]) -> dict[
         except ValueError:
             continue
         if candidate.is_file():
-            out[rel] = _sha256_file(candidate)
-    return out
+            candidates.append((rel, candidate))
+    return _hash_file_items(candidates)
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> Path:

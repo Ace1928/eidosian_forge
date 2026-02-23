@@ -249,5 +249,6 @@ Eval/observability artifacts:
 - Integration scope policy is configurable with `--integration-policy {run,effective_run,global}` on `digest` and `roundtrip`.
 - Apply supports `--require-manifest` and `--dry-run` for guarded promotion workflows.
 - Apply/replacement is managed-scope safe: prune/removal only applies to manifest-managed paths (or explicit scoped filters), preventing unmanaged file deletion.
+- Roundtrip parity hashing can run in parallel for larger trees; tune with `EIDOS_CODE_FORGE_HASH_WORKERS` (defaults to auto-scaling for large file sets).
 - FTS5 search is used when available; fallback lexical search remains active.
 - Default ingestion excludes generated outputs (`data/code_forge/digester`, `data/code_forge/graphrag_input`, `doc_forge/final_docs`).

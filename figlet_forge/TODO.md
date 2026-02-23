@@ -21,5 +21,5 @@
 - [ ] Document 'PYTHONPATH=eidosian_forge/eidos_mcp/src' requirement for manual Stdio testing of eidos_mcp_server.py in DEBUGGING.md
 
 ## Bug Fixes
-- [ ] Fix eidos_remember_self: TieredMemorySystem.remember_self() raises TypeError because it does not accept the 'importance' argument defined in the MCP schema.
-- [ ] Fix path resolution in refactor_analyze: It incorrectly prepends the working directory to already relative paths.
+- [x] ~~Fix eidos_remember_self: TieredMemorySystem.remember_self() raises TypeError because it does not accept the 'importance' argument defined in the MCP schema.~~
+- [x] ~~Fix path resolution in refactor_analyze: It incorrectly prepends the working directory to already relative paths.~~

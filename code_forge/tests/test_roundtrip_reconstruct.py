@@ -11,6 +11,7 @@ from code_forge.reconstruct.pipeline import (
     compare_tree_parity,
     run_roundtrip_pipeline,
 )
+from code_forge.reconstruct import pipeline as reconstruct_pipeline
 
 
 def _make_repo(root: Path) -> None:
@@ -257,3 +258,16 @@ def test_roundtrip_uses_latest_effective_run_when_no_new_units(tmp_path: Path) -
     assert second["digest"]["knowledge_sync"]["scanned_units"] > 0
     assert second["digest"]["memory_sync"]["scanned_units"] > 0
     assert "exported" in second["digest"]["graphrag_export"]
+
+
+def test_parallel_hashing_matches_single_thread(monkeypatch, tmp_path: Path) -> None:
+    root = tmp_path / "hash_root"
+    root.mkdir()
+    for idx in range(100):
+        (root / f"f_{idx:03d}.txt").write_text(f"v{idx}\n", encoding="utf-8")
+
+    monkeypatch.setenv("EIDOS_CODE_FORGE_HASH_WORKERS", "1")
+    serial = reconstruct_pipeline._collect_tree_hashes(root)
+    monkeypatch.setenv("EIDOS_CODE_FORGE_HASH_WORKERS", "4")
+    parallel = reconstruct_pipeline._collect_tree_hashes(root)
+    assert serial == parallel

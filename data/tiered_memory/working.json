@@ -27,10 +27,10 @@
     "importance": 0.5,
     "ttl_seconds": 86400,
     "tags": [
+      "identity",
       "milestone-complete",
       "introspection",
-      "velvet-beef",
-      "identity"
+      "velvet-beef"
     ],
     "linked_memories": []
   },
@@ -67,11 +67,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "session",
-      "gemini",
       "codex",
       "termux",
-      "mcp"
+      "session",
+      "mcp",
+      "gemini"
     ],
     "linked_memories": []
   },
@@ -88,10 +88,10 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "ports",
+      "termux",
       "dashboard",
       "doc_forge",
-      "termux",
+      "ports",
       "scribe"
     ],
     "linked_memories": []
@@ -109,10 +109,10 @@
     "importance": 0.84,
     "ttl_seconds": 86400,
     "tags": [
-      "stability",
-      "doc_forge",
       "termux",
-      "service"
+      "stability",
+      "service",
+      "doc_forge"
     ],
     "linked_memories": []
   },
@@ -129,10 +129,10 @@
     "importance": 0.86,
     "ttl_seconds": 86400,
     "tags": [
-      "judge",
-      "graphrag",
       "quality",
-      "evaluation"
+      "evaluation",
+      "judge",
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -149,11 +149,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "quality-gates",
-      "graphrag",
-      "models",
       "benchmarking",
-      "termux"
+      "termux",
+      "quality-gates",
+      "models",
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -171,11 +171,11 @@
     "ttl_seconds": 86400,
     "tags": [
       "eidctl",
-      "validation",
-      "agent_forge",
-      "rac_ap",
       "termux",
-      "consciousness"
+      "rac_ap",
+      "consciousness",
+      "validation",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -192,13 +192,13 @@
     "importance": 0.93,
     "ttl_seconds": 86400,
     "tags": [
-      "causal",
-      "validation",
       "rac-ap",
-      "agent_forge",
-      "intervention",
+      "validation",
       "consciousness",
-      "protocol"
+      "causal",
+      "protocol",
+      "intervention",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -215,12 +215,12 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
+      "push",
       "git",
       "tests",
+      "rebase",
       "validation",
-      "agent_forge",
-      "push",
-      "rebase"
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -237,11 +237,11 @@
     "importance": 0.91,
     "ttl_seconds": 86400,
     "tags": [
-      "workflows",
-      "validation",
-      "eidosian_forge",
       "ci",
-      "security"
+      "security",
+      "eidosian_forge",
+      "workflows",
+      "validation"
     ],
     "linked_memories": []
   },
@@ -258,11 +258,11 @@
     "importance": 0.93,
     "ttl_seconds": 86400,
     "tags": [
-      "lint",
+      "ci",
+      "termux",
       "prettier",
       "workflow",
-      "ci",
-      "termux"
+      "lint"
     ],
     "linked_memories": []
   },
@@ -279,10 +279,10 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "atlas",
       "pytest",
       "ci",
-      "workflow"
+      "workflow",
+      "atlas"
     ],
     "linked_memories": []
   },
@@ -299,9 +299,9 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "stabilization",
       "pytest",
       "ci",
+      "stabilization",
       "monorepo"
     ],
     "linked_memories": []
@@ -319,10 +319,10 @@
     "importance": 0.88,
     "ttl_seconds": 86400,
     "tags": [
-      "validation",
       "termux",
       "memory_forge",
-      "chroma"
+      "chroma",
+      "validation"
     ],
     "linked_memories": []
   },
@@ -339,11 +339,11 @@
     "importance": 0.89,
     "ttl_seconds": 86400,
     "tags": [
-      "provenance",
-      "knowledge_forge",
-      "validation",
       "memory_forge",
-      "code_forge"
+      "knowledge_forge",
+      "provenance",
+      "code_forge",
+      "validation"
     ],
     "linked_memories": []
   },
@@ -360,11 +360,11 @@
     "importance": 0.88,
     "ttl_seconds": 86400,
     "tags": [
-      "workflow",
       "ci",
+      "github-actions",
+      "workflow",
       "ports",
-      "dependencies",
-      "github-actions"
+      "dependencies"
     ],
     "linked_memories": []
   },
@@ -381,11 +381,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "workflow",
-      "dependency-management",
       "ci",
-      "agent_forge",
-      "scripts"
+      "dependency-management",
+      "workflow",
+      "scripts",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -402,14 +402,14 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "stability",
-      "moltbook_forge",
-      "tests",
-      "workflows",
-      "figlet_forge",
       "ci",
-      "eidos_mcp",
+      "figlet_forge",
+      "moltbook_forge",
       "game_forge",
+      "stability",
+      "workflows",
+      "tests",
+      "eidos_mcp",
       "glyph_forge"
     ],
     "linked_memories": []
@@ -427,10 +427,10 @@
     "importance": 0.82,
     "ttl_seconds": 86400,
     "tags": [
+      "ci",
       "audit",
       "tests",
-      "forge-wide",
-      "ci"
+      "forge-wide"
     ],
     "linked_memories": []
   },
@@ -447,11 +447,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "validation",
       "ci",
       "game",
+      "glyph",
       "figlet",
-      "glyph"
+      "validation"
     ],
     "linked_memories": []
   },
@@ -468,12 +468,12 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "benchmark",
-      "validation",
-      "rac-ap",
       "security",
+      "rac-ap",
+      "benchmark",
       "consciousness",
-      "protocol"
+      "protocol",
+      "validation"
     ],
     "linked_memories": []
   },
@@ -490,16 +490,16 @@
     "importance": 0.97,
     "ttl_seconds": 86400,
     "tags": [
-      "word_forge",
-      "tests",
-      "benchmark",
-      "knowledge_forge",
       "memory_forge",
+      "knowledge_forge",
+      "benchmark",
       "push",
-      "interop",
+      "tests",
+      "mcp",
       "commit",
       "code_forge",
-      "mcp"
+      "word_forge",
+      "interop"
     ],
     "linked_memories": []
   },
@@ -516,13 +516,13 @@
     "importance": 0.95,
     "ttl_seconds": 86400,
     "tags": [
-      "observability",
-      "tests",
       "staleness",
-      "replay",
-      "eval_os",
       "termux",
-      "code_forge"
+      "tests",
+      "eval_os",
+      "observability",
+      "code_forge",
+      "replay"
     ],
     "linked_memories": []
   },
@@ -539,11 +539,11 @@
     "importance": 0.85,
     "ttl_seconds": 86400,
     "tags": [
-      "tests",
-      "ffmpeg",
       "ci",
-      "determinism",
-      "glyph_forge"
+      "ffmpeg",
+      "tests",
+      "glyph_forge",
+      "determinism"
     ],
     "linked_memories": []
   },
@@ -560,12 +560,12 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "audit",
-      "parity",
       "ci",
       "linux",
       "termux",
-      "mcp"
+      "parity",
+      "mcp",
+      "audit"
     ],
     "linked_memories": []
   },
@@ -582,11 +582,11 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "audit",
-      "parity",
       "ci",
       "lessons",
-      "mcp"
+      "parity",
+      "mcp",
+      "audit"
     ],
     "linked_memories": []
   },
@@ -603,10 +603,10 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "stability",
-      "workflow",
-      "pytest-timeout",
       "ci",
+      "stability",
+      "pytest-timeout",
+      "workflow",
       "opencv"
     ],
     "linked_memories": []
@@ -624,11 +624,11 @@
     "importance": 0.88,
     "ttl_seconds": 86400,
     "tags": [
-      "atlas",
-      "determinism",
       "ci",
-      "tracked-scope",
-      "regression"
+      "atlas",
+      "regression",
+      "determinism",
+      "tracked-scope"
     ],
     "linked_memories": []
   },
@@ -645,10 +645,10 @@
     "importance": 0.86,
     "ttl_seconds": 86400,
     "tags": [
-      "atlas",
-      "workflow",
-      "determinism",
       "ci",
+      "workflow",
+      "atlas",
+      "determinism",
       "green"
     ],
     "linked_memories": []
@@ -666,12 +666,12 @@
     "importance": 0.89,
     "ttl_seconds": 86400,
     "tags": [
-      "refactor_forge",
-      "article_forge",
-      "type_forge",
-      "terminal_forge",
       "todo",
-      "multi-forge"
+      "article_forge",
+      "multi-forge",
+      "terminal_forge",
+      "type_forge",
+      "refactor_forge"
     ],
     "linked_memories": []
   },
@@ -688,10 +688,10 @@
     "importance": 0.82,
     "ttl_seconds": 86400,
     "tags": [
-      "cli-dashboard",
+      "todo",
       "diagnostics_forge",
       "tests",
-      "todo"
+      "cli-dashboard"
     ],
     "linked_memories": []
   },
@@ -708,11 +708,11 @@
     "importance": 0.84,
     "ttl_seconds": 86400,
     "tags": [
-      "performance",
-      "file_forge",
-      "search",
       "todo",
-      "ripgrep"
+      "search",
+      "ripgrep",
+      "performance",
+      "file_forge"
     ],
     "linked_memories": []
   },
@@ -729,11 +729,11 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "tests",
-      "gis",
-      "eidos_mcp",
       "config",
-      "termux"
+      "termux",
+      "gis",
+      "tests",
+      "eidos_mcp"
     ],
     "linked_memories": []
   },
@@ -770,10 +770,10 @@
     "importance": 0.84,
     "ttl_seconds": 86400,
     "tags": [
+      "rdf",
       "status",
       "knowledge_forge",
-      "tests",
-      "rdf"
+      "tests"
     ],
     "linked_memories": []
   },
@@ -791,9 +791,9 @@
     "ttl_seconds": 86400,
     "tags": [
       "todo-progress",
+      "eidos_mcp",
       "rac-ap",
-      "agent_forge",
-      "eidos_mcp"
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -810,11 +810,11 @@
     "importance": 0.91,
     "ttl_seconds": 86400,
     "tags": [
-      "todo-progress",
-      "tests",
-      "agent_forge",
       "security",
-      "rac-ap"
+      "rac-ap",
+      "tests",
+      "todo-progress",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -831,11 +831,11 @@
     "importance": 0.92,
     "ttl_seconds": 86400,
     "tags": [
-      "tests",
-      "agent_forge",
       "rac-ap",
+      "tests",
+      "mcp",
       "drift-review",
-      "mcp"
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -852,10 +852,10 @@
     "importance": 0.86,
     "ttl_seconds": 86400,
     "tags": [
-      "knowledge_forge",
-      "visualization",
       "pyvis",
-      "todo-progress"
+      "knowledge_forge",
+      "todo-progress",
+      "visualization"
     ],
     "linked_memories": []
   },
@@ -872,10 +872,10 @@
     "importance": 0.8,
     "ttl_seconds": 86400,
     "tags": [
-      "chatmock",
       "todo-progress",
       "decision",
-      "eidos_mcp"
+      "eidos_mcp",
+      "chatmock"
     ],
     "linked_memories": []
   },
@@ -893,11 +893,11 @@
     "ttl_seconds": 86400,
     "tags": [
       "cli",
-      "benchmark",
-      "agent_forge",
-      "consciousness",
       "termux",
-      "adapter"
+      "benchmark",
+      "consciousness",
+      "adapter",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -914,12 +914,12 @@
     "importance": 0.88,
     "ttl_seconds": 86400,
     "tags": [
-      "benchmark",
-      "validation",
-      "agent_forge",
       "todo",
+      "termux",
+      "benchmark",
       "dashboard",
-      "termux"
+      "validation",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -936,12 +936,12 @@
     "importance": 0.85,
     "ttl_seconds": 86400,
     "tags": [
-      "cli",
       "quality",
-      "workflow",
-      "agent_forge",
       "testing",
-      "rebase"
+      "cli",
+      "workflow",
+      "rebase",
+      "agent_forge"
     ],
     "linked_memories": []
   },
@@ -958,9 +958,9 @@
     "importance": 0.84,
     "ttl_seconds": 86400,
     "tags": [
-      "workflow",
       "ci",
       "quality-gate",
+      "workflow",
       "code_forge",
       "coverage"
     ],
@@ -979,12 +979,12 @@
     "importance": 0.9,
     "ttl_seconds": 86400,
     "tags": [
-      "validation",
-      "security",
       "roundtrip",
+      "security",
       "code_forge",
+      "signature",
       "schema",
-      "signature"
+      "validation"
     ],
     "linked_memories": []
   },
@@ -1001,12 +1001,34 @@
     "importance": 0.89,
     "ttl_seconds": 86400,
     "tags": [
-      "observability",
-      "otlp",
       "ci",
       "tracing",
       "eval_os",
+      "otlp",
+      "observability",
       "code_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "1c9cda89-424b-400a-9cfb-d9add0b4504c",
+    "content": "Closed stale figlet_forge TODO bugfix entries by validating behavior with direct tests in eidos_mcp routers and preserving current MCP schema compatibility.",
+    "created_at": "2026-02-23T11:04:49.205986",
+    "last_accessed": "2026-02-23T11:04:49.205994",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.83,
+    "ttl_seconds": 86400,
+    "tags": [
+      "figlet_forge",
+      "todo",
+      "router",
+      "eidos_mcp",
+      "compatibility",
+      "regression"
     ],
     "linked_memories": []
   }
