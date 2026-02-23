@@ -54,8 +54,13 @@ code-forge normalized-dedup-report
 code-forge near-dedup-report --max-hamming 6 --min-tokens 20
 
 # Hybrid semantic search and structural trace
-code-forge semantic-search "workspace competition winner"
+code-forge semantic-search "workspace competition winner" --backend text
+code-forge semantic-search "workspace competition winner" --backend vector
+code-forge semantic-search "workspace competition winner" --backend hybrid --vector-weight 0.35
 code-forge trace agent_forge.consciousness.kernel.ConsciousnessKernel --depth 3
+
+# Refresh optional vector index backend
+code-forge vector-index --model hash128_v1 --dim 128 --limit 5000
 
 # Build intake artifacts only
 code-forge catalog . --output-dir data/code_forge/digester/latest
@@ -206,6 +211,7 @@ Primary DB tables:
 - `relationships`: typed edges (`contains`, `imports`, `calls`, `uses`)
 - `code_fingerprints`: normalized hash, simhash64, token_count
 - `code_search`: semantic/lexical search text
+- `code_vectors`: optional vector backend rows for semantic retrieval experiments
 - `ingestion_runs`: deterministic ingestion run metadata
 
 Primary digester artifacts:

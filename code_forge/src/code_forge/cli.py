@@ -384,7 +384,69 @@ class CodeForgeCLI(StandardCLI):
             default=0.05,
             help="Minimum semantic score threshold (default: 0.05)",
         )
+        semantic_parser.add_argument(
+            "--backend",
+            choices=["text", "vector", "hybrid"],
+            default="text",
+            help="Retrieval backend mode (default: text)",
+        )
+        semantic_parser.add_argument(
+            "--vector-weight",
+            type=float,
+            default=0.35,
+            help="Hybrid mode vector weight in [0,1] (default: 0.35)",
+        )
+        semantic_parser.add_argument(
+            "--vector-model",
+            default="hash128_v1",
+            help="Vector model identifier (default: hash128_v1)",
+        )
+        semantic_parser.add_argument(
+            "--vector-dim",
+            type=int,
+            default=128,
+            help="Vector embedding dimension (default: 128)",
+        )
+        semantic_parser.add_argument(
+            "--vector-max-candidates",
+            type=int,
+            default=8000,
+            help="Vector backend candidate scan cap (default: 8000)",
+        )
         semantic_parser.set_defaults(func=self._cmd_semantic_search)
+
+        vector_index_parser = subparsers.add_parser(
+            "vector-index",
+            help="Build or refresh optional vector index backend entries",
+        )
+        vector_index_parser.add_argument(
+            "--model",
+            default="hash128_v1",
+            help="Vector model identifier (default: hash128_v1)",
+        )
+        vector_index_parser.add_argument(
+            "--dim",
+            type=int,
+            default=128,
+            help="Vector dimension (default: 128)",
+        )
+        vector_index_parser.add_argument(
+            "--limit",
+            type=int,
+            default=5000,
+            help="Maximum rows to index per run (default: 5000)",
+        )
+        vector_index_parser.add_argument(
+            "--language",
+            default=None,
+            help="Optional language filter",
+        )
+        vector_index_parser.add_argument(
+            "--type",
+            default=None,
+            help="Optional unit type filter",
+        )
+        vector_index_parser.set_defaults(func=self._cmd_vector_index)
 
         trace_parser = subparsers.add_parser(
             "trace",
@@ -1225,6 +1287,7 @@ class CodeForgeCLI(StandardCLI):
             db_total = self.library_db.count_units()
             db_by_type = self.library_db.count_units_by_type()
             db_by_language = self.library_db.count_units_by_language()
+            vector_stats = self.library_db.vector_index_stats()
             rel_counts = self.library_db.relationship_counts()
             digester_dir = FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"
             latest_runs = self.library_db.latest_runs(limit=5)
@@ -1241,6 +1304,7 @@ class CodeForgeCLI(StandardCLI):
                     "db_total_units": db_total,
                     "db_units_by_type": db_by_type,
                     "db_units_by_language": db_by_language,
+                    "vector_index": vector_stats,
                     "db_relationship_counts": rel_counts,
                     "latest_ingestion_runs": latest_runs,
                     "supported_extensions": sorted(GenericCodeAnalyzer.supported_extensions()),
@@ -1592,6 +1656,11 @@ class CodeForgeCLI(StandardCLI):
                 language=args.language,
                 unit_type=args.type,
                 min_score=float(args.min_score),
+                backend=str(args.backend),
+                vector_weight=float(args.vector_weight),
+                vector_model_name=str(args.vector_model),
+                vector_dim=max(8, int(args.vector_dim)),
+                vector_max_candidates=max(50, int(args.vector_max_candidates)),
             )
             result = CommandResult(
                 True,
@@ -1603,11 +1672,33 @@ class CodeForgeCLI(StandardCLI):
                         "language": args.language,
                         "unit_type": args.type,
                         "min_score": float(args.min_score),
+                        "backend": str(args.backend),
+                        "vector_model": str(args.vector_model),
+                        "vector_dim": max(8, int(args.vector_dim)),
                     },
                 },
             )
         except Exception as e:
             result = CommandResult(False, f"Semantic search error: {e}")
+        self._output(result, args)
+
+    def _cmd_vector_index(self, args) -> None:
+        """Build or refresh vector index rows for semantic retrieval experiments."""
+        try:
+            payload = self.library_db.ensure_vector_index(
+                model_name=str(args.model),
+                dim=max(8, int(args.dim)),
+                limit=max(1, int(args.limit)),
+                language=args.language,
+                unit_type=args.type,
+            )
+            result = CommandResult(
+                True,
+                f"Vector index updated: indexed_now={payload.get('indexed_now', 0)}",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Vector index error: {e}")
         self._output(result, args)
 
     def _cmd_trace(self, args) -> None:

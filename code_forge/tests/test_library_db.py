@@ -224,3 +224,81 @@ def test_file_metrics_and_language_counts(tmp_path: Path) -> None:
     metrics = db.file_metrics()
     assert any(rec["file_path"] == "src/m.py" for rec in metrics)
     assert any(rec["file_path"] == "src/web.js" for rec in metrics)
+
+
+def test_vector_index_and_vector_search(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+
+    src_a = "def compile_plan(steps):\n    return [s for s in steps if s]\n"
+    src_b = "def parse_graph(nodes):\n    return {n['id']: n for n in nodes}\n"
+    h_a = db.add_text(src_a)
+    h_b = db.add_text(src_b)
+    n_a, s_a, t_a = build_fingerprint(src_a)
+    n_b, s_b, t_b = build_fingerprint(src_b)
+
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="compile_plan",
+            qualified_name="ops.compile_plan",
+            file_path="src/ops.py",
+            language="python",
+            content_hash=h_a,
+            normalized_hash=n_a,
+            structural_hash=structural_hash(src_a),
+            simhash64=f"{s_a:016x}",
+            token_count=t_a,
+            semantic_text=src_a,
+        )
+    )
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="parse_graph",
+            qualified_name="ops.parse_graph",
+            file_path="src/graph.py",
+            language="python",
+            content_hash=h_b,
+            normalized_hash=n_b,
+            structural_hash=structural_hash(src_b),
+            simhash64=f"{s_b:016x}",
+            token_count=t_b,
+            semantic_text=src_b,
+        )
+    )
+
+    stats = db.ensure_vector_index(model_name="hash128_v1", dim=128, limit=100)
+    assert stats["vector_rows"] >= 2
+
+    vector = db.semantic_search("compile plan steps", limit=5, backend="vector", min_score=0.0)
+    assert vector
+    assert vector[0].get("qualified_name") == "ops.compile_plan"
+    assert any(rec.get("qualified_name") == "ops.compile_plan" for rec in vector)
+    assert all("vector_score" in rec for rec in vector)
+
+    hybrid = db.semantic_search("parse graph nodes", limit=5, backend="hybrid", min_score=0.0)
+    assert hybrid
+    assert any(rec.get("qualified_name") == "ops.parse_graph" for rec in hybrid)
+
+
+def test_semantic_search_empty_query_is_safe(tmp_path: Path) -> None:
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    h = db.add_text("def noop():\n    return None\n")
+    n, s, t = build_fingerprint("def noop():\n    return None\n")
+    db.add_unit(
+        CodeUnit(
+            unit_type="function",
+            name="noop",
+            qualified_name="ops.noop",
+            file_path="src/ops.py",
+            language="python",
+            content_hash=h,
+            normalized_hash=n,
+            structural_hash=structural_hash("def noop():\n    return None\n"),
+            simhash64=f"{s:016x}",
+            token_count=t,
+        )
+    )
+
+    matches = db.semantic_search("", limit=5)
+    assert isinstance(matches, list)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -130,6 +131,16 @@ class CodeLibraryDB:
                     FOREIGN KEY(unit_id) REFERENCES code_units(id) ON DELETE CASCADE
                 );
 
+                CREATE TABLE IF NOT EXISTS code_vectors (
+                    unit_id TEXT PRIMARY KEY,
+                    model_name TEXT NOT NULL,
+                    dim INTEGER NOT NULL,
+                    vector_json TEXT NOT NULL,
+                    norm REAL NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(unit_id) REFERENCES code_units(id) ON DELETE CASCADE
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_code_units_file_path
                     ON code_units(file_path);
                 CREATE INDEX IF NOT EXISTS idx_code_units_qualified_name
@@ -147,6 +158,9 @@ class CodeLibraryDB:
                     ON code_fingerprints(simhash64);
                 CREATE INDEX IF NOT EXISTS idx_code_fp_token_count
                     ON code_fingerprints(token_count);
+
+                CREATE INDEX IF NOT EXISTS idx_code_vectors_model_dim
+                    ON code_vectors(model_name, dim);
 
                 CREATE INDEX IF NOT EXISTS idx_relationships_parent_type
                     ON relationships(parent_id, rel_type);
@@ -289,6 +303,56 @@ class CodeLibraryDB:
                 (unit_id, search_text),
             )
 
+    @staticmethod
+    def _hash_vector(tokens: list[str], *, dim: int = 128) -> tuple[list[float], float]:
+        """Deterministic signed-hash embedding for lightweight vector search."""
+        size = max(8, int(dim))
+        vec = [0.0] * size
+        if not tokens:
+            return vec, 0.0
+        for tok in tokens:
+            digest = hashlib.sha256(tok.encode("utf-8")).digest()
+            idx = int.from_bytes(digest[:4], "big") % size
+            sign = -1.0 if (digest[4] & 1) else 1.0
+            weight = 1.0 + (int.from_bytes(digest[5:7], "big") % 7) / 10.0
+            vec[idx] += sign * weight
+        norm = math.sqrt(sum(v * v for v in vec))
+        if norm > 0.0:
+            vec = [v / norm for v in vec]
+        return vec, norm
+
+    def _upsert_vector_index(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        unit_id: str,
+        search_text: str,
+        model_name: str,
+        dim: int,
+    ) -> None:
+        tokens = tokenize_code_text(search_text)
+        vec, norm = self._hash_vector(tokens, dim=dim)
+        conn.execute(
+            """
+            INSERT INTO code_vectors (unit_id, model_name, dim, vector_json, norm, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(unit_id) DO UPDATE SET
+                model_name=excluded.model_name,
+                dim=excluded.dim,
+                vector_json=excluded.vector_json,
+                norm=excluded.norm,
+                created_at=excluded.created_at
+            """,
+            (
+                unit_id,
+                model_name,
+                int(dim),
+                json.dumps(vec, separators=(",", ":")),
+                float(norm),
+                _utc_now(),
+            ),
+        )
+
     def add_unit(self, unit: CodeUnit) -> str:
         unit_id = self.make_unit_id(unit)
         with self._connect() as conn:
@@ -331,6 +395,13 @@ class CodeLibraryDB:
             self._upsert_fingerprint(conn, unit_id, unit)
             search_text = self._build_search_text(conn, unit)
             self._upsert_search_index(conn, unit_id, search_text)
+            self._upsert_vector_index(
+                conn,
+                unit_id=unit_id,
+                search_text=search_text,
+                model_name="hash128_v1",
+                dim=128,
+            )
 
         return unit_id
 
@@ -852,20 +923,169 @@ class CodeLibraryDB:
                 """,
                 (limit,),
             ).fetchall()
-            return [(str(r["unit_id"]), 0.0) for r in rows]
-
-        like_terms = [f"%{tok}%" for tok in query_tokens]
-        where = " OR ".join(["search_text LIKE ?" for _ in like_terms])
-        rows = conn.execute(
-            f"""
-            SELECT unit_id, search_text
-            FROM code_search
-            WHERE {where}
-            LIMIT ?
-            """,
-            tuple(like_terms + [limit]),
-        ).fetchall()
+        else:
+            like_terms = [f"%{tok}%" for tok in query_tokens]
+            where = " OR ".join(["search_text LIKE ?" for _ in like_terms])
+            rows = conn.execute(
+                f"""
+                SELECT unit_id, search_text
+                FROM code_search
+                WHERE {where}
+                LIMIT ?
+                """,
+                tuple(like_terms + [limit]),
+            ).fetchall()
         return [(str(r["unit_id"]), 0.0) for r in rows]
+
+    def vector_index_stats(self, model_name: str = "hash128_v1", dim: int = 128) -> Dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT COUNT(*) AS c
+                FROM code_vectors
+                WHERE model_name = ? AND dim = ?
+                """,
+                (str(model_name), int(dim)),
+            ).fetchone()
+        return {
+            "model_name": str(model_name),
+            "dim": int(dim),
+            "vector_rows": int(row["c"]) if row else 0,
+        }
+
+    def ensure_vector_index(
+        self,
+        *,
+        model_name: str = "hash128_v1",
+        dim: int = 128,
+        limit: int = 5000,
+        language: Optional[str] = None,
+        unit_type: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        where = ["(cv.unit_id IS NULL OR cv.model_name <> ? OR cv.dim <> ?)"]
+        params: list[Any] = [str(model_name), int(dim)]
+        if language:
+            where.append("cu.language = ?")
+            params.append(str(language))
+        if unit_type:
+            where.append("cu.unit_type = ?")
+            params.append(str(unit_type))
+        params.append(max(1, int(limit)))
+
+        created = 0
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT cu.id AS unit_id, cs.search_text
+                FROM code_units cu
+                JOIN code_search cs ON cs.unit_id = cu.id
+                LEFT JOIN code_vectors cv ON cv.unit_id = cu.id
+                WHERE {' AND '.join(where)}
+                ORDER BY cu.created_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+            for row in rows:
+                unit_id = str(row["unit_id"])
+                search_text = str(row["search_text"] or "")
+                self._upsert_vector_index(
+                    conn,
+                    unit_id=unit_id,
+                    search_text=search_text,
+                    model_name=str(model_name),
+                    dim=int(dim),
+                )
+                created += 1
+        stats = self.vector_index_stats(model_name=model_name, dim=dim)
+        return {
+            "model_name": str(model_name),
+            "dim": int(dim),
+            "indexed_now": int(created),
+            "vector_rows": int(stats["vector_rows"]),
+        }
+
+    @staticmethod
+    def _cosine_score(query_vec: list[float], row_vec: list[float]) -> float:
+        if not query_vec or not row_vec:
+            return 0.0
+        size = min(len(query_vec), len(row_vec))
+        if size <= 0:
+            return 0.0
+        return float(sum(query_vec[i] * row_vec[i] for i in range(size)))
+
+    def vector_search(
+        self,
+        query: str,
+        limit: int = 20,
+        *,
+        language: Optional[str] = None,
+        unit_type: Optional[str] = None,
+        min_score: float = 0.05,
+        model_name: str = "hash128_v1",
+        dim: int = 128,
+        ensure_index_limit: int = 5000,
+        max_candidates: int = 8000,
+    ) -> list[Dict[str, Any]]:
+        self.ensure_vector_index(
+            model_name=model_name,
+            dim=dim,
+            limit=max(1, int(ensure_index_limit)),
+            language=language,
+            unit_type=unit_type,
+        )
+
+        query_tokens = tokenize_code_text(query)
+        query_vec, query_norm = self._hash_vector(query_tokens, dim=int(dim))
+        if query_norm <= 0.0:
+            return []
+
+        where = ["cv.model_name = ?", "cv.dim = ?"]
+        params: list[Any] = [str(model_name), int(dim)]
+        if language:
+            where.append("cu.language = ?")
+            params.append(str(language))
+        if unit_type:
+            where.append("cu.unit_type = ?")
+            params.append(str(unit_type))
+        params.append(max(1, int(max_candidates)))
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count,
+                       cs.search_text, cv.vector_json
+                FROM code_vectors cv
+                JOIN code_units cu ON cu.id = cv.unit_id
+                LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
+                LEFT JOIN code_search cs ON cs.unit_id = cu.id
+                WHERE {' AND '.join(where)}
+                ORDER BY cu.created_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+
+        scored: list[Dict[str, Any]] = []
+        for row in rows:
+            rec = dict(row)
+            try:
+                row_vec = json.loads(str(rec.get("vector_json") or "[]"))
+            except Exception:
+                continue
+            score = self._cosine_score(query_vec, row_vec if isinstance(row_vec, list) else [])
+            if score < float(min_score):
+                continue
+            rec["semantic_score"] = round(float(score), 4)
+            rec["vector_score"] = round(float(score), 4)
+            rec["fts_score"] = 0.0
+            rec["lexical_score"] = round(token_jaccard(query_tokens, tokenize_code_text(str(rec.get("search_text") or ""))), 4)
+            rec["search_preview"] = str(rec.get("search_text") or "")[:280]
+            rec.pop("vector_json", None)
+            scored.append(rec)
+
+        scored.sort(key=lambda item: float(item.get("semantic_score") or 0.0), reverse=True)
+        return scored[: max(1, int(limit))]
 
     def semantic_search(
         self,
@@ -874,7 +1094,30 @@ class CodeLibraryDB:
         language: Optional[str] = None,
         unit_type: Optional[str] = None,
         min_score: float = 0.05,
+        backend: str = "text",
+        vector_weight: float = 0.35,
+        vector_model_name: str = "hash128_v1",
+        vector_dim: int = 128,
+        vector_ensure_limit: int = 5000,
+        vector_max_candidates: int = 8000,
     ) -> list[Dict[str, Any]]:
+        backend_norm = str(backend or "text").strip().lower()
+        if backend_norm not in {"text", "vector", "hybrid"}:
+            raise ValueError("backend must be one of: text, vector, hybrid")
+        if backend_norm == "vector":
+            return self.vector_search(
+                query=query,
+                limit=limit,
+                language=language,
+                unit_type=unit_type,
+                min_score=min_score,
+                model_name=vector_model_name,
+                dim=vector_dim,
+                ensure_index_limit=vector_ensure_limit,
+                max_candidates=vector_max_candidates,
+            )
+
+        # Text/lexical candidate search path.
         query_tokens = tokenize_code_text(query)
         with self._connect() as conn:
             candidates: list[tuple[str, float]] = []
@@ -947,7 +1190,31 @@ class CodeLibraryDB:
                 if len(out) >= limit:
                     break
 
-        out.sort(key=lambda x: x.get("semantic_score", 0.0), reverse=True)
+        # Optional hybrid rerank with vector similarity.
+        if backend_norm == "hybrid" and out:
+            vector_rows = self.vector_search(
+                query=query,
+                limit=max(limit * 4, 50),
+                language=language,
+                unit_type=unit_type,
+                min_score=-1.0,
+                model_name=vector_model_name,
+                dim=vector_dim,
+                ensure_index_limit=vector_ensure_limit,
+                max_candidates=vector_max_candidates,
+            )
+            vector_by_id = {str(rec.get("id")): float(rec.get("vector_score") or 0.0) for rec in vector_rows}
+            v_weight = min(max(float(vector_weight), 0.0), 1.0)
+            t_weight = 1.0 - v_weight
+            for rec in out:
+                vec_score = vector_by_id.get(str(rec.get("id")), 0.0)
+                base = float(rec.get("semantic_score") or 0.0)
+                combined = (t_weight * base) + (v_weight * vec_score)
+                rec["vector_score"] = round(vec_score, 4)
+                rec["semantic_score"] = round(combined, 4)
+            out = [rec for rec in out if float(rec.get("semantic_score") or 0.0) >= float(min_score)]
+
+        out.sort(key=lambda x: float(x.get("semantic_score") or 0.0), reverse=True)
         return out
 
     def trace_contains(
