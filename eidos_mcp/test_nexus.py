@@ -538,9 +538,7 @@ def test_failing_example():
                         "venv_run", arguments={"venv_path": str(temp_venv_path), "command": verify_command}
                     )
                     verify_result = _extract_result_json(verify_result_json)
-                    self.assertEqual(
-                        verify_result.get("exit_code"), 0, f"Failed to verify requests: {verify_result}"
-                    )
+                    self.assertEqual(verify_result.get("exit_code"), 0, f"Failed to verify requests: {verify_result}")
                     self.assertIn("requests imported successfully", verify_result.get("stdout", ""))
 
                     # 4. Test error handling for a non-existent venv
@@ -576,7 +574,9 @@ def test_failing_example():
                 value = _extract_result_text(get_result)
                 self.assertEqual(value, '"ok"')
 
-                default_result = await session.call_tool("gis_get", arguments={"key": f"{key}.missing", "default": "fallback"})
+                default_result = await session.call_tool(
+                    "gis_get", arguments={"key": f"{key}.missing", "default": "fallback"}
+                )
                 default_value = _extract_result_text(default_result)
                 self.assertEqual(default_value, '"fallback"')
 
