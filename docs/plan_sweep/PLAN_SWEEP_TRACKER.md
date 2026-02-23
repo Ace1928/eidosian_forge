@@ -3,7 +3,7 @@
 Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 
 - Open files: **92**
-- Open checklist items: **1107**
+- Open checklist items: **1100**
 
 ## Iteration Log
 
@@ -12,6 +12,8 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 - [x] ~~`eidos_mcp/TODO_eidos_mcp.md`: `test_tool_remember` item updated to current `memory_add` tool name.~~
 - [x] ~~`eidos_mcp` diagnostics expanded: component checks + smoke test + strict/JSON modes (`check_mcp`).~~
 - [x] ~~`eidos_mcp` diagnostics integrated into dev workflow via automated pytest coverage and README preflight path.~~
+- [x] ~~`eidos_mcp` resource fetcher upgraded: dynamic Python invocation/PYTHONPATH, `--list`, `--json`, `--json-errors`, and binary-safe content normalization.~~
+- [x] ~~Regression fixes applied: `agent_forge` eidctl benchmark import parser syntax restored; `tika_cache_stats` now returns structured fallback JSON when Tika is unavailable.~~
 - Pending: `eidos_mcp/TODO_eidos_mcp.md` full completion sweep
 - Pending: `memory_forge` TODO/ROADMAP/PLAN completion sweep
 - Pending: `word_forge` TODO/ROADMAP/PLAN completion sweep
@@ -22,9 +24,9 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---|---:|
 | `word_forge` | 233 |
 | `game_forge` | 133 |
-| `eidos_mcp` | 79 |
 | `computer_control_forge` | 74 |
 | `web_interface_forge` | 73 |
+| `eidos_mcp` | 72 |
 | `llm_forge` | 38 |
 | `code_forge` | 34 |
 | `memory_forge` | 27 |
@@ -63,8 +65,8 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---:|---|
 | 174 | `word_forge/DETAILED_TODO.md` |
 | 69 | `game_forge/src/autoseed/docs/TODO.md` |
-| 51 | `eidos_mcp/TODO_eidos_mcp.md` |
 | 48 | `game_forge/src/Stratum/TODO.md` |
+| 44 | `eidos_mcp/TODO_eidos_mcp.md` |
 | 40 | `computer_control_forge/ROADMAP.md` |
 | 40 | `web_interface_forge/ROADMAP.md` |
 | 35 | `word_forge/ROADMAP.md` |

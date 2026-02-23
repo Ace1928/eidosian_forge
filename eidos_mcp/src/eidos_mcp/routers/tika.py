@@ -37,6 +37,27 @@ _knowledge_forge: Optional[KnowledgeForge] = None
 _ingester: Optional[TikaKnowledgeIngester] = None
 
 
+def _tika_unavailable_payload(*, operation: str) -> dict:
+    return {
+        "status": "unavailable",
+        "operation": operation,
+        "available": False,
+        "reason": "Tika not available",
+        "hint": "Install dependencies with: pip install tika",
+    }
+
+
+def _tika_unavailable_stats() -> dict:
+    return {
+        "available": False,
+        "entries": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": 0.0,
+        "reason": "Tika not available",
+    }
+
+
 def _get_tika() -> Optional[TikaExtractor]:
     """Lazy-load the Tika extractor."""
     global _tika
@@ -101,7 +122,10 @@ def tika_extract_file(file_path: str, use_cache: bool = True) -> str:
     """Extract text and metadata from a local file."""
     tika = _get_tika()
     if not tika:
-        return "Error: Tika not available. Install with: pip install tika"
+        payload = _tika_unavailable_payload(operation="extract_file")
+        payload["file_path"] = str(file_path)
+        payload["use_cache"] = bool(use_cache)
+        return json.dumps(payload, indent=2)
 
     result = tika.extract_from_file(Path(file_path), use_cache=use_cache)
 
@@ -129,7 +153,10 @@ def tika_extract_url(url: str, use_cache: bool = True) -> str:
     """Extract text and metadata from a URL."""
     tika = _get_tika()
     if not tika:
-        return "Error: Tika not available. Install with: pip install tika"
+        payload = _tika_unavailable_payload(operation="extract_url")
+        payload["url"] = str(url)
+        payload["use_cache"] = bool(use_cache)
+        return json.dumps(payload, indent=2)
 
     result = tika.extract_from_url(url, use_cache=use_cache)
 
@@ -156,7 +183,9 @@ def tika_get_metadata(file_path: str) -> str:
     """Get metadata from a file without full content extraction."""
     tika = _get_tika()
     if not tika:
-        return "Error: Tika not available"
+        payload = _tika_unavailable_payload(operation="get_metadata")
+        payload["file_path"] = str(file_path)
+        return json.dumps(payload, indent=2)
 
     metadata = tika.get_metadata_only(Path(file_path))
     return json.dumps(metadata, indent=2, default=str)
@@ -193,7 +222,11 @@ def tika_ingest_file(
     """Extract and ingest a file into Knowledge Forge."""
     ingester = _get_ingester()
     if not ingester:
-        return "Error: Knowledge ingester not available"
+        payload = _tika_unavailable_payload(operation="ingest_file")
+        payload["file_path"] = str(file_path)
+        payload["tags"] = tags or []
+        payload["chunk_size"] = int(chunk_size)
+        return json.dumps(payload, indent=2)
 
     result = ingester.ingest_file(
         Path(file_path),
@@ -229,7 +262,11 @@ def tika_ingest_url(
     """Extract and ingest a URL into Knowledge Forge."""
     ingester = _get_ingester()
     if not ingester:
-        return "Error: Knowledge ingester not available"
+        payload = _tika_unavailable_payload(operation="ingest_url")
+        payload["url"] = str(url)
+        payload["tags"] = tags or []
+        payload["chunk_size"] = int(chunk_size)
+        return json.dumps(payload, indent=2)
 
     result = ingester.ingest_url(
         url,
@@ -271,7 +308,11 @@ def tika_ingest_directory(
     """Ingest all documents from a directory."""
     ingester = _get_ingester()
     if not ingester:
-        return "Error: Knowledge ingester not available"
+        payload = _tika_unavailable_payload(operation="ingest_directory")
+        payload["directory"] = str(directory)
+        payload["recursive"] = bool(recursive)
+        payload["extensions"] = extensions or []
+        return json.dumps(payload, indent=2)
 
     dir_path = Path(directory)
     if not dir_path.exists():
@@ -332,7 +373,7 @@ def tika_cache_stats() -> str:
     """Get cache statistics."""
     tika = _get_tika()
     if not tika:
-        return "Error: Tika not available"
+        return json.dumps(_tika_unavailable_stats(), indent=2)
 
     stats = tika.cache_stats()
     return json.dumps(stats, indent=2)
@@ -353,7 +394,10 @@ def tika_cache_clear(source: Optional[str] = None) -> str:
     """Clear the extraction cache."""
     tika = _get_tika()
     if not tika:
-        return "Error: Tika not available"
+        payload = _tika_unavailable_payload(operation="cache_clear")
+        payload["source"] = source
+        payload["cleared"] = 0
+        return json.dumps(payload, indent=2)
 
     count = tika.clear_cache(source)
     if source:

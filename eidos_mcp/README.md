@@ -109,6 +109,24 @@ Use the built-in MCP diagnostics to verify wiring before client usage:
 ./eidosian_venv/bin/python -m eidos_mcp.check_mcp --json --strict --smoke-test --expect-env EIDOS_FORGE_DIR
 ```
 
+## 📦 Resource Fetcher
+
+`eidos_fetch` can read or list MCP resources using stdio/http with structured outputs.
+
+```bash
+# Read one resource (plain text if available)
+./eidosian_venv/bin/python -m eidos_mcp.eidos_fetch eidos://persona
+
+# JSON output (machine-readable)
+./eidosian_venv/bin/python -m eidos_mcp.eidos_fetch --json eidos://config
+
+# List available resources
+./eidosian_venv/bin/python -m eidos_mcp.eidos_fetch --list
+
+# Structured error payloads for automation
+./eidosian_venv/bin/python -m eidos_mcp.eidos_fetch --json-errors eidos://does-not-exist
+```
+
 ## 🛠️ Configuration
 Configuration is loaded from the **GIS** (Global Info System) first, with environment
 variables overriding GIS values at runtime.

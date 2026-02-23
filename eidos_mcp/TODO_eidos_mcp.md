@@ -79,17 +79,17 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 ## 3. Resource Fetcher (`eidos_fetch.py`) Enhancements
 
 ### 3.1. Portability & Configuration
-- [ ] **Dynamic Server Script Path:** Make the `SERVER_SCRIPT` path configurable, either through an `EIDOS_MCP_SERVER_SCRIPT` environment variable or by attempting to locate it relative to `eidos_fetch.py`.
-- [ ] **Dynamic `PYTHONPATH`:** Ensure `PYTHONPATH` is set dynamically and correctly within `StdioServerParameters.env` to reflect the actual project structure and virtual environment.
+- [x] ~~**Dynamic Server Script Path:** `eidos_fetch.py` now invokes the server via module entry (`python -m eidos_mcp.eidos_mcp_server`) with configurable interpreter (`--python` / `EIDOS_PYTHON_BIN`), avoiding hardcoded script paths.~~
+- [x] ~~**Dynamic `PYTHONPATH`:** `eidos_fetch.py` dynamically assembles `PYTHONPATH` from forge root, `eidos_mcp/src`, and `lib` for portable stdio startup.~~
 
 ### 3.2. Usability & Output
-- [ ] **Structured Error Output:** Implement a more structured error output format (e.g., JSON) for programmatic consumption by other tools.
-- [ ] **Handle Diverse Resource Content:** Extend `fetch_resource` to handle various content types (e.g., binary data) beyond just plain text, perhaps by detecting content type from response headers or explicit metadata.
-- [ ] **Add `--list` Option:** Introduce a command-line option (e.g., `eidos_fetch.py --list`) to list all available resources, enhancing client discoverability.
-- [ ] **Add `--json` Output Option:** Provide an option to output the fetched resource content as raw JSON (if applicable) for easier parsing by other tools.
+- [x] ~~**Structured Error Output:** Added structured error payload emission via `--json-errors` (and `--json`) for programmatic consumption.~~
+- [x] ~~**Handle Diverse Resource Content:** Fetcher now normalizes text/blob resource content (including binary-safe blob encoding metadata) and emits non-text resource summaries safely.~~
+- [x] ~~**Add `--list` Option:** Added `--list` mode to enumerate available MCP resources over stdio/http transports.~~
+- [x] ~~**Add `--json` Output Option:** Added `--json` output mode for both resource listing and resource reads.~~
 
 ### 3.3. Dependency Management
-- [ ] **Direct Python Invocation:** Consider modifying `eidos_fetch.py` to directly invoke `eidos_mcp_server.py` (with appropriate arguments for test mode) rather than relying on `run_server.sh`, if feasible.
+- [x] ~~**Direct Python Invocation:** `eidos_fetch.py` directly launches MCP via Python module invocation and no longer depends on `run_server.sh`.~~
 
 ## 4. Diagnostics (`check_mcp.py`) Improvements
 
