@@ -9,11 +9,9 @@ from typing import Any, Iterable, Optional, Protocol
 class ParserAdapter(Protocol):
     """Adapter contract for language-aware structural analysis."""
 
-    def supports_language(self, language: str) -> bool:
-        ...
+    def supports_language(self, language: str) -> bool: ...
 
-    def analyze_file(self, file_path: Path, source: str, language: str) -> Optional[dict[str, Any]]:
-        ...
+    def analyze_file(self, file_path: Path, source: str, language: str) -> Optional[dict[str, Any]]: ...
 
 
 @dataclass(frozen=True)
@@ -171,7 +169,9 @@ class TreeSitterAdapter:
         token = re.sub(r"[^A-Za-z0-9_]+", "_", head).strip("_")
         return token[:64] or "anonymous"
 
-    def _capture_nodes(self, language: str, root_node: Any, source_bytes: bytes) -> tuple[list[_CapturedNode], set[str]]:
+    def _capture_nodes(
+        self, language: str, root_node: Any, source_bytes: bytes
+    ) -> tuple[list[_CapturedNode], set[str]]:
         rules = self._TYPE_RULES.get(language, {})
         class_types = rules.get("class", set())
         function_types = rules.get("function", set())
@@ -307,4 +307,3 @@ def build_default_parser_adapters() -> list[ParserAdapter]:
     if adapter.available:
         return [adapter]
     return []
-

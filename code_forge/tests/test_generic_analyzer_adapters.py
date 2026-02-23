@@ -84,4 +84,3 @@ def test_tree_sitter_adapter_is_safe_when_runtime_missing() -> None:
     assert isinstance(adapter.available, bool)
     if not adapter.available:
         assert adapter.analyze_file(Path("x.js"), "function x(){}", "javascript") is None
-
