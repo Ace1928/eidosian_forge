@@ -1128,5 +1128,26 @@
       "diagnostics"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "b2a4eb2b-6396-4385-9a65-523befcfb1f6",
+    "content": "Targeted validation passed after fixes: pytest eidos_mcp/tests/test_mcp_tool_calls_individual.py -k tika_cache_stats, pytest agent_forge/tests/test_consciousness_benchmarks.py, and combined regression run (32 passed).",
+    "created_at": "2026-02-23T17:21:07.812896",
+    "last_accessed": "2026-02-23T17:21:07.812910",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "ci",
+      "tika",
+      "eidos_mcp",
+      "eidos_fetch",
+      "agent_forge"
+    ],
+    "linked_memories": []
   }
 ]

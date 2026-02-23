@@ -2232,5 +2232,34 @@
       0.592156862745098,
       0.596078431372549
     ]
+  },
+  "7ed813ef-1523-468d-8f38-6fbef6046ba3": {
+    "id": "7ed813ef-1523-468d-8f38-6fbef6046ba3",
+    "content": "Resolved CI regressions from latest reports: fixed agent_forge eidctl syntax corruption in import-benchmark parser, implemented structured fallback JSON for Tika-unavailable routes (including tika_cache_stats), and hardened eidos_fetch with list/json/json-errors + resource normalization.",
+    "created_at": "2026-02-23T17:21:07.707722",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "ci_regression_fix_eidctl_tika_fetch_20260223"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.30980392156862746,
+      0.38823529411764707,
+      0.5764705882352941,
+      0.4549019607843137,
+      0.27450980392156865,
+      0.5137254901960784,
+      0.45098039215686275,
+      0.9725490196078431,
+      0.3137254901960784,
+      0.09019607843137255,
+      0.615686274509804,
+      0.7333333333333333,
+      0.4392156862745098,
+      0.6980392156862745,
+      0.8549019607843137,
+      0.7529411764705882
+    ]
   }
 }

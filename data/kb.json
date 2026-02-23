@@ -1823,6 +1823,19 @@
         ]
       },
       "links": []
+    },
+    "a27c527f-15ee-48a5-8e9d-f85ae55e03ac": {
+      "id": "a27c527f-15ee-48a5-8e9d-f85ae55e03ac",
+      "content": "eidos_mcp routers/tika now returns structured JSON fallback payloads when Tika is unavailable, allowing tika_cache_stats and related tool tests to pass without a local Tika runtime.",
+      "metadata": {
+        "tags": [
+          "ci",
+          "fallback",
+          "tika",
+          "eidos_mcp"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
