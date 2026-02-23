@@ -94,6 +94,21 @@ export FASTMCP_PORT=8928
 python -m eidos_mcp.eidos_mcp_server
 ```
 
+## 🔎 MCP Diagnostics
+
+Use the built-in MCP diagnostics to verify wiring before client usage:
+
+```bash
+# Human-readable summary
+./eidosian_venv/bin/python -m eidos_mcp.check_mcp
+
+# Structured report for automation
+./eidosian_venv/bin/python -m eidos_mcp.check_mcp --json
+
+# Strict preflight (fails on missing components/env) + server bootstrap smoke test
+./eidosian_venv/bin/python -m eidos_mcp.check_mcp --json --strict --smoke-test --expect-env EIDOS_FORGE_DIR
+```
+
 ## 🛠️ Configuration
 Configuration is loaded from the **GIS** (Global Info System) first, with environment
 variables overriding GIS values at runtime.

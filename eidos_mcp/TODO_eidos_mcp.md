@@ -94,16 +94,16 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 ## 4. Diagnostics (`check_mcp.py`) Improvements
 
 ### 4.1. Expanded Diagnostic Checks
-- [ ] **Comprehensive Component Check:** Extend `check_mcp.py` to perform more thorough checks for core `mcp` components, including:
+- [x] ~~**Comprehensive Component Check:** `check_mcp.py` now verifies MCP package version, critical MCP imports, and expected environment variable presence, with strict-mode failure gating.~~
     - Verifying the installed `mcp` package version.
     - Attempting to import `ClientSession`, `StdioServerParameters`, and other critical classes.
     - Checking for expected environment variables (e.g., `EIDOS_HOME_DIR`, `EIDOS_FORGE_DIR`) if they are introduced as part of server configuration.
-- [ ] **Basic Server Functionality Test:** Optionally, add a minimal server startup and immediate shutdown sequence to confirm that the `FastMCP` server can be initialized without errors.
+- [x] ~~**Basic Server Functionality Test:** Added `--smoke-test` in `check_mcp.py` to build the StreamableHTTP ASGI app and verify MCP server bootstrap wiring without binding network ports.~~
 
 ### 4.2. Usage & Integration
-- [ ] **Add Docstring/Usage Instructions:** Provide a clear docstring and command-line help (`--help`) explaining the purpose and usage of `check_mcp.py`.
+- [x] ~~**Add Docstring/Usage Instructions:** `check_mcp.py` now exposes documented CLI options (`--help`) for JSON output, smoke test, strict mode, and expected env checks.~~
 - [ ] **Integrate into Development Workflow:** Suggest integrating `check_mcp.py` into the project's development workflow (e.g., a `make check` command, a pre-commit hook, or a pre-flight check before starting the main server).
-- [ ] **Structured Output:** Provide an option for structured output (e.g., JSON) for automated parsing of diagnostic results.
+- [x] ~~**Structured Output:** `check_mcp.py --json` emits a structured payload including tool/resource registries and component check results.~~
 
 ---
 
