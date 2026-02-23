@@ -1728,6 +1728,20 @@
         ]
       },
       "links": []
+    },
+    "2c2d6f79-f20b-43ec-93f1-4ea1dc67f54a": {
+      "id": "2c2d6f79-f20b-43ec-93f1-4ea1dc67f54a",
+      "content": "Code Forge now exposes a parser adapter extension point for non-Python analysis and includes a built-in optional TreeSitterAdapter auto-discovery path.",
+      "metadata": {
+        "tags": [
+          "extensibility",
+          "code_forge",
+          "tree-sitter",
+          "parser",
+          "architecture"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
