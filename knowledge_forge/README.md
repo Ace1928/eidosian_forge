@@ -53,6 +53,10 @@ GraphRAG subprocess timeout is controlled by:
 
 # Interactive graph visualization (requires `knowledge_forge[viz]`)
 ./eidosian_venv/bin/knowledge-forge visualize ./reports/kb_graph.html --max-nodes 300
+
+# OWL/RDFS reasoning experiment (requires `knowledge_forge[reasoning]`)
+./eidosian_venv/bin/knowledge-forge reason-owl --profile owlrl --output ./reports/kb_reasoned.ttl
+./eidosian_venv/bin/knowledge-forge reason-owl --profile rdfs --apply --merge
 ```
 
 ## Test

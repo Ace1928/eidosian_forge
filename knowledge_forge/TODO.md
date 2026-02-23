@@ -9,8 +9,4 @@
 - [x] ~~**Visualization**: Add `pyvis` support for interactive graph exploration.~~
 
 ## 🟢 Low Priority
-- [ ] **Reasoning**: Experiment with OWL reasoners.
-
-
-## 🟢 Low Priority
-- [ ] **Reasoning**: Experiment with OWL reasoners.
+- [x] ~~**Reasoning**: Experiment with OWL reasoners.~~

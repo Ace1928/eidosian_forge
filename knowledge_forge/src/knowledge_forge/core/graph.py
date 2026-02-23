@@ -185,17 +185,12 @@ class KnowledgeForge:
             "concepts": list(self.concept_map.keys()),
         }
 
-    @eidosian()
-    def export_rdf(self, output_path: Union[str, Path], format: str = "turtle") -> Dict[str, Any]:
-        """
-        Export knowledge graph as RDF using rdflib.
-
-        Requires `rdflib` optional dependency.
-        """
+    def _build_rdf_graph(self) -> Any:
+        """Build an rdflib graph snapshot from the in-memory knowledge graph."""
         try:
             from rdflib import RDF, Graph, Literal, Namespace, URIRef
         except Exception as exc:
-            raise RuntimeError("RDF export requires rdflib. Install knowledge_forge[rdf].") from exc
+            raise RuntimeError("RDF support requires rdflib. Install knowledge_forge[rdf].") from exc
 
         graph = Graph()
         eidos_ns = Namespace("https://eidosian.dev/knowledge#")
@@ -221,33 +216,15 @@ class KnowledgeForge:
                     graph.add((subject, eidos_ns.hasConcept, Literal(concept)))
             for linked_id in sorted(node.links):
                 graph.add((subject, eidos_ns.linkedTo, node_uri(linked_id)))
+        return graph
 
-        output = Path(output_path)
-        output.parent.mkdir(parents=True, exist_ok=True)
-        graph.serialize(destination=str(output), format=format)
-        return {
-            "path": str(output),
-            "format": format,
-            "node_count": len(self.nodes),
-            "triple_count": len(graph),
-        }
-
-    @eidosian()
-    def import_rdf(
-        self, input_path: Union[str, Path], format: Optional[str] = None, merge: bool = False
-    ) -> Dict[str, Any]:
-        """
-        Import knowledge graph from RDF using rdflib.
-
-        Requires `rdflib` optional dependency.
-        """
+    def _import_rdf_graph(self, graph: Any, *, merge: bool = False) -> Dict[str, Any]:
+        """Load graph state from an rdflib Graph object."""
         try:
-            from rdflib import RDF, Graph, Namespace
+            from rdflib import RDF, Namespace
         except Exception as exc:
-            raise RuntimeError("RDF import requires rdflib. Install knowledge_forge[rdf].") from exc
+            raise RuntimeError("RDF support requires rdflib. Install knowledge_forge[rdf].") from exc
 
-        graph = Graph()
-        graph.parse(str(input_path), format=format)
         eidos_ns = Namespace("https://eidosian.dev/knowledge#")
 
         if not merge:
@@ -302,11 +279,139 @@ class KnowledgeForge:
             self.save()
 
         return {
-            "path": str(input_path),
-            "format": format or "auto",
             "imported_nodes": imported,
             "concept_count": len(self.concept_map),
         }
+
+    @eidosian()
+    def export_rdf(self, output_path: Union[str, Path], format: str = "turtle") -> Dict[str, Any]:
+        """
+        Export knowledge graph as RDF using rdflib.
+
+        Requires `rdflib` optional dependency.
+        """
+        graph = self._build_rdf_graph()
+
+        output = Path(output_path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        graph.serialize(destination=str(output), format=format)
+        return {
+            "path": str(output),
+            "format": format,
+            "node_count": len(self.nodes),
+            "triple_count": len(graph),
+        }
+
+    @eidosian()
+    def import_rdf(
+        self, input_path: Union[str, Path], format: Optional[str] = None, merge: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Import knowledge graph from RDF using rdflib.
+
+        Requires `rdflib` optional dependency.
+        """
+        try:
+            from rdflib import Graph
+        except Exception as exc:
+            raise RuntimeError("RDF import requires rdflib. Install knowledge_forge[rdf].") from exc
+
+        graph = Graph()
+        graph.parse(str(input_path), format=format)
+        loaded = self._import_rdf_graph(graph, merge=merge)
+
+        return {
+            "path": str(input_path),
+            "format": format or "auto",
+            **loaded,
+        }
+
+    @staticmethod
+    def reason_rdf_graph(
+        graph: Any,
+        *,
+        profile: str = "owlrl",
+        include_axiomatic: bool = False,
+        include_datatype_axioms: bool = False,
+    ) -> Dict[str, Any]:
+        """Run owlrl reasoning over an rdflib graph and mutate it in-place."""
+        try:
+            from owlrl import DeductiveClosure, OWLRL_Semantics, RDFS_Semantics
+        except Exception as exc:
+            raise RuntimeError("OWL reasoning requires owlrl. Install knowledge_forge[reasoning].") from exc
+
+        profile_norm = str(profile or "owlrl").strip().lower()
+        semantics_map = {
+            "owlrl": OWLRL_Semantics,
+            "rdfs": RDFS_Semantics,
+        }
+        semantics = semantics_map.get(profile_norm)
+        if semantics is None:
+            supported = ", ".join(sorted(semantics_map.keys()))
+            raise ValueError(f"Unsupported reasoning profile: {profile_norm}. Supported: {supported}")
+
+        triple_count_before = len(graph)
+        closure = DeductiveClosure(
+            semantics,
+            axiomatic_triples=bool(include_axiomatic),
+            datatype_axioms=bool(include_datatype_axioms),
+        )
+        closure.expand(graph)
+        triple_count_after = len(graph)
+        inferred_triples = max(0, int(triple_count_after) - int(triple_count_before))
+
+        return {
+            "profile": profile_norm,
+            "triple_count_before": int(triple_count_before),
+            "triple_count_after": int(triple_count_after),
+            "inferred_triples": inferred_triples,
+            "include_axiomatic": bool(include_axiomatic),
+            "include_datatype_axioms": bool(include_datatype_axioms),
+        }
+
+    @eidosian()
+    def reason_owl(
+        self,
+        *,
+        profile: str = "owlrl",
+        apply: bool = False,
+        merge: bool = False,
+        include_axiomatic: bool = False,
+        include_datatype_axioms: bool = False,
+        output_path: Optional[Union[str, Path]] = None,
+        output_format: str = "turtle",
+    ) -> Dict[str, Any]:
+        """
+        Run OWL/RDFS reasoning on the current knowledge graph RDF projection.
+
+        Requires `owlrl` optional dependency.
+        """
+        graph = self._build_rdf_graph()
+        report = self.reason_rdf_graph(
+            graph,
+            profile=profile,
+            include_axiomatic=include_axiomatic,
+            include_datatype_axioms=include_datatype_axioms,
+        )
+
+        if output_path:
+            output = Path(output_path)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            graph.serialize(destination=str(output), format=output_format)
+            report["output_path"] = str(output)
+            report["output_format"] = output_format
+
+        if apply:
+            imported = self._import_rdf_graph(graph, merge=merge)
+            report["applied"] = True
+            report["merge"] = bool(merge)
+            report["imported_nodes"] = int(imported["imported_nodes"])
+            report["concept_count"] = int(imported["concept_count"])
+        else:
+            report["applied"] = False
+            report["merge"] = bool(merge)
+
+        return report
 
     @eidosian()
     def visualize_pyvis(

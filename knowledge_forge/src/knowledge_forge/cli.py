@@ -284,6 +284,49 @@ class KnowledgeForgeCLI(StandardCLI):
         )
         viz_parser.set_defaults(func=self._cmd_visualize)
 
+        # OWL reasoning command
+        reason_parser = subparsers.add_parser(
+            "reason-owl",
+            help="Run OWL/RDFS reasoning over current graph RDF projection (requires owlrl)",
+        )
+        reason_parser.add_argument(
+            "--profile",
+            choices=["owlrl", "rdfs"],
+            default="owlrl",
+            help="Reasoning profile (default: owlrl)",
+        )
+        reason_parser.add_argument(
+            "--apply",
+            action="store_true",
+            help="Apply inferred graph back into the knowledge graph",
+        )
+        reason_parser.add_argument(
+            "--merge",
+            action="store_true",
+            help="When --apply is set, merge with current graph instead of replacing",
+        )
+        reason_parser.add_argument(
+            "--include-axiomatic",
+            action="store_true",
+            help="Include axiomatic triples during reasoning",
+        )
+        reason_parser.add_argument(
+            "--include-datatype-axioms",
+            action="store_true",
+            help="Include datatype axioms during reasoning",
+        )
+        reason_parser.add_argument(
+            "--output",
+            default=None,
+            help="Optional path to write reasoned RDF graph",
+        )
+        reason_parser.add_argument(
+            "--output-format",
+            default="turtle",
+            help="Serialization format for --output (default: turtle)",
+        )
+        reason_parser.set_defaults(func=self._cmd_reason_owl)
+
     @eidosian()
     def cmd_status(self, args) -> CommandResult:
         """Show knowledge graph status."""
@@ -546,6 +589,23 @@ class KnowledgeForgeCLI(StandardCLI):
             result = CommandResult(True, "Visualization export complete", report)
         except Exception as e:
             result = CommandResult(False, f"Visualization export error: {e}")
+        self._output(result, args)
+
+    def _cmd_reason_owl(self, args) -> None:
+        """Run OWL/RDFS reasoning against the current graph projection."""
+        try:
+            report = self.kb.reason_owl(
+                profile=args.profile,
+                apply=bool(args.apply),
+                merge=bool(args.merge),
+                include_axiomatic=bool(args.include_axiomatic),
+                include_datatype_axioms=bool(args.include_datatype_axioms),
+                output_path=args.output,
+                output_format=args.output_format,
+            )
+            result = CommandResult(True, "OWL reasoning complete", report)
+        except Exception as e:
+            result = CommandResult(False, f"OWL reasoning error: {e}")
         self._output(result, args)
 
     def _find_node_by_prefix(self, prefix: str) -> Optional[str]:

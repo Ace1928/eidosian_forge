@@ -38,6 +38,10 @@ viz = [
 rdf = [
     "rdflib>=7.0.0",
 ]
+reasoning = [
+    "rdflib>=7.0.0",
+    "owlrl>=6.0.2",
+]
 
 [project.scripts]
 knowledge-forge = "knowledge_forge.cli:main"
