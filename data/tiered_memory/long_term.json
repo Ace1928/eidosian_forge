@@ -12,13 +12,13 @@
     "importance": 0.92,
     "ttl_seconds": null,
     "tags": [
-      "digester",
-      "dedup",
-      "code_forge",
-      "graphrag",
-      "knowledge_forge",
       "triage",
-      "semantic_search"
+      "knowledge_forge",
+      "dedup",
+      "digester",
+      "semantic_search",
+      "code_forge",
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -35,12 +35,12 @@
     "importance": 0.93,
     "ttl_seconds": null,
     "tags": [
-      "commit",
       "production",
-      "code_forge",
       "push",
-      "archive_digester",
-      "tests"
+      "tests",
+      "code_forge",
+      "commit",
+      "archive_digester"
     ],
     "linked_memories": []
   },
@@ -57,10 +57,10 @@
     "importance": 0.9,
     "ttl_seconds": null,
     "tags": [
+      "quality",
       "assessment",
       "benchmark",
-      "graphrag",
-      "quality"
+      "graphrag"
     ],
     "linked_memories": []
   },
@@ -77,9 +77,9 @@
     "importance": 0.86,
     "ttl_seconds": null,
     "tags": [
-      "models",
-      "benchmark",
       "multimodal",
+      "benchmark",
+      "models",
       "judges",
       "tool-calling"
     ],
@@ -99,9 +99,9 @@
     "ttl_seconds": null,
     "tags": [
       "artifact_validation",
-      "code_forge",
       "push",
       "tests",
+      "code_forge",
       "triage_audit"
     ],
     "linked_memories": []
@@ -120,9 +120,9 @@
     "ttl_seconds": null,
     "tags": [
       "termux",
-      "drift",
       "code_forge",
-      "benchmark"
+      "benchmark",
+      "drift"
     ],
     "linked_memories": []
   },
@@ -139,12 +139,12 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "dependency_graph",
+      "canonicalization",
       "production",
       "benchmark",
       "code_forge",
-      "regression",
-      "canonicalization"
+      "dependency_graph",
+      "regression"
     ],
     "linked_memories": []
   },
@@ -161,12 +161,12 @@
     "importance": 0.96,
     "ttl_seconds": null,
     "tags": [
-      "dependency_graph",
       "regression_gate",
-      "benchmark",
-      "code_forge",
-      "push",
       "canonical_plan",
+      "benchmark",
+      "push",
+      "code_forge",
+      "dependency_graph",
       "phase_complete"
     ],
     "linked_memories": []
@@ -184,12 +184,12 @@
     "importance": 0.97,
     "ttl_seconds": null,
     "tags": [
+      "schema_validation",
+      "termux",
       "benchmark_gate",
       "structural_duplicates",
       "code_forge",
-      "termux",
-      "triage_audit",
-      "schema_validation"
+      "triage_audit"
     ],
     "linked_memories": []
   },
@@ -206,14 +206,14 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "integration",
       "roundtrip",
-      "parity",
-      "audit_forge",
-      "code_forge",
-      "graphrag",
       "knowledge_forge",
-      "regeneration"
+      "integration",
+      "parity",
+      "code_forge",
+      "regeneration",
+      "graphrag",
+      "audit_forge"
     ],
     "linked_memories": []
   },
@@ -231,12 +231,12 @@
     "ttl_seconds": null,
     "tags": [
       "roundtrip",
-      "parity",
-      "sms_forge",
-      "code_forge",
       "termux",
       "tests",
-      "regeneration"
+      "parity",
+      "code_forge",
+      "regeneration",
+      "sms_forge"
     ],
     "linked_memories": []
   },
@@ -253,11 +253,11 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "gitleaks",
+      "security",
+      "data-governance",
       "code_forge",
       "eidos_mcp",
-      "data-governance",
-      "security"
+      "gitleaks"
     ],
     "linked_memories": []
   },
@@ -274,11 +274,11 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "commit",
+      "ci",
+      "termux",
       "chroma",
       "git",
-      "termux",
-      "ci"
+      "commit"
     ],
     "linked_memories": []
   },
@@ -295,11 +295,11 @@
     "importance": 0.96,
     "ttl_seconds": null,
     "tags": [
+      "knowledge_forge",
+      "tests",
       "mcp",
       "graphrag",
-      "interop",
-      "knowledge_forge",
-      "tests"
+      "interop"
     ],
     "linked_memories": []
   },
@@ -316,11 +316,11 @@
     "importance": 0.9,
     "ttl_seconds": null,
     "tags": [
-      "testing",
-      "compatibility",
       "figlet_forge",
+      "testing",
       "moltbook_forge",
-      "termux"
+      "termux",
+      "compatibility"
     ],
     "linked_memories": []
   },
@@ -337,12 +337,12 @@
     "importance": 0.92,
     "ttl_seconds": null,
     "tags": [
-      "documentation",
+      "ci",
       "stability",
       "tests",
-      "regression",
-      "ci",
-      "workflow"
+      "workflow",
+      "documentation",
+      "regression"
     ],
     "linked_memories": []
   },
@@ -359,11 +359,11 @@
     "importance": 0.86,
     "ttl_seconds": null,
     "tags": [
-      "audit",
-      "pytest",
-      "termux",
       "ci",
-      "venv"
+      "venv",
+      "termux",
+      "pytest",
+      "audit"
     ],
     "linked_memories": []
   },
@@ -380,14 +380,14 @@
     "importance": 0.95,
     "ttl_seconds": null,
     "tags": [
-      "mcp",
       "memory_forge",
+      "knowledge_forge",
+      "tests",
+      "mcp",
       "code_forge",
       "graphrag",
-      "interop",
       "word_forge",
-      "knowledge_forge",
-      "tests"
+      "interop"
     ],
     "linked_memories": []
   },
@@ -405,12 +405,117 @@
     "ttl_seconds": null,
     "tags": [
       "staleness",
+      "tests",
+      "eval_os",
       "observability",
       "code_forge",
       "taskbank",
-      "eval_os",
-      "tests",
       "replay"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "8608dbec-d6c9-47cb-8936-b8f79237ee42",
+    "content": "Completed TODO cycle: implemented code_forge profile-hotpath triage integration and crawl_forge BeautifulSoup extraction upgrade, with targeted tests passing.",
+    "created_at": "2026-02-23T11:34:25.773289",
+    "last_accessed": "2026-02-23T12:06:36.788825",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": null,
+    "tags": [
+      "code_forge",
+      "crawl_forge",
+      "todo",
+      "tests"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "740185af-4f33-40a2-b7b7-9c5b41db640b",
+    "content": "Safe flow completed: autostash rebase over origin/main, push succeeded, and targeted regression tests passed after rebase for code_forge and crawl_forge changes.",
+    "created_at": "2026-02-23T11:55:54.124789",
+    "last_accessed": "2026-02-23T12:06:36.831293",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.94,
+    "ttl_seconds": null,
+    "tags": [
+      "termux",
+      "rebase",
+      "validation",
+      "git"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "5fd1f1e5-31a1-453c-a8bc-daa51f8e1b50",
+    "content": "Cycle completed: external benchmark adapters integrated and tested in Termux using eidosian_venv. Added CLI import command and report normalization for consciousness benchmark artifacts with provenance fields.",
+    "created_at": "2026-02-22T19:25:34.499138",
+    "last_accessed": "2026-02-23T12:06:36.836494",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.87,
+    "ttl_seconds": null,
+    "tags": [
+      "cli",
+      "termux",
+      "benchmark",
+      "consciousness",
+      "adapter",
+      "agent_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "0fe3e82e-b9e9-459e-9596-8813d96b6c0d",
+    "content": "Completed agent_forge TODO closure cycle: external benchmark adapters and validation trend dashboard features implemented with passing targeted tests in eidosian_venv.",
+    "created_at": "2026-02-22T19:31:15.687926",
+    "last_accessed": "2026-02-23T12:06:36.842548",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.88,
+    "ttl_seconds": null,
+    "tags": [
+      "todo",
+      "termux",
+      "benchmark",
+      "dashboard",
+      "validation",
+      "agent_forge"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ac37e27d-1350-468b-97c4-c0aef8378000",
+    "content": "Coverage target enforcement for code_forge now uses explicit source-scoped coverage and fail-under threshold in CI workflows, with local command documented in README.",
+    "created_at": "2026-02-22T20:09:37.984246",
+    "last_accessed": "2026-02-23T12:06:36.848129",
+    "access_count": 1,
+    "tier": "long_term",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.84,
+    "ttl_seconds": null,
+    "tags": [
+      "ci",
+      "quality-gate",
+      "workflow",
+      "code_forge",
+      "coverage"
     ],
     "linked_memories": []
   }

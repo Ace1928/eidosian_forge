@@ -22,6 +22,7 @@ prepare_forge_imports(
 
 _ROUTER_MODULES = (
     "audit",
+    "auth",
     "consciousness",
     "diagnostics",
     "gis",
@@ -40,6 +41,7 @@ _ROUTER_MODULES = (
     "types",
     "word_forge",
     "erais",
+    "plugins",
 )
 
 

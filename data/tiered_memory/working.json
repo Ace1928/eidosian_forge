@@ -1149,5 +1149,26 @@
       "agent_forge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "fac18810-184e-4acd-a36d-83ccf78bf971",
+    "content": "Current quality gate baseline: pytest eidos_mcp/tests + eidos_mcp/test_nexus.py + agent_forge/tests/test_consciousness_benchmarks.py => 88 passed, 1 skipped on Termux/Linux environment with eidosian_venv.",
+    "created_at": "2026-02-23T18:57:23.769738",
+    "last_accessed": "2026-02-23T18:57:23.769748",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.93,
+    "ttl_seconds": 86400,
+    "tags": [
+      "qa",
+      "termux",
+      "tests",
+      "mcp",
+      "eidosian_venv"
+    ],
+    "linked_memories": []
   }
 ]

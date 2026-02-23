@@ -1836,6 +1836,19 @@
         ]
       },
       "links": []
+    },
+    "25c1d6ac-4f0f-4c58-8b0a-cdb443e6b9a2": {
+      "id": "25c1d6ac-4f0f-4c58-8b0a-cdb443e6b9a2",
+      "content": "MCP compatibility contract now includes tool-level discovery endpoints `mcp_list_tools` and `mcp_list_resources` in the plugins router; tests validate transactional and safe-mode behavior for file/shell/venv tools.",
+      "metadata": {
+        "tags": [
+          "mcp",
+          "test-contract",
+          "compatibility",
+          "tool-discovery"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

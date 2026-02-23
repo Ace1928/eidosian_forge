@@ -123,11 +123,22 @@ _SSE_MEDIA_TYPE = "text/event-stream"
 _JSON_ERROR_CODE = -32000
 
 
-def _read_first(paths: Iterable[Path]) -> str:
+def _read_first_path(paths: Iterable[Path]) -> Optional[Path]:
     for path in paths:
         if path.exists():
-            return path.read_text(encoding="utf-8")
-    return ""
+            return path
+    return None
+
+
+def _resource_not_found_payload(resource_uri: str, paths: Sequence[Path]) -> str:
+    return json.dumps(
+        {
+            "error": "Resource not found",
+            "resource": resource_uri,
+            "searched_paths": [str(path) for path in paths],
+        },
+        indent=2,
+    )
 
 
 def _persona_payload() -> str:
@@ -136,7 +147,10 @@ def _persona_payload() -> str:
         ROOT_DIR / "GEMINI.md",
         FORGE_DIR / "GEMINI.md",
     ]
-    body = _read_first(sources).strip()
+    source_path = _read_first_path(sources)
+    if source_path is None:
+        return _resource_not_found_payload("eidos://persona", sources)
+    body = source_path.read_text(encoding="utf-8").strip()
     if _PERSONA_HEADER not in body:
         body = f"{_PERSONA_HEADER}\n\n{body}"
     return body
@@ -713,7 +727,10 @@ def resource_roadmap() -> str:
         FORGE_DIR / "REVIEW_MASTER_PLAN.md",
         FORGE_DIR / "TODO.md",
     ]
-    return _read_first(sources)
+    source_path = _read_first_path(sources)
+    if source_path is None:
+        return _resource_not_found_payload("eidos://roadmap", sources)
+    return source_path.read_text(encoding="utf-8")
 
 
 @eidosian()
@@ -724,7 +741,25 @@ def resource_todo() -> str:
         ROOT_DIR / "TODO.md",
         FORGE_DIR / "TODO.md",
     ]
-    return _read_first(sources)
+    source_path = _read_first_path(sources)
+    if source_path is None:
+        return _resource_not_found_payload("eidos://todo", sources)
+    return source_path.read_text(encoding="utf-8")
+
+
+@eidosian()
+@resource("eidos://context/index", description="Context index payload.")
+def resource_context_index() -> str:
+    """Context index payload."""
+    sources = [
+        FORGE_DIR / "data" / "context_index.json",
+        FORGE_DIR / "context_index.json",
+        ROOT_DIR / "context_index.json",
+    ]
+    source_path = _read_first_path(sources)
+    if source_path is None:
+        return _resource_not_found_payload("eidos://context/index", sources)
+    return source_path.read_text(encoding="utf-8")
 
 
 @eidosian()

@@ -14,7 +14,7 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 - [ ] **Subprocess Management Enhancement (`mcp_self_upgrade`, `context_refresh`, `codex_task`):**
     - [ ] Improve `subprocess.run` and `subprocess.Popen` calls with more robust error detection, including checking return codes, capturing `stderr`, and implementing stricter timeouts for `communicate()`.
     - [ ] Add explicit checks for script existence (e.g., `script_path.exists()`) before attempting to run external scripts.
-- [ ] **Resource Not Found Handling:** For `eidos://persona`, `eidos://roadmap`, `eidos://todo`, and `eidos://context/index` resources, return more informative JSON error objects (e.g., `{"error": "Resource not found", "path": "..."}`) instead of simple strings.
+- [x] ~~**Resource Not Found Handling:** `eidos://persona`, `eidos://roadmap`, `eidos://todo`, and `eidos://context/index` now return informative JSON error objects when source files are missing.~~
 - [ ] **Input Validation for Tools:** Implement thorough input validation for all tool arguments, leveraging `type_forge` where appropriate, to prevent unexpected behavior, errors, or potential security vulnerabilities.
 
 ### 1.3. Performance & Asynchronicity
@@ -64,17 +64,17 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 - [ ] **Negative Test Cases:** Add tests to verify that tools and resources handle invalid inputs, non-existent data, and error conditions gracefully, returning expected error messages or codes.
 
 ### 2.2. Test Environment Isolation & Setup
-- [ ] **Dynamic Server Script Path:** Make `SERVER_SCRIPT` in `test_nexus.py` dynamic, perhaps by deriving its path relative to the test file or from an environment variable.
+- [x] ~~**Dynamic Server Script Path:** `test_nexus.py` derives interpreter and module startup dynamically (`PYTHON_BIN` + `-m eidos_mcp.eidos_mcp_server`) with environment overrides.~~
 - [ ] **Isolated Test Environment for Persistence:**
     - [ ] Modify `eidos_mcp_server.py` to allow Forges to accept optional temporary paths for their persistence files (e.g., `persistence_path=FORGE_DIR / "gis_data.json"`) during testing.
     - [ ] In `TestEidosianNexus.asyncSetUp`, create a unique temporary directory for each test run.
     - [ ] Pass these temporary paths to the `StdioServerParameters.env` dictionary to be consumed by the server under test.
 - [ ] **Proper Cleanup:** Implement robust `async tearDown` methods to ensure that all temporary files, directories, or server processes created during tests are properly cleaned up, preventing test interference and resource leaks.
-- [ ] **Replace `run_server.sh` in Tests:** Directly invoke `eidos_mcp_server.py` with Python in `StdioServerParameters.command`, passing appropriate environment variables or arguments for test mode, eliminating the reliance on a shell script.
+- [x] ~~**Replace `run_server.sh` in Tests:** Tests now directly invoke `python -m eidos_mcp.eidos_mcp_server` via `StdioServerParameters` with explicit test transport env.~~
 
 ### 2.3. Test Reliability & Maintainability
 - [x] ~~**Update Tool Name:** Changed tests to use `session.call_tool("memory_add", ...)` in `test_tool_remember`, matching the current MCP tool name.~~
-- [ ] **Configurable Latency Thresholds:** Make performance thresholds for server startup (e.g., `self.assertLess(duration, 2.0)`) configurable via environment variables or a test configuration file to allow for flexible testing across different environments.
+- [x] ~~**Configurable Latency Thresholds:** Startup latency threshold now uses `EIDOS_MCP_TEST_STARTUP_MAX_SEC` (default `35.0`) in `test_nexus.py`.~~
 
 ## 3. Resource Fetcher (`eidos_fetch.py`) Enhancements
 

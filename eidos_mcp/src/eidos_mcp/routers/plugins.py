@@ -13,7 +13,7 @@ from typing import Optional
 
 from eidosian_core import eidosian
 
-from ..core import tool
+from ..core import list_resource_metadata, list_tool_metadata, tool
 from ..plugins import call_tool, get_loader, get_tool, list_plugins, list_tools
 
 
@@ -201,3 +201,46 @@ def tool_invoke(tool_name: str, args: Optional[dict] = None) -> str:
         return json.dumps({"status": "success", "tool": tool_name, "result": result})
     except Exception as e:
         return json.dumps({"status": "error", "tool": tool_name, "error": str(e)})
+
+
+@tool(
+    name="mcp_list_tools",
+    description="Returns a JSON-formatted list of all registered tools, including names, descriptions, and parameter schemas.",
+    parameters={"type": "object", "properties": {}, "required": []},
+)
+@eidosian()
+def mcp_list_tools() -> str:
+    """Compatibility tool for programmatic MCP tool discovery."""
+    tools = list_tool_metadata()
+    payload = []
+    for item in tools:
+        payload.append(
+            {
+                "name": item.get("name", ""),
+                "description": item.get("description", ""),
+                "parameters": item.get("parameters", {}),
+            }
+        )
+    payload.sort(key=lambda entry: entry["name"])
+    return json.dumps(payload, indent=2)
+
+
+@tool(
+    name="mcp_list_resources",
+    description="Returns a JSON-formatted list of all registered resources and descriptions.",
+    parameters={"type": "object", "properties": {}, "required": []},
+)
+@eidosian()
+def mcp_list_resources() -> str:
+    """Compatibility tool for programmatic MCP resource discovery."""
+    resources = list_resource_metadata()
+    payload = []
+    for item in resources:
+        payload.append(
+            {
+                "uri": item.get("uri", ""),
+                "description": item.get("description", ""),
+            }
+        )
+    payload.sort(key=lambda entry: entry["uri"])
+    return json.dumps(payload, indent=2)

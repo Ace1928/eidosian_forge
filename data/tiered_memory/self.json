@@ -3,8 +3,8 @@
     "id": "09a3d36f-5036-4cd2-a501-32714b685575",
     "content": "LESSON: Implemented PR-H2 ignition tracing: pending winner finalization across beats, index-backed linkage pools, trace_strength metrics and v3 ignition gating; validated with 22 agent_forge tests and full eidos_mcp tool-call regression.\nCONTEXT: Stage H PR-H2 on Termux/Linux parity path",
     "created_at": "2026-02-16T17:50:45.028161",
-    "last_accessed": "2026-02-16T17:50:45.028168",
-    "access_count": 0,
+    "last_accessed": "2026-02-23T11:04:40.338575",
+    "access_count": 1,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -16,13 +16,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "ignition-trace",
       "self-improvement",
-      "learning",
-      "consciousness",
-      "lesson",
+      "ignition-trace",
       "termux",
-      "stage-h"
+      "stage-h",
+      "consciousness",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -43,14 +43,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "trial-runner",
       "self-improvement",
-      "bench",
-      "learning",
+      "termux",
+      "stage-h",
       "consciousness",
       "lesson",
-      "termux",
-      "stage-h"
+      "bench",
+      "learning",
+      "trial-runner"
     ],
     "linked_memories": []
   },
@@ -72,14 +72,14 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "metrics",
-      "directionality",
-      "rci-v2",
-      "learning",
-      "consciousness",
-      "lesson",
       "termux",
-      "stage-h"
+      "stage-h",
+      "consciousness",
+      "directionality",
+      "metrics",
+      "lesson",
+      "learning",
+      "rci-v2"
     ],
     "linked_memories": []
   },
@@ -87,8 +87,8 @@
     "id": "1252aa33-0ed7-45e8-9a47-db7015f33483",
     "content": "LESSON: Delivered PR-H5 ablation framework with matrix execution, variant-vs-full comparisons, golden checks, bench.ablation_result events, and regression tests.\nCONTEXT: Stage H PR-H5 ablation/golden suite",
     "created_at": "2026-02-16T20:46:57.927311",
-    "last_accessed": "2026-02-16T20:46:57.927316",
-    "access_count": 0,
+    "last_accessed": "2026-02-23T11:04:40.338672",
+    "access_count": 1,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -100,15 +100,15 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "ablation",
       "self-improvement",
-      "learning",
-      "consciousness",
-      "lesson",
       "termux",
+      "stage-h",
+      "consciousness",
+      "ablation",
       "regression",
-      "golden",
-      "stage-h"
+      "learning",
+      "lesson",
+      "golden"
     ],
     "linked_memories": []
   },
@@ -130,14 +130,14 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "rollout",
-      "consciousness",
-      "lesson",
-      "termux",
-      "predictive-coding",
       "world-model",
-      "stage-h"
+      "termux",
+      "stage-h",
+      "consciousness",
+      "predictive-coding",
+      "rollout",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -160,13 +160,13 @@
     "tags": [
       "self-improvement",
       "meta",
-      "learning",
-      "simulation",
-      "report",
-      "consciousness",
-      "lesson",
       "termux",
-      "stage-h"
+      "stage-h",
+      "consciousness",
+      "report",
+      "simulation",
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -174,8 +174,8 @@
     "id": "7811f015-46bf-421d-b731-0c632147fce3",
     "content": "Completed PR-H7 simulation stream integration in consciousness kernel: added simulation module, meta simulated-fraction reasoning, report simulation context, and passing regression suites in Termux.",
     "created_at": "2026-02-16T21:17:02.749774",
-    "last_accessed": "2026-02-20T07:37:16.060142",
-    "access_count": 2,
+    "last_accessed": "2026-02-23T11:04:40.338704",
+    "access_count": 3,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "semantic",
@@ -183,11 +183,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "termux",
       "integration",
-      "simulation",
-      "milestone_h",
       "consciousness",
-      "termux"
+      "simulation",
+      "milestone_h"
     ],
     "linked_memories": []
   },
@@ -208,14 +208,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
-      "testing",
+      "ci",
       "self-improvement",
-      "mcp",
-      "learning",
-      "lesson",
+      "testing",
       "termux",
-      "ci"
+      "mcp",
+      "lesson",
+      "reliability",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -233,10 +233,10 @@
     "ttl_seconds": null,
     "tags": [
       "ppx",
-      "phenomenology",
+      "consciousness",
       "metrics",
-      "milestone_h",
-      "consciousness"
+      "phenomenology",
+      "milestone_h"
     ],
     "linked_memories": []
   },
@@ -257,13 +257,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "benchmarking",
       "self-improvement",
-      "learning",
-      "lesson",
       "telemetry",
       "falsifiability",
       "methodology",
-      "benchmarking"
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -280,11 +280,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "bench",
-      "milestone_h",
-      "recipes",
       "consciousness",
-      "perturbation"
+      "perturbation",
+      "recipes",
+      "bench",
+      "milestone_h"
     ],
     "linked_memories": []
   },
@@ -305,14 +305,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
       "self-improvement",
-      "mcp",
+      "termux",
       "benchmark",
-      "learning",
       "timeouts",
+      "mcp",
       "lesson",
-      "termux"
+      "reliability",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -333,13 +333,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "optimization",
-      "self-improvement",
       "autotune",
-      "learning",
+      "self-improvement",
       "consciousness",
+      "optimization",
+      "bayes",
       "lesson",
-      "bayes"
+      "learning"
     ],
     "linked_memories": []
   },
@@ -362,10 +362,10 @@
     "tags": [
       "self-improvement",
       "attention",
-      "learning",
-      "competition",
       "consciousness",
-      "lesson"
+      "lesson",
+      "competition",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -387,12 +387,12 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "validation",
-      "learning",
-      "lesson",
-      "termux",
       "venv",
-      "workflow"
+      "termux",
+      "workflow",
+      "learning",
+      "validation",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -414,12 +414,12 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "consciousness",
-      "lesson",
       "phase_i6",
+      "consciousness",
+      "experiment_designer",
       "red_team",
-      "experiment_designer"
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -440,13 +440,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
       "self-improvement",
-      "mcp",
-      "learning",
-      "lesson",
       "termux",
-      "red_team"
+      "mcp",
+      "reliability",
+      "red_team",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -468,13 +468,13 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "benchmark",
-      "learning",
-      "consciousness",
-      "lesson",
       "phase_i7",
       "gates",
-      "red_team"
+      "benchmark",
+      "consciousness",
+      "red_team",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -496,12 +496,12 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "scoring",
-      "benchmark",
-      "learning",
-      "consciousness",
-      "lesson",
       "phase_i7",
+      "benchmark",
+      "consciousness",
+      "scoring",
+      "lesson",
+      "learning",
       "normalization"
     ],
     "linked_memories": []
@@ -523,13 +523,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "testing",
+      "hardening",
       "self-improvement",
+      "testing",
       "mcp",
-      "learning",
-      "lesson",
       "idempotence",
-      "hardening"
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -550,14 +550,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "self-improvement",
       "autotune",
-      "learning",
-      "consciousness",
-      "lesson",
+      "self-improvement",
       "termux",
-      "red-team",
-      "stage-i"
+      "consciousness",
+      "learning",
+      "stage-i",
+      "lesson",
+      "red-team"
     ],
     "linked_memories": []
   },
@@ -579,13 +579,13 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "index",
+      "termux",
       "benchmark",
-      "learning",
+      "stage-h",
       "consciousness",
       "lesson",
-      "termux",
-      "stage-h"
+      "learning",
+      "index"
     ],
     "linked_memories": []
   },
@@ -606,14 +606,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "self-improvement",
-      "learning",
       "dependabot",
+      "self-improvement",
       "security",
-      "lesson",
       "termux",
       "phase-15",
-      "workflow"
+      "workflow",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -634,14 +634,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "self-improvement",
-      "learning",
       "dependabot",
+      "self-improvement",
       "security",
-      "lesson",
       "phase-15",
       "remediation",
-      "workflow"
+      "workflow",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -662,13 +662,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "action-pins",
       "self-improvement",
-      "learning",
       "security",
-      "lesson",
       "phase-15",
-      "workflow"
+      "workflow",
+      "action-pins",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -689,14 +689,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "phase-16",
-      "self-improvement",
-      "learning",
       "dependabot",
+      "self-improvement",
       "security",
-      "lesson",
+      "phase-16",
       "remediation",
-      "workflow"
+      "workflow",
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -704,8 +704,8 @@
     "id": "e360cd06-9932-4b90-b48a-ac79dad1e46a",
     "content": "LESSON: Dependabot raw-alert first_patched_version metadata can drive deterministic pip pin upgrades with idempotent dry-run/write/post-write-dry-run validation and rollback backups.\nCONTEXT: Stage L PR-L1..PR-L3 dependency remediation execution in Termux/Linux parity path",
     "created_at": "2026-02-16T22:54:34.676824+00:00",
-    "last_accessed": "2026-02-16T22:54:34.676824+00:00",
-    "access_count": 0,
+    "last_accessed": "2026-02-23T11:04:40.338739",
+    "access_count": 1,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -717,13 +717,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "idempotent",
       "dependabot",
       "security",
-      "lesson",
       "termux",
       "supply-chain",
-      "stage-l"
+      "idempotent",
+      "stage-l",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -744,12 +744,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "phase17",
       "dependabot",
+      "phase17",
+      "hardening",
       "security",
-      "lesson",
       "stage-l",
-      "hardening"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -770,12 +770,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "phase17",
       "dependabot",
+      "phase17",
       "security",
-      "lesson",
       "closure",
-      "stage-l"
+      "stage-l",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -796,12 +796,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "payload-safety",
-      "phase18",
-      "watchdog",
-      "lesson",
+      "hardening",
       "termux",
-      "hardening"
+      "phase18",
+      "payload-safety",
+      "lesson",
+      "watchdog"
     ],
     "linked_memories": []
   },
@@ -822,12 +822,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "ci",
       "stress-benchmark",
-      "payload-safety",
       "phase18",
-      "watchdog",
+      "payload-safety",
       "lesson",
-      "ci"
+      "watchdog"
     ],
     "linked_memories": []
   },
@@ -848,11 +848,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "phase18",
+      "side-effect-free",
       "status",
-      "watchdog",
+      "phase18",
       "lesson",
-      "side-effect-free"
+      "watchdog"
     ],
     "linked_memories": []
   },
@@ -860,8 +860,8 @@
     "id": "7c1f6f3f-497e-4f46-9cad-a0d6642c0506",
     "content": "LESSON: Linux parity reliability improves when CI and local smoke runs share a single deterministic audit matrix that validates forge status, MCP runtime health, and consciousness benchmark/stress gates with structured report artifacts.\\nCONTEXT: Phase 19 Linux audit matrix parity closure.",
     "created_at": "2026-02-17T01:44:44+00:00",
-    "last_accessed": "2026-02-21T11:30:27.633757",
-    "access_count": 2,
+    "last_accessed": "2026-02-23T11:04:40.338771",
+    "access_count": 3,
     "tier": "self",
     "namespace": "eidos",
     "memory_type": "procedural",
@@ -873,12 +873,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "ci",
       "linux-parity",
       "phase19",
       "mcp",
       "lesson",
-      "audit-matrix",
-      "ci"
+      "audit-matrix"
     ],
     "linked_memories": []
   },
@@ -899,11 +899,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "ci-gate",
+      "linux-audit",
       "phase20",
       "observability",
-      "lesson",
-      "linux-audit",
-      "ci-gate"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -924,11 +924,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "kb",
       "phase20",
       "mcp",
-      "lesson",
-      "kb",
-      "memory-hygiene"
+      "memory-hygiene",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -950,10 +950,10 @@
     "ttl_seconds": null,
     "tags": [
       "phase21",
-      "event-fabric",
-      "lesson",
+      "causal-trace",
       "trial-capture",
-      "causal-trace"
+      "event-fabric",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -974,11 +974,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "provenance",
+      "replay-manifest",
       "phase22",
       "bench",
-      "replay-manifest",
-      "lesson",
-      "provenance"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -999,11 +999,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
+      "directory-atlas",
       "phase23",
       "documentation",
-      "directory-atlas",
-      "lesson",
-      "test-coverage"
+      "test-coverage",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1024,13 +1024,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "atlas",
-      "docs",
-      "phase24",
+      "ci",
       "self-improvement",
-      "determinism",
       "termux",
-      "ci"
+      "phase24",
+      "atlas",
+      "determinism",
+      "docs"
     ],
     "linked_memories": []
   },
@@ -1051,12 +1051,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "self-improvement",
-      "learning",
-      "lesson",
-      "refactor",
+      "ast",
       "lessons-learned",
-      "ast"
+      "self-improvement",
+      "refactor",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1078,10 +1078,10 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
       "prompt-engineering",
-      "lesson",
-      "architecture"
+      "learning",
+      "architecture",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1103,11 +1103,11 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "learning",
-      "lesson",
       "agency",
       "strategy",
-      "future-directions"
+      "learning",
+      "future-directions",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1124,10 +1124,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "introspection",
-      "velvet-beef",
+      "identity",
       "strategy-shift",
-      "identity"
+      "introspection",
+      "velvet-beef"
     ],
     "linked_memories": []
   },
@@ -1148,11 +1148,11 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "philosophy",
-      "recursive-improvement",
       "self-improvement",
+      "philosophy",
       "learning",
-      "lesson"
+      "lesson",
+      "recursive-improvement"
     ],
     "linked_memories": []
   },
@@ -1174,10 +1174,10 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
+      "eidosian-core",
       "sms-forge",
       "learning",
-      "lesson",
-      "eidosian-core"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1198,12 +1198,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "fastmcp",
       "self-improvement",
-      "mcp",
-      "learning",
       "async-python",
-      "lesson"
+      "mcp",
+      "fastmcp",
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1224,13 +1224,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
       "strict-shell",
       "self-improvement",
+      "termux",
       "mcp",
-      "learning",
       "lesson",
-      "termux"
+      "reliability",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1247,10 +1247,10 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "doc_forge",
-      "reliability",
+      "ports",
       "validation",
-      "ports"
+      "reliability",
+      "doc_forge"
     ],
     "linked_memories": []
   },
@@ -1272,13 +1272,13 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "validation",
-      "learning",
       "security",
       "consciousness",
-      "lesson",
       "causal",
-      "methodology"
+      "methodology",
+      "lesson",
+      "validation",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1299,14 +1299,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "chroma",
+      "hnswlib",
       "self-improvement",
-      "learning",
-      "ops",
-      "stability",
-      "lesson",
       "termux",
-      "hnswlib"
+      "stability",
+      "chroma",
+      "ops",
+      "lesson",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1327,13 +1327,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
-      "workflow-lint",
-      "self-improvement",
       "github-actions",
-      "learning",
+      "self-improvement",
       "actionlint",
-      "lesson"
+      "workflow-lint",
+      "lesson",
+      "reliability",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1354,12 +1354,12 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "self-improvement",
-      "github-actions",
       "heredoc",
+      "github-actions",
+      "self-improvement",
+      "workflow",
       "learning",
-      "lesson",
-      "workflow"
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1380,14 +1380,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
-      "self-improvement",
-      "pytest",
-      "learning",
-      "lesson",
-      "termux",
       "ci",
-      "venv"
+      "self-improvement",
+      "venv",
+      "termux",
+      "pytest",
+      "reliability",
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1408,8 +1408,8 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "lesson",
       "self-improvement",
+      "lesson",
       "learning"
     ],
     "linked_memories": []
@@ -1431,14 +1431,14 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
       "self-improvement",
-      "compatibility",
       "mcp",
-      "learning",
       "graphrag",
+      "reliability",
+      "compatibility",
       "lesson",
-      "timeout"
+      "timeout",
+      "learning"
     ],
     "linked_memories": []
   },
@@ -1459,13 +1459,13 @@
     "importance": 1.5,
     "ttl_seconds": null,
     "tags": [
-      "reliability",
-      "lesson",
       "self-improvement",
       "contracts",
       "evaluation",
+      "reliability",
       "replay",
-      "learning"
+      "learning",
+      "lesson"
     ],
     "linked_memories": []
   },
@@ -1487,14 +1487,41 @@
     "ttl_seconds": null,
     "tags": [
       "self-improvement",
-      "git",
-      "learning",
-      "ops",
-      "lesson",
-      "rebase",
       "termux",
+      "git",
+      "workflow",
+      "rebase",
       "stash",
-      "workflow"
+      "ops",
+      "learning",
+      "lesson"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "a4b0554b-daf1-46bf-ad30-a5b98cc7b0cc",
+    "content": "LESSON: Avoid full-repo git status/diff in this workspace; prefer scoped adds and explicit file paths because full index scans can stall for extended periods on this repo in Termux.\nCONTEXT: termux git operations during large repo updates",
+    "created_at": "2026-02-23T11:34:37.737012",
+    "last_accessed": "2026-02-23T11:34:37.737038",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "Avoid full-repo git status/diff in this workspace; prefer scoped adds and explicit file paths because full index scans can stall for extended periods on this repo in Termux.",
+      "context": "termux git operations during large repo updates",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "workflow",
+      "self-improvement",
+      "reliability",
+      "termux",
+      "learning",
+      "git",
+      "lesson"
     ],
     "linked_memories": []
   }

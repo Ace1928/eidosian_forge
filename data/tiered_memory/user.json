@@ -1,3 +1,300 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:44c60c0308b597bf0142108420ee113e31829f630deb5df97309195a66658af5
-size 9132
+[
+  {
+    "id": "e7e5a5d6-6cf7-4d29-a147-9469a91ce943",
+    "content": "2026-02-16T13:35:39Z USER preference confirmed: all repo python/test operations should run via eidosian_venv; include memory and KB growth in commit cycles.",
+    "created_at": "2026-02-16T23:35:39.863010",
+    "last_accessed": "2026-02-16T23:35:39.863011",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "preference",
+      "termux",
+      "workflow",
+      "venv"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "24c8a8b1-6a40-4015-8fc9-c7c3eb578492",
+    "content": "2026-02-16T22:54:34Z USER workflow preference honored: dependency remediation now uses eidosian_venv with dry-run -> write -> post-write dry-run idempotency checks and backup snapshots.",
+    "created_at": "2026-02-16T22:54:34.676824+00:00",
+    "last_accessed": "2026-02-16T22:54:34.676824+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "termux",
+      "workflow",
+      "venv",
+      "dependabot",
+      "security"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "0cdf4a2b-c24b-4302-ba4f-bbcf6472b01d",
+    "content": "2026-02-16T23:11:06Z USER continuity checkpoint: completed all-severity remediation pass and no-fix mitigation (ecdsa/keras dependency minimization, orjson range-safe bump) with idempotent validation.",
+    "created_at": "2026-02-16T23:11:06.353944+00:00",
+    "last_accessed": "2026-02-16T23:11:06.353944+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "termux",
+      "workflow",
+      "phase17",
+      "dependabot",
+      "security"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "9413f003-eaa1-49af-831b-18c0c347a085",
+    "content": "2026-02-16T23:27:34Z USER objective reached: Dependabot open vulnerability count is now zero and remediation issue queue is closed.",
+    "created_at": "2026-02-16T23:27:34.195902+00:00",
+    "last_accessed": "2026-02-16T23:27:34.195902+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "termux",
+      "workflow",
+      "closure",
+      "dependabot",
+      "security"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "abec8a56-9db9-46dc-bbdd-32ceb2c4fba7",
+    "content": "2026-02-16T23:43:19Z USER request alignment: completed checklist audit, confirmed Phases 0-17 complete, and began Phase 18 with substantial runtime hardening upgrades.",
+    "created_at": "2026-02-16T23:43:19.283684+00:00",
+    "last_accessed": "2026-02-16T23:43:19.283684+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "checklist-audit",
+      "user",
+      "hardening",
+      "phase18"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "2e51f1b6-b3ff-40cf-8ef2-c33cb90aab2f",
+    "content": "2026-02-17T00:24:46Z USER directive honored: finalized Phase 18 by exposing watchdog/payload runtime health through CLI+MCP and adding a repeatable stress benchmark profile wired into CI trend reporting.",
+    "created_at": "2026-02-17T00:24:46+00:00",
+    "last_accessed": "2026-02-17T00:24:46+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "stress-benchmark",
+      "watchdog",
+      "cli",
+      "mcp",
+      "user",
+      "phase18"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "ba95ea2d-3656-4a72-b2d2-7297848d8995",
+    "content": "2026-02-17T00:24:46Z USER quality bar upheld: runtime status surfaces are now read-only/side-effect-free and validated with regression tests after the Phase 18 status exposure rollout.",
+    "created_at": "2026-02-17T00:24:46+00:00",
+    "last_accessed": "2026-02-17T00:24:46+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "status",
+      "side-effect-free",
+      "quality",
+      "user",
+      "phase18"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "4eec908c-d083-4906-b7cc-5f547f9b1f69",
+    "content": "2026-02-17T01:44:44Z USER direction sustained: implemented the next production cycle with a Linux audit matrix integrated into smoke+CI, closing the last unchecked Termux/Linux parity checklist item.",
+    "created_at": "2026-02-17T01:44:44+00:00",
+    "last_accessed": "2026-02-17T11:50:34.727126",
+    "access_count": 1,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase19",
+      "ci",
+      "user",
+      "linux-parity",
+      "audit-matrix"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "7ddc00c7-fc8b-4558-b9e9-35c88e43204f",
+    "content": "2026-02-17T02:01:03Z USER directive continued: Linux audit results are now part of trend observability and CI fails fast when latest linux audit fail count is non-zero.",
+    "created_at": "2026-02-17T02:01:03+00:00",
+    "last_accessed": "2026-02-17T02:01:03+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase20",
+      "ci-gate",
+      "observability",
+      "linux-audit",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "adbf76d4-491c-4818-be83-21e7a2ccc835",
+    "content": "2026-02-17T02:19:15Z USER continuity preserved: event-bus records now include event_id/ts_ms and trial artifacts are marker-bounded (`bench.trial_start`/`bench.trial_end`) for stricter causal capture.",
+    "created_at": "2026-02-17T02:19:15+00:00",
+    "last_accessed": "2026-02-17T02:19:15+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase21",
+      "event-fabric",
+      "trial-capture",
+      "user",
+      "consciousness"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "3e88083c-a75b-4a9e-a9e9-50671d826918",
+    "content": "2026-02-17T02:33:24Z USER direction sustained: trial artifacts now include replay-grade provenance (capture digest, event-id coverage, seed/corr lineage), plus `module_state_snapshot.json` and `replay_manifest.json` for deterministic post-run reconstruction.",
+    "created_at": "2026-02-17T02:33:24+00:00",
+    "last_accessed": "2026-02-17T02:33:24+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase22",
+      "provenance",
+      "replay-manifest",
+      "user",
+      "consciousness"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "4de89434-932c-4a91-aef3-23bad33a5942",
+    "content": "2026-02-17T03:24:01Z USER request satisfied: repository docs now include a linked directory atlas plus a full recursive directory index, and validation cycle included consciousness benchmark + stress benchmark + full regression suites in eidosian_venv.",
+    "created_at": "2026-02-17T03:24:01+00:00",
+    "last_accessed": "2026-02-17T03:24:01+00:00",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase23",
+      "documentation",
+      "directory-atlas",
+      "benchmarks",
+      "user"
+    ],
+    "linked_memories": []
+  },
+  {
+    "id": "fad157ce-48ea-4ccd-a3ff-547358b86476",
+    "content": "2026-02-17T04:13:10Z USER continuity honored: delivered deterministic directory-atlas generation + CI drift guard with complete eidosian_venv validation and benchmark evidence for Phase 24.",
+    "created_at": "2026-02-17T04:13:10Z",
+    "last_accessed": "2026-02-17T04:13:10Z",
+    "access_count": 0,
+    "tier": "user",
+    "namespace": "user",
+    "memory_type": "semantic",
+    "metadata": {
+      "user_id": "lloyd"
+    },
+    "importance": 1.2,
+    "ttl_seconds": null,
+    "tags": [
+      "phase24",
+      "docs",
+      "ci",
+      "deterministic",
+      "user"
+    ],
+    "linked_memories": []
+  }
+]
