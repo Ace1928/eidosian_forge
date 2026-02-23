@@ -102,7 +102,7 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 
 ### 4.2. Usage & Integration
 - [x] ~~**Add Docstring/Usage Instructions:** `check_mcp.py` now exposes documented CLI options (`--help`) for JSON output, smoke test, strict mode, and expected env checks.~~
-- [ ] **Integrate into Development Workflow:** Suggest integrating `check_mcp.py` into the project's development workflow (e.g., a `make check` command, a pre-commit hook, or a pre-flight check before starting the main server).
+- [x] ~~**Integrate into Development Workflow:** Added `check_mcp` coverage into the automated pytest path (`eidos_mcp/tests/test_check_mcp.py`) and documented strict preflight invocation in README.~~
 - [x] ~~**Structured Output:** `check_mcp.py --json` emits a structured payload including tool/resource registries and component check results.~~
 
 ---

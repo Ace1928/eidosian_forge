@@ -3,7 +3,7 @@
 Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 
 - Open files: **92**
-- Open checklist items: **1108**
+- Open checklist items: **1107**
 
 ## Iteration Log
 
@@ -11,6 +11,7 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 - [x] ~~`knowledge_forge/TODO.md` fully completed (OWL/RDFS reasoning experiment implemented via CLI + tests + docs).~~
 - [x] ~~`eidos_mcp/TODO_eidos_mcp.md`: `test_tool_remember` item updated to current `memory_add` tool name.~~
 - [x] ~~`eidos_mcp` diagnostics expanded: component checks + smoke test + strict/JSON modes (`check_mcp`).~~
+- [x] ~~`eidos_mcp` diagnostics integrated into dev workflow via automated pytest coverage and README preflight path.~~
 - Pending: `eidos_mcp/TODO_eidos_mcp.md` full completion sweep
 - Pending: `memory_forge` TODO/ROADMAP/PLAN completion sweep
 - Pending: `word_forge` TODO/ROADMAP/PLAN completion sweep
@@ -21,7 +22,7 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---|---:|
 | `word_forge` | 233 |
 | `game_forge` | 133 |
-| `eidos_mcp` | 80 |
+| `eidos_mcp` | 79 |
 | `computer_control_forge` | 74 |
 | `web_interface_forge` | 73 |
 | `llm_forge` | 38 |
@@ -62,7 +63,7 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---:|---|
 | 174 | `word_forge/DETAILED_TODO.md` |
 | 69 | `game_forge/src/autoseed/docs/TODO.md` |
-| 52 | `eidos_mcp/TODO_eidos_mcp.md` |
+| 51 | `eidos_mcp/TODO_eidos_mcp.md` |
 | 48 | `game_forge/src/Stratum/TODO.md` |
 | 40 | `computer_control_forge/ROADMAP.md` |
 | 40 | `web_interface_forge/ROADMAP.md` |
