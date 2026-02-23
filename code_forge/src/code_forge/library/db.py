@@ -1079,7 +1079,9 @@ class CodeLibraryDB:
             rec["semantic_score"] = round(float(score), 4)
             rec["vector_score"] = round(float(score), 4)
             rec["fts_score"] = 0.0
-            rec["lexical_score"] = round(token_jaccard(query_tokens, tokenize_code_text(str(rec.get("search_text") or ""))), 4)
+            rec["lexical_score"] = round(
+                token_jaccard(query_tokens, tokenize_code_text(str(rec.get("search_text") or ""))), 4
+            )
             rec["search_preview"] = str(rec.get("search_text") or "")[:280]
             rec.pop("vector_json", None)
             scored.append(rec)
