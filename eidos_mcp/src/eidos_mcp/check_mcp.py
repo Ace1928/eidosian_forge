@@ -73,7 +73,9 @@ def _component_checks(expected_env: list[str], smoke_test: bool) -> dict[str, An
 
     if smoke_test:
         try:
-            app = eidos_mcp_server._build_streamable_http_app(eidos_mcp_server._runtime_config().mount_path)  # noqa: SLF001
+            app = eidos_mcp_server._build_streamable_http_app(
+                eidos_mcp_server._runtime_config().mount_path
+            )  # noqa: SLF001
             checks["server_smoke_build"] = {
                 "ok": app is not None,
                 "detail": "ASGI app created",
