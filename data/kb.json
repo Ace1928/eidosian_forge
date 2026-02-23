@@ -1783,6 +1783,19 @@
         ]
       },
       "links": []
+    },
+    "c8856a46-45f5-47d5-895e-4748d0e30662": {
+      "id": "c8856a46-45f5-47d5-895e-4748d0e30662",
+      "content": "Code Forge now supports operational vector indexing through code_vectors with hash128_v1 embeddings and backend-selectable semantic search (text, vector, hybrid).",
+      "metadata": {
+        "tags": [
+          "sqlite",
+          "code_forge",
+          "vector_index",
+          "semantic_search"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

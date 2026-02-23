@@ -2145,5 +2145,34 @@
       0.0392156862745098,
       0.6431372549019608
     ]
+  },
+  "85279369-82ee-405c-9f37-cccb8fda0ce8": {
+    "id": "85279369-82ee-405c-9f37-cccb8fda0ce8",
+    "content": "Code Forge vector index backend completed and validated: SQLite code_vectors schema, CLI vector-index command, semantic-search backends (text/vector/hybrid), and regression tests including empty-query safety.",
+    "created_at": "2026-02-23T14:21:54.021001",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_vector_index_complete_20260223"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.6980392156862745,
+      0.4196078431372549,
+      0.19607843137254902,
+      0.01568627450980392,
+      0.06666666666666667,
+      0.9450980392156862,
+      0.6431372549019608,
+      0.6392156862745098,
+      0.5882352941176471,
+      0.8784313725490196,
+      0.7647058823529411,
+      0.7372549019607844,
+      0.34901960784313724,
+      0.1843137254901961,
+      0.5450980392156862,
+      0.12941176470588237
+    ]
   }
 }
