@@ -73,7 +73,7 @@ This document outlines a series of tasks to extend, enhance, and significantly i
 - [ ] **Replace `run_server.sh` in Tests:** Directly invoke `eidos_mcp_server.py` with Python in `StdioServerParameters.command`, passing appropriate environment variables or arguments for test mode, eliminating the reliance on a shell script.
 
 ### 2.3. Test Reliability & Maintainability
-- [ ] **Update Tool Name:** Change `session.call_tool("remember", ...)` to `session.call_tool("memory_add", ...)` in `test_tool_remember` to reflect the current server tool name.
+- [x] ~~**Update Tool Name:** Changed tests to use `session.call_tool("memory_add", ...)` in `test_tool_remember`, matching the current MCP tool name.~~
 - [ ] **Configurable Latency Thresholds:** Make performance thresholds for server startup (e.g., `self.assertLess(duration, 2.0)`) configurable via environment variables or a test configuration file to allow for flexible testing across different environments.
 
 ## 3. Resource Fetcher (`eidos_fetch.py`) Enhancements

@@ -2,16 +2,17 @@
 
 Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 
-- Open files: **93**
-- Open checklist items: **1115**
+- Open files: **92**
+- Open checklist items: **1112**
 
 ## Iteration Log
 
 - [x] ~~`code_forge/TODO.md` fully completed (vector index backend implemented, tested, documented).~~
 - [x] ~~`knowledge_forge/TODO.md` fully completed (OWL/RDFS reasoning experiment implemented via CLI + tests + docs).~~
-- [ ] `eidos_mcp/TODO_eidos_mcp.md` completion sweep
-- [ ] `memory_forge` TODO/ROADMAP/PLAN completion sweep
-- [ ] `word_forge` TODO/ROADMAP/PLAN completion sweep
+- [x] ~~`eidos_mcp/TODO_eidos_mcp.md`: `test_tool_remember` item updated to current `memory_add` tool name.~~
+- Pending: `eidos_mcp/TODO_eidos_mcp.md` full completion sweep
+- Pending: `memory_forge` TODO/ROADMAP/PLAN completion sweep
+- Pending: `word_forge` TODO/ROADMAP/PLAN completion sweep
 
 ## Open Items By Top-Level Scope
 
@@ -19,20 +20,20 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---|---:|
 | `word_forge` | 233 |
 | `game_forge` | 133 |
-| `eidos_mcp` | 85 |
+| `eidos_mcp` | 84 |
 | `computer_control_forge` | 74 |
 | `web_interface_forge` | 73 |
 | `llm_forge` | 38 |
 | `code_forge` | 34 |
 | `memory_forge` | 27 |
-| `knowledge_forge` | 25 |
+| `knowledge_forge` | 23 |
+| `root_docs` | 21 |
 | `figlet_forge` | 20 |
 | `prompt_forge` | 20 |
 | `sms_forge` | 20 |
 | `projects` | 19 |
 | `audit_forge` | 18 |
 | `agent_forge` | 17 |
-| `ELEVATION_PLAN.md` | 16 |
 | `doc_forge` | 16 |
 | `glyph_forge` | 16 |
 | `gis_forge` | 15 |
@@ -52,7 +53,6 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 | `repo_forge` | 12 |
 | `terminal_forge` | 12 |
 | `type_forge` | 12 |
-| `REVIEW_MASTER_PLAN.md` | 5 |
 | `moltbook_forge` | 5 |
 
 ## Highest Open-Item Files (Top 30)
@@ -61,7 +61,7 @@ Generated from `scripts/plan_inventory.py` (canonical exclusions applied).
 |---:|---|
 | 174 | `word_forge/DETAILED_TODO.md` |
 | 69 | `game_forge/src/autoseed/docs/TODO.md` |
-| 57 | `eidos_mcp/TODO_eidos_mcp.md` |
+| 56 | `eidos_mcp/TODO_eidos_mcp.md` |
 | 48 | `game_forge/src/Stratum/TODO.md` |
 | 40 | `computer_control_forge/ROADMAP.md` |
 | 40 | `web_interface_forge/ROADMAP.md` |
