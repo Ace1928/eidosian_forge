@@ -178,3 +178,42 @@ def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:
     assert registry.get("schema_version")
     unit_links = ((registry.get("links") or {}).get("unit_links")) or []
     assert isinstance(unit_links, list)
+
+
+def test_triage_profile_hot_path_preserves_duplicate_candidate(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _make_repo(repo)
+
+    db = CodeLibraryDB(tmp_path / "library.sqlite")
+    runner = IngestionRunner(db=db, runs_dir=tmp_path / "runs")
+    runner.ingest_path(repo, extensions=[".py"], progress_every=1)
+
+    output = tmp_path / "digester"
+    repo_index = build_repo_index(repo, output, extensions=[".py"])
+    duplication = build_duplication_index(db, output, near_min_tokens=1, near_limit=50)
+    triage_without_profile = build_triage_report(db, repo_index, duplication, output)
+
+    profile = {
+        "file_hotness": {
+            "src/a.py": 1.4,
+        }
+    }
+    profile_path = tmp_path / "profile_hotspots.json"
+    profile_path.write_text(json.dumps(profile, indent=2) + "\n", encoding="utf-8")
+
+    triage_with_profile = build_triage_report(
+        db,
+        repo_index,
+        duplication,
+        output,
+        profile_hotspots={"src/a.py": {"hotness": 1.4, "samples": 2, "source": str(profile_path)}},
+    )
+
+    by_file_no_profile = {rec["file_path"]: rec for rec in triage_without_profile["entries"]}
+    by_file_profile = {rec["file_path"]: rec for rec in triage_with_profile["entries"]}
+    assert "src/a.py" in by_file_profile
+    assert by_file_profile["src/a.py"]["metrics"]["profile_hotness"] > 0.0
+    assert by_file_profile["src/a.py"]["rule_id"].startswith("RULE_H")
+    if by_file_no_profile.get("src/a.py", {}).get("label") == "delete_candidate":
+        assert by_file_profile["src/a.py"]["label"] != "delete_candidate"

@@ -1031,5 +1031,25 @@
       "regression"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "8608dbec-d6c9-47cb-8936-b8f79237ee42",
+    "content": "Completed TODO cycle: implemented code_forge profile-hotpath triage integration and crawl_forge BeautifulSoup extraction upgrade, with targeted tests passing.",
+    "created_at": "2026-02-23T11:34:25.773289",
+    "last_accessed": "2026-02-23T11:34:25.773318",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.92,
+    "ttl_seconds": 86400,
+    "tags": [
+      "code_forge",
+      "crawl_forge",
+      "todo",
+      "tests"
+    ],
+    "linked_memories": []
   }
 ]

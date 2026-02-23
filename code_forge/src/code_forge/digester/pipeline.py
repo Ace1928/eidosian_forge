@@ -21,7 +21,7 @@ from code_forge.integration.provenance_registry import (
 )
 from code_forge.library.db import CodeLibraryDB
 
-TRIAGE_RULESET_VERSION = "code_forge_triage_ruleset_v2_2026_02_19"
+TRIAGE_RULESET_VERSION = "code_forge_triage_ruleset_v3_2026_02_23"
 TRIAGE_THRESHOLDS = {
     "unit_count_min": 1,
     "delete_candidate_duplicate_pressure": 2.0,
@@ -30,6 +30,8 @@ TRIAGE_THRESHOLDS = {
     "refactor_max_complexity": 12.0,
     "refactor_avg_complexity": 6.0,
     "keep_callable_units": 2,
+    "hot_path_preserve_threshold": 0.35,
+    "hot_path_keep_threshold": 1.0,
 }
 
 
@@ -204,6 +206,108 @@ def _count_file_hits_from_pairs(pairs: list[dict[str, Any]]) -> dict[str, int]:
     return out
 
 
+def _normalize_profile_path(path: str, *, root_path: Path | None = None) -> str:
+    text = str(path or "").strip().replace("\\", "/")
+    if not text:
+        return ""
+    p = Path(text)
+    if root_path is not None:
+        try:
+            return str(p.resolve().relative_to(root_path.resolve())).replace("\\", "/")
+        except Exception:
+            pass
+    if text.startswith("./"):
+        text = text[2:]
+    return text
+
+
+def load_profile_hotspots(
+    profile_trace_path: Path | None,
+    *,
+    root_path: Path | None = None,
+) -> dict[str, dict[str, Any]]:
+    """
+    Load optional profile hotness hints keyed by repository-relative file path.
+
+    Supported JSON layouts:
+    - {"file_hotness": {"path.py": 1.2, ...}}
+    - {"hotspots": [{"file_path": "...", "hotness": 0.8, "samples": 4}, ...]}
+    - {"entries": [{"path": "...", "duration_ms": 42.0, "calls": 3}, ...]}
+    """
+
+    if profile_trace_path is None:
+        return {}
+    path = Path(profile_trace_path).resolve()
+    if not path.exists() or not path.is_file():
+        return {}
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    out: dict[str, dict[str, Any]] = {}
+
+    def _add(path_value: Any, *, hotness: Any, samples: Any = 1, source: str = "") -> None:
+        rel = _normalize_profile_path(str(path_value or ""), root_path=root_path)
+        if not rel:
+            return
+        try:
+            hot = float(hotness or 0.0)
+        except (TypeError, ValueError):
+            hot = 0.0
+        if hot <= 0.0:
+            return
+        try:
+            count = max(1, int(samples or 1))
+        except (TypeError, ValueError):
+            count = 1
+        current = out.get(rel)
+        if current is None:
+            out[rel] = {
+                "hotness": hot,
+                "samples": count,
+                "source": source or path.name,
+            }
+            return
+        current["hotness"] = float(current.get("hotness") or 0.0) + hot
+        current["samples"] = int(current.get("samples") or 0) + count
+
+    if isinstance(payload, dict):
+        file_hotness = payload.get("file_hotness")
+        if isinstance(file_hotness, dict):
+            for rel, score in file_hotness.items():
+                _add(rel, hotness=score, samples=1, source="file_hotness")
+
+        for key in ("hotspots", "entries"):
+            rows = payload.get(key)
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                rel = row.get("file_path") or row.get("path") or row.get("file")
+                hot = row.get("hotness")
+                if hot is None:
+                    duration_ms = float(row.get("duration_ms") or 0.0)
+                    calls = int(row.get("calls") or row.get("samples") or 1)
+                    hot = max(0.0, duration_ms) * max(1, calls) / 1000.0
+                _add(rel, hotness=hot, samples=row.get("samples") or row.get("calls") or 1, source=key)
+
+    elif isinstance(payload, list):
+        for row in payload:
+            if not isinstance(row, dict):
+                continue
+            _add(
+                row.get("file_path") or row.get("path") or row.get("file"),
+                hotness=row.get("hotness") or row.get("duration_ms"),
+                samples=row.get("samples") or row.get("calls") or 1,
+                source="list",
+            )
+
+    return out
+
+
 def build_duplication_index(
     db: CodeLibraryDB,
     output_dir: Path,
@@ -289,6 +393,8 @@ def _classify_file(metrics: dict[str, Any]) -> dict[str, Any]:
     max_complexity = float(metrics.get("max_complexity") or 0.0)
     callable_units = int(metrics.get("callable_units") or 0)
     is_test = bool(metrics.get("is_test"))
+    profile_hotness = float(metrics.get("profile_hotness") or 0.0)
+    profile_samples = int(metrics.get("profile_samples") or 0)
 
     if unit_count < TRIAGE_THRESHOLDS["unit_count_min"]:
         reasons.append("No indexed code units detected for file")
@@ -305,6 +411,45 @@ def _classify_file(metrics: dict[str, Any]) -> dict[str, Any]:
             "label": "keep",
             "rule_id": "RULE_K1_TEST_ASSET",
             "confidence": 0.98,
+            "reasons": reasons,
+        }
+
+    if profile_hotness >= TRIAGE_THRESHOLDS["hot_path_keep_threshold"]:
+        reasons.append(
+            f"Runtime profile marks file as high-impact hot path (hotness={profile_hotness:.2f}, samples={profile_samples})"
+        )
+        if (
+            max_complexity >= TRIAGE_THRESHOLDS["refactor_max_complexity"]
+            or avg_complexity >= TRIAGE_THRESHOLDS["refactor_avg_complexity"]
+        ):
+            reasons.append("Preserve behavior and prioritize hotspot refactor hardening")
+            return {
+                "label": "refactor",
+                "rule_id": "RULE_H1_HOT_PATH_REFACTOR",
+                "confidence": 0.95,
+                "reasons": reasons,
+            }
+        reasons.append("Preserve hot path stability during archive reduction")
+        return {
+            "label": "keep",
+            "rule_id": "RULE_H2_HOT_PATH_KEEP",
+            "confidence": 0.93,
+            "reasons": reasons,
+        }
+
+    if (
+        profile_hotness >= TRIAGE_THRESHOLDS["hot_path_preserve_threshold"]
+        and duplicate_pressure >= TRIAGE_THRESHOLDS["delete_candidate_duplicate_pressure"]
+        and unit_count <= TRIAGE_THRESHOLDS["delete_candidate_unit_count_max"]
+    ):
+        reasons.append(
+            f"Hot-path profile signal ({profile_hotness:.2f}) overrides delete-candidate duplicate pressure ({duplicate_pressure:.2f})"
+        )
+        reasons.append("Extract to canonical module; avoid deleting runtime-sensitive file")
+        return {
+            "label": "extract",
+            "rule_id": "RULE_H3_HOT_PATH_DELETE_OVERRIDE",
+            "confidence": 0.9,
             "reasons": reasons,
         }
 
@@ -375,6 +520,8 @@ def build_triage_report(
     repo_index: dict[str, Any],
     duplication_index: dict[str, Any],
     output_dir: Path,
+    *,
+    profile_hotspots: Optional[dict[str, dict[str, Any]]] = None,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -387,6 +534,8 @@ def build_triage_report(
     structural_hits = {str(k): int(v) for k, v in (duplication_index.get("structural_hits_by_file") or {}).items()}
     near_hits = {str(k): int(v) for k, v in (duplication_index.get("near_hits_by_file") or {}).items()}
 
+    normalized_hotspots = dict(profile_hotspots or {})
+
     entries: list[dict[str, Any]] = []
     audit_entries: list[dict[str, Any]] = []
     label_counts: dict[str, int] = {}
@@ -398,6 +547,8 @@ def build_triage_report(
 
         dbm = metric_by_path.get(rel_path, {})
         unit_count = int(dbm.get("unit_count") or 0)
+
+        profile = normalized_hotspots.get(rel_path) or normalized_hotspots.get(_normalize_profile_path(rel_path))
 
         metrics = {
             "file_path": rel_path,
@@ -418,6 +569,9 @@ def build_triage_report(
             "normalized_duplicate_hits": normalized_hits.get(rel_path, 0),
             "structural_duplicate_hits": structural_hits.get(rel_path, 0),
             "near_duplicate_hits": near_hits.get(rel_path, 0),
+            "profile_hotness": float((profile or {}).get("hotness") or 0.0),
+            "profile_samples": int((profile or {}).get("samples") or 0),
+            "profile_source": str((profile or {}).get("source") or ""),
         }
         metrics["duplicate_pressure"] = (
             metrics["exact_duplicate_hits"]
@@ -532,6 +686,19 @@ def build_triage_report(
     report_lines.append("")
     report_lines.append(f"Average confidence: {avg_conf:.4f}")
 
+    if normalized_hotspots:
+        report_lines.append("")
+        report_lines.append("## Runtime Hot Paths")
+        report_lines.append("")
+        for rel, info in sorted(
+            normalized_hotspots.items(),
+            key=lambda item: float((item[1] or {}).get("hotness") or 0.0),
+            reverse=True,
+        )[:25]:
+            report_lines.append(
+                f"- `{rel}` | hotness={float((info or {}).get('hotness') or 0.0):.3f} | samples={int((info or {}).get('samples') or 0)}"
+            )
+
     triage_audit = {
         "generated_at": _utc_now(),
         "ruleset_version": TRIAGE_RULESET_VERSION,
@@ -550,6 +717,7 @@ def build_triage_report(
         "ruleset_version": TRIAGE_RULESET_VERSION,
         "entries": entries,
         "label_counts": label_counts,
+        "profile_hotspots_count": len(normalized_hotspots),
         "csv_path": str(csv_path),
         "report_path": str(output_dir / "triage_report.md"),
         "triage_audit_path": str(output_dir / "triage_audit.json"),
@@ -580,6 +748,7 @@ def run_archive_digester(
     previous_snapshot_path: Optional[Path] = None,
     drift_warn_pct: float = 30.0,
     drift_min_abs_delta: float = 1.0,
+    profile_trace_path: Optional[Path] = None,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -602,7 +771,14 @@ def run_archive_digester(
     )
     duplication = build_duplication_index(db=db, output_dir=output_dir)
     dependency_graph = build_dependency_graph(db=db, output_dir=output_dir, limit_edges=graph_export_limit)
-    build_triage_report(db=db, repo_index=repo_index, duplication_index=duplication, output_dir=output_dir)
+    profile_hotspots = load_profile_hotspots(profile_trace_path, root_path=Path(root_path))
+    triage = build_triage_report(
+        db=db,
+        repo_index=repo_index,
+        duplication_index=duplication,
+        output_dir=output_dir,
+        profile_hotspots=profile_hotspots,
+    )
 
     normalized_policy = str(integration_policy).strip().lower() or "effective_run"
     if normalized_policy not in {"run", "effective_run", "global"}:
@@ -665,6 +841,8 @@ def run_archive_digester(
         "triage_json_path": str(output_dir / "triage.json"),
         "triage_audit_path": str(output_dir / "triage_audit.json"),
         "triage_report_path": str(output_dir / "triage_report.md"),
+        "profile_trace_path": str(Path(profile_trace_path).resolve()) if profile_trace_path else None,
+        "profile_hotspots_count": int(triage.get("profile_hotspots_count") or 0),
         "knowledge_sync": knowledge_sync,
         "memory_sync": memory_sync,
         "graphrag_export": graphrag_export,

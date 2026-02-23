@@ -23,7 +23,7 @@
 ## Medium Priority
 - [x] Add AST-structural clone detection and cluster reports.
 - [ ] Add per-language parser adapters (tree-sitter path) for deeper non-Python fidelity.
-- [ ] Integrate profile traces into triage decisions (hot path preservation).
+- [x] ~~Integrate profile traces into triage decisions (hot path preservation).~~
 - [x] ~~Add parallelized parity hashing for large tree roundtrips.~~
 
 ## Low Priority

@@ -1,7 +1,7 @@
 # TODO: crawl_forge
 
 ## 🚨 High Priority
-- [ ] **Upgrade**: Replace Regex HTML parsing with `BeautifulSoup` (bs4) in `crawl_core.py`.
+- [x] ~~**Upgrade**: Replace Regex HTML parsing with `BeautifulSoup` (bs4) in `crawl_core.py`.~~
 
 ## 🟡 Medium Priority
 - [ ] **Feature**: Add support for headless browser (Playwright/Selenium) for JS-heavy sites.

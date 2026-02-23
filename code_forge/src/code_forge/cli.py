@@ -59,6 +59,7 @@ from code_forge import (
     validate_output_dir,
     validate_roundtrip_workspace,
 )
+from code_forge.digester.pipeline import load_profile_hotspots
 
 # Default paths
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[3]))).resolve()
@@ -499,6 +500,11 @@ class CodeForgeCLI(StandardCLI):
             default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
             help="Directory containing repo_index.json/duplication_index.json and triage outputs",
         )
+        triage_parser.add_argument(
+            "--profile-trace",
+            default=None,
+            help="Optional profile trace JSON for hot-path triage preservation",
+        )
         triage_parser.set_defaults(func=self._cmd_triage_report)
 
         digest_parser = subparsers.add_parser(
@@ -613,6 +619,11 @@ class CodeForgeCLI(StandardCLI):
             type=float,
             default=1.0,
             help="Warning threshold for absolute drift delta",
+        )
+        digest_parser.add_argument(
+            "--profile-trace",
+            default=None,
+            help="Optional profile trace JSON used to preserve runtime hot paths in triage decisions",
         )
         digest_parser.set_defaults(func=self._cmd_digest)
 
@@ -1652,11 +1663,16 @@ class CodeForgeCLI(StandardCLI):
             else:
                 repo_index = json.loads(repo_index_path.read_text(encoding="utf-8"))
                 duplication = json.loads(duplication_path.read_text(encoding="utf-8"))
+                profile_hotspots = load_profile_hotspots(
+                    Path(args.profile_trace).resolve() if args.profile_trace else None,
+                    root_path=Path(repo_index.get("root_path") or output_dir).resolve(),
+                )
                 payload = build_triage_report(
                     db=self.library_db,
                     repo_index=repo_index,
                     duplication_index=duplication,
                     output_dir=output_dir,
+                    profile_hotspots=profile_hotspots,
                 )
                 result = CommandResult(
                     True,
@@ -1666,6 +1682,7 @@ class CodeForgeCLI(StandardCLI):
                         "triage_json": str(output_dir / "triage.json"),
                         "triage_csv": str(output_dir / "triage.csv"),
                         "triage_report": str(output_dir / "triage_report.md"),
+                        "profile_hotspots_count": payload.get("profile_hotspots_count", 0),
                         "label_counts": payload.get("label_counts", {}),
                     },
                 )
@@ -1704,6 +1721,7 @@ class CodeForgeCLI(StandardCLI):
                     previous_snapshot_path=(Path(args.previous_snapshot).resolve() if args.previous_snapshot else None),
                     drift_warn_pct=float(args.drift_warn_pct),
                     drift_min_abs_delta=float(args.drift_min_abs_delta),
+                    profile_trace_path=(Path(args.profile_trace).resolve() if args.profile_trace else None),
                 )
                 result = CommandResult(
                     True,

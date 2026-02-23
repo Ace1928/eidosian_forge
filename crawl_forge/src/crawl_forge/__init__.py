@@ -6,10 +6,10 @@ Provides structured extraction with respect for boundaries.
 import requests
 import time
 import logging
-import re
 from typing import Dict, Any, List, Optional
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 
 # Export Tika integration
 try:
@@ -74,26 +74,37 @@ class CrawlForge:
     @eidosian()
     def extract_structured_data(self, html: str) -> Dict[str, Any]:
         """
-        Extract basic metadata from HTML using regex.
+        Extract basic metadata from HTML using BeautifulSoup.
         """
         data = {
             "title": "",
             "meta_description": "",
             "links": []
         }
-        
-        # Extract title
-        title_match = re.search(r"<title>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-        if title_match:
-            data["title"] = title_match.group(1).strip()
-            
-        # Extract meta description
-        meta_desc_match = re.search(r'<meta name="description" content="(.*?)"', html, re.IGNORECASE)
-        if meta_desc_match:
-            data["meta_description"] = meta_desc_match.group(1).strip()
-            
-        # Extract all links
-        links = re.findall(r'href=["\'](http[s]?://.*?)["\']', html, re.IGNORECASE)
-        data["links"] = list(set(links)) # Deduplicate
-        
+
+        soup = BeautifulSoup(html or "", "html.parser")
+
+        if soup.title and soup.title.string:
+            data["title"] = soup.title.string.strip()
+
+        meta_tag = soup.find("meta", attrs={"name": lambda value: str(value).lower() == "description"})
+        if meta_tag is None:
+            meta_tag = soup.find("meta", attrs={"property": lambda value: str(value).lower() == "og:description"})
+        if meta_tag is not None:
+            data["meta_description"] = str(meta_tag.get("content") or "").strip()
+
+        links: List[str] = []
+        seen: set[str] = set()
+        for anchor in soup.find_all("a", href=True):
+            href = str(anchor.get("href") or "").strip()
+            if not href or href.startswith("#"):
+                continue
+            if not href.lower().startswith(("http://", "https://")):
+                continue
+            if href in seen:
+                continue
+            seen.add(href)
+            links.append(href)
+        data["links"] = links
+
         return data

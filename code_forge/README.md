@@ -18,6 +18,7 @@ and produces explainable triage outputs for archive reduction and canonical extr
   - Stage B: duplication index (`duplication_index.json`)
 - Stage C: triage classification (`triage.json`, `triage.csv`, `triage_report.md`)
 - Stage C.1: triage audit (`triage_audit.json`) with rule ids and confidence scores
+- Optional hot-path triage preservation from runtime profile traces (`--profile-trace`).
 - Stage D: dependency graph export (`dependency_graph.json`)
 - Stage E: drift intelligence (`drift_report.json`, `history/*.json`) for run-over-run regression visibility
 - Benchmark + regression gate suite for ingestion, semantic search, and dependency graph build latency.
@@ -70,11 +71,14 @@ code-forge validate-roundtrip \
   --verify-hashes
 
 # Generate triage from existing intake artifacts
-code-forge triage-report --output-dir data/code_forge/digester/latest
+code-forge triage-report \
+  --output-dir data/code_forge/digester/latest \
+  --profile-trace reports/code_forge_profile_hotspots.json
 
 # Full archive-digester run
 code-forge digest . \
   --output-dir data/code_forge/digester/latest \
+  --profile-trace reports/code_forge_profile_hotspots.json \
   --sync-knowledge \
   --sync-memory \
   --export-graphrag \

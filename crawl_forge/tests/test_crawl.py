@@ -38,5 +38,25 @@ class TestCrawlForge(unittest.TestCase):
         self.assertIn("https://link1.com", data["links"])
         self.assertEqual(len(data["links"]), 2)
 
+    def test_extraction_uses_meta_fallback_and_filters_links(self):
+        html = """
+        <html>
+            <head>
+                <title>Another Page</title>
+                <meta property="og:description" content="Open graph description">
+            </head>
+            <body>
+                <a href="#anchor">Anchor</a>
+                <a href="/relative/path">Relative</a>
+                <a href="https://a.example.com">A</a>
+                <a href="https://a.example.com">A duplicate</a>
+            </body>
+        </html>
+        """
+        data = self.forge.extract_structured_data(html)
+        self.assertEqual(data["title"], "Another Page")
+        self.assertEqual(data["meta_description"], "Open graph description")
+        self.assertEqual(data["links"], ["https://a.example.com"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -1688,6 +1688,19 @@
         ]
       },
       "links": []
+    },
+    "bcd675fa-e155-4dc2-bea4-35a0920e52e2": {
+      "id": "bcd675fa-e155-4dc2-bea4-35a0920e52e2",
+      "content": "Crawl Forge extraction now uses BeautifulSoup parsing for title/meta description/link extraction with HTTP-only deduped links; regex extraction path removed.",
+      "metadata": {
+        "tags": [
+          "todo-complete",
+          "quality",
+          "crawl_forge",
+          "html-parsing"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

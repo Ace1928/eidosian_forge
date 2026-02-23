@@ -1942,5 +1942,34 @@
       0.2980392156862745,
       0.7333333333333333
     ]
+  },
+  "ceca991e-84a9-4ec0-85e9-b28269220158": {
+    "id": "ceca991e-84a9-4ec0-85e9-b28269220158",
+    "content": "Code Forge digester now supports optional profile-trace JSON ingestion and hot-path preservation in triage decisions. New RULE_H* rules prevent delete-candidate outcomes for runtime-hot files and expose profile_hotspots_count in triage artifacts.",
+    "created_at": "2026-02-23T11:34:18.856961",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "code_forge_profile_hotpath_triage_2026_02_23"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.8901960784313725,
+      0.49411764705882355,
+      0.7607843137254902,
+      0.4,
+      0.5254901960784314,
+      0.1803921568627451,
+      0.5019607843137255,
+      0.8705882352941177,
+      0.9098039215686274,
+      0.5529411764705883,
+      0.9176470588235294,
+      0.19215686274509805,
+      0.17647058823529413,
+      0.9254901960784314,
+      0.023529411764705882,
+      0.35294117647058826
+    ]
   }
 }
