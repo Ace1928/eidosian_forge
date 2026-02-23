@@ -81,6 +81,11 @@ code-forge archive-reduction-plan \
   --output-dir data/code_forge/digester/latest \
   --max-delete-candidates 300
 
+# Build static HTML dashboard for triage + duplicate clusters
+code-forge dashboard \
+  --output-dir data/code_forge/digester/latest \
+  --max-rows 200
+
 # Full archive-digester run
 code-forge digest . \
   --output-dir data/code_forge/digester/latest \

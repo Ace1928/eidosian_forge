@@ -1769,6 +1769,20 @@
         ]
       },
       "links": []
+    },
+    "c6030957-3463-4734-ae4d-cc43c8e2c2e7": {
+      "id": "c6030957-3463-4734-ae4d-cc43c8e2c2e7",
+      "content": "Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning.",
+      "metadata": {
+        "tags": [
+          "planning",
+          "triage",
+          "cli",
+          "dashboard",
+          "code_forge"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

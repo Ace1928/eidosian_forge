@@ -1026,3 +1026,173 @@ def build_archive_reduction_plan(
     payload["json_path"] = str(json_path)
     payload["markdown_path"] = str(md_path)
     return payload
+
+
+def build_triage_dashboard(
+    output_dir: Path,
+    *,
+    dashboard_path: Optional[Path] = None,
+    max_rows: int = 200,
+) -> dict[str, Any]:
+    """
+    Generate a static HTML dashboard summarizing triage and duplication artifacts.
+    """
+    output_dir = Path(output_dir).resolve()
+    triage_path = output_dir / "triage.json"
+    duplication_path = output_dir / "duplication_index.json"
+    if not triage_path.exists():
+        raise FileNotFoundError(f"missing triage artifact: {triage_path}")
+    if not duplication_path.exists():
+        raise FileNotFoundError(f"missing duplication artifact: {duplication_path}")
+
+    triage = json.loads(triage_path.read_text(encoding="utf-8"))
+    duplication = json.loads(duplication_path.read_text(encoding="utf-8"))
+    entries = list(triage.get("entries") or [])
+    labels = dict(triage.get("label_counts") or {})
+
+    top_dup = sorted(
+        entries,
+        key=lambda rec: float((rec.get("metrics") or {}).get("duplicate_pressure") or 0.0),
+        reverse=True,
+    )[: max(1, int(max_rows))]
+    top_complexity = sorted(
+        entries,
+        key=lambda rec: float((rec.get("metrics") or {}).get("max_complexity") or 0.0),
+        reverse=True,
+    )[: max(1, int(max_rows))]
+
+    exact_groups = list(duplication.get("exact_duplicate_groups") or [])
+    normalized_groups = list(duplication.get("normalized_duplicate_groups") or [])
+    structural_groups = list(duplication.get("structural_duplicate_groups") or [])
+    near_pairs = list(duplication.get("near_duplicate_pairs") or [])
+
+    dashboard_payload = {
+        "generated_at": _utc_now(),
+        "triage_path": str(triage_path),
+        "duplication_path": str(duplication_path),
+        "labels": labels,
+        "summary": {
+            "entries_total": len(entries),
+            "exact_group_count": len(exact_groups),
+            "normalized_group_count": len(normalized_groups),
+            "structural_group_count": len(structural_groups),
+            "near_pair_count": len(near_pairs),
+        },
+        "top_duplicate_pressure": [
+            {
+                "file_path": rec.get("file_path"),
+                "label": rec.get("label"),
+                "rule_id": rec.get("rule_id"),
+                "confidence": float(rec.get("confidence") or 0.0),
+                "duplicate_pressure": float(((rec.get("metrics") or {}).get("duplicate_pressure") or 0.0)),
+            }
+            for rec in top_dup
+        ],
+        "top_complexity": [
+            {
+                "file_path": rec.get("file_path"),
+                "label": rec.get("label"),
+                "rule_id": rec.get("rule_id"),
+                "confidence": float(rec.get("confidence") or 0.0),
+                "max_complexity": float(((rec.get("metrics") or {}).get("max_complexity") or 0.0)),
+            }
+            for rec in top_complexity
+        ],
+    }
+
+    html_data = json.dumps(dashboard_payload, ensure_ascii=True)
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Code Forge Dashboard</title>
+  <style>
+    :root {{
+      --bg: #0f172a;
+      --card: #111827;
+      --line: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --good: #34d399;
+      --warn: #f59e0b;
+      --bad: #f87171;
+    }}
+    body {{ margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: linear-gradient(145deg, var(--bg), #020617); color: var(--text); }}
+    .wrap {{ max-width: 1200px; margin: 0 auto; padding: 20px; }}
+    h1 {{ margin: 0 0 8px; font-size: 28px; }}
+    .muted {{ color: var(--muted); font-size: 13px; }}
+    .grid {{ display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 16px 0; }}
+    .card {{ background: color-mix(in srgb, var(--card) 85%, transparent); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }}
+    .k {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
+    .v {{ font-size: 24px; font-weight: 700; margin-top: 6px; }}
+    .bar-wrap {{ margin-top: 12px; }}
+    .bar-row {{ display: grid; grid-template-columns: 160px 1fr 50px; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }}
+    .bar {{ height: 10px; border-radius: 999px; background: #111827; border: 1px solid var(--line); overflow: hidden; }}
+    .bar > span {{ display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #3b82f6); }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }}
+    th, td {{ text-align: left; border-bottom: 1px solid var(--line); padding: 7px 6px; }}
+    th {{ color: var(--muted); font-weight: 600; }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Code Forge Dashboard</h1>
+    <div class="muted" id="meta"></div>
+    <div class="grid" id="summary"></div>
+    <div class="card">
+      <div class="k">Triage Labels</div>
+      <div class="bar-wrap" id="labels"></div>
+    </div>
+    <div class="card">
+      <div class="k">Top Duplicate Pressure</div>
+      <table><thead><tr><th>File</th><th>Label</th><th>Rule</th><th>Pressure</th><th>Conf</th></tr></thead><tbody id="dup"></tbody></table>
+    </div>
+    <div class="card">
+      <div class="k">Top Complexity</div>
+      <table><thead><tr><th>File</th><th>Label</th><th>Rule</th><th>Max Complexity</th><th>Conf</th></tr></thead><tbody id="complexity"></tbody></table>
+    </div>
+  </div>
+  <script>
+    const data = {html_data};
+    const meta = document.getElementById("meta");
+    meta.textContent = "Generated " + data.generated_at + " | triage=" + data.triage_path + " | duplication=" + data.duplication_path;
+
+    const summary = document.getElementById("summary");
+    const summaryItems = [
+      ["Entries", data.summary.entries_total],
+      ["Exact groups", data.summary.exact_group_count],
+      ["Normalized groups", data.summary.normalized_group_count],
+      ["Structural groups", data.summary.structural_group_count],
+      ["Near pairs", data.summary.near_pair_count],
+    ];
+    summary.innerHTML = summaryItems.map(([k, v]) => `<div class="card"><div class="k">${{k}}</div><div class="v">${{v}}</div></div>`).join("");
+
+    const labelRoot = document.getElementById("labels");
+    const entries = Object.entries(data.labels || {{}}).sort((a, b) => b[1] - a[1]);
+    const max = Math.max(...entries.map(([, v]) => v), 1);
+    labelRoot.innerHTML = entries.map(([label, value]) => {{
+      const pct = Math.max(2, Math.round((value / max) * 100));
+      return `<div class="bar-row"><div>${{label}}</div><div class="bar"><span style="width:${{pct}}%"></span></div><div>${{value}}</div></div>`;
+    }}).join("");
+
+    function rows(rows, key, targetId) {{
+      const target = document.getElementById(targetId);
+      target.innerHTML = rows.slice(0, 80).map((r) => `<tr><td>${{r.file_path || ""}}</td><td>${{r.label || ""}}</td><td>${{r.rule_id || ""}}</td><td>${{Number(r[key] || 0).toFixed(2)}}</td><td>${{Number(r.confidence || 0).toFixed(2)}}</td></tr>`).join("");
+    }}
+    rows(data.top_duplicate_pressure || [], "duplicate_pressure", "dup");
+    rows(data.top_complexity || [], "max_complexity", "complexity");
+  </script>
+</body>
+</html>
+"""
+    target = Path(dashboard_path).resolve() if dashboard_path else (output_dir / "dashboard.html")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(html, encoding="utf-8")
+    return {
+        "generated_at": dashboard_payload["generated_at"],
+        "dashboard_path": str(target),
+        "entries_total": int(dashboard_payload["summary"]["entries_total"]),
+        "labels": labels,
+    }

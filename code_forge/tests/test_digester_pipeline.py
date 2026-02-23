@@ -3,6 +3,7 @@ from pathlib import Path
 
 from code_forge.digester.pipeline import (
     build_archive_reduction_plan,
+    build_triage_dashboard,
     build_duplication_index,
     build_repo_index,
     build_triage_report,
@@ -94,6 +95,11 @@ def test_run_archive_digester_end_to_end(tmp_path: Path) -> None:
     assert reduction["counts"]["entries_total"] >= 1
     assert (out / "archive_reduction_plan.json").exists()
     assert (out / "archive_reduction_plan.md").exists()
+    dashboard = build_triage_dashboard(out, max_rows=20)
+    assert dashboard["entries_total"] >= 1
+    dash_path = out / "dashboard.html"
+    assert dash_path.exists()
+    assert "Code Forge Dashboard" in dash_path.read_text(encoding="utf-8")
 
 
 def test_run_archive_digester_integration_policy_modes(tmp_path: Path) -> None:

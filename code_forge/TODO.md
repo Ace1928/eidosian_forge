@@ -27,6 +27,6 @@
 - [x] ~~Add parallelized parity hashing for large tree roundtrips.~~
 
 ## Low Priority
-- [ ] Add web dashboard for triage and duplicate clusters.
+- [x] ~~Add web dashboard for triage and duplicate clusters.~~
 - [ ] Add optional vector index backend for semantic retrieval experiments.
 - [x] ~~Add archive reduction assistant output (candidate deletion PR plan).~~

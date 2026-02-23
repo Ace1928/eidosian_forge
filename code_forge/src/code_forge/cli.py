@@ -45,6 +45,7 @@ from code_forge import (
     build_duplication_index,
     build_reconstruction_from_library,
     build_repo_index,
+    build_triage_dashboard,
     build_triage_report,
     compare_tree_parity,
     compute_staleness_metrics,
@@ -542,6 +543,28 @@ class CodeForgeCLI(StandardCLI):
             help="Maximum quarantine-candidate rows (default: 200)",
         )
         reduction_plan_parser.set_defaults(func=self._cmd_archive_reduction_plan)
+
+        dashboard_parser = subparsers.add_parser(
+            "dashboard",
+            help="Generate static HTML dashboard for triage and duplicate clusters",
+        )
+        dashboard_parser.add_argument(
+            "--output-dir",
+            default=str(FORGE_ROOT / "data" / "code_forge" / "digester" / "latest"),
+            help="Directory containing triage.json and duplication_index.json",
+        )
+        dashboard_parser.add_argument(
+            "--dashboard-path",
+            default=None,
+            help="Optional target HTML path (default: <output-dir>/dashboard.html)",
+        )
+        dashboard_parser.add_argument(
+            "--max-rows",
+            type=int,
+            default=200,
+            help="Maximum triage rows to include in tables (default: 200)",
+        )
+        dashboard_parser.set_defaults(func=self._cmd_dashboard)
 
         digest_parser = subparsers.add_parser(
             "digest",
@@ -1749,6 +1772,23 @@ class CodeForgeCLI(StandardCLI):
             )
         except Exception as e:
             result = CommandResult(False, f"Archive reduction plan error: {e}")
+        self._output(result, args)
+
+    def _cmd_dashboard(self, args) -> None:
+        """Generate static triage dashboard HTML from digester artifacts."""
+        try:
+            payload = build_triage_dashboard(
+                output_dir=Path(args.output_dir).resolve(),
+                dashboard_path=(Path(args.dashboard_path).resolve() if args.dashboard_path else None),
+                max_rows=max(1, int(args.max_rows)),
+            )
+            result = CommandResult(
+                True,
+                "Dashboard generated",
+                payload,
+            )
+        except Exception as e:
+            result = CommandResult(False, f"Dashboard error: {e}")
         self._output(result, args)
 
     def _cmd_digest(self, args) -> None:
