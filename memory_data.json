@@ -2377,5 +2377,34 @@
       0.5529411764705883,
       0.6352941176470588
     ]
+  },
+  "8deb797c-730f-415e-801b-ea5fc48d856f": {
+    "id": "8deb797c-730f-415e-801b-ea5fc48d856f",
+    "content": "Pushed commit 5c83fe688e to main after rebasing onto origin/main. This commit standardizes canonical model selection via config/model_selection.json across Doc Forge, GraphRAG bench, qualitative assessor judges, and living knowledge pipeline; includes full 9-model no-timeout sweep outcome with Qwen2.5-0.5B winner.",
+    "created_at": "2026-02-26T18:57:08.161041",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "model_selection_contract_push_20260226"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.21568627450980393,
+      0.9019607843137255,
+      0.9607843137254902,
+      0.7843137254901961,
+      0.058823529411764705,
+      0.48627450980392156,
+      0.22745098039215686,
+      0.7843137254901961,
+      0.7137254901960784,
+      0.9176470588235294,
+      0.5725490196078431,
+      0.1803921568627451,
+      0.5764705882352941,
+      0.7294117647058823,
+      0.43529411764705883,
+      0.9450980392156862
+    ]
   }
 }

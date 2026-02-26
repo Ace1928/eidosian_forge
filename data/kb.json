@@ -1892,6 +1892,20 @@
         ]
       },
       "links": []
+    },
+    "03c34769-efe0-402c-bb1f-a3154d1ee913": {
+      "id": "03c34769-efe0-402c-bb1f-a3154d1ee913",
+      "content": "Commit 5c83fe688e standardized model-selection contract propagation and documentation; GraphRAG/Doc Forge default models now resolve from config/model_selection.json with validated no-timeout sweep provenance.",
+      "metadata": {
+        "tags": [
+          "graphrag",
+          "doc-forge",
+          "model-selection",
+          "provenance",
+          "git"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
