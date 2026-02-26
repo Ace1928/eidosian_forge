@@ -1863,6 +1863,21 @@
         ]
       },
       "links": []
+    },
+    "55ee6a73-b540-4fde-898d-0fb8fb2ab746": {
+      "id": "55ee6a73-b540-4fde-898d-0fb8fb2ab746",
+      "content": "Commit 8ebb4b4d8a stabilizes Doc Forge + Atlas integration with new modular scribe package, dashboard APIs, and termux service manager health orchestration; tests pass for scribe/dashboard/bench sweep suites.",
+      "metadata": {
+        "tags": [
+          "commit",
+          "web_interface_forge",
+          "doc_forge",
+          "termux",
+          "testing",
+          "atlas"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}
