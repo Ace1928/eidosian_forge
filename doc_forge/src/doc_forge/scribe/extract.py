@@ -23,13 +23,80 @@ except Exception:
 from .config import ScribeConfig
 
 COMMON_STOPWORDS = {
-    "the", "and", "for", "that", "this", "with", "from", "into", "your", "file", "code", "data", "are", 
-    "was", "were", "has", "have", "had", "will", "would", "should", "could", "can", "not", "but", "you", 
-    "our", "their", "its", "then", "than", "when", "where", "what", "which", "there", "here", "about", 
-    "over", "under", "also", "while", "using", "used", "use", "each", "per", "all", "any", "may", "one", 
-    "two", "three", "four", "five", "via", "out", "in", "on", "as", "at", "to", "of", "is", "it", "by", 
-    "an", "or", "be", "if", "do", "does"
+    "the",
+    "and",
+    "for",
+    "that",
+    "this",
+    "with",
+    "from",
+    "into",
+    "your",
+    "file",
+    "code",
+    "data",
+    "are",
+    "was",
+    "were",
+    "has",
+    "have",
+    "had",
+    "will",
+    "would",
+    "should",
+    "could",
+    "can",
+    "not",
+    "but",
+    "you",
+    "our",
+    "their",
+    "its",
+    "then",
+    "than",
+    "when",
+    "where",
+    "what",
+    "which",
+    "there",
+    "here",
+    "about",
+    "over",
+    "under",
+    "also",
+    "while",
+    "using",
+    "used",
+    "use",
+    "each",
+    "per",
+    "all",
+    "any",
+    "may",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "via",
+    "out",
+    "in",
+    "on",
+    "as",
+    "at",
+    "to",
+    "of",
+    "is",
+    "it",
+    "by",
+    "an",
+    "or",
+    "be",
+    "if",
+    "do",
+    "does",
 }
+
 
 def is_text_bytes(sample: bytes) -> bool:
     if not sample:
@@ -39,11 +106,13 @@ def is_text_bytes(sample: bytes) -> bool:
     text_bytes = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)))
     return all(ch in text_bytes for ch in sample)
 
+
 def extract_terms(text: str, limit: int = 24) -> list[str]:
     words = re.findall(r"[A-Za-z][A-Za-z0-9_\-]{3,}", text.lower())
     words = [w for w in words if w not in COMMON_STOPWORDS]
     freq = Counter(words)
     return [w for w, _ in freq.most_common(limit)]
+
 
 def extract_symbols(source_text: str) -> list[str]:
     patterns = [
@@ -65,6 +134,7 @@ def extract_symbols(source_text: str) -> list[str]:
             unique.append(item)
             seen.add(item)
     return unique[:80]
+
 
 class DocumentExtractor:
     def __init__(self, cfg: ScribeConfig) -> None:

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import subprocess
 import threading
 import time
-import hashlib
-from contextlib import asynccontextmanager
 from collections import deque
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +22,7 @@ from .generate import DocGenerator
 from .judge import FederatedJudge
 from .state import ProcessorState, atomic_write_json, now_iso, read_json
 
+
 def _atlas_dashboard_url() -> str:
     explicit = os.environ.get("EIDOS_ATLAS_URL", "").strip()
     if explicit:
@@ -29,6 +30,7 @@ def _atlas_dashboard_url() -> str:
     port = os.environ.get("EIDOS_ATLAS_PORT", "8936")
     host = os.environ.get("EIDOS_ATLAS_HOST", "127.0.0.1")
     return f"http://{host}:{port}/"
+
 
 class ManagedModelServer:
     def __init__(self, cfg: ScribeConfig) -> None:
@@ -59,18 +61,24 @@ class ManagedModelServer:
         self.cfg.runtime_root.mkdir(parents=True, exist_ok=True)
         log_path = self.cfg.runtime_root / "llama_server.log"
         self.log_handle = log_path.open("a")
-        
+
         # Determine parallel setting: if low ram/cpu, stick to 1, else 2
         parallel = 1
-        
+
         cmd = [
             str(self.cfg.llama_server_bin),
-            "-m", str(self.cfg.llm_model_path),
-            "--port", str(self.cfg.llm_server_port),
-            "--ctx-size", str(self.cfg.llm_ctx_size),
-            "--temp", str(self.cfg.llm_temperature),
-            "--n-gpu-layers", os.environ.get("EIDOS_LLAMA_GPU_LAYERS", "0"),
-            "--parallel", str(parallel),
+            "-m",
+            str(self.cfg.llm_model_path),
+            "--port",
+            str(self.cfg.llm_server_port),
+            "--ctx-size",
+            str(self.cfg.llm_ctx_size),
+            "--temp",
+            str(self.cfg.llm_temperature),
+            "--n-gpu-layers",
+            os.environ.get("EIDOS_LLAMA_GPU_LAYERS", "0"),
+            "--parallel",
+            str(parallel),
         ]
 
         env = os.environ.copy()
@@ -101,6 +109,7 @@ class ManagedModelServer:
             self.log_handle.close()
             self.log_handle = None
 
+
 class DocProcessor:
     def __init__(self, cfg: ScribeConfig) -> None:
         self.cfg = cfg
@@ -111,7 +120,7 @@ class DocProcessor:
         self.state = ProcessorState(cfg.state_path, cfg.status_path, cfg.index_path)
         self.state.update("model", str(cfg.llm_model_path))
         self.state.update("completion_url", cfg.completion_url)
-        
+
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
         self.recent_docs: deque[dict[str, Any]] = deque(maxlen=80)
@@ -127,8 +136,16 @@ class DocProcessor:
             cfg.runtime_root.resolve(),
         ]
         self.excluded_segments = {
-            ".git", "__pycache__", ".pytest_cache", "node_modules", "archive_forge", "Backups", 
-            "runtime", "staging", "final_docs", "eidos_mcp_backup"
+            ".git",
+            "__pycache__",
+            ".pytest_cache",
+            "node_modules",
+            "archive_forge",
+            "Backups",
+            "runtime",
+            "staging",
+            "final_docs",
+            "eidos_mcp_backup",
         }
 
         for path in [cfg.runtime_root, cfg.staging_root, cfg.final_root, cfg.rejected_root, cfg.judgments_root]:
@@ -208,9 +225,9 @@ class DocProcessor:
                     continue
                 self.state.persist()
             elif self.cfg.dry_run:
-                 if self.state.get("status") == "starting":
-                        self.state.update("status", "running")
-                        self.state.persist()
+                if self.state.get("status") == "starting":
+                    self.state.update("status", "running")
+                    self.state.persist()
 
             candidates = self._scan_candidates()
             self.state.update("total_discovered", len(candidates))
@@ -242,24 +259,26 @@ class DocProcessor:
                     break
                 started = time.perf_counter()
                 rel_key = str(rel)
-                
+
                 # Paths
                 stage_path = self.cfg.staging_root / rel.with_suffix(rel.suffix + ".md")
                 final_path = self.cfg.final_root / rel.with_suffix(rel.suffix + ".md")
                 rejected_path = self.cfg.rejected_root / rel.with_suffix(rel.suffix + ".md")
                 judgment_path = self.cfg.judgments_root / rel.with_suffix(rel.suffix + ".json")
-                
+
                 for p in (stage_path, final_path, rejected_path, judgment_path):
                     p.parent.mkdir(parents=True, exist_ok=True)
 
                 doc_type = rel.suffix.lower().lstrip(".") or "text"
-                self.state.data["doc_type_frequency"][doc_type] = self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
+                self.state.data["doc_type_frequency"][doc_type] = (
+                    self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
+                )
 
                 try:
                     source_text, metadata = self.extractor.extract(path)
                     metadata["source_size_bytes"] = path.stat().st_size
                     metadata["doc_type"] = metadata.get("doc_type") or doc_type
-                    
+
                     markdown = (
                         self.generator.generate(rel_key, source_text, metadata)
                         if not self.cfg.dry_run
@@ -279,7 +298,7 @@ class DocProcessor:
 
                     tags = extract_terms(markdown, limit=8)
                     themes = extract_terms(source_text, limit=8)
-                    
+
                     with self.state.lock:
                         for t in tags:
                             self.state.data["tag_frequency"][t] = self.state.data["tag_frequency"].get(t, 0) + 1
@@ -288,13 +307,13 @@ class DocProcessor:
 
                     approved = bool(scorecard.get("approved", False))
                     status = "approved" if approved else "rejected"
-                    
+
                     if approved:
                         final_path.write_text(markdown, encoding="utf-8")
                         with self.state.lock:
                             self.state.data["approved"] += 1
                             self.state.data["last_approved"] = rel_key
-                        
+
                         index_entry = {
                             "source": rel_key,
                             "document": str(final_path.relative_to(self.cfg.runtime_root)),
@@ -348,12 +367,13 @@ class DocProcessor:
                             "updated_at": now_iso(),
                             "duration_seconds": elapsed,
                         }
-                        
+
                 self.state.persist()
                 time.sleep(self.cfg.loop_sleep_s)
 
         self.state.update("status", "stopped")
         self.state.persist()
+
 
 def create_app(processor: DocProcessor) -> FastAPI:
     @asynccontextmanager
@@ -380,6 +400,7 @@ def create_app(processor: DocProcessor) -> FastAPI:
 
     return app
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run Eidosian Doc Processor v3 service")
     parser.add_argument("--host", default=None)
@@ -394,6 +415,8 @@ def main() -> int:
     uvicorn.run(app, host=cfg.host, port=cfg.port, log_level="info")
     return 0
 
+
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

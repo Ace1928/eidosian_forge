@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-import re
 import fcntl
-import requests
+import re
 from typing import Any
+
+import requests
+
 from .config import ScribeConfig
-from .extract import extract_terms, extract_symbols
+from .extract import extract_symbols, extract_terms
 from .state import now_iso
 
 REQUIRED_HEADINGS = [
@@ -17,9 +19,17 @@ REQUIRED_HEADINGS = [
 ]
 
 PLACEHOLDER_MARKERS = {
-    "todo", "lorem ipsum", "placeholder", "i cannot", "i'm unable", 
-    "insufficient context", "not provided", "not available", "unknown"
+    "todo",
+    "lorem ipsum",
+    "placeholder",
+    "i cannot",
+    "i'm unable",
+    "insufficient context",
+    "not provided",
+    "not available",
+    "unknown",
 }
+
 
 class FederatedJudge:
     def __init__(self, cfg: ScribeConfig) -> None:
@@ -27,20 +37,20 @@ class FederatedJudge:
 
     def evaluate(self, *, markdown: str, source_text: str, rel_path: str, metadata: dict[str, Any]) -> dict[str, Any]:
         judges: list[dict[str, Any]] = []
-        
+
         # Heuristic Judges (Fast)
         judges.append(self._judge_structure(markdown))
         judges.append(self._judge_safety(markdown))
         judges.append(self._judge_grounding(markdown, source_text))
         judges.append(self._judge_coverage(markdown, source_text))
         judges.append(self._judge_specificity(markdown))
-        
+
         # LLM Judge (Slow but Qualitative)
         judges.append(self._judge_llm(markdown, source_text))
 
         aggregate = round(sum(j["score"] for j in judges) / max(1, len(judges)), 4)
         min_score = min(j["score"] for j in judges) if judges else 0.0
-        
+
         # Stricter approval: High aggregate AND decent minimum (no total failure)
         approved = aggregate >= self.cfg.approval_threshold and min_score >= 0.45
 
@@ -113,7 +123,7 @@ class FederatedJudge:
 
     def _judge_llm(self, markdown: str, source_text: str) -> dict[str, Any]:
         if self.cfg.dry_run:
-             return {"name": "llm_quality", "score": 1.0, "details": {"reason": "dry_run"}}
+            return {"name": "llm_quality", "score": 1.0, "details": {"reason": "dry_run"}}
 
         prompt = (
             "<|im_start|>system\nYou are a documentation quality auditor. Rate the documentation on a scale of 0.0 to 1.0.\n"
@@ -122,18 +132,13 @@ class FederatedJudge:
             f"<|im_start|>user\nSOURCE CODE excerpt:\n```\n{source_text[:2000]}\n```\n\n"
             f"DOCUMENTATION:\n```\n{markdown}\n```\n\nScore (0.0-1.0):<|im_end|>\n<|im_start|>assistant\n"
         )
-        
-        score = 0.5 # Default fallback
+
+        score = 0.5  # Default fallback
         try:
             with open(self.cfg.model_lock_path, "w") as lockfile:
                 fcntl.flock(lockfile, fcntl.LOCK_EX)
                 try:
-                    payload = {
-                        "prompt": prompt, 
-                        "n_predict": 10, 
-                        "temperature": 0.1,
-                        "stream": False
-                    }
+                    payload = {"prompt": prompt, "n_predict": 10, "temperature": 0.1, "stream": False}
                     resp = requests.post(self.cfg.completion_url, json=payload, timeout=60)
                     if resp.status_code == 200:
                         content = resp.json().get("content", "").strip()
@@ -151,5 +156,5 @@ class FederatedJudge:
                     "error": f"{type(exc).__name__}: {exc}",
                 },
             }
-            
+
         return {"name": "llm_quality", "score": score, "details": {"model": str(self.cfg.llm_model_path)}}

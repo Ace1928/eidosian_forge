@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import requests
 import fcntl
 from typing import Any
+
+import requests
+
 from .config import ScribeConfig
 
 REQUIRED_HEADINGS = [
@@ -12,6 +14,7 @@ REQUIRED_HEADINGS = [
     "## Validation Notes",
     "## Improvement Opportunities",
 ]
+
 
 class DocGenerator:
     def __init__(self, cfg: ScribeConfig) -> None:
@@ -25,7 +28,7 @@ class DocGenerator:
             "stop": stop or ["<|im_end|>", "</s>"],
             "stream": False,
         }
-        
+
         # Simple file lock to ensure single model usage
         with open(self.cfg.model_lock_path, "w") as lockfile:
             fcntl.flock(lockfile, fcntl.LOCK_EX)
@@ -40,11 +43,11 @@ class DocGenerator:
         # Phase 1: Planning (Chain of Thought)
         plan_prompt = self._build_plan_prompt(rel_path, source_text, metadata)
         plan = self._call_model(plan_prompt, temperature=0.4)
-        
+
         # Phase 2: Drafting
         draft_prompt = self._build_draft_prompt(rel_path, source_text, metadata, plan)
         draft = self._call_model(draft_prompt, temperature=0.2)
-        
+
         try:
             return self._normalize(draft)
         except ValueError:
@@ -98,12 +101,12 @@ class DocGenerator:
             text = text[3:]
         if text.endswith("```"):
             text = text[:-3]
-        
+
         text = text.strip()
-        
+
         if not text.startswith("# "):
             text = "# File Overview\n\n" + text
-            
+
         missing = [heading for heading in REQUIRED_HEADINGS if heading not in text]
         if missing:
             raise ValueError(f"missing required headings: {missing}")

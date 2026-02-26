@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import fcntl
 import json
 import threading
-import time
-import fcntl
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
 
 def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -24,6 +25,7 @@ def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
         finally:
             fcntl.flock(lockfile, fcntl.LOCK_UN)
 
+
 def read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
     if not path.exists():
         return default
@@ -31,7 +33,7 @@ def read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
         # Read with shared lock to prevent reading mid-write (though atomic replace mostly solves this)
         lock_path = path.with_suffix(path.suffix + ".lock")
         if lock_path.exists():
-             with open(lock_path, "r") as lockfile:
+            with open(lock_path, "r") as lockfile:
                 fcntl.flock(lockfile, fcntl.LOCK_SH)
                 data = json.loads(path.read_text(encoding="utf-8"))
                 fcntl.flock(lockfile, fcntl.LOCK_UN)
@@ -39,6 +41,7 @@ def read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
+
 
 class ProcessorState:
     def __init__(self, state_path: Path, status_path: Path, index_path: Path):
@@ -86,7 +89,7 @@ class ProcessorState:
         remaining = max(0, total - processed)
         avg_seconds = float(snapshot.get("average_seconds_per_document", 0.0))
         eta = round(remaining * avg_seconds, 2) if avg_seconds > 0 else None
-        
+
         status_payload = {
             "status": str(snapshot.get("status", "unknown")),
             "started_at": str(snapshot.get("started_at", now_iso())),
@@ -116,7 +119,7 @@ class ProcessorState:
     def get(self, key: str, default: Any = None) -> Any:
         with self.lock:
             return self.data.get(key, default)
-    
+
     def update_running_average(self, key: str, value: float, count_key: str) -> None:
         with self.lock:
             current_count = int(self.data.get(count_key, 0))
