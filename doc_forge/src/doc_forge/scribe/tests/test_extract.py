@@ -1,4 +1,3 @@
-
 import pytest
 from doc_forge.scribe.extract import DocumentExtractor, is_text_bytes
 

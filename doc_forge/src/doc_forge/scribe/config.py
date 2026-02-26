@@ -58,7 +58,9 @@ class ScribeConfig:
         if selection_path.exists():
             try:
                 selection = json.loads(selection_path.read_text(encoding="utf-8"))
-                selected = (((selection.get("services") or {}).get("doc_forge") or {}).get("completion_model") or "").strip()
+                selected = (
+                    ((selection.get("services") or {}).get("doc_forge") or {}).get("completion_model") or ""
+                ).strip()
                 if selected and (forge_root / selected).exists():
                     model_path_str = selected
                     selected_from_contract = True
