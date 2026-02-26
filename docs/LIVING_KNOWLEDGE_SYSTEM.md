@@ -72,7 +72,8 @@ When `--run-graphrag` is enabled:
 - runs `python -m graphrag index`
 - optionally executes one or more global queries
 
-Default completion model is selected from latest sweep winner when available (`reports/graphrag_sweep/model_selection_latest.json`), otherwise falls back to local Qwen 0.5B.
+Default completion and embedding models are selected from `config/model_selection.json`.
+If no selection file exists, completion falls back to latest sweep winner (`reports/graphrag_sweep/model_selection_latest.json`) and then local Qwen 0.5B.
 
 ## Usage
 

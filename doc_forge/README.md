@@ -14,6 +14,7 @@ Doc Forge is the production documentation processor for `eidosian_forge`.
 - Only approved docs are finalized into runtime index/final outputs.
 - Resumes safely across restarts (persistent state + atomic writes).
 - Exposes a live status API and modern dashboard UI.
+- Uses canonical model defaults from `config/model_selection.json` (with latest sweep fallback).
 
 ## Runtime Paths
 

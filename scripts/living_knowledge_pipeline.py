@@ -464,6 +464,29 @@ def _pick_sweep_model(repo_root: Path, fallback: Path) -> Path:
     return fallback
 
 
+def _load_model_selection(repo_root: Path) -> dict[str, Any]:
+    path = repo_root / "config" / "model_selection.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _pick_selected_model(repo_root: Path, service_key: str, model_key: str, fallback: Path) -> Path:
+    payload = _load_model_selection(repo_root)
+    services = payload.get("services") if isinstance(payload, dict) else None
+    service = services.get(service_key) if isinstance(services, dict) else None
+    selected = str(service.get(model_key, "")).strip() if isinstance(service, dict) else ""
+    if selected:
+        candidate = (repo_root / selected).resolve() if not Path(selected).is_absolute() else Path(selected)
+        if candidate.exists():
+            return candidate
+    return fallback
+
+
 def _wait_for_http(url: str, timeout_s: float = 60.0) -> None:
     import urllib.request
 
@@ -696,8 +719,14 @@ def run_pipeline(
     if run_graphrag:
         llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
         embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
-        llm_model = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
-        embed_model = repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf"
+        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
+        llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
+        embed_model = _pick_selected_model(
+            repo_root,
+            "graphrag",
+            "embedding_model",
+            repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
+        )
         _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
         runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
         try:

@@ -44,6 +44,7 @@ PYTHONPATH=lib:agent_forge/src:eidos_mcp/src:crawl_forge/src python -m pytest -q
 | Workflows quickstart | `WORKFLOWS_QUICKSTART.md` |
 | Consciousness implementation docs | `docs/consciousness_fcl/README.md` |
 | Port registry | `docs/PORT_REGISTRY.md` |
+| Canonical model selection | `docs/MODEL_SELECTION.md` |
 | Living knowledge system | `docs/LIVING_KNOWLEDGE_SYSTEM.md` |
 | Security docs | `docs/security/` |
 | CI/workflow docs | `.github/workflows/README.md` |

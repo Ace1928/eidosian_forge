@@ -1214,5 +1214,26 @@
       "federated-judge"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "2ac0e0b1-dc33-4e26-9332-8da5f5766f44",
+    "content": "Canonical runtime model contract now centralized in config/model_selection.json and docs/MODEL_SELECTION.md; doc_forge, GraphRAG bench, qualitative assessor judges, and living_knowledge_pipeline resolve defaults from this contract with explicit fallbacks.",
+    "created_at": "2026-02-26T18:50:34.654288",
+    "last_accessed": "2026-02-26T18:50:34.654310",
+    "access_count": 0,
+    "tier": "working",
+    "namespace": "task",
+    "memory_type": "episodic",
+    "metadata": {},
+    "importance": 0.9,
+    "ttl_seconds": 86400,
+    "tags": [
+      "doc_forge",
+      "config",
+      "selection",
+      "models",
+      "graphrag"
+    ],
+    "linked_memories": []
   }
 ]

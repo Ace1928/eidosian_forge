@@ -29,10 +29,35 @@ DEFAULT_WORKSPACE_ROOT = Path("data/graphrag_test/workspace")
 DEFAULT_REPORT_DIR = Path("reports/graphrag")
 DEFAULT_SCHEMA_PATH = Path("benchmarks/schemas/graphrag_qualitative_assessment.schema.json")
 DEFAULT_LLAMA_SERVER_BIN = Path("llama.cpp/build/bin/llama-server")
-DEFAULT_MODELS = [
-    "qwen=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf",
-    "llama=models/Llama-3.2-1B-Instruct-Q8_0.gguf",
-]
+MODEL_SELECTION_PATH = Path(os.environ.get("EIDOS_MODEL_SELECTION_PATH", "config/model_selection.json"))
+
+
+def _default_judge_models() -> list[str]:
+    default = [
+        "qwen=models/Qwen2.5-0.5B-Instruct-Q8_0.gguf",
+        "llama=models/Llama-3.2-1B-Instruct-Q8_0.gguf",
+    ]
+    if not MODEL_SELECTION_PATH.exists():
+        return default
+    try:
+        payload = json.loads(MODEL_SELECTION_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return default
+    judges = payload.get("judges") if isinstance(payload, dict) else None
+    if not isinstance(judges, list):
+        return default
+    specs: list[str] = []
+    for judge in judges:
+        if not isinstance(judge, dict):
+            continue
+        name = str(judge.get("name", "")).strip()
+        path = str(judge.get("model_path", "")).strip()
+        if name and path:
+            specs.append(f"{name}={path}")
+    return specs or default
+
+
+DEFAULT_MODELS = _default_judge_models()
 
 EXPECTED_WORKFLOWS = [
     "load_input_documents",
@@ -341,7 +366,13 @@ def parse_judge_specs(models: Iterable[str], port_base: int) -> list[JudgeSpec]:
     return specs
 
 
-def start_judges(specs: list[JudgeSpec], llama_server_bin: Path, report_dir: Path) -> list[JudgeRuntime]:
+def start_judges(
+    specs: list[JudgeSpec],
+    llama_server_bin: Path,
+    report_dir: Path,
+    *,
+    start_timeout_s: float,
+) -> list[JudgeRuntime]:
     report_dir.mkdir(parents=True, exist_ok=True)
     runtimes: list[JudgeRuntime] = []
     for spec in specs:
@@ -364,7 +395,7 @@ def start_judges(specs: list[JudgeSpec], llama_server_bin: Path, report_dir: Pat
         ]
         process = subprocess.Popen(cmd, stdout=log_handle, stderr=subprocess.STDOUT, env=_llama_env(llama_server_bin))
         try:
-            _wait_for_http(f"http://127.0.0.1:{spec.port}/health", timeout_s=60.0)
+            _wait_for_http(f"http://127.0.0.1:{spec.port}/health", timeout_s=start_timeout_s)
         except Exception:
             process.terminate()
             log_handle.close()
@@ -415,7 +446,14 @@ def _judge_prompt(artifacts: dict[str, Any], deterministic: dict[str, float], st
     )
 
 
-def run_judges(runtimes: list[JudgeRuntime], artifacts: dict[str, Any], deterministic: dict[str, float], stage_scores: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def run_judges(
+    runtimes: list[JudgeRuntime],
+    artifacts: dict[str, Any],
+    deterministic: dict[str, float],
+    stage_scores: list[dict[str, Any]],
+    *,
+    judge_request_timeout_s: float,
+) -> list[dict[str, Any]]:
     assessments: list[dict[str, Any]] = []
     prompt = _judge_prompt(artifacts, deterministic, stage_scores)
     for runtime in runtimes:
@@ -433,7 +471,7 @@ def run_judges(runtimes: list[JudgeRuntime], artifacts: dict[str, Any], determin
         parsed: dict[str, Any] | None = None
         err: str | None = None
         try:
-            raw = _http_json(url, req, timeout_s=120.0)
+            raw = _http_json(url, req, timeout_s=judge_request_timeout_s)
             text = (
                 raw.get("choices", [{}])[0]
                 .get("message", {})
@@ -645,6 +683,18 @@ def main() -> int:
         help="Base port for judge servers.",
     )
     parser.add_argument("--skip-judges", action="store_true", help="Skip local model judges and run deterministic scoring only.")
+    parser.add_argument(
+        "--judge-start-timeout",
+        type=float,
+        default=0.0,
+        help="Seconds to wait for each judge server startup (<=0 disables practical timeout).",
+    )
+    parser.add_argument(
+        "--judge-request-timeout",
+        type=float,
+        default=0.0,
+        help="Seconds to wait for each judge completion call (<=0 disables practical timeout).",
+    )
     args = parser.parse_args()
 
     workspace_root = Path(args.workspace_root)
@@ -658,15 +708,29 @@ def main() -> int:
     judge_specs = parse_judge_specs(args.judge_model or DEFAULT_MODELS, args.port_base)
     judge_assessments: list[dict[str, Any]] = []
 
+    judge_start_timeout_s = args.judge_start_timeout if args.judge_start_timeout > 0 else 86400.0
+    judge_request_timeout_s = args.judge_request_timeout if args.judge_request_timeout > 0 else 86400.0
+
     runtimes: list[JudgeRuntime] = []
     if not args.skip_judges:
         llama_server_bin = Path(args.llama_server_bin)
         if not llama_server_bin.exists():
             print(f"[warn] llama-server not found at {llama_server_bin}; skipping judges", file=sys.stderr)
         else:
-            runtimes = start_judges(judge_specs, llama_server_bin, report_dir)
+            runtimes = start_judges(
+                judge_specs,
+                llama_server_bin,
+                report_dir,
+                start_timeout_s=judge_start_timeout_s,
+            )
             try:
-                judge_assessments = run_judges(runtimes, artifacts, deterministic, stage_scores)
+                judge_assessments = run_judges(
+                    runtimes,
+                    artifacts,
+                    deterministic,
+                    stage_scores,
+                    judge_request_timeout_s=judge_request_timeout_s,
+                )
             finally:
                 stop_judges(runtimes)
 

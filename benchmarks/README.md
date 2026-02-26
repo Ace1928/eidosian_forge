@@ -15,6 +15,11 @@ Fast GraphRAG-only setup:
 ./scripts/download_graphrag_models.sh
 ```
 
+Canonical selected runtime models are tracked in:
+
+- `config/model_selection.json`
+- `docs/MODEL_SELECTION.md`
+
 ## GraphRAG Runtime Benchmark
 Use `run_graphrag_bench.py` to run end-to-end GraphRAG indexing + query against local `llama.cpp` servers with strict output quality gates.
 
@@ -34,6 +39,7 @@ Use `run_graphrag_bench.py` to run end-to-end GraphRAG indexing + query against 
 - `EIDOS_GRAPHRAG_LLM_MODEL` / `EIDOS_GRAPHRAG_LLM_MODEL_FALLBACK`
 - `EIDOS_GRAPHRAG_MAX_COMPLETION_TOKENS` / `EIDOS_GRAPHRAG_MAX_TOKENS`
 - `EIDOS_LLAMA_CTX_SIZE` / `EIDOS_LLAMA_PARALLEL` / `EIDOS_LLAMA_TEMPERATURE`
+- `EIDOS_MODEL_SELECTION_PATH` (default `config/model_selection.json`)
 
 ### With profiler
 ```bash
@@ -87,6 +93,8 @@ Use `graphrag_qualitative_assessor.py` to score GraphRAG artifacts with determin
 
 Schema reference:
 - `benchmarks/schemas/graphrag_qualitative_assessment.schema.json`
+
+Judge defaults are loaded from `config/model_selection.json` (falling back to Qwen 0.5B + Llama 1B if absent).
 
 ## Multi-Domain Model Suite
 Use `model_domain_suite.py` to benchmark local models across tool calling, extraction, reasoning, coding, safety, and optional multimodal OCR.

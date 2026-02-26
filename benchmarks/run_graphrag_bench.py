@@ -16,22 +16,46 @@ from datetime import datetime, timezone
 
 # Configuration
 MODELS_DIR = Path("models")
+MODEL_SELECTION_PATH = Path(os.environ.get("EIDOS_MODEL_SELECTION_PATH", "config/model_selection.json"))
+
+
+def _load_model_selection() -> dict:
+    if not MODEL_SELECTION_PATH.exists():
+        return {}
+    try:
+        payload = json.loads(MODEL_SELECTION_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _selection_model(path: str, fallback: str) -> str:
+    payload = _load_model_selection()
+    services = payload.get("services") if isinstance(payload, dict) else None
+    graphrag = services.get("graphrag") if isinstance(services, dict) else None
+    if isinstance(graphrag, dict):
+        value = str(graphrag.get(path, "")).strip()
+        if value:
+            return value
+    return fallback
+
+
 LLM_MODEL = Path(
     os.environ.get(
         "EIDOS_GRAPHRAG_LLM_MODEL",
-        str(MODELS_DIR / "Qwen2.5-0.5B-Instruct-Q8_0.gguf"),
+        _selection_model("completion_model", str(MODELS_DIR / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")),
     )
 )
 LLM_MODEL_FALLBACK = Path(
     os.environ.get(
         "EIDOS_GRAPHRAG_LLM_MODEL_FALLBACK",
-        str(MODELS_DIR / "Llama-3.2-1B-Instruct-Q8_0.gguf"),
+        _selection_model("completion_fallback", str(MODELS_DIR / "Llama-3.2-1B-Instruct-Q8_0.gguf")),
     )
 )
 EMBED_MODEL = Path(
     os.environ.get(
         "EIDOS_GRAPHRAG_EMBED_MODEL",
-        str(MODELS_DIR / "nomic-embed-text-v1.5.Q4_K_M.gguf"),
+        _selection_model("embedding_model", str(MODELS_DIR / "nomic-embed-text-v1.5.Q4_K_M.gguf")),
     )
 )
 LLAMA_SERVER_BIN = Path("llama.cpp/build/bin/llama-server")

@@ -2348,5 +2348,34 @@
       0.4392156862745098,
       0.8313725490196079
     ]
+  },
+  "ed087ffa-1e2a-4ca7-a91d-d4db5730c00b": {
+    "id": "ed087ffa-1e2a-4ca7-a91d-d4db5730c00b",
+    "content": "2026-02-26 full GraphRAG federated model sweep completed across 9 local GGUF models with assessment/judge timeout cutoffs disabled. Winner remained qwen2_5_0_5b_instruct (score 0.8572, rank A, bench_ok true), with qwen2_5_3b_instruct and llama_3_2_3b_instruct as slower valid alternatives.",
+    "created_at": "2026-02-26T18:50:18.237711",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "graphrag_full_sweep_20260226_084600"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.9921568627450981,
+      0.8941176470588236,
+      0.8980392156862745,
+      0.09803921568627451,
+      0.6941176470588235,
+      0.7254901960784313,
+      0.6705882352941176,
+      0.023529411764705882,
+      0.23921568627450981,
+      0.32941176470588235,
+      0.3764705882352941,
+      0.41568627450980394,
+      0.15294117647058825,
+      0.08235294117647059,
+      0.5529411764705883,
+      0.6352941176470588
+    ]
   }
 }

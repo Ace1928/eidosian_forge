@@ -1878,6 +1878,20 @@
         ]
       },
       "links": []
+    },
+    "435051ad-a31b-4e02-99d3-89230f39dc92": {
+      "id": "435051ad-a31b-4e02-99d3-89230f39dc92",
+      "content": "Model selection for Doc Forge and GraphRAG is now a canonical contract in config/model_selection.json sourced from a full 9-model federated sweep; default embedding model is nomic-embed-text-v1.5.Q4_K_M.",
+      "metadata": {
+        "tags": [
+          "embedding",
+          "doc-forge",
+          "model-selection",
+          "contract",
+          "graphrag"
+        ]
+      },
+      "links": []
     }
   },
   "concept_map": {}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,21 +40,35 @@ class ScribeConfig:
 
     @classmethod
     def from_env(
-        cls, forge_root: Path | None = None, host: str | None = None, port: int | None = None, dry_run: bool = False
+        cls,
+        forge_root: Path | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        dry_run: bool = False,
     ) -> "ScribeConfig":
         forge_root = (
             forge_root
             or Path(os.environ.get("EIDOS_FORGE_ROOT", "/data/data/com.termux/files/home/eidosian_forge")).resolve()
         )
 
-        # Load winner model from sweep if available
-        sweep_result = forge_root / "reports/graphrag_sweep/model_selection_latest.json"
-        model_path_str = "models/Qwen2.5-0.5B-Instruct-Q8_0.gguf"  # Default fallback
-
-        if sweep_result.exists():
+        # Resolve default model from centralized selection, then sweep winner fallback.
+        model_path_str = "models/Qwen2.5-0.5B-Instruct-Q8_0.gguf"
+        selected_from_contract = False
+        selection_path = forge_root / "config" / "model_selection.json"
+        if selection_path.exists():
             try:
-                import json
+                selection = json.loads(selection_path.read_text(encoding="utf-8"))
+                selected = (((selection.get("services") or {}).get("doc_forge") or {}).get("completion_model") or "").strip()
+                if selected and (forge_root / selected).exists():
+                    model_path_str = selected
+                    selected_from_contract = True
+            except Exception:
+                pass
 
+        # Load winner model from sweep only when no explicit contract selection is available.
+        sweep_result = forge_root / "reports/graphrag_sweep/model_selection_latest.json"
+        if not selected_from_contract and sweep_result.exists():
+            try:
                 data = json.loads(sweep_result.read_text(encoding="utf-8"))
                 winner = data.get("winner", {}).get("model_path")
                 if winner and (forge_root / winner).exists():

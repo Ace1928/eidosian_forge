@@ -91,6 +91,9 @@ def run_model(
     sweep_root: Path,
     skip_judges: bool,
     fallback_model_path: str,
+    assessment_timeout: int | None,
+    judge_start_timeout: float | None,
+    judge_request_timeout: float | None,
 ) -> SweepResult:
     workspace_dir = sweep_root / model_id / "workspace"
     report_dir = sweep_root / model_id / "reports"
@@ -122,8 +125,12 @@ def run_model(
         assessment_cmd.extend(["--metrics-json", str(metrics_path)])
     if skip_judges:
         assessment_cmd.append("--skip-judges")
+    if judge_start_timeout is not None:
+        assessment_cmd.extend(["--judge-start-timeout", str(judge_start_timeout)])
+    if judge_request_timeout is not None:
+        assessment_cmd.extend(["--judge-request-timeout", str(judge_request_timeout)])
 
-    assess = _run(assessment_cmd, env=os.environ.copy(), timeout=600)
+    assess = _run(assessment_cmd, env=os.environ.copy(), timeout=assessment_timeout)
     assessment_path = _latest_matching(report_dir, "qualitative_assessment_*.json")
     assessment = _load_json(assessment_path)
     metrics = _load_json(metrics_path)
@@ -171,6 +178,24 @@ def main() -> None:
         default="reports/graphrag_sweep",
         help="Output root directory for sweep artifacts.",
     )
+    parser.add_argument(
+        "--assessment-timeout",
+        type=int,
+        default=0,
+        help="Seconds before terminating qualitative assessor process (<=0 disables timeout).",
+    )
+    parser.add_argument(
+        "--judge-start-timeout",
+        type=float,
+        default=0.0,
+        help="Seconds to wait for each judge server startup (<=0 disables practical timeout).",
+    )
+    parser.add_argument(
+        "--judge-request-timeout",
+        type=float,
+        default=0.0,
+        help="Seconds to wait for each judge completion request (<=0 disables practical timeout).",
+    )
     args = parser.parse_args()
 
     specs: list[tuple[str, str]] = []
@@ -190,6 +215,9 @@ def main() -> None:
 
     sweep_root = Path(args.output_root).resolve()
     sweep_root.mkdir(parents=True, exist_ok=True)
+    assessment_timeout = args.assessment_timeout if args.assessment_timeout > 0 else None
+    judge_start_timeout = args.judge_start_timeout if args.judge_start_timeout > 0 else None
+    judge_request_timeout = args.judge_request_timeout if args.judge_request_timeout > 0 else None
 
     print(f"Starting sweep with {len(specs)} models...")
     for s in specs:
@@ -225,6 +253,9 @@ def main() -> None:
             sweep_root=sweep_root,
             skip_judges=args.skip_judges,
             fallback_model_path=fallback_model_path,
+            assessment_timeout=assessment_timeout,
+            judge_start_timeout=judge_start_timeout,
+            judge_request_timeout=judge_request_timeout,
         )
         results.append(result)
         print(f"Result: ok={result.bench_ok}, score={result.final_score:.4f}, time={result.index_seconds}s")

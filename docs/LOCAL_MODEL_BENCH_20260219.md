@@ -2,6 +2,10 @@
 
 Date: 2026-02-19 (UTC)
 
+> Historical snapshot only. Active production model selection now lives in:
+> - `config/model_selection.json`
+> - `docs/MODEL_SELECTION.md`
+
 ## Scope
 This run selected and validated local models up to 3B parameters (plus embedding model) with:
 - GraphRAG end-to-end benchmark + federated qualitative assessment.
