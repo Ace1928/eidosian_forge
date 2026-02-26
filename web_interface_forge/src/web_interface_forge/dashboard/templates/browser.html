@@ -1,0 +1,46 @@
+
+{% extends "base.html" %}
+
+{% block title %}Browse {{ path }} | Eidosian Atlas{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="/browse/">root</a> <span>/</span>
+    {% for part in path.split('/') %}
+        {% if part and part != '.' %}
+            <span>{{ part }}</span> <span>/</span>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2>Directory: {{ path }}</h2>
+    {% if parent %}
+    <p><a href="/browse/{{ parent }}">.. (Up one level)</a></p>
+    {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Modified</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in files %}
+            <tr>
+                <td>
+                    {% if item.is_dir %}
+                    <a href="/browse/{{ item.path }}">📂 {{ item.name }}/</a>
+                    {% else %}
+                    <a href="/browse/{{ item.path }}">📄 {{ item.name }}</a>
+                    {% endif %}
+                </td>
+                <td>{{ item.size }} B</td>
+                <td>{{ item.mtime[:16].replace('T', ' ') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

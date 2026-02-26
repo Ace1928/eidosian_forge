@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Eidosian Atlas{% endblock %}</title>
+    <style>
+        :root {
+            --bg-primary: #0b1116;
+            --bg-secondary: #162733;
+            --text-primary: #e6f4ff;
+            --text-secondary: #90abc0;
+            --accent: #5cc8ff;
+            --border: #2f4759;
+            --success: #00d084;
+            --danger: #ff5d73;
+            --warning: #ffc857;
+        }
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+        a:hover { color: #8ad4ff; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 0;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 1px; }
+        .nav-links a { margin-left: 20px; font-weight: 500; }
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        h1, h2, h3 { margin-top: 0; color: var(--text-primary); }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--accent); }
+        .stat-label { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-secondary); font-weight: 600; font-size: 0.9rem; }
+        tr:hover { background-color: rgba(255,255,255,0.02); }
+        .status-pill {
+            padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+        }
+        .status-running { background-color: rgba(0, 208, 132, 0.2); color: var(--success); }
+        .status-stopped { background-color: rgba(255, 93, 115, 0.2); color: var(--danger); }
+        .status-unknown { background-color: rgba(255, 200, 87, 0.2); color: var(--warning); }
+        
+        /* Markdown Styles */
+        .markdown-body { font-size: 1rem; }
+        .markdown-body pre { background-color: #0d161f; padding: 15px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border); }
+        .markdown-body code { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9em; background-color: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 4px; }
+        .markdown-body pre code { background-color: transparent; padding: 0; }
+        .markdown-body h1, .markdown-body h2 { border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+        .markdown-body blockquote { border-left: 4px solid var(--accent); padding-left: 15px; color: var(--text-secondary); margin-left: 0; }
+        
+        .breadcrumb { margin-bottom: 20px; font-size: 0.9rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--text-secondary); }
+        .breadcrumb a:hover { color: var(--accent); }
+        .breadcrumb span { margin: 0 5px; }
+
+        footer { text-align: center; padding: 40px 0; color: var(--text-secondary); font-size: 0.9rem; border-top: 1px solid var(--border); margin-top: 40px; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">💎 EIDOSIAN <span style="color:var(--accent)">ATLAS</span></div>
+            <nav class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/browse/">Browse Docs</a>
+                <a href="/api/system" target="_blank">API</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>Eidosian Forge &copy; 2026. "Precision is the foundation of elegance."</p>
+    </footer>
+</body>
+</html>

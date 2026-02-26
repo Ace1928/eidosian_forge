@@ -4,7 +4,26 @@
 
 ## Overview
 
-The Web Interface Forge provides a **hybrid chat sidecar** - a browser automation system that bridges web-based AI interfaces (like ChatGPT) to a local WebSocket API, enabling programmatic interaction without API keys.
+The Web Interface Forge provides two production surfaces:
+
+- **Eidosian Atlas dashboard** (`web_interface_forge.dashboard.main`) for live Doc Forge telemetry and documentation browsing.
+- **Hybrid chat sidecar** (`eidos_server.py`/`eidos_client.py`) for browser-automation chat bridging.
+
+Atlas is managed by `scripts/eidos_termux_services.sh` and exposed on the `eidos_atlas_dashboard` service port.
+
+## Atlas Quick Start
+
+```bash
+bash web_interface_forge/scripts/run_dashboard.sh
+```
+
+Open `http://127.0.0.1:8936/` (or `EIDOS_ATLAS_PORT` from `config/ports.json`).
+
+Key endpoints:
+
+- `GET /health`
+- `GET /api/system`
+- `GET /api/doc/status`
 
 ## Why This Approach?
 
@@ -17,7 +36,7 @@ The Web Interface Forge provides a **hybrid chat sidecar** - a browser automatio
 
 ## Quick Start
 
-### Prerequisites
+### Sidecar Prerequisites
 
 ```bash
 # Install dependencies
@@ -34,7 +53,7 @@ chromium --remote-debugging-port=9222
 
 ```bash
 cd eidosian_forge/web_interface_forge
-python -m web_interface_forge.eidos_server --port 8928
+python -m web_interface_forge.eidos_server --port 8932
 
 # Log in to ChatGPT in the browser window that opens
 ```
@@ -43,7 +62,7 @@ python -m web_interface_forge.eidos_server --port 8928
 
 ```bash
 # In another terminal
-python -m web_interface_forge.eidos_client --ws ws://127.0.0.1:8928
+python -m web_interface_forge.eidos_client --ws ws://127.0.0.1:8932
 ```
 
 ### Client Commands
@@ -97,7 +116,7 @@ python -m web_interface_forge.eidos_client --ws ws://127.0.0.1:8928
 | Setting | Default | Environment Variable |
 |---------|---------|---------------------|
 | Host | 127.0.0.1 | - |
-| Port | 8928 | - |
+| Port | 8932 | `EIDOS_WEB_INTERFACE_WS_PORT` |
 | State Path | ~/.eidos_chatgpt_state.json | - |
 | Log Path | ~/.eidos_sidecar_server.log | - |
 
@@ -107,13 +126,13 @@ python -m web_interface_forge.eidos_client --ws ws://127.0.0.1:8928
 # Server
 python -m web_interface_forge.eidos_server \
   --host 127.0.0.1 \
-  --port 8928 \
+  --port 8932 \
   --state ~/.eidos_chatgpt_state.json \
   --log ~/.eidos_sidecar_server.log
 
 # Client
 python -m web_interface_forge.eidos_client \
-  --ws ws://127.0.0.1:8928
+  --ws ws://127.0.0.1:8932
 ```
 
 ## Security

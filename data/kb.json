@@ -57,9 +57,9 @@
       "content": "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config.",
       "metadata": {
         "tags": [
-          "autotune",
-          "termux",
           "mcp",
+          "termux",
+          "autotune",
           "consciousness"
         ]
       },
@@ -70,9 +70,9 @@
       "content": "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics.",
       "metadata": {
         "tags": [
-          "autotune",
-          "termux",
           "mcp",
+          "termux",
+          "autotune",
           "consciousness"
         ]
       },
@@ -83,9 +83,9 @@
       "content": "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled.",
       "metadata": {
         "tags": [
-          "autotune",
-          "termux",
           "mcp",
+          "termux",
+          "autotune",
           "consciousness"
         ]
       },
@@ -200,9 +200,9 @@
       "content": "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence.",
       "metadata": {
         "tags": [
+          "optimization",
           "autotune",
-          "consciousness",
-          "optimization"
+          "consciousness"
         ]
       },
       "links": []
@@ -214,8 +214,8 @@
         "tags": [
           "attention",
           "learning",
-          "consciousness",
-          "competition"
+          "competition",
+          "consciousness"
         ]
       },
       "links": []
@@ -225,9 +225,9 @@
       "content": "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context.",
       "metadata": {
         "tags": [
-          "termux",
+          "validation",
           "operations",
-          "validation"
+          "termux"
         ]
       },
       "links": []
@@ -289,10 +289,10 @@
       "content": "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources.",
       "metadata": {
         "tags": [
-          "mcp",
           "red-team",
-          "consciousness",
-          "cli"
+          "mcp",
+          "cli",
+          "consciousness"
         ]
       },
       "links": []
@@ -302,9 +302,9 @@
       "content": "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes.",
       "metadata": {
         "tags": [
-          "tasks",
           "bench",
           "validation",
+          "tasks",
           "consciousness"
         ]
       },
@@ -367,11 +367,11 @@
       "content": "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP.",
       "metadata": {
         "tags": [
-          "cli",
-          "benchmark",
-          "consciousness",
           "mcp",
-          "red-team"
+          "red-team",
+          "consciousness",
+          "cli",
+          "benchmark"
         ]
       },
       "links": []
@@ -381,9 +381,9 @@
       "content": "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions.",
       "metadata": {
         "tags": [
+          "benchmark",
           "schema",
           "gates",
-          "benchmark",
           "consciousness"
         ]
       },
@@ -407,10 +407,10 @@
       "content": "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates.",
       "metadata": {
         "tags": [
-          "autotune",
+          "red-team",
           "termux",
-          "consciousness",
-          "red-team"
+          "autotune",
+          "consciousness"
         ]
       },
       "links": []
@@ -420,10 +420,10 @@
       "content": "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type.",
       "metadata": {
         "tags": [
-          "termux",
           "benchmark",
-          "consciousness",
-          "index"
+          "index",
+          "termux",
+          "consciousness"
         ]
       },
       "links": []
@@ -433,9 +433,9 @@
       "content": "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
-          "security",
-          "dependabot"
+          "security"
         ]
       },
       "links": []
@@ -445,10 +445,10 @@
       "content": "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
           "issues",
-          "security",
-          "dependabot"
+          "security"
         ]
       },
       "links": []
@@ -471,10 +471,10 @@
       "content": "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py.",
       "metadata": {
         "tags": [
+          "dependabot",
           "workflow",
           "remediation",
-          "security",
-          "dependabot"
+          "security"
         ]
       },
       "links": []
@@ -484,12 +484,12 @@
       "content": "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports.",
       "metadata": {
         "tags": [
-          "dependabot",
-          "phase17",
-          "security",
           "termux",
+          "phase17",
+          "dependabot",
           "automation",
-          "pip"
+          "pip",
+          "security"
         ],
         "source": "phase17_autopatch_execution",
         "updated_at": "2026-02-16T22:54:34Z"
@@ -501,10 +501,10 @@
       "content": "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4).",
       "metadata": {
         "tags": [
-          "phase17",
           "no-fix",
-          "security",
+          "phase17",
           "mitigation",
+          "security",
           "advisory"
         ],
         "source": "phase17_iteration2_no_fix_mitigation",
@@ -517,11 +517,11 @@
       "content": "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge.",
       "metadata": {
         "tags": [
-          "dependabot",
           "phase17",
-          "security",
+          "dependabot",
           "automation",
-          "closure"
+          "closure",
+          "security"
         ],
         "source": "phase17_final_closure",
         "updated_at": "2026-02-16T23:27:34Z"
@@ -533,11 +533,11 @@
       "content": "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening.",
       "metadata": {
         "tags": [
-          "hardening",
           "consciousness",
+          "hardening",
+          "watchdog",
           "phase18",
-          "payload-safety",
-          "watchdog"
+          "payload-safety"
         ],
         "source": "phase18_runtime_hardening",
         "updated_at": "2026-02-16T23:43:19Z"
@@ -549,13 +549,13 @@
       "content": "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation.",
       "metadata": {
         "tags": [
-          "ci",
-          "stress-benchmark",
-          "consciousness",
-          "phase18",
           "mcp",
-          "payload-safety",
-          "watchdog"
+          "consciousness",
+          "stress-benchmark",
+          "watchdog",
+          "ci",
+          "phase18",
+          "payload-safety"
         ],
         "source": "phase18_status_stress_completion",
         "updated_at": "2026-02-17T00:24:46Z"
@@ -567,10 +567,10 @@
       "content": "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance.",
       "metadata": {
         "tags": [
-          "hardening",
-          "side-effect-free",
-          "status",
           "consciousness",
+          "side-effect-free",
+          "hardening",
+          "status",
           "phase18"
         ],
         "source": "phase18_status_side_effect_fix",
@@ -583,12 +583,12 @@
       "content": "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk.",
       "metadata": {
         "tags": [
-          "ci",
           "termux",
-          "linux-parity",
           "consciousness",
+          "ci",
           "phase19",
-          "audit-matrix"
+          "audit-matrix",
+          "linux-parity"
         ],
         "source": "phase19_linux_audit_matrix",
         "updated_at": "2026-02-17T01:44:44Z"
@@ -600,10 +600,10 @@
       "content": "Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow.",
       "metadata": {
         "tags": [
-          "ci-gate",
-          "consciousness",
-          "phase20",
           "linux-audit",
+          "consciousness",
+          "ci-gate",
+          "phase20",
           "observability",
           "trend"
         ],
@@ -618,10 +618,10 @@
       "metadata": {
         "tags": [
           "consciousness",
-          "phase21",
-          "causal-trace",
           "trial-capture",
-          "event-fabric"
+          "phase21",
+          "event-fabric",
+          "causal-trace"
         ],
         "source": "phase21_event_fabric_trial_capture",
         "updated_at": "2026-02-17T02:19:15Z"
@@ -633,11 +633,11 @@
       "content": "Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments.",
       "metadata": {
         "tags": [
-          "provenance",
-          "replay-manifest",
-          "phase22",
+          "bench",
           "consciousness",
-          "bench"
+          "phase22",
+          "provenance",
+          "replay-manifest"
         ],
         "source": "phase22_trial_provenance_replay",
         "updated_at": "2026-02-17T02:33:24Z"
@@ -650,10 +650,10 @@
       "metadata": {
         "tags": [
           "directory-atlas",
-          "benchmarks",
-          "phase23",
           "consciousness",
-          "documentation"
+          "benchmarks",
+          "documentation",
+          "phase23"
         ],
         "source": "phase23_repo_docs_hardening",
         "updated_at": "2026-02-17T03:24:01Z"
@@ -666,10 +666,10 @@
       "metadata": {
         "tags": [
           "ci",
-          "operations",
-          "phase24",
           "documentation",
-          "determinism"
+          "phase24",
+          "determinism",
+          "operations"
         ]
       },
       "links": []
@@ -690,11 +690,11 @@
       "content": "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected.",
       "metadata": {
         "tags": [
-          "quality",
-          "assessment",
+          "schema",
           "benchmark",
-          "graphrag",
-          "schema"
+          "assessment",
+          "quality",
+          "graphrag"
         ]
       },
       "links": []
@@ -704,10 +704,10 @@
       "content": "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection.",
       "metadata": {
         "tags": [
-          "termux",
           "benchmark",
           "graphrag",
-          "quality-gate"
+          "quality-gate",
+          "termux"
         ]
       },
       "links": []
@@ -717,9 +717,9 @@
       "content": "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow.",
       "metadata": {
         "tags": [
-          "termux",
-          "stability",
           "eidos_mcp",
+          "stability",
+          "termux",
           "transport"
         ]
       },
@@ -730,11 +730,11 @@
       "content": "Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules.",
       "metadata": {
         "tags": [
-          "configuration",
+          "services",
           "termux",
-          "infrastructure",
           "ports",
-          "services"
+          "infrastructure",
+          "configuration"
         ]
       },
       "links": []
@@ -744,10 +744,10 @@
       "content": "Eidosian Forge now has a canonical local service registry at config/ports.json, with fallback behavior implemented in launch scripts and runtime modules when env vars are unset or empty.",
       "metadata": {
         "tags": [
-          "termux",
           "ports",
+          "config",
           "operations",
-          "config"
+          "termux"
         ]
       },
       "links": []
@@ -757,10 +757,10 @@
       "content": "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A).",
       "metadata": {
         "tags": [
-          "model-selection",
           "benchmark",
           "graphrag",
-          "quality-gate"
+          "quality-gate",
+          "model-selection"
         ]
       },
       "links": []
@@ -770,9 +770,9 @@
       "content": "Living knowledge pipeline scaffold added at scripts/living_knowledge_pipeline.py with strict run artifacts (manifest, records, dedup, drift, code analysis) and optional GraphRAG indexing/query execution.",
       "metadata": {
         "tags": [
+          "code-forge",
           "living-knowledge",
           "graphrag",
-          "code-forge",
           "pipeline"
         ]
       },
@@ -783,9 +783,9 @@
       "content": "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected.",
       "metadata": {
         "tags": [
-          "robustness",
-          "evaluation",
           "quality",
+          "evaluation",
+          "robustness",
           "graphrag"
         ]
       },
@@ -796,10 +796,10 @@
       "content": "Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models.",
       "metadata": {
         "tags": [
-          "multimodal",
           "termux",
           "catalog",
           "models",
+          "multimodal",
           "graphrag"
         ]
       },
@@ -810,10 +810,10 @@
       "content": "GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled.",
       "metadata": {
         "tags": [
-          "termux",
-          "model-selection",
           "quality-gates",
-          "graphrag"
+          "graphrag",
+          "termux",
+          "model-selection"
         ]
       },
       "links": []
@@ -823,11 +823,11 @@
       "content": "Commit a5873193ae introduces curated <=3B model catalog plus automated downloader and multi-domain benchmark suite with optional multimodal OCR task and judge aggregation.",
       "metadata": {
         "tags": [
-          "benchmarking",
-          "eidosian_forge",
-          "automation",
           "commit",
-          "models"
+          "benchmarking",
+          "models",
+          "automation",
+          "eidosian_forge"
         ]
       },
       "links": []
@@ -837,11 +837,11 @@
       "content": "Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest.",
       "metadata": {
         "tags": [
-          "triage",
-          "knowledge_graph",
           "code_forge",
-          "graphrag",
-          "archive_digester"
+          "triage",
+          "archive_digester",
+          "knowledge_graph",
+          "graphrag"
         ]
       },
       "links": []
@@ -851,11 +851,11 @@
       "content": "Commit dedb968da9 introduces Code Forge Archive Digester v1 with deterministic intake, duplication, triage artifacts, and CLI orchestration integrated into living_knowledge_pipeline.",
       "metadata": {
         "tags": [
-          "integration",
           "code_forge",
+          "integration",
           "commit",
-          "pipeline",
-          "archive_digester"
+          "archive_digester",
+          "pipeline"
         ]
       },
       "links": []
@@ -865,11 +865,11 @@
       "content": "Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs.",
       "metadata": {
         "tags": [
-          "canonicalization",
-          "regression_gate",
+          "code_forge",
           "migration_map",
+          "canonicalization",
           "benchmark",
-          "code_forge"
+          "regression_gate"
         ]
       },
       "links": []
@@ -879,12 +879,12 @@
       "content": "Commit f911629d49 upgrades Code Forge with imports/calls/uses edge ingestion, dependency graph artifacts, baseline-aware benchmark gating, and canonical migration planning with compatibility shim staging.",
       "metadata": {
         "tags": [
-          "canonicalization",
-          "production",
-          "benchmark",
-          "dependency_graph",
+          "code_forge",
           "commit",
-          "code_forge"
+          "production",
+          "dependency_graph",
+          "canonicalization",
+          "benchmark"
         ]
       },
       "links": []
@@ -894,11 +894,11 @@
       "content": "Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs.",
       "metadata": {
         "tags": [
-          "structural_clone",
-          "artifact_schema",
           "code_forge",
-          "triage_audit",
-          "validation"
+          "artifact_schema",
+          "validation",
+          "structural_clone",
+          "triage_audit"
         ]
       },
       "links": []
@@ -908,11 +908,11 @@
       "content": "Commit 16aca8e692 hardens Code Forge with structural duplication indexing, confidence-based triage audit contracts, and strict output validation tooling.",
       "metadata": {
         "tags": [
-          "hardening",
-          "triage",
           "code_forge",
-          "structural_duplicates",
+          "triage",
           "commit",
+          "structural_duplicates",
+          "hardening",
           "validation"
         ]
       },
@@ -924,9 +924,9 @@
       "metadata": {
         "tags": [
           "code_forge",
+          "drift",
           "artifact-validation",
-          "digester",
-          "drift"
+          "digester"
         ]
       },
       "links": []
@@ -936,9 +936,9 @@
       "content": "Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts.",
       "metadata": {
         "tags": [
+          "consciousness",
           "rac_ap",
           "research",
-          "consciousness",
           "validation",
           "agent_forge"
         ]
@@ -950,12 +950,12 @@
       "content": "Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports.",
       "metadata": {
         "tags": [
-          "rac-ap",
-          "consciousness",
           "protocol",
+          "intervention",
+          "consciousness",
           "validation",
           "agent_forge",
-          "intervention"
+          "rac-ap"
         ]
       },
       "links": []
@@ -965,11 +965,11 @@
       "content": "Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa).",
       "metadata": {
         "tags": [
-          "rac-ap",
-          "git",
           "consciousness",
           "validation",
-          "agent_forge"
+          "agent_forge",
+          "rac-ap",
+          "git"
         ]
       },
       "links": []
@@ -979,12 +979,12 @@
       "content": "Code Forge digest integration exports now use active run scoping with fallback to latest effective source-root run, preserving meaningful Knowledge Forge and GraphRAG exports during idempotent no-op ingestion cycles.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
+          "code_forge",
           "integration",
           "idempotency",
-          "code_forge",
-          "graphrag",
-          "run_scoping"
+          "knowledge_forge",
+          "run_scoping",
+          "graphrag"
         ]
       },
       "links": []
@@ -994,11 +994,11 @@
       "content": "Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity.",
       "metadata": {
         "tags": [
-          "roundtrip",
-          "idempotent",
-          "regeneration",
           "code_forge",
-          "sms_forge"
+          "regeneration",
+          "sms_forge",
+          "idempotent",
+          "roundtrip"
         ]
       },
       "links": []
@@ -1008,10 +1008,10 @@
       "content": "Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
-          "provenance",
-          "mcp",
           "code_forge",
+          "mcp",
+          "provenance",
+          "knowledge_forge",
           "graphrag"
         ]
       },
@@ -1022,11 +1022,11 @@
       "content": "GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
-          "security",
+          "ci",
+          "gitleaks",
           "workflow-lock",
-          "gitleaks"
+          "security"
         ]
       },
       "links": []
@@ -1036,11 +1036,11 @@
       "content": "Security remediation applied: requirements/eidos_venv_reqs.txt now pins pypdf==6.7.1 per Dependabot autopatch for open moderate alerts.",
       "metadata": {
         "tags": [
-          "dependabot",
-          "security",
           "requirements",
+          "dependabot",
+          "pypdf",
           "remediation",
-          "pypdf"
+          "security"
         ]
       },
       "links": []
@@ -1052,8 +1052,8 @@
         "tags": [
           "dependabot",
           "backlog",
-          "security",
-          "triage"
+          "triage",
+          "security"
         ]
       },
       "links": []
@@ -1063,11 +1063,11 @@
       "content": "Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end.",
       "metadata": {
         "tags": [
-          "memory_forge",
           "termux",
-          "chroma",
+          "hnswlib",
           "validation",
-          "hnswlib"
+          "memory_forge",
+          "chroma"
         ]
       },
       "links": []
@@ -1077,11 +1077,11 @@
       "content": "CI/Lint/Format workflows now scope Python checks to active forge directories and TypeScript Prettier checks to ts/tsx/js/jsx files, reducing monorepo timeout and LFS-json parse failures.",
       "metadata": {
         "tags": [
-          "ci",
           "format",
+          "reliability",
+          "ci",
           "workflows",
-          "lint",
-          "reliability"
+          "lint"
         ]
       },
       "links": []
@@ -1091,10 +1091,10 @@
       "content": "Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners.",
       "metadata": {
         "tags": [
-          "pytest",
-          "ci",
           "workflow",
-          "atlas"
+          "atlas",
+          "pytest",
+          "ci"
         ]
       },
       "links": []
@@ -1117,10 +1117,10 @@
       "content": "Universal CI format-check was failing due pre-existing parse/format debt across unrelated directories; remediation set formatting checks non-blocking while preserving visibility through warnings and summaries.",
       "metadata": {
         "tags": [
-          "ci",
-          "formatting",
           "governance",
-          "monorepo"
+          "monorepo",
+          "formatting",
+          "ci"
         ]
       },
       "links": []
@@ -1130,11 +1130,11 @@
       "content": "CI-style monorepo test execution in eidosian_forge requires forge-local script path resolution in subprocess-based tests; absolute paths derived from Path(__file__).resolve().parents[1] eliminate cwd-sensitive failures on GitHub Actions and Termux.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
-          "testing",
           "termux",
-          "path-resolution"
+          "path-resolution",
+          "testing",
+          "ci"
         ]
       },
       "links": []
@@ -1144,11 +1144,11 @@
       "content": "Code Forge provenance schema now includes memory_links, enabling cross-forge lineage queries across artifact->memory->knowledge->GraphRAG surfaces with deterministic IDs.",
       "metadata": {
         "tags": [
-          "provenance",
-          "knowledge",
           "code_forge",
-          "graphrag",
-          "memory"
+          "memory",
+          "knowledge",
+          "provenance",
+          "graphrag"
         ]
       },
       "links": []
@@ -1158,10 +1158,10 @@
       "content": "MCP code_forge_provenance now reports memory_link_count in addition to artifact_count, knowledge_link_count, and graphrag_link_count, enabling direct cross-forge lineage inspection from MCP clients.",
       "metadata": {
         "tags": [
-          "memory_links",
           "code_forge",
+          "provenance",
           "eidos_mcp",
-          "provenance"
+          "memory_links"
         ]
       },
       "links": []
@@ -1171,11 +1171,11 @@
       "content": "Commit ea59a0f5bd fixes Eidosian Universal CI failures by adding lib/eidosian_core/ports.py, adding lib/tests/test_ports.py, and expanding CI test dependencies to include numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
+          "dependencies",
           "regression-fix",
           "ports",
-          "dependencies"
+          "ci"
         ]
       },
       "links": []
@@ -1185,10 +1185,10 @@
       "content": "Commit cdbf0d08af resolves prior Eidosian Universal CI failing test groups by restoring eidos_mcp llm/refactor exports, pyfiglet renderText alias behavior, pyparticles numba compatibility imports, glyph_forge cv2-absent fallback rendering, and CI jinja2 dependency for Moltbook UI tests.",
       "metadata": {
         "tags": [
-          "ci",
+          "regression-fix",
           "stability",
           "eidosian_forge",
-          "regression-fix"
+          "ci"
         ]
       },
       "links": []
@@ -1198,10 +1198,10 @@
       "content": "Eidosian Universal CI regression bundle fixed in commit 6346d73611 with deterministic guards for eidos_mcp compatibility exports, game_forge sparse interaction fallback, glyph_forge batch input typing, moltbook CLI module invocation context, and figlet compatibility assertion variance.",
       "metadata": {
         "tags": [
-          "ci",
           "stability",
           "qa",
-          "eidosian_forge"
+          "eidosian_forge",
+          "ci"
         ]
       },
       "links": []
@@ -1211,10 +1211,10 @@
       "content": "CI hardening pattern: prefer robust cross-platform assertions in compat tests and strict type guards at public parser boundaries to avoid environment-dependent regressions.",
       "metadata": {
         "tags": [
-          "ci",
           "defensive-programming",
+          "cross-platform",
           "testing",
-          "cross-platform"
+          "ci"
         ]
       },
       "links": []
@@ -1224,10 +1224,10 @@
       "content": "Operational testing contract for eidosian_forge: invoke tests via eidosian_venv interpreter (`python -m pytest`) to avoid plugin/path drift from system pytest in Termux.",
       "metadata": {
         "tags": [
-          "termux",
+          "reliability",
           "testing",
-          "venv",
-          "reliability"
+          "termux",
+          "venv"
         ]
       },
       "links": []
@@ -1237,11 +1237,11 @@
       "content": "Cross-platform test reliability pattern: make dependency checks injectable/mocked in CLI tests (e.g., shutil.which for ffmpeg), and ensure process fakes implement context-manager + communicate semantics to avoid third-party import breakage.",
       "metadata": {
         "tags": [
-          "ci",
-          "mocks",
-          "testing",
           "reliability",
-          "glyph_forge"
+          "glyph_forge",
+          "testing",
+          "ci",
+          "mocks"
         ]
       },
       "links": []
@@ -1251,10 +1251,10 @@
       "content": "Code Forge now emits provenance_registry.json for digester and roundtrip pipelines, including unit-level joins (knowledge/memory/GraphRAG) and optional benchmark/drift summaries; eidos_mcp code_forge_provenance supports unit-level filtering and benchmark inclusion.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
-          "provenance",
-          "mcp",
           "code_forge",
+          "mcp",
+          "provenance",
+          "knowledge_forge",
           "graphrag"
         ]
       },
@@ -1265,11 +1265,11 @@
       "content": "Repository docs and ignore policy were refreshed during figlet compatibility cycle: deterministic directory atlas regenerated and local CI/test artifact paths added to .gitignore (.coverage, .tmp_test, reports/ci/*.log, reports/local_test_audit/).",
       "metadata": {
         "tags": [
-          "ci",
-          "figlet_forge",
           "maintenance",
-          "gitignore",
-          "docs"
+          "docs",
+          "figlet_forge",
+          "ci",
+          "gitignore"
         ]
       },
       "links": []
@@ -1279,11 +1279,11 @@
       "content": "MCP knowledge router now resolves GraphRAG root using EIDOS_GRAPHRAG_ROOT override, defaulting to graphrag_workspace and falling back to graphrag. GraphRAG integration commands now use python -m graphrag <subcommand> with legacy fallback support.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
-          "integration",
           "mcp",
-          "graphrag",
-          "compatibility"
+          "integration",
+          "compatibility",
+          "knowledge_forge",
+          "graphrag"
         ]
       },
       "links": []
@@ -1293,11 +1293,11 @@
       "content": "Cross-forge interop hardening added GraphRAG CLI compatibility in knowledge_forge (primary python -m graphrag subcommand invocation with legacy fallback) and MCP router root resolution via EIDOS_GRAPHRAG_ROOT -> graphrag_workspace -> graphrag fallback.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
-          "eidos_mcp",
-          "graphrag",
           "compatibility",
-          "interop"
+          "interop",
+          "eidos_mcp",
+          "knowledge_forge",
+          "graphrag"
         ]
       },
       "links": []
@@ -1307,12 +1307,12 @@
       "content": "Commit e3f3bd3293 hardened forge interoperability by adding GraphRAG timeout-guarded execution and MCP GraphRAG root precedence, with full cross-forge validation tests and benchmark pass.",
       "metadata": {
         "tags": [
-          "knowledge_forge",
           "commit",
-          "eidos_mcp",
-          "graphrag",
           "interop",
-          "validation"
+          "eidos_mcp",
+          "knowledge_forge",
+          "validation",
+          "graphrag"
         ]
       },
       "links": []
@@ -1322,11 +1322,11 @@
       "content": "Code Forge now includes eval OS modules (contracts/tracing/replay/runner/staleness/scoring) with CLI entrypoints and schema versioning for reproducible ablation runs.",
       "metadata": {
         "tags": [
-          "cli",
-          "observability",
-          "evaluation",
           "code_forge",
-          "schema"
+          "evaluation",
+          "schema",
+          "cli",
+          "observability"
         ]
       },
       "links": []
@@ -1336,11 +1336,11 @@
       "content": "Code Forge eval harness now supports deterministic replay across separate output directories via configurable replay_store_path (CLI: --replay-store), with run summary including replay_store_path metadata.",
       "metadata": {
         "tags": [
-          "schema",
-          "eval_os",
-          "observability",
           "code_forge",
-          "replay"
+          "eval_os",
+          "schema",
+          "replay",
+          "observability"
         ]
       },
       "links": []
@@ -1350,11 +1350,11 @@
       "content": "Eidosian Universal CI run 22256896857 failed only in glyph_forge due ffmpeg discovery in test_extract_playlist_stitches_audio; fixed by mocking extractors.shutil.which for ffmpeg in test code and pushed in commit 1cdb3d31a5.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
-          "ffmpeg",
+          "glyph_forge",
           "testing",
-          "glyph_forge"
+          "ci",
+          "ffmpeg"
         ]
       },
       "links": []
@@ -1364,11 +1364,11 @@
       "content": "Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift.",
       "metadata": {
         "tags": [
-          "ci",
-          "stability",
-          "pytest",
           "glyph_forge",
-          "agent_forge"
+          "ci",
+          "pytest",
+          "agent_forge",
+          "stability"
         ]
       },
       "links": []
@@ -1378,11 +1378,11 @@
       "content": "linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux.",
       "metadata": {
         "tags": [
-          "ci",
-          "termux",
-          "stability",
           "linux_audit",
-          "mcp"
+          "mcp",
+          "termux",
+          "ci",
+          "stability"
         ]
       },
       "links": []
@@ -1392,11 +1392,11 @@
       "content": "Consciousness Linux Parity GitHub Actions run 22265310795 succeeded after setting EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word in parity smoke workflow.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
           "audit-gate",
           "consciousness",
-          "parity"
+          "parity",
+          "ci"
         ]
       },
       "links": []
@@ -1406,12 +1406,12 @@
       "content": "Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs.",
       "metadata": {
         "tags": [
-          "ci",
-          "stability",
-          "workflow",
+          "opencv",
           "pytest",
-          "universal",
-          "opencv"
+          "ci",
+          "workflow",
+          "stability",
+          "universal"
         ]
       },
       "links": []
@@ -1422,10 +1422,10 @@
       "metadata": {
         "tags": [
           "ci",
-          "atlas",
-          "determinism",
+          "git-tracked",
           "docs",
-          "git-tracked"
+          "determinism",
+          "atlas"
         ]
       },
       "links": []
@@ -1435,12 +1435,12 @@
       "content": "CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners.",
       "metadata": {
         "tags": [
-          "ci",
           "github-actions",
           "termux",
-          "atlas",
+          "ci",
+          "docs",
           "determinism",
-          "docs"
+          "atlas"
         ]
       },
       "links": []
@@ -1450,11 +1450,11 @@
       "content": "TypeForge now supports GIS-backed schema registry persistence through a backend contract; eidos_mcp initializes TypeCore with GIS backend when available.",
       "metadata": {
         "tags": [
-          "gis_forge",
           "eidos_mcp",
           "type_forge",
           "schema-registry",
-          "persistence"
+          "persistence",
+          "gis_forge"
         ]
       },
       "links": []
@@ -1464,10 +1464,10 @@
       "content": "Diagnostics Forge CLI now supports a dashboard subcommand that renders metrics JSON summaries in a sortable terminal table and supports raw JSON output.",
       "metadata": {
         "tags": [
-          "observability",
-          "diagnostics_forge",
           "cli",
-          "todo-completion"
+          "todo-completion",
+          "observability",
+          "diagnostics_forge"
         ]
       },
       "links": []
@@ -1477,10 +1477,10 @@
       "content": "Diagnostics Forge now exposes Prometheus metrics text and an optional HTTP /metrics endpoint via diagnostics CLI.",
       "metadata": {
         "tags": [
+          "cli",
           "prometheus",
           "observability",
-          "diagnostics_forge",
-          "cli"
+          "diagnostics_forge"
         ]
       },
       "links": []
@@ -1490,10 +1490,10 @@
       "content": "eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence.",
       "metadata": {
         "tags": [
-          "runtime",
           "gis",
+          "eidos_mcp",
           "configuration",
-          "eidos_mcp"
+          "runtime"
         ]
       },
       "links": []
@@ -1503,10 +1503,10 @@
       "content": "memory_forge now supports CLI semantic compression command with dry-run and clustering controls for old memory consolidation.",
       "metadata": {
         "tags": [
-          "tiered_memory",
-          "memory_forge",
           "cli",
-          "compression"
+          "compression",
+          "tiered_memory",
+          "memory_forge"
         ]
       },
       "links": []
@@ -1516,9 +1516,9 @@
       "content": "knowledge_forge now supports RDF serialization/deserialization via rdflib with non-lossy node IDs, concepts, tags, and links persisted across roundtrip.",
       "metadata": {
         "tags": [
-          "rdflib",
           "knowledge_forge",
           "interoperability",
+          "rdflib",
           "rdf"
         ]
       },
@@ -1529,11 +1529,11 @@
       "content": "eidos_mcp exposes RAC-AP construct validation via consciousness_construct_validate, consciousness_construct_latest, and eidos://consciousness/construct-latest.",
       "metadata": {
         "tags": [
-          "rac-ap",
           "consciousness",
           "eidos_mcp",
-          "tooling",
-          "validation"
+          "validation",
+          "rac-ap",
+          "tooling"
         ]
       },
       "links": []
@@ -1543,10 +1543,10 @@
       "content": "RAC-AP validator supports explicit security_required mode, enabling hard gate failure when security boundary evidence is absent or weak.",
       "metadata": {
         "tags": [
-          "consciousness",
           "security-gates",
+          "agent_forge",
           "validation",
-          "agent_forge"
+          "consciousness"
         ]
       },
       "links": []
@@ -1556,11 +1556,11 @@
       "content": "Consciousness construct validation now includes protocol threshold drift analysis over latest validation reports with configurable delta threshold.",
       "metadata": {
         "tags": [
-          "consciousness",
           "protocol",
+          "consciousness",
+          "drift",
           "validation",
-          "agent_forge",
-          "drift"
+          "agent_forge"
         ]
       },
       "links": []
@@ -1570,10 +1570,10 @@
       "content": "knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`.",
       "metadata": {
         "tags": [
-          "graph-visualization",
-          "knowledge_forge",
           "cli",
-          "pyvis"
+          "pyvis",
+          "graph-visualization",
+          "knowledge_forge"
         ]
       },
       "links": []
@@ -1583,10 +1583,10 @@
       "content": "ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met.",
       "metadata": {
         "tags": [
-          "architecture-decision",
           "governance",
           "eidos_mcp",
-          "chatmock"
+          "chatmock",
+          "architecture-decision"
         ]
       },
       "links": []
@@ -1596,11 +1596,11 @@
       "content": "Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter.",
       "metadata": {
         "tags": [
-          "cli",
-          "benchmark",
-          "consciousness",
           "adapter",
-          "agent_forge"
+          "consciousness",
+          "agent_forge",
+          "cli",
+          "benchmark"
         ]
       },
       "links": []
@@ -1610,11 +1610,11 @@
       "content": "Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`.",
       "metadata": {
         "tags": [
-          "cli",
-          "consciousness",
           "dashboard",
+          "consciousness",
           "validation",
-          "agent_forge"
+          "agent_forge",
+          "cli"
         ]
       },
       "links": []
@@ -1624,11 +1624,11 @@
       "content": "`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests.",
       "metadata": {
         "tags": [
-          "cli",
-          "consciousness",
           "rebase",
-          "bugfix",
-          "agent_forge"
+          "consciousness",
+          "agent_forge",
+          "cli",
+          "bugfix"
         ]
       },
       "links": []
@@ -1638,11 +1638,11 @@
       "content": "Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command.",
       "metadata": {
         "tags": [
-          "ci",
-          "todo",
           "code_forge",
+          "coverage",
+          "todo",
           "documentation",
-          "coverage"
+          "ci"
         ]
       },
       "links": []
@@ -1652,11 +1652,11 @@
       "content": "Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks.",
       "metadata": {
         "tags": [
-          "roundtrip",
-          "security",
-          "tamper-detection",
           "code_forge",
-          "signature"
+          "signature",
+          "tamper-detection",
+          "roundtrip",
+          "security"
         ]
       },
       "links": []
@@ -1666,11 +1666,11 @@
       "content": "Code Forge eval OS exports traces to OTLP backends via configurable endpoint/service/headers and records exporter status in run artifacts and summary stats.",
       "metadata": {
         "tags": [
-          "traces",
-          "otlp",
-          "observability",
           "code_forge",
-          "eval"
+          "traces",
+          "eval",
+          "otlp",
+          "observability"
         ]
       },
       "links": []
@@ -1680,11 +1680,11 @@
       "content": "Code Forge roundtrip parity hashing now supports parallel file hashing for larger trees, controlled by `EIDOS_CODE_FORGE_HASH_WORKERS`, with determinism validated against single-thread mode.",
       "metadata": {
         "tags": [
-          "roundtrip",
-          "hashing",
           "code_forge",
-          "parallelism",
-          "performance"
+          "hashing",
+          "roundtrip",
+          "performance",
+          "parallelism"
         ]
       },
       "links": []
@@ -1694,10 +1694,10 @@
       "content": "Crawl Forge extraction now uses BeautifulSoup parsing for title/meta description/link extraction with HTTP-only deduped links; regex extraction path removed.",
       "metadata": {
         "tags": [
-          "todo-complete",
           "quality",
-          "crawl_forge",
-          "html-parsing"
+          "todo-complete",
+          "html-parsing",
+          "crawl_forge"
         ]
       },
       "links": []
@@ -1707,9 +1707,9 @@
       "content": "Code Forge digest and triage-report CLI now accept --profile-trace, enabling runtime hot-path aware triage classification and reporting.",
       "metadata": {
         "tags": [
-          "triage",
           "code_forge",
           "profiling",
+          "triage",
           "cli"
         ]
       },
@@ -1720,11 +1720,11 @@
       "content": "Crawl Forge now includes TTL-based robots and HTTP page caching plus cache_stats telemetry in status output.",
       "metadata": {
         "tags": [
-          "termux",
           "reliability",
+          "cache",
+          "termux",
           "robots",
-          "crawl_forge",
-          "cache"
+          "crawl_forge"
         ]
       },
       "links": []
@@ -1734,11 +1734,11 @@
       "content": "Code Forge now exposes a parser adapter extension point for non-Python analysis and includes a built-in optional TreeSitterAdapter auto-discovery path.",
       "metadata": {
         "tags": [
-          "extensibility",
           "code_forge",
-          "tree-sitter",
+          "extensibility",
           "parser",
-          "architecture"
+          "architecture",
+          "tree-sitter"
         ]
       },
       "links": []
@@ -1748,10 +1748,10 @@
       "content": "Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks.",
       "metadata": {
         "tags": [
-          "schema",
           "code_forge",
-          "validation",
-          "artifacts"
+          "schema",
+          "artifacts",
+          "validation"
         ]
       },
       "links": []
@@ -1761,11 +1761,11 @@
       "content": "Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels.",
       "metadata": {
         "tags": [
-          "planning",
+          "code_forge",
           "triage",
           "artifacts",
-          "code_forge",
-          "archive"
+          "archive",
+          "planning"
         ]
       },
       "links": []
@@ -1775,11 +1775,11 @@
       "content": "Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning.",
       "metadata": {
         "tags": [
-          "planning",
+          "code_forge",
           "triage",
-          "cli",
           "dashboard",
-          "code_forge"
+          "cli",
+          "planning"
         ]
       },
       "links": []
@@ -1789,10 +1789,10 @@
       "content": "Code Forge now supports operational vector indexing through code_vectors with hash128_v1 embeddings and backend-selectable semantic search (text, vector, hybrid).",
       "metadata": {
         "tags": [
-          "sqlite",
           "code_forge",
+          "semantic_search",
           "vector_index",
-          "semantic_search"
+          "sqlite"
         ]
       },
       "links": []
@@ -1802,11 +1802,11 @@
       "content": "Knowledge Forge now includes optional OWL/RDFS reasoning via reason_owl + reason_rdf_graph and CLI command `reason-owl`, with tests in knowledge_forge/tests/test_owl_reasoning.py.",
       "metadata": {
         "tags": [
+          "owl",
+          "reasoning",
           "knowledge_forge",
           "cli",
-          "tests",
-          "owl",
-          "reasoning"
+          "tests"
         ]
       },
       "links": []
@@ -1816,10 +1816,10 @@
       "content": "`eidos_mcp.check_mcp` now emits structured diagnostics with component_checks, supports --smoke-test and --strict, and is covered by eidos_mcp/tests/test_check_mcp.py.",
       "metadata": {
         "tags": [
-          "check_mcp",
-          "testing",
+          "diagnostics",
           "eidos_mcp",
-          "diagnostics"
+          "check_mcp",
+          "testing"
         ]
       },
       "links": []
@@ -1829,10 +1829,10 @@
       "content": "eidos_mcp routers/tika now returns structured JSON fallback payloads when Tika is unavailable, allowing tika_cache_stats and related tool tests to pass without a local Tika runtime.",
       "metadata": {
         "tags": [
-          "ci",
-          "fallback",
           "tika",
-          "eidos_mcp"
+          "eidos_mcp",
+          "fallback",
+          "ci"
         ]
       },
       "links": []
@@ -1842,10 +1842,24 @@
       "content": "MCP compatibility contract now includes tool-level discovery endpoints `mcp_list_tools` and `mcp_list_resources` in the plugins router; tests validate transactional and safe-mode behavior for file/shell/venv tools.",
       "metadata": {
         "tags": [
-          "mcp",
-          "test-contract",
           "compatibility",
-          "tool-discovery"
+          "mcp",
+          "tool-discovery",
+          "test-contract"
+        ]
+      },
+      "links": []
+    },
+    "57e65b07-ec74-4ac9-805e-28153afdcbd0": {
+      "id": "57e65b07-ec74-4ac9-805e-28153afdcbd0",
+      "content": "Eidosian Atlas is now registered in the central port registry (service key eidos_atlas_dashboard, port 8936) and Doc Forge root endpoint redirects to Atlas for unified documentation observability.",
+      "metadata": {
+        "tags": [
+          "integration",
+          "dashboard",
+          "doc_forge",
+          "ports",
+          "atlas"
         ]
       },
       "links": []

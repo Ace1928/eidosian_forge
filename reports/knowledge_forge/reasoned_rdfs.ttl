@@ -1,0 +1,2133 @@
+@prefix eidos: <https://eidosian.dev/knowledge#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<urn:eidos:knowledge:node:00fce394-bdfd-4fbe-b613-2c0fc3f7dfa2> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness Linux Parity GitHub Actions run 22265310795 succeeded after setting EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word in parity smoke workflow." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"audit-gate\", \"consciousness\", \"parity\"]}" ;
+    eidos:tag "audit-gate",
+        "ci",
+        "consciousness",
+        "github-actions",
+        "parity" .
+
+<urn:eidos:knowledge:node:0164791c-9fb2-4436-bbfc-8beae16c102e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "knowledge_forge now supports RDF serialization/deserialization via rdflib with non-lossy node IDs, concepts, tags, and links persisted across roundtrip." ;
+    eidos:metadataJson "{\"tags\": [\"rdflib\", \"knowledge_forge\", \"interoperability\", \"rdf\"]}" ;
+    eidos:tag "interoperability",
+        "knowledge_forge",
+        "rdf",
+        "rdflib" .
+
+<urn:eidos:knowledge:node:06127ffa-a6d6-4cbd-92b9-cd49f71ff46e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Eidosian Forge now has a canonical local service registry at config/ports.json, with fallback behavior implemented in launch scripts and runtime modules when env vars are unset or empty." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"ports\", \"operations\", \"config\"]}" ;
+    eidos:tag "config",
+        "operations",
+        "ports",
+        "termux" .
+
+<urn:eidos:knowledge:node:0cea89d1-c1ea-4eec-870c-d15fa56c3945> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs." ;
+    eidos:metadataJson "{\"source\": \"phase23_repo_docs_hardening\", \"tags\": [\"directory-atlas\", \"benchmarks\", \"phase23\", \"consciousness\", \"documentation\"], \"updated_at\": \"2026-02-17T03:24:01Z\"}" ;
+    eidos:tag "benchmarks",
+        "consciousness",
+        "directory-atlas",
+        "documentation",
+        "phase23" .
+
+<urn:eidos:knowledge:node:0f4781b3-214f-4880-82d3-2d2cfa625f88> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`." ;
+    eidos:metadataJson "{\"tags\": [\"graph-visualization\", \"knowledge_forge\", \"cli\", \"pyvis\"]}" ;
+    eidos:tag "cli",
+        "graph-visualization",
+        "knowledge_forge",
+        "pyvis" .
+
+<urn:eidos:knowledge:node:0f90a7b4-3aee-4ed5-8798-5201c4ca68f0> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP code_forge_provenance now reports memory_link_count in addition to artifact_count, knowledge_link_count, and graphrag_link_count, enabling direct cross-forge lineage inspection from MCP clients." ;
+    eidos:metadataJson "{\"tags\": [\"memory_links\", \"code_forge\", \"eidos_mcp\", \"provenance\"]}" ;
+    eidos:tag "code_forge",
+        "eidos_mcp",
+        "memory_links",
+        "provenance" .
+
+<urn:eidos:knowledge:node:1f6934ab-f465-4739-8cb5-3418be877cd1> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Crawl Forge now includes TTL-based robots and HTTP page caching plus cache_stats telemetry in status output." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"reliability\", \"robots\", \"crawl_forge\", \"cache\"]}" ;
+    eidos:tag "cache",
+        "crawl_forge",
+        "reliability",
+        "robots",
+        "termux" .
+
+<urn:eidos:knowledge:node:1f6e7bc5-698d-41e8-9270-9338e0b88f53> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"todo\", \"code_forge\", \"documentation\", \"coverage\"]}" ;
+    eidos:tag "ci",
+        "code_forge",
+        "coverage",
+        "documentation",
+        "todo" .
+
+<urn:eidos:knowledge:node:207cd2e2-949a-47cd-8138-2079ab86cd7d> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow." ;
+    eidos:metadataJson "{\"source\": \"phase20_audit_observability_gate\", \"tags\": [\"ci-gate\", \"consciousness\", \"phase20\", \"linux-audit\", \"observability\", \"trend\"], \"updated_at\": \"2026-02-17T02:10:00Z\"}" ;
+    eidos:tag "ci-gate",
+        "consciousness",
+        "linux-audit",
+        "observability",
+        "phase20",
+        "trend" .
+
+<urn:eidos:knowledge:node:2340dcdc-59ac-491f-9902-e8bb4496faaa> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "CI hardening pattern: prefer robust cross-platform assertions in compat tests and strict type guards at public parser boundaries to avoid environment-dependent regressions." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"defensive-programming\", \"testing\", \"cross-platform\"]}" ;
+    eidos:tag "ci",
+        "cross-platform",
+        "defensive-programming",
+        "testing" .
+
+<urn:eidos:knowledge:node:2804c24a-f446-4e75-a0e3-bc116378a061> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Operational testing contract for eidosian_forge: invoke tests via eidosian_venv interpreter (`python -m pytest`) to avoid plugin/path drift from system pytest in Termux." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"testing\", \"venv\", \"reliability\"]}" ;
+    eidos:tag "reliability",
+        "termux",
+        "testing",
+        "venv" .
+
+<urn:eidos:knowledge:node:28f22ed7-8c3b-41f1-b085-2f3436f4cfef> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Diagnostics Forge CLI now supports a dashboard subcommand that renders metrics JSON summaries in a sortable terminal table and supports raw JSON output." ;
+    eidos:metadataJson "{\"tags\": [\"observability\", \"diagnostics_forge\", \"cli\", \"todo-completion\"]}" ;
+    eidos:tag "cli",
+        "diagnostics_forge",
+        "observability",
+        "todo-completion" .
+
+<urn:eidos:knowledge:node:2ae8ec9b-bfc8-4675-bd4e-cc4f13843a1f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Directory atlas generation in tracked mode must filter README links against tracked file set, otherwise local runtime files cause CI drift false positives." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"atlas\", \"determinism\", \"docs\", \"git-tracked\"]}" ;
+    eidos:tag "atlas",
+        "ci",
+        "determinism",
+        "docs",
+        "git-tracked" .
+
+<urn:eidos:knowledge:node:2c0101c6-e1d1-4adc-83fd-ce4466ac6d4e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected." ;
+    eidos:metadataJson "{\"tags\": [\"robustness\", \"evaluation\", \"quality\", \"graphrag\"]}" ;
+    eidos:tag "evaluation",
+        "graphrag",
+        "quality",
+        "robustness" .
+
+<urn:eidos:knowledge:node:2c2d6f79-f20b-43ec-93f1-4ea1dc67f54a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now exposes a parser adapter extension point for non-Python analysis and includes a built-in optional TreeSitterAdapter auto-discovery path." ;
+    eidos:metadataJson "{\"tags\": [\"extensibility\", \"code_forge\", \"tree-sitter\", \"parser\", \"architecture\"]}" ;
+    eidos:tag "architecture",
+        "code_forge",
+        "extensibility",
+        "parser",
+        "tree-sitter" .
+
+<urn:eidos:knowledge:node:3029ab9a-4a26-4596-bb1d-e62bc9398982> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4)." ;
+    eidos:metadataJson "{\"source\": \"phase17_iteration2_no_fix_mitigation\", \"tags\": [\"phase17\", \"no-fix\", \"security\", \"mitigation\", \"advisory\"], \"updated_at\": \"2026-02-16T23:10:55Z\"}" ;
+    eidos:tag "advisory",
+        "mitigation",
+        "no-fix",
+        "phase17",
+        "security" .
+
+<urn:eidos:knowledge:node:34a59dd7-54e6-4e29-a5ec-e062d59274ee> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now emits provenance_registry.json for digester and roundtrip pipelines, including unit-level joins (knowledge/memory/GraphRAG) and optional benchmark/drift summaries; eidos_mcp code_forge_provenance supports unit-level filtering and benchmark inclusion." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"provenance\", \"mcp\", \"code_forge\", \"graphrag\"]}" ;
+    eidos:tag "code_forge",
+        "graphrag",
+        "knowledge_forge",
+        "mcp",
+        "provenance" .
+
+<urn:eidos:knowledge:node:34cd2c39-0300-4f31-b20e-24fcc74af243> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence." ;
+    eidos:metadataJson "{\"tags\": [\"autotune\", \"consciousness\", \"optimization\"]}" ;
+    eidos:tag "autotune",
+        "consciousness",
+        "optimization" .
+
+<urn:eidos:knowledge:node:34ec451c-581c-4210-b11c-cb1db6aefc64> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "RAC-AP validator supports explicit security_required mode, enabling hard gate failure when security boundary evidence is absent or weak." ;
+    eidos:metadataJson "{\"tags\": [\"consciousness\", \"security-gates\", \"validation\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "consciousness",
+        "security-gates",
+        "validation" .
+
+<urn:eidos:knowledge:node:3e06a63f-3aed-4380-bb43-a90e4d1baada> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Repository docs and ignore policy were refreshed during figlet compatibility cycle: deterministic directory atlas regenerated and local CI/test artifact paths added to .gitignore (.coverage, .tmp_test, reports/ci/*.log, reports/local_test_audit/)." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"figlet_forge\", \"maintenance\", \"gitignore\", \"docs\"]}" ;
+    eidos:tag "ci",
+        "docs",
+        "figlet_forge",
+        "gitignore",
+        "maintenance" .
+
+<urn:eidos:knowledge:node:40281b53-ab83-428b-a2f2-bb7cb52b114c> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk." ;
+    eidos:metadataJson "{\"source\": \"phase19_linux_audit_matrix\", \"tags\": [\"ci\", \"termux\", \"linux-parity\", \"consciousness\", \"phase19\", \"audit-matrix\"], \"updated_at\": \"2026-02-17T01:44:44Z\"}" ;
+    eidos:tag "audit-matrix",
+        "ci",
+        "consciousness",
+        "linux-parity",
+        "phase19",
+        "termux" .
+
+<urn:eidos:knowledge:node:41815211-75ea-4242-9db3-cce8687ff33f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears." ;
+    eidos:metadataJson "{\"tags\": [\"workflow\", \"issues\", \"security\", \"dependabot\"]}" ;
+    eidos:tag "dependabot",
+        "issues",
+        "security",
+        "workflow" .
+
+<urn:eidos:knowledge:node:43bb575a-f5cd-4b72-bd46-5898c7c7533c> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "eidos_mcp exposes RAC-AP construct validation via consciousness_construct_validate, consciousness_construct_latest, and eidos://consciousness/construct-latest." ;
+    eidos:metadataJson "{\"tags\": [\"rac-ap\", \"consciousness\", \"eidos_mcp\", \"tooling\", \"validation\"]}" ;
+    eidos:tag "consciousness",
+        "eidos_mcp",
+        "rac-ap",
+        "tooling",
+        "validation" .
+
+<urn:eidos:knowledge:node:44eb1c0f-bdc5-4622-900f-b265cc8817ca> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks." ;
+    eidos:metadataJson "{\"tags\": [\"roundtrip\", \"security\", \"tamper-detection\", \"code_forge\", \"signature\"]}" ;
+    eidos:tag "code_forge",
+        "roundtrip",
+        "security",
+        "signature",
+        "tamper-detection" .
+
+<urn:eidos:knowledge:node:454d6328-5e95-49f8-9560-6ad0019783f6> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Living knowledge pipeline scaffold added at scripts/living_knowledge_pipeline.py with strict run artifacts (manifest, records, dedup, drift, code analysis) and optional GraphRAG indexing/query execution." ;
+    eidos:metadataJson "{\"tags\": [\"living-knowledge\", \"graphrag\", \"code-forge\", \"pipeline\"]}" ;
+    eidos:tag "code-forge",
+        "graphrag",
+        "living-knowledge",
+        "pipeline" .
+
+<urn:eidos:knowledge:node:48749281-de23-4868-9062-ea6cae3f0872> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"termux\", \"stability\", \"linux_audit\", \"mcp\"]}" ;
+    eidos:tag "ci",
+        "linux_audit",
+        "mcp",
+        "stability",
+        "termux" .
+
+<urn:eidos:knowledge:node:4978c492-3065-4119-8b1c-61a2671b8494> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Security remediation applied: requirements/eidos_venv_reqs.txt now pins pypdf==6.7.1 per Dependabot autopatch for open moderate alerts." ;
+    eidos:metadataJson "{\"tags\": [\"dependabot\", \"security\", \"requirements\", \"remediation\", \"pypdf\"]}" ;
+    eidos:tag "dependabot",
+        "pypdf",
+        "remediation",
+        "requirements",
+        "security" .
+
+<urn:eidos:knowledge:node:4af8e708-1457-477c-a7f3-c40317e3d270> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Current upstream vulnerability banner reports 10 Dependabot alerts (3 critical, 6 moderate, 1 low) after latest push; remediation should continue beyond pypdf pin update." ;
+    eidos:metadataJson "{\"tags\": [\"dependabot\", \"backlog\", \"security\", \"triage\"]}" ;
+    eidos:tag "backlog",
+        "dependabot",
+        "security",
+        "triage" .
+
+<urn:eidos:knowledge:node:4bc7ac71-7083-4d57-a704-0fe7055bd5d4> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge eval OS exports traces to OTLP backends via configurable endpoint/service/headers and records exporter status in run artifacts and summary stats." ;
+    eidos:metadataJson "{\"tags\": [\"traces\", \"otlp\", \"observability\", \"code_forge\", \"eval\"]}" ;
+    eidos:tag "code_forge",
+        "eval",
+        "observability",
+        "otlp",
+        "traces" .
+
+<urn:eidos:knowledge:node:4cb3141e-3c09-4279-a9a5-3f9c142c56e4> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit ea59a0f5bd fixes Eidosian Universal CI failures by adding lib/eidosian_core/ports.py, adding lib/tests/test_ports.py, and expanding CI test dependencies to include numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"regression-fix\", \"ports\", \"dependencies\"]}" ;
+    eidos:tag "ci",
+        "dependencies",
+        "github-actions",
+        "ports",
+        "regression-fix" .
+
+<urn:eidos:knowledge:node:4d1188fe-846c-4938-bd67-089d67b64037> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Universal CI format-check was failing due pre-existing parse/format debt across unrelated directories; remediation set formatting checks non-blocking while preserving visibility through warnings and summaries." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"formatting\", \"governance\", \"monorepo\"]}" ;
+    eidos:tag "ci",
+        "formatting",
+        "governance",
+        "monorepo" .
+
+<urn:eidos:knowledge:node:54b5f86e-bf33-4479-878d-0c6040564bbc> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP knowledge router now resolves GraphRAG root using EIDOS_GRAPHRAG_ROOT override, defaulting to graphrag_workspace and falling back to graphrag. GraphRAG integration commands now use python -m graphrag <subcommand> with legacy fallback support." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"integration\", \"mcp\", \"graphrag\", \"compatibility\"]}" ;
+    eidos:tag "compatibility",
+        "graphrag",
+        "integration",
+        "knowledge_forge",
+        "mcp" .
+
+<urn:eidos:knowledge:node:59ede79a-5ee1-46a5-a0fa-6ac0060811e5> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs." ;
+    eidos:metadataJson "{\"tags\": [\"workflow\", \"security\", \"dependabot\"]}" ;
+    eidos:tag "dependabot",
+        "security",
+        "workflow" .
+
+<urn:eidos:knowledge:node:5c084c80-f363-428a-84e7-10bc05ae4c2a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Autotune module executes propose-trial-commit/rollback loop with guardrail metrics." ;
+    eidos:metadataJson "{\"tags\": [\"autotune\", \"termux\", \"mcp\", \"consciousness\"]}" ;
+    eidos:tag "autotune",
+        "consciousness",
+        "mcp",
+        "termux" .
+
+<urn:eidos:knowledge:node:5da84aa1-6c27-4823-8808-255a3e8c3a58> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge eval harness now supports deterministic replay across separate output directories via configurable replay_store_path (CLI: --replay-store), with run summary including replay_store_path metadata." ;
+    eidos:metadataJson "{\"tags\": [\"schema\", \"eval_os\", \"observability\", \"code_forge\", \"replay\"]}" ;
+    eidos:tag "code_forge",
+        "eval_os",
+        "observability",
+        "replay",
+        "schema" .
+
+<urn:eidos:knowledge:node:6408f454-d2d0-4925-bbe1-86faf2a6379a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Security dependency workflow failure root cause: mis-indented heredoc Python blocks in .github/workflows/security-audit.yml caused shell syntax error. Fixed by YAML-safe indentation that preserves shell heredoc termination semantics." ;
+    eidos:metadataJson "{\"tags\": [\"workflow\", \"github-actions\", \"bugfix\", \"security-audit\"]}" ;
+    eidos:tag "bugfix",
+        "github-actions",
+        "security-audit",
+        "workflow" .
+
+<urn:eidos:knowledge:node:6e4fac6f-950a-41de-b9df-e7b14f99d6b6> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners." ;
+    eidos:metadataJson "{\"tags\": [\"pytest\", \"ci\", \"workflow\", \"atlas\"]}" ;
+    eidos:tag "atlas",
+        "ci",
+        "pytest",
+        "workflow" .
+
+<urn:eidos:knowledge:node:6fb13215-06d7-4399-9797-274ce01ac435> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal." ;
+    eidos:metadataJson "{\"tags\": [\"refactor\", \"code-intelligence\"]}" ;
+    eidos:tag "code-intelligence",
+        "refactor" .
+
+<urn:eidos:knowledge:node:7040c0c1-071c-45d8-9062-934add61992a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns." ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"hardening\", \"operations\", \"testing\"]}" ;
+    eidos:tag "hardening",
+        "mcp",
+        "operations",
+        "testing" .
+
+<urn:eidos:knowledge:node:711a3dd5-0a4c-44a6-8c89-0abcc9ccf391> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs." ;
+    eidos:metadataJson "{\"tags\": [\"structural_clone\", \"artifact_schema\", \"code_forge\", \"triage_audit\", \"validation\"]}" ;
+    eidos:tag "artifact_schema",
+        "code_forge",
+        "structural_clone",
+        "triage_audit",
+        "validation" .
+
+<urn:eidos:knowledge:node:750ebc78-8e2e-4466-a8a6-2f000ea35dc6> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction." ;
+    eidos:metadataJson "{\"source\": \"phase21_event_fabric_trial_capture\", \"tags\": [\"consciousness\", \"phase21\", \"causal-trace\", \"trial-capture\", \"event-fabric\"], \"updated_at\": \"2026-02-17T02:19:15Z\"}" ;
+    eidos:tag "causal-trace",
+        "consciousness",
+        "event-fabric",
+        "phase21",
+        "trial-capture" .
+
+<urn:eidos:knowledge:node:75bb5880-a002-4470-92fb-5f55d453316f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected." ;
+    eidos:metadataJson "{\"tags\": [\"quality\", \"assessment\", \"benchmark\", \"graphrag\", \"schema\"]}" ;
+    eidos:tag "assessment",
+        "benchmark",
+        "graphrag",
+        "quality",
+        "schema" .
+
+<urn:eidos:knowledge:node:76077d8d-1e76-4170-857c-b5533c85d06e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening." ;
+    eidos:metadataJson "{\"source\": \"phase18_runtime_hardening\", \"tags\": [\"hardening\", \"consciousness\", \"phase18\", \"payload-safety\", \"watchdog\"], \"updated_at\": \"2026-02-16T23:43:19Z\"}" ;
+    eidos:tag "consciousness",
+        "hardening",
+        "payload-safety",
+        "phase18",
+        "watchdog" .
+
+<urn:eidos:knowledge:node:792397c3-1ee8-4a99-bcd3-6375e20c109f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs." ;
+    eidos:metadataJson "{\"tags\": [\"workflow\", \"actions\", \"lock\", \"security\"]}" ;
+    eidos:tag "actions",
+        "lock",
+        "security",
+        "workflow" .
+
+<urn:eidos:knowledge:node:7abda254-f0eb-48b5-b21d-d20b90036563> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"stability\", \"pytest\", \"glyph_forge\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "ci",
+        "glyph_forge",
+        "pytest",
+        "stability" .
+
+<urn:eidos:knowledge:node:7da7c7cb-d182-4446-b1ca-9765a7719f79> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness construct validation now includes protocol threshold drift analysis over latest validation reports with configurable delta threshold." ;
+    eidos:metadataJson "{\"tags\": [\"consciousness\", \"protocol\", \"validation\", \"agent_forge\", \"drift\"]}" ;
+    eidos:tag "agent_forge",
+        "consciousness",
+        "drift",
+        "protocol",
+        "validation" .
+
+<urn:eidos:knowledge:node:7e799ffc-ef86-4e2c-a629-60522a3a16ef> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge digest and triage-report CLI now accept --profile-trace, enabling runtime hot-path aware triage classification and reporting." ;
+    eidos:metadataJson "{\"tags\": [\"triage\", \"code_forge\", \"profiling\", \"cli\"]}" ;
+    eidos:tag "cli",
+        "code_forge",
+        "profiling",
+        "triage" .
+
+<urn:eidos:knowledge:node:7f1ba695-cb3c-495d-a296-fe17e54e74cc> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now includes eval OS modules (contracts/tracing/replay/runner/staleness/scoring) with CLI entrypoints and schema versioning for reproducible ablation runs." ;
+    eidos:metadataJson "{\"tags\": [\"cli\", \"observability\", \"evaluation\", \"code_forge\", \"schema\"]}" ;
+    eidos:tag "cli",
+        "code_forge",
+        "evaluation",
+        "observability",
+        "schema" .
+
+<urn:eidos:knowledge:node:8069094c-4798-4f9f-9361-5bfe620e5508> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A)." ;
+    eidos:metadataJson "{\"tags\": [\"model-selection\", \"benchmark\", \"graphrag\", \"quality-gate\"]}" ;
+    eidos:tag "benchmark",
+        "graphrag",
+        "model-selection",
+        "quality-gate" .
+
+<urn:eidos:knowledge:node:82292ab8-0f74-4b88-ac59-4e949259a765> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions." ;
+    eidos:metadataJson "{\"tags\": [\"schema\", \"gates\", \"benchmark\", \"consciousness\"]}" ;
+    eidos:tag "benchmark",
+        "consciousness",
+        "gates",
+        "schema" .
+
+<urn:eidos:knowledge:node:84d77384-4f75-4082-bf2f-0eba2dbba2fc> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "CI-style monorepo test execution in eidosian_forge requires forge-local script path resolution in subprocess-based tests; absolute paths derived from Path(__file__).resolve().parents[1] eliminate cwd-sensitive failures on GitHub Actions and Termux." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"testing\", \"termux\", \"path-resolution\"]}" ;
+    eidos:tag "ci",
+        "github-actions",
+        "path-resolution",
+        "termux",
+        "testing" .
+
+<urn:eidos:knowledge:node:8521f761-9e04-47d7-99a5-c3dd6a8000c3> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit 16aca8e692 hardens Code Forge with structural duplication indexing, confidence-based triage audit contracts, and strict output validation tooling." ;
+    eidos:metadataJson "{\"tags\": [\"hardening\", \"triage\", \"code_forge\", \"structural_duplicates\", \"commit\", \"validation\"]}" ;
+    eidos:tag "code_forge",
+        "commit",
+        "hardening",
+        "structural_duplicates",
+        "triage",
+        "validation" .
+
+<urn:eidos:knowledge:node:899adef5-cd25-46ed-a022-18b6e51cb7bd> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge digest integration exports now use active run scoping with fallback to latest effective source-root run, preserving meaningful Knowledge Forge and GraphRAG exports during idempotent no-op ingestion cycles." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"integration\", \"idempotency\", \"code_forge\", \"graphrag\", \"run_scoping\"]}" ;
+    eidos:tag "code_forge",
+        "graphrag",
+        "idempotency",
+        "integration",
+        "knowledge_forge",
+        "run_scoping" .
+
+<urn:eidos:knowledge:node:8c316c0b-9cc9-43d4-8a95-f93db9dce0bd> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "TypeForge now supports GIS-backed schema registry persistence through a backend contract; eidos_mcp initializes TypeCore with GIS backend when available." ;
+    eidos:metadataJson "{\"tags\": [\"gis_forge\", \"eidos_mcp\", \"type_forge\", \"schema-registry\", \"persistence\"]}" ;
+    eidos:tag "eidos_mcp",
+        "gis_forge",
+        "persistence",
+        "schema-registry",
+        "type_forge" .
+
+<urn:eidos:knowledge:node:8d4ab02f-53b6-4d71-a7fb-4b447b7abeb1> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge provenance schema now includes memory_links, enabling cross-forge lineage queries across artifact->memory->knowledge->GraphRAG surfaces with deterministic IDs." ;
+    eidos:metadataJson "{\"tags\": [\"provenance\", \"knowledge\", \"code_forge\", \"graphrag\", \"memory\"]}" ;
+    eidos:tag "code_forge",
+        "graphrag",
+        "knowledge",
+        "memory",
+        "provenance" .
+
+<urn:eidos:knowledge:node:8e0fb522-c0a4-4413-999b-b82f630f0ffd> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit cdbf0d08af resolves prior Eidosian Universal CI failing test groups by restoring eidos_mcp llm/refactor exports, pyfiglet renderText alias behavior, pyparticles numba compatibility imports, glyph_forge cv2-absent fallback rendering, and CI jinja2 dependency for Moltbook UI tests." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"stability\", \"eidosian_forge\", \"regression-fix\"]}" ;
+    eidos:tag "ci",
+        "eidosian_forge",
+        "regression-fix",
+        "stability" .
+
+<urn:eidos:knowledge:node:90941e5b-422a-48dd-a948-86bec8955b6f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"operations\", \"phase24\", \"documentation\", \"determinism\"]}" ;
+    eidos:tag "ci",
+        "determinism",
+        "documentation",
+        "operations",
+        "phase24" .
+
+<urn:eidos:knowledge:node:93db8a5b-9665-452c-8c08-63c9dcdf52b9> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "memory_forge now supports CLI semantic compression command with dry-run and clustering controls for old memory consolidation." ;
+    eidos:metadataJson "{\"tags\": [\"tiered_memory\", \"memory_forge\", \"cli\", \"compression\"]}" ;
+    eidos:tag "cli",
+        "compression",
+        "memory_forge",
+        "tiered_memory" .
+
+<urn:eidos:knowledge:node:94f4fb6f-496f-4b81-8080-8b3c720b09b3> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"benchmark\", \"graphrag\", \"quality-gate\"]}" ;
+    eidos:tag "benchmark",
+        "graphrag",
+        "quality-gate",
+        "termux" .
+
+<urn:eidos:knowledge:node:96e3a8ed-7eab-4a59-8efe-6308699d4e60> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py." ;
+    eidos:metadataJson "{\"tags\": [\"workflow\", \"remediation\", \"security\", \"dependabot\"]}" ;
+    eidos:tag "dependabot",
+        "remediation",
+        "security",
+        "workflow" .
+
+<urn:eidos:knowledge:node:99f2e785-dd18-4666-a9c2-f52624a3ecf7> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Diagnostics Forge now exposes Prometheus metrics text and an optional HTTP /metrics endpoint via diagnostics CLI." ;
+    eidos:metadataJson "{\"tags\": [\"prometheus\", \"observability\", \"diagnostics_forge\", \"cli\"]}" ;
+    eidos:tag "cli",
+        "diagnostics_forge",
+        "observability",
+        "prometheus" .
+
+<urn:eidos:knowledge:node:9a0c47fd-d0ea-4ca2-9c36-b2121ae44c05> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts." ;
+    eidos:metadataJson "{\"tags\": [\"rac_ap\", \"research\", \"consciousness\", \"validation\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "consciousness",
+        "rac_ap",
+        "research",
+        "validation" .
+
+<urn:eidos:knowledge:node:9a27e3d0-0b30-4249-a0d2-9e557b970184> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs." ;
+    eidos:metadataJson "{\"tags\": [\"canonicalization\", \"regression_gate\", \"migration_map\", \"benchmark\", \"code_forge\"]}" ;
+    eidos:tag "benchmark",
+        "canonicalization",
+        "code_forge",
+        "migration_map",
+        "regression_gate" .
+
+<urn:eidos:knowledge:node:9ba989ba-cd55-4300-9bab-8890fc1c8fa2> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"stability\", \"workflow\", \"pytest\", \"universal\", \"opencv\"]}" ;
+    eidos:tag "ci",
+        "opencv",
+        "pytest",
+        "stability",
+        "universal",
+        "workflow" .
+
+<urn:eidos:knowledge:node:9c73bbdf-d09f-4c43-bc50-152885496535> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"model-selection\", \"quality-gates\", \"graphrag\"]}" ;
+    eidos:tag "graphrag",
+        "model-selection",
+        "quality-gates",
+        "termux" .
+
+<urn:eidos:knowledge:node:9e993517-4f30-409d-b1a2-25a0ef8dad35> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence." ;
+    eidos:metadataJson "{\"tags\": [\"runtime\", \"gis\", \"configuration\", \"eidos_mcp\"]}" ;
+    eidos:tag "configuration",
+        "eidos_mcp",
+        "gis",
+        "runtime" .
+
+<urn:eidos:knowledge:node:9fee45e5-ff7f-4a4d-9ce5-d4a2cc14a1ce> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity." ;
+    eidos:metadataJson "{\"tags\": [\"roundtrip\", \"idempotent\", \"regeneration\", \"code_forge\", \"sms_forge\"]}" ;
+    eidos:tag "code_forge",
+        "idempotent",
+        "regeneration",
+        "roundtrip",
+        "sms_forge" .
+
+<urn:eidos:knowledge:node:a145bade-f093-46f6-9f75-aa2001d30b2e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge." ;
+    eidos:metadataJson "{\"source\": \"phase17_final_closure\", \"tags\": [\"dependabot\", \"phase17\", \"security\", \"automation\", \"closure\"], \"updated_at\": \"2026-02-16T23:27:34Z\"}" ;
+    eidos:tag "automation",
+        "closure",
+        "dependabot",
+        "phase17",
+        "security" .
+
+<urn:eidos:knowledge:node:a1a23b49-25e9-42ab-8d79-c69b2a2702f9> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels." ;
+    eidos:metadataJson "{\"tags\": [\"planning\", \"triage\", \"artifacts\", \"code_forge\", \"archive\"]}" ;
+    eidos:tag "archive",
+        "artifacts",
+        "code_forge",
+        "planning",
+        "triage" .
+
+<urn:eidos:knowledge:node:a4f9287c-cb1d-4861-8f6b-a1165046478e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"security\", \"workflow-lock\", \"gitleaks\"]}" ;
+    eidos:tag "ci",
+        "github-actions",
+        "gitleaks",
+        "security",
+        "workflow-lock" .
+
+<urn:eidos:knowledge:node:a7db1800-132e-4cce-8dba-7603498849a0> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks." ;
+    eidos:metadataJson "{\"tags\": [\"schema\", \"code_forge\", \"validation\", \"artifacts\"]}" ;
+    eidos:tag "artifacts",
+        "code_forge",
+        "schema",
+        "validation" .
+
+<urn:eidos:knowledge:node:a8065518-d17c-49d7-8079-b04d167c2779> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports." ;
+    eidos:metadataJson "{\"tags\": [\"rac-ap\", \"consciousness\", \"protocol\", \"validation\", \"agent_forge\", \"intervention\"]}" ;
+    eidos:tag "agent_forge",
+        "consciousness",
+        "intervention",
+        "protocol",
+        "rac-ap",
+        "validation" .
+
+<urn:eidos:knowledge:node:a8ab33be-0878-436e-856e-b4011466dcf8> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now has a drift intelligence stage with immutable history snapshots and a CLI command for run-over-run metric drift reporting." ;
+    eidos:metadataJson "{\"tags\": [\"code_forge\", \"artifact-validation\", \"digester\", \"drift\"]}" ;
+    eidos:tag "artifact-validation",
+        "code_forge",
+        "digester",
+        "drift" .
+
+<urn:eidos:knowledge:node:a9d5fc54-ce04-4836-ba41-0746c58b1b11> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config." ;
+    eidos:metadataJson "{\"tags\": [\"autotune\", \"termux\", \"mcp\", \"consciousness\"]}" ;
+    eidos:tag "autotune",
+        "consciousness",
+        "mcp",
+        "termux" .
+
+<urn:eidos:knowledge:node:ab5f4066-da38-4201-ab85-b5df3f45209c> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports." ;
+    eidos:metadataJson "{\"source\": \"phase17_autopatch_execution\", \"tags\": [\"dependabot\", \"phase17\", \"security\", \"termux\", \"automation\", \"pip\"], \"updated_at\": \"2026-02-16T22:54:34Z\"}" ;
+    eidos:tag "automation",
+        "dependabot",
+        "phase17",
+        "pip",
+        "security",
+        "termux" .
+
+<urn:eidos:knowledge:node:ad1de6f5-ed35-4499-b9d7-c1b9a8e6548f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end." ;
+    eidos:metadataJson "{\"tags\": [\"memory_forge\", \"termux\", \"chroma\", \"validation\", \"hnswlib\"]}" ;
+    eidos:tag "chroma",
+        "hnswlib",
+        "memory_forge",
+        "termux",
+        "validation" .
+
+<urn:eidos:knowledge:node:ade1434e-5b97-4272-8501-398b86c9e2a1> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit f911629d49 upgrades Code Forge with imports/calls/uses edge ingestion, dependency graph artifacts, baseline-aware benchmark gating, and canonical migration planning with compatibility shim staging." ;
+    eidos:metadataJson "{\"tags\": [\"canonicalization\", \"production\", \"benchmark\", \"dependency_graph\", \"commit\", \"code_forge\"]}" ;
+    eidos:tag "benchmark",
+        "canonicalization",
+        "code_forge",
+        "commit",
+        "dependency_graph",
+        "production" .
+
+<urn:eidos:knowledge:node:b0e6c2a8-cc94-41d4-8ef2-df475a2166aa> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation." ;
+    eidos:metadataJson "{\"source\": \"phase18_status_stress_completion\", \"tags\": [\"ci\", \"stress-benchmark\", \"consciousness\", \"phase18\", \"mcp\", \"payload-safety\", \"watchdog\"], \"updated_at\": \"2026-02-17T00:24:46Z\"}" ;
+    eidos:tag "ci",
+        "consciousness",
+        "mcp",
+        "payload-safety",
+        "phase18",
+        "stress-benchmark",
+        "watchdog" .
+
+<urn:eidos:knowledge:node:b195a416-7bec-4e6e-b306-f8ddbf73c50c> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Cross-forge interop hardening added GraphRAG CLI compatibility in knowledge_forge (primary python -m graphrag subcommand invocation with legacy fallback) and MCP router root resolution via EIDOS_GRAPHRAG_ROOT -> graphrag_workspace -> graphrag fallback." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"eidos_mcp\", \"graphrag\", \"compatibility\", \"interop\"]}" ;
+    eidos:tag "compatibility",
+        "eidos_mcp",
+        "graphrag",
+        "interop",
+        "knowledge_forge" .
+
+<urn:eidos:knowledge:node:b3fa722c-4274-4cb9-8dfa-df0388602254> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Attention and workspace competition now adapt online from gw.reaction_trace reward signals." ;
+    eidos:metadataJson "{\"tags\": [\"attention\", \"learning\", \"consciousness\", \"competition\"]}" ;
+    eidos:tag "attention",
+        "competition",
+        "consciousness",
+        "learning" .
+
+<urn:eidos:knowledge:node:b5d38c9a-795f-47cd-87e6-2c0320ecc66e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests." ;
+    eidos:metadataJson "{\"tags\": [\"cli\", \"consciousness\", \"rebase\", \"bugfix\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "bugfix",
+        "cli",
+        "consciousness",
+        "rebase" .
+
+<urn:eidos:knowledge:node:ba793301-b7c2-4940-8614-c4deebb3c4d6> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"benchmark\", \"consciousness\", \"index\"]}" ;
+    eidos:tag "benchmark",
+        "consciousness",
+        "index",
+        "termux" .
+
+<urn:eidos:knowledge:node:bcd675fa-e155-4dc2-bea4-35a0920e52e2> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Crawl Forge extraction now uses BeautifulSoup parsing for title/meta description/link extraction with HTTP-only deduped links; regex extraction path removed." ;
+    eidos:metadataJson "{\"tags\": [\"todo-complete\", \"quality\", \"crawl_forge\", \"html-parsing\"]}" ;
+    eidos:tag "crawl_forge",
+        "html-parsing",
+        "quality",
+        "todo-complete" .
+
+<urn:eidos:knowledge:node:c50325d0-db49-4112-8582-2b4318c49774> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes." ;
+    eidos:metadataJson "{\"tags\": [\"tasks\", \"bench\", \"validation\", \"consciousness\"]}" ;
+    eidos:tag "bench",
+        "consciousness",
+        "tasks",
+        "validation" .
+
+<urn:eidos:knowledge:node:c5f0d7f2-36b1-4dad-a359-4230533f2e18> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Eidosian Universal CI regression bundle fixed in commit 6346d73611 with deterministic guards for eidos_mcp compatibility exports, game_forge sparse interaction fallback, glyph_forge batch input typing, moltbook CLI module invocation context, and figlet compatibility assertion variance." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"stability\", \"qa\", \"eidosian_forge\"]}" ;
+    eidos:tag "ci",
+        "eidosian_forge",
+        "qa",
+        "stability" .
+
+<urn:eidos:knowledge:node:c6030957-3463-4734-ae4d-cc43c8e2c2e7> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning." ;
+    eidos:metadataJson "{\"tags\": [\"planning\", \"triage\", \"cli\", \"dashboard\", \"code_forge\"]}" ;
+    eidos:tag "cli",
+        "code_forge",
+        "dashboard",
+        "planning",
+        "triage" .
+
+<urn:eidos:knowledge:node:c8856a46-45f5-47d5-895e-4748d0e30662> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now supports operational vector indexing through code_vectors with hash128_v1 embeddings and backend-selectable semantic search (text, vector, hybrid)." ;
+    eidos:metadataJson "{\"tags\": [\"sqlite\", \"code_forge\", \"vector_index\", \"semantic_search\"]}" ;
+    eidos:tag "code_forge",
+        "semantic_search",
+        "sqlite",
+        "vector_index" .
+
+<urn:eidos:knowledge:node:cb117831-7fb4-4322-bedb-98635ce8edb4> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments." ;
+    eidos:metadataJson "{\"source\": \"phase22_trial_provenance_replay\", \"tags\": [\"provenance\", \"replay-manifest\", \"phase22\", \"consciousness\", \"bench\"], \"updated_at\": \"2026-02-17T02:33:24Z\"}" ;
+    eidos:tag "bench",
+        "consciousness",
+        "phase22",
+        "provenance",
+        "replay-manifest" .
+
+<urn:eidos:knowledge:node:cb7a6618-c25b-4f67-b0b2-9599af30dbed> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"termux\", \"atlas\", \"determinism\", \"docs\"]}" ;
+    eidos:tag "atlas",
+        "ci",
+        "determinism",
+        "docs",
+        "github-actions",
+        "termux" .
+
+<urn:eidos:knowledge:node:cc0bc34f-7801-4df5-a57e-f5e8ed95ec12> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models." ;
+    eidos:metadataJson "{\"tags\": [\"multimodal\", \"termux\", \"catalog\", \"models\", \"graphrag\"]}" ;
+    eidos:tag "catalog",
+        "graphrag",
+        "models",
+        "multimodal",
+        "termux" .
+
+<urn:eidos:knowledge:node:ccc9e00d-8f92-4f93-9fcb-94b3d9997383> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Cross-platform test reliability pattern: make dependency checks injectable/mocked in CLI tests (e.g., shutil.which for ffmpeg), and ensure process fakes implement context-manager + communicate semantics to avoid third-party import breakage." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"mocks\", \"testing\", \"reliability\", \"glyph_forge\"]}" ;
+    eidos:tag "ci",
+        "glyph_forge",
+        "mocks",
+        "reliability",
+        "testing" .
+
+<urn:eidos:knowledge:node:ce7abe60-10a4-400e-b90e-c527116b8b59> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`." ;
+    eidos:metadataJson "{\"tags\": [\"cli\", \"consciousness\", \"dashboard\", \"validation\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "cli",
+        "consciousness",
+        "dashboard",
+        "validation" .
+
+<urn:eidos:knowledge:node:cf84f854-4af6-4494-9f95-787167464a22> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge roundtrip parity hashing now supports parallel file hashing for larger trees, controlled by `EIDOS_CODE_FORGE_HASH_WORKERS`, with determinism validated against single-thread mode." ;
+    eidos:metadataJson "{\"tags\": [\"roundtrip\", \"hashing\", \"code_forge\", \"parallelism\", \"performance\"]}" ;
+    eidos:tag "code_forge",
+        "hashing",
+        "parallelism",
+        "performance",
+        "roundtrip" .
+
+<urn:eidos:knowledge:node:d1da8688-f43a-42d8-839c-df8ae090e575> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa)." ;
+    eidos:metadataJson "{\"tags\": [\"rac-ap\", \"git\", \"consciousness\", \"validation\", \"agent_forge\"]}" ;
+    eidos:tag "agent_forge",
+        "consciousness",
+        "git",
+        "rac-ap",
+        "validation" .
+
+<urn:eidos:knowledge:node:dba9002e-897a-4980-b19d-74bceaa6541f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "CI/Lint/Format workflows now scope Python checks to active forge directories and TypeScript Prettier checks to ts/tsx/js/jsx files, reducing monorepo timeout and LFS-json parse failures." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"format\", \"workflows\", \"lint\", \"reliability\"]}" ;
+    eidos:tag "ci",
+        "format",
+        "lint",
+        "reliability",
+        "workflows" .
+
+<urn:eidos:knowledge:node:dbeb32ab-2ea0-43a3-8e73-b073d7483f58> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit e3f3bd3293 hardened forge interoperability by adding GraphRAG timeout-guarded execution and MCP GraphRAG root precedence, with full cross-forge validation tests and benchmark pass." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"commit\", \"eidos_mcp\", \"graphrag\", \"interop\", \"validation\"]}" ;
+    eidos:tag "commit",
+        "eidos_mcp",
+        "graphrag",
+        "interop",
+        "knowledge_forge",
+        "validation" .
+
+<urn:eidos:knowledge:node:dc41bde2-2666-4eee-92f8-a02833d0ce54> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"operations\", \"validation\"]}" ;
+    eidos:tag "operations",
+        "termux",
+        "validation" .
+
+<urn:eidos:knowledge:node:dfe68229-a803-491c-af1b-e52b30ad3f0a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents." ;
+    eidos:metadataJson "{\"tags\": [\"knowledge_forge\", \"provenance\", \"mcp\", \"code_forge\", \"graphrag\"]}" ;
+    eidos:tag "code_forge",
+        "graphrag",
+        "knowledge_forge",
+        "mcp",
+        "provenance" .
+
+<urn:eidos:knowledge:node:e3859000-11f4-4c71-b86e-8ede0a5dbc23> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources." ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"red-team\", \"consciousness\", \"cli\"]}" ;
+    eidos:tag "cli",
+        "consciousness",
+        "mcp",
+        "red-team" .
+
+<urn:eidos:knowledge:node:e6ad00f1-43c0-4e2c-b98b-21d11afb2eea> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Eidosian Universal CI run 22256896857 failed only in glyph_forge due ffmpeg discovery in test_extract_playlist_stitches_audio; fixed by mocking extractors.shutil.which for ffmpeg in test code and pushed in commit 1cdb3d31a5." ;
+    eidos:metadataJson "{\"tags\": [\"ci\", \"github-actions\", \"ffmpeg\", \"testing\", \"glyph_forge\"]}" ;
+    eidos:tag "ci",
+        "ffmpeg",
+        "github-actions",
+        "glyph_forge",
+        "testing" .
+
+<urn:eidos:knowledge:node:e6d0fef3-9dd9-47be-ac40-7d0319f496e3> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit dedb968da9 introduces Code Forge Archive Digester v1 with deterministic intake, duplication, triage artifacts, and CLI orchestration integrated into living_knowledge_pipeline." ;
+    eidos:metadataJson "{\"tags\": [\"integration\", \"code_forge\", \"commit\", \"pipeline\", \"archive_digester\"]}" ;
+    eidos:tag "archive_digester",
+        "code_forge",
+        "commit",
+        "integration",
+        "pipeline" .
+
+<urn:eidos:knowledge:node:e74103f7-9d97-4b79-adc0-277e3b64929d> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP." ;
+    eidos:metadataJson "{\"tags\": [\"cli\", \"benchmark\", \"consciousness\", \"mcp\", \"red-team\"]}" ;
+    eidos:tag "benchmark",
+        "cli",
+        "consciousness",
+        "mcp",
+        "red-team" .
+
+<urn:eidos:knowledge:node:e8c8f867-3cec-4085-bb16-567b864f173d> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled." ;
+    eidos:metadataJson "{\"tags\": [\"autotune\", \"termux\", \"mcp\", \"consciousness\"]}" ;
+    eidos:tag "autotune",
+        "consciousness",
+        "mcp",
+        "termux" .
+
+<urn:eidos:knowledge:node:e9f0b6d2-aca6-405c-9ab9-0c5dbac51418> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest." ;
+    eidos:metadataJson "{\"tags\": [\"triage\", \"knowledge_graph\", \"code_forge\", \"graphrag\", \"archive_digester\"]}" ;
+    eidos:tag "archive_digester",
+        "code_forge",
+        "graphrag",
+        "knowledge_graph",
+        "triage" .
+
+<urn:eidos:knowledge:node:ed872013-b60e-48fa-a094-42e471d46c6f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met." ;
+    eidos:metadataJson "{\"tags\": [\"architecture-decision\", \"governance\", \"eidos_mcp\", \"chatmock\"]}" ;
+    eidos:tag "architecture-decision",
+        "chatmock",
+        "eidos_mcp",
+        "governance" .
+
+<urn:eidos:knowledge:node:ee5520b6-b8d4-4f73-8a9a-6ec96be3292d> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance." ;
+    eidos:metadataJson "{\"source\": \"phase18_status_side_effect_fix\", \"tags\": [\"hardening\", \"side-effect-free\", \"status\", \"consciousness\", \"phase18\"], \"updated_at\": \"2026-02-17T00:24:46Z\"}" ;
+    eidos:tag "consciousness",
+        "hardening",
+        "phase18",
+        "side-effect-free",
+        "status" .
+
+<urn:eidos:knowledge:node:f0dcdfbf-9ba4-4b31-9580-20a0b954c152> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates." ;
+    eidos:metadataJson "{\"tags\": [\"autotune\", \"termux\", \"consciousness\", \"red-team\"]}" ;
+    eidos:tag "autotune",
+        "consciousness",
+        "red-team",
+        "termux" .
+
+<urn:eidos:knowledge:node:f12a8026-b90d-4c1d-b487-2e6a35188bad> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Commit a5873193ae introduces curated <=3B model catalog plus automated downloader and multi-domain benchmark suite with optional multimodal OCR task and judge aggregation." ;
+    eidos:metadataJson "{\"tags\": [\"benchmarking\", \"eidosian_forge\", \"automation\", \"commit\", \"models\"]}" ;
+    eidos:tag "automation",
+        "benchmarking",
+        "commit",
+        "eidosian_forge",
+        "models" .
+
+<urn:eidos:knowledge:node:f4411614-61e6-45ba-a314-c32e7d6a616e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter." ;
+    eidos:metadataJson "{\"tags\": [\"cli\", \"benchmark\", \"consciousness\", \"adapter\", \"agent_forge\"]}" ;
+    eidos:tag "adapter",
+        "agent_forge",
+        "benchmark",
+        "cli",
+        "consciousness" .
+
+<urn:eidos:knowledge:node:fcccca30-873c-433a-b1e1-95ce0005d5e9> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow." ;
+    eidos:metadataJson "{\"tags\": [\"termux\", \"stability\", \"eidos_mcp\", \"transport\"]}" ;
+    eidos:tag "eidos_mcp",
+        "stability",
+        "termux",
+        "transport" .
+
+<urn:eidos:knowledge:node:fd48a706-cd76-4a34-81b5-2b438717c73b> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules." ;
+    eidos:metadataJson "{\"tags\": [\"configuration\", \"termux\", \"infrastructure\", \"ports\", \"services\"]}" ;
+    eidos:tag "configuration",
+        "infrastructure",
+        "ports",
+        "services",
+        "termux" .
+
+rdf:type a rdf:Property ;
+    rdfs:subPropertyOf rdf:type .
+
+rdfs:subPropertyOf a rdf:Property ;
+    rdfs:subPropertyOf rdfs:subPropertyOf .
+
+eidos:content a rdf:Property ;
+    rdfs:subPropertyOf eidos:content .
+
+eidos:linkedTo a rdf:Property ;
+    rdfs:subPropertyOf eidos:linkedTo .
+
+eidos:metadataJson a rdf:Property ;
+    rdfs:subPropertyOf eidos:metadataJson .
+
+eidos:tag a rdf:Property ;
+    rdfs:subPropertyOf eidos:tag .
+
+<urn:eidos:knowledge:node:018416b4-3a6f-48a5-8947-8276bc692653> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:b786c236-5444-4d09-8db8-3be9f6fb43fa> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:04ee5920-e96b-44fa-8021-9e920e098aa3> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:c858723b-99c1-43ec-af65-622897c32658> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:0aba4907-8d2c-4af8-b1af-1d1ece25ae6f> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:0ca1ff67-30de-40dd-b183-ea6ffab2d787> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:890e39ba-be5d-4e3e-8827-37e67d06760a> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:3540c15c-e2db-482c-897f-5afd5dff7bdd> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:98d12879-712b-4cce-8e31-59758888fbf2> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:3fdbb2cb-af88-4b28-924f-5751870c080c> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:fc89cb87-66de-420e-b89b-d251db91ae73> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:5ceb54de-de71-41d6-bc69-1be2339b5711> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:d1278c29-9cc7-4a70-a96f-bd1a65bf747e> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:7d5e762c-13f5-426b-a9eb-1c78b26a1147> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:e60805ea-e88b-440a-815b-3bd37c34d7d1> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:857a29cb-6423-49c1-8592-e72aa88f6d12> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:bd8583fb-002a-44bf-8c64-a0986dd5205e> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:890e39ba-be5d-4e3e-8827-37e67d06760a> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:0ca1ff67-30de-40dd-b183-ea6ffab2d787> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:985d4ac7-fd58-4f0e-bca6-0a02ebdf4c97> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:0aba4907-8d2c-4af8-b1af-1d1ece25ae6f> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:98d12879-712b-4cce-8e31-59758888fbf2> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:3540c15c-e2db-482c-897f-5afd5dff7bdd> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:b14edcc3-2cad-4804-90f7-3bc1cb1268d1> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:c048672f-221c-45ef-8e4c-ac80e8af24af> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:b786c236-5444-4d09-8db8-3be9f6fb43fa> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:018416b4-3a6f-48a5-8947-8276bc692653> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:bd8583fb-002a-44bf-8c64-a0986dd5205e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:857a29cb-6423-49c1-8592-e72aa88f6d12> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:c048672f-221c-45ef-8e4c-ac80e8af24af> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:b14edcc3-2cad-4804-90f7-3bc1cb1268d1> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:c858723b-99c1-43ec-af65-622897c32658> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:04ee5920-e96b-44fa-8021-9e920e098aa3> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:d1278c29-9cc7-4a70-a96f-bd1a65bf747e> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:5ceb54de-de71-41d6-bc69-1be2339b5711> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:e60805ea-e88b-440a-815b-3bd37c34d7d1> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact A" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:7d5e762c-13f5-426b-a9eb-1c78b26a1147> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+<urn:eidos:knowledge:node:fc89cb87-66de-420e-b89b-d251db91ae73> a rdfs:Resource,
+        eidos:KnowledgeNode ;
+    eidos:content "MCP test fact B" ;
+    eidos:linkedTo <urn:eidos:knowledge:node:3fdbb2cb-af88-4b28-924f-5751870c080c> ;
+    eidos:metadataJson "{\"tags\": [\"mcp\", \"test\"]}" ;
+    eidos:tag "mcp",
+        "test" .
+
+"Agent Forge now includes RAC-AP protocol tooling: schema-compatible protocol validation, pre-registration manifest generation, and interventional validity scoring integrated into consciousness validation reports." a rdfs:Resource .
+
+"Agent Forge now includes a RAC-AP validation report pipeline that computes reliability, nomological correlations, discriminant controls, and security-boundary scores from benchmark/trial/red-team artifacts." a rdfs:Resource .
+
+"Agent Forge now supports importing external benchmark JSON payloads into standardized consciousness benchmark reports via `eidctl consciousness import-benchmark` and ExternalBenchmarkImporter." a rdfs:Resource .
+
+"Attention and workspace competition now adapt online from gw.reaction_trace reward signals." a rdfs:Resource .
+
+"Autotune commit-path now enforces quick red-team adversarial thresholds before overlay persistence, with explicit rollback reasons for unavailable campaigns and failed robustness gates." a rdfs:Resource .
+
+"Autotune module executes propose-trial-commit/rollback loop with guardrail metrics." a rdfs:Resource .
+
+"Autotune now supports bayes_pareto acquisition with Pareto frontier tracking and objective history persistence." a rdfs:Resource .
+
+"Bench task suite includes self_other_discrimination, continuity_distraction, and report_grounding_challenge for closed-loop behavioral probes." a rdfs:Resource .
+
+"CI drift guards should validate generated docs against tracked git scope, not local filesystem state, to remain deterministic across Termux and GitHub runners." a rdfs:Resource .
+
+"CI hardening pattern: prefer robust cross-platform assertions in compat tests and strict type guards at public parser boundaries to avoid environment-dependent regressions." a rdfs:Resource .
+
+"CI-style monorepo test execution in eidosian_forge requires forge-local script path resolution in subprocess-based tests; absolute paths derived from Path(__file__).resolve().parents[1] eliminate cwd-sensitive failures on GitHub Actions and Termux." a rdfs:Resource .
+
+"CI/Lint/Format workflows now scope Python checks to active forge directories and TypeScript Prettier checks to ts/tsx/js/jsx files, reducing monorepo timeout and LFS-json parse failures." a rdfs:Resource .
+
+"ChatMock remains in projects/src/chatmock; promotion to a dedicated Forge is deferred until API stability, CI/security readiness, and migration criteria are met." a rdfs:Resource .
+
+"Code Forge CLI includes `dashboard` command for static triage+duplication visualization and `archive-reduction-plan` for candidate action planning." a rdfs:Resource .
+
+"Code Forge TODO critical item for source-scoped coverage enforcement is implemented via CI workflow fail-under gates and documented local test command." a rdfs:Resource .
+
+"Code Forge digest and triage-report CLI now accept --profile-trace, enabling runtime hot-path aware triage classification and reporting." a rdfs:Resource .
+
+"Code Forge digest integration exports now use active run scoping with fallback to latest effective source-root run, preserving meaningful Knowledge Forge and GraphRAG exports during idempotent no-op ingestion cycles." a rdfs:Resource .
+
+"Code Forge digester schema now validates optional archive_reduction_plan.json artifact as part of output contract checks." a rdfs:Resource .
+
+"Code Forge eval OS exports traces to OTLP backends via configurable endpoint/service/headers and records exporter status in run artifacts and summary stats." a rdfs:Resource .
+
+"Code Forge eval harness now supports deterministic replay across separate output directories via configurable replay_store_path (CLI: --replay-store), with run summary including replay_store_path metadata." a rdfs:Resource .
+
+"Code Forge includes a benchmark harness with baseline-aware regression gates and a canonical migration planner producing migration_map.json and shim staging from triage outputs." a rdfs:Resource .
+
+"Code Forge now emits provenance_links.json and graphrag_export_manifest.json; MCP exposes provenance query via code_forge_provenance tool, enabling cross-forge lineage queries from code units to knowledge nodes and GraphRAG documents." a rdfs:Resource .
+
+"Code Forge now emits provenance_registry.json for digester and roundtrip pipelines, including unit-level joins (knowledge/memory/GraphRAG) and optional benchmark/drift summaries; eidos_mcp code_forge_provenance supports unit-level filtering and benchmark inclusion." a rdfs:Resource .
+
+"Code Forge now enforces strict artifact contracts across repo_index, duplication_index (including structural clones), dependency_graph, triage, triage_audit, and archive_digester_summary outputs." a rdfs:Resource .
+
+"Code Forge now exposes a parser adapter extension point for non-Python analysis and includes a built-in optional TreeSitterAdapter auto-discovery path." a rdfs:Resource .
+
+"Code Forge now has a drift intelligence stage with immutable history snapshots and a CLI command for run-over-run metric drift reporting." a rdfs:Resource .
+
+"Code Forge now includes eval OS modules (contracts/tracing/replay/runner/staleness/scoring) with CLI entrypoints and schema versioning for reproducible ablation runs." a rdfs:Resource .
+
+"Code Forge now supports archive_reduction_plan artifacts with candidate buckets for delete/extract/refactor/quarantine generated from triage labels." a rdfs:Resource .
+
+"Code Forge now supports deterministic archive digestion artifacts (repo_index.json, duplication_index.json, triage.json/csv/md, archive_digester_summary.json) and exposes this workflow through CLI commands catalog, triage-report, and digest." a rdfs:Resource .
+
+"Code Forge now supports operational vector indexing through code_vectors with hash128_v1 embeddings and backend-selectable semantic search (text, vector, hybrid)." a rdfs:Resource .
+
+"Code Forge provenance schema now includes memory_links, enabling cross-forge lineage queries across artifact->memory->knowledge->GraphRAG surfaces with deterministic IDs." a rdfs:Resource .
+
+"Code Forge regeneration pipeline now enforces managed-scope pruning during apply, enabling idempotent project roundtrip without deleting unmanaged files; validated on sms_forge cycle06 with full test parity." a rdfs:Resource .
+
+"Code Forge roundtrip artifacts now include signature envelopes and validation logic to detect tampering via payload hash and digest checks." a rdfs:Resource .
+
+"Code Forge roundtrip parity hashing now supports parallel file hashing for larger trees, controlled by `EIDOS_CODE_FORGE_HASH_WORKERS`, with determinism validated against single-thread mode." a rdfs:Resource .
+
+"Commit 16aca8e692 hardens Code Forge with structural duplication indexing, confidence-based triage audit contracts, and strict output validation tooling." a rdfs:Resource .
+
+"Commit a5873193ae introduces curated <=3B model catalog plus automated downloader and multi-domain benchmark suite with optional multimodal OCR task and judge aggregation." a rdfs:Resource .
+
+"Commit cdbf0d08af resolves prior Eidosian Universal CI failing test groups by restoring eidos_mcp llm/refactor exports, pyfiglet renderText alias behavior, pyparticles numba compatibility imports, glyph_forge cv2-absent fallback rendering, and CI jinja2 dependency for Moltbook UI tests." a rdfs:Resource .
+
+"Commit dedb968da9 introduces Code Forge Archive Digester v1 with deterministic intake, duplication, triage artifacts, and CLI orchestration integrated into living_knowledge_pipeline." a rdfs:Resource .
+
+"Commit e3f3bd3293 hardened forge interoperability by adding GraphRAG timeout-guarded execution and MCP GraphRAG root precedence, with full cross-forge validation tests and benchmark pass." a rdfs:Resource .
+
+"Commit ea59a0f5bd fixes Eidosian Universal CI failures by adding lib/eidosian_core/ports.py, adding lib/tests/test_ports.py, and expanding CI test dependencies to include numpy/httpx/pandas/pyarrow/psutil/pyyaml/huggingface_hub." a rdfs:Resource .
+
+"Commit f911629d49 upgrades Code Forge with imports/calls/uses edge ingestion, dependency graph artifacts, baseline-aware benchmark gating, and canonical migration planning with compatibility shim staging." a rdfs:Resource .
+
+"Consciousness Linux Parity GitHub Actions run 22265310795 succeeded after setting EIDOS_AUDIT_OPTIONAL_FORGES=mkey,llm,erais,glyph,word in parity smoke workflow." a rdfs:Resource .
+
+"Consciousness bench trial snapshots and guardrail counters now derive from EventIndex buckets, including GW winner counts via broadcasts_by_kind and per-type counters via by_type." a rdfs:Resource .
+
+"Consciousness construct validation now includes protocol threshold drift analysis over latest validation reports with configurable delta threshold." a rdfs:Resource .
+
+"Consciousness runtime now exposes adversarial red-team campaigns via eidctl and MCP, with persisted bench.red_team_result reports and latest-report resources." a rdfs:Resource .
+
+"Consciousness runtime status path is now side-effect-free: `ConsciousnessTrialRunner.status()` reads watchdog/payload health via `ConsciousnessKernel.read_runtime_health(...)` from persisted state instead of constructing a live kernel instance." a rdfs:Resource .
+
+"Consciousness tuning overlay now resolves runtime_overrides over tuned_overlay over base config." a rdfs:Resource .
+
+"Consciousness validator now supports trend extraction and HTML dashboard export via `validation_trends`, surfaced in CLI as `eidctl consciousness validation-trends`." a rdfs:Resource .
+
+"Crawl Forge extraction now uses BeautifulSoup parsing for title/meta description/link extraction with HTTP-only deduped links; regex extraction path removed." a rdfs:Resource .
+
+"Crawl Forge now includes TTL-based robots and HTTP page caching plus cache_stats telemetry in status output." a rdfs:Resource .
+
+"Cross-forge interop hardening added GraphRAG CLI compatibility in knowledge_forge (primary python -m graphrag subcommand invocation with legacy fallback) and MCP router root resolution via EIDOS_GRAPHRAG_ROOT -> graphrag_workspace -> graphrag fallback." a rdfs:Resource .
+
+"Cross-platform test reliability pattern: make dependency checks injectable/mocked in CLI tests (e.g., shutil.which for ffmpeg), and ensure process fakes implement context-manager + communicate semantics to avoid third-party import breakage." a rdfs:Resource .
+
+"Current upstream vulnerability banner reports 10 Dependabot alerts (3 critical, 6 moderate, 1 low) after latest push; remediation should continue beyond pypdf pin update." a rdfs:Resource .
+
+"Defaulting EIDOS_MCP_STATELESS_HTTP=1 in eidos_mcp/run_server.sh resolved repeated stale-session MCP transport failures in this Termux workflow." a rdfs:Resource .
+
+"Diagnostics Forge CLI now supports a dashboard subcommand that renders metrics JSON summaries in a sortable terminal table and supports raw JSON output." a rdfs:Resource .
+
+"Diagnostics Forge now exposes Prometheus metrics text and an optional HTTP /metrics endpoint via diagnostics CLI." a rdfs:Resource .
+
+"Directory Atlas Drift Guard workflow now installs pytest before running scripts/tests/test_generate_directory_atlas.py, preventing module-not-found failures on clean GitHub runners." a rdfs:Resource .
+
+"Directory atlas generation in tracked mode must filter README links against tracked file set, otherwise local runtime files cause CI drift false positives." a rdfs:Resource .
+
+"Directory atlas generation is now deterministic by default with scope-aware controls and CI drift enforcement workflow." a rdfs:Resource .
+
+"Eidosian Forge now has a canonical local service registry at config/ports.json, with fallback behavior implemented in launch scripts and runtime modules when env vars are unset or empty." a rdfs:Resource .
+
+"Eidosian Forge now has a canonical port registry document and machine-readable config (docs/PORT_REGISTRY.md + config/ports.json) used as fallback defaults by service scripts and key runtime modules." a rdfs:Resource .
+
+"Eidosian Universal CI regression bundle fixed in commit 6346d73611 with deterministic guards for eidos_mcp compatibility exports, game_forge sparse interaction fallback, glyph_forge batch input typing, moltbook CLI module invocation context, and figlet compatibility assertion variance." a rdfs:Resource .
+
+"Eidosian Universal CI run 22256896857 failed only in glyph_forge due ffmpeg discovery in test_extract_playlist_stitches_audio; fixed by mocking extractors.shutil.which for ffmpeg in test code and pushed in commit 1cdb3d31a5." a rdfs:Resource .
+
+"Eidosian Universal CI test job now enforces per-forge timeout controls and includes OpenCV headless dependency to improve deterministic cross-forge test coverage and prevent stuck runs." a rdfs:Resource .
+
+"Full benchmark interfaces now accept red-team controls: run_red_team, red_team_quick, red_team_max_scenarios, and red_team_seed across CLI and MCP." a rdfs:Resource .
+
+"GitHub workflow action lock now tracks gitleaks/gitleaks-action@v2 and passes enforce-lock policy with zero drift/unlocked/mutable refs." a rdfs:Resource .
+
+"GraphRAG benchmark script now includes strict output-quality gates: placeholder detection, schema checks, relevance checks, and non-informative answer rejection." a rdfs:Resource .
+
+"GraphRAG evaluator now rejects pathological all-zero judge outputs when deterministic evidence indicates high-confidence pipeline/query quality; aggregate now reports judge_total/judge_valid/judge_rejected." a rdfs:Resource .
+
+"GraphRAG qualitative assessment contract v1 combines deterministic pipeline metrics with federated local-model judge consensus and guardrail capping when placeholder community reports are detected." a rdfs:Resource .
+
+"GraphRAG strict quality gates in this environment currently favor Qwen2.5-0.5B-Instruct over Qwen2.5-1.5B for the default benchmark prompt and settings; Qwen1.5 can fail community report generation when placeholders are disabled." a rdfs:Resource .
+
+"Integrated benchmark report schema includes red_team section, red_team_score, and red-team gate results for regression-safe runtime decisions." a rdfs:Resource .
+
+"Latest GraphRAG sweep selected models/Qwen2.5-0.5B-Instruct-Q8_0.gguf as best available local model under strict quality gates (federated judge score 0.8801, rank A)." a rdfs:Resource .
+
+"Living knowledge pipeline scaffold added at scripts/living_knowledge_pipeline.py with strict run artifacts (manifest, records, dedup, drift, code analysis) and optional GraphRAG indexing/query execution." a rdfs:Resource .
+
+"MCP code_forge_provenance now reports memory_link_count in addition to artifact_count, knowledge_link_count, and graphrag_link_count, enabling direct cross-forge lineage inspection from MCP clients." a rdfs:Resource .
+
+"MCP knowledge router now resolves GraphRAG root using EIDOS_GRAPHRAG_ROOT override, defaulting to graphrag_workspace and falling back to graphrag. GraphRAG integration commands now use python -m graphrag <subcommand> with legacy fallback support." a rdfs:Resource .
+
+"MCP stale-session compatibility now returns deterministic 400 responses when recovery is disabled." a rdfs:Resource .
+
+"Main branch now includes RAC-AP protocol schema management and interventional validity scoring in consciousness validation (pushed in commit 8338941faa)." a rdfs:Resource .
+
+"Model catalog now defines local <=3B candidates with profile tags (core/toolcalling/graphrag/multimodal) and supports companion mmproj artifacts for multimodal GGUF models." a rdfs:Resource .
+
+"No-fix advisory mitigation playbook established: when Dependabot lacks first_patched_version, reduce direct dependency surface where imports are absent (ecdsa/keras) and apply explicit version escapes when vulnerable range bounds are known (orjson > 3.11.4)." a rdfs:Resource .
+
+"Operational rule: execute project python checks through eidosian_venv in Termux for deterministic dependency context." a rdfs:Resource .
+
+"Operational testing contract for eidosian_forge: invoke tests via eidosian_venv interpreter (`python -m pytest`) to avoid plugin/path drift from system pytest in Termux." a rdfs:Resource .
+
+"Phase 17 closure fact: end-to-end automated remediation loop achieved zero open Dependabot alerts and closed outstanding remediation batch issues in Ace1928/eidosian_forge." a rdfs:Resource .
+
+"Phase 18 capability: consciousness runtime now enforces module watchdog quarantine/recovery and payload truncation safety envelopes with explicit telemetry for observability-driven hardening." a rdfs:Resource .
+
+"Phase 18 completion capability: runtime health now surfaces watchdog and payload-safety state across `eidctl` and MCP (`consciousness_kernel_status`), and payload/event-pressure stress benchmarks are first-class with CI trend aggregation." a rdfs:Resource .
+
+"Phase 19 parity control added a deterministic Linux audit matrix runner that now drives both local parity smoke checks and CI artifact generation, reducing Termux/Linux drift risk." a rdfs:Resource .
+
+"Phase 20 observability hardened Linux parity by integrating linux_audit reports into trend analytics and enforcing latest_fail_count == 0 as a CI gate in the consciousness parity workflow." a rdfs:Resource .
+
+"Phase 21 event-fabric hardening introduced first-class event identity (`event_id`, `ts_ms`) and marker-bounded bench capture (`bench.trial_start` to `bench.trial_end`) to improve deterministic causal-window artifact extraction." a rdfs:Resource .
+
+"Phase 22 provenance hardening added replay-grade trial artifacts (`module_state_snapshot.json`, `replay_manifest.json`) and report-level capture digest/event-id coverage metadata, enabling deterministic post-run validation across environments." a rdfs:Resource .
+
+"Phase 23 documentation hardening introduced automated repository directory coverage via `scripts/generate_directory_atlas.py`, producing `docs/DIRECTORY_ATLAS.md` (linked depth-limited map) and `docs/DIRECTORY_INDEX_FULL.txt` (complete recursive index), validated with dedicated script tests and consciousness benchmark/stress runs." a rdfs:Resource .
+
+"RAC-AP validator supports explicit security_required mode, enabling hard gate failure when security boundary evidence is absent or weak." a rdfs:Resource .
+
+"Refactor Forge provides AST-based code transformations including identifier renaming and docstring removal." a rdfs:Resource .
+
+"Repository docs and ignore policy were refreshed during figlet compatibility cycle: deterministic directory atlas regenerated and local CI/test artifact paths added to .gitignore (.coverage, .tmp_test, reports/ci/*.log, reports/local_test_audit/)." a rdfs:Resource .
+
+"Security dependency workflow failure root cause: mis-indented heredoc Python blocks in .github/workflows/security-audit.yml caused shell syntax error. Fixed by YAML-safe indentation that preserves shell heredoc termination semantics." a rdfs:Resource .
+
+"Security hardening capability: scripts/dependabot_autopatch_requirements.py builds deterministic pip pin updates from Dependabot raw alerts (first_patched_version), supports dry-run/write, and preserves rollback via timestamped backups plus structured JSON/Markdown reports." a rdfs:Resource .
+
+"Security remediation applied: requirements/eidos_venv_reqs.txt now pins pypdf==6.7.1 per Dependabot autopatch for open moderate alerts." a rdfs:Resource .
+
+"Termux Chroma stability is validated after rebuilding chroma-hnswlib and hnswlib from source with HNSWLIB_NO_NATIVE=1; memory_forge chroma tests pass end-to-end." a rdfs:Resource .
+
+"TypeForge now supports GIS-backed schema registry persistence through a backend contract; eidos_mcp initializes TypeCore with GIS backend when available." a rdfs:Resource .
+
+"Universal CI format-check was failing due pre-existing parse/format debt across unrelated directories; remediation set formatting checks non-blocking while preserving visibility through warnings and summaries." a rdfs:Resource .
+
+"Universal CI run 22257241042 succeeded end-to-end after glyph_forge ffmpeg test isolation fix; pytest async loop scope now pinned to function in both root pytest.ini and agent_forge/pytest.ini to remove loop-scope deprecation drift." a rdfs:Resource .
+
+"Workflow security-audit.yml now inventories Dependabot alerts and can enforce optional critical/high severity gates while always artifacting JSON/log outputs." a rdfs:Resource .
+
+"`eidctl consciousness import-benchmark` parser was repaired after rebase corruption and validated with passing tests." a rdfs:Resource .
+
+"actions" a rdfs:Resource .
+
+"adapter" a rdfs:Resource .
+
+"advisory" a rdfs:Resource .
+
+"architecture" a rdfs:Resource .
+
+"architecture-decision" a rdfs:Resource .
+
+"archive" a rdfs:Resource .
+
+"artifact-validation" a rdfs:Resource .
+
+"artifact_schema" a rdfs:Resource .
+
+"assessment" a rdfs:Resource .
+
+"attention" a rdfs:Resource .
+
+"audit-gate" a rdfs:Resource .
+
+"audit-matrix" a rdfs:Resource .
+
+"backlog" a rdfs:Resource .
+
+"benchmarking" a rdfs:Resource .
+
+"benchmarks" a rdfs:Resource .
+
+"cache" a rdfs:Resource .
+
+"catalog" a rdfs:Resource .
+
+"causal-trace" a rdfs:Resource .
+
+"chatmock" a rdfs:Resource .
+
+"chroma" a rdfs:Resource .
+
+"ci-gate" a rdfs:Resource .
+
+"closure" a rdfs:Resource .
+
+"code-forge" a rdfs:Resource .
+
+"code-intelligence" a rdfs:Resource .
+
+"competition" a rdfs:Resource .
+
+"compression" a rdfs:Resource .
+
+"config" a rdfs:Resource .
+
+"coverage" a rdfs:Resource .
+
+"cross-platform" a rdfs:Resource .
+
+"defensive-programming" a rdfs:Resource .
+
+"dependencies" a rdfs:Resource .
+
+"dependency_graph" a rdfs:Resource .
+
+"digester" a rdfs:Resource .
+
+"directory-atlas" a rdfs:Resource .
+
+"eidos_mcp exposes RAC-AP construct validation via consciousness_construct_validate, consciousness_construct_latest, and eidos://consciousness/construct-latest." a rdfs:Resource .
+
+"eidos_mcp full integration test harness restores kb/memory files after execution to keep repository state stable across reruns." a rdfs:Resource .
+
+"eidos_mcp runtime configuration is now centralized via eidos_mcp.config.runtime with GIS namespace mcp.* and environment variable override precedence." a rdfs:Resource .
+
+"eval" a rdfs:Resource .
+
+"eval_os" a rdfs:Resource .
+
+"event-fabric" a rdfs:Resource .
+
+"extensibility" a rdfs:Resource .
+
+"ffmpeg" a rdfs:Resource .
+
+"figlet_forge" a rdfs:Resource .
+
+"format" a rdfs:Resource .
+
+"formatting" a rdfs:Resource .
+
+"gates" a rdfs:Resource .
+
+"gis" a rdfs:Resource .
+
+"gis_forge" a rdfs:Resource .
+
+"git" a rdfs:Resource .
+
+"git-tracked" a rdfs:Resource .
+
+"gitignore" a rdfs:Resource .
+
+"gitleaks" a rdfs:Resource .
+
+"graph-visualization" a rdfs:Resource .
+
+"hashing" a rdfs:Resource .
+
+"hnswlib" a rdfs:Resource .
+
+"html-parsing" a rdfs:Resource .
+
+"idempotency" a rdfs:Resource .
+
+"idempotent" a rdfs:Resource .
+
+"index" a rdfs:Resource .
+
+"infrastructure" a rdfs:Resource .
+
+"interoperability" a rdfs:Resource .
+
+"intervention" a rdfs:Resource .
+
+"issues" a rdfs:Resource .
+
+"knowledge" a rdfs:Resource .
+
+"knowledge_forge now supports RDF serialization/deserialization via rdflib with non-lossy node IDs, concepts, tags, and links persisted across roundtrip." a rdfs:Resource .
+
+"knowledge_forge now supports interactive pyvis graph export via KnowledgeForge.visualize_pyvis and CLI `knowledge-forge visualize`." a rdfs:Resource .
+
+"knowledge_graph" a rdfs:Resource .
+
+"learning" a rdfs:Resource .
+
+"lint" a rdfs:Resource .
+
+"linux-audit" a rdfs:Resource .
+
+"linux-parity" a rdfs:Resource .
+
+"linux_audit" a rdfs:Resource .
+
+"linux_audit_matrix now treats mkey as optional forge by default and uses MCP quick-probe timeout floors (initialize>=30s, call>=12s) to avoid false-negative audit failures on Termux." a rdfs:Resource .
+
+"living-knowledge" a rdfs:Resource .
+
+"lock" a rdfs:Resource .
+
+"maintenance" a rdfs:Resource .
+
+"memory" a rdfs:Resource .
+
+"memory_forge now supports CLI semantic compression command with dry-run and clustering controls for old memory consolidation." a rdfs:Resource .
+
+"memory_links" a rdfs:Resource .
+
+"migration_map" a rdfs:Resource .
+
+"mitigation" a rdfs:Resource .
+
+"mocks" a rdfs:Resource .
+
+"monorepo" a rdfs:Resource .
+
+"multimodal" a rdfs:Resource .
+
+"no-fix" a rdfs:Resource .
+
+"opencv" a rdfs:Resource .
+
+"optimization" a rdfs:Resource .
+
+"otlp" a rdfs:Resource .
+
+"parallelism" a rdfs:Resource .
+
+"parity" a rdfs:Resource .
+
+"parser" a rdfs:Resource .
+
+"path-resolution" a rdfs:Resource .
+
+"performance" a rdfs:Resource .
+
+"persistence" a rdfs:Resource .
+
+"phase19" a rdfs:Resource .
+
+"phase20" a rdfs:Resource .
+
+"phase21" a rdfs:Resource .
+
+"phase22" a rdfs:Resource .
+
+"phase23" a rdfs:Resource .
+
+"phase24" a rdfs:Resource .
+
+"pip" a rdfs:Resource .
+
+"production" a rdfs:Resource .
+
+"profiling" a rdfs:Resource .
+
+"prometheus" a rdfs:Resource .
+
+"pypdf" a rdfs:Resource .
+
+"pyvis" a rdfs:Resource .
+
+"qa" a rdfs:Resource .
+
+"quality-gates" a rdfs:Resource .
+
+"rac_ap" a rdfs:Resource .
+
+"rdf" a rdfs:Resource .
+
+"rdflib" a rdfs:Resource .
+
+"rebase" a rdfs:Resource .
+
+"refactor" a rdfs:Resource .
+
+"regeneration" a rdfs:Resource .
+
+"regression_gate" a rdfs:Resource .
+
+"replay" a rdfs:Resource .
+
+"replay-manifest" a rdfs:Resource .
+
+"requirements" a rdfs:Resource .
+
+"research" a rdfs:Resource .
+
+"robots" a rdfs:Resource .
+
+"robustness" a rdfs:Resource .
+
+"run_scoping" a rdfs:Resource .
+
+"runtime" a rdfs:Resource .
+
+"schema-registry" a rdfs:Resource .
+
+"security-audit" a rdfs:Resource .
+
+"security-audit workflow now builds remediation batches from Dependabot summaries and synchronizes keyed remediation issues automatically via scripts/dependabot_remediation_plan.py and scripts/sync_security_remediation_issues.py." a rdfs:Resource .
+
+"security-audit workflow now maintains a Security Dependency Delta Report issue using baseline markers and closes it automatically when high/critical risk clears." a rdfs:Resource .
+
+"security-gates" a rdfs:Resource .
+
+"semantic_search" a rdfs:Resource .
+
+"services" a rdfs:Resource .
+
+"side-effect-free" a rdfs:Resource .
+
+"signature" a rdfs:Resource .
+
+"sms_forge" a rdfs:Resource .
+
+"sqlite" a rdfs:Resource .
+
+"status" a rdfs:Resource .
+
+"stress-benchmark" a rdfs:Resource .
+
+"structural_clone" a rdfs:Resource .
+
+"structural_duplicates" a rdfs:Resource .
+
+"tamper-detection" a rdfs:Resource .
+
+"tasks" a rdfs:Resource .
+
+"tiered_memory" a rdfs:Resource .
+
+"todo" a rdfs:Resource .
+
+"todo-complete" a rdfs:Resource .
+
+"todo-completion" a rdfs:Resource .
+
+"tooling" a rdfs:Resource .
+
+"traces" a rdfs:Resource .
+
+"transport" a rdfs:Resource .
+
+"tree-sitter" a rdfs:Resource .
+
+"trend" a rdfs:Resource .
+
+"triage_audit" a rdfs:Resource .
+
+"trial-capture" a rdfs:Resource .
+
+"type_forge" a rdfs:Resource .
+
+"universal" a rdfs:Resource .
+
+"vector_index" a rdfs:Resource .
+
+"venv" a rdfs:Resource .
+
+"workflow-action-pin-audit.yml now enforces lock-based GitHub Action drift policy using audit_data/workflow_action_lock.json and rejects mutable refs." a rdfs:Resource .
+
+"workflow-lock" a rdfs:Resource .
+
+"workflows" a rdfs:Resource .
+
+"{\"source\": \"phase17_autopatch_execution\", \"tags\": [\"dependabot\", \"phase17\", \"security\", \"termux\", \"automation\", \"pip\"], \"updated_at\": \"2026-02-16T22:54:34Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase17_final_closure\", \"tags\": [\"dependabot\", \"phase17\", \"security\", \"automation\", \"closure\"], \"updated_at\": \"2026-02-16T23:27:34Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase17_iteration2_no_fix_mitigation\", \"tags\": [\"phase17\", \"no-fix\", \"security\", \"mitigation\", \"advisory\"], \"updated_at\": \"2026-02-16T23:10:55Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase18_runtime_hardening\", \"tags\": [\"hardening\", \"consciousness\", \"phase18\", \"payload-safety\", \"watchdog\"], \"updated_at\": \"2026-02-16T23:43:19Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase18_status_side_effect_fix\", \"tags\": [\"hardening\", \"side-effect-free\", \"status\", \"consciousness\", \"phase18\"], \"updated_at\": \"2026-02-17T00:24:46Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase18_status_stress_completion\", \"tags\": [\"ci\", \"stress-benchmark\", \"consciousness\", \"phase18\", \"mcp\", \"payload-safety\", \"watchdog\"], \"updated_at\": \"2026-02-17T00:24:46Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase19_linux_audit_matrix\", \"tags\": [\"ci\", \"termux\", \"linux-parity\", \"consciousness\", \"phase19\", \"audit-matrix\"], \"updated_at\": \"2026-02-17T01:44:44Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase20_audit_observability_gate\", \"tags\": [\"ci-gate\", \"consciousness\", \"phase20\", \"linux-audit\", \"observability\", \"trend\"], \"updated_at\": \"2026-02-17T02:10:00Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase21_event_fabric_trial_capture\", \"tags\": [\"consciousness\", \"phase21\", \"causal-trace\", \"trial-capture\", \"event-fabric\"], \"updated_at\": \"2026-02-17T02:19:15Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase22_trial_provenance_replay\", \"tags\": [\"provenance\", \"replay-manifest\", \"phase22\", \"consciousness\", \"bench\"], \"updated_at\": \"2026-02-17T02:33:24Z\"}" a rdfs:Resource .
+
+"{\"source\": \"phase23_repo_docs_hardening\", \"tags\": [\"directory-atlas\", \"benchmarks\", \"phase23\", \"consciousness\", \"documentation\"], \"updated_at\": \"2026-02-17T03:24:01Z\"}" a rdfs:Resource .
+
+"{\"tags\": [\"architecture-decision\", \"governance\", \"eidos_mcp\", \"chatmock\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"attention\", \"learning\", \"consciousness\", \"competition\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"autotune\", \"consciousness\", \"optimization\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"autotune\", \"termux\", \"consciousness\", \"red-team\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"benchmarking\", \"eidosian_forge\", \"automation\", \"commit\", \"models\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"canonicalization\", \"production\", \"benchmark\", \"dependency_graph\", \"commit\", \"code_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"canonicalization\", \"regression_gate\", \"migration_map\", \"benchmark\", \"code_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"atlas\", \"determinism\", \"docs\", \"git-tracked\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"defensive-programming\", \"testing\", \"cross-platform\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"figlet_forge\", \"maintenance\", \"gitignore\", \"docs\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"format\", \"workflows\", \"lint\", \"reliability\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"formatting\", \"governance\", \"monorepo\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"audit-gate\", \"consciousness\", \"parity\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"ffmpeg\", \"testing\", \"glyph_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"regression-fix\", \"ports\", \"dependencies\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"security\", \"workflow-lock\", \"gitleaks\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"termux\", \"atlas\", \"determinism\", \"docs\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"github-actions\", \"testing\", \"termux\", \"path-resolution\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"mocks\", \"testing\", \"reliability\", \"glyph_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"operations\", \"phase24\", \"documentation\", \"determinism\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"stability\", \"eidosian_forge\", \"regression-fix\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"stability\", \"pytest\", \"glyph_forge\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"stability\", \"qa\", \"eidosian_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"stability\", \"workflow\", \"pytest\", \"universal\", \"opencv\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"termux\", \"stability\", \"linux_audit\", \"mcp\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"ci\", \"todo\", \"code_forge\", \"documentation\", \"coverage\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"cli\", \"benchmark\", \"consciousness\", \"adapter\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"cli\", \"benchmark\", \"consciousness\", \"mcp\", \"red-team\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"cli\", \"consciousness\", \"dashboard\", \"validation\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"cli\", \"consciousness\", \"rebase\", \"bugfix\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"cli\", \"observability\", \"evaluation\", \"code_forge\", \"schema\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"code_forge\", \"artifact-validation\", \"digester\", \"drift\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"configuration\", \"termux\", \"infrastructure\", \"ports\", \"services\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"consciousness\", \"protocol\", \"validation\", \"agent_forge\", \"drift\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"consciousness\", \"security-gates\", \"validation\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"dependabot\", \"backlog\", \"security\", \"triage\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"dependabot\", \"security\", \"requirements\", \"remediation\", \"pypdf\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"extensibility\", \"code_forge\", \"tree-sitter\", \"parser\", \"architecture\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"gis_forge\", \"eidos_mcp\", \"type_forge\", \"schema-registry\", \"persistence\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"graph-visualization\", \"knowledge_forge\", \"cli\", \"pyvis\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"hardening\", \"triage\", \"code_forge\", \"structural_duplicates\", \"commit\", \"validation\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"integration\", \"code_forge\", \"commit\", \"pipeline\", \"archive_digester\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"knowledge_forge\", \"commit\", \"eidos_mcp\", \"graphrag\", \"interop\", \"validation\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"knowledge_forge\", \"eidos_mcp\", \"graphrag\", \"compatibility\", \"interop\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"knowledge_forge\", \"integration\", \"idempotency\", \"code_forge\", \"graphrag\", \"run_scoping\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"knowledge_forge\", \"integration\", \"mcp\", \"graphrag\", \"compatibility\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"living-knowledge\", \"graphrag\", \"code-forge\", \"pipeline\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"mcp\", \"hardening\", \"operations\", \"testing\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"mcp\", \"red-team\", \"consciousness\", \"cli\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"memory_forge\", \"termux\", \"chroma\", \"validation\", \"hnswlib\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"memory_links\", \"code_forge\", \"eidos_mcp\", \"provenance\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"model-selection\", \"benchmark\", \"graphrag\", \"quality-gate\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"multimodal\", \"termux\", \"catalog\", \"models\", \"graphrag\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"observability\", \"diagnostics_forge\", \"cli\", \"todo-completion\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"planning\", \"triage\", \"artifacts\", \"code_forge\", \"archive\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"planning\", \"triage\", \"cli\", \"dashboard\", \"code_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"prometheus\", \"observability\", \"diagnostics_forge\", \"cli\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"provenance\", \"knowledge\", \"code_forge\", \"graphrag\", \"memory\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"pytest\", \"ci\", \"workflow\", \"atlas\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"quality\", \"assessment\", \"benchmark\", \"graphrag\", \"schema\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"rac-ap\", \"consciousness\", \"eidos_mcp\", \"tooling\", \"validation\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"rac-ap\", \"consciousness\", \"protocol\", \"validation\", \"agent_forge\", \"intervention\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"rac-ap\", \"git\", \"consciousness\", \"validation\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"rac_ap\", \"research\", \"consciousness\", \"validation\", \"agent_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"rdflib\", \"knowledge_forge\", \"interoperability\", \"rdf\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"refactor\", \"code-intelligence\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"robustness\", \"evaluation\", \"quality\", \"graphrag\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"roundtrip\", \"hashing\", \"code_forge\", \"parallelism\", \"performance\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"roundtrip\", \"idempotent\", \"regeneration\", \"code_forge\", \"sms_forge\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"roundtrip\", \"security\", \"tamper-detection\", \"code_forge\", \"signature\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"runtime\", \"gis\", \"configuration\", \"eidos_mcp\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"schema\", \"code_forge\", \"validation\", \"artifacts\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"schema\", \"eval_os\", \"observability\", \"code_forge\", \"replay\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"schema\", \"gates\", \"benchmark\", \"consciousness\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"sqlite\", \"code_forge\", \"vector_index\", \"semantic_search\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"structural_clone\", \"artifact_schema\", \"code_forge\", \"triage_audit\", \"validation\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"tasks\", \"bench\", \"validation\", \"consciousness\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"benchmark\", \"consciousness\", \"index\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"benchmark\", \"graphrag\", \"quality-gate\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"model-selection\", \"quality-gates\", \"graphrag\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"operations\", \"validation\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"ports\", \"operations\", \"config\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"reliability\", \"robots\", \"crawl_forge\", \"cache\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"stability\", \"eidos_mcp\", \"transport\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"termux\", \"testing\", \"venv\", \"reliability\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"tiered_memory\", \"memory_forge\", \"cli\", \"compression\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"todo-complete\", \"quality\", \"crawl_forge\", \"html-parsing\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"traces\", \"otlp\", \"observability\", \"code_forge\", \"eval\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"triage\", \"code_forge\", \"profiling\", \"cli\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"triage\", \"knowledge_graph\", \"code_forge\", \"graphrag\", \"archive_digester\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"workflow\", \"actions\", \"lock\", \"security\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"workflow\", \"github-actions\", \"bugfix\", \"security-audit\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"workflow\", \"issues\", \"security\", \"dependabot\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"workflow\", \"remediation\", \"security\", \"dependabot\"]}" a rdfs:Resource .
+
+"{\"tags\": [\"workflow\", \"security\", \"dependabot\"]}" a rdfs:Resource .
+
+"archive_digester" a rdfs:Resource .
+
+"artifacts" a rdfs:Resource .
+
+"bench" a rdfs:Resource .
+
+"bugfix" a rdfs:Resource .
+
+"canonicalization" a rdfs:Resource .
+
+"compatibility" a rdfs:Resource .
+
+"configuration" a rdfs:Resource .
+
+"crawl_forge" a rdfs:Resource .
+
+"dashboard" a rdfs:Resource .
+
+"diagnostics_forge" a rdfs:Resource .
+
+"drift" a rdfs:Resource .
+
+"evaluation" a rdfs:Resource .
+
+"governance" a rdfs:Resource .
+
+"interop" a rdfs:Resource .
+
+"memory_forge" a rdfs:Resource .
+
+"model-selection" a rdfs:Resource .
+
+"models" a rdfs:Resource .
+
+"payload-safety" a rdfs:Resource .
+
+"pipeline" a rdfs:Resource .
+
+"planning" a rdfs:Resource .
+
+"protocol" a rdfs:Resource .
+
+"quality-gate" a rdfs:Resource .
+
+"regression-fix" a rdfs:Resource .
+
+"remediation" a rdfs:Resource .
+
+"watchdog" a rdfs:Resource .
+
+"{\"tags\": [\"knowledge_forge\", \"provenance\", \"mcp\", \"code_forge\", \"graphrag\"]}" a rdfs:Resource .
+
+"atlas" a rdfs:Resource .
+
+"automation" a rdfs:Resource .
+
+"determinism" a rdfs:Resource .
+
+"docs" a rdfs:Resource .
+
+"documentation" a rdfs:Resource .
+
+"eidosian_forge" a rdfs:Resource .
+
+"glyph_forge" a rdfs:Resource .
+
+"integration" a rdfs:Resource .
+
+"phase17" a rdfs:Resource .
+
+"phase18" a rdfs:Resource .
+
+"ports" a rdfs:Resource .
+
+"pytest" a rdfs:Resource .
+
+"quality" a rdfs:Resource .
+
+"rac-ap" a rdfs:Resource .
+
+"red-team" a rdfs:Resource .
+
+"roundtrip" a rdfs:Resource .
+
+"{\"tags\": [\"autotune\", \"termux\", \"mcp\", \"consciousness\"]}" a rdfs:Resource .
+
+"hardening" a rdfs:Resource .
+
+"operations" a rdfs:Resource .
+
+"reliability" a rdfs:Resource .
+
+"autotune" a rdfs:Resource .
+
+"commit" a rdfs:Resource .
+
+"provenance" a rdfs:Resource .
+
+"schema" a rdfs:Resource .
+
+"observability" a rdfs:Resource .
+
+"stability" a rdfs:Resource .
+
+"testing" a rdfs:Resource .
+
+"triage" a rdfs:Resource .
+
+"dependabot" a rdfs:Resource .
+
+"github-actions" a rdfs:Resource .
+
+"workflow" a rdfs:Resource .
+
+"eidos_mcp" a rdfs:Resource .
+
+"knowledge_forge" a rdfs:Resource .
+
+"agent_forge" a rdfs:Resource .
+
+"benchmark" a rdfs:Resource .
+
+"MCP test fact A" a rdfs:Resource .
+
+"MCP test fact B" a rdfs:Resource .
+
+"security" a rdfs:Resource .
+
+"cli" a rdfs:Resource .
+
+"validation" a rdfs:Resource .
+
+"graphrag" a rdfs:Resource .
+
+"termux" a rdfs:Resource .
+
+"test" a rdfs:Resource .
+
+"{\"tags\": [\"mcp\", \"test\"]}" a rdfs:Resource .
+
+"ci" a rdfs:Resource .
+
+"code_forge" a rdfs:Resource .
+
+"consciousness" a rdfs:Resource .
+
+"mcp" a rdfs:Resource .
+
+eidos:KnowledgeNode a rdfs:Resource .
+

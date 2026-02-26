@@ -44,6 +44,15 @@
       "path": "/",
       "env": ["EIDOS_WEB_INTERFACE_HTTP_PORT"]
     },
+    "eidos_atlas_dashboard": {
+      "description": "Eidosian Atlas dashboard for doc_forge status and browsing",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8936,
+      "path": "/",
+      "health_path": "/health",
+      "env": ["EIDOS_ATLAS_PORT", "EIDOS_DASHBOARD_PORT"]
+    },
     "graphrag_llm": {
       "description": "GraphRAG benchmark/query completion model server",
       "protocol": "http",

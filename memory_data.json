@@ -2290,5 +2290,34 @@
       0.3843137254901961,
       0.6980392156862745
     ]
+  },
+  "be3dddab-f1ba-4dc3-ad72-1fdddebc1dbf": {
+    "id": "be3dddab-f1ba-4dc3-ad72-1fdddebc1dbf",
+    "content": "Doc Forge scribe v3 modular package and Atlas dashboard integration validated in Termux. Service manager now health-checks MCP/doc/atlas, doc root redirects to Atlas, and status endpoints expose model/ETA/quality metrics.",
+    "created_at": "2026-02-26T11:54:53.535660",
+    "type": "episodic",
+    "metadata": {
+      "is_fact": true,
+      "key": "doc_scribe_atlas_integration_20260226"
+    },
+    "importance": 1.0,
+    "embedding": [
+      0.0784313725490196,
+      0.8823529411764706,
+      0.7725490196078432,
+      0.06666666666666667,
+      0.788235294117647,
+      0.49411764705882355,
+      1.0,
+      0.22745098039215686,
+      0.5372549019607843,
+      0.7450980392156863,
+      0.4,
+      0.8705882352941177,
+      0.1568627450980392,
+      0.596078431372549,
+      0.6431372549019608,
+      0.48627450980392156
+    ]
   }
 }

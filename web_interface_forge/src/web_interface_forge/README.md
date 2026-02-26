@@ -1,17 +1,31 @@
-# Eidos Hybrid Chat Sidecar (Linux)
+# Web Interface Forge
 
-This project gives you a **terminal chat interface** to your existing ChatGPT web account,
-without using an API key, by running a **real headed browser** (Playwright Chromium) and
-bridging it to a **local WebSocket**.
+Web Interface Forge currently provides two runtime surfaces:
 
-## Why this exists
-- You want "chat in terminal"
-- You do **not** want API keys or separate billing
-- You want it to behave like the web app because it *is* the web app
+- `dashboard.main` (Eidosian Atlas): docs/status dashboard for `doc_forge` with live metrics and document browsing.
+- `eidos_server.py` + `eidos_client.py`: sidecar chat bridge utilities.
 
-## Components
-- `eidos_server.py` — launches headed Chromium, loads/saves session, scans DOM, streams deltas
-- `eidos_client.py` — terminal UI, reconnects automatically, supports commands
+## Eidosian Atlas
 
-Default WebSocket:
-- `ws://127.0.0.1:8928`
+- Module: `web_interface_forge.dashboard.main:app`
+- Default port: `8936` (`eidos_atlas_dashboard` in `config/ports.json`)
+- Health endpoint: `GET /health`
+- Live status endpoint: `GET /api/doc/status`
+
+The Atlas reads:
+
+- `doc_forge/runtime/processor_status.json`
+- `doc_forge/runtime/doc_index.json`
+- `doc_forge/runtime/final_docs/`
+
+## Run
+
+```bash
+bash web_interface_forge/scripts/run_dashboard.sh
+```
+
+Open:
+
+```text
+http://127.0.0.1:8936/
+```

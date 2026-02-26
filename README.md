@@ -11,6 +11,7 @@ Brutal clarity, production-first engineering, and modular agent infrastructure i
 
 `eidosian_forge` is a unified Forge stack:
 
+- **Eidosian Atlas** (`web_interface_forge/EIDOS_ATLAS.md`): Real-time dashboard for system telemetry, documentation status, and knowledge base visualization.
 - Runtime orchestration (`agent_forge`, `eidos_mcp`, `memory_forge`, `knowledge_forge`)
 - Capability forges (code, docs, diagnostics, terminal, metadata, testing, visualization, and more)
 - Shared libraries, scripts, workflows, reports, and state artifacts

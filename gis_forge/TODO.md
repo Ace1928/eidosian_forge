@@ -18,3 +18,6 @@
 - [x] Implement evaluation/observability operating system core: task contracts, run matrix, trace schema, replay store, staleness metrics, and CLI wiring.
 - [x] Add production docs + references for SWE-bench, OpenTelemetry trace model, W3C PROV, HTTP stale-while-revalidate semantics.
 - [x] Add and pass code_forge test suite coverage for new eval_os modules and CLI command behavior.
+
+## MCP Validation
+- [ ] Sandbox audit test

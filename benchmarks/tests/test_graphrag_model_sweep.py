@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+import pytest
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "graphrag_model_sweep.py"
 spec = importlib.util.spec_from_file_location("graphrag_model_sweep", MODULE_PATH)
@@ -74,3 +75,21 @@ def test_score_tuple_uses_runtime_as_tiebreaker() -> None:
         query_output="answer",
     )
     assert mod._score_tuple(faster) > mod._score_tuple(slower)
+
+
+def test_discover_models_filters_non_llm_files(tmp_path, monkeypatch) -> None:
+    models = tmp_path / "models"
+    models.mkdir(parents=True, exist_ok=True)
+    (models / "Qwen2.5-0.5B-Instruct-Q8_0.gguf").write_text("", encoding="utf-8")
+    (models / "my-embed-model.gguf").write_text("", encoding="utf-8")
+    (models / "vision-mmproj.gguf").write_text("", encoding="utf-8")
+    monkeypatch.setattr(mod, "MODELS_DIR", models)
+    discovered = mod.discover_models()
+    assert len(discovered) == 1
+    assert discovered[0][0].startswith("qwen2_5_0_5b_instruct")
+
+
+def test_main_rejects_invalid_model_arg(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", ["graphrag_model_sweep.py", "--model", "badspec"])
+    with pytest.raises(SystemExit):
+        mod.main()

@@ -14,6 +14,7 @@ This is the canonical local port contract for Eidosian Forge services.
   - `8930`: `doc_forge_dashboard` (Doc processor API + live dashboard)
   - `8932`: `web_interface_sidecar_ws`
   - `8934`: `web_interface_http`
+  - `8936`: `eidos_atlas_dashboard` (Atlas UI and doc browser)
 
 ## Service Map
 
@@ -23,6 +24,7 @@ This is the canonical local port contract for Eidosian Forge services.
 | `doc_forge_dashboard` | `127.0.0.1` | `8930` | `http` | `/` | `EIDOS_DOC_FORGE_PORT` |
 | `web_interface_sidecar_ws` | `127.0.0.1` | `8932` | `ws` | `/` | `EIDOS_WEB_INTERFACE_WS_PORT` |
 | `web_interface_http` | `127.0.0.1` | `8934` | `http` | `/` | `EIDOS_WEB_INTERFACE_HTTP_PORT` |
+| `eidos_atlas_dashboard` | `127.0.0.1` | `8936` | `http` | `/` | `EIDOS_ATLAS_PORT`, `EIDOS_DASHBOARD_PORT` |
 | `graphrag_llm` | `127.0.0.1` | `8081` | `http` | `/completion` | `EIDOS_GRAPHRAG_LLM_PORT` |
 | `graphrag_embedding` | `127.0.0.1` | `8082` | `http` | `/embedding` | `EIDOS_GRAPHRAG_EMBED_PORT` |
 | `graphrag_judges_base` | `127.0.0.1` | `8091` | `http` | `/completion` | `EIDOS_GRAPHRAG_JUDGE_PORT_BASE` |

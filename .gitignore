@@ -103,6 +103,7 @@ reports/consciousness_validation/
 reports/consciousness_preregister/
 reports/code_forge_benchmark_*.json
 game_forge/pyparticles_haskell_source/
+web_interface_forge/eidos_atlas.log
 
 # Keep forge-managed Python library source tracked.
 !lib/eidosian_core/

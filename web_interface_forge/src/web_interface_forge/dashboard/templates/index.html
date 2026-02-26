@@ -1,0 +1,121 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Eidosian Atlas{% endblock %}
+
+{% block head %}
+<style>
+    .live-strip {
+        position: sticky;
+        top: 78px;
+        z-index: 90;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: linear-gradient(90deg, rgba(92,200,255,0.08), rgba(22,39,51,0.8));
+        backdrop-filter: blur(2px);
+    }
+    .live-item {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .live-item strong {
+        display: block;
+        color: var(--text-primary);
+        font-size: 1rem;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="live-strip">
+    <div class="live-item">Model<strong id="live-model">{{ doc_status.get('model', 'n/a') }}</strong></div>
+    <div class="live-item">Processed<strong id="live-processed">{{ doc_status.get('processed', 0) }}</strong></div>
+    <div class="live-item">Remaining<strong id="live-remaining">{{ doc_status.get('remaining', 0) }}</strong></div>
+    <div class="live-item">Avg Score<strong id="live-score">{{ "%.3f"|format(doc_status.get('average_quality_score', 0.0)) }}</strong></div>
+    <div class="live-item">Avg Seconds/Doc<strong id="live-avg-sec">{{ "%.2f"|format(doc_status.get('average_seconds_per_document', 0.0)) }}</strong></div>
+    <div class="live-item">ETA (s)<strong id="live-eta">{{ doc_status.get('eta_seconds', 'n/a') }}</strong></div>
+    <div class="live-item">Last Approved<strong id="live-approved">{{ doc_status.get('last_approved', 'n/a') }}</strong></div>
+    <div class="live-item">Indexed Docs<strong id="live-indexed">{{ doc_index_count }}</strong></div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>System Load</h3>
+        <div class="stat-value">{{ sys_stats.get('cpu', 0) }}%</div>
+        <div class="stat-label">CPU</div>
+    </div>
+    <div class="card">
+        <h3>Memory Usage</h3>
+        <div class="stat-value">{{ sys_stats.get('ram_percent', 0) }}%</div>
+        <div class="stat-label">{{ sys_stats.get('ram_used_gb', 0) }} / {{ sys_stats.get('ram_total_gb', 0) }} GB</div>
+    </div>
+    <div class="card">
+        <h3>Disk Usage</h3>
+        <div class="stat-value">{{ sys_stats.get('disk_percent', 0) }}%</div>
+        <div class="stat-label">{{ sys_stats.get('disk_free_gb', 0) }} GB Free</div>
+    </div>
+    <div class="card">
+        <h3>Forge Status</h3>
+        <div class="stat-value">{{ forge_status.get('doc_forge', 'unknown')|upper }}</div>
+        <div class="stat-label">Doc Forge</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Recent Documents</h3>
+    {% if recent_docs %}
+    <table>
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Score</th>
+                <th>Type</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in recent_docs %}
+            <tr>
+                <td><a href="/browse/{{ doc.get('document', '') }}">{{ doc.get('source', 'Unknown') }}</a></td>
+                <td>{{ "%.2f"|format(doc.get('score', 0)) }}</td>
+                <td>{{ doc.get('doc_type', 'unknown') }}</td>
+                <td>{{ doc.get('updated_at', '')[:16].replace('T', ' ') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No recent documents found or index unavailable.</p>
+    {% endif %}
+</div>
+
+<script>
+async function refreshDocStatus() {
+    try {
+        const res = await fetch("/api/doc/status", {cache: "no-store"});
+        if (!res.ok) return;
+        const data = await res.json();
+        const status = data.status || {};
+        document.getElementById("live-model").textContent = status.model || "n/a";
+        document.getElementById("live-processed").textContent = status.processed ?? 0;
+        document.getElementById("live-remaining").textContent = status.remaining ?? 0;
+        const score = Number(status.average_quality_score ?? 0);
+        document.getElementById("live-score").textContent = score.toFixed(3);
+        const avgSec = Number(status.average_seconds_per_document ?? 0);
+        document.getElementById("live-avg-sec").textContent = avgSec.toFixed(2);
+        document.getElementById("live-eta").textContent = status.eta_seconds ?? "n/a";
+        document.getElementById("live-approved").textContent = status.last_approved || "n/a";
+        document.getElementById("live-indexed").textContent = data.index_count ?? 0;
+    } catch (err) {
+        // Keep existing values on fetch errors.
+    }
+}
+setInterval(refreshDocStatus, 5000);
+</script>
+{% endblock %}

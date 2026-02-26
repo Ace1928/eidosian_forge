@@ -39,10 +39,16 @@ Doc Forge reads defaults from `config/ports.json` when env values are unset/empt
 ./doc_forge/scripts/run_forge.sh
 ```
 
-Open dashboard:
+Open Doc Forge service (redirects to Atlas):
 
 ```bash
 http://127.0.0.1:8930/
+```
+
+Open Atlas directly:
+
+```bash
+http://127.0.0.1:8936/
 ```
 
 Key API endpoints:
