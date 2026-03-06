@@ -103,7 +103,9 @@ def thinking_mode_to_api_value(thinking_mode: Any) -> Any:
     return mode
 
 
-def apply_reasoning_mode(payload: Dict[str, Any], model: str, thinking_mode: Any, explicit_think: bool = False) -> Dict[str, Any]:
+def apply_reasoning_mode(
+    payload: Dict[str, Any], model: str, thinking_mode: Any, explicit_think: bool = False
+) -> Dict[str, Any]:
     if explicit_think or not supports_reasoning_controls(model):
         return payload
     think_value = thinking_mode_to_api_value(thinking_mode)

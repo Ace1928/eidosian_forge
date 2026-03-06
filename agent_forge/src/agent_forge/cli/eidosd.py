@@ -19,8 +19,8 @@ except Exception:
 # add repo root to sys.path for local imports
 
 
-from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
 from agent_forge.autonomy import AutonomySupervisor, load_supervisor_config  # type: ignore
+from agent_forge.consciousness import ConsciousnessKernel  # type: ignore
 from agent_forge.core import db as DB  # type: ignore
 from agent_forge.core import events as E  # type: ignore
 from agent_forge.core import os_metrics as OM  # type: ignore
