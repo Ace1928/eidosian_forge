@@ -189,7 +189,9 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
     assert captured["kwargs"]["timeout"] == 900.0
 
 
-def test_generate_living_documentation_retries_without_thinking_when_no_final_response(tmp_path: Path, monkeypatch) -> None:
+def test_generate_living_documentation_retries_without_thinking_when_no_final_response(
+    tmp_path: Path, monkeypatch
+) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir(parents=True, exist_ok=True)
     seen_modes: list[str] = []
@@ -243,12 +245,20 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     output_root.mkdir(parents=True, exist_ok=True)
     workspace_root.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "run_code_analysis",
+        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
+    )
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(
+        pipeline,
+        "compare_with_previous_run",
+        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
+    )
     monkeypatch.setattr(
         pipeline,
         "generate_living_documentation",
