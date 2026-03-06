@@ -11,6 +11,11 @@ from typing import Any, Dict, Iterable, Optional
 
 from code_forge.library.similarity import hamming_distance64, token_jaccard, tokenize_code_text
 
+try:
+    from eidosian_vector import HNSWVectorStore
+except Exception:  # pragma: no cover - runtime fallback when lib path is unavailable
+    HNSWVectorStore = None
+
 ISO_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
@@ -54,6 +59,12 @@ class CodeLibraryDB:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._fts_enabled = False
+        self._shared_vector_store = None
+        if HNSWVectorStore is not None:
+            try:
+                self._shared_vector_store = HNSWVectorStore(self.db_path.parent / "vectors")
+            except Exception:
+                self._shared_vector_store = None
         self._init_schema()
 
     def _connect(self) -> sqlite3.Connection:
@@ -332,6 +343,7 @@ class CodeLibraryDB:
         search_text: str,
         model_name: str,
         dim: int,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         tokens = tokenize_code_text(search_text)
         vec, norm = self._hash_vector(tokens, dim=dim)
@@ -355,6 +367,11 @@ class CodeLibraryDB:
                 _utc_now(),
             ),
         )
+        if self._shared_vector_store is not None and vec:
+            payload = dict(metadata or {})
+            payload["model_name"] = str(model_name)
+            payload["dim"] = int(dim)
+            self._shared_vector_store.upsert(unit_id, vec, text=search_text, metadata=payload)
 
     def add_unit(self, unit: CodeUnit) -> str:
         unit_id = self.make_unit_id(unit)
@@ -404,6 +421,13 @@ class CodeLibraryDB:
                 search_text=search_text,
                 model_name="hash128_v1",
                 dim=128,
+                metadata={
+                    "language": unit.language,
+                    "unit_type": unit.unit_type,
+                    "file_path": unit.file_path,
+                    "qualified_name": unit.qualified_name or "",
+                    "name": unit.name,
+                },
             )
 
         return unit_id
@@ -954,6 +978,7 @@ class CodeLibraryDB:
             "model_name": str(model_name),
             "dim": int(dim),
             "vector_rows": int(row["c"]) if row else 0,
+            "hnsw_vector_rows": int(self._shared_vector_store.count()) if self._shared_vector_store is not None else 0,
         }
 
     def ensure_vector_index(
@@ -979,7 +1004,8 @@ class CodeLibraryDB:
         with self._connect() as conn:
             rows = conn.execute(
                 f"""
-                SELECT cu.id AS unit_id, cs.search_text
+                SELECT cu.id AS unit_id, cs.search_text,
+                       cu.language, cu.unit_type, cu.file_path, cu.qualified_name, cu.name
                 FROM code_units cu
                 JOIN code_search cs ON cs.unit_id = cu.id
                 LEFT JOIN code_vectors cv ON cv.unit_id = cu.id
@@ -998,6 +1024,13 @@ class CodeLibraryDB:
                     search_text=search_text,
                     model_name=str(model_name),
                     dim=int(dim),
+                    metadata={
+                        "language": str(row["language"] or ""),
+                        "unit_type": str(row["unit_type"] or ""),
+                        "file_path": str(row["file_path"] or ""),
+                        "qualified_name": str(row["qualified_name"] or ""),
+                        "name": str(row["name"] or ""),
+                    },
                 )
                 created += 1
         stats = self.vector_index_stats(model_name=model_name, dim=dim)
@@ -1006,6 +1039,7 @@ class CodeLibraryDB:
             "dim": int(dim),
             "indexed_now": int(created),
             "vector_rows": int(stats["vector_rows"]),
+            "hnsw_vector_rows": int(stats.get("hnsw_vector_rows", 0) or 0),
         }
 
     @staticmethod
@@ -1042,6 +1076,51 @@ class CodeLibraryDB:
         query_vec, query_norm = self._hash_vector(query_tokens, dim=int(dim))
         if query_norm <= 0.0:
             return []
+
+        if self._shared_vector_store is not None:
+            filters: Dict[str, Any] = {"model_name": str(model_name), "dim": int(dim)}
+            if language:
+                filters["language"] = str(language)
+            if unit_type:
+                filters["unit_type"] = str(unit_type)
+            hits = self._shared_vector_store.query(
+                query_vec,
+                limit=max(1, int(limit)),
+                filters=filters,
+                overfetch=max(max(1, int(limit)) * 8, 32),
+            )
+            filtered_hits = [hit for hit in hits if float(hit.score) >= float(min_score)]
+            if filtered_hits:
+                hit_ids = [str(hit.item_id) for hit in filtered_hits]
+                placeholders = ",".join(["?"] * len(hit_ids))
+                with self._connect() as conn:
+                    rows = conn.execute(
+                        f"""
+                        SELECT cu.*, fp.normalized_hash, fp.structural_hash, fp.simhash64, fp.token_count,
+                               cs.search_text
+                        FROM code_units cu
+                        LEFT JOIN code_fingerprints fp ON fp.unit_id = cu.id
+                        LEFT JOIN code_search cs ON cs.unit_id = cu.id
+                        WHERE cu.id IN ({placeholders})
+                        """,
+                        tuple(hit_ids),
+                    ).fetchall()
+                by_id = {str(row["id"]): dict(row) for row in rows}
+                scored: list[Dict[str, Any]] = []
+                for hit in filtered_hits:
+                    rec = by_id.get(str(hit.item_id))
+                    if rec is None:
+                        continue
+                    rec["semantic_score"] = round(float(hit.score), 4)
+                    rec["vector_score"] = round(float(hit.score), 4)
+                    rec["fts_score"] = 0.0
+                    rec["lexical_score"] = round(
+                        token_jaccard(query_tokens, tokenize_code_text(str(rec.get("search_text") or ""))), 4
+                    )
+                    rec["search_preview"] = str(rec.get("search_text") or "")[:280]
+                    scored.append(rec)
+                if scored:
+                    return scored[: max(1, int(limit))]
 
         where = ["cv.model_name = ?", "cv.dim = ?"]
         params: list[Any] = [str(model_name), int(dim)]

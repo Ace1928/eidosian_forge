@@ -279,12 +279,18 @@ def test_vector_index_and_vector_search(tmp_path: Path) -> None:
 
     stats = db.ensure_vector_index(model_name="hash128_v1", dim=128, limit=100)
     assert stats["vector_rows"] >= 2
+    assert stats["hnsw_vector_rows"] >= 2
 
     vector = db.semantic_search("compile plan steps", limit=5, backend="vector", min_score=0.0)
     assert vector
     assert vector[0].get("qualified_name") == "ops.compile_plan"
     assert any(rec.get("qualified_name") == "ops.compile_plan" for rec in vector)
     assert all("vector_score" in rec for rec in vector)
+
+    reopened = CodeLibraryDB(tmp_path / "library.sqlite")
+    persisted = reopened.semantic_search("compile plan steps", limit=5, backend="vector", min_score=0.0)
+    assert persisted
+    assert persisted[0].get("qualified_name") == "ops.compile_plan"
 
     hybrid = db.semantic_search("parse graph nodes", limit=5, backend="hybrid", min_score=0.0)
     assert hybrid
