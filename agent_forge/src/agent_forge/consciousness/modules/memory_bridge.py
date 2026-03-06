@@ -394,7 +394,11 @@ class MemoryBridgeModule:
                         source_module=self.name,
                         content={
                             "community_count": stats_payload.get("community_count", 0),
-                            "top_community": _to_text(top_communities[0][0] if isinstance(top_communities[0], (list, tuple)) else top_communities[0]),
+                            "top_community": _to_text(
+                                top_communities[0][0]
+                                if isinstance(top_communities[0], (list, tuple))
+                                else top_communities[0]
+                            ),
                             "vector_count": stats_payload.get("vector_count", 0),
                         },
                         confidence=0.72,
