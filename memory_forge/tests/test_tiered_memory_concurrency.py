@@ -106,7 +106,9 @@ def test_llm_enrichment_respects_runtime_budget_gate(tmp_path, monkeypatch) -> N
         def generate_payload(self, *args, **kwargs):
             raise AssertionError("Model call should not occur when coordinator denies budget")
 
-    monkeypatch.setitem(sys.modules, "eidosian_runtime", types.SimpleNamespace(ForgeRuntimeCoordinator=_DeniedCoordinator))
+    monkeypatch.setitem(
+        sys.modules, "eidosian_runtime", types.SimpleNamespace(ForgeRuntimeCoordinator=_DeniedCoordinator)
+    )
     monkeypatch.setitem(sys.modules, "eidos_mcp.config.models", types.SimpleNamespace(ModelConfig=_FakeModelConfig))
 
     memory = TieredMemorySystem(
