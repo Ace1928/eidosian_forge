@@ -32,6 +32,7 @@ from file_forge.core import FileForge
 
 from ..core import tool
 
+
 class _NullDiagnostics:
     def log_event(self, *args, **kwargs) -> None:
         return None

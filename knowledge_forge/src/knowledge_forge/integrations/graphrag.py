@@ -792,11 +792,7 @@ class GraphRAGIntegration:
     @eidosian()
     def native_artifact_summary(self, limit: int = 10) -> Dict[str, Any]:
         state = self._load_native_state()
-        artifacts = [
-            value
-            for value in (state.get("code_forge_artifacts") or {}).values()
-            if isinstance(value, dict)
-        ]
+        artifacts = [value for value in (state.get("code_forge_artifacts") or {}).values() if isinstance(value, dict)]
         items = sorted(
             artifacts,
             key=lambda row: str(row.get("updated_at") or ""),
