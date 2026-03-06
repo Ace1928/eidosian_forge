@@ -1,4 +1,6 @@
+import json
 import subprocess
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -174,6 +176,34 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
     docs = workspace / "input"
     docs.mkdir(parents=True, exist_ok=True)
     (docs / "guide.md").write_text("Eidos uses a unified vector graph index.", encoding="utf-8")
+    artifact_dir = tmp_path / "data" / "code_forge" / "cycle" / "run_001"
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    (artifact_dir / "provenance_registry.json").write_text(
+        """
+        {
+          "schema_version": "code_forge_provenance_registry_v1",
+          "generated_at": "2026-03-06T00:00:00+00:00",
+          "registry_id": "reg_1",
+          "stage": "archive_digester",
+          "root_path": "/tmp/repo",
+          "provenance_id": "prov_1",
+          "integration_policy": "effective_run",
+          "integration_run_id": "run_1",
+          "artifacts": [{"artifact_kind": "triage", "path": "/tmp/out/triage.json"}],
+          "links": {
+            "knowledge_count": 1,
+            "memory_count": 0,
+            "graphrag_count": 1,
+            "unit_links": [
+              {"unit_id": "u1", "qualified_name": "pkg.mod.fn", "knowledge_node_id": "", "memory_id": ""}
+            ]
+          },
+          "benchmark": {"gate_pass": true, "search_p95_ms": 42.0},
+          "drift": {"warning_count": 1, "max_abs_delta": 3.0}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
     word_graph = tmp_path / "eidos_semantic_graph.json"
     word_graph.write_text(
         """
@@ -203,14 +233,16 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
             stdout="",
             stderr="graphrag not installed",
         )
-        result = grag.run_incremental_index([docs])
+        result = grag.run_incremental_index([docs, artifact_dir])
 
     assert result["success"] is True
     assert result["mode"] == "native_vector_graph"
     assert result["external_success"] is False
-    assert result["files_indexed"] == 1
+    assert result["files_indexed"] >= 1
     assert result["word_forge"]["term_nodes"] == 2
     assert result["word_forge"]["relationships"] == 1
+    assert result["code_forge"]["artifacts_indexed"] >= 1
+    assert result["community_reports"]["count"] >= 3
 
     knowledge = KnowledgeForge(persistence_path=tmp_path / "kb.json")
     assert knowledge.search("Eidos uses a unified vector graph index.")
@@ -218,6 +250,8 @@ def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(
     assert word_hits
     related = knowledge.get_related_nodes(word_hits[0].id)
     assert related
+    artifact_hits = knowledge.search("Code Forge artifact:")
+    assert artifact_hits
 
 
 def test_graphrag_incremental_index_removes_stale_native_documents(tmp_path):
@@ -249,3 +283,32 @@ def test_graphrag_incremental_index_removes_stale_native_documents(tmp_path):
 
     knowledge = KnowledgeForge(persistence_path=tmp_path / "kb.json")
     assert knowledge.search("persistent graph memory") == []
+
+
+def test_graphrag_native_reports_written_after_index(tmp_path):
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "architecture.md").write_text("Vector graph architecture links memory, code, and knowledge.", encoding="utf-8")
+
+    grag = GraphRAGIntegration(
+        graphrag_root=workspace,
+        kb_path=tmp_path / "kb.json",
+        memory_dir=tmp_path / "memory",
+        word_graph_path=tmp_path / "missing_word_graph.json",
+    )
+    with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python", "-m", "graphrag", "index"],
+            returncode=2,
+            stdout="",
+            stderr="graphrag not installed",
+        )
+        result = grag.run_incremental_index([docs])
+
+    reports = result["community_reports"]
+    assert reports["count"] >= 1
+    assert Path(reports["json_path"]).exists()
+    assert Path(reports["markdown_path"]).exists()
+    payload = json.loads(Path(reports["json_path"]).read_text(encoding="utf-8"))
+    assert payload["reports"]

@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -60,6 +61,7 @@ EXCLUDE_SEGMENTS = {
 
 DEFAULT_CHUNK_CHARS = 1200
 DEFAULT_CHUNK_OVERLAP = 200
+MAX_NATIVE_REPORTS = 8
 
 
 def _forge_root() -> Path:
@@ -408,6 +410,332 @@ class GraphRAGIntegration:
             return "docs"
         return "data"
 
+    def _default_code_forge_artifact_paths(self) -> List[Path]:
+        forge_root = _forge_root()
+        candidates = [
+            forge_root / "data" / "code_forge",
+            forge_root / "reports",
+        ]
+        return [path.resolve() for path in candidates if path.exists()]
+
+    def _iter_code_forge_artifact_files(self, scan_roots: List[Path]) -> Iterable[Path]:
+        wanted = {
+            "provenance_registry.json",
+            "provenance_links.json",
+            "drift_report.json",
+            "triage.json",
+            "triage_audit.json",
+        }
+        seen: set[Path] = set()
+        for root in list(scan_roots) + self._default_code_forge_artifact_paths():
+            base = Path(root).expanduser().resolve()
+            if not base.exists():
+                continue
+            if base.is_file():
+                if base.name in wanted or ("code_forge" in base.name and base.suffix.lower() == ".json"):
+                    if base not in seen:
+                        seen.add(base)
+                        yield base
+                continue
+            for path in base.rglob("*"):
+                if path in seen or not path.is_file():
+                    continue
+                if path.name in wanted or ("code_forge" in path.name and path.suffix.lower() == ".json"):
+                    seen.add(path)
+                    yield path
+
+    def _summarize_json_payload(self, payload: Dict[str, Any], *, max_items: int = 6) -> str:
+        lines: list[str] = []
+        for key, value in payload.items():
+            if len(lines) >= max_items:
+                break
+            if isinstance(value, dict):
+                sub_keys = list(value.keys())[:4]
+                lines.append(f"{key}: object[{', '.join(str(k) for k in sub_keys)}]")
+            elif isinstance(value, list):
+                lines.append(f"{key}: list[{len(value)}]")
+            elif isinstance(value, (str, int, float, bool)) or value is None:
+                text = str(value)
+                if len(text) > 140:
+                    text = text[:137] + "..."
+                lines.append(f"{key}: {text}")
+        return "\n".join(lines).strip()
+
+    def _artifact_kind(self, path: Path, payload: Dict[str, Any]) -> str:
+        if path.name == "provenance_registry.json":
+            return "code_forge_provenance_registry"
+        if path.name == "provenance_links.json":
+            return "code_forge_provenance_links"
+        if path.name == "drift_report.json":
+            return "code_forge_drift"
+        if path.name == "triage_audit.json":
+            return "code_forge_triage_audit"
+        if path.name == "triage.json":
+            return "code_forge_triage"
+        if "benchmark" in path.name:
+            return "code_forge_benchmark"
+        return str(payload.get("schema_version") or payload.get("stage") or "code_forge_artifact")
+
+    def _ingest_code_forge_artifacts(self, knowledge: Any, state: Dict[str, Any], scan_roots: List[Path]) -> Dict[str, Any]:
+        artifact_state = dict(state.get("code_forge_artifacts") or {})
+        active_paths: set[str] = set()
+        artifacts_seen = 0
+        artifacts_indexed = 0
+        artifacts_unchanged = 0
+        artifacts_removed = 0
+        links_created = 0
+        deleted_nodes = 0
+
+        for path in self._iter_code_forge_artifact_files(scan_roots):
+            artifacts_seen += 1
+            source_key = str(path)
+            active_paths.add(source_key)
+            digest = self._sha256_file(path)
+            prior = dict(artifact_state.get(source_key) or {})
+            if prior.get("sha256") == digest:
+                artifacts_unchanged += 1
+                continue
+
+            if prior:
+                deleted_nodes += self._delete_recorded_nodes(
+                    knowledge,
+                    [str(prior.get("root_node_id") or "")] + list(prior.get("node_ids") or []),
+                )
+
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                artifact_state.pop(source_key, None)
+                continue
+            if not isinstance(payload, dict):
+                artifact_state.pop(source_key, None)
+                continue
+
+            rel_path = os.path.relpath(path, _forge_root())
+            kind = self._artifact_kind(path, payload)
+            title = str(payload.get("provenance_id") or payload.get("registry_id") or payload.get("stage") or path.stem)
+            root_node = knowledge.add_knowledge(
+                content=f"Code Forge artifact: {rel_path}\nKind: {kind}\nTitle: {title}",
+                concepts=[path.stem, "code_forge_artifact"],
+                tags=["code_forge", "artifact", kind],
+                metadata={
+                    "source": "code_forge",
+                    "kind": kind,
+                    "artifact_path": rel_path,
+                    "source_paths": [str(path)],
+                    "sha256": digest,
+                },
+            )
+
+            detail_ids: list[str] = []
+            summary_text = self._summarize_json_payload(payload)
+            if summary_text:
+                summary_node = knowledge.add_knowledge(
+                    content=f"Artifact summary: {rel_path}\n{summary_text}",
+                    concepts=[path.stem],
+                    tags=["code_forge", "artifact_summary", kind],
+                    metadata={
+                        "source": "code_forge",
+                        "kind": "artifact_summary",
+                        "artifact_path": rel_path,
+                        "source_paths": [str(path)],
+                        "sha256": digest,
+                    },
+                )
+                knowledge.link_nodes(root_node.id, summary_node.id)
+                detail_ids.append(summary_node.id)
+
+            unit_links = []
+            links_payload = payload.get("links")
+            if isinstance(links_payload, dict):
+                candidate_links = links_payload.get("unit_links")
+                if isinstance(candidate_links, list):
+                    unit_links = [row for row in candidate_links if isinstance(row, dict)]
+            if not unit_links and path.name == "provenance_links.json":
+                gr_docs = ((payload.get("graphrag_links") or {}).get("documents")) if isinstance(payload.get("graphrag_links"), dict) else []
+                if isinstance(gr_docs, list):
+                    unit_links = [row for row in gr_docs if isinstance(row, dict)]
+
+            for row in unit_links[:200]:
+                knowledge_node_id = str(row.get("knowledge_node_id") or row.get("node_id") or "").strip()
+                if knowledge_node_id and knowledge_node_id in knowledge.nodes:
+                    knowledge.link_nodes(root_node.id, knowledge_node_id)
+                    links_created += 1
+                else:
+                    unit_id = str(row.get("unit_id") or "").strip()
+                    qualified_name = str(row.get("qualified_name") or unit_id or "").strip()
+                    if not qualified_name:
+                        continue
+                    detail = knowledge.add_knowledge(
+                        content=f"Code Forge unit linkage: {qualified_name}\nArtifact: {rel_path}",
+                        concepts=[qualified_name],
+                        tags=["code_forge", "unit_link", kind],
+                        metadata={
+                            "source": "code_forge",
+                            "kind": "unit_link",
+                            "unit_id": unit_id or None,
+                            "qualified_name": qualified_name,
+                            "artifact_path": rel_path,
+                            "source_paths": [str(path)],
+                        },
+                    )
+                    knowledge.link_nodes(root_node.id, detail.id)
+                    detail_ids.append(detail.id)
+
+            benchmark = payload.get("benchmark")
+            if isinstance(benchmark, dict):
+                lines = ["Benchmark summary:"]
+                gate_pass = benchmark.get("gate_pass")
+                if gate_pass is not None:
+                    lines.append(f"gate_pass: {gate_pass}")
+                if benchmark.get("search_p95_ms") is not None:
+                    lines.append(f"search_p95_ms: {benchmark.get('search_p95_ms')}")
+                if benchmark.get("graph_build_ms") is not None:
+                    lines.append(f"graph_build_ms: {benchmark.get('graph_build_ms')}")
+                bench_node = knowledge.add_knowledge(
+                    content="\n".join(lines),
+                    concepts=["benchmark", "code_forge"],
+                    tags=["code_forge", "benchmark", kind],
+                    metadata={
+                        "source": "code_forge",
+                        "kind": "benchmark_summary",
+                        "artifact_path": rel_path,
+                        "source_paths": [str(path)],
+                    },
+                )
+                knowledge.link_nodes(root_node.id, bench_node.id)
+                detail_ids.append(bench_node.id)
+
+            drift = payload.get("drift")
+            if isinstance(drift, dict) and drift.get("warning_count") is not None:
+                drift_node = knowledge.add_knowledge(
+                    content=f"Drift warnings: {drift.get('warning_count')}\nMax abs delta: {drift.get('max_abs_delta')}",
+                    concepts=["drift", "code_forge"],
+                    tags=["code_forge", "drift", kind],
+                    metadata={
+                        "source": "code_forge",
+                        "kind": "drift_summary",
+                        "artifact_path": rel_path,
+                        "source_paths": [str(path)],
+                    },
+                )
+                knowledge.link_nodes(root_node.id, drift_node.id)
+                detail_ids.append(drift_node.id)
+
+            artifact_state[source_key] = {
+                "sha256": digest,
+                "root_node_id": root_node.id,
+                "node_ids": detail_ids,
+                "kind": kind,
+                "artifact_path": rel_path,
+                "updated_at": self._timestamp(),
+            }
+            artifacts_indexed += 1
+
+        for stale_path in sorted(set(artifact_state.keys()) - active_paths):
+            prior = dict(artifact_state.get(stale_path) or {})
+            deleted_nodes += self._delete_recorded_nodes(
+                knowledge,
+                [str(prior.get("root_node_id") or "")] + list(prior.get("node_ids") or []),
+            )
+            artifact_state.pop(stale_path, None)
+            artifacts_removed += 1
+
+        state["code_forge_artifacts"] = artifact_state
+        return {
+            "artifacts_seen": artifacts_seen,
+            "artifacts_indexed": artifacts_indexed,
+            "artifacts_unchanged": artifacts_unchanged,
+            "artifacts_removed": artifacts_removed,
+            "links_created": links_created,
+            "deleted_nodes": deleted_nodes,
+        }
+
+    def _collect_report_candidate_ids(self, state: Dict[str, Any]) -> List[str]:
+        node_ids: list[str] = []
+        for payload in (state.get("files") or {}).values():
+            if isinstance(payload, dict):
+                node_ids.extend([str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("chunk_node_ids") or []])
+        word_graph = state.get("word_graph") or {}
+        if isinstance(word_graph, dict):
+            node_ids.extend(str(x) for x in word_graph.get("node_ids") or [])
+        for payload in (state.get("code_forge_artifacts") or {}).values():
+            if isinstance(payload, dict):
+                node_ids.extend([str(payload.get("root_node_id") or "")] + [str(x) for x in payload.get("node_ids") or []])
+        return [node_id for node_id in dict.fromkeys(node_ids) if node_id]
+
+    def _build_native_community_reports(self, knowledge: Any, state: Dict[str, Any]) -> Dict[str, Any]:
+        output_dir = self.root / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        candidate_ids = self._collect_report_candidate_ids(state)
+        nodes = [knowledge.nodes[node_id] for node_id in candidate_ids if node_id in knowledge.nodes]
+
+        buckets: dict[str, list[Any]] = {
+            "documents": [node for node in nodes if "document_chunk" in node.tags or "document_root" in node.tags],
+            "lexicon": [node for node in nodes if "word_forge" in node.tags or "lexicon" in node.tags],
+            "code_forge": [node for node in nodes if "code_forge" in node.tags or "artifact" in node.tags],
+        }
+        tag_counts = Counter(
+            tag
+            for node in nodes
+            for tag in node.tags
+            if tag not in {"native_graphrag", "document_root", "document_chunk", "code_forge", "artifact", "word_forge"}
+        )
+        for tag, _count in tag_counts.most_common(MAX_NATIVE_REPORTS):
+            group = [node for node in nodes if tag in node.tags]
+            if len(group) >= 2:
+                buckets.setdefault(tag, group)
+
+        reports: list[dict[str, Any]] = []
+        for community, group in buckets.items():
+            if not group:
+                continue
+            unique_group = list(dict.fromkeys(group))
+            sample_nodes = unique_group[:5]
+            findings = []
+            linked_neighbors = 0
+            for node in sample_nodes:
+                content = str(node.content).strip().replace("\n", " ")
+                if len(content) > 180:
+                    content = content[:177] + "..."
+                findings.append(content)
+                linked_neighbors += len(knowledge.get_related_nodes(node.id))
+            rating = min(5, max(1, len(unique_group) // 2 + (1 if linked_neighbors else 0)))
+            reports.append(
+                {
+                    "community": community,
+                    "title": f"{community.replace('_', ' ').title()} Community",
+                    "summary": f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references",
+                    "rating": rating,
+                    "rating_explanation": "Higher scores reflect denser linked context and broader coverage.",
+                    "findings": findings,
+                    "node_ids": [node.id for node in unique_group[:25]],
+                }
+            )
+
+        reports = sorted(reports, key=lambda row: (int(row.get("rating", 0)), len(row.get("node_ids", []))), reverse=True)
+        json_path = output_dir / "native_community_reports.json"
+        md_path = output_dir / "native_community_reports.md"
+        json_path.write_text(json.dumps({"generated_at": self._timestamp(), "reports": reports}, indent=2) + "\n", encoding="utf-8")
+
+        md_lines = ["# Native Community Reports", ""]
+        for report in reports:
+            md_lines.append(f"## {report['title']}")
+            md_lines.append(f"- Community: {report['community']}")
+            md_lines.append(f"- Rating: {report['rating']}")
+            md_lines.append(f"- Summary: {report['summary']}")
+            md_lines.append("- Findings:")
+            for finding in report["findings"]:
+                md_lines.append(f"  - {finding}")
+            md_lines.append("")
+        md_path.write_text("\n".join(md_lines).rstrip() + "\n", encoding="utf-8")
+        return {
+            "count": len(reports),
+            "json_path": str(json_path),
+            "markdown_path": str(md_path),
+            "top_community": reports[0]["community"] if reports else None,
+        }
+
     def _native_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         bridge = self._load_bridge()
         if bridge is None or getattr(bridge, "knowledge", None) is None:
@@ -511,6 +839,8 @@ class GraphRAGIntegration:
 
         state["files"] = file_state
         word_forge = self._ingest_word_graph(knowledge, state)
+        code_forge = self._ingest_code_forge_artifacts(knowledge, state, scan_roots)
+        community_reports = self._build_native_community_reports(knowledge, state)
         self._save_native_state(state)
         knowledge.save()
 
@@ -527,6 +857,8 @@ class GraphRAGIntegration:
             "document_nodes": document_nodes,
             "chunk_nodes": chunk_nodes,
             "word_forge": word_forge,
+            "code_forge": code_forge,
+            "community_reports": community_reports,
         }
 
     def _local_vector_graph_query(self, query: str, method: str) -> Dict[str, Any]:
