@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -23,6 +24,7 @@ from ..core import tool
 FORGE_DIR = Path(os.environ.get("EIDOS_FORGE_DIR", str(FORGE_ROOT))).resolve()
 SEMANTIC_GRAPH_PATH = FORGE_DIR / "data" / "eidos_semantic_graph.json"
 COORDINATOR_STATUS_PATH = FORGE_DIR / "data" / "runtime" / "forge_coordinator_status.json"
+LEXICON_QUEUE_PATH = FORGE_DIR / "data" / "runtime" / "word_forge_lexicon_queue.json"
 
 # Simple in-memory graph
 _graph: Optional[nx.Graph] = None
@@ -31,7 +33,10 @@ TERM_ENRICH_SCHEMA: dict[str, Any] = {
     "properties": {
         "definition": {"type": "string"},
         "pos": {"type": "string"},
+        "phonetic": {"type": "string"},
         "aliases": {"type": "array", "items": {"type": "string"}},
+        "examples": {"type": "array", "items": {"type": "string"}},
+        "roots": {"type": "array", "items": {"type": "string"}},
         "domains": {"type": "array", "items": {"type": "string"}},
         "related_terms": {
             "type": "array",
@@ -46,7 +51,7 @@ TERM_ENRICH_SCHEMA: dict[str, Any] = {
             },
         },
     },
-    "required": ["definition", "pos", "aliases", "domains", "related_terms"],
+    "required": ["definition", "pos", "aliases", "examples", "roots", "domains", "related_terms"],
 }
 TEXT_LEXICON_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -59,6 +64,10 @@ TEXT_LEXICON_SCHEMA: dict[str, Any] = {
                     "term": {"type": "string"},
                     "definition": {"type": "string"},
                     "pos": {"type": "string"},
+                    "phonetic": {"type": "string"},
+                    "aliases": {"type": "array", "items": {"type": "string"}},
+                    "examples": {"type": "array", "items": {"type": "string"}},
+                    "roots": {"type": "array", "items": {"type": "string"}},
                     "domains": {"type": "array", "items": {"type": "string"}},
                     "related_terms": {
                         "type": "array",
@@ -73,12 +82,16 @@ TEXT_LEXICON_SCHEMA: dict[str, Any] = {
                         },
                     },
                 },
-                "required": ["term", "definition", "pos", "domains", "related_terms"],
+                "required": ["term", "definition", "pos", "aliases", "examples", "roots", "domains", "related_terms"],
             },
         }
     },
     "required": ["terms"],
 }
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _get_graph() -> nx.Graph:
@@ -117,6 +130,49 @@ def _extract_json_fragment(text: str) -> Dict[str, Any] | None:
     candidate = str(text or "").strip()
     if not candidate:
         return None
+
+
+def _read_lexicon_queue() -> dict[str, Any]:
+    if not LEXICON_QUEUE_PATH.exists():
+        return {"contract": "eidos.word_forge.lexicon_queue.v1", "items": []}
+    try:
+        payload = json.loads(LEXICON_QUEUE_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {"contract": "eidos.word_forge.lexicon_queue.v1", "items": []}
+    if not isinstance(payload, dict):
+        return {"contract": "eidos.word_forge.lexicon_queue.v1", "items": []}
+    items = payload.get("items")
+    payload["items"] = items if isinstance(items, list) else []
+    payload["contract"] = "eidos.word_forge.lexicon_queue.v1"
+    return payload
+
+
+def _write_lexicon_queue(payload: dict[str, Any]) -> None:
+    LEXICON_QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = dict(payload)
+    payload["contract"] = "eidos.word_forge.lexicon_queue.v1"
+    payload["updated_at"] = _now_iso()
+    LEXICON_QUEUE_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def _normalize_queue_term(term: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_./:+-]+", " ", str(term or "")).strip().lower()
+    return re.sub(r"\s+", " ", cleaned)
+
+
+def _candidate_terms_from_text(text: str, limit: int = 32) -> list[str]:
+    candidates = re.findall(r"[A-Za-z][A-Za-z0-9_./:+-]{3,}", str(text or ""))
+    out: list[str] = []
+    seen: set[str] = set()
+    for token in candidates:
+        normalized = _normalize_queue_term(token)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        out.append(normalized)
+        if len(out) >= max(1, int(limit)):
+            break
+    return out
     try:
         payload = json.loads(candidate)
         return payload if isinstance(payload, dict) else None
@@ -538,9 +594,7 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
         timeout_sec=timeout_sec,
     )
     if not payload:
-        return json.dumps(
-            {"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2
-        )
+        return json.dumps({"status": "skipped", "reason": "model unavailable or returned no structured payload"}, indent=2)
     if payload.get("_budget_denied"):
         return json.dumps(
             {
@@ -552,10 +606,10 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
         )
 
     attributes = dict(existing)
-    for key in ("definition", "pos"):
+    for key in ("definition", "pos", "phonetic"):
         if str(payload.get(key) or "").strip():
             attributes[key] = str(payload.get(key)).strip()
-    for key in ("aliases", "domains"):
+    for key in ("aliases", "examples", "roots", "domains"):
         value = payload.get(key)
         if isinstance(value, list):
             attributes[key] = [str(item).strip() for item in value if str(item).strip()]
@@ -583,7 +637,10 @@ def wf_enrich_term(term: str, context: str = "", thinking_mode: str = "on", time
             "term": term,
             "definition": attributes.get("definition"),
             "pos": attributes.get("pos"),
+            "phonetic": attributes.get("phonetic"),
             "aliases": attributes.get("aliases", []),
+            "examples": attributes.get("examples", []),
+            "roots": attributes.get("roots", []),
             "domains": attributes.get("domains", []),
             "relationships_added": created_edges,
             "effective_thinking_mode": payload.get("_effective_thinking_mode"),
@@ -712,6 +769,10 @@ def wf_build_lexicon_from_text(text: str, thinking_mode: str = "on", timeout_sec
         attrs = {
             "definition": str(item.get("definition") or "").strip(),
             "pos": str(item.get("pos") or "").strip(),
+            "phonetic": str(item.get("phonetic") or "").strip(),
+            "aliases": [str(x).strip() for x in (item.get("aliases") or []) if str(x).strip()],
+            "examples": [str(x).strip() for x in (item.get("examples") or []) if str(x).strip()],
+            "roots": [str(x).strip() for x in (item.get("roots") or []) if str(x).strip()],
             "domains": [str(x).strip() for x in (item.get("domains") or []) if str(x).strip()],
             "source": "llm_text_extraction",
             "effective_thinking_mode": payload.get("_effective_thinking_mode"),
@@ -742,6 +803,154 @@ def wf_build_lexicon_from_text(text: str, thinking_mode: str = "on", timeout_sec
             "total_nodes": graph.number_of_nodes(),
             "total_edges": graph.number_of_edges(),
             "effective_thinking_mode": payload.get("_effective_thinking_mode"),
+        },
+        indent=2,
+    )
+
+
+@tool(
+    name="wf_queue_terms_from_text",
+    description="Queue candidate lexical terms from text for later enrichment.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "text": {"type": "string", "description": "Grounding text used to derive lexical candidates."},
+            "source": {"type": "string", "description": "Optional source identifier for the queued terms."},
+            "limit": {"type": "integer", "description": "Maximum number of candidate terms to queue."},
+        },
+        "required": ["text"],
+    },
+)
+@eidosian()
+def wf_queue_terms_from_text(text: str, source: str = "", limit: int = 32) -> str:
+    queue = _read_lexicon_queue()
+    items = [row for row in queue.get("items", []) if isinstance(row, dict)]
+    indexed = {str(row.get("term")): row for row in items if str(row.get("term") or "").strip()}
+    queued = 0
+    updated = 0
+    for term in _candidate_terms_from_text(text, limit=limit):
+        item = indexed.get(term)
+        if item is None:
+            item = {
+                "term": term,
+                "sources": [],
+                "contexts": [],
+                "occurrences": 0,
+                "status": "queued",
+                "queued_at": _now_iso(),
+            }
+            indexed[term] = item
+            items.append(item)
+            queued += 1
+        else:
+            updated += 1
+        if source and source not in item["sources"]:
+            item["sources"].append(source)
+        excerpt = str(text or "").strip().replace("\n", " ")[:240]
+        if excerpt and excerpt not in item["contexts"]:
+            item["contexts"] = (item.get("contexts") or [])[:3] + ([excerpt] if excerpt not in (item.get("contexts") or []) else [])
+            item["contexts"] = item["contexts"][:4]
+        item["occurrences"] = int(item.get("occurrences") or 0) + 1
+        item["status"] = "queued"
+        item["updated_at"] = _now_iso()
+    queue["items"] = sorted(items, key=lambda row: (str(row.get("status") or ""), -int(row.get("occurrences") or 0), str(row.get("term") or "")))
+    _write_lexicon_queue(queue)
+    return json.dumps(
+        {
+            "status": "success",
+            "queued": queued,
+            "updated": updated,
+            "queue_size": len(queue["items"]),
+            "path": str(LEXICON_QUEUE_PATH),
+        },
+        indent=2,
+    )
+
+
+@tool(
+    name="wf_process_lexicon_queue",
+    description="Process queued lexical terms through the enrichment model.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "max_terms": {"type": "integer", "description": "Maximum queued terms to process in this pass."},
+            "thinking_mode": {"type": "string", "description": "Reasoning mode for lexical enrichment."},
+            "timeout_sec": {"type": "number", "description": "Per-term timeout in seconds."},
+        },
+    },
+)
+@eidosian()
+def wf_process_lexicon_queue(max_terms: int = 16, thinking_mode: str = "on", timeout_sec: float = 900.0) -> str:
+    queue = _read_lexicon_queue()
+    items = [row for row in queue.get("items", []) if isinstance(row, dict)]
+    processed = 0
+    enriched = 0
+    skipped = 0
+    failed = 0
+    for item in items:
+        if processed >= max(1, int(max_terms)):
+            break
+        if str(item.get("status") or "") not in {"queued", "failed"}:
+            continue
+        term = str(item.get("term") or "").strip()
+        if not term:
+            continue
+        context = "\n".join(str(row).strip() for row in (item.get("contexts") or []) if str(row).strip())[:2000]
+        item["status"] = "processing"
+        item["updated_at"] = _now_iso()
+        result = json.loads(wf_enrich_term(term, context=context, thinking_mode=thinking_mode, timeout_sec=timeout_sec))
+        processed += 1
+        if result.get("status") == "success":
+            item["status"] = "enriched"
+            item["enriched_at"] = _now_iso()
+            item["result"] = result
+            enriched += 1
+        elif result.get("reason") == "runtime budget denied":
+            item["status"] = "queued"
+            item["updated_at"] = _now_iso()
+            item["budget_reason"] = result.get("budget_reason")
+            skipped += 1
+            break
+        else:
+            item["status"] = "failed"
+            item["updated_at"] = _now_iso()
+            item["error"] = str(result.get("reason") or "enrichment_failed")
+            failed += 1
+    queue["items"] = items
+    _write_lexicon_queue(queue)
+    return json.dumps(
+        {
+            "status": "success",
+            "processed": processed,
+            "enriched": enriched,
+            "skipped": skipped,
+            "failed": failed,
+            "queue_size": len(items),
+            "path": str(LEXICON_QUEUE_PATH),
+        },
+        indent=2,
+    )
+
+
+@tool(
+    name="wf_lexicon_queue_status",
+    description="Return status for the persistent lexical enrichment queue.",
+    parameters={"type": "object", "properties": {}},
+)
+@eidosian()
+def wf_lexicon_queue_status() -> str:
+    queue = _read_lexicon_queue()
+    items = [row for row in queue.get("items", []) if isinstance(row, dict)]
+    counts: dict[str, int] = {}
+    for item in items:
+        status = str(item.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+    return json.dumps(
+        {
+            "status": "success",
+            "queue_size": len(items),
+            "counts": counts,
+            "path": str(LEXICON_QUEUE_PATH),
         },
         indent=2,
     )

@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 from doc_forge.scribe.generate import REQUIRED_HEADINGS, DocGenerator
 
 
+@patch("doc_forge.scribe.generate.ForgeRuntimeCoordinator", autospec=True)
 @patch("requests.post")
-def test_generate_success(mock_post, mock_config, mock_llm_response):
+def test_generate_success(mock_post, _mock_coordinator, mock_config, mock_llm_response):
     mock_post.return_value = mock_llm_response
     # Mock return needs to have valid headings
     valid_doc = "\\n".join(REQUIRED_HEADINGS) + "\\nContent."
@@ -18,8 +19,9 @@ def test_generate_success(mock_post, mock_config, mock_llm_response):
     assert mock_post.call_count == 2
 
 
+@patch("doc_forge.scribe.generate.ForgeRuntimeCoordinator", autospec=True)
 @patch("requests.post")
-def test_generate_retry(mock_post, mock_config, mock_llm_response):
+def test_generate_retry(mock_post, _mock_coordinator, mock_config, mock_llm_response):
     # First draft fails validation (missing headings), second succeeds
     bad_draft = "# Wrong\\nBad content"
     good_draft = "\\n".join(REQUIRED_HEADINGS) + "\\nGood content"

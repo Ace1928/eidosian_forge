@@ -97,8 +97,8 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
     calls: list[tuple[str, list[Path]]] = []
 
     class FakeGraphRAG:
-        def run_incremental_index(self, scan_roots):
-            calls.append(("index", list(scan_roots)))
+        def run_incremental_index(self, scan_roots, *, include_external=True):
+            calls.append(("index", list(scan_roots), include_external))
             return {
                 "success": True,
                 "mode": "native_vector_graph",
@@ -115,7 +115,24 @@ def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch)
     assert result["community_reports"]["average_quality_score"] == 0.75
     assert result["report_trends"]["latest"]["average_quality_score"] == 0.75
     assert result["assessment"]["status"] == "stable"
-    assert calls == [("index", [docs])]
+    assert calls == [("index", [docs], True)]
+
+
+def test_run_graphrag_index_skips_external_for_native_mode(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+
+    seen: list[bool] = []
+
+    class FakeGraphRAG:
+        def run_incremental_index(self, scan_roots, *, include_external=True):
+            seen.append(include_external)
+            return {"success": True, "community_reports": {}, "report_trends": {}, "assessment": {}}
+
+    monkeypatch.setattr(pipeline, "_build_graphrag", lambda workspace_root: FakeGraphRAG())
+    pipeline._run_graphrag_index(workspace, method="native", scan_roots=[docs])
+    assert seen == [False]
 
 
 def test_build_word_forge_lexicon_uses_router(tmp_path: Path, monkeypatch) -> None:
@@ -136,18 +153,48 @@ def test_build_word_forge_lexicon_uses_router(tmp_path: Path, monkeypatch) -> No
         simhash="0000000000000001",
     )
 
-    monkeypatch.setattr(
-        wf_router,
-        "wf_build_lexicon_from_text",
-        lambda text, thinking_mode="on": json.dumps({"status": "success", "nodes_added": 2, "edges_added": 1}),
-    )
+    monkeypatch.setattr(wf_router, "wf_queue_terms_from_text", lambda text, source="", limit=32: json.dumps({"status": "success", "queued": 2, "queue_size": 2}))
+    monkeypatch.setattr(wf_router, "wf_build_lexicon_from_text", lambda text, thinking_mode="on": json.dumps({"status": "success", "nodes_added": 2, "edges_added": 1}))
+    monkeypatch.setattr(wf_router, "wf_process_lexicon_queue", lambda max_terms=16, thinking_mode="on", timeout_sec=900.0: json.dumps({"status": "success", "processed": 2, "enriched": 2}))
+    monkeypatch.setattr(wf_router, "wf_lexicon_queue_status", lambda: json.dumps({"status": "success", "queue_size": 0, "counts": {"enriched": 2}}))
     monkeypatch.setattr(wf_router, "wf_graph_stats", lambda: json.dumps({"nodes": 2, "edges": 1}))
 
     result = pipeline.build_word_forge_lexicon([record], repo_root=tmp_path, thinking_mode="on")
     assert result["enabled"] is True
     assert result["updated"] is True
     assert result["build_result"]["nodes_added"] == 2
+    assert result["queue_result"]["queued"] == 2
+    assert result["process_result"]["enriched"] == 2
     assert result["stats"]["nodes"] == 2
+
+
+def test_stage_doc_forge_documents_uses_runtime_index(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    runtime_root = repo_root / "doc_forge" / "runtime"
+    final_root = runtime_root / "final_docs"
+    final_root.mkdir(parents=True, exist_ok=True)
+    doc_path = final_root / "pkg" / "module.py.md"
+    doc_path.parent.mkdir(parents=True, exist_ok=True)
+    doc_path.write_text("# File Overview\nDoc body", encoding="utf-8")
+    (runtime_root / "doc_index.json").write_text(
+        json.dumps(
+            {
+                "entries": [
+                    {
+                        "source": "pkg/module.py",
+                        "document": "final_docs/pkg/module.py.md",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    stage_dir = tmp_path / "stage"
+
+    records = pipeline.stage_doc_forge_documents(repo_root, stage_dir, max_chars_per_doc=4000)
+    assert len(records) == 1
+    assert records[0].source_path == "doc_forge::pkg/module.py"
+    assert Path(records[0].staged_path).exists()
 
 
 def test_render_graphrag_query_result_handles_local_fallback() -> None:
@@ -200,6 +247,7 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
         near_duplicates=2,
         drift={"added_count": 1, "removed_count": 0, "changed_count": 3},
         code_report={"run_stats": {"files_processed": 8, "units_created": 21}},
+        doc_forge_result={"enabled": True, "processed": 8, "approved": 7, "rejected": 1, "errors": 0},
         graphrag_result={
             "indexed": True,
             "report_summary": {"count": 1},
@@ -230,12 +278,11 @@ def test_generate_living_documentation_uses_central_qwen_config(tmp_path: Path, 
     assert captured["kwargs"]["format"]["type"] == "object"
     assert "recommended_actions" in captured["kwargs"]["format"]["required"]
     assert '"assessment_summary": {' in captured["prompt"]
+    assert '"doc_forge": {' in captured["prompt"]
     assert '"word_forge": {' in captured["prompt"]
 
 
-def test_generate_living_documentation_retries_without_thinking_when_no_final_response(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_generate_living_documentation_retries_without_thinking_when_no_final_response(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir(parents=True, exist_ok=True)
     seen_modes: list[str] = []
@@ -271,6 +318,7 @@ def test_generate_living_documentation_retries_without_thinking_when_no_final_re
         near_duplicates=0,
         drift={"added_count": 0, "removed_count": 0, "changed_count": 1},
         code_report={"run_stats": {}},
+        doc_forge_result={"enabled": True, "processed": 1, "approved": 1, "rejected": 0, "errors": 0},
         graphrag_result={"indexed": False},
         word_forge_result={"enabled": True, "updated": False, "stats": {"nodes": 1, "edges": 0}},
         config=pipeline.LivingDocumentationConfig(model="qwen3.5:2b", thinking_mode="on"),
@@ -294,20 +342,16 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     monkeypatch.setattr(pipeline, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(pipeline, "PIPELINE_STATUS_PATH", runtime_dir / "living_pipeline_status.json")
 
-    monkeypatch.setattr(
-        pipeline,
-        "run_code_analysis",
-        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(pipeline, "run_doc_forge_batch", lambda *args, **kwargs: {"enabled": True, "processed": 2, "approved": 2, "rejected": 0, "errors": 0})
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pipeline, "stage_doc_forge_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(
-        pipeline,
-        "compare_with_previous_run",
-        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(pipeline, "queue_terms_for_documents", lambda *args, **kwargs: {"enabled": True, "queued": 0, "processed": 0})
+    monkeypatch.setattr(pipeline, "post_ingest_generated_documents", lambda *args, **kwargs: {"indexed": False, "documents": 0})
     monkeypatch.setattr(
         pipeline,
         "generate_living_documentation",
@@ -350,6 +394,7 @@ def test_run_pipeline_includes_living_documentation_manifest(tmp_path: Path, mon
     assert manifest["living_documentation"]["generated"] is True
     assert manifest["living_documentation"]["model"] == "qwen3.5:2b"
     assert manifest["living_documentation"]["thinking_mode"] == "off"
+    assert manifest["doc_forge"]["processed"] == 2
     assert manifest["word_forge"]["stats"]["nodes"] == 3
     assert manifest["graphrag"].get("assessment_summary") in ({}, None)
     assert manifest["runtime"]["status_path"] == str(runtime_dir / "living_pipeline_status.json")
@@ -390,20 +435,16 @@ def test_run_pipeline_degrades_phase_models_when_coordinator_denies_budget(tmp_p
             return kwargs
 
     monkeypatch.setattr(pipeline, "ForgeRuntimeCoordinator", FakeCoordinator)
-    monkeypatch.setattr(
-        pipeline,
-        "run_code_analysis",
-        lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "run_code_analysis", lambda *args, **kwargs: {"run_stats": {}, "total_units": 0, "duplicate_group_count": 0})
+    monkeypatch.setattr(pipeline, "run_doc_forge_batch", lambda *args, **kwargs: {"enabled": True, "processed": 0, "approved": 0, "rejected": 0, "errors": 0})
     monkeypatch.setattr(pipeline, "stage_repo_text_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "stage_memory_and_kb_documents", lambda *args, **kwargs: [])
+    monkeypatch.setattr(pipeline, "stage_doc_forge_documents", lambda *args, **kwargs: [])
     monkeypatch.setattr(pipeline, "group_exact_duplicates", lambda records: [])
     monkeypatch.setattr(pipeline, "detect_near_duplicates", lambda records: [])
-    monkeypatch.setattr(
-        pipeline,
-        "compare_with_previous_run",
-        lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0},
-    )
+    monkeypatch.setattr(pipeline, "compare_with_previous_run", lambda *args, **kwargs: {"added_count": 0, "removed_count": 0, "changed_count": 0})
+    monkeypatch.setattr(pipeline, "queue_terms_for_documents", lambda *args, **kwargs: {"enabled": True, "queued": 0, "processed": 0})
+    monkeypatch.setattr(pipeline, "post_ingest_generated_documents", lambda *args, **kwargs: {"indexed": False, "documents": 0})
 
     captured: dict[str, object] = {}
 

@@ -84,6 +84,9 @@ def _forge_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
+COORDINATOR_STATUS_PATH = _forge_root() / "data" / "runtime" / "forge_coordinator_status.json"
+
+
 def _safe_ratio(numerator: float, denominator: float) -> float:
     if denominator <= 0:
         return 0.0
@@ -288,13 +291,30 @@ class GraphRAGIntegration:
         model_config = self._model_config()
         if model_config is None or not getattr(model_config, "is_ollama_running", lambda: False)():
             return {}
+        model_name = str(model or getattr(model_config, "inference_model", "") or "qwen3.5:2b")
+        try:
+            from eidosian_runtime import ForgeRuntimeCoordinator
+
+            coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
+            decision = coordinator.can_allocate(
+                owner="native_graphrag",
+                requested_models=[{"family": "ollama", "model": model_name, "role": "graphrag_report_enrichment"}],
+                allow_same_owner=False,
+            )
+            if not bool(decision.get("allowed")):
+                return {
+                    "_budget_denied": True,
+                    "_budget_reason": str(decision.get("reason") or "runtime budget denied"),
+                }
+        except Exception:
+            pass
         requested_mode = str(thinking_mode or "on")
         for mode in [requested_mode, "off"] if requested_mode != "off" else ["off"]:
             try:
                 payload = model_config.generate_payload(
                     prompt,
                     system=system,
-                    model=model,
+                    model=model_name,
                     thinking_mode=mode,
                     timeout=timeout or 900.0,
                     max_tokens=max_tokens,
@@ -507,9 +527,7 @@ class GraphRAGIntegration:
             if not content:
                 return
             row = {
-                "id": str(
-                    item.get("id") or item.get("key") or hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
-                ),
+                "id": str(item.get("id") or item.get("key") or hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]),
                 "content": content,
                 "tier": str(item.get("tier") or tier_name),
                 "namespace": str(item.get("namespace") or namespace_name),
@@ -858,7 +876,9 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
+                "benchmark_gate_pass": (
+                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
+                ),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -927,9 +947,7 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(
-            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
-        )
+        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -1029,9 +1047,9 @@ class GraphRAGIntegration:
                 max_tokens=700,
                 temperature=0.1,
             )
-            enriched_tags = (
-                [str(tag).strip() for tag in llm_payload.get("tags", []) if str(tag).strip()] if llm_payload else []
-            )
+            if llm_payload.get("_budget_denied"):
+                llm_payload = {}
+            enriched_tags = [str(tag).strip() for tag in llm_payload.get("tags", []) if str(tag).strip()] if llm_payload else []
             merged_tags = sorted(dict.fromkeys(report_tags + enriched_tags))
             base_rating = min(5, max(1, len(unique_group) // 2 + (1 if linked_neighbors else 0)))
             rating = min(5, max(1, int(llm_payload.get("rating", base_rating) if llm_payload else base_rating)))
@@ -1040,17 +1058,14 @@ class GraphRAGIntegration:
                     "community": community,
                     "title": str(llm_payload.get("title") or f"{community.replace('_', ' ').title()} Community"),
                     "summary": str(
-                        llm_payload.get("summary")
-                        or f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references"
+                        llm_payload.get("summary") or f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references"
                     ),
                     "rating": rating,
                     "rating_explanation": str(
                         llm_payload.get("rating_explanation")
                         or "Higher scores reflect denser linked context and broader coverage."
                     ),
-                    "findings": [
-                        str(item).strip() for item in (llm_payload.get("findings") or findings) if str(item).strip()
-                    ][:5],
+                    "findings": [str(item).strip() for item in (llm_payload.get("findings") or findings) if str(item).strip()][:5],
                     "tags": merged_tags,
                     "llm_enriched": bool(llm_payload),
                     "effective_thinking_mode": llm_payload.get("_effective_thinking_mode") if llm_payload else None,
@@ -1505,6 +1520,20 @@ class GraphRAGIntegration:
         result = self._run_graphrag("query", "--root", str(self.root), "--method", method, query)
         if result.get("success"):
             return result
+        diagnostics = result.get("diagnostics") or {}
+        fallback_stderr = str(diagnostics.get("fallback_stderr") or "")
+        fallback_returncode = diagnostics.get("fallback_returncode")
+        allow_local_fallback = self._is_legacy_fallback_candidate(str(result.get("stderr") or ""))
+        if int(result.get("returncode") or 0) == 124:
+            allow_local_fallback = False
+        if (
+            bool(result.get("fallback_used"))
+            and fallback_returncode not in (None, 0)
+            and not self._is_legacy_fallback_candidate(fallback_stderr)
+        ):
+            allow_local_fallback = False
+        if not allow_local_fallback:
+            return result
         local = self._local_vector_graph_query(query, method)
         if not local.get("success"):
             return result
@@ -1574,9 +1603,7 @@ class GraphRAGIntegration:
         }
 
     def _artifact_summary_from_state(self, state: Dict[str, Any], *, limit: int = 10) -> Dict[str, Any]:
-        artifact_state = (
-            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
-        )
+        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))
@@ -1661,7 +1688,7 @@ class GraphRAGIntegration:
         }
 
     @eidosian()
-    def run_incremental_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
+    def run_incremental_index(self, scan_roots: List[Path], *, include_external: bool = True) -> Dict[str, Any]:
         """
         Trigger an index run.
 
@@ -1670,7 +1697,16 @@ class GraphRAGIntegration:
         """
         scan_roots = [Path(root).expanduser().resolve() for root in scan_roots]
         native = self._native_index(scan_roots)
-        external = self._run_graphrag("index", "--root", str(self.root))
+        external = (
+            self._run_graphrag("index", "--root", str(self.root))
+            if include_external
+            else {
+                "success": False,
+                "skipped": True,
+                "stderr": "external GraphRAG disabled",
+                "attempted_commands": [],
+            }
+        )
 
         result = dict(native)
         result["scan_roots"] = [str(root) for root in scan_roots]

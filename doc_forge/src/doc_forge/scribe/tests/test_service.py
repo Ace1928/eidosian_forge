@@ -55,3 +55,27 @@ def test_dashboard_redirect_uses_atlas_env(mock_config, monkeypatch):
     assert response.status_code == 307
     assert response.headers["location"] == "http://127.0.0.1:9999/"
     assert status_response.status_code == 200
+
+
+def test_process_pending_returns_summary(mock_processor):
+    p = mock_processor.cfg.source_root / "sample.py"
+    p.write_text("print('hi')", encoding="utf-8")
+    mock_processor._scan_candidates = MagicMock(return_value=[p])
+    mock_processor._queue_lexicon_terms = MagicMock(return_value={"queued": True})
+    mock_processor.generator.generate.return_value = "\n".join(
+        [
+            "# File Overview",
+            "## Key Structures",
+            "## Behavior Summary",
+            "## Validation Notes",
+            "## Improvement Opportunities",
+        ]
+    )
+    mock_processor.judges.evaluate.return_value = {"approved": True, "aggregate_score": 0.91}
+
+    summary = mock_processor.process_pending(max_documents=1)
+
+    assert summary["processed"] == 1
+    assert summary["approved"] == 1
+    assert summary["documents"][0]["approved"] is True
+    assert summary["documents"][0]["lexicon_queue"]["queued"] is True

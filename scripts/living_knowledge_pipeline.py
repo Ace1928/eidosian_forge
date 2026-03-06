@@ -34,10 +34,10 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
-from eidosian_core.ports import get_service_port
 from eidosian_runtime import ForgeRuntimeCoordinator
+from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -199,6 +199,7 @@ def _write_pipeline_status(
     phase_timings: dict[str, float],
     estimated_total_seconds: float | None,
     code_report: dict[str, Any] | None = None,
+    doc_forge_result: dict[str, Any] | None = None,
     word_forge_result: dict[str, Any] | None = None,
     graphrag_result: dict[str, Any] | None = None,
     living_doc_result: dict[str, Any] | None = None,
@@ -231,6 +232,14 @@ def _write_pipeline_status(
             "total_units": (code_report or {}).get("total_units"),
             "relationship_counts": (code_report or {}).get("relationship_counts"),
             "dependency_graph_summary": (code_report or {}).get("dependency_graph_summary"),
+        },
+        "doc_forge": {
+            "enabled": bool((doc_forge_result or {}).get("enabled")),
+            "processed": (doc_forge_result or {}).get("processed"),
+            "approved": (doc_forge_result or {}).get("approved"),
+            "rejected": (doc_forge_result or {}).get("rejected"),
+            "errors": (doc_forge_result or {}).get("errors"),
+            "final_root": (doc_forge_result or {}).get("final_root"),
         },
         "word_forge": word_forge_result or {},
         "graphrag": {
@@ -532,6 +541,131 @@ def stage_memory_and_kb_documents(
 
 
 @eidosian()
+def run_doc_forge_batch(repo_root: Path, *, max_documents: int | None = None) -> dict[str, Any]:
+    try:
+        import sys
+
+        for extra in (
+            repo_root / "lib",
+            repo_root / "doc_forge" / "src",
+            repo_root / "eidos_mcp" / "src",
+            repo_root,
+        ):
+            text = str(extra)
+            if extra.exists() and text not in sys.path:
+                sys.path.insert(0, text)
+        from doc_forge.scribe.config import ScribeConfig  # type: ignore
+        from doc_forge.scribe.service import DocProcessor  # type: ignore
+
+        cfg = ScribeConfig.from_env(forge_root=repo_root, dry_run=False)
+        processor = DocProcessor(cfg)
+        try:
+            summary = processor.process_pending(max_documents=max_documents)
+        finally:
+            processor.model_server.stop()
+        summary["enabled"] = True
+        summary["runtime_root"] = str(cfg.runtime_root)
+        summary["final_root"] = str(cfg.final_root)
+        summary["index_path"] = str(cfg.index_path)
+        return summary
+    except Exception as exc:
+        return {"enabled": False, "error": str(exc)}
+
+
+@eidosian()
+def stage_doc_forge_documents(
+    repo_root: Path,
+    stage_dir: Path,
+    max_chars_per_doc: int,
+) -> list[StagedRecord]:
+    runtime_root = repo_root / "doc_forge" / "runtime"
+    index_path = runtime_root / "doc_index.json"
+    final_root = runtime_root / "final_docs"
+    payload = _read_json_file(index_path, {})
+    entries = payload.get("entries") if isinstance(payload, dict) else None
+    rows = entries if isinstance(entries, list) else []
+    out: list[StagedRecord] = []
+
+    def _stage(doc_path: Path, source_path: str) -> None:
+        if not doc_path.exists() or not doc_path.is_file():
+            return
+        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
+        if not text:
+            return
+        text = text[:max_chars_per_doc]
+        digest = _sha256_text(text)
+        sim = _simhash64(text)
+        safe_name = _sanitize_id(source_path or doc_path.as_posix()) + ".txt"
+        target = stage_dir / "doc_forge" / safe_name
+        _write_text_document(target, source_path, "doc_forge", text)
+        out.append(
+            StagedRecord(
+                doc_id=f"doc_forge::{source_path}",
+                source_path=f"doc_forge::{source_path}",
+                kind="docs",
+                sha256=digest,
+                bytes=len(text.encode("utf-8")),
+                chars=len(text),
+                staged_path=str(target),
+                simhash=f"{sim:016x}",
+            )
+        )
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source = str(row.get("source") or "").strip()
+        document_rel = str(row.get("document") or "").strip()
+        if not source or not document_rel:
+            continue
+        _stage(runtime_root / document_rel, source)
+
+    if not out:
+        for doc_path in sorted(final_root.rglob("*.md")):
+            rel = doc_path.relative_to(final_root).with_suffix("")
+            _stage(doc_path, rel.as_posix())
+    return out
+
+
+@eidosian()
+def stage_markdown_documents(
+    doc_paths: list[Path],
+    stage_dir: Path,
+    *,
+    source_prefix: str,
+    kind: str,
+    max_chars_per_doc: int,
+) -> list[StagedRecord]:
+    out: list[StagedRecord] = []
+    for doc_path in doc_paths:
+        if not doc_path.exists() or not doc_path.is_file():
+            continue
+        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
+        if not text:
+            continue
+        text = text[:max_chars_per_doc]
+        rel = doc_path.name
+        digest = _sha256_text(text)
+        sim = _simhash64(text)
+        source = f"{source_prefix}:{rel}"
+        target = stage_dir / source_prefix / (_sanitize_id(rel) + ".txt")
+        _write_text_document(target, source, kind, text)
+        out.append(
+            StagedRecord(
+                doc_id=source,
+                source_path=source,
+                kind=kind,
+                sha256=digest,
+                bytes=len(text.encode("utf-8")),
+                chars=len(text),
+                staged_path=str(target),
+                simhash=f"{sim:016x}",
+            )
+        )
+    return out
+
+
+@eidosian()
 def run_code_analysis(
     repo_root: Path,
     report_dir: Path,
@@ -643,17 +777,31 @@ def build_word_forge_lexicon(
     if not text_parts:
         try:
             stats = json.loads(wf_router.wf_graph_stats())
+            queue_status = json.loads(wf_router.wf_lexicon_queue_status())
         except Exception:
             stats = {}
-        return {"enabled": True, "updated": False, "stats": stats}
+            queue_status = {}
+        return {"enabled": True, "updated": False, "stats": stats, "queue": queue_status}
 
     combined = "\n\n".join(text_parts)[:max_chars]
+    queue_result = json.loads(
+        wf_router.wf_queue_terms_from_text(
+            combined,
+            source="living_pipeline:staged_records",
+            limit=48,
+        )
+    )
     build_result = json.loads(wf_router.wf_build_lexicon_from_text(combined, thinking_mode=thinking_mode))
+    process_result = json.loads(wf_router.wf_process_lexicon_queue(max_terms=16, thinking_mode=thinking_mode))
     stats = json.loads(wf_router.wf_graph_stats())
+    queue_status = json.loads(wf_router.wf_lexicon_queue_status())
     return {
         "enabled": True,
         "updated": str(build_result.get("status")) == "success",
         "build_result": build_result,
+        "queue_result": queue_result,
+        "process_result": process_result,
+        "queue": queue_status,
         "stats": stats,
         "graph_path": str(repo_root / "data" / "eidos_semantic_graph.json"),
     }
@@ -837,10 +985,10 @@ def _build_graphrag(workspace_root: Path) -> GraphRAGIntegration:
 
 
 def _run_graphrag_index(workspace_root: Path, method: str, scan_roots: list[Path] | None = None) -> dict[str, Any]:
-    _ = method
     grag = _build_graphrag(workspace_root)
     roots = scan_roots or [workspace_root / "input"]
-    result = grag.run_incremental_index(roots)
+    include_external = str(method or "").lower() not in {"native", "native_only", "local"}
+    result = grag.run_incremental_index(roots, include_external=include_external)
     if not result.get("success"):
         raise RuntimeError(result.get("stderr") or result.get("external_error") or "graphrag index failed")
     return result
@@ -894,6 +1042,7 @@ def _living_doc_prompt(
     near_duplicates: int,
     drift: dict[str, Any],
     code_report: dict[str, Any],
+    doc_forge_result: dict[str, Any],
     graphrag_result: dict[str, Any],
     word_forge_result: dict[str, Any],
 ) -> str:
@@ -914,6 +1063,13 @@ def _living_doc_prompt(
             "triage_label_counts": code_report.get("triage_label_counts"),
             "unit_catalog_path": code_report.get("unit_catalog_path"),
             "search_examples_path": code_report.get("search_examples_path"),
+        },
+        "doc_forge": {
+            "enabled": doc_forge_result.get("enabled"),
+            "processed": doc_forge_result.get("processed"),
+            "approved": doc_forge_result.get("approved"),
+            "rejected": doc_forge_result.get("rejected"),
+            "errors": doc_forge_result.get("errors"),
         },
         "word_forge": word_forge_result,
         "graphrag": {
@@ -1058,6 +1214,7 @@ def generate_living_documentation(
     near_duplicates: int,
     drift: dict[str, Any],
     code_report: dict[str, Any],
+    doc_forge_result: dict[str, Any],
     graphrag_result: dict[str, Any],
     word_forge_result: dict[str, Any],
     config: LivingDocumentationConfig,
@@ -1073,6 +1230,7 @@ def generate_living_documentation(
         near_duplicates=near_duplicates,
         drift=drift,
         code_report=code_report,
+        doc_forge_result=doc_forge_result,
         graphrag_result=graphrag_result,
         word_forge_result=word_forge_result,
     )
@@ -1105,6 +1263,93 @@ def generate_living_documentation(
         "thinking_chars": payload["thinking_chars"],
         "response_chars": payload["response_chars"],
         "title": payload["title"],
+    }
+
+
+@eidosian()
+def queue_terms_for_documents(
+    doc_paths: list[Path],
+    *,
+    source_prefix: str,
+    thinking_mode: str = "on",
+    max_terms: int = 16,
+) -> dict[str, Any]:
+    try:
+        from eidos_mcp.routers import word_forge as wf_router
+    except Exception as exc:
+        return {"enabled": False, "error": str(exc)}
+
+    queued = 0
+    processed = 0
+    failures: list[str] = []
+    for doc_path in doc_paths:
+        if not doc_path.exists() or not doc_path.is_file():
+            continue
+        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
+        if not text:
+            continue
+        try:
+            queue_result = json.loads(
+                wf_router.wf_queue_terms_from_text(
+                    text[:6000],
+                    source=f"{source_prefix}:{doc_path.name}",
+                    limit=max_terms,
+                )
+            )
+            queued += int(queue_result.get("queued") or 0)
+        except Exception as exc:
+            failures.append(f"{doc_path.name}: {exc}")
+    try:
+        process_result = json.loads(
+            wf_router.wf_process_lexicon_queue(
+                max_terms=max_terms,
+                thinking_mode=thinking_mode,
+            )
+        )
+        processed = int(process_result.get("processed") or 0)
+        queue_status = json.loads(wf_router.wf_lexicon_queue_status())
+    except Exception as exc:
+        failures.append(f"process_queue: {exc}")
+        process_result = {}
+        queue_status = {}
+    return {
+        "enabled": True,
+        "queued": queued,
+        "processed": processed,
+        "failures": failures,
+        "process_result": process_result,
+        "queue": queue_status,
+    }
+
+
+@eidosian()
+def post_ingest_generated_documents(
+    workspace_root: Path,
+    *,
+    generated_doc_paths: list[Path],
+    method: str,
+) -> dict[str, Any]:
+    if not generated_doc_paths:
+        return {"indexed": False, "documents": 0}
+    stage_dir = workspace_root / "post_generated_docs"
+    if stage_dir.exists():
+        shutil.rmtree(stage_dir)
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    staged = stage_markdown_documents(
+        generated_doc_paths,
+        stage_dir,
+        source_prefix="generated_docs",
+        kind="docs",
+        max_chars_per_doc=20_000,
+    )
+    if not staged:
+        return {"indexed": False, "documents": 0}
+    result = _run_graphrag_index(workspace_root, method=method, scan_roots=[stage_dir])
+    return {
+        "indexed": bool(result.get("success")),
+        "documents": len(staged),
+        "scan_root": str(stage_dir),
+        "index_result": result,
     }
 
 
@@ -1180,6 +1425,8 @@ def run_pipeline(
         active_models: list[dict[str, Any]] = []
         if phase_name == "word_forge":
             active_models = [{"family": "ollama", "model": "qwen3.5:2b", "role": "lexicon_enrichment"}]
+        elif phase_name == "doc_forge":
+            active_models = [{"family": "llama.cpp", "model": "doc_forge", "role": "doc_forge_completion"}]
         elif phase_name == "living_documentation":
             cfg = living_doc_config or LivingDocumentationConfig()
             active_models = [{"family": "ollama", "model": str(cfg.model), "role": "living_documentation"}]
@@ -1193,6 +1440,7 @@ def run_pipeline(
             phase_timings=phase_timings,
             estimated_total_seconds=estimated_total,
             code_report=code_report,
+            doc_forge_result=doc_forge_result,
             word_forge_result=word_forge_result,
             graphrag_result=graphrag_result,
             living_doc_result=living_doc_result,
@@ -1212,6 +1460,7 @@ def run_pipeline(
         phase_timings[phase_name] = round(max(0.0, time.monotonic() - started), 3)
 
     code_report: dict[str, Any] = {}
+    doc_forge_result: dict[str, Any] = {}
     word_forge_result: dict[str, Any] = {}
     graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
     living_doc_result: dict[str, Any] = {}
@@ -1227,10 +1476,15 @@ def run_pipeline(
         code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
         _phase_done("code_analysis", phase_started)
 
+        phase_started = _phase_start("doc_forge")
+        doc_forge_result = run_doc_forge_batch(repo_root)
+        _phase_done("doc_forge", phase_started)
+
         phase_started = _phase_start("staging")
         repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
         memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
-        records = repo_records + memory_records
+        doc_records = stage_doc_forge_documents(repo_root, stage_dir, max_chars_per_doc)
+        records = repo_records + memory_records + doc_records
         records_total = len(records)
         records_by_kind = dict(Counter(r.kind for r in records))
         exact_duplicates = group_exact_duplicates(records)
@@ -1269,55 +1523,40 @@ def run_pipeline(
                 "embedding_model",
                 repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
             )
-            _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
             runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
-            graphrag_budget = _phase_budget(
-                [
+            native_only = str(method or "").lower() in {"native", "native_only", "local"}
+            graphrag_budget_models = (
+                [{"family": "ollama", "model": "qwen3.5:2b", "role": "graphrag_report_enrichment"}]
+                if native_only
+                else [
                     {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
-                    {
-                        "family": "llama.cpp",
-                        "model": str(embed_model),
-                        "role": "graphrag_embedding",
-                        "port": embed_port,
-                    },
+                    {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
                 ]
             )
+            graphrag_budget = _phase_budget(graphrag_budget_models)
             phase_started = _phase_start("graphrag")
             try:
                 graphrag_result["budget"] = graphrag_budget
                 if graphrag_budget["saturated"]:
                     graphrag_result["indexed"] = False
                     graphrag_result["skipped"] = True
-                    graphrag_result["skip_reason"] = str(
-                        (graphrag_budget["decision"] or {}).get("reason") or "budget_denied"
-                    )
+                    graphrag_result["skip_reason"] = str((graphrag_budget["decision"] or {}).get("reason") or "budget_denied")
                 else:
                     coordinator.heartbeat(
                         owner=coordinator_owner,
                         task="graphrag",
                         state="running",
-                        active_models=[
-                            {
-                                "family": "llama.cpp",
-                                "model": str(llm_model),
-                                "role": "graphrag_completion",
-                                "port": llm_port,
-                            },
-                            {
-                                "family": "llama.cpp",
-                                "model": str(embed_model),
-                                "role": "graphrag_embedding",
-                                "port": embed_port,
-                            },
-                        ],
+                        active_models=graphrag_budget_models,
                         metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
                     )
-                    runtimes.append(_start_server(llm_model, llm_port, embedding=False))
-                    runtimes.append(_start_server(embed_model, embed_port, embedding=True))
+                    if not native_only:
+                        _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
+                        runtimes.append(_start_server(llm_model, llm_port, embedding=False))
+                        runtimes.append(_start_server(embed_model, embed_port, embedding=True))
                     index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
                     graphrag_result["indexed"] = True
-                    graphrag_result["llm_model"] = str(llm_model)
-                    graphrag_result["embed_model"] = str(embed_model)
+                    graphrag_result["llm_model"] = "qwen3.5:2b" if native_only else str(llm_model)
+                    graphrag_result["embed_model"] = "" if native_only else str(embed_model)
                     graphrag_result["index_result"] = index_result
                     graphrag_result["report_summary"] = (
                         index_result.get("community_reports") if isinstance(index_result, dict) else {}
@@ -1336,13 +1575,7 @@ def run_pipeline(
             _phase_done("graphrag", phase_started)
 
         living_doc_budget = _phase_budget(
-            [
-                {
-                    "family": "ollama",
-                    "model": str((living_doc_config or LivingDocumentationConfig()).model),
-                    "role": "living_documentation",
-                }
-            ]
+            [{"family": "ollama", "model": str((living_doc_config or LivingDocumentationConfig()).model), "role": "living_documentation"}]
         )
         phase_started = _phase_start("living_documentation")
         effective_doc_config = living_doc_config or LivingDocumentationConfig()
@@ -1364,11 +1597,39 @@ def run_pipeline(
             near_duplicates=len(near_duplicates),
             drift=drift,
             code_report=code_report,
+            doc_forge_result=doc_forge_result,
             graphrag_result=graphrag_result,
             word_forge_result=word_forge_result,
             config=effective_doc_config,
         )
         living_doc_result["budget"] = living_doc_budget
+        queued_generated_terms = queue_terms_for_documents(
+            [
+                Path(path)
+                for path in [
+                    living_doc_result.get("markdown_path"),
+                    living_doc_result.get("json_path"),
+                ]
+                if isinstance(path, str) and path
+            ],
+            source_prefix="living_documentation",
+            thinking_mode=str(effective_doc_config.thinking_mode or "on"),
+            max_terms=16,
+        )
+        living_doc_result["lexicon_queue"] = queued_generated_terms
+        if run_graphrag and bool(graphrag_result.get("indexed")):
+            post_ingest = post_ingest_generated_documents(
+                workspace_root,
+                generated_doc_paths=[Path(living_doc_result["markdown_path"])],
+                method=method,
+            )
+            living_doc_result["post_ingest"] = post_ingest
+            if post_ingest.get("indexed") and isinstance(post_ingest.get("index_result"), dict):
+                index_result = dict(post_ingest["index_result"])
+                graphrag_result["post_ingest"] = post_ingest
+                graphrag_result["report_summary"] = index_result.get("community_reports", graphrag_result.get("report_summary"))
+                graphrag_result["trend_summary"] = index_result.get("report_trends", graphrag_result.get("trend_summary"))
+                graphrag_result["assessment_summary"] = index_result.get("assessment", graphrag_result.get("assessment_summary"))
         _phase_done("living_documentation", phase_started)
     except Exception as exc:
         _write_pipeline_status(
@@ -1381,6 +1642,7 @@ def run_pipeline(
             phase_timings=phase_timings,
             estimated_total_seconds=estimated_total,
             code_report=code_report,
+            doc_forge_result=doc_forge_result,
             word_forge_result=word_forge_result,
             graphrag_result=graphrag_result,
             living_doc_result=living_doc_result,
@@ -1416,6 +1678,7 @@ def run_pipeline(
             "total_units": code_report.get("total_units"),
             "duplicate_group_count": code_report.get("duplicate_group_count"),
         },
+        "doc_forge": doc_forge_result,
         "word_forge": word_forge_result,
         "graphrag": graphrag_result,
         "living_documentation": living_doc_result,
@@ -1447,6 +1710,7 @@ def run_pipeline(
         phase_timings=phase_timings,
         estimated_total_seconds=estimated_total,
         code_report=code_report,
+        doc_forge_result=doc_forge_result,
         word_forge_result=word_forge_result,
         graphrag_result=graphrag_result,
         living_doc_result=living_doc_result,
@@ -1458,11 +1722,7 @@ def run_pipeline(
         task="completed",
         state="idle",
         active_models=[],
-        metadata={
-            "run_id": run_id,
-            "records_total": records_total,
-            "assessment": graphrag_result.get("assessment_summary"),
-        },
+        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
     )
     return manifest
 

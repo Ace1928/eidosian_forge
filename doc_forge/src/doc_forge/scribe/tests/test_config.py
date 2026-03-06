@@ -28,3 +28,4 @@ def test_path_resolution(temp_forge_root):
     cfg = ScribeConfig.from_env(forge_root=temp_forge_root)
     assert cfg.runtime_root == temp_forge_root / "doc_forge" / "runtime"
     assert cfg.staging_root == cfg.runtime_root / "staging_docs"
+    assert cfg.coordinator_status_path == temp_forge_root / "data" / "runtime" / "forge_coordinator_status.json"

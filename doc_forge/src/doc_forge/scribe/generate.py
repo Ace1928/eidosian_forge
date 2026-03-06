@@ -7,6 +7,11 @@ import requests
 
 from .config import ScribeConfig
 
+try:
+    from eidosian_runtime import ForgeRuntimeCoordinator
+except Exception:
+    ForgeRuntimeCoordinator = None
+
 REQUIRED_HEADINGS = [
     "# File Overview",
     "## Key Structures",
@@ -19,6 +24,27 @@ REQUIRED_HEADINGS = [
 class DocGenerator:
     def __init__(self, cfg: ScribeConfig) -> None:
         self.cfg = cfg
+        self._coordinator = (
+            ForgeRuntimeCoordinator(cfg.coordinator_status_path) if ForgeRuntimeCoordinator is not None else None
+        )
+
+    def _coordinator_gate(self) -> None:
+        if self._coordinator is None:
+            return
+        decision = self._coordinator.can_allocate(
+            owner=self.cfg.coordinator_owner,
+            requested_models=[
+                {
+                    "family": "llama.cpp",
+                    "model": str(self.cfg.llm_model_path),
+                    "role": "doc_forge_completion",
+                    "port": self.cfg.llm_server_port,
+                }
+            ],
+            allow_same_owner=True,
+        )
+        if not bool(decision.get("allowed")):
+            raise RuntimeError(str(decision.get("reason") or "runtime budget denied"))
 
     def _call_model(self, prompt: str, temperature: float = 0.2, stop: list[str] | None = None) -> str:
         payload = {
@@ -33,10 +59,34 @@ class DocGenerator:
         with open(self.cfg.model_lock_path, "w") as lockfile:
             fcntl.flock(lockfile, fcntl.LOCK_EX)
             try:
+                self._coordinator_gate()
+                if self._coordinator is not None:
+                    self._coordinator.heartbeat(
+                        owner=self.cfg.coordinator_owner,
+                        task="doc_forge_generation",
+                        state="running",
+                        active_models=[
+                            {
+                                "family": "llama.cpp",
+                                "model": str(self.cfg.llm_model_path),
+                                "role": "doc_forge_completion",
+                                "port": self.cfg.llm_server_port,
+                            }
+                        ],
+                        metadata={"completion_url": self.cfg.completion_url},
+                    )
                 resp = requests.post(self.cfg.completion_url, json=payload, timeout=240)
                 resp.raise_for_status()
                 return (resp.json().get("content") or "").strip()
             finally:
+                if self._coordinator is not None:
+                    self._coordinator.heartbeat(
+                        owner=self.cfg.coordinator_owner,
+                        task="doc_forge_generation",
+                        state="idle",
+                        active_models=[],
+                        metadata={"completion_url": self.cfg.completion_url},
+                    )
                 fcntl.flock(lockfile, fcntl.LOCK_UN)
 
     def generate(self, rel_path: str, source_text: str, metadata: dict[str, Any]) -> str:
