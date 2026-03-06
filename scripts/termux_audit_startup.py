@@ -77,12 +77,11 @@ def main() -> int:
         },
         "shell_modules": {
             "termux_bootstrap_exists": (FORGE_ROOT / "shell" / "termux_bootstrap.sh").exists(),
-            "profile_modules": sorted(
-                str(p.relative_to(FORGE_ROOT))
-                for p in (FORGE_ROOT / "shell" / "profile.d").glob("*.sh")
-            )
-            if (FORGE_ROOT / "shell" / "profile.d").exists()
-            else [],
+            "profile_modules": (
+                sorted(str(p.relative_to(FORGE_ROOT)) for p in (FORGE_ROOT / "shell" / "profile.d").glob("*.sh"))
+                if (FORGE_ROOT / "shell" / "profile.d").exists()
+                else []
+            ),
         },
         "recommendations": [],
     }

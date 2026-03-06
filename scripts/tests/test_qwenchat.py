@@ -32,7 +32,9 @@ def test_qwenchat_wait_message_uses_eta(tmp_path: Path, monkeypatch) -> None:
         json.dumps({"phase": "doc_forge", "eta_seconds": 42}),
         encoding="utf-8",
     )
-    message = mod._wait_message({"active_owner": "eidos_scheduler"}, {"owner": "eidos_scheduler", "task": "living_pipeline"})
+    message = mod._wait_message(
+        {"active_owner": "eidos_scheduler"}, {"owner": "eidos_scheduler", "task": "living_pipeline"}
+    )
     assert "doc_forge" in message
     assert "42s" in message
 

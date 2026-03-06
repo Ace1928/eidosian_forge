@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from eidosian_core.ports import get_service_url
 from eidos_mcp.config.models import get_model_config
+from eidosian_core.ports import get_service_url
 from llm_forge.benchmarking.engine_bench import Benchmarker
 from llm_forge.engine.base import EngineConfig
 from llm_forge.engine.local_cli import LocalCLIEngine
