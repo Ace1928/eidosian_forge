@@ -1920,5 +1920,34 @@
       "thinking"
     ],
     "linked_memories": []
+  },
+  {
+    "id": "2de54b4c-4a80-4369-8f8d-d94d6bf8a898",
+    "content": "LESSON: For qwen3.5 living-documentation synthesis in this Termux/Ollama path, the right production posture is thinking-on first with a single automatic retry to thinking-off when the model emits thoughts but no final structured answer. This preserves the quality-first default without stalling the pipeline.\nCONTEXT: Live smoke of generate_living_documentation with qwen3.5:2b and 240s timeout",
+    "created_at": "2026-03-06T18:39:43.933226",
+    "last_accessed": "2026-03-06T18:39:43.933252",
+    "access_count": 0,
+    "tier": "self",
+    "namespace": "eidos",
+    "memory_type": "procedural",
+    "metadata": {
+      "lesson": "For qwen3.5 living-documentation synthesis in this Termux/Ollama path, the right production posture is thinking-on first with a single automatic retry to thinking-off when the model emits thoughts but no final structured answer. This preserves the quality-first default without stalling the pipeline.",
+      "context": "Live smoke of generate_living_documentation with qwen3.5:2b and 240s timeout",
+      "outcome": ""
+    },
+    "importance": 1.5,
+    "ttl_seconds": null,
+    "tags": [
+      "learning",
+      "self-improvement",
+      "fallback",
+      "ollama",
+      "qwen3.5",
+      "living-documentation",
+      "lesson",
+      "termux",
+      "thinking"
+    ],
+    "linked_memories": []
   }
 ]

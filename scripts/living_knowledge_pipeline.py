@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
-from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -743,7 +743,8 @@ def _living_doc_prompt(
     return (
         "Generate living documentation for the current forge state. "
         "Focus on the most important system health signals, evidence-backed risks, and concrete next actions.\n"
-        "DATA=" + json.dumps(payload, ensure_ascii=True)
+        "DATA="
+        + json.dumps(payload, ensure_ascii=True)
     )
 
 
@@ -765,12 +766,68 @@ def _normalize_living_doc_payload(raw: dict[str, Any], *, config: LivingDocument
     }
 
 
+def _extract_json_fragment(text: str) -> dict[str, Any] | None:
+    text = str(text or "").strip()
+    if not text:
+        return None
+    try:
+        payload = json.loads(text)
+        return payload if isinstance(payload, dict) else None
+    except json.JSONDecodeError:
+        pass
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        payload = json.loads(text[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _invoke_living_doc_model(prompt: str, config: LivingDocumentationConfig) -> tuple[dict[str, Any], str, bool]:
+    model_config = get_model_config()
+    modes = [str(config.thinking_mode)]
+    if str(config.thinking_mode).lower() != "off":
+        modes.append("off")
+
+    last_error: Exception | None = None
+    for idx, mode in enumerate(modes):
+        try:
+            raw = model_config.generate_payload(
+                prompt,
+                model=config.model,
+                max_tokens=config.max_tokens,
+                temperature=config.temperature,
+                thinking_mode=mode,
+                timeout=config.timeout,
+                system=LIVING_DOC_SYSTEM_PROMPT,
+                format="json",
+            )
+        except Exception as exc:
+            last_error = exc
+            continue
+        response_text = str(raw.get("response") or "").strip()
+        if response_text:
+            return raw, mode, idx > 0
+        if str(raw.get("thinking") or "").strip():
+            last_error = RuntimeError(f"no final response returned for thinking_mode={mode}")
+            continue
+        last_error = RuntimeError(f"empty response returned for thinking_mode={mode}")
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("living documentation generation failed without an explicit error")
+
+
 def _render_living_doc_markdown(payload: dict[str, Any]) -> str:
     lines = [
         f"# {payload.get('title') or 'Living Knowledge Summary'}",
         "",
         f"Model: `{payload.get('model')}`",
-        f"Thinking Mode: `{payload.get('thinking_mode')}`",
+        f"Requested Thinking Mode: `{payload.get('thinking_mode')}`",
+        f"Effective Thinking Mode: `{payload.get('effective_thinking_mode', payload.get('thinking_mode'))}`",
+        f"Fallback Used: `{bool(payload.get('fallback_used'))}`",
         "",
         "## Summary",
         str(payload.get("summary") or "").strip() or "No summary generated.",
@@ -826,22 +883,9 @@ def generate_living_documentation(
         code_report=code_report,
         graphrag_result=graphrag_result,
     )
-    model_config = get_model_config()
-    raw = model_config.generate_payload(
-        prompt,
-        model=config.model,
-        max_tokens=config.max_tokens,
-        temperature=config.temperature,
-        thinking_mode=config.thinking_mode,
-        timeout=config.timeout,
-        system=LIVING_DOC_SYSTEM_PROMPT,
-        format="json",
-    )
+    raw, effective_thinking_mode, fallback_used = _invoke_living_doc_model(prompt, config)
     response_text = str(raw.get("response") or "").strip()
-    try:
-        parsed = json.loads(response_text)
-    except Exception as exc:
-        raise RuntimeError(f"living documentation generation returned non-JSON: {exc}") from exc
+    parsed = _extract_json_fragment(response_text)
     if not isinstance(parsed, dict):
         raise RuntimeError("living documentation generation returned non-object JSON")
 
@@ -849,6 +893,8 @@ def generate_living_documentation(
     payload["generated_at"] = _now_utc()
     payload["response_chars"] = len(response_text)
     payload["thinking_chars"] = len(str(raw.get("thinking") or ""))
+    payload["effective_thinking_mode"] = effective_thinking_mode
+    payload["fallback_used"] = bool(fallback_used)
 
     json_path = run_root / "living_documentation_summary.json"
     md_path = run_root / "living_documentation_summary.md"
@@ -861,6 +907,8 @@ def generate_living_documentation(
         "markdown_path": str(md_path),
         "model": config.model,
         "thinking_mode": config.thinking_mode,
+        "effective_thinking_mode": effective_thinking_mode,
+        "fallback_used": bool(fallback_used),
         "thinking_chars": payload["thinking_chars"],
         "response_chars": payload["response_chars"],
         "title": payload["title"],
@@ -958,12 +1006,8 @@ def run_pipeline(
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
             graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (
-                index_result.get("community_reports") if isinstance(index_result, dict) else {}
-            )
-            graphrag_result["trend_summary"] = (
-                index_result.get("report_trends") if isinstance(index_result, dict) else {}
-            )
+            graphrag_result["report_summary"] = (index_result.get("community_reports") if isinstance(index_result, dict) else {})
+            graphrag_result["trend_summary"] = (index_result.get("report_trends") if isinstance(index_result, dict) else {})
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})

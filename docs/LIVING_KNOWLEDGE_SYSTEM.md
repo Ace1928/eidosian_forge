@@ -88,6 +88,7 @@ Every run also executes a documentation synthesis pass using centralized model c
 - default model: `qwen3.5:2b`
 - default thinking mode for documentation synthesis: `on`
 - default timeout: `900s`
+- fallback policy: retry once with `thinking=off` if the model returns thinking content but no final structured answer
 - output artifacts:
   - `living_documentation_summary.json`
   - `living_documentation_summary.md`
