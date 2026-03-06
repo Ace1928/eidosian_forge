@@ -7,7 +7,16 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+from eidosian_vector import build_default_embedder
+
+
+def _forge_root() -> Path:
+    raw = os.environ.get("EIDOS_FORGE_DIR")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return Path(__file__).resolve().parents[4]
 
 
 class GraphRAGIntegration:
@@ -15,8 +24,27 @@ class GraphRAGIntegration:
     Bridge between KnowledgeForge and the external GraphRAG tool.
     """
 
-    def __init__(self, graphrag_root: Path):
+    def __init__(
+        self,
+        graphrag_root: Path,
+        *,
+        bridge: Any = None,
+        memory_dir: Optional[Path] = None,
+        kb_path: Optional[Path] = None,
+    ):
         self.root = graphrag_root
+        self._bridge = bridge
+        forge_root = _forge_root()
+        self.memory_dir = (
+            Path(memory_dir).expanduser().resolve()
+            if memory_dir is not None
+            else Path(os.environ.get("EIDOS_MEMORY_DIR", str(forge_root / "data" / "memory"))).expanduser().resolve()
+        )
+        self.kb_path = (
+            Path(kb_path).expanduser().resolve()
+            if kb_path is not None
+            else Path(os.environ.get("EIDOS_KNOWLEDGE_PATH", str(forge_root / "data" / "kb.json"))).expanduser().resolve()
+        )
         timeout_raw = os.environ.get("EIDOS_GRAPHRAG_TIMEOUT_SEC", "900")
         try:
             self.timeout_seconds = max(30, int(timeout_raw))
@@ -110,6 +138,108 @@ class GraphRAGIntegration:
             "diagnostics": diagnostics,
         }
 
+    def _load_bridge(self):
+        if self._bridge is not None:
+            return self._bridge
+        try:
+            from knowledge_forge.core.bridge import KnowledgeMemoryBridge
+
+            self._bridge = KnowledgeMemoryBridge(
+                memory_dir=self.memory_dir,
+                kb_path=self.kb_path,
+                embedder=build_default_embedder(),
+            )
+        except Exception:
+            self._bridge = None
+        return self._bridge
+
+    def _local_vector_graph_query(self, query: str, method: str) -> Dict[str, Any]:
+        bridge = self._load_bridge()
+        if bridge is None:
+            return {
+                "success": False,
+                "mode": "local_vector_graph",
+                "method": method,
+                "query": query,
+                "summary": "",
+                "memory_context": [],
+                "knowledge_context": [],
+                "graph_neighbors": [],
+                "graph_paths": [],
+                "local_fallback": False,
+            }
+
+        context = bridge.get_memory_knowledge_context(query, max_results=8)
+        knowledge_ids = [str(entry.get("id")) for entry in context.get("knowledge_context", []) if entry.get("id")]
+        graph_neighbors: list[dict[str, Any]] = []
+        graph_paths: list[list[str]] = []
+        knowledge = getattr(bridge, "knowledge", None)
+        if knowledge is not None:
+            seen_neighbors: set[str] = set()
+            for node_id in knowledge_ids[:3]:
+                for node in knowledge.get_related_nodes(node_id)[:6]:
+                    if node.id in seen_neighbors:
+                        continue
+                    seen_neighbors.add(node.id)
+                    graph_neighbors.append(
+                        {
+                            "id": node.id,
+                            "content": str(node.content)[:220],
+                            "tags": sorted(list(node.tags)),
+                        }
+                    )
+            if len(knowledge_ids) >= 2:
+                for idx in range(len(knowledge_ids) - 1):
+                    path = knowledge.find_path(knowledge_ids[idx], knowledge_ids[idx + 1])
+                    if path:
+                        graph_paths.append(path)
+
+        summary_parts: list[str] = []
+        if context.get("knowledge_context"):
+            top = context["knowledge_context"][0]
+            summary_parts.append(f"Top knowledge hit: {str(top.get('content') or '')[:160]}")
+        if context.get("memory_context"):
+            top = context["memory_context"][0]
+            summary_parts.append(f"Top memory hit: {str(top.get('content') or '')[:160]}")
+        if graph_neighbors:
+            summary_parts.append(f"Linked graph neighbors: {len(graph_neighbors)}")
+        if graph_paths:
+            summary_parts.append(f"Graph paths discovered: {len(graph_paths)}")
+
+        return {
+            "success": bool(context.get("total_results") or graph_neighbors),
+            "mode": "local_vector_graph",
+            "method": method,
+            "query": query,
+            "summary": " | ".join(summary_parts),
+            "memory_context": list(context.get("memory_context") or []),
+            "knowledge_context": list(context.get("knowledge_context") or []),
+            "graph_neighbors": graph_neighbors,
+            "graph_paths": graph_paths,
+            "local_fallback": True,
+        }
+
+    def _query_with_fallback(self, query: str, *, method: str) -> Dict[str, Any]:
+        result = self._run_graphrag("query", "--root", str(self.root), "--method", method, query)
+        if result.get("success"):
+            return result
+        local = self._local_vector_graph_query(query, method)
+        if not local.get("success"):
+            return result
+        merged = dict(result)
+        merged["success"] = True
+        merged["fallback_used"] = True
+        merged["local_fallback"] = True
+        merged["mode"] = str(local.get("mode"))
+        merged["method"] = method
+        merged["query"] = query
+        merged["summary"] = str(local.get("summary") or "")
+        merged["memory_context"] = list(local.get("memory_context") or [])
+        merged["knowledge_context"] = list(local.get("knowledge_context") or [])
+        merged["graph_neighbors"] = list(local.get("graph_neighbors") or [])
+        merged["graph_paths"] = list(local.get("graph_paths") or [])
+        return merged
+
     @eidosian()
     def run_incremental_index(self, scan_roots: List[Path]) -> Dict[str, Any]:
         """
@@ -122,9 +252,9 @@ class GraphRAGIntegration:
     @eidosian()
     def global_query(self, query: str) -> Dict[str, Any]:
         """Run a global query against the index."""
-        return self._run_graphrag("query", "--root", str(self.root), "--method", "global", query)
+        return self._query_with_fallback(query, method="global")
 
     @eidosian()
     def local_query(self, query: str) -> Dict[str, Any]:
         """Run a local query against the index."""
-        return self._run_graphrag("query", "--root", str(self.root), "--method", "local", query)
+        return self._query_with_fallback(query, method="local")

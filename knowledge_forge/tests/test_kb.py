@@ -111,3 +111,59 @@ def test_graphrag_timeout_returns_structured_error(tmp_path):
     assert res["success"] is False
     assert res["returncode"] == 124
     assert "timed out" in res["stderr"].lower()
+
+
+class _FakeNode:
+    def __init__(self, node_id: str, content: str, tags: list[str] | None = None) -> None:
+        self.id = node_id
+        self.content = content
+        self.tags = set(tags or [])
+
+
+class _FakeKnowledge:
+    def get_related_nodes(self, node_id: str):
+        if node_id == "kb-1":
+            return [_FakeNode("kb-2", "Related graph evidence", ["graph"])]
+        return []
+
+    def find_path(self, start_id: str, end_id: str):
+        if {start_id, end_id} == {"kb-1", "kb-3"}:
+            return ["kb-1", "kb-2", "kb-3"]
+        return []
+
+
+class _FakeBridge:
+    def __init__(self) -> None:
+        self.knowledge = _FakeKnowledge()
+
+    def get_memory_knowledge_context(self, query: str, max_results: int = 8):
+        _ = query
+        return {
+            "query": query,
+            "total_results": 3,
+            "memory_context": [{"id": "mem-1", "content": "Relevant memory", "score": 0.8}],
+            "knowledge_context": [
+                {"id": "kb-1", "content": "Primary knowledge node", "score": 0.9, "tags": ["root"]},
+                {"id": "kb-3", "content": "Secondary knowledge node", "score": 0.85, "tags": ["leaf"]},
+            ][:max_results],
+        }
+
+
+def test_graphrag_query_falls_back_to_local_vector_graph_context(tmp_path):
+    grag = GraphRAGIntegration(graphrag_root=tmp_path / "grag", bridge=_FakeBridge())
+    with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python", "-m", "graphrag", "query"],
+            returncode=1,
+            stdout="",
+            stderr="No module named graphrag.__main__",
+        )
+        res = grag.local_query("vector graph query")
+
+    assert res["success"] is True
+    assert res["fallback_used"] is True
+    assert res["local_fallback"] is True
+    assert res["mode"] == "local_vector_graph"
+    assert res["knowledge_context"][0]["id"] == "kb-1"
+    assert res["graph_neighbors"][0]["id"] == "kb-2"
+    assert res["graph_paths"][0] == ["kb-1", "kb-2", "kb-3"]

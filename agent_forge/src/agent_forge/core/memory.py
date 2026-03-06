@@ -9,10 +9,11 @@ Provides persistent, versioned memory storage with retrieval capabilities.
 import json
 import logging
 import os
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from agent_forge.models import Memory, Task, Thought, ThoughtType
 
@@ -23,6 +24,28 @@ except ImportError:
     GitMemoryManager = None
 
 logger = logging.getLogger(__name__)
+
+
+def _forge_root() -> Path:
+    raw = os.environ.get("EIDOS_FORGE_DIR")
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return Path(__file__).resolve().parents[4]
+
+
+def _ensure_tiered_import_path() -> None:
+    root = _forge_root()
+    for path in (
+        root / "lib",
+        root / "memory_forge" / "src",
+        root / "knowledge_forge" / "src",
+        root / "eidos_mcp" / "src",
+        root / "ollama_forge" / "src",
+        root,
+    ):
+        text = str(path)
+        if path.exists() and text not in sys.path:
+            sys.path.insert(0, text)
 
 
 class MemorySystem:
@@ -39,6 +62,7 @@ class MemorySystem:
         git_enabled: bool = True,
         auto_commit: bool = True,
         commit_interval_minutes: int = 30,
+        tiered_memory_system: Any = None,
     ):
         """
         Initialize memory system.
@@ -51,6 +75,7 @@ class MemorySystem:
         """
         self.memory_path = Path(memory_path)
         self.git_enabled = git_enabled and GitMemoryManager is not None
+        self._tiered_memory_system = tiered_memory_system
 
         if self.git_enabled:
             self.git = GitMemoryManager(
@@ -72,6 +97,90 @@ class MemorySystem:
             for d in memory_dirs:
                 os.makedirs(self.memory_path / d, exist_ok=True)
             logger.info(f"Git integration disabled or unavailable, using directory-based storage at {memory_path}")
+
+    def _tiered_memory_dir(self) -> Path:
+        override = os.environ.get("EIDOS_MEMORY_DIR")
+        if override:
+            return Path(override).expanduser().resolve()
+        root = _forge_root()
+        candidate = root / "data" / "memory"
+        if candidate.exists():
+            return candidate
+        return (self.memory_path / "tiered").resolve()
+
+    def _load_tiered_memory_system(self) -> Any:
+        if self._tiered_memory_system is not None:
+            return self._tiered_memory_system
+        try:
+            _ensure_tiered_import_path()
+            from eidosian_vector import build_default_embedder  # type: ignore
+            from memory_forge import TieredMemorySystem  # type: ignore
+
+            self._tiered_memory_system = TieredMemorySystem(
+                persistence_dir=self._tiered_memory_dir(),
+                embedder=build_default_embedder(),
+            )
+        except Exception:
+            self._tiered_memory_system = None
+        return self._tiered_memory_system
+
+    def _legacy_search_thoughts(self, query: str, max_results: int) -> List[Thought]:
+        results = []
+        thought_ids = []
+        if self.git_enabled and hasattr(self, "git"):
+            thought_ids = self.git.list_memories("thoughts")
+        else:
+            thought_dir = self.memory_path / "thoughts"
+            if thought_dir.exists():
+                thought_ids = [f.stem for f in thought_dir.glob("*.json") if f.is_file() and not f.name.startswith(".")]
+
+        for thought_id in thought_ids:
+            thought = self.get_thought(thought_id)
+            if thought and query in thought.content.lower():
+                results.append(thought)
+                if len(results) >= max_results:
+                    break
+        return results
+
+    @staticmethod
+    def _thought_from_tiered(item: Any) -> Thought:
+        metadata = dict(getattr(item, "metadata", {}) or {})
+        thought_type = metadata.get("thought_type") or metadata.get("type")
+        return Thought(
+            content=str(getattr(item, "content", "")),
+            thought_type=thought_type,
+            timestamp=getattr(item, "created_at", datetime.now()),
+            related_thoughts=sorted(list(getattr(item, "linked_memories", set()) or [])),
+            metadata={
+                **metadata,
+                "source": "tiered_memory",
+                "memory_id": str(getattr(item, "id", "")),
+                "tier": getattr(getattr(item, "tier", None), "value", getattr(item, "tier", "")),
+                "namespace": getattr(getattr(item, "namespace", None), "value", getattr(item, "namespace", "")),
+                "importance": getattr(item, "importance", 0.5),
+                "tags": sorted(list(getattr(item, "tags", set()) or [])),
+            },
+        )
+
+    @staticmethod
+    def _memory_from_tiered(item: Any) -> Memory:
+        metadata = dict(getattr(item, "metadata", {}) or {})
+        tags = sorted(list(getattr(item, "tags", set()) or []))
+        associations = sorted(list(getattr(item, "linked_memories", set()) or []))
+        return Memory(
+            content=str(getattr(item, "content", "")),
+            timestamp=getattr(item, "created_at", datetime.now()),
+            tags=tags,
+            importance=float(getattr(item, "importance", 0.5) or 0.5),
+            associations=associations,
+            metadata={
+                **metadata,
+                "source": "tiered_memory",
+                "memory_id": str(getattr(item, "id", "")),
+                "tier": getattr(getattr(item, "tier", None), "value", getattr(item, "tier", "")),
+                "namespace": getattr(getattr(item, "namespace", None), "value", getattr(item, "namespace", "")),
+            },
+        )
 
     @eidosian()
     def save_thought(self, thought: Thought) -> str:
@@ -273,25 +382,36 @@ class MemorySystem:
         Returns:
             List of matching Thought objects
         """
-        query = query.lower()
-        results = []
+        query_text = str(query or "").strip()
+        if not query_text:
+            return []
 
-        # Very simple search implementation for now
-        # In a future pass, we can implement vector search or better text search
-        thought_ids = []
-        if self.git_enabled and hasattr(self, "git"):
-            thought_ids = self.git.list_memories("thoughts")
-        else:
-            thought_dir = self.memory_path / "thoughts"
-            if thought_dir.exists():
-                thought_ids = [f.stem for f in thought_dir.glob("*.json") if f.is_file() and not f.name.startswith(".")]
+        results: List[Thought] = []
+        seen: set[str] = set()
 
-        for thought_id in thought_ids:
-            thought = self.get_thought(thought_id)
-            if thought and query in thought.content.lower():
-                results.append(thought)
-                if len(results) >= max_results:
-                    break
+        tiered = self._load_tiered_memory_system()
+        if tiered is not None and hasattr(tiered, "recall"):
+            try:
+                for item in tiered.recall(query_text, limit=max_results):
+                    thought = self._thought_from_tiered(item)
+                    signature = thought.metadata.get("memory_id") or thought.content
+                    if signature in seen:
+                        continue
+                    seen.add(str(signature))
+                    results.append(thought)
+                    if len(results) >= max_results:
+                        return results
+            except Exception:
+                logger.debug("Tiered thought search failed", exc_info=True)
+
+        for thought in self._legacy_search_thoughts(query_text.lower(), max_results=max_results):
+            signature = thought.content
+            if signature in seen:
+                continue
+            seen.add(signature)
+            results.append(thought)
+            if len(results) >= max_results:
+                break
 
         return results
 
@@ -310,9 +430,17 @@ class MemorySystem:
         Returns:
             List of matching Memory objects
         """
-        # Simple implementation for now
-        # This is a fallback for components that expect a get_memories method
-        return []  # In future versions, implement actual memory search
+        query_text = str(query or "").strip()
+        if not query_text:
+            return []
+        tiered = self._load_tiered_memory_system()
+        if tiered is None or not hasattr(tiered, "recall"):
+            return []
+        try:
+            return [self._memory_from_tiered(item) for item in tiered.recall(query_text, limit=max_results)]
+        except Exception:
+            logger.debug("Tiered memory retrieval failed", exc_info=True)
+            return []
 
     @eidosian()
     def commit_changes(self, message: str) -> bool:
