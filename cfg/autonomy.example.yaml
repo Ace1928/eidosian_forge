@@ -29,11 +29,5 @@ autonomy:
       cooldown_beats: 24
       max_runs: 0
       query: "hygiene pytest lint integrity repo benchmark drift artifact report"
-      focus_communities:
-        - code_forge
-        - documents
-      focus_artifact_kinds:
-        - code_forge_benchmark
-        - triage
       vars:
         pytest_args: "-q"

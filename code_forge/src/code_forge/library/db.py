@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -29,16 +28,6 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except Exception:
         return default
-
-
-def _forge_root_from_db(db_path: Path) -> Path:
-    env_root = str(os.environ.get("EIDOS_FORGE_DIR") or os.environ.get("EIDOS_FORGE_ROOT") or "").strip()
-    if env_root:
-        return Path(env_root).expanduser().resolve()
-    try:
-        return db_path.resolve().parents[2]
-    except Exception:
-        return db_path.resolve().parent
 
 
 @dataclass(frozen=True)
@@ -481,95 +470,6 @@ class CodeLibraryDB:
                 (unit_id,),
             ).fetchone()
         return dict(row) if row else None
-
-    def render_snippet(self, unit_id: str, context_lines: int = 4, max_chars: int = 4000) -> Dict[str, Any]:
-        unit = self.get_unit(unit_id)
-        if not unit:
-            return {"found": False, "snippet": ""}
-
-        file_path = str(unit.get("file_path") or "").strip()
-        line_start = _safe_int(unit.get("line_start"), 0)
-        line_end = _safe_int(unit.get("line_end"), line_start)
-        source_text = ""
-        resolved_path: Optional[Path] = None
-
-        if file_path:
-            candidate = (_forge_root_from_db(self.db_path) / file_path).resolve()
-            if candidate.exists() and candidate.is_file():
-                resolved_path = candidate
-                try:
-                    source_text = candidate.read_text(encoding="utf-8", errors="ignore")
-                except Exception:
-                    source_text = ""
-
-        if not source_text and unit.get("content_hash"):
-            source_text = self.get_text(str(unit.get("content_hash") or "")) or ""
-
-        if not source_text:
-            return {
-                "found": True,
-                "file_path": file_path,
-                "resolved_path": str(resolved_path) if resolved_path else "",
-                "line_start": line_start,
-                "line_end": line_end,
-                "snippet": "",
-            }
-
-        lines = source_text.splitlines()
-        if not lines:
-            return {
-                "found": True,
-                "file_path": file_path,
-                "resolved_path": str(resolved_path) if resolved_path else "",
-                "line_start": line_start,
-                "line_end": line_end,
-                "snippet": "",
-            }
-
-        if line_start <= 0:
-            line_start = 1
-        if line_end < line_start:
-            line_end = line_start
-        start_idx = max(0, line_start - 1 - max(0, int(context_lines)))
-        end_idx = min(len(lines), line_end + max(0, int(context_lines)))
-        snippet = "\n".join(lines[start_idx:end_idx]).strip()
-        if len(snippet) > max_chars:
-            snippet = snippet[: max_chars - 3].rstrip() + "..."
-        return {
-            "found": True,
-            "file_path": file_path,
-            "resolved_path": str(resolved_path) if resolved_path else "",
-            "line_start": line_start,
-            "line_end": line_end,
-            "snippet_start_line": start_idx + 1,
-            "snippet_end_line": end_idx,
-            "snippet": snippet,
-        }
-
-    def unit_context(
-        self,
-        unit_id: str,
-        *,
-        context_lines: int = 4,
-        contains_limit: int = 40,
-        relationship_limit: int = 80,
-    ) -> Dict[str, Any]:
-        unit = self.get_unit(unit_id)
-        if not unit:
-            return {"found": False}
-
-        parents = self.get_parents(unit_id, rel_type=None, limit=max(1, int(relationship_limit)))
-        children = self.get_children(unit_id, rel_type=None, limit=max(1, int(relationship_limit)))
-        contains_trace = self.trace_contains(unit_id, max_depth=2, max_nodes=max(1, int(contains_limit)))
-        snippet = self.render_snippet(unit_id, context_lines=max(0, int(context_lines)))
-        return {
-            "found": True,
-            "unit": unit,
-            "parents": parents,
-            "children": children,
-            "contains_trace": contains_trace,
-            "snippet": snippet,
-        }
 
     def get_text(self, content_hash: str) -> Optional[str]:
         with self._connect() as conn:

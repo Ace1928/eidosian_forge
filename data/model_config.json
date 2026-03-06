@@ -4,8 +4,9 @@
   "description": "Unified model configuration for Eidosian Forge",
 
   "ollama": {
-    "base_url": "http://localhost:11434",
-    "api_v1_url": "http://localhost:11434/v1"
+    "base_url": "http://127.0.0.1:8938",
+    "api_v1_url": "http://127.0.0.1:8938/v1",
+    "embedding_base_url": "http://127.0.0.1:8940"
   },
 
   "inference": {

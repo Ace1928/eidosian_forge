@@ -58,7 +58,6 @@ class KnowledgeForge:
         self.concept_map: Dict[str, List[str]] = {}
         self.persistence_path = Path(persistence_path) if persistence_path else None
         self.embedder = embedder
-        self._vector_store_dir = None
         self._thread_lock = threading.RLock()
         self._lock_handle = None
         self._lock_depth = 0
@@ -74,7 +73,6 @@ class KnowledgeForge:
                     store_dir = self.persistence_path.parent / "kb_vectors"
                 else:
                     store_dir = Path("./data/kb_vectors")
-                self._vector_store_dir = store_dir
                 self.vector_store = HNSWVectorStore(store_dir)
             except Exception:
                 self.vector_store = None
@@ -203,15 +201,8 @@ class KnowledgeForge:
         query_vec = self.embedder.embed_text(query)
         if not query_vec:
             return self.search(query)[:limit]
-        try:
-            hits = self.vector_store.query(query_vec, limit=limit)
-        except ValueError as exc:
-            if not self._is_vector_dimension_mismatch(exc):
-                raise
-            self._rebuild_vector_store(query_vec)
-            hits = self.vector_store.query(query_vec, limit=limit) if self.vector_store is not None else []
         results = []
-        for hit in hits:
+        for hit in self.vector_store.query(query_vec, limit=limit):
             node = self.nodes.get(hit.item_id)
             if node is not None:
                 results.append(node)
@@ -368,48 +359,14 @@ class KnowledgeForge:
         vector = self.embedder.embed_text(str(node.content))
         if not vector:
             return
-        try:
-            self.vector_store.upsert(
-                node.id,
-                vector,
-                text=str(node.content),
-                metadata={
-                    "tags": sorted(node.tags),
-                },
-            )
-        except ValueError as exc:
-            if not self._is_vector_dimension_mismatch(exc):
-                raise
-            self._rebuild_vector_store(vector)
-
-    def _is_vector_dimension_mismatch(self, exc: Exception) -> bool:
-        return "Vector dimension mismatch" in str(exc)
-
-    def _rebuild_vector_store(self, seed_vector: Optional[List[float]] = None) -> None:
-        if self.embedder is None or self.vector_store is None:
-            return
-        if seed_vector:
-            dim = len(seed_vector)
-        else:
-            dim = None
-            for node in self.nodes.values():
-                vector = self.embedder.embed_text(str(node.content))
-                if vector:
-                    dim = len(vector)
-                    break
-            if dim is None:
-                return
-        self.vector_store.reset(dim=dim)
-        for node in self.nodes.values():
-            vector = self.embedder.embed_text(str(node.content))
-            if not vector or len(vector) != dim:
-                continue
-            self.vector_store.upsert(
-                node.id,
-                vector,
-                text=str(node.content),
-                metadata={"tags": sorted(node.tags)},
-            )
+        self.vector_store.upsert(
+            node.id,
+            vector,
+            text=str(node.content),
+            metadata={
+                "tags": sorted(node.tags),
+            },
+        )
 
     def _build_rdf_graph(self) -> Any:
         """Build an rdflib graph snapshot from the in-memory knowledge graph."""

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "run_graphrag_bench.py"
@@ -17,23 +17,22 @@ spec.loader.exec_module(mod)
 
 def test_validate_pipeline_outputs_rejects_placeholders(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mod, "WORKSPACE_DIR", tmp_path / "workspace")
-    reports_path = mod.WORKSPACE_DIR / "output" / "native_community_reports.json"
+    reports_path = mod.WORKSPACE_DIR / "output" / "community_reports.parquet"
     reports_path.parent.mkdir(parents=True, exist_ok=True)
-    reports_path.write_text(
-        json.dumps(
+    reports_path.write_bytes(b"x")
+
+    frame = pd.DataFrame(
+        [
             {
-                "reports": [
-                    {
-                        "title": "Community 0",
-                        "summary": "Auto-generated placeholder summary for Community 0.",
-                        "findings": ["Fallback generated for missing data."],
-                        "rating": 0.0,
-                    }
-                ]
+                "title": "Community 0",
+                "summary": "Auto-generated placeholder summary for Community 0.",
+                "full_content": "# Community 0\n\nFallback generated for missing data.",
+                "findings": [{"summary": "x", "explanation": "y"}],
+                "rating": 0.0,
             }
-        ),
-        encoding="utf-8",
+        ]
     )
+    monkeypatch.setattr(mod.pd, "read_parquet", lambda _: frame)
 
     with pytest.raises(RuntimeError, match="Placeholder/fallback community reports detected"):
         mod.validate_pipeline_outputs()
@@ -41,26 +40,24 @@ def test_validate_pipeline_outputs_rejects_placeholders(tmp_path: Path, monkeypa
 
 def test_validate_pipeline_outputs_accepts_grounded_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mod, "WORKSPACE_DIR", tmp_path / "workspace")
-    reports_path = mod.WORKSPACE_DIR / "output" / "native_community_reports.json"
+    reports_path = mod.WORKSPACE_DIR / "output" / "community_reports.parquet"
     reports_path.parent.mkdir(parents=True, exist_ok=True)
-    reports_path.write_text(
-        json.dumps(
+    reports_path.write_bytes(b"x")
+
+    frame = pd.DataFrame(
+        [
             {
-                "reports": [
-                    {
-                        "title": "Alaric and Seraphina in Eidos",
-                        "summary": "Alaric and Seraphina coordinate defense of the Crystal in Eidos.",
-                        "findings": ["Kael protects the Crystal while Seraphina advises Alaric in Eidos."],
-                        "rating": 8.5,
-                    }
-                ]
+                "title": "Alaric and Seraphina in Eidos",
+                "summary": "Alaric and Seraphina coordinate defense of the Crystal in Eidos.",
+                "full_content": "Kael protects the Crystal while Seraphina advises Alaric in Eidos.",
+                "findings": [{"summary": "x", "explanation": "y"}],
+                "rating": 8.5,
             }
-        ),
-        encoding="utf-8",
+        ]
     )
+    monkeypatch.setattr(mod.pd, "read_parquet", lambda _: frame)
 
     result = mod.validate_pipeline_outputs()
-    assert result["report_source"] == "native_json"
     assert result["placeholder_rows"] == 0
     assert result["relevance_fail_rows"] == 0
     assert result["schema_fail_rows"] == 0

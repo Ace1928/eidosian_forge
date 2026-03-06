@@ -102,9 +102,6 @@ def _parse_memory_stats(stats: Any) -> dict[str, Any]:
         "avg_importance": float(getattr(stats, "avg_importance", 0.0) or 0.0),
         "avg_access_count": float(getattr(stats, "avg_access_count", 0.0) or 0.0),
         "top_tags": list(getattr(stats, "top_tags", []) or []),
-        "vector_count": _safe_int(getattr(stats, "vector_count", 0), default=0),
-        "community_count": _safe_int(getattr(stats, "community_count", 0), default=0),
-        "top_communities": list(getattr(stats, "top_communities", []) or []),
     }
 
 
@@ -377,49 +374,6 @@ class MemoryBridgeModule:
                         tags=["consciousness", "memory_bridge", "broadcast"],
                         corr_id=introspection_evt.get("corr_id"),
                         parent_id=introspection_evt.get("parent_id"),
-                    )
-                top_communities = list(stats_payload.get("top_communities") or [])
-                if top_communities:
-                    community_evt = ctx.emit_event(
-                        "mem.communities",
-                        {
-                            "community_count": stats_payload.get("community_count", 0),
-                            "top_communities": top_communities[:6],
-                            "vector_count": stats_payload.get("vector_count", 0),
-                        },
-                        tags=["consciousness", "memory_bridge", "communities"],
-                    )
-                    payload = WorkspacePayload(
-                        kind="MEMORY_COMMUNITIES",
-                        source_module=self.name,
-                        content={
-                            "community_count": stats_payload.get("community_count", 0),
-                            "top_community": _to_text(
-                                top_communities[0][0]
-                                if isinstance(top_communities[0], (list, tuple))
-                                else top_communities[0]
-                            ),
-                            "vector_count": stats_payload.get("vector_count", 0),
-                        },
-                        confidence=0.72,
-                        salience=0.58,
-                        links={
-                            "corr_id": community_evt.get("corr_id"),
-                            "parent_id": community_evt.get("parent_id"),
-                            "memory_ids": [],
-                        },
-                    ).as_dict()
-                    payload = normalize_workspace_payload(
-                        payload,
-                        fallback_kind="MEMORY_COMMUNITIES",
-                        source_module=self.name,
-                    )
-                    ctx.broadcast(
-                        self.name,
-                        payload,
-                        tags=["consciousness", "memory_bridge", "communities"],
-                        corr_id=community_evt.get("corr_id"),
-                        parent_id=community_evt.get("parent_id"),
                     )
                 ctx.metric("consciousness.memory_bridge.insight_count", float(insight_count))
             except Exception as exc:

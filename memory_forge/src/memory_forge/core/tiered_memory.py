@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import tempfile
 import threading
 import uuid
@@ -212,26 +211,12 @@ class TieredMemorySystem:
         MemoryTier.SHORT_TERM: 0.6,  # Promote to WORKING
         MemoryTier.WORKING: 0.8,  # Promote to LONG_TERM
     }
-    _WORD_RE = re.compile(r"[A-Za-z0-9_.:-]{3,}")
-    _DOMAIN_KEYWORDS = {
-        "memory": {"memory", "recall", "remember", "tiered", "episodic", "semantic"},
-        "knowledge": {"knowledge", "graph", "graphrag", "community", "ontology"},
-        "code": {"code", "function", "class", "module", "snippet", "library"},
-        "runtime": {"scheduler", "runtime", "coordinator", "daemon", "service", "port"},
-        "model": {"qwen", "ollama", "llama", "embedding", "reasoning", "thinking", "model"},
-        "docs": {"docs", "documentation", "markdown", "report", "summary"},
-        "consciousness": {"consciousness", "workspace", "attention", "autonomy", "self-model"},
-        "termux": {"termux", "android", "prefix", "venv"},
-    }
 
     def __init__(
         self,
         persistence_dir: Optional[Path] = None,
         embedder: Optional[EmbeddingService] = None,
         vector_store_dir: Optional[Path] = None,
-        llm_enrichment: bool | None = None,
-        llm_model: Optional[str] = None,
-        llm_thinking_mode: Optional[str] = None,
     ):
         if persistence_dir is None:
             self.persistence_dir = Path("./data/tiered_memory")
@@ -241,15 +226,6 @@ class TieredMemorySystem:
             self.persistence_dir = persistence_dir
         self.persistence_dir.mkdir(parents=True, exist_ok=True)
         self.embedder = embedder
-        self.llm_enrichment = (
-            bool(llm_enrichment)
-            if llm_enrichment is not None
-            else str(os.environ.get("EIDOS_MEMORY_LLM_ENRICHMENT", "")).strip().lower() in {"1", "true", "on", "yes"}
-        )
-        self.llm_model = llm_model or str(os.environ.get("EIDOS_MEMORY_LLM_MODEL", "qwen3.5:2b")).strip()
-        self.llm_thinking_mode = (
-            str(os.environ.get("EIDOS_MEMORY_LLM_THINKING_MODE", llm_thinking_mode or "on")).strip() or "on"
-        )
         self._thread_lock = threading.RLock()
         self._lock_path = self.persistence_dir / ".tiered_memory.lock"
         self._lock_handle = None
@@ -696,11 +672,7 @@ class TieredMemorySystem:
             "by_tier": {},
             "by_namespace": {},
             "by_type": {},
-            "vector_count": self.vector_store.count() if self.vector_store is not None else 0,
-            "community_count": 0,
-            "top_communities": [],
         }
-        communities: Dict[str, int] = {}
 
         for tier in MemoryTier:
             count = len(self.tiers[tier])
@@ -714,15 +686,6 @@ class TieredMemorySystem:
                 mt = item.memory_type.value
                 stats["by_namespace"][ns] = stats["by_namespace"].get(ns, 0) + 1
                 stats["by_type"][mt] = stats["by_type"].get(mt, 0) + 1
-                community = str(item.metadata.get("community") or "")
-                if community:
-                    communities[community] = communities.get(community, 0) + 1
-
-        stats["community_count"] = len(communities)
-        stats["top_communities"] = [
-            {"community": name, "count": count}
-            for name, count in sorted(communities.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
-        ]
 
         return stats
 
@@ -742,344 +705,6 @@ class TieredMemorySystem:
                 if not item.is_expired():
                     results.append(item)
         return results
-
-    @eidosian()
-    def enrich_memory(self, memory_id: str, use_llm: Optional[bool] = None) -> Dict[str, Any]:
-        """Enrich a specific memory with structured tags/metadata/community labels."""
-        with self._mutation_lock():
-            self._reload_from_disk_locked()
-            item = self._find_memory(memory_id)
-            if item is None:
-                return {"updated": False, "found": False, "memory_id": memory_id}
-            updated = self._apply_enrichment(item, use_llm=use_llm)
-            self._persist_tier(item.tier)
-            self._upsert_vector_store(item)
-            return {
-                "updated": bool(updated),
-                "found": True,
-                "memory_id": item.id,
-                "community": str(item.metadata.get("community") or ""),
-                "keywords": list(item.metadata.get("keywords") or []),
-                "tags": sorted(item.tags),
-            }
-
-    @eidosian()
-    def enrich_all_memories(
-        self,
-        limit: int = 0,
-        tiers: Optional[List[MemoryTier]] = None,
-        use_llm: Optional[bool] = None,
-    ) -> Dict[str, Any]:
-        """Batch-enrich memories to improve tagging, grouping, and vector metadata."""
-        tiers = tiers or list(MemoryTier)
-        max_items = max(0, int(limit))
-        updated = 0
-        touched: Set[MemoryTier] = set()
-        communities: Dict[str, int] = {}
-        with self._mutation_lock():
-            self._merge_disk_state_locked()
-            items: List[TieredMemoryItem] = []
-            for tier in tiers:
-                items.extend(self.tiers[tier].values())
-            items.sort(key=lambda row: row.created_at)
-            for item in items:
-                if max_items and updated >= max_items:
-                    break
-                if self._apply_enrichment(item, use_llm=use_llm):
-                    updated += 1
-                    touched.add(item.tier)
-                community = str(item.metadata.get("community") or "")
-                if community:
-                    communities[community] = communities.get(community, 0) + 1
-                self._upsert_vector_store(item)
-            for tier in touched:
-                self._persist_tier(tier)
-        return {
-            "updated": updated,
-            "scanned": len(items) if "items" in locals() else 0,
-            "tiers": [tier.value for tier in tiers],
-            "llm_enrichment": bool(self.llm_enrichment if use_llm is None else use_llm),
-            "communities": dict(sorted(communities.items(), key=lambda kv: (-kv[1], kv[0]))[:12]),
-        }
-
-    @eidosian()
-    def reindex_vector_store(self, limit: int = 0) -> Dict[str, Any]:
-        """Rebuild embeddings/vector metadata for all memories."""
-        reindexed = 0
-        scanned = 0
-        max_items = max(0, int(limit))
-        with self._mutation_lock():
-            self._merge_disk_state_locked()
-            for item in self.list_all():
-                scanned += 1
-                if max_items and reindexed >= max_items:
-                    break
-                if self.embedder and not item.embedding:
-                    try:
-                        item.embedding = self.embedder.embed_text(item.content)
-                    except Exception:
-                        item.embedding = item.embedding or None
-                self._apply_enrichment(item, use_llm=False)
-                self._upsert_vector_store(item)
-                reindexed += 1
-            for tier in MemoryTier:
-                self._persist_tier(tier)
-        return {
-            "reindexed": reindexed,
-            "scanned": scanned,
-            "vector_count": self.vector_store.count() if self.vector_store is not None else 0,
-        }
-
-    @eidosian()
-    def community_summary(self, limit: int = 20) -> Dict[str, Any]:
-        """Summarize memory communities derived from vector-aware enrichment."""
-        groups: Dict[str, Dict[str, Any]] = {}
-        for item in self.list_all():
-            community = str(item.metadata.get("community") or "unclassified").strip() or "unclassified"
-            group = groups.setdefault(
-                community,
-                {
-                    "community": community,
-                    "count": 0,
-                    "tiers": {},
-                    "namespaces": {},
-                    "top_tags": {},
-                    "examples": [],
-                },
-            )
-            group["count"] += 1
-            group["tiers"][item.tier.value] = group["tiers"].get(item.tier.value, 0) + 1
-            group["namespaces"][item.namespace.value] = group["namespaces"].get(item.namespace.value, 0) + 1
-            for tag in item.tags:
-                tag_text = str(tag).strip()
-                if tag_text:
-                    group["top_tags"][tag_text] = group["top_tags"].get(tag_text, 0) + 1
-            if len(group["examples"]) < 3:
-                group["examples"].append({"id": item.id, "content": item.content[:180], "tier": item.tier.value})
-        rows = sorted(groups.values(), key=lambda row: (-int(row["count"]), str(row["community"])))
-        for row in rows:
-            row["top_tags"] = [tag for tag, _ in sorted(row["top_tags"].items(), key=lambda kv: (-kv[1], kv[0]))[:8]]
-        return {"count": len(rows), "communities": rows[: max(1, int(limit))]}
-
-    @eidosian()
-    def memory_graph(self, limit: int = 120) -> Dict[str, Any]:
-        """Return a graph-friendly view of memory nodes and semantic/community links."""
-        items = self.list_all()[: max(1, int(limit))]
-        nodes: List[Dict[str, Any]] = []
-        edges: List[Dict[str, Any]] = []
-        seen_edges: Set[tuple[str, str, str]] = set()
-        for item in items:
-            nodes.append(
-                {
-                    "id": item.id,
-                    "label": item.content[:72],
-                    "community": str(item.metadata.get("community") or "unclassified"),
-                    "tier": item.tier.value,
-                    "namespace": item.namespace.value,
-                    "tags": sorted(item.tags)[:8],
-                }
-            )
-        by_id = {item.id: item for item in items}
-        for item in items:
-            for linked_id in sorted(item.linked_memories):
-                if linked_id not in by_id:
-                    continue
-                key = tuple(sorted((item.id, linked_id)) + ["linked"])
-                if key in seen_edges:
-                    continue
-                seen_edges.add(key)
-                edges.append({"source": item.id, "target": linked_id, "rel_type": "linked"})
-        community_buckets: Dict[str, List[str]] = {}
-        for item in items:
-            community = str(item.metadata.get("community") or "")
-            if not community:
-                continue
-            community_buckets.setdefault(community, []).append(item.id)
-        for members in community_buckets.values():
-            for idx in range(len(members) - 1):
-                src = members[idx]
-                dst = members[idx + 1]
-                key = tuple(sorted((src, dst)) + ["community"])
-                if key in seen_edges:
-                    continue
-                seen_edges.add(key)
-                edges.append({"source": src, "target": dst, "rel_type": "community"})
-        return {
-            "nodes": nodes,
-            "edges": edges,
-            "summary": {
-                "node_count": len(nodes),
-                "edge_count": len(edges),
-                "community_count": len(community_buckets),
-            },
-        }
-
-    def _apply_enrichment(self, item: TieredMemoryItem, *, use_llm: Optional[bool]) -> bool:
-        enriched_tags, enriched_metadata = self._heuristic_enrichment(item)
-        if bool(self.llm_enrichment if use_llm is None else use_llm):
-            llm_metadata = self._llm_enrichment(item)
-            if llm_metadata:
-                llm_tags = {
-                    self._normalize_tag(tag) for tag in llm_metadata.get("tags") or [] if self._normalize_tag(tag)
-                }
-                enriched_tags.update(llm_tags)
-                enriched_metadata = self._merge_metadata(enriched_metadata, llm_metadata)
-                enriched_metadata["tag_origin"] = "llm_assisted"
-        changed = False
-        if not enriched_tags.issubset(item.tags):
-            item.tags.update(enriched_tags)
-            changed = True
-        merged = self._merge_metadata(item.metadata, enriched_metadata)
-        if merged != item.metadata:
-            item.metadata = merged
-            changed = True
-        if item.embedding is None and self.embedder:
-            try:
-                item.embedding = self.embedder.embed_text(item.content)
-                changed = True
-            except Exception:
-                pass
-        return changed
-
-    def _heuristic_enrichment(self, item: TieredMemoryItem) -> tuple[Set[str], Dict[str, Any]]:
-        keywords = self._extract_keywords(item.content)
-        domains = self._infer_domains(item.content, set(item.tags), item.namespace, item.memory_type)
-        tags = {
-            self._normalize_tag(tag)
-            for tag in (
-                list(item.tags) + keywords + domains + [item.tier.value, item.namespace.value, item.memory_type.value]
-            )
-            if self._normalize_tag(tag)
-        }
-        title = item.content.strip().splitlines()[0][:96] if item.content.strip() else ""
-        community = self._community_label(item.namespace, domains, keywords)
-        metadata = {
-            "content_hash": self._content_hash(item.content),
-            "keywords": keywords,
-            "domains": domains,
-            "community": community,
-            "title": title,
-            "summary": item.content.strip().replace("\n", " ")[:180],
-            "tag_origin": str(item.metadata.get("tag_origin") or "heuristic"),
-            "vector_ready": bool(item.embedding),
-        }
-        return tags, metadata
-
-    def _llm_enrichment(self, item: TieredMemoryItem) -> Dict[str, Any]:
-        try:
-            from eidos_mcp.config.models import ModelConfig
-            from eidosian_runtime import ForgeRuntimeCoordinator
-        except Exception:
-            return {}
-        try:
-            coordinator = ForgeRuntimeCoordinator(FORGE_ROOT / "data" / "runtime" / "forge_coordinator_status.json")
-            decision = coordinator.can_allocate(
-                owner="memory_forge_enrichment",
-                requested_models=[{"family": "ollama", "model": self.llm_model, "role": "memory_enrichment"}],
-                allow_same_owner=False,
-            )
-            if not bool(decision.get("allowed")):
-                return {}
-        except Exception:
-            pass
-        schema = {
-            "type": "object",
-            "properties": {
-                "tags": {"type": "array", "items": {"type": "string"}},
-                "keywords": {"type": "array", "items": {"type": "string"}},
-                "domains": {"type": "array", "items": {"type": "string"}},
-                "community": {"type": "string"},
-                "summary": {"type": "string"},
-            },
-            "required": ["tags", "keywords", "domains", "community", "summary"],
-        }
-        prompt = "\n".join(
-            [
-                "Return structured enrichment for this memory.",
-                f"Tier: {item.tier.value}",
-                f"Namespace: {item.namespace.value}",
-                f"Type: {item.memory_type.value}",
-                "Memory:",
-                item.content[:2000],
-            ]
-        )
-        try:
-            payload = ModelConfig().generate_payload(
-                prompt,
-                model=self.llm_model,
-                max_tokens=320,
-                temperature=0.1,
-                thinking_mode=self.llm_thinking_mode,
-                timeout=180.0,
-                format=schema,
-            )
-            response = str(payload.get("response") or "").strip()
-            if not response:
-                return {}
-            parsed = json.loads(response)
-            if not isinstance(parsed, dict):
-                return {}
-            return {
-                "keywords": [self._normalize_tag(x) for x in parsed.get("keywords") or [] if self._normalize_tag(x)],
-                "domains": [self._normalize_tag(x) for x in parsed.get("domains") or [] if self._normalize_tag(x)],
-                "tags": [self._normalize_tag(x) for x in parsed.get("tags") or [] if self._normalize_tag(x)],
-                "community": self._normalize_tag(parsed.get("community")) or "",
-                "summary": str(parsed.get("summary") or "").strip()[:220],
-            }
-        except Exception:
-            return {}
-
-    def _extract_keywords(self, text: str, limit: int = 8) -> List[str]:
-        counts: Dict[str, int] = {}
-        for token in self._WORD_RE.findall(str(text or "").lower()):
-            norm = self._normalize_tag(token)
-            if not norm or norm.isdigit() or len(norm) < 4:
-                continue
-            counts[norm] = counts.get(norm, 0) + 1
-        return [token for token, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[: max(1, int(limit))]]
-
-    def _infer_domains(
-        self,
-        content: str,
-        tags: Set[str],
-        namespace: MemoryNamespace,
-        memory_type: MemoryType,
-    ) -> List[str]:
-        hay = {self._normalize_tag(token) for token in self._WORD_RE.findall(str(content or "").lower())}
-        hay.update({self._normalize_tag(tag) for tag in tags})
-        hay.add(self._normalize_tag(namespace.value))
-        hay.add(self._normalize_tag(memory_type.value))
-        matched: List[str] = []
-        for domain, keywords in self._DOMAIN_KEYWORDS.items():
-            if hay.intersection(keywords):
-                matched.append(domain)
-        if not matched:
-            matched.append(self._normalize_tag(namespace.value) or "general")
-        return matched[:4]
-
-    def _community_label(self, namespace: MemoryNamespace, domains: List[str], keywords: List[str]) -> str:
-        primary_domain = domains[0] if domains else "general"
-        secondary = keywords[0] if keywords else primary_domain
-        return f"{self._normalize_tag(namespace.value)}:{self._normalize_tag(primary_domain)}:{self._normalize_tag(secondary)}".strip(
-            ":"
-        )
-
-    def _normalize_tag(self, value: Any) -> str:
-        text = str(value or "").strip().lower()
-        if not text:
-            return ""
-        clean = []
-        for ch in text:
-            clean.append(ch if ch.isalnum() or ch in {"_", "-"} else "_")
-        normalized = "".join(clean).strip("_-")
-        while "__" in normalized:
-            normalized = normalized.replace("__", "_")
-        return normalized[:48]
-
-    def _content_hash(self, text: str) -> str:
-        import hashlib
-
-        return hashlib.sha256(str(text or "").encode("utf-8", "replace")).hexdigest()[:16]
 
     def _check_promotion(self, item: TieredMemoryItem) -> None:
         """Check if memory should be promoted based on access patterns."""
@@ -1253,20 +878,6 @@ class TieredMemorySystem:
         """Store or merge a memory while holding the persistence lock."""
         normalized_tags = set(tags or set())
         normalized_metadata = dict(metadata or {})
-        preview_item = TieredMemoryItem(
-            content=content,
-            tier=tier,
-            namespace=namespace,
-            memory_type=memory_type,
-            importance=importance,
-            embedding=embedding,
-            ttl_seconds=self.TIER_TTL.get(tier),
-            tags=normalized_tags,
-            metadata=normalized_metadata,
-        )
-        enriched_tags, enriched_metadata = self._heuristic_enrichment(preview_item)
-        normalized_tags.update(enriched_tags)
-        normalized_metadata = self._merge_metadata(normalized_metadata, enriched_metadata)
         existing = self._find_duplicate_memory(
             content=content,
             tier=tier,
@@ -1281,7 +892,6 @@ class TieredMemorySystem:
             existing.last_accessed = datetime.now()
             if existing.embedding is None and embedding:
                 existing.embedding = embedding
-            self._apply_enrichment(existing, use_llm=False)
             self._persist_tier(existing.tier)
             self._upsert_vector_store(existing)
             return existing.id
@@ -1339,25 +949,13 @@ class TieredMemorySystem:
         memory_type: MemoryType,
         metadata: Dict[str, Any],
     ) -> str:
-        derived_keys = {
-            "content_hash",
-            "keywords",
-            "domains",
-            "community",
-            "title",
-            "summary",
-            "tag_origin",
-            "vector_ready",
-            "enriched_at",
-        }
-        stable_metadata = {key: value for key, value in metadata.items() if key not in derived_keys}
         return json.dumps(
             {
                 "content": content.strip(),
                 "tier": tier.value,
                 "namespace": namespace.value,
                 "memory_type": memory_type.value,
-                "metadata": self._normalize_json_value(stable_metadata),
+                "metadata": self._normalize_json_value(metadata),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -1444,8 +1042,5 @@ class TieredMemorySystem:
                 "memory_type": item.memory_type.value,
                 "importance": item.importance,
                 "tags": sorted(item.tags),
-                "community": str(item.metadata.get("community") or ""),
-                "keywords": list(item.metadata.get("keywords") or []),
-                "domains": list(item.metadata.get("domains") or []),
             },
         )

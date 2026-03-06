@@ -1,6 +1,3 @@
-import sys
-import types
-
 from memory_forge.core.interfaces import MemoryType
 from memory_forge.core.tiered_memory import MemoryNamespace, MemoryTier, TieredMemorySystem
 
@@ -42,8 +39,7 @@ def test_remember_merges_duplicate_entries_across_instances(tmp_path) -> None:
     persisted = list(reloaded.tiers[MemoryTier.LONG_TERM].values())
     assert len(persisted) == 1
     assert persisted[0].id == first_id
-    assert {"qwen", "stable", "termux", "default"}.issubset(persisted[0].tags)
-    assert persisted[0].metadata["community"].startswith("knowledge:")
+    assert persisted[0].tags == {"qwen", "stable", "termux", "default"}
 
 
 def test_recall_uses_vector_store_when_embeddings_are_available(tmp_path) -> None:
@@ -65,64 +61,3 @@ def test_recall_uses_vector_store_when_embeddings_are_available(tmp_path) -> Non
 
     assert len(results) == 1
     assert results[0].id == best_id
-
-
-def test_memory_enrichment_adds_community_metadata_and_reindex(tmp_path) -> None:
-    memory = TieredMemorySystem(persistence_dir=tmp_path, embedder=_FakeEmbedder())
-    mem_id = memory.remember(
-        "Qwen scheduler runtime memory graph integration for Termux dashboard.",
-        tier=MemoryTier.LONG_TERM,
-        namespace=MemoryNamespace.KNOWLEDGE,
-        memory_type=MemoryType.SEMANTIC,
-    )
-
-    item = memory._find_memory(mem_id)
-    assert item is not None
-    assert item.metadata["community"].startswith("knowledge:")
-    assert "runtime" in item.metadata["domains"]
-    assert item.embedding
-
-    report = memory.reindex_vector_store()
-    assert report["reindexed"] >= 1
-    assert report["vector_count"] >= 1
-
-    summary = memory.community_summary(limit=5)
-    assert summary["count"] >= 1
-    assert summary["communities"][0]["count"] >= 1
-
-    graph = memory.memory_graph(limit=10)
-    assert graph["summary"]["node_count"] >= 1
-
-
-def test_llm_enrichment_respects_runtime_budget_gate(tmp_path, monkeypatch) -> None:
-    class _DeniedCoordinator:
-        def __init__(self, *_args, **_kwargs) -> None:
-            pass
-
-        def can_allocate(self, **_kwargs):
-            return {"allowed": False, "reason": "instance_budget_exceeded"}
-
-    class _FakeModelConfig:
-        def generate_payload(self, *args, **kwargs):
-            raise AssertionError("Model call should not occur when coordinator denies budget")
-
-    monkeypatch.setitem(
-        sys.modules, "eidosian_runtime", types.SimpleNamespace(ForgeRuntimeCoordinator=_DeniedCoordinator)
-    )
-    monkeypatch.setitem(sys.modules, "eidos_mcp.config.models", types.SimpleNamespace(ModelConfig=_FakeModelConfig))
-
-    memory = TieredMemorySystem(
-        persistence_dir=tmp_path,
-        embedder=_FakeEmbedder(),
-        llm_enrichment=True,
-        llm_model="qwen3.5:2b",
-    )
-    mem_id = memory.remember(
-        "Autonomous runtime memory enrichment should defer when the coordinator budget is saturated.",
-        tier=MemoryTier.LONG_TERM,
-        namespace=MemoryNamespace.KNOWLEDGE,
-        memory_type=MemoryType.SEMANTIC,
-    )
-    item = memory._find_memory(mem_id)
-    assert item is not None
-    assert memory._llm_enrichment(item) == {}

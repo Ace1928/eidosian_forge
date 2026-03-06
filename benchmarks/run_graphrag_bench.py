@@ -8,12 +8,11 @@ import argparse
 import cProfile
 import pstats
 import io
+import pandas as pd
 import urllib.request
 import urllib.error
-import math
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any
 
 # Configuration
 MODELS_DIR = Path("models")
@@ -156,77 +155,6 @@ Output JSON:
 """
 
 
-def _require_pandas():
-    try:
-        import pandas as pd  # type: ignore
-    except Exception as exc:
-        raise RuntimeError(
-            "pandas is required to load GraphRAG parquet artifacts in this environment"
-        ) from exc
-    return pd
-
-
-def _load_native_report_rows(output_dir: Path) -> list[dict[str, Any]]:
-    native_path = output_dir / "native_community_reports.json"
-    if not native_path.exists():
-        return []
-    try:
-        payload = json.loads(native_path.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    reports = payload.get("reports") if isinstance(payload, dict) else None
-    if not isinstance(reports, list):
-        return []
-    rows: list[dict[str, Any]] = []
-    for row in reports:
-        if not isinstance(row, dict):
-            continue
-        findings = row.get("findings")
-        if not isinstance(findings, list):
-            findings = []
-        full_content = " ".join(str(item).strip() for item in findings if str(item).strip())
-        rows.append(
-            {
-                "title": row.get("title"),
-                "summary": row.get("summary"),
-                "full_content": full_content,
-                "findings": findings,
-                "rating": row.get("rating"),
-            }
-        )
-    return rows
-
-
-def _load_parquet_report_rows(output_dir: Path) -> list[dict[str, Any]]:
-    reports_path = output_dir / "community_reports.parquet"
-    if not reports_path.exists():
-        return []
-    pd = _require_pandas()
-    reports_df = pd.read_parquet(reports_path)
-    return reports_df.to_dict(orient="records")
-
-
-def _load_report_rows(output_dir: Path) -> tuple[str, list[dict[str, Any]]]:
-    native_rows = _load_native_report_rows(output_dir)
-    if native_rows:
-        return "native_json", native_rows
-    parquet_rows = _load_parquet_report_rows(output_dir)
-    if parquet_rows:
-        return "parquet", parquet_rows
-    return "missing", []
-
-
-def _rating_present(value: Any) -> bool:
-    if value is None:
-        return False
-    if isinstance(value, float):
-        return not math.isnan(value)
-    try:
-        return not math.isnan(float(value))
-    except Exception:
-        return True
-
-
 def resolve_model(primary: Path, fallback: Path | None = None) -> Path:
     if primary.exists():
         return primary
@@ -312,16 +240,17 @@ def start_server(model_path, port, embedding=False):
 
 def validate_pipeline_outputs() -> dict:
     output_dir = WORKSPACE_DIR / "output"
-    report_source, report_rows = _load_report_rows(output_dir)
-    if not report_rows:
-        raise RuntimeError(
-            "Missing community reports output: expected native_community_reports.json or community_reports.parquet"
-        )
+    reports_path = output_dir / "community_reports.parquet"
+    if not reports_path.exists():
+        raise RuntimeError(f"Missing community reports output: {reports_path}")
+    reports_df = pd.read_parquet(reports_path)
+    if reports_df.empty:
+        raise RuntimeError("Community reports output is empty.")
 
     placeholder_rows = []
     relevance_fail_rows = []
     schema_fail_rows = []
-    for idx, row in enumerate(report_rows):
+    for idx, row in reports_df.iterrows():
         summary = str(row.get("summary", "")).lower()
         full_content = str(row.get("full_content", "")).lower()
         if any(marker in summary or marker in full_content for marker in PLACEHOLDER_MARKERS):
@@ -332,13 +261,13 @@ def validate_pipeline_outputs() -> dict:
         findings = row.get("findings", None)
         title = str(row.get("title", "")).strip()
         rating = row.get("rating", row.get("rank", None))
-        if not title or findings is None or not _rating_present(rating):
+        if not title or findings is None or pd.isna(rating):
             schema_fail_rows.append(
                 {
                     "row": int(idx),
                     "title_present": bool(title),
                     "has_findings": findings is not None,
-                    "has_rating": _rating_present(rating),
+                    "has_rating": not pd.isna(rating) if rating is not None else False,
                 }
             )
 
@@ -359,8 +288,7 @@ def validate_pipeline_outputs() -> dict:
         )
 
     return {
-        "community_reports_rows": int(len(report_rows)),
-        "report_source": report_source,
+        "community_reports_rows": int(len(reports_df)),
         "placeholder_rows": int(len(placeholder_rows)),
         "relevance_fail_rows": int(len(relevance_fail_rows)),
         "schema_fail_rows": int(len(schema_fail_rows)),

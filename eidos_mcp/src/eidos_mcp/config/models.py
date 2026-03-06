@@ -40,9 +40,16 @@ CONFIG_DIR = Path(os.environ.get("EIDOS_MODEL_CONFIG_DIR", str(FORGE_ROOT / "dat
 CONFIG_FILE = CONFIG_DIR / "model_config.json"
 DEFAULT_OLLAMA_BASE_URL = os.environ.get(
     "EIDOS_OLLAMA_BASE_URL",
-    get_service_url("ollama_http", default_port=11434, default_host="localhost", default_path=""),
+    os.environ.get(
+        "EIDOS_OLLAMA_QWEN_BASE_URL",
+        get_service_url("ollama_qwen_http", default_port=8938, default_host="localhost", default_path=""),
+    ),
 ).rstrip("/")
 DEFAULT_OLLAMA_API_V1_URL = f"{DEFAULT_OLLAMA_BASE_URL}/v1"
+DEFAULT_OLLAMA_EMBEDDING_BASE_URL = os.environ.get(
+    "EIDOS_OLLAMA_EMBEDDING_BASE_URL",
+    get_service_url("ollama_embedding_http", default_port=8940, default_host="localhost", default_path=""),
+).rstrip("/")
 DEFAULT_INFERENCE_MODEL = os.environ.get("EIDOS_DEFAULT_INFERENCE_MODEL", "qwen3.5:2b")
 DEFAULT_THINKING_MODE = os.environ.get("EIDOS_DEFAULT_THINKING_MODE", "off")
 REASONING_MODEL_PREFIXES = (
@@ -180,6 +187,7 @@ class OllamaConfig:
 
     base_url: str = DEFAULT_OLLAMA_BASE_URL
     api_v1_url: str = DEFAULT_OLLAMA_API_V1_URL
+    embedding_base_url: str = DEFAULT_OLLAMA_EMBEDDING_BASE_URL
     timeout: float = 3600.0  # [EIDOS] 1 hour for slow local models
 
 
@@ -272,6 +280,9 @@ class ModelConfig:
             self.ollama = OllamaConfig(
                 base_url=data.get("ollama", {}).get("base_url", DEFAULT_OLLAMA_BASE_URL),
                 api_v1_url=data.get("ollama", {}).get("api_v1_url", DEFAULT_OLLAMA_API_V1_URL),
+                embedding_base_url=data.get("ollama", {}).get(
+                    "embedding_base_url", DEFAULT_OLLAMA_EMBEDDING_BASE_URL
+                ),
             )
             self.inference = InferenceConfig(
                 model=data.get("inference", {}).get("model", DEFAULT_INFERENCE_MODEL),
@@ -324,7 +335,7 @@ class ModelConfig:
         if use_cache and cache_key in self._embedding_cache:
             return self._embedding_cache[cache_key]
 
-        url = f"{self.ollama.base_url}/api/embeddings"
+        url = f"{self.ollama.embedding_base_url}/api/embeddings"
         data = {"model": actual_model, "prompt": text}
 
         with httpx.Client(timeout=self.ollama.timeout) as client:
@@ -541,6 +552,7 @@ class ModelConfig:
             "ollama": {
                 "base_url": self.ollama.base_url,
                 "api_v1_url": self.ollama.api_v1_url,
+                "embedding_base_url": self.ollama.embedding_base_url,
             },
             "inference": {
                 "model": self.inference.model,

@@ -11,16 +11,6 @@ class _FakeEmbedder:
         return [0.0, 0.0, 1.0, 0.0]
 
 
-class _WideEmbedder:
-    def embed_text(self, text: str):
-        text = text.lower()
-        if "memory" in text:
-            return [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        if "graph" in text:
-            return [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-        return [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
-
-
 def test_add_knowledge_upserts_same_content_across_instances(tmp_path) -> None:
     kb_path = tmp_path / "kb.json"
     kb_a = KnowledgeForge(persistence_path=kb_path)
@@ -55,20 +45,6 @@ def test_semantic_search_uses_vector_index(tmp_path) -> None:
     kb.add_knowledge("Graph relationships stay lexical", tags=["graph"])
 
     results = kb.semantic_search("memory search", limit=1)
-
-    assert len(results) == 1
-    assert results[0].id == expected.id
-
-
-def test_semantic_search_rebuilds_stale_vector_index_on_dimension_change(tmp_path) -> None:
-    kb_path = tmp_path / "kb.json"
-    initial = KnowledgeForge(persistence_path=kb_path, embedder=_FakeEmbedder())
-    initial.add_knowledge("Memory vector search is enabled", tags=["memory"])
-
-    reloaded = KnowledgeForge(persistence_path=kb_path, embedder=_WideEmbedder())
-    expected = reloaded.add_knowledge("Graph relationships are linked", tags=["graph"])
-
-    results = reloaded.semantic_search("graph relationships", limit=1)
 
     assert len(results) == 1
     assert results[0].id == expected.id

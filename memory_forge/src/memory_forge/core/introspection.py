@@ -47,9 +47,6 @@ class MemoryStats:
     avg_access_count: float = 0.0
     oldest_memory: Optional[datetime] = None
     newest_memory: Optional[datetime] = None
-    vector_count: int = 0
-    community_count: int = 0
-    top_communities: List[Tuple[str, int]] = field(default_factory=list)
 
 
 class MemoryIntrospector:
@@ -88,7 +85,6 @@ class MemoryIntrospector:
 
         stats = MemoryStats()
         all_memories = self.memory.list_all()
-        system_stats = self.memory.stats() if hasattr(self.memory, "stats") else {}
         stats.total_memories = len(all_memories)
 
         if not all_memories:
@@ -138,13 +134,6 @@ class MemoryIntrospector:
         stats.avg_access_count = total_access / len(all_memories)
         stats.oldest_memory = oldest if oldest != datetime.max else None
         stats.newest_memory = newest if newest != datetime.min else None
-        stats.vector_count = int((system_stats or {}).get("vector_count") or 0)
-        stats.community_count = int((system_stats or {}).get("community_count") or 0)
-        stats.top_communities = [
-            (str(row.get("community") or ""), int(row.get("count") or 0))
-            for row in (system_stats or {}).get("top_communities") or []
-            if str(row.get("community") or "")
-        ]
 
         return stats
 

@@ -226,21 +226,13 @@ def has_existing_output(root: Path) -> bool:
     output_dir = root / "output"
     if not output_dir.exists():
         return False
-    return any(
-        path.exists()
-        for path in (
-            output_dir / "entities.parquet",
-            output_dir / "native_community_reports.json",
-            output_dir / "native_assessment.json",
-        )
-    )
+    required = output_dir / "entities.parquet"
+    return required.exists()
 
 
 @eidosian()
 def validate_index_output(root: Path) -> None:
     stats_path = root / "output" / "stats.json"
-    native_reports_path = root / "output" / "native_community_reports.json"
-    native_assessment_path = root / "output" / "native_assessment.json"
     if not stats_path.exists():
         raise RuntimeError(f"GraphRAG index completed without stats output: {stats_path}")
     try:
@@ -254,16 +246,6 @@ def validate_index_output(root: Path) -> None:
         raise RuntimeError(
             "GraphRAG index produced zero documents. Check settings.yaml input/input_storage configuration."
         )
-    if native_reports_path.exists():
-        payload = json.loads(native_reports_path.read_text(encoding="utf-8"))
-        reports = payload.get("reports") if isinstance(payload, dict) else None
-        if not isinstance(reports, list) or not reports:
-            raise RuntimeError(f"Native GraphRAG output is empty: {native_reports_path}")
-    elif native_assessment_path.exists():
-        payload = json.loads(native_assessment_path.read_text(encoding="utf-8"))
-        report_count = int(payload.get("report_count", 0) or 0) if isinstance(payload, dict) else 0
-        if report_count <= 0:
-            raise RuntimeError(f"Native GraphRAG assessment indicates zero reports: {native_assessment_path}")
 
 
 @eidosian()

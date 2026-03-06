@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -76,28 +75,6 @@ class _FakeGraphRAG:
             ][:limit],
         }
 
-    def native_trend_summary(self, limit: int = 10):
-        return {
-            "count": 1,
-            "latest": {
-                "weak_community_labels": ["code_forge"],
-                "artifact_kinds": {"code_forge_benchmark": 1},
-                "quality_delta": -0.15,
-            },
-            "history": [
-                {
-                    "weak_community_labels": ["code_forge"],
-                    "artifact_kinds": {"code_forge_benchmark": 1},
-                    "quality_delta": -0.15,
-                }
-            ][:limit],
-        }
-
-
-def _write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload), encoding="utf-8")
-
 
 def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     state_dir = tmp_path / "state"
@@ -148,7 +125,6 @@ def test_supervisor_seeds_autonomous_mission(tmp_path: Path) -> None:
     selected = next(evt for evt in events if evt.get("type") == "autonomy.mission_selected")
     assert selected["data"]["report_count"] == 2
     assert selected["data"]["artifact_count"] == 1
-    assert selected["data"]["weak_communities"] == ["code_forge"]
     assert fake_memory.rows
 
 
@@ -250,8 +226,6 @@ def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path
                     "template": "hygiene",
                     "priority": 0.65,
                     "query": "repo benchmark drift artifact report",
-                    "focus_communities": ["code_forge"],
-                    "focus_artifact_kinds": ["code_forge_benchmark"],
                 },
             ],
         },
@@ -262,82 +236,3 @@ def test_supervisor_hygiene_scoring_uses_report_and_artifact_risk(tmp_path: Path
     assert payload["mission_id"] == "repo_hygiene"
     assert payload["benchmark_failures"] == 1
     assert payload["average_report_quality"] == 0.42
-    assert payload["artifact_kinds"] == ["code_forge_benchmark"]
-
-
-def test_supervisor_runtime_context_penalizes_model_heavy_mission(tmp_path: Path) -> None:
-    state_dir = tmp_path / "state"
-    repo_root = tmp_path / "repo"
-    runtime_dir = repo_root / "data" / "runtime"
-    repo_root.mkdir()
-    S.migrate(state_dir)
-    _write_json(runtime_dir / "living_pipeline_status.json", {"state": "running", "phase": "living_documentation"})
-    _write_json(runtime_dir / "eidos_scheduler_status.json", {"state": "running", "current_task": "living_pipeline"})
-    _write_json(
-        runtime_dir / "forge_coordinator_status.json",
-        {
-            "state": "running",
-            "task": "living_documentation",
-            "active_models": [{"model": "qwen3.5:2b", "role": "doc_writer"}],
-        },
-    )
-    E.append(
-        state_dir,
-        "memory_bridge.status",
-        {
-            "available": True,
-            "query": "memory community runtime",
-            "stats": {
-                "vector_count": 3,
-                "community_count": 2,
-                "top_communities": [("knowledge:runtime:qwen", 2), ("task:workspace:agent", 1)],
-            },
-        },
-    )
-
-    supervisor = AutonomySupervisor(
-        state_dir,
-        repo_root=repo_root,
-        bridge=_FakeBridge(),
-        memory_system=_FakeMemory(),
-        graphrag=_FakeGraphRAG(),
-        config={
-            "enabled": True,
-            "context_query": "consciousness benchmark latency memory",
-            "policy": {"max_active_goals": 1, "allowed_templates": ["hygiene", "consciousness_guard"]},
-            "missions": [
-                {
-                    "id": "consciousness_guard",
-                    "title": "Autonomy: consciousness guard loop",
-                    "drive": "integrity",
-                    "template": "consciousness_guard",
-                    "priority": 1.0,
-                    "query": "consciousness benchmark latency memory",
-                    "requires_llm": True,
-                },
-                {
-                    "id": "repo_hygiene",
-                    "title": "Autonomy: repo hygiene sweep",
-                    "drive": "integrity",
-                    "template": "hygiene",
-                    "priority": 0.8,
-                    "query": "repo benchmark drift artifact report",
-                    "focus_communities": ["code_forge"],
-                    "focus_artifact_kinds": ["code_forge_benchmark"],
-                },
-            ],
-        },
-    )
-
-    payload = supervisor.tick(beat_count=5)
-    events = E.iter_events(state_dir, limit=None)
-    ctx = next(evt for evt in events if evt.get("type") == "autonomy.context")
-
-    assert payload["mission_id"] == "repo_hygiene"
-    assert payload["scheduler_state"] == "running"
-    assert payload["pipeline_phase"] == "living_documentation"
-    assert payload["active_model_count"] == 1
-    assert payload["memory_community_count"] == 2
-    assert payload["top_memory_communities"] == ["knowledge:runtime:qwen", "task:workspace:agent"]
-    assert ctx["data"]["coordinator_state"] == "running"
-    assert ctx["data"]["pipeline_phase"] == "living_documentation"

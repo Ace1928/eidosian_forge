@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import fcntl
-import os
 import re
 from typing import Any
 
@@ -10,16 +9,6 @@ import requests
 from .config import ScribeConfig
 from .extract import extract_symbols, extract_terms
 from .state import now_iso
-
-try:
-    from eidos_mcp.config.models import get_model_config
-except Exception:
-    get_model_config = None
-
-try:
-    from eidosian_runtime import ForgeRuntimeCoordinator
-except Exception:
-    ForgeRuntimeCoordinator = None
 
 REQUIRED_HEADINGS = [
     "# File Overview",
@@ -45,85 +34,6 @@ PLACEHOLDER_MARKERS = {
 class FederatedJudge:
     def __init__(self, cfg: ScribeConfig) -> None:
         self.cfg = cfg
-        self._coordinator = (
-            ForgeRuntimeCoordinator(cfg.coordinator_status_path) if ForgeRuntimeCoordinator is not None else None
-        )
-
-    def _extract_completion_text(self, payload: Any) -> str:
-        if not isinstance(payload, dict):
-            return ""
-        content = payload.get("content")
-        if isinstance(content, str) and content.strip():
-            return content.strip()
-        choices = payload.get("choices")
-        if isinstance(choices, list):
-            for choice in choices:
-                if not isinstance(choice, dict):
-                    continue
-                text = choice.get("text")
-                if isinstance(text, str) and text.strip():
-                    return text.strip()
-                message = choice.get("message")
-                if isinstance(message, dict):
-                    message_text = message.get("content")
-                    if isinstance(message_text, str) and message_text.strip():
-                        return message_text.strip()
-        response = payload.get("response")
-        if isinstance(response, str):
-            return response.strip()
-        return ""
-
-    def _coordinator_gate(self) -> None:
-        if self._coordinator is None:
-            return
-        decision = self._coordinator.can_allocate(
-            owner=self.cfg.coordinator_owner,
-            requested_models=[
-                {
-                    "family": "llama.cpp",
-                    "model": str(self.cfg.llm_model_path),
-                    "role": "doc_forge_judge",
-                    "port": self.cfg.llm_server_port,
-                }
-            ],
-            allow_same_owner=True,
-        )
-        if not bool(decision.get("allowed")):
-            raise RuntimeError(str(decision.get("reason") or "runtime budget denied"))
-
-    def _call_model_contract(self, prompt: str) -> str:
-        if get_model_config is None:
-            raise RuntimeError("model contract unavailable")
-        model_config = get_model_config()
-        requested_model = str(
-            os.environ.get("EIDOS_DOC_FORGE_INFERENCE_MODEL", "").strip() or getattr(model_config, "inference_model", "")
-        ).strip() or "qwen3.5:2b"
-        requested_mode = str(os.environ.get("EIDOS_DOC_FORGE_THINKING_MODE", "on")).strip() or "on"
-        timeout = float(os.environ.get("EIDOS_DOC_FORGE_TIMEOUT_SEC", "900"))
-        last_error: Exception | None = None
-        for mode in [requested_mode, "off"] if requested_mode.lower() != "off" else [requested_mode]:
-            try:
-                payload = model_config.generate_payload(
-                    prompt,
-                    model=requested_model,
-                    max_tokens=24,
-                    temperature=0.1,
-                    thinking_mode=mode,
-                    timeout=timeout,
-                )
-            except Exception as exc:
-                last_error = exc
-                continue
-            content = self._extract_completion_text(payload)
-            if content:
-                return content
-            if str(payload.get("thinking") or "").strip():
-                last_error = RuntimeError(f"no final response returned for thinking_mode={mode}")
-                continue
-            last_error = RuntimeError(f"empty response returned for thinking_mode={mode}")
-        if last_error is not None:
-            raise last_error
-        raise RuntimeError("model contract returned no completion")
 
     def evaluate(self, *, markdown: str, source_text: str, rel_path: str, metadata: dict[str, Any]) -> dict[str, Any]:
         judges: list[dict[str, Any]] = []
@@ -228,41 +138,14 @@ class FederatedJudge:
             with open(self.cfg.model_lock_path, "w") as lockfile:
                 fcntl.flock(lockfile, fcntl.LOCK_EX)
                 try:
-                    self._coordinator_gate()
-                    if self._coordinator is not None:
-                        self._coordinator.heartbeat(
-                            owner=self.cfg.coordinator_owner,
-                            task="doc_forge_judge",
-                            state="running",
-                            active_models=[
-                                {
-                                    "family": "llama.cpp",
-                                    "model": str(self.cfg.llm_model_path),
-                                    "role": "doc_forge_judge",
-                                    "port": self.cfg.llm_server_port,
-                                }
-                            ],
-                            metadata={"completion_url": self.cfg.completion_url},
-                        )
-                    if not self.cfg.enable_managed_llm:
-                        content = self._call_model_contract(prompt)
-                    else:
-                        payload = {"prompt": prompt, "n_predict": 10, "temperature": 0.1, "stream": False}
-                        resp = requests.post(self.cfg.completion_url, json=payload, timeout=60)
-                        resp.raise_for_status()
-                        content = self._extract_completion_text(resp.json())
-                    match = re.search(r"0\.\d+|1\.0", content)
-                    if match:
-                        score = float(match.group(0))
+                    payload = {"prompt": prompt, "n_predict": 10, "temperature": 0.1, "stream": False}
+                    resp = requests.post(self.cfg.completion_url, json=payload, timeout=60)
+                    if resp.status_code == 200:
+                        content = resp.json().get("content", "").strip()
+                        match = re.search(r"0\.\d+|1\.0", content)
+                        if match:
+                            score = float(match.group(0))
                 finally:
-                    if self._coordinator is not None:
-                        self._coordinator.heartbeat(
-                            owner=self.cfg.coordinator_owner,
-                            task="doc_forge_judge",
-                            state="idle",
-                            active_models=[],
-                            metadata={"completion_url": self.cfg.completion_url},
-                        )
                     fcntl.flock(lockfile, fcntl.LOCK_UN)
         except Exception as exc:
             return {

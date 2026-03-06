@@ -37,8 +37,6 @@ class ScribeConfig:
     enable_managed_llm: bool
     dry_run: bool
     model_lock_path: Path
-    coordinator_status_path: Path
-    coordinator_owner: str
 
     @classmethod
     def from_env(
@@ -177,6 +175,4 @@ class ScribeConfig:
             enable_managed_llm=os.environ.get("EIDOS_DOC_FORGE_ENABLE_MANAGED_LLM", "1") == "1",
             dry_run=dry_run,
             model_lock_path=runtime_root / "llm_server.lock",
-            coordinator_status_path=forge_root / "data" / "runtime" / "forge_coordinator_status.json",
-            coordinator_owner=os.environ.get("EIDOS_DOC_FORGE_COORDINATOR_OWNER", "doc_forge"),
         )

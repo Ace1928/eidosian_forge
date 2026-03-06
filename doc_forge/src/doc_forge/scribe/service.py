@@ -166,19 +166,6 @@ class DocProcessor:
 
     def _is_excluded(self, path: Path) -> bool:
         resolved = path.resolve()
-        source_root = self.cfg.source_root.resolve()
-        forge_root = self.cfg.forge_root.resolve()
-        scoped_scan = source_root != forge_root
-        if scoped_scan:
-            try:
-                rel = resolved.relative_to(source_root)
-            except Exception:
-                rel = None
-            if rel is not None:
-                for part in rel.parts:
-                    if part in {".git", "__pycache__", ".pytest_cache", "node_modules", "eidos_mcp_backup"}:
-                        return True
-                return False
         for prefix in self.excluded_prefixes:
             try:
                 resolved.relative_to(prefix)
@@ -220,233 +207,169 @@ class DocProcessor:
         out.sort()
         return out
 
-    def _pending_documents(self) -> list[tuple[Path, Path, str]]:
-        candidates = self._scan_candidates()
-        self.state.update("total_discovered", len(candidates))
-        pending: list[tuple[Path, Path, str]] = []
-        for path in candidates:
-            try:
-                rel = path.resolve().relative_to(self.cfg.source_root.resolve())
-                rel_key = str(rel)
-                raw = path.read_bytes()
-                digest = hashlib.sha256(raw).hexdigest()
-                file_state = self.state.get("files", {}).get(rel_key)
-                if file_state and file_state.get("sha256") == digest and file_state.get("status") == "approved":
-                    continue
-                pending.append((path, rel, digest))
-            except Exception:
-                continue
-        return pending
-
-    def _queue_lexicon_terms(self, *, source: str, markdown: str, source_text: str) -> dict[str, Any]:
-        try:
-            from eidos_mcp.routers import word_forge as wf_router
-        except Exception as exc:
-            return {"queued": False, "error": str(exc)}
-        try:
-            queued_markdown = json.loads(wf_router.wf_queue_terms_from_text(markdown[:6000], source=f"doc_forge:{source}"))
-        except Exception as exc:
-            return {"queued": False, "error": str(exc)}
-        try:
-            queued_source = json.loads(wf_router.wf_queue_terms_from_text(source_text[:6000], source=f"source:{source}"))
-        except Exception:
-            queued_source = {"status": "error"}
-        return {
-            "queued": True,
-            "markdown": queued_markdown,
-            "source": queued_source,
-        }
-
-    def _process_document(self, path: Path, rel: Path, digest: str) -> dict[str, Any]:
-        started = time.perf_counter()
-        rel_key = str(rel)
-
-        stage_path = self.cfg.staging_root / rel.with_suffix(rel.suffix + ".md")
-        final_path = self.cfg.final_root / rel.with_suffix(rel.suffix + ".md")
-        rejected_path = self.cfg.rejected_root / rel.with_suffix(rel.suffix + ".md")
-        judgment_path = self.cfg.judgments_root / rel.with_suffix(rel.suffix + ".json")
-
-        for candidate in (stage_path, final_path, rejected_path, judgment_path):
-            candidate.parent.mkdir(parents=True, exist_ok=True)
-
-        doc_type = rel.suffix.lower().lstrip(".") or "text"
-        self.state.data["doc_type_frequency"][doc_type] = self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
-
-        try:
-            source_text, metadata = self.extractor.extract(path)
-            metadata["source_size_bytes"] = path.stat().st_size
-            metadata["doc_type"] = metadata.get("doc_type") or doc_type
-
-            markdown = (
-                self.generator.generate(rel_key, source_text, metadata)
-                if not self.cfg.dry_run
-                else "\n".join(
-                    [
-                        "# File Overview",
-                        "",
-                        "## Key Structures",
-                        "",
-                        "## Behavior Summary",
-                        "",
-                        "## Validation Notes",
-                        "",
-                        "## Improvement Opportunities",
-                    ]
-                )
-            )
-
-            stage_path.write_text(markdown, encoding="utf-8")
-            self.state.update("last_staged", rel_key)
-
-            scorecard = self.judges.evaluate(markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata)
-            atomic_write_json(judgment_path, scorecard)
-
-            quality = float(scorecard.get("aggregate_score", 0.0))
-            self.state.update_running_average("average_quality_score", quality, "quality_samples")
-
-            tags = extract_terms(markdown, limit=8)
-            themes = extract_terms(source_text, limit=8)
-
-            with self.state.lock:
-                for t in tags:
-                    self.state.data["tag_frequency"][t] = self.state.data["tag_frequency"].get(t, 0) + 1
-                for t in themes:
-                    self.state.data["theme_frequency"][t] = self.state.data["theme_frequency"].get(t, 0) + 1
-
-            approved = bool(scorecard.get("approved", False))
-            status = "approved" if approved else "rejected"
-            lexicon_queue = {}
-
-            if approved:
-                final_path.write_text(markdown, encoding="utf-8")
-                lexicon_queue = self._queue_lexicon_terms(source=rel_key, markdown=markdown, source_text=source_text)
-                with self.state.lock:
-                    self.state.data["approved"] += 1
-                    self.state.data["last_approved"] = rel_key
-
-                index_entry = {
-                    "source": rel_key,
-                    "document": str(final_path.relative_to(self.cfg.runtime_root)),
-                    "score": quality,
-                    "updated_at": now_iso(),
-                    "tags": tags,
-                    "doc_type": metadata.get("doc_type", "unknown"),
-                }
-                with self.state.lock:
-                    current_index = [e for e in self.state.data.get("index", []) if e.get("source") != rel_key]
-                    current_index.append(index_entry)
-                    current_index.sort(key=lambda x: x.get("source", ""))
-                    self.state.data["index"] = current_index
-            else:
-                rejected_path.write_text(markdown, encoding="utf-8")
-                with self.state.lock:
-                    self.state.data["rejected"] += 1
-
-            elapsed = round(time.perf_counter() - started, 4)
-            self.state.update_running_average("average_seconds_per_document", elapsed, "duration_samples")
-
-            with self.state.lock:
-                self.state.data["processed"] += 1
-                self.state.data["files"][rel_key] = {
-                    "sha256": digest,
-                    "status": status,
-                    "score": quality,
-                    "doc_type": metadata.get("doc_type", "unknown"),
-                    "updated_at": now_iso(),
-                    "duration_seconds": elapsed,
-                    "tags": tags,
-                }
-                history_entry = {
-                    "source": rel_key,
-                    "status": status,
-                    "score": quality,
-                    "duration_seconds": elapsed,
-                    "updated_at": now_iso(),
-                }
-                self.state.data["history"] = (self.state.data.get("history", []) + [history_entry])[-500:]
-            self.state.persist()
-            return {
-                "source": rel_key,
-                "status": status,
-                "approved": approved,
-                "score": quality,
-                "duration_seconds": elapsed,
-                "final_path": str(final_path) if approved else "",
-                "judgment_path": str(judgment_path),
-                "tags": tags,
-                "themes": themes,
-                "lexicon_queue": lexicon_queue,
-            }
-        except Exception as exc:
-            elapsed = round(time.perf_counter() - started, 4)
-            with self.state.lock:
-                self.state.data["processed"] += 1
-                self.state.data["errors"] += 1
-                self.state.data["files"][rel_key] = {
-                    "sha256": digest,
-                    "status": "error",
-                    "error": str(exc),
-                    "updated_at": now_iso(),
-                    "duration_seconds": elapsed,
-                }
-            self.state.persist()
-            return {
-                "source": rel_key,
-                "status": "error",
-                "approved": False,
-                "error": str(exc),
-                "duration_seconds": elapsed,
-            }
-
-    def process_pending(self, max_documents: int | None = None) -> dict[str, Any]:
-        self.state.update("status", "running")
-        self.state.persist()
-        if not self.cfg.dry_run and self.cfg.enable_managed_llm and not self.model_server.is_ready():
-            self.model_server.start()
-        pending = self._pending_documents()
-        if max_documents is not None and max_documents > 0:
-            pending = pending[: max_documents]
-        if not pending:
-            self.state.update("status", "idle")
-            self.state.persist()
-            return {"status": "idle", "processed": 0, "approved": 0, "rejected": 0, "errors": 0, "documents": []}
-        documents: list[dict[str, Any]] = []
-        for path, rel, digest in pending:
-            documents.append(self._process_document(path, rel, digest))
-            if self.stop_event.is_set():
-                break
-            time.sleep(self.cfg.loop_sleep_s)
-        approved = sum(1 for row in documents if row.get("approved"))
-        errors = sum(1 for row in documents if row.get("status") == "error")
-        rejected = sum(1 for row in documents if row.get("status") == "rejected")
-        self.state.update("status", "idle")
-        self.state.persist()
-        return {
-            "status": "completed",
-            "processed": len(documents),
-            "approved": approved,
-            "rejected": rejected,
-            "errors": errors,
-            "documents": documents,
-            "runtime_root": str(self.cfg.runtime_root),
-            "final_root": str(self.cfg.final_root),
-            "index_path": str(self.cfg.index_path),
-        }
-
     def _run_loop(self) -> None:
         self.state.update("status", "starting")
         self.state.persist()
 
         while not self.stop_event.is_set():
-            try:
-                self.process_pending()
-            except Exception as exc:
-                self.state.update("status", "waiting_for_llm")
-                self.state.update("last_error", f"{type(exc).__name__}: {exc}")
+            if not self.cfg.dry_run and not self.model_server.is_ready():
+                try:
+                    self.model_server.start()
+                    self.state.update("status", "running")
+                    self.state.update("last_error", "")
+                except Exception as exc:
+                    self.state.update("status", "waiting_for_llm")
+                    self.state.update("last_error", f"{type(exc).__name__}: {exc}")
+                    self.state.persist()
+                    time.sleep(max(2.0, self.cfg.loop_sleep_s))
+                    continue
+                self.state.persist()
+            elif self.cfg.dry_run:
+                if self.state.get("status") == "starting":
+                    self.state.update("status", "running")
+                    self.state.persist()
+
+            candidates = self._scan_candidates()
+            self.state.update("total_discovered", len(candidates))
+
+            pending = []
+            for path in candidates:
+                try:
+                    rel = path.resolve().relative_to(self.cfg.source_root.resolve())
+                    rel_key = str(rel)
+                    raw = path.read_bytes()
+                    digest = hashlib.sha256(raw).hexdigest()
+                    file_state = self.state.get("files", {}).get(rel_key)
+                    if file_state and file_state.get("sha256") == digest and file_state.get("status") == "approved":
+                        continue
+                    pending.append((path, rel, digest))
+                except Exception:
+                    continue
+
+            if not pending:
+                self.state.update("status", "idle")
                 self.state.persist()
                 time.sleep(max(2.0, self.cfg.loop_sleep_s))
+                if self.state.get("status") == "idle":
+                    self.state.update("status", "running")
                 continue
-            time.sleep(max(2.0, self.cfg.loop_sleep_s))
+
+            for path, rel, digest in pending:
+                if self.stop_event.is_set():
+                    break
+                started = time.perf_counter()
+                rel_key = str(rel)
+
+                # Paths
+                stage_path = self.cfg.staging_root / rel.with_suffix(rel.suffix + ".md")
+                final_path = self.cfg.final_root / rel.with_suffix(rel.suffix + ".md")
+                rejected_path = self.cfg.rejected_root / rel.with_suffix(rel.suffix + ".md")
+                judgment_path = self.cfg.judgments_root / rel.with_suffix(rel.suffix + ".json")
+
+                for p in (stage_path, final_path, rejected_path, judgment_path):
+                    p.parent.mkdir(parents=True, exist_ok=True)
+
+                doc_type = rel.suffix.lower().lstrip(".") or "text"
+                self.state.data["doc_type_frequency"][doc_type] = (
+                    self.state.data["doc_type_frequency"].get(doc_type, 0) + 1
+                )
+
+                try:
+                    source_text, metadata = self.extractor.extract(path)
+                    metadata["source_size_bytes"] = path.stat().st_size
+                    metadata["doc_type"] = metadata.get("doc_type") or doc_type
+
+                    markdown = (
+                        self.generator.generate(rel_key, source_text, metadata)
+                        if not self.cfg.dry_run
+                        else "\n".join(["# Placeholder", "## Content"])
+                    )
+
+                    stage_path.write_text(markdown, encoding="utf-8")
+                    self.state.update("last_staged", rel_key)
+
+                    scorecard = self.judges.evaluate(
+                        markdown=markdown, source_text=source_text, rel_path=rel_key, metadata=metadata
+                    )
+                    atomic_write_json(judgment_path, scorecard)
+
+                    quality = float(scorecard.get("aggregate_score", 0.0))
+                    self.state.update_running_average("average_quality_score", quality, "quality_samples")
+
+                    tags = extract_terms(markdown, limit=8)
+                    themes = extract_terms(source_text, limit=8)
+
+                    with self.state.lock:
+                        for t in tags:
+                            self.state.data["tag_frequency"][t] = self.state.data["tag_frequency"].get(t, 0) + 1
+                        for t in themes:
+                            self.state.data["theme_frequency"][t] = self.state.data["theme_frequency"].get(t, 0) + 1
+
+                    approved = bool(scorecard.get("approved", False))
+                    status = "approved" if approved else "rejected"
+
+                    if approved:
+                        final_path.write_text(markdown, encoding="utf-8")
+                        with self.state.lock:
+                            self.state.data["approved"] += 1
+                            self.state.data["last_approved"] = rel_key
+
+                        index_entry = {
+                            "source": rel_key,
+                            "document": str(final_path.relative_to(self.cfg.runtime_root)),
+                            "score": quality,
+                            "updated_at": now_iso(),
+                            "tags": tags,
+                            "doc_type": metadata.get("doc_type", "unknown"),
+                        }
+                        with self.state.lock:
+                            current_index = [e for e in self.state.data.get("index", []) if e.get("source") != rel_key]
+                            current_index.append(index_entry)
+                            current_index.sort(key=lambda x: x.get("source", ""))
+                            self.state.data["index"] = current_index
+                    else:
+                        rejected_path.write_text(markdown, encoding="utf-8")
+                        with self.state.lock:
+                            self.state.data["rejected"] += 1
+
+                    elapsed = round(time.perf_counter() - started, 4)
+                    self.state.update_running_average("average_seconds_per_document", elapsed, "duration_samples")
+
+                    with self.state.lock:
+                        self.state.data["processed"] += 1
+                        self.state.data["files"][rel_key] = {
+                            "sha256": digest,
+                            "status": status,
+                            "score": quality,
+                            "doc_type": metadata.get("doc_type", "unknown"),
+                            "updated_at": now_iso(),
+                            "duration_seconds": elapsed,
+                            "tags": tags,
+                        }
+                        history_entry = {
+                            "source": rel_key,
+                            "status": status,
+                            "score": quality,
+                            "duration_seconds": elapsed,
+                            "updated_at": now_iso(),
+                        }
+                        self.state.data["history"] = (self.state.data.get("history", []) + [history_entry])[-500:]
+
+                except Exception as exc:
+                    elapsed = round(time.perf_counter() - started, 4)
+                    with self.state.lock:
+                        self.state.data["processed"] += 1
+                        self.state.data["errors"] += 1
+                        self.state.data["files"][rel_key] = {
+                            "sha256": digest,
+                            "status": "error",
+                            "error": str(exc),
+                            "updated_at": now_iso(),
+                            "duration_seconds": elapsed,
+                        }
+
+                self.state.persist()
+                time.sleep(self.cfg.loop_sleep_s)
 
         self.state.update("status", "stopped")
         self.state.persist()

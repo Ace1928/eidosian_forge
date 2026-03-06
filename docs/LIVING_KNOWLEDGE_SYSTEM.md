@@ -34,7 +34,6 @@ Per run:
   - drift summary against previous run
   - code analysis summary
   - GraphRAG execution summary
-  - living documentation synthesis summary
 - `records.jsonl`
   - one staged document per line with deterministic identifiers
 - `duplicates_exact.json`
@@ -45,10 +44,6 @@ Per run:
   - added/removed/changed source paths vs previous run
 - `code_analysis_report.json`
   - code ingestion stats, unit counts, duplicate code unit groups, trace samples
-- `living_documentation_summary.json`
-  - grounded Qwen-generated documentation summary with risks, priorities, and recommended actions
-- `living_documentation_summary.md`
-  - markdown rendering of the JSON summary for direct human inspection
 
 ## Code Forge Integration
 
@@ -80,24 +75,6 @@ When `--run-graphrag` is enabled:
 Default completion and embedding models are selected from `config/model_selection.json`.
 If no selection file exists, completion falls back to latest sweep winner (`reports/graphrag_sweep/model_selection_latest.json`) and then local Qwen 0.5B.
 
-## Living Documentation Synthesis
-
-Every run also executes a documentation synthesis pass using centralized model configuration from
-`eidos_mcp.config.models`.
-
-- default model: `qwen3.5:2b`
-- default thinking mode for documentation synthesis: `on`
-- default timeout: `900s`
-- fallback policy: retry once with `thinking=off` if the model returns thinking content but no final structured answer
-- output artifacts:
-  - `living_documentation_summary.json`
-  - `living_documentation_summary.md`
-
-This stage is separate from external GraphRAG runtime selection. The goal is to ensure the living
-documentation contract always uses the centralized Ollama-backed inference path with explicit
-thinking control and a strict JSON schema, even if GraphRAG indexing itself is using a different
-local runtime.
-
 ## Usage
 
 ```bash
@@ -109,8 +86,6 @@ local runtime.
 
 ./eidosian_venv/bin/python scripts/living_knowledge_pipeline.py \
   --run-graphrag \
-  --doc-model qwen3.5:2b \
-  --doc-thinking-mode on \
   --query "What duplicated logic patterns recur across forges?"
 ```
 

@@ -22,7 +22,6 @@ FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve()
 for extra in (
     FORGE_ROOT / "lib",
     FORGE_ROOT / "code_forge" / "src",
-    FORGE_ROOT / "eidos_mcp" / "src",
     FORGE_ROOT / "knowledge_forge" / "src",
     FORGE_ROOT,
 ):
@@ -35,9 +34,7 @@ from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
-from eidosian_runtime import ForgeRuntimeCoordinator
 from eidosian_core.ports import get_service_port
-from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -107,152 +104,8 @@ class StagedRecord:
     simhash: str
 
 
-@dataclass
-class LivingDocumentationConfig:
-    enabled: bool = True
-    model: str = os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b")
-    thinking_mode: str = os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on")
-    timeout: float = float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900"))
-    max_tokens: int = int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400"))
-    temperature: float = float(os.environ.get("EIDOS_LIVING_DOC_TEMPERATURE", "0.1"))
-
-
-LIVING_DOC_SYSTEM_PROMPT = """You are generating grounded living documentation for the Eidosian Forge.
-Use only the provided evidence. Do not invent files, benchmarks, or incidents.
-Return strict JSON with keys:
-title, summary, key_findings, risks, priorities, recommended_actions.
-"""
-
-LIVING_DOC_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "title": {"type": "string"},
-        "summary": {"type": "string"},
-        "key_findings": {"type": "array", "items": {"type": "string"}},
-        "risks": {"type": "array", "items": {"type": "string"}},
-        "priorities": {"type": "array", "items": {"type": "string"}},
-        "recommended_actions": {"type": "array", "items": {"type": "string"}},
-    },
-    "required": [
-        "title",
-        "summary",
-        "key_findings",
-        "risks",
-        "priorities",
-        "recommended_actions",
-    ],
-}
-
-RUNTIME_DIR = FORGE_ROOT / "data" / "runtime"
-PIPELINE_STATUS_PATH = RUNTIME_DIR / "living_pipeline_status.json"
-SCHEDULER_STATUS_PATH = RUNTIME_DIR / "eidos_scheduler_status.json"
-COORDINATOR_STATUS_PATH = RUNTIME_DIR / "forge_coordinator_status.json"
-
-
 def _now_utc() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def _read_json_file(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
-    return payload
-
-
-def _latest_manifest_path(output_root: Path) -> Path | None:
-    latest_marker = output_root / "latest_run"
-    if latest_marker.exists():
-        run_id = latest_marker.read_text(encoding="utf-8").strip()
-        if run_id:
-            candidate = output_root / run_id / "manifest.json"
-            if candidate.exists():
-                return candidate
-    manifests = sorted(output_root.glob("*/manifest.json"))
-    return manifests[-1] if manifests else None
-
-
-def _prior_runtime_estimate(output_root: Path) -> float | None:
-    manifest_path = _latest_manifest_path(output_root)
-    if manifest_path is None:
-        return None
-    payload = _read_json_file(manifest_path, {})
-    runtime = payload.get("runtime") if isinstance(payload, dict) else None
-    if isinstance(runtime, dict):
-        total = runtime.get("total_elapsed_seconds")
-        if isinstance(total, (int, float)) and total > 0:
-            return float(total)
-    return None
-
-
-def _write_pipeline_status(
-    *,
-    state: str,
-    phase: str,
-    run_id: str,
-    started_at: str,
-    output_root: Path,
-    workspace_root: Path,
-    phase_timings: dict[str, float],
-    estimated_total_seconds: float | None,
-    code_report: dict[str, Any] | None = None,
-    doc_forge_result: dict[str, Any] | None = None,
-    word_forge_result: dict[str, Any] | None = None,
-    graphrag_result: dict[str, Any] | None = None,
-    living_doc_result: dict[str, Any] | None = None,
-    records_total: int | None = None,
-    records_by_kind: dict[str, int] | None = None,
-    error: str | None = None,
-) -> dict[str, Any]:
-    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    elapsed_seconds = round(sum(max(0.0, float(v)) for v in phase_timings.values()), 3)
-    eta_seconds = None
-    if estimated_total_seconds and estimated_total_seconds > 0:
-        eta_seconds = round(max(0.0, float(estimated_total_seconds) - elapsed_seconds), 3)
-    payload = {
-        "contract": "living_knowledge.pipeline_status.v1",
-        "run_id": run_id,
-        "state": state,
-        "phase": phase,
-        "started_at": started_at,
-        "updated_at": _now_utc(),
-        "elapsed_seconds": elapsed_seconds,
-        "eta_seconds": eta_seconds,
-        "output_root": str(output_root),
-        "workspace_root": str(workspace_root),
-        "phase_timings": dict(phase_timings),
-        "records_total": int(records_total or 0),
-        "records_by_kind": dict(records_by_kind or {}),
-        "code_analysis": {
-            "files_processed": ((code_report or {}).get("run_stats") or {}).get("files_processed"),
-            "units_created": ((code_report or {}).get("run_stats") or {}).get("units_created"),
-            "total_units": (code_report or {}).get("total_units"),
-            "relationship_counts": (code_report or {}).get("relationship_counts"),
-            "dependency_graph_summary": (code_report or {}).get("dependency_graph_summary"),
-        },
-        "doc_forge": {
-            "enabled": bool((doc_forge_result or {}).get("enabled")),
-            "processed": (doc_forge_result or {}).get("processed"),
-            "approved": (doc_forge_result or {}).get("approved"),
-            "rejected": (doc_forge_result or {}).get("rejected"),
-            "errors": (doc_forge_result or {}).get("errors"),
-            "final_root": (doc_forge_result or {}).get("final_root"),
-        },
-        "word_forge": word_forge_result or {},
-        "graphrag": {
-            "indexed": bool((graphrag_result or {}).get("indexed")),
-            "report_summary": (graphrag_result or {}).get("report_summary"),
-            "trend_summary": (graphrag_result or {}).get("trend_summary"),
-            "assessment_summary": (graphrag_result or {}).get("assessment_summary"),
-        },
-        "living_documentation": living_doc_result or {},
-        "error": str(error or ""),
-    }
-    PIPELINE_STATUS_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    return payload
 
 
 def _sha256_text(text: str) -> str:
@@ -541,135 +394,6 @@ def stage_memory_and_kb_documents(
 
 
 @eidosian()
-def run_doc_forge_batch(repo_root: Path, *, max_documents: int | None = None) -> dict[str, Any]:
-    try:
-        import sys
-
-        for extra in (
-            repo_root / "lib",
-            repo_root / "doc_forge" / "src",
-            repo_root / "eidos_mcp" / "src",
-            repo_root,
-        ):
-            text = str(extra)
-            if extra.exists() and text not in sys.path:
-                sys.path.insert(0, text)
-        from doc_forge.scribe.config import ScribeConfig  # type: ignore
-        from doc_forge.scribe.service import DocProcessor  # type: ignore
-
-        cfg = ScribeConfig.from_env(forge_root=repo_root, dry_run=False)
-        processor = DocProcessor(cfg)
-        try:
-            summary = processor.process_pending(max_documents=max_documents)
-        finally:
-            processor.model_server.stop()
-        summary["enabled"] = True
-        summary["runtime_root"] = str(cfg.runtime_root)
-        summary["final_root"] = str(cfg.final_root)
-        summary["index_path"] = str(cfg.index_path)
-        return summary
-    except Exception as exc:
-        return {"enabled": False, "error": str(exc)}
-
-
-@eidosian()
-def stage_doc_forge_documents(
-    repo_root: Path,
-    stage_dir: Path,
-    max_chars_per_doc: int,
-) -> list[StagedRecord]:
-    runtime_root = repo_root / "doc_forge" / "runtime"
-    index_path = runtime_root / "doc_index.json"
-    final_root = runtime_root / "final_docs"
-    payload = _read_json_file(index_path, {})
-    entries = None
-    if isinstance(payload, dict):
-        entries = payload.get("entries")
-        if not isinstance(entries, list):
-            entries = payload.get("documents")
-    rows = entries if isinstance(entries, list) else []
-    out: list[StagedRecord] = []
-
-    def _stage(doc_path: Path, source_path: str) -> None:
-        if not doc_path.exists() or not doc_path.is_file():
-            return
-        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
-        if not text:
-            return
-        text = text[:max_chars_per_doc]
-        digest = _sha256_text(text)
-        sim = _simhash64(text)
-        safe_name = _sanitize_id(source_path or doc_path.as_posix()) + ".txt"
-        target = stage_dir / "doc_forge" / safe_name
-        _write_text_document(target, source_path, "doc_forge", text)
-        out.append(
-            StagedRecord(
-                doc_id=f"doc_forge::{source_path}",
-                source_path=f"doc_forge::{source_path}",
-                kind="docs",
-                sha256=digest,
-                bytes=len(text.encode("utf-8")),
-                chars=len(text),
-                staged_path=str(target),
-                simhash=f"{sim:016x}",
-            )
-        )
-
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source = str(row.get("source") or "").strip()
-        document_rel = str(row.get("document") or "").strip()
-        if not source or not document_rel:
-            continue
-        _stage(runtime_root / document_rel, source)
-
-    if not out:
-        for doc_path in sorted(final_root.rglob("*.md")):
-            rel = doc_path.relative_to(final_root).with_suffix("")
-            _stage(doc_path, rel.as_posix())
-    return out
-
-
-@eidosian()
-def stage_markdown_documents(
-    doc_paths: list[Path],
-    stage_dir: Path,
-    *,
-    source_prefix: str,
-    kind: str,
-    max_chars_per_doc: int,
-) -> list[StagedRecord]:
-    out: list[StagedRecord] = []
-    for doc_path in doc_paths:
-        if not doc_path.exists() or not doc_path.is_file():
-            continue
-        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
-        if not text:
-            continue
-        text = text[:max_chars_per_doc]
-        rel = doc_path.name
-        digest = _sha256_text(text)
-        sim = _simhash64(text)
-        source = f"{source_prefix}:{rel}"
-        target = stage_dir / source_prefix / (_sanitize_id(rel) + ".txt")
-        _write_text_document(target, source, kind, text)
-        out.append(
-            StagedRecord(
-                doc_id=source,
-                source_path=source,
-                kind=kind,
-                sha256=digest,
-                bytes=len(text.encode("utf-8")),
-                chars=len(text),
-                staged_path=str(target),
-                simhash=f"{sim:016x}",
-            )
-        )
-    return out
-
-
-@eidosian()
 def run_code_analysis(
     repo_root: Path,
     report_dir: Path,
@@ -699,27 +423,10 @@ def run_code_analysis(
     duplication_index = build_duplication_index(db, digester_dir, limit_groups=200, near_limit=200)
     triage = build_triage_report(db, repo_index, duplication_index, digester_dir)
     dependency_graph = db.module_dependency_graph(rel_types=["imports", "calls", "uses"], limit_edges=20000)
-    dependency_graph_path = digester_dir / "code_forge_dependency_graph.json"
-    dependency_graph_path.write_text(
+    (digester_dir / "dependency_graph.json").write_text(
         json.dumps(dependency_graph, indent=2) + "\n",
         encoding="utf-8",
     )
-    unit_catalog = {
-        "generated_at": _now_utc(),
-        "total_units": total_units,
-        "units": list(db.iter_units(limit=500)),
-    }
-    unit_catalog_path = digester_dir / "code_forge_unit_catalog.json"
-    unit_catalog_path.write_text(json.dumps(unit_catalog, indent=2) + "\n", encoding="utf-8")
-    search_examples = {
-        "generated_at": _now_utc(),
-        "queries": {
-            query: db.semantic_search(query, limit=5, backend="hybrid", min_score=0.0)
-            for query in ("graph", "memory", "vector", "autonomy", "code forge")
-        },
-    }
-    search_examples_path = digester_dir / "code_forge_search_examples.json"
-    search_examples_path.write_text(json.dumps(search_examples, indent=2) + "\n", encoding="utf-8")
 
     code_report = {
         "generated_at": _now_utc(),
@@ -739,9 +446,7 @@ def run_code_analysis(
         "duplication_index_path": str(digester_dir / "duplication_index.json"),
         "triage_path": str(digester_dir / "triage.json"),
         "triage_label_counts": triage.get("label_counts", {}),
-        "dependency_graph_path": str(dependency_graph_path),
-        "unit_catalog_path": str(unit_catalog_path),
-        "search_examples_path": str(search_examples_path),
+        "dependency_graph_path": str(digester_dir / "dependency_graph.json"),
         "dependency_graph_summary": dependency_graph.get("summary", {}),
         "relationship_counts": db.relationship_counts(),
         "artifact_validation": validate_output_dir(digester_dir),
@@ -749,66 +454,6 @@ def run_code_analysis(
     report_path = report_dir / "code_analysis_report.json"
     report_path.write_text(json.dumps(code_report, indent=2) + "\n", encoding="utf-8")
     return code_report
-
-
-@eidosian()
-def build_word_forge_lexicon(
-    records: list[StagedRecord],
-    *,
-    repo_root: Path,
-    thinking_mode: str = "on",
-    max_chars: int = 6000,
-) -> dict[str, Any]:
-    try:
-        from eidos_mcp.routers import word_forge as wf_router
-    except Exception as exc:
-        return {"enabled": False, "error": str(exc)}
-
-    text_parts: list[str] = []
-    for rec in records:
-        if rec.kind not in {"docs", "knowledge", "memory", "config", "code"}:
-            continue
-        try:
-            snippet = Path(rec.staged_path).read_text(encoding="utf-8", errors="ignore").strip()
-        except Exception:
-            continue
-        if not snippet:
-            continue
-        text_parts.append(snippet[:1500])
-        if sum(len(part) for part in text_parts) >= max_chars:
-            break
-
-    if not text_parts:
-        try:
-            stats = json.loads(wf_router.wf_graph_stats())
-            queue_status = json.loads(wf_router.wf_lexicon_queue_status())
-        except Exception:
-            stats = {}
-            queue_status = {}
-        return {"enabled": True, "updated": False, "stats": stats, "queue": queue_status}
-
-    combined = "\n\n".join(text_parts)[:max_chars]
-    queue_result = json.loads(
-        wf_router.wf_queue_terms_from_text(
-            combined,
-            source="living_pipeline:staged_records",
-            limit=48,
-        )
-    )
-    build_result = json.loads(wf_router.wf_build_lexicon_from_text(combined, thinking_mode=thinking_mode))
-    process_result = json.loads(wf_router.wf_process_lexicon_queue(max_terms=16, thinking_mode=thinking_mode))
-    stats = json.loads(wf_router.wf_graph_stats())
-    queue_status = json.loads(wf_router.wf_lexicon_queue_status())
-    return {
-        "enabled": True,
-        "updated": str(build_result.get("status")) == "success",
-        "build_result": build_result,
-        "queue_result": queue_result,
-        "process_result": process_result,
-        "queue": queue_status,
-        "stats": stats,
-        "graph_path": str(repo_root / "data" / "eidos_semantic_graph.json"),
-    }
 
 
 def _pick_sweep_model(repo_root: Path, fallback: Path) -> Path:
@@ -989,10 +634,10 @@ def _build_graphrag(workspace_root: Path) -> GraphRAGIntegration:
 
 
 def _run_graphrag_index(workspace_root: Path, method: str, scan_roots: list[Path] | None = None) -> dict[str, Any]:
+    _ = method
     grag = _build_graphrag(workspace_root)
     roots = scan_roots or [workspace_root / "input"]
-    include_external = str(method or "").lower() not in {"native", "native_only", "local"}
-    result = grag.run_incremental_index(roots, include_external=include_external)
+    result = grag.run_incremental_index(roots)
     if not result.get("success"):
         raise RuntimeError(result.get("stderr") or result.get("external_error") or "graphrag index failed")
     return result
@@ -1037,326 +682,6 @@ def _run_graphrag_query(workspace_root: Path, query: str, method: str = "global"
     raise RuntimeError("graphrag query returned no usable output")
 
 
-def _living_doc_prompt(
-    *,
-    repo_root: Path,
-    records_total: int,
-    records_by_kind: dict[str, int],
-    exact_duplicates: int,
-    near_duplicates: int,
-    drift: dict[str, Any],
-    code_report: dict[str, Any],
-    doc_forge_result: dict[str, Any],
-    graphrag_result: dict[str, Any],
-    word_forge_result: dict[str, Any],
-) -> str:
-    payload = {
-        "repo_root": str(repo_root),
-        "records_total": records_total,
-        "records_by_kind": records_by_kind,
-        "exact_duplicate_groups": exact_duplicates,
-        "near_duplicate_pairs": near_duplicates,
-        "drift": drift,
-        "code_analysis": {
-            "files_processed": ((code_report.get("run_stats") or {}).get("files_processed")),
-            "units_created": ((code_report.get("run_stats") or {}).get("units_created")),
-            "duplicate_group_count": code_report.get("duplicate_group_count"),
-            "normalized_duplicate_group_count": code_report.get("normalized_duplicate_group_count"),
-            "near_duplicate_pair_count": code_report.get("near_duplicate_pair_count"),
-            "dependency_graph_summary": code_report.get("dependency_graph_summary"),
-            "triage_label_counts": code_report.get("triage_label_counts"),
-            "unit_catalog_path": code_report.get("unit_catalog_path"),
-            "search_examples_path": code_report.get("search_examples_path"),
-        },
-        "doc_forge": {
-            "enabled": doc_forge_result.get("enabled"),
-            "processed": doc_forge_result.get("processed"),
-            "approved": doc_forge_result.get("approved"),
-            "rejected": doc_forge_result.get("rejected"),
-            "errors": doc_forge_result.get("errors"),
-        },
-        "word_forge": word_forge_result,
-        "graphrag": {
-            "indexed": graphrag_result.get("indexed"),
-            "report_summary": graphrag_result.get("report_summary"),
-            "trend_summary": graphrag_result.get("trend_summary"),
-            "assessment_summary": graphrag_result.get("assessment_summary"),
-            "query_count": len(graphrag_result.get("queries") or []),
-            "queries": [
-                {"query": row.get("query"), "answer": str(row.get("answer") or "")[:500]}
-                for row in (graphrag_result.get("queries") or [])[:3]
-                if isinstance(row, dict)
-            ],
-        },
-    }
-    return (
-        "Generate living documentation for the current forge state. "
-        "Focus on the most important system health signals, evidence-backed risks, and concrete next actions. "
-        "Respond with JSON matching this schema:\n"
-        + json.dumps(LIVING_DOC_SCHEMA, ensure_ascii=True)
-        + "\nDATA="
-        + json.dumps(payload, ensure_ascii=True)
-    )
-
-
-def _normalize_living_doc_payload(raw: dict[str, Any], *, config: LivingDocumentationConfig) -> dict[str, Any]:
-    def _string_list(value: Any) -> list[str]:
-        if not isinstance(value, list):
-            return []
-        return [str(item).strip() for item in value if str(item).strip()]
-
-    return {
-        "title": str(raw.get("title") or "Living Knowledge Summary").strip(),
-        "summary": str(raw.get("summary") or "").strip(),
-        "key_findings": _string_list(raw.get("key_findings")),
-        "risks": _string_list(raw.get("risks")),
-        "priorities": _string_list(raw.get("priorities")),
-        "recommended_actions": _string_list(raw.get("recommended_actions")),
-        "model": config.model,
-        "thinking_mode": config.thinking_mode,
-    }
-
-
-def _extract_json_fragment(text: str) -> dict[str, Any] | None:
-    text = str(text or "").strip()
-    if not text:
-        return None
-    try:
-        payload = json.loads(text)
-        return payload if isinstance(payload, dict) else None
-    except json.JSONDecodeError:
-        pass
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end <= start:
-        return None
-    try:
-        payload = json.loads(text[start : end + 1])
-    except json.JSONDecodeError:
-        return None
-    return payload if isinstance(payload, dict) else None
-
-
-def _invoke_living_doc_model(prompt: str, config: LivingDocumentationConfig) -> tuple[dict[str, Any], str, bool]:
-    model_config = get_model_config()
-    modes = [str(config.thinking_mode)]
-    if str(config.thinking_mode).lower() != "off":
-        modes.append("off")
-
-    last_error: Exception | None = None
-    for idx, mode in enumerate(modes):
-        try:
-            raw = model_config.generate_payload(
-                prompt,
-                model=config.model,
-                max_tokens=config.max_tokens,
-                temperature=config.temperature,
-                thinking_mode=mode,
-                timeout=config.timeout,
-                system=LIVING_DOC_SYSTEM_PROMPT,
-                format=LIVING_DOC_SCHEMA,
-            )
-        except Exception as exc:
-            last_error = exc
-            continue
-        response_text = str(raw.get("response") or "").strip()
-        if response_text:
-            return raw, mode, idx > 0
-        if str(raw.get("thinking") or "").strip():
-            last_error = RuntimeError(f"no final response returned for thinking_mode={mode}")
-            continue
-        last_error = RuntimeError(f"empty response returned for thinking_mode={mode}")
-    if last_error is not None:
-        raise last_error
-    raise RuntimeError("living documentation generation failed without an explicit error")
-
-
-def _render_living_doc_markdown(payload: dict[str, Any]) -> str:
-    lines = [
-        f"# {payload.get('title') or 'Living Knowledge Summary'}",
-        "",
-        f"Model: `{payload.get('model')}`",
-        f"Requested Thinking Mode: `{payload.get('thinking_mode')}`",
-        f"Effective Thinking Mode: `{payload.get('effective_thinking_mode', payload.get('thinking_mode'))}`",
-        f"Fallback Used: `{bool(payload.get('fallback_used'))}`",
-        "",
-        "## Summary",
-        str(payload.get("summary") or "").strip() or "No summary generated.",
-        "",
-        "## Key Findings",
-    ]
-    for item in payload.get("key_findings") or []:
-        lines.append(f"- {item}")
-    if not payload.get("key_findings"):
-        lines.append("- None")
-    lines.extend(["", "## Risks"])
-    for item in payload.get("risks") or []:
-        lines.append(f"- {item}")
-    if not payload.get("risks"):
-        lines.append("- None")
-    lines.extend(["", "## Priorities"])
-    for item in payload.get("priorities") or []:
-        lines.append(f"- {item}")
-    if not payload.get("priorities"):
-        lines.append("- None")
-    lines.extend(["", "## Recommended Actions"])
-    for item in payload.get("recommended_actions") or []:
-        lines.append(f"- {item}")
-    if not payload.get("recommended_actions"):
-        lines.append("- None")
-    return "\n".join(lines).rstrip() + "\n"
-
-
-@eidosian()
-def generate_living_documentation(
-    run_root: Path,
-    *,
-    repo_root: Path,
-    records_total: int,
-    records_by_kind: dict[str, int],
-    exact_duplicates: int,
-    near_duplicates: int,
-    drift: dict[str, Any],
-    code_report: dict[str, Any],
-    doc_forge_result: dict[str, Any],
-    graphrag_result: dict[str, Any],
-    word_forge_result: dict[str, Any],
-    config: LivingDocumentationConfig,
-) -> dict[str, Any]:
-    if not config.enabled:
-        return {"enabled": False, "generated": False}
-
-    prompt = _living_doc_prompt(
-        repo_root=repo_root,
-        records_total=records_total,
-        records_by_kind=records_by_kind,
-        exact_duplicates=exact_duplicates,
-        near_duplicates=near_duplicates,
-        drift=drift,
-        code_report=code_report,
-        doc_forge_result=doc_forge_result,
-        graphrag_result=graphrag_result,
-        word_forge_result=word_forge_result,
-    )
-    raw, effective_thinking_mode, fallback_used = _invoke_living_doc_model(prompt, config)
-    response_text = str(raw.get("response") or "").strip()
-    parsed = _extract_json_fragment(response_text)
-    if not isinstance(parsed, dict):
-        raise RuntimeError("living documentation generation returned non-object JSON")
-
-    payload = _normalize_living_doc_payload(parsed, config=config)
-    payload["generated_at"] = _now_utc()
-    payload["response_chars"] = len(response_text)
-    payload["thinking_chars"] = len(str(raw.get("thinking") or ""))
-    payload["effective_thinking_mode"] = effective_thinking_mode
-    payload["fallback_used"] = bool(fallback_used)
-
-    json_path = run_root / "living_documentation_summary.json"
-    md_path = run_root / "living_documentation_summary.md"
-    json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    md_path.write_text(_render_living_doc_markdown(payload), encoding="utf-8")
-    return {
-        "enabled": True,
-        "generated": True,
-        "json_path": str(json_path),
-        "markdown_path": str(md_path),
-        "model": config.model,
-        "thinking_mode": config.thinking_mode,
-        "effective_thinking_mode": effective_thinking_mode,
-        "fallback_used": bool(fallback_used),
-        "thinking_chars": payload["thinking_chars"],
-        "response_chars": payload["response_chars"],
-        "title": payload["title"],
-    }
-
-
-@eidosian()
-def queue_terms_for_documents(
-    doc_paths: list[Path],
-    *,
-    source_prefix: str,
-    thinking_mode: str = "on",
-    max_terms: int = 16,
-) -> dict[str, Any]:
-    try:
-        from eidos_mcp.routers import word_forge as wf_router
-    except Exception as exc:
-        return {"enabled": False, "error": str(exc)}
-
-    queued = 0
-    processed = 0
-    failures: list[str] = []
-    for doc_path in doc_paths:
-        if not doc_path.exists() or not doc_path.is_file():
-            continue
-        text = doc_path.read_text(encoding="utf-8", errors="replace").strip()
-        if not text:
-            continue
-        try:
-            queue_result = json.loads(
-                wf_router.wf_queue_terms_from_text(
-                    text[:6000],
-                    source=f"{source_prefix}:{doc_path.name}",
-                    limit=max_terms,
-                )
-            )
-            queued += int(queue_result.get("queued") or 0)
-        except Exception as exc:
-            failures.append(f"{doc_path.name}: {exc}")
-    try:
-        process_result = json.loads(
-            wf_router.wf_process_lexicon_queue(
-                max_terms=max_terms,
-                thinking_mode=thinking_mode,
-            )
-        )
-        processed = int(process_result.get("processed") or 0)
-        queue_status = json.loads(wf_router.wf_lexicon_queue_status())
-    except Exception as exc:
-        failures.append(f"process_queue: {exc}")
-        process_result = {}
-        queue_status = {}
-    return {
-        "enabled": True,
-        "queued": queued,
-        "processed": processed,
-        "failures": failures,
-        "process_result": process_result,
-        "queue": queue_status,
-    }
-
-
-@eidosian()
-def post_ingest_generated_documents(
-    workspace_root: Path,
-    *,
-    generated_doc_paths: list[Path],
-    method: str,
-) -> dict[str, Any]:
-    if not generated_doc_paths:
-        return {"indexed": False, "documents": 0}
-    stage_dir = workspace_root / "post_generated_docs"
-    if stage_dir.exists():
-        shutil.rmtree(stage_dir)
-    stage_dir.mkdir(parents=True, exist_ok=True)
-    staged = stage_markdown_documents(
-        generated_doc_paths,
-        stage_dir,
-        source_prefix="generated_docs",
-        kind="docs",
-        max_chars_per_doc=20_000,
-    )
-    if not staged:
-        return {"indexed": False, "documents": 0}
-    result = _run_graphrag_index(workspace_root, method=method, scan_roots=[stage_dir])
-    return {
-        "indexed": bool(result.get("success")),
-        "documents": len(staged),
-        "scan_root": str(stage_dir),
-        "index_result": result,
-    }
-
-
 @eidosian()
 def compare_with_previous_run(run_root: Path, records: list[StagedRecord]) -> dict[str, Any]:
     current = {r.source_path: r.sha256 for r in records}
@@ -1397,7 +722,6 @@ def run_pipeline(
     run_graphrag: bool,
     queries: list[str],
     method: str,
-    living_doc_config: LivingDocumentationConfig | None = None,
 ) -> dict[str, Any]:
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     run_root = output_root / run_id
@@ -1406,262 +730,53 @@ def run_pipeline(
     if stage_dir.exists():
         shutil.rmtree(stage_dir)
     stage_dir.mkdir(parents=True, exist_ok=True)
-    estimated_total = _prior_runtime_estimate(output_root)
-    started_at = _now_utc()
-    phase_timings: dict[str, float] = {}
-    coordinator = ForgeRuntimeCoordinator(COORDINATOR_STATUS_PATH)
-    coordinator_owner = f"living_pipeline:{run_id}"
 
-    def _phase_budget(requested_models: list[dict[str, Any]] | None = None) -> dict[str, Any]:
-        requested_models = [row for row in (requested_models or []) if isinstance(row, dict)]
-        decision = coordinator.can_allocate(
-            owner=coordinator_owner,
-            requested_models=requested_models,
-            allow_same_owner=True,
-        )
-        return {
-            "decision": decision,
-            "requested_models": requested_models,
-            "saturated": not bool(decision.get("allowed")),
-        }
+    code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
+    repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
+    memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
+    records = repo_records + memory_records
 
-    def _phase_start(phase_name: str) -> float:
-        active_models: list[dict[str, Any]] = []
-        if phase_name == "word_forge":
-            active_models = [{"family": "ollama", "model": "qwen3.5:2b", "role": "lexicon_enrichment"}]
-        elif phase_name == "doc_forge":
-            active_models = [{"family": "llama.cpp", "model": "doc_forge", "role": "doc_forge_completion"}]
-        elif phase_name == "living_documentation":
-            cfg = living_doc_config or LivingDocumentationConfig()
-            active_models = [{"family": "ollama", "model": str(cfg.model), "role": "living_documentation"}]
-        _write_pipeline_status(
-            state="running",
-            phase=phase_name,
-            run_id=run_id,
-            started_at=started_at,
-            output_root=output_root,
-            workspace_root=workspace_root,
-            phase_timings=phase_timings,
-            estimated_total_seconds=estimated_total,
-            code_report=code_report,
-            doc_forge_result=doc_forge_result,
-            word_forge_result=word_forge_result,
-            graphrag_result=graphrag_result,
-            living_doc_result=living_doc_result,
-            records_total=records_total,
-            records_by_kind=records_by_kind,
-        )
-        coordinator.heartbeat(
-            owner=coordinator_owner,
-            task=phase_name,
-            state="running",
-            active_models=active_models,
-            metadata={"run_id": run_id, "phase_timings": dict(phase_timings), "records_total": records_total},
-        )
-        return time.monotonic()
+    exact_duplicates = group_exact_duplicates(records)
+    near_duplicates = detect_near_duplicates(records)
+    drift = compare_with_previous_run(run_root, records)
 
-    def _phase_done(phase_name: str, started: float) -> None:
-        phase_timings[phase_name] = round(max(0.0, time.monotonic() - started), 3)
+    workspace_input = workspace_root / "input"
+    if workspace_input.exists():
+        shutil.rmtree(workspace_input)
+    workspace_input.mkdir(parents=True, exist_ok=True)
+    for rec in records:
+        src = Path(rec.staged_path)
+        dest = workspace_input / src.relative_to(stage_dir)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
 
-    code_report: dict[str, Any] = {}
-    doc_forge_result: dict[str, Any] = {}
-    word_forge_result: dict[str, Any] = {}
     graphrag_result: dict[str, Any] = {"indexed": False, "queries": []}
-    living_doc_result: dict[str, Any] = {}
-    records: list[StagedRecord] = []
-    records_by_kind: dict[str, int] = {}
-    records_total = 0
-    exact_duplicates: list[dict[str, Any]] = []
-    near_duplicates: list[dict[str, Any]] = []
-    drift: dict[str, Any] = {}
-
-    try:
-        phase_started = _phase_start("code_analysis")
-        code_report = run_code_analysis(repo_root, run_root, max_files=code_max_files)
-        _phase_done("code_analysis", phase_started)
-
-        phase_started = _phase_start("doc_forge")
-        doc_forge_result = run_doc_forge_batch(repo_root)
-        _phase_done("doc_forge", phase_started)
-
-        phase_started = _phase_start("staging")
-        repo_records = stage_repo_text_documents(repo_root, stage_dir, max_file_bytes, max_chars_per_doc)
-        memory_records = stage_memory_and_kb_documents(repo_root, stage_dir, max_chars_per_doc)
-        doc_records = stage_doc_forge_documents(repo_root, stage_dir, max_chars_per_doc)
-        records = repo_records + memory_records + doc_records
-        records_total = len(records)
-        records_by_kind = dict(Counter(r.kind for r in records))
-        exact_duplicates = group_exact_duplicates(records)
-        near_duplicates = detect_near_duplicates(records)
-        drift = compare_with_previous_run(run_root, records)
-
-        workspace_input = workspace_root / "input"
-        if workspace_input.exists():
-            shutil.rmtree(workspace_input)
-        workspace_input.mkdir(parents=True, exist_ok=True)
-        for rec in records:
-            src = Path(rec.staged_path)
-            dest = workspace_input / src.relative_to(stage_dir)
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dest)
-        _phase_done("staging", phase_started)
-
-        word_budget = _phase_budget([{"family": "ollama", "model": "qwen3.5:2b", "role": "lexicon_enrichment"}])
-        phase_started = _phase_start("word_forge")
-        word_forge_result = build_word_forge_lexicon(
-            records,
-            repo_root=repo_root,
-            thinking_mode="off" if word_budget["saturated"] else "on",
+    if run_graphrag:
+        llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
+        embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
+        llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
+        llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
+        embed_model = _pick_selected_model(
+            repo_root,
+            "graphrag",
+            "embedding_model",
+            repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
         )
-        word_forge_result["budget"] = word_budget
-        _phase_done("word_forge", phase_started)
-
-        if run_graphrag:
-            llm_port = get_service_port("graphrag_llm", default=8081, env_keys=("EIDOS_GRAPHRAG_LLM_PORT",))
-            embed_port = get_service_port("graphrag_embedding", default=8082, env_keys=("EIDOS_GRAPHRAG_EMBED_PORT",))
-            llm_fallback = _pick_sweep_model(repo_root, repo_root / "models" / "Qwen2.5-0.5B-Instruct-Q8_0.gguf")
-            llm_model = _pick_selected_model(repo_root, "graphrag", "completion_model", llm_fallback)
-            embed_model = _pick_selected_model(
-                repo_root,
-                "graphrag",
-                "embedding_model",
-                repo_root / "models" / "nomic-embed-text-v1.5.Q4_K_M.gguf",
-            )
-            runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
-            native_only = str(method or "").lower() in {"native", "native_only", "local"}
-            graphrag_budget_models = (
-                [{"family": "ollama", "model": "qwen3.5:2b", "role": "graphrag_report_enrichment"}]
-                if native_only
-                else [
-                    {"family": "llama.cpp", "model": str(llm_model), "role": "graphrag_completion", "port": llm_port},
-                    {"family": "llama.cpp", "model": str(embed_model), "role": "graphrag_embedding", "port": embed_port},
-                ]
-            )
-            graphrag_budget = _phase_budget(graphrag_budget_models)
-            phase_started = _phase_start("graphrag")
-            try:
-                graphrag_result["budget"] = graphrag_budget
-                if graphrag_budget["saturated"]:
-                    graphrag_result["indexed"] = False
-                    graphrag_result["skipped"] = True
-                    graphrag_result["skip_reason"] = str((graphrag_budget["decision"] or {}).get("reason") or "budget_denied")
-                else:
-                    coordinator.heartbeat(
-                        owner=coordinator_owner,
-                        task="graphrag",
-                        state="running",
-                        active_models=graphrag_budget_models,
-                        metadata={"run_id": run_id, "workspace_root": str(workspace_root)},
-                    )
-                    if not native_only:
-                        _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
-                        runtimes.append(_start_server(llm_model, llm_port, embedding=False))
-                        runtimes.append(_start_server(embed_model, embed_port, embedding=True))
-                    index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
-                    graphrag_result["indexed"] = True
-                    graphrag_result["llm_model"] = "qwen3.5:2b" if native_only else str(llm_model)
-                    graphrag_result["embed_model"] = "" if native_only else str(embed_model)
-                    graphrag_result["index_result"] = index_result
-                    graphrag_result["report_summary"] = (
-                        index_result.get("community_reports") if isinstance(index_result, dict) else {}
-                    )
-                    graphrag_result["trend_summary"] = (
-                        index_result.get("report_trends") if isinstance(index_result, dict) else {}
-                    )
-                    graphrag_result["assessment_summary"] = (
-                        index_result.get("assessment") if isinstance(index_result, dict) else {}
-                    )
-                    for query in queries:
-                        answer = _run_graphrag_query(workspace_root, query, method="global")
-                        graphrag_result["queries"].append({"query": query, "answer": answer})
-            finally:
-                _stop_servers(runtimes)
-            _phase_done("graphrag", phase_started)
-
-        living_doc_budget = _phase_budget(
-            [{"family": "ollama", "model": str((living_doc_config or LivingDocumentationConfig()).model), "role": "living_documentation"}]
-        )
-        phase_started = _phase_start("living_documentation")
-        effective_doc_config = living_doc_config or LivingDocumentationConfig()
-        if living_doc_budget["saturated"]:
-            effective_doc_config = LivingDocumentationConfig(
-                enabled=effective_doc_config.enabled,
-                model=effective_doc_config.model,
-                thinking_mode="off",
-                timeout=effective_doc_config.timeout,
-                max_tokens=effective_doc_config.max_tokens,
-                temperature=effective_doc_config.temperature,
-            )
-        living_doc_result = generate_living_documentation(
-            run_root,
-            repo_root=repo_root,
-            records_total=records_total,
-            records_by_kind=records_by_kind,
-            exact_duplicates=len(exact_duplicates),
-            near_duplicates=len(near_duplicates),
-            drift=drift,
-            code_report=code_report,
-            doc_forge_result=doc_forge_result,
-            graphrag_result=graphrag_result,
-            word_forge_result=word_forge_result,
-            config=effective_doc_config,
-        )
-        living_doc_result["budget"] = living_doc_budget
-        queued_generated_terms = queue_terms_for_documents(
-            [
-                Path(path)
-                for path in [
-                    living_doc_result.get("markdown_path"),
-                    living_doc_result.get("json_path"),
-                ]
-                if isinstance(path, str) and path
-            ],
-            source_prefix="living_documentation",
-            thinking_mode=str(effective_doc_config.thinking_mode or "on"),
-            max_terms=16,
-        )
-        living_doc_result["lexicon_queue"] = queued_generated_terms
-        if run_graphrag and bool(graphrag_result.get("indexed")):
-            post_ingest = post_ingest_generated_documents(
-                workspace_root,
-                generated_doc_paths=[Path(living_doc_result["markdown_path"])],
-                method=method,
-            )
-            living_doc_result["post_ingest"] = post_ingest
-            if post_ingest.get("indexed") and isinstance(post_ingest.get("index_result"), dict):
-                index_result = dict(post_ingest["index_result"])
-                graphrag_result["post_ingest"] = post_ingest
-                graphrag_result["report_summary"] = index_result.get("community_reports", graphrag_result.get("report_summary"))
-                graphrag_result["trend_summary"] = index_result.get("report_trends", graphrag_result.get("trend_summary"))
-                graphrag_result["assessment_summary"] = index_result.get("assessment", graphrag_result.get("assessment_summary"))
-        _phase_done("living_documentation", phase_started)
-    except Exception as exc:
-        _write_pipeline_status(
-            state="failed",
-            phase="failed",
-            run_id=run_id,
-            started_at=started_at,
-            output_root=output_root,
-            workspace_root=workspace_root,
-            phase_timings=phase_timings,
-            estimated_total_seconds=estimated_total,
-            code_report=code_report,
-            doc_forge_result=doc_forge_result,
-            word_forge_result=word_forge_result,
-            graphrag_result=graphrag_result,
-            living_doc_result=living_doc_result,
-            records_total=records_total,
-            records_by_kind=records_by_kind,
-            error=str(exc),
-        )
-        coordinator.heartbeat(
-            owner=coordinator_owner,
-            task="failed",
-            state="error",
-            active_models=[],
-            metadata={"run_id": run_id, "error": str(exc)},
-        )
-        raise
+        _write_workspace_settings(workspace_root, llm_port=llm_port, embed_port=embed_port)
+        runtimes: list[tuple[subprocess.Popen[Any], Any]] = []
+        try:
+            runtimes.append(_start_server(llm_model, llm_port, embedding=False))
+            runtimes.append(_start_server(embed_model, embed_port, embedding=True))
+            index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
+            graphrag_result["indexed"] = True
+            graphrag_result["llm_model"] = str(llm_model)
+            graphrag_result["embed_model"] = str(embed_model)
+            graphrag_result["index_result"] = index_result
+            for query in queries:
+                answer = _run_graphrag_query(workspace_root, query, method="global")
+                graphrag_result["queries"].append({"query": query, "answer": answer})
+        finally:
+            _stop_servers(runtimes)
 
     manifest = {
         "contract": "living_knowledge.pipeline.v1",
@@ -1682,16 +797,7 @@ def run_pipeline(
             "total_units": code_report.get("total_units"),
             "duplicate_group_count": code_report.get("duplicate_group_count"),
         },
-        "doc_forge": doc_forge_result,
-        "word_forge": word_forge_result,
         "graphrag": graphrag_result,
-        "living_documentation": living_doc_result,
-        "runtime": {
-            "status_path": str(PIPELINE_STATUS_PATH),
-            "total_elapsed_seconds": round(sum(phase_timings.values()), 3),
-            "phase_timings": dict(phase_timings),
-            "estimated_total_seconds": estimated_total,
-        },
         "source_hashes": {r.source_path: r.sha256 for r in records},
     }
 
@@ -1704,30 +810,6 @@ def run_pipeline(
     (run_root / "duplicates_near.json").write_text(json.dumps(near_duplicates, indent=2) + "\n", encoding="utf-8")
     (run_root / "drift.json").write_text(json.dumps(drift, indent=2) + "\n", encoding="utf-8")
     (output_root / "latest_run").write_text(run_id + "\n", encoding="utf-8")
-    _write_pipeline_status(
-        state="completed",
-        phase="completed",
-        run_id=run_id,
-        started_at=started_at,
-        output_root=output_root,
-        workspace_root=workspace_root,
-        phase_timings=phase_timings,
-        estimated_total_seconds=estimated_total,
-        code_report=code_report,
-        doc_forge_result=doc_forge_result,
-        word_forge_result=word_forge_result,
-        graphrag_result=graphrag_result,
-        living_doc_result=living_doc_result,
-        records_total=records_total,
-        records_by_kind=records_by_kind,
-    )
-    coordinator.heartbeat(
-        owner=coordinator_owner,
-        task="completed",
-        state="idle",
-        active_models=[],
-        metadata={"run_id": run_id, "records_total": records_total, "assessment": graphrag_result.get("assessment_summary")},
-    )
     return manifest
 
 
@@ -1755,33 +837,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--query", action="append", default=[], help="GraphRAG global query (repeatable).")
     parser.add_argument("--method", choices=["fast", "standard"], default="fast", help="GraphRAG index method.")
-    parser.add_argument(
-        "--doc-model",
-        default=os.environ.get("EIDOS_LIVING_DOC_MODEL", "qwen3.5:2b"),
-        help="Living documentation synthesis model (default: qwen3.5:2b).",
-    )
-    parser.add_argument(
-        "--doc-thinking-mode",
-        default=os.environ.get("EIDOS_LIVING_DOC_THINKING_MODE", "on"),
-        help="Living documentation thinking mode: off, on, auto, low, medium, high.",
-    )
-    parser.add_argument(
-        "--doc-timeout-sec",
-        type=float,
-        default=float(os.environ.get("EIDOS_LIVING_DOC_TIMEOUT_SEC", "900")),
-        help="Living documentation generation timeout in seconds.",
-    )
-    parser.add_argument(
-        "--doc-max-tokens",
-        type=int,
-        default=int(os.environ.get("EIDOS_LIVING_DOC_MAX_TOKENS", "1400")),
-        help="Max tokens for living documentation synthesis.",
-    )
-    parser.add_argument(
-        "--skip-living-docs",
-        action="store_true",
-        help="Skip qwen-based living documentation synthesis.",
-    )
     return parser.parse_args()
 
 
@@ -1803,13 +858,6 @@ def main() -> int:
         run_graphrag=bool(args.run_graphrag),
         queries=list(args.query or []),
         method=str(args.method),
-        living_doc_config=LivingDocumentationConfig(
-            enabled=not bool(args.skip_living_docs),
-            model=str(args.doc_model),
-            thinking_mode=str(args.doc_thinking_mode),
-            timeout=float(args.doc_timeout_sec),
-            max_tokens=int(args.doc_max_tokens),
-        ),
     )
     print(json.dumps({"ok": True, "run_id": manifest["run_id"], "records_total": manifest["records_total"]}, indent=2))
     return 0

@@ -74,8 +74,6 @@ class ProcessorState:
 
     def _load(self) -> Dict[str, Any]:
         state = read_json(self.state_path, self._default_state())
-        if not isinstance(state, dict):
-            state = self._default_state()
         default = self._default_state()
         for key, value in default.items():
             state.setdefault(key, value)

@@ -97,13 +97,32 @@
       "path": "/v1/embeddings",
       "env": ["EIDOS_FILE_FORGE_EMBED_PROXY_PORT"]
     },
-    "ollama_http": {
-      "description": "Local Ollama HTTP API",
+    "ollama_qwen_http": {
+      "description": "Dedicated Ollama HTTP API for qwen generation/chat workloads",
       "protocol": "http",
       "host": "127.0.0.1",
-      "port": 11434,
+      "port": 8938,
       "path": "/",
-      "env": ["EIDOS_OLLAMA_PORT"]
+      "health_path": "/api/tags",
+      "env": ["EIDOS_OLLAMA_QWEN_PORT", "EIDOS_OLLAMA_PORT"]
+    },
+    "ollama_embedding_http": {
+      "description": "Dedicated Ollama HTTP API for embedding workloads",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8940,
+      "path": "/",
+      "health_path": "/api/tags",
+      "env": ["EIDOS_OLLAMA_EMBEDDING_PORT"]
+    },
+    "ollama_http": {
+      "description": "Legacy/default Ollama HTTP API alias routed to the dedicated qwen generation service",
+      "protocol": "http",
+      "host": "127.0.0.1",
+      "port": 8938,
+      "path": "/",
+      "health_path": "/api/tags",
+      "env": ["EIDOS_OLLAMA_PORT", "EIDOS_OLLAMA_QWEN_PORT"]
     }
   }
 }

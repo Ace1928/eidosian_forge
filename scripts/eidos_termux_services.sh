@@ -11,10 +11,14 @@ MCP_PID_FILE="${RUN_DIR}/eidos_mcp.pid"
 DOC_PID_FILE="${RUN_DIR}/doc_forge.pid"
 ATLAS_PID_FILE="${RUN_DIR}/eidos_atlas.pid"
 SCHEDULER_PID_FILE="${RUN_DIR}/eidos_scheduler.pid"
+OLLAMA_QWEN_PID_FILE="${RUN_DIR}/ollama_qwen.pid"
+OLLAMA_EMBED_PID_FILE="${RUN_DIR}/ollama_embedding.pid"
 MCP_LOG_FILE="${FORGE_ROOT}/doc_forge/mcp_server.log"
 DOC_LOG_FILE="${FORGE_ROOT}/doc_forge/orchestrator.log"
 ATLAS_LOG_FILE="${FORGE_ROOT}/web_interface_forge/eidos_atlas.log"
 SCHEDULER_LOG_FILE="${FORGE_ROOT}/logs/eidos_scheduler.log"
+OLLAMA_QWEN_LOG_FILE="${FORGE_ROOT}/logs/ollama_qwen.log"
+OLLAMA_EMBED_LOG_FILE="${FORGE_ROOT}/logs/ollama_embedding.log"
 
 _registry_port_default() {
     local service="$1"
@@ -29,6 +33,8 @@ _registry_port_default() {
 DEFAULT_MCP_PORT="$(_registry_port_default eidos_mcp 8928)"
 DEFAULT_DOC_PORT="$(_registry_port_default doc_forge_dashboard 8930)"
 DEFAULT_ATLAS_PORT="$(_registry_port_default eidos_atlas_dashboard 8936)"
+DEFAULT_OLLAMA_QWEN_PORT="$(_registry_port_default ollama_qwen_http 8938)"
+DEFAULT_OLLAMA_EMBED_PORT="$(_registry_port_default ollama_embedding_http 8940)"
 
 MCP_PORT="${EIDOS_MCP_PORT:-${DEFAULT_MCP_PORT}}"
 MCP_HEALTH_URL="${EIDOS_MCP_HEALTH_URL:-http://127.0.0.1:${MCP_PORT}/health}"
@@ -36,10 +42,15 @@ DOC_PORT="${EIDOS_DOC_FORGE_PORT:-${DEFAULT_DOC_PORT}}"
 DOC_HEALTH_URL="${EIDOS_DOC_FORGE_HEALTH_URL:-http://127.0.0.1:${DOC_PORT}/health}"
 ATLAS_PORT="${EIDOS_ATLAS_PORT:-${DEFAULT_ATLAS_PORT}}"
 ATLAS_HEALTH_URL="${EIDOS_ATLAS_HEALTH_URL:-http://127.0.0.1:${ATLAS_PORT}/health}"
+OLLAMA_QWEN_PORT="${EIDOS_OLLAMA_QWEN_PORT:-${DEFAULT_OLLAMA_QWEN_PORT}}"
+OLLAMA_QWEN_HEALTH_URL="${EIDOS_OLLAMA_QWEN_HEALTH_URL:-http://127.0.0.1:${OLLAMA_QWEN_PORT}/api/tags}"
+OLLAMA_EMBED_PORT="${EIDOS_OLLAMA_EMBEDDING_PORT:-${DEFAULT_OLLAMA_EMBED_PORT}}"
+OLLAMA_EMBED_HEALTH_URL="${EIDOS_OLLAMA_EMBED_HEALTH_URL:-http://127.0.0.1:${OLLAMA_EMBED_PORT}/api/tags}"
 
 ENABLE_DOC_FORGE_AUTOSTART="${EIDOS_ENABLE_DOC_FORGE_AUTOSTART:-1}"
 ENABLE_ATLAS_AUTOSTART="${EIDOS_ENABLE_ATLAS_AUTOSTART:-1}"
 ENABLE_SCHEDULER_AUTOSTART="${EIDOS_ENABLE_SCHEDULER_AUTOSTART:-1}"
+ENABLE_OLLAMA_AUTOSTART="${EIDOS_ENABLE_OLLAMA_AUTOSTART:-1}"
 
 mkdir -p "${RUN_DIR}"
 
@@ -246,6 +257,12 @@ cmd="${1:-status}"
 case "${cmd}" in
     start-shell)
         _with_lock _increment_shell_count_locked >/dev/null
+        if _is_truthy "${ENABLE_OLLAMA_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" ] && [ -x "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" ]; then
+            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" || true
+            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" || true
+            _wait_http_ok "${OLLAMA_QWEN_HEALTH_URL}" 30 || _log "warning: Ollama qwen health check failed at ${OLLAMA_QWEN_HEALTH_URL}."
+            _wait_http_ok "${OLLAMA_EMBED_HEALTH_URL}" 30 || _log "warning: Ollama embedding health check failed at ${OLLAMA_EMBED_HEALTH_URL}."
+        fi
         _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" || true
         if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
             _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" || true
@@ -267,6 +284,8 @@ case "${cmd}" in
     exit-shell)
         remaining_count="$(_with_lock _decrement_shell_count_locked)"
         if [ "${remaining_count}" -eq 0 ]; then
+            _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh"
+            _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh"
             _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
             _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
             _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
@@ -274,6 +293,16 @@ case "${cmd}" in
         fi
         ;;
     start)
+        if _is_truthy "${ENABLE_OLLAMA_AUTOSTART}" && [ -x "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" ] && [ -x "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" ]; then
+            _start_service "Eidos Ollama Qwen" "${FORGE_ROOT}/scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_LOG_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh"
+            _start_service "Eidos Ollama Embedding" "${FORGE_ROOT}/scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_LOG_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh"
+            _wait_http_ok "${OLLAMA_QWEN_HEALTH_URL}" 30 || {
+                _log "warning: Ollama qwen health check failed at ${OLLAMA_QWEN_HEALTH_URL}."
+            }
+            _wait_http_ok "${OLLAMA_EMBED_HEALTH_URL}" 30 || {
+                _log "warning: Ollama embedding health check failed at ${OLLAMA_EMBED_HEALTH_URL}."
+            }
+        fi
         _start_service "Eidos MCP Server" "${FORGE_ROOT}/eidos_mcp/run_server.sh" "${MCP_PID_FILE}" "${MCP_LOG_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh"
         if _is_truthy "${ENABLE_DOC_FORGE_AUTOSTART}" && [ -x "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" ]; then
             _start_service "Eidos Documentation Forge" "${FORGE_ROOT}/doc_forge/scripts/run_forge.sh" "${DOC_PID_FILE}" "${DOC_LOG_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh"
@@ -297,6 +326,8 @@ case "${cmd}" in
         }
         ;;
     stop)
+        _stop_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "scripts/run_ollama_qwen.sh"
+        _stop_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "scripts/run_ollama_embedding.sh"
         _stop_service "Eidos MCP Server" "${MCP_PID_FILE}" "eidos_mcp/run_server.sh"
         _stop_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "doc_forge/scripts/run_forge.sh"
         _stop_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "web_interface_forge/scripts/run_dashboard.sh"
@@ -307,6 +338,8 @@ case "${cmd}" in
         "$0" start
         ;;
     status)
+        _status_service "Eidos Ollama Qwen" "${OLLAMA_QWEN_PID_FILE}" "${OLLAMA_QWEN_PORT}" "scripts/run_ollama_qwen.sh" "${OLLAMA_QWEN_HEALTH_URL}"
+        _status_service "Eidos Ollama Embedding" "${OLLAMA_EMBED_PID_FILE}" "${OLLAMA_EMBED_PORT}" "scripts/run_ollama_embedding.sh" "${OLLAMA_EMBED_HEALTH_URL}"
         _status_service "Eidos MCP Server" "${MCP_PID_FILE}" "${MCP_PORT}" "eidos_mcp/run_server.sh" "${MCP_HEALTH_URL}"
         _status_service "Eidos Documentation Forge" "${DOC_PID_FILE}" "${DOC_PORT}" "doc_forge/scripts/run_forge.sh" "${DOC_HEALTH_URL}"
         _status_service "Eidos Atlas Dashboard" "${ATLAS_PID_FILE}" "${ATLAS_PORT}" "web_interface_forge/scripts/run_dashboard.sh" "${ATLAS_HEALTH_URL}"
