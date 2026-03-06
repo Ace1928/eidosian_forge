@@ -167,3 +167,85 @@ def test_graphrag_query_falls_back_to_local_vector_graph_context(tmp_path):
     assert res["knowledge_context"][0]["id"] == "kb-1"
     assert res["graph_neighbors"][0]["id"] == "kb-2"
     assert res["graph_paths"][0] == ["kb-1", "kb-2", "kb-3"]
+
+
+def test_graphrag_incremental_index_native_fallback_ingests_docs_and_word_graph(tmp_path):
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "guide.md").write_text("Eidos uses a unified vector graph index.", encoding="utf-8")
+    word_graph = tmp_path / "eidos_semantic_graph.json"
+    word_graph.write_text(
+        """
+        {
+          "nodes": [
+            {"id": "autonomy", "definition": "self-directed action"},
+            {"id": "agency", "definition": "capacity to act"}
+          ],
+          "edges": [
+            {"source": "autonomy", "target": "agency", "type": "related", "weight": 0.9}
+          ]
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    grag = GraphRAGIntegration(
+        graphrag_root=workspace,
+        kb_path=tmp_path / "kb.json",
+        memory_dir=tmp_path / "memory",
+        word_graph_path=word_graph,
+    )
+    with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python", "-m", "graphrag", "index"],
+            returncode=2,
+            stdout="",
+            stderr="graphrag not installed",
+        )
+        result = grag.run_incremental_index([docs])
+
+    assert result["success"] is True
+    assert result["mode"] == "native_vector_graph"
+    assert result["external_success"] is False
+    assert result["files_indexed"] == 1
+    assert result["word_forge"]["term_nodes"] == 2
+    assert result["word_forge"]["relationships"] == 1
+
+    knowledge = KnowledgeForge(persistence_path=tmp_path / "kb.json")
+    assert knowledge.search("Eidos uses a unified vector graph index.")
+    word_hits = knowledge.search("Word Forge term: autonomy")
+    assert word_hits
+    related = knowledge.get_related_nodes(word_hits[0].id)
+    assert related
+
+
+def test_graphrag_incremental_index_removes_stale_native_documents(tmp_path):
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+    doc_path = docs / "note.txt"
+    doc_path.write_text("persistent graph memory", encoding="utf-8")
+
+    grag = GraphRAGIntegration(
+        graphrag_root=workspace,
+        kb_path=tmp_path / "kb.json",
+        memory_dir=tmp_path / "memory",
+        word_graph_path=tmp_path / "missing_word_graph.json",
+    )
+    with patch("knowledge_forge.integrations.graphrag.subprocess.run") as run_mock:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python", "-m", "graphrag", "index"],
+            returncode=2,
+            stdout="",
+            stderr="graphrag not installed",
+        )
+        first = grag.run_incremental_index([docs])
+        doc_path.unlink()
+        second = grag.run_incremental_index([docs])
+
+    assert first["files_indexed"] == 1
+    assert second["files_removed"] == 1
+
+    knowledge = KnowledgeForge(persistence_path=tmp_path / "kb.json")
+    assert knowledge.search("persistent graph memory") == []

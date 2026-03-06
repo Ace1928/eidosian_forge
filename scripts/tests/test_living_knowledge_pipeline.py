@@ -87,3 +87,38 @@ def test_detect_near_duplicates() -> None:
     pairs = pipeline.detect_near_duplicates([rec_a, rec_b], max_hamming=8)
     assert len(pairs) == 1
     assert {pairs[0]["doc_a"], pairs[0]["doc_b"]} == {"a", "b"}
+
+
+def test_run_graphrag_index_uses_adapter_scan_roots(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    docs = workspace / "input"
+    docs.mkdir(parents=True, exist_ok=True)
+
+    calls: list[tuple[str, list[Path]]] = []
+
+    class FakeGraphRAG:
+        def run_incremental_index(self, scan_roots):
+            calls.append(("index", list(scan_roots)))
+            return {"success": True, "mode": "native_vector_graph", "scan_roots": [str(p) for p in scan_roots]}
+
+    monkeypatch.setattr(pipeline, "_build_graphrag", lambda workspace_root: FakeGraphRAG())
+    result = pipeline._run_graphrag_index(workspace, method="global", scan_roots=[docs])
+
+    assert result["success"] is True
+    assert calls == [("index", [docs])]
+
+
+def test_render_graphrag_query_result_handles_local_fallback() -> None:
+    rendered = pipeline._render_graphrag_query_result(
+        {
+            "summary": "Top knowledge hit: unified graph",
+            "knowledge_context": [{"content": "Knowledge node one"}],
+            "memory_context": [{"content": "Memory node one"}],
+            "graph_neighbors": [{"content": "Graph neighbor one"}],
+        }
+    )
+
+    assert "Top knowledge hit: unified graph" in rendered
+    assert "Knowledge node one" in rendered
+    assert "Memory node one" in rendered
+    assert "Graph neighbor one" in rendered

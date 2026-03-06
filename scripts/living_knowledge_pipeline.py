@@ -19,7 +19,7 @@ from typing import Any
 import yaml
 
 FORGE_ROOT = Path(os.environ.get("EIDOS_FORGE_DIR", str(Path(__file__).resolve().parents[1]))).resolve()
-for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT):
+for extra in (FORGE_ROOT / "lib", FORGE_ROOT / "code_forge" / "src", FORGE_ROOT / "knowledge_forge" / "src", FORGE_ROOT):
     extra_str = str(extra)
     if extra.exists() and extra_str not in sys.path:
         sys.path.insert(0, extra_str)
@@ -30,6 +30,7 @@ from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
+from knowledge_forge import GraphRAGIntegration
 
 SUPPORTED_TEXT_SUFFIXES = {
     ".py",
@@ -622,29 +623,57 @@ def _write_workspace_settings(workspace_root: Path, llm_port: int, embed_port: i
     (workspace_root / "settings.yaml").write_text(yaml.safe_dump(settings, sort_keys=False), encoding="utf-8")
 
 
-def _run_graphrag_index(workspace_root: Path, method: str) -> None:
-    cmd = [sys.executable, "-m", "graphrag", "index", "--root", str(workspace_root), "--method", method]
-    subprocess.run(cmd, check=True)
+def _build_graphrag(workspace_root: Path) -> GraphRAGIntegration:
+    return GraphRAGIntegration(graphrag_root=workspace_root)
+
+
+def _run_graphrag_index(workspace_root: Path, method: str, scan_roots: list[Path] | None = None) -> dict[str, Any]:
+    _ = method
+    grag = _build_graphrag(workspace_root)
+    roots = scan_roots or [workspace_root / "input"]
+    result = grag.run_incremental_index(roots)
+    if not result.get("success"):
+        raise RuntimeError(result.get("stderr") or result.get("external_error") or "graphrag index failed")
+    return result
+
+
+def _render_graphrag_query_result(result: dict[str, Any]) -> str:
+    stdout = str(result.get("stdout") or "").strip()
+    if stdout:
+        return stdout
+
+    parts: list[str] = []
+    summary = str(result.get("summary") or "").strip()
+    if summary:
+        parts.append(summary)
+
+    knowledge_hits = list(result.get("knowledge_context") or [])
+    if knowledge_hits:
+        parts.append("Knowledge:")
+        parts.extend(f"- {str(hit.get('content') or '').strip()}" for hit in knowledge_hits[:3] if hit.get("content"))
+
+    memory_hits = list(result.get("memory_context") or [])
+    if memory_hits:
+        parts.append("Memory:")
+        parts.extend(f"- {str(hit.get('content') or '').strip()}" for hit in memory_hits[:2] if hit.get("content"))
+
+    graph_hits = list(result.get("graph_neighbors") or [])
+    if graph_hits:
+        parts.append("Graph:")
+        parts.extend(f"- {str(hit.get('content') or '').strip()}" for hit in graph_hits[:3] if hit.get("content"))
+
+    return "\n".join(part for part in parts if part).strip()
 
 
 def _run_graphrag_query(workspace_root: Path, query: str, method: str = "global") -> str:
-    cmd = [
-        sys.executable,
-        "-m",
-        "graphrag",
-        "query",
-        "--root",
-        str(workspace_root),
-        "--method",
-        method,
-        "--response-type",
-        "Concise Paragraph",
-        query,
-    ]
-    proc = subprocess.run(cmd, text=True, capture_output=True, check=False)
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip() or proc.stdout.strip() or "graphrag query failed")
-    return (proc.stdout or "").strip()
+    grag = _build_graphrag(workspace_root)
+    result = grag.global_query(query) if method == "global" else grag.local_query(query)
+    if not result.get("success"):
+        raise RuntimeError(result.get("stderr") or result.get("external_error") or "graphrag query failed")
+    rendered = _render_graphrag_query_result(result)
+    if rendered:
+        return rendered
+    raise RuntimeError("graphrag query returned no usable output")
 
 
 @eidosian()
@@ -732,10 +761,11 @@ def run_pipeline(
         try:
             runtimes.append(_start_server(llm_model, llm_port, embedding=False))
             runtimes.append(_start_server(embed_model, embed_port, embedding=True))
-            _run_graphrag_index(workspace_root, method=method)
+            index_result = _run_graphrag_index(workspace_root, method=method, scan_roots=[workspace_input])
             graphrag_result["indexed"] = True
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
+            graphrag_result["index_result"] = index_result
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})
