@@ -507,7 +507,9 @@ class GraphRAGIntegration:
             if not content:
                 return
             row = {
-                "id": str(item.get("id") or item.get("key") or hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]),
+                "id": str(
+                    item.get("id") or item.get("key") or hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
+                ),
                 "content": content,
                 "tier": str(item.get("tier") or tier_name),
                 "namespace": str(item.get("namespace") or namespace_name),
@@ -856,9 +858,7 @@ class GraphRAGIntegration:
                 "node_ids": detail_ids,
                 "kind": kind,
                 "artifact_path": rel_path,
-                "benchmark_gate_pass": (
-                    None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))
-                ),
+                "benchmark_gate_pass": (None if not isinstance(benchmark, dict) else bool(benchmark.get("gate_pass"))),
                 "search_p95_ms": None if not isinstance(benchmark, dict) else benchmark.get("search_p95_ms"),
                 "graph_build_ms": None if not isinstance(benchmark, dict) else benchmark.get("graph_build_ms"),
                 "drift_warning_count": (
@@ -927,7 +927,9 @@ class GraphRAGIntegration:
                 if tag not in {"native_graphrag"}
             }
         )
-        avg_chars = _safe_ratio(sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group))
+        avg_chars = _safe_ratio(
+            sum(len(str(getattr(node, "content", "") or "")) for node in unique_group), len(unique_group)
+        )
         coverage_ratio = _safe_ratio(len(unique_group), total_nodes)
         link_density = _safe_ratio(linked_neighbors, len(unique_group))
         tag_diversity = len(unique_tags)
@@ -1027,7 +1029,9 @@ class GraphRAGIntegration:
                 max_tokens=700,
                 temperature=0.1,
             )
-            enriched_tags = [str(tag).strip() for tag in llm_payload.get("tags", []) if str(tag).strip()] if llm_payload else []
+            enriched_tags = (
+                [str(tag).strip() for tag in llm_payload.get("tags", []) if str(tag).strip()] if llm_payload else []
+            )
             merged_tags = sorted(dict.fromkeys(report_tags + enriched_tags))
             base_rating = min(5, max(1, len(unique_group) // 2 + (1 if linked_neighbors else 0)))
             rating = min(5, max(1, int(llm_payload.get("rating", base_rating) if llm_payload else base_rating)))
@@ -1036,14 +1040,17 @@ class GraphRAGIntegration:
                     "community": community,
                     "title": str(llm_payload.get("title") or f"{community.replace('_', ' ').title()} Community"),
                     "summary": str(
-                        llm_payload.get("summary") or f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references"
+                        llm_payload.get("summary")
+                        or f"{len(unique_group)} nodes with {linked_neighbors} linked neighbor references"
                     ),
                     "rating": rating,
                     "rating_explanation": str(
                         llm_payload.get("rating_explanation")
                         or "Higher scores reflect denser linked context and broader coverage."
                     ),
-                    "findings": [str(item).strip() for item in (llm_payload.get("findings") or findings) if str(item).strip()][:5],
+                    "findings": [
+                        str(item).strip() for item in (llm_payload.get("findings") or findings) if str(item).strip()
+                    ][:5],
                     "tags": merged_tags,
                     "llm_enriched": bool(llm_payload),
                     "effective_thinking_mode": llm_payload.get("_effective_thinking_mode") if llm_payload else None,
@@ -1567,7 +1574,9 @@ class GraphRAGIntegration:
         }
 
     def _artifact_summary_from_state(self, state: Dict[str, Any], *, limit: int = 10) -> Dict[str, Any]:
-        artifact_state = state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
+        artifact_state = (
+            state.get("code_forge_artifacts") if isinstance(state.get("code_forge_artifacts"), dict) else {}
+        )
         rows = [row for row in artifact_state.values() if isinstance(row, dict)]
         rows.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
         limit = max(1, int(limit or 10))

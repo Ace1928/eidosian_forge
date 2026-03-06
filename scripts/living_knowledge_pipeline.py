@@ -34,9 +34,9 @@ from code_forge.digester.pipeline import build_duplication_index, build_repo_ind
 from code_forge.digester.schema import validate_output_dir
 from code_forge.ingest.runner import IngestionRunner
 from code_forge.library.db import CodeLibraryDB
+from eidos_mcp.config.models import get_model_config
 from eidosian_core import eidosian
 from eidosian_core.ports import get_service_port
-from eidos_mcp.config.models import get_model_config
 
 from knowledge_forge import GraphRAGIntegration
 
@@ -1101,9 +1101,15 @@ def run_pipeline(
             graphrag_result["llm_model"] = str(llm_model)
             graphrag_result["embed_model"] = str(embed_model)
             graphrag_result["index_result"] = index_result
-            graphrag_result["report_summary"] = (index_result.get("community_reports") if isinstance(index_result, dict) else {})
-            graphrag_result["trend_summary"] = (index_result.get("report_trends") if isinstance(index_result, dict) else {})
-            graphrag_result["assessment_summary"] = (index_result.get("assessment") if isinstance(index_result, dict) else {})
+            graphrag_result["report_summary"] = (
+                index_result.get("community_reports") if isinstance(index_result, dict) else {}
+            )
+            graphrag_result["trend_summary"] = (
+                index_result.get("report_trends") if isinstance(index_result, dict) else {}
+            )
+            graphrag_result["assessment_summary"] = (
+                index_result.get("assessment") if isinstance(index_result, dict) else {}
+            )
             for query in queries:
                 answer = _run_graphrag_query(workspace_root, query, method="global")
                 graphrag_result["queries"].append({"query": query, "answer": answer})
